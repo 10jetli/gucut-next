@@ -1,0 +1,19 @@
+{
+  "google": {
+    "period": "last_7_days",
+    "account": "ศีตกาล เทรดดิ้ง",
+    "campaigns": [
+      { "name": "Performance Max", "impressions": 16950, "clicks": 218, "cost": 658.6211 },
+      { "name": "คำค้นหา-เลื่อยยนต์", "impressions": 13071, "clicks": 199, "cost": 628.4827 }
+    ]
+  },
+  "facebook": {
+    "period": "last_30_days",
+    "account": "บัญชีผู้ใช้โฆษณาGUCUT",
+    "campaigns": [
+      { "name": "ชุดโฆษณาการรับรู้ใหม่", "impressions": 1684359, "clicks": 7038, "cost": 11535.01 },
+      { "name": "ชุดโฆษณายอดขายใหม่ - เริ่มขั้นตอนการชำระเงิน", "impressions": 139211, "clicks": 4795, "cost": 4513.21 }
+    ]
+  },
+  "updated": "2026-07-03"
+}
