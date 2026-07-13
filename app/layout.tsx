@@ -8,11 +8,12 @@ export const metadata: Metadata = {
 }
 
 const navItems = [
-  { href: '/',          icon: '🏠', label: 'หน้าหลัก' },
-  { href: '/orders',    icon: '📦', label: 'Orders' },
-  { href: '/products',  icon: '🛍', label: 'สินค้า' },
-  { href: '/factory',   icon: '🏭', label: 'โรงงาน' },
-  { href: '/ads',       icon: '📢', label: 'โฆษณา' },
+  { href: '/', icon: '🏠', label: 'หน้าหลัก' },
+  { href: '/orders', icon: '📦', label: 'Orders' },
+  { href: '/products', icon: '🛍', label: 'สินค้า' },
+  { href: '/factory', icon: '🏭', label: 'โรงงาน' },
+  { href: '/ads', icon: '📢', label: 'โฆษณา' },
+  { href: '/bills', icon: '🧾', label: 'บิล' },
 ]
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
