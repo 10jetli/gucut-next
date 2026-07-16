@@ -16,7 +16,7 @@ export interface BillVendor {
 // ผู้ให้บริการที่ต้องเก็บบิลทุกเดือน
 export const VENDORS: BillVendor[] = [
   { id: 'tiktok',  name: 'TikTok Ads',        emoji: '🎵', query: 'from:tiktok.com (invoice OR "tax invoice" OR ใบแจ้งหนี้) -from:notification@service.tiktok.com -from:sellersupport@shop.tiktok.com' },
-  { id: 'meta',    name: 'Facebook/Meta Ads', emoji: '📘', query: 'from:facebookmail.com (invoice OR receipt OR ใบเสร็จ)' },
+  { id: 'meta',    name: 'Facebook/Meta Ads', emoji: '📘', query: 'from:facebookmail.com (invoice OR receipt OR ใบเสร็จ) "263190084598096"' },
   { id: 'google',  name: 'Google Ads',        emoji: '🔍', query: 'from:payments-noreply@google.com OR (from:google.com subject:("payment receipt" OR ใบเสร็จ))' },
   { id: 'shopify', name: 'www (Shopify)',     emoji: '🛒', query: 'from:shopify.com (invoice OR billing OR ใบเรียกเก็บเงิน OR receipt)' },
   { id: 'line',    name: 'LINE',              emoji: '💚', query: '(from:line.me OR from:linecorp.com OR from:linebiz.com) (invoice OR receipt OR ใบเสร็จ OR "tax invoice")' },
