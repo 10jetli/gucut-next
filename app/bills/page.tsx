@@ -5,8 +5,8 @@ import Link from 'next/link'
 const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
 
 // 7 เจ้าหลัก + Omise — กดช่องไหนเข้าไปดูบิลของเจ้านั้นเรียงเป็นเดือนๆ
-const VENDOR_LIST = [
-  { id: 'shopify', name: 'www (Shopify)', emoji: '🛒' },
+const VENDOR_LIST: { id: string; name: string; emoji: string; logo?: string }[] = [
+  { id: 'shopify', name: 'www (Shopify)', emoji: '🛒', logo: 'https://www.gucut.com/cdn/shop/files/1200.png?v=1749549593' },
   { id: 'meta',    name: 'Facebook Ads',  emoji: '📘' },
   { id: 'tiktok',  name: 'TikTok Ads',    emoji: '🎵' },
   { id: 'google',  name: 'Google Ads',    emoji: '🔍' },
@@ -40,9 +40,14 @@ export default function BillsPage() {
           <Link
             key={v.id}
             href={`/bills/${v.id}`}
-            className="bg-white rounded-2xl shadow-sm p-4 text-center active:bg-gray-50"
+            className="bg-white rounded-2xl shadow-sm p-4 text-center active:bg-gray-50 flex flex-col items-center justify-center"
           >
-            <div className="text-[30px] leading-none mb-1">{v.emoji}</div>
+            {v.logo ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={v.logo} alt={v.name} className="h-9 mb-1 object-contain" />
+            ) : (
+              <div className="text-[30px] leading-none mb-1">{v.emoji}</div>
+            )}
             <div className="text-[13px] font-bold text-gray-800">{v.name}</div>
             <div className="text-[10px] text-gray-400 mt-0.5">ดูบิลรายเดือน →</div>
           </Link>
