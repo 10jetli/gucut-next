@@ -6,7 +6,7 @@ const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มี
 
 // 7 เจ้าหลัก + Omise — กดช่องไหนเข้าไปดูบิลของเจ้านั้นเรียงเป็นเดือนๆ
 const VENDOR_LIST: { id: string; name: string; emoji: string; logo?: string }[] = [
-  { id: 'shopify', name: 'www (Shopify)', emoji: '🛒', logo: 'https://www.gucut.com/cdn/shop/files/1200.png?v=1749549593' },
+  { id: 'shopify', name: 'www (Shopify)', emoji: '🛒', logo: 'https://www.gucut.com/cdn/shop/files/7c6eb86bd569d120fbcb7ab8372b6803_8e3d89af-4a8d-419a-98c6-14b009abbfc3.svg' },
   { id: 'meta',    name: 'Facebook Ads',  emoji: '📘' },
   { id: 'tiktok',  name: 'TikTok Ads',    emoji: '🎵' },
   { id: 'google',  name: 'Google Ads',    emoji: '🔍' },
@@ -44,7 +44,7 @@ export default function BillsPage() {
           >
             {v.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={v.logo} alt={v.name} className="h-9 mb-1 object-contain" />
+              <img src={v.logo} alt={v.name} className="h-8 mb-1.5 object-contain" />
             ) : (
               <div className="text-[30px] leading-none mb-1">{v.emoji}</div>
             )}
