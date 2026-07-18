@@ -28,16 +28,32 @@ function prevMonth(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
 }
 
+const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+
+// รายการย้อนหลัง 12 เดือน (ล่าสุดก่อน) สำหรับกดดู/โหลด ZIP รายเดือน
+function lastMonths(n: number): { value: string; label: string }[] {
+  const out: { value: string; label: string }[] = []
+  const d = new Date()
+  for (let i = 0; i < n; i++) {
+    const y = d.getFullYear(), m = d.getMonth()
+    out.push({ value: `${y}-${String(m + 1).padStart(2, '0')}`, label: `${TH_MONTHS[m]} ${y + 543}` })
+    d.setMonth(m - 1)
+  }
+  return out
+}
+
 export default function BillsPage() {
   const [month, setMonth] = useState(prevMonth())
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<BillsResponse | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  async function fetchBills() {
+  async function fetchBills(m?: string) {
+    const target = m ?? month
+    if (m) setMonth(m)
     setLoading(true); setError(null); setData(null)
     try {
-      const res = await fetch(`/api/bills?month=${month}`)
+      const res = await fetch(`/api/bills?month=${target}`)
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'เกิดข้อผิดพลาด')
       setData(json)
@@ -67,7 +83,7 @@ export default function BillsPage() {
             className="flex-1 border border-gray-200 rounded-xl px-3 py-2 text-[14px]"
           />
           <button
-            onClick={fetchBills}
+            onClick={() => fetchBills()}
             disabled={loading}
             className="bg-blue-500 disabled:bg-gray-300 text-white font-bold rounded-xl px-4 py-2 text-[14px]"
           >
@@ -82,6 +98,35 @@ export default function BillsPage() {
             ⬇️ ดาวน์โหลดทั้งหมด (Ads {data.month}.zip)
           </a>
         )}
+      </div>
+
+      {/* บิลรายเดือนย้อนหลัง — กดเดือนไหนโหลดเดือนนั้น */}
+      <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+        <div className="text-[13px] font-bold text-gray-800 mb-2">📅 บิลรายเดือน (ย้อนหลัง 12 เดือน)</div>
+        {lastMonths(12).map(mo => (
+          <div key={mo.value} className="flex items-center justify-between border-t border-gray-100 py-2">
+            <button
+              onClick={() => fetchBills(mo.value)}
+              className={`text-[13px] ${month === mo.value ? 'font-bold text-blue-500' : 'text-gray-700'}`}
+            >
+              {mo.label}
+            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => fetchBills(mo.value)}
+                className="text-[12px] bg-blue-50 text-blue-500 rounded-full px-3 py-1 font-bold"
+              >
+                ดูรายการ
+              </button>
+              <a
+                href={`/api/bills/download?month=${mo.value}`}
+                className="text-[12px] bg-green-50 text-green-600 rounded-full px-3 py-1 font-bold"
+              >
+                ⬇️ ZIP
+              </a>
+            </div>
+          </div>
+        ))}
       </div>
 
       {loading && (
