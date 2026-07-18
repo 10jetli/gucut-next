@@ -7,6 +7,9 @@ export const maxDuration = 60
 
 const pad = (n: number) => String(n).padStart(2, '0')
 
+// รับเฉพาะไฟล์บิลจริง: PDF (และ .zip ใบเสร็จของ Omise) — ตัด csv/อื่นๆ ทิ้ง
+const isBillFile = (name: string) => /\.pdf$/i.test(name) || /\.zip$/i.test(name)
+
 // GET /api/bills/vendor?vendor=shopify
 // สแกนอีเมลของเจ้านั้นย้อนหลัง ~13 เดือน อ่านวันที่บนหัวบิลทุก PDF แล้วจัดกลุ่มตามเดือน
 export async function GET(req: NextRequest) {
@@ -25,7 +28,8 @@ export async function GET(req: NextRequest) {
     const months: Record<string, any[]> = {}
     for (const b of bills) {
       const emailMonth = b.date.slice(0, 7)
-      for (const att of b.attachments) {
+      const billFiles = b.attachments.filter(a => isBillFile(a.filename))
+      for (const att of billFiles) {
         let m = emailMonth
         if (/\.pdf$/i.test(att.filename)) {
           try {
