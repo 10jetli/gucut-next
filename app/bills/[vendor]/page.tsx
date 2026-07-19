@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 
 const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
+const EN_MONTHS = ['Jan.','Feb.','Mar.','Apr.','May','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.']
 
 const VENDOR_INFO: Record<string, { name: string; emoji: string; note?: string }> = {
   tiktok:  { name: 'TikTok Ads',        emoji: '🎵' },
@@ -14,11 +15,6 @@ const VENDOR_INFO: Record<string, { name: string; emoji: string; note?: string }
   adobe:   { name: 'Adobe',             emoji: '🅰️' },
   apple:   { name: 'Apple / iCloud',    emoji: '🍎' },
   omise:   { name: 'Omise',             emoji: '💳' },
-}
-
-function monthLabel(m: string): string {
-  const [y, mo] = m.split('-').map(Number)
-  return `${TH_MONTHS[mo - 1]} ${y + 543}`
 }
 
 interface BillFile {
@@ -66,30 +62,35 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
         </div>
       )}
 
-      {months.map(m => (
-        <div key={m} className="bg-white rounded-2xl shadow-sm p-4 mb-3">
-          <div className="text-[14px] font-bold text-gray-800 mb-1">
-            📅 {monthLabel(m)}
-            <span className="ml-2 text-[11px] font-normal text-gray-400">{data!.months[m].length} ใบ</span>
-          </div>
-          {data!.months[m].map((f, i) => (
-            <div key={i} className="flex items-center justify-between border-t border-gray-100 py-2 gap-2">
-              <div className="text-[12px] text-gray-700 break-all flex-1">
-                📎 {f.filename}
-                {f.size > 0 && <span className="text-[10px] text-gray-400 ml-1">({Math.max(1, Math.round(f.size / 1024))} KB)</span>}
-              </div>
-              {f.attachmentId && (
-                <a
-                  href={`/api/bills/file?messageId=${f.messageId}&attachmentId=${encodeURIComponent(f.attachmentId)}&name=${encodeURIComponent(m + '_' + f.filename)}`}
-                  className="text-[12px] bg-green-50 text-green-600 rounded-full px-3 py-1 font-bold whitespace-nowrap"
-                >
-                  ⬇️ โหลด
-                </a>
-              )}
+      {months.map(m => {
+        const [y, mo] = m.split('-').map(Number)
+        return (
+          <div key={m} className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+            <div className="text-[14px] font-bold text-gray-800 mb-1">
+              📅 <span className="text-red-600">{mo} ({EN_MONTHS[mo - 1]}) {y}</span>
+              <span className="mx-1 text-gray-300">·</span>
+              {TH_MONTHS[mo - 1]} {y + 543}
+              <span className="ml-2 text-[11px] font-normal text-gray-400">{data!.months[m].length} ใบ</span>
             </div>
-          ))}
-        </div>
-      ))}
+            {data!.months[m].map((f, i) => (
+              <div key={i} className="flex items-center justify-between border-t border-gray-100 py-2 gap-2">
+                <div className="text-[12px] text-gray-700 break-all flex-1">
+                  📎 {f.filename}
+                  {f.size > 0 && <span className="text-[10px] text-gray-400 ml-1">({Math.max(1, Math.round(f.size / 1024))} KB)</span>}
+                </div>
+                {f.attachmentId && (
+                  <a
+                    href={`/api/bills/file?messageId=${f.messageId}&attachmentId=${encodeURIComponent(f.attachmentId)}&name=${encodeURIComponent(m + '_' + f.filename)}`}
+                    className="text-[12px] bg-green-50 text-green-600 rounded-full px-3 py-1 font-bold whitespace-nowrap"
+                  >
+                    ⬇️ โหลด
+                  </a>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+      })}
     </div>
   )
 }
