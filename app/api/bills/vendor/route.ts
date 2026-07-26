@@ -43,7 +43,7 @@ export async function GET(req: NextRequest) {
             const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
             const { month: pdfMonth, text } = await pdfBillInfo(buf)
             textLen = text.length
-            textSnippet = text.slice(0, 300)
+            textSnippet = text.slice(0, 1800)
             if (vendor.accountId) {
               matched = pdfHasAccountId(text, vendor.accountId)
               if (!matched) skip = true
