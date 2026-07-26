@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import JSZip from 'jszip'
-import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, monthRange } from '@/lib/gmail'
+import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessageDetail, monthRange } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
+import { emailToPdf } from '@/lib/emailPdf'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 const sanitize = (s: string) => s.replace(/[\\/:*?"<>|]/g, '_').slice(0, 80)
 
-// GET /api/bills/download?month=2026-06 → ZIP โดยจัดไฟล์ตาม "เดือนบนหัวบิล" (อ่านจากใน PDF)
-// - ค้นอีเมลกว้างถึง +3 เดือน เผื่อบิลถูก forward เข้ามาช้า
-// - PDF: อ่านวันที่ในไฟล์ → เก็บเฉพาะใบที่เป็นของเดือนที่ขอ
-// - ไฟล์อื่น/อ่านวันที่ไม่ได้: ใช้เดือนของอีเมลแทน
+// GET /api/bills/download?month=2026-06 -> ZIP
 export async function GET(req: NextRequest) {
   const month = req.nextUrl.searchParams.get('month')
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
@@ -43,29 +41,45 @@ export async function GET(req: NextRequest) {
         const attNames: string[] = []
         for (const att of b.attachments) {
           try {
-                        const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
-                        let fileMonth: string | null = null
-                        if (/\.pdf$/i.test(att.filename)) {
-                                        const { month: pm, text } = await pdfBillInfo(buf)
-                                        if (vendor.accountId && !pdfHasAccountId(text, vendor.accountId)) continue // ไม่ใช่บัญชีนี้ ข้าม
-                                        fileMonth = pm
-                        }
-                        const belongs = fileMonth ? fileMonth === month : emailMonth === month
-                        if (!belongs) continue
-                        const name = `${fileMonth ?? emailMonth}_${sanitize(att.filename)}`
-                        zip.folder(sanitize(vendor.name))!.file(name, buf)
-                        attNames.push(name)
-                        added++
+            const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
+            let fileMonth: string | null = null
+            if (/\.pdf$/i.test(att.filename)) {
+              const { month: pm, text } = await pdfBillInfo(buf)
+              if (vendor.accountId && !pdfHasAccountId(text, vendor.accountId)) continue
+              fileMonth = pm
+            }
+            const belongs = fileMonth ? fileMonth === month : emailMonth === month
+            if (!belongs) continue
+            const name = `${fileMonth ?? emailMonth}_${sanitize(att.filename)}`
+            zip.folder(sanitize(vendor.name))!.file(name, buf)
+            attNames.push(name)
+            added++
           } catch { /* ข้ามไฟล์ที่ดึงไม่ได้ */ }
         }
-        // อีเมลไม่มีไฟล์แนบ → เก็บเนื้อหาเป็น .txt (เฉพาะอีเมลของเดือนนี้)
+        // อีเมลไม่มีไฟล์แนบ -> แปลงเนื้อหาอีเมลเป็น PDF จริง (เฉพาะอีเมลของเดือนนี้)
         if (!b.attachments.length && emailMonth === month) {
-          zip.folder(sanitize(vendor.name))!.file(
-            `${b.date.slice(0, 10)}_${sanitize(b.subject || 'บิล')}.txt`,
-            `From: ${b.from}\nSubject: ${b.subject}\nDate: ${b.date}\nยอดที่พบ: ${b.amounts.join(', ') || '-'}\n\n${b.snippet}\n(อีเมลนี้ไม่มีไฟล์แนบ — เปิดดูฉบับเต็มใน Gmail)`,
-          )
-          attNames.push('(ไม่มีไฟล์แนบ)')
-          added++
+          try {
+            const detail = await fetchMessageDetail(token, b.messageId)
+            const pdfBuf = await emailToPdf({
+              vendorName: vendor.name,
+              subject: detail.subject,
+              from: detail.from,
+              date: detail.date,
+              amounts: b.amounts,
+              body: detail.text,
+            })
+            const name = `${emailMonth}_${sanitize(b.subject || 'ใบเสร็จ')}.pdf`
+            zip.folder(sanitize(vendor.name))!.file(name, pdfBuf)
+            attNames.push(name)
+            added++
+          } catch {
+            zip.folder(sanitize(vendor.name))!.file(
+              `${b.date.slice(0, 10)}_${sanitize(b.subject || 'บิล')}.txt`,
+              `From: ${b.from}\nSubject: ${b.subject}\nDate: ${b.date}\nยอดที่พบ: ${b.amounts.join(', ') || '-'}\n\n${b.snippet}\n(แปลงเป็น PDF ไม่สำเร็จ — เปิดดูฉบับเต็มใน Gmail)`,
+            )
+            attNames.push('(แปลง PDF ไม่สำเร็จ)')
+            added++
+          }
         }
         if (attNames.length) {
           rows.push([vendor.name, b.date.slice(0, 10), b.subject, b.amounts.join(' | '), attNames.join(' ; ')])
@@ -74,7 +88,7 @@ export async function GET(req: NextRequest) {
       if (!added) missing.push(vendor.name)
     }
 
-    const csv = '﻿' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n')
+    const csv = '\uFEFF' + rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n')
     zip.file('summary.csv', csv)
     if (missing.length) {
       zip.file('ไม่พบบิล.txt', `เดือน ${month} ไม่พบบิลจาก:\n- ${missing.join('\n- ')}\n\n(บิลบางเจ้าอาจส่งเข้าอีเมลอื่น เช่น gucut@icloud.com / gucut1@gmail.com — ตั้ง forward มาที่ Gmail หลัก)`)
