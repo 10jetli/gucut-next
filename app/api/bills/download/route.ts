@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import JSZip from 'jszip'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, monthRange } from '@/lib/gmail'
-import { pdfBillMonth } from '@/lib/billdate'
+import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -43,15 +43,19 @@ export async function GET(req: NextRequest) {
         const attNames: string[] = []
         for (const att of b.attachments) {
           try {
-            const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
-            let fileMonth: string | null = null
-            if (/\.pdf$/i.test(att.filename)) fileMonth = await pdfBillMonth(buf)
-            const belongs = fileMonth ? fileMonth === month : emailMonth === month
-            if (!belongs) continue
-            const name = `${fileMonth ?? emailMonth}_${sanitize(att.filename)}`
-            zip.folder(sanitize(vendor.name))!.file(name, buf)
-            attNames.push(name)
-            added++
+                        const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
+                        let fileMonth: string | null = null
+                        if (/\.pdf$/i.test(att.filename)) {
+                                        const { month: pm, text } = await pdfBillInfo(buf)
+                                        if (vendor.accountId && !pdfHasAccountId(text, vendor.accountId)) continue // ไม่ใช่บัญชีนี้ ข้าม
+                                        fileMonth = pm
+                        }
+                        const belongs = fileMonth ? fileMonth === month : emailMonth === month
+                        if (!belongs) continue
+                        const name = `${fileMonth ?? emailMonth}_${sanitize(att.filename)}`
+                        zip.folder(sanitize(vendor.name))!.file(name, buf)
+                        attNames.push(name)
+                        added++
           } catch { /* ข้ามไฟล์ที่ดึงไม่ได้ */ }
         }
         // อีเมลไม่มีไฟล์แนบ → เก็บเนื้อหาเป็น .txt (เฉพาะอีเมลของเดือนนี้)
