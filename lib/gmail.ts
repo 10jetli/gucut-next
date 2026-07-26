@@ -175,3 +175,50 @@ export function monthRange(month: string): { after: string; before: string } {
     before: `${next.getUTCFullYear()}/${pad(next.getUTCMonth() + 1)}/${pad(next.getUTCDate())}`,
   }
 }
+
+// ── ดึงเนื้อหาอีเมลเต็ม (ใช้แปลงเป็น PDF สำหรับอีเมลที่ไม่มีไฟล์แนบ) ─────────────────────────────────
+
+export interface MessageDetail {
+  subject: string
+  from: string
+  date: string
+  text: string
+}
+
+function htmlToText(html: string): string {
+  return html
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<br\s*\/?>/gi, '\n')
+    .replace(/<\/(p|div|tr|li|h[1-6])>/gi, '\n')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/[ \t]+/g, ' ')
+    .replace(/\n[ \t]*/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim()
+}
+
+export async function fetchMessageDetail(token: string, messageId: string): Promise<MessageDetail> {
+  const msg = await gmailGet(token, '/messages/' + messageId + '?format=full')
+  const parts = collectParts(msg.payload)
+  const plain = parts.find((p: any) => p.mimeType === 'text/plain')
+  const html = parts.find((p: any) => p.mimeType === 'text/html')
+  let text = ''
+  if (plain?.body?.data) {
+    text = decodeBody(plain.body.data)
+  } else if (html?.body?.data) {
+    text = htmlToText(decodeBody(html.body.data))
+  } else {
+    text = msg.snippet ?? ''
+  }
+  return {
+    subject: headerOf(msg.payload, 'Subject'),
+    from: headerOf(msg.payload, 'From'),
+    date: new Date(Number(msg.internalDate)).toISOString(),
+    text,
+  }
+}
