@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment } from '@/lib/gmail'
-import { pdfBillMonth } from '@/lib/billdate'
+import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -31,12 +31,15 @@ export async function GET(req: NextRequest) {
       const billFiles = b.attachments.filter(a => isBillFile(a.filename))
       for (const att of billFiles) {
         let m = emailMonth
-        if (/\.pdf$/i.test(att.filename)) {
-          try {
-            const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
-            m = (await pdfBillMonth(buf)) ?? emailMonth
-          } catch { /* ใช้เดือนอีเมลแทน */ }
-        }
+              if (/\.pdf$/i.test(att.filename)) {
+                          try {
+                                        const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
+                                        const { month: pdfMonth, text } = await pdfBillInfo(buf)
+                                        if (vendor.accountId && !pdfHasAccountId(text, vendor.accountId)) continue // ไม่ใช่บัญชีนี้ ข้าม
+                                        m = pdfMonth ?? emailMonth
+                          } catch { /* ใช้เดือนอีเมลแทน */ }
+              }
+              }
         ;(months[m] ??= []).push({
           filename: att.filename,
           messageId: b.messageId,
