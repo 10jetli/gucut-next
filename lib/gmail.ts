@@ -17,7 +17,7 @@ export interface BillVendor {
 // หมายเหตุ: เงื่อนไขรองรับทั้งอีเมลที่ส่งตรงจากผู้ให้บริการ และอีเมลที่ถูก forward มา (ผู้ส่งเปลี่ยน)
 export const VENDORS: BillVendor[] = [
   { id: 'tiktok',  name: 'TikTok Ads',        emoji: '🎵', query: 'from:tiktok.com (invoice OR "tax invoice" OR ใบแจ้งหนี้) -from:notification@service.tiktok.com -from:sellersupport@shop.tiktok.com' },
-  { id: 'meta',    name: 'Facebook/Meta Ads', emoji: '📘', query: '"263190084598096" (ใบเสร็จ OR receipt OR invoice)' },
+  { id: 'meta',    name: 'Facebook/Meta Ads', emoji: '📘', query: 'from:facebookmail.com (subject:"Meta Invoice" OR subject:"Payments Remittance" OR "self accounted document" OR "remittance advice")' },
   { id: 'google',  name: 'Google Ads',        emoji: '🔍', query: 'from:payments-noreply@google.com OR (from:google.com subject:("payment receipt" OR ใบเสร็จ))' },
   { id: 'shopify', name: 'www (Shopify)',     emoji: '🛒', query: '(from:shopify.com OR "Shopify Billing") (invoice OR billing OR bill OR ใบเรียกเก็บเงิน OR receipt OR ลดหนี้)' },
   { id: 'line',    name: 'LINE',              emoji: '💚', query: '(from:line.me OR from:linecorp.com OR from:linebiz.com) (invoice OR receipt OR ใบเสร็จ OR "tax invoice")' },
