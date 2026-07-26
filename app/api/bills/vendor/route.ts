@@ -39,8 +39,7 @@ export async function GET(req: NextRequest) {
                                         m = pdfMonth ?? emailMonth
                           } catch { /* ใช้เดือนอีเมลแทน */ }
               }
-              }
-        ;(months[m] ??= []).push({
+                      ;(months[m] ??= []).push({
           filename: att.filename,
           messageId: b.messageId,
           attachmentId: att.attachmentId,
