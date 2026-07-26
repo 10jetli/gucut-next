@@ -65,9 +65,9 @@ export async function GET(req: NextRequest) {
       }
       if (!b.attachments.length) {
         ;(months[emailMonth] ??= []).push({
-          filename: '(อีเมลไม่มีไฟล์แนบ — เปิดดูใน Gmail)',
+          filename: 'ใบเสร็จ.pdf',
           messageId: b.messageId,
-          attachmentId: '',
+          attachmentId: 'GEN',
           size: 0,
           subject: b.subject,
         })
