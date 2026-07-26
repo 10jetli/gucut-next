@@ -29,12 +29,26 @@ export function monthFromText(text: string): string | null {
   return null
 }
 
-// อ่าน 2 หน้าแรกของ PDF แล้วหาเดือนบนหัวบิล
-export async function pdfBillMonth(buf: Buffer): Promise<string | null> {
-  try {
-    const data = await pdfParse(buf, { max: 2 })
-    return monthFromText(String(data.text ?? '').slice(0, 4000))
-  } catch {
-    return null
-  }
+// อ่าน 2 หน้าแรกของ PDF แล้วคืนทั้งข้อความและเดือนบนหัวบิล (ใช้ครั้งเดียว ไม่ parse ซ้ำ)
+export async function pdfBillInfo(buf: Buffer): Promise<{ month: string | null; text: string }> {
+    try {
+          const data = await pdfParse(buf, { max: 2 })
+                const text = String(data.text ?? '').slice(0, 4000)
+                      return { month: monthFromText(text), text }
+    } catch {
+          return { month: null, text: '' }
+    }
 }
+
+// เผื่อโค้ดที่อื่นเรียก pdfBillMonth(buf) ตรงๆ อยู่
+export async function pdfBillMonth(buf: Buffer): Promise<string | null> {
+    return (await pdfBillInfo(buf)).month
+}
+
+// ตรวจว่าเนื้อหา PDF มีเลขบัญชี/รหัสนี้อยู่หรือไม่ (ทนช่องว่างคั่นระหว่างตัวเลข)
+export function pdfHasAccountId(text: string, accountId: string): boolean {
+    if (!accountId) return true
+        const re = new RegExp(accountId.split('').join('\\s*'))
+            return re.test(text)
+}
+
