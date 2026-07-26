@@ -12,8 +12,10 @@ const isBillFile = (name: string) => /\.pdf$/i.test(name) || /\.zip$/i.test(name
 
 // GET /api/bills/vendor?vendor=shopify
 // สแกนอีเมลของเจ้านั้นย้อนหลัง ~13 เดือน อ่านวันที่บนหัวบิลทุก PDF แล้วจัดกลุ่มตามเดือน
+// เติม &debug=1 เพื่อดูรายละเอียดการอ่าน PDF แต่ละไฟล์ (ใช้ตอนแก้บั๊ก)
 export async function GET(req: NextRequest) {
   const vendorId = req.nextUrl.searchParams.get('vendor')
+  const debug = req.nextUrl.searchParams.get('debug') === '1'
   const vendor = VENDORS.find(v => v.id === vendorId)
   if (!vendor) return NextResponse.json({ error: 'ไม่รู้จัก vendor นี้' }, { status: 400 })
 
@@ -24,22 +26,36 @@ export async function GET(req: NextRequest) {
     const before = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate() + 1)}`
     const bills = await searchVendorBills(token, vendor, after, before)
 
-    // months: { '2026-06': [ {filename, messageId, attachmentId, size, subject} ] }
     const months: Record<string, any[]> = {}
+    const debugInfo: any[] = []
     for (const b of bills) {
       const emailMonth = b.date.slice(0, 7)
       const billFiles = b.attachments.filter(a => isBillFile(a.filename))
       for (const att of billFiles) {
         let m = emailMonth
-              if (/\.pdf$/i.test(att.filename)) {
-                          try {
-                                        const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
-                                        const { month: pdfMonth, text } = await pdfBillInfo(buf)
-                                        if (vendor.accountId && !pdfHasAccountId(text, vendor.accountId)) continue // ไม่ใช่บัญชีนี้ ข้าม
-                                        m = pdfMonth ?? emailMonth
-                          } catch { /* ใช้เดือนอีเมลแทน */ }
-              }
-                      ;(months[m] ??= []).push({
+        let skip = false
+        let parseErr = ''
+        let textLen = 0
+        let textSnippet = ''
+        let matched: boolean | null = null
+        if (/\.pdf$/i.test(att.filename)) {
+          try {
+            const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
+            const { month: pdfMonth, text } = await pdfBillInfo(buf)
+            textLen = text.length
+            textSnippet = text.slice(0, 300)
+            if (vendor.accountId) {
+              matched = pdfHasAccountId(text, vendor.accountId)
+              if (!matched) skip = true
+            }
+            m = pdfMonth ?? emailMonth
+          } catch (e: any) { parseErr = e.message ?? String(e) }
+        }
+        if (debug) {
+          debugInfo.push({ subject: b.subject, filename: att.filename, month: m, skip, parseErr, textLen, textSnippet, matched })
+        }
+        if (skip) continue
+        ;(months[m] ??= []).push({
           filename: att.filename,
           messageId: b.messageId,
           attachmentId: att.attachmentId,
@@ -58,7 +74,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months })
+    return NextResponse.json({ vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months, ...(debug ? { debugInfo } : {}) })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
