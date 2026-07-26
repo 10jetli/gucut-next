@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "pdf-lib": "^1.17.1",
     "jszip": "^3.10.1",
     "next": "14.2.3",
     "pdf-parse": "^1.1.1",
