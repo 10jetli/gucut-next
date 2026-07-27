@@ -146,14 +146,6 @@ function parseAppleReceipt(html: string): ReceiptData | null {
   return { logoUrl, title, fields, billedToLines, paymentMethod, items, total }
 }
 
-function footerNote(): string {
-  return 'เอกสารนี้สร้างโดยระบบเก็บบิลอัตโนมัติของ GUCUT จากอีเมลต้นฉบับ • ' + new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' })
-}
-
-function drawFooters(pages: any[], font: any) {
-  // เอาแถบท้ายกระดาษออกตามที่ผู้ใช้ขอ (ไม่แสดงข้อความ/เลขหน้า)
-}
-
 // ── วาด PDF สไตล์ใบแจ้งหนี้ (แถบสีบน + สองคอลัมน์ + การ์ดรายการสินค้า + ยอดรวม) ──
 async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   const fonts = await loadFonts()
@@ -163,11 +155,9 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   const bold = await doc.embedFont(fonts.bold, { subset: true })
 
   const contentW = PAGE_W - MARGIN * 2
-  const pages: any[] = []
   function newPage() {
     const p = doc.addPage([PAGE_W, PAGE_H])
     p.drawRectangle({ x: 0, y: PAGE_H - 6, width: PAGE_W, height: 6, color: ACCENT })
-    pages.push(p)
     return p
   }
   let page = newPage()
@@ -298,8 +288,6 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
     y -= 30
   }
 
-  drawFooters(pages, font)
-
   const bytes = await doc.save()
   return Buffer.from(bytes)
 }
@@ -322,11 +310,9 @@ async function drawGenericPdf(info: EmailPdfInfo): Promise<Buffer> {
   const bold = await doc.embedFont(fonts.bold, { subset: true })
 
   const contentW = PAGE_W - MARGIN * 2
-  const pages: any[] = []
   function newPage() {
     const p = doc.addPage([PAGE_W, PAGE_H])
     p.drawRectangle({ x: 0, y: PAGE_H - 6, width: PAGE_W, height: 6, color: ACCENT })
-    pages.push(p)
     return p
   }
   let page = newPage()
@@ -389,8 +375,6 @@ async function drawGenericPdf(info: EmailPdfInfo): Promise<Buffer> {
     count++
   }
   y = cardTop - cardH - 18
-
-  drawFooters(pages, font)
 
   const bytes = await doc.save()
   return Buffer.from(bytes)
