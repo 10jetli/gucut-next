@@ -193,7 +193,7 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   }
   const topY = y
   if (logoImg) {
-    const h = 24
+    const h = 34
     const w = (logoImg.width / logoImg.height) * h
     page.drawImage(logoImg, { x: MARGIN, y: topY - h, width: w, height: h })
   }
@@ -248,15 +248,9 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   y -= 25
 
   for (const item of data.items) {
-    let iconImg: any = null
-    if (item.iconUrl) {
-      const img = await fetchImageBytes(item.iconUrl)
-      if (img) { try { iconImg = img.kind === 'png' ? await doc.embedPng(img.bytes) : await doc.embedJpg(img.bytes) } catch {} }
-    }
-    const iconSize = 46
     const padding = 16
     const priceWidth = bold.widthOfTextAtSize(item.price, 12)
-    const innerTextW = contentW - padding * 2 - (iconImg ? iconSize + 14 : 0) - priceWidth - 10
+    const innerTextW = contentW - padding * 2 - priceWidth - 10
 
     const nameLines = wrapLine(item.name, bold, 12, innerTextW)
     let descLineCount = 0
@@ -267,18 +261,14 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
       descLineCount += w.length
     }
     const textBlockH = nameLines.length * 16 + descLineCount * 14
-    const cardH = Math.max(iconSize, textBlockH) + padding * 2
+    const cardH = textBlockH + padding * 2
 
     ensureSpace(cardH + 10)
     const cardTop = y
     const cardBottom = y - cardH
     page.drawRectangle({ x: MARGIN, y: cardBottom, width: contentW, height: cardH, color: CARD_BG, borderColor: BORDER_GRAY, borderWidth: 1 })
 
-    const iconX = MARGIN + padding
-    const textX = iconX + (iconImg ? iconSize + 14 : 0)
-    if (iconImg) {
-      page.drawImage(iconImg, { x: iconX, y: cardTop - padding - iconSize, width: iconSize, height: iconSize })
-    }
+    const textX = MARGIN + padding
     let itemY = cardTop - padding
     for (const l of nameLines) {
       page.drawText(l, { x: textX, y: itemY - 12, size: 12, font: bold, color: BLACK })
