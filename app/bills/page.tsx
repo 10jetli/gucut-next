@@ -1,20 +1,13 @@
 'use client'
 
 import Link from 'next/link'
+import { BILL_VENDORS } from '@/lib/vendors'
+import { TH_MONTHS } from '@/lib/format'
 
-const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
-
-// 7 เจ้าหลัก + Omise — กดช่องไหนเข้าไปดูบิลของเจ้านั้นเรียงเป็นเดือนๆ
-const VENDOR_LIST: { id: string; name: string; emoji: string; logo?: string }[] = [
-  { id: 'shopify', name: 'www (Shopify)', emoji: '🛒', logo: 'https://www.gucut.com/cdn/shop/files/7c6eb86bd569d120fbcb7ab8372b6803_8e3d89af-4a8d-419a-98c6-14b009abbfc3.svg' },
-  { id: 'meta',    name: 'Facebook Ads',  emoji: '📘' },
-  { id: 'tiktok',  name: 'TikTok Ads',    emoji: '🎵' },
-  { id: 'google',  name: 'Google Ads',    emoji: '🔍' },
-  { id: 'line',    name: 'LINE',          emoji: '💚' },
-  { id: 'adobe',   name: 'Adobe',         emoji: '🅰️' },
-  { id: 'apple',   name: 'Apple / iCloud', emoji: '🍎' },
-  { id: 'omise',   name: 'Omise',         emoji: '💳' },
-]
+// 7 เจ้าหลัก + Omise — กดช่องไหนเข้าไปดูบิลของเจ้านั้นเรียงเป็นเดือนๆ (ข้อมูลรวมอยู่ที่ lib/vendors.ts)
+const VENDOR_LIST = [...BILL_VENDORS]
+  .sort((a, b) => a.gridOrder - b.gridOrder)
+  .map(v => ({ id: v.id, name: v.gridName, emoji: v.emoji, logo: v.logo }))
 
 // รายการย้อนหลัง 12 เดือน สำหรับโหลด ZIP รวมทุกเจ้า
 function lastMonths(n: number): { value: string; label: string }[] {
