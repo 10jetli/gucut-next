@@ -1,5 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
+import { fmtBaht, fmtNum } from '@/lib/format'
+import LoadingState from '@/components/ui/LoadingState'
+import ErrorBox from '@/components/ui/ErrorBox'
 
 interface Campaign {
   name: string
@@ -18,14 +21,6 @@ interface AdsData {
   google: PlatformData
   facebook: PlatformData
   updated: string
-}
-
-function fmtBaht(n: number) {
-  return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-}
-
-function fmtNum(n: number) {
-  return n.toLocaleString('th-TH')
 }
 
 function ctr(clicks: number, impressions: number) {
@@ -100,13 +95,12 @@ export default function AdsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <div className="text-center py-12 text-gray-400 text-sm">กำลังโหลด...</div>
+  if (loading) return <LoadingState className="text-center py-12 text-gray-400 text-sm" />
   if (error) return (
     <div className="p-4">
-      <div className="bg-red-50 rounded-xl p-4 text-sm text-red-600">
-        <p className="font-semibold">โหลดไม่ได้</p>
+      <ErrorBox>
         <p className="text-[11px] mt-1">{error}</p>
-      </div>
+      </ErrorBox>
     </div>
   )
   if (!data) return null
