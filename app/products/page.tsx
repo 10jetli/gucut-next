@@ -1,10 +1,8 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { Product } from '@/lib/types'
-
-function fmtBaht(n: number) {
-  return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-}
+import { fmtBaht } from '@/lib/format'
+import LoadingState from '@/components/ui/LoadingState'
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<Product[]>([])
@@ -21,7 +19,7 @@ export default function ProductsPage() {
   return (
     <div className="p-4">
       <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        {loading && <p className="text-center py-8 text-gray-400 text-sm">กำลังโหลด...</p>}
+        {loading && <LoadingState />}
         {products.map(p => (
           <div key={p.sku} className="px-4 py-3 border-b border-gray-50 last:border-0">
             <div className="flex items-start justify-between gap-2">
