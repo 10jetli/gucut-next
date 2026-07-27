@@ -2,11 +2,9 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import type { Order, Return } from '@/lib/types'
-import OrderCard from '@/components/OrderCard'
-
-function fmtBaht(n: number) {
-  return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
-}
+import OrderCard from '@/components/ui/OrderCard'
+import { fmtBaht } from '@/lib/format'
+import LoadingState from '@/components/ui/LoadingState'
 
 export default function DashboardPage() {
   const [todayOrders, setTodayOrders] = useState<Order[]>([])
@@ -81,9 +79,7 @@ export default function DashboardPage() {
         </button>
       </div>
 
-      {loading && (
-        <div className="text-center py-8 text-gray-400 text-sm">กำลังโหลด...</div>
-      )}
+      {loading && <LoadingState />}
 
       {/* ── Stat cards: แถวเดียว 4 ใบบนจอ PC แบบ Zort ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
