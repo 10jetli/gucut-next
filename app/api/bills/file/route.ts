@@ -26,6 +26,7 @@ export async function GET(req: NextRequest) {
         date: detail.date,
         amounts: [],
         body: detail.text,
+        html: detail.html,
       })
       const pdfName = name.replace(/\.[^.]+$/, '') + '.pdf'
       return new NextResponse(buf as any, {
