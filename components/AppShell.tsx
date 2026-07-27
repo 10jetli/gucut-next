@@ -27,6 +27,13 @@ const navItems: NavItem[] = [
       { href: '/bills/omise', label: 'Omise' },
     ],
   },
+  {
+    icon: '⚙️',
+    label: 'ตั้งค่า',
+    children: [
+      { href: '/settings/connections', label: 'เชื่อมต่อบริการอื่น' },
+    ],
+  },
 ]
 
 const STORAGE_KEY = 'gucut-sidebar-collapsed'
