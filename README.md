@@ -16,19 +16,21 @@
 | บิล | `/bills`, `/bills/[vendor]` | ระบบเก็บบิลจาก Gmail รายเดือน 8 เจ้า + แปลงอีเมลเป็น PDF |
 | ตั้งค่า → เชื่อมต่อบริการอื่น | `/settings/connections` | เช็คสถานะ Gmail token / ZORT / Sheets + ฟอร์มกุญแจ ZORT (localStorage) |
 
-## โครงสร้างโค้ด
+## โครงสร้างโค้ด (หลัง refactor)
+
+> กติกาการเขียนโค้ดฉบับเต็ม: ดู **CLAUDE.md**
 
 ```
 app/
+  layout.tsx                  ครอบทุกหน้าด้วย <AppShell> (จุดเดียว)
   page.tsx                    Dashboard
-  layout.tsx                  ครอบด้วย <AppShell> (sidebar/topbar)
-  login/                      หน้าล็อกอิน (SITE_PASSWORD)
-  orders/ products/ factory/ ads/   หน้าข้อมูลแต่ละส่วน
+  login/ orders/ products/ factory/ ads/   หน้าข้อมูลแต่ละส่วน
   bills/ + bills/[vendor]/    หน้าบิลรายเจ้า
   settings/connections/       สถานะการเชื่อมต่อ + กุญแจ ZORT
   api/
     zort/                     proxy ไป ZORT API (ใช้ env ZORT_*)
     sheets/                   อ่าน Google Sheets โรงงาน (gviz public)
+    ads/                      ข้อมูลโฆษณาจาก data/ads.json
     bills/                    ค้นบิลทุกเจ้าของเดือน
     bills/vendor/             ค้นบิลรายเจ้า
     bills/file/               ดาวน์โหลดไฟล์แนบ / สร้าง PDF จากอีเมล (attachmentId=GEN)
@@ -36,10 +38,13 @@ app/
     connections/              ตรวจสถานะการเชื่อมต่อทุกบริการ
     auth/ google/             ล็อกอิน + Google OAuth callback (public paths)
 components/
-  AppShell.tsx                sidebar ย่อ/ขยายได้ + เมนูย่อยแบบ accordion + mobile nav
-  OrderCard.tsx               การ์ดออเดอร์
+  layout/                     AppShell (state) + Sidebar + TopBar + MobileNav
+  ui/                         OrderCard, LoadingState, ErrorBox, PillButton
 lib/
-  gmail.ts                    Gmail API (refresh token) + นิยาม VENDORS ทั้ง 8 เจ้า + query
+  nav-config.ts               ⭐ รายการเมนูทั้งหมด (แก้เมนูที่นี่ที่เดียว)
+  vendors.ts                  ⭐ ข้อมูล vendor บิลทั้งหมด (ชื่อ/query/accountId — แก้ที่นี่ที่เดียว)
+  format.ts                   fmtBaht, fmtNum, TH_MONTHS, EN_MONTHS
+  gmail.ts                    Gmail API (refresh token) + ค้นบิล
   emailPdf.ts                 แปลงอีเมลบิลเป็น PDF (pdf-lib + ฟอนต์ Sarabun โหลด runtime)
   zort.ts                     ZORT API helper (2 ร้านจาก env)
   billdate.ts types.ts        helper/types
