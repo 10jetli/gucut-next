@@ -69,11 +69,14 @@ export default function DashboardPage() {
   const returnTotal = returns.reduce((s, r) => s + (r.paymentamount ?? 0), 0)
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Refresh button */}
+    <div className="p-4 md:p-6 space-y-4 md:space-y-5">
+      {/* Page header + refresh */}
       <div className="flex items-center justify-between">
-        <span className="text-[11px] text-gray-400" suppressHydrationWarning>อัพเดต {refreshed.toLocaleTimeString('th-TH')}</span>
-        <button onClick={load} className="text-[12px] text-blue-500 flex items-center gap-1">
+        <div>
+          <h1 className="hidden md:block text-lg font-bold text-gray-800">ภาพรวมร้าน</h1>
+          <span className="text-[11px] text-gray-400" suppressHydrationWarning>อัพเดต {refreshed.toLocaleTimeString('th-TH')}</span>
+        </div>
+        <button onClick={load} className="text-[12px] md:text-[13px] text-blue-600 bg-white md:border md:border-gray-200 md:rounded-lg md:px-3 md:py-1.5 md:shadow-sm flex items-center gap-1 hover:bg-blue-50 transition-colors">
           🔄 รีเฟรช
         </button>
       </div>
@@ -82,59 +85,58 @@ export default function DashboardPage() {
         <div className="text-center py-8 text-gray-400 text-sm">กำลังโหลด...</div>
       )}
 
-      {/* Today orders */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <p className="text-[12px] text-gray-400 mb-1">📦 Orders วันนี้</p>
-        <p className="text-2xl font-black text-gray-900">{todayOrders.length} <span className="text-sm font-normal text-gray-500">orders</span></p>
-        <p className="text-[11px] text-gray-400 mt-1">ใน 7 วัน</p>
-      </div>
-
-      {/* Week revenue */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <p className="text-[12px] text-gray-400 mb-1">💰 ยอดขาย (7 วัน)</p>
-        <p className="text-2xl font-black text-gray-900">{fmtBaht(weekRevenue)}</p>
-      </div>
-
-      {/* Product count */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <p className="text-[12px] text-gray-400 mb-1">🛍 สินค้าทั้งหมด</p>
-        <p className="text-2xl font-black text-gray-900">{productCount} <span className="text-sm font-normal text-gray-500">ใน ZORT</span></p>
-      </div>
-
-      {/* Returns */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <p className="text-[12px] text-gray-400 mb-1">↩️ สินค้าตีกลับ (30 วัน)</p>
-        <p className="text-2xl font-black text-gray-900">{returns.length} <span className="text-sm font-normal text-gray-500">รายการ</span></p>
-        {returns.length > 0 && <p className="text-[12px] text-red-500 mt-1">มูลค่า {fmtBaht(returnTotal)}</p>}
-      </div>
-
-      {/* Factory stats */}
-      <div className="bg-white rounded-xl shadow-sm p-4">
-        <div className="flex items-center justify-between mb-2">
-          <p className="text-[12px] text-gray-400">🏭 การสั่งของกับโรงงาน</p>
-          <Link href="/factory" className="text-[11px] text-blue-500">ดูทั้งหมด →</Link>
+      {/* ── Stat cards: แถวเดียว 4 ใบบนจอ PC แบบ Zort ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5">
+          <p className="text-[12px] text-gray-400 mb-1">📦 Orders วันนี้</p>
+          <p className="text-2xl md:text-3xl font-black text-gray-900">{todayOrders.length} <span className="text-sm font-normal text-gray-500">orders</span></p>
         </div>
-        <div className="flex gap-4">
-          <div>
-            <p className="text-xl font-black text-orange-500">{factoryStats.pending}</p>
-            <p className="text-[11px] text-gray-400">ยังไม่มัดจำ</p>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5">
+          <p className="text-[12px] text-gray-400 mb-1">💰 ยอดขาย (7 วัน)</p>
+          <p className="text-2xl md:text-3xl font-black text-gray-900">{fmtBaht(weekRevenue)}</p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5">
+          <p className="text-[12px] text-gray-400 mb-1">🛍 สินค้าทั้งหมด</p>
+          <p className="text-2xl md:text-3xl font-black text-gray-900">{productCount} <span className="text-sm font-normal text-gray-500">ใน ZORT</span></p>
+        </div>
+
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5">
+          <p className="text-[12px] text-gray-400 mb-1">↩️ สินค้าตีกลับ (30 วัน)</p>
+          <p className="text-2xl md:text-3xl font-black text-gray-900">{returns.length} <span className="text-sm font-normal text-gray-500">รายการ</span></p>
+          {returns.length > 0 && <p className="text-[12px] text-red-500 mt-1">มูลค่า {fmtBaht(returnTotal)}</p>}
+        </div>
+      </div>
+
+      {/* ── แถวล่าง: โรงงาน + Orders ล่าสุด ── */}
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5 xl:col-span-1 h-fit">
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[12px] md:text-[13px] font-semibold text-gray-600">🏭 การสั่งของกับโรงงาน</p>
+            <Link href="/factory" className="text-[11px] text-blue-500">ดูทั้งหมด →</Link>
           </div>
-          <div>
-            <p className="text-xl font-black text-blue-500">{factoryStats.production}</p>
-            <p className="text-[11px] text-gray-400">กำลังผลิต</p>
+          <div className="flex gap-8">
+            <div>
+              <p className="text-2xl font-black text-orange-500">{factoryStats.pending}</p>
+              <p className="text-[11px] text-gray-400">ยังไม่มัดจำ</p>
+            </div>
+            <div>
+              <p className="text-2xl font-black text-blue-500">{factoryStats.production}</p>
+              <p className="text-[11px] text-gray-400">กำลังผลิต</p>
+            </div>
           </div>
         </div>
-      </div>
 
-      {/* Recent orders */}
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-50">
-          <p className="text-[13px] font-semibold text-gray-700">📋 Orders ล่าสุด</p>
-          <Link href="/orders" className="text-[11px] text-blue-500">ดูทั้งหมด →</Link>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden xl:col-span-2">
+          <div className="flex items-center justify-between px-4 md:px-5 py-3 border-b border-gray-100">
+            <p className="text-[13px] font-semibold text-gray-700">📋 Orders ล่าสุด</p>
+            <Link href="/orders" className="text-[11px] text-blue-500">ดูทั้งหมด →</Link>
+          </div>
+          {recentOrders.map((o) => (
+            <OrderCard key={o.number} order={o} />
+          ))}
         </div>
-        {recentOrders.map((o) => (
-          <OrderCard key={o.number} order={o} />
-        ))}
       </div>
     </div>
   )
