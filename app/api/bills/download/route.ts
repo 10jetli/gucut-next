@@ -67,6 +67,7 @@ export async function GET(req: NextRequest) {
               date: detail.date,
               amounts: b.amounts,
               body: detail.text,
+              html: detail.html,
             })
             const name = `${emailMonth}_${sanitize(b.subject || 'ใบเสร็จ')}.pdf`
             zip.folder(sanitize(vendor.name))!.file(name, pdfBuf)
