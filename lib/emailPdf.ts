@@ -151,13 +151,7 @@ function footerNote(): string {
 }
 
 function drawFooters(pages: any[], font: any) {
-  pages.forEach((p, i) => {
-    p.drawLine({ start: { x: MARGIN, y: MARGIN - 8 }, end: { x: PAGE_W - MARGIN, y: MARGIN - 8 }, thickness: 0.5, color: BORDER_GRAY })
-    p.drawText(footerNote(), { x: MARGIN, y: MARGIN - 20, size: 7.5, font, color: GRAY })
-    const pn = 'หน้า ' + (i + 1) + '/' + pages.length
-    const pnW = font.widthOfTextAtSize(pn, 7.5)
-    p.drawText(pn, { x: PAGE_W - MARGIN - pnW, y: MARGIN - 20, size: 7.5, font, color: GRAY })
-  })
+  // เอาแถบท้ายกระดาษออกตามที่ผู้ใช้ขอ (ไม่แสดงข้อความ/เลขหน้า)
 }
 
 // ── วาด PDF สไตล์ใบแจ้งหนี้ (แถบสีบน + สองคอลัมน์ + การ์ดรายการสินค้า + ยอดรวม) ──
@@ -193,17 +187,14 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   }
   const topY = y
   if (logoImg) {
-    const h = 34
+    const h = 46
     const w = (logoImg.width / logoImg.height) * h
     page.drawImage(logoImg, { x: MARGIN, y: topY - h, width: w, height: h })
   }
   const titleSize = 19
   const titleWidth = bold.widthOfTextAtSize(data.title, titleSize)
   page.drawText(data.title, { x: PAGE_W - MARGIN - titleWidth, y: topY - titleSize + 3, size: titleSize, font: bold, color: ACCENT })
-  const subtitle = 'สำเนาอิเล็กทรอนิกส์ - ออกโดยระบบอัตโนมัติ'
-  const subW = font.widthOfTextAtSize(subtitle, 8.5)
-  page.drawText(subtitle, { x: PAGE_W - MARGIN - subW, y: topY - titleSize - 10, size: 8.5, font, color: GRAY })
-  y = topY - 55
+  y = topY - 45
   page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 1.2, color: ACCENT })
   y -= 22
 
