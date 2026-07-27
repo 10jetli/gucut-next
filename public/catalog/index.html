@@ -551,7 +551,11 @@ document.getElementById("cReset").onclick=()=>{if(confirm("ล้างการ
 const LS_TRF="gucut_zort_conn_v1";
 const TRF_META=[{l:"ศีตกาล/โกดัง",wh:"NEW"},{l:"ZAMA/ANJ",wh:"ANJ"},{l:"ZAMA/KLD",wh:"KLD"}];
 const trfItems=[];
+// โหมดเชื่อม ZORT: ถ้าเซิร์ฟเวอร์ตั้งค่า ZORT_TRF_* แล้ว เรียกผ่าน /api/transfer (กุญแจอยู่ที่เดียว)
+// ถ้ายังไม่ตั้ง จะ fallback ใช้กุญแจใน localStorage แบบเดิมอัตโนมัติ — ใช้งานได้เหมือนเดิมทุกกรณี
+var TRF_SERVER=false;
 function trfAccts(){return load(LS_TRF,null);}
+function trfList(){return TRF_SERVER?TRF_META:trfAccts();}
 function trfHead(a){return {"storename":a.s,"apikey":a.k,"apisecret":a.x,"Content-Type":"application/json"};}
 function showPage(w){
   document.getElementById("app").style.display=w==="main"?"":"none";
@@ -560,7 +564,7 @@ function showPage(w){
   document.getElementById("trfPage").style.display=w==="trf"?"":"none";
   document.getElementById("navMain").style.fontWeight=w==="main"?"600":"400";
   document.getElementById("navTrf").style.fontWeight=w==="trf"?"600":"400";
-  if(w==="trf"){const a=trfAccts();document.getElementById("trfSetup").style.display=a?"none":"";document.getElementById("trfMain").style.display=a?"":"none";if(a){trfInitUI();}else{trfSetupUI();}}
+  if(w==="trf"){const a=trfList();document.getElementById("trfSetup").style.display=a?"none":"";document.getElementById("trfMain").style.display=a?"":"none";if(a){trfInitUI();}else{trfSetupUI();}}
 }
 document.getElementById("navMain").onclick=()=>showPage("main");
 document.getElementById("navTrf").onclick=()=>showPage("trf");
@@ -583,7 +587,7 @@ document.getElementById("trfSetupSave").onclick=async()=>{
   }catch(e){document.getElementById("trfSetupErr").textContent="❌ "+e.message;}
 };
 function trfInitUI(){
-  const A=trfAccts();
+  const A=trfList();
   const f=document.getElementById("trfFrom"),t=document.getElementById("trfTo");
   if(!f.options.length){
     const o=A.map((a,i)=>'<option value="'+i+'">'+esc(a.l)+' (คลัง '+a.wh+')</option>').join("");
@@ -592,7 +596,7 @@ function trfInitUI(){
   }
   trfWhInfo();trfRecent();trfRender();
 }
-function trfWhInfo(){const A=trfAccts();const f=A[+document.getElementById("trfFrom").value],t=A[+document.getElementById("trfTo").value];
+function trfWhInfo(){const A=trfList();const f=A[+document.getElementById("trfFrom").value],t=A[+document.getElementById("trfTo").value];
   document.getElementById("trfWhInfo").textContent="ตัดออกจากคลัง "+f.wh+" ("+f.l+") → รับเข้าคลัง "+t.wh+" ("+t.l+")";}
 document.getElementById("trfSearch").addEventListener("input",function(){
   const q=this.value.trim().toLowerCase();const box=document.getElementById("trfSug");
@@ -618,9 +622,16 @@ function trfRender(){
 }
 document.getElementById("trfRows").addEventListener("input",e=>{if(e.target.classList.contains("trfQty"))trfItems[+e.target.getAttribute("data-i")].qty=Math.max(1,+e.target.value||1);});
 document.getElementById("trfRows").addEventListener("click",e=>{const b=e.target.closest(".trfDel");if(b){trfItems.splice(+b.getAttribute("data-i"),1);trfRender();}});
-async function trfPost(acc,body){const r=await fetch("https://open-api.zortout.com/v4/Transfer/AddTransfer",{method:"POST",headers:trfHead(acc),body:JSON.stringify(body)});return r.json();}
+async function trfPost(idx,acc,body){
+  if(TRF_SERVER){const r=await fetch("/api/transfer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"add",store:idx+1,payload:body})});return r.json();}
+  const r=await fetch("https://open-api.zortout.com/v4/Transfer/AddTransfer",{method:"POST",headers:trfHead(acc),body:JSON.stringify(body)});return r.json();
+}
+async function trfVoid(idx,acc,id){
+  if(TRF_SERVER){return fetch("/api/transfer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"void",store:idx+1,id:id})});}
+  return fetch("https://open-api.zortout.com/v4/Transfer/VoidTransfer?id="+id,{method:"POST",headers:trfHead(acc),body:"{}"});
+}
 document.getElementById("trfGo").onclick=async()=>{
-  const A=trfAccts();
+  const A=trfList();
   const fi=+document.getElementById("trfFrom").value,ti=+document.getElementById("trfTo").value;
   if(fi===ti){alert("บัญชีต้นทางกับปลายทางต้องต่างกัน");return;}
   if(!trfItems.length){alert("ยังไม่มีรายการสินค้า");return;}
@@ -633,13 +644,13 @@ document.getElementById("trfGo").onclick=async()=>{
   const ref="WEB"+Date.now();
   const list=trfItems.map(it=>({sku:it.sku,name:it.name,number:it.qty}));
   try{
-    const out=await trfPost(src,{fromwarehousecode:src.wh,transferdate:today,reference:ref,description:"โอนไป "+dst.l,list:list});
+    const out=await trfPost(fi,src,{fromwarehousecode:src.wh,transferdate:today,reference:ref,description:"โอนไป "+dst.l,list:list});
     if(out.resCode!=="200")throw new Error("ขาออกล้มเหลว: "+out.resDesc);
     st.textContent="ขาออกสำเร็จ ("+out.resDesc2+") กำลังสร้างขารับเข้า…";
-    const inn=await trfPost(dst,{towarehousecode:dst.wh,transferdate:today,reference:ref,description:"รับจาก "+src.l,list:list});
+    const inn=await trfPost(ti,dst,{towarehousecode:dst.wh,transferdate:today,reference:ref,description:"รับจาก "+src.l,list:list});
     if(inn.resCode!=="200"){
       st.textContent="ขารับเข้าล้มเหลว กำลังยกเลิกขาออก…";
-      await fetch("https://open-api.zortout.com/v4/Transfer/VoidTransfer?id="+out.resDesc,{method:"POST",headers:trfHead(src),body:"{}"});
+      await trfVoid(fi,src,out.resDesc);
       throw new Error("ขารับเข้าล้มเหลว: "+inn.resDesc+" — ยกเลิกขาออกให้แล้ว ไม่มีอะไรเปลี่ยน");
     }
     document.getElementById("trfResult").innerHTML='<div style="background:#e6f4ea;border:1px solid #b7dfc0;border-radius:8px;padding:12px">✅ โอนสำเร็จ<br>ขาออก '+esc(src.l)+": <b>"+esc(out.resDesc2)+"</b><br>ขารับเข้า "+esc(dst.l)+": <b>"+esc(inn.resDesc2)+"</b><br>อ้างอิง: "+ref+"</div>";
@@ -652,8 +663,10 @@ document.getElementById("trfGo").onclick=async()=>{
 };
 async function trfRecent(){
   try{
-    const A=trfAccts();const src=A[+document.getElementById("trfFrom").value];
-    const j=await fetch("https://open-api.zortout.com/v4/Transfer/GetTransfers?page=1&limit=8",{headers:trfHead(src)}).then(r=>r.json());
+    const fi=+document.getElementById("trfFrom").value;
+    let j;
+    if(TRF_SERVER){j=await fetch("/api/transfer?op=recent&store="+(fi+1)).then(r=>r.json());}
+    else{const A=trfAccts();const src=A[fi];j=await fetch("https://open-api.zortout.com/v4/Transfer/GetTransfers?page=1&limit=8",{headers:trfHead(src)}).then(r=>r.json());}
     document.getElementById("trfRecent").innerHTML=(j.list||[]).map(t=>
       '<div style="padding:5px 0;border-bottom:1px solid #f1f1f1">'+esc(t.number)+" · "+esc((t.transferdateString||"").slice(0,10))+" · "+esc(t.transferType)+" "+esc(t.fromwarehousecode||"")+"→"+esc(t.towarehousecode||"")+' · <span style="color:'+(t.status==="Voided"?"#d93025":"#137333")+'">'+esc(t.status)+"</span></div>").join("")||"—";
   }catch(e){document.getElementById("trfRecent").textContent="โหลดไม่ได้";}
@@ -671,8 +684,10 @@ fetch("products.json").then(r=>r.json()).then(data=>{
   ["q","fCat","fFac","fStock","fReco"].forEach(id=>document.getElementById(id).addEventListener("input",render));
   document.getElementById("fCat").addEventListener("change",catAction);
   render();
-  showPage(location.hash==="#trf"?"trf":"main");
-  window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"main"));
+  fetch("/api/transfer?op=status").then(r=>r.json()).then(j=>{TRF_SERVER=!!(j&&j.configured);}).catch(()=>{TRF_SERVER=false;}).then(()=>{
+    showPage(location.hash==="#trf"?"trf":"main");
+    window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"main"));
+  });
 }).catch(e=>{document.getElementById("app").innerHTML='<div class="empty">โหลดข้อมูลไม่สำเร็จ: '+e+'</div>';});
 </script>
 </body>
