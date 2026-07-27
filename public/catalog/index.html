@@ -84,7 +84,7 @@
     <h1>🔧 GUCUT — คลังอะไหล่</h1>
     <span class="tag" id="srcTag">Shopify snapshot</span>
   </div>
-  <div style="display:flex;gap:6px;padding:0 12px 6px">
+  <div style="display:none;gap:6px;padding:0 12px 6px">
     <button class="btn" id="navMain" style="font-weight:600">📦 ระบบสั่งของ</button>
     <button class="btn" id="navTrf">🔄 โอนสินค้า</button>
   </div>
@@ -117,7 +117,7 @@
 <main id="app"><div class="empty">กำลังโหลดข้อมูล…</div></main>
 <section id="trfPage" style="display:none;padding:14px;max-width:960px;margin:0 auto">
   <div id="trfSetup" style="display:none;max-width:560px;margin:0 auto">
-    <h3>ตั้งค่าการเชื่อมต่อ (ครั้งแรกครั้งเดียว เก็บในเครื่องนี้เท่านั้น)</h3>
+    <h3>การเชื่อมต่อ ZORT</h3>
     <div id="trfSetupRows"></div>
     <button class="btn primary" id="trfSetupSave" style="margin-top:10px">บันทึกการเชื่อมต่อ</button>
     <div id="trfSetupErr" style="color:#d93025;margin-top:8px"></div>
@@ -565,11 +565,9 @@ function showPage(w){
 document.getElementById("navMain").onclick=()=>showPage("main");
 document.getElementById("navTrf").onclick=()=>showPage("trf");
 function trfSetupUI(){
-  document.getElementById("trfSetupRows").innerHTML=TRF_META.map((m,i)=>
-    '<div style="border:1px solid #eee;border-radius:8px;padding:10px;margin-top:8px"><b>'+esc(m.l)+'</b> (คลัง '+m.wh+')'+
-    '<div class="fld"><label>Store name (อีเมล ZORT)</label><input type="text" class="tS" data-i="'+i+'"></div>'+
-    '<div class="fld"><label>API Key</label><input type="text" class="tK" data-i="'+i+'"></div>'+
-    '<div class="fld"><label>API Secret</label><input type="text" class="tX" data-i="'+i+'"></div></div>').join("");
+  // ฟอร์มกรอกกุญแจย้ายไปหน้า ตั้งค่า → เชื่อมต่อบริการอื่น ของระบบหลังบ้านแล้ว
+  document.getElementById("trfSetupRows").innerHTML='<div style="background:#fef7e0;border:1px solid #f0d879;border-radius:10px;padding:16px;font-size:14px;line-height:1.7">ยังไม่ได้ตั้งค่ากุญแจ ZORT ในเครื่องนี้<br><a href="/settings/connections" style="color:#1a73e8;font-weight:700">→ ไปตั้งค่าที่เมนู ตั้งค่า › เชื่อมต่อบริการอื่น</a></div>';
+  document.getElementById("trfSetupSave").style.display="none";
 }
 document.getElementById("trfSetupSave").onclick=async()=>{
   const g=(c,i)=>document.querySelector("."+c+'[data-i="'+i+'"]').value.trim();
@@ -673,6 +671,8 @@ fetch("products.json").then(r=>r.json()).then(data=>{
   ["q","fCat","fFac","fStock","fReco"].forEach(id=>document.getElementById(id).addEventListener("input",render));
   document.getElementById("fCat").addEventListener("change",catAction);
   render();
+  showPage(location.hash==="#trf"?"trf":"main");
+  window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"main"));
 }).catch(e=>{document.getElementById("app").innerHTML='<div class="empty">โหลดข้อมูลไม่สำเร็จ: '+e+'</div>';});
 </script>
 </body>
