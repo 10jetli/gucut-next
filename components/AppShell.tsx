@@ -12,6 +12,7 @@ const navItems: NavItem[] = [
   { href: '/products', icon: '🛍', label: 'สินค้า' },
   { href: '/factory', icon: '🏭', label: 'โรงงาน' },
   { href: '/ads', icon: '📢', label: 'โฆษณา' },
+  { href: '/catalog/index.html', icon: '🧰', label: 'สั่งของ (แคตตาล็อก)' },
   {
     icon: '🧾',
     label: 'บิล',
