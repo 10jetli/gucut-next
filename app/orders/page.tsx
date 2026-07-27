@@ -1,7 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { Order } from '@/lib/types'
-import OrderCard from '@/components/OrderCard'
+import OrderCard from '@/components/ui/OrderCard'
+import LoadingState from '@/components/ui/LoadingState'
+import PillButton from '@/components/ui/PillButton'
 
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
@@ -21,19 +23,13 @@ export default function OrdersPage() {
     <div>
       <div className="sticky top-[57px] bg-white z-10 flex gap-2 px-4 py-2 border-b border-gray-100">
         {['1', '2'].map(s => (
-          <button
-            key={s}
-            onClick={() => setStore(s)}
-            className={`px-3 py-1 rounded-full text-[12px] font-semibold transition-colors ${
-              store === s ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
+          <PillButton key={s} active={store === s} onClick={() => setStore(s)}>
             {s === '1' ? 'Gucut' : 'Ceojet'}
-          </button>
+          </PillButton>
         ))}
       </div>
       <div className="bg-white mt-2 rounded-xl mx-4 shadow-sm overflow-hidden">
-        {loading && <p className="text-center py-8 text-gray-400 text-sm">กำลังโหลด...</p>}
+        {loading && <LoadingState />}
         {!loading && orders.length === 0 && (
           <p className="text-center py-8 text-gray-400 text-sm">ไม่มี orders</p>
         )}
