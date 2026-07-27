@@ -1,6 +1,9 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { FactoryOrder } from '@/lib/types'
+import LoadingState from '@/components/ui/LoadingState'
+import ErrorBox from '@/components/ui/ErrorBox'
+import PillButton from '@/components/ui/PillButton'
 
 type StatusFilter = 'all' | 'production' | 'pending' | 'deposit' | 'done'
 
@@ -66,28 +69,21 @@ export default function FactoryPage() {
       {/* Filter tabs */}
       <div className="flex gap-2 overflow-x-auto pb-1">
         {(['all', 'production', 'pending', 'deposit', 'done'] as StatusFilter[]).map(f => (
-          <button
-            key={f}
-            onClick={() => setFilter(f)}
-            className={`flex-shrink-0 px-3 py-1 rounded-full text-[12px] font-semibold transition-colors ${
-              filter === f ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600'
-            }`}
-          >
+          <PillButton key={f} active={filter === f} onClick={() => setFilter(f)} className="flex-shrink-0 ">
             {f === 'all' ? `ทั้งหมด (${stats.all})` : `${STATUS_LABEL[f] ?? f} (${stats[f as keyof typeof stats]})`}
-          </button>
+          </PillButton>
         ))}
       </div>
 
-      {loading && <p className="text-center py-8 text-gray-400 text-sm">กำลังโหลด...</p>}
+      {loading && <LoadingState />}
 
       {error && (
-        <div className="bg-red-50 rounded-xl p-4 text-sm text-red-600">
-          <p className="font-semibold">โหลดไม่ได้</p>
+        <ErrorBox>
           <p className="text-[11px] mt-1 break-all">{error}</p>
           <p className="text-[11px] mt-2 text-red-400">
             ตรวจสอบว่า Google Sheets ถูก Share เป็น &quot;Anyone with the link can view&quot;
           </p>
-        </div>
+        </ErrorBox>
       )}
 
       {/* Order cards */}
