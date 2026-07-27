@@ -183,6 +183,7 @@ export interface MessageDetail {
   from: string
   date: string
   text: string
+  html: string
 }
 
 function htmlToText(html: string): string {
@@ -207,11 +208,12 @@ export async function fetchMessageDetail(token: string, messageId: string): Prom
   const parts = collectParts(msg.payload)
   const plain = parts.find((p: any) => p.mimeType === 'text/plain')
   const html = parts.find((p: any) => p.mimeType === 'text/html')
+  const htmlRaw = html?.body?.data ? decodeBody(html.body.data) : ''
   let text = ''
   if (plain?.body?.data) {
     text = decodeBody(plain.body.data)
-  } else if (html?.body?.data) {
-    text = htmlToText(decodeBody(html.body.data))
+  } else if (htmlRaw) {
+    text = htmlToText(htmlRaw)
   } else {
     text = msg.snippet ?? ''
   }
@@ -220,5 +222,6 @@ export async function fetchMessageDetail(token: string, messageId: string): Prom
     from: headerOf(msg.payload, 'From'),
     date: new Date(Number(msg.internalDate)).toISOString(),
     text,
+    html: htmlRaw,
   }
 }
