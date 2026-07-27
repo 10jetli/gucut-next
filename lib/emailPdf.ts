@@ -1,6 +1,6 @@
-// แปลงอีเมลใบเสร็จเป็นไฟล์ PDF
-// - ถ้าเป็นใบเสร็จ Apple (โครงสร้าง HTML ตามแบบของ Apple) จะจัดหน้าให้ใกล้เคียงต้นฉบับ พร้อมโลโก้/ไอคอนสินค้า
-// - ถ้าไม่ใช่ จะ fallback เป็นการแสดงเนื้อหาแบบข้อความล้วน
+// แปลงอีเมลใบเสร็จเป็นไฟล์ PDF สไตล์เอกสารบัญชีมืออาชีพ
+// - ถ้าเป็นใบเสร็จ Apple (โครงสร้าง HTML ตามแบบของ Apple) จะจัดหน้าแบบใบแจ้งหนี้ พร้อมโลโก้/ไอคอนสินค้า
+// - ถ้าไม่ใช่ จะ fallback เป็นการแสดงเนื้อหาแบบข้อความในกรอบเดียวกัน
 import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { parse } from 'node-html-parser'
@@ -50,6 +50,16 @@ function wrapLine(text: string, font: any, size: number, maxWidth: number): stri
   if (line) lines.push(line)
   return lines
 }
+
+// ── สีและสไตล์ร่วมของเอกสาร (โทนน้ำเงินเข้ม ดูเป็นทางการ) ────────────────────
+const ACCENT = rgb(0.09, 0.22, 0.42)
+const GRAY = rgb(0.43, 0.43, 0.46)
+const BLACK = rgb(0.12, 0.12, 0.14)
+const BORDER_GRAY = rgb(0.83, 0.85, 0.88)
+const CARD_BG = rgb(0.985, 0.985, 0.99)
+const PAGE_W = 595.28
+const PAGE_H = 841.89
+const MARGIN = 50
 
 // ── โครงสร้างข้อมูลใบเสร็จ (ใช้เมื่อแกะจาก HTML ของ Apple สำเร็จ) ─────────────
 export interface ReceiptItem {
@@ -136,7 +146,21 @@ function parseAppleReceipt(html: string): ReceiptData | null {
   return { logoUrl, title, fields, billedToLines, paymentMethod, items, total }
 }
 
-// ── วาด PDF สไตล์ใบเสร็จ (โลโก้ + สองคอลัมน์ + รายการสินค้าพร้อมไอคอน + ยอดรวม) ──
+function footerNote(): string {
+  return 'เอกสารนี้สร้างโดยระบบเก็บบิลอัตโนมัติของ GUCUT จากอีเมลต้นฉบับ • ' + new Date().toLocaleDateString('th-TH', { dateStyle: 'medium' })
+}
+
+function drawFooters(pages: any[], font: any) {
+  pages.forEach((p, i) => {
+    p.drawLine({ start: { x: MARGIN, y: MARGIN - 8 }, end: { x: PAGE_W - MARGIN, y: MARGIN - 8 }, thickness: 0.5, color: BORDER_GRAY })
+    p.drawText(footerNote(), { x: MARGIN, y: MARGIN - 20, size: 7.5, font, color: GRAY })
+    const pn = 'หน้า ' + (i + 1) + '/' + pages.length
+    const pnW = font.widthOfTextAtSize(pn, 7.5)
+    p.drawText(pn, { x: PAGE_W - MARGIN - pnW, y: MARGIN - 20, size: 7.5, font, color: GRAY })
+  })
+}
+
+// ── วาด PDF สไตล์ใบแจ้งหนี้ (แถบสีบน + สองคอลัมน์ + การ์ดรายการสินค้า + ยอดรวม) ──
 async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   const fonts = await loadFonts()
   const doc = await PDFDocument.create()
@@ -144,128 +168,150 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   const font = await doc.embedFont(fonts.regular, { subset: true })
   const bold = await doc.embedFont(fonts.bold, { subset: true })
 
-  const pageW = 595.28, pageH = 841.89
-  const margin = 50
-  const contentW = pageW - margin * 2
-  let page = doc.addPage([pageW, pageH])
-  let y = pageH - margin
+  const contentW = PAGE_W - MARGIN * 2
+  const pages: any[] = []
+  function newPage() {
+    const p = doc.addPage([PAGE_W, PAGE_H])
+    p.drawRectangle({ x: 0, y: PAGE_H - 6, width: PAGE_W, height: 6, color: ACCENT })
+    pages.push(p)
+    return p
+  }
+  let page = newPage()
+  let y = PAGE_H - MARGIN - 14
 
   const ensureSpace = (needed: number) => {
-    if (y - needed < margin) {
-      page = doc.addPage([pageW, pageH])
-      y = pageH - margin
+    if (y - needed < MARGIN + 30) {
+      page = newPage()
+      y = PAGE_H - MARGIN - 14
     }
   }
-
-  const gray = rgb(0.4, 0.4, 0.4)
-  const black = rgb(0.15, 0.15, 0.15)
 
   let logoImg: any = null
   if (data.logoUrl) {
     const img = await fetchImageBytes(data.logoUrl)
-    if (img) {
-      try { logoImg = img.kind === 'png' ? await doc.embedPng(img.bytes) : await doc.embedJpg(img.bytes) } catch {}
-    }
+    if (img) { try { logoImg = img.kind === 'png' ? await doc.embedPng(img.bytes) : await doc.embedJpg(img.bytes) } catch {} }
   }
   const topY = y
   if (logoImg) {
-    const h = 26
+    const h = 24
     const w = (logoImg.width / logoImg.height) * h
-    page.drawImage(logoImg, { x: margin, y: topY - h, width: w, height: h })
+    page.drawImage(logoImg, { x: MARGIN, y: topY - h, width: w, height: h })
   }
-  const titleSize = 20
+  const titleSize = 19
   const titleWidth = bold.widthOfTextAtSize(data.title, titleSize)
-  page.drawText(data.title, { x: pageW - margin - titleWidth, y: topY - titleSize, size: titleSize, font: bold, color: black })
-  y = topY - 50
+  page.drawText(data.title, { x: PAGE_W - MARGIN - titleWidth, y: topY - titleSize + 3, size: titleSize, font: bold, color: ACCENT })
+  const subtitle = 'สำเนาอิเล็กทรอนิกส์ - ออกโดยระบบอัตโนมัติ'
+  const subW = font.widthOfTextAtSize(subtitle, 8.5)
+  page.drawText(subtitle, { x: PAGE_W - MARGIN - subW, y: topY - titleSize - 10, size: 8.5, font, color: GRAY })
+  y = topY - 55
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 1.2, color: ACCENT })
+  y -= 22
 
-  const colGap = 20
+  const colGap = 24
   const colW = (contentW - colGap) / 2
-  const leftX = margin
-  const rightX = margin + colW + colGap
+  const leftX = MARGIN
+  const rightX = MARGIN + colW + colGap
 
   let leftY = y
   for (const f of data.fields) {
     ensureSpace(30)
-    page.drawText(f.label, { x: leftX, y: leftY, size: 10, font, color: gray })
+    page.drawText(f.label.toUpperCase(), { x: leftX, y: leftY, size: 8.5, font: bold, color: GRAY })
     leftY -= 13
     for (const l of wrapLine(f.value, font, 11, colW)) {
-      page.drawText(l, { x: leftX, y: leftY, size: 11, font, color: black })
+      page.drawText(l, { x: leftX, y: leftY, size: 11, font, color: BLACK })
       leftY -= 15
     }
-    leftY -= 4
+    leftY -= 5
   }
 
   let rightY = y
   if (data.billedToLines.length || data.paymentMethod) {
-    page.drawText('เรียกเก็บเงินไปยัง', { x: rightX, y: rightY, size: 10, font, color: gray })
-    rightY -= 15
+    page.drawText('เรียกเก็บเงินไปยัง'.toUpperCase(), { x: rightX, y: rightY, size: 8.5, font: bold, color: GRAY })
+    rightY -= 16
     if (data.paymentMethod) {
       for (const l of wrapLine(data.paymentMethod, bold, 11, colW)) {
-        page.drawText(l, { x: rightX, y: rightY, size: 11, font: bold, color: black })
+        page.drawText(l, { x: rightX, y: rightY, size: 11, font: bold, color: BLACK })
         rightY -= 15
       }
     }
     for (const line of data.billedToLines) {
       for (const l of wrapLine(line, font, 10.5, colW)) {
-        page.drawText(l, { x: rightX, y: rightY, size: 10.5, font, color: black })
+        page.drawText(l, { x: rightX, y: rightY, size: 10.5, font, color: BLACK })
         rightY -= 14
       }
     }
   }
 
-  y = Math.min(leftY, rightY) - 15
+  y = Math.min(leftY, rightY) - 20
   ensureSpace(20)
-  page.drawLine({ start: { x: margin, y }, end: { x: pageW - margin, y }, thickness: 1, color: rgb(0.85, 0.85, 0.85) })
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.75, color: BORDER_GRAY })
   y -= 25
 
   for (const item of data.items) {
     let iconImg: any = null
     if (item.iconUrl) {
       const img = await fetchImageBytes(item.iconUrl)
-      if (img) {
-        try { iconImg = img.kind === 'png' ? await doc.embedPng(img.bytes) : await doc.embedJpg(img.bytes) } catch {}
-      }
+      if (img) { try { iconImg = img.kind === 'png' ? await doc.embedPng(img.bytes) : await doc.embedJpg(img.bytes) } catch {} }
     }
-    const iconSize = 44
-    const textX = margin + (iconImg ? iconSize + 15 : 0)
+    const iconSize = 46
+    const padding = 16
     const priceWidth = bold.widthOfTextAtSize(item.price, 12)
+    const innerTextW = contentW - padding * 2 - (iconImg ? iconSize + 14 : 0) - priceWidth - 10
 
-    ensureSpace(iconSize + 10)
-    const rowTopY = y
-    if (iconImg) {
-      page.drawImage(iconImg, { x: margin, y: rowTopY - iconSize, width: iconSize, height: iconSize })
+    const nameLines = wrapLine(item.name, bold, 12, innerTextW)
+    let descLineCount = 0
+    const descWrapped: string[][] = []
+    for (const d of item.descLines) {
+      const w = wrapLine(d, font, 10, innerTextW)
+      descWrapped.push(w)
+      descLineCount += w.length
     }
-    let itemY = rowTopY
-    for (const l of wrapLine(item.name, bold, 12, contentW - (iconImg ? iconSize + 15 : 0) - priceWidth - 10)) {
-      page.drawText(l, { x: textX, y: itemY - 12, size: 12, font: bold, color: black })
+    const textBlockH = nameLines.length * 16 + descLineCount * 14
+    const cardH = Math.max(iconSize, textBlockH) + padding * 2
+
+    ensureSpace(cardH + 10)
+    const cardTop = y
+    const cardBottom = y - cardH
+    page.drawRectangle({ x: MARGIN, y: cardBottom, width: contentW, height: cardH, color: CARD_BG, borderColor: BORDER_GRAY, borderWidth: 1 })
+
+    const iconX = MARGIN + padding
+    const textX = iconX + (iconImg ? iconSize + 14 : 0)
+    if (iconImg) {
+      page.drawImage(iconImg, { x: iconX, y: cardTop - padding - iconSize, width: iconSize, height: iconSize })
+    }
+    let itemY = cardTop - padding
+    for (const l of nameLines) {
+      page.drawText(l, { x: textX, y: itemY - 12, size: 12, font: bold, color: BLACK })
       itemY -= 16
     }
-    for (const d of item.descLines) {
-      for (const l of wrapLine(d, font, 10, contentW - (iconImg ? iconSize + 15 : 0) - priceWidth - 10)) {
-        page.drawText(l, { x: textX, y: itemY - 11, size: 10, font, color: gray })
+    for (const w of descWrapped) {
+      for (const l of w) {
+        page.drawText(l, { x: textX, y: itemY - 11, size: 10, font, color: GRAY })
         itemY -= 14
       }
     }
-    page.drawText(item.price, { x: pageW - margin - priceWidth, y: rowTopY - 12, size: 12, font: bold, color: black })
-    y = Math.min(itemY, rowTopY - iconSize) - 15
-    ensureSpace(10)
-    page.drawLine({ start: { x: margin, y }, end: { x: pageW - margin, y }, thickness: 0.5, color: rgb(0.9, 0.9, 0.9) })
-    y -= 20
+    page.drawText(item.price, { x: PAGE_W - MARGIN - padding - priceWidth, y: cardTop - padding - 12, size: 12, font: bold, color: BLACK })
+
+    y = cardBottom - 18
   }
 
   if (data.total) {
-    ensureSpace(30)
-    page.drawText('รวม', { x: margin, y, size: 13, font: bold, color: black })
-    const totalWidth = bold.widthOfTextAtSize(data.total, 14)
-    page.drawText(data.total, { x: pageW - margin - totalWidth, y, size: 14, font: bold, color: black })
+    ensureSpace(40)
+    page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 1.4, color: ACCENT })
+    y -= 24
+    page.drawText('ยอดรวมทั้งสิ้น', { x: MARGIN, y, size: 12, font: bold, color: BLACK })
+    const totalWidth = bold.widthOfTextAtSize(data.total, 16)
+    page.drawText(data.total, { x: PAGE_W - MARGIN - totalWidth, y: y - 2, size: 16, font: bold, color: ACCENT })
     y -= 30
   }
+
+  drawFooters(pages, font)
 
   const bytes = await doc.save()
   return Buffer.from(bytes)
 }
 
-// ── fallback: dump ข้อความล้วน (ใช้เมื่อไม่ใช่โครงสร้าง Apple) ────────────────
+// ── fallback: แสดงเนื้อหาอีเมลในกรอบเดียวกัน (ใช้เมื่อไม่ใช่โครงสร้าง Apple) ───
 export interface EmailPdfInfo {
   vendorName: string
   subject: string
@@ -282,39 +328,76 @@ async function drawGenericPdf(info: EmailPdfInfo): Promise<Buffer> {
   const font = await doc.embedFont(fonts.regular, { subset: true })
   const bold = await doc.embedFont(fonts.bold, { subset: true })
 
-  const pageW = 595.28, pageH = 841.89
-  const margin = 50
-  const maxWidth = pageW - margin * 2
-
-  let page = doc.addPage([pageW, pageH])
-  let y = pageH - margin
+  const contentW = PAGE_W - MARGIN * 2
+  const pages: any[] = []
+  function newPage() {
+    const p = doc.addPage([PAGE_W, PAGE_H])
+    p.drawRectangle({ x: 0, y: PAGE_H - 6, width: PAGE_W, height: 6, color: ACCENT })
+    pages.push(p)
+    return p
+  }
+  let page = newPage()
+  let y = PAGE_H - MARGIN - 14
 
   const ensureSpace = (needed: number) => {
-    if (y - needed < margin) {
-      page = doc.addPage([pageW, pageH])
-      y = pageH - margin
+    if (y - needed < MARGIN + 30) {
+      page = newPage()
+      y = PAGE_H - MARGIN - 14
     }
   }
-  const drawLine = (text: string, size: number, f: any, gap: number) => {
-    ensureSpace(gap)
-    page.drawText(text, { x: margin, y, size, font: f, color: rgb(0, 0, 0) })
-    y -= gap
+
+  const titleSize = 19
+  page.drawText('ใบเสร็จ / บิล', { x: MARGIN, y, size: titleSize, font: bold, color: ACCENT })
+  page.drawText(info.vendorName, { x: MARGIN, y: y - 22, size: 11, font, color: GRAY })
+  y -= 45
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 1.2, color: ACCENT })
+  y -= 22
+
+  const fields: { label: string; value: string }[] = [
+    { label: 'หัวข้อ', value: info.subject },
+    { label: 'จาก', value: info.from },
+    { label: 'วันที่', value: new Date(info.date).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' }) },
+  ]
+  if (info.amounts.length) fields.push({ label: 'ยอดที่พบ', value: info.amounts.join(', ') })
+
+  for (const f of fields) {
+    ensureSpace(30)
+    page.drawText(f.label.toUpperCase(), { x: MARGIN, y, size: 8.5, font: bold, color: GRAY })
+    y -= 13
+    for (const l of wrapLine(f.value, font, 11, contentW)) {
+      page.drawText(l, { x: MARGIN, y, size: 11, font, color: BLACK })
+      y -= 15
+    }
+    y -= 5
   }
 
-  drawLine('ใบเสร็จ / บิล — ' + info.vendorName, 16, bold, 26)
-  for (const l of wrapLine('หัวข้อ: ' + info.subject, font, 11, maxWidth)) drawLine(l, 11, font, 15)
-  for (const l of wrapLine('จาก: ' + info.from, font, 11, maxWidth)) drawLine(l, 11, font, 15)
-  const dateStr = new Date(info.date).toLocaleString('th-TH', { dateStyle: 'long', timeStyle: 'short' })
-  drawLine('วันที่: ' + dateStr, 11, font, 15)
-  if (info.amounts.length) drawLine('ยอดที่พบ: ' + info.amounts.join(', '), 11, font, 15)
-  y -= 8
-  drawLine('เนื้อหาอีเมล:', 12, bold, 18)
+  y -= 10
+  ensureSpace(20)
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.75, color: BORDER_GRAY })
+  y -= 25
 
+  const bodyLines: string[] = []
   for (const raw of info.body.split('\n')) {
     const trimmed = raw.trim()
-    if (!trimmed) { ensureSpace(10); y -= 10; continue }
-    for (const w of wrapLine(trimmed, font, 10, maxWidth)) drawLine(w, 10, font, 14)
+    if (!trimmed) { bodyLines.push(''); continue }
+    for (const l of wrapLine(trimmed, font, 10, contentW - 32)) bodyLines.push(l)
   }
+  const cardH = Math.min(bodyLines.length, 34) * 14 + 32
+  ensureSpace(cardH + 10)
+  const cardTop = y
+  page.drawRectangle({ x: MARGIN, y: cardTop - cardH, width: contentW, height: cardH, color: CARD_BG, borderColor: BORDER_GRAY, borderWidth: 1 })
+  let by = cardTop - 16
+  let count = 0
+  for (const l of bodyLines) {
+    if (count >= 34) break
+    if (!l) { by -= 14; count++; continue }
+    page.drawText(l, { x: MARGIN + 16, y: by, size: 10, font, color: BLACK })
+    by -= 14
+    count++
+  }
+  y = cardTop - cardH - 18
+
+  drawFooters(pages, font)
 
   const bytes = await doc.save()
   return Buffer.from(bytes)
@@ -328,7 +411,7 @@ export async function emailToPdf(info: EmailPdfInfo & { html?: string }): Promis
       try {
         return await drawReceiptPdf(receipt)
       } catch {
-        // ถ้าวาดแบบสวยไม่สำเร็จ (เช่น โหลดรูปไม่ได้) ให้ fallback เป็นแบบข้อความ
+        // ถ้าวาดแบบใบแจ้งหนี้ไม่สำเร็จ (เช่น โหลดรูปไม่ได้) ให้ fallback เป็นแบบข้อความ
       }
     }
   }
