@@ -2,20 +2,12 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { BILL_VENDORS } from '@/lib/vendors'
+import { TH_MONTHS, EN_MONTHS } from '@/lib/format'
 
-const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
-const EN_MONTHS = ['Jan.','Feb.','Mar.','Apr.','May','Jun.','Jul.','Aug.','Sep.','Oct.','Nov.','Dec.']
-
-const VENDOR_INFO: Record<string, { name: string; emoji: string; note?: string }> = {
-  tiktok:  { name: 'TikTok Ads',        emoji: '🎵' },
-  meta:    { name: 'Facebook/Meta Ads', emoji: '📘', note: 'เฉพาะบัญชี GUCUTใหม่ (263190084598096)' },
-  google:  { name: 'Google Ads',        emoji: '🔍' },
-  shopify: { name: 'www (Shopify)',     emoji: '🛒', note: 'ปกติเดือนละ 2 ใบ (ค่าแพ็คเกจ + ค่าแอป)' },
-  line:    { name: 'LINE',              emoji: '💚' },
-  adobe:   { name: 'Adobe',             emoji: '🅰️' },
-  apple:   { name: 'Apple / iCloud',    emoji: '🍎' },
-  omise:   { name: 'Omise',             emoji: '💳' },
-}
+// ข้อมูล vendor รวมอยู่ที่ lib/vendors.ts
+const VENDOR_INFO: Record<string, { name: string; emoji: string; note?: string }> =
+  Object.fromEntries(BILL_VENDORS.map(v => [v.id, { name: v.name, emoji: v.emoji, note: v.note }]))
 
 interface BillFile {
   filename: string
