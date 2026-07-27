@@ -189,7 +189,7 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   if (logoImg) {
     const h = 46
     const w = (logoImg.width / logoImg.height) * h
-    page.drawImage(logoImg, { x: MARGIN, y: topY - h, width: w, height: h })
+    page.drawImage(logoImg, { x: MARGIN, y: topY - h + 20, width: w, height: h })
   }
   const titleSize = 19
   const titleWidth = bold.widthOfTextAtSize(data.title, titleSize)
@@ -238,10 +238,17 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.75, color: BORDER_GRAY })
   y -= 25
 
+  const ICON_SIZE = 42
   for (const item of data.items) {
     const padding = 16
+    let iconImg: any = null
+    if (item.iconUrl) {
+      const img = await fetchImageBytes(item.iconUrl)
+      if (img) { try { iconImg = img.kind === 'png' ? await doc.embedPng(img.bytes) : await doc.embedJpg(img.bytes) } catch {} }
+    }
+    const iconGap = iconImg ? ICON_SIZE + 14 : 0
     const priceWidth = bold.widthOfTextAtSize(item.price, 12)
-    const innerTextW = contentW - padding * 2 - priceWidth - 10
+    const innerTextW = contentW - padding * 2 - priceWidth - 10 - iconGap
 
     const nameLines = wrapLine(item.name, bold, 12, innerTextW)
     let descLineCount = 0
@@ -252,14 +259,19 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
       descLineCount += w.length
     }
     const textBlockH = nameLines.length * 16 + descLineCount * 14
-    const cardH = textBlockH + padding * 2
+    const cardH = Math.max(textBlockH, iconImg ? ICON_SIZE : 0) + padding * 2
 
     ensureSpace(cardH + 10)
     const cardTop = y
     const cardBottom = y - cardH
     page.drawRectangle({ x: MARGIN, y: cardBottom, width: contentW, height: cardH, color: CARD_BG, borderColor: BORDER_GRAY, borderWidth: 1 })
 
-    const textX = MARGIN + padding
+    if (iconImg) {
+      const iconY = cardBottom + (cardH - ICON_SIZE) / 2
+      page.drawImage(iconImg, { x: MARGIN + padding, y: iconY, width: ICON_SIZE, height: ICON_SIZE })
+    }
+
+    const textX = MARGIN + padding + iconGap
     let itemY = cardTop - padding
     for (const l of nameLines) {
       page.drawText(l, { x: textX, y: itemY - 12, size: 12, font: bold, color: BLACK })
