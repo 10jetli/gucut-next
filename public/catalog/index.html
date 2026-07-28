@@ -568,6 +568,9 @@ function showPage(w){
 }
 document.getElementById("navMain").onclick=()=>showPage("main");
 document.getElementById("navTrf").onclick=()=>showPage("trf");
+// แสดงหน้าให้ตรงกับ URL hash ทันที ก่อนโหลดข้อมูลสินค้า กันหน้ากะพริบไปหน้ารายการสินค้าก่อนสลับมาหน้าโอน
+showPage(location.hash==="#trf"?"trf":"main");
+window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"main"));
 function trfSetupUI(){
   // ฟอร์มกรอกกุญแจย้ายไปหน้า ตั้งค่า → เชื่อมต่อบริการอื่น ของระบบหลังบ้านแล้ว
   document.getElementById("trfSetupRows").innerHTML='<div style="background:#fef7e0;border:1px solid #f0d879;border-radius:10px;padding:16px;font-size:14px;line-height:1.7">ยังไม่ได้ตั้งค่ากุญแจ ZORT ในเครื่องนี้<br><a href="/settings/connections" style="color:#1a73e8;font-weight:700">→ ไปตั้งค่าที่เมนู ตั้งค่า › เชื่อมต่อบริการอื่น</a></div>';
@@ -685,8 +688,7 @@ fetch("products.json").then(r=>r.json()).then(data=>{
   document.getElementById("fCat").addEventListener("change",catAction);
   render();
   fetch("/api/transfer?op=status").then(r=>r.json()).then(j=>{TRF_SERVER=!!(j&&j.configured);}).catch(()=>{TRF_SERVER=false;}).then(()=>{
-    showPage(location.hash==="#trf"?"trf":"main");
-    window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"main"));
+    if(location.hash==="#trf")showPage("trf");
   });
 }).catch(e=>{document.getElementById("app").innerHTML='<div class="empty">โหลดข้อมูลไม่สำเร็จ: '+e+'</div>';});
 </script>
