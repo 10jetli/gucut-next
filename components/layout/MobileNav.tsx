@@ -1,7 +1,7 @@
 'use client'
 // เฮดเดอร์ + แถบเมนูล่างสำหรับจอมือถือ
 import Link from 'next/link'
-import { NAV_ITEMS } from '@/lib/nav-config'
+import type { NavItem } from '@/lib/nav-config'
 
 // ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
 // ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
@@ -16,10 +16,10 @@ export function MobileHeader() {
   )
 }
 
-export function MobileBottomNav() {
+export function MobileBottomNav({ navItems }: { navItems: NavItem[] }) {
   return (
     <nav className="md:hidden fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[430px] bg-white border-t border-gray-100 flex justify-around py-2 z-20">
-      {NAV_ITEMS.map((item) => {
+      {navItems.map((item) => {
         const href = item.href ?? item.children![0].href
         const cls = 'flex flex-col items-center gap-0.5 text-gray-500 hover:text-blue-500 transition-colors'
         const inner = (
