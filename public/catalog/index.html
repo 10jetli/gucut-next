@@ -698,7 +698,7 @@ async function trfRecent(){
   }catch(e){document.getElementById("trfRecent").textContent="โหลดไม่ได้";}
 }
 // ---- init ----
-fetch("products.json").then(r=>r.json()).then(data=>{
+fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
   state.prefix=(data._meta&&data._meta.imgPrefix)||"";
   state.base=data.products.map(p=>({...p,model:model(p.title),pp:parseTags(p.tags)}));
   rebuildCatFilter();
