@@ -1,30 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// ป้องกันทั้งเว็บด้วยรหัสผ่านเดียว (ตั้งค่าใน env: SITE_PASSWORD)
+// ป้องกันทั้งเว็บด้วยรหัสผ่าน (ตั้งค่าใน env)
+// - SITE_PASSWORD  = แอดมิน เข้าได้ทุกหน้า
+// - STAFF_PASSWORD = พนักงาน เข้าได้เฉพาะหน้า "โอนสินค้า" (/catalog) + API โอนสินค้า
 // - ยังไม่ล็อกอิน → เด้งไปหน้า /login
 // - API ที่ยังไม่ล็อกอิน → 401
+// - พนักงานเปิดหน้าอื่นนอกเหนือสิทธิ์ → เด้งกลับไปหน้าโอนสินค้า (หรือ 403 ถ้าเป็น API)
 // - ยกเว้น: /login, /api/auth/*, /api/google/* (OAuth callback), ไฟล์ static
 const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google']
+
+// เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
+const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer']
+
+function staffAllowed(pathname: string) {
+  return STAFF_ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))
+}
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
-  if (PUBLIC_PATHS.some(p => pathname.startsWith(p))) return NextResponse.next()
+  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next()
 
-  const expected = process.env.SITE_PASSWORD
-  if (!expected) return NextResponse.next() // ยังไม่ได้ตั้งรหัส = ไม่ล็อก
+  const adminPass = process.env.SITE_PASSWORD
+  const staffPass = process.env.STAFF_PASSWORD
+  if (!adminPass) return NextResponse.next() // ยังไม่ได้ตั้งรหัส = ไม่ล็อก
 
-  const ok = req.cookies.get('gucut_auth')?.value === expected
-  if (ok) return NextResponse.next()
+  const auth = req.cookies.get('gucut_auth')?.value
+  const isAdmin = !!auth && auth === adminPass
+  const isStaff = !isAdmin && !!staffPass && !!auth && auth === staffPass
 
-  if (pathname.startsWith('/api')) {
-    return NextResponse.json({ error: 'Unauthorized', message: 'กรุณาเข้าสู่ระบบก่อน' }, { status: 401 })
+  if (!isAdmin && !isStaff) {
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'Unauthorized', message: 'กรุณาเข้าสู่ระบบก่อน' }, { status: 401 })
+    }
+    const url = req.nextUrl.clone()
+    url.pathname = '/login'
+    url.searchParams.set('next', pathname)
+    return NextResponse.redirect(url)
   }
 
-  const url = req.nextUrl.clone()
-  url.pathname = '/login'
-  url.searchParams.set('next', pathname)
-  return NextResponse.redirect(url)
+  if (isStaff && !staffAllowed(pathname)) {
+    if (pathname.startsWith('/api')) {
+      return NextResponse.json({ error: 'Forbidden', message: 'บัญชีนี้มีสิทธิ์เฉพาะโอนสินค้า' }, { status: 403 })
+    }
+    const url = req.nextUrl.clone()
+    url.pathname = '/catalog/index.html'
+    url.hash = '#trf'
+    return NextResponse.redirect(url)
+  }
+
+  return NextResponse.next()
 }
 
 export const config = {
