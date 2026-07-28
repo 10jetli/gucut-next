@@ -1,7 +1,11 @@
 'use client'
-// Sidebar เดสก์ท็อป: เมนูหลัก + เมนูย่อยแบบพับ/กาง + ปุ่มย่อเมนู
+// Sidebar เดสก์ท็อป: เมนูลัก + เมนูย่อยแบบพับ/กาง + ปุ่มย่อเมนู
 import Link from 'next/link'
 import { NAV_ITEMS } from '@/lib/nav-config'
+
+// ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
+// ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
+const isStaticLink = (href: string) => href.startsWith('/catalog/')
 
 interface SidebarProps {
   collapsed: boolean
@@ -47,28 +51,32 @@ export default function Sidebar({ collapsed, openGroups, anim, sidebarW, isActiv
               </button>
               {!collapsed && openGroups[item.label] && (
                 <div className="pb-1">
-                  {item.children.map((c) => (
-                    <Link
-                      key={c.href}
-                      href={c.href}
-                      className={`block py-2 pl-11 pr-3 text-[12.5px] transition-colors ${isActive(c.href) && !(c.href === '/bills' && pathname !== '/bills') ? 'bg-blue-600 text-white font-semibold' : 'text-blue-100/80 hover:bg-white/10 hover:text-white'}`}
-                    >
-                      {c.label}
-                    </Link>
-                  ))}
+                  {item.children.map((c) => {
+                    const cls = `block py-2 pl-11 pr-3 text-[12.5px] transition-colors ${isActive(c.href) && !(c.href === '/bills' && pathname !== '/bills') ? 'bg-blue-600 text-white font-semibold' : 'text-blue-100/80 hover:bg-white/10 hover:text-white'}`
+                    return isStaticLink(c.href) ? (
+                      <a key={c.href} href={c.href} className={cls}>{c.label}</a>
+                    ) : (
+                      <Link key={c.href} href={c.href} className={cls}>{c.label}</Link>
+                    )
+                  })}
                 </div>
               )}
             </div>
           ) : (
-            <Link
-              key={item.href}
-              href={item.href!}
-              title={item.label}
-              className={`flex items-center gap-3 py-2.5 rounded-lg text-[13px] transition-colors ${collapsed ? 'justify-center px-0' : 'px-3'} ${isActive(item.href!) ? 'bg-blue-600 text-white font-semibold' : 'text-blue-100/90 hover:bg-white/10 hover:text-white'}`}
-            >
-              <span className="text-lg w-5 text-center shrink-0">{item.icon}</span>
-              {!collapsed && <span className="truncate">{item.label}</span>}
-            </Link>
+            (() => {
+              const cls = `flex items-center gap-3 py-2.5 rounded-lg text-[13px] transition-colors ${collapsed ? 'justify-center px-0' : 'px-3'} ${isActive(item.href!) ? 'bg-blue-600 text-white font-semibold' : 'text-blue-100/90 hover:bg-white/10 hover:text-white'}`
+              const inner = (
+                <>
+                  <span className="text-lg w-5 text-center shrink-0">{item.icon}</span>
+                  {!collapsed && <span className="truncate">{item.label}</span>}
+                </>
+              )
+              return isStaticLink(item.href!) ? (
+                <a key={item.href} href={item.href} title={item.label} className={cls}>{inner}</a>
+              ) : (
+                <Link key={item.href} href={item.href!} title={item.label} className={cls}>{inner}</Link>
+              )
+            })()
           ),
         )}
       </nav>
