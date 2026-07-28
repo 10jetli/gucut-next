@@ -1,13 +1,14 @@
 'use client'
-// Sidebar เดสก์ท็อป: เมนูลัก + เมนูย่อยแบบพับ/กาง + ปุ่มย่อเมนู
+// Sidebar เดสก์ท็อป: เมนูหลัก + เมนูย่อยแบบพับ/กาง + ปุ่มย่อเมนู
 import Link from 'next/link'
-import { NAV_ITEMS } from '@/lib/nav-config'
+import type { NavItem } from '@/lib/nav-config'
 
 // ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
 // ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
 const isStaticLink = (href: string) => href.startsWith('/catalog/')
 
 interface SidebarProps {
+  navItems: NavItem[]
   collapsed: boolean
   openGroups: Record<string, boolean>
   anim: string
@@ -18,7 +19,7 @@ interface SidebarProps {
   toggleCollapse: () => void
 }
 
-export default function Sidebar({ collapsed, openGroups, anim, sidebarW, isActive, pathname, toggleGroup, toggleCollapse }: SidebarProps) {
+export default function Sidebar({ navItems, collapsed, openGroups, anim, sidebarW, isActive, pathname, toggleGroup, toggleCollapse }: SidebarProps) {
   return (
     <aside className={`hidden md:flex fixed inset-y-0 left-0 ${sidebarW} flex-col bg-[#17386b] text-white z-30 ${anim}`}>
       <div className="h-14 px-3 border-b border-white/10 flex items-center justify-center shrink-0">
@@ -33,7 +34,7 @@ export default function Sidebar({ collapsed, openGroups, anim, sidebarW, isActiv
       </div>
 
       <nav className="flex-1 overflow-y-auto py-3 px-2 space-y-1">
-        {NAV_ITEMS.map((item) =>
+        {navItems.map((item) =>
           item.children ? (
             <div key={item.label} className={openGroups[item.label] && !collapsed ? 'rounded-lg overflow-hidden bg-black/20' : ''}>
               <button
