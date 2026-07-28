@@ -29,6 +29,37 @@ function pickStore(storeParam: string | null) {
   return TRF_STORES[idx - 1]
 }
 
+// ---- แจ้งเตือน/ขออนุมัติผ่าน Telegram ก่อนสร้างใบโอนจริง ----
+// ข้อมูลคำขอทั้งหมด (from,to,list,...) ถูกฝังไว้ในตัวข้อความ Telegram เอง (เข้ารหัส base64)
+// ไม่ต้องเก็บลง DB — ตอนเจ้านายกดปุ่มอนุมัติ/ปฏิเสธ Telegram จะส่งข้อความเดิมกลับมาให้ /api/telegram/webhook อ่านข้อมูลออกมาใช้ได้เลย
+const escHtml = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+
+async function sendTelegramApproval(payload: any) {
+  const token = cleanEnv(process.env.TELEGRAM_BOT_TOKEN)
+  const chatId = cleanEnv(process.env.TELEGRAM_CHAT_ID)
+  if (!token || !chatId) return { ok: false, error: 'ยังไม่ได้ตั้งค่า TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID บน Vercel' }
+  const b64 = Buffer.from(JSON.stringify(payload)).toString('base64')
+  const lines = (payload.list || []).map((it: any) => `• ${escHtml(it.sku)} × ${it.number}`).join('\n')
+  const text = `🔄 <b>คำขอโอนสินค้าใหม่</b>\nจาก: ${escHtml(payload.fromLabel)}\nไป: ${escHtml(payload.toLabel)}\n\n${lines}\n\nอ้างอิง: ${escHtml(payload.ref)}\n\n<code>REF-DATA:${b64}</code>`
+  const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: 'HTML',
+      reply_markup: {
+        inline_keyboard: [[
+          { text: '✅ อนุมัติ', callback_data: 'approve' },
+          { text: '❌ ปฏิเสธ', callback_data: 'reject' },
+        ]],
+      },
+    }),
+  }).then(r => r.json())
+  if (!res.ok) return { ok: false, error: 'ส่งข้อความ Telegram ไม่สำเร็จ: ' + (res.description || '') }
+  return { ok: true }
+}
+
 // GET /api/transfer?op=status                    → เช็คว่าตั้งค่า env ครบไหม (ไม่เปิดเผยกุญแจ)
 // GET /api/transfer?op=recent&store=N            → ใบโอนล่าสุดของบัญชี N
 // GET /api/transfer?op=warehouses&store=N        → รายชื่อคลังของบัญชี N (ใช้ทดสอบการเชื่อมต่อ)
@@ -67,7 +98,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/transfer  { op: 'add', store: N, payload: {...} }  → สร้างใบโอน
+// POST /api/transfer  { op: 'request', from: N, to: N, fromWh, toWh, fromLabel, toLabel, ref, date, list }
+//                                                                → ส่งคำขอไปให้เจ้านายอนุมัติผ่าน Telegram (ยังไม่สร้างใบโอนจริง)
+// POST /api/transfer  { op: 'add', store: N, payload: {...} }  → สร้างใบโอน (ใช้ภายในหลังอนุมัติแล้วเท่านั้น)
 // POST /api/transfer  { op: 'void', store: N, id: '...' }      → ยกเลิกใบโอน
 export async function POST(req: NextRequest) {
   if (!isConfigured()) {
@@ -77,6 +110,21 @@ export async function POST(req: NextRequest) {
   try { body = await req.json() } catch {
     return NextResponse.json({ error: 'body ต้องเป็น JSON' }, { status: 400 })
   }
+
+  if (body.op === 'request') {
+    const fromAcc = pickStore(String(body?.from ?? ''))
+    const toAcc = pickStore(String(body?.to ?? ''))
+    if (!fromAcc || !toAcc) return NextResponse.json({ error: 'from/to ต้องเป็น 1-3' }, { status: 400 })
+    if (!Array.isArray(body.list) || !body.list.length) return NextResponse.json({ error: 'ยังไม่มีรายการสินค้า' }, { status: 400 })
+    const payload = {
+      from: body.from, to: body.to, fromWh: body.fromWh, toWh: body.toWh,
+      fromLabel: body.fromLabel, toLabel: body.toLabel, ref: body.ref, date: body.date, list: body.list,
+    }
+    const sent = await sendTelegramApproval(payload)
+    if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 500 })
+    return NextResponse.json({ ok: true, ref: body.ref })
+  }
+
   const acc = pickStore(String(body?.store ?? ''))
   if (!acc) return NextResponse.json({ error: 'store ต้องเป็น 1-3' }, { status: 400 })
   try {
