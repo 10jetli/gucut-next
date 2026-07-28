@@ -2,10 +2,11 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-// POST /api/auth/login  { password }  → ตั้ง cookie gucut_auth ถ้ารหัสถูก
+// POST /api/auth/login  { password }  → ตั้ง cookie gucut_auth ถ้ารหัสถูก (แอดมินหรือพนักงาน)
 export async function POST(req: NextRequest) {
-  const expected = process.env.SITE_PASSWORD
-  if (!expected) {
+  const adminPass = process.env.SITE_PASSWORD
+  const staffPass = process.env.STAFF_PASSWORD
+  if (!adminPass) {
     return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า SITE_PASSWORD บน Vercel' }, { status: 500 })
   }
   let password = ''
@@ -14,12 +15,15 @@ export async function POST(req: NextRequest) {
     password = String(body?.password ?? '')
   } catch { /* ไม่มี body */ }
 
-  if (password !== expected) {
+  const isAdmin = password === adminPass
+  const isStaff = !isAdmin && !!staffPass && password === staffPass
+  if (!isAdmin && !isStaff) {
     return NextResponse.json({ error: 'รหัสผ่านไม่ถูกต้อง' }, { status: 401 })
   }
 
-  const res = NextResponse.json({ ok: true })
-  res.cookies.set('gucut_auth', expected, {
+  const role = isAdmin ? 'admin' : 'staff'
+  const res = NextResponse.json({ ok: true, role })
+  res.cookies.set('gucut_auth', password, {
     httpOnly: true,
     secure: true,
     sameSite: 'lax',
