@@ -3,18 +3,21 @@
 // state การย่อ/ขยาย sidebar และการกางเมนูย่อยอยู่ที่นี่
 import { useEffect, useState } from 'react'
 import { usePathname } from 'next/navigation'
-import { NAV_ITEMS } from '@/lib/nav-config'
+import { getNavItems } from '@/lib/nav-config'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import { MobileHeader, MobileBottomNav } from './MobileNav'
 
 const STORAGE_KEY = 'gucut-sidebar-collapsed'
 
-export default function AppShell({ children }: { children: React.ReactNode }) {
+interface AppShellProps { children: React.ReactNode; role: 'admin' | 'staff' | null }
+
+export default function AppShell({ children, role }: AppShellProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [ready, setReady] = useState(false)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const navItems = getNavItems(role)
 
   useEffect(() => {
     try {
@@ -25,12 +28,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   // เปิดกลุ่มอัตโนมัติถ้าหน้าปัจจุบันอยู่ในเมนูย่อยของกลุ่มนั้น
   useEffect(() => {
-    for (const item of NAV_ITEMS) {
+    for (const item of navItems) {
       if (item.children && item.children.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))) {
         setOpenGroups((prev) => ({ ...prev, [item.label]: true }))
       }
     }
-  }, [pathname])
+  }, [pathname, navItems])
 
   const toggleCollapse = () => {
     setCollapsed((prev) => {
@@ -60,6 +63,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <>
       <Sidebar
+        navItems={navItems}
         collapsed={collapsed}
         openGroups={openGroups}
         anim={anim}
@@ -77,7 +81,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <div className="md:max-w-[1300px] md:mx-auto">{children}</div>
       </main>
 
-      <MobileBottomNav />
+      <MobileBottomNav navItems={navItems} />
     </>
   )
 }
