@@ -554,10 +554,12 @@ const trfItems=[];
 // โหมดเชื่อม ZORT: ถ้าเซิร์ฟเวอร์ตั้งค่า ZORT_TRF_* แล้ว เรียกผ่าน /api/transfer (กุญแจอยู่ที่เดียว)
 // ถ้ายังไม่ตั้ง จะ fallback ใช้กุญแจใน localStorage แบบเดิมอัตโนมัติ — ใช้งานได้เหมือนเดิมทุกกรณี
 var TRF_SERVER=false;
+var STAFF_ONLY=false; // true ถ้าล็อกอินด้วยบัญชีพนักงาน (สิทธิ์โอนสินค้าเท่านั้น) — ล็อกให้อยู่หน้าโอนสินค้าเสมอ
 function trfAccts(){return load(LS_TRF,null);}
 function trfList(){return TRF_SERVER?TRF_META:trfAccts();}
 function trfHead(a){return {"storename":a.s,"apikey":a.k,"apisecret":a.x,"Content-Type":"application/json"};}
 function showPage(w){
+  if(STAFF_ONLY)w="trf";
   document.getElementById("app").style.display=w==="main"?"":"none";
   document.getElementById("mainControls").style.display=w==="main"?"":"none";
   var fb=document.getElementById("facBar");if(fb)fb.style.display=w==="main"?"flex":"none";
@@ -571,6 +573,10 @@ document.getElementById("navTrf").onclick=()=>showPage("trf");
 // แสดงหน้าให้ตรงกับ URL hash ทันที ก่อนโหลดข้อมูลสินค้า กันหน้ากะพริบไปหน้ารายการสินค้าก่อนสลับมาหน้าโอน
 showPage(location.hash==="#trf"?"trf":"main");
 window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"main"));
+// บัญชีพนักงาน (สิทธิ์โอนสินค้าเท่านั้น) — เช็คสิทธิ์แล้วล็อกให้อยู่หน้าโอนสินค้าเสมอ ไม่ว่าจะพิมพ์ URL แบบไหน
+fetch("/api/auth/whoami").then(r=>r.json()).then(j=>{
+  if(j&&j.role==="staff"){STAFF_ONLY=true;showPage("trf");}
+}).catch(()=>{});
 function trfSetupUI(){
   // ฟอร์มกรอกกุญแจย้ายไปหน้า ตั้งค่า → เชื่อมต่อบริการอื่น ของระบบหลังบ้านแล้ว
   document.getElementById("trfSetupRows").innerHTML='<div style="background:#fef7e0;border:1px solid #f0d879;border-radius:10px;padding:16px;font-size:14px;line-height:1.7">ยังไม่ได้ตั้งค่ากุญแจ ZORT ในเครื่องนี้<br><a href="/settings/connections" style="color:#1a73e8;font-weight:700">→ ไปตั้งค่าที่เมนู ตั้งค่า › เชื่อมต่อบริการอื่น</a></div>';
