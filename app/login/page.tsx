@@ -21,7 +21,14 @@ function LoginForm() {
       })
       const json = await res.json()
       if (!res.ok) throw new Error(json.error ?? 'เข้าสู่ระบบไม่สำเร็จ')
-      router.replace(params.get('next') || '/')
+      const next = params.get('next')
+      const dest = next || (json.role === 'staff' ? '/catalog/index.html#trf' : '/')
+      // ปลายทางที่เป็นไฟล์ static (/catalog/...) ต้องโหลดหน้าจริง ไม่ใช่ client-router ของ Next
+      if (dest.startsWith('/catalog/')) {
+        window.location.href = dest
+        return
+      }
+      router.replace(dest)
       router.refresh()
     } catch (e: any) {
       setErr(e.message)
