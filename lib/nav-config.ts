@@ -28,3 +28,9 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
 ]
+
+// เมนูที่แสดงจริง — แอดมินเห็นทั้งหมด, พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เห็นแค่ "โอนสินค้า"
+export function getNavItems(role: 'admin' | 'staff' | null): NavItem[] {
+  if (role === 'staff') return NAV_ITEMS.filter(i => i.href === '/catalog/index.html#trf')
+  return NAV_ITEMS
+}
