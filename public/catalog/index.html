@@ -646,12 +646,29 @@ document.getElementById("trfGo").onclick=async()=>{
   if(!trfItems.length){alert("ยังไม่มีรายการสินค้า");return;}
   const src=A[fi],dst=A[ti];
   const lines=trfItems.map(it=>"• "+it.sku+" × "+it.qty).join("\n");
-  if(!confirm("ยืนยันสร้างใบโอนจริงใน ZORT?\n\nจาก: "+src.l+" (คลัง "+src.wh+")\nไป: "+dst.l+" (คลัง "+dst.wh+")\n\n"+lines))return;
   const btn=document.getElementById("trfGo"),st=document.getElementById("trfStat");
-  btn.disabled=true;st.textContent="กำลังสร้างใบโอนขาออก…";
   const today=new Date().toISOString().slice(0,10);
   const ref="WEB"+Date.now();
   const list=trfItems.map(it=>({sku:it.sku,name:it.name,number:it.qty}));
+  if(TRF_SERVER){
+    // โหมดมีเซิร์ฟเวอร์ ZORT: ส่งคำขอไปให้เจ้านายอนุมัติผ่าน Telegram ก่อน ยังไม่สร้างใบโอนจริง
+    if(!confirm("ส่งคำขอโอนสินค้านี้ไปให้เจ้านายอนุมัติผ่าน Telegram?\n\nจาก: "+src.l+" (คลัง "+src.wh+")\nไป: "+dst.l+" (คลัง "+dst.wh+")\n\n"+lines))return;
+    btn.disabled=true;st.textContent="กำลังส่งคำขอไปหาเจ้านาย…";
+    try{
+      const r=await fetch("/api/transfer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"request",from:fi+1,to:ti+1,fromWh:src.wh,toWh:dst.wh,fromLabel:src.l,toLabel:dst.l,ref:ref,date:today,list:list})}).then(r=>r.json());
+      if(!r.ok)throw new Error(r.error||"ส่งคำขอไม่สำเร็จ");
+      document.getElementById("trfResult").innerHTML='<div style="background:#e8f0fe;border:1px solid #b9d0f7;border-radius:8px;padding:12px">📨 ส่งคำขอไปให้เจ้านายอนุมัติผ่าน Telegram แล้ว รอผลอนุมัติ<br>เช็คผลได้ที่ "ใบโอนล่าสุด" ด้านล่างหลังอนุมัติ<br>อ้างอิง: '+esc(ref)+'</div>';
+      trfItems.length=0;trfRender();st.textContent="";
+    }catch(e){
+      document.getElementById("trfResult").innerHTML='<div style="background:#fce8e6;border:1px solid #f5c0ba;border-radius:8px;padding:12px">❌ '+esc(e.message)+"</div>";
+      st.textContent="";
+    }
+    btn.disabled=false;
+    return;
+  }
+  // โหมด fallback (ยังไม่ได้ตั้งเซิร์ฟเวอร์ ZORT) — สร้างใบโอนทันทีจากเบราว์เซอร์ ไม่มีขั้นตอนอนุมัติ
+  if(!confirm("ยืนยันสร้างใบโอนจริงใน ZORT?\n\nจาก: "+src.l+" (คลัง "+src.wh+")\nไป: "+dst.l+" (คลัง "+dst.wh+")\n\n"+lines))return;
+  btn.disabled=true;st.textContent="กำลังสร้างใบโอนขาออก…";
   try{
     const out=await trfPost(fi,src,{fromwarehousecode:src.wh,transferdate:today,reference:ref,description:"โอนไป "+dst.l,list:list});
     if(out.resCode!=="200")throw new Error("ขาออกล้มเหลว: "+out.resDesc);
