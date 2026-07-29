@@ -47,11 +47,18 @@ async function sendTelegramApproval(payload: any) {
 
   // ส่งรูปสินค้า (ถ้ามี) เป็นรูปเดี่ยวทีละใบ (ใหญ่ชัด ไม่ใช่อัลบั้มย่อเล็ก) ก่อนส่งข้อความสรุป + ปุ่มอนุมัติ
   const withImg = list.filter((it) => it.img)
+  // Telegram แสดงรูป .webp เป็นไอคอนเล็กๆ (เหมือนสติกเกอร์) แทนที่จะเป็นรูปภาพขนาดปกติ
+  // แปลงเป็น .jpg ผ่าน Shopify CDN on-the-fly transform ก่อนส่งให้ Telegram เพื่อให้แสดงผลใหญ่ปกติ
+  const toJpg = (url: string) => {
+    if (!url) return url
+    const sep = url.includes('?') ? '&' : '?'
+    return `${url}${sep}width=1600&format=jpg`
+  }
   for (const it of withImg) {
     try {
       await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, photo: it.img, caption: `${it.sku} ${it.name || ''} × ${it.number}` }),
+        body: JSON.stringify({ chat_id: chatId, photo: toJpg(it.img), caption: `${it.sku} ${it.name || ''} × ${it.number}` }),
       })
     } catch { /* รูปส่งไม่สำเร็จก็ไม่เป็นไร ข้อความสรุปด้านล่างยังส่งต่อได้ */ }
   }
