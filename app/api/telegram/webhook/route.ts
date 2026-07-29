@@ -83,16 +83,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true })
   }
 
+  // ต่อท้ายคำอธิบายด้วยชื่อผู้คีย์ข้อมูล (ถ้ามี) — เพื่อให้หน้า "ใบโอนล่าสุด" แสดงชื่อพนักงานได้
+  const staffTag = data.staffName ? ` · คีย์โดย ${data.staffName}` : ''
+
   try {
     const outRes = await fetch(`${BASE}/Transfer/AddTransfer`, {
       method: 'POST', headers: headOf(src),
-      body: JSON.stringify({ fromwarehousecode: data.fromWh, transferdate: data.date, reference: data.ref, description: 'โอนไป ' + data.toLabel, list: data.list }),
+      body: JSON.stringify({ fromwarehousecode: data.fromWh, transferdate: data.date, reference: data.ref, description: 'โอนไป ' + data.toLabel + staffTag, list: data.list }),
     }).then(r => r.json())
     if (outRes.resCode !== '200') throw new Error('ขาออกล้มเหลว: ' + outRes.resDesc)
 
     const innRes = await fetch(`${BASE}/Transfer/AddTransfer`, {
       method: 'POST', headers: headOf(dst),
-      body: JSON.stringify({ towarehousecode: data.toWh, transferdate: data.date, reference: data.ref, description: 'รับจาก ' + data.fromLabel, list: data.list }),
+      body: JSON.stringify({ towarehousecode: data.toWh, transferdate: data.date, reference: data.ref, description: 'รับจาก ' + data.fromLabel + staffTag, list: data.list }),
     }).then(r => r.json())
     if (innRes.resCode !== '200') {
       await fetch(`${BASE}/Transfer/VoidTransfer?id=${encodeURIComponent(outRes.resDesc)}`, { method: 'POST', headers: headOf(src), body: '{}' })
