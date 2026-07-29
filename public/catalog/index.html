@@ -554,7 +554,7 @@ const trfItems=[];
 // โหมดเชื่อม ZORT: ถ้าเซิร์ฟเวอร์ตั้งค่า ZORT_TRF_* แล้ว เรียกผ่าน /api/transfer (กุญแจอยู่ที่เดียว)
 // ถ้ายังไม่ตั้ง จะ fallback ใช้กุญแจใน localStorage แบบเดิมอัตโนมัติ — ใช้งานได้เหมือนเดิมทุกกรณี
 var TRF_SERVER=false;
-var STAFF_ONLY=false; // true ถ้าล็อกอินด้วยบัญชีพนักงาน (สิทธิ์โอนสินค้าเท่านั้น) — ล็อกให้อยู่หน้าโอนสินค้าเสมอ
+var STAFF_ONLY=false;var STAFF_NAME=""; // true ถ้าล็อกอินด้วยบัญชีพนักงาน (สิทธิ์โอนสินค้าเท่านั้น) — ล็อกให้อยู่หน้าโอนสินค้าเสมอ
 function trfAccts(){return load(LS_TRF,null);}
 function trfList(){return TRF_SERVER?TRF_META:trfAccts();}
 function trfHead(a){return {"storename":a.s,"apikey":a.k,"apisecret":a.x,"Content-Type":"application/json"};}
@@ -575,7 +575,7 @@ showPage(location.hash==="#trf"?"trf":"main");
 window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"main"));
 // บัญชีพนักงาน (สิทธิ์โอนสินค้าเท่านั้น) — เช็คสิทธิ์แล้วล็อกให้อยู่หน้าโอนสินค้าเสมอ ไม่ว่าจะพิมพ์ URL แบบไหน
 fetch("/api/auth/whoami").then(r=>r.json()).then(j=>{
-  if(j&&j.role==="staff"){STAFF_ONLY=true;showPage("trf");}
+  if(j&&j.role==="staff"){STAFF_ONLY=true;STAFF_NAME=j.name||"";showPage("trf");}
 }).catch(()=>{});
 function trfSetupUI(){
   // ฟอร์มกรอกกุญแจย้ายไปหน้า ตั้งค่า → เชื่อมต่อบริการอื่น ของระบบหลังบ้านแล้ว
@@ -655,7 +655,7 @@ document.getElementById("trfGo").onclick=async()=>{
     if(!confirm("ส่งคำขอโอนสินค้านี้ไปให้เจ้านายอนุมัติผ่าน Telegram?\n\nจาก: "+src.l+" (คลัง "+src.wh+")\nไป: "+dst.l+" (คลัง "+dst.wh+")\n\n"+lines))return;
     btn.disabled=true;st.textContent="กำลังส่งคำขอไปหาเจ้านาย…";
     try{
-      const r=await fetch("/api/transfer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"request",from:fi+1,to:ti+1,fromWh:src.wh,toWh:dst.wh,fromLabel:src.l,toLabel:dst.l,ref:ref,date:today,list:list})}).then(r=>r.json());
+      const r=await fetch("/api/transfer",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({op:"request",from:fi+1,to:ti+1,fromWh:src.wh,toWh:dst.wh,fromLabel:src.l,toLabel:dst.l,ref:ref,date:today,list:list,staffName:STAFF_NAME})}).then(r=>r.json());
       if(!r.ok)throw new Error(r.error||"ส่งคำขอไม่สำเร็จ");
       document.getElementById("trfResult").innerHTML='<div style="background:#e8f0fe;border:1px solid #b9d0f7;border-radius:8px;padding:12px">📨 ส่งคำขอไปให้เจ้านายอนุมัติผ่าน Telegram แล้ว รอผลอนุมัติ<br>เช็คผลได้ที่ "ใบโอนล่าสุด" ด้านล่างหลังอนุมัติ<br>อ้างอิง: '+esc(ref)+'</div>';
       trfItems.length=0;trfRender();st.textContent="";
@@ -687,14 +687,27 @@ document.getElementById("trfGo").onclick=async()=>{
   }
   btn.disabled=false;
 };
+function trfStatusTh(s){
+  if(s==="Voided")return{txt:"ไม่อนุมัติ",col:"#d93025"};
+  if(s==="Pending")return{txt:"รออนุมัติ",col:"#a15c00"};
+  if(s==="Success"||s==="Complete"||s==="Completed")return{txt:"อนุมัติแล้ว",col:"#137333"};
+  return{txt:s||"-",col:"#137333"};
+}
+function trfStaffOf(t){
+  const src=String(t.description||t.remark||t.note||"");
+  const m=src.match(/คีย์โดย\s*([^\s·][^·]*)/);
+  return m?m[1].trim():"-";
+}
 async function trfRecent(){
   try{
     const fi=+document.getElementById("trfFrom").value;
     let j;
     if(TRF_SERVER){j=await fetch("/api/transfer?op=recent&store="+(fi+1)).then(r=>r.json());}
     else{const A=trfAccts();const src=A[fi];j=await fetch("https://open-api.zortout.com/v4/Transfer/GetTransfers?page=1&limit=8",{headers:trfHead(src)}).then(r=>r.json());}
-    document.getElementById("trfRecent").innerHTML=(j.list||[]).map(t=>
-      '<div style="padding:5px 0;border-bottom:1px solid #f1f1f1">'+esc(t.number)+" · "+esc((t.transferdateString||"").slice(0,10))+" · "+esc(t.transferType)+" "+esc(t.fromwarehousecode||"")+"→"+esc(t.towarehousecode||"")+' · <span style="color:'+(t.status==="Voided"?"#d93025":"#137333")+'">'+esc(t.status)+"</span></div>").join("")||"—";
+    document.getElementById("trfRecent").innerHTML=(j.list||[]).map(t=>{
+      const st=trfStatusTh(t.status);
+      return '<div style="padding:5px 0;border-bottom:1px solid #f1f1f1">'+esc(t.number)+" · "+esc((t.transferdateString||"").slice(0,10))+" · "+esc(t.transferType)+" "+esc(t.fromwarehousecode||"")+"→"+esc(t.towarehousecode||"")+' · <span style="color:'+st.col+'">'+esc(st.txt)+'</span> · <span style="color:#5f6368">ผู้คีย์ข้อมูล(พนักงาน): '+esc(trfStaffOf(t))+'</span></div>';
+    }).join("")||"—";
   }catch(e){document.getElementById("trfRecent").textContent="โหลดไม่ได้";}
 }
 // ---- init ----
