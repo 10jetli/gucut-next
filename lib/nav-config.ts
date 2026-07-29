@@ -27,6 +27,13 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/settings/connections', label: 'เชื่อมต่อบริการอื่น' },
     ],
   },
+  {
+    icon: '🌐',
+    label: 'เว็บไซต์',
+    children: [
+      { href: '/store/products', label: 'ผลิตภัณฑ์' },
+    ],
+  },
 ]
 
 // เมนูที่แสดงจริง — แอดมินเห็นทั้งหมด, พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เห็นแค่ "โอนสินค้า"
