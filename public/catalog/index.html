@@ -619,7 +619,7 @@ document.getElementById("trfSearch").addEventListener("input",function(){
 document.getElementById("trfSug").addEventListener("click",e=>{
   const d=e.target.closest(".trfSugI");if(!d)return;
   const p=state.base.find(x=>x.sku===d.getAttribute("data-sku"));if(!p)return;
-  if(!trfItems.some(x=>x.sku===p.sku))trfItems.push({sku:p.sku,name:(p.title||p.sku).slice(0,90),inv:p.inv,qty:1});
+  if(!trfItems.some(x=>x.sku===p.sku))trfItems.push({sku:p.sku,name:(p.title||p.sku).slice(0,90),inv:p.inv,qty:1,img:p.img?state.prefix+encodeURIComponent(p.img):""});
   document.getElementById("trfSug").style.display="none";document.getElementById("trfSearch").value="";
   trfRender();
 });
@@ -649,7 +649,7 @@ document.getElementById("trfGo").onclick=async()=>{
   const btn=document.getElementById("trfGo"),st=document.getElementById("trfStat");
   const today=new Date().toISOString().slice(0,10);
   const ref="WEB"+Date.now();
-  const list=trfItems.map(it=>({sku:it.sku,name:it.name,number:it.qty}));
+  const list=trfItems.map(it=>({sku:it.sku,name:it.name,number:it.qty,img:it.img||""}));
   if(TRF_SERVER){
     // โหมดมีเซิร์ฟเวอร์ ZORT: ส่งคำขอไปให้เจ้านายอนุมัติผ่าน Telegram ก่อน ยังไม่สร้างใบโอนจริง
     if(!confirm("ส่งคำขอโอนสินค้านี้ไปให้เจ้านายอนุมัติผ่าน Telegram?\n\nจาก: "+src.l+" (คลัง "+src.wh+")\nไป: "+dst.l+" (คลัง "+dst.wh+")\n\n"+lines))return;
