@@ -32,9 +32,23 @@ async function tg(method: string, params: Record<string, any>) {
   return r.json()
 }
 
-// ตัดส่วน REF-DATA ท้ายข้อความออก เหลือแต่ข้อความที่คนอ่านได้
+// REF-DATA ถูกฝังแบบมองไม่เห็น (Unicode Tag characters) ในข้อความ — ต้องถอดออกทั้งข้อความที่คนอ่านได้และค่าที่ฝังไว้
+const TAG_BASE = 0xE0000
+function decodeInvisible(text: string): string | null {
+  const bytes: number[] = []
+  for (const ch of text) {
+    const cp = ch.codePointAt(0)!
+    if (cp >= TAG_BASE && cp <= TAG_BASE + 0x7f) bytes.push(cp - TAG_BASE)
+  }
+  if (!bytes.length) return null
+  return Buffer.from(bytes).toString('utf8')
+}
 function stripData(text: string) {
-  return text.replace(/\n*REF-DATA:[\s\S]*/, '').trim()
+  const noInvisible = Array.from(text).filter((ch) => {
+    const cp = ch.codePointAt(0)!
+    return !(cp >= TAG_BASE && cp <= TAG_BASE + 0x7f)
+  }).join('')
+  return noInvisible.replace(/\n*REF-DATA:[\s\S]*/, '').trim()
 }
 
 export async function POST(req: NextRequest) {
@@ -58,7 +72,9 @@ export async function POST(req: NextRequest) {
   await tg('editMessageReplyMarkup', { chat_id: chatId, message_id: messageId, reply_markup: { inline_keyboard: [] } })
 
   const clean = stripData(rawText)
-  const m = rawText.match(/REF-DATA:([A-Za-z0-9+/=]+)/)
+  // รองรับทั้งแบบใหม่ (ฝังมองไม่เห็น) และแบบเก่า (ข้อความ REF-DATA ที่มองเห็นได้ ในกรณีมีคำขอค้างจากก่อนอัปเดต)
+  const hidden = decodeInvisible(rawText)
+  const m = (hidden ? hidden.match(/REF-DATA:([A-Za-z0-9+/=]+)/) : null) || rawText.match(/REF-DATA:([A-Za-z0-9+/=]+)/)
   if (!m) {
     await tg('editMessageText', { chat_id: chatId, message_id: messageId, text: clean + '\n\n⚠️ ไม่พบข้อมูลคำขอ (ระบบผิดพลาด)' })
     return NextResponse.json({ ok: true })
