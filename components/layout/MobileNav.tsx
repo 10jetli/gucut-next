@@ -2,6 +2,7 @@
 // เฮดเดอร์ + แถบเมนูล่างสำหรับจอมือถือ
 import Link from 'next/link'
 import type { NavItem } from '@/lib/nav-config'
+import UserMenu from './UserMenu'
 
 // ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
 // ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
@@ -9,9 +10,12 @@ const isStaticLink = (href: string) => href.startsWith('/catalog/')
 
 export function MobileHeader() {
   return (
-    <header className="md:hidden sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex items-center gap-2 shadow-sm">
-      <span className="text-lg font-black tracking-tight text-gray-900">GUCUT</span>
-      <span className="text-[10px] text-gray-400 mt-0.5">WWW.GUCUT.COM</span>
+    <header className="md:hidden sticky top-0 z-10 bg-white border-b border-gray-100 px-4 py-3 flex items-center justify-between gap-2 shadow-sm">
+      <div className="flex items-center gap-2">
+        <span className="text-lg font-black tracking-tight text-gray-900">GUCUT</span>
+        <span className="text-[10px] text-gray-400 mt-0.5">WWW.GUCUT.COM</span>
+      </div>
+      <UserMenu />
     </header>
   )
 }
