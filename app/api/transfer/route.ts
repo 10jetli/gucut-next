@@ -40,7 +40,8 @@ async function sendTelegramApproval(payload: any) {
   if (!token || !chatId) return { ok: false, error: 'ยังไม่ได้ตั้งค่า TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID บน Vercel' }
   const b64 = Buffer.from(JSON.stringify(payload)).toString('base64')
   const lines = (payload.list || []).map((it: any) => `• ${escHtml(it.sku)} × ${it.number}`).join('\n')
-  const text = `🔄 <b>คำขอโอนสินค้าใหม่</b>\nจาก: ${escHtml(payload.fromLabel)}\nไป: ${escHtml(payload.toLabel)}\n\n${lines}\n\nอ้างอิง: ${escHtml(payload.ref)}\n\n<code>REF-DATA:${b64}</code>`
+  const staffLine = payload.staffName ? `ผู้คีย์ข้อมูล: ${escHtml(payload.staffName)}\n` : ''
+  const text = `🔄 <b>คำขอโอนสินค้าใหม่</b>\nจาก: ${escHtml(payload.fromLabel)}\nไป: ${escHtml(payload.toLabel)}\n${staffLine}\n${lines}\n\nอ้างอิง: ${escHtml(payload.ref)}\n\n<code>REF-DATA:${b64}</code>`
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -98,7 +99,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST /api/transfer  { op: 'request', from: N, to: N, fromWh, toWh, fromLabel, toLabel, ref, date, list }
+// POST /api/transfer  { op: 'request', from: N, to: N, fromWh, toWh, fromLabel, toLabel, ref, date, list, staffName }
 //                                                                → ส่งคำขอไปให้เจ้านายอนุมัติผ่าน Telegram (ยังไม่สร้างใบโอนจริง)
 // POST /api/transfer  { op: 'add', store: N, payload: {...} }  → สร้างใบโอน (ใช้ภายในหลังอนุมัติแล้วเท่านั้น)
 // POST /api/transfer  { op: 'void', store: N, id: '...' }      → ยกเลิกใบโอน
@@ -119,6 +120,7 @@ export async function POST(req: NextRequest) {
     const payload = {
       from: body.from, to: body.to, fromWh: body.fromWh, toWh: body.toWh,
       fromLabel: body.fromLabel, toLabel: body.toLabel, ref: body.ref, date: body.date, list: body.list,
+      staffName: String(body.staffName ?? ''),
     }
     const sent = await sendTelegramApproval(payload)
     if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 500 })
