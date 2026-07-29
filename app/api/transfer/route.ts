@@ -42,25 +42,19 @@ async function sendTelegramApproval(payload: any) {
   const list: any[] = payload.list || []
   const lines = list.map((it) => `• <b>${escHtml(it.sku)}</b> ${escHtml(it.name || '')} × ${it.number}`).join('\n')
   const staffLine = payload.staffName ? `ผู้คีย์ข้อมูล: ${escHtml(payload.staffName)}\n` : ''
-  const text = `🔄 <b>คำขอโอนสินค้าใหม่</b>\nอ้างอิง: <b>${escHtml(payload.ref)}</b>\n\n${lines}\n\nจาก: ${escHtml(payload.fromLabel)}\nไป: ${escHtml(payload.toLabel)}\n${staffLine}\n<code>REF-DATA:${b64}</code>`
+  // ซ่อน REF-DATA ไว้หลัง spoiler (แตะเพื่อดู) กันรกตา แต่ตัวอักษรยังอยู่ในข้อความให้ webhook อ่านได้เหมือนเดิม
+  const text = `🔄 <b>คำขอโอนสินค้าใหม่</b>\nอ้างอิง: <b>${escHtml(payload.ref)}</b>\n\n${lines}\n\nจาก: ${escHtml(payload.fromLabel)}\nไป: ${escHtml(payload.toLabel)}\n${staffLine}\n<tg-spoiler>REF-DATA:${b64}</tg-spoiler>`
 
-  // ส่งรูปสินค้า (ถ้ามี) เป็นข้อความแยกก่อน แล้วค่อยส่งข้อความสรุป + ปุ่มอนุมัติ
+  // ส่งรูปสินค้า (ถ้ามี) เป็นรูปเดี่ยวทีละใบ (ใหญ่ชัด ไม่ใช่อัลบั้มย่อเล็ก) ก่อนส่งข้อความสรุป + ปุ่มอนุมัติ
   const withImg = list.filter((it) => it.img)
-  const caption = (it: any) => `${it.sku} ${it.name || ''} × ${it.number}`
-  try {
-    if (withImg.length === 1) {
+  for (const it of withImg) {
+    try {
       await fetch(`https://api.telegram.org/bot${token}/sendPhoto`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, photo: withImg[0].img, caption: caption(withImg[0]) }),
+        body: JSON.stringify({ chat_id: chatId, photo: it.img, caption: `${it.sku} ${it.name || ''} × ${it.number}` }),
       })
-    } else if (withImg.length >= 2) {
-      const media = withImg.slice(0, 10).map((it) => ({ type: 'photo', media: it.img, caption: caption(it) }))
-      await fetch(`https://api.telegram.org/bot${token}/sendMediaGroup`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chatId, media }),
-      })
-    }
-  } catch { /* รูปส่งไม่สำเร็จก็ไม่เป็นไร ข้อความสรุปด้านล่างยังส่งต่อได้ */ }
+    } catch { /* รูปส่งไม่สำเร็จก็ไม่เป็นไร ข้อความสรุปด้านล่างยังส่งต่อได้ */ }
+  }
 
   const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: 'POST',
