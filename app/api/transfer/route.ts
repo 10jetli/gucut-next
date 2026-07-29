@@ -42,8 +42,12 @@ async function sendTelegramApproval(payload: any) {
   const list: any[] = payload.list || []
   const lines = list.map((it) => `• <b>${escHtml(it.sku)}</b> ${escHtml(it.name || '')} × ${it.number}`).join('\n')
   const staffLine = payload.staffName ? `ผู้คีย์ข้อมูล: ${escHtml(payload.staffName)}\n` : ''
-  // ซ่อน REF-DATA ไว้หลัง spoiler (แตะเพื่อดู) กันรกตา แต่ตัวอักษรยังอยู่ในข้อความให้ webhook อ่านได้เหมือนเดิม
-  const text = `🔄 <b>คำขอโอนสินค้าใหม่</b>\nอ้างอิง: <b>${escHtml(payload.ref)}</b>\n\n${lines}\n\nจาก: ${escHtml(payload.fromLabel)}\nไป: ${escHtml(payload.toLabel)}\n${staffLine}\n<tg-spoiler>REF-DATA:${b64}</tg-spoiler>`
+  // ฝังข้อมูล REF-DATA แบบมองไม่เห็นเลย (ใช้ Unicode Tag characters แทนตัวอักษรจริง)
+  // ตัวอักษรพวกนี้ไม่แสดงผลใน Telegram แต่ยังอยู่ในข้อความจริงให้ webhook อ่านออกได้เหมือนเดิม
+  const TAG_BASE = 0xE0000
+  const encodeInvisible = (s: string) => Array.from(Buffer.from(s, 'utf8')).map((b) => String.fromCodePoint(TAG_BASE + b)).join('')
+  const hiddenData = encodeInvisible(`REF-DATA:${b64}`)
+  const text = `🔄 <b>คำขอโอนสินค้าใหม่</b>\nอ้างอิง: <b>${escHtml(payload.ref)}</b>\n\n${lines}\n\nจาก: ${escHtml(payload.fromLabel)}\nไป: ${escHtml(payload.toLabel)}\n${staffLine}${hiddenData}`
 
   // ตัดการส่งรูปสินค้าออกตามคำขอ — ส่งเฉพาะข้อความสรุป (รหัส/ชื่อ/จำนวน/พนักงาน) ไม่แนบรูปแล้ว
 
