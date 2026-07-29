@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // ป้องกันทั้งเว็บด้วยรหัสผ่าน (ตั้งค่าใน env)
 // - SITE_PASSWORD  = แอดมิน เข้าได้ทุกหน้า
-// - STAFF_PASSWORD = พนักงาน เข้าได้เฉพาะหน้า "โอนสินค้า" (/catalog) + API โอนสินค้า
+// - STAFF_PASSWORD = พนักงาน (รหัสเก่าใช้ร่วมกัน) เข้าได้เฉพาะหน้า "โอนสินค้า" (/catalog) + API โอนสินค้า
+// - STAFF_NAME_1..8 / STAFF_PASS_1..8 = พนักงานรายคน (คนละรหัส) สิทธิ์เท่ากับ STAFF_PASSWORD
 // - ยังไม่ล็อกอิน → เด้งไปหน้า /login
 // - API ที่ยังไม่ล็อกอิน → 401
 // - พนักงานเปิดหน้าอื่นนอกเหนือสิทธิ์ → เด้งกลับไปหน้าโอนสินค้า (หรือ 403 ถ้าเป็น API)
@@ -16,6 +17,16 @@ function staffAllowed(pathname: string) {
   return STAFF_ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))
 }
 
+const cleanEnv = (v?: string) => (v ?? '').trim()
+function staffPasswords() {
+  const list: string[] = []
+  for (let i = 1; i <= 8; i++) {
+    const pass = cleanEnv(process.env[`STAFF_PASS_${i}`])
+    if (pass) list.push(pass)
+  }
+  return list
+}
+
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
@@ -27,7 +38,9 @@ export function middleware(req: NextRequest) {
 
   const auth = req.cookies.get('gucut_auth')?.value
   const isAdmin = !!auth && auth === adminPass
-  const isStaff = !isAdmin && !!staffPass && !!auth && auth === staffPass
+  const isLegacyStaff = !isAdmin && !!staffPass && !!auth && auth === staffPass
+  const isNamedStaff = !isAdmin && !!auth && staffPasswords().includes(auth)
+  const isStaff = isLegacyStaff || isNamedStaff
 
   if (!isAdmin && !isStaff) {
     if (pathname.startsWith('/api')) {
