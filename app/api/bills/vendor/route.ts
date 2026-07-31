@@ -23,8 +23,8 @@ export async function GET(req: NextRequest) {
     const token = await getAccessToken()
     const now = new Date()
     const after = `${now.getFullYear() - 1}/${pad(now.getMonth() + 1)}/01`
-    const before = `${now.getFullYear()}/${pad(now.getMonth() + 1)}/${pad(now.getDate() + 1)}`
-    const bills = await searchVendorBills(token, vendor, after, before)
+    const before = (() => { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}` })()    
+      const bills = await searchVendorBills(token, vendor, after, before)
 
     const months: Record<string, any[]> = {}
     const debugInfo: any[] = []
