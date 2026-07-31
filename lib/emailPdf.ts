@@ -1,6 +1,7 @@
 // แปลงอีเมลใบเสร็จเป็นไฟล์ PDF สไตล์เอกสารบัญชีมืออาชีพ
 // - ถ้าเป็นใบเสร็จ Apple (โครงสร้าง HTML ตามแบบของ Apple) จะจัดหน้าแบบใบแจ้งหนี้ พร้อมโลโก้/ไอคอนสินค้า
-// - ถ้าไม่ใช่ จะ fallback เป็นการแสดงเนื้อหาแบบข้อความในกรอบเดียวกัน
+// - ถ้าเป็นอีเมลสรุปใบกำกับภาษี LINE OA จะจัดหน้าสไตล์ Tax Invoice/Receipt ของ LINE
+// - ถ้าไม่ใช่ทั้งสองแบบ จะ fallback เป็นการแสดงเนื้อหาแบบข้อความในกรอบเดียวกัน
 import { PDFDocument, rgb } from 'pdf-lib'
 import fontkit from '@pdf-lib/fontkit'
 import { parse } from 'node-html-parser'
@@ -60,6 +61,7 @@ const CARD_BG = rgb(0.985, 0.985, 0.99)
 const PAGE_W = 595.28
 const PAGE_H = 841.89
 const MARGIN = 50
+const LINE_GREEN = rgb(0.024, 0.78, 0.335)
 
 // ── โครงสร้างข้อมูลใบเสร็จ (ใช้เมื่อแกะจาก HTML ของ Apple สำเร็จ) ─────────────
 export interface ReceiptItem {
@@ -292,6 +294,187 @@ async function drawReceiptPdf(data: ReceiptData): Promise<Buffer> {
   return Buffer.from(bytes)
 }
 
+// ── โครงสร้างข้อมูลสรุปใบกำกับภาษี LINE OA (แกะจากอีเมลสรุปอัตโนมัติรายเดือน) ───
+export interface LineOaData {
+  paymentDate: string
+  item: string
+  amountText: string
+  ref: string
+  status: string
+  periodLabel?: string
+}
+
+// ── แกะข้อมูลจากอีเมลสรุปใบกำกับภาษี LINE OA (คืนค่า null ถ้าไม่ใช่แบบฟอร์มนี้) ──
+function parseLineOaSummary(subject: string, body: string): LineOaData | null {
+  if (!/ใบกำกับภาษี LINE OA/.test(subject || '') && !/LINE Official Account/.test(body || '')) return null
+  const grab = (label: string): string => {
+    const m = (body || '').match(new RegExp(label + '\\s*:?\\s*([^\\n]+)'))
+    return m ? m[1].trim() : ''
+  }
+  const paymentDate = grab('วันที่ชำระเงิน')
+  const item = grab('รายการ')
+  const amountRaw = grab('จำนวนเงิน')
+  const ref = grab('เลขที่อ้างอิง')
+  const status = grab('สถานะ')
+  if (!paymentDate || !amountRaw) return null
+  const amountText = amountRaw.replace(/[^\d.,]/g, '')
+  const periodMatch = (subject || '').match(/เดือน(.+)/)
+  const periodLabel = periodMatch ? periodMatch[1].trim() : undefined
+  return { paymentDate, item, amountText, ref, status, periodLabel }
+}
+
+// ── วาด PDF สรุปใบกำกับภาษี LINE OA สไตล์ Tax Invoice/Receipt ของ LINE ─────────
+async function drawLineOaPdf(data: LineOaData): Promise<Buffer> {
+  const fonts = await loadFonts()
+  const doc = await PDFDocument.create()
+  doc.registerFontkit(fontkit as any)
+  const font = await doc.embedFont(fonts.regular, { subset: true })
+  const bold = await doc.embedFont(fonts.bold, { subset: true })
+
+  const contentW = PAGE_W - MARGIN * 2
+  const page = doc.addPage([PAGE_W, PAGE_H])
+  page.drawRectangle({ x: 0, y: PAGE_H - 6, width: PAGE_W, height: 6, color: LINE_GREEN })
+
+  let y = PAGE_H - MARGIN - 14
+  page.drawText('LINE', { x: MARGIN, y: y - 8, size: 26, font: bold, color: LINE_GREEN })
+  const title = 'ใบกำกับภาษี / Tax Invoice-Receipt'
+  const titleSize = 12.5
+  const titleWidth = bold.widthOfTextAtSize(title, titleSize)
+  page.drawText(title, { x: PAGE_W - MARGIN - titleWidth, y: y - 4, size: titleSize, font: bold, color: BLACK })
+  y -= 44
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 1.2, color: LINE_GREEN })
+  y -= 22
+
+  const colGap = 24
+  const colW = (contentW - colGap) / 2
+  const leftX = MARGIN
+  const rightX = MARGIN + colW + colGap
+
+  const leftFields: [string, string][] = [
+    ['วันที่ชำระเงิน', data.paymentDate],
+    ['เลขที่อ้างอิง (Transaction ID)', data.ref || '-'],
+    ['สถานะ', data.status || '-'],
+  ]
+  let leftY = y
+  for (const [label, value] of leftFields) {
+    page.drawText(label.toUpperCase(), { x: leftX, y: leftY, size: 8.5, font: bold, color: GRAY })
+    leftY -= 13
+    for (const l of wrapLine(value, font, 11, colW)) {
+      page.drawText(l, { x: leftX, y: leftY, size: 11, font, color: BLACK })
+      leftY -= 15
+    }
+    leftY -= 5
+  }
+
+  let rightY = y
+  page.drawText('ผู้ให้บริการ'.toUpperCase(), { x: rightX, y: rightY, size: 8.5, font: bold, color: GRAY })
+  rightY -= 15
+  const companyLines: [string, boolean][] = [
+    ['LINE COMPANY (THAILAND) LIMITED', true],
+    ['127 Gaysorn Tower, 17th-18th Floor,', false],
+    ['Ratchadamri Road, Lumpini Subdistrict,', false],
+    ['Pathumwan District, Bangkok 10330, Thailand', false],
+    ['Tax ID No. 0105557074618', false],
+  ]
+  for (const [line, isBoldLine] of companyLines) {
+    const f = isBoldLine ? bold : font
+    const sz = isBoldLine ? 10.5 : 9.5
+    for (const l of wrapLine(line, f, sz, colW)) {
+      page.drawText(l, { x: rightX, y: rightY, size: sz, font: f, color: BLACK })
+      rightY -= isBoldLine ? 14 : 12.5
+    }
+  }
+
+  y = Math.min(leftY, rightY) - 14
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.75, color: BORDER_GRAY })
+  y -= 20
+
+  page.drawText('เรียกเก็บเงินไปยัง'.toUpperCase(), { x: MARGIN, y, size: 8.5, font: bold, color: GRAY })
+  y -= 14
+  const customerLines = [
+    'บริษัท ศีตกาล เทรดดิ้ง จำกัด',
+    '81 หมู่ที่ 11 ต.ค่ายบกหวาน อ.เมือง จ.หนองคาย 43100',
+    'Tax ID No. 0435565000668',
+  ]
+  for (const line of customerLines) {
+    for (const l of wrapLine(line, font, 10.5, contentW)) {
+      page.drawText(l, { x: MARGIN, y, size: 10.5, font, color: BLACK })
+      y -= 14
+    }
+  }
+  y -= 12
+
+  const amountNum = parseFloat(data.amountText.replace(/,/g, '')) || 0
+  const fmt = (n: number) => n.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const amountStr = fmt(amountNum)
+  const excVat = amountNum / 1.07
+  const vat = amountNum - excVat
+  const excVatStr = fmt(excVat)
+  const vatStr = fmt(vat)
+
+  const headerH = 22
+  const rowH = 26
+  let tY = y
+  page.drawRectangle({ x: MARGIN, y: tY - headerH, width: contentW, height: headerH, color: CARD_BG, borderColor: BORDER_GRAY, borderWidth: 1 })
+  page.drawText('DESCRIPTION', { x: MARGIN + 10, y: tY - headerH + 7, size: 9, font: bold, color: GRAY })
+  const amtHeaderW = bold.widthOfTextAtSize('AMOUNT (THB)', 9)
+  page.drawText('AMOUNT (THB)', { x: PAGE_W - MARGIN - 10 - amtHeaderW, y: tY - headerH + 7, size: 9, font: bold, color: GRAY })
+  tY -= headerH
+
+  page.drawRectangle({ x: MARGIN, y: tY - rowH, width: contentW, height: rowH, borderColor: BORDER_GRAY, borderWidth: 1 })
+  const itemLines = wrapLine(data.item || '-', font, 10.5, contentW - 160)
+  page.drawText(itemLines[0] || '-', { x: MARGIN + 10, y: tY - 17, size: 10.5, font, color: BLACK })
+  const amtW = font.widthOfTextAtSize(amountStr, 10.5)
+  page.drawText(amountStr, { x: PAGE_W - MARGIN - 10 - amtW, y: tY - 17, size: 10.5, font, color: BLACK })
+  tY -= rowH
+
+  if (data.periodLabel) {
+    page.drawRectangle({ x: MARGIN, y: tY - 20, width: contentW, height: 20, borderColor: BORDER_GRAY, borderWidth: 1 })
+    page.drawText('Period of service: ' + data.periodLabel, { x: MARGIN + 10, y: tY - 14, size: 9.5, font, color: GRAY })
+    tY -= 20
+  }
+  y = tY - 6
+
+  const summaryRows: [string, string, boolean][] = [
+    ['Amount Exc VAT (THB)', excVatStr, false],
+    ['VAT 7%', vatStr, false],
+    ['Amount Inc VAT (THB)', amountStr, true],
+  ]
+  for (const [label, value, isBoldRow] of summaryRows) {
+    const f = isBoldRow ? bold : font
+    const vw = f.widthOfTextAtSize(value, 10.5)
+    const lw = f.widthOfTextAtSize(label, 10.5)
+    page.drawText(label, { x: PAGE_W - MARGIN - vw - 20 - lw, y, size: 10.5, font: f, color: isBoldRow ? BLACK : GRAY })
+    page.drawText(value, { x: PAGE_W - MARGIN - vw, y, size: 10.5, font: f, color: BLACK })
+    y -= isBoldRow ? 20 : 17
+  }
+
+  y -= 18
+  page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.75, color: BORDER_GRAY })
+  y -= 18
+
+  const noteLines = [
+    'เอกสารนี้สรุปจากอีเมลแจ้งชำระเงินอัตโนมัติของ LINE Official Account เพื่อความสะดวกในการดูยอด',
+    'สำหรับใบกำกับภาษีฉบับทางการ (มีลายเซ็นดิจิทัลจากกรมสรรพากร) กรุณาดาวน์โหลดจาก LINE Official Account Manager โดยตรงที่ลิงก์ด้านล่าง:',
+  ]
+  for (const l of noteLines) {
+    for (const w of wrapLine(l, font, 8.5, contentW)) {
+      page.drawText(w, { x: MARGIN, y, size: 8.5, font, color: GRAY })
+      y -= 12
+    }
+  }
+  if (data.ref) {
+    const link = `https://manager.line.biz/account/@yab4021t/purchase/history/invoice/${data.ref}`
+    for (const w of wrapLine(link, font, 8.5, contentW)) {
+      page.drawText(w, { x: MARGIN, y, size: 8.5, font, color: ACCENT })
+      y -= 12
+    }
+  }
+
+  const bytes = await doc.save()
+  return Buffer.from(bytes)
+}
+
 // ── fallback: แสดงเนื้อหาอีเมลในกรอบเดียวกัน (ใช้เมื่อไม่ใช่โครงสร้าง Apple) ───
 export interface EmailPdfInfo {
   vendorName: string
@@ -382,6 +565,14 @@ async function drawGenericPdf(info: EmailPdfInfo): Promise<Buffer> {
 
 // ── ฟังก์ชันหลัก: เลือก renderer ที่เหมาะสม ──────────────────────────────────
 export async function emailToPdf(info: EmailPdfInfo & { html?: string }): Promise<Buffer> {
+  const lineData = parseLineOaSummary(info.subject, info.body)
+  if (lineData) {
+    try {
+      return await drawLineOaPdf(lineData)
+    } catch {
+      // ถ้าวาดแบบ LINE ไม่สำเร็จ ให้ fallback เป็นแบบข้อความ
+    }
+  }
   if (info.html) {
     const receipt = parseAppleReceipt(info.html)
     if (receipt && (receipt.items.length || receipt.fields.length)) {
