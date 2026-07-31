@@ -8,8 +8,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // - API ที่ยังไม่ล็อกอิน → 401
 // - พนักงานเปิดหน้าอื่นนอกเหนือสิทธิ์ → เด้งกลับไปหน้าโอนสินค้า (หรือ 403 ถ้าเป็น API)
 // - ยกเว้น: /login, /api/auth/*, /api/google/* (OAuth callback), ไฟล์ static
-const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram']
-
+const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync']
 // เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
 const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer']
 
