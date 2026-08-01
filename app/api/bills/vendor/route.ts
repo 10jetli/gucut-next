@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 import { listVendorDriveFiles } from '@/lib/drive'
+import { loadBillIndex, saveBillIndex, BillEntry } from '@/lib/billcache'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -12,24 +13,41 @@ const pad = (n: number) => String(n).padStart(2, '0')
 const isBillFile = (name: string) => /\.pdf$/i.test(name) || /\.zip$/i.test(name)
 
 // GET /api/bills/vendor?vendor=shopify
-// สแกนอีเมลของเจ้านั้นย้อนหลัง ~13 เดือน อ่านวันที่บนหัวบิลทุก PDF แล้วจัดกลุ่มตามเดือน
-// เติม &debug=1 เพื่อดูรายละเอียดการอ่านแต่ละไฟล์ PDF (ใช้ตอนแก้บั๊ก)
+// ใช้ cache ผลสแกน (เก็บใน Drive) — สแกน Gmail + อ่าน PDF เฉพาะอีเมลใหม่เท่านั้น
+// เติม &rescan=1 เพื่อบังคับสแกนใหม่ทั้งหมด, &debug=1 เพื่อดูรายละเอียดการอ่าน PDF
 export async function GET(req: NextRequest) {
   const vendorId = req.nextUrl.searchParams.get('vendor')
   const debug = req.nextUrl.searchParams.get('debug') === '1'
+  const rescan = req.nextUrl.searchParams.get('rescan') === '1'
   const vendor = VENDORS.find(v => v.id === vendorId)
   if (!vendor) return NextResponse.json({ error: 'ไม่รู้จัก vendor นี้' }, { status: 400 })
 
   try {
     const token = await getAccessToken()
     const now = new Date()
-    const after = `${now.getFullYear() - 1}/${pad(now.getMonth() + 1)}/01`
-    const before = (() => { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}` })()
-      const bills = await searchVendorBills(token, vendor, after, before)
 
-    const months: Record<string, any[]> = {}
+    // ── โหลด cache (ถ้ามี) แล้วสแกนเพิ่มเฉพาะช่วงหลังการสแกนล่าสุด (เผื่อย้อน 3 วัน) ──
+    const idx = rescan ? null : await loadBillIndex(token, vendor.id)
+    let after: string
+    if (idx) {
+      const d = new Date(idx.lastScan)
+      d.setDate(d.getDate() - 3)
+      after = `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}`
+    } else {
+      after = `${now.getFullYear() - 1}/${pad(now.getMonth() + 1)}/01`
+    }
+    const before = (() => { const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1); return `${d.getFullYear()}/${pad(d.getMonth() + 1)}/${pad(d.getDate())}` })()
+    const bills = await searchVendorBills(token, vendor, after, before)
+
+    const done = new Set(idx?.done ?? [])
+    const entries: BillEntry[] = idx ? [...idx.entries] : []
     const debugInfo: any[] = []
+    let changed = false
+
     for (const b of bills) {
+      if (done.has(b.messageId)) continue
+      done.add(b.messageId)
+      changed = true
       const emailMonth = b.date.slice(0, 7)
       const billFiles = b.attachments.filter(a => isBillFile(a.filename))
       for (const att of billFiles) {
@@ -56,7 +74,8 @@ export async function GET(req: NextRequest) {
           debugInfo.push({ subject: b.subject, filename: att.filename, month: m, skip, parseErr, textLen, textSnippet, matched })
         }
         if (skip) continue
-        ;(months[m] ??= []).push({
+        entries.push({
+          month: m,
           filename: att.filename,
           messageId: b.messageId,
           attachmentId: att.attachmentId,
@@ -65,7 +84,8 @@ export async function GET(req: NextRequest) {
         })
       }
       if (!b.attachments.length) {
-        ;(months[emailMonth] ??= []).push({
+        entries.push({
+          month: emailMonth,
           filename: 'ใบเสร็จ.pdf',
           messageId: b.messageId,
           attachmentId: 'GEN',
@@ -73,6 +93,25 @@ export async function GET(req: NextRequest) {
           subject: b.subject,
         })
       }
+    }
+
+    // บันทึก cache เมื่อมีของใหม่ (หรือยังไม่เคยมี cache) — ถ้าบันทึกพลาดก็ไม่เป็นไร รอบหน้าสแกนใหม่
+    if (changed || !idx) {
+      try { await saveBillIndex(token, vendor.id, { lastScan: now.toISOString(), done: [...done], entries }) } catch {}
+    }
+
+    // ── จัดกลุ่มเป็นรายเดือน (ตัดเดือนที่เก่ากว่า ~13 เดือนทิ้ง) ──
+    const cutoff = `${now.getFullYear() - 1}-${pad(now.getMonth() + 1)}`
+    const months: Record<string, any[]> = {}
+    for (const e of entries) {
+      if (e.month < cutoff) continue
+      ;(months[e.month] ??= []).push({
+        filename: e.filename,
+        messageId: e.messageId,
+        attachmentId: e.attachmentId,
+        size: e.size,
+        subject: e.subject,
+      })
     }
 
     // ── รวมไฟล์บิล "ตัวจริง" ที่อัปโหลดไว้ใน Google Drive (ผ่าน /api/bills/upload) ──
@@ -98,7 +137,11 @@ export async function GET(req: NextRequest) {
       }
     } catch { /* ถ้าอ่าน Drive ไม่ได้ ให้แสดงเฉพาะบิลจากอีเมลตามปกติ */ }
 
-    return NextResponse.json({ vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months, ...(debug ? { debugInfo } : {}) })
+    return NextResponse.json({
+      vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months,
+      cached: !!idx, newMessages: changed,
+      ...(debug ? { debugInfo } : {}),
+    })
   } catch (e: any) {
     return NextResponse.json({ error: e.message }, { status: 500 })
   }
