@@ -84,7 +84,7 @@
     <a href="/" title="กลับหน้าหลัก" style="display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#1a73e8;text-decoration:none;white-space:nowrap">← หน้าหลัก</a>
     <h1 style="margin:0">🔧 GUCUT — คลังอะไหล่</h1>
     <span class="tag" id="srcTag">Shopify snapshot</span>
-    <span id="userBadge" style="margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap"></span>
+    <span id="userBadge" style="margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer" title="แตะเพื่อออกจากระบบ"></span>
   </div>
   <div style="display:none;gap:6px;padding:0 12px 6px">
     <button class="btn" id="navMain" style="font-weight:600">📦 ระบบสั่งของ</button>
@@ -578,7 +578,7 @@ window.addEventListener("hashchange",()=>showPage(location.hash==="#trf"?"trf":"
 // บัญชีพนักงาน (สิทธิ์โอนสินค้าเท่านั้น) — เช็คสิทธิ์แล้วล็อกให้อยู่หน้าโอนสินค้าเสมอ ไม่ว่าจะพิมพ์ URL แบบไหน
 fetch("/api/auth/whoami").then(r=>r.json()).then(j=>{
   if(j&&j.role==="staff"){STAFF_ONLY=true;STAFF_NAME=j.name||"";showPage("trf");}
-  var ub=document.getElementById("userBadge");if(ub&&j&&j.role)ub.textContent="👤 "+(j.role==="admin"?"แอดมิน":(j.name||"พนักงาน"));
+  var ub=document.getElementById("userBadge");if(ub&&j&&j.role){ub.textContent="👤 "+(j.role==="admin"?"แอดมิน":(j.name||"พนักงาน"))+" · ออกจากระบบ";ub.onclick=function(){if(confirm("ออกจากระบบ?")){fetch("/api/auth/login",{method:"DELETE"}).then(function(){location.href="/login";});}};}
 }).catch(()=>{});
 function trfSetupUI(){
   // ฟอร์มกรอกกุญแจย้ายไปหน้า ตั้งค่า → เชื่อมต่อบริการอื่น ของระบบหลังบ้านแล้ว
