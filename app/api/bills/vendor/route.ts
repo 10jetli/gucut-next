@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment } from '@/lib/gmail'
+import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 import { listVendorDriveFiles } from '@/lib/drive'
 import { loadBillIndex, saveBillIndex, BillEntry } from '@/lib/billcache'
@@ -84,7 +84,15 @@ export async function GET(req: NextRequest) {
         })
       }
       if (!b.attachments.length) {
-        entries.push({
+                let genSkip = false
+                if (vendor.accountId) {
+                            try {
+                                          const detail = await fetchMessageDetail(token, b.messageId)
+                                          const combined = (detail.text || '') + ' ' + (detail.html || '')
+                                          if (!pdfHasAccountId(combined, vendor.accountId)) genSkip = true
+                            } catch {}
+                }
+        if (!genSkip) entries.push({
           month: emailMonth,
           filename: 'ใบเสร็จ.pdf',
           messageId: b.messageId,
