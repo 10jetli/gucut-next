@@ -100,3 +100,33 @@ export async function syncBillToDrive(
   await uploadToDrive(token, folderId, filename, mimeType, bytes)
   return true
 }
+
+// ── ไฟล์บิล "ตัวจริง" ที่อัปโหลดผ่าน /api/bills/upload ─────────────────────────
+// ตั้งชื่อไฟล์ตามแบบ YYYY-MM_REAL_<ชื่อไฟล์>.pdf เพื่อให้หน้าบิลรายเจ้าแยกออกจากไฟล์สำรองอีเมล
+
+export interface DriveBillFile {
+  id: string
+  name: string
+  size: number
+}
+
+// ดูรายชื่อไฟล์ทั้งหมดในโฟลเดอร์บิลของเจ้านั้น
+export async function listVendorDriveFiles(token: string, vendorId: string): Promise<DriveBillFile[]> {
+  const folderId = await getVendorDriveFolder(token, vendorId)
+  const q = `'${folderId}' in parents and trashed = false and mimeType != 'application/vnd.google-apps.folder'`
+  const found = await driveGet(token, `/files?q=${encodeURIComponent(q)}&fields=files(id,name,size)&pageSize=200&spaces=drive`)
+  return (found.files ?? []).map((f: any) => ({ id: f.id, name: f.name, size: Number(f.size ?? 0) }))
+}
+
+// ดาวน์โหลดเนื้อไฟล์จาก Drive ตาม fileId
+export async function downloadDriveFile(token: string, fileId: string): Promise<Buffer> {
+  const res = await fetch(`${DRIVE}/files/${fileId}?alt=media`, {
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  })
+  if (!res.ok) {
+    const t = await res.text()
+    throw new Error(`โหลดไฟล์ Drive ไม่สำเร็จ ${res.status}: ${t.slice(0, 300)}`)
+  }
+  return Buffer.from(await res.arrayBuffer())
+}
