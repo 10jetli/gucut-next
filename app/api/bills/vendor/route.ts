@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
     const bills = await searchVendorBills(token, vendor, after, before)
 
     const done = new Set(idx?.done ?? [])
-    const entries: BillEntry[] = idx ? [...idx.entries] : []
+    const entries: BillEntry[] = idx ? idx.entries.slice() : []
     const debugInfo: any[] = []
     let changed = false
 
@@ -97,7 +97,7 @@ export async function GET(req: NextRequest) {
 
     // บันทึก cache เมื่อมีของใหม่ (หรือยังไม่เคยมี cache) — ถ้าบันทึกพลาดก็ไม่เป็นไร รอบหน้าสแกนใหม่
     if (changed || !idx) {
-      try { await saveBillIndex(token, vendor.id, { lastScan: now.toISOString(), done: [...done], entries }) } catch {}
+      try { await saveBillIndex(token, vendor.id, { lastScan: now.toISOString(), done: Array.from(done), entries }) } catch {}
     }
 
     // ── จัดกลุ่มเป็นรายเดือน (ตัดเดือนที่เก่ากว่า ~13 เดือนทิ้ง) ──
@@ -133,7 +133,7 @@ export async function GET(req: NextRequest) {
       }
       for (const [m, files] of Object.entries(realByMonth)) {
         const existing = (months[m] ?? []).filter(x => x.attachmentId !== 'GEN')
-        months[m] = [...files, ...existing]
+        months[m] = files.concat(existing)
       }
     } catch { /* ถ้าอ่าน Drive ไม่ได้ ให้แสดงเฉพาะบิลจากอีเมลตามปกติ */ }
 
