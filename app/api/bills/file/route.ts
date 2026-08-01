@@ -1,24 +1,37 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAccessToken, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { emailToPdf } from '@/lib/emailPdf'
+import { downloadDriveFile } from '@/lib/drive'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 // GET /api/bills/file?messageId=...&attachmentId=...&name=... -> download tairil file
 // attachmentId=GEN means no real attachment exists (HTML-only receipt email) -> convert email body to PDF
+// attachmentId=DRIVE:<fileId> means a real uploaded bill stored in Google Drive -> stream it
 export async function GET(req: NextRequest) {
   const messageId = req.nextUrl.searchParams.get('messageId')
   const attachmentId = req.nextUrl.searchParams.get('attachmentId')
   const name = req.nextUrl.searchParams.get('name') || 'file'
-  if (!messageId || !attachmentId) {
+  if (!attachmentId || (!messageId && !attachmentId.startsWith('DRIVE:'))) {
     return NextResponse.json({ error: 'ต้องระบุ messageId และ attachmentId' }, { status: 400 })
   }
   try {
     const token = await getAccessToken()
 
+    if (attachmentId.startsWith('DRIVE:')) {
+      const buf = await downloadDriveFile(token, attachmentId.slice('DRIVE:'.length))
+      const pdfName = name.endsWith('.pdf') ? name : name + '.pdf'
+      return new NextResponse(buf as any, {
+        headers: {
+          'Content-Type': 'application/pdf',
+          'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(pdfName)}`,
+        },
+      })
+    }
+
     if (attachmentId === 'GEN') {
-      const detail = await fetchMessageDetail(token, messageId)
+      const detail = await fetchMessageDetail(token, messageId!)
       const buf = await emailToPdf({
         vendorName: 'ใบเสร็จจากอีเมล',
         subject: detail.subject,
@@ -37,7 +50,7 @@ export async function GET(req: NextRequest) {
       })
     }
 
-    const buf = await fetchAttachment(token, messageId, attachmentId)
+    const buf = await fetchAttachment(token, messageId!, attachmentId)
     const ext = name.split('.').pop()?.toLowerCase()
     const type =
       ext === 'pdf' ? 'application/pdf' :
