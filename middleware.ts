@@ -11,7 +11,7 @@ import { NextRequest, NextResponse } from 'next/server'
 // - /api/bills/drivesync และ /api/bills/upload มี secret ของตัวเอง (DRIVESYNC_SECRET)
 const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync', '/api/bills/upload']
 // เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
-const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer']
+const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer', '/api/catalog']
 
 function staffAllowed(pathname: string) {
   return STAFF_ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))
