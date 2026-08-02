@@ -14,7 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/catalog/index.html#trf', icon: '🔄', label: 'โอนสินค้า' },
   {
     icon: '🧾',
-    label: 'บิล',
+    label: 'ดึงบิล',
     children: [
       { href: '/bills', label: 'รวมบิลทุกเจ้า' },
       ...BILL_VENDORS.map(v => ({ href: `/bills/${v.id}`, label: v.name })),
