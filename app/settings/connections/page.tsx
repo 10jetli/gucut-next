@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useState, useCallback } from 'react'
+import LoadingState from '@/components/ui/LoadingState'
 
 interface ConnStatus {
   id: string
@@ -74,44 +75,44 @@ function ZortKeysCard() {
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5">
+    <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] p-4 md:p-5">
       <div className="flex items-center gap-2 flex-wrap">
         <p className="text-[14px] font-semibold text-gray-800">🔄 กุญแจ ZORT (ระบบโอนสินค้า)</p>
-        <span className={'text-[10.5px] px-2 py-0.5 rounded-full font-semibold ' + (saved ? 'bg-green-100 text-green-700' : 'bg-amber-100 text-amber-700')}>
+        <span className={'text-[10.5px] px-2 py-0.5 rounded-full font-semibold ' + (saved ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700')}>
           {saved ? 'ตั้งค่าแล้วในเครื่องนี้' : 'ยังไม่ได้ตั้งค่า'}
         </span>
       </div>
       <p className="text-[12px] text-gray-400 mt-0.5">ใช้กับแท็บโอนสินค้าในแคตตาล็อก · เก็บในเบราว์เซอร์เครื่องนี้เท่านั้น ไม่ส่งขึ้นเซิร์ฟเวอร์</p>
 
       {!saved && !editing && (
-        <button onClick={() => setEditing(true)} className="mt-3 text-[13px] text-blue-600 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors">
+        <button onClick={() => setEditing(true)} className="mt-3 text-[13px] font-medium text-blue-600 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors">
           ➕ กรอกกุญแจ 3 บัญชี
         </button>
       )}
       {saved && !editing && (
         <div className="mt-3 flex gap-2">
-          <button onClick={() => setEditing(true)} className="text-[13px] text-blue-600 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors">✏️ แก้ไขกุญแจ</button>
-          <button onClick={clearKeys} className="text-[13px] text-red-600 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm hover:bg-red-50 transition-colors">🗑 ลบออกจากเครื่อง</button>
+          <button onClick={() => setEditing(true)} className="text-[13px] font-medium text-blue-600 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors">✏️ แก้ไขกุญแจ</button>
+          <button onClick={clearKeys} className="text-[13px] font-medium text-red-600 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm hover:bg-red-50 transition-colors">🗑 ลบออกจากเครื่อง</button>
         </div>
       )}
 
       {editing && (
         <div className="mt-4 space-y-4">
           {accs.map((a, i) => (
-            <div key={a.wh} className="border border-gray-200 rounded-lg p-4">
+            <div key={a.wh} className="border border-gray-200 rounded-xl p-4">
               <p className="text-[13px] font-semibold text-gray-700 mb-2">{a.l} <span className="text-gray-400 font-normal">(คลัง {a.wh})</span></p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <input value={a.s} onChange={e => upd(i, 's', e.target.value)} placeholder="Store name (อีเมล ZORT)" className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-400" />
-                <input value={a.k} onChange={e => upd(i, 'k', e.target.value)} placeholder="API Key" className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-400" />
-                <input value={a.x} onChange={e => upd(i, 'x', e.target.value)} placeholder="API Secret" type="password" className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:border-blue-400" />
+                <input value={a.s} onChange={e => upd(i, 's', e.target.value)} placeholder="Store name (อีเมล ZORT)" className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none transition-shadow focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <input value={a.k} onChange={e => upd(i, 'k', e.target.value)} placeholder="API Key" className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none transition-shadow focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <input value={a.x} onChange={e => upd(i, 'x', e.target.value)} placeholder="API Secret" type="password" className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none transition-shadow focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
             </div>
           ))}
           <div className="flex gap-2 items-center">
-            <button onClick={saveKeys} disabled={testing} className="text-[13px] font-semibold text-white bg-[#17386b] rounded-lg px-4 py-2 hover:opacity-90 transition-opacity disabled:opacity-50">
+            <button onClick={saveKeys} disabled={testing} className="text-[13px] font-semibold text-white bg-[#17386b] rounded-xl px-4 py-2 hover:opacity-90 transition-opacity disabled:opacity-50 shadow-[0_6px_16px_-6px_rgba(23,56,107,0.5)]">
               {testing ? 'กำลังทดสอบ...' : 'ทดสอบและบันทึก'}
             </button>
-            <button onClick={() => { setEditing(false); setMsg(null) }} className="text-[13px] text-gray-500 px-3 py-2">ยกเลิก</button>
+            <button onClick={() => { setEditing(false); setMsg(null) }} className="text-[13px] text-gray-500 px-3 py-2 hover:text-gray-700 transition-colors">ยกเลิก</button>
           </div>
         </div>
       )}
@@ -159,14 +160,14 @@ export default function ConnectionsPage() {
         <button
           onClick={load}
           disabled={loading}
-          className="text-[13px] text-blue-600 bg-white border border-gray-200 rounded-lg px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors disabled:opacity-50"
+          className="text-[13px] font-medium text-blue-600 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors disabled:opacity-50"
         >
           {loading ? 'กำลังตรวจ...' : '🔄 ตรวจสอบอีกครั้ง'}
         </button>
       </div>
 
       {!loading && !error && (
-        <div className={'rounded-xl border p-4 text-[13px] ' + (okCount === conns.length ? 'bg-green-50 border-green-200 text-green-700' : 'bg-red-50 border-red-200 text-red-700')}>
+        <div className={'rounded-2xl border p-4 text-[13px] ' + (okCount === conns.length ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700')}>
           {okCount === conns.length
             ? '✅ ทุกการเชื่อมต่อใช้งานได้ปกติ (' + okCount + '/' + conns.length + ')'
             : '⚠️ มีการเชื่อมต่อที่มีปัญหา ' + (conns.length - okCount) + ' รายการ — ดูรายละเอียดด้านล่าง'}
@@ -174,21 +175,19 @@ export default function ConnectionsPage() {
       )}
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">เกิดข้อผิดพลาด: {error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">เกิดข้อผิดพลาด: {error}</div>
       )}
 
-      {loading && (
-        <div className="text-center py-10 text-gray-400 text-sm">กำลังตรวจสอบการเชื่อมต่อทุกบริการ...</div>
-      )}
+      {loading && <LoadingState />}
 
       <div className="space-y-3">
         {conns.map((c) => (
-          <div key={c.id} className="bg-white rounded-xl shadow-sm border border-gray-100 p-4 md:p-5 flex items-start gap-4">
-            <span className={'mt-1 inline-block w-2.5 h-2.5 rounded-full shrink-0 ' + (c.ok ? 'bg-green-500' : 'bg-red-500')} />
+          <div key={c.id} className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] p-4 md:p-5 flex items-start gap-4 transition-shadow hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_28px_-14px_rgba(15,23,42,0.2)]">
+            <span className={'mt-1 inline-block w-2.5 h-2.5 rounded-full shrink-0 ' + (c.ok ? 'bg-emerald-500' : 'bg-red-500')} />
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-[14px] font-semibold text-gray-800">{c.name}</p>
-                <span className={'text-[10.5px] px-2 py-0.5 rounded-full font-semibold ' + (c.ok ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700')}>
+                <span className={'text-[10.5px] px-2 py-0.5 rounded-full font-semibold ' + (c.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
                   {c.ok ? 'เชื่อมต่อแล้ว' : 'มีปัญหา'}
                 </span>
               </div>
