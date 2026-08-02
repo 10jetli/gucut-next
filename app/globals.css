@@ -4,8 +4,16 @@
 
 html, body {
   margin: 0;
-  background: #f8f9fa;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* พื้นหลังหลักของระบบ — โทนฟ้าเทาอ่อนนวลๆ แทนสีเทาแบนเดิม ให้การ์ดสีขาวเด่นขึ้น */
+.bg-app {
+  background-color: #f3f5f9;
+  background-image:
+    radial-gradient(1200px 480px at 100% -10%, rgba(37, 99, 235, 0.05), transparent 55%),
+    radial-gradient(900px 400px at -10% 0%, rgba(23, 56, 107, 0.04), transparent 55%);
+  background-attachment: fixed;
 }
 
 /* จำกัดความกว้างเฉพาะจอมือถือ — บนจอ PC ใช้เต็มจอแบบระบบหลังบ้าน */
@@ -14,4 +22,38 @@ html, body {
     max-width: 430px;
     margin: 0 auto;
   }
+}
+
+/* เลือกข้อความด้วยโทนสีแบรนด์ */
+::selection {
+  background: rgba(37, 99, 235, 0.18);
+}
+
+/* สโครลบาร์บางเรียบ (เดสก์ท็อป) */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.16);
+    border-radius: 999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.28);
+    background-clip: content-box;
+  }
+}
+
+/* สปินเนอร์โหลด ใช้ร่วมกับ LoadingState */
+@keyframes spin-soft {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  animation: spin-soft 0.7s linear infinite;
 }

@@ -18,7 +18,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
 
   return (
     <html lang="th">
-      <body className="bg-gray-100 min-h-screen pb-16 md:pb-0">
+      {/* ฟอนต์หลักของระบบ — Prompt จาก Google Fonts (โหลดฝั่ง browser ผู้ใช้ตรงๆ ไม่ผูกกับ build) รองรับภาษาไทยเต็มรูปแบบ */}
+      <head>
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="bg-app min-h-screen pb-16 md:pb-0 text-gray-800">
         <AppShell role={role}>{children}</AppShell>
       </body>
     </html>
