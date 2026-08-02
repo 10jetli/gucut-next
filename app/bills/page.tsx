@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { BILL_VENDORS } from '@/lib/vendors'
 import { TH_MONTHS } from '@/lib/format'
+import Card from '@/components/ui/Card'
 
 // 7 เจ้าหลัก + Omise — กดช่องไหนเข้าไปดูบิลของเจ้านั้นเรียงเป็นเดือนๆ (ข้อมูลรวมอยู่ที่ lib/vendors.ts)
 const VENDOR_LIST = [...BILL_VENDORS]
@@ -33,7 +34,7 @@ export default function BillsPage() {
           <Link
             key={v.id}
             href={`/bills/${v.id}`}
-            className="bg-white rounded-2xl shadow-sm p-4 text-center active:bg-gray-50 flex flex-col items-center justify-center"
+            className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] p-4 text-center active:bg-gray-50 flex flex-col items-center justify-center transition-all duration-200 hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_16px_28px_-14px_rgba(15,23,42,0.2)] hover:-translate-y-0.5"
           >
             {v.logo ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -42,13 +43,13 @@ export default function BillsPage() {
               <div className="text-[30px] leading-none mb-1">{v.emoji}</div>
             )}
             <div className="text-[13px] font-bold text-gray-800">{v.name}</div>
-            <div className="text-[10px] text-gray-400 mt-0.5">ดูบิลรายเดือน →</div>
+            <div className="text-[10px] text-blue-500 mt-0.5">ดูบิลรายเดือน →</div>
           </Link>
         ))}
       </div>
 
       {/* ZIP รวมทุกเจ้า แยกตามเดือน (จัดตามวันที่บนหัวบิล) */}
-      <div className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+      <Card className="mb-3">
         <div className="text-[13px] font-bold text-gray-800 mb-1">📦 ดาวน์โหลด ZIP รวมทุกเจ้า (รายเดือน)</div>
         <div className="text-[10px] text-gray-400 mb-2">จัดไฟล์ตามวันที่บนหัวบิล · ใช้เวลาสร้าง ~30 วินาที</div>
         {lastMonths(12).map(mo => (
@@ -56,13 +57,13 @@ export default function BillsPage() {
             <div className="text-[13px] text-gray-700">{mo.label}</div>
             <a
               href={`/api/bills/download?month=${mo.value}`}
-              className="text-[12px] bg-green-50 text-green-600 rounded-full px-3 py-1 font-bold"
+              className="text-[12px] bg-emerald-50 text-emerald-600 rounded-full px-3 py-1 font-bold transition-colors hover:bg-emerald-100"
             >
               ⬇️ ZIP
             </a>
           </div>
         ))}
-      </div>
+      </Card>
     </div>
   )
 }
