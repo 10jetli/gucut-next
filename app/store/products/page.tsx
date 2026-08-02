@@ -58,15 +58,15 @@ export default function StoreProductsPage() {
   return (
     <div className="p-4">
       <div className="mb-4">
-        <h1 className="text-lg font-bold text-gray-800">ผลิตภัณฑ์ (เว็บไซต์)</h1>
+        <h1 className="text-lg font-bold text-gray-900 tracking-tight">ผลิตภัณฑ์ (เว็บไซต์)</h1>
         <p className="text-xs text-gray-400 mt-0.5">สินค้าที่แสดงอยู่บนหน้าร้าน gucut-store — ดึงข้อมูลสดจาก Shopify</p>
       </div>
 
       {error && (
-        <div className="bg-red-50 text-red-600 text-[13px] rounded-lg px-4 py-3 mb-4">{error}</div>
+        <div className="bg-red-50 border border-red-100 text-red-600 text-[13px] rounded-xl px-4 py-3 mb-4">{error}</div>
       )}
 
-      <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+      <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
         {loading && products.length === 0 && (
           <p className="text-center py-8 text-gray-400 text-sm">กำลังโหลด...</p>
         )}
