@@ -4,9 +4,12 @@ export default function ErrorBox({
   children,
 }: { title?: string; children?: React.ReactNode }) {
   return (
-    <div className="bg-red-50 rounded-xl p-4 text-sm text-red-600">
-      <p className="font-semibold">{title}</p>
-      {children}
+    <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-sm text-red-600 flex gap-3">
+      <span className="text-lg leading-none shrink-0">⚠️</span>
+      <div>
+        <p className="font-semibold">{title}</p>
+        {children}
+      </div>
     </div>
   )
 }

@@ -3,8 +3,8 @@ import type { Order } from '@/lib/types'
 import { fmtBaht } from '@/lib/format'
 
 function statusColor(s: string) {
-  if (s === 'Complete' || s === 'Paid') return 'text-green-600'
-  if (s === 'Pending' || s === 'WaitPayment') return 'text-yellow-600'
+  if (s === 'Complete' || s === 'Paid') return 'text-emerald-600'
+  if (s === 'Pending' || s === 'WaitPayment') return 'text-amber-600'
   if (s === 'Cancel') return 'text-red-500'
   return 'text-gray-500'
 }
@@ -30,9 +30,9 @@ export default function OrderCard({ order }: { order: Order }) {
   const date = dt.slice(0, 10)
   const time = dt.slice(11, 16)
   return (
-    <div className="px-4 py-3 border-b border-gray-50 last:border-0">
+    <div className="px-4 py-3 border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/70">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[13px] font-semibold text-blue-500 truncate">
+        <span className="text-[13px] font-semibold text-blue-600 truncate">
           #{order.number}
         </span>
         <ChannelBadge channel={order.saleschannel ?? 'Direct'} />
