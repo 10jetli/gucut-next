@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { BILL_VENDORS } from '@/lib/vendors'
 import { TH_MONTHS, EN_MONTHS } from '@/lib/format'
+import Card from '@/components/ui/Card'
 
 // ข้อมูล vendor รวมอยู่ที่ lib/vendors.ts
 const VENDOR_INFO: Record<string, { name: string; emoji: string; note?: string }> =
@@ -33,14 +34,14 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
 
   return (
     <div className="max-w-[430px] mx-auto px-4 py-4">
-      <Link href="/bills" className="text-[13px] text-blue-500">← กลับหน้าบิล</Link>
+      <Link href="/bills" className="text-[13px] text-blue-600 font-medium hover:text-blue-700">← กลับหน้าบิล</Link>
       <div className="text-[17px] font-bold text-gray-800 mt-2 mb-1">{info.emoji} {info.name}</div>
       {info.note && <div className="text-[11px] text-gray-400 mb-3">{info.note}</div>}
 
       {!data && !err && (
-        <div className="bg-white rounded-2xl shadow-sm p-6 text-center text-gray-400 text-[13px]">
+        <Card className="p-6 text-center text-gray-400 text-[13px]">
           กำลังสแกนบิลย้อนหลัง 1 ปี และอ่านวันที่บนหัวบิลทุกใบ…<br />อาจใช้เวลา 20–40 วินาที
-        </div>
+        </Card>
       )}
 
       {err && (
@@ -48,16 +49,16 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
       )}
 
       {data && !months.length && (
-        <div className="bg-white rounded-2xl shadow-sm p-6 text-center text-gray-400 text-[13px]">
+        <Card className="p-6 text-center text-gray-400 text-[13px]">
           ยังไม่พบบิลของเจ้านี้ในเมล 10jetli@gmail.com<br />
-          <span className="text-[11px]">(ถ้าบิลอยู่อีเมลอื่น ให้ forward มาที่เมลหลักก่อน)</span>
-        </div>
+          <span className="text-[11px]">(ถ้าบิลอยู่อีเม෥อื่น ให้ forward มาที่เมลหลักก่อน)</span>
+        </Card>
       )}
 
       {months.map(m => {
         const [y, mo] = m.split('-').map(Number)
         return (
-          <div key={m} className="bg-white rounded-2xl shadow-sm p-4 mb-3">
+          <Card key={m} className="mb-3">
             <div className="text-[14px] font-bold text-gray-800 mb-1">
               📅 <span className="text-red-600">{mo} ({EN_MONTHS[mo - 1]}) {y}</span>
               <span className="mx-1 text-gray-300">·</span>
@@ -73,14 +74,14 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
                 {f.attachmentId && (
                   <a
                     href={`/api/bills/file?messageId=${f.messageId}&attachmentId=${encodeURIComponent(f.attachmentId)}&name=${encodeURIComponent(m + '_' + f.filename)}`}
-                    className="text-[12px] bg-green-50 text-green-600 rounded-full px-3 py-1 font-bold whitespace-nowrap"
+                    className="text-[12px] bg-emerald-50 text-emerald-600 rounded-full px-3 py-1 font-bold whitespace-nowrap transition-colors hover:bg-emerald-100"
                   >
                     ⬇️ โหลด
                   </a>
                 )}
               </div>
             ))}
-          </div>
+          </Card>
         )
       })}
     </div>
