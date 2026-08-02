@@ -43,19 +43,23 @@ export default function UserMenu() {
   if (!info || !info.role) return null
 
   const label = info.role === 'admin' ? 'แอดมิน' : info.name || 'พนักงาน'
+  const initial = label.trim().charAt(0).toUpperCase()
 
   return (
     <div className="relative" ref={menuRef}>
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 text-[12px] text-gray-600 whitespace-nowrap hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 text-[12px] text-gray-600 whitespace-nowrap hover:text-gray-800 transition-colors"
       >
-        👤 <span className="font-semibold">{label}</span>
+        <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-[#17386b] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
+          {initial}
+        </span>
+        <span className="font-semibold">{label}</span>
         <span className={`text-[9px] text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-200 rounded-md shadow-lg py-1 z-30">
+        <div className="absolute right-0 top-full mt-2 w-44 bg-white border border-gray-100 rounded-xl shadow-[0_12px_32px_-12px_rgba(15,23,42,0.25)] py-1 z-30 overflow-hidden">
           <button
             onClick={comingSoon}
             className="w-full text-left px-3 py-2 text-[12.5px] text-gray-600 hover:bg-gray-50 transition-colors"
