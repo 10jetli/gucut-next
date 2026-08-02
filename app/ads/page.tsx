@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { fmtBaht, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import Card from '@/components/ui/Card'
 
 interface Campaign {
   name: string
@@ -39,10 +40,10 @@ function PlatformCard({ title, logo, color, bgColor, data }: {
   const totalImpressions = data.campaigns.reduce((s, c) => s + c.impressions, 0)
   const totalClicks = data.campaigns.reduce((s, c) => s + c.clicks, 0)
   const totalCost = data.campaigns.reduce((s, c) => s + c.cost, 0)
-  const periodLabel = data.period === 'last_7_days' ? '7 วันหลัง' : '30 วันหลัง'
+  const periodLabel = data.period === 'last_7_days' ? '7 วันหลัง' : '30 วันลวลวรง'
 
   return (
-    <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+    <Card padded={false} className="overflow-hidden">
       <div className={`${bgColor} px-4 py-3 flex items-center gap-2`}>
         <span className="text-xl">{logo}</span>
         <div>
@@ -65,7 +66,7 @@ function PlatformCard({ title, logo, color, bgColor, data }: {
         </div>
       </div>
       {data.campaigns.map((c, i) => (
-        <div key={i} className="px-4 py-3 border-b border-gray-50 last:border-0">
+        <div key={i} className="px-4 py-3 border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/70">
           <p className="text-[12px] font-semibold text-gray-800 truncate">{c.name}</p>
           <div className="flex flex-wrap gap-x-3 mt-1 text-[11px] text-gray-500">
             <span>{fmtBaht(c.cost)}</span>
@@ -75,7 +76,7 @@ function PlatformCard({ title, logo, color, bgColor, data }: {
           </div>
         </div>
       ))}
-    </div>
+    </Card>
   )
 }
 
@@ -95,7 +96,7 @@ export default function AdsPage() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading) return <LoadingState className="text-center py-12 text-gray-400 text-sm" />
+  if (loading) return <LoadingState className="flex flex-col items-center justify-center gap-2 py-12 text-gray-400 text-sm" />
   if (error) return (
     <div className="p-4">
       <ErrorBox>
@@ -109,9 +110,9 @@ export default function AdsPage() {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="bg-gradient-to-r from-blue-500 to-purple-600 rounded-xl p-4 text-white">
+      <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-2xl p-4 text-white shadow-[0_16px_32px_-16px_rgba(37,99,235,0.5)]">
         <p className="text-[11px] opacity-80">ค่าโฆษณารวม (Google + Facebook)</p>
-        <p className="text-3xl font-black mt-1">{fmtBaht(totalCost)}</p>
+        <p className="text-3xl font-black mt-1 tracking-tight">{fmtBaht(totalCost)}</p>
         <p className="text-[10px] opacity-60 mt-1">อัพเดต {data.updated}</p>
       </div>
       <PlatformCard title="Google Ads" logo="🔍" color="text-blue-700" bgColor="bg-blue-50" data={data.google} />
