@@ -4,6 +4,8 @@ import type { FactoryOrder } from '@/lib/types'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import PillButton from '@/components/ui/PillButton'
+import Card from '@/components/ui/Card'
+import StatCard from '@/components/ui/StatCard'
 
 type StatusFilter = 'all' | 'production' | 'pending' | 'deposit' | 'done'
 
@@ -16,9 +18,9 @@ const STATUS_LABEL: Record<string, string> = {
 
 const STATUS_COLOR: Record<string, string> = {
   production: 'bg-blue-100 text-blue-700',
-  pending:    'bg-yellow-100 text-yellow-700',
+  pending:    'bg-amber-100 text-amber-700',
   deposit:    'bg-purple-100 text-purple-700',
-  done:       'bg-green-100 text-green-700',
+  done:       'bg-emerald-100 text-emerald-700',
 }
 
 export default function FactoryPage() {
@@ -56,14 +58,8 @@ export default function FactoryPage() {
     <div className="p-4 space-y-4">
       {/* Stats row */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="bg-blue-50 rounded-xl p-3">
-          <p className="text-2xl font-black text-blue-600">{stats.production}</p>
-          <p className="text-[11px] text-blue-500">กำลังผลิต</p>
-        </div>
-        <div className="bg-yellow-50 rounded-xl p-3">
-          <p className="text-2xl font-black text-yellow-600">{stats.pending}</p>
-          <p className="text-[11px] text-yellow-600">รอดำเนินการ</p>
-        </div>
+        <StatCard icon="🏭" tone="blue" label="กำลังผลิต" value={stats.production} />
+        <StatCard icon="⏳" tone="orange" label="รอดำเนินการ" value={stats.pending} />
       </div>
 
       {/* Filter tabs */}
@@ -88,14 +84,14 @@ export default function FactoryPage() {
 
       {/* Order cards */}
       {!loading && !error && (
-        <div className="bg-white rounded-xl shadow-sm overflow-hidden">
+        <Card padded={false} className="overflow-hidden">
           {filtered.length === 0 && (
             <p className="text-center py-8 text-gray-400 text-sm">ไม่มีรายการ</p>
           )}
           {filtered.map((o, i) => (
             <FactoryCard key={o.id ?? i} order={o} />
           ))}
-        </div>
+        </Card>
       )}
     </div>
   )
@@ -121,7 +117,7 @@ function FactoryCard({ order }: { order: FactoryOrder }) {
   const due = fmtDate(order.due)
 
   return (
-    <div className="px-4 py-4 border-b border-gray-50 last:border-0">
+    <div className="px-4 py-4 border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/70">
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <p className="text-[14px] font-bold text-gray-900 leading-tight">{order.product}</p>
