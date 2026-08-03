@@ -266,6 +266,7 @@ function currentRows(){
   let rows=state.base.map(row).filter(r=>{
     if(fc&&fc.indexOf("__")!==0&&r.category!==fc)return false;
     if(ff&&r.factory!==ff)return false;
+    if(ff&&reco(r.stock).lvl===0)return false;
     if(fs==="zero"&&r.stock>0)return false;
     if(fs==="low"&&!(r.stock>0&&r.stock<=THRESHOLD))return false;
     if(fs==="in"&&r.stock<=THRESHOLD)return false;
