@@ -9,6 +9,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/orders', icon: '📦', label: 'Orders' },
   { href: '/products', icon: '🛍', label: 'สินค้า' },
   { href: '/factory', icon: '🏭', label: 'โรงงาน' },
+  { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
   { href: '/ads', icon: '📢', label: 'โฆษณา' },
   { href: '/catalog/index.html', icon: '🧰', label: 'ระบบสั่งของ' },
   { href: '/catalog/index.html#trf', icon: '🔄', label: 'โอนสินค้า' },
