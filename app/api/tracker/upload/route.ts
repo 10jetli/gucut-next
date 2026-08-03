@@ -18,12 +18,13 @@ export async function POST(req: NextRequest) {
     const file = form.get('file') as File | null
     if (!file) return NextResponse.json({ ok: false, error: 'ไม่พบไฟล์' }, { status: 400 })
 
-    const buf = Buffer.from(await file.arrayBuffer())
+    const arrayBuffer = await file.arrayBuffer()
+    const bytes = new Uint8Array(arrayBuffer)
     const ext = extFromName(file.name || '', file.type || '')
     const key = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
 
     const store = getStore('tracker-images')
-    await store.set(key, buf, { metadata: { contentType: file.type || 'image/jpeg' } })
+    await store.set(key, bytes, { metadata: { contentType: file.type || 'image/jpeg' } })
 
     const url = `/api/tracker/image/${key}`
     return NextResponse.json({ ok: true, url, thumb: url, name: file.name || key })
