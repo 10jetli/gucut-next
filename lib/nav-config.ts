@@ -8,7 +8,6 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/', icon: '🏠', label: 'หน้าหลัก' },
   { href: '/orders', icon: '📦', label: 'Orders' },
   { href: '/products', icon: '🛍', label: 'สินค้า' },
-  { href: '/factory', icon: '🏭', label: 'โรงงาน' },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
   { href: '/ads', icon: '📢', label: 'โฆษณา' },
   { href: '/catalog/index.html', icon: '🧰', label: 'ระบบสั่งของ' },
