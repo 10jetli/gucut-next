@@ -49,4 +49,5 @@ middleware.ts               ล็อกทั้งเว็บด้วย SIT
 
 ## วิธี deploy
 
-ดูหัวข้อ "วิธี deploy" ใน README.md (ต้อง clone repo ใหม่เป็น gucut-next-authNN แล้ว reconnect ทุกครั้ง)
+ดูหัวข้อ "วิธี deploy" ใน README.md — สรุปสั้น: **push ขึ้น `main` แล้ว Netlify build เอง**
+(ย้ายจาก Vercel มา Netlify ส.ค. 2026 — workflow เก่าที่ต้อง clone เป็น `gucut-next-authNN` ยกเลิกแล้ว)

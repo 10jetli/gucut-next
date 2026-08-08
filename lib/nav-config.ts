@@ -30,6 +30,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'เว็บไซต์',
     children: [
       { href: '/store/products', label: 'ผลิตภัณฑ์' },
+      { href: '/ai-visibility', label: 'AI Visibility' },
     ],
   },
 ]
