@@ -64,15 +64,24 @@ middleware.ts                 ล็อกทั้งเว็บ ยกเว�
 
 ## วิธี deploy (สำคัญ — workflow เฉพาะของโปรเจกต์นี้)
 
-repo หลักที่แก้ไขคือ `10jetli/gucut-next` (repo นี้) แต่ Vercel project `gucut-next` เชื่อมกับ repo โคลนภายใต้บัญชี `gucut-jet` การ push มาที่ repo นี้**ไม่ trigger deploy อัตโนมัติ** ต้องทำรอบ deploy ดังนี้:
+> อัปเดต ส.ค. 2026: **ย้ายจาก Vercel มา Netlify แล้ว** — workflow เก่าที่ต้องโคลน repo เป็น
+> `gucut-next-authNN` แล้ว reconnect ทุกครั้ง **ยกเลิกแล้ว ไม่ต้องทำอีก**
 
-1. เปิด `vercel.com/new/clone?repository-url=https://github.com/10jetli/gucut-next`
-2. ตั้งชื่อ repo ใหม่ตามลำดับ `gucut-next-authNN` (เลขถัดจากตัวล่าสุด) → Create → รอ build เสร็จ
-3. ไป Project `gucut-next` → Settings → Git → Disconnect → เลือก GitHub → Connect กับ `gucut-next-authNN` ตัวใหม่
-4. สร้าง Deploy Hook ใหม่ (ของเก่าใช้ไม่ได้หลัง reconnect) → เปิด URL hook เพื่อ trigger
-5. รอ Deployments ขึ้น Ready แล้วตรวจผลจริงบน gucut-next.vercel.app
+- **Production**: https://admin.new78.com (Netlify project `gucut-admin`)
+- **Deploy อัตโนมัติ**: push ขึ้น branch `main` ของ `10jetli/gucut-next` → Netlify build เอง ไม่ต้องทำอะไรเพิ่ม
+- **Runtime**: `@netlify/plugin-nextjs` (Next.js 14 App Router)
 
-**จุดเซฟ:** ทุก deploy ย้อนกลับได้ผ่านปุ่ม Promote to Production ในหน้า Deployments — จดเลข commit + วันเวลาไว้ทุกครั้งที่แก้
+**จุดเซฟ:** ทุก deploy ย้อนกลับได้จาก Netlify → Deploys → เลือก deploy เก่า → Publish deploy
+จดเลข commit + วันเวลาไว้ทุกครั้งที่แก้
+
+### Environment variables (ตั้งที่ Netlify → Site configuration → Environment variables)
+
+| ตัวแปร | ใช้ทำอะไร |
+|---|---|
+| `SITE_PASSWORD` | รหัสล็อกทั้งเว็บ (middleware.ts) |
+| `ANTHROPIC_API_KEY` | หน้า AI Visibility — เรียก Claude API ตรวจว่า AI เอ่ยถึงร้านไหม |
+
+> ตั้งค่า env ใหม่แล้วต้อง **redeploy หนึ่งครั้ง** ค่าถึงจะมีผล
 
 ## กับดักที่รู้แล้ว (อย่าเหยียบซ้ำ)
 
