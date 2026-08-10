@@ -47,15 +47,17 @@ export async function POST() {
   }
 
   try {
-    const results: PromptResult[] = []
-    for (const prompt of PROMPTS) {
-      try {
-        const answer = await askGemini(prompt, apiKey)
-        results.push({ prompt, answer, hits: analyseAnswer(answer) })
-      } catch (e: any) {
-        results.push({ prompt, answer: '', hits: [], error: e?.message ?? String(e) })
-      }
-    }
+    // ยิงทุกคำถามพร้อมกัน (parallel) — ให้จบใน 1 request ทันเพดานเวลา Netlify function
+    const results: PromptResult[] = await Promise.all(
+      PROMPTS.map(async (prompt): Promise<PromptResult> => {
+        try {
+          const answer = await askGemini(prompt, apiKey)
+          return { prompt, answer, hits: analyseAnswer(answer) }
+        } catch (e: any) {
+          return { prompt, answer: '', hits: [], error: e?.message ?? String(e) }
+        }
+      }),
+    )
 
     const record: RunRecord = {
       runAt: new Date().toISOString(),
