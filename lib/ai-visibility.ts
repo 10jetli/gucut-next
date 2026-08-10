@@ -75,26 +75,34 @@ export function analyseAnswer(answer: string): BrandHit[] {
   }))
 }
 
-/** ถาม Gemini หนึ่งคำถาม แล้วคืนคำตอบดิบ (ใช้ Google AI Studio free tier) */
+/** ถาม Gemini หนึ่งคำถาม แล้วคืนคำตอบดิบ (ใช้ Google AI Studio free tier)
+ *  รองรับการลองใหม่เมื่อโดน 429 (rate limit ของ free tier) — หน่วงสั้นๆ แล้วยิงซ้ำ 1 ครั้ง
+ *  (หน่วงสั้นเพราะ Netlify function มีเพดานเวลา — ยิงคำถามทั้งหมดแบบขนานที่ route แทน) */
 export async function askGemini(prompt: string, apiKey: string): Promise<string> {
-  const res = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
-    {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`
+  const body = JSON.stringify({
+    contents: [{ parts: [{ text: prompt }] }],
+    generationConfig: { maxOutputTokens: 700 },
+  })
+
+  for (let attempt = 0; ; attempt++) {
+    const res = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { maxOutputTokens: 700 },
-      }),
-    },
-  )
-  if (!res.ok) {
+      body,
+    })
+    if (res.ok) {
+      const data = await res.json()
+      const parts = data?.candidates?.[0]?.content?.parts ?? []
+      return parts.map((p: any) => p?.text ?? '').join('')
+    }
     const detail = await res.text()
+    if (res.status === 429 && attempt < 1) {
+      await new Promise(r => setTimeout(r, 3000))
+      continue
+    }
     throw new Error(`Gemini API ${res.status}: ${detail.slice(0, 200)}`)
   }
-  const data = await res.json()
-  const parts = data?.candidates?.[0]?.content?.parts ?? []
-  return parts.map((p: any) => p?.text ?? '').join('')
 }
 
 /** สรุปผลรวมจากประวัติทั้งหมด — ใช้โชว์บนหน้าเว็บ */
