@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { getStore } from '@netlify/blobs'
-import { PROMPTS, analyseAnswer, askClaude, summarise } from '@/lib/ai-visibility'
+import { PROMPTS, analyseAnswer, askGemini, summarise } from '@/lib/ai-visibility'
 import type { PromptResult, RunRecord } from '@/lib/ai-visibility'
 
 export const dynamic = 'force-dynamic'
@@ -27,7 +27,7 @@ export async function GET() {
     const runs = await readRuns()
     return NextResponse.json({
       ok: true,
-      hasKey: !!process.env.ANTHROPIC_API_KEY,
+      hasKey: !!process.env.GEMINI_API_KEY,
       runs,
       summary: summarise(runs),
     })
@@ -36,12 +36,12 @@ export async function GET() {
   }
 }
 
-// POST /api/ai-visibility → ตรวจรอบใหม่ (ยิงทุกคำถามเข้า Claude)
+// POST /api/ai-visibility → ตรวจรอบใหม่ (ยิงทุกคำถามเข้า Gemini)
 export async function POST() {
-  const apiKey = process.env.ANTHROPIC_API_KEY
+  const apiKey = process.env.GEMINI_API_KEY
   if (!apiKey) {
     return NextResponse.json(
-      { ok: false, error: 'ยังไม่ได้ตั้งค่า ANTHROPIC_API_KEY ใน Netlify → Site configuration → Environment variables' },
+      { ok: false, error: 'ยังไม่ได้ตั้งค่า GEMINI_API_KEY ใน Netlify → Site configuration → Environment variables' },
       { status: 400 },
     )
   }
@@ -50,7 +50,7 @@ export async function POST() {
     const results: PromptResult[] = []
     for (const prompt of PROMPTS) {
       try {
-        const answer = await askClaude(prompt, apiKey)
+        const answer = await askGemini(prompt, apiKey)
         results.push({ prompt, answer, hits: analyseAnswer(answer) })
       } catch (e: any) {
         results.push({ prompt, answer: '', hits: [], error: e?.message ?? String(e) })
@@ -59,7 +59,7 @@ export async function POST() {
 
     const record: RunRecord = {
       runAt: new Date().toISOString(),
-      engine: 'claude',
+      engine: 'gemini',
       results,
     }
 

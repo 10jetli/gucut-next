@@ -79,7 +79,7 @@ middleware.ts                 ล็อกทั้งเว็บ ยกเว�
 | ตัวแปร | ใช้ทำอะไร |
 |---|---|
 | `SITE_PASSWORD` | รหัสล็อกทั้งเว็บ (middleware.ts) |
-| `ANTHROPIC_API_KEY` | หน้า AI Visibility — เรียก Claude API ตรวจว่า AI เอ่ยถึงร้านไหม |
+| `GEMINI_API_KEY` | หน้า AI Visibility — เรียก Gemini API (Google AI Studio free tier) ตรวจว่า AI เอ่ยถึงร้านไหม |
 
 > ตั้งค่า env ใหม่แล้วต้อง **redeploy หนึ่งครั้ง** ค่าถึงจะมีผล
 
