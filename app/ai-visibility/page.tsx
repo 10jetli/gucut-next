@@ -91,8 +91,9 @@ export default function AiVisibilityPage() {
       {!hasKey && (
         <ErrorBox title="ยังใช้งานไม่ได้ — ต้องตั้งค่ากุญแจก่อน">
           <p className="mt-1">
-            ไปที่ Netlify → Site configuration → Environment variables แล้วเพิ่มตัวแปรชื่อ{' '}
-            <code className="bg-white/60 px-1 rounded">ANTHROPIC_API_KEY</code> จากนั้น deploy ใหม่หนึ่งครั้ง
+            ขอกุญแจฟรีที่ Google AI Studio (aistudio.google.com/apikey) แล้วไปที่ Netlify → Site
+            configuration → Environment variables เพิ่มตัวแปรชื่อ{' '}
+            <code className="bg-white/60 px-1 rounded">GEMINI_API_KEY</code> จากนั้น deploy ใหม่หนึ่งครั้ง
           </p>
         </ErrorBox>
       )}

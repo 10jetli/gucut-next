@@ -75,29 +75,26 @@ export function analyseAnswer(answer: string): BrandHit[] {
   }))
 }
 
-/** ถาม Claude หนึ่งคำถาม แล้วคืนคำตอบดิบ */
-export async function askClaude(prompt: string, apiKey: string): Promise<string> {
-  const res = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-      'anthropic-version': '2023-06-01',
+/** ถาม Gemini หนึ่งคำถาม แล้วคืนคำตอบดิบ (ใช้ Google AI Studio free tier) */
+export async function askGemini(prompt: string, apiKey: string): Promise<string> {
+  const res = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${encodeURIComponent(apiKey)}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { maxOutputTokens: 700 },
+      }),
     },
-    body: JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 700,
-      messages: [{ role: 'user', content: prompt }],
-    }),
-  })
+  )
   if (!res.ok) {
     const detail = await res.text()
-    throw new Error(`Claude API ${res.status}: ${detail.slice(0, 200)}`)
+    throw new Error(`Gemini API ${res.status}: ${detail.slice(0, 200)}`)
   }
   const data = await res.json()
-  return (data.content ?? [])
-    .map((b: any) => (b.type === 'text' ? b.text : ''))
-    .join('')
+  const parts = data?.candidates?.[0]?.content?.parts ?? []
+  return parts.map((p: any) => p?.text ?? '').join('')
 }
 
 /** สรุปผลรวมจากประวัติทั้งหมด — ใช้โชว์บนหน้าเว็บ */
