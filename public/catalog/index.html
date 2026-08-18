@@ -114,6 +114,17 @@
     <button class="btn primary" id="dlBtn">⬇ ดาวน์โหลด Excel (รูป HD)</button>
     <span class="stat" id="stat"></span>
   </div>
+  <!-- แถบตั้งค่าการวางแผนสั่งของ — ค่าที่ตั้งไว้เก็บในเครื่อง ไม่ต้อง deploy ใหม่เวลาปรับ -->
+  <div class="bar" style="gap:8px;flex-wrap:wrap;align-items:center">
+    <label style="font-size:13px;color:#5f6368">รอของจากโรงงาน
+      <input id="pLead" type="number" min="1" max="365" style="width:64px;margin-left:4px"> วัน
+    </label>
+    <label style="font-size:13px;color:#5f6368">อยากมีของพอขาย
+      <input id="pCover" type="number" min="7" max="730" style="width:72px;margin-left:4px"> วัน
+    </label>
+    <button class="btn" id="anaBtn">↻ ดึงข้อมูลใหม่</button>
+    <span id="anaInfo" style="font-size:12px;color:#5f6368"></span>
+  </div>
   <div id="facBar" style="display:flex;gap:12px;flex-wrap:wrap;padding:16px 12px 6px"></div>
 </header>
 <main id="app"><div class="empty">กำลังโหลดข้อมูล…</div></main>
@@ -200,14 +211,15 @@
 <script src="/catalog/sync.js"></script>
 <script>
 const LS_OVR="gucut_overrides_v1", LS_COL="gucut_cols_v1", LS_CAT="gucut_catmap_v1", LS_CATNEW="gucut_catnew_v1", LS_FAC="gucut_factories_v1";
-const state={base:[], prefix:"", ovr:load(LS_OVR,{}), catMap:load(LS_CAT,{}), catNew:load(LS_CATNEW,[]), facs:load(LS_FAC,[]), facEdit:null, sort:{key:"stock",dir:1}, editing:null};
+const state={base:[], prefix:"", ana:{}, anaInfo:null, ovr:load(LS_OVR,{}), catMap:load(LS_CAT,{}), catNew:load(LS_CATNEW,[]), facs:load(LS_FAC,[]), facEdit:null, sort:{key:"stock",dir:1}, editing:null};
 const THRESHOLD=5;
 const COLS=[
   {key:"sku",label:"SKU"},{key:"name",label:"Product Name"},{key:"nameEn",label:"Name (EN)"},
   {key:"oem",label:"OEM"},{key:"hh",label:"HH SKU"},{key:"tags",label:"Tags"},{key:"cn",label:"คำอธิบาย (จีน)"},
   {key:"category",label:"ชื่อหมวด"},{key:"factory",label:"ชื่อโรงงาน"},
   {key:"img",label:"Image"},{key:"price",label:"ราคา"},{key:"stock",label:"สต๊อก"},
-  {key:"reco",label:"คำแนะนำ"},{key:"sold6",label:"ขาย 12ด"},{key:"qty",label:"จำนวนสั่ง"},{key:"edit",label:"แก้ไข"}
+  {key:"reco",label:"คำแนะนำ"},{key:"daysLeft",label:"หมดในกี่วัน"},{key:"perDay",label:"ขาย/วัน"},
+  {key:"sold6",label:"ขาย 12ด"},{key:"qty",label:"จำนวนสั่ง"},{key:"edit",label:"แก้ไข"}
 ];
 let colOn=load(LS_COL,null)||Object.fromEntries(COLS.map(c=>[c.key,true]));
 
@@ -233,10 +245,35 @@ function rebuildCatFilter(){const cnt=catCounts(),cats=allCats(),sel=document.ge
    +'<option disabled>──────────</option><option value="__add__">➕ เพิ่มหมวดใหม่…</option><option value="__del__">🗑 ลบหมวดที่เลือก…</option><option value="__ren__">✏️ เปลี่ยนชื่อหมวดที่เลือก…</option><option value="__mgr__">⚙️ จัดการหมวดทั้งหมด…</option>';
  const dl=document.getElementById("catList");if(dl)dl.innerHTML=cats.map(c=>'<option value="'+esc(c)+'">').join("");}
 
-// ---- reorder recommendation (placeholder rule; phase 2 = ZORT ROP) ----
-function reco(stock){ if(stock<=0)return{lvl:2,txt:"ต้องสั่งด่วน"}; if(stock<=THRESHOLD)return{lvl:1,txt:"ควรสั่ง"}; return{lvl:0,txt:"พอ"}; }
-// จำนวนสั่งซื้อ (placeholder; เฟส 2 = คำนวณจริงจากยอดขายทุกช่องทาง ZORT / ROP)
-function orderQty(stock){ if(stock>THRESHOLD)return 0; return Math.max(0,(THRESHOLD*2)-stock); }
+// ---- คำแนะนำการสั่งซื้อ ----
+//
+// ⚠️ ของเดิมตัดสินด้วย "สต๊อก <= 5" อย่างเดียว ไม่ดูว่าขายเร็วแค่ไหน
+//    ของขายวันละ 20 ชิ้น เหลือ 30 → บอก "พอ"     (จริง ๆ อีก 1.5 วันหมด)
+//    ของขายปีละ 2 ชิ้น  เหลือ 4  → บอก "ควรสั่ง"  (จริง ๆ พอไปอีก 2 ปี)
+//
+// ตัวใหม่ใช้ตัวเลขสดจาก /api/reorder ซึ่งรวมยอดขายทุกแพลตฟอร์มจาก ZORT
+// (Shopee · Lazada · TikTok · หน้าร้าน) แล้วเทียบ "ของจะหมดในกี่วัน"
+// กับ "เวลารอของจากโรงงาน" — เจ้าของร้านยืนยันว่ารอ 45 วัน
+//
+// ⚠️ ถ้าดึงข้อมูลสดไม่ได้ (เน็ตล่ม / ZORT ล่ม) จะถอยไปใช้กฎเดิมอัตโนมัติ
+//    ดีกว่าหน้าจอว่างเปล่า แต่ต้องมีป้ายบอกว่ากำลังใช้ของเก่าอยู่
+function reco(stock, sku){
+  const a = sku && state.ana[sku];
+  if(a){
+    if(a.level===2) return {lvl:2, txt:"ต้องสั่งด่วน"};
+    if(a.level===1) return {lvl:1, txt:"ควรสั่ง"};
+    return {lvl:0, txt:"พอ"};
+  }
+  if(stock<=0)return{lvl:2,txt:"ต้องสั่งด่วน"};
+  if(stock<=THRESHOLD)return{lvl:1,txt:"ควรสั่ง"};
+  return{lvl:0,txt:"พอ"};
+}
+function orderQty(stock, sku){
+  const a = sku && state.ana[sku];
+  if(a) return a.suggest;
+  if(stock>THRESHOLD)return 0;
+  return Math.max(0,(THRESHOLD*2)-stock);
+}
 function qtyClass(n){return n<=0?"zero":(n<=THRESHOLD?"low":"ok");}
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]));}
 function hl(s,q){s=String(s??"");if(!q)return esc(s);const i=s.toLowerCase().indexOf(q);if(i<0)return esc(s);return esc(s.slice(0,i))+"<mark>"+esc(s.slice(i,i+q.length))+"</mark>"+esc(s.slice(i+q.length));}
@@ -253,8 +290,14 @@ function row(p){
     category:catOf(p),
     factory:o.factory||"", wechat:facWx(o.factory||""),
     img:o.img||(p.img?state.prefix+encodeURIComponent(p.img):""),
-    price:p.price, stock:p.inv, sold6:(p.sold6||0),
-    qty:(typeof p.qty6==="number"?p.qty6:orderQty(p.inv)), qsrc:p.qsrc||"",
+    // ⚠️ สต๊อกกับยอดขายเอาของสดจาก ZORT ก่อนเสมอ — ไฟล์ products.json เป็นของนิ่ง
+    //    ที่อัปเดตครั้งล่าสุด 2 ส.ค. 2569 ใช้ตัดสินใจสั่งของไม่ได้แล้ว
+    price:p.price,
+    stock:(state.ana[p.sku] ? state.ana[p.sku].stock : p.inv),
+    sold6:(state.ana[p.sku] ? state.ana[p.sku].sold : (p.sold6||0)),
+    perDay:(state.ana[p.sku] ? state.ana[p.sku].perDay : null),
+    daysLeft:(state.ana[p.sku] ? state.ana[p.sku].daysLeft : null),
+    qty:orderQty(p.inv, p.sku), qsrc:p.qsrc||"",
     edited:!!(o.name||o.nameEn||o.img||o.category||o.factory||o.wechat)
   };
 }
@@ -266,18 +309,18 @@ function currentRows(){
   let rows=state.base.map(row).filter(r=>{
     if(fc&&fc.indexOf("__")!==0&&r.category!==fc)return false;
     if(ff&&r.factory!==ff)return false;
-    if(ff&&reco(r.stock).lvl===0)return false;
+    if(ff&&reco(r.stock,r.sku).lvl===0)return false;
     if(fs==="zero"&&r.stock>0)return false;
     if(fs==="low"&&!(r.stock>0&&r.stock<=THRESHOLD))return false;
     if(fs==="in"&&r.stock<=THRESHOLD)return false;
-    if(fr!==""&&String(reco(r.stock).lvl)!==fr)return false;
+    if(fr!==""&&String(reco(r.stock,r.sku).lvl)!==fr)return false;
     if(q){const hay=(r.sku+" "+r.name+" "+r.nameEn+" "+r.oem+" "+r.hh+" "+r.tagsName+" "+r.cn+" "+r.category+" "+r.factory+" "+r.wechat).toLowerCase();if(!hay.includes(q))return false;}
     return true;
   });
   const s=state.sort;
   rows.sort((a,b)=>{
     let x=a[s.key], y=b[s.key];
-    if(s.key==="reco"){x=reco(a.stock).lvl;y=reco(b.stock).lvl;}
+    if(s.key==="reco"){x=reco(a.stock,a.sku).lvl;y=reco(b.stock,b.sku).lvl;}
     if(typeof x==="number"||s.key==="stock"||s.key==="price"){x=+a[s.key]||0;y=+b[s.key]||0;}
     else{x=String(x||"");y=String(y||"");return s.dir*x.localeCompare(y,"th");}
     return s.dir*(x-y);
@@ -300,7 +343,18 @@ function cell(r,key,q){
     case"img":return '<td class="num">'+(r.img?'<img class="thumb" loading="lazy" src="'+esc(r.img)+'" alt="" onerror="this.className=\'thumb ph\';this.removeAttribute(\'src\');this.textContent=\'—\'">':'<div class="thumb ph">—</div>')+'</td>';
     case"price":return '<td class="num">'+(r.price?"฿"+r.price:"-")+'</td>';
     case"stock":return '<td class="num"><span class="qty '+qtyClass(r.stock)+'">'+r.stock+'</span></td>';
-    case"reco":{const rc=reco(r.stock);return '<td class="num"><span class="reco r'+rc.lvl+'">'+rc.txt+'</span></td>';}
+    case"daysLeft":{
+      // ⚠️ null = ยังไม่เคยขายเลยในรอบปี คำนวณไม่ได้ ต้องโชว์ "–" ไม่ใช่ 0
+      //    ถ้าโชว์ 0 จะดูเหมือนของกำลังจะหมด ทั้งที่ไม่มีใครซื้อเลย
+      if(r.daysLeft===null||r.daysLeft===undefined) return '<td class="num" style="color:#bbb" title="ยังไม่เคยขายในรอบ 12 เดือน">–</td>';
+      const d=r.daysLeft, c=d<=45?'#d93025':(d<=68?'#c47f00':'#137333');
+      return '<td class="num" title="ของจะหมดในอีก '+d+' วัน (เวลารอของจากโรงงาน 45 วัน)"><b style="color:'+c+'">'+d+'</b></td>';
+    }
+    case"perDay":{
+      if(!r.perDay) return '<td class="num" style="color:#bbb">–</td>';
+      return '<td class="num" style="color:#5f6368" title="ยอดขายเฉลี่ยต่อวัน รวมทุกแพลตฟอร์มจาก ZORT">'+r.perDay+'</td>';
+    }
+    case"reco":{const rc=reco(r.stock,r.sku);return '<td class="num"><span class="reco r'+rc.lvl+'">'+rc.txt+'</span></td>';}
     case"sold6":return '<td class="num" style="color:#5f6368">'+(r.sold6>0?r.sold6:'-')+'</td>';
     case"qty":{const t=(r.qsrc==="po")?"ของหมด — ใช้จำนวนที่เคยสั่งสูงสุด":(r.qsrc==="min")?"ของหมด — จำนวนสั่งขั้นต่ำ":"แผนสั่ง 12 เดือน จากยอดขายทุกช่องทาง 12 เดือน ZORT";const mk=(r.qsrc==="po")?' ↺':(r.qsrc==="min")?' ●':'';return '<td class="num" title="'+t+'">'+(r.qty>0?'<b style="color:#d93025">'+r.qty+'</b>'+(mk?'<span style="font-size:10px;color:#888">'+mk+'</span>':''):'<span style="color:#137333">พอ</span>')+'</td>';}
     case"edit":return '<td class="num"><button class="edit-btn" data-sku="'+esc(r.sku)+'">✎ แก้ไข</button></td>';
@@ -380,7 +434,7 @@ async function download(){
       const hr=ws.getRow(ri);HEAD.forEach((h,i)=>{const c=hr.getCell(i+1);c.value=h;c.font={bold:true};c.fill={type:"pattern",pattern:"solid",fgColor:{argb:"FFF0F0F0"}};c.alignment={vertical:"middle"};});hr.commit&&hr.commit();ri++;
       for(const idx of idxs){
         const r=rows[idx];
-        const vals=[r.sku,r.name,r.nameEn,r.oem,r.hh,r.tagsName,r.cn,r.category,r.factory,r.wechat,"",r.price?("฿"+r.price):"",r.stock,reco(r.stock).txt,r.qty||"",r.sold6||""];
+        const vals=[r.sku,r.name,r.nameEn,r.oem,r.hh,r.tagsName,r.cn,r.category,r.factory,r.wechat,"",r.price?("฿"+r.price):"",r.stock,reco(r.stock,r.sku).txt,r.qty||"",r.sold6||""];
         const rowObj=ws.getRow(ri);
         vals.forEach((v,i)=>{const c=rowObj.getCell(i+1);c.value=v;c.alignment={vertical:"middle",wrapText:i===1||i===2||i===5||i===6};});
         rowObj.height=58;
@@ -456,7 +510,7 @@ function rebuildFacFilter(){
 const FAC_COLORS=["#e8f5e9","#f3e5f5","#e3f2fd","#fff3e0","#fce4ec","#e0f7fa","#f1f8e9","#ede7f6"];
 function facWx(n){const f=state.facs.find(x=>x.n===n);return f?(f.w||""):"";}
 function facCount(n){return state.base.filter(p=>((state.ovr[p.sku]||{}).factory||"")===n).length;}
-function facStats(n){let u=0,w=0;state.base.forEach(p=>{if(((state.ovr[p.sku]||{}).factory||"")!==n)return;const l=reco(p.inv).lvl;if(l===2)u++;else if(l===1)w++;});return {u:u,w:w};}
+function facStats(n){let u=0,w=0;state.base.forEach(p=>{if(((state.ovr[p.sku]||{}).factory||"")!==n)return;const l=reco(state.ana[p.sku]?state.ana[p.sku].stock:p.inv,p.sku).lvl;if(l===2)u++;else if(l===1)w++;});return {u:u,w:w};}
 function badge(n,bg,fg){return n>0?'<span style="display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:'+bg+';color:'+fg+';font-size:12px;font-weight:700;line-height:1;box-shadow:0 0 0 2px #fff,0 2px 5px rgba(0,0,0,.28)">'+n+'</span>':'';}
 function renderFacBar(){
   const bar=document.getElementById("facBar");if(!bar)return;
@@ -715,6 +769,36 @@ async function trfRecent(){
   }catch(e){document.getElementById("trfRecent").textContent="โหลดไม่ได้";}
 }
 // ---- init ----
+// ---- ดึงผลวิเคราะห์สดจาก ZORT ----
+//
+// ⚠️ ไฟล์ products.json เป็นของนิ่ง อัปเดตล่าสุด 2 ส.ค. 2569
+//    สต๊อกกับยอดขายในนั้นใช้ตัดสินใจสั่งของไม่ได้แล้ว จึงต้องดึงสดมาทับ
+//    ถ้าดึงไม่ได้ หน้าจะยังใช้งานได้ด้วยข้อมูลเก่า แต่ต้องมีป้ายบอกให้รู้
+const LS_PLAN="gucut_plan_v1";
+const plan=Object.assign({lead:45,cover:120}, load(LS_PLAN,{}));
+
+function anaBadge(txt,warn){
+  const el=document.getElementById("anaInfo"); if(!el)return;
+  el.textContent=txt; el.style.color=warn?"#d93025":"#5f6368";
+}
+
+async function loadAnalysis(force){
+  anaBadge("กำลังวิเคราะห์จาก ZORT…");
+  try{
+    const u="/api/reorder?lead="+plan.lead+"&cover="+plan.cover+(force?"&refresh=1":"");
+    const j=await fetch(u).then(r=>r.json());
+    if(!j||!Array.isArray(j.skus)) throw new Error(j&&j.error?j.error:"รูปแบบข้อมูลไม่ถูกต้อง");
+    state.ana={}; j.skus.forEach(x=>{ if(x.sku) state.ana[x.sku]=x; });
+    state.anaInfo=j;
+    const when=new Date(j.at).toLocaleString("th-TH",{dateStyle:"short",timeStyle:"short"});
+    anaBadge("วิเคราะห์จากออเดอร์จริง "+j.orders.toLocaleString()+" ใบ (12 เดือน ทุกแพลตฟอร์ม) · รอของ "+j.leadDays+" วัน · ข้อมูล ณ "+when+(j.stale?" · ⚠️ ของเก่า ดึงใหม่ไม่สำเร็จ":""), !!j.stale);
+  }catch(e){
+    state.ana={};
+    anaBadge("⚠️ ดึงข้อมูลสดไม่ได้ ("+e.message+") — กำลังใช้ตัวเลขเก่าจากไฟล์ 2 ส.ค.", true);
+  }
+  if(state.base.length) render();
+}
+
 fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
   state.prefix=(data._meta&&data._meta.imgPrefix)||"";
   state.base=data.products.map(p=>({...p,model:model(p.title),pp:parseTags(p.tags)}));
@@ -724,6 +808,16 @@ fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
   if(state.facs.length)save(LS_FAC,state.facs);
   rebuildFacFilter();renderFacBar();
   buildColMenu();
+  // ค่าตั้งต้น: รอของ 45 วัน (เจ้าของร้านยืนยัน 18 ส.ค. 2569) · มีของพอขาย 120 วัน
+  document.getElementById("pLead").value=plan.lead;
+  document.getElementById("pCover").value=plan.cover;
+  document.getElementById("anaBtn").onclick=function(){
+    plan.lead=Math.max(1,parseInt(document.getElementById("pLead").value,10)||45);
+    plan.cover=Math.max(7,parseInt(document.getElementById("pCover").value,10)||120);
+    save(LS_PLAN,plan);
+    loadAnalysis(true);
+  };
+  loadAnalysis(false);
   ["q","fCat","fFac","fStock","fReco"].forEach(id=>document.getElementById(id).addEventListener("input",render));
   document.getElementById("fCat").addEventListener("change",catAction);
   render();
