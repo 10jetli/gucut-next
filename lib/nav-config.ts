@@ -29,9 +29,11 @@ export const NAV_ITEMS: NavItem[] = [
     icon: '🌐',
     label: 'เว็บไซต์',
     children: [
+      // เจ้าของร้านสั่งเอา "ผลิตภัณฑ์" (/store/products) กับ "AI Visibility"
+      // (/ai-visibility) ออกจากเมนู 18 ส.ค. 2569
+      // ⚠️ เอาออกจาก "เมนู" เท่านั้น ตัวหน้ากับ API ยังอยู่ครบ พิมพ์ที่อยู่เข้าตรง ๆ ได้
+      //    ถ้าจะลบทิ้งจริงต้องสั่งอีกที เพราะต้องลบทั้งหน้า API และข้อมูลที่ผูกอยู่
       { href: '/site', label: 'ระบบหลังร้านเว็บ' },
-      { href: '/store/products', label: 'ผลิตภัณฑ์' },
-      { href: '/ai-visibility', label: 'AI Visibility' },
     ],
   },
 ]
