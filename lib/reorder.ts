@@ -54,23 +54,50 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
 const ymd = (d: Date) => d.toISOString().slice(0, 10)
 
 /**
- * ดึงทีละหน้าจนครบ
- * ⚠️ ต้องมีเพดานจำนวนหน้า ไม่งั้นถ้า API ตอบผิดรูปจะวนไม่รู้จบจนฟังก์ชันหมดเวลา
+ * ดึงข้อมูลทีละหน้า — แต่ยิงพร้อมกันหลายหน้า
+ *
+ * ⚠️ ห้ามกลับไปยิงเรียงทีละหน้าเด็ดขาด
+ *    ออเดอร์ 12 เดือนของร้านนี้มีหลายพันใบ = 30-40 หน้า
+ *    ยิงเรียงกันใช้เวลา 20-40 วินาที ซึ่งเกินเวลาที่ Netlify ให้ฟังก์ชันทำงาน
+ *    ผลคือถูกตัดกลางคัน แล้วส่งข้อความ error เป็นตัวหนังสือธรรมดากลับมา
+ *    (หน้าเว็บจะฟ้องว่า "Unexpected token 'h', the edge fu... is not valid JSON")
+ *    เจอของจริง 18 ส.ค. 2569
+ *
+ * วิธีทำ: ยิงหน้าแรกก่อนเพื่ออ่าน count → คำนวณจำนวนหน้า → ยิงที่เหลือพร้อมกันทีละชุด
+ * ⚠️ ยิงพร้อมกันมากเกินไปจะโดน ZORT จำกัดอัตรา จึงล็อกไว้ที่ 6 หน้าต่อชุด
  */
+const PAGE_SIZE = 200
+const CONCURRENCY = 6
+
 async function pagedList(
   endpoint: string,
   params: Record<string, string>,
   maxPages = 60,
 ): Promise<Record<string, unknown>[]> {
-  const out: Record<string, unknown>[] = []
-  const limit = 200
-  for (let page = 1; page <= maxPages; page++) {
-    const res = (await zortFetch(endpoint, { ...params, page: String(page), limit: String(limit) })) as {
+  const get = (page: number) =>
+    zortFetch(endpoint, { ...params, page: String(page), limit: String(PAGE_SIZE) }) as Promise<{
       list?: Record<string, unknown>[]
+      count?: number
+    }>
+
+  const first = await get(1)
+  const out: Record<string, unknown>[] = Array.isArray(first?.list) ? [...first.list] : []
+  if (out.length < PAGE_SIZE) return out
+
+  const total = Number(first?.count) || 0
+  const pages = Math.min(maxPages, total ? Math.ceil(total / PAGE_SIZE) : maxPages)
+
+  for (let p = 2; p <= pages; p += CONCURRENCY) {
+    const batch = []
+    for (let k = p; k < p + CONCURRENCY && k <= pages; k++) batch.push(get(k))
+    const res = await Promise.all(batch.map((x) => x.catch(() => ({ list: [] }))))
+    let short = false
+    for (const r of res) {
+      const list = Array.isArray(r?.list) ? r.list : []
+      out.push(...list)
+      if (list.length < PAGE_SIZE) short = true
     }
-    const list = Array.isArray(res?.list) ? res.list : []
-    out.push(...list)
-    if (list.length < limit) break
+    if (short) break     // เจอหน้าสุดท้ายแล้ว
   }
   return out
 }

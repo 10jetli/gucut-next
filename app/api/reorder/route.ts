@@ -15,8 +15,10 @@ import { computeReorder, DEFAULT_COVER_DAYS, DEFAULT_LEAD_DAYS } from '@/lib/reo
 import type { ReorderResult } from '@/lib/reorder'
 
 export const dynamic = 'force-dynamic'
-// ดึง 1 ปีใช้เวลานาน — ขอเวลาทำงานให้พอ ไม่งั้นโดนตัดกลางคัน
-export const maxDuration = 120
+// ⚠️ Netlify ให้ฟังก์ชันแบบรอผลทำงานได้สูงสุด 26 วินาที ใส่มากกว่านี้ไม่มีผล
+//    ตั้ง 120 ไว้ตอนแรกแล้วเข้าใจผิดว่ามีเวลาเหลือเฟือ พอเกินจริงจึงถูกตัดกลางคัน
+//    แล้วส่งข้อความ error เป็นตัวหนังสือกลับมาแทน JSON (เจอ 18 ส.ค. 2569)
+export const maxDuration = 26
 
 const STORE = 'reorder'
 const FRESH_MS = 6 * 60 * 60 * 1000   // แคชสด 6 ชั่วโมง

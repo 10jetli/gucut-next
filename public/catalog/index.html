@@ -786,8 +786,17 @@ async function loadAnalysis(force){
   anaBadge("กำลังวิเคราะห์จาก ZORT…");
   try{
     const u="/api/reorder?lead="+plan.lead+"&cover="+plan.cover+(force?"&refresh=1":"");
-    const j=await fetch(u).then(r=>r.json());
-    if(!j||!Array.isArray(j.skus)) throw new Error(j&&j.error?j.error:"รูปแบบข้อมูลไม่ถูกต้อง");
+    // ⚠️ ต้องอ่านเป็นข้อความก่อนเสมอ — ถ้าฟังก์ชันทำงานนานเกินกำหนด
+    //    Netlify จะส่งข้อความ error เป็นตัวหนังสือธรรมดากลับมา ไม่ใช่ JSON
+    //    ถ้าเรียก .json() ตรง ๆ จะได้ข้อความงง ๆ ว่า "Unexpected token 'h'..."
+    const res=await fetch(u);
+    const raw=await res.text();
+    let j=null; try{ j=JSON.parse(raw); }catch(e){}
+    if(!j) throw new Error(res.status===504||/timed? ?out|edge fu/i.test(raw)
+      ? "ประมวลผลนานเกินกำหนด — กดดึงข้อมูลใหม่อีกครั้ง"
+      : ("เซิร์ฟเวอร์ตอบกลับผิดรูปแบบ ("+res.status+")"));
+    if(j.error) throw new Error(j.error);
+    if(!Array.isArray(j.skus)) throw new Error("รูปแบบข้อมูลไม่ถูกต้อง");
     state.ana={}; j.skus.forEach(x=>{ if(x.sku) state.ana[x.sku]=x; });
     state.anaInfo=j;
     const when=new Date(j.at).toLocaleString("th-TH",{dateStyle:"short",timeStyle:"short"});
