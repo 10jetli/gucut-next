@@ -8,7 +8,7 @@
 app/                        หน้าเว็บ (App Router) — ห้ามใส่ Navbar/Header/Footer เองในเพจ
   layout.tsx                จุดเดียวที่ครอบ <AppShell> ให้ทุกหน้า
   page.tsx                  Dashboard · orders/ products/ factory/ ads/ bills/ settings/ login/
-  api/                      API routes (zort, sheets, ads, bills*, connections, auth, google)
+  api/                      API routes (zort, sheets, ads, bills*, connections, auth, google, rokid)
 components/
   layout/                   โครงหน้า — AppShell (state), Sidebar, TopBar, MobileNav
   ui/                       ชิ้นส่วน UI ใช้ซ้ำ — OrderCard, LoadingState, ErrorBox, PillButton
@@ -20,6 +20,7 @@ lib/
   zort.ts                   ZORT API (2 ร้านจาก env)
   emailPdf.ts               แปลงอีเมลใบเสร็จเป็น PDF (pdf-lib + ฟอนต์ Sarabun runtime)
   billdate.ts               อ่านเดือนบนหัวบิลจาก PDF
+  rokid.ts                  สะพานแว่น Rokid Glasses → Claude (แปลง chat completions ↔ Anthropic Messages API)
   types.ts                  TypeScript interfaces ที่ใช้ร่วม
 data/ads.json               ข้อมูลโฆษณา (snapshot)
 public/catalog/             เว็บแคตตาล็อก static (index.html + products.json) — คนละระบบกับ Next.js

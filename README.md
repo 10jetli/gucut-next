@@ -14,6 +14,7 @@
 | ระบบสั่งของ | `/catalog/index.html` | **static site** แคตตาล็อก 2,256 SKU + แผนสั่งซื้อ (ย้ายมาจาก Netlify) |
 | โอนสินค้า | `/catalog/index.html#trf` | สร้างใบโอนจริงระหว่าง 3 บัญชี ZORT (ในไฟล์ static เดียวกัน) |
 | บิล | `/bills`, `/bills/[vendor]` | ระบบเก็บบิลจาก Gmail รายเดือน 8 เจ้า + แปลงอีเมลเป็น PDF |
+| แว่น Rokid | `/api/rokid/v1/chat/completions` | สะพานให้แว่น Rokid Glasses คุยกับ Claude (ไม่มีหน้าเว็บ — เป็น API อย่างเดียว) |
 | ตั้งค่า → เชื่อมต่อบริการอื่น | `/settings/connections` | เช็คสถานะ Gmail token / ZORT / Sheets + ฟอร์มกุญแจ ZORT (localStorage) |
 
 ## โครงสร้างโค้ด (หลัง refactor)
@@ -80,8 +81,42 @@ middleware.ts                 ล็อกทั้งเว็บ ยกเว�
 |---|---|
 | `SITE_PASSWORD` | รหัสล็อกทั้งเว็บ (middleware.ts) |
 | `GEMINI_API_KEY` | หน้า AI Visibility — เรียก Gemini API (Google AI Studio free tier) ตรวจว่า AI เอ่ยถึงร้านไหม |
+| `ANTHROPIC_API_KEY` | สะพานแว่น Rokid → Claude (กุญแจจาก console.anthropic.com) |
+| `ROKID_BRIDGE_KEY` | กุญแจที่เราตั้งเอง สำหรับกรอกช่อง auth key ฝั่ง Rokid — กันคนอื่นยิงเข้ามาใช้ฟรี |
+| `ROKID_MODEL` | (ไม่บังคับ) รหัสโมเดล Claude — ค่าเริ่มต้น `claude-opus-5` |
+| `ROKID_EFFORT` | (ไม่บังคับ) `low`/`medium`/`high`/`xhigh`/`max` — ค่าเริ่มต้น `low` (ตอบไวที่สุด เหมาะกับแว่น) |
+| `ROKID_SYSTEM` | (ไม่บังคับ) ทับคำสั่งระบบเริ่มต้นของผู้ช่วยในแว่น |
 
 > ตั้งค่า env ใหม่แล้วต้อง **redeploy หนึ่งครั้ง** ค่าถึงจะมีผล
+
+## แว่นตา Rokid Glasses → Claude
+
+แว่น Rokid มีฟีเจอร์ **Custom Agent (自定义智能体)** ให้ผูกแว่นเข้ากับ AI ของเราเองแทนผู้ช่วยที่ติดมากับเครื่อง
+วิธีทำคือชี้แว่นมาที่ URL ของเรา แล้วเราคุยกับ Claude ให้ — โค้ดส่วนนี้อยู่ที่ `lib/rokid.ts` + `app/api/rokid/`
+
+**ปลายทางที่แว่นเรียก:** `https://admin.new78.com/api/rokid/v1/chat/completions`
+รับคำขอแบบ chat completions ตอบกลับได้ทั้งแบบสตรีม SSE (`"stream": true`) และ JSON ก้อนเดียว
+รองรับภาพจากกล้องแว่นด้วย (ส่งมาเป็น `image_url` ทั้งแบบ `data:` และลิงก์ http)
+
+### ขั้นตอนตั้งค่า
+
+1. ตั้ง env `ANTHROPIC_API_KEY` (จาก console.anthropic.com) และ `ROKID_BRIDGE_KEY` (สุ่มเอง เช่น `openssl rand -hex 24`) ที่ Netlify แล้ว redeploy
+2. เช็คว่าสะพานพร้อม — เปิด `https://admin.new78.com/api/rokid/v1/chat/completions` ในเบราว์เซอร์ ต้องได้ `"ready": true`
+3. สมัคร developer ที่ [developer.rokid.com](https://developer.rokid.com) แล้วเข้าแพลตฟอร์ม Rizon ([rizon.rokid.com](https://rizon.rokid.com)) → สร้าง Custom Agent
+4. กรอก URL จากข้อ 2 และ auth key = ค่าเดียวกับ `ROKID_BRIDGE_KEY`
+5. จับคู่แว่นกับแอป Rokid ที่ใช้บัญชี developer เดียวกัน แล้วเรียกใช้ agent ด้วยคำสั่งเสียง
+
+### ทดสอบเองก่อนได้ (ไม่ต้องมีแว่น)
+
+```bash
+curl -N https://admin.new78.com/api/rokid/v1/chat/completions \
+  -H "Authorization: Bearer $ROKID_BRIDGE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"stream":true,"messages":[{"role":"user","content":"เลื่อยยนต์โซ่ตันต้องทำยังไง"}]}'
+```
+
+> **ข้อควรรู้:** ฟีเจอร์ Custom Agent เปิดจากฝั่งจีนเป็นหลัก เครื่องที่ซื้อในไทย (mobi by SPVi) อาจยังไม่เห็นเมนูนี้ในแอป
+> ถ้าเป็นแบบนั้น สะพานนี้ยังใช้ได้กับทางอื่นที่รับ endpoint แบบ chat completions ได้เหมือนกัน (เช่นแอป companion ที่เขียนเองด้วย CXR-M SDK)
 
 ## กับดักที่รู้แล้ว (อย่าเหยียบซ้ำ)
 

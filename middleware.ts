@@ -9,7 +9,8 @@ import { NextRequest, NextResponse } from 'next/server'
 // - พนักงานเปิดหน้าอื่นนอกเหนือสิทธิ์ → เด้งกลับไปหน้าโอนสินค้า (หรือ 403 ถ้าเป็น API)
 // - ยกเว้น: /login, /api/auth/*, /api/google/* (OAuth callback), ไฟล์ static
 // - /api/bills/drivesync และ /api/bills/upload มี secret ของตัวเอง (DRIVESYNC_SECRET)
-const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync', '/api/bills/upload']
+// - /api/rokid (สะพานแว่น Rokid → Claude) มีกุญแจของตัวเอง (ROKID_BRIDGE_KEY)
+const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync', '/api/bills/upload', '/api/rokid']
 // เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
 const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer', '/api/catalog']
 
