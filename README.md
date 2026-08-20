@@ -68,7 +68,7 @@ middleware.ts                 ล็อกทั้งเว็บ ยกเว�
 > อัปเดต ส.ค. 2026: **ย้ายจาก Vercel มา Netlify แล้ว** — workflow เก่าที่ต้องโคลน repo เป็น
 > `gucut-next-authNN` แล้ว reconnect ทุกครั้ง **ยกเลิกแล้ว ไม่ต้องทำอีก**
 
-- **Production**: https://admin.new78.com (Netlify project `gucut-admin`)
+- **Production**: https://admin.gucut.com (Netlify project `gucut-admin`)
 - **Deploy อัตโนมัติ**: push ขึ้น branch `main` ของ `10jetli/gucut-next` → Netlify build เอง ไม่ต้องทำอะไรเพิ่ม
 - **Runtime**: `@netlify/plugin-nextjs` (Next.js 14 App Router)
 
@@ -94,14 +94,14 @@ middleware.ts                 ล็อกทั้งเว็บ ยกเว�
 แว่น Rokid มีฟีเจอร์ **Custom Agent (自定义智能体)** ให้ผูกแว่นเข้ากับ AI ของเราเองแทนผู้ช่วยที่ติดมากับเครื่อง
 วิธีทำคือชี้แว่นมาที่ URL ของเรา แล้วเราคุยกับ Claude ให้ — โค้ดส่วนนี้อยู่ที่ `lib/rokid.ts` + `app/api/rokid/`
 
-**ปลายทางที่แว่นเรียก:** `https://admin.new78.com/api/rokid/v1/chat/completions`
+**ปลายทางที่แว่นเรียก:** `https://admin.gucut.com/api/rokid/v1/chat/completions`
 รับคำขอแบบ chat completions ตอบกลับได้ทั้งแบบสตรีม SSE (`"stream": true`) และ JSON ก้อนเดียว
 รองรับภาพจากกล้องแว่นด้วย (ส่งมาเป็น `image_url` ทั้งแบบ `data:` และลิงก์ http)
 
 ### ขั้นตอนตั้งค่า
 
 1. ตั้ง env `ANTHROPIC_API_KEY` (จาก console.anthropic.com) และ `ROKID_BRIDGE_KEY` (สุ่มเอง เช่น `openssl rand -hex 24`) ที่ Netlify แล้ว redeploy
-2. เช็คว่าสะพานพร้อม — เปิด `https://admin.new78.com/api/rokid/v1/chat/completions` ในเบราว์เซอร์ ต้องได้ `"ready": true`
+2. เช็คว่าสะพานพร้อม — เปิด `https://admin.gucut.com/api/rokid/v1/chat/completions` ในเบราว์เซอร์ ต้องได้ `"ready": true`
 3. สมัคร developer ที่ [developer.rokid.com](https://developer.rokid.com) แล้วเข้าแพลตฟอร์ม Rizon ([rizon.rokid.com](https://rizon.rokid.com)) → สร้าง Custom Agent
 4. กรอก URL จากข้อ 2 และ auth key = ค่าเดียวกับ `ROKID_BRIDGE_KEY`
 5. จับคู่แว่นกับแอป Rokid ที่ใช้บัญชี developer เดียวกัน แล้วเรียกใช้ agent ด้วยคำสั่งเสียง
@@ -109,7 +109,7 @@ middleware.ts                 ล็อกทั้งเว็บ ยกเว�
 ### ทดสอบเองก่อนได้ (ไม่ต้องมีแว่น)
 
 ```bash
-curl -N https://admin.new78.com/api/rokid/v1/chat/completions \
+curl -N https://admin.gucut.com/api/rokid/v1/chat/completions \
   -H "Authorization: Bearer $ROKID_BRIDGE_KEY" \
   -H "Content-Type: application/json" \
   -d '{"stream":true,"messages":[{"role":"user","content":"เลื่อยยนต์โซ่ตันต้องทำยังไง"}]}'
