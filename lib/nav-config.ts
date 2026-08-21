@@ -10,6 +10,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: '/site/attendance', icon: '⏰', label: 'ลงเวลาพนักงาน' },
   { href: '/ads', icon: '📢', label: 'โฆษณา' },
   { href: '/catalog/index.html', icon: '🧰', label: 'ระบบสั่งของ' },
+  { href: '/import', icon: '🇨🇳', label: 'นำเข้าจากจีน' },
   { href: '/catalog/index.html#trf', icon: '🔄', label: 'โอนสินค้า' },
   {
     icon: '🧾',
