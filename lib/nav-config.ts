@@ -7,6 +7,7 @@ export interface NavItem { href?: string; icon: string; label: string; children?
 export const NAV_ITEMS: NavItem[] = [
   { href: '/', icon: '🏠', label: 'หน้าหลัก' },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
+  { href: '/site/attendance', icon: '⏰', label: 'ลงเวลาพนักงาน' },
   { href: '/ads', icon: '📢', label: 'โฆษณา' },
   { href: '/catalog/index.html', icon: '🧰', label: 'ระบบสั่งของ' },
   { href: '/catalog/index.html#trf', icon: '🔄', label: 'โอนสินค้า' },
@@ -34,7 +35,6 @@ export const NAV_ITEMS: NavItem[] = [
       // ⚠️ เอาออกจาก "เมนู" เท่านั้น ตัวหน้ากับ API ยังอยู่ครบ พิมพ์ที่อยู่เข้าตรง ๆ ได้
       //    ถ้าจะลบทิ้งจริงต้องสั่งอีกที เพราะต้องลบทั้งหน้า API และข้อมูลที่ผูกอยู่
       { href: '/site', label: 'ระบบหลังร้านเว็บ' },
-      { href: '/site/attendance', label: 'ลงเวลาพนักงาน' },
     ],
   },
 ]
