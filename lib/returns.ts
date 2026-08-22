@@ -8,6 +8,11 @@
 //    ตัวที่ถูกคืนซ้ำ ๆ มักมีสาเหตุจริง (รูปไม่ตรง · สเปกกำกวม · ของเสียบ่อย)
 import { zortFetch } from './zort'
 
+// ⚠️ ใบคืนของจากเว็บหน้าร้าน (gucut.com) ไม่มีใน ZORT
+//    ออเดอร์ถูกส่งเข้า ZORT ตอนสั่งก็จริง แต่การคืนของบนเว็บไม่ได้ส่งไป
+//    ZORT จึงไม่มีวันรู้ ต้องไปดึงจากเว็บโดยตรงแล้วเอามารวมเอง
+const SITE = (process.env.GUCUT_SITE_URL || 'https://gucut.com').replace(/\/$/, '')
+
 const PAGE_SIZE = 200
 const CONCURRENCY = 6
 
@@ -96,13 +101,37 @@ export function channelOf(raw: string): string {
   return s.split('-')[0] || s
 }
 
-export async function computeReturns(days = 365): Promise<ReturnsResult> {
+/**
+ * ใบคืนของจากเว็บหน้าร้าน
+ * ⚠️ ต้องมี GUCUT_ADMIN_KEY ใน env ถึงจะดึงได้ — ไม่มีก็แค่ไม่รวมเว็บเข้ามา
+ *    ห้ามให้ทั้งหน้าพังเพราะเว็บล่มหรือยังไม่ได้ตั้งคีย์ ใบคืนจาก ZORT ยังต้องดูได้
+ */
+async function siteReturns(days: number): Promise<ReturnOrder[]> {
+  const key = (process.env.GUCUT_ADMIN_KEY || '').trim()
+  if (!key) return []
+  try {
+    const r = await fetch(`${SITE}/api/returns-feed?days=${days}`, {
+      headers: { 'x-admin-key': key },
+      signal: AbortSignal.timeout(10000),
+    })
+    if (!r.ok) return []
+    const j = (await r.json()) as { list?: ReturnOrder[] }
+    return Array.isArray(j.list) ? j.list : []
+  } catch {
+    return []
+  }
+}
+
+export async function computeReturns(days = 30): Promise<ReturnsResult> {
   const today = new Date()
   const start = new Date(today.getTime() - days * 86400_000)
-  const raw = await pagedList('ReturnOrder/GetReturnOrders', {
-    returnorderdateafter: ymd(start),
-    returnorderdatebefore: ymd(today),
-  })
+  const [raw, fromSite] = await Promise.all([
+    pagedList('ReturnOrder/GetReturnOrders', {
+      returnorderdateafter: ymd(start),
+      returnorderdatebefore: ymd(today),
+    }),
+    siteReturns(days),
+  ])
 
   const list: ReturnOrder[] = []
   const byChannel: Record<string, { orders: number; amount: number }> = {}
@@ -148,6 +177,27 @@ export async function computeReturns(days = 365): Promise<ReturnsResult> {
       cur.amount += l.total
       cur.orders += 1
       cur.byChannel[channel] = (cur.byChannel[channel] || 0) + l.qty
+      if (!cur.name) cur.name = l.name
+      skuMap.set(l.sku, cur)
+    }
+  }
+
+  // รวมใบคืนจากเว็บหน้าร้านเข้าไปด้วย — นับเข้าช่องทาง/เดือน/SKU ชุดเดียวกัน
+  for (const o of fromSite) {
+    list.push(o)
+    const c = (byChannel[o.channel] ||= { orders: 0, amount: 0 })
+    c.orders += 1
+    c.amount += o.amount
+    if (o.date) byMonth[o.date.slice(0, 7)] = (byMonth[o.date.slice(0, 7)] || 0) + 1
+    for (const l of o.lines) {
+      if (!l.sku) continue
+      const cur = skuMap.get(l.sku) || {
+        sku: l.sku, name: l.name, qty: 0, amount: 0, orders: 0, byChannel: {},
+      }
+      cur.qty += l.qty
+      cur.amount += l.total
+      cur.orders += 1
+      cur.byChannel[o.channel] = (cur.byChannel[o.channel] || 0) + l.qty
       if (!cur.name) cur.name = l.name
       skuMap.set(l.sku, cur)
     }

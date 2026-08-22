@@ -19,7 +19,9 @@ const FRESH_MS = 6 * 60 * 60 * 1000
 
 export async function GET(request: Request) {
   const url = new URL(request.url)
-  const days = Math.min(1095, Math.max(7, Number(url.searchParams.get('days')) || 365))
+  // ⚠️ ต่ำสุด 1 วัน ไม่ใช่ 7 — เจ้าของร้านต้องดูของที่เพิ่งคืนเมื่อวานได้
+  //    ของคืนเป็นเรื่องที่ต้องรีบรู้ ไม่ใช่รอสรุปรายเดือน
+  const days = Math.min(1095, Math.max(1, Number(url.searchParams.get('days')) || 30))
   const refresh = url.searchParams.get('refresh') === '1'
   const key = `v1-${days}`
 

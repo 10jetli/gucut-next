@@ -20,12 +20,13 @@ const CH_COLOR: Record<string, string> = {
   Lazada: 'bg-blue-100 text-blue-700',
   Tiktok: 'bg-gray-900 text-white',
   Shopify: 'bg-emerald-100 text-emerald-700',
+  GUCUT: 'bg-red-100 text-red-700',
 }
 
 export default function ReturnsPage() {
   const [data, setData] = useState<(ReturnsResult & { cached?: boolean; stale?: boolean }) | null>(null)
   const [tab, setTab] = useState<'sku' | 'list'>('sku')
-  const [days, setDays] = useState(365)
+  const [days, setDays] = useState(30)
   const [ch, setCh] = useState('')
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
@@ -76,6 +77,10 @@ export default function ReturnsPage() {
             onChange={(e) => setDays(Number(e.target.value))}
             className="rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
           >
+            <option value={1}>เมื่อวาน</option>
+            <option value={3}>3 วัน</option>
+            <option value={7}>7 วัน</option>
+            <option value={15}>15 วัน</option>
             <option value={30}>30 วัน</option>
             <option value={90}>90 วัน</option>
             <option value={365}>1 ปี</option>
