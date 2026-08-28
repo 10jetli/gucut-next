@@ -22,6 +22,9 @@ const IC = {
   refresh: 'M20 11a8 8 0 10.9 4.5M20 4v6h-6',
 }
 const flag = (cc: string) => /^[A-Z]{2}$/.test(cc) ? String.fromCodePoint(...cc.split('').map((c) => 0x1f1e6 + c.charCodeAt(0) - 65)) : '🏳️'
+// ⚠️ decodeURIComponent โยน error ได้ถ้าเจอ % ที่ไม่ใช่รหัส — เคยทำทั้งหน้าตายมาแล้ว
+//    (บทเรียนเดียวกับหน้า admin ของ gucut.com 17 ส.ค. 2569) ต้องครอบ try เสมอ
+const safeDecode = (v: string) => { try { return decodeURIComponent(v) } catch { return v } }
 function countryName(cc: string) {
   try { return new Intl.DisplayNames(['th'], { type: 'region' }).of(cc) || cc } catch { return cc }
 }
@@ -109,7 +112,7 @@ export default function WebLivePage() {
           <div className="divide-y divide-gray-50">
             {(s?.pages ?? []).slice(0, 8).map((p) => (
               <div key={p.p} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
-                <span className="flex-1 min-w-0 text-[12.5px] text-gray-700 truncate" dir="ltr">{decodeURIComponent(p.p)}</span>
+                <span className="flex-1 min-w-0 text-[12.5px] text-gray-700 truncate" dir="ltr">{safeDecode(p.p)}</span>
                 <span className="text-[12.5px] font-black text-gray-900 tabular-nums">{p.n}</span>
               </div>
             ))}
