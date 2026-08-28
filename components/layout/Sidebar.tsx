@@ -81,7 +81,7 @@ export default function Sidebar({ navItems, collapsed, openGroups, anim, sidebar
                 <div className="pb-1">
                   {item.children.map((c) => {
                     const active = isActive(c.href) && !(c.href === '/bills' && pathname !== '/bills')
-                    const cls = `flex items-center gap-2 py-2 pl-11 pr-3 text-[12.5px] transition-colors duration-150 border-l-2 ${active ? 'border-blue-400 bg-blue-600/90 text-white font-semibold' : 'border-transparent text-blue-100/75 hover:bg-white/10 hover:text-white'}`
+                    const cls = `flex items-center gap-2 py-2 pl-11 pr-3 text-[12.5px] transition-colors duration-150 border-l-2 ${active ? 'border-[#FF6A3C] bg-[#D63300] text-white font-semibold' : 'border-transparent text-blue-100/75 hover:bg-white/10 hover:text-white'}`
                     return isStaticLink(c.href) ? (
                       <a key={c.href} href={c.href} className={cls}>{c.label}</a>
                     ) : (
@@ -94,7 +94,7 @@ export default function Sidebar({ navItems, collapsed, openGroups, anim, sidebar
           ) : (
             (() => {
               const active = isActive(item.href!)
-              const cls = `flex items-center gap-3 py-2.5 rounded-xl text-[13px] transition-all duration-150 ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-blue-600 text-white font-semibold shadow-[0_4px_12px_-4px_rgba(37,99,235,0.7)]' : 'text-blue-100/85 hover:bg-white/10 hover:text-white'}`
+              const cls = `flex items-center gap-3 py-2.5 rounded-xl text-[13px] transition-all duration-150 ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[#D63300] text-white font-semibold shadow-[0_4px_12px_-4px_rgba(214,51,0,0.7)]' : 'text-blue-100/85 hover:bg-white/10 hover:text-white'}`
               const inner = (
                 <>
                   <span className="text-lg w-5 text-center shrink-0">{item.icon}</span>
