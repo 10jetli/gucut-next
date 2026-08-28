@@ -78,10 +78,10 @@ export default function Sidebar({ navItems, collapsed, openGroups, anim, sidebar
                 )}
               </button>
               {!collapsed && openGroups[item.label] && (
-                <div className="pb-1">
+                <div className="pb-1 bg-[#D63300]">
                   {item.children.map((c) => {
                     const active = isActive(c.href) && !(c.href === '/bills' && pathname !== '/bills')
-                    const cls = `flex items-center gap-2 py-2 pl-11 pr-3 text-[12.5px] transition-colors duration-150 border-l-2 ${active ? 'border-[#FF6A3C] bg-[#D63300] text-white font-semibold' : 'border-transparent text-blue-100/75 hover:bg-white/10 hover:text-white'}`
+                    const cls = `flex items-center gap-2 py-2 pl-11 pr-3 text-[12.5px] transition-colors duration-150 border-l-2 ${active ? 'border-white bg-black/25 text-white font-semibold' : 'border-transparent text-white/85 hover:bg-black/15 hover:text-white'}`
                     return isStaticLink(c.href) ? (
                       <a key={c.href} href={c.href} className={cls}>{c.label}</a>
                     ) : (
