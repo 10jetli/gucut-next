@@ -96,6 +96,14 @@ export default function ReturnsPage() {
     .filter((s) => !low || s.sku.toLowerCase().includes(low) || s.name.toLowerCase().includes(low))
     .slice(0, 100)
 
+  const preList = (data?.list || [])
+    .filter((o) => !ch || o.channel === ch)
+    .filter((o) => !low || o.number.toLowerCase().includes(low) || o.customer.toLowerCase().includes(low)
+      || o.lines.some((l) => l.sku.toLowerCase().includes(low)))
+  const nRecv = preList.filter((o) => recv[o.number]?.received).length
+  const nDeliv = preList.filter((o) => recv[o.number]?.delivered && !recv[o.number]?.received).length
+  const nWait = preList.length - nRecv - nDeliv
+
   const list = (data?.list || [])
     .filter((o) => !ch || o.channel === ch)
     .filter((o) => {
@@ -200,9 +208,14 @@ export default function ReturnsPage() {
             />
             {tab === 'list' && (
               <div className="flex flex-wrap items-center gap-1.5">
-                {([['', 'ทั้งหมด'], ['waiting', 'รอของ'], ['delivered', 'ถึงแล้วรอตรวจ'], ['received', 'ร้านรับแล้ว']] as const).map(([v, lb]) => (
+                {([
+                  ['', `ทั้งหมด ${preList.length}`, 'bg-gray-100 text-gray-600'],
+                  ['waiting', `🟡 ยังไม่ได้รับ ${nWait}`, 'bg-amber-100 text-amber-800'],
+                  ['delivered', `🔵 ถึงแล้วรอตรวจ ${nDeliv}`, 'bg-blue-100 text-blue-800'],
+                  ['received', `🟢 รับแล้ว ${nRecv}`, 'bg-emerald-100 text-emerald-800'],
+                ] as const).map(([v, lb, tone]) => (
                   <button key={v} onClick={() => setRecvFilter(v)}
-                    className={`rounded-full px-3 py-1 text-xs font-medium ${recvFilter === v ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${recvFilter === v ? 'bg-gray-900 text-white' : tone}`}>
                     {lb}
                   </button>
                 ))}
@@ -212,6 +225,45 @@ export default function ReturnsPage() {
               </div>
             )}
           </div>
+
+          {tab === 'list' && preList.length > 0 && (
+            <Card>
+              <h2 className="text-sm font-semibold text-gray-900">ภาพรวมการตามของ</h2>
+              {/* แถบสัดส่วน: มองแวบเดียวรู้ว่ารับครบหรือยัง */}
+              <div className="mt-3 flex h-5 w-full overflow-hidden rounded-full bg-gray-100">
+                {nRecv > 0 && <div className="bg-emerald-500" style={{ width: `${(nRecv / preList.length) * 100}%` }} />}
+                {nDeliv > 0 && <div className="bg-blue-500" style={{ width: `${(nDeliv / preList.length) * 100}%` }} />}
+                {nWait > 0 && <div className="bg-amber-400" style={{ width: `${(nWait / preList.length) * 100}%` }} />}
+              </div>
+              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />รับแล้ว <b className="tabular-nums">{nRecv}</b></span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" />ถึงแล้วรอตรวจ <b className="tabular-nums">{nDeliv}</b></span>
+                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" />ยังไม่ได้รับ <b className="tabular-nums">{nWait}</b></span>
+                <span className="ml-auto text-gray-400">รวม {preList.length} ใบ</span>
+              </div>
+
+              {/* เทียบรายเดือน: ใบคืนเดือนไหนเยอะผิดปกติเห็นทันที */}
+              {Object.keys(data.byMonth).length > 1 && (() => {
+                const months = Object.entries(data.byMonth).sort((a, b) => (a[0] < b[0] ? -1 : 1)).slice(-12)
+                const max = Math.max(...months.map(([, n]) => n))
+                return (
+                  <div className="mt-4 border-t pt-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ใบคืนรายเดือน (เทียบ {months.length} เดือน)</p>
+                    <div className="mt-2 flex h-24 items-end gap-1.5">
+                      {months.map(([m, n]) => (
+                        <div key={m} className="flex min-w-0 flex-1 flex-col items-center gap-1">
+                          <span className="text-[10px] font-semibold tabular-nums text-gray-600">{n}</span>
+                          <div className={`w-full rounded-t ${n === max ? 'bg-red-400' : 'bg-blue-300'}`}
+                            style={{ height: `${Math.max(6, (n / max) * 64)}px` }} />
+                          <span className="truncate text-[9.5px] text-gray-400">{m.slice(2).replace('-', '/')}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })()}
+            </Card>
+          )}
 
           {tab === 'sku' ? (
             <Card>
@@ -259,8 +311,24 @@ export default function ReturnsPage() {
                 const age = daysSince(o.shipDate || o.date)
                 const overdue = !st.delivered && !st.received && age > 7 && boxes > 0
                 const fmtD = (t?: number) => t ? new Date(t).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : ''
+                // สีทั้งใบบอกสถานะ — มองปราดเดียวรู้ว่าใบไหนของถึงมือแล้ว ใบไหนยังลอยอยู่
+                const tone = st.received
+                  ? 'border-l-emerald-500 bg-emerald-50/70 border-emerald-200/70'
+                  : st.delivered
+                  ? 'border-l-blue-500 bg-blue-50/70 border-blue-200/70'
+                  : overdue
+                  ? 'border-l-red-500 bg-red-50/70 border-red-200/70'
+                  : 'border-l-amber-400 bg-amber-50/60 border-amber-200/60'
+                const bigChip = st.received
+                  ? ['✓ รับแล้ว', 'bg-emerald-600']
+                  : st.delivered
+                  ? ['ถึงแล้ว·รอตรวจ', 'bg-blue-600']
+                  : overdue
+                  ? ['ค้างนาน!', 'bg-red-600']
+                  : ['ยังไม่ได้รับ', 'bg-amber-500']
                 return (
-                <Card key={o.number}>
+                <div key={o.number} className={`rounded-2xl border border-l-4 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${tone}`}>
+                  <span className={`float-right ml-2 rounded-full px-2.5 py-1 text-[11px] font-bold text-white ${bigChip[1]}`}>{bigChip[0]}</span>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium text-gray-900">{o.number}</span>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CH_COLOR[o.channel] || 'bg-gray-100 text-gray-700'}`}>
@@ -342,7 +410,7 @@ export default function ReturnsPage() {
                     {o.platformDiscount > 0 && <span>ส่วนลดแพลตฟอร์ม {baht(o.platformDiscount)}</span>}
                     <span className="text-sm font-semibold text-gray-900">คืนเงิน {baht(o.amount)}</span>
                   </div>
-                </Card>
+                </div>
                 )
               })}
               {list.length === 0 && (
