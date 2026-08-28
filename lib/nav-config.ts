@@ -40,7 +40,6 @@ export const NAV_ITEMS: NavItem[] = [
       // หน้าที่ย้ายแล้วเป็นเนทีฟ (/web/...) · ที่เหลือยังเปิดผ่านกรอบ /site จนกว่าจะย้ายเสร็จ
       { href: '/web/orders', label: 'ออเดอร์เว็บ' },
       { href: '/web/chat', label: 'แชทลูกค้า' },
-      { href: '/site/tool/duoke', label: 'แชท Shopee/Lazada/TikTok' },
       { href: '/web/coupons', label: 'โค้ดส่วนลด' },
       { href: '/web/live', label: 'คนเข้าเว็บ' },
       { href: '/web/status', label: 'สถานะระบบ' },
