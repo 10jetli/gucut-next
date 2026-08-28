@@ -18,9 +18,9 @@ export default function WebClipShopPage() {
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
-    fetch('https://gucut.com/feed.json').then((r) => r.json()).then(setClips).catch(() => {})
+    fetch('/api/webfile/feed.json').then((r) => r.json()).then(setClips).catch(() => {})
     fetch('/api/web/clip-shop').then((r) => r.json()).then((d) => setMap(d.map ?? {})).catch(() => {})
-    fetch('https://gucut.com/search-index.json').then((r) => r.json()).then((d) => setIndex(d.items ?? d)).catch(() => {})
+    fetch('/api/webfile/search-index.json').then((r) => r.json()).then((d) => setIndex(d.items ?? d)).catch(() => {})
   }, [])
 
   const shown = useMemo(() => (onlyEmpty ? clips.filter((c) => !c.p && !map[c.v.v]) : clips), [clips, map, onlyEmpty])
