@@ -133,7 +133,7 @@ export function MobileDrawer({ navItems, open, onClose }: {
               </div>
             ) : (
               <NavAnchor key={item.label} href={item.href!} onClick={onClose}
-                className={`flex items-center gap-3 px-4 py-3 text-[14px] ${isActive(item.href!) ? 'bg-[#D63300] text-white font-semibold' : 'text-blue-100/90 active:bg-white/10'}`}>
+                className={`flex items-center gap-3 mx-2 px-3 py-3 rounded-xl text-[14px] ${isActive(item.href!) ? 'ring-2 ring-blue-400 ring-inset bg-white/5 text-white font-semibold' : 'text-blue-100/90 active:bg-white/10'}`}>
                 <span className="text-lg w-6 text-center shrink-0">{item.icon}</span>
                 <span className="font-semibold">{item.label}</span>
               </NavAnchor>

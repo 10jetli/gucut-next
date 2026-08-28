@@ -94,7 +94,7 @@ export default function Sidebar({ navItems, collapsed, openGroups, anim, sidebar
           ) : (
             (() => {
               const active = isActive(item.href!)
-              const cls = `flex items-center gap-3 py-2.5 rounded-xl text-[13px] transition-all duration-150 ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'bg-[#D63300] text-white font-semibold shadow-[0_4px_12px_-4px_rgba(214,51,0,0.7)]' : 'text-blue-100/85 hover:bg-white/10 hover:text-white'}`
+              const cls = `flex items-center gap-3 py-2.5 rounded-xl text-[13px] transition-all duration-150 ${collapsed ? 'justify-center px-0' : 'px-3'} ${active ? 'ring-2 ring-blue-400 ring-inset bg-white/5 text-white font-semibold' : 'text-blue-100/85 hover:bg-white/10 hover:text-white'}`
               const inner = (
                 <>
                   <span className="text-lg w-5 text-center shrink-0">{item.icon}</span>
