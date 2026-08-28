@@ -1,9 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
-import { listVendorDriveFiles } from '@/lib/drive'
-import { BillEntry } from '@/lib/billcache'
-import { listVendorBlobFiles, loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
+import { BillEntry, listVendorBlobFiles, loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -127,15 +125,10 @@ export async function GET(req: NextRequest) {
     // ชื่อไฟล์รูปแบบ YYYY-MM_REAL_<ชื่อ>.pdf — ถ้าเดือนไหนมีไฟล์ตัวจริง ให้ตัด PDF
     // ที่สร้างจากอีเมล (GEN) ของเดือนนั้นทิ้ง เหลือแต่ตัวจริง
     try {
-      // ไฟล์จริง: Blobs เป็นหลัก · Drive เป็นตาข่ายช่วงย้าย (ไฟล์เก่าที่ยังไม่ migrate)
-      //   dedup ตามชื่อไฟล์ — ตัวที่อยู่ Blobs แล้วชนะ (f.id ของ Blobs เป็น BLOB:<key> อยู่แล้ว)
-      const blobFiles: { id: string; name: string; size: number }[] = await listVendorBlobFiles(vendor.id).catch(() => [])
-      let driveFiles: { id: string; name: string; size: number }[] = []
-      try { driveFiles = (await listVendorDriveFiles(token, vendor.id)).map(f => ({ id: `DRIVE:${f.id}`, name: f.name, size: f.size })) } catch {}
-      const seen = new Set(blobFiles.map(f => f.name))
-      const allReal = blobFiles.concat(driveFiles.filter(f => !seen.has(f.name)))
+      // ไฟล์จริงที่อัปโหลดไว้ (…_REAL_…) — เก็บบน Netlify Blobs
+      const blobFiles = await listVendorBlobFiles(vendor.id)
       const realByMonth: Record<string, any[]> = {}
-      for (const f of allReal) {
+      for (const f of blobFiles) {
         const m = f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/)
         if (!m) continue
         ;(realByMonth[m[1]] ??= []).push({

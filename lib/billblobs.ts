@@ -7,7 +7,20 @@
 //                                  (…_REAL_… marker ที่ vendor route ใช้ regex แยกต้องไม่เพี้ยน)
 //   c/<vendorId>                   แคช index JSON ผลสแกน (แทน bills_<vendor>.json)
 import { getStore } from '@netlify/blobs'
-import type { BillIndex } from './billcache'
+
+export interface BillEntry {
+  month: string
+  filename: string
+  messageId: string
+  attachmentId: string
+  size: number
+  subject: string
+}
+export interface BillIndex {
+  lastScan: string
+  done: string[]
+  entries: BillEntry[]
+}
 
 const STORE = 'gucut-bills'
 const fkey = (vendorId: string, filename: string) => `f/${vendorId}/${filename}`

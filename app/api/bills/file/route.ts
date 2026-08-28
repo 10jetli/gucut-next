@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAccessToken, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { emailToPdf } from '@/lib/emailPdf'
-import { downloadDriveFile } from '@/lib/drive'
 import { downloadBlobFile } from '@/lib/billblobs'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +13,7 @@ export async function GET(req: NextRequest) {
   const messageId = req.nextUrl.searchParams.get('messageId')
   const attachmentId = req.nextUrl.searchParams.get('attachmentId')
   const name = req.nextUrl.searchParams.get('name') || 'file'
-  if (!attachmentId || (!messageId && !attachmentId.startsWith('DRIVE:') && !attachmentId.startsWith('BLOB:'))) {
+  if (!attachmentId || (!messageId && !attachmentId.startsWith('BLOB:'))) {
     return NextResponse.json({ error: 'ต้องระบุ messageId และ attachmentId' }, { status: 400 })
   }
   try {
@@ -23,17 +22,6 @@ export async function GET(req: NextRequest) {
     if (attachmentId.startsWith('BLOB:')) {
       const buf = await downloadBlobFile(attachmentId.slice('BLOB:'.length))
       if (!buf) return NextResponse.json({ error: 'ไม่พบไฟล์' }, { status: 404 })
-      const pdfName = name.endsWith('.pdf') ? name : name + '.pdf'
-      return new NextResponse(buf as any, {
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(pdfName)}`,
-        },
-      })
-    }
-
-    if (attachmentId.startsWith('DRIVE:')) {
-      const buf = await downloadDriveFile(token, attachmentId.slice('DRIVE:'.length))
       const pdfName = name.endsWith('.pdf') ? name : name + '.pdf'
       return new NextResponse(buf as any, {
         headers: {

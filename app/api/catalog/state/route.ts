@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { loadCatalogStateAny, saveCatalogStateBlobs } from '@/lib/catalogstate'
+import { loadCatalogStateBlobs, saveCatalogStateBlobs } from '@/lib/catalogstate'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +7,7 @@ export const dynamic = 'force-dynamic'
 // ให้หน้า /catalog ทุกเครื่อง/เบราว์เซอร์เห็นข้อมูลตรงกัน แทนที่จะต่างคนต่าง localStorage
 export async function GET() {
   try {
-    const state = await loadCatalogStateAny()
+    const state = await loadCatalogStateBlobs()
     if (!state) return NextResponse.json({ exists: false })
     return NextResponse.json({
       exists: true,
