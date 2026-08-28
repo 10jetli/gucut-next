@@ -2,6 +2,8 @@
 import { BILL_VENDORS } from './vendors'
 
 export interface NavChild { href: string; label: string }
+import { WEB_TOOLS } from './web-tools'
+
 export interface NavItem { href?: string; icon: string; label: string; children?: NavChild[] }
 
 export const NAV_ITEMS: NavItem[] = [
@@ -31,19 +33,14 @@ export const NAV_ITEMS: NavItem[] = [
   {
     icon: '🌐',
     label: 'เว็บไซต์',
+    // เจ้าของร้านสั่ง "เอาออกมาไว้ข้างนอก" (28 ส.ค. 2569) — เมนูดึงจากทะเบียน
+    // เครื่องมือทั้งหมดอัตโนมัติ เพิ่มหน้าใหม่ใน web-tools.ts แล้วเมนูขึ้นเอง
     children: [
-      // เจ้าของร้านสั่งเอา "ผลิตภัณฑ์" (/store/products) กับ "AI Visibility"
-      // (/ai-visibility) ออกจากเมนู 18 ส.ค. 2569
-      // ⚠️ เอาออกจาก "เมนู" เท่านั้น ตัวหน้ากับ API ยังอยู่ครบ พิมพ์ที่อยู่เข้าตรง ๆ ได้
-      //    ถ้าจะลบทิ้งจริงต้องสั่งอีกที เพราะต้องลบทั้งหน้า API และข้อมูลที่ผูกอยู่
-      // รวมหลังร้านเป็นเนื้อเดียว (28 ส.ค. 2569) — ทยอยย้ายทีละหน้า
-      // หน้าที่ย้ายแล้วเป็นเนทีฟ (/web/...) · ที่เหลือยังเปิดผ่านกรอบ /site จนกว่าจะย้ายเสร็จ
-      { href: '/web/orders', label: 'ออเดอร์เว็บ' },
-      { href: '/web/chat', label: 'แชทลูกค้า' },
-      { href: '/web/coupons', label: 'โค้ดส่วนลด' },
-      { href: '/web/live', label: 'คนเข้าเว็บ' },
-      { href: '/web/status', label: 'สถานะระบบ' },
-      { href: '/site', label: 'เครื่องมือเว็บไซต์' },
+      ...WEB_TOOLS.map((t) => ({
+        href: t.native ? t.path : `/site/tool/${t.slug}`,
+        label: t.title,
+      })),
+      { href: '/site', label: 'รวมเครื่องมือ (ค้นหา)' },
     ],
   },
 ]
