@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { getNavItems } from '@/lib/nav-config'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
-import { MobileHeader, MobileBottomNav } from './MobileNav'
+import { MobileHeader, MobileBottomNav, MobileDrawer } from './MobileNav'
 
 const STORAGE_KEY = 'gucut-sidebar-collapsed'
 
@@ -17,6 +17,7 @@ export default function AppShell({ children, role }: AppShellProps) {
   const [collapsed, setCollapsed] = useState(false)
   const [ready, setReady] = useState(false)
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
+  const [drawerOpen, setDrawerOpen] = useState(false)
   const navItems = getNavItems(role)
 
   useEffect(() => {
@@ -27,6 +28,8 @@ export default function AppShell({ children, role }: AppShellProps) {
   }, [])
 
   // เปิดกลุ่มอัตโนมัติถ้าหน้าปัจจุบันอยู่ในเมนูย่อยของกลุ่มนั้น
+  useEffect(() => { setDrawerOpen(false) }, [pathname])
+
   useEffect(() => {
     for (const item of navItems) {
       if (item.children && item.children.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))) {
@@ -74,14 +77,15 @@ export default function AppShell({ children, role }: AppShellProps) {
         toggleCollapse={toggleCollapse}
       />
       <TopBar mainMl={mainMl} anim={anim} />
-      <MobileHeader />
+      <MobileHeader onMenu={() => setDrawerOpen(true)} />
 
       {/* ── Main content ── */}
       <main className={`${mainMl} md:pt-14 ${anim}`}>
         <div className="md:max-w-[1300px] md:mx-auto">{children}</div>
       </main>
 
-      <MobileBottomNav navItems={navItems} />
+      <MobileBottomNav navItems={navItems} onMenu={() => setDrawerOpen(true)} />
+      <MobileDrawer navItems={navItems} open={drawerOpen} onClose={() => setDrawerOpen(false)} />
     </>
   )
 }
