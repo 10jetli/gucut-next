@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAccessToken } from '@/lib/gmail'
-import { syncBillToDrive } from '@/lib/drive'
+import { syncBillToBlobs } from '@/lib/billblobs'
 import { BILL_VENDORS } from '@/lib/vendors'
 
 export const dynamic = 'force-dynamic'
@@ -51,9 +50,8 @@ export async function POST(req: NextRequest) {
       return json({ error: 'ไฟล์ไม่ใช่ PDF ที่ถูกต้อง' }, 400)
     }
 
-    const token = await getAccessToken()
     const driveName = `${month}_REAL_${filename.endsWith('.pdf') ? filename : filename + '.pdf'}`
-    const uploaded = await syncBillToDrive(token, vendorId, driveName, 'application/pdf', buf)
+    const uploaded = await syncBillToBlobs(vendorId, driveName, 'application/pdf', buf)
 
     return json({ ok: true, uploaded, skipped: !uploaded, name: driveName, size: buf.length })
   } catch (e: any) {

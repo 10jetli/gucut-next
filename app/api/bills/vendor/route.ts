@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 import { listVendorDriveFiles } from '@/lib/drive'
-import { loadBillIndex, saveBillIndex, BillEntry } from '@/lib/billcache'
+import { BillEntry } from '@/lib/billcache'
+import { listVendorBlobFiles, loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -27,7 +28,7 @@ export async function GET(req: NextRequest) {
     const now = new Date()
 
     // ── โหลด cache (ถ้ามี) แล้วสแกนเพิ่มเฉพาะช่วงหลังการสแกนล่าสุด (เผื่อย้อน 3 วัน) ──
-    const idx = rescan ? null : await loadBillIndex(token, vendor.id)
+    const idx = rescan ? null : await loadBillIndexBlobs(vendor.id)
     let after: string
     if (idx) {
       const d = new Date(idx.lastScan)
@@ -105,7 +106,7 @@ export async function GET(req: NextRequest) {
 
     // บันทึก cache เมื่อมีของใหม่ (หรือยังไม่เคยมี cache) — ถ้าบันทึกพลาดก็ไม่เป็นไร รอบหน้าสแกนใหม่
     if (changed || !idx) {
-      try { await saveBillIndex(token, vendor.id, { lastScan: now.toISOString(), done: Array.from(done), entries }) } catch {}
+      try { await saveBillIndexBlobs(vendor.id, { lastScan: now.toISOString(), done: Array.from(done), entries }) } catch {}
     }
 
     // ── จัดกลุ่มเป็นรายเดือน (ตัดเดือนที่เก่ากว่า ~13 เดือนทิ้ง) ──
@@ -126,15 +127,21 @@ export async function GET(req: NextRequest) {
     // ชื่อไฟล์รูปแบบ YYYY-MM_REAL_<ชื่อ>.pdf — ถ้าเดือนไหนมีไฟล์ตัวจริง ให้ตัด PDF
     // ที่สร้างจากอีเมล (GEN) ของเดือนนั้นทิ้ง เหลือแต่ตัวจริง
     try {
-      const driveFiles = await listVendorDriveFiles(token, vendor.id)
+      // ไฟล์จริง: Blobs เป็นหลัก · Drive เป็นตาข่ายช่วงย้าย (ไฟล์เก่าที่ยังไม่ migrate)
+      //   dedup ตามชื่อไฟล์ — ตัวที่อยู่ Blobs แล้วชนะ (f.id ของ Blobs เป็น BLOB:<key> อยู่แล้ว)
+      const blobFiles: { id: string; name: string; size: number }[] = await listVendorBlobFiles(vendor.id).catch(() => [])
+      let driveFiles: { id: string; name: string; size: number }[] = []
+      try { driveFiles = (await listVendorDriveFiles(token, vendor.id)).map(f => ({ id: `DRIVE:${f.id}`, name: f.name, size: f.size })) } catch {}
+      const seen = new Set(blobFiles.map(f => f.name))
+      const allReal = blobFiles.concat(driveFiles.filter(f => !seen.has(f.name)))
       const realByMonth: Record<string, any[]> = {}
-      for (const f of driveFiles) {
+      for (const f of allReal) {
         const m = f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/)
         if (!m) continue
         ;(realByMonth[m[1]] ??= []).push({
           filename: m[2],
           messageId: '',
-          attachmentId: `DRIVE:${f.id}`,
+          attachmentId: f.id,
           size: f.size,
           subject: `ไฟล์ตัวจริงจาก ${vendor.name}`,
         })

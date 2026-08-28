@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 import { emailToPdf } from '@/lib/emailPdf'
-import { syncBillToDrive } from '@/lib/drive'
+import { syncBillToBlobs } from '@/lib/billblobs'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -37,7 +37,7 @@ async function syncVendor(vendor: (typeof VENDORS)[number]) {
           }
           const mimeType = /\.zip$/i.test(att.filename) ? 'application/zip' : 'application/pdf'
           const filename = `${emailMonth}_${b.messageId}_${safeName(att.filename)}`
-          const didUpload = await syncBillToDrive(token, vendor.id, filename, mimeType, buf)
+          const didUpload = await syncBillToBlobs(vendor.id, filename, mimeType, buf)
           didUpload ? uploaded++ : skipped++
         } catch (e: any) {
           failed++
@@ -52,7 +52,7 @@ async function syncVendor(vendor: (typeof VENDORS)[number]) {
           date: detail.date, amounts: [], body: detail.text, html: detail.html,
         })
         const filename = `${emailMonth}_${b.messageId}_ใบเสร็จ.pdf`
-        const didUpload = await syncBillToDrive(token, vendor.id, filename, 'application/pdf', buf)
+        const didUpload = await syncBillToBlobs(vendor.id, filename, 'application/pdf', buf)
         didUpload ? uploaded++ : skipped++
       } catch (e: any) {
         failed++

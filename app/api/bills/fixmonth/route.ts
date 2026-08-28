@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAccessToken } from '@/lib/gmail'
-import { loadBillIndex, saveBillIndex } from '@/lib/billcache'
+import { loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,8 +16,7 @@ export async function POST(req: NextRequest) {
     if (!vendor || !match || !/^\d{4}-\d{2}$/.test(month || '')) {
           return NextResponse.json({ error: 'need vendor, match, month (YYYY-MM)' }, { status: 400 })
     }
-    const token = await getAccessToken()
-    const idx = await loadBillIndex(token, vendor)
+    const idx = await loadBillIndexBlobs(vendor)
     if (!idx) {
           return NextResponse.json({ error: 'no cache for this vendor' }, { status: 404 })
     }
@@ -30,7 +28,7 @@ export async function POST(req: NextRequest) {
           }
     }
     if (changed > 0) {
-          await saveBillIndex(token, vendor, idx)
+          await saveBillIndexBlobs(vendor, idx)
     }
     return NextResponse.json({ ok: true, changed })
 }
