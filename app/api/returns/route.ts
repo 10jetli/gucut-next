@@ -23,7 +23,7 @@ export async function GET(request: Request) {
   //    ของคืนเป็นเรื่องที่ต้องรีบรู้ ไม่ใช่รอสรุปรายเดือน
   const days = Math.min(1095, Math.max(1, Number(url.searchParams.get('days')) || 30))
   const refresh = url.searchParams.get('refresh') === '1'
-  const key = `v1-${days}`
+  const key = `v2-${days}`
 
   const store = getStore(STORE)
   if (!refresh) {

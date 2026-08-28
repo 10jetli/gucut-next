@@ -193,7 +193,9 @@ export default function ReturnsPage() {
             </Card>
           ) : (
             <div className="space-y-2">
-              {list.map((o) => (
+              {list.map((o) => {
+                const boxes = o.trackings?.length ? o.trackings.length : o.tracking ? 1 : 0
+                return (
                 <Card key={o.number}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium text-gray-900">{o.number}</span>
@@ -202,24 +204,51 @@ export default function ReturnsPage() {
                     </span>
                     <span className="text-xs text-gray-500">{o.date}</span>
                   </div>
-                  <p className="mt-0.5 text-xs text-gray-500">
-                    {o.customer}{o.province && <> · {o.province}</>}
-                    {o.tracking && <> · {o.tracking}</>}
-                  </p>
-                  <ul className="mt-1.5 space-y-0.5">
+                  {o.ref && <p className="mt-0.5 text-xs text-gray-400">ออเดอร์เดิม #{o.ref}</p>}
+
+                  {/* ใครส่งคืน มาจากไหน — Shopee เซ็นเซอร์ชื่อ/เบอร์/บ้านเลขที่มาเอง เห็นได้สุดแค่นี้ */}
+                  <div className="mt-2 grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
+                    {o.customer && <p><span className="text-gray-400">ลูกค้า </span><span className="font-medium text-gray-800">{o.customer}</span>
+                      {o.phone && <span className="text-gray-600"> · โทร {o.phone}</span>}</p>}
+                    {(o.address || o.province) && <p><span className="text-gray-400">ส่งจาก </span><span className="text-gray-700">{o.address || o.province}</span></p>}
+                    {(o.tracking || boxes > 0) && (
+                      <p>
+                        <span className="text-gray-400">พัสดุ </span>
+                        <span className="font-medium tabular-nums text-gray-800">{boxes} กล่อง</span>
+                        {o.carrier && <span className="text-gray-700"> · {o.carrier}</span>}
+                        {o.shipDate && <span className="text-gray-500"> · ขนส่งรับ {o.shipDate}</span>}
+                      </p>
+                    )}
+                    {(o.trackings?.length ? o.trackings : o.tracking ? [{ no: o.tracking, carrier: '', date: '' }] : []).map((t) => (
+                      <p key={t.no} className="font-mono text-[11.5px] text-gray-700">
+                        {t.no}
+                        <button onClick={() => void navigator.clipboard?.writeText(t.no).catch(() => {})}
+                          className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 font-sans text-[10px] text-gray-500 active:bg-gray-200">คัดลอก</button>
+                      </p>
+                    ))}
+                    {o.warehouse && <p><span className="text-gray-400">คลังรับคืน </span><span className="text-gray-700">{o.warehouse}</span></p>}
+                    {o.paymentStatus && <p><span className="text-gray-400">เงินคืน </span><span className={o.paymentStatus === 'Paid' ? 'font-medium text-emerald-700' : 'text-gray-700'}>{o.paymentStatus === 'Paid' ? 'คืนแล้ว' : o.paymentStatus}</span></p>}
+                    {o.note && <p className="sm:col-span-2"><span className="text-gray-400">หมายเหตุ </span><span className="text-gray-700">{o.note}</span></p>}
+                  </div>
+
+                  <ul className="mt-2 space-y-0.5 border-t pt-2">
                     {o.lines.map((l, i) => (
                       <li key={i} className="flex gap-2 text-sm">
-                        <span className="min-w-0 flex-1 text-gray-800">{l.name}</span>
+                        <span className="min-w-0 flex-1 text-gray-800">{l.name}<span className="ml-1.5 text-[11px] text-gray-400">{l.sku}</span></span>
                         <span className="shrink-0 tabular-nums text-gray-400">×{l.qty}</span>
                         <span className="shrink-0 tabular-nums text-gray-600">{baht(l.total)}</span>
                       </li>
                     ))}
                   </ul>
-                  <p className="mt-1.5 border-t pt-1.5 text-right text-sm font-semibold text-gray-900">
-                    คืนเงิน {baht(o.amount)}
-                  </p>
+                  <div className="mt-1.5 flex flex-wrap items-baseline justify-end gap-x-3 border-t pt-1.5 text-xs text-gray-500">
+                    {typeof o.qty === 'number' && o.qty > 0 && <span>รวม {o.qty} ชิ้น</span>}
+                    {o.shipping > 0 && <span>ค่าส่ง {baht(o.shipping)}</span>}
+                    {o.platformDiscount > 0 && <span>ส่วนลดแพลตฟอร์ม {baht(o.platformDiscount)}</span>}
+                    <span className="text-sm font-semibold text-gray-900">คืนเงิน {baht(o.amount)}</span>
+                  </div>
                 </Card>
-              ))}
+                )
+              })}
               {list.length === 0 && (
                 <Card><p className="py-6 text-center text-sm text-gray-500">ไม่พบข้อมูล</p></Card>
               )}

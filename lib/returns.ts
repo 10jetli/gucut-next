@@ -17,17 +17,29 @@ const PAGE_SIZE = 200
 const CONCURRENCY = 6
 
 export interface ReturnLine { sku: string; name: string; qty: number; total: number }
+export interface ReturnTracking { no: string; carrier: string; date: string }
 export interface ReturnOrder {
   number: string
   ref: string
   date: string
   channel: string
   status: string
+  paymentStatus: string
   amount: number
+  shipping: number
+  platformDiscount: number
   customer: string
   phone: string
+  address: string
   province: string
   tracking: string
+  // หนึ่งเลขแทร็ก = หนึ่งกล่อง — ZORT ไม่มีน้ำหนัก/ขนาดกล่อง จึงนับจากตรงนี้
+  trackings: ReturnTracking[]
+  carrier: string
+  shipDate: string
+  warehouse: string
+  qty: number
+  note: string
   lines: ReturnLine[]
 }
 
@@ -149,17 +161,36 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
       return { sku: str(it.sku), name: str(it.name), qty: num(it.number), total: num(it.totalprice) }
     })
 
+    // ที่อยู่ต้นทางที่ลูกค้าส่งคืนมา — Shopee เซ็นเซอร์บ้านเลขที่ให้เอง เหลือระดับตำบลขึ้นไป
+    const address = [str(r.customersubdistrict) && `ต.${str(r.customersubdistrict)}`,
+      str(r.customerdistrict) && `อ.${str(r.customerdistrict)}`,
+      str(r.customerprovince), str(r.customerpostcode)].filter(Boolean).join(' ')
+    const trackings: ReturnTracking[] = (Array.isArray(r.trackingList) ? r.trackingList : []).map((t) => {
+      const x = t as Record<string, unknown>
+      return { no: str(x.trackingno), carrier: str(x.shippingchannel), date: str(x.shippingdate).slice(0, 10) }
+    }).filter((t) => t.no)
+
     list.push({
       number: str(r.number),
       ref: str(r.referencenumber) || str(r.reference),
       date,
       channel,
       status: str(r.status),
+      paymentStatus: str(r.paymentstatus),
       amount,
+      shipping: num(r.shippingamount),
+      platformDiscount: num(r.platformdiscount),
       customer: str(r.customername),
       phone: str(r.customerphone),
+      address,
       province: str(r.customerprovince),
       tracking: str(r.trackingno),
+      trackings,
+      carrier: trackings[0]?.carrier || '',
+      shipDate: trackings[0]?.date || '',
+      warehouse: str(r.warehousecode),
+      qty: lines.reduce((n, l) => n + l.qty, 0),
+      note: str(r.description),
       lines,
     })
 
@@ -184,7 +215,12 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
 
   // รวมใบคืนจากเว็บหน้าร้านเข้าไปด้วย — นับเข้าช่องทาง/เดือน/SKU ชุดเดียวกัน
   for (const o of fromSite) {
-    list.push(o)
+    list.push({
+      paymentStatus: '', shipping: 0, platformDiscount: 0, address: '', trackings: [],
+      carrier: '', shipDate: '', warehouse: '', note: '',
+      qty: (o.lines || []).reduce((n, l) => n + l.qty, 0),
+      ...o,
+    })
     const c = (byChannel[o.channel] ||= { orders: 0, amount: 0 })
     c.orders += 1
     c.amount += o.amount
