@@ -31,6 +31,11 @@ export default function ReturnsPage() {
   const [q, setQ] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
+  // สถานะตามของคืน (สองขั้น: ขนส่งส่งถึง → ร้านรับ+ใครรับ) — เก็บฝั่งเซิร์ฟเวอร์
+  const [recv, setRecv] = useState<Record<string, { delivered?: number; received?: number; by?: string }>>({})
+  const [recvFilter, setRecvFilter] = useState<'' | 'waiting' | 'delivered' | 'received'>('')
+  // ชื่อคนรับ — จำไว้ในเครื่อง กรอกครั้งเดียวพอ
+  const [recvName, setRecvName] = useState('')
 
   const load = useCallback(async (d: number, refresh = false) => {
     setBusy(true); setErr('')
@@ -46,6 +51,41 @@ export default function ReturnsPage() {
 
   useEffect(() => { void load(days) }, [days, load])
 
+  useEffect(() => {
+    fetch('/api/returns/received')
+      .then((r) => r.json())
+      .then((j) => { if (j?.map) setRecv(j.map) })
+      .catch(() => {})
+  }, [])
+
+  useEffect(() => {
+    try { setRecvName(localStorage.getItem('gucut-recv-name') || '') } catch {}
+  }, [])
+
+  const markRecv = async (number: string, stage: 'delivered' | 'received' | 'clear') => {
+    const by = stage === 'received' ? recvName.trim() : undefined
+    // ปรับหน้าจอทันที ไม่รอเซิร์ฟเวอร์ — พลาดค่อยเด้งกลับตอนรีเฟรช
+    setRecv((prev) => {
+      const next = { ...prev }
+      const cur = next[number] || {}
+      if (stage === 'delivered') next[number] = { ...cur, delivered: Date.now() }
+      else if (stage === 'received') next[number] = { delivered: cur.delivered || Date.now(), received: Date.now(), by }
+      else delete next[number]
+      return next
+    })
+    if (stage === 'received') { try { localStorage.setItem('gucut-recv-name', recvName.trim()) } catch {} }
+    await fetch('/api/returns/received', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ number, stage, by }),
+    }).catch(() => {})
+  }
+
+  // ขนส่งรับไปแล้วเกิน 7 วันแต่ของยังไม่ถึง = ต้องทวงขนส่ง/แพลตฟอร์ม
+  const daysSince = (d: string) => d ? Math.floor((Date.now() - new Date(d + 'T00:00:00').getTime()) / 86400_000) : -1
+  const flashUrl = (no: string, carrier: string) =>
+    /flash/i.test(carrier) ? `https://www.flashexpress.com/fle/tracking?se=${encodeURIComponent(no)}` : ''
+
   if (!data && busy) return <LoadingState text="กำลังดึงใบคืนของจาก ZORT..." />
 
   const channels = data ? Object.entries(data.byChannel).sort((a, b) => b[1].orders - a[1].orders) : []
@@ -58,6 +98,13 @@ export default function ReturnsPage() {
 
   const list = (data?.list || [])
     .filter((o) => !ch || o.channel === ch)
+    .filter((o) => {
+      if (!recvFilter) return true
+      const st = recv[o.number]
+      if (recvFilter === 'received') return !!st?.received
+      if (recvFilter === 'delivered') return !!st?.delivered && !st?.received
+      return !st?.delivered && !st?.received
+    })
     .filter((o) => !low || o.number.toLowerCase().includes(low) || o.customer.toLowerCase().includes(low)
       || o.lines.some((l) => l.sku.toLowerCase().includes(low)))
     .slice(0, 100)
@@ -151,6 +198,19 @@ export default function ReturnsPage() {
               placeholder="ค้นหา SKU · ชื่อสินค้า · เลขใบคืน"
               className="min-w-0 flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm outline-none focus:border-blue-500"
             />
+            {tab === 'list' && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {([['', 'ทั้งหมด'], ['waiting', 'รอของ'], ['delivered', 'ถึงแล้วรอตรวจ'], ['received', 'ร้านรับแล้ว']] as const).map(([v, lb]) => (
+                  <button key={v} onClick={() => setRecvFilter(v)}
+                    className={`rounded-full px-3 py-1 text-xs font-medium ${recvFilter === v ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600'}`}>
+                    {lb}
+                  </button>
+                ))}
+                <input value={recvName} onChange={(e) => setRecvName(e.target.value)}
+                  placeholder="ชื่อคนรับของ"
+                  className="w-28 rounded-lg border border-gray-300 px-2 py-1 text-xs outline-none focus:border-blue-500" />
+              </div>
+            )}
           </div>
 
           {tab === 'sku' ? (
@@ -195,6 +255,10 @@ export default function ReturnsPage() {
             <div className="space-y-2">
               {list.map((o) => {
                 const boxes = o.trackings?.length ? o.trackings.length : o.tracking ? 1 : 0
+                const st = recv[o.number] || {}
+                const age = daysSince(o.shipDate || o.date)
+                const overdue = !st.delivered && !st.received && age > 7 && boxes > 0
+                const fmtD = (t?: number) => t ? new Date(t).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' }) : ''
                 return (
                 <Card key={o.number}>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -205,6 +269,33 @@ export default function ReturnsPage() {
                     <span className="text-xs text-gray-500">{o.date}</span>
                   </div>
                   {o.ref && <p className="mt-0.5 text-xs text-gray-400">ออเดอร์เดิม #{o.ref}</p>}
+
+                  {/* ตามของสองขั้น: ขนส่งส่งถึง → ร้านตรวจรับ (จดว่าใครรับ) — กดเอง Flash ไม่เปิด API */}
+                  <div className={`mt-2 flex flex-wrap items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${st.received ? 'bg-emerald-50' : st.delivered ? 'bg-blue-50' : overdue ? 'bg-red-50' : 'bg-amber-50'}`}>
+                    <span className={`font-semibold ${st.received ? 'text-emerald-700' : st.delivered ? 'text-blue-700' : overdue ? 'text-red-700' : 'text-amber-700'}`}>
+                      {st.received
+                        ? `✓ ร้านรับแล้ว${st.by ? ` · ${st.by} รับ` : ''}${st.received ? ` · ${fmtD(st.received)}` : ''}`
+                        : st.delivered
+                        ? `📦 ขนส่งส่งถึงแล้ว ${fmtD(st.delivered)} · รอตรวจรับ`
+                        : overdue
+                        ? `⚠️ เกิน ${age} วันของยังไม่ถึงร้าน — เช็คพัสดุ/ทวงขนส่ง`
+                        : boxes > 0 ? `รอของ · ขนส่งรับไปแล้ว ${age >= 0 ? age + ' วัน' : ''}` : 'รอของ · ยังไม่มีเลขพัสดุ'}
+                    </span>
+                    <span className="ml-auto flex gap-1.5">
+                      {!st.delivered && !st.received && (
+                        <button onClick={() => void markRecv(o.number, 'delivered')}
+                          className="rounded-md bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white">ขนส่งส่งถึงแล้ว</button>
+                      )}
+                      {!st.received && (
+                        <button onClick={() => void markRecv(o.number, 'received')}
+                          className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white">ร้านรับแล้ว</button>
+                      )}
+                      {(st.delivered || st.received) && (
+                        <button onClick={() => void markRecv(o.number, 'clear')}
+                          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-400">ล้าง</button>
+                      )}
+                    </span>
+                  </div>
 
                   {/* ใครส่งคืน มาจากไหน — Shopee เซ็นเซอร์ชื่อ/เบอร์/บ้านเลขที่มาเอง เห็นได้สุดแค่นี้ */}
                   <div className="mt-2 grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
@@ -219,13 +310,18 @@ export default function ReturnsPage() {
                         {o.shipDate && <span className="text-gray-500"> · ขนส่งรับ {o.shipDate}</span>}
                       </p>
                     )}
-                    {(o.trackings?.length ? o.trackings : o.tracking ? [{ no: o.tracking, carrier: '', date: '' }] : []).map((t) => (
+                    {(o.trackings?.length ? o.trackings : o.tracking ? [{ no: o.tracking, carrier: o.carrier, date: '' }] : []).map((t) => {
+                      const fl = flashUrl(t.no, t.carrier || o.carrier)
+                      return (
                       <p key={t.no} className="font-mono text-[11.5px] text-gray-700">
                         {t.no}
                         <button onClick={() => void navigator.clipboard?.writeText(t.no).catch(() => {})}
                           className="ml-1.5 rounded bg-gray-100 px-1.5 py-0.5 font-sans text-[10px] text-gray-500 active:bg-gray-200">คัดลอก</button>
+                        {fl && <a href={fl} target="_blank" rel="noreferrer"
+                          className="ml-1.5 rounded bg-blue-50 px-1.5 py-0.5 font-sans text-[10px] font-medium text-blue-600">เช็คสถานะ</a>}
                       </p>
-                    ))}
+                      )
+                    })}
                     {o.warehouse && <p><span className="text-gray-400">คลังรับคืน </span><span className="text-gray-700">{o.warehouse}</span></p>}
                     {o.paymentStatus && <p><span className="text-gray-400">เงินคืน </span><span className={o.paymentStatus === 'Paid' ? 'font-medium text-emerald-700' : 'text-gray-700'}>{o.paymentStatus === 'Paid' ? 'คืนแล้ว' : o.paymentStatus}</span></p>}
                     {o.note && <p className="sm:col-span-2"><span className="text-gray-400">หมายเหตุ </span><span className="text-gray-700">{o.note}</span></p>}
