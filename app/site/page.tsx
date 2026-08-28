@@ -1,14 +1,12 @@
 'use client'
-// เครื่องมือเว็บไซต์ gucut.com — หน้ารวมแบบ Shopify App Store
+// เครื่องมือเว็บไซต์ gucut.com — ลิสต์แถวเรียงลงมาแบบ ZORT
 //
-// เจ้าของร้านสั่ง 28 ส.ค. 2569: "เมนูเว็บอื่น ๆ มาตรฐานแบบ apps.shopify.com"
-// เดิมหน้านี้ฝังเมนูมือถือของ gucut.com/admin ทั้งดุ้น (ดูเป็นเว็บซ้อนเว็บ)
-// ตอนนี้เป็นหน้ารวมเครื่องมือเนทีฟ: การ์ดไอคอนไล่สี จัดหมวด ค้นหาได้
-// กดแล้วเปิดเครื่องมือนั้นเต็มจอ (/site/tool/<slug>) — เครื่องมือที่ย้ายเป็น
-// เนื้อเดียวแล้ว (native) ชี้ตรงเข้าหน้าในโดเมนนี้เลย
+// เจ้าของร้านให้ทิศทาง (28 ส.ค. 2569): "ชอบแบบ ZORT · ชอบแบบออเดอร์เว็บที่ทำอันแรก
+// เรียงลงมาเรื่อย ๆ · ขอ UI ทันสมัย" ⇒ เลิกตารางการ์ด 3 คอลัมน์
+// เป็นแถวเต็มความกว้างซ้อนลงมา จัดหมวดด้วยหัวข้อคั่น — ภาษาเดียวกับหน้าออเดอร์เว็บ
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
-import { WEB_TOOLS, CATS } from '@/lib/web-tools'
+import { WEB_TOOLS, CATS, type WebTool } from '@/lib/web-tools'
 
 function I({ d, className = 'w-5 h-5' }: { d: string; className?: string }) {
   return (
@@ -16,6 +14,33 @@ function I({ d, className = 'w-5 h-5' }: { d: string; className?: string }) {
          strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden>
       <path d={d} />
     </svg>
+  )
+}
+
+function ToolRow({ t }: { t: WebTool }) {
+  const href = t.native ? t.path : `/site/tool/${t.slug}`
+  return (
+    <Link href={href}
+      className="group flex items-center gap-3.5 px-4 md:px-5 py-3.5 transition-colors hover:bg-gray-50/80">
+      <span className={`w-11 h-11 rounded-xl bg-gradient-to-br ${t.grad} text-white flex items-center justify-center shrink-0 shadow-[0_8px_16px_-8px_rgba(15,23,42,0.4)] ring-2 ring-white transition-transform duration-200 group-hover:scale-105`}>
+        <I d={t.icon} className="w-[20px] h-[20px]" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center gap-1.5">
+          <span className="text-[14px] font-bold text-gray-900 truncate">{t.title}</span>
+          {t.isNew && (
+            <span className="shrink-0 rounded-full bg-blue-600 px-1.5 py-0.5 text-[9px] font-black text-white uppercase tracking-wide">ใหม่</span>
+          )}
+          {t.native && (
+            <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-600">เนื้อเดียวแล้ว</span>
+          )}
+        </span>
+        <span className="block text-[12px] text-gray-500 mt-0.5 truncate">{t.desc}</span>
+      </span>
+      <span className="shrink-0 text-gray-200 transition-all duration-200 group-hover:text-blue-500 group-hover:translate-x-0.5">
+        <I d="M9 6l6 6-6 6" className="w-4 h-4" />
+      </span>
+    </Link>
   )
 }
 
@@ -32,8 +57,16 @@ export default function SiteToolsPage() {
     })
   }, [cat, q])
 
+  // จัดกลุ่มตามหมวด — คงลำดับหมวดตาม CATS
+  const groups = useMemo(() => {
+    const g = new Map<string, WebTool[]>()
+    for (const c of CATS.slice(1)) g.set(c, [])
+    for (const t of shown) g.get(t.cat)?.push(t)
+    return Array.from(g.entries()).filter(([, list]) => list.length > 0)
+  }, [shown])
+
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 max-w-3xl">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
@@ -59,36 +92,14 @@ export default function SiteToolsPage() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
-        {shown.map((t) => {
-          const href = t.native ? t.path : `/site/tool/${t.slug}`
-          return (
-            <Link key={t.slug} href={href}
-              className="group bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_18px_32px_-16px_rgba(15,23,42,0.2)] hover:border-blue-100">
-              <div className="flex items-start gap-3.5">
-                <span className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${t.grad} text-white flex items-center justify-center shrink-0 shadow-[0_8px_16px_-8px_rgba(15,23,42,0.4)] transition-transform duration-200 group-hover:scale-105`}>
-                  <I d={t.icon} className="w-[22px] h-[22px]" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-[14.5px] font-bold text-gray-900 truncate">{t.title}</span>
-                    {t.isNew && (
-                      <span className="shrink-0 rounded-full bg-blue-600 px-1.5 py-0.5 text-[9px] font-black text-white uppercase tracking-wide">ใหม่</span>
-                    )}
-                  </span>
-                  <span className="block text-[12px] text-gray-500 mt-0.5 leading-relaxed line-clamp-2">{t.desc}</span>
-                  <span className="mt-2 inline-flex items-center gap-1 rounded-md bg-gray-50 px-1.5 py-0.5 text-[10px] font-semibold text-gray-400">
-                    {t.cat}{t.native ? ' · เนื้อเดียวแล้ว' : ''}
-                  </span>
-                </span>
-                <span className="shrink-0 self-center text-gray-200 transition-all duration-200 group-hover:text-blue-500 group-hover:translate-x-0.5">
-                  <I d="M9 6l6 6-6 6" className="w-4 h-4" />
-                </span>
-              </div>
-            </Link>
-          )
-        })}
-      </div>
+      {groups.map(([catName, list]) => (
+        <div key={catName}>
+          <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">{catName}</p>
+          <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
+            {list.map((t) => <ToolRow key={t.slug} t={t} />)}
+          </div>
+        </div>
+      ))}
 
       {shown.length === 0 && (
         <p className="py-14 text-center text-[13px] text-gray-400">ไม่พบเครื่องมือที่ตรงกับ &ldquo;{q}&rdquo;</p>
