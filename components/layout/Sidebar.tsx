@@ -1,6 +1,7 @@
 'use client'
 // Sidebar เดสก์ท็อป: เมนูหลัก + เมนูย่อยแบบพับ/กาง + ปุ่มย่อเมนู
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import type { NavItem } from '@/lib/nav-config'
 
 // ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
@@ -20,6 +21,14 @@ interface SidebarProps {
 }
 
 export default function Sidebar({ navItems, collapsed, openGroups, anim, sidebarW, isActive, pathname, toggleGroup, toggleCollapse }: SidebarProps) {
+  // เครดิต Netlify คงเหลือ — เจ้าของร้านสั่งให้โชว์ข้างโลโก้ (28 ส.ค. 2569)
+  const [credits, setCredits] = useState<number | null>(null)
+  useEffect(() => {
+    fetch('/api/netlify-credits')
+      .then((r) => r.json())
+      .then((j) => { if (typeof j?.left === 'number') setCredits(j.left) })
+      .catch(() => {})
+  }, [])
   return (
     <aside
       className={`hidden md:flex fixed inset-y-0 left-0 ${sidebarW} flex-col text-white z-30 ${anim}`}
@@ -39,6 +48,14 @@ export default function Sidebar({ navItems, collapsed, openGroups, anim, sidebar
               <p className="text-lg font-black tracking-tight leading-none">GUCUT</p>
               <p className="text-[9.5px] text-blue-200/60 mt-0.5 tracking-wide">BACK OFFICE</p>
             </div>
+            {credits !== null && (
+              <span
+                className={`ml-auto rounded-full px-2 py-0.5 text-[10px] font-bold ${credits < 1000 ? 'bg-orange-400/25 text-orange-200' : 'bg-white/10 text-blue-100/80'}`}
+                title={`เครดิต Netlify คงเหลือ (จาก 5,000/เดือน)`}
+              >
+                ⚡{credits.toLocaleString('th-TH')}
+              </span>
+            )}
           </div>
         )}
       </div>
