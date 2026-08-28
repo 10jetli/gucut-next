@@ -39,6 +39,10 @@ export const NAV_ITEMS: NavItem[] = [
       // รวมหลังร้านเป็นเนื้อเดียว (28 ส.ค. 2569) — ทยอยย้ายทีละหน้า
       // หน้าที่ย้ายแล้วเป็นเนทีฟ (/web/...) · ที่เหลือยังเปิดผ่านกรอบ /site จนกว่าจะย้ายเสร็จ
       { href: '/web/orders', label: 'ออเดอร์เว็บ' },
+      { href: '/web/chat', label: 'แชทลูกค้า' },
+      { href: '/web/coupons', label: 'โค้ดส่วนลด' },
+      { href: '/web/live', label: 'คนเข้าเว็บ' },
+      { href: '/web/status', label: 'สถานะระบบ' },
       { href: '/site', label: 'เครื่องมือเว็บไซต์' },
     ],
   },

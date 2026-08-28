@@ -10,7 +10,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
 
-const ALLOW = new Set(['orders', 'live', 'chat', 'social', 'coupon', 'points', 'marketing', 'permit-doc', 'time', 'read-id', 'ai-bots', 'netlify-credits'])
+const ALLOW = new Set(['orders', 'live', 'chat', 'social', 'coupon', 'points', 'marketing', 'permit-doc', 'time', 'read-id', 'ai-bots', 'netlify-credits', 'status'])
 
 async function forward(req: NextRequest, path: string[]) {
   const key = process.env.GUCUT_WEB_ADMIN_KEY
