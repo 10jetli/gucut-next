@@ -40,7 +40,6 @@ export const NAV_ITEMS: NavItem[] = [
         href: t.native ? t.path : `/site/tool/${t.slug}`,
         label: t.title,
       })),
-      { href: '/site', label: 'รวมเครื่องมือ (ค้นหา)' },
     ],
   },
 ]
