@@ -215,12 +215,13 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
 
   // รวมใบคืนจากเว็บหน้าร้านเข้าไปด้วย — นับเข้าช่องทาง/เดือน/SKU ชุดเดียวกัน
   for (const o of fromSite) {
-    list.push({
+    // ใบคืนจากเว็บอาจส่ง field ใหม่มาไม่ครบ — เติมค่าว่างเฉพาะช่องที่ขาด
+    const defaults = {
       paymentStatus: '', shipping: 0, platformDiscount: 0, address: '', trackings: [],
       carrier: '', shipDate: '', warehouse: '', note: '',
       qty: (o.lines || []).reduce((n, l) => n + l.qty, 0),
-      ...o,
-    })
+    }
+    list.push({ ...defaults, ...(o as Partial<ReturnOrder>) } as ReturnOrder)
     const c = (byChannel[o.channel] ||= { orders: 0, amount: 0 })
     c.orders += 1
     c.amount += o.amount
