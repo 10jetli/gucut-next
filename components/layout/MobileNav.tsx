@@ -23,6 +23,14 @@ function NavAnchor({ href, className, onClick, children }: {
 }
 
 export function MobileHeader({ onMenu }: { onMenu: () => void }) {
+  // เครดิต Netlify คงเหลือ — จุดเดียวกับป้ายใน sidebar เดสก์ท็อป (เจ้าของร้านสั่งให้โชว์บนมือถือด้วย)
+  const [credits, setCredits] = useState<number | null>(null)
+  useEffect(() => {
+    fetch('/api/netlify-credits')
+      .then((r) => r.json())
+      .then((j) => { if (typeof j?.left === 'number') setCredits(j.left) })
+      .catch(() => {})
+  }, [])
   return (
     <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-3 py-2.5 flex items-center justify-between gap-2 shadow-sm">
       <div className="flex items-center gap-1.5">
@@ -37,7 +45,17 @@ export function MobileHeader({ onMenu }: { onMenu: () => void }) {
         </div>
         <span className="text-lg font-black tracking-tight text-gray-900">GUCUT</span>
       </div>
-      <UserMenu />
+      <div className="flex items-center gap-2">
+        {credits !== null && (
+          <span
+            className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${credits < 1000 ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-500'}`}
+            title="เครดิต Netlify คงเหลือ (จาก 5,000/เดือน)"
+          >
+            ⚡{credits.toLocaleString('th-TH')}
+          </span>
+        )}
+        <UserMenu />
+      </div>
     </header>
   )
 }
