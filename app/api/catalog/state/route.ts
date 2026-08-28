@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAccessToken } from '@/lib/gmail'
-import { loadCatalogState, saveCatalogState } from '@/lib/catalogstate'
+import { loadCatalogStateAny, saveCatalogStateBlobs } from '@/lib/catalogstate'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,8 +7,7 @@ export const dynamic = 'force-dynamic'
 // ให้หน้า /catalog ทุกเครื่อง/เบราว์เซอร์เห็นข้อมูลตรงกัน แทนที่จะต่างคนต่าง localStorage
 export async function GET() {
   try {
-    const token = await getAccessToken()
-    const state = await loadCatalogState(token)
+    const state = await loadCatalogStateAny()
     if (!state) return NextResponse.json({ exists: false })
     return NextResponse.json({
       exists: true,
@@ -35,8 +33,7 @@ export async function POST(req: NextRequest) {
       catNew: Array.isArray(body?.catNew) ? body.catNew : [],
       facs: Array.isArray(body?.facs) ? body.facs : [],
     }
-    const token = await getAccessToken()
-    await saveCatalogState(token, state)
+    await saveCatalogStateBlobs(state)
     return NextResponse.json({ ok: true })
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 })

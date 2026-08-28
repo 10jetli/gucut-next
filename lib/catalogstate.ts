@@ -2,6 +2,7 @@
 // เดิมเก็บแค่ localStorage ของเบราว์เซอร์แต่ละเครื่อง ทำให้แต่ละเครื่องเห็นข้อมูลไม่ตรงกัน
 // ย้ายมาเก็บไฟล์ JSON เดียวใน Drive โฟลเดอร์ "GUCUT catalog" ให้ทุกเครื่องอ่าน/เขียนที่เดียวกัน
 import { findOrCreateFolder } from './drive'
+import { getStore } from '@netlify/blobs'
 
 const DRIVE = 'https://www.googleapis.com/drive/v3'
 const DRIVE_UPLOAD = 'https://www.googleapis.com/upload/drive/v3'
@@ -35,7 +36,7 @@ async function findFile(token: string, folder: string): Promise<string | null> {
 }
 
 // อ่านสถานะปัจจุบัน คืน null ถ้ายังไม่เคยมีการบันทึก (เครื่องแรกที่เปิดหลังอัปเดต)
-export async function loadCatalogState(token: string): Promise<CatalogState | null> {
+async function loadFromDrive(token: string): Promise<CatalogState | null> {
   try {
     const folder = await getFolder(token)
     const id = await findFile(token, folder)
@@ -54,7 +55,7 @@ export async function loadCatalogState(token: string): Promise<CatalogState | nu
 }
 
 // เขียนทับสถานะทั้งก้อน (ฝั่งหน้าเว็บส่งข้อมูลทั้งชุดมาเสมอ ไม่ patch บางส่วน)
-export async function saveCatalogState(token: string, state: Omit<CatalogState, 'updatedAt'>): Promise<void> {
+async function saveToDrive(token: string, state: Omit<CatalogState, 'updatedAt'>): Promise<void> {
   const folder = await getFolder(token)
   const id = await findFile(token, folder)
   const body = JSON.stringify({ ...state, updatedAt: new Date().toISOString() })
@@ -76,4 +77,42 @@ export async function saveCatalogState(token: string, state: Omit<CatalogState, 
       body: mp,
     })
   }
+}
+
+
+// ─── เก็บที่ Netlify Blobs (ที่จริงแล้วเป็น primary — เจ้าของร้านสั่งเลิกเก็บ Google Drive 28 ส.ค. 2569) ───
+// Drive functions ด้านบนเหลือไว้เพื่อ "ย้ายข้อมูลเดิมครั้งเดียว" เท่านั้น ไม่ใช่ที่เก็บหลักอีกต่อไป
+const STORE = 'gucut-catalog'
+const KEY = 'state'
+
+export async function loadCatalogStateBlobs(): Promise<CatalogState | null> {
+  try {
+    const store = getStore(STORE)
+    const j = (await store.get(KEY, { type: 'json' })) as CatalogState | null
+    return j ?? null
+  } catch {
+    return null
+  }
+}
+
+export async function saveCatalogStateBlobs(state: Omit<CatalogState, 'updatedAt'>): Promise<void> {
+  const store = getStore(STORE)
+  await store.setJSON(KEY, { ...state, updatedAt: new Date().toISOString() })
+}
+
+// อ่านสถานะ — Blobs ก่อน · ถ้ายังว่างลองย้ายจาก Drive มาครั้งเดียว (ข้อมูลเก่า 1,021 รายการไม่หาย)
+export async function loadCatalogStateAny(): Promise<CatalogState | null> {
+  const fromBlobs = await loadCatalogStateBlobs()
+  if (fromBlobs) return fromBlobs
+  // migrate จาก Drive ครั้งเดียว — ถ้า OAuth ยังตั้งอยู่
+  try {
+    const { getAccessToken } = await import('./gmail')
+    const token = await getAccessToken()
+    const fromDrive = await loadFromDrive(token)
+    if (fromDrive) {
+      await saveCatalogStateBlobs(fromDrive)
+      return fromDrive
+    }
+  } catch {}
+  return null
 }
