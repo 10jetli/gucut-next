@@ -8,6 +8,7 @@ export interface WebTool {
   slug: string
   path: string          // ใต้ gucut.com/admin/ (หรือเส้นทางในโดเมนนี้เมื่อ native)
   native?: boolean
+  ext?: boolean         // path เป็น URL เต็มของระบบภายนอก (ฝังเป็นกรอบ เช่น Duoke)
   title: string
   desc: string
   cat: 'การขาย' | 'คอนเทนต์' | 'การตลาด' | 'ระบบ'
@@ -41,6 +42,15 @@ export const WEB_TOOLS: WebTool[] = [
   { slug: 'chat', path: '/web/chat', native: true, isNew: true, cat: 'การขาย',
     title: 'แชทลูกค้า', desc: 'อ่านและตอบข้อความที่ลูกค้าทักจากหน้าเว็บ',
     icon: IC.chat, grad: 'from-emerald-400 to-teal-600' },
+  // แชทมาร์เก็ตเพลส/โซเชียล — ฝังระบบที่ร้านใช้อยู่จริง (เจ้าของร้านถาม "ฝังได้เหรอ"
+  // 28 ส.ค. 2569 · ตรวจแล้ว web.duoke.com กับ ZORT Social ไม่มีกำแพงกันฝัง)
+  // แชทวิ่งบนเซิร์ฟเวอร์ของเขาเอง ไม่กินเครดิต Netlify เลย
+  { slug: 'duoke', path: 'https://web.duoke.com', ext: true, isNew: true, cat: 'การขาย',
+    title: 'แชท Shopee · Lazada · TikTok', desc: 'ตอบแชทมาร์เก็ตเพลสผ่าน Duoke — ระบบทวงตะกร้าที่ร้านเลือกใช้',
+    icon: IC.chat, grad: 'from-orange-400 to-amber-500' },
+  { slug: 'zort-social', path: 'https://social.zortout.com', ext: true, isNew: true, cat: 'การขาย',
+    title: 'แชท LINE · Facebook · IG', desc: 'ตอบแชทโซเชียล + เปิดบิลจอเดียว ผ่าน ZORT Social Commerce',
+    icon: IC.chat, grad: 'from-green-400 to-emerald-600' },
   { slug: 'permits', path: '/web/permits', native: true, isNew: true, cat: 'การขาย',
     title: 'ขอทะเบียนเลื่อยยนต์', desc: 'ลูกค้าเดินเรื่องถึงขั้นไหน · ใบ ลซ.๒ ที่ส่งเข้ามา',
     icon: IC.saw, grad: 'from-orange-400 to-red-500' },

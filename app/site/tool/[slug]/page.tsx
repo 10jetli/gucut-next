@@ -10,7 +10,7 @@ import { WEB_TOOLS } from '@/lib/web-tools'
 
 export default function SiteToolPage() {
   const { slug } = useParams<{ slug: string }>()
-  const tool = WEB_TOOLS.find((t) => t.slug === slug && !t.native)
+  const tool = WEB_TOOLS.find((t) => t.slug === slug && (!t.native || t.ext))
   if (!tool) {
     return (
       <div className="py-14 text-center text-sm text-gray-400">
@@ -18,7 +18,7 @@ export default function SiteToolPage() {
       </div>
     )
   }
-  const src = `https://gucut.com/admin/${tool.path}/`
+  const src = tool.ext ? tool.path : `https://gucut.com/admin/${tool.path}/`
   return (
     <div className="flex flex-col h-[calc(100vh-2rem)]">
       <div className="flex items-center gap-3 pb-3">
