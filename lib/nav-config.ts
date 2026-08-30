@@ -8,6 +8,7 @@ export interface NavItem { href?: string; icon: string; label: string; children?
 
 export const NAV_ITEMS: NavItem[] = [
   { href: '/', icon: '🏠', label: 'หน้าหลัก' },
+  { href: '/sales', icon: '📊', label: 'ยอดขายทุกช่องทาง' },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
   { href: '/returns', icon: '↩️', label: 'สินค้าที่ลูกค้าคืน' },
   { href: '/ads', icon: '📢', label: 'โฆษณา' },
