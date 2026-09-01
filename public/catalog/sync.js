@@ -57,7 +57,8 @@
   //    ถ้าย้ายหมวดทีหลัง ไฟล์นี้จะไม่ตามให้ ต้องสร้างใหม่
   var SEEDS=[["oem-ms440.json","oem"],["hh-ms440.json","hh"],
              ["oem-ms660.json","oem"],["hh-ms660.json","hh"],
-             ["factory-7800tb.json","factory"]];
+             ["factory-7800tb.json","factory"],
+             ["factory-mini.json","factory"]];
   function applySeed(file,field){
     return fetch(file,{cache:"no-store"})
       .then(function(r){return r.ok?r.json():null;})
