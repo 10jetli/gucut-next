@@ -52,8 +52,12 @@
   //    รอบถัดไปจะเติมใหม่แล้ว reload อีก วนไม่รู้จบ (กันด้วย sessionStorage)
   var SEED_FLAG="gucut_oem_ms440_v1";
   // เพิ่มรุ่นใหม่ = เพิ่มไฟล์ + เพิ่มบรรทัดที่นี่ ห้ามแก้รูปแบบไฟล์เดิม
+  // ⚠️ รายชื่อ SKU ของ factory-7800tb.json คัดจากช่อง cat ใน products.json
+  //    ตอนสร้างได้ 176 ตัว ตรงกับที่หน้าจอนับให้พอดี ⇒ ยังไม่มีใครย้ายหมวดพวกนี้
+  //    ถ้าย้ายหมวดทีหลัง ไฟล์นี้จะไม่ตามให้ ต้องสร้างใหม่
   var SEEDS=[["oem-ms440.json","oem"],["hh-ms440.json","hh"],
-             ["oem-ms660.json","oem"],["hh-ms660.json","hh"]];
+             ["oem-ms660.json","oem"],["hh-ms660.json","hh"],
+             ["factory-7800tb.json","factory"]];
   function applySeed(file,field){
     return fetch(file,{cache:"no-store"})
       .then(function(r){return r.ok?r.json():null;})
