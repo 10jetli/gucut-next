@@ -15,6 +15,7 @@ export async function GET() {
       catMap: state.catMap ?? {},
       catNew: state.catNew ?? [],
       facs: state.facs ?? [],
+      catDone: state.catDone ?? [],
       updatedAt: state.updatedAt ?? null,
     })
   } catch (e: any) {
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
       catMap: body?.catMap && typeof body.catMap === 'object' ? body.catMap : {},
       catNew: Array.isArray(body?.catNew) ? body.catNew : [],
       facs: Array.isArray(body?.facs) ? body.facs : [],
+      catDone: Array.isArray(body?.catDone) ? body.catDone.filter((x: unknown) => typeof x === 'string') : [],
     }
     await saveCatalogStateBlobs(state)
     return NextResponse.json({ ok: true })

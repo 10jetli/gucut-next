@@ -212,8 +212,8 @@
 </div>
 <script src="/catalog/sync.js"></script>
 <script>
-const LS_OVR="gucut_overrides_v1", LS_COL="gucut_cols_v1", LS_CAT="gucut_catmap_v1", LS_CATNEW="gucut_catnew_v1", LS_FAC="gucut_factories_v1";
-const state={base:[], prefix:"", ana:{}, anaInfo:null, ovr:load(LS_OVR,{}), catMap:load(LS_CAT,{}), catNew:load(LS_CATNEW,[]), facs:load(LS_FAC,[]), facEdit:null, sort:{key:"stock",dir:1}, editing:null};
+const LS_OVR="gucut_overrides_v1", LS_COL="gucut_cols_v1", LS_CAT="gucut_catmap_v1", LS_CATNEW="gucut_catnew_v1", LS_FAC="gucut_factories_v1", LS_CATDONE="gucut_catdone_v1";
+const state={base:[], prefix:"", ana:{}, anaInfo:null, ovr:load(LS_OVR,{}), catMap:load(LS_CAT,{}), catNew:load(LS_CATNEW,[]), facs:load(LS_FAC,[]), catDone:load(LS_CATDONE,[]), facEdit:null, sort:{key:"stock",dir:1}, editing:null};
 const THRESHOLD=5;
 const COLS=[
   {key:"sku",label:"SKU"},{key:"name",label:"Product Name"},{key:"nameEn",label:"Name (EN)"},
@@ -227,6 +227,15 @@ let colOn=load(LS_COL,null)||Object.fromEntries(COLS.map(c=>[c.key,true]));
 
 function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+// ---- หมวดที่ทำเสร็จแล้ว (เจ้าของร้านกดเองจากเมนูหมวด) ----
+// เก็บเป็นรายชื่อหมวด เพื่อให้เห็นว่าไล่ใส่ข้อมูลถึงรุ่นไหนแล้ว
+function isCatDone(c){return (state.catDone||[]).indexOf(c)>=0;}
+function toggleCatDone(c){
+  const i=(state.catDone||[]).indexOf(c);
+  if(i>=0)state.catDone.splice(i,1);else state.catDone.push(c);
+  save(LS_CATDONE,state.catDone);   // sync.js จับตรงนี้แล้วส่งขึ้นเซิร์ฟเวอร์เอง
+  return i<0;
+}
 
 // ---- parse tags ----
 const CJK=/[一-鿿　-〿＀-￯]+/g;
@@ -250,8 +259,8 @@ function renameCat(from,to){if(!to||from===to)return;const raws=new Set();state.
 function deleteCat(name){if(state.base.some(p=>catOf(p)===name))renameCat(name,"ไม่ระบุหมวด");state.catNew=state.catNew.filter(c=>c!==name);save(LS_CAT,state.catMap);save(LS_CATNEW,state.catNew);}
 function autoMerge(){const cnt=catCounts();const g={};Object.keys(cnt).forEach(c=>{const k=c.toLowerCase().replace(/[\s\-_.,]/g,"");(g[k]=g[k]||[]).push(c);});let n=0;Object.values(g).forEach(arr=>{if(arr.length<2)return;arr.sort((a,b)=>(cnt[b]||0)-(cnt[a]||0));const keep=arr[0];arr.slice(1).forEach(c=>{renameCat(c,keep);n++;});});return n;}
 function rebuildCatFilter(){const cnt=catCounts(),cats=allCats(),sel=document.getElementById("fCat"),cur=sel.value;
- sel.innerHTML='<option value="">ทุกหมวด</option>'+cats.map(c=>'<option value="'+esc(c)+'"'+(c===cur?" selected":"")+'>'+esc(c)+' ('+(cnt[c]||0)+')</option>').join("")
-   +'<option disabled>──────────</option><option value="__add__">➕ เพิ่มหมวดใหม่…</option><option value="__del__">🗑 ลบหมวดที่เลือก…</option><option value="__ren__">✏️ เปลี่ยนชื่อหมวดที่เลือก…</option><option value="__mgr__">⚙️ จัดการหมวดทั้งหมด…</option>';
+ sel.innerHTML='<option value="">ทุกหมวด</option>'+cats.map(c=>{const d=isCatDone(c);return '<option value="'+esc(c)+'"'+(c===cur?" selected":"")+(d?' style="color:#188038;font-weight:600"':'')+'>'+(d?"\u2713 ":"")+esc(c)+' ('+(cnt[c]||0)+')</option>';}).join("")
+   +'<option disabled>──────────</option><option value="__add__">➕ เพิ่มหมวดใหม่…</option><option value="__del__">🗑 ลบหมวดที่เลือก…</option><option value="__ren__">✏️ เปลี่ยนชื่อหมวดที่เลือก…</option><option value="__done__">✅ สลับ \"เสร็จแล้ว\" ของหมวดที่เลือก</option><option value="__mgr__">⚙️ จัดการหมวดทั้งหมด…</option>';
  const dl=document.getElementById("catList");if(dl)dl.innerHTML=cats.map(c=>'<option value="'+esc(c)+'">').join("");}
 
 // ---- คำแนะนำการสั่งซื้อ ----
@@ -591,6 +600,9 @@ function catAction(){
     if(n&&n.trim()){const t=n.trim();if(!state.catNew.includes(t))state.catNew.push(t);save(LS_CATNEW,state.catNew);rebuildCatFilter();sel.value=t;state._lastCat=t;}
     render();return;}
   if(!prev){alert("กรุณาเลือกหมวดที่ต้องการก่อน แล้วค่อยเลือกคำสั่งนี้");render();return;}
+  if(v==="__done__"){
+    const on=toggleCatDone(prev);rebuildCatFilter();sel.value=prev;state._lastCat=prev;
+    render();alert('"'+prev+'" '+(on?"ทำเครื่องหมายว่าเสร็จแล้ว ✅":"เอาเครื่องหมายเสร็จแล้วออก"));return;}
   if(v==="__del__"){
     if(confirm('ลบหมวด "'+prev+'" ?\nสินค้าในหมวดนี้จะย้ายไป "ไม่ระบุหมวด"')){deleteCat(prev);rebuildCatFilter();sel.value="";state._lastCat="";}
     render();return;}

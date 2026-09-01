@@ -5,6 +5,8 @@ export interface CatalogState {
   catMap: Record<string, string>
   catNew: string[]
   facs: { n: string; w?: string }[]
+  /** หมวดที่ทำเสร็จแล้ว — โชว์เขียว+ติ๊กถูกในเมนูหมวด (1 ก.ย. 2569) */
+  catDone?: string[]
   updatedAt?: string
 }
 
