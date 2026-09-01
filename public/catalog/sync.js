@@ -53,7 +53,8 @@
   var SEED_FLAG="gucut_oem_ms440_v1";
   // เพิ่มรุ่นใหม่ = เพิ่มไฟล์ + เพิ่มบรรทัดที่นี่ ห้ามแก้รูปแบบไฟล์เดิม
   var SEEDS=[["oem-ms440.json","oem"],["hh-ms440.json","hh"],
-             ["oem-ms660.json","oem"],["hh-ms660.json","hh"]];
+             ["oem-ms660.json","oem"],["hh-ms660.json","hh"],
+             ["nameen-ms440-660.json","nameEn"]];
   function applySeed(file,field){
     return fetch(file,{cache:"no-store"})
       .then(function(r){return r.ok?r.json():null;})
