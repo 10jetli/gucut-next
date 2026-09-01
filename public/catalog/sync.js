@@ -25,37 +25,52 @@
   };
 
   // ═══════════════════════════════════════════════════════════════════════
-  // งานครั้งเดียว: เติมเลข OEM ให้อะไหล่ MS440 จำนวน 59 รายการ (1 ก.ย. 2569)
+  // งานครั้งเดียว: เติม OEM + HH SKU ให้อะไหล่ MS440 อย่างละ 59 รายการ (1 ก.ย. 2569)
   //
   // ข้อมูลมาจากชีตของเจ้าของร้าน (แถว 05756 → 05822 ในแท็บ MS440)
   // ของเดิมในคลังบางแถวมีขยะ เช่น 05774 เป็น "PB440S003A1128 790 9150"
   // (HH SKU ต่อกับ OEM ติดเป็นพืด) ⇒ เขียนทับด้วยค่าสะอาดจากชีต
   //
   // 🗑️ ลบทิ้งได้เมื่อ: ยืนยันแล้วว่าค่าขึ้นครบใน /catalog และเซฟลงเซิร์ฟเวอร์แล้ว
-  //    (ลบทั้งบล็อกนี้ + ไฟล์ oem-ms440.json)
+  //    (ลบทั้งบล็อกนี้ + ไฟล์ oem-ms440.json + hh-ms440.json)
   //
-  // ⚠️ เขียนเฉพาะช่อง oem — รูป หมวด โรงงาน ของเดิมต้องไม่หาย
+  // ⚠️ แยกเป็นสองไฟล์โดยตั้งใจ ห้ามยุบรวมเป็นไฟล์เดียวรูปแบบใหม่
+  //    เบราว์เซอร์ที่ยังแคช sync.js ตัวเก่าไว้จะอ่านไฟล์รูปแบบใหม่ไม่เป็น
+  //    แล้วยัด object ทั้งก้อนลงช่อง oem — ขยะเข้าเซิร์ฟเวอร์ทันที
+  //    เพิ่มไฟล์ใหม่ = ตัวเก่าไม่รู้จักแล้วข้ามไปเฉย ๆ ปลอดภัยกว่า
+  // ⚠️ เขียนเฉพาะช่องที่ระบุ — รูป หมวด โรงงาน ของเดิมต้องไม่หาย
   // ⚠️ ต้องทำงาน "หลัง" ดึงค่าจากเซิร์ฟเวอร์มาทับ localStorage แล้วเท่านั้น
   //    ทำก่อน = ค่าที่เพิ่งเติมจะโดนของเซิร์ฟเวอร์ทับหายทันที
   // ⚠️ ห้าม reload เกินหนึ่งครั้งต่อแท็บ — ถ้าเซิร์ฟเวอร์เซฟไม่ติด
   //    รอบถัดไปจะเติมใหม่แล้ว reload อีก วนไม่รู้จบ (กันด้วย sessionStorage)
   var SEED_FLAG="gucut_oem_ms440_v1";
-  function applyOemSeed(){
-    return fetch("oem-ms440.json",{cache:"no-store"})
+  var SEEDS=[["oem-ms440.json","oem"],["hh-ms440.json","hh"]];
+  function applySeed(file,field){
+    return fetch(file,{cache:"no-store"})
       .then(function(r){return r.ok?r.json():null;})
       .then(function(map){
         if(!map||typeof map!=="object")return false;
         var ovr=JSON.parse(localStorage.getItem(LS_OVR)||"{}"),n=0;
         Object.keys(map).forEach(function(sku){
+          if(typeof map[sku]!=="string"||!map[sku])return;   // กันค่าที่ไม่ใช่ข้อความ
           var cur=ovr[sku]||{};
-          if((cur.oem||"")===map[sku])return;   // ตรงอยู่แล้ว ไม่ต้องเขียนซ้ำ
-          cur.oem=map[sku];ovr[sku]=cur;n++;
+          if((cur[field]||"")===map[sku])return;             // ตรงอยู่แล้ว ไม่ต้องเขียนซ้ำ
+          cur[field]=map[sku];ovr[sku]=cur;n++;
         });
         if(!n)return false;
         origSetItem(LS_OVR,JSON.stringify(ovr));
         return true;
       })
       .catch(function(){return false;});       // โหลดไม่ได้ = ข้ามไปเงียบ ๆ ห้ามทำหน้าพัง
+  }
+  // ทีละไฟล์ตามลำดับ ห้ามยิงพร้อมกัน — ต่างคนต่างอ่าน localStorage ก้อนเดิม
+  // แล้วเขียนทับกันเอง ของที่เขียนก่อนหายทันที
+  function applyOemSeed(){
+    return SEEDS.reduce(function(chain,s){
+      return chain.then(function(any){
+        return applySeed(s[0],s[1]).then(function(hit){return any||hit;});
+      });
+    },Promise.resolve(false));
   }
   function pushNow(){
     return fetch("/api/catalog/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(getAll())}).catch(function(){});
