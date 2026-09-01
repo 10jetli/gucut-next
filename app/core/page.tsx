@@ -23,6 +23,10 @@ interface Status {
   counts?: { orders: number; items: number; snapshots: number }
   recon?: Recon[]
   channels?: { channel: string; orders: number; amount: number }[]
+  shopee?: {
+    day: string; api_orders: number; api_amount: number
+    zort_orders: number; zort_amount: number; match: boolean
+  }[]
 }
 
 const GOAL_DAYS = 30 // ประตูระยะ 2: ยอดตรงติดต่อกัน 30 วัน
@@ -163,6 +167,31 @@ export default function CorePage() {
               })}
             </Card>
 
+            {/* เทียบ 3 ทางฝั่ง Shopee — แผนลับขั้น 3 (ระยะรันคู่) */}
+            <Card padded={false} className="overflow-hidden">
+              <div className="px-4 md:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
+                <p className="text-[13px] font-semibold text-gray-700">🛒 Shopee ตรงจาก API vs ZORT (ขั้น 3 — รันคู่)</p>
+                <span className="text-[11px] text-gray-400">ต้องตรง 14 วันติดก่อนขยับ</span>
+              </div>
+              {(st.shopee ?? []).length === 0 && (
+                <p className="text-[13px] text-gray-400 p-4">ยังไม่มีข้อมูล — กด "ดึงออเดอร์ Shopee" ด้านล่าง</p>
+              )}
+              {(st.shopee ?? []).map((r) => (
+                <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
+                  <span className="text-[15px] shrink-0">{r.match ? '✅' : '⚠️'}</span>
+                  <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{r.day}</span>
+                  <span className="text-[12px] text-gray-500 flex-1">
+                    API {fmtNum(r.api_orders)} ใบ · {fmtBaht(r.api_amount)} — ZORT {fmtNum(r.zort_orders)} ใบ · {fmtBaht(r.zort_amount)}
+                  </span>
+                  {!r.match && (
+                    <span className="text-[11px] font-semibold text-red-500 shrink-0">
+                      ต่าง {fmtNum(Math.abs(r.api_orders - r.zort_orders))} ใบ
+                    </span>
+                  )}
+                </div>
+              ))}
+            </Card>
+
             {/* ช่องทางในคลังเงา */}
             <Card>
               <p className="text-[13px] font-semibold text-gray-700 mb-3">🏪 ช่องทางที่กระจกเข้ามาแล้ว (ยอดสะสม)</p>
@@ -191,6 +220,8 @@ export default function CorePage() {
                 { label: 'กระจก 3 วันล่าสุด', qs: 'sync=1&days=3' },
                 { label: 'Backfill 60 วัน', qs: 'sync=1&days=60' },
                 { label: 'เทียบยอดเดี๋ยวนี้', qs: 'recon=1' },
+                { label: 'ดึงออเดอร์ Shopee (API)', qs: 'shopeesync=1&days=3' },
+                { label: 'Shopee ย้อน 15 วัน', qs: 'shopeesync=1&days=15' },
                 { label: 'ถ่ายสต็อกเดี๋ยวนี้', qs: 'snapshot=1' },
               ].map((b) => (
                 <button
