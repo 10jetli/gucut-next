@@ -178,6 +178,7 @@
     <div class="fld"><label>ชื่อสินค้า (Product Name)</label><input id="mName" type="text"></div>
     <div class="fld"><label>ชื่อภาษาอังกฤษ (Name EN)</label><input id="mNameEn" type="text"></div>
     <div class="fld"><label>OEM <span style="font-weight:400;color:#5f6368;font-size:12px">— เลขอะไหล่ OEM (คั่นหลายเลขด้วย / )</span></label><input id="mOEM" type="text" placeholder="เช่น 1106-790-1501"></div>
+    <div class="fld"><label>HH SKU <span style="font-weight:400;color:#5f6368;font-size:12px">— รหัสของโรงงาน Hanakawa</span></label><input id="mHH" type="text" placeholder="เช่น PY440S028B"></div>
     <div class="fld"><label>ชื่อหมวด <span style="font-weight:400;color:#5f6368;font-size:12px">— เลือกเพื่อย้ายหมวด</span></label>
       <select id="mCatSel"></select>
       <input id="mCat" type="text" placeholder="พิมพ์ชื่อหมวดใหม่" autocomplete="off" style="margin-top:6px;display:none">
@@ -287,7 +288,7 @@ function row(p){
     model:p.model,
     name:o.name??p.title.replace(/^\d+\s*/,""),
     nameEn:o.nameEn??p.pp.name,
-    oem:o.oem??p.pp.oem, hh:p.pp.hh, tagsName:p.pp.name, cn:p.pp.cn,
+    oem:o.oem??p.pp.oem, hh:o.hh??p.pp.hh, tagsName:p.pp.name, cn:p.pp.cn,
     category:catOf(p),
     factory:o.factory||"", wechat:facWx(o.factory||""),
     img:o.img||(p.img?state.prefix+encodeURIComponent(p.img):""),
@@ -466,7 +467,7 @@ function openEdit(sku){
   sel.innerHTML=cats.map(c=>'<option value="'+esc(c)+'"'+(c===cur?" selected":"")+'>'+esc(c)+'</option>').join("")
     +'<option value="__new__"'+(cats.includes(cur)?"":" selected")+'>✏️ พิมพ์ชื่อหมวดใหม่…</option>';
   if(!cats.includes(cur)){inp.style.display="block";inp.value=cur;}else{inp.style.display="none";inp.value="";}
-  document.getElementById("mOEM").value=r.oem||"";
+  document.getElementById("mOEM").value=r.oem||"";document.getElementById("mHH").value=r.hh||"";
   document.getElementById("mImg").value=(state.ovr[sku]&&state.ovr[sku].img)||"";
   rebuildFacSel(r.factory);
   updatePrev();
@@ -495,6 +496,8 @@ document.getElementById("mSave").onclick=()=>{
   if(nameEn&&nameEn!==base.pp.name)o.nameEn=nameEn;
   const oem=document.getElementById("mOEM").value.trim();
   if(oem!==(base.pp.oem||""))o.oem=oem;
+   const hh=document.getElementById("mHH").value.trim();
+   if(hh!==(base.pp.hh||""))o.hh=hh;
   if(cat&&cat!==((base.cat&&base.cat.trim())||("อะไหล่ "+base.model)))o.category=cat;
   if(img)o.img=img; if(fac)o.factory=fac; if(we)o.wechat=we;
   if(Object.keys(o).length)state.ovr[sku]=o; else delete state.ovr[sku];
