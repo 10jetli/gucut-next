@@ -23,6 +23,45 @@
     origSetItem(k,v);
     if(SHARED_KEYS.indexOf(k)>=0)queueSync();
   };
+
+  // ═══════════════════════════════════════════════════════════════════════
+  // งานครั้งเดียว: เติมเลข OEM ให้อะไหล่ MS440 จำนวน 59 รายการ (1 ก.ย. 2569)
+  //
+  // ข้อมูลมาจากชีตของเจ้าของร้าน (แถว 05756 → 05822 ในแท็บ MS440)
+  // ของเดิมในคลังบางแถวมีขยะ เช่น 05774 เป็น "PB440S003A1128 790 9150"
+  // (HH SKU ต่อกับ OEM ติดเป็นพืด) ⇒ เขียนทับด้วยค่าสะอาดจากชีต
+  //
+  // 🗑️ ลบทิ้งได้เมื่อ: ยืนยันแล้วว่าค่าขึ้นครบใน /catalog และเซฟลงเซิร์ฟเวอร์แล้ว
+  //    (ลบทั้งบล็อกนี้ + ไฟล์ oem-ms440.json)
+  //
+  // ⚠️ เขียนเฉพาะช่อง oem — รูป หมวด โรงงาน ของเดิมต้องไม่หาย
+  // ⚠️ ต้องทำงาน "หลัง" ดึงค่าจากเซิร์ฟเวอร์มาทับ localStorage แล้วเท่านั้น
+  //    ทำก่อน = ค่าที่เพิ่งเติมจะโดนของเซิร์ฟเวอร์ทับหายทันที
+  // ⚠️ ห้าม reload เกินหนึ่งครั้งต่อแท็บ — ถ้าเซิร์ฟเวอร์เซฟไม่ติด
+  //    รอบถัดไปจะเติมใหม่แล้ว reload อีก วนไม่รู้จบ (กันด้วย sessionStorage)
+  var SEED_FLAG="gucut_oem_ms440_v1";
+  function applyOemSeed(){
+    return fetch("oem-ms440.json",{cache:"no-store"})
+      .then(function(r){return r.ok?r.json():null;})
+      .then(function(map){
+        if(!map||typeof map!=="object")return false;
+        var ovr=JSON.parse(localStorage.getItem(LS_OVR)||"{}"),n=0;
+        Object.keys(map).forEach(function(sku){
+          var cur=ovr[sku]||{};
+          if((cur.oem||"")===map[sku])return;   // ตรงอยู่แล้ว ไม่ต้องเขียนซ้ำ
+          cur.oem=map[sku];ovr[sku]=cur;n++;
+        });
+        if(!n)return false;
+        origSetItem(LS_OVR,JSON.stringify(ovr));
+        return true;
+      })
+      .catch(function(){return false;});       // โหลดไม่ได้ = ข้ามไปเงียบ ๆ ห้ามทำหน้าพัง
+  }
+  function pushNow(){
+    return fetch("/api/catalog/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(getAll())}).catch(function(){});
+  }
+  // ═══════════════════════════════════════════════════════════════════════
+
   fetch("/api/catalog/state",{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(j){
     if(j&&j.exists){
       var newOvr=JSON.stringify(j.ovr||{});
@@ -37,11 +76,21 @@
       origSetItem(LS_CAT,newCat);
       origSetItem(LS_CATNEW,newCatNew);
       origSetItem(LS_FAC,newFac);
-      if(changed) location.reload();
+      return applyOemSeed().then(function(seeded){
+        if(seeded)return pushNow().then(function(){
+          if(sessionStorage.getItem(SEED_FLAG))return;   // เติมไปแล้วรอบนึง ไม่ reload ซ้ำ
+          sessionStorage.setItem(SEED_FLAG,"1");
+          location.reload();
+        });
+        if(changed)location.reload();
+      });
     }else{
       var cur=getAll();
       var hasLocal=(cur.facs&&cur.facs.length)||Object.keys(cur.ovr||{}).length||Object.keys(cur.catMap||{}).length||(cur.catNew&&cur.catNew.length);
-      if(hasLocal)queueSync();
+      return applyOemSeed().then(function(seeded){
+        if(seeded)return pushNow();
+        if(hasLocal)queueSync();
+      });
     }
   }).catch(function(){});
 })();
