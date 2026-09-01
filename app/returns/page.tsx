@@ -37,6 +37,24 @@ export default function ReturnsPage() {
   // ชื่อคนรับ — จำไว้ในเครื่อง กรอกครั้งเดียวพอ
   const [recvName, setRecvName] = useState('')
 
+  // ── ชื่อ/เบอร์ผู้ซื้อตัวจริง (ถาม Shopee Open API ตอนกดปุ่ม) ──
+  // เก็บในหน่วยความจำหน้าเท่านั้น ไม่ลง localStorage — เป็นข้อมูลส่วนบุคคลของลูกค้า
+  // ⚠️ กดทีละใบโดยตั้งใจ ไม่ดึงล่วงหน้าทั้งหน้า — เปลืองโควตา Shopee และไม่มีเหตุให้ดูทุกใบ
+  type Buyer = { loading?: boolean; err?: string; buyer?: string; name?: string; phone?: string; address?: string }
+  const [buyer, setBuyer] = useState<Record<string, Buyer>>({})
+
+  const openBuyer = useCallback(async (sn: string) => {
+    setBuyer((b) => ({ ...b, [sn]: { loading: true } }))
+    try {
+      const r = await fetch(`/api/web/shopee/buyer?sn=${encodeURIComponent(sn)}`)
+      const j = await r.json().catch(() => ({}))
+      if (!r.ok || j?.error) throw new Error(j?.error || `Shopee ตอบ ${r.status}`)
+      setBuyer((b) => ({ ...b, [sn]: { buyer: j.buyer, name: j.name, phone: j.phone, address: j.address } }))
+    } catch (e) {
+      setBuyer((b) => ({ ...b, [sn]: { err: e instanceof Error ? e.message : String(e) } }))
+    }
+  }, [])
+
   const load = useCallback(async (d: number, refresh = false) => {
     setBusy(true); setErr('')
     try {
@@ -326,6 +344,7 @@ export default function ReturnsPage() {
                   : overdue
                   ? ['ค้างนาน!', 'bg-red-600']
                   : ['ยังไม่ได้รับ', 'bg-amber-500']
+                const bx = o.ref ? buyer[o.ref] : undefined   // ชื่อ/เบอร์ตัวจริงที่กดเปิดไว้แล้ว
                 return (
                 <div key={o.number} className={`rounded-2xl border border-l-4 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${tone}`}>
                   <span className={`float-right ml-2 rounded-full px-2.5 py-1 text-[11px] font-bold text-white ${bigChip[1]}`}>{bigChip[0]}</span>
@@ -365,10 +384,26 @@ export default function ReturnsPage() {
                     </span>
                   </div>
 
-                  {/* ใครส่งคืน มาจากไหน — Shopee เซ็นเซอร์ชื่อ/เบอร์/บ้านเลขที่มาเอง เห็นได้สุดแค่นี้ */}
+                  {/* ใครส่งคืน มาจากไหน — ค่าที่มาทาง ZORT ถูก Shopee เซ็นเซอร์มาแล้ว
+                      ปุ่ม "เปิดตัวจริง" ยิงถาม Shopee Open API ทีละใบ (ต้องเชื่อมร้านก่อน) */}
                   <div className="mt-2 grid gap-x-4 gap-y-1 text-xs sm:grid-cols-2">
                     {o.customer && <p><span className="text-gray-400">ลูกค้า </span><span className="font-medium text-gray-800">{o.customer}</span>
-                      {o.phone && <span className="text-gray-600"> · โทร {o.phone}</span>}</p>}
+                      {o.phone && <span className="text-gray-600"> · โทร {o.phone}</span>}
+                      {o.channel === 'Shopee' && o.ref && !bx && (
+                        <button onClick={() => void openBuyer(o.ref)}
+                          className="ml-1.5 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50">เปิดตัวจริง</button>
+                      )}
+                      {bx?.loading && <span className="ml-1.5 text-gray-400">กำลังถาม Shopee…</span>}
+                      {bx?.err && <span className="ml-1.5 text-red-600">{bx.err}</span>}
+                    </p>}
+                    {bx && !bx.loading && !bx.err && (
+                      <p className="sm:col-span-2 rounded-lg bg-emerald-50 px-2.5 py-1.5">
+                        <span className="text-gray-400">ตัวจริงจาก Shopee </span>
+                        <span className="font-medium text-gray-900">{bx.name || bx.buyer || '—'}</span>
+                        {bx.phone && <> · <a href={`tel:${bx.phone}`} className="font-semibold text-blue-600">{bx.phone}</a></>}
+                        {bx.address && <span className="text-gray-600"> · {bx.address}</span>}
+                      </p>
+                    )}
                     {(o.address || o.province) && <p><span className="text-gray-400">ส่งจาก </span><span className="text-gray-700">{o.address || o.province}</span></p>}
                     {(o.tracking || boxes > 0) && (
                       <p>
