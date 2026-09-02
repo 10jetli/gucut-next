@@ -56,7 +56,7 @@ export default function ImportPage() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-bold text-gray-900">นำเข้าจากจีน</h1>
+          <h1 className="text-xl font-bold text-gray-900">ดรอปชิปปิ้ง</h1>
           <p className="mt-0.5 text-xs text-gray-500">
             เลือกของเองจาก Taobao / 1688 แล้วเอามากรอกที่นี่ — ระบบคิดต้นทุนถึงหน้าร้านให้
           </p>

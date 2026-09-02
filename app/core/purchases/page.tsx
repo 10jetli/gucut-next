@@ -127,7 +127,7 @@ export default function CorePurchasesPage() {
         right={
           importCount !== null ? (
             <Link href="/import" className="text-[13px] text-blue-600 hover:underline">
-              นำเข้าจากจีน ({importCount.toLocaleString('th-TH')} รายการที่กำลังดู) →
+              ดรอปชิปปิ้ง ({importCount.toLocaleString('th-TH')} รายการที่กำลังดู) →
             </Link>
           ) : undefined
         }

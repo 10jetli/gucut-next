@@ -44,7 +44,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { href: '/core/purchases', label: 'ดูรายการซื้อ' },
       { href: '/catalog/index.html', label: 'ระบบสั่งของ' },
-      { href: '/import', label: 'นำเข้าจากจีน' },
+      { href: '/import', label: 'ดรอปชิปปิ้ง' },
     ],
   },
   {
