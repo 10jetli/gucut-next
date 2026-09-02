@@ -58,6 +58,8 @@ export default function CorePosPage() {
   const [error, setError] = useState('')
   const [sales, setSales] = useState<SaleRow[]>([])
   const [held, setHeld] = useState<HeldBill[]>([])
+  // 🔴 ยืนยัน "ตั้งใจแจกฟรี" — ต้องติ๊กเองเท่านั้น ห้ามติ๊กให้อัตโนมัติ
+  const [allowZero, setAllowZero] = useState(false)
   const searchRef = useRef<HTMLInputElement>(null)
 
   // บิลที่พักไว้ — อ่านครั้งเดียวตอนเปิดจอ
@@ -168,6 +170,15 @@ export default function CorePosPage() {
       }
       return [...prev, { sku: it.sku, name: it.name, price: Number(it.price) || 0, qty: 1 }]
     })
+    // 🔴 **เตือนตรงนี้เลย ไม่ใช่ตอนกดเก็บเงิน** — ของจริงคือแคชเชียร์ยิงบาร์โค้ดรัว ๆ
+    //    ถ้าไปเตือนตอนท้าย เขาจะไม่รู้ว่าตัวไหนราคา 0 และอาจกดยืนยันผ่านไปเลย
+    //    (เจอจริงตอนทดสอบ: รหัส 03409-3 ราคา 0 ⇒ บิลออก ฿0 โดยไม่มีอะไรเตือน = ขายฟรีไม่รู้ตัว)
+    if ((Number(it.price) || 0) <= 0) {
+      setError(`⚠️ "${it.name || it.sku}" ราคา 0 บาท (ยังไม่ได้ตั้งราคาในคลัง) — `
+        + 'ใส่ลงบิลแล้วแต่จะเก็บเงินไม่ได้จนกว่าจะยืนยันว่าตั้งใจแจกฟรี')
+    } else {
+      setError('')
+    }
     // เคลียร์ + โฟกัสกลับทันที เพื่อยิงตัวถัดไป
     setQ('')
     setFound([])
@@ -179,6 +190,13 @@ export default function CorePosPage() {
     setCart((prev) => prev.map((c) => (c.sku === sku ? { ...c, qty: Math.max(1, qty) } : c)))
   const removeLine = (sku: string) => setCart((prev) => prev.filter((c) => c.sku !== sku))
 
+  // สินค้าราคา 0 ในบิล — ต้องรู้ทั้งว่ามีไหมและตัวไหน เพื่อบอกคนขายได้ว่าตัวไหน
+  const zeroLines = useMemo(() => cart.filter((c) => (Number(c.price) || 0) <= 0), [cart])
+  const hasZero = zeroLines.length > 0
+  const zeroNames = useMemo(
+    () => zeroLines.map((c) => c.name || c.sku).join(' · '),
+    [zeroLines]
+  )
   const total = useMemo(() => cart.reduce((s, c) => s + c.price * c.qty, 0), [cart])
   const count = useMemo(() => cart.reduce((s, c) => s + c.qty, 0), [cart])
 
@@ -195,6 +213,8 @@ export default function CorePosPage() {
         body: JSON.stringify({
           branch,
           customer: customer.trim() || undefined,
+          // ส่งเฉพาะตอนคนขายติ๊กยืนยันเองว่าตั้งใจแจกฟรี
+          ...(allowZero ? { allowZero: true } : {}),
           items: cart.map((c) => ({ sku: c.sku, name: c.name, qty: c.qty, price: c.price })),
         }),
       })
@@ -207,7 +227,13 @@ export default function CorePosPage() {
         throw new Error(`${d?.error ?? `HTTP ${res.status}`}${bad}`)
       }
       // ⚠️ ใบซ้ำ **ห้ามแกล้งขึ้นเขียวว่าเป็นใบใหม่** — ต้องบอกตรง ๆ ว่าบันทึกไปแล้ว
-      setDone({ number: String(d?.number ?? ''), duplicate: !!d?.duplicate })
+      // ⚠️ เลขที่บิลอยู่ที่ order.number — เดิมอ่าน d.number แล้วได้ค่าว่าง
+      //    จอเลยขึ้น "เปิดบิลแล้ว เลขที่" ห้วน ๆ ไม่มีเลข (เจอตอนทดสอบจริง)
+      setDone({
+        number: String(d?.order?.number ?? d?.number ?? ''),
+        duplicate: !!d?.duplicate,
+      })
+      setAllowZero(false)
       setCart([])
       setCustomer('')
       await loadSales()
@@ -392,7 +418,10 @@ export default function CorePosPage() {
             <div key={c.sku} className="flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-0">
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium text-gray-800 truncate">{c.name || c.sku}</p>
-                <p className="text-[12px] text-gray-400">{c.sku} · {fmtBaht(c.price)}/ชิ้น</p>
+                <p className={`text-[12px] ${(Number(c.price) || 0) <= 0 ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
+                  {c.sku} · {fmtBaht(c.price)}/ชิ้น
+                  {(Number(c.price) || 0) <= 0 && ' — ยังไม่ได้ตั้งราคา'}
+                </p>
               </div>
               {/* ปุ่มเพิ่ม/ลดเป้า 44px กดด้วยนิ้วได้ */}
               <div className="flex items-center gap-1 shrink-0">
@@ -448,10 +477,26 @@ export default function CorePosPage() {
             </div>
           )}
 
+          {/* 🔴 ราคา 0 = ขายฟรี ต้องให้คนขายยืนยันเองเสมอ ห้ามปล่อยผ่านเงียบ ๆ */}
+          {hasZero && (
+            <label className="flex items-start gap-2.5 px-3 py-3 bg-red-50 border-t border-red-200 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={allowZero}
+                onChange={(e) => setAllowZero(e.target.checked)}
+                className="mt-0.5 w-5 h-5 shrink-0"
+              />
+              <span className="text-[12.5px] text-red-800 leading-relaxed">
+                <b>บิลนี้มีสินค้าราคา 0 บาท</b> ({zeroNames}) — ปกติแปลว่ายังไม่ได้ตั้งราคาในคลัง
+                ติ๊กช่องนี้ก็ต่อเมื่อ<b>ตั้งใจแจกฟรีจริง ๆ</b>
+              </span>
+            </label>
+          )}
+
           {/* ปุ่มใหญ่เต็มความกว้างแบบเครื่องจริง */}
           <button
             onClick={checkout}
-            disabled={saving || !branch || cart.length === 0}
+            disabled={saving || !branch || cart.length === 0 || (hasZero && !allowZero)}
             className="w-full text-[18px] font-bold text-white py-4 disabled:opacity-40"
             style={{ background: '#1b3b73' }}
           >
