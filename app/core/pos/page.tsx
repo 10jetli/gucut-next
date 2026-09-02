@@ -57,6 +57,12 @@ export default function CorePosPage() {
   const [done, setDone] = useState<{ number: string; duplicate?: boolean } | null>(null)
   const [error, setError] = useState('')
   const [sales, setSales] = useState<SaleRow[]>([])
+  // สรุปแยกตามวิธีจ่ายของวันนั้น — เอาไว้ปิดยอดสิ้นวัน
+  // (เงินสดต้องนับในลิ้นชัก · โอนต้องเช็คสลิป · บัตรต้องกระทบยอดกับเครื่องรูด)
+  const [byPay, setByPay] = useState<{ method: string; orders: number; amount: number }[]>([])
+  // ชื่อไทยของวิธีจ่ายมาจากเซิร์ฟเวอร์ — ห้ามฮาร์ดโค้ด ร้านเพิ่มวิธีจ่ายได้
+  const [payNames, setPayNames] = useState<Record<string, string>>({})
+  const [dayTotal, setDayTotal] = useState({ orders: 0, amount: 0 })
   const [held, setHeld] = useState<HeldBill[]>([])
   // 🔴 ยืนยัน "ตั้งใจแจกฟรี" — ต้องติ๊กเองเท่านั้น ห้ามติ๊กให้อัตโนมัติ
   const [allowZero, setAllowZero] = useState(false)
@@ -142,6 +148,22 @@ export default function CorePosPage() {
       const res = await fetch(`/api/web/core?list=sales&day=${thaiToday()}&limit=50`)
       const d = await res.json()
       setSales(Array.isArray(d?.rows) ? d.rows : [])
+      // รับได้ทั้งรูป array และ object เผื่อรูปข้อมูลต่างจากที่คิด — จอต้องไม่พังเพราะรูปไม่ตรง
+      const bp = d?.byPay
+      setByPay(
+        Array.isArray(bp)
+          ? bp.map((r: { method?: string; orders?: number; amount?: number }) => ({
+            method: String(r?.method ?? ''), orders: Number(r?.orders) || 0, amount: Number(r?.amount) || 0,
+          }))
+          : bp && typeof bp === 'object'
+            ? Object.entries(bp).map(([method, v]) => {
+              const o = v as { orders?: number; amount?: number }
+              return { method, orders: Number(o?.orders) || 0, amount: Number(o?.amount) || 0 }
+            })
+            : []
+      )
+      setPayNames(d?.methods && typeof d.methods === 'object' ? d.methods : {})
+      setDayTotal({ orders: Number(d?.total) || 0, amount: Number(d?.totalAmount) || 0 })
     } catch { /* ประวัติดึงไม่ได้ไม่ควรขวางการขาย */ }
   }, [])
 
@@ -602,6 +624,33 @@ export default function CorePosPage() {
           </button>
         </div>
       </div>
+
+      {/* ปิดยอดสิ้นวัน — แยกตามวิธีจ่าย เพราะแต่ละทางกระทบยอดคนละแบบ */}
+      {byPay.length > 0 && (
+        <div className="bg-white border border-gray-200 rounded-md overflow-hidden mt-3">
+          <div className="px-4 py-3 border-b border-gray-100">
+            <p className="text-[14px] font-bold text-gray-800">ปิดยอดวันนี้</p>
+            <p className="text-[11.5px] text-gray-400 mt-0.5">
+              ไม่นับใบที่ยกเลิกแล้ว · เงินสดนับในลิ้นชัก · โอนเช็คสลิป · บัตรกระทบยอดกับเครื่องรูด
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gray-100">
+            {byPay.map((r) => (
+              <div key={r.method} className="bg-white px-4 py-3">
+                <p className="text-[12px] text-gray-500">{payNames[r.method] || r.method}</p>
+                <p className="text-[20px] font-black text-gray-900 leading-tight">{fmtBaht(r.amount)}</p>
+                <p className="text-[11.5px] text-gray-400">{r.orders.toLocaleString('th-TH')} ใบ</p>
+              </div>
+            ))}
+          </div>
+          <div className="flex items-baseline justify-between px-4 py-3 border-t border-gray-200 bg-blue-50/60">
+            <span className="text-[14px] font-bold text-gray-800">
+              รวมทั้งวัน ({dayTotal.orders.toLocaleString('th-TH')} ใบ)
+            </span>
+            <span className="text-[22px] font-black text-gray-900">{fmtBaht(dayTotal.amount)}</span>
+          </div>
+        </div>
+      )}
 
       {/* ประวัติวันนี้ */}
       <div className="bg-white border border-gray-200 rounded-md overflow-hidden mt-3">
