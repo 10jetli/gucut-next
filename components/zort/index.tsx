@@ -193,6 +193,8 @@ const CHANNEL_LOGO: [RegExp, string][] = [
   [/shopee/i, '/logos/shopee.png'],
   [/lazada/i, '/logos/lazada.png'],
   [/tiktok/i, '/logos/tiktok.png'],
+  [/facebook|เฟ(ส|ซ)/i, '/logos/facebook.webp'],
+  [/line|ไลน์/i, '/logos/line.png'],
 ]
 const CHANNEL_DOT: [RegExp, string][] = [
   [/gucut|เว็บ|web/i, 'bg-red-500'],
