@@ -305,9 +305,9 @@ interface AppTile {
 
 const APPS: AppTile[] = [
   // ของ ZORT แผ่นนี้เปิดแอป ZORT Chat Commerce (รวมแชท Facebook + LINE)
-  // ของเราตอนนี้มีแค่ **แชทที่ลูกค้าทักผ่านหน้าเว็บร้าน** — Facebook/LINE ยังอยู่ที่แอป ZORT
-  // และมาร์เก็ตเพลสยังอยู่ที่ Duoke (ขั้นที่ 4-5 ของโครงการแก่น) เขียนบอกไว้ใต้แผงแล้ว
-  { href: '/web/chat', label: 'แชทลูกค้า', icon: IconChat },
+  // ของเรา = /core/chat จอรวมแชทที่รับ **หน้าเว็บร้าน** ได้จริงแล้ว 1 ช่องทาง
+  // Facebook/LINE เข้าไปดูได้ว่าติดอะไรและต้องทำอะไรถึงจะเปิด (ไม่ใช่แท็บเปล่า)
+  { href: '/core/chat', label: 'แชทคอมเมิร์ซ', icon: IconChat },
   { href: '/core/pos', label: 'POS', icon: IconPos },
   { href: '/core/manual', label: 'คู่มือการใช้งาน', icon: IconBook },
 ]
@@ -349,7 +349,7 @@ function AppsButton() {
           </div>
           {/* ⚠️ ต้องเขียนบอกขอบเขตจริงของแผ่นแชท ไม่งั้นเข้าใจว่าย้าย Facebook/LINE มาแล้ว */}
           <p className="text-[11px] text-gray-400 leading-relaxed px-1.5 pt-2 pb-0.5 border-t border-gray-100 mt-1">
-            แชทลูกค้า = ข้อความที่ทักผ่านหน้าเว็บร้านเท่านั้น · Facebook กับ LINE ยังตอบที่แอป
+            แชทคอมเมิร์ซรับข้อความจากหน้าเว็บร้านได้แล้ว · Facebook กับ LINE ยังตอบที่แอป
             ZORT Social Commerce · แชทมาร์เก็ตเพลสยังอยู่ที่ Duoke
           </p>
         </div>
