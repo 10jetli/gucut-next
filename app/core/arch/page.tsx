@@ -3,19 +3,32 @@
 //
 // เจ้าของร้านสั่ง (2 ก.ย. 2569): "ทำผังใส่ใน admin.gucut.com ถ้ามีการเปลี่ยนแปลง
 // ก็ให้อัปเดตอัตโนมัติ เขียนเมนูว่า สถาปัตยกรรมที่ใช้อยู่"
-// แล้วสั่งเพิ่ม (3 ก.ย. 2569): "ทำให้สวย ๆ" พร้อมลิงก์ผังตัวอย่างของฝั่งเจ้าของร้าน
+// แล้วสั่งเพิ่ม (3 ก.ย. 2569): "ทำให้สวย ๆ แบบนี้" พร้อมผังที่ฝั่งเจ้าของร้านวาดไว้
+// ⇒ โครงกับชุดสีลอกจาก ~/claude-shared/arch-artifact.html (โทนอุ่น · ส้มแบรนด์ #E03500)
+//   ผังนั้นมี 5 ชั้น: คนกด → สองเว็บ+ท่อกลาง → ที่เก็บข้อมูล → ของนอกบ้านที่ต่อแล้ว → ยังไม่ต่อ
 //
 // ⚠️ **ห้ามพิมพ์ตัวเลขใด ๆ ลงหน้านี้เด็ดขาด** ทุกตัวเลขมาจาก /api/web/core?arch=1
-//    ซึ่งฝั่งเซิร์ฟเวอร์สแกนซอร์สจริงตอน build · ผังที่คนกรอกเองจะกลายเป็นของโกหก
-//    ภายในไม่กี่สัปดาห์ (เพิ่มฟังก์ชันแล้วลืมแก้ผัง) และ **แย่กว่าไม่มีผังเลย**
-//    เพราะคนเอาไปตัดสินใจต่อโดยเชื่อว่ามันตรง
+//    ซึ่งสแกนซอร์สจริงตอน build · ผังที่คนกรอกเองจะกลายเป็นของโกหกภายในไม่กี่สัปดาห์
+//    และ **แย่กว่าไม่มีผังเลย** เพราะคนเอาไปตัดสินใจต่อโดยเชื่อว่ามันตรง
+//    ⇒ ผังต้นฉบับมีตัวเลขฝั่งหลังร้านด้วย (17 หน้า · 30 เส้นทาง · 4 ถัง) แต่ตัวสแกน
+//      **มองไม่เห็นฝั่งนั้น** เพราะอยู่คนละที่เก็บโค้ด ⇒ ที่นี่จึงไม่ลอกตัวเลขชุดนั้นมา
+//      กล่องหลังร้านเขียนตรง ๆ ว่ายังไม่ได้ถูกสแกน
 // ⚠️ **อ่านไม่ได้ต้องขึ้นว่าอ่านไม่ได้ ห้ามโชว์ตัวเลขค้างจากรอบก่อน**
-// ⚠️ ผังนี้ครอบคลุม **เฉพาะฝั่งหน้าร้าน (gucut-web)** — ตัวสแกนอยู่คนละ repo กับหลังร้าน
-//    ต้องเขียนบอกบนหน้า ไม่งั้นคนอ่านนึกว่านี่คือทั้งระบบ
+// ⚠️ ค่าที่ยังไม่มาต้องขึ้น "ไม่ทราบจำนวน" **ห้ามใส่ 0 เป็นค่าตั้งต้น**
+//    (3 ก.ย. 2569 API ห่อคำตอบไว้อีกชั้นแล้วอ่านไม่เจอ — เพราะขึ้น "ไม่ทราบจำนวน"
+//     ฝั่งเซิร์ฟเวอร์จับต้นเหตุได้ใน 2 นาที ถ้าเป็น 0 คงไล่หาบั๊กผิดที่ทั้งเช้า)
 import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
+
+/* ชุดสีจากผังต้นฉบับ — โทนอุ่น ส้มแบรนด์ GUCUT */
+const C = {
+  bg: '#FAF8F5', surface: '#FFFFFF', surface2: '#F3EFEA',
+  ink: '#221F1D', muted: '#6B6560', line: '#E4DED7',
+  accent: '#E03500', accentSoft: '#FFF0EA', accentLine: '#F3B9A4',
+  slate: '#6F7B8C', slateSoft: '#EFF1F4',
+}
 
 interface Integration {
   id: string; name: string; what: string
@@ -34,10 +47,9 @@ interface Arch {
   integrations?: Integration[]
 }
 
-const NAVY = '#1b3b73'
-
 /** งานตามเวลาตั้งบน Netlify เป็น **เวลาสากล** — แปลงเป็นเวลาไทยให้อ่านออก
- *  ⚠️ แปลเฉพาะรูปที่แน่ใจจริง ๆ · รูปอื่นคืนค่าดิบ ดีกว่าแปลผิดแล้วคนเชื่อ */
+ *  ⚠️ แปลเฉพาะรูปที่แน่ใจจริง ๆ · รูปอื่นคืน null แล้วโชว์ค่าดิบ
+ *    แปลผิดแล้วคนเชื่อ แย่กว่าไม่แปล */
 function cronThai(cron: string): string | null {
   const c = String(cron || '').trim()
   let m = /^\*\/(\d+) \* \* \* \*$/.exec(c)
@@ -56,87 +68,92 @@ function cronThai(cron: string): string | null {
   return null
 }
 
-/** ป้ายชื่อเล็ก ๆ แบบตัวพิมพ์คงความกว้าง — ใช้กับชื่อถัง/ตาราง/ฟังก์ชัน */
-function Tag({ children, tone = 'plain' }: { children: React.ReactNode; tone?: 'plain' | 'light' }) {
+function Tag({ children, tone = 'plain' }: { children: React.ReactNode; tone?: 'plain' | 'accent' }) {
   return (
-    <span className={`text-[11px] font-mono rounded px-1.5 py-0.5 leading-relaxed ${
-      tone === 'light' ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-600'
-    }`}>
+    <span
+      className="text-[11px] font-mono rounded px-1.5 py-0.5 leading-relaxed"
+      style={tone === 'accent'
+        ? { background: C.accentSoft, color: C.accent }
+        : { background: C.slateSoft, color: C.slate }}
+    >
       {children}
     </span>
   )
 }
 
-/** การ์ดหนึ่งชั้นของผัง — แถบสีซ้ายบอกชั้น ทำให้กวาดตาแล้วเห็นลำดับได้เร็ว */
-function Layer({
-  accent, icon, title, count, sub, children, dark = false,
+/** ตัวแสดงบนสุดของผัง — ใครเป็นคนเริ่มเรื่อง */
+function Actor({ title, sub }: { title: string; sub: string }) {
+  return (
+    <div className="rounded-lg border px-3 py-2.5 text-center" style={{ background: C.surface, borderColor: C.line }}>
+      <p className="text-[12.5px] font-semibold" style={{ color: C.ink }}>{title}</p>
+      <p className="text-[11px] mt-0.5 leading-snug" style={{ color: C.muted }}>{sub}</p>
+    </div>
+  )
+}
+
+/** กล่องใหญ่ของผัง */
+function Node({
+  title, meta, lines, accent = false, dim = false, dashed = false, children,
 }: {
-  accent: string
-  icon: string
   title: string
-  count?: string
-  sub?: string
+  meta?: string
+  lines?: string[]
+  accent?: boolean
+  dim?: boolean
+  dashed?: boolean
   children?: React.ReactNode
-  dark?: boolean
 }) {
   return (
     <div
-      className={`relative rounded-lg border overflow-hidden ${
-        dark ? 'text-white border-transparent' : 'bg-white border-gray-200'
-      }`}
-      style={dark ? { background: NAVY } : undefined}
+      className="rounded-lg border px-3.5 py-3 h-full"
+      style={{
+        background: accent ? C.accentSoft : C.surface,
+        borderColor: accent ? C.accentLine : C.line,
+        borderStyle: dashed ? 'dashed' : 'solid',
+        opacity: dim ? 0.75 : 1,
+      }}
     >
-      <span className="absolute left-0 top-0 bottom-0 w-1" style={{ background: accent }} />
-      <div className="pl-4 pr-3.5 py-3">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-[15px] leading-none">{icon}</span>
-          <p className={`text-[13.5px] font-semibold ${dark ? 'text-white' : 'text-gray-900'}`}>{title}</p>
-          {count && (
-            <span className={`text-[11.5px] font-semibold rounded-full px-2 py-0.5 ${
-              dark ? 'bg-white/15 text-white' : 'bg-gray-100 text-gray-600'
-            }`}>
-              {count}
-            </span>
-          )}
+      <p className="text-[14px] font-semibold" style={{ color: accent ? C.accent : C.ink }}>{title}</p>
+      {meta && <p className="text-[11px] mt-0.5 font-mono" style={{ color: C.muted }}>{meta}</p>}
+      {lines && lines.length > 0 && (
+        <div className="mt-1.5 space-y-0.5">
+          {lines.map((l, i) => (
+            <p key={i} className="text-[11.5px] leading-snug" style={{ color: C.muted }}>{l}</p>
+          ))}
         </div>
-        {sub && <p className={`text-[11.5px] mt-1 ${dark ? 'text-white/70' : 'text-gray-500'}`}>{sub}</p>}
-        {children && <div className="mt-2">{children}</div>}
-      </div>
+      )}
+      {children && <div className="mt-2">{children}</div>}
     </div>
   )
 }
 
-/** เส้นเชื่อมระหว่างชั้น — วาดด้วย CSS ล้วน ปรับตามความกว้างจอเอง ไม่ใช้รูป */
-function Link({ label }: { label?: string }) {
+/** เส้นเชื่อมชั้น — CSS ล้วน ปรับตามความกว้างจอเอง */
+function Down({ label }: { label?: string }) {
   return (
-    <div className="flex flex-col items-center py-1">
-      <span className="w-px h-3" style={{ background: '#cbd9ef' }} />
+    <div className="flex flex-col items-center py-1.5">
+      <span className="w-px h-3.5" style={{ background: C.accentLine }} />
       {label && (
-        <span className="text-[10.5px] text-gray-400 bg-white border border-gray-200 rounded-full px-2 py-0.5 my-0.5">
+        <span
+          className="text-[10.5px] rounded-full px-2 py-0.5 my-1 border"
+          style={{ background: C.surface, borderColor: C.line, color: C.muted }}
+        >
           {label}
         </span>
       )}
-      <span className="w-px h-3" style={{ background: '#cbd9ef' }} />
-      <span className="text-[10px] leading-none" style={{ color: '#cbd9ef' }}>▼</span>
+      <span className="w-px h-3.5" style={{ background: C.accentLine }} />
+      <span className="text-[10px] leading-none" style={{ color: C.accentLine }}>▼</span>
     </div>
   )
 }
 
-/** ตัวเลขใหญ่หนึ่งช่อง — ทั้งแถบบนสุดของหน้า */
 function Stat({ n, label, hint }: { n: string; label: string; hint?: string }) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg px-3.5 py-3">
-      <p className="text-[22px] font-semibold leading-none" style={{ color: NAVY }}>{n}</p>
-      <p className="text-[12px] text-gray-700 mt-1.5">{label}</p>
-      {hint && <p className="text-[11px] text-gray-400 mt-0.5">{hint}</p>}
+    <div className="rounded-lg border px-3.5 py-3" style={{ background: C.surface, borderColor: C.line }}>
+      <p className="text-[23px] font-semibold leading-none" style={{ color: C.accent }}>{n}</p>
+      <p className="text-[12px] mt-1.5" style={{ color: C.ink }}>{label}</p>
+      {hint && <p className="text-[11px] mt-0.5" style={{ color: C.muted }}>{hint}</p>}
     </div>
   )
-}
-
-function stateOf(it: Integration) {
-  if (it.live) return { text: 'ต่อแล้ว', dot: '#10b981', cls: 'text-emerald-800 bg-emerald-50 border-emerald-200' }
-  if (it.partial) return { text: 'ตั้งคีย์ไม่ครบ', dot: '#f59e0b', cls: 'text-amber-800 bg-amber-50 border-amber-200' }
-  return { text: 'ยังไม่ได้ตั้ง', dot: '#cbd5e1', cls: 'text-gray-600 bg-gray-50 border-gray-200' }
 }
 
 export default function ArchPage() {
@@ -151,7 +168,8 @@ export default function ArchPage() {
       const res = await fetch('/api/web/core?arch=1')
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
-      setD(j)
+      // เผื่อฝั่งเซิร์ฟเวอร์กลับไปห่อคำตอบอีกชั้น — รับได้ทั้งสองรูป ไม่พังเงียบ
+      setD((j?.arch ?? j) as Arch)
     } catch (e) {
       // ⚠️ ทิ้งของเก่าทั้งชุด — ผังที่โชว์เลขค้างโดยไม่บอกว่าค้าง คือผังที่โกหก
       setD(null)
@@ -172,23 +190,19 @@ export default function ArchPage() {
   const unlabelled = Array.isArray(d?.unlabelled) ? d!.unlabelled! : []
   const integrations = Array.isArray(d?.integrations) ? d!.integrations! : []
   const live = integrations.filter((i) => i.live)
-  const partial = integrations.filter((i) => !i.live && i.partial)
-  const off = integrations.filter((i) => !i.live && !i.partial)
+  const waiting = integrations.filter((i) => !i.live)
+  const hasR2 = integrations.some((i) => /r2|cloudflare/i.test(i.id) || /R2/.test(i.name))
 
   const stamp = d?.generatedAt
     ? new Date(d.generatedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
     : null
-  const n = (v?: number) => (typeof v === 'number' ? v.toLocaleString('th-TH') : '—')
+  const n = (v?: number) => (typeof v === 'number' ? v.toLocaleString('th-TH') : 'ไม่ทราบจำนวน')
 
   return (
     <div className="p-4 md:p-6">
       <PageHead
         title="สถาปัตยกรรมที่ใช้อยู่"
-        summary={
-          d
-            ? <>ผังนี้<b>สแกนจากโค้ดจริง</b> ไม่มีใครพิมพ์ไว้ — แก้ระบบแล้ว deploy ผังเปลี่ยนตามเอง</>
-            : 'กำลังอ่านจากเซิร์ฟเวอร์…'
-        }
+        summary={<>ผังนี้<b>สแกนจากโค้ดจริง</b> ไม่มีใครพิมพ์ไว้ — แก้ระบบแล้ว deploy ผังเปลี่ยนตามเอง</>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'อ่านใหม่'}</BtnGhost>}
       />
 
@@ -206,158 +220,207 @@ export default function ArchPage() {
 
       {d && (
         <>
-          {/* ───────── ตัวเลขรวม ───────── */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2.5 mb-4">
             <Stat n={n(d.pages?.count)} label="หน้าเว็บหน้าร้าน" />
-            <Stat n={n(fn?.count)} label="ฟังก์ชันเซิร์ฟเวอร์" hint={scheduled.length ? `ทำงานเอง ${scheduled.length}` : undefined} />
+            <Stat n={n(fn?.count)} label="ฟังก์ชันเซิร์ฟเวอร์" hint={scheduled.length ? `ทำงานเอง ${scheduled.length} ตัว` : undefined} />
             <Stat n={n(blobs.length)} label="ถังเก็บข้อมูล" hint="Netlify Blobs" />
             <Stat n={n(tables.length)} label="ตารางในคลังเงา" hint="Cloudflare D1" />
             <Stat n={`${live.length}/${integrations.length}`} label="บริการข้างนอกที่ต่อแล้ว" />
           </div>
 
-          {/* ───────── ผังชั้น ───────── */}
-          <div className="bg-[#f7f9fd] border border-gray-200 rounded-lg p-4 md:p-6 mb-4">
-            <div className="max-w-[640px] mx-auto">
-              <Layer accent="#94a3b8" icon="👥" title="ลูกค้า และเจ้าของร้าน"
-                sub="เปิดผ่านเบราว์เซอร์ หรือแอปที่ติดตั้งจากเว็บ (PWA)" />
-              <Link />
+          {/* ───────── ผัง 5 ชั้น ───────── */}
+          <div className="rounded-xl border p-4 md:p-6 mb-4" style={{ background: C.bg, borderColor: C.line }}>
+            <div className="max-w-[760px] mx-auto">
 
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Layer
-                  dark
-                  accent="#4f8ef7"
-                  icon="🛒"
-                  title={d.site ?? 'หน้าร้าน'}
-                  count={typeof d.pages?.count === 'number' ? `${d.pages.count} หน้า` : undefined}
-                  sub={d.repo ? `โค้ดอยู่ที่ ${d.repo}` : undefined}
-                >
-                  {logins.length > 0 && (
-                    <div className="flex flex-wrap gap-1">
-                      <span className="text-[11px] text-white/60 self-center">เข้าสู่ระบบ:</span>
-                      {logins.map((p) => <Tag key={p} tone="light">{p}</Tag>)}
-                    </div>
-                  )}
-                </Layer>
-                <Layer
-                  accent="#cbd5e1"
-                  icon="🖥️"
-                  title="หลังร้าน admin.gucut.com"
-                  sub="จอที่คุณเปิดอยู่ตอนนี้ — เรียกข้อมูลผ่านท่อกลางไปหาหน้าร้าน"
-                >
-                  {/* ⚠️ ต้องบอกตรง ๆ ว่าฝั่งนี้ไม่ได้ถูกสแกน ไม่งั้นคนอ่านนึกว่าผังครอบคลุมทั้งระบบ */}
-                  <span className="text-[11px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">
-                    ไม่ได้อยู่ในผังนี้ — ตัวสแกนอยู่คนละที่เก็บโค้ด
-                  </span>
-                </Layer>
+              {/* ชั้น 1 — ใครเป็นคนเริ่มเรื่อง */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5">
+                <Actor title="ลูกค้า" sub="เบราว์เซอร์ · แอปที่ติดตั้ง (PWA)" />
+                <Actor title="งานตั้งเวลา" sub={scheduled.length ? `${scheduled.length} ตัว ทำงานเองตามเวลา` : 'ทำงานเองตามเวลา'} />
+                <Actor title="เจ้าของร้าน + ภรรยา" sub="เปิดหลังร้านผ่านเบราว์เซอร์" />
+                <Actor title="Telegram" sub="แจ้งเตือน + ปุ่มกดตอบกลับ" />
               </div>
 
-              <Link label="เรียกผ่าน /api/" />
+              <Down />
 
-              <Layer
-                accent="#8b5cf6"
-                icon="⚙️"
-                title="ฟังก์ชันฝั่งเซิร์ฟเวอร์"
-                count={typeof fn?.count === 'number' ? `${fn.count} ตัว` : undefined}
-                sub={scheduled.length ? `ในนี้มี ${scheduled.length} ตัวที่ทำงานเองตามเวลา` : undefined}
-              >
-                {scheduled.length > 0 && (
-                  <div className="space-y-1">
-                    {scheduled.map((s) => {
-                      const gloss = cronThai(s.cron)
-                      return (
-                        <div key={s.name} className="flex flex-wrap items-baseline gap-2">
-                          <Tag>{s.name}</Tag>
-                          <span className="text-[11.5px] text-gray-600">{gloss ?? s.cron}</span>
-                          {gloss && <span className="text-[10.5px] text-gray-400 font-mono">{s.cron}</span>}
-                        </div>
-                      )
-                    })}
-                  </div>
+              {/* ชั้น 2 — สองเว็บ + ท่อกลาง */}
+              <div className="grid md:grid-cols-[1fr_auto_1fr] gap-2.5 items-stretch">
+                <Node
+                  accent
+                  title={d.site ?? 'หน้าร้าน'}
+                  meta={d.repo ? `Netlify · ${d.project ?? '—'} · repo ${d.repo}` : undefined}
+                  lines={[
+                    'หน้าร้าน · ตะกร้า · เช็คเอาต์ · ฟีดคลิป · ขอทะเบียน',
+                    `ไฟล์นิ่ง ${n(d.pages?.count)} หน้า + ฟังก์ชัน ${n(fn?.count)}`
+                    + (edge.length ? ` + ตัวดักขอบ ${edge.length}` : ''),
+                  ]}
+                >
+                  {logins.length > 0 && (
+                    <div className="flex flex-wrap gap-1 items-center">
+                      <span className="text-[11px]" style={{ color: C.muted }}>เข้าสู่ระบบ:</span>
+                      {logins.map((p) => <Tag key={p} tone="accent">{p}</Tag>)}
+                    </div>
+                  )}
+                </Node>
+
+                <div className="flex md:flex-col items-center justify-center gap-1 px-1">
+                  <span className="hidden md:block w-px flex-1" style={{ background: C.accentLine }} />
+                  <span
+                    className="text-[11px] rounded-full border px-2.5 py-1 text-center whitespace-nowrap"
+                    style={{ background: C.surface, borderColor: C.accentLine, color: C.accent }}
+                  >
+                    ท่อกลาง
+                    <span className="block font-mono text-[10.5px]" style={{ color: C.muted }}>/api/web/*</span>
+                  </span>
+                  <span className="hidden md:block w-px flex-1" style={{ background: C.accentLine }} />
+                </div>
+
+                <Node
+                  title="admin.gucut.com"
+                  meta="Netlify · gucut-admin · repo gucut-next"
+                  lines={['หลังร้านตัวจริง — จอที่คุณเปิดอยู่ตอนนี้']}
+                >
+                  {/* ⚠️ ตัวสแกนอ่านฝั่งนี้ไม่ได้ ⇒ ห้ามลอกตัวเลขจากผังต้นฉบับมาใส่
+                      ตัวเลขที่ไม่มีใครตรวจ = ตัวเลขที่จะผิดโดยไม่มีใครรู้ */}
+                  <span
+                    className="text-[11px] rounded px-1.5 py-0.5 inline-block leading-relaxed"
+                    style={{ background: '#FEF3C7', color: '#92400E' }}
+                  >
+                    ยังไม่ได้ถูกสแกน — ตัวสแกนอ่านได้เฉพาะที่เก็บโค้ดของหน้าร้าน
+                  </span>
+                </Node>
+              </div>
+
+              <Down label="เก็บข้อมูลที่" />
+
+              {/* ชั้น 3 — ที่เก็บข้อมูล */}
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
+                <Node
+                  title="Netlify Blobs"
+                  meta={blobs.length ? `${blobs.length} ถัง` : 'ไม่ทราบจำนวนถัง'}
+                  lines={['ออเดอร์ · แชท · คนเข้าเว็บ · ลงเวลา · รีวิวรอเข้า · สมาชิก']}
+                >
+                  <div className="flex flex-wrap gap-1">{blobs.map((b) => <Tag key={b}>{b}</Tag>)}</div>
+                </Node>
+                <Node
+                  title="Cloudflare D1"
+                  meta={tables.length ? `${tables.length} ตาราง` : 'ไม่ทราบจำนวนตาราง'}
+                  lines={['คลังเงา — กระจกของ ZORT', 'และเป็นที่เก็บสำเนาสำรองของถังฝั่งซ้าย']}
+                >
+                  <div className="flex flex-wrap gap-1">{tables.map((t) => <Tag key={t}>{t}</Tag>)}</div>
+                </Node>
+                {hasR2 && (
+                  <Node
+                    title="Cloudflare R2"
+                    lines={[
+                      'คลิปวิดีโอ (HLS) และรูปสินค้า',
+                      'เบราว์เซอร์ลูกค้าโหลดตรงจากที่นี่ ไม่ผ่านตัวเว็บ',
+                    ]}
+                  />
                 )}
-              </Layer>
+              </div>
 
               {edge.length > 0 && (
                 <>
-                  <Link />
-                  <Layer accent="#f59e0b" icon="🛡️" title="ตัวดักที่ขอบเครือข่าย"
-                    sub="ทำงานก่อนคำขอถึงเว็บ ใช้กับบอตของ AI">
+                  <Down />
+                  <Node
+                    title="ตัวดักที่ขอบเครือข่าย"
+                    lines={['ทำงานก่อนคำขอถึงเว็บ ใช้กับบอตของ AI']}
+                  >
                     <div className="flex flex-wrap gap-1">{edge.map((e) => <Tag key={e}>{e}</Tag>)}</div>
-                  </Layer>
+                  </Node>
                 </>
               )}
 
-              <Link label="เก็บข้อมูลที่" />
-
-              <div className="grid sm:grid-cols-2 gap-3">
-                <Layer accent="#10b981" icon="🗄️" title="Netlify Blobs"
-                  count={blobs.length ? `${blobs.length} ถัง` : undefined}
-                  sub="ออเดอร์ · แชท · รีวิวรอเข้า · ลงเวลา ฯลฯ">
-                  <div className="flex flex-wrap gap-1">{blobs.map((b) => <Tag key={b}>{b}</Tag>)}</div>
-                </Layer>
-                <Layer accent="#0ea5e9" icon="🌳" title="Cloudflare D1 — คลังเงา"
-                  count={tables.length ? `${tables.length} ตาราง` : undefined}
-                  sub="ระบบที่กำลังสร้างมาแทน ZORT">
-                  <div className="flex flex-wrap gap-1">{tables.map((t) => <Tag key={t}>{t}</Tag>)}</div>
-                </Layer>
-              </div>
-            </div>
-          </div>
-
-          {/* ───────── ของนอกบ้าน ───────── */}
-          <div className="mb-4">
-            <div className="flex items-baseline gap-2 mb-2">
-              <p className="text-[15px] font-semibold text-gray-900">บริการข้างนอกที่ระบบพึ่งอยู่</p>
-              <p className="text-[12px] text-gray-500">ต่อแล้ว {live.length} จาก {integrations.length} เจ้า</p>
-            </div>
-
-            {integrations.length === 0 ? (
-              <p className="text-[13px] text-gray-400 bg-white border border-gray-200 rounded-lg px-4 py-5">
-                ตัวสแกนไม่พบบริการภายนอกเลย
-              </p>
-            ) : (
-              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
-                {[...live, ...partial, ...off].map((it) => {
-                  const s = stateOf(it)
-                  return (
-                    <div key={it.id} className={`border rounded-lg px-3.5 py-3 ${s.cls}`}>
-                      <div className="flex items-start gap-2">
-                        <span className="w-2 h-2 rounded-full mt-1.5 shrink-0" style={{ background: s.dot }} />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[13px] font-semibold text-gray-900">{it.name}</p>
-                          <p className="text-[11.5px] text-gray-600 leading-relaxed mt-0.5">{it.what}</p>
-                        </div>
-                      </div>
-                      <div className="flex flex-wrap gap-1.5 mt-2 pl-4">
-                        <span className="text-[11px] font-semibold">{s.text}</span>
-                        {/* ตั้งคีย์ไว้แต่โค้ดไม่ได้เรียก — ต้องบอก ไม่งั้นเข้าใจว่าใช้งานอยู่ */}
-                        {!it.inCode && (
-                          <span className="text-[10.5px] text-gray-500 bg-white/70 border border-gray-200 rounded px-1.5 py-0.5">
-                            โค้ดยังไม่ได้เรียกใช้
-                          </span>
-                        )}
-                      </div>
+              {scheduled.length > 0 && (
+                <>
+                  <Down label="งานที่ทำเองตามเวลา" />
+                  <Node title="งานตั้งเวลา" meta={`${scheduled.length} ตัว`}>
+                    <div className="space-y-1">
+                      {scheduled.map((s) => {
+                        const gloss = cronThai(s.cron)
+                        return (
+                          <div key={s.name} className="flex flex-wrap items-baseline gap-2">
+                            <Tag>{s.name}</Tag>
+                            <span className="text-[11.5px]" style={{ color: C.ink }}>{gloss ?? s.cron}</span>
+                            {gloss && <span className="text-[10.5px] font-mono" style={{ color: C.muted }}>{s.cron}</span>}
+                          </div>
+                        )
+                      })}
                     </div>
-                  )
-                })}
-              </div>
-            )}
+                  </Node>
+                </>
+              )}
+            </div>
           </div>
+
+          {/* ───────── ชั้น 4-5: ของนอกบ้าน ───────── */}
+          {integrations.length > 0 && (
+            <>
+              <div className="flex items-baseline gap-2 mb-2">
+                <p className="text-[15px] font-semibold" style={{ color: C.ink }}>บริการภายนอกที่ต่อแล้ว</p>
+                <p className="text-[12px]" style={{ color: C.muted }}>{live.length} จาก {integrations.length} เจ้า</p>
+              </div>
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-4">
+                {live.map((it) => (
+                  <div key={it.id} className="rounded-lg border px-3.5 py-3"
+                    style={{ background: C.accentSoft, borderColor: C.accentLine }}>
+                    <p className="text-[13px] font-semibold" style={{ color: C.ink }}>{it.name}</p>
+                    <p className="text-[11.5px] mt-0.5 leading-relaxed" style={{ color: C.muted }}>{it.what}</p>
+                    {!it.inCode && (
+                      <span className="text-[10.5px] rounded px-1.5 py-0.5 inline-block mt-1.5"
+                        style={{ background: C.surface, color: C.muted }}>
+                        โค้ดยังไม่ได้เรียกใช้
+                      </span>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              {waiting.length > 0 && (
+                <>
+                  <div className="flex items-baseline gap-2 mb-2">
+                    <p className="text-[15px] font-semibold" style={{ color: C.ink }}>ยังไม่ต่อ — โค้ดเขียนรอไว้แล้ว</p>
+                    <p className="text-[12px]" style={{ color: C.muted }}>{waiting.length} เจ้า</p>
+                  </div>
+                  <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-2.5 mb-4">
+                    {waiting.map((it) => (
+                      <div key={it.id} className="rounded-lg border border-dashed px-3.5 py-3"
+                        style={{ background: C.surface, borderColor: C.line }}>
+                        <div className="flex items-baseline gap-2 flex-wrap">
+                          <p className="text-[13px] font-semibold" style={{ color: C.ink }}>{it.name}</p>
+                          <span className="text-[10.5px] rounded px-1.5 py-0.5"
+                            style={it.partial
+                              ? { background: '#FEF3C7', color: '#92400E' }
+                              : { background: C.slateSoft, color: C.slate }}>
+                            {it.partial ? 'ตั้งคีย์ไม่ครบ' : 'ยังไม่ได้ตั้ง'}
+                          </span>
+                        </div>
+                        <p className="text-[11.5px] mt-0.5 leading-relaxed" style={{ color: C.muted }}>{it.what}</p>
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
+            </>
+          )}
 
           {/* ⚠️ ตัวแปรที่ตัวสแกนยังไม่รู้จัก — ต้องโชว์ ไม่งั้นผังดูครบทั้งที่ยังมีของนอกสายตา */}
           {unlabelled.length > 0 && (
-            <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3.5 py-2.5 mb-3 leading-relaxed">
+            <div className="text-[12.5px] rounded-lg px-3.5 py-2.5 mb-3 leading-relaxed border"
+              style={{ background: '#FEF3C7', borderColor: '#FDE68A', color: '#92400E' }}>
               ⚠️ ยังจัดหมวดไม่ได้ <b>{unlabelled.length} ตัว</b> — ตัวสแกนเห็นว่าโค้ดใช้อยู่
               แต่ยังไม่รู้ว่าเป็นบริการอะไร: {unlabelled.join(' · ')}
             </div>
           )}
 
-          <div className="text-[11.5px] text-gray-500 bg-white border border-gray-200 rounded-lg px-3.5 py-2.5 leading-relaxed">
+          <div className="text-[11.5px] rounded-lg border px-3.5 py-2.5 leading-relaxed"
+            style={{ background: C.surface, borderColor: C.line, color: C.muted }}>
             {stamp
               ? <>ข้อมูลชุดนี้สร้างตอน build รอบ <b>{stamp} น.</b> — แก้โค้ดแล้วยังไม่ deploy ผังจะยังไม่เปลี่ยน</>
               : 'ไม่ทราบเวลาที่สร้างข้อมูลชุดนี้'}
             <br />
-            ผังนี้แสดง<b>เฉพาะฝั่งหน้าร้าน</b> (gucut.com) ยังไม่รวมหลังร้านที่คุณเปิดอยู่ตอนนี้
-            เพราะตัวสแกนอ่านได้เฉพาะที่เก็บโค้ดของหน้าร้าน
+            ตัวเลขทั้งหมดมาจากการสแกน<b>ฝั่งหน้าร้าน</b> · กล่อง admin.gucut.com ยังไม่ได้ถูกสแกน
+            จึงไม่มีตัวเลขกำกับ — ตัวเลขที่ไม่มีใครตรวจ คือตัวเลขที่จะผิดโดยไม่มีใครรู้
           </div>
         </>
       )}
