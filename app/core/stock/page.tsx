@@ -21,6 +21,8 @@ interface Resp {
   skip?: string
   day: string; soldDays: number
   total: number; outOfStock: number; low: number; value: number
+  /** จำนวนแถวของแท็บที่เลือกอยู่ — ใช้ทำเลขหน้า ห้ามใช้ total ตอนอยู่แท็บ out/low */
+  shown?: number
   limit: number; offset: number; rows: Row[]
 }
 
@@ -40,13 +42,15 @@ export default function CoreStockPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (off = 0, sortId = sort) => {
+  const load = useCallback(async (off = 0, sortId = sort, tabId = tab) => {
     setLoading(true)
     setError('')
     try {
       const qs = new URLSearchParams({
         list: 'stock', sort: sortId, limit: String(PAGE), offset: String(off),
       })
+      // กรองฝั่งเซิร์ฟเวอร์แล้ว — แท็บจึงกรองทั้งคลังจริง ไม่ใช่แค่หน้าที่กำลังดู
+      if (tabId !== 'all') qs.set('only', tabId)
       if (q.trim()) qs.set('q', q.trim())
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
@@ -58,18 +62,16 @@ export default function CoreStockPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, sort])
+  }, [q, sort, tab])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ⚠️ **ตัวนับในแท็บเป็นเลขทั้งคลังแล้ว แต่การกรองแถวยังทำได้แค่ในหน้าที่กำลังดู**
-  //    (เซิร์ฟเวอร์ยังไม่มีตัวกรอง only=out/low — ขอไปแล้ว)
-  //    ระหว่างนี้ต้องเขียนบอกบนจอตรง ๆ ว่ากรองแค่หน้านี้ ไม่งั้นคนอ่านนึกว่าเห็นครบทั้งคลัง
-  const all = data?.rows ?? []
-  const rows = tab === 'out' ? all.filter((r) => r.qty <= 0)
-    : tab === 'low' ? all.filter((r) => r.qty > 0 && r.qty <= 3)
-      : all
-  const shown = offset + all.length
+  // เซิร์ฟเวอร์กรองให้แล้ว (only=out/low) — แถวที่ได้คือของทั้งคลังในแท็บนั้น
+  // ⚠️ เลขหน้าต้องใช้ shown (จำนวนแถวของแท็บที่เลือก) ไม่ใช่ total
+  //    ใช้ total ตอนอยู่แท็บ out/low = โชว์ 54 หน้าทั้งที่มีของจริง 12 หน้า
+  const rows = data?.rows ?? []
+  const inTab = data?.shown ?? data?.total ?? 0
+  const shown = offset + rows.length
 
   return (
     <div className="p-4 md:p-6">
@@ -134,7 +136,11 @@ export default function CoreStockPage() {
               { id: 'low', label: 'เหลือน้อย', count: data.low },
             ]}
             active={tab}
-            onChange={(id) => setTab(id as 'all' | 'out' | 'low')}
+            onChange={(id) => {
+              const t = id as 'all' | 'out' | 'low'
+              setTab(t)
+              load(0, sort, t)
+            }}
           />
 
           <TableWrap>
@@ -160,7 +166,14 @@ export default function CoreStockPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
                     <td className={TD}><span className="text-blue-600">{r.name || '—'}</span></td>
                     <td className={TDR}>{r.price ? fmtBaht(r.price) : '0'}</td>
-                    <td className={TDR}><Num v={r.qty} zeroRed /></td>
+                    <td className={TDR}>
+                      <Num v={r.qty} zeroRed />
+                      {r.qty < 0 && (
+                        <span className="ml-1.5 text-[10.5px] font-semibold text-red-600 bg-red-50 rounded px-1 py-0.5">
+                          ติดลบ
+                        </span>
+                      )}
+                    </td>
                     <td className={TDR}>{r.sold.toLocaleString('th-TH')}</td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
@@ -177,11 +190,10 @@ export default function CoreStockPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
-                แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {data.total.toLocaleString('th-TH')} รายการ
-                {tab !== 'all' && (
-                  <span className="text-amber-600">
-                    {' '}· ⚠️ ตอนนี้แท็บนี้กรองเฉพาะ {all.length} แถวในหน้านี้ ตัวเลขในวงเล็บคือทั้งคลัง
-                    (รอตัวกรองฝั่งเซิร์ฟเวอร์)
+                แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
+                {tab === 'out' && (
+                  <span className="text-gray-400">
+                    {' '}· &quot;ของหมด&quot; รวมของที่<b>ติดลบ</b>ด้วย ซึ่งมักเป็นรายการบริการที่ไม่มีสต็อกจริง
                   </span>
                 )}
               </span>
@@ -189,7 +201,7 @@ export default function CoreStockPage() {
                 <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
                   ← ก่อนหน้า
                 </BtnGhost>
-                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= data.total}>
+                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= inTab}>
                   ถัดไป →
                 </BtnGhost>
               </div>
