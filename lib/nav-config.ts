@@ -20,6 +20,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/customers', label: 'ลูกค้า / คู่ค้า (คลังเรา)' },
       { href: '/core/purchases', label: 'รายการซื้อ' },
       { href: '/core/channels', label: 'ร้านค้าออนไลน์' },
+      { href: '/core/finance', label: 'การเงิน' },
     ],
   },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
