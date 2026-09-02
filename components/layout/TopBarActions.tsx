@@ -252,18 +252,64 @@ function HelpButton() {
   )
 }
 
-/* ───────────────────── ตารางจุด 9 ช่อง (ทางลัด) ───────────────────── */
+/* ───────────────────── ตารางจุด 9 ช่อง (แอปในเครือ) ───────────────────── */
+//
+// ⚠️ ของ ZORT ปุ่มนี้ **ไม่ใช่ทางลัดไปหน้าในระบบ** — เป็นแผงสลับไป "แอปคนละตัว"
+//    3 แผ่น: โซเชียลคอมเมิร์ซ · POS · คู่มือการใช้งาน (เจ้าของร้านส่งภาพจริงมา 2 ก.ย. 2569)
+//    ครั้งแรกเราทำเป็นทางลัด 9 หน้าซึ่งซ้ำกับแถบเมนูซ้ายอยู่แล้ว — ผิดทั้งหน้าตาและความหมาย
+//    ⇒ เปลี่ยนเป็น 3 แผ่นให้ตรงของจริง โดยจับคู่กับของที่ **เรามีจริง**
 
-const SHORTCUTS: { href: string; icon: string; label: string }[] = [
-  { href: '/core/pos', icon: '🧾', label: 'ขายหน้าร้าน' },
-  { href: '/core/sales', icon: '💰', label: 'รายการขาย' },
-  { href: '/core/stock', icon: '📦', label: 'สินค้า' },
-  { href: '/core/moves', icon: '📥', label: 'รับ/ปรับสต็อก' },
-  { href: '/core/purchases', icon: '🛒', label: 'รายการซื้อ' },
-  { href: '/core/customers', icon: '👥', label: 'ผู้ติดต่อ' },
-  { href: '/core/finance', icon: '💵', label: 'การเงิน' },
-  { href: '/catalog/index.html', icon: '🏭', label: 'ระบบสั่งของ' },
-  { href: '/core', icon: '🌳', label: 'โครงการแก่น' },
+/** ไอคอนวาดเอง — ห้ามลอกไฟล์ภาพของ ZORT มาใช้ (เป็นงานออกแบบของเขา) */
+function IconChat() {
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+      <rect x="4" y="8" width="30" height="23" rx="6" fill="#4f6ef7" />
+      <rect x="10" y="15" width="14" height="3" rx="1.5" fill="#fff" opacity=".95" />
+      <rect x="10" y="21" width="9" height="3" rx="1.5" fill="#fff" opacity=".7" />
+      <path d="M12 31h8l-4 6z" fill="#4f6ef7" />
+      <rect x="21" y="22" width="27" height="21" rx="6" fill="#8fb4fb" />
+      <rect x="27" y="29" width="13" height="3" rx="1.5" fill="#fff" opacity=".95" />
+      <rect x="27" y="35" width="8" height="3" rx="1.5" fill="#fff" opacity=".75" />
+    </svg>
+  )
+}
+function IconPos() {
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+      <rect x="5" y="13" width="42" height="27" rx="5" fill="#4f6ef7" />
+      <rect x="9" y="17" width="26" height="14" rx="2.5" fill="#e8eefc" />
+      <rect x="12" y="20" width="14" height="2.5" rx="1.25" fill="#8fb4fb" />
+      <rect x="12" y="25" width="9" height="2.5" rx="1.25" fill="#8fb4fb" />
+      <rect x="9" y="34" width="34" height="3" rx="1.5" fill="#ffb020" />
+      <rect x="38" y="17" width="6" height="6" rx="1.5" fill="#fff" opacity=".9" />
+    </svg>
+  )
+}
+function IconBook() {
+  return (
+    <svg width="52" height="52" viewBox="0 0 52 52" fill="none">
+      <circle cx="26" cy="26" r="21" fill="#3f8ef7" />
+      <path d="M16 17h8a3 3 0 0 1 3 3v16a3 3 0 0 0-3-2.5h-8z" fill="#fff" />
+      <path d="M36 17h-8a3 3 0 0 0-3 3v16a3 3 0 0 1 3-2.5h8z" fill="#fff" opacity=".82" />
+    </svg>
+  )
+}
+
+interface AppTile {
+  href: string
+  label: string
+  icon: () => React.ReactElement
+  /** เปิดแท็บใหม่ไหม — ของที่อยู่คนละระบบควรเปิดแท็บใหม่ ไม่งั้นคนใช้หลุดจากงานที่ค้างอยู่ */
+  blank?: boolean
+}
+
+const APPS: AppTile[] = [
+  // ของ ZORT แผ่นนี้เปิดแอป ZORT Chat Commerce (รวมแชท Facebook + LINE)
+  // ของเราตอนนี้มีแค่ **แชทที่ลูกค้าทักผ่านหน้าเว็บร้าน** — Facebook/LINE ยังอยู่ที่แอป ZORT
+  // และมาร์เก็ตเพลสยังอยู่ที่ Duoke (ขั้นที่ 4-5 ของโครงการแก่น) เขียนบอกไว้ใต้แผงแล้ว
+  { href: '/web/chat', label: 'แชทลูกค้า', icon: IconChat },
+  { href: '/core/pos', label: 'POS', icon: IconPos },
+  { href: '/core/manual', label: 'คู่มือการใช้งาน', icon: IconBook },
 ]
 
 function AppsButton() {
@@ -274,8 +320,8 @@ function AppsButton() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
-        title="ทางลัด"
-        aria-label="ทางลัด"
+        title="แอปในเครือ"
+        aria-label="แอปในเครือ"
         className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
       >
         <span className="grid grid-cols-3 gap-[3px]">
@@ -286,20 +332,26 @@ function AppsButton() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full mt-2 w-[268px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] z-30 p-2">
+        <div className="absolute right-0 top-full mt-2 w-[340px] bg-white border border-gray-200 rounded-xl shadow-[0_14px_36px_-12px_rgba(15,23,42,0.32)] z-30 p-2.5">
           <div className="grid grid-cols-3 gap-1">
-            {SHORTCUTS.map((s) => (
+            {APPS.map((a) => (
               <Link
-                key={s.href + s.label}
-                href={s.href}
+                key={a.href}
+                href={a.href}
+                target={a.blank ? '_blank' : undefined}
                 onClick={() => setOpen(false)}
-                className="flex flex-col items-center gap-1 px-1 py-2.5 rounded hover:bg-gray-50 text-center"
+                className="flex flex-col items-center gap-2 px-1 py-3 rounded-lg hover:bg-[#eef4ff] transition-colors text-center"
               >
-                <span className="text-[18px] leading-none">{s.icon}</span>
-                <span className="text-[11px] text-gray-600 leading-tight">{s.label}</span>
+                <a.icon />
+                <span className="text-[12.5px] text-gray-700 leading-tight">{a.label}</span>
               </Link>
             ))}
           </div>
+          {/* ⚠️ ต้องเขียนบอกขอบเขตจริงของแผ่นแชท ไม่งั้นเข้าใจว่าย้าย Facebook/LINE มาแล้ว */}
+          <p className="text-[11px] text-gray-400 leading-relaxed px-1.5 pt-2 pb-0.5 border-t border-gray-100 mt-1">
+            แชทลูกค้า = ข้อความที่ทักผ่านหน้าเว็บร้านเท่านั้น · Facebook กับ LINE ยังตอบที่แอป
+            ZORT Social Commerce · แชทมาร์เก็ตเพลสยังอยู่ที่ Duoke
+          </p>
         </div>
       )}
     </div>
