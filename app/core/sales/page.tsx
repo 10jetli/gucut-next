@@ -7,6 +7,7 @@
 //              → แถวค้นหา + ตัวเลือกช่วงเวลา → แท็บสถานะมีจำนวนในวงเล็บ
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -159,13 +160,35 @@ export default function CoreSalesPage() {
               </span>
             )}
             {' | '}
+            {/* ZORT มีลิงก์ "แพ็คสินค้า" ตรงนี้ (ภาพ 01-รายการขาย.jpg) */}
+            <Link href="/core/soon/packing" className="text-blue-600 hover:underline">แพ็คสินค้า</Link>
+            {' | '}
             <span className="text-gray-400">อ่านจากคลังของเราเอง ไม่ได้ยิง ZORT</span>
           </>
         }
         actions={
-          <BtnGhost onClick={() => load(offset)} disabled={loading}>
-            {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-          </BtnGhost>
+          <>
+            <BtnGhost onClick={() => load(offset)} disabled={loading}>
+              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
+            </BtnGhost>
+            {/* ⚠️ สามปุ่มนี้ลอกจาก ZORT — "สร้างอย่างง่าย" ของเขาคือเปิดบิลเร็ว
+                ซึ่งตรงกับจอขายหน้าร้านของเราพอดี จึงพาไปที่นั่นจริง ๆ
+                ส่วนอีกสองปุ่มพาไปหน้าที่บอกว่ายังไม่ได้ทำ — เหมือนในผัง แต่กดแล้วไม่โกหก */}
+            <Link href="/core/soon/sale-import"
+              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              นำเข้าไฟล์ (Excel)
+            </Link>
+            <Link href="/core/soon/sale-create"
+              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              style={{ background: '#1b3b73' }}>
+              สร้าง
+            </Link>
+            <Link href="/core/pos"
+              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              style={{ background: '#1b3b73' }}>
+              สร้างอย่างง่าย
+            </Link>
+          </>
         }
       />
 
@@ -173,7 +196,7 @@ export default function CoreSalesPage() {
         value={q}
         onChange={setQ}
         onSubmit={() => load(0)}
-        placeholder="เลขรายการขาย ชื่อลูกค้า"
+        placeholder="เลขรายการขาย ชื่อลูกค้า ช่องทางการขาย และอื่นๆ"
         advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
         right={
           <>
