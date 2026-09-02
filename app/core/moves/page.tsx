@@ -15,6 +15,7 @@ import { fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import { PageHead, BtnGhost } from '@/components/zort'
 
 interface Move { id: number; sku: string; qty: number; reason: string; ref: string; at: string }
 
@@ -141,12 +142,10 @@ export default function CoreMovesPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 tracking-tight">✏️ ปรับสต็อกมือ</h1>
-        <span className="text-[11px] text-gray-400">
-          รับของเข้า · โอน · ของเสีย · ปรับยอดจากการนับ — สิ่งที่ออเดอร์บอกไม่ได้
-        </span>
-      </div>
+      <PageHead
+        title="ปรับสต็อกมือ"
+        summary="รับของเข้า · โอน · ของเสีย · ปรับยอดจากการนับ — สิ่งที่ออเดอร์บอกไม่ได้"
+      />
 
       <p className="text-[12px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
         ℹ️ คลังเงาคิดสต็อกจาก <b>ภาพถ่ายวันฐาน − ที่ขายไป</b> ซึ่งไม่รู้จักของที่ซื้อเข้ามาใหม่

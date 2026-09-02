@@ -16,6 +16,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
+import { PageHead, BtnGhost } from '@/components/zort'
 
 interface CoreOrderRow {
   id: string; number: string; channel: string
@@ -104,21 +105,19 @@ export default function DashboardPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="hidden md:block text-xl font-bold text-gray-900 tracking-tight">ภาพรวมร้าน</h1>
-          <span className="text-[11px] text-gray-400" suppressHydrationWarning>
-            ตัวเลขจากคลังของเราเอง · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
+      <PageHead
+        title="ภาพรวมร้าน"
+        summary={
+          <span suppressHydrationWarning>
+            ตัวเลขจากคลังของเราเอง (ไม่ได้ยิง ZORT) · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
           </span>
-        </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="text-[12px] md:text-[13px] font-semibold text-blue-600 bg-white md:border md:border-gray-200 md:rounded-xl md:px-3.5 md:py-2 md:shadow-sm flex items-center gap-1.5 hover:bg-blue-50 transition-colors disabled:opacity-50"
-        >
-          <span className={loading ? 'spinner inline-block' : ''}>🔄</span> รีเฟรช
-        </button>
-      </div>
+        }
+        actions={
+          <BtnGhost onClick={load} disabled={loading}>
+            {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
+          </BtnGhost>
+        }
+      />
 
       {loading && <LoadingState />}
 

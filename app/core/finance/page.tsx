@@ -14,6 +14,7 @@ import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import { PageHead, BtnGhost } from '@/components/zort'
 
 interface Row { amount: number; order_date: string }
 interface StockResp { total: number; value: number; outOfStock: number; day: string }
@@ -118,18 +119,11 @@ export default function CoreFinancePage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">💵 การเงิน</h1>
-          <span className="text-[11px] text-gray-400">
-            รายรับจากการขายและมูลค่าของในคลัง — อ่านจากคลังเงา (D1)
-          </span>
-        </div>
-        <button onClick={load} disabled={loading}
-          className="text-[12.5px] font-semibold text-blue-600 bg-white border border-gray-200 rounded-xl px-3.5 py-2 shadow-sm hover:bg-blue-50 transition-colors disabled:opacity-50">
-          <span className={loading ? 'spinner inline-block' : ''}>🔄</span> รีเฟรช
-        </button>
-      </div>
+      <PageHead
+        title="การเงิน"
+        summary="รายรับจากการขายและมูลค่าของในคลัง — อ่านจากคลังของเราเอง"
+        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+      />
 
       {error && <ErrorBox title="ดึงข้อมูลการเงินไม่ได้">{error}</ErrorBox>}
       {loading && rows.length === 0 && <LoadingState />}

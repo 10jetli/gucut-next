@@ -13,6 +13,7 @@ import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import { PageHead, BtnPrimary } from '@/components/zort'
 
 interface Row {
   sku: string; name: string; shopee: number
@@ -58,18 +59,11 @@ export default function CoreMissingSkuPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">🚨 SKU ที่คลังเราไม่รู้จัก</h1>
-          <span className="text-[11px] text-gray-400">
-            รหัสที่ Shopee ขายอยู่จริง แต่ไม่มีในภาพถ่ายสต็อกของเรา
-          </span>
-        </div>
-        <button onClick={load} disabled={loading}
-          className="text-[12.5px] font-semibold text-white bg-blue-600 rounded-xl px-3.5 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50">
-          {loading ? '⏳ กำลังตรวจ…' : '🔍 ตรวจเดี๋ยวนี้'}
-        </button>
-      </div>
+      <PageHead
+        title="SKU ที่คลังเราไม่รู้จัก"
+        summary="รหัสที่ Shopee ขายอยู่จริง แต่ไม่มีในภาพถ่ายสต็อกของเรา"
+        actions={<BtnPrimary onClick={load} disabled={loading}>{loading ? 'กำลังตรวจ…' : 'ตรวจเดี๋ยวนี้'}</BtnPrimary>}
+      />
 
       <p className="text-[12px] text-red-800 bg-red-50 border border-red-100 rounded-lg px-3 py-2 leading-relaxed">
         ⚠️ SKU ที่คลังไม่รู้จัก = <b>ไม่มีใครคุมสต็อกตัวนั้น</b> ขายเกินได้โดยไม่มีอะไรเตือน

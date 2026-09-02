@@ -102,9 +102,10 @@ export default function AppShell({ children, role }: AppShellProps) {
       <MobileHeader onMenu={() => setDrawerOpen(true)} />
 
       {/* ── Main content ── */}
-      <main className={`${mainMl} md:pt-14 ${anim}`}>
-        <div className="md:max-w-[1300px] md:mx-auto">{children}</div>
-      </main>
+      {/* ⚠️ เนื้อหาเต็มความกว้างเหมือน ZORT — ของเดิมจำกัด 1300px แล้วจัดกลาง
+          ทำให้จอกว้างเหลือที่ว่างข้างขวาเป็นแถบใหญ่ ต่างจาก ZORT ที่ตารางกินเต็มจอ
+          (เห็นชัดตอนเทียบภาพหลังร้านเรากับ ZORT — ตารางเยอะคอลัมน์ต้องการที่) */}
+      <main className={`${mainMl} md:pt-14 ${anim}`}>{children}</main>
 
       <MobileBottomNav navItems={navItems} onMenu={() => setDrawerOpen(true)} />
       <MobileDrawer navItems={navItems} open={drawerOpen} onClose={() => setDrawerOpen(false)} />

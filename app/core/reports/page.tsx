@@ -12,6 +12,7 @@ import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import { PageHead, BtnGhost } from '@/components/zort'
 
 interface Row {
   id: string; number: string; channel: string
@@ -120,12 +121,11 @@ export default function CoreReportsPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">📊 รายงาน — จากคลังของเราเอง</h1>
-          <span className="text-[11px] text-gray-400">ยอดรายเดือน · ช่องทางที่ทำเงิน · สินค้าขายดี</span>
-        </div>
-        <div className="flex gap-2">
+      <PageHead
+        title="รายงาน"
+        summary="ยอดรายเดือน · ช่องทางที่ทำเงิน · สินค้าขายดี — อ่านจากคลังของเราเอง"
+        actions={
+          <div className="flex gap-2">
           {RANGES.map((r) => (
             <button key={r.id} onClick={() => load(r.id)} disabled={loading}
               className={`text-[12.5px] font-semibold rounded-xl px-3 py-1.5 border transition-colors disabled:opacity-50 ${
@@ -134,8 +134,9 @@ export default function CoreReportsPage() {
               {r.label}
             </button>
           ))}
-        </div>
-      </div>
+          </div>
+        }
+      />
 
       {error && <ErrorBox title="ดึงรายงานไม่ได้">{error}</ErrorBox>}
       {loading && orders.length === 0 && <LoadingState />}
