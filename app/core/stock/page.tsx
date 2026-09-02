@@ -13,7 +13,7 @@ import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu,
 } from '@/components/zort'
 
 interface Row { sku: string; name: string; qty: number; price: number; sold: number }
@@ -62,8 +62,9 @@ export default function CoreStockPage() {
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ⚠️ แท็บกรองเฉพาะ "หน้าที่กำลังดู" เท่านั้น (เซิร์ฟเวอร์ยังไม่มีตัวกรองนี้)
-  //    จึงต้องเขียนบอกบนจอ ไม่งั้นคนอ่านจะนึกว่าเห็นครบทั้งคลัง
+  // ⚠️ **ตัวนับในแท็บเป็นเลขทั้งคลังแล้ว แต่การกรองแถวยังทำได้แค่ในหน้าที่กำลังดู**
+  //    (เซิร์ฟเวอร์ยังไม่มีตัวกรอง only=out/low — ขอไปแล้ว)
+  //    ระหว่างนี้ต้องเขียนบอกบนจอตรง ๆ ว่ากรองแค่หน้านี้ ไม่งั้นคนอ่านนึกว่าเห็นครบทั้งคลัง
   const all = data?.rows ?? []
   const rows = tab === 'out' ? all.filter((r) => r.qty <= 0)
     : tab === 'low' ? all.filter((r) => r.qty > 0 && r.qty <= 3)
@@ -124,10 +125,13 @@ export default function CoreStockPage() {
           </div>
 
           <Tabs
+            // ⚠️ **ตัวนับต้องเป็นเลขทั้งคลัง ไม่ใช่เลขของหน้าที่กำลังดู**
+            //    ของเดิมนับจาก all (50 แถวในหน้านี้) ⇒ ตัวเลขในวงเล็บกับความจริงคนละเรื่อง
+            //    หลักเดียวกับ byStatus ในจอรายการขาย: แท็บคือสารบัญของข้อมูลทั้งหมด
             tabs={[
-              { id: 'all', label: 'ทั้งหมด', count: all.length },
-              { id: 'out', label: 'ของหมด', count: all.filter((r) => r.qty <= 0).length },
-              { id: 'low', label: 'เหลือน้อย', count: all.filter((r) => r.qty > 0 && r.qty <= 3).length },
+              { id: 'all', label: 'ทั้งหมด', count: data.total },
+              { id: 'out', label: 'ของหมด', count: data.outOfStock },
+              { id: 'low', label: 'เหลือน้อย', count: data.low },
             ]}
             active={tab}
             onChange={(id) => setTab(id as 'all' | 'out' | 'low')}
@@ -143,11 +147,12 @@ export default function CoreStockPage() {
                   <th className={THR}>ราคาขาย</th>
                   <th className={THR}>คงเหลือ</th>
                   <th className={THR}>ขาย {data.soldDays} วัน</th>
+                  <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={6} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบสินค้าในเงื่อนไขนี้</td></tr>
+                  <tr><td colSpan={7} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบสินค้าในเงื่อนไขนี้</td></tr>
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
@@ -157,6 +162,14 @@ export default function CoreStockPage() {
                     <td className={TDR}>{r.price ? fmtBaht(r.price) : '0'}</td>
                     <td className={TDR}><Num v={r.qty} zeroRed /></td>
                     <td className={TDR}>{r.sold.toLocaleString('th-TH')}</td>
+                    <td className={`${TD} text-right`}>
+                      <RowMenu
+                        items={[
+                          { label: 'คัดลอกรหัสสินค้า', onClick: () => { navigator.clipboard?.writeText(r.sku).catch(() => {}) } },
+                          { label: 'ปรับสต็อกของรหัสนี้', onClick: () => { window.location.href = `/core/moves?sku=${encodeURIComponent(r.sku)}` } },
+                        ]}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -165,7 +178,12 @@ export default function CoreStockPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {data.total.toLocaleString('th-TH')} รายการ
-                {tab !== 'all' && <span className="text-amber-600"> · แท็บกรองเฉพาะหน้านี้ ไม่ใช่ทั้งคลัง</span>}
+                {tab !== 'all' && (
+                  <span className="text-amber-600">
+                    {' '}· ⚠️ ตอนนี้แท็บนี้กรองเฉพาะ {all.length} แถวในหน้านี้ ตัวเลขในวงเล็บคือทั้งคลัง
+                    (รอตัวกรองฝั่งเซิร์ฟเวอร์)
+                  </span>
+                )}
               </span>
               <div className="flex gap-2">
                 <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>

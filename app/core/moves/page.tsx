@@ -10,7 +10,8 @@
 //    ถ้าปล่อยให้ ref ว่างได้ ตาข่ายนั้นพังทันที
 // ⚠️ ของออก (โอนออก · ของเสีย) ต้องส่ง qty **ติดลบ** — จอบวกเครื่องหมายให้เอง
 //    ห้ามให้คนกรอกเครื่องหมายเอง เพราะกรอกผิดทีเดียวสต็อกวิ่งผิดทางสองเท่า
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
@@ -41,8 +42,11 @@ function thaiTime(at: string): string {
   return new Date(d.getTime() + 7 * 3600e3).toISOString().replace('T', ' ').slice(0, 16)
 }
 
-export default function CoreMovesPage() {
-  const [sku, setSku] = useState('')
+function MovesInner() {
+  // รับรหัสสินค้ามาจากจอสินค้าได้ (จุดสามจุด → "ปรับสต็อกของรหัสนี้")
+  // เติมให้ตั้งแต่ตอนสร้าง state ไม่ใช่ใน effect — ไม่งั้นช่องจะกระพริบว่างก่อนแล้วค่อยเติม
+  const sp = useSearchParams()
+  const [sku, setSku] = useState(() => sp.get('sku') ?? '')
   const [qty, setQty] = useState('')
   const [reason, setReason] = useState('receive')
   const [ref, setRef] = useState('')
@@ -260,5 +264,14 @@ export default function CoreMovesPage() {
         </p>
       </Card>
     </div>
+  )
+}
+
+export default function CoreMovesPage() {
+  // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก
+  return (
+    <Suspense fallback={<div className="p-6"><LoadingState /></div>}>
+      <MovesInner />
+    </Suspense>
   )
 }
