@@ -1,6 +1,10 @@
 'use client'
-// ยอดขายทุกช่องทาง — Shopee / Lazada / TikTok / GUCUT.com / POS ทั้ง 2 สาขา (รวมจาก ZORT 2 ร้าน)
-// รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน: หน้าที่ยิง API ภายนอกต้องกดเอง)
+// ยอดขายทุกช่องทาง — Shopee / Lazada / TikTok / GUCUT.com / POS ทั้ง 2 สาขา
+//
+// ⚠️ ย้ายมาอ่าน **คลังเงา (D1)** แล้ว 2 ก.ย. 2569 — เดิมยิง /api/sales-report ซึ่งดึงสดจาก ZORT
+//    ตามกฎ "จอที่ยัง fetch /api/zort อยู่ = ยังไม่เสร็จ" จอนี้จึงต้องยืนได้เองวันที่เลิกใช้ ZORT
+//    ตัวเลขชุดเดียวกับที่ /core/sales ใช้ จึงเทียบกันได้ตรง ๆ ไม่ใช่คนละแหล่ง
+// รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน)
 import { useEffect, useState, useCallback } from 'react'
 import { fmtBaht, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -13,7 +17,46 @@ interface Report {
   totals: { sales: number; orders: number; avg: number; prevSales: number; prevOrders: number }
   daily: { date: string; sales: number; orders: number }[]
   channels: { label: string; name: string; store: string; sales: number; orders: number; prevSales: number }[]
-  topProducts: { name: string; sku: string; qty: number; amount: number }[] | null
+  // amount เป็น optional เพราะคลังเงายังบอกได้แค่ "ขายไปกี่ชิ้น" ต่อ SKU
+  // ยังไม่มีท่อรวมยอดเงินรายสินค้า — โชว์ขีดดีกว่าโชว์เลขที่เดาเอง
+  topProducts: { name: string; sku: string; qty: number; amount?: number }[] | null
+}
+
+interface CoreRow { number: string; channel: string; amount: number; order_date: string }
+interface CoreChan { channel: string; orders: number; amount: number }
+
+const thaiDay = (back = 0) =>
+  new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
+
+/** ดึงออเดอร์ทั้งช่วงจากคลังเงา (ทีละหน้า) — คืนแถวทั้งหมด + ยอดรวม + ยอดแยกช่องทาง */
+async function fetchRange(from: string, to: string, wantRows: boolean) {
+  const rows: CoreRow[] = []
+  let total = 0
+  let amount = 0
+  let channels: CoreChan[] = []
+  let page = 0
+  const LIMIT = wantRows ? 200 : 1
+  // 12 หน้า = 2,400 ใบ พอสำหรับช่วง 30 วันของร้านนี้หลายเท่า
+  while (page < 12) {
+    const qs = new URLSearchParams({
+      list: 'orders', from, to, limit: String(LIMIT), offset: String(page * LIMIT),
+    })
+    const res = await fetch(`/api/web/core?${qs}`)
+    const d = await res.json()
+    if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+    if (d?.skip) throw new Error(d.skip)
+    if (page === 0) {
+      total = Number(d.total ?? 0)
+      amount = Number(d.totalAmount ?? 0)
+      channels = Array.isArray(d.byChannel) ? d.byChannel : []
+    }
+    if (!wantRows) break
+    const got: CoreRow[] = Array.isArray(d.rows) ? d.rows : []
+    rows.push(...got)
+    page++
+    if (got.length < LIMIT || rows.length >= total) break
+  }
+  return { rows, total, amount, channels }
 }
 
 const PERIODS = [
@@ -95,10 +138,53 @@ export default function SalesReportPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`/api/sales-report?days=${d}`)
-      const data = await res.json()
-      if (!res.ok) throw new Error(data?.error ?? `HTTP ${res.status}`)
-      setReport(data)
+      const to = thaiDay(0)
+      const from = thaiDay(d - 1)
+      const prevTo = thaiDay(d)
+      const prevFrom = thaiDay(d * 2 - 1)
+
+      const [cur, prev, best] = await Promise.all([
+        fetchRange(from, to, true),
+        fetchRange(prevFrom, prevTo, false),
+        fetch(`/api/web/core?list=stock&sort=sold&limit=10&soldDays=${Math.max(1, d)}`)
+          .then((r) => r.json())
+          .catch(() => null),
+      ])
+
+      // ยอดรายวัน — เติมวันที่ไม่มีออเดอร์ให้เป็นศูนย์ ไม่งั้นกราฟกระโดดข้ามวัน
+      const byDay = new Map<string, { sales: number; orders: number }>()
+      for (let i = d - 1; i >= 0; i--) byDay.set(thaiDay(i), { sales: 0, orders: 0 })
+      for (const o of cur.rows) {
+        const slot = byDay.get(o.order_date)
+        if (!slot) continue
+        slot.sales += Number(o.amount) || 0
+        slot.orders += 1
+      }
+
+      const prevByChan = new Map(prev.channels.map((c) => [c.channel, c.amount]))
+      const bestRows: { sku: string; name: string; sold: number }[] =
+        Array.isArray(best?.rows) ? best.rows.filter((r: { sold: number }) => r.sold > 0) : []
+
+      setReport({
+        range: { from, to, days: d },
+        totals: {
+          sales: cur.amount,
+          orders: cur.total,
+          avg: cur.total ? cur.amount / cur.total : 0,
+          prevSales: prev.amount,
+          prevOrders: prev.total,
+        },
+        daily: Array.from(byDay.entries()).map(([date, v]) => ({ date, ...v })),
+        channels: cur.channels.map((c) => ({
+          label: c.channel,
+          name: c.channel,
+          store: '',
+          sales: c.amount,
+          orders: c.orders,
+          prevSales: prevByChan.get(c.channel) ?? 0,
+        })),
+        topProducts: bestRows.map((r) => ({ name: r.name || r.sku, sku: r.sku, qty: r.sold })),
+      })
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
     } finally {
@@ -144,7 +230,7 @@ export default function SalesReportPage() {
         </div>
       </div>
 
-      {error && <ErrorBox title="ดึงข้อมูลจาก ZORT ไม่สำเร็จ">{error}</ErrorBox>}
+      {error && <ErrorBox title="ดึงข้อมูลจากคลังของเราไม่สำเร็จ">{error}</ErrorBox>}
       {loading && !report && <LoadingState />}
 
       {report && (
@@ -219,9 +305,7 @@ export default function SalesReportPage() {
               <p className="text-[13px] font-semibold text-gray-700">🏆 สินค้าขายดี ({days === 1 ? 'วันนี้' : `${days} วันล่าสุด`})</p>
             </div>
             {report.topProducts === null ? (
-              <p className="text-[13px] text-gray-400 p-4 md:p-5">
-                ZORT ไม่ส่งรายการสินค้ามากับข้อมูลออเดอร์รวม — ส่วนนี้จะแสดงเมื่อข้อมูลพร้อม
-              </p>
+              <p className="text-[13px] text-gray-400 p-4 md:p-5">ยังไม่มีข้อมูลสินค้าขายดี</p>
             ) : report.topProducts.length === 0 ? (
               <p className="text-[13px] text-gray-400 p-4 md:p-5">ไม่มีข้อมูลสินค้าในช่วงนี้</p>
             ) : (
@@ -235,9 +319,17 @@ export default function SalesReportPage() {
                     {p.sku && <p className="text-[11px] text-gray-400">{p.sku}</p>}
                   </div>
                   <span className="text-[12px] text-gray-500 shrink-0">×{fmtNum(p.qty)}</span>
-                  <span className="text-[13px] font-bold text-gray-900 w-24 text-right shrink-0">{fmtBaht(p.amount)}</span>
+                  <span className="text-[13px] font-bold text-gray-900 w-24 text-right shrink-0">
+                    {typeof p.amount === 'number' ? fmtBaht(p.amount) : '—'}
+                  </span>
                 </div>
               ))
+            )}
+            {report.topProducts !== null && report.topProducts.length > 0 && (
+              <p className="text-[11px] text-gray-400 px-4 md:px-5 py-3 border-t border-gray-50">
+                คลังเงายังบอกได้แค่ &quot;ขายไปกี่ชิ้น&quot; ต่อ SKU — ช่องยอดเงินจึงเป็นขีดไว้ก่อน
+                จะมีตัวเลขเมื่อมีท่อรวมยอดเงินรายสินค้า (ขีดดีกว่าเลขที่เดาเอง)
+              </p>
             )}
           </Card>
         </>
