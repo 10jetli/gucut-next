@@ -17,6 +17,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/sales', label: 'รายการขาย (คลังเรา)' },
       { href: '/core/stock', label: 'สินค้า / สต็อก (คลังเรา)' },
       { href: '/core/customers', label: 'ลูกค้า / คู่ค้า (คลังเรา)' },
+      { href: '/core/purchases', label: 'รายการซื้อ' },
     ],
   },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
