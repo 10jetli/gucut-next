@@ -10,9 +10,9 @@
 //
 // ⚠️ **ห้ามพิมพ์ตัวเลขใด ๆ ลงหน้านี้เด็ดขาด** ทุกตัวเลขมาจาก /api/web/core?arch=1
 //    ซึ่งสแกนซอร์สจริงตอน build · ผังที่คนกรอกเองจะกลายเป็นของโกหกภายในไม่กี่สัปดาห์
-//    ⇒ ผังต้นฉบับมีตัวเลขฝั่งหลังร้านด้วย (17 หน้า · 30 เส้นทาง · Blobs 4 ถัง)
-//      **ไม่ลอกมา** เพราะตัวสแกนอ่านฝั่งนั้นไม่ได้ ⇒ ตัวเลขที่ไม่มีใครตรวจ
-//      คือตัวเลขที่จะผิดโดยไม่มีใครรู้ · กล่องฝั่งนั้นเขียนตรง ๆ ว่ายังไม่ได้ถูกสแกน
+//    ⇒ ผังต้นฉบับมีตัวเลขฝั่งหลังร้านด้วย แต่**นับด้วยมือ** จึงไม่ลอกมา
+//      ตอนนี้ฝั่งเซิร์ฟเวอร์ทำตัวสแกนแฝดให้แล้ว (scripts/gen-arch.mjs → lib/arch-admin.ts)
+//      เลขฝั่งหลังร้านจึงมาจากการสแกนเหมือนกัน ไม่ใช่เลขที่ใครนับเอง
 // ⚠️ **อ่านไม่ได้ต้องขึ้นว่าอ่านไม่ได้ ห้ามโชว์ตัวเลขค้างจากรอบก่อน**
 // ⚠️ ค่าที่ยังไม่มาต้องขึ้น "ไม่ทราบ" **ห้ามใส่ 0 เป็นค่าตั้งต้น**
 //    (3 ก.ย. 2569 API ห่อคำตอบไว้อีกชั้น หน้าขึ้น "ไม่ทราบจำนวน" ⇒ จับต้นเหตุได้ใน 2 นาที
@@ -23,6 +23,9 @@ import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
+// ⚠️ ฝั่งหลังร้าน **ไม่ต้องเรียก API** — อยู่ repo เดียวกับหน้าจอ ตัวสแกนเขียนไฟล์นี้ตอน build
+//    (scripts/gen-arch.mjs · ห้ามแก้ lib/arch-admin.ts ด้วยมือ เดี๋ยวถูกเขียนทับ)
+import { ARCH_ADMIN } from '@/lib/arch-admin'
 
 /* ชุดสีจากผังต้นฉบับ — โทนอุ่น ส้มแบรนด์ GUCUT */
 const C = {
@@ -174,6 +177,25 @@ export default function ArchPage() {
   const waiting = integrations.filter((i) => !i.live)
   const hasR2 = integrations.some((i) => /r2/i.test(i.id) || /R2/.test(i.name))
 
+  // ── ฝั่งหลังร้าน: มาจากไฟล์ที่ตัวสแกนเขียนตอน build ไม่ได้ยิง API ──
+  // ⚠️ ฝั่งนี้มีแค่ `inCode` (โค้ดเรียกอยู่ไหม) **ไม่มี live/partial** เพราะดูตอน build ไม่ใช่ตอนรัน
+  //    ⇒ ห้ามเขียนว่า "ต่อแล้ว" กับกล่องฝั่งนี้ ต้องเขียนว่า "มีในโค้ด"
+  //    เขียนว่าต่อแล้วทั้งที่ยังไม่ได้ตั้งคีย์ = คำโกหกชนิดที่ตรวจไม่เจอจนถึงวันที่ต้องใช้
+  const A = ARCH_ADMIN as unknown as {
+    generatedAt?: string; site?: string; project?: string; repo?: string
+    apiRoutes?: { count?: number }
+    pages?: { count?: number; core?: number }
+    blobs?: string[]
+    pipe?: { count?: number }
+    integrations?: { id: string; name: string; what: string; inCode: boolean }[]
+    unlabelled?: string[]
+  }
+  const adminBlobs = Array.isArray(A.blobs) ? A.blobs : []
+  const adminInts = Array.isArray(A.integrations) ? A.integrations : []
+  const adminStamp = A.generatedAt
+    ? new Date(A.generatedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
+    : null
+
   // ── ความสูงของสองแผงล่างขึ้นกับจำนวนบริการ จึงคำนวณก่อนวาด ──
   const PER_ROW = 5, SB_H = 62, SB_GAP = 12
   const liveRows = Math.max(1, Math.ceil(live.length / PER_ROW))
@@ -256,11 +278,11 @@ export default function ArchPage() {
               />
               <Card
                 x={SITE_R_X} y={SITE_Y} w={SITE_W} h={SITE_H} accent titleAnchor="start"
-                title="admin.gucut.com"
-                meta="Netlify · gucut-admin · repo gucut-next"
+                title={A.site ?? 'admin.gucut.com'}
+                meta={`Netlify · ${A.project ?? '—'} · repo ${A.repo ?? '—'}`}
                 lines={[
-                  'หลังร้านตัวจริง — จอที่คุณเปิดอยู่ตอนนี้',
-                  'ยังไม่ได้ถูกสแกน · ตัวสแกนอ่านได้เฉพาะฝั่งหน้าร้าน',
+                  `หลังร้านตัวจริง · จอ ${n(A.pages?.count)} หน้า (โครงการแก่น ${n(A.pages?.core)})`,
+                  `API ของตัวเอง ${n(A.apiRoutes?.count)} เส้นทาง · ท่อกลางอนุญาต ${n(A.pipe?.count)}`,
                 ]}
               />
               {/* ท่อกลาง — ลูกศรชี้ซ้าย เพราะหลังร้านเป็นฝ่ายเรียกไปหาหน้าร้าน */}
@@ -292,9 +314,9 @@ export default function ArchPage() {
                   title="Cloudflare R2" lines={['ตัวสแกนไม่พบว่าต่ออยู่']} />
               )}
               {/* ⚠️ ถังฝั่งหลังร้าน — ผังต้นฉบับเขียน "4 ถัง" แต่ตัวสแกนมองไม่เห็น จึงไม่ใส่ตัวเลข */}
-              <Card x={stoX(3)} y={STO_Y} w={STO_W} h={STO_H} fill={C.surface2} dashed
-                title="Netlify Blobs (หลังร้าน)"
-                lines={['ระบบสั่งของ · คืนสินค้า', 'ติดตามพัสดุ · บิลค่าใช้จ่าย', 'คนละชุดกับฝั่งซ้าย · ยังไม่ถูกสแกน']} />
+              <Card x={stoX(3)} y={STO_Y} w={STO_W} h={STO_H}
+                title={`Netlify Blobs · ${adminBlobs.length ? `${adminBlobs.length} ถัง` : 'ไม่ทราบ'}`}
+                lines={['ของฝั่งหลังร้าน', adminBlobs.join(' · ') || '—', 'คนละชุดกับฝั่งซ้ายสนิท']} />
 
               <Arrow x1={M + 120} y1={SITE_Y + SITE_H} x2={stoX(0) + STO_W / 2} y2={STO_Y - 6} />
               <Arrow x1={M + 260} y1={SITE_Y + SITE_H} x2={stoX(1) + STO_W / 2} y2={STO_Y - 6} />
@@ -382,6 +404,33 @@ export default function ArchPage() {
                 </div>
               </div>
             )}
+            {adminInts.length > 0 && (
+              <div className="rounded-lg border p-3.5" style={{ background: C.surface, borderColor: C.line }}>
+                <p className="text-[13.5px] font-semibold mb-0.5" style={{ color: C.ink }}>
+                  ของนอกบ้านที่ฝั่งหลังร้านเรียกใช้ · {adminInts.length} เจ้า
+                </p>
+                {/* ⚠️ ฝั่งนี้บอกได้แค่ว่า "โค้ดเรียกอยู่" ไม่ได้บอกว่าตั้งคีย์ครบแล้ว
+                    เพราะข้อมูลมาจากตอน build ไม่ใช่ตอนรัน — เขียนว่า "ต่อแล้ว" จะเป็นคำโกหก
+                    ชนิดที่ตรวจไม่เจอจนถึงวันที่ต้องใช้จริง */}
+                <p className="text-[11.5px] mb-2" style={{ color: C.muted }}>
+                  บอกว่า<b>มีในโค้ด</b>เท่านั้น ไม่ได้บอกว่าตั้งคีย์ครบแล้ว (ต่างจากฝั่งหน้าร้านที่ดูตอนรันได้)
+                </p>
+                <div className="space-y-1">
+                  {adminInts.map((it) => (
+                    <div key={it.id} className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-[12.5px] font-medium" style={{ color: C.ink }}>{it.name}</span>
+                      <span className="text-[11.5px]" style={{ color: C.muted }}>{it.what}</span>
+                      {!it.inCode && (
+                        <span className="text-[10.5px] rounded px-1.5 py-0.5" style={{ background: C.surface2, color: C.muted }}>
+                          ไม่พบการเรียกใช้ในโค้ด
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="rounded-lg border p-3.5" style={{ background: C.surface, borderColor: C.line }}>
               <p className="text-[13.5px] font-semibold mb-1.5" style={{ color: C.ink }}>รายละเอียดที่ผังย่อไว้</p>
               <div className="space-y-1.5 text-[12px]" style={{ color: C.muted }}>
@@ -408,8 +457,9 @@ export default function ArchPage() {
               ? <>ข้อมูลชุดนี้สร้างตอน build รอบ <b>{stamp} น.</b> — แก้โค้ดแล้วยังไม่ deploy ผังจะยังไม่เปลี่ยน</>
               : 'ไม่ทราบเวลาที่สร้างข้อมูลชุดนี้'}
             <br />
-            กล่องเส้นประฝั่งขวาคือของ<b>หลังร้าน</b> ซึ่งยังไม่ได้ถูกสแกน จึงไม่มีตัวเลขกำกับ —
-            ตัวเลขที่ไม่มีใครตรวจ คือตัวเลขที่จะผิดโดยไม่มีใครรู้
+            ตัวเลขฝั่ง<b>หลังร้าน</b>มาจากตัวสแกนคนละตัว ซึ่งอ่านซอร์สของ repo นี้ตอน build
+            {adminStamp ? ` (รอบ ${adminStamp} น.)` : ''} — จึงเป็นของที่ตรวจได้เหมือนกัน
+            ไม่ใช่เลขที่ใครนับด้วยมือ
           </div>
         </>
       )}
