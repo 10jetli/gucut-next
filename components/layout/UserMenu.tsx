@@ -2,6 +2,7 @@
 // แสดงว่าใครล็อกอินอยู่ตอนนี้ (แอดมิน/ชื่อพนักงาน) + เมนูดรอปดาวน์ (ข้อมูลส่วนตัว/เปลี่ยนรหัสผ่าน/ออกจากระบบ)
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { StMark } from './TopBarActions'
 
 export default function UserMenu() {
   const router = useRouter()
@@ -43,18 +44,18 @@ export default function UserMenu() {
   if (!info || !info.role) return null
 
   const label = info.role === 'admin' ? 'แอดมิน' : info.name || 'พนักงาน'
-  const initial = label.trim().charAt(0).toUpperCase()
 
   return (
     <div className="relative" ref={menuRef}>
+      {/* หน้าตาแบบ ZORT: โลโก้ ST + ชื่อบัญชีสีเทา ไม่มีวงกลมตัวอักษรย่อ
+          ⚠️ ZORT โชว์ชื่อบัญชีของเขา ("SITAKAN") — ของเราโชว์ **คนที่ล็อกอินอยู่จริง**
+             เพราะระบบนี้มีทั้งแอดมินและพนักงาน ใครกำลังใช้อยู่สำคัญกว่าชื่อบัญชี */}
       <button
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1.5 text-[12px] text-gray-600 whitespace-nowrap hover:text-gray-800 transition-colors"
+        className="flex items-center gap-1.5 whitespace-nowrap px-1.5 py-1 rounded hover:bg-gray-100 transition-colors"
       >
-        <span className="w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-[#17386b] text-white text-[11px] font-bold flex items-center justify-center shrink-0">
-          {initial}
-        </span>
-        <span className="font-semibold">{label}</span>
+        <StMark size={15} />
+        <span className="text-[12.5px] font-medium text-gray-400">{label}</span>
         <span className={`text-[9px] text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
       </button>
 
