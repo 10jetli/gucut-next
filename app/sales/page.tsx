@@ -17,8 +17,8 @@ interface Report {
   totals: { sales: number; orders: number; avg: number; prevSales: number; prevOrders: number }
   daily: { date: string; sales: number; orders: number }[]
   channels: { label: string; name: string; store: string; sales: number; orders: number; prevSales: number }[]
-  // amount เป็น optional เพราะคลังเงายังบอกได้แค่ "ขายไปกี่ชิ้น" ต่อ SKU
-  // ยังไม่มีท่อรวมยอดเงินรายสินค้า — โชว์ขีดดีกว่าโชว์เลขที่เดาเอง
+  // ยอดเงินรายสินค้ามาจาก /api/core?list=topproducts (รวมจาก order_items จริง)
+  // ยังเป็น optional ไว้ เผื่อท่อนั้นล่ม — โชว์ขีดดีกว่าโชว์เลขที่เดาเอง
   topProducts: { name: string; sku: string; qty: number; amount?: number }[] | null
 }
 
@@ -146,7 +146,8 @@ export default function SalesReportPage() {
       const [cur, prev, best] = await Promise.all([
         fetchRange(from, to, true),
         fetchRange(prevFrom, prevTo, false),
-        fetch(`/api/web/core?list=stock&sort=sold&limit=10&soldDays=${Math.max(1, d)}`)
+        // ยอดขายรายสินค้าพร้อม "ยอดเงินจริง" จาก order_items (ไม่ใช่ qty คูณราคาขาย ซึ่งเป็นการเดา)
+        fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=10`)
           .then((r) => r.json())
           .catch(() => null),
       ])
@@ -162,8 +163,8 @@ export default function SalesReportPage() {
       }
 
       const prevByChan = new Map(prev.channels.map((c) => [c.channel, c.amount]))
-      const bestRows: { sku: string; name: string; sold: number }[] =
-        Array.isArray(best?.rows) ? best.rows.filter((r: { sold: number }) => r.sold > 0) : []
+      const bestRows: { sku: string; name: string; qty: number; amount: number }[] =
+        Array.isArray(best?.items) ? best.items.filter((r: { qty: number }) => r.qty > 0) : []
 
       setReport({
         range: { from, to, days: d },
@@ -183,7 +184,9 @@ export default function SalesReportPage() {
           orders: c.orders,
           prevSales: prevByChan.get(c.channel) ?? 0,
         })),
-        topProducts: bestRows.map((r) => ({ name: r.name || r.sku, sku: r.sku, qty: r.sold })),
+        topProducts: bestRows.map((r) => ({
+          name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount,
+        })),
       })
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
@@ -325,10 +328,9 @@ export default function SalesReportPage() {
                 </div>
               ))
             )}
-            {report.topProducts !== null && report.topProducts.length > 0 && (
+            {report.topProducts !== null && report.topProducts.some((p) => typeof p.amount !== 'number') && (
               <p className="text-[11px] text-gray-400 px-4 md:px-5 py-3 border-t border-gray-50">
-                คลังเงายังบอกได้แค่ &quot;ขายไปกี่ชิ้น&quot; ต่อ SKU — ช่องยอดเงินจึงเป็นขีดไว้ก่อน
-                จะมีตัวเลขเมื่อมีท่อรวมยอดเงินรายสินค้า (ขีดดีกว่าเลขที่เดาเอง)
+                ช่องที่เป็นขีดคือดึงยอดเงินรายสินค้าไม่ได้รอบนี้ — ขีดดีกว่าเลขที่เดาเอง
               </p>
             )}
           </Card>
