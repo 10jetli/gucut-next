@@ -14,6 +14,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'โครงการแก่น',
     children: [
       { href: '/core', label: 'ภาพรวมคลังเงา' },
+      { href: '/core/reports', label: 'รายงาน (คลังเรา)' },
       { href: '/core/sales', label: 'รายการขาย (คลังเรา)' },
       { href: '/core/stock', label: 'สินค้า / สต็อก (คลังเรา)' },
       { href: '/core/customers', label: 'ลูกค้า / คู่ค้า (คลังเรา)' },
