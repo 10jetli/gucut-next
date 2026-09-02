@@ -9,6 +9,7 @@
 // ⚠️ ตัวเลขที่นี่คือ "ภาพถ่ายสต็อกตอนตี 1" ไม่ใช่ยอดสด — ต้องเขียนบอกบนจอเสมอ
 //    ปล่อยให้เข้าใจว่าสดจะกลายเป็นจอที่โกหกเงียบ ๆ ตอนของขยับระหว่างวัน
 import { useCallback, useEffect, useState } from 'react'
+import Link from 'next/link'
 import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -103,7 +104,13 @@ export default function CoreStockPage() {
         summary={
           data ? (
             <>
-              จำนวน {data.total.toLocaleString('th-TH')} รายการ | ของหมด{' '}
+              {/* บรรทัดนี้ลอกรูปประโยคของ ZORT: "จำนวน N รายการ | ลิงก์ | ลิงก์" */}
+              จำนวน {data.total.toLocaleString('th-TH')} รายการ{' | '}
+              <Link href="/core/soon/product-image" className="text-blue-600 hover:underline">จัดการรูปภาพสินค้า</Link>
+              {' | '}
+              <Link href="/core/soon/product-cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
+              <br />
+              ของหมด{' '}
               <span className="text-red-500 font-semibold">{data.outOfStock.toLocaleString('th-TH')}</span> ·
               เหลือน้อย <span className="text-orange-600 font-semibold">{data.low.toLocaleString('th-TH')}</span> ·
               มูลค่าสต็อก {fmtBaht(data.value)}
@@ -115,9 +122,22 @@ export default function CoreStockPage() {
           ) : 'กำลังโหลด…'
         }
         actions={
-          <BtnGhost onClick={() => load(offset)} disabled={loading}>
-            {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-          </BtnGhost>
+          <>
+            <BtnGhost onClick={() => load(offset)} disabled={loading}>
+              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
+            </BtnGhost>
+            {/* ⚠️ ปุ่มสองอันนี้มีใน ZORT — ทำให้ผังเหมือน แต่ **กดแล้วต้องไม่โกหก**
+                จึงพาไปหน้าที่บอกตรง ๆ ว่ายังไม่ได้ทำ และตอนนี้ให้ไปทำที่ไหน */}
+            <Link href="/core/soon/product-import"
+              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              นำเข้าไฟล์ (Excel)
+            </Link>
+            <Link href="/core/soon/product-add"
+              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              style={{ background: '#1b3b73' }}>
+              เพิ่มสินค้าใหม่
+            </Link>
+          </>
         }
       />
 
@@ -191,11 +211,10 @@ export default function CoreStockPage() {
             //    ⇒ เลขในวงเล็บของแท็บที่เปิดอยู่ตรงกับที่กดเข้าไปเห็นเสมอ
             //    (บั๊กตัวเดิม "แท็บมีเลขแต่กดเข้าไปไม่เจอ" — ห้ามให้เกิดซ้ำ)
             tabs={[
+              // ⚠️ **สามแท็บแรกกับลำดับ ลอกจาก ZORT ตรง ๆ** (ภาพ 02-สินค้า.jpg)
+              //    ของเดิมเอา ของหมด/เหลือน้อย ขึ้นก่อน ซึ่งคนที่ชินกับ ZORT จะกดผิดตำแหน่ง
+              //    สองแท็บท้ายเป็นของที่เราเพิ่มเอง (ZORT ไม่มี) จึงต่อท้าย ไม่แทรกกลาง
               { id: 'all', label: 'ทั้งหมด', count: tab === 'all' ? inTab : data.total },
-              { id: 'out', label: 'ของหมด', count: tab === 'out' ? inTab : data.outOfStock },
-              { id: 'low', label: 'เหลือน้อย', count: tab === 'low' ? inTab : data.low },
-              // แท็บของ ZORT — เซิร์ฟเวอร์กรองให้ที่ฐานข้อมูล (only=active/inactive)
-              // จำนวน "เปิดใช้งาน" = ทั้งหมด − ปิดใช้งาน · ไม่มี inactive ก็ไม่ต้องเดา
               {
                 id: 'active',
                 label: 'เปิดใช้งาน',
@@ -204,6 +223,8 @@ export default function CoreStockPage() {
                   : (typeof data.inactive === 'number' ? data.total - data.inactive : undefined),
               },
               { id: 'inactive', label: 'ปิดใช้งาน', count: tab === 'inactive' ? inTab : data.inactive },
+              { id: 'out', label: 'ของหมด', count: tab === 'out' ? inTab : data.outOfStock },
+              { id: 'low', label: 'เหลือน้อย', count: tab === 'low' ? inTab : data.low },
             ]}
             active={tab}
             onChange={(id) => {
@@ -218,7 +239,6 @@ export default function CoreStockPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH} style={{ width: 56 }}></th>
                   <th className={TH}>รหัส</th>
                   <th className={TH}>ชื่อสินค้า</th>
                   <th className={THR}>ราคาซื้อ</th>
@@ -232,7 +252,7 @@ export default function CoreStockPage() {
               <tbody>
                 {rows.length === 0 && (
                   <tr>
-                    <td colSpan={10} className="px-3 py-6 text-[13px] text-gray-400 text-center">
+                    <td colSpan={9} className="px-3 py-6 text-[13px] text-gray-400 text-center">
                       {/* ⚠️ แท็บว่างต้องบอกว่า "ไม่มีของแบบนี้" ไม่ใช่ปล่อยให้ดูเหมือนโหลดพลาด */}
                       {tab === 'inactive'
                         ? 'ยังไม่มีสินค้าที่ปิดใช้งาน — สินค้าทุกตัวในคลังเปิดขายอยู่'
@@ -243,23 +263,23 @@ export default function CoreStockPage() {
                 {rows.map((r, i) => (
                   <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
-                    <td className="px-3 py-2 align-middle">
-                      {/* ⚠️ ไม่มีรูป = กล่องเทา แบบเดียวกับ ZORT · ห้ามปล่อยช่องว่างเปล่า
-                          ช่องว่างทำให้แถวเบี้ยวและดูเหมือนโหลดไม่เสร็จ */}
-                      {imgOf(r.sku)
-                        ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={imgOf(r.sku) as string}
-                            alt=""
-                            loading="lazy"
-                            className="w-10 h-10 rounded border border-gray-200 object-cover bg-white"
-                          />
-                        )
-                        : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100" />}
-                    </td>
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
+                    {/* ⚠️ ZORT วางรูปไว้**ในคอลัมน์ชื่อสินค้า** ไม่ใช่คอลัมน์แยก (ภาพ 02-สินค้า.jpg)
+                        ไม่มีรูป = กล่องเทา ห้ามปล่อยช่องว่าง แถวจะเบี้ยวและดูเหมือนโหลดไม่เสร็จ */}
                     <td className={TD}>
+                      <span className="flex items-start gap-2.5">
+                        {imgOf(r.sku)
+                          ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={imgOf(r.sku) as string}
+                              alt=""
+                              loading="lazy"
+                              className="w-10 h-10 rounded border border-gray-200 object-cover bg-white shrink-0"
+                            />
+                          )
+                          : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0" />}
+                        <span className="min-w-0">
                       <span className="text-blue-600">{r.name || '—'}</span>
                       {r.service && (
                         // ติดป้ายเฉพาะตอนแสดงบริการด้วย จะได้รู้ทันทีว่าทำไมแถวนี้ติดลบ
@@ -272,6 +292,8 @@ export default function CoreStockPage() {
                           ปิดใช้งาน
                         </span>
                       )}
+                        </span>
+                      </span>
                     </td>
                     {/* ⚠️ ราคาซื้อ null = ยังไม่ได้กรอก ≠ ฿0 · เขียน ฿0 = บอกว่าของฟรี */}
                     <td className={TDR}>
