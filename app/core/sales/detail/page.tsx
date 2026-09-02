@@ -85,7 +85,7 @@ function DetailInner() {
   // ตัวกรองเดิมของรายการที่กดเข้ามา — ต้องส่งต่อ ไม่งั้นใบถัดไปจะเป็นคนละชุด
   const listQs = useCallback((extra: Record<string, string>) => {
     const qs = new URLSearchParams({ list: 'orders' })
-    for (const k of ['from', 'to', 'channel', 'q', 'cancelled']) {
+    for (const k of ['from', 'to', 'channel', 'status', 'q', 'cancelled']) {
       const v = sp.get(k)
       if (v) qs.set(k, v)
     }
@@ -133,7 +133,7 @@ function DetailInner() {
 
   const backHref = (() => {
     const qs = new URLSearchParams()
-    for (const k of ['from', 'to', 'channel', 'q', 'cancelled']) {
+    for (const k of ['from', 'to', 'channel', 'status', 'q', 'cancelled']) {
       const v = sp.get(k)
       if (v) qs.set(k, v)
     }
@@ -143,7 +143,7 @@ function DetailInner() {
 
   const hrefFor = (o: Order, i: number) => {
     const qs = new URLSearchParams({ id: o.id, i: String(i) })
-    for (const k of ['from', 'to', 'channel', 'q', 'cancelled']) {
+    for (const k of ['from', 'to', 'channel', 'status', 'q', 'cancelled']) {
       const v = sp.get(k)
       if (v) qs.set(k, v)
     }

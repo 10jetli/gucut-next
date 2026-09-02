@@ -38,6 +38,17 @@ interface Detail {
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
 
+// ⚠️ ชื่อสถานะในคลังเงาเป็นภาษาอังกฤษดิบจาก ZORT — **แปลบนจอเท่านั้น**
+//    ค่าที่ส่งกลับ API ต้องเป็นค่าดิบเสมอ ไม่งั้นกรองไม่ตรง (เซิร์ฟเวอร์เทียบตรงตัว ไม่ใช่ LIKE)
+//    ชื่อที่ไม่รู้จักให้แสดงค่าดิบไปเลย ดีกว่าเดาคำแปลผิด
+const STATUS_TH: Record<string, string> = {
+  Success: 'สำเร็จ',
+  Voided: 'ยกเลิก',
+  Pending: 'รอดำเนินการ',
+  Waiting: 'รอ',
+}
+const statusTh = (s: string) => STATUS_TH[s] ?? (s || 'ไม่ระบุสถานะ')
+
 const PAGE = 50
 const RANGES = [
   { days: 7, label: 'ย้อนหลัง 7 วัน' },
@@ -54,7 +65,6 @@ export default function CoreSalesPage() {
   //    ช่องทางของ ZORT อยู่เป็นคอลัมน์ + ตัวกรอง เราจึงย้ายมาเป็น dropdown ให้ตรงกัน
   const [status, setStatus] = useState('')
   const [q, setQ] = useState('')
-  const [cancelled, setCancelled] = useState(false)
   const [offset, setOffset] = useState(0)
 
   const [data, setData] = useState<ListResp | null>(null)
@@ -63,12 +73,11 @@ export default function CoreSalesPage() {
 
   const load = useCallback(async (
     off = 0,
-    opt?: { days?: number; channel?: string; status?: string; cancelled?: boolean },
+    opt?: { days?: number; channel?: string; status?: string },
   ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
     const st = opt?.status ?? status
-    const withCancel = opt?.cancelled ?? cancelled
     setLoading(true)
     setError('')
     try {
@@ -79,7 +88,11 @@ export default function CoreSalesPage() {
       if (ch) qs.set('channel', ch)
       if (st) qs.set('status', st)
       if (q.trim()) qs.set('q', q.trim())
-      if (withCancel) qs.set('cancelled', '1')
+      // ⚠️ **ส่ง cancelled=1 เสมอ** — ค่าเริ่มต้นของ API ตัดใบยกเลิกทิ้ง
+      //    ถ้าไม่ส่ง byStatus จะไม่มี "Voided" เลย ⇒ ไม่มีแท็บยกเลิกให้กด
+      //    และถ้าเผลอมีแท็บ กดแล้วจะได้ 0 ใบทั้งที่มี 44 ใบ (ฝั่งท่อหลังบ้านเตือนไว้)
+      //    ZORT เองก็โชว์ใบยกเลิกในแท็บ "ทั้งหมด" เหมือนกัน — เราจึงตรงกับต้นแบบด้วย
+      qs.set('cancelled', '1')
       const res = await fetch(`/api/web/core?${qs}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
@@ -90,7 +103,7 @@ export default function CoreSalesPage() {
     } finally {
       setLoading(false)
     }
-  }, [days, channel, status, cancelled, q])
+  }, [days, channel, status, q])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -102,8 +115,10 @@ export default function CoreSalesPage() {
       from: thaiDay(days - 1), to: thaiDay(0),
     })
     if (channel) qs.set('channel', channel)
+    if (status) qs.set('status', status)
     if (q.trim()) qs.set('q', q.trim())
-    if (cancelled) qs.set('cancelled', '1')
+    // ต้องตรงกับตัวกรองที่ใช้ดึงรายการเป๊ะ ไม่งั้นลูกศรเลื่อนใบข้ามไปคนละชุด
+    qs.set('cancelled', '1')
     router.push(`/core/sales/detail?${qs}`)
   }
 
@@ -113,10 +128,19 @@ export default function CoreSalesPage() {
   // แท็บสถานะพร้อมจำนวนในวงเล็บ — ลอกจาก ZORT (ทั้งหมด · รอโอน (21) · รอชำระ (12) · สำเร็จ)
   // byStatus จากเซิร์ฟเวอร์ไม่ถูกกรองด้วยสถานะที่เลือกอยู่ แท็บอื่นจึงยังบอกจำนวนได้เสมอ
   const allCount = (data?.byStatus ?? []).reduce((s2, r) => s2 + Number(r.orders || 0), 0)
+  // ยอดในบรรทัดสรุปรวมใบยกเลิกไว้ด้วย (เพราะเราส่ง cancelled=1 เสมอ)
+  // ⚠️ ต้องบอกให้เห็นว่ารวมไว้เท่าไหร่ ไม่งั้นยอดขายดูพองโดยไม่มีใครรู้ว่าทำไม
+  const voidedRows = (data?.byStatus ?? []).filter((r) => toneOfStatus(r.status) === 'red')
+  const voided = voidedRows.length
+    ? {
+      orders: voidedRows.reduce((n, r) => n + Number(r.orders || 0), 0),
+      amount: voidedRows.reduce((n, r) => n + Number(r.amount || 0), 0),
+    }
+    : null
   const tabs = [
     { id: '', label: 'ทั้งหมด', count: allCount || data?.total },
     ...(data?.byStatus ?? []).map((r) => ({
-      id: r.status, label: r.status || 'ไม่ระบุสถานะ', count: r.orders,
+      id: r.status, label: statusTh(r.status), count: r.orders,
     })),
   ]
 
@@ -127,19 +151,19 @@ export default function CoreSalesPage() {
         summary={
           <>
             {data ? summaryLine(data.total, data.totalAmount) : 'กำลังโหลด…'}
+            {voided && (
+              <span className="text-gray-400">
+                {' '}(รวมใบยกเลิก {voided.orders.toLocaleString('th-TH')} ใบ {fmtBaht(voided.amount)})
+              </span>
+            )}
             {' | '}
             <span className="text-gray-400">อ่านจากคลังของเราเอง ไม่ได้ยิง ZORT</span>
           </>
         }
         actions={
-          <>
-            <BtnGhost onClick={() => { setCancelled(!cancelled); load(0, { cancelled: !cancelled }) }}>
-              {cancelled ? 'ซ่อนใบที่ยกเลิก' : 'รวมใบที่ยกเลิก'}
-            </BtnGhost>
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>
-              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-            </BtnGhost>
-          </>
+          <BtnGhost onClick={() => load(offset)} disabled={loading}>
+            {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
+          </BtnGhost>
         }
       />
 
@@ -227,7 +251,7 @@ export default function CoreSalesPage() {
                     <td className={`${TD} max-w-[190px] truncate`}>{r.customer || '—'}</td>
                     <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>
                     <td className={TDR}>{fmtBaht(r.amount)}</td>
-                    <td className={TD}><Pill tone={toneOfStatus(r.status)}>{r.status || '—'}</Pill></td>
+                    <td className={TD}><Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill></td>
                     <td className={`${TD} text-right`} onClick={(e) => e.stopPropagation()}>
                       <RowMenu
                         items={[
