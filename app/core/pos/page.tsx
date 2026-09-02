@@ -59,6 +59,14 @@ function newRef() {
   return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
 }
 
+/** "45 วินาทีที่แล้ว" / "4 นาทีที่แล้ว" — เกินนาทีครึ่งแล้วนับเป็นวินาทีอ่านยาก
+ *  (หน้าต่างเตือนบิลซ้ำขยายเป็น 5 นาที ⇒ ตัวเลขวินาทีขึ้นไปถึง 300 ได้) */
+function agoText(secs: number) {
+  const s = Math.max(0, Math.round(Number(secs) || 0))
+  if (s < 90) return `${s} วินาทีที่แล้ว`
+  return `${Math.round(s / 60)} นาทีที่แล้ว`
+}
+
 const DRAFT_KEY = 'gucut-pos-draft'
 const DRAFT_MAX_AGE = 8 * 3600e3
 
@@ -570,7 +578,7 @@ export default function CorePosPage() {
         <div className="rounded px-3 py-2.5 mb-3 text-[13px] border bg-amber-50 border-amber-200 text-amber-900">
           <p className="leading-relaxed">
             ⚠️ ใบ <b>{done.maybe.number}</b> ยอด {fmtBaht(done.maybe.amount)} เพิ่งออกไปเมื่อ{' '}
-            <b>{done.maybe.secondsAgo} วินาทีที่แล้ว</b> รายการเหมือนกันเป๊ะ —
+            <b>{agoText(done.maybe.secondsAgo)}</b> รายการเหมือนกันเป๊ะ —
             ถ้าเป็นใบเดียวกันที่กดซ้ำ ให้ยกเลิกใบที่เพิ่งออก ({done.number})
             <br />
             <span className="text-amber-700">

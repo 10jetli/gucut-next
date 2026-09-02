@@ -36,7 +36,8 @@ interface Status {
   lastRun?: string
   stores?: StoreRow[]
   never?: NeverRow[]
-  protected?: string[]
+  /** ถังที่ระบบคุ้มครองทั้งหมด — เอามาประกบกับ stores เพื่อให้ถังที่ยังไม่มีคีย์โผล่ด้วย */
+  protected?: { store: string; what?: string; skip?: string }[]
 }
 interface RunResult {
   stores?: StoreRow[]
@@ -175,6 +176,8 @@ export default function BackupPage() {
 
   const stores = Array.isArray(st?.stores) ? st!.stores! : []
   const nevers = Array.isArray(st?.never) ? st!.never! : []
+  const protectedList = Array.isArray(st?.protected) ? st!.protected! : []
+  const emptyProtected = protectedList.filter((p) => !stores.some((s) => s.store === p.store))
   const totalKeys = stores.reduce((a, s) => a + (Number(s.keys) || 0), 0)
   const totalBytes = stores.reduce((a, s) => a + (Number(s.bytes) || 0), 0)
   const totalGone = stores.reduce((a, s) => a + (Number(s.gone) || 0), 0)
@@ -260,6 +263,17 @@ export default function BackupPage() {
                     <td className={`${TD} text-gray-500 whitespace-nowrap`}>{thaiTime(s.last)}</td>
                   </tr>
                 ))}
+                {/* ⚠️ ถังที่คุ้มครองแต่ยังไม่มีคีย์เลยจะไม่อยู่ใน stores (GROUP BY ไม่มีแถว)
+                    ไม่เอามาต่อ = ตารางดูเหมือนคุ้มครองน้อยกว่าความจริง */}
+                {emptyProtected.map((p) => (
+                  <tr key={p.store} className="border-b border-gray-100 last:border-0">
+                    <td className={`${TD} text-gray-500`}>{p.store}</td>
+                    <td className={TDR}><span className="text-gray-300">0</span></td>
+                    <td className={TDR}><span className="text-gray-300">—</span></td>
+                    <td className={TDR}><span className="text-gray-300">0</span></td>
+                    <td className={`${TD} text-gray-400 text-[12px]`}>คุ้มครองแล้ว แต่ยังไม่มีข้อมูลให้สำรอง</td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </TableWrap>
@@ -269,7 +283,8 @@ export default function BackupPage() {
             สำเนาตั้งใจไม่ลบตามต้นทาง จึงยังกู้ของที่ถูกลบไปแล้วได้ ·
             แต่ถ้าเลขนี้พุ่งขึ้นผิดปกติ แปลว่ามีอะไรกำลังลบข้อมูลอยู่ ควรมาดู
             <br />
-            ถังที่<b>ยังไม่มีคีย์เลย</b>จะไม่ปรากฏในตารางนี้ — ไม่ได้แปลว่าไม่ได้คุ้มครอง
+            ตารางนี้รวม<b>ทุกถังที่ระบบคุ้มครอง</b>แล้ว — ถังที่ยังไม่มีข้อมูลก็ขึ้นด้วย
+            จะได้ไม่เข้าใจว่าคุ้มครองน้อยกว่าความจริง
           </p>
 
           {/* ⚠️ ต้องโชว์เสมอ ไม่งั้นเข้าใจว่าสำรองครบทุกถัง */}
@@ -345,7 +360,7 @@ export default function BackupPage() {
           />
           <datalist id="backup-stores">
             {stores.map((s) => <option key={s.store} value={s.store} />)}
-            {(st?.protected ?? []).map((p) => <option key={p} value={p} />)}
+            {protectedList.map((p) => <option key={p.store} value={p.store} />)}
           </datalist>
           <input
             value={oneKey}
