@@ -1,23 +1,24 @@
 'use client'
-// รายการซื้อ — ตัวแทนหน้า "รายการซื้อ" ของ ZORT
+// รายการซื้อ — ผังลอกจากจอ "รายการซื้อ" ของ ZORT (~/claude-shared/zort-ui/06-รายการซื้อ.jpg)
+// คอลัมน์ของ ZORT: # · วันที่ · รายการ (เลข PO) · ผู้ขาย · มูลค่า · สถานะ · ชำระเงิน
 //
 // ⚠️ ของฝั่งเราไม่ได้อยู่ที่เดียวเหมือน ZORT — การซื้อจริงของร้านกระจายอยู่ 2 ที่:
 //    · สั่งของกับโรงงาน  → /api/sheets  (ใบสั่งซื้อจริงที่ทำให้ของเข้าคลัง)
 //    · นำเข้าจากจีน      → /api/import  (ยัง "พิจารณา" อยู่ ไม่ใช่ใบซื้อ)
-//    จอนี้จึงรวมให้ดูที่เดียวแบบ ZORT แต่ **ไม่ทำซ้ำหน้าที่ของหน้าเดิม** —
+//    จอนี้รวมให้ดูที่เดียวแบบ ZORT แต่ **ไม่ทำซ้ำหน้าที่หน้าเดิม** —
 //    แก้ไข/อัปรูป/เปลี่ยนสถานะ ยังทำที่ ติดตามออเดอร์ กับ นำเข้าจากจีน เหมือนเดิม
-//
-// ⚠️ ช่องว่างที่ยังปิดไม่ได้จากฝั่งจอ: การซื้อพวกนี้ **ยังไม่ตัดเข้าคลังเงา**
-//    ZORT รับของเข้าแล้วสต็อกขึ้นเอง แต่ของเราต้องมีคนเขียน stock_moves ให้ก่อน
-//    ซึ่งอยู่ในเขตท่อหลังบ้าน (netlify/**) — เขียนบอกไว้บนจอแล้ว ห้ามถอด
+// ⚠️ การซื้อพวกนี้ **ยังไม่ตัดเข้าคลังเงา** — ZORT รับของเข้าแล้วสต็อกขึ้นเอง
+//    ของเราต้องบันทึกที่หน้า "ปรับสต็อกมือ" ก่อน · เขียนเตือนไว้บนจอ ห้ามถอด
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { TrackerOrder, TrackerStatus } from '@/lib/types'
-import { fmtBaht, fmtNum } from '@/lib/format'
-import Card from '@/components/ui/Card'
-import StatCard from '@/components/ui/StatCard'
+import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import {
+  PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText,
+  type PillTone,
+} from '@/components/zort'
 
 const STATUS_LABEL: Record<TrackerStatus, string> = {
   pending: 'ยังไม่มัดจำ',
@@ -28,14 +29,14 @@ const STATUS_LABEL: Record<TrackerStatus, string> = {
   warehouse: 'ถึงโกดัง',
   done: 'เสร็จแล้ว',
 }
-const STATUS_COLOR: Record<TrackerStatus, string> = {
-  pending: 'bg-gray-100 text-gray-600',
-  talking: 'bg-sky-100 text-sky-700',
-  deposit: 'bg-amber-100 text-amber-700',
-  production: 'bg-blue-100 text-blue-700',
-  shipping: 'bg-indigo-100 text-indigo-700',
-  warehouse: 'bg-purple-100 text-purple-700',
-  done: 'bg-emerald-100 text-emerald-700',
+const STATUS_TONE: Record<TrackerStatus, PillTone> = {
+  pending: 'gray',
+  talking: 'blue',
+  deposit: 'orange',
+  production: 'blue',
+  shipping: 'blue',
+  warehouse: 'orange',
+  done: 'green',
 }
 // ยังไม่จบ = ยังเป็นเงินที่ผูกไว้กับของที่ยังไม่ถึงมือ
 const OPEN: TrackerStatus[] = ['pending', 'talking', 'deposit', 'production', 'shipping']
@@ -45,7 +46,7 @@ const money = (s: string) => Number(String(s ?? '').replace(/[^0-9.-]/g, '')) ||
 export default function CorePurchasesPage() {
   const [orders, setOrders] = useState<TrackerOrder[]>([])
   const [importCount, setImportCount] = useState<number | null>(null)
-  const [filter, setFilter] = useState<'open' | 'all' | TrackerStatus>('open')
+  const [tab, setTab] = useState<'open' | 'all' | TrackerStatus>('open')
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -64,11 +65,11 @@ export default function CorePurchasesPage() {
       setError('ดึงรายการสั่งของกับโรงงานไม่ได้')
       setOrders([])
     }
-    if (impRes.status === 'fulfilled' && Array.isArray(impRes.value?.items)) {
-      setImportCount(impRes.value.items.length)
-    } else {
-      setImportCount(null)
-    }
+    setImportCount(
+      impRes.status === 'fulfilled' && Array.isArray(impRes.value?.items)
+        ? impRes.value.items.length
+        : null
+    )
     setLoading(false)
   }, [])
 
@@ -77,136 +78,118 @@ export default function CorePurchasesPage() {
   const shown = useMemo(() => {
     const needle = q.trim().toLowerCase()
     return orders.filter((o) => {
-      if (filter === 'open' && !OPEN.includes(o.status)) return false
-      if (filter !== 'open' && filter !== 'all' && o.status !== filter) return false
+      if (tab === 'open' && !OPEN.includes(o.status)) return false
+      if (tab !== 'open' && tab !== 'all' && o.status !== tab) return false
       if (!needle) return true
       return (
         String(o.product ?? '').toLowerCase().includes(needle) ||
         String(o.factory ?? '').toLowerCase().includes(needle)
       )
     })
-  }, [orders, filter, q])
+  }, [orders, tab, q])
 
   const openOrders = orders.filter((o) => OPEN.includes(o.status))
   const openValue = openOrders.reduce((s, o) => s + money(o.total), 0)
   const paidDeposit = openOrders.reduce((s, o) => s + money(o.deposit), 0)
 
+  const tabs = [
+    { id: 'open', label: 'ที่ยังไม่จบ', count: openOrders.length },
+    { id: 'all', label: 'ทั้งหมด', count: orders.length },
+    ...(Object.keys(STATUS_LABEL) as TrackerStatus[]).map((s) => ({
+      id: s, label: STATUS_LABEL[s], count: orders.filter((o) => o.status === s).length,
+    })),
+  ]
+
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">🧾 รายการซื้อ</h1>
-          <span className="text-[11px] text-gray-400">
-            รวมการซื้อของร้านไว้ที่เดียวแบบ ZORT · แก้ไขรายตัวยังทำที่หน้าเดิม
-          </span>
-        </div>
-        <button onClick={load} disabled={loading}
-          className="text-[12.5px] font-semibold text-blue-600 bg-white border border-gray-200 rounded-xl px-3.5 py-2 shadow-sm hover:bg-blue-50 transition-colors disabled:opacity-50">
-          <span className={loading ? 'spinner inline-block' : ''}>🔄</span> รีเฟรช
-        </button>
-      </div>
+    <div className="p-4 md:p-6">
+      <PageHead
+        title="รายการซื้อ"
+        summary={
+          <>
+            จำนวน {orders.length.toLocaleString('th-TH')} รายการ, ที่ยังไม่จบ{' '}
+            {openOrders.length.toLocaleString('th-TH')} ใบ มูลค่า {fmtBaht(openValue)}
+            {paidDeposit > 0 && <> · มัดจำไปแล้ว {fmtBaht(paidDeposit)}</>}
+            {' | '}
+            <Link href="/core/moves" className="text-blue-600 hover:underline">บันทึกรับของเข้าคลัง</Link>
+          </>
+        }
+        actions={
+          <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+        }
+      />
+
+      <SearchRow
+        value={q}
+        onChange={setQ}
+        onSubmit={() => {}}
+        placeholder="ค้นชื่อสินค้า หรือโรงงาน"
+        advanced={<LinkText onClick={() => {}}>ค้นหา</LinkText>}
+        right={
+          importCount !== null ? (
+            <Link href="/import" className="text-[13px] text-blue-600 hover:underline">
+              นำเข้าจากจีน ({importCount.toLocaleString('th-TH')} รายการที่กำลังดู) →
+            </Link>
+          ) : undefined
+        }
+      />
 
       {error && <ErrorBox title="ดึงรายการซื้อไม่ได้">{error}</ErrorBox>}
       {loading && orders.length === 0 && <LoadingState />}
 
-      <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2 leading-relaxed">
+      <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
         ⚠️ <b>ของที่ซื้อเข้ามายังไม่บวกเข้าคลังเงาอัตโนมัติ</b> — ZORT รับของเข้าแล้วสต็อกขึ้นเอง
-        แต่ของเรายังต้องรอท่อ &quot;รับของเข้า&quot; ฝั่งหลังบ้าน ตอนนี้จึงเห็นเป็นรายการซื้อเฉย ๆ
-      </p>
-
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard icon="📋" tone="blue" label="ใบสั่งซื้อที่ยังไม่จบ" value={fmtNum(openOrders.length)} unit="ใบ" />
-        <StatCard icon="💰" tone="orange" label="มูลค่าที่ยังค้างอยู่" value={fmtBaht(openValue)}
-          note={paidDeposit > 0 ? `มัดจำไปแล้ว ${fmtBaht(paidDeposit)}` : undefined} />
-        <StatCard icon="🇨🇳" tone="purple" label="รายการนำเข้าจีนที่กำลังดู"
-          value={importCount === null ? '—' : fmtNum(importCount)} unit="รายการ"
-          note="ยังไม่ใช่ใบซื้อ" />
+        แต่ของเราต้องไปบันทึกที่หน้า <Link href="/core/moves" className="text-blue-600 underline">ปรับสต็อกมือ</Link> ก่อน
       </div>
 
-      <Card>
-        <div className="flex flex-wrap items-center gap-2">
-          {([['open', 'ที่ยังไม่จบ'], ['all', 'ทั้งหมด']] as const).map(([id, label]) => (
-            <button key={id} onClick={() => setFilter(id)}
-              className={`text-[12.5px] font-semibold rounded-xl px-3 py-1.5 border transition-colors ${
-                filter === id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-              }`}>
-              {label}
-            </button>
-          ))}
-          {(Object.keys(STATUS_LABEL) as TrackerStatus[]).map((s) => (
-            <button key={s} onClick={() => setFilter(s)}
-              className={`text-[12.5px] font-semibold rounded-xl px-3 py-1.5 border transition-colors ${
-                filter === s ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
-              }`}>
-              {STATUS_LABEL[s]}
-            </button>
-          ))}
-          <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ค้นชื่อสินค้า หรือโรงงาน"
-            className="text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-[180px]" />
-        </div>
-      </Card>
+      {!loading && (
+        <>
+          <Tabs tabs={tabs} active={tab} onChange={(id) => setTab(id as typeof tab)} />
 
-      <Card padded={false} className="overflow-hidden">
-        <div className="flex items-center justify-between px-4 md:px-5 py-3 border-b border-gray-100">
-          <p className="text-[13px] font-semibold text-gray-700">🏭 สั่งของกับโรงงาน</p>
-          <Link href="/tracker" className="text-[11px] text-blue-600 font-medium hover:text-blue-700">
-            แก้ไข/อัปรูป ที่หน้าติดตามออเดอร์ →
-          </Link>
-        </div>
-        {!loading && shown.length === 0 && (
-          <p className="text-[13px] text-gray-400 p-4">ไม่มีใบสั่งซื้อในเงื่อนไขนี้</p>
-        )}
-        {shown.length > 0 && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-[12.5px] min-w-[720px]">
-              <thead className="bg-gray-50 text-gray-500">
+          <TableWrap>
+            <table className="w-full min-w-[820px]">
+              <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className="text-left font-medium px-4 py-2.5">สินค้า</th>
-                  <th className="text-left font-medium px-3 py-2.5">โรงงาน</th>
-                  <th className="text-right font-medium px-3 py-2.5">จำนวน</th>
-                  <th className="text-right font-medium px-3 py-2.5">มัดจำ</th>
-                  <th className="text-right font-medium px-3 py-2.5">ยอดรวม</th>
-                  <th className="text-left font-medium px-3 py-2.5">สถานะ</th>
-                  <th className="text-left font-medium px-4 py-2.5">กำหนด</th>
+                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH}>สินค้า</th>
+                  <th className={TH}>ผู้ขาย / โรงงาน</th>
+                  <th className={THR}>จำนวน</th>
+                  <th className={THR}>มัดจำ</th>
+                  <th className={THR}>มูลค่า</th>
+                  <th className={TH}>สถานะ</th>
+                  <th className={TH}>กำหนด</th>
                 </tr>
               </thead>
               <tbody>
-                {shown.map((o) => (
-                  <tr key={o.id} className="border-t border-gray-50">
-                    <td className="px-4 py-2.5 font-medium text-gray-800 max-w-[240px] truncate">{o.product || '—'}</td>
-                    <td className="px-3 py-2.5 text-gray-600 max-w-[160px] truncate">{o.factory || '—'}</td>
-                    <td className="px-3 py-2.5 text-right text-gray-700">{fmtNum(o.qty)}</td>
-                    <td className="px-3 py-2.5 text-right text-gray-500 whitespace-nowrap">{money(o.deposit) ? fmtBaht(money(o.deposit)) : '—'}</td>
-                    <td className="px-3 py-2.5 text-right font-semibold text-gray-900 whitespace-nowrap">{money(o.total) ? fmtBaht(money(o.total)) : '—'}</td>
-                    <td className="px-3 py-2.5">
-                      <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLOR[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
-                        {STATUS_LABEL[o.status] ?? o.status}
-                      </span>
+                {shown.length === 0 && (
+                  <tr><td colSpan={8} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่มีใบสั่งซื้อในเงื่อนไขนี้</td></tr>
+                )}
+                {shown.map((o, i) => (
+                  <tr key={o.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <td className={`${TD} text-gray-400`}>{i + 1}</td>
+                    <td className={TD}><span className="text-blue-600">{o.product || '—'}</span></td>
+                    <td className={`${TD} text-gray-600 max-w-[190px] truncate`}>{o.factory || '—'}</td>
+                    <td className={TDR}>{Number(o.qty || 0).toLocaleString('th-TH')}</td>
+                    <td className={`${TDR} text-gray-500`}>{money(o.deposit) ? fmtBaht(money(o.deposit)) : '—'}</td>
+                    <td className={TDR}>{money(o.total) ? fmtBaht(money(o.total)) : '—'}</td>
+                    <td className={TD}>
+                      <Pill tone={STATUS_TONE[o.status] ?? 'gray'}>{STATUS_LABEL[o.status] ?? o.status}</Pill>
                     </td>
-                    <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{o.due || '—'}</td>
+                    <td className={`${TD} text-gray-500 whitespace-nowrap`}>{o.due || '—'}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-        )}
-      </Card>
-
-      <Card>
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <p className="text-[13px] font-semibold text-gray-700">🇨🇳 นำเข้าจากจีน</p>
-            <p className="text-[12px] text-gray-500 mt-0.5">
-              {importCount === null
-                ? 'ดึงข้อมูลไม่ได้ตอนนี้'
-                : `กำลังพิจารณาอยู่ ${fmtNum(importCount)} รายการ — ยังไม่ใช่ใบซื้อจนกว่าจะสั่งจริง`}
-            </p>
-          </div>
-          <Link href="/import" className="text-[12.5px] font-semibold text-blue-600 border border-gray-200 rounded-xl px-3.5 py-2 hover:bg-blue-50 transition-colors shrink-0">
-            เปิดหน้านำเข้า →
-          </Link>
-        </div>
-      </Card>
+            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
+              <span className="text-[12px] text-gray-500">
+                แสดง {shown.length.toLocaleString('th-TH')} จาก {orders.length.toLocaleString('th-TH')} รายการ
+              </span>
+              <Link href="/tracker" className="text-[12px] text-blue-600 hover:underline">
+                แก้ไข / อัปรูป / เปลี่ยนสถานะ ที่หน้าติดตามออเดอร์ →
+              </Link>
+            </div>
+          </TableWrap>
+        </>
+      )}
     </div>
   )
 }
