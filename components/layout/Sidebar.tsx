@@ -22,10 +22,13 @@ const isStaticLink = (href: string) => href.startsWith('/catalog/')
 // สีจาก ZORT ของจริง (ภาพครอปที่เจ้าของร้านส่งมา 2 ก.ย. 2569 — ชัดกว่าภาพเต็มมาก)
 // ⚠️ รอบแรกผมอ่านจากภาพเต็มความละเอียดต่ำแล้วสรุปผิดว่าเมนูย่อยเป็นพื้นขาว
 //    ของจริงคือ **บล็อกน้ำเงินเข้มทั้งก้อน** ตั้งแต่หัวข้อลงมาถึงลูกทุกตัว
-const GROUP_BG = '#1e2a52'      // พื้นบล็อกกลุ่มที่กางอยู่
-const GROUP_LINE = '#2f6fe0'    // เส้นสว่างคาดใต้หัวข้อกลุ่ม
-const CHILD_ACTIVE = '#2b4a8f'  // ลูกที่เลือกอยู่ — สว่างกว่าพื้นบล็อกให้เห็นชัด
-const ITEM_ACTIVE = '#1b3b73'   // เมนูเดี่ยว (ไม่มีลูก) ที่เลือกอยู่
+// ⚠️ **ทั้งแถบเป็นน้ำเงินเข้ม** ไม่ใช่พื้นขาว — เห็นชัดจากภาพความละเอียดสูง 2 ก.ย. 2569
+//    รอบก่อนผมทำพื้นขาวแล้วให้เฉพาะกลุ่มที่กางเป็นน้ำเงิน ซึ่งผิดทั้งคู่
+//    บทเรียนซ้ำรอบที่สอง: **สีต้องดูจากภาพที่ชัดพอ** ภาพย่อทั้งหน้าอ่านสีพื้นไม่ได้
+const BAR_BG = '#1e2a52'        // พื้นแถบทั้งแถบ
+const GROUP_LINE = '#2f6fe0'    // เส้นสว่างคาดใต้หัวข้อกลุ่มที่กางอยู่
+const CHILD_ACTIVE = '#3b5bd0'  // ลูกที่เลือกอยู่ — น้ำเงินสว่างกว่าพื้นแถบ
+const ITEM_ACTIVE = '#3b5bd0'   // เมนูเดี่ยว (ไม่มีลูก) ที่เลือกอยู่ ใช้สีเดียวกัน
 
 interface SidebarProps {
   navItems: NavItem[]
@@ -53,20 +56,21 @@ export default function Sidebar({
 
   return (
     <aside
-      className={`hidden md:flex fixed inset-y-0 left-0 ${sidebarW} flex-col bg-white border-r border-gray-200 z-30 ${anim}`}
+      className={`hidden md:flex fixed inset-y-0 left-0 ${sidebarW} flex-col z-30 ${anim}`}
+      style={{ background: BAR_BG }}
     >
       {/* โลโก้ + ปุ่มพับเมนู — ZORT วางโลโก้ซ้าย ปุ่มพับขวา */}
-      <div className="h-14 px-3 flex items-center gap-2 shrink-0 border-b border-gray-100">
-        <div className="w-7 h-7 rounded-md bg-[#1b3b73] flex items-center justify-center shrink-0">
+      <div className="h-14 px-3 flex items-center gap-2 shrink-0">
+        <div className="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center shrink-0">
           <span className="text-[13px] font-black text-white leading-none">G</span>
         </div>
         {!collapsed && (
           <>
-            <span className="text-[17px] font-black tracking-tight text-gray-900">GUCUT</span>
+            <span className="text-[17px] font-black tracking-tight text-white">GUCUT</span>
             <button
               onClick={toggleCollapse}
               title="ย่อเมนู"
-              className="ml-auto w-7 h-7 rounded-md flex items-center justify-center text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+              className="ml-auto w-7 h-7 rounded-md flex items-center justify-center text-white/60 hover:bg-white/10 hover:text-white transition-colors"
             >
               ☰
             </button>
@@ -76,7 +80,7 @@ export default function Sidebar({
           <button
             onClick={toggleCollapse}
             title="ขยายเมนู"
-            className="absolute left-1/2 -translate-x-1/2 top-11 w-6 h-6 rounded-md flex items-center justify-center text-[11px] text-gray-400 hover:bg-gray-100"
+            className="absolute left-1/2 -translate-x-1/2 top-11 w-6 h-6 rounded-md flex items-center justify-center text-[11px] text-white/60 hover:bg-white/10"
           >
             »
           </button>
@@ -87,7 +91,7 @@ export default function Sidebar({
         <div className="px-3 pt-2 pb-1">
           <span
             className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-              credits < 1000 ? 'bg-orange-50 text-orange-600' : 'bg-gray-100 text-gray-500'
+              credits < 1000 ? 'bg-orange-400/25 text-orange-200' : 'bg-white/10 text-white/70'
             }`}
             title="เครดิต Netlify คงเหลือ (จาก 5,000/เดือน)"
           >
@@ -102,13 +106,13 @@ export default function Sidebar({
             (() => {
               const open = !!openGroups[item.label] && !collapsed
               return (
-                <div key={item.label} style={open ? { background: GROUP_BG } : undefined}>
+                <div key={item.label}>
                   <button
                     onClick={() => toggleGroup(item.label)}
                     title={item.label}
                     className={`w-full flex items-center gap-2.5 py-2.5 text-[13px] transition-colors ${
                       collapsed ? 'justify-center px-0' : 'px-3'
-                    } ${open ? 'text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
+                    } ${open ? 'text-white font-semibold' : 'text-white/80 hover:bg-white/10'}`}
                     style={open ? { borderBottom: `2px solid ${GROUP_LINE}` } : undefined}
                   >
                     <span className="text-[15px] w-5 text-center shrink-0">{item.icon}</span>
@@ -116,7 +120,7 @@ export default function Sidebar({
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
                         {/* ZORT ใช้ลูกศรชี้ขึ้นตอนกาง ชี้ลงตอนพับ */}
-                        <span className={`text-[9px] ${open ? 'text-white/70' : 'text-gray-400'}`}>{open ? '⌃' : '⌄'}</span>
+                        <span className={`text-[9px] ${open ? 'text-white/70' : 'text-white/50'}`}>{open ? '⌃' : '⌄'}</span>
                       </>
                     )}
                   </button>
@@ -145,7 +149,7 @@ export default function Sidebar({
               const active = isActive(item.href!)
               const cls = `flex items-center gap-2.5 py-2.5 text-[13px] transition-colors ${
                 collapsed ? 'justify-center px-0' : 'px-3'
-              } ${active ? 'text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'}`
+              } ${active ? 'text-white font-semibold' : 'text-white/80 hover:bg-white/10'}`
               const style = active ? { background: ITEM_ACTIVE } : undefined
               const inner = (
                 <>
@@ -172,7 +176,7 @@ export default function Sidebar({
         <div className="p-2 shrink-0">
           <Link
             href="/web/status"
-            className="block rounded-lg border border-gray-200 bg-white px-3 py-2.5 hover:bg-gray-50 transition-colors"
+            className="block rounded-lg bg-white px-3 py-2.5 hover:bg-gray-50 transition-colors shadow-sm"
           >
             <p className="text-[12px] font-semibold text-gray-700">สถานะระบบ</p>
             <p className="text-[11px] text-gray-400 leading-snug mt-0.5">

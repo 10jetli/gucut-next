@@ -25,7 +25,9 @@ export function PageHead({
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
       <div className="min-w-0">
-        <h1 className="text-[26px] leading-tight font-bold text-gray-900 tracking-tight">{title}</h1>
+        {/* ⚠️ ZORT ใช้ฟอนต์ Prompt เหมือนเรา (ตรวจจาก zortout.com แล้ว) แต่หัวจอเขาน้ำหนัก 600
+            ไม่ใช่ 700 และไม่บีบตัวอักษร — ของเดิมหนาและแน่นกว่าต้นแบบ */}
+        <h1 className="text-[26px] leading-tight font-semibold text-gray-900">{title}</h1>
         {summary && <div className="text-[13px] text-gray-500 mt-1">{summary}</div>}
       </div>
       {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
