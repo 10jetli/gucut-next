@@ -86,6 +86,11 @@ export default function CorePosPage() {
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState<{ number: string; duplicate?: boolean } | null>(null)
   const [error, setError] = useState('')
+  // ⚠️ **ข้อมูลที่ต้องรู้ ไม่ใช่ความผิดพลาด** — ต้องแยกกล่องกัน
+  //    เจ้าของร้านเปิดจอจริงแล้วเจอว่าข้อความเรื่อง ลซ.๒ ไปโผล่ในกล่อง "ทำรายการไม่สำเร็จ"
+  //    ทั้งที่สินค้าถูกเพิ่มลงบิลสำเร็จแล้ว ⇒ คนขายเห็นคำว่าไม่สำเร็จจะนึกว่าระบบพังแล้วกดซ้ำ
+  //    หรือคิดว่าขายไม่ได้ · ระบบทำงานถูกแต่สื่อสารผิด แล้วคนใช้ตัดสินใจผิดตาม
+  const [notice, setNotice] = useState<{ tone: 'info' | 'warn' | 'good'; text: string } | null>(null)
   const [sales, setSales] = useState<SaleRow[]>([])
   // สรุปแยกตามวิธีจ่ายของวันนั้น — เอาไว้ปิดยอดสิ้นวัน
   // (เงินสดต้องนับในลิ้นชัก · โอนต้องเช็คสลิป · บัตรต้องกระทบยอดกับเครื่องรูด)
@@ -264,18 +269,27 @@ export default function CorePosPage() {
     // 🪚 บอกเรื่องใบอนุญาตตั้งแต่ตอนหยิบลงบิล — คนขายจะได้พูดกับลูกค้าทันที
     //    ไม่ใช่มารู้ตอนเก็บเงินแล้วลูกค้าเดินออกไปแล้ว
     if (it.permit === 'required') {
-      setError(`🪚 "${it.name}" ต้องขอใบอนุญาตให้มีเลื่อยโซ่ยนต์ — ขายแล้ว`
-        + 'ต้องทำเรื่อง ลซ.๒ ให้ลูกค้า (ขั้นตอนที่ gucut.com/permit)')
+      setNotice({
+        tone: 'warn',
+        text: `🪚 "${it.name}" ต้องขอใบอนุญาตให้มีเลื่อยโซ่ยนต์ — `
+          + 'ขายแล้วต้องทำเรื่อง ลซ.๒ ให้ลูกค้า (ขั้นตอนที่ gucut.com/permit)',
+      })
     } else if (it.permit === 'unknown') {
-      setError(`⚠️ "${it.name}" เป็นตัวเครื่องแต่ระบบจับรุ่นไม่ได้ — `
-        + '**ต้องตรวจสอบเองก่อนขาย**ว่ารุ่นนี้ต้องขอใบอนุญาตหรือไม่')
+      setNotice({
+        tone: 'warn',
+        text: `⚠️ "${it.name}" เป็นตัวเครื่องแต่ระบบจับรุ่นไม่ได้ — `
+          + 'ต้องตรวจสอบเองก่อนขายว่ารุ่นนี้ต้องขอใบอนุญาตหรือไม่',
+      })
     } else if (it.permit === 'exempt') {
-      setError(`✅ "${it.name}" รุ่นนี้ไม่ต้องขอใบอนุญาตให้มี — บอกลูกค้าได้เลย`)
+      setNotice({ tone: 'good', text: `✅ "${it.name}" รุ่นนี้ไม่ต้องขอใบอนุญาตให้มี — บอกลูกค้าได้เลย` })
     } else if ((Number(it.price) || 0) <= 0) {
-      setError(`⚠️ "${it.name || it.sku}" ราคา 0 บาท (ยังไม่ได้ตั้งราคาในคลัง) — `
-        + 'ใส่ลงบิลแล้วแต่จะเก็บเงินไม่ได้จนกว่าจะยืนยันว่าตั้งใจแจกฟรี')
+      setNotice({
+        tone: 'warn',
+        text: `⚠️ "${it.name || it.sku}" ราคา 0 บาท (ยังไม่ได้ตั้งราคาในคลัง) — `
+          + 'ใส่ลงบิลแล้ว แต่จะเก็บเงินไม่ได้จนกว่าจะยืนยันว่าตั้งใจแจกฟรี',
+      })
     } else {
-      setError('')
+      setNotice(null)
     }
     // เคลียร์ + โฟกัสกลับทันที เพื่อยิงตัวถัดไป
     setQ('')
@@ -329,6 +343,7 @@ export default function CorePosPage() {
     if (!cart.length) return
     setSaving(true)
     setError('')
+    setNotice(null)
     setDone(null)
     try {
       const res = await fetch('/api/web/core?sale=1', {
@@ -423,6 +438,24 @@ export default function CorePosPage() {
         ⚠️ <b>ยังเป็นช่วงเดินคู่ขนานกับ ZORT</b> — ใบที่เปิดที่นี่<b>ห้ามเปิดซ้ำในแอป ZORT POS</b>
         ไม่งั้นคลังเงาจะได้สองใบสำหรับการขายครั้งเดียว แล้วยอดเบิ้ลโดยไม่มีใครรู้
       </div>
+
+      {/* กล่องแจ้งข้อมูล — **ไม่ใช่ความผิดพลาด** สินค้าเข้าบิลเรียบร้อยแล้ว */}
+      {notice && (
+        <div
+          className={`rounded px-3 py-2.5 mb-3 text-[13px] border leading-relaxed ${
+            notice.tone === 'good'
+              ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+              : notice.tone === 'warn'
+                ? 'bg-amber-50 border-amber-200 text-amber-900'
+                : 'bg-blue-50 border-blue-200 text-blue-900'
+          }`}
+        >
+          <b>
+            {notice.tone === 'good' ? 'บอกลูกค้าได้เลย' : notice.tone === 'warn' ? 'ต้องทำเรื่องทะเบียนให้ลูกค้า' : 'แจ้งให้ทราบ'}
+          </b>
+          <span className="block mt-0.5">{notice.text}</span>
+        </div>
+      )}
 
       {error && <ErrorBox title="ทำรายการไม่สำเร็จ">{error}</ErrorBox>}
 

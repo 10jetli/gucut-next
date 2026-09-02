@@ -186,9 +186,12 @@ export function Num({ v, zeroRed = false }: { v: number; zeroRed?: boolean }) {
 // เจ้าของร้านสั่งให้ใส่โลโก้จริง (2 ก.ย. 2569) — ก่อนหน้านี้ใช้จุดสีเพราะยังไม่มีไฟล์
 // และเป็นเครื่องหมายการค้าของคนอื่น ซึ่งไม่ใช่เรื่องที่เราตัดสินใจแทนเจ้าของร้าน · ตอนนี้เขาสั่งแล้ว
 // ไฟล์อยู่ public/logos/ · ช่องทางที่ไม่มีโลโก้ยังใช้จุดสีเหมือนเดิม (ไม่ทำโลโก้ปลอม)
+// ⚠️ ต้องเป็น **ไอคอนสี่เหลี่ยม (app icon)** ไม่ใช่โลโก้ตัวอักษร
+//    รอบแรกผมโหลดโลโก้แบบตัวอักษรมา (อัตราส่วน 3:1) ย่อลงกล่อง 16px แล้วอ่านไม่ออกเลย
+//    เจ้าของร้านส่งภาพ ZORT มาให้ดูถึงเห็นว่าเขาใช้ไอคอนสี่เหลี่ยมเล็ก ๆ นำหน้าชื่อ
 const CHANNEL_LOGO: [RegExp, string][] = [
-  [/shopee/i, '/logos/shopee.svg'],
-  [/lazada/i, '/logos/lazada.svg'],
+  [/shopee/i, '/logos/shopee.png'],
+  [/lazada/i, '/logos/lazada.png'],
   [/tiktok/i, '/logos/tiktok.png'],
 ]
 const CHANNEL_DOT: [RegExp, string][] = [
@@ -204,7 +207,7 @@ export function ChannelTag({ name }: { name: string }) {
       {logo
         ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={logo} alt="" className="w-4 h-4 object-contain shrink-0" />
+          <img src={logo} alt="" className="w-[18px] h-[18px] rounded-[3px] object-contain shrink-0" />
         )
         : <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />}
       <span className="truncate">{name}</span>
