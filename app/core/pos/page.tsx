@@ -1,8 +1,17 @@
 'use client'
 // ขายหน้าร้าน (POS) — 2 สาขา · เขียนเข้าคลังเงาโดยตรง ไม่ผ่าน ZORT
 //
-// **ไม่มีต้นแบบให้ลอก** — ZORT ขายหน้าร้านผ่านแอป Android ไม่มีจอเว็บ (ตรวจแล้วที่ pos.zortout.com)
-// จอนี้จึงออกแบบเองโดยยึดอย่างเดียว: **ใช้ง่ายตอนยืนขายโดยมีลูกค้ารออยู่ตรงหน้า**
+// ZORT ขายหน้าร้านผ่าน **แอป Android** ไม่มีจอเว็บให้ลอก (ตรวจที่ pos.zortout.com แล้ว)
+// แต่เจ้าของร้านถ่ายเครื่องจริงบนแท็บเล็ตหน้าร้านมาให้ (2 ก.ย. 2569) ⇒ ได้ผังของจริงมาแล้ว:
+//   · **สองแผงแนวนอน** ซ้าย = ตัวเลือกสินค้า · ขวา = ตะกร้า + บล็อกสรุป + ปุ่มใหญ่เต็มความกว้าง
+//   · เลือกสินค้าจาก **หมวดหมู่** เป็นหลัก (ปุ่มใหญ่เรียงลง) ไม่ใช่ค้นหาอย่างเดียว
+//     ⚠️ รอบแรกผมทำเป็นค้นหาล้วน ซึ่งใช้ได้เฉพาะคนที่จำรหัสได้ — คนขายจริงกดจากหมวดหมู่
+//     (ยังไม่มีข้อมูลหมวดหมู่ในคลังเงา — ขอฝั่งท่อหลังบ้านแล้ว)
+//   · ล่างซ้ายมีช่อง Barcode/SN แยกจากช่องค้นหา
+//   · บล็อกสรุป: สินค้ารวม · ราคารวม · ส่วนลดโปรโมชั่น · ส่วนลดท้ายบิล · **ราคาสุทธิตัวใหญ่**
+//   · มีปุ่ม **พักบิล** — พักใบนี้ไว้แล้วเปิดใบใหม่ได้ (แคชเชียร์ใช้ตอนลูกค้าไปหยิบของเพิ่ม)
+//
+// ยึดอย่างเดียว: **ใช้ง่ายตอนยืนขายโดยมีลูกค้ารออยู่ตรงหน้า**
 //   1. ช่องค้นหาโฟกัสตั้งแต่เปิดจอ — พิมพ์รหัสแล้ว Enter ได้เลย ไม่ต้องแตะเมาส์
 //   2. เพิ่มลงบิลแล้วช่องค้นหาเคลียร์ + โฟกัสกลับทันที เพื่อยิงตัวถัดไป
 //   3. ปุ่มเก็บเงินใหญ่และอยู่ที่เดิมเสมอ (ติดล่างจอ)
@@ -31,6 +40,9 @@ interface SaleRow {
 }
 
 const BRANCH_KEY = 'gucut-pos-branch'
+const HOLD_KEY = 'gucut-pos-held'   // บิลที่พักไว้ — เก็บในเครื่อง ไม่แตะเซิร์ฟเวอร์
+
+interface HeldBill { id: string; at: string; customer: string; lines: CartLine[] }
 const thaiToday = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
 
 export default function CorePosPage() {
@@ -45,7 +57,58 @@ export default function CorePosPage() {
   const [done, setDone] = useState<{ number: string; duplicate?: boolean } | null>(null)
   const [error, setError] = useState('')
   const [sales, setSales] = useState<SaleRow[]>([])
+  const [held, setHeld] = useState<HeldBill[]>([])
   const searchRef = useRef<HTMLInputElement>(null)
+
+  // บิลที่พักไว้ — อ่านครั้งเดียวตอนเปิดจอ
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(HOLD_KEY)
+      const arr = raw ? JSON.parse(raw) : []
+      if (Array.isArray(arr)) setHeld(arr)
+    } catch { /* ของพังในเครื่องไม่ควรทำให้เปิดจอขายไม่ได้ */ }
+  }, [])
+
+  const saveHeld = (list: HeldBill[]) => {
+    setHeld(list)
+    try { localStorage.setItem(HOLD_KEY, JSON.stringify(list)) } catch {}
+  }
+
+  // ⚠️ พักบิลเก็บใน **เครื่องนี้เท่านั้น** ไม่ได้ส่งขึ้นเซิร์ฟเวอร์
+  //    เปลี่ยนเครื่องแล้วบิลที่พักไว้จะไม่ตามไป — ต้องเขียนบอกบนจอ
+  function holdBill() {
+    if (!cart.length) return
+    const bill: HeldBill = {
+      id: `H${Date.now()}`,
+      at: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+      customer,
+      lines: cart,
+    }
+    saveHeld([bill, ...held])
+    setCart([])
+    setCustomer('')
+    setDone(null)
+    searchRef.current?.focus()
+  }
+
+  function resumeBill(id: string) {
+    const b = held.find((h) => h.id === id)
+    if (!b) return
+    // ของในตะกร้าตอนนี้ต้องไม่หาย — พักอันเดิมไว้ก่อนแล้วค่อยดึงอันใหม่มา
+    const rest = held.filter((h) => h.id !== id)
+    if (cart.length) {
+      rest.unshift({
+        id: `H${Date.now()}`,
+        at: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
+        customer,
+        lines: cart,
+      })
+    }
+    saveHeld(rest)
+    setCart(b.lines)
+    setCustomer(b.customer)
+    searchRef.current?.focus()
+  }
 
   // ── สาขา: ดึงจากเซิร์ฟเวอร์ ห้ามฮาร์ดโค้ด (ร้านเพิ่มสาขาได้ด้วย env) ──
   useEffect(() => {
@@ -171,44 +234,40 @@ export default function CorePosPage() {
   const isVoid = (s: string) => /void|ยกเลิก|cancel/i.test(String(s ?? ''))
 
   return (
-    <div className="p-4 md:p-6 pb-28">
+    <div className="p-3 md:p-4">
       <PageHead
         title="ขายหน้าร้าน"
         summary={`บันทึกการขายเข้าคลังของเราเองโดยตรง · วันที่ ${thaiToday()}`}
+        actions={
+          <div className="flex items-center gap-2">
+            {branches.map((b) => (
+              <button
+                key={b.code}
+                onClick={() => pickBranch(b.code)}
+                className={`text-[14px] font-semibold rounded-lg px-4 py-2.5 border transition-colors ${
+                  branch === b.code
+                    ? 'bg-[#1b3b73] text-white border-[#1b3b73]'
+                    : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
+                }`}
+              >
+                {b.name || b.code}
+              </button>
+            ))}
+          </div>
+        }
       />
 
       {/* ⚠️ คำเตือนถาวร ห้ามถอดจนกว่าจะเลิกใช้ ZORT จริง */}
-      <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2.5 mb-4 leading-relaxed">
+      <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2 mb-3 leading-relaxed">
         ⚠️ <b>ยังเป็นช่วงเดินคู่ขนานกับ ZORT</b> — ใบที่เปิดที่นี่<b>ห้ามเปิดซ้ำในแอป ZORT POS</b>
         ไม่งั้นคลังเงาจะได้สองใบสำหรับการขายครั้งเดียว แล้วยอดเบิ้ลโดยไม่มีใครรู้
-        · ตกลงกันให้ชัดก่อนว่าบิลไหนเปิดที่ไหน
       </div>
 
       {error && <ErrorBox title="ทำรายการไม่สำเร็จ">{error}</ErrorBox>}
 
-      {/* เลือกสาขา — จำไว้ ไม่ต้องเลือกทุกบิล */}
-      <div className="flex flex-wrap items-center gap-2 mb-4">
-        <span className="text-[13px] text-gray-500">สาขา</span>
-        {branches.length === 0 && <span className="text-[13px] text-gray-400">กำลังโหลด…</span>}
-        {branches.map((b) => (
-          <button
-            key={b.code}
-            onClick={() => pickBranch(b.code)}
-            className={`text-[14px] font-semibold rounded-lg px-5 py-2.5 border transition-colors ${
-              branch === b.code
-                ? 'bg-[#1b3b73] text-white border-[#1b3b73]'
-                : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
-            }`}
-          >
-            {b.name || b.code}
-          </button>
-        ))}
-      </div>
-
-      {/* ผลเปิดบิลล่าสุด */}
       {done && (
         <div
-          className={`rounded px-3 py-2.5 mb-4 text-[13px] border ${
+          className={`rounded px-3 py-2.5 mb-3 text-[13px] border ${
             done.duplicate
               ? 'bg-amber-50 border-amber-200 text-amber-800'
               : 'bg-emerald-50 border-emerald-200 text-emerald-800'
@@ -220,30 +279,42 @@ export default function CorePosPage() {
         </div>
       )}
 
-      {/* ค้นหาสินค้า */}
-      <div className="mb-3">
-        <input
-          ref={searchRef}
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => {
-            // พิมพ์รหัสแล้ว Enter ได้เลย — ถ้าเจอตัวเดียวใส่ตัวนั้น ไม่ต้องแตะเมาส์
-            if (e.key === 'Enter' && found.length > 0) addToCart(found[0])
-          }}
-          placeholder="สแกนหรือพิมพ์รหัสสินค้า / ชื่อสินค้า แล้วกด Enter"
-          className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1b3b73]"
-        />
-        {looking && <p className="text-[12px] text-gray-400 mt-1">กำลังค้น…</p>}
-      </div>
+      {/* ── สองแผงแบบเครื่องจริง: ซ้าย = เลือกสินค้า · ขวา = ตะกร้า + สรุป ── */}
+      <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,400px)_1fr] gap-3 items-start">
 
-      {/* ผลค้นหา — กดทั้งแถวเพื่อเพิ่ม (เป้าใหญ่ กดด้วยนิ้วได้) */}
-      {found.length > 0 && (
-        <div className="bg-white border border-gray-200 rounded-md overflow-hidden mb-4">
+        {/* แผงซ้าย */}
+        <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+          <div className="px-3 py-2.5 border-b border-gray-100">
+            <p className="text-[13.5px] font-bold text-gray-800">เลือกสินค้า</p>
+          </div>
+
+          <div className="p-3">
+            <input
+              ref={searchRef}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              onKeyDown={(e) => {
+                // พิมพ์รหัส/ยิงบาร์โค้ดแล้ว Enter — เจอตัวแรกใส่เลย ไม่ต้องแตะเมาส์
+                if (e.key === 'Enter' && found.length > 0) addToCart(found[0])
+              }}
+              placeholder="สแกนบาร์โค้ด / พิมพ์รหัสหรือชื่อสินค้า แล้วกด Enter"
+              className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1b3b73]"
+            />
+            {looking && <p className="text-[12px] text-gray-400 mt-1">กำลังค้น…</p>}
+            {!q.trim() && (
+              <p className="text-[12px] text-gray-400 mt-2 leading-relaxed">
+                เครื่องจริงที่หน้าร้านเลือกจาก<b>หมวดหมู่</b>ได้ด้วย —
+                ของเรายังไม่มีข้อมูลหมวดหมู่ในคลัง (ขอไว้แล้ว) ระหว่างนี้ใช้ค้นหาไปก่อน
+              </p>
+            )}
+          </div>
+
+          {/* ผลค้นหา — กดทั้งแถวเพื่อเพิ่ม เป้าใหญ่กดด้วยนิ้วได้ */}
           {found.map((f) => (
             <button
               key={f.sku}
               onClick={() => addToCart(f)}
-              className="w-full flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 text-left hover:bg-blue-50 transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-3 border-t border-gray-100 text-left hover:bg-blue-50 transition-colors"
             >
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium text-gray-800 truncate">{f.name || f.sku}</p>
@@ -254,80 +325,143 @@ export default function CorePosPage() {
                 </p>
               </div>
               <span className="text-[15px] font-bold text-gray-900 shrink-0">{fmtBaht(f.price)}</span>
-              <span className="text-[13px] font-bold text-white bg-[#1b3b73] rounded-lg px-3 py-2 shrink-0">เพิ่ม</span>
             </button>
           ))}
-        </div>
-      )}
 
-      {/* ตะกร้า */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-          <p className="text-[14px] font-bold text-gray-800">บิลปัจจุบัน</p>
-          {cart.length > 0 && (
-            <button onClick={() => setCart([])} className="text-[12.5px] text-red-500 hover:underline">
-              ล้างบิล
-            </button>
+          {/* บิลที่พักไว้ */}
+          {held.length > 0 && (
+            <div className="border-t border-gray-100">
+              <p className="text-[12.5px] font-semibold text-gray-600 px-3 pt-3">
+                บิลที่พักไว้ ({held.length})
+              </p>
+              {held.map((h) => (
+                <div key={h.id} className="flex items-center gap-2 px-3 py-2.5">
+                  <div className="min-w-0 flex-1">
+                    <p className="text-[13px] text-gray-800 truncate">
+                      {h.customer || 'ไม่ระบุชื่อ'} · {h.lines.length} รายการ
+                    </p>
+                    <p className="text-[11.5px] text-gray-400">พักไว้ {h.at}</p>
+                  </div>
+                  <button
+                    onClick={() => resumeBill(h.id)}
+                    className="text-[12.5px] font-semibold text-white bg-[#1b3b73] rounded-lg px-3 py-2 shrink-0"
+                  >
+                    เรียกคืน
+                  </button>
+                  <button
+                    onClick={() => saveHeld(held.filter((x) => x.id !== h.id))}
+                    className="text-[12px] text-red-500 hover:underline shrink-0"
+                  >
+                    ทิ้ง
+                  </button>
+                </div>
+              ))}
+              <p className="text-[11px] text-gray-400 px-3 pb-3">
+                ⚠️ บิลที่พักไว้เก็บใน<b>เครื่องนี้เท่านั้น</b> เปลี่ยนเครื่องแล้วจะไม่ตามไป
+              </p>
+            </div>
           )}
         </div>
-        {cart.length === 0 && (
-          <p className="text-[13px] text-gray-400 px-4 py-8 text-center">
-            ยังไม่มีสินค้าในบิล — พิมพ์รหัสหรือชื่อสินค้าในช่องด้านบน
-          </p>
-        )}
-        {cart.map((c) => (
-          <div key={c.sku} className="flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0">
-            <div className="min-w-0 flex-1">
-              <p className="text-[14px] font-medium text-gray-800 truncate">{c.name || c.sku}</p>
-              <p className="text-[12px] text-gray-400">{c.sku} · {fmtBaht(c.price)}/ชิ้น</p>
+
+        {/* แผงขวา */}
+        <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+          <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between gap-2">
+            <p className="text-[13.5px] font-bold text-gray-800">บิลปัจจุบัน</p>
+            <div className="flex items-center gap-2">
+              {cart.length > 0 && (
+                <>
+                  <button
+                    onClick={holdBill}
+                    className="text-[12.5px] font-semibold text-gray-700 border border-gray-300 rounded-lg px-3 py-1.5 hover:bg-gray-50"
+                  >
+                    พักบิล
+                  </button>
+                  <button onClick={() => setCart([])} className="text-[12.5px] text-red-500 hover:underline">
+                    ล้างบิล
+                  </button>
+                </>
+              )}
             </div>
-            {/* ปุ่มเพิ่ม/ลดต้องกดด้วยนิ้วได้ — เป้า 44px ขึ้นไป */}
-            <div className="flex items-center gap-1 shrink-0">
-              <button
-                onClick={() => setQty(c.sku, c.qty - 1)}
-                className="w-11 h-11 rounded-lg border border-gray-300 text-[20px] text-gray-600 hover:bg-gray-50"
-              >
-                −
-              </button>
+          </div>
+
+          {cart.length === 0 && (
+            <p className="text-[13px] text-gray-400 px-4 py-10 text-center">กรุณาเลือกสินค้า</p>
+          )}
+
+          {cart.map((c) => (
+            <div key={c.sku} className="flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-0">
+              <div className="min-w-0 flex-1">
+                <p className="text-[14px] font-medium text-gray-800 truncate">{c.name || c.sku}</p>
+                <p className="text-[12px] text-gray-400">{c.sku} · {fmtBaht(c.price)}/ชิ้น</p>
+              </div>
+              {/* ปุ่มเพิ่ม/ลดเป้า 44px กดด้วยนิ้วได้ */}
+              <div className="flex items-center gap-1 shrink-0">
+                <button onClick={() => setQty(c.sku, c.qty - 1)}
+                  className="w-11 h-11 rounded-lg border border-gray-300 text-[20px] text-gray-600 hover:bg-gray-50">−</button>
+                <input
+                  value={c.qty}
+                  onChange={(e) => setQty(c.sku, Number(e.target.value.replace(/[^0-9]/g, '')) || 1)}
+                  inputMode="numeric"
+                  className="w-14 h-11 text-center text-[15px] font-semibold border border-gray-300 rounded-lg"
+                />
+                <button onClick={() => setQty(c.sku, c.qty + 1)}
+                  className="w-11 h-11 rounded-lg border border-gray-300 text-[20px] text-gray-600 hover:bg-gray-50">+</button>
+              </div>
+              <span className="text-[15px] font-bold text-gray-900 w-24 text-right shrink-0">
+                {fmtBaht(c.price * c.qty)}
+              </span>
+              <button onClick={() => removeLine(c.sku)}
+                className="w-11 h-11 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 shrink-0" title="เอาออกจากบิล">✕</button>
+            </div>
+          ))}
+
+          {/* บล็อกสรุปแบบเครื่องจริง */}
+          <div className="bg-blue-50/60 border-t border-gray-200 px-4 py-3">
+            <div className="flex justify-between text-[13px] py-0.5">
+              <span className="text-gray-600">สินค้ารวม</span>
+              <span className="text-gray-800">{count.toLocaleString('th-TH')} ชิ้น</span>
+            </div>
+            <div className="flex justify-between text-[13px] py-0.5">
+              <span className="text-gray-600">ราคารวม</span>
+              <span className="text-gray-800">{fmtBaht(total)}</span>
+            </div>
+            {/* เว้นที่ไว้ให้ส่วนลด — เครื่องจริงมีสองบรรทัดนี้ ยังไม่ทำรอบแรก
+                เว้นไว้เลยจะได้ไม่ต้องรื้อผังตอนเพิ่มทีหลัง */}
+            <div className="flex justify-between text-[13px] py-0.5 text-gray-400">
+              <span>ส่วนลด</span>
+              <span>ยังไม่รองรับ</span>
+            </div>
+            <div className="flex items-baseline justify-between pt-2 mt-1 border-t border-blue-200">
+              <span className="text-[15px] font-bold text-gray-800">ราคาสุทธิ</span>
+              <span className="text-[26px] font-black text-gray-900 leading-none">{fmtBaht(total)}</span>
+            </div>
+          </div>
+
+          {cart.length > 0 && (
+            <div className="px-3 py-2.5 border-t border-gray-100">
               <input
-                value={c.qty}
-                onChange={(e) => setQty(c.sku, Number(e.target.value.replace(/[^0-9]/g, '')) || 1)}
-                inputMode="numeric"
-                className="w-14 h-11 text-center text-[15px] font-semibold border border-gray-300 rounded-lg"
+                value={customer}
+                onChange={(e) => setCustomer(e.target.value)}
+                placeholder="ชื่อลูกค้า (ไม่บังคับ)"
+                className="w-full text-[13px] border border-gray-300 rounded-lg px-3 py-2"
               />
-              <button
-                onClick={() => setQty(c.sku, c.qty + 1)}
-                className="w-11 h-11 rounded-lg border border-gray-300 text-[20px] text-gray-600 hover:bg-gray-50"
-              >
-                +
-              </button>
             </div>
-            <span className="text-[15px] font-bold text-gray-900 w-24 text-right shrink-0">
-              {fmtBaht(c.price * c.qty)}
-            </span>
-            <button
-              onClick={() => removeLine(c.sku)}
-              className="w-11 h-11 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 shrink-0"
-              title="เอาออกจากบิล"
-            >
-              ✕
-            </button>
-          </div>
-        ))}
-        {cart.length > 0 && (
-          <div className="px-4 py-3 border-t border-gray-100">
-            <input
-              value={customer}
-              onChange={(e) => setCustomer(e.target.value)}
-              placeholder="ชื่อลูกค้า (ไม่บังคับ)"
-              className="w-full text-[13px] border border-gray-300 rounded-lg px-3 py-2"
-            />
-          </div>
-        )}
+          )}
+
+          {/* ปุ่มใหญ่เต็มความกว้างแบบเครื่องจริง */}
+          <button
+            onClick={checkout}
+            disabled={saving || !branch || cart.length === 0}
+            className="w-full text-[18px] font-bold text-white py-4 disabled:opacity-40"
+            style={{ background: '#1b3b73' }}
+          >
+            {saving ? 'กำลังบันทึก…' : `เก็บเงิน ${cart.length ? fmtBaht(total) : ''}`}
+          </button>
+        </div>
       </div>
 
       {/* ประวัติวันนี้ */}
-      <div className="bg-white border border-gray-200 rounded-md overflow-hidden mt-4">
+      <div className="bg-white border border-gray-200 rounded-md overflow-hidden mt-3">
         <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
           <p className="text-[14px] font-bold text-gray-800">บิลของวันนี้</p>
           <button onClick={loadSales} className="text-[12.5px] text-blue-600 hover:underline">รีเฟรช</button>
@@ -336,44 +470,20 @@ export default function CorePosPage() {
         {sales.map((s) => {
           const voided = isVoid(s.status)
           return (
-            <div
-              key={s.number}
-              className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 ${voided ? 'opacity-50' : ''}`}
-            >
+            <div key={s.number}
+              className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 ${voided ? 'opacity-50' : ''}`}>
               <span className="text-[13px] font-medium text-gray-800 w-[170px] shrink-0 truncate">{s.number}</span>
               <span className="text-[12.5px] text-gray-500 flex-1 truncate">{s.channel} · {s.customer || 'ไม่ระบุชื่อ'}</span>
               {voided && <Pill tone="red">ยกเลิกแล้ว</Pill>}
               <span className="text-[14px] font-bold text-gray-900 shrink-0">{fmtBaht(s.amount)}</span>
               {!voided && (
-                <button
-                  onClick={() => voidSale(s.number)}
-                  className="text-[12px] font-semibold text-red-500 hover:underline shrink-0"
-                >
-                  ยกเลิก
-                </button>
+                <button onClick={() => voidSale(s.number)}
+                  className="text-[12px] font-semibold text-red-500 hover:underline shrink-0">ยกเลิก</button>
               )}
             </div>
           )
         })}
       </div>
-
-      {/* แถบเก็บเงินติดล่างจอ — อยู่ที่เดิมเสมอ */}
-      {cart.length > 0 && (
-        <div className="fixed bottom-0 left-0 right-0 md:left-[165px] bg-white border-t border-gray-200 px-4 py-3 flex items-center gap-4 z-20">
-          <div className="min-w-0">
-            <p className="text-[12px] text-gray-500">{count.toLocaleString('th-TH')} ชิ้น · สาขา {branch || '—'}</p>
-            <p className="text-[22px] font-black text-gray-900 leading-tight">{fmtBaht(total)}</p>
-          </div>
-          <button
-            onClick={checkout}
-            disabled={saving || !branch}
-            className="ml-auto text-[17px] font-bold text-white rounded-xl px-8 py-4 disabled:opacity-50"
-            style={{ background: '#1b3b73' }}
-          >
-            {saving ? 'กำลังบันทึก…' : 'เก็บเงิน'}
-          </button>
-        </div>
-      )}
     </div>
   )
 }
