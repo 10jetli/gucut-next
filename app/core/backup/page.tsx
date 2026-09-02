@@ -2,137 +2,99 @@
 // สำรองข้อมูล / กู้คืน — เจ้าของร้านสั่ง "ห้ามข้อมูลหาย · เรียกคืนได้ กันเหนียว"
 //
 // ฝั่งเซิร์ฟเวอร์สำรอง Netlify Blobs → Cloudflare D1 (คนละบริษัท คนละคีย์) ทุกชั่วโมง
-//   ?backupstatus=1                       สถานะสำเนา
-//   ?backup=1                             สั่งสำรองเดี๋ยวนั้น
-//   ?restore=<ถัง>                        **ซ้อม** ไม่เขียนอะไร
-//   ?restore=<ถัง>&confirm=1              เขียนจริง (ไม่ทับของที่ยังอยู่)
-//   ?restore=<ถัง>&confirm=1&overwrite=1  ทับด้วย
+//   ?backupstatus=1                                 สถานะสำเนา
+//   ?backup=1                                       สั่งสำรองเดี๋ยวนั้น
+//   ?restore=<ถัง>[&key=..]                         **ซ้อม** ไม่เขียนอะไร
+//   ?restore=<ถัง>&confirm=1[&overwrite=1]          เขียนจริง
 //
 // ⚠️ **ห้ามมีปุ่มที่กดทีเดียวแล้วเขียนทับ** — ต้องซ้อมก่อนเสมอ แล้วโชว์ว่าจะเขียนกี่คีย์
-//    ก่อนถึงจะกดจริงได้ · การกู้คืนคือการเขียนทับข้อมูลจริงของร้าน กดพลาดแล้วย้อนไม่ได้
+//    การกู้คืนคือการเขียนทับข้อมูลจริงของร้าน กดพลาดแล้วย้อนไม่ได้
 //
-// ⚠️ **หน้านี้ไม่เดาชื่อฟิลด์ของคำตอบ** — แสดงทุกอย่างที่เซิร์ฟเวอร์ส่งมาแบบตรงไปตรงมา
-//    เดาชื่อฟิลด์แล้วอ่านไม่เจอ = ขึ้น "—" หรือ 0 ทั้งที่ข้อมูลมีอยู่ ⇒ เข้าใจว่าไม่มีสำเนา
-//    ซึ่งเป็นความเข้าใจผิดที่แพงที่สุดของหน้านี้
+// ⚠️ **เวลาจากเซิร์ฟเวอร์เป็น UTC** (รูป "2026-09-02 22:15:25" ไม่มีเขตเวลาต่อท้าย)
+//    โชว์ดิบ = คนอ่านเห็นเวลาย้อนไป 7 ชั่วโมงแล้วนึกว่าระบบหยุดทำงาน
+//    ต้องบวก 7 แล้วเขียนกำกับว่าเป็นเวลาไทยเสมอ
+//
+// ⚠️ **`gone` ไม่ใช่ error** — คือคีย์ที่หายจากต้นทางแล้วแต่สำเนายังเก็บไว้
+//    นั่นคือหัวใจของระบบ (สำเนาไม่ลบตาม) แต่ถ้าเลขนี้พุ่งผิดปกติ = มีอะไรกำลังลบข้อมูล
+//    ⇒ ต้องโชว์ ห้ามซ่อน
+// ⚠️ **`never` (ถังที่ตั้งใจไม่สำรอง) ต้องโชว์เสมอ** ไม่งั้นเข้าใจว่าสำรองครบทุกถัง
+//    ทั้งที่รูปบัตรประชาชนเราตั้งใจไม่เก็บ (ประกาศกับลูกค้าว่าเก็บ 7 วันแล้วลบ)
 import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, BtnPrimary } from '@/components/zort'
+import { PageHead, BtnGhost, BtnPrimary, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
 
-type Json = unknown
-
-/** ชื่อไทยของคีย์ที่พอเดาความหมายได้ — เดา "ป้าย" ปลอดภัย เดา "ค่า" ไม่ปลอดภัย
- *  คีย์ที่ไม่รู้จักแสดงชื่อดิบไปตรง ๆ ดีกว่าซ่อน */
-const LABEL: Record<string, string> = {
-  ok: 'สถานะ', at: 'เวลา', generatedAt: 'เวลา', lastRun: 'สำรองล่าสุด',
-  keys: 'จำนวนคีย์', totalKeys: 'จำนวนคีย์ทั้งหมด', bytes: 'ขนาด', size: 'ขนาด',
-  stores: 'ถังที่สำรอง', buckets: 'ถังที่สำรอง', store: 'ถัง', name: 'ชื่อ',
-  count: 'จำนวน', ms: 'ใช้เวลา (มิลลิวินาที)', took: 'ใช้เวลา',
-  wrote: 'เขียนไป', skipped: 'ข้าม', would: 'จะเขียน', dryRun: 'โหมดซ้อม',
-  restored: 'กู้คืนแล้ว', error: 'ข้อผิดพลาด', note: 'หมายเหตุ',
+interface StoreRow {
+  store: string; what?: string
+  keys?: number; bytes?: number; gone?: number; last?: string
+  saved?: number; unchanged?: number; skipped?: number; left?: number
+  error?: string
 }
-const label = (k: string) => LABEL[k] ?? k
-
-function fmtVal(v: Json): string {
-  if (v === null || v === undefined) return '—'
-  if (typeof v === 'boolean') return v ? 'ใช่' : 'ไม่'
-  if (typeof v === 'number') return v.toLocaleString('th-TH')
-  const s = String(v)
-  // ค่าที่หน้าตาเป็นเวลา ISO → แปลงเป็นเวลาไทยให้อ่านออก
-  if (/^\d{4}-\d{2}-\d{2}T/.test(s)) {
-    const d = new Date(s)
-    if (!isNaN(d.getTime())) return `${d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })} น.`
-  }
-  return s
+interface NeverRow { store: string; why?: string }
+interface Status {
+  ready?: boolean; why?: string
+  lastRun?: string
+  stores?: StoreRow[]
+  never?: NeverRow[]
+  protected?: string[]
 }
-
-/** แสดงคำตอบของเซิร์ฟเวอร์ตามรูปที่มันเป็นจริง ไม่บังคับให้เข้าโครงที่เราคิดไว้ */
-function Show({ data }: { data: Json }) {
-  if (data === null || typeof data !== 'object') {
-    return <p className="text-[13px] text-gray-700">{fmtVal(data)}</p>
-  }
-  if (Array.isArray(data)) {
-    if (data.length === 0) return <p className="text-[12.5px] text-gray-400">ว่าง</p>
-    const allObj = data.every((x) => x && typeof x === 'object' && !Array.isArray(x))
-    if (!allObj) {
-      return (
-        <div className="flex flex-wrap gap-1">
-          {data.map((x, i) => (
-            <span key={i} className="text-[11.5px] bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{fmtVal(x)}</span>
-          ))}
-        </div>
-      )
-    }
-    const cols = Array.from(
-      new Set(data.flatMap((x) => Object.keys(x as Record<string, Json>))),
-    )
-    return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-[12.5px]">
-          <thead>
-            <tr className="border-b border-gray-200">
-              {cols.map((c) => <th key={c} className="text-left font-medium text-gray-500 px-2 py-1.5">{label(c)}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {data.map((row, i) => (
-              <tr key={i} className="border-b border-gray-50 last:border-0">
-                {cols.map((c) => (
-                  <td key={c} className="px-2 py-1.5 text-gray-700">
-                    {fmtVal((row as Record<string, Json>)[c])}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    )
-  }
-  const entries = Object.entries(data as Record<string, Json>)
-  return (
-    <div className="space-y-1.5">
-      {entries.map(([k, v]) => (
-        <div key={k} className="flex flex-wrap items-start gap-2">
-          <span className="text-[12.5px] text-gray-500 w-[140px] shrink-0">{label(k)}</span>
-          <span className="text-[12.5px] text-gray-800 min-w-0 flex-1">
-            {v && typeof v === 'object' ? <Show data={v} /> : fmtVal(v)}
-          </span>
-        </div>
-      ))}
-    </div>
-  )
+interface RunResult {
+  stores?: StoreRow[]
+  totals?: { saved?: number; keys?: number; bytes?: number; failed?: number; left?: number }
+  never?: NeverRow[]
+}
+interface DryResult {
+  dryRun?: boolean; store?: string
+  willWrite?: number; missing?: number; alreadyThere?: number
+  sample?: { key: string; bytes?: number; backedUpAt?: string }[]
+  note?: string
+}
+interface RealResult {
+  store?: string; written?: number; skippedExisting?: number
+  failed?: { key: string; why?: string }[]
 }
 
-/** ดึงรายชื่อถังจากคำตอบสถานะ — ลองหลายรูป ไม่เจอก็ให้พิมพ์เอง ไม่ล็อกคนใช้ */
-function bucketsOf(status: Json): string[] {
-  const s = (status ?? {}) as Record<string, Json>
-  for (const key of ['stores', 'buckets']) {
-    const v = s[key]
-    if (Array.isArray(v)) {
-      const names = v.map((x) => {
-        if (typeof x === 'string') return x
-        const o = (x ?? {}) as Record<string, Json>
-        const n = o.store ?? o.name ?? o.bucket
-        return typeof n === 'string' ? n : ''
-      }).filter(Boolean)
-      if (names.length) return names as string[]
-    }
+/** เวลาจากฐานเป็น UTC — บวก 7 แล้วบอกว่าเป็นเวลาไทย ห้ามโชว์ค่าดิบ */
+function thaiTime(s?: string | null) {
+  if (!s) return '—'
+  const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s) ? `${s.replace(' ', 'T')}Z` : s
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return s
+  try {
+    return `${d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Bangkok' })} น.`
+  } catch {
+    return s
   }
-  return []
 }
+/** ผ่านมานานเท่าไหร่ — ใช้ตัดสินว่าสำเนา "สด" หรือ "ค้าง" */
+function minutesSince(s?: string | null): number | null {
+  if (!s) return null
+  const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s) ? `${s.replace(' ', 'T')}Z` : s
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return null
+  return Math.floor((Date.now() - d.getTime()) / 60000)
+}
+function fmtBytes(n?: number) {
+  if (typeof n !== 'number' || n < 0) return '—'
+  if (n < 1024) return `${n} ไบต์`
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`
+  return `${(n / 1024 / 1024).toFixed(2)} MB`
+}
+const num = (n?: number) => (typeof n === 'number' ? n.toLocaleString('th-TH') : '—')
 
 export default function BackupPage() {
-  const [status, setStatus] = useState<Json>(null)
+  const [st, setSt] = useState<Status | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [busy, setBusy] = useState('')
   const [msg, setMsg] = useState('')
+  const [run, setRun] = useState<RunResult | null>(null)
 
   const [bucket, setBucket] = useState('')
-  const [dry, setDry] = useState<Json>(null)
-  const [dryFor, setDryFor] = useState('')   // ซ้อมไว้กับถังไหน — เปลี่ยนถังแล้วผลซ้อมต้องหมดอายุ
-  const [result, setResult] = useState<Json>(null)
+  const [oneKey, setOneKey] = useState('')
+  const [dry, setDry] = useState<DryResult | null>(null)
+  const [dryFor, setDryFor] = useState('')   // ซ้อมไว้กับถัง+คีย์ไหน เปลี่ยนแล้วผลซ้อมหมดอายุ
+  const [real, setReal] = useState<RealResult | null>(null)
 
   const loadStatus = useCallback(async () => {
     setLoading(true)
@@ -141,9 +103,9 @@ export default function BackupPage() {
       const res = await fetch('/api/web/core?backupstatus=1')
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
-      setStatus(j)
+      setSt((j?.backup ?? j) as Status)
     } catch (e) {
-      setStatus(null) // ไม่โชว์ของค้าง — เดียวเข้าใจว่ามีสำเนาทั้งที่อ่านไม่ได้
+      setSt(null) // ไม่โชว์ของค้าง — ไม่งั้นเข้าใจว่ามีสำเนาทั้งที่อ่านไม่ได้
       setError(String(e instanceof Error ? e.message : e))
     } finally {
       setLoading(false)
@@ -158,6 +120,7 @@ export default function BackupPage() {
     try {
       const res = await fetch(`/api/web/core?${qs}`)
       const j = await res.json()
+      // ⚠️ ถังที่ไม่ได้คุ้มครองตอบ HTTP 400 พร้อมข้อความไทย — เอาข้อความนั้นมาโชว์ตรง ๆ
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
       return j
     } catch (e) {
@@ -170,44 +133,61 @@ export default function BackupPage() {
 
   async function backupNow() {
     const j = await call('backup=1', 'backup')
-    if (j) { setMsg('✅ สำรองเรียบร้อย'); loadStatus() }
+    if (!j) return
+    const r = (j?.backup ?? j) as RunResult
+    setRun(r)
+    const failed = Number(r?.totals?.failed) || 0
+    setMsg(failed > 0 ? `⚠️ สำรองเสร็จ แต่มี ${failed} ถังที่ไม่สำเร็จ` : '✅ สำรองเรียบร้อย')
+    loadStatus()
   }
+
+  const dryKey = `${bucket.trim()}|${oneKey.trim()}`
 
   async function rehearse() {
     if (!bucket.trim()) return
-    setResult(null)
-    const j = await call(`restore=${encodeURIComponent(bucket.trim())}`, 'dry')
-    if (j) { setDry(j); setDryFor(bucket.trim()); setMsg('') }
+    setReal(null)
+    const qs = `restore=${encodeURIComponent(bucket.trim())}`
+      + (oneKey.trim() ? `&key=${encodeURIComponent(oneKey.trim())}` : '')
+    const j = await call(qs, 'dry')
+    if (j) { setDry(j as DryResult); setDryFor(dryKey) }
   }
 
   async function restoreReal(overwrite: boolean) {
     const b = bucket.trim()
-    if (!b || dryFor !== b) return
+    if (!b || dryFor !== dryKey || !dry) return
+    const willWrite = Number(dry.willWrite) || 0
     const warn = overwrite
-      ? `กู้คืนถัง "${b}" แบบ **ทับของเดิม** — ข้อมูลที่อยู่ในถังตอนนี้จะถูกเขียนทับด้วยสำเนา ย้อนกลับไม่ได้ ยืนยันไหม`
-      : `กู้คืนถัง "${b}" เฉพาะคีย์ที่หายไป (ไม่ทับของที่ยังอยู่) ยืนยันไหม`
+      ? `กู้คืนถัง "${b}" แบบทับของเดิม — ข้อมูลที่อยู่ในถังตอนนี้จะถูกเขียนทับด้วยสำเนา ย้อนกลับไม่ได้ ยืนยันไหม`
+      : `กู้คืนถัง "${b}" เฉพาะคีย์ที่หายไป ${willWrite.toLocaleString('th-TH')} คีย์ (ไม่ทับของที่ยังอยู่) ยืนยันไหม`
     if (!confirm(warn)) return
-    const j = await call(
-      `restore=${encodeURIComponent(b)}&confirm=1${overwrite ? '&overwrite=1' : ''}`,
-      overwrite ? 'over' : 'real',
-    )
-    if (j) {
-      setResult(j)
-      setDry(null)
-      setDryFor('')   // ซ้อมใหม่ทุกครั้งก่อนกู้รอบถัดไป
-      setMsg('✅ กู้คืนเรียบร้อย')
-      loadStatus()
-    }
+    const qs = `restore=${encodeURIComponent(b)}`
+      + (oneKey.trim() ? `&key=${encodeURIComponent(oneKey.trim())}` : '')
+      + `&confirm=1${overwrite ? '&overwrite=1' : ''}`
+    const j = await call(qs, overwrite ? 'over' : 'real')
+    if (!j) return
+    setReal(j as RealResult)
+    // ⚠️ ซ้อมใหม่ก่อนกู้รอบถัดไปเสมอ — ผลซ้อมเก่าไม่ตรงกับสภาพหลังเขียนแล้ว
+    setDry(null)
+    setDryFor('')
+    setMsg('✅ กู้คืนเรียบร้อย')
+    loadStatus()
   }
 
-  const buckets = bucketsOf(status)
-  const canRestore = !!bucket.trim() && dryFor === bucket.trim() && !!dry
+  const stores = Array.isArray(st?.stores) ? st!.stores! : []
+  const nevers = Array.isArray(st?.never) ? st!.never! : []
+  const totalKeys = stores.reduce((a, s) => a + (Number(s.keys) || 0), 0)
+  const totalBytes = stores.reduce((a, s) => a + (Number(s.bytes) || 0), 0)
+  const totalGone = stores.reduce((a, s) => a + (Number(s.gone) || 0), 0)
+  const mins = minutesSince(st?.lastRun)
+  // สำรองทุกชั่วโมง — เกินสองชั่วโมงแปลว่ารอบอัตโนมัติไม่เดิน ต้องเห็นชัด ไม่ใช่เขียวเงียบ
+  const stale = mins !== null && mins > 125
+  const canRestore = !!bucket.trim() && dryFor === dryKey && !!dry
 
   return (
     <div className="p-4 md:p-6">
       <PageHead
         title="สำรองข้อมูล"
-        summary="สำเนาของข้อมูลในเว็บ เก็บไว้คนละบริษัทกับตัวจริง · ทำเองทุกชั่วโมง"
+        summary="สำเนาของข้อมูลในเว็บ เก็บไว้คนละบริษัทและคนละคีย์กับตัวจริง · ทำเองทุกชั่วโมง"
         actions={
           <>
             <BtnGhost onClick={loadStatus} disabled={loading}>{loading ? 'กำลังโหลด…' : 'อ่านใหม่'}</BtnGhost>
@@ -220,59 +200,192 @@ export default function BackupPage() {
 
       {msg && (
         <p className={`text-[13px] rounded px-3 py-2 mb-3 border ${
-          msg.startsWith('✅')
-            ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
-            : 'bg-red-50 border-red-200 text-red-700'
+          msg.startsWith('✅') ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            : msg.startsWith('⚠️') ? 'bg-amber-50 border-amber-200 text-amber-800'
+              : 'bg-red-50 border-red-200 text-red-700'
         }`}>{msg}</p>
       )}
 
       {error && <ErrorBox title="อ่านสถานะสำเนาไม่ได้">{error}</ErrorBox>}
-      {loading && !status && <LoadingState />}
+      {loading && !st && <LoadingState />}
 
-      {status != null && (
-        <div className="bg-white border border-gray-200 rounded-md p-4 mb-3">
-          <p className="text-[14.5px] font-semibold text-gray-900 mb-2.5">สถานะสำเนาล่าสุด</p>
-          <Show data={status} />
+      {/* ระบบยังไม่พร้อม — ต้องบอกเหตุผลตรง ๆ ไม่ใช่โชว์ตาราง 0 คีย์แล้วปล่อยให้เดา */}
+      {st && st.ready === false && (
+        <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2.5 mb-3 leading-relaxed">
+          🔴 <b>ระบบสำรองยังไม่พร้อมใช้งาน</b>{st.why ? ` — ${st.why}` : ''}
+          <br />
+          <span className="text-[12.5px]">แปลว่าตอนนี้<b>ยังไม่มีสำเนา</b> ข้อมูลหายแล้วเรียกคืนไม่ได้</span>
+        </div>
+      )}
+
+      {st && st.ready !== false && (
+        <>
+          <div className={`rounded px-3 py-2.5 mb-3 text-[13px] border leading-relaxed ${
+            stale ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+          }`}>
+            {stale
+              ? <>⚠️ สำเนาล่าสุดทำเมื่อ <b>{thaiTime(st.lastRun)}</b> ({mins} นาทีที่แล้ว) —
+                ปกติทำทุกชั่วโมง ทิ้งช่วงนานกว่านี้แปลว่ารอบอัตโนมัติอาจไม่เดิน กด &quot;สำรองเดี๋ยวนี้&quot; ดูได้</>
+              : <>✅ สำเนาล่าสุด <b>{thaiTime(st.lastRun)}</b>
+                {mins !== null && <> ({mins < 1 ? 'เมื่อครู่' : `${mins} นาทีที่แล้ว`})</>} ·
+                รวม <b>{num(totalKeys)}</b> คีย์ · {fmtBytes(totalBytes)} · {stores.length} ถัง</>}
+          </div>
+
+          <TableWrap>
+            <table className="w-full min-w-[640px]">
+              <thead className="bg-white border-b border-gray-200">
+                <tr>
+                  <th className={TH}>ถังข้อมูล</th>
+                  <th className={THR}>คีย์ที่มีสำเนา</th>
+                  <th className={THR}>ขนาด</th>
+                  <th className={THR}>เก็บต่อแม้ต้นทางลบ</th>
+                  <th className={TH}>สำรองล่าสุด</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stores.length === 0 && (
+                  <tr><td colSpan={5} className="px-3 py-6 text-[13px] text-gray-400 text-center">ยังไม่มีสำเนาสักถัง</td></tr>
+                )}
+                {stores.map((s) => (
+                  <tr key={s.store} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <td className={`${TD} text-gray-800 font-medium`}>{s.store}</td>
+                    <td className={TDR}>{num(s.keys)}</td>
+                    <td className={TDR}>{fmtBytes(s.bytes)}</td>
+                    {/* ⚠️ ไม่ใช่ error — คือคีย์ที่ต้นทางลบไปแล้วแต่สำเนายังอยู่ (จุดประสงค์ของระบบ) */}
+                    <td className={TDR}>
+                      {Number(s.gone) > 0
+                        ? <span className="text-blue-700 font-semibold">{num(s.gone)}</span>
+                        : <span className="text-gray-300">0</span>}
+                    </td>
+                    <td className={`${TD} text-gray-500 whitespace-nowrap`}>{thaiTime(s.last)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrap>
+
+          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+            &quot;เก็บต่อแม้ต้นทางลบ&quot; รวม <b>{num(totalGone)}</b> คีย์ — <b>ไม่ใช่ข้อผิดพลาด</b>
+            สำเนาตั้งใจไม่ลบตามต้นทาง จึงยังกู้ของที่ถูกลบไปแล้วได้ ·
+            แต่ถ้าเลขนี้พุ่งขึ้นผิดปกติ แปลว่ามีอะไรกำลังลบข้อมูลอยู่ ควรมาดู
+            <br />
+            ถังที่<b>ยังไม่มีคีย์เลย</b>จะไม่ปรากฏในตารางนี้ — ไม่ได้แปลว่าไม่ได้คุ้มครอง
+          </p>
+
+          {/* ⚠️ ต้องโชว์เสมอ ไม่งั้นเข้าใจว่าสำรองครบทุกถัง */}
+          {nevers.length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
+              <p className="text-[13.5px] font-semibold text-gray-900 mb-1">
+                ถังที่ <span className="text-gray-600">ตั้งใจไม่สำรอง</span> ({nevers.length})
+              </p>
+              <p className="text-[12px] text-gray-500 mb-2">
+                ไม่ใช่ของตกหล่น — เป็นข้อมูลที่เราประกาศกับลูกค้าว่าจะลบทิ้งตามกำหนด การเก็บสำเนาไว้จะขัดกับที่ประกาศไว้
+              </p>
+              <div className="space-y-1.5">
+                {nevers.map((n) => (
+                  <div key={n.store} className="flex flex-wrap gap-2 text-[12.5px]">
+                    <span className="text-gray-800 font-medium w-[150px] shrink-0">{n.store}</span>
+                    <span className="text-gray-500 min-w-0 flex-1">{n.why ?? '—'}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ───────── ผลการสั่งสำรองเดี๋ยวนี้ ───────── */}
+      {run && (
+        <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
+          <p className="text-[13.5px] font-semibold text-gray-900 mb-2">ผลรอบที่เพิ่งสั่ง</p>
+          {run.totals && (
+            <p className="text-[12.5px] text-gray-600 mb-2">
+              เขียนใหม่ {num(run.totals.saved)} · รวมคีย์ {num(run.totals.keys)} · {fmtBytes(run.totals.bytes)}
+              {Number(run.totals.failed) > 0 && <span className="text-red-600"> · ไม่สำเร็จ {num(run.totals.failed)} ถัง</span>}
+              {/* ⚠️ left > 0 = หมดงบเวลา รอบหน้าเก็บต่อ **ไม่ใช่ error** ห้ามขึ้นแดง */}
+              {Number(run.totals.left) > 0 && (
+                <span className="text-gray-500"> · เหลือ {num(run.totals.left)} คีย์ให้รอบหน้าเก็บต่อ (หมดงบเวลารอบนี้ ไม่ใช่ข้อผิดพลาด)</span>
+              )}
+            </p>
+          )}
+          <div className="space-y-1">
+            {(run.stores ?? []).map((s) => (
+              <div key={s.store} className="flex flex-wrap items-baseline gap-2 text-[12.5px]">
+                <span className="text-gray-800 font-medium w-[150px] shrink-0">{s.store}</span>
+                {/* ⚠️ ถังที่พลาดจะไม่มี keys/saved เลย — ต้องเช็ค error ก่อนอ่านตัวเลข */}
+                {s.error
+                  ? <span className="text-red-600">ไม่สำเร็จ: {s.error}</span>
+                  : (
+                    <span className="text-gray-500">
+                      เขียนใหม่ {num(s.saved)} · เหมือนเดิม {num(s.unchanged)} · รวม {num(s.keys)}
+                      {Number(s.left) > 0 && ` · เหลือ ${num(s.left)} ให้รอบหน้า`}
+                    </span>
+                  )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* ───────── กู้คืน ───────── */}
-      <div className="bg-white border border-gray-200 rounded-md p-4">
+      <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
         <p className="text-[14.5px] font-semibold text-gray-900">กู้คืนข้อมูล</p>
         <p className="text-[12.5px] text-gray-600 leading-relaxed mt-1">
-          การกู้คืนคือการ<b>เขียนข้อมูลจริงของร้าน</b> — หน้านี้จึงบังคับให้
-          <b>ซ้อมก่อนเสมอ</b> แล้วดูว่าจะเขียนกี่คีย์ ถึงจะกดจริงได้
+          การกู้คืนคือการ<b>เขียนข้อมูลจริงของร้าน</b> — หน้านี้จึงบังคับให้<b>ซ้อมก่อนเสมอ</b>
+          แล้วดูว่าจะเขียนกี่คีย์ ถึงจะกดจริงได้
         </p>
 
         <div className="flex flex-wrap items-center gap-2 mt-3">
-          {buckets.length > 0 ? (
-            <select
-              value={bucket}
-              onChange={(e) => { setBucket(e.target.value); setDry(null); setDryFor(''); setResult(null) }}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
-            >
-              <option value="">— เลือกถัง —</option>
-              {buckets.map((b) => <option key={b} value={b}>{b}</option>)}
-            </select>
-          ) : (
-            <input
-              value={bucket}
-              onChange={(e) => { setBucket(e.target.value); setDry(null); setDryFor(''); setResult(null) }}
-              placeholder="ชื่อถัง เช่น gucut-orders"
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 w-[240px]"
-            />
-          )}
+          <input
+            list="backup-stores"
+            value={bucket}
+            onChange={(e) => { setBucket(e.target.value); setDry(null); setDryFor(''); setReal(null) }}
+            placeholder="ชื่อถัง เช่น gucut-orders"
+            className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
+          />
+          <datalist id="backup-stores">
+            {stores.map((s) => <option key={s.store} value={s.store} />)}
+            {(st?.protected ?? []).map((p) => <option key={p} value={p} />)}
+          </datalist>
+          <input
+            value={oneKey}
+            onChange={(e) => { setOneKey(e.target.value); setDry(null); setDryFor(''); setReal(null) }}
+            placeholder="เฉพาะคีย์เดียว (ไม่ใส่ = ทั้งถัง)"
+            className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
+          />
           <BtnGhost onClick={rehearse} disabled={!bucket.trim() || !!busy}>
             {busy === 'dry' ? 'กำลังซ้อม…' : 'ซ้อมกู้คืน (ไม่เขียนอะไร)'}
           </BtnGhost>
         </div>
 
-        {dry != null && (
+        {dry && (
           <div className="mt-3 border border-blue-100 bg-blue-50 rounded p-3">
-            <p className="text-[13px] font-semibold text-blue-900 mb-1.5">
-              ผลการซ้อมถัง “{dryFor}” — ยังไม่มีอะไรถูกเขียน
+            <p className="text-[13px] font-semibold text-blue-900">
+              ผลการซ้อมถัง “{dry.store ?? bucket}” — ยังไม่มีอะไรถูกเขียน
             </p>
-            <Show data={dry} />
+            <p className="text-[13px] text-blue-900 mt-1.5">
+              จะเขียนเพิ่ม <b>{num(dry.willWrite)}</b> คีย์ · หายไปจากต้นทาง {num(dry.missing)} ·
+              ยังอยู่ครบ {num(dry.alreadyThere)}
+            </p>
+            {Number(dry.willWrite) === 0 && (
+              <p className="text-[12.5px] text-blue-800 mt-1">
+                ไม่มีอะไรต้องกู้ — ข้อมูลต้นทางครบอยู่แล้ว
+              </p>
+            )}
+            {Array.isArray(dry.sample) && dry.sample.length > 0 && (
+              <div className="mt-2">
+                <p className="text-[12px] text-blue-800 mb-1">ตัวอย่างคีย์ (สูงสุด 10)</p>
+                <div className="space-y-0.5">
+                  {dry.sample.map((s) => (
+                    <div key={s.key} className="flex flex-wrap gap-2 text-[11.5px] text-blue-900">
+                      <span className="font-mono">{s.key}</span>
+                      <span className="text-blue-700">{fmtBytes(s.bytes)}</span>
+                      <span className="text-blue-700">สำรองเมื่อ {thaiTime(s.backedUpAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="flex flex-wrap gap-2 mt-3">
               <BtnPrimary onClick={() => restoreReal(false)} disabled={!canRestore || !!busy}>
                 {busy === 'real' ? 'กำลังกู้คืน…' : 'กู้คืนจริง — เฉพาะคีย์ที่หายไป'}
@@ -292,18 +405,32 @@ export default function BackupPage() {
           </div>
         )}
 
-        {result != null && (
+        {real && (
           <div className="mt-3 border border-emerald-200 bg-emerald-50 rounded p-3">
-            <p className="text-[13px] font-semibold text-emerald-900 mb-1.5">ผลการกู้คืน</p>
-            <Show data={result} />
+            <p className="text-[13px] font-semibold text-emerald-900">ผลการกู้คืนถัง “{real.store ?? bucket}”</p>
+            <p className="text-[13px] text-emerald-900 mt-1">
+              เขียนไป <b>{num(real.written)}</b> คีย์ · ข้ามเพราะยังมีอยู่ {num(real.skippedExisting)}
+            </p>
+            {Array.isArray(real.failed) && real.failed.length > 0 && (
+              <div className="mt-2">
+                <p className="text-[12.5px] text-red-700 font-semibold">เขียนไม่สำเร็จ {real.failed.length} คีย์</p>
+                <div className="space-y-0.5 mt-1">
+                  {real.failed.map((f) => (
+                    <div key={f.key} className="text-[11.5px] text-red-700">
+                      <span className="font-mono">{f.key}</span> — {f.why ?? 'ไม่ทราบสาเหตุ'}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            <p className="text-[12px] text-emerald-800 mt-2">ต้องซ้อมใหม่ก่อนกู้คืนรอบถัดไป</p>
           </div>
         )}
       </div>
 
       <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
-        สำเนาเก็บที่ผู้ให้บริการคนละเจ้ากับตัวจริงและใช้คีย์คนละชุด —
-        ถ้าฝั่งหนึ่งล่มหรือบัญชีมีปัญหา อีกฝั่งยังอยู่ ·
-        หน้านี้แสดงค่าที่เซิร์ฟเวอร์ส่งมาตรง ๆ ไม่ได้ตีความใหม่
+        เวลาทั้งหมดบนหน้านี้แปลงเป็น<b>เวลาไทย</b>แล้ว (ฐานข้อมูลเก็บเป็นเวลาสากล) ·
+        สำเนาอยู่คนละผู้ให้บริการและคนละคีย์กับตัวจริง — ฝั่งหนึ่งล่มหรือบัญชีมีปัญหา อีกฝั่งยังอยู่
       </p>
     </div>
   )
