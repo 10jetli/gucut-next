@@ -95,6 +95,8 @@ export default function BackupPage() {
   const [oneKey, setOneKey] = useState('')
   const [dry, setDry] = useState<DryResult | null>(null)
   const [dryFor, setDryFor] = useState('')   // ซ้อมไว้กับถัง+คีย์ไหน เปลี่ยนแล้วผลซ้อมหมดอายุ
+  const [dryAt, setDryAt] = useState(0)      // ซ้อมไว้เมื่อไหร่ — ผลซ้อมเก่าใช้อนุมัติการเขียนไม่ได้
+  const [now, setNow] = useState(0)          // เวลาปัจจุบัน (ตั้งหลัง hydrate เพื่อไม่ให้ SSR เพี้ยน)
   const [real, setReal] = useState<RealResult | null>(null)
 
   const loadStatus = useCallback(async () => {
@@ -114,6 +116,17 @@ export default function BackupPage() {
   }, [])
 
   useEffect(() => { loadStatus() }, [loadStatus])
+
+  // ⚠️ **ตาข่ายนี้จะหยุดทำงานเมื่อไหร่: เมื่อผลซ้อมเก่าเกินไป**
+  //    ซ้อมตอน 9 โมงแล้วกดกู้จริงตอนบ่าย = อนุมัติการเขียนด้วยภาพของเมื่อเช้า
+  //    ระหว่างนั้นข้อมูลต้นทางเปลี่ยนได้ (มีคนสั่งของ · งานตามเวลาเขียนคีย์ใหม่)
+  //    ⇒ นับเวลาถอยหลังให้เห็น แล้วปิดปุ่มเมื่อหมดอายุ ต้องซ้อมใหม่
+  useEffect(() => {
+    if (!dryAt) return
+    setNow(Date.now())
+    const t = setInterval(() => setNow(Date.now()), 5000)
+    return () => clearInterval(t)
+  }, [dryAt])
 
   async function call(qs: string, tag: string) {
     setBusy(tag)
@@ -150,7 +163,7 @@ export default function BackupPage() {
     const qs = `restore=${encodeURIComponent(bucket.trim())}`
       + (oneKey.trim() ? `&key=${encodeURIComponent(oneKey.trim())}` : '')
     const j = await call(qs, 'dry')
-    if (j) { setDry(j as DryResult); setDryFor(dryKey) }
+    if (j) { setDry(j as DryResult); setDryFor(dryKey); setDryAt(Date.now()) }
   }
 
   async function restoreReal(overwrite: boolean) {
@@ -170,6 +183,7 @@ export default function BackupPage() {
     // ⚠️ ซ้อมใหม่ก่อนกู้รอบถัดไปเสมอ — ผลซ้อมเก่าไม่ตรงกับสภาพหลังเขียนแล้ว
     setDry(null)
     setDryFor('')
+    setDryAt(0)
     setMsg('✅ กู้คืนเรียบร้อย')
     loadStatus()
   }
@@ -184,7 +198,11 @@ export default function BackupPage() {
   const mins = minutesSince(st?.lastRun)
   // สำรองทุกชั่วโมง — เกินสองชั่วโมงแปลว่ารอบอัตโนมัติไม่เดิน ต้องเห็นชัด ไม่ใช่เขียวเงียบ
   const stale = mins !== null && mins > 125
-  const canRestore = !!bucket.trim() && dryFor === dryKey && !!dry
+  // ผลซ้อมมีอายุ 5 นาที — พอให้อ่านผลและตัดสินใจ แต่ไม่นานพอให้ข้อมูลต้นทางเปลี่ยนไปมาก
+  const DRY_TTL = 5 * 60_000
+  const dryLeft = dryAt && now ? Math.max(0, DRY_TTL - (now - dryAt)) : DRY_TTL
+  const dryExpired = !!dryAt && !!now && dryLeft <= 0
+  const canRestore = !!bucket.trim() && dryFor === dryKey && !!dry && !dryExpired
 
   return (
     <div className="p-4 md:p-6">
@@ -354,7 +372,7 @@ export default function BackupPage() {
           <input
             list="backup-stores"
             value={bucket}
-            onChange={(e) => { setBucket(e.target.value); setDry(null); setDryFor(''); setReal(null) }}
+            onChange={(e) => { setBucket(e.target.value); setDry(null); setDryFor(''); setDryAt(0); setReal(null) }}
             placeholder="ชื่อถัง เช่น gucut-orders"
             className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
           />
@@ -364,7 +382,7 @@ export default function BackupPage() {
           </datalist>
           <input
             value={oneKey}
-            onChange={(e) => { setOneKey(e.target.value); setDry(null); setDryFor(''); setReal(null) }}
+            onChange={(e) => { setOneKey(e.target.value); setDry(null); setDryFor(''); setDryAt(0); setReal(null) }}
             placeholder="เฉพาะคีย์เดียว (ไม่ใส่ = ทั้งถัง)"
             className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
           />
@@ -400,6 +418,16 @@ export default function BackupPage() {
                   ))}
                 </div>
               </div>
+            )}
+            {dryExpired ? (
+              <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 leading-relaxed">
+                ⏱ ผลการซ้อมนี้<b>เก่าเกิน 5 นาทีแล้ว</b> — ระหว่างนี้ข้อมูลต้นทางอาจเปลี่ยนไป
+                (มีออเดอร์เข้า หรืองานตามเวลาเขียนคีย์ใหม่) กดซ้อมใหม่ก่อนกู้คืน
+              </p>
+            ) : (
+              <p className="text-[11.5px] text-gray-500 mt-2">
+                ผลซ้อมนี้ใช้อนุมัติการกู้คืนได้อีก {Math.ceil(dryLeft / 60000)} นาที
+              </p>
             )}
             <div className="flex flex-wrap gap-2 mt-3">
               <BtnPrimary onClick={() => restoreReal(false)} disabled={!canRestore || !!busy}>
