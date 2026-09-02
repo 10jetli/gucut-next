@@ -33,7 +33,7 @@ interface StockItem {
 }
 interface StockDetail {
   skip?: string
-  baseDay?: string; curDay?: string
+  baseDay?: string; curDay?: string; moveWindow?: string
   skus?: number; matched?: number; mismatched?: number
   absDiff?: number; soldTotal?: number
   items?: StockItem[]
@@ -324,10 +324,18 @@ export default function CorePage() {
                 {stockDetail.skip ? (
                   <p className="text-[12px] text-gray-500 mt-1">{stockDetail.skip}</p>
                 ) : (
-                  <p className="text-[12px] text-gray-500 mt-1">
-                    เทียบ {fmtNum(stockDetail.skus ?? 0)} SKU · ตรง {fmtNum(stockDetail.matched ?? 0)} ·
-                    ต่าง {fmtNum(stockDetail.mismatched ?? 0)} · ขายไปในช่วงนี้ {fmtNum(stockDetail.soldTotal ?? 0)} ชิ้น
-                  </p>
+                  <>
+                    <p className="text-[12px] text-gray-500 mt-1">
+                      เทียบ {fmtNum(stockDetail.skus ?? 0)} SKU · ตรง {fmtNum(stockDetail.matched ?? 0)} ·
+                      ต่าง {fmtNum(stockDetail.mismatched ?? 0)} · ขายไปในช่วงนี้ {fmtNum(stockDetail.soldTotal ?? 0)} ชิ้น
+                    </p>
+                    {stockDetail.moveWindow && (
+                      // บอกช่วงที่นับใบปรับสต็อกมือ ไม่งั้นคนกรอกเช้านี้จะงงว่าทำไมยังไม่ขึ้น
+                      <p className="text-[11px] text-gray-400 mt-0.5">
+                        นับใบปรับสต็อกมือช่วง {stockDetail.moveWindow} — ใบที่กรอกวันนี้จะขึ้นรอบพรุ่งนี้
+                      </p>
+                    )}
+                  </>
                 )}
               </div>
               {!stockDetail.skip && (stockDetail.items ?? []).length === 0 && (
