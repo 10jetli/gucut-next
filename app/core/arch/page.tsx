@@ -80,21 +80,47 @@ function estW(text: string, fs: number) {
   return String(text ?? '').length * fs * 0.53
 }
 
-/** ตัดบรรทัดยาวตรงคั่น " · " ให้พอดีกล่อง — ตัดไม่ได้ก็คืนทั้งก้อน (ยอมล้นดีกว่าตัดคำ) */
+/** แยกคำโดยไม่ตัดกลางวงเล็บ — "(เบราว์เซอร์โหลดตรง)" ต้องอยู่ก้อนเดียวกัน
+ *  ตัดกลางวงเล็บแล้วอ่านแปลกกว่าปล่อยให้บรรทัดยาว */
+function spaceTokens(text: string): string[] {
+  const out: string[] = []
+  let depth = 0
+  for (const word of text.split(' ')) {
+    if (depth > 0 && out.length) out[out.length - 1] += ` ${word}`
+    else out.push(word)
+    depth += (word.match(/[(（]/g) ?? []).length - (word.match(/[)）]/g) ?? []).length
+    if (depth < 0) depth = 0
+  }
+  return out
+}
+
+/** ลำดับที่ยอมตัดบรรทัด — ไล่จาก "ตัดแล้วอ่านเป็นธรรมชาติที่สุด" ไปหาตาข่ายสุดท้าย
+ *  ⚠️ ต้องมีช่องว่างธรรมดาปิดท้ายเสมอ ไม่งั้นบรรทัดที่ไม่มีตัวคั่นสวย ๆ จะหาที่ตัดไม่เจอ
+ *     แล้วปล่อยยาวล้นกรอบเงียบ ๆ (เจอจริง 3 ก.ย. 2569: บรรทัดที่ใช้ + กับ — ล้นข้างละ 12-17px
+ *     ทั้งที่ตัวตัดบรรทัดทำงานอยู่ — มันแค่หา " · " ไม่เจอ) */
+const SEPS = [' · ', ' — ', ' + ', ' ']
+
+/** ตัดบรรทัดยาวให้พอดีกล่อง — ลองตัวคั่นทีละแบบจนกว่าทุกบรรทัดจะพอดี */
 function fitLines(text: string, w: number, fs: number): string[] {
   const max = w - 32
   if (!text) return []
   if (estW(text, fs) <= max) return [text]
-  const parts = String(text).split(' · ')
-  const out: string[] = []
-  let cur = ''
-  for (const part of parts) {
-    const next = cur ? `${cur} · ${part}` : part
-    if (!cur || estW(next, fs) <= max) cur = next
-    else { out.push(cur); cur = part }
+
+  for (const sep of SEPS) {
+    const parts = sep === ' ' ? spaceTokens(String(text)) : String(text).split(sep)
+    if (parts.length < 2) continue
+    const out: string[] = []
+    let cur = ''
+    for (const part of parts) {
+      const next = cur ? `${cur}${sep}${part}` : part
+      if (!cur || estW(next, fs) <= max) cur = next
+      else { out.push(cur); cur = part }
+    }
+    if (cur) out.push(cur)
+    // พอดีทุกบรรทัดแล้ว หรือหมดทางเลือกแล้ว (ช่องว่างเป็นตัวสุดท้าย) ก็ใช้ชุดนี้
+    if (out.every((l) => estW(l, fs) <= max) || sep === ' ') return out
   }
-  if (cur) out.push(cur)
-  return out
+  return [String(text)]
 }
 
 const bodyLines = (lines: (string | undefined)[] | undefined, w: number) =>
@@ -129,6 +155,28 @@ function cronThai(cron: string): string | null {
 
 /* ── ชิ้นส่วนของ SVG ── */
 
+/** ข้อความที่ **ไม่มีทางล้นกรอบ** — ยาวเกินเมื่อไหร่บีบระยะตัวอักษรให้พอดี
+ *  ⚠️ ตาข่ายชั้นสุดท้ายหลังตัดบรรทัดแล้ว · บีบนิดหน่อยยังอ่านออก
+ *     แต่ล้นออกนอกกล่องคืออ่านไม่ได้เลยและดูเหมือนจอพัง */
+function FitText({
+  x, y, text, fs, maxW, fill, anchor = 'middle', weight, mono,
+}: {
+  x: number; y: number; text: string; fs: number; maxW: number
+  fill: string; anchor?: 'middle' | 'start'; weight?: string; mono?: boolean
+}) {
+  const over = estW(text, fs) > maxW
+  return (
+    <text
+      x={x} y={y} textAnchor={anchor} fontSize={fs} fill={fill}
+      fontWeight={weight} fontFamily={mono ? 'ui-monospace, monospace' : undefined}
+      textLength={over ? maxW : undefined}
+      lengthAdjust={over ? 'spacingAndGlyphs' : undefined}
+    >
+      {text}
+    </text>
+  )
+}
+
 function Card({
   x, y, w, title, meta, lines, accent, fill, dashed, titleAnchor = 'middle', h,
 }: {
@@ -158,18 +206,12 @@ function Card({
         strokeWidth={accent ? 2.2 : 1.4}
         strokeDasharray={dashed ? '7 6' : undefined}
       />
-      <text x={cx} y={ty} textAnchor={titleAnchor} fontSize={titleSize} fontWeight="600" fill={C.ink}>
-        {title}
-      </text>
+      <FitText x={cx} y={ty} text={title} fs={titleSize} maxW={w - 32} fill={C.ink} anchor={titleAnchor} weight="600" />
       {meta && (
-        <text x={cx} y={(ty += 22)} textAnchor={titleAnchor} fontSize="13.5" fill={C.muted} fontFamily="ui-monospace, monospace">
-          {meta}
-        </text>
+        <FitText x={cx} y={(ty += 22)} text={meta} fs={13.5} maxW={w - 32} fill={C.muted} anchor={titleAnchor} mono />
       )}
       {body.map((l, i) => (
-        <text key={i} x={cx} y={(ty += LINE_H)} textAnchor={titleAnchor} fontSize="14" fill={C.muted}>
-          {l}
-        </text>
+        <FitText key={i} x={cx} y={(ty += LINE_H)} text={l} fs={14} maxW={w - 32} fill={C.muted} anchor={titleAnchor} />
       ))}
     </g>
   )
@@ -430,9 +472,9 @@ export default function ArchPage() {
                 return (
                   <g key={it.id}>
                     <rect x={x} y={y} width={sbW} height={SB_H} rx="10" fill={C.surface2} />
-                    <text x={x + sbW / 2} y={y + 24} textAnchor="middle" fontSize="14.5" fontWeight="600" fill={C.ink}>{it.name}</text>
+                    <FitText x={x + sbW / 2} y={y + 24} text={it.name} fs={14.5} maxW={sbW - 20} fill={C.ink} weight="600" />
                     {(liveWhat[i] ?? []).map((t, k) => (
-                      <text key={k} x={x + sbW / 2} y={y + 42 + k * 18} textAnchor="middle" fontSize="12.5" fill={C.muted}>{t}</text>
+                      <FitText key={k} x={x + sbW / 2} y={y + 42 + k * 18} text={t} fs={12.5} maxW={sbW - 20} fill={C.muted} />
                     ))}
                   </g>
                 )
@@ -455,9 +497,9 @@ export default function ArchPage() {
                       <g key={it.id}>
                         <rect x={x} y={y} width={wbW} height={WB_H} rx="10" fill="none"
                           stroke={C.line} strokeWidth="1.4" strokeDasharray="7 6" />
-                        <text x={x + wbW / 2} y={y + 24} textAnchor="middle" fontSize="14.5" fontWeight="600" fill={C.muted}>{it.name}</text>
+                        <FitText x={x + wbW / 2} y={y + 24} text={it.name} fs={14.5} maxW={wbW - 20} fill={C.muted} weight="600" />
                         {(waitWhat[i] ?? []).map((t, k) => (
-                          <text key={k} x={x + wbW / 2} y={y + 42 + k * 18} textAnchor="middle" fontSize="12.5" fill={C.muted}>{t}</text>
+                          <FitText key={k} x={x + wbW / 2} y={y + 42 + k * 18} text={t} fs={12.5} maxW={wbW - 20} fill={C.muted} />
                         ))}
                       </g>
                     )
