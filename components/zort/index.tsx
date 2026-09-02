@@ -183,19 +183,30 @@ export function Num({ v, zeroRed = false }: { v: number; zeroRed?: boolean }) {
    ZORT วางโลโก้แพลตฟอร์มนำหน้าชื่อช่องทาง เพื่อให้กวาดตาแล้วรู้ทันทีว่าใบไหนมาจากไหน
    ⚠️ เรามีแต่โลโก้ TikTok ในโปรเจกต์ ไม่มี Shopee/Lazada — **ไม่ใช้โลโก้ปลอม**
       ใช้จุดสีประจำช่องทางแทน ได้ผลเดียวกันคือกวาดตาแล้วแยกออก และไม่อ้างของที่ไม่มี */
+// เจ้าของร้านสั่งให้ใส่โลโก้จริง (2 ก.ย. 2569) — ก่อนหน้านี้ใช้จุดสีเพราะยังไม่มีไฟล์
+// และเป็นเครื่องหมายการค้าของคนอื่น ซึ่งไม่ใช่เรื่องที่เราตัดสินใจแทนเจ้าของร้าน · ตอนนี้เขาสั่งแล้ว
+// ไฟล์อยู่ public/logos/ · ช่องทางที่ไม่มีโลโก้ยังใช้จุดสีเหมือนเดิม (ไม่ทำโลโก้ปลอม)
+const CHANNEL_LOGO: [RegExp, string][] = [
+  [/shopee/i, '/logos/shopee.svg'],
+  [/lazada/i, '/logos/lazada.svg'],
+  [/tiktok/i, '/logos/tiktok.png'],
+]
 const CHANNEL_DOT: [RegExp, string][] = [
-  [/shopee/i, 'bg-orange-500'],
-  [/lazada/i, 'bg-indigo-500'],
-  [/tiktok/i, 'bg-gray-900'],
   [/gucut|เว็บ|web/i, 'bg-red-500'],
   [/pos|หน้าร้าน/i, 'bg-emerald-500'],
 ]
 export function ChannelTag({ name }: { name: string }) {
   if (!name) return <span className="text-gray-400">—</span>
+  const logo = CHANNEL_LOGO.find(([re]) => re.test(name))?.[1]
   const dot = CHANNEL_DOT.find(([re]) => re.test(name))?.[1] ?? 'bg-gray-400'
   return (
     <span className="inline-flex items-center gap-1.5 min-w-0">
-      <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+      {logo
+        ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={logo} alt="" className="w-4 h-4 object-contain shrink-0" />
+        )
+        : <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />}
       <span className="truncate">{name}</span>
     </span>
   )

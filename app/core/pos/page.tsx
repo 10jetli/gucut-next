@@ -32,9 +32,12 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, Pill } from '@/components/zort'
 
 interface Branch { code: string; name: string }
-interface Found { sku: string; name: string; price: number; qty: number }
+interface Found {
+  sku: string; name: string; price: number; qty: number
+  permit?: Permit; permitModel?: string; permitWhy?: string
+}
 interface Cat { code: string; name: string; items: number }
-interface CartLine { sku: string; name: string; price: number; qty: number; discount: number }
+interface CartLine { sku: string; name: string; price: number; qty: number; discount: number; permit?: Permit }
 interface SaleRow {
   number: string; channel: string; status: string
   amount: number; customer: string; order_date: string
@@ -44,10 +47,28 @@ const BRANCH_KEY = 'gucut-pos-branch'
 const HOLD_KEY = 'gucut-pos-held'   // บิลที่พักไว้ — เก็บในเครื่อง ไม่แตะเซิร์ฟเวอร์
 
 interface HeldBill { id: string; at: string; customer: string; lines: CartLine[] }
-// 🪚 เลื่อยยนต์ในคลังร้านนี้ **ทุกตัวเป็นแบบมีทะเบียน** (ฝั่งท่อหลังบ้านตรวจทั้งคลังแล้ว 104 ตัว)
-//    ขายแล้วต้องทำเรื่อง ลซ.๒ ให้ลูกค้า ⇒ คนขายต้องรู้ตั้งแต่ตอนหยิบลงบิล ไม่ใช่ตอนจะเก็บเงิน
-// ⚠️ ตอนนี้เดาจากชื่อสินค้า — ขอธงจากเซิร์ฟเวอร์ไว้แล้ว ได้เมื่อไหร่ให้เปลี่ยนมาใช้ธงแทน
-const needsPermit = (name: string) => /^\s*เลื่อยยนต์/.test(String(name ?? ''))
+// 🪚 ใบอนุญาตเลื่อยโซ่ยนต์ — **ใช้ธง permit จากเซิร์ฟเวอร์เท่านั้น ห้ามเดาจากชื่อสินค้า**
+//    เดาจากชื่อพังทันทีที่ร้านตั้งชื่อแบบอื่น และไม่มีอะไรฟ้อง (ผมเคยทำแบบนั้นไว้ ตอนนี้เลิกแล้ว)
+//    · required = ต้องขอทะเบียน · exempt = ไม่ต้องขอ · unknown = เป็นตัวเครื่องแต่จับรุ่นไม่ได้
+//    · null/ไม่มีค่า = ไม่ใช่ตัวเครื่อง (โซ่ บาร์ อะไหล่) ⇒ **ไม่ต้องขึ้นอะไรเลย**
+// ⚠️ null แปลได้สองอย่างที่ต้องแสดงคนละแบบสุดขั้ว — ห้ามรวบเป็นกรณีเดียว
+// ⚠️ **exempt เป็นจุดขาย ไม่ใช่แค่ "ไม่ต้องเตือน"** ลูกค้าเยอะมากอยากได้เลื่อยแต่กลัวเรื่องเอกสาร
+//    ขึ้นป้ายเขียวบอกไปเลยว่าไม่ต้องขอใบอนุญาต จะช่วยปิดการขาย
+// ⚠️ **ห้ามเขียนว่า "ไม่ผิดกฎหมาย" ลอย ๆ** เขียนได้แค่ "ไม่ต้องขอใบอนุญาตให้มี"
+//    ผู้ใช้ยังมีหน้าที่อื่นตามกฎหมายอยู่ (กติกาในความจำร้าน)
+type Permit = 'required' | 'exempt' | 'unknown' | null | undefined
+const PERMIT_BADGE: Record<string, { text: string; cls: string }> = {
+  required: { text: 'ต้องขอ ลซ.๒', cls: 'text-amber-800 bg-amber-100' },
+  exempt: { text: 'ไม่ต้องขอใบอนุญาต', cls: 'text-emerald-800 bg-emerald-100' },
+  unknown: { text: 'ต้องตรวจสอบก่อน', cls: 'text-red-800 bg-red-100' },
+}
+function PermitBadge({ permit }: { permit: Permit }) {
+  const b = permit ? PERMIT_BADGE[permit] : undefined
+  if (!b) return null
+  return (
+    <span className={`ml-1.5 text-[10.5px] font-semibold rounded px-1.5 py-0.5 ${b.cls}`}>{b.text}</span>
+  )
+}
 
 const thaiToday = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
 
@@ -129,7 +150,7 @@ export default function CorePosPage() {
     saveHeld(rest)
     // ⚠️ บิลที่พักไว้ก่อนมีฟีเจอร์ส่วนลดจะไม่มีฟิลด์ discount — เติมให้เป็น 0
     //    ไม่งั้นช่องส่วนลดของบรรทัดเก่าเป็น undefined แล้วคำนวณเพี้ยนแบบเงียบ ๆ
-    setCart(b.lines.map((l) => ({ ...l, discount: Number(l.discount) || 0 })))
+    setCart(b.lines.map((l) => ({ ...l, discount: Number(l.discount) || 0, permit: l.permit })))
     setCustomer(b.customer)
     searchRef.current?.focus()
   }
@@ -235,16 +256,21 @@ export default function CorePosPage() {
         next[at] = { ...next[at], qty: next[at].qty + 1 }
         return next
       }
-      return [...prev, { sku: it.sku, name: it.name, price: Number(it.price) || 0, qty: 1, discount: 0 }]
+      return [...prev, { sku: it.sku, name: it.name, price: Number(it.price) || 0, qty: 1, discount: 0, permit: it.permit }]
     })
     // 🔴 **เตือนตรงนี้เลย ไม่ใช่ตอนกดเก็บเงิน** — ของจริงคือแคชเชียร์ยิงบาร์โค้ดรัว ๆ
     //    ถ้าไปเตือนตอนท้าย เขาจะไม่รู้ว่าตัวไหนราคา 0 และอาจกดยืนยันผ่านไปเลย
     //    (เจอจริงตอนทดสอบ: รหัส 03409-3 ราคา 0 ⇒ บิลออก ฿0 โดยไม่มีอะไรเตือน = ขายฟรีไม่รู้ตัว)
-    // 🪚 เตือนเรื่องทะเบียนตั้งแต่ตอนหยิบลงบิล — คนขายจะได้บอกลูกค้าทันที
+    // 🪚 บอกเรื่องใบอนุญาตตั้งแต่ตอนหยิบลงบิล — คนขายจะได้พูดกับลูกค้าทันที
     //    ไม่ใช่มารู้ตอนเก็บเงินแล้วลูกค้าเดินออกไปแล้ว
-    if (needsPermit(it.name)) {
-      setError(`🪚 "${it.name}" เป็นเลื่อยยนต์แบบมีทะเบียน — ขายแล้ว`
-        + 'ต้องทำเรื่อง ลซ.๒ ให้ลูกค้า (ดูขั้นตอนที่ gucut.com/permit)')
+    if (it.permit === 'required') {
+      setError(`🪚 "${it.name}" ต้องขอใบอนุญาตให้มีเลื่อยโซ่ยนต์ — ขายแล้ว`
+        + 'ต้องทำเรื่อง ลซ.๒ ให้ลูกค้า (ขั้นตอนที่ gucut.com/permit)')
+    } else if (it.permit === 'unknown') {
+      setError(`⚠️ "${it.name}" เป็นตัวเครื่องแต่ระบบจับรุ่นไม่ได้ — `
+        + '**ต้องตรวจสอบเองก่อนขาย**ว่ารุ่นนี้ต้องขอใบอนุญาตหรือไม่')
+    } else if (it.permit === 'exempt') {
+      setError(`✅ "${it.name}" รุ่นนี้ไม่ต้องขอใบอนุญาตให้มี — บอกลูกค้าได้เลย`)
     } else if ((Number(it.price) || 0) <= 0) {
       setError(`⚠️ "${it.name || it.sku}" ราคา 0 บาท (ยังไม่ได้ตั้งราคาในคลัง) — `
         + 'ใส่ลงบิลแล้วแต่จะเก็บเงินไม่ได้จนกว่าจะยืนยันว่าตั้งใจแจกฟรี')
@@ -557,11 +583,7 @@ export default function CorePosPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium text-gray-800 truncate">
                   {f.name || f.sku}
-                  {needsPermit(f.name) && (
-                    <span className="ml-1.5 text-[10.5px] font-semibold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">
-                      ต้องขอ ลซ.๒
-                    </span>
-                  )}
+                  <PermitBadge permit={f.permit} />
                 </p>
                 <p className="text-[12px] text-gray-400">
                   {f.sku}
@@ -640,11 +662,7 @@ export default function CorePosPage() {
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium text-gray-800 truncate">
                   {c.name || c.sku}
-                  {needsPermit(c.name) && (
-                    <span className="ml-1.5 text-[10.5px] font-semibold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">
-                      ต้องขอ ลซ.๒
-                    </span>
-                  )}
+                  <PermitBadge permit={c.permit} />
                 </p>
                 <p className={`text-[12px] ${(Number(c.price) || 0) <= 0 ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
                   {c.sku} · {fmtBaht(c.price)}/ชิ้น
