@@ -50,6 +50,15 @@ const HOLD_KEY = 'gucut-pos-held'   // บิลที่พักไว้ — 
 // ⚠️ ของที่ยิงเข้าบิลไปสิบกว่าตัวแล้วหายเพราะเผลอรีเฟรช คือเรื่องใหญ่ตอนลูกค้ายืนรอ
 // ⚠️ แต่ **ห้ามกู้บิลข้ามวัน** — บิลค้างจากเมื่อวานโผล่ขึ้นมาแล้วคนขายไม่ทันสังเกต
 //    จะกลายเป็นขายซ้ำหรือคิดเงินผิด ⇒ กู้เฉพาะที่ยังไม่เกิน 8 ชั่วโมง และต้องบอกให้เห็นชัด
+/** รหัสสุ่มประจำบิล — ใช้ crypto ถ้ามี ไม่มีก็ถอยไปเวลา+สุ่ม (แท็บเก่า/บริบทไม่ปลอดภัย) */
+function newRef() {
+  try {
+    const c = globalThis.crypto
+    if (c && typeof c.randomUUID === 'function') return c.randomUUID()
+  } catch { /* บางเบราว์เซอร์ throw ตอนแตะ crypto ในบริบทที่ไม่ใช่ https */ }
+  return `r${Date.now().toString(36)}${Math.random().toString(36).slice(2, 10)}`
+}
+
 const DRAFT_KEY = 'gucut-pos-draft'
 const DRAFT_MAX_AGE = 8 * 3600e3
 
@@ -94,7 +103,21 @@ export default function CorePosPage() {
   const [cart, setCart] = useState<CartLine[]>([])
   const [customer, setCustomer] = useState('')
   const [saving, setSaving] = useState(false)
-  const [done, setDone] = useState<{ number: string; duplicate?: boolean } | null>(null)
+  const [done, setDone] = useState<{
+    number: string
+    duplicate?: boolean
+    /** เซิร์ฟเวอร์เตือนว่าอาจซ้ำกับใบก่อนหน้า — **ออกใบให้แล้ว** แค่ให้คนตัดสินว่าใช่ซ้ำไหม */
+    maybe?: { number: string; amount: number; secondsAgo: number }
+  } | null>(null)
+  // 🔴 **รหัสประจำบิลใบนี้ (clientRef) — ตัวกันเปิดบิลซ้ำที่ระดับเซิร์ฟเวอร์**
+  //    ยิงของจริงแล้วเจอ: กดเปิดบิลสองครั้งได้บิลสองใบ (KLD-…-001 กับ -002)
+  //    จากตะกร้าใบเดียวกัน ⇒ ยอดขายเบิ้ล · สต็อกตัดสองรอบ · เข้า PEAK สองใบ
+  //    ตัวกันเดิมเทียบจาก "เลขที่ใบ" ซึ่ง **ยังไม่มีตอนกดครั้งแรก** (เซิร์ฟเวอร์เป็นคนตั้งเลข)
+  //    ⇒ กันได้เฉพาะตอนที่จอรู้เลขอยู่แล้ว ซึ่งไม่ใช่สถานการณ์ที่คนกดซ้ำจริง
+  //    (เน็ตสะดุด → จอไม่ได้คำตอบ → แคชเชียร์กดใหม่ → ในมือยังไม่มีเลขสักตัว)
+  // ⚠️ ต้องเกิดพร้อมบิล **ไม่ใช่ตอนกดเก็บเงิน** และต้องอยู่รอดข้ามการโหลดหน้าใหม่
+  //    (เก็บไปกับร่างใน localStorage) ไม่งั้นรีเฟรชแล้วกดใหม่ = ได้ ref ใหม่ = ซ้ำอีก
+  const [billRef, setBillRef] = useState('')
   const [error, setError] = useState('')
   // ⚠️ **ข้อมูลที่ต้องรู้ ไม่ใช่ความผิดพลาด** — ต้องแยกกล่องกัน
   //    เจ้าของร้านเปิดจอจริงแล้วเจอว่าข้อความเรื่อง ลซ.๒ ไปโผล่ในกล่อง "ทำรายการไม่สำเร็จ"
@@ -136,6 +159,9 @@ export default function CorePosPage() {
       if (age > DRAFT_MAX_AGE) { localStorage.removeItem(DRAFT_KEY); return }
       setCart(d.lines.map((l: CartLine) => ({ ...l, discount: Number(l.discount) || 0 })))
       setCustomer(String(d.customer ?? ''))
+      // กู้รหัสประจำบิลมาด้วย — บิลเดิมต้องใช้ ref เดิม ไม่งั้นกดเปิดบิลหลังรีเฟรช
+      // จะกลายเป็นบิลใหม่ในสายตาเซิร์ฟเวอร์ แล้วได้สองใบ (ร่างเก่าที่ไม่มี ref จะได้ตัวใหม่)
+      if (typeof d.ref === 'string' && d.ref) setBillRef(d.ref)
       const when = new Date(Number(d.at)).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
       setNotice({
         tone: 'info',
@@ -145,13 +171,20 @@ export default function CorePosPage() {
     } catch { /* ร่างพังไม่ควรขวางการขาย */ }
   }, [])
 
+  // รหัสประจำบิลเกิดพร้อมบิล และตายพร้อมบิล — บิลว่าง = ไม่มี ref
+  // (พักบิล · ล้างบิล · เปิดบิลสำเร็จ ล้วนทำให้ตะกร้าว่าง ⇒ ใบถัดไปได้ ref ใหม่เองทุกทาง)
+  useEffect(() => {
+    if (cart.length === 0) { if (billRef) setBillRef(''); return }
+    if (!billRef) setBillRef(newRef())
+  }, [cart, billRef])
+
   // เก็บบิลที่กำลังคิดทุกครั้งที่เปลี่ยน — เขียนแค่ localStorage ไม่แตะเซิร์ฟเวอร์
   useEffect(() => {
     try {
       if (cart.length === 0) localStorage.removeItem(DRAFT_KEY)
-      else localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), customer, lines: cart }))
+      else localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), customer, lines: cart, ref: billRef }))
     } catch {}
-  }, [cart, customer])
+  }, [cart, customer, billRef])
 
   const saveHeld = (list: HeldBill[]) => {
     setHeld(list)
@@ -391,6 +424,8 @@ export default function CorePosPage() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           branch,
+          // 🔴 ตัวกันเปิดบิลซ้ำ — เจอ ref เดิม เซิร์ฟเวอร์คืนใบเดิม ไม่สร้างใบใหม่
+          ...(billRef ? { clientRef: billRef } : {}),
           customer: customer.trim() || undefined,
           // ส่งเฉพาะตอนคนขายติ๊กยืนยันเองว่าตั้งใจแจกฟรี
           ...(allowZero ? { allowZero: true } : {}),
@@ -416,9 +451,23 @@ export default function CorePosPage() {
       // ⚠️ ใบซ้ำ **ห้ามแกล้งขึ้นเขียวว่าเป็นใบใหม่** — ต้องบอกตรง ๆ ว่าบันทึกไปแล้ว
       // ⚠️ เลขที่บิลอยู่ที่ order.number — เดิมอ่าน d.number แล้วได้ค่าว่าง
       //    จอเลยขึ้น "เปิดบิลแล้ว เลขที่" ห้วน ๆ ไม่มีเลข (เจอตอนทดสอบจริง)
+      // ⚠️ **เกณฑ์ล้างตะกร้า/ร่าง: มี order กลับมา = บิลมีอยู่จริงแล้ว = ล้างเสมอ**
+      //    ห้ามแยกว่า duplicate หรือไม่ — ทั้งสองรูปแปลว่า "ขายเสร็จแล้ว" เหมือนกัน
+      //    ต่างกันแค่ใบนั้นเพิ่งเกิด หรือเกิดไปแล้วจากการกดครั้งก่อน
+      //    ถ้าเผลอล้างเฉพาะตอนไม่ duplicate → ร่างค้าง → เปิดจอครั้งหน้ากล่องฟ้า
+      //    ยื่นตะกร้าของบิลที่ขายไปแล้วคืนมา → คนขายกดต่อ = ขายซ้ำใบที่สอง
+      //    (อันตรายกว่าร่างหาย เพราะของโผล่มาโดยคนใช้ไม่รู้ว่ามาจากไหน)
+      const mb = d?.maybeDuplicate
       setDone({
         number: String(d?.order?.number ?? d?.number ?? ''),
         duplicate: !!d?.duplicate,
+        maybe: mb && mb.number
+          ? {
+            number: String(mb.number),
+            amount: Number(mb.amount) || 0,
+            secondsAgo: Number(mb.secondsAgo) || 0,
+          }
+          : undefined,
       })
       setAllowZero(false)
       setStep('cart')
@@ -508,8 +557,40 @@ export default function CorePosPage() {
           }`}
         >
           {done.duplicate
-            ? <>⚠️ ใบเลขนี้ <b>บันทึกไปแล้วก่อนหน้านี้</b> ({done.number}) ระบบไม่บันทึกซ้ำให้ — ไม่ได้เปิดใบใหม่</>
+            ? <>⚠️ ใบนี้ <b>เปิดไปแล้วก่อนหน้านี้</b> (เลขที่ {done.number}) — ระบบคืนใบเดิมให้ <b>ไม่ได้เปิดใบใหม่</b> เก็บเงินได้ตามปกติ</>
             : <>✅ เปิดบิลแล้ว เลขที่ <b>{done.number}</b></>}
+        </div>
+      )}
+
+      {/* ⚠️ เซิร์ฟเวอร์เจอใบยอดเท่ากัน สาขาเดียวกัน รายการเหมือนกันเมื่อกี้ — **แต่ออกใบให้แล้ว**
+          ตั้งใจไม่บล็อก: ลูกค้าซื้อของชิ้นเดิมสองบิลติดกันเป็นเรื่องปกติหน้าร้าน
+          บล็อก = ขายของไม่ได้ ซึ่งแย่กว่าบิลซ้ำที่ยกเลิกได้ ⇒ ให้คนตัดสิน ไม่ใช่ระบบเดา
+          แต่ก็ต้องไม่เงียบ — ถามตรง ๆ พร้อมปุ่มยกเลิกใบที่เพิ่งออก */}
+      {done?.maybe && (
+        <div className="rounded px-3 py-2.5 mb-3 text-[13px] border bg-amber-50 border-amber-200 text-amber-900">
+          <p className="leading-relaxed">
+            ⚠️ ใบ <b>{done.maybe.number}</b> ยอด {fmtBaht(done.maybe.amount)} เพิ่งออกไปเมื่อ{' '}
+            <b>{done.maybe.secondsAgo} วินาทีที่แล้ว</b> รายการเหมือนกันเป๊ะ —
+            ถ้าเป็นใบเดียวกันที่กดซ้ำ ให้ยกเลิกใบที่เพิ่งออก ({done.number})
+            <br />
+            <span className="text-amber-700">
+              ถ้าลูกค้าซื้อของชิ้นเดิมจริงสองบิล ไม่ต้องทำอะไร — ทั้งสองใบถูกต้องแล้ว
+            </span>
+          </p>
+          <div className="flex gap-2 mt-2">
+            <button
+              onClick={() => { voidSale(done.number); setDone(null) }}
+              className="rounded-full bg-white border border-amber-300 px-3.5 py-1.5 text-[12.5px] font-semibold text-amber-900 hover:bg-amber-100"
+            >
+              ยกเลิกใบ {done.number}
+            </button>
+            <button
+              onClick={() => setDone((v) => (v ? { ...v, maybe: undefined } : v))}
+              className="rounded-full px-3.5 py-1.5 text-[12.5px] text-amber-800 hover:bg-amber-100"
+            >
+              ไม่ซ้ำ ทั้งสองใบถูกต้อง
+            </button>
+          </div>
         </div>
       )}
 
