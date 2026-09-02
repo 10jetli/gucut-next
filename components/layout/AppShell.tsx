@@ -9,6 +9,7 @@ import TopBar from './TopBar'
 import { MobileHeader, MobileBottomNav, MobileDrawer } from './MobileNav'
 
 const STORAGE_KEY = 'gucut-sidebar-collapsed'
+const GROUPS_KEY = 'gucut-sidebar-groups'
 
 interface AppShellProps { children: React.ReactNode; role: 'admin' | 'staff' | null }
 
@@ -16,15 +17,30 @@ export default function AppShell({ children, role }: AppShellProps) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [ready, setReady] = useState(false)
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({})
   const [drawerOpen, setDrawerOpen] = useState(false)
   const navItems = getNavItems(role)
+
+  // ⚠️ **ทุกกลุ่มต้องกางไว้เป็นค่าเริ่มต้น** — ของเดิมเป็นเมนูแบน เห็นทุกอันพร้อมกัน
+  //    พอจัดเป็นกลุ่มแบบ ZORT แล้วตั้งค่าเริ่มต้นเป็นพับ เจ้าของร้านทักทันทีว่า
+  //    "เมนูที่ผมเคยทำไว้หายไปไหน" ทั้งที่ลิงก์อยู่ครบทุกอัน (2 ก.ย. 2569)
+  //    ของที่เคยกดได้ทันที (ระบบสั่งของ · นำเข้าจากจีน · โอนสินค้า · ดึงบิล) หายเข้าไปอยู่ข้างใน
+  //    บทเรียน: จัดกลุ่มใหม่ = ของเดิมต้องยัง "เห็นได้ทันที" เหมือนเดิม ไม่ใช่แค่ "ยังเข้าถึงได้"
+  const allOpen = () => Object.fromEntries(navItems.filter((i) => i.children).map((i) => [i.label, true]))
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(allOpen)
 
   useEffect(() => {
     try {
       if (localStorage.getItem(STORAGE_KEY) === '1') setCollapsed(true)
+      // จำสถานะพับ/กางที่เจ้าของร้านตั้งเอง — ไม่มีค่าที่จำไว้ = กางหมดตามค่าเริ่มต้น
+      const saved = localStorage.getItem(GROUPS_KEY)
+      if (saved) {
+        const obj = JSON.parse(saved)
+        if (obj && typeof obj === 'object') setOpenGroups((prev) => ({ ...prev, ...obj }))
+      }
     } catch {}
     setReady(true)
+    // อ่านค่าที่จำไว้ครั้งเดียวตอนเปิดหน้า — ใส่ deps จะทับค่าที่ผู้ใช้เพิ่งกด
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // เปิดกลุ่มอัตโนมัติถ้าหน้าปัจจุบันอยู่ในเมนูย่อยของกลุ่มนั้น
@@ -46,14 +62,19 @@ export default function AppShell({ children, role }: AppShellProps) {
     })
   }
 
+  const saveGroups = (next: Record<string, boolean>) => {
+    try { localStorage.setItem(GROUPS_KEY, JSON.stringify(next)) } catch {}
+    return next
+  }
+
   const toggleGroup = (label: string) => {
     if (collapsed) {
       setCollapsed(false)
       try { localStorage.setItem(STORAGE_KEY, '0') } catch {}
-      setOpenGroups((prev) => ({ ...prev, [label]: true }))
+      setOpenGroups((prev) => saveGroups({ ...prev, [label]: true }))
       return
     }
-    setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }))
+    setOpenGroups((prev) => saveGroups({ ...prev, [label]: !prev[label] }))
   }
 
   const isActive = (href: string) =>
