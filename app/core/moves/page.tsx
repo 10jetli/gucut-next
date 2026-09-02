@@ -32,6 +32,21 @@ const REASONS: { id: string; label: string; dir: 'in' | 'out' }[] = [
 const labelOf = (id: string) => REASONS.find((r) => r.id === id)?.label ?? id
 
 /**
+ * แปลข้อผิดพลาดที่คนอ่านไม่รู้เรื่องให้เป็นภาษาคน
+ * ⚠️ โควตาเขียนของ D1 แพ็กฟรี = 100,000 แถว/วัน · ชนแล้วเขียนไม่ได้จนถึงเที่ยงคืน UTC (07:00 ไทย)
+ *    ชนมาแล้วจริง 2 ก.ย. 2569 — ถ้าไม่แปล คนกรอกจะเห็นข้อความอังกฤษแล้วนึกว่าระบบพัง
+ *    แล้วไปไล่แก้ผิดที่ · **การอ่านไม่กระทบ** จอที่แค่แสดงผลยังใช้ได้ตามปกติ
+ */
+function humanError(msg: string): string {
+  const t = String(msg ?? '')
+  if (/row write limit|daily row write|exceeded.*write/i.test(t)) {
+    return 'วันนี้ฐานข้อมูลเขียนครบโควตาแล้ว (แพ็กฟรีเขียนได้วันละ 100,000 แถว) '
+      + 'บันทึกใหม่ได้อีกครั้งหลัง 07:00 น. พรุ่งนี้ — ไม่ใช่ระบบพัง และการดูข้อมูลยังใช้ได้ปกติ'
+  }
+  return t
+}
+
+/**
  * ⚠️ `at` จากฐานเป็น **UTC** เสมอ (เขียนด้วย datetime('now') ไม่มีตัวบอกโซนต่อท้าย)
  *    ห้ามโชว์ค่าดิบ — คนกรอกตอนเช้าไทยจะเห็นเวลาย้อนไปเมื่อวานแล้วนึกว่าระบบพัง
  *    ค่าที่อ่านไม่ออกให้คืนค่าเดิม ดีกว่าโชว์ "Invalid Date"
@@ -104,7 +119,7 @@ function MovesInner() {
         }),
       })
       const d = await res.json()
-      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      if (!res.ok || d?.error) throw new Error(humanError(d?.error ?? `HTTP ${res.status}`))
       if (d.added === 0 && d.duplicate > 0) {
         setMsgTone('warn')
         setMsg(`ใบนี้เคยบันทึกไปแล้ว (SKU ${sku.trim()} · อ้างอิง ${ref.trim()}) — ระบบไม่บันทึกซ้ำให้`)
@@ -129,7 +144,7 @@ function MovesInner() {
       // ⚠️ ต้องเป็น DELETE — เซิร์ฟเวอร์ตอบ 405 ถ้าส่ง POST (เจอตอนอ่านโค้ดฝั่งท่อ)
       const res = await fetch(`/api/web/core?movedel=${id}`, { method: 'DELETE' })
       const d = await res.json()
-      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      if (!res.ok || d?.error) throw new Error(humanError(d?.error ?? `HTTP ${res.status}`))
       setMsgTone('ok')
       setMsg(`ลบใบเลข ${id} แล้ว`)
       await load(filterSku)
