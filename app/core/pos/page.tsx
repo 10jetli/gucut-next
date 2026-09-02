@@ -70,7 +70,34 @@ function agoText(secs: number) {
 const DRAFT_KEY = 'gucut-pos-draft'
 const DRAFT_MAX_AGE = 8 * 3600e3
 
-interface HeldBill { id: string; at: string; customer: string; lines: CartLine[] }
+interface HeldBill { id: string; at: string; customer: string; lines: CartLine[]; ts?: number }
+
+/** บิลพักไว้ตั้งแต่เมื่อไหร่ — ใบเก่าไม่มีช่อง ts แต่ id เป็น "H<เวลา>" จึงถอดออกมาได้
+ *  ⚠️ **ตาข่ายนี้จะหยุดทำงานเมื่อไหร่: ถ้าวันหนึ่งเปลี่ยนรูปแบบ id**
+ *     เปลี่ยนเมื่อไหร่ต้องอ่าน ts อย่างเดียว ไม่ใช่เดาจาก id */
+function heldTime(h: HeldBill): number {
+  if (typeof h.ts === 'number' && h.ts > 0) return h.ts
+  const guess = Number(String(h.id ?? '').replace(/^H/, ''))
+  return Number.isFinite(guess) && guess > 0 ? guess : 0
+}
+
+/** "เมื่อวาน 14:30" / "2 ก.ย. 14:30" — บิลข้ามวันต้องอ่านออกทันทีว่าไม่ใช่ของวันนี้ */
+function heldWhen(h: HeldBill): { text: string; stale: boolean } {
+  const ts = heldTime(h)
+  if (!ts) return { text: h.at || '—', stale: false }
+  const d = new Date(ts)
+  const now = new Date()
+  const clock = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+  const sameDay = d.toDateString() === now.toDateString()
+  if (sameDay) return { text: clock, stale: Date.now() - ts > 8 * 3600e3 }
+  const yesterday = new Date(now.getTime() - 864e5).toDateString() === d.toDateString()
+  return {
+    text: yesterday
+      ? `เมื่อวาน ${clock}`
+      : `${d.toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })} ${clock}`,
+    stale: true,
+  }
+}
 // 🪚 ใบอนุญาตเลื่อยโซ่ยนต์ — **ใช้ธง permit จากเซิร์ฟเวอร์เท่านั้น ห้ามเดาจากชื่อสินค้า**
 //    เดาจากชื่อพังทันทีที่ร้านตั้งชื่อแบบอื่น และไม่มีอะไรฟ้อง (ผมเคยทำแบบนั้นไว้ ตอนนี้เลิกแล้ว)
 //    · required = ต้องขอทะเบียน · exempt = ไม่ต้องขอ · unknown = เป็นตัวเครื่องแต่จับรุ่นไม่ได้
@@ -205,6 +232,7 @@ export default function CorePosPage() {
     if (!cart.length) return
     const bill: HeldBill = {
       id: `H${Date.now()}`,
+      ts: Date.now(),
       at: new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }),
       customer,
       lines: cart,
@@ -784,13 +812,21 @@ export default function CorePosPage() {
               <p className="text-[12.5px] font-semibold text-gray-600 px-3 pt-3">
                 บิลที่พักไว้ ({held.length})
               </p>
-              {held.map((h) => (
-                <div key={h.id} className="flex items-center gap-2 px-3 py-2.5">
+              {held.map((h) => {
+                const w = heldWhen(h)
+                return (
+                <div key={h.id} className={`flex items-center gap-2 px-3 py-2.5 ${w.stale ? 'bg-amber-50' : ''}`}>
                   <div className="min-w-0 flex-1">
                     <p className="text-[13px] text-gray-800 truncate">
                       {h.customer || 'ไม่ระบุชื่อ'} · {h.lines.length} รายการ
                     </p>
-                    <p className="text-[11.5px] text-gray-400">พักไว้ {h.at}</p>
+                    {/* ⚠️ บิลพักข้ามวันต้องเห็นทันทีว่าไม่ใช่ของวันนี้
+                        ของเดิมเก็บแค่ "14:30" ⇒ บิลเมื่อวานหน้าตาเหมือนบิลเมื่อกี้เป๊ะ
+                        เรียกคืนผิดใบ = คิดเงินตะกร้าของลูกค้าคนอื่น
+                        **ไม่ลบให้อัตโนมัติ** — ตะกร้าที่หายเองอันตรายกว่าตะกร้าที่ค้าง ให้คนตัดสิน */}
+                    <p className={`text-[11.5px] ${w.stale ? 'text-amber-700 font-semibold' : 'text-gray-400'}`}>
+                      พักไว้ {w.text}{w.stale ? ' · ไม่ใช่บิลของช่วงนี้แล้ว' : ''}
+                    </p>
                   </div>
                   <button
                     onClick={() => resumeBill(h.id)}
@@ -805,7 +841,8 @@ export default function CorePosPage() {
                     ทิ้ง
                   </button>
                 </div>
-              ))}
+                )
+              })}
               <p className="text-[11px] text-gray-400 px-3 pb-3">
                 ⚠️ บิลที่พักไว้เก็บใน<b>เครื่องนี้เท่านั้น</b> เปลี่ยนเครื่องแล้วจะไม่ตามไป
               </p>

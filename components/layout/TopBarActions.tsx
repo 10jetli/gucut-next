@@ -16,6 +16,11 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 
 const CACHE_KEY = 'gucut-bell'
+/** ผลตรวจเก่ากว่านี้ถือว่าใช้ตัดสินใจไม่ได้แล้ว
+ *  ⚠️ **ตาข่ายนี้จะหยุดทำงานเมื่อไหร่: เมื่อคนเปิดจอค้างไว้ทั้งวัน**
+ *     จุดแดงที่ตรวจไว้ตอนเช้ายังค้างอยู่ตอนเย็น ทั้งที่เรื่องนั้นอาจถูกแก้ไปแล้ว
+ *     หรือมีเรื่องใหม่ที่ยังไม่รู้ — "เคยถูก" แล้วหยุดอัปเดต คือแบบที่จับได้ยากที่สุด */
+const STALE_MS = 3 * 3600e3
 const NAVY = '#1b3b73'
 
 interface Alert {
@@ -137,6 +142,9 @@ function BellButton() {
   }
 
   const count = checked?.alerts.length ?? 0
+  // ผลตรวจเก่าไม่นับเป็นจุดแดง — จุดแดงต้องแปลว่า "มีเรื่องรอคุณอยู่ตอนนี้"
+  const checkedMs = checked ? Date.parse(checked.at) : 0
+  const stale = !!checkedMs && Date.now() - checkedMs > STALE_MS
 
   return (
     <div className="relative" ref={ref}>
@@ -152,7 +160,11 @@ function BellButton() {
           <path d="M13.7 21a2 2 0 0 1-3.4 0" />
         </svg>
         {count > 0 && (
-          <span className="absolute top-0.5 right-0.5 w-[9px] h-[9px] rounded-full bg-red-500 ring-2 ring-white" />
+          <span
+            className={`absolute top-0.5 right-0.5 w-[9px] h-[9px] rounded-full ring-2 ring-white ${
+              stale ? 'bg-gray-300' : 'bg-red-500'
+            }`}
+          />
         )}
       </button>
 
@@ -178,6 +190,12 @@ function BellButton() {
             {!error && loading && !checked && (
               <p className="px-3.5 py-4 text-[12.5px] text-gray-400">กำลังตรวจจากคลังเงา…</p>
             )}
+            {!error && stale && (
+              <p className="px-3.5 py-2.5 text-[12px] text-amber-800 bg-amber-50 border-b border-amber-100 leading-relaxed">
+                ผลนี้ตรวจไว้นานแล้ว — เรื่องที่เห็นอาจถูกแก้ไปแล้ว หรือมีเรื่องใหม่ที่ยังไม่รู้
+                กด &quot;ตรวจใหม่&quot; ก่อนใช้ตัดสินใจ
+              </p>
+            )}
             {!error && checked && checked.alerts.length === 0 && (
               <p className="px-3.5 py-4 text-[12.5px] text-gray-500 leading-relaxed">
                 ไม่มีเรื่องต้องมาดู — ยอดขายและสต็อกตรงกับ ZORT
@@ -199,7 +217,7 @@ function BellButton() {
           {/* บอกเวลาที่ตรวจเสมอ — ไม่งั้นคนใช้เข้าใจว่าตัวเลขสดตลอดเวลา */}
           <p className="px-3.5 py-2 text-[11px] text-gray-400 border-t border-gray-100 leading-relaxed">
             {checked
-              ? `ตรวจเมื่อ ${new Date(checked.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. · ระบบไม่ตรวจเอง ต้องกดปุ่มตรวจใหม่`
+              ? `${stale ? '⏱ ผลนี้เก่าแล้ว — ' : ''}ตรวจเมื่อ ${new Date(checked.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. · ระบบไม่ตรวจเอง ต้องกดปุ่มตรวจใหม่`
               : 'ระบบไม่ตรวจเอง — กด "ตรวจใหม่" เพื่อดูสถานะล่าสุด'}
           </p>
         </div>
