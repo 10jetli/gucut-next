@@ -30,6 +30,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { fmtBaht } from '@/lib/format'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, Pill } from '@/components/zort'
+import { useSkuImages } from '@/lib/sku-images'
 
 interface Branch { code: string; name: string }
 interface Found {
@@ -116,6 +117,8 @@ export default function CorePosPage() {
   const [tendered, setTendered] = useState('')   // เงินที่รับมา (กดจากแป้นตัวเลข)
   const [billDiscount, setBillDiscount] = useState('')   // ส่วนลดท้ายบิล (บาท)
   const searchRef = useRef<HTMLInputElement>(null)
+  // รูปสินค้าในการ์ดผลค้นหา — เครื่องจริงก็มีรูปในการ์ด ช่วยให้คนขายกดถูกตัวเร็วขึ้น
+  const imgOf = useSkuImages()
 
   // บิลที่พักไว้ + บิลที่กำลังคิดค้างอยู่ — อ่านครั้งเดียวตอนเปิดจอ
   useEffect(() => {
@@ -664,6 +667,13 @@ export default function CorePosPage() {
               onClick={() => addToCart(f)}
               className="w-full flex items-center gap-3 px-3 py-3 border-t border-gray-100 text-left hover:bg-blue-50 transition-colors"
             >
+              {imgOf(f.sku)
+                ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={imgOf(f.sku) as string} alt="" loading="lazy"
+                    className="w-11 h-11 rounded border border-gray-200 object-cover bg-white shrink-0" />
+                )
+                : <span className="w-11 h-11 rounded border border-gray-200 bg-gray-100 shrink-0" />}
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium text-gray-800 truncate">
                   {f.name || f.sku}

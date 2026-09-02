@@ -12,6 +12,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu,
 } from '@/components/zort'
@@ -41,6 +42,8 @@ export default function CoreStockPage() {
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // รูปสินค้า — โหลดแผนที่ SKU→ไฟล์ครั้งเดียวต่อการเปิดเว็บ
+  const imgOf = useSkuImages()
 
   const load = useCallback(async (off = 0, sortId = sort, tabId = tab) => {
     setLoading(true)
@@ -148,6 +151,7 @@ export default function CoreStockPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH} style={{ width: 56 }}></th>
                   <th className={TH}>รหัส</th>
                   <th className={TH}>ชื่อสินค้า</th>
                   <th className={THR}>ราคาขาย</th>
@@ -158,11 +162,26 @@ export default function CoreStockPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={7} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบสินค้าในเงื่อนไขนี้</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบสินค้าในเงื่อนไขนี้</td></tr>
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    <td className="px-3 py-2 align-middle">
+                      {/* ⚠️ ไม่มีรูป = กล่องเทา แบบเดียวกับ ZORT · ห้ามปล่อยช่องว่างเปล่า
+                          ช่องว่างทำให้แถวเบี้ยวและดูเหมือนโหลดไม่เสร็จ */}
+                      {imgOf(r.sku)
+                        ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={imgOf(r.sku) as string}
+                            alt=""
+                            loading="lazy"
+                            className="w-10 h-10 rounded border border-gray-200 object-cover bg-white"
+                          />
+                        )
+                        : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100" />}
+                    </td>
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
                     <td className={TD}><span className="text-blue-600">{r.name || '—'}</span></td>
                     <td className={TDR}>{r.price ? fmtBaht(r.price) : '0'}</td>
