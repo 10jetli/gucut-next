@@ -151,7 +151,9 @@ export default function CoreSalesPage() {
         summary={
           <>
             {data ? summaryLine(data.total, data.totalAmount) : 'กำลังโหลด…'}
-            {voided && (
+            {/* ⚠️ ซ่อนวงเล็บตอนอยู่แท็บ "ยกเลิก" — แท็บนั้นเป็นใบยกเลิกทั้งหมดอยู่แล้ว
+                วงเล็บจะซ้ำกับตัวเลขหลักเป๊ะ ๆ แล้วคนอ่านสะดุดว่าทำไมบอกสองรอบ */}
+            {voided && toneOfStatus(status) !== 'red' && (
               <span className="text-gray-400">
                 {' '}(รวมใบยกเลิก {voided.orders.toLocaleString('th-TH')} ใบ {fmtBaht(voided.amount)})
               </span>
