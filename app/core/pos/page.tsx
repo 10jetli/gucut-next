@@ -33,7 +33,7 @@ import { PageHead, Pill } from '@/components/zort'
 
 interface Branch { code: string; name: string }
 interface Found { sku: string; name: string; price: number; qty: number }
-interface CartLine { sku: string; name: string; price: number; qty: number }
+interface CartLine { sku: string; name: string; price: number; qty: number; discount: number }
 interface SaleRow {
   number: string; channel: string; status: string
   amount: number; customer: string; order_date: string
@@ -70,6 +70,7 @@ export default function CorePosPage() {
   const [step, setStep] = useState<'cart' | 'pay'>('cart')
   const [payMethod, setPayMethod] = useState<'cash' | 'credit' | 'transfer'>('cash')
   const [tendered, setTendered] = useState('')   // เงินที่รับมา (กดจากแป้นตัวเลข)
+  const [billDiscount, setBillDiscount] = useState('')   // ส่วนลดท้ายบิล (บาท)
   const searchRef = useRef<HTMLInputElement>(null)
 
   // บิลที่พักไว้ — อ่านครั้งเดียวตอนเปิดจอ
@@ -117,7 +118,9 @@ export default function CorePosPage() {
       })
     }
     saveHeld(rest)
-    setCart(b.lines)
+    // ⚠️ บิลที่พักไว้ก่อนมีฟีเจอร์ส่วนลดจะไม่มีฟิลด์ discount — เติมให้เป็น 0
+    //    ไม่งั้นช่องส่วนลดของบรรทัดเก่าเป็น undefined แล้วคำนวณเพี้ยนแบบเงียบ ๆ
+    setCart(b.lines.map((l) => ({ ...l, discount: Number(l.discount) || 0 })))
     setCustomer(b.customer)
     searchRef.current?.focus()
   }
@@ -194,7 +197,7 @@ export default function CorePosPage() {
         next[at] = { ...next[at], qty: next[at].qty + 1 }
         return next
       }
-      return [...prev, { sku: it.sku, name: it.name, price: Number(it.price) || 0, qty: 1 }]
+      return [...prev, { sku: it.sku, name: it.name, price: Number(it.price) || 0, qty: 1, discount: 0 }]
     })
     // 🔴 **เตือนตรงนี้เลย ไม่ใช่ตอนกดเก็บเงิน** — ของจริงคือแคชเชียร์ยิงบาร์โค้ดรัว ๆ
     //    ถ้าไปเตือนตอนท้าย เขาจะไม่รู้ว่าตัวไหนราคา 0 และอาจกดยืนยันผ่านไปเลย
@@ -215,6 +218,11 @@ export default function CorePosPage() {
   const setQty = (sku: string, qty: number) =>
     setCart((prev) => prev.map((c) => (c.sku === sku ? { ...c, qty: Math.max(1, qty) } : c)))
   const removeLine = (sku: string) => setCart((prev) => prev.filter((c) => c.sku !== sku))
+  // ส่วนลดต่อชิ้น — กันกรอกเกินราคาตั้งแต่ที่จอ (เซิร์ฟเวอร์ก็กันอีกชั้น)
+  const setDiscount = (sku: string, v: number) =>
+    setCart((prev) => prev.map((c) => (c.sku === sku
+      ? { ...c, discount: Math.max(0, Math.min(Number.isFinite(v) ? v : 0, c.price)) }
+      : c)))
 
   // สินค้าราคา 0 ในบิล — ต้องรู้ทั้งว่ามีไหมและตัวไหน เพื่อบอกคนขายได้ว่าตัวไหน
   const zeroLines = useMemo(() => cart.filter((c) => (Number(c.price) || 0) <= 0), [cart])
@@ -223,7 +231,19 @@ export default function CorePosPage() {
     () => zeroLines.map((c) => c.name || c.sku).join(' · '),
     [zeroLines]
   )
-  const total = useMemo(() => cart.reduce((s, c) => s + c.price * c.qty, 0), [cart])
+  // ⚠️ ตัวเลขพวกนี้ใช้ **แสดงผลอย่างเดียว** — เซิร์ฟเวอร์คิดยอดใหม่เองทั้งหมดและไม่เชื่อยอดจากจอ
+  //    (กติกาเดิมของร้าน ใช้กับหน้าเช็คเอาต์อยู่แล้ว) จอจึงส่งแค่ ราคา/จำนวน/ส่วนลด ไม่ส่ง amount
+  const subtotal = useMemo(
+    () => cart.reduce((s, c) => s + Math.max(0, c.price - (c.discount || 0)) * c.qty, 0),
+    [cart]
+  )
+  const lineDiscount = useMemo(
+    () => cart.reduce((s, c) => s + (c.discount || 0) * c.qty, 0),
+    [cart]
+  )
+  // ส่วนลดท้ายบิลเกินยอดก่อนลดไม่ได้ — เซิร์ฟเวอร์ตีกลับอยู่แล้ว แต่กันที่จอด้วยจะได้ไม่ต้องยิงไปเสียเที่ยว
+  const billOff = Math.max(0, Math.min(Number(billDiscount) || 0, subtotal))
+  const total = Math.max(0, subtotal - billOff)
   // เงินทอน — ติดลบแปลว่ารับเงินมาไม่พอ ต้องบอกว่าขาดอีกเท่าไหร่ ไม่ใช่โชว์เลขติดลบเฉย ๆ
   const change = (Number(tendered) || 0) - total
 
@@ -253,7 +273,12 @@ export default function CorePosPage() {
           // ⚠️ ท่อยังไม่มีที่เก็บวิธีจ่าย (ขอไว้แล้ว) — ส่งไปก่อนได้ ฟิลด์เกินถูกมองข้าม
           //    วันที่ท่อรับ ข้อมูลจะครบตั้งแต่ใบแรกโดยไม่ต้องมาไล่เติมย้อนหลัง
           payMethod,
-          items: cart.map((c) => ({ sku: c.sku, name: c.name, qty: c.qty, price: c.price })),
+          // ⚠️ ส่งแค่ ราคา/จำนวน/ส่วนลด — **ไม่ส่งยอดรวม** เซิร์ฟเวอร์คิดใหม่เองและไม่เชื่อยอดจากจอ
+          items: cart.map((c) => ({
+            sku: c.sku, name: c.name, qty: c.qty, price: c.price,
+            ...(c.discount > 0 ? { discount: c.discount } : {}),
+          })),
+          ...(billOff > 0 ? { billDiscount: billOff } : {}),
         }),
       })
       const d = await res.json()
@@ -274,6 +299,7 @@ export default function CorePosPage() {
       setAllowZero(false)
       setStep('cart')
       setTendered('')
+      setBillDiscount('')
       setCart([])
       setCustomer('')
       await loadSales()
@@ -538,6 +564,18 @@ export default function CorePosPage() {
                   {c.sku} · {fmtBaht(c.price)}/ชิ้น
                   {(Number(c.price) || 0) <= 0 && ' — ยังไม่ได้ตั้งราคา'}
                 </p>
+                {/* ส่วนลดต่อชิ้น — เครื่องจริงโชว์บรรทัด "ส่วนลด/หน่วย" ใต้ชื่อสินค้า */}
+                <div className="flex items-center gap-1.5 mt-1">
+                  <span className="text-[11.5px] text-gray-500">ลด/ชิ้น</span>
+                  <input
+                    value={c.discount || ''}
+                    onChange={(e) => setDiscount(c.sku, Number(e.target.value.replace(/[^0-9.]/g, '')))}
+                    inputMode="decimal"
+                    placeholder="0"
+                    className="w-20 h-8 text-[12.5px] text-right border border-gray-300 rounded px-2"
+                  />
+                  <span className="text-[11.5px] text-gray-400">บาท</span>
+                </div>
               </div>
               {/* ปุ่มเพิ่ม/ลดเป้า 44px กดด้วยนิ้วได้ */}
               <div className="flex items-center gap-1 shrink-0">
@@ -553,7 +591,7 @@ export default function CorePosPage() {
                   className="w-11 h-11 rounded-lg border border-gray-300 text-[20px] text-gray-600 hover:bg-gray-50">+</button>
               </div>
               <span className="text-[15px] font-bold text-gray-900 w-24 text-right shrink-0">
-                {fmtBaht(c.price * c.qty)}
+                {fmtBaht(Math.max(0, c.price - (c.discount || 0)) * c.qty)}
               </span>
               <button onClick={() => removeLine(c.sku)}
                 className="w-11 h-11 rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 shrink-0" title="เอาออกจากบิล">✕</button>
@@ -568,13 +606,27 @@ export default function CorePosPage() {
             </div>
             <div className="flex justify-between text-[13px] py-0.5">
               <span className="text-gray-600">ราคารวม</span>
-              <span className="text-gray-800">{fmtBaht(total)}</span>
+              <span className="text-gray-800">{fmtBaht(subtotal + lineDiscount)}</span>
             </div>
-            {/* เว้นที่ไว้ให้ส่วนลด — เครื่องจริงมีสองบรรทัดนี้ ยังไม่ทำรอบแรก
-                เว้นไว้เลยจะได้ไม่ต้องรื้อผังตอนเพิ่มทีหลัง */}
-            <div className="flex justify-between text-[13px] py-0.5 text-gray-400">
-              <span>ส่วนลด</span>
-              <span>ยังไม่รองรับ</span>
+            <div className="flex justify-between text-[13px] py-0.5">
+              <span className="text-gray-600">ส่วนลดรายชิ้น</span>
+              <span className={lineDiscount > 0 ? 'text-red-600' : 'text-gray-400'}>
+                {lineDiscount > 0 ? `− ${fmtBaht(lineDiscount)}` : '—'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between text-[13px] py-0.5">
+              <span className="text-gray-600">ส่วนลดท้ายบิล</span>
+              <span className="flex items-center gap-1.5">
+                <span className="text-red-600">−</span>
+                <input
+                  value={billDiscount}
+                  onChange={(e) => setBillDiscount(e.target.value.replace(/[^0-9.]/g, ''))}
+                  inputMode="decimal"
+                  placeholder="0"
+                  className="w-24 h-8 text-[12.5px] text-right border border-gray-300 rounded px-2 bg-white"
+                />
+                <span className="text-[11.5px] text-gray-400">บาท</span>
+              </span>
             </div>
             <div className="flex items-baseline justify-between pt-2 mt-1 border-t border-blue-200">
               <span className="text-[15px] font-bold text-gray-800">ราคาสุทธิ</span>
