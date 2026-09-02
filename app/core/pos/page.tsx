@@ -60,6 +60,10 @@ export default function CorePosPage() {
   const [held, setHeld] = useState<HeldBill[]>([])
   // 🔴 ยืนยัน "ตั้งใจแจกฟรี" — ต้องติ๊กเองเท่านั้น ห้ามติ๊กให้อัตโนมัติ
   const [allowZero, setAllowZero] = useState(false)
+  // เครื่องจริงแยกเป็นขั้น ๆ (หัวจอเขียน "1.ตะกร้าสินค้า" → "3.ชำระเงิน")
+  const [step, setStep] = useState<'cart' | 'pay'>('cart')
+  const [payMethod, setPayMethod] = useState<'cash' | 'credit' | 'transfer'>('cash')
+  const [tendered, setTendered] = useState('')   // เงินที่รับมา (กดจากแป้นตัวเลข)
   const searchRef = useRef<HTMLInputElement>(null)
 
   // บิลที่พักไว้ — อ่านครั้งเดียวตอนเปิดจอ
@@ -198,6 +202,15 @@ export default function CorePosPage() {
     [zeroLines]
   )
   const total = useMemo(() => cart.reduce((s, c) => s + c.price * c.qty, 0), [cart])
+  // เงินทอน — ติดลบแปลว่ารับเงินมาไม่พอ ต้องบอกว่าขาดอีกเท่าไหร่ ไม่ใช่โชว์เลขติดลบเฉย ๆ
+  const change = (Number(tendered) || 0) - total
+
+  function tapKey(k: string) {
+    if (k === 'AC') { setTendered(''); return }
+    // กันจุดทศนิยมซ้ำ — กดรัว ๆ ตอนรีบแล้วได้ "12..5" ซึ่งกลายเป็น NaN
+    if (k === '.' && tendered.includes('.')) return
+    setTendered((prev) => (prev === '0' && k !== '.' ? k : prev + k))
+  }
   const count = useMemo(() => cart.reduce((s, c) => s + c.qty, 0), [cart])
 
   async function checkout() {
@@ -215,6 +228,9 @@ export default function CorePosPage() {
           customer: customer.trim() || undefined,
           // ส่งเฉพาะตอนคนขายติ๊กยืนยันเองว่าตั้งใจแจกฟรี
           ...(allowZero ? { allowZero: true } : {}),
+          // ⚠️ ท่อยังไม่มีที่เก็บวิธีจ่าย (ขอไว้แล้ว) — ส่งไปก่อนได้ ฟิลด์เกินถูกมองข้าม
+          //    วันที่ท่อรับ ข้อมูลจะครบตั้งแต่ใบแรกโดยไม่ต้องมาไล่เติมย้อนหลัง
+          payMethod,
           items: cart.map((c) => ({ sku: c.sku, name: c.name, qty: c.qty, price: c.price })),
         }),
       })
@@ -234,6 +250,8 @@ export default function CorePosPage() {
         duplicate: !!d?.duplicate,
       })
       setAllowZero(false)
+      setStep('cart')
+      setTendered('')
       setCart([])
       setCustomer('')
       await loadSales()
@@ -308,11 +326,85 @@ export default function CorePosPage() {
       {/* ── สองแผงแบบเครื่องจริง: ซ้าย = เลือกสินค้า · ขวา = ตะกร้า + สรุป ── */}
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(320px,400px)_1fr] gap-3 items-start">
 
-        {/* แผงซ้าย */}
+        {/* แผงซ้าย — สลับตามขั้นตอน เหมือนเครื่องจริงที่หัวจอเขียน 1.ตะกร้าสินค้า / 3.ชำระเงิน */}
         <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
-          <div className="px-3 py-2.5 border-b border-gray-100">
-            <p className="text-[13.5px] font-bold text-gray-800">เลือกสินค้า</p>
+          <div className="px-3 py-2.5 border-b border-gray-100 flex items-center gap-2">
+            {step === 'pay' && (
+              <button onClick={() => setStep('cart')} className="text-[15px] text-gray-500 hover:text-gray-800" title="กลับไปแก้บิล">←</button>
+            )}
+            <p className="text-[13.5px] font-bold text-gray-800">
+              {step === 'cart' ? '1. เลือกสินค้า' : '2. ชำระเงิน'}
+            </p>
           </div>
+
+          {/* ── ขั้นชำระเงิน: เลือกวิธีจ่าย + แป้นตัวเลข + เงินทอน ── */}
+          {step === 'pay' && (
+            <div className="p-3">
+              <div className="flex">
+                {([['cash', 'เงินสด'], ['credit', 'บัตรเครดิต'], ['transfer', 'โอนเงิน']] as const).map(([id, label]) => (
+                  <button
+                    key={id}
+                    onClick={() => setPayMethod(id)}
+                    className={`flex-1 text-[13px] font-semibold py-2.5 border transition-colors ${
+                      payMethod === id
+                        ? 'bg-[#1b3b73] text-white border-[#1b3b73]'
+                        : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-3 border border-gray-300 rounded-lg px-4 py-3 text-right">
+                <p className="text-[11.5px] text-gray-400">รับเงินมา</p>
+                <p className="text-[30px] font-black text-gray-900 leading-tight">
+                  {tendered === '' ? '0' : tendered}
+                </p>
+              </div>
+
+              {/* เงินทอน — คำนวณให้เลย แคชเชียร์จะได้ไม่ต้องคิดในหัวตอนลูกค้ารอ */}
+              <div className="mt-2 flex items-baseline justify-between px-1">
+                <span className="text-[13px] text-gray-600">เงินทอน</span>
+                <span className={`text-[20px] font-bold ${change < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
+                  {change < 0 ? `ขาดอีก ${fmtBaht(-change)}` : fmtBaht(change)}
+                </span>
+              </div>
+
+              {/* แป้นตัวเลขแบบเครื่องจริง — ปุ่มใหญ่ กดด้วยนิ้วได้ */}
+              <div className="grid grid-cols-3 gap-2 mt-3">
+                {['7', '8', '9', '4', '5', '6', '1', '2', '3', 'AC', '0', '.'].map((k) => (
+                  <button
+                    key={k}
+                    onClick={() => tapKey(k)}
+                    className={`h-14 rounded-lg border text-[18px] font-semibold transition-colors ${
+                      k === 'AC'
+                        ? 'border-gray-300 text-red-500 hover:bg-red-50'
+                        : 'border-gray-300 text-gray-800 hover:bg-gray-50'
+                    }`}
+                  >
+                    {k}
+                  </button>
+                ))}
+              </div>
+
+              {/* ปุ่มลัดเงินที่รับบ่อย — เครื่องจริงไม่มี แต่ช่วยให้เร็วขึ้นมากตอนรับแบงก์ */}
+              <div className="flex gap-2 mt-2">
+                {[total, 100, 500, 1000].map((v, i) => (
+                  <button
+                    key={`${v}-${i}`}
+                    onClick={() => setTendered(String(Math.round(v)))}
+                    className="flex-1 h-11 rounded-lg border border-gray-300 text-[13px] font-semibold text-gray-700 hover:bg-gray-50"
+                  >
+                    {i === 0 ? 'พอดี' : v.toLocaleString('th-TH')}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {step === 'cart' && (
+          <>
 
           <div className="p-3">
             <input
@@ -386,6 +478,8 @@ export default function CorePosPage() {
                 ⚠️ บิลที่พักไว้เก็บใน<b>เครื่องนี้เท่านั้น</b> เปลี่ยนเครื่องแล้วจะไม่ตามไป
               </p>
             </div>
+          )}
+          </>
           )}
         </div>
 
@@ -495,12 +589,16 @@ export default function CorePosPage() {
 
           {/* ปุ่มใหญ่เต็มความกว้างแบบเครื่องจริง */}
           <button
-            onClick={checkout}
+            onClick={() => (step === 'cart' ? setStep('pay') : checkout())}
             disabled={saving || !branch || cart.length === 0 || (hasZero && !allowZero)}
             className="w-full text-[18px] font-bold text-white py-4 disabled:opacity-40"
             style={{ background: '#1b3b73' }}
           >
-            {saving ? 'กำลังบันทึก…' : `เก็บเงิน ${cart.length ? fmtBaht(total) : ''}`}
+            {saving
+              ? 'กำลังบันทึก…'
+              : step === 'cart'
+                ? `ต่อไป ${cart.length ? fmtBaht(total) : ''}`
+                : 'ชำระเงิน'}
           </button>
         </div>
       </div>
