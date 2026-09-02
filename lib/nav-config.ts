@@ -22,6 +22,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/channels', label: 'ร้านค้าออนไลน์' },
       { href: '/core/finance', label: 'การเงิน' },
       { href: '/core/moves', label: 'ปรับสต็อกมือ' },
+      { href: '/core/missing-sku', label: '🚨 SKU ที่คลังไม่รู้จัก' },
     ],
   },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },

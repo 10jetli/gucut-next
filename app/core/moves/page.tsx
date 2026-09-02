@@ -110,7 +110,8 @@ export default function CoreMovesPage() {
   async function remove(id: number) {
     setMsg('')
     try {
-      const res = await fetch(`/api/web/core?movedel=${id}`, { method: 'POST' })
+      // ⚠️ ต้องเป็น DELETE — เซิร์ฟเวอร์ตอบ 405 ถ้าส่ง POST (เจอตอนอ่านโค้ดฝั่งท่อ)
+      const res = await fetch(`/api/web/core?movedel=${id}`, { method: 'DELETE' })
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
       setMsgTone('ok')
@@ -138,7 +139,8 @@ export default function CoreMovesPage() {
 
       <p className="text-[12px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
         ℹ️ คลังเงาคิดสต็อกจาก <b>ภาพถ่ายวันฐาน − ที่ขายไป</b> ซึ่งไม่รู้จักของที่ซื้อเข้ามาใหม่
-        หรือโอนระหว่างสาขาเลย · ทุกใบที่บันทึกที่นี่จะถูกนำไปบวก/ลบตอนเทียบสต็อกรอบถัดไป
+        หรือโอนระหว่างสาขาเลย · ใบที่บันทึกวันนี้จะไปมีผลใน<b>รอบเทียบของพรุ่งนี้</b>
+        (ภาพถ่ายสต็อกของวันนี้ถ่ายไปตั้งแต่ตี 1 ของที่รับเข้าตอนสายจึงยังไม่มีทางอยู่ในภาพนั้น)
       </p>
 
       <Card>
