@@ -140,6 +140,9 @@ export const NAV_ITEMS: NavItem[] = [
     ],
   },
   { href: '/core', icon: '🌳', label: 'โครงการแก่น' },
+  // ผังระบบที่อ่านจากซอร์สจริง — ไม่ใช่เมนูของ ZORT แต่เจ้าของร้านสั่งให้มี
+  // และตั้งชื่อเมนูมาเองว่า "สถาปัตยกรรมที่ใช้อยู่" (2 ก.ย. 2569)
+  { href: '/core/arch', icon: '🧭', label: 'สถาปัตยกรรมที่ใช้อยู่' },
   {
     icon: '⚙️',
     label: 'ตั้งค่า',
@@ -151,6 +154,8 @@ export const NAV_ITEMS: NavItem[] = [
       soon('setting-notify', 'การแจ้งเตือน'),
       soon('setting-autoreport', 'รายงานอัตโนมัติ'),
       { href: '/settings/connections', label: 'เชื่อมต่อบริการอื่น' },
+      // เจ้าของร้านสั่ง "ห้ามข้อมูลหาย · เรียกคืนได้ กันเหนียว" (2 ก.ย. 2569)
+      { href: '/core/backup', label: 'สำรองข้อมูล' },
     ],
   },
   {
