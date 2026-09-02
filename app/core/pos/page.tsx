@@ -33,6 +33,7 @@ import { PageHead, Pill } from '@/components/zort'
 
 interface Branch { code: string; name: string }
 interface Found { sku: string; name: string; price: number; qty: number }
+interface Cat { code: string; name: string; items: number }
 interface CartLine { sku: string; name: string; price: number; qty: number; discount: number }
 interface SaleRow {
   number: string; channel: string; status: string
@@ -43,6 +44,11 @@ const BRANCH_KEY = 'gucut-pos-branch'
 const HOLD_KEY = 'gucut-pos-held'   // บิลที่พักไว้ — เก็บในเครื่อง ไม่แตะเซิร์ฟเวอร์
 
 interface HeldBill { id: string; at: string; customer: string; lines: CartLine[] }
+// 🪚 เลื่อยยนต์ในคลังร้านนี้ **ทุกตัวเป็นแบบมีทะเบียน** (ฝั่งท่อหลังบ้านตรวจทั้งคลังแล้ว 104 ตัว)
+//    ขายแล้วต้องทำเรื่อง ลซ.๒ ให้ลูกค้า ⇒ คนขายต้องรู้ตั้งแต่ตอนหยิบลงบิล ไม่ใช่ตอนจะเก็บเงิน
+// ⚠️ ตอนนี้เดาจากชื่อสินค้า — ขอธงจากเซิร์ฟเวอร์ไว้แล้ว ได้เมื่อไหร่ให้เปลี่ยนมาใช้ธงแทน
+const needsPermit = (name: string) => /^\s*เลื่อยยนต์/.test(String(name ?? ''))
+
 const thaiToday = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
 
 export default function CorePosPage() {
@@ -51,6 +57,9 @@ export default function CorePosPage() {
   const [q, setQ] = useState('')
   const [found, setFound] = useState<Found[]>([])
   const [looking, setLooking] = useState(false)
+  const [cats, setCats] = useState<Cat[]>([])
+  const [cat, setCat] = useState('')          // หมวดที่เปิดอยู่ ('' = ยังไม่ได้เลือก)
+  const [catTotal, setCatTotal] = useState(0) // มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
   const [cart, setCart] = useState<CartLine[]>([])
   const [customer, setCustomer] = useState('')
   const [saving, setSaving] = useState(false)
@@ -140,6 +149,33 @@ export default function CorePosPage() {
       .catch(() => setError('ดึงรายชื่อสาขาไม่ได้ — เปิดบิลไม่ได้จนกว่าจะรู้ว่าขายที่สาขาไหน'))
   }, [])
 
+  // รายชื่อหมวด — เรียงมาให้แล้วจากเซิร์ฟเวอร์ ห้ามจัดลำดับเอง
+  useEffect(() => {
+    fetch('/api/web/core?list=poscats')
+      .then((r) => r.json())
+      .then((d) => setCats(Array.isArray(d?.cats) ? d.cats : []))
+      .catch(() => setCats([]))
+  }, [])
+
+  // เปิดหมวด — ดึงได้ถึง 200 ตัว และต้องบอกด้วยว่าทั้งหมวดมีกี่ตัว
+  // ⚠️ หมวดใหญ่สุดมี 462 ตัว ถ้าไม่บอก total คนขายจะนึกว่าเห็นครบแล้ว
+  const openCat = useCallback(async (code: string) => {
+    setCat(code)
+    setQ('')
+    setLooking(true)
+    try {
+      const res = await fetch(`/api/web/core?poslookup=&cat=${encodeURIComponent(code)}&limit=200`)
+      const d = await res.json()
+      setFound(Array.isArray(d?.rows) ? d.rows : [])
+      setCatTotal(Number(d?.total) || 0)
+    } catch {
+      setFound([])
+      setCatTotal(0)
+    } finally {
+      setLooking(false)
+    }
+  }, [])
+
   const pickBranch = (code: string) => {
     setBranch(code)
     try { localStorage.setItem(BRANCH_KEY, code) } catch {}
@@ -176,7 +212,9 @@ export default function CorePosPage() {
   // ── ค้นหาสินค้า: หน่วง 300ms พอ (เป็นการอ่าน ยิงถี่ได้แต่ไม่ต้องยิงทุกตัวอักษร) ──
   useEffect(() => {
     const term = q.trim()
-    if (!term) { setFound([]); return }
+    // พิมพ์ค้นหา = ออกจากโหมดดูหมวด (แต่ปุ่มหมวดยังอยู่ให้กดกลับได้)
+    if (!term) { if (!cat) setFound([]); return }
+    setCat('')
     let alive = true
     setLooking(true)
     const t = setTimeout(() => {
@@ -187,7 +225,7 @@ export default function CorePosPage() {
         .finally(() => { if (alive) setLooking(false) })
     }, 300)
     return () => { alive = false; clearTimeout(t) }
-  }, [q])
+  }, [q, cat])
 
   function addToCart(it: Found) {
     setCart((prev) => {
@@ -202,7 +240,12 @@ export default function CorePosPage() {
     // 🔴 **เตือนตรงนี้เลย ไม่ใช่ตอนกดเก็บเงิน** — ของจริงคือแคชเชียร์ยิงบาร์โค้ดรัว ๆ
     //    ถ้าไปเตือนตอนท้าย เขาจะไม่รู้ว่าตัวไหนราคา 0 และอาจกดยืนยันผ่านไปเลย
     //    (เจอจริงตอนทดสอบ: รหัส 03409-3 ราคา 0 ⇒ บิลออก ฿0 โดยไม่มีอะไรเตือน = ขายฟรีไม่รู้ตัว)
-    if ((Number(it.price) || 0) <= 0) {
+    // 🪚 เตือนเรื่องทะเบียนตั้งแต่ตอนหยิบลงบิล — คนขายจะได้บอกลูกค้าทันที
+    //    ไม่ใช่มารู้ตอนเก็บเงินแล้วลูกค้าเดินออกไปแล้ว
+    if (needsPermit(it.name)) {
+      setError(`🪚 "${it.name}" เป็นเลื่อยยนต์แบบมีทะเบียน — ขายแล้ว`
+        + 'ต้องทำเรื่อง ลซ.๒ ให้ลูกค้า (ดูขั้นตอนที่ gucut.com/permit)')
+    } else if ((Number(it.price) || 0) <= 0) {
       setError(`⚠️ "${it.name || it.sku}" ราคา 0 บาท (ยังไม่ได้ตั้งราคาในคลัง) — `
         + 'ใส่ลงบิลแล้วแต่จะเก็บเงินไม่ได้จนกว่าจะยืนยันว่าตั้งใจแจกฟรี')
     } else {
@@ -467,13 +510,42 @@ export default function CorePosPage() {
               className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1b3b73]"
             />
             {looking && <p className="text-[12px] text-gray-400 mt-1">กำลังค้น…</p>}
-            {!q.trim() && (
-              <p className="text-[12px] text-gray-400 mt-2 leading-relaxed">
-                เครื่องจริงที่หน้าร้านเลือกจาก<b>หมวดหมู่</b>ได้ด้วย —
-                ของเรายังไม่มีข้อมูลหมวดหมู่ในคลัง (ขอไว้แล้ว) ระหว่างนี้ใช้ค้นหาไปก่อน
-              </p>
-            )}
           </div>
+
+          {/* ── ปุ่มหมวดหมู่ — เครื่องจริงเลือกจากตรงนี้เป็นหลัก ── */}
+          {!q.trim() && (
+            <div className="px-3 pb-3">
+              {cat && (
+                <button
+                  onClick={() => { setCat(''); setFound([]); setCatTotal(0) }}
+                  className="text-[12.5px] text-blue-600 hover:underline mb-2"
+                >
+                  ‹ กลับไปเลือกหมวด
+                </button>
+              )}
+              {!cat && (
+                <div className="grid grid-cols-1 gap-1.5 max-h-[420px] overflow-y-auto">
+                  {cats.length === 0 && <p className="text-[12.5px] text-gray-400">กำลังโหลดหมวด…</p>}
+                  {cats.map((c) => (
+                    <button
+                      key={c.code}
+                      onClick={() => openCat(c.code)}
+                      className="w-full flex items-center justify-between gap-2 text-left border border-gray-300 rounded-lg px-3 py-3 hover:bg-blue-50 transition-colors"
+                    >
+                      <span className="text-[13.5px] text-gray-800 truncate">{c.name}</span>
+                      <span className="text-[12px] text-gray-400 shrink-0">{c.items.toLocaleString('th-TH')}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {cat && catTotal > found.length && (
+                <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-2.5 py-1.5">
+                  หมวดนี้มีทั้งหมด <b>{catTotal.toLocaleString('th-TH')}</b> ตัว
+                  แสดง {found.length.toLocaleString('th-TH')} ตัวแรก — ใช้ช่องค้นหาด้านบนหาตัวที่ต้องการ
+                </p>
+              )}
+            </div>
+          )}
 
           {/* ผลค้นหา — กดทั้งแถวเพื่อเพิ่ม เป้าใหญ่กดด้วยนิ้วได้ */}
           {found.map((f) => (
@@ -483,7 +555,14 @@ export default function CorePosPage() {
               className="w-full flex items-center gap-3 px-3 py-3 border-t border-gray-100 text-left hover:bg-blue-50 transition-colors"
             >
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-medium text-gray-800 truncate">{f.name || f.sku}</p>
+                <p className="text-[14px] font-medium text-gray-800 truncate">
+                  {f.name || f.sku}
+                  {needsPermit(f.name) && (
+                    <span className="ml-1.5 text-[10.5px] font-semibold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">
+                      ต้องขอ ลซ.๒
+                    </span>
+                  )}
+                </p>
                 <p className="text-[12px] text-gray-400">
                   {f.sku}
                   {/* 🔴 คงเหลือเป็นตัวช่วยดูเท่านั้น ห้ามเอาไปบล็อกการขาย */}
@@ -559,7 +638,14 @@ export default function CorePosPage() {
           {cart.map((c) => (
             <div key={c.sku} className="flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-0">
               <div className="min-w-0 flex-1">
-                <p className="text-[14px] font-medium text-gray-800 truncate">{c.name || c.sku}</p>
+                <p className="text-[14px] font-medium text-gray-800 truncate">
+                  {c.name || c.sku}
+                  {needsPermit(c.name) && (
+                    <span className="ml-1.5 text-[10.5px] font-semibold text-amber-700 bg-amber-100 rounded px-1.5 py-0.5">
+                      ต้องขอ ลซ.๒
+                    </span>
+                  )}
+                </p>
                 <p className={`text-[12px] ${(Number(c.price) || 0) <= 0 ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
                   {c.sku} · {fmtBaht(c.price)}/ชิ้น
                   {(Number(c.price) || 0) <= 0 && ' — ยังไม่ได้ตั้งราคา'}
