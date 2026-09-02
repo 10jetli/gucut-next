@@ -21,6 +21,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/purchases', label: 'รายการซื้อ' },
       { href: '/core/channels', label: 'ร้านค้าออนไลน์' },
       { href: '/core/finance', label: 'การเงิน' },
+      { href: '/core/moves', label: 'ปรับสต็อกมือ' },
     ],
   },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
