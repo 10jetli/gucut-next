@@ -13,7 +13,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, summaryLine,
+  BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu,
 } from '@/components/zort'
 
 interface Row {
@@ -21,12 +21,13 @@ interface Row {
   status: string; amount: number; customer: string; order_date: string
 }
 interface ChannelRow { channel: string; orders: number; amount: number }
+interface StatusRow { status: string; orders: number; amount: number }
 interface ListResp {
   skip?: string
   from: string; to: string
   total: number; totalAmount: number
   limit: number; offset: number
-  rows: Row[]; byChannel: ChannelRow[]; channels: string[]
+  rows: Row[]; byChannel: ChannelRow[]; byStatus: StatusRow[]; channels: string[]
 }
 interface Detail {
   error?: string
@@ -49,6 +50,9 @@ export default function CoreSalesPage() {
   const router = useRouter()
   const [days, setDays] = useState(90)
   const [channel, setChannel] = useState('')
+  // ⚠️ แท็บของ ZORT เป็น "สถานะ" ไม่ใช่ช่องทาง — คนที่ชิน ZORT จะมองหาแท็บ "รอโอน"
+  //    ช่องทางของ ZORT อยู่เป็นคอลัมน์ + ตัวกรอง เราจึงย้ายมาเป็น dropdown ให้ตรงกัน
+  const [status, setStatus] = useState('')
   const [q, setQ] = useState('')
   const [cancelled, setCancelled] = useState(false)
   const [offset, setOffset] = useState(0)
@@ -57,9 +61,13 @@ export default function CoreSalesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (off = 0, opt?: { days?: number; channel?: string; cancelled?: boolean }) => {
+  const load = useCallback(async (
+    off = 0,
+    opt?: { days?: number; channel?: string; status?: string; cancelled?: boolean },
+  ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
+    const st = opt?.status ?? status
     const withCancel = opt?.cancelled ?? cancelled
     setLoading(true)
     setError('')
@@ -69,6 +77,7 @@ export default function CoreSalesPage() {
         limit: String(PAGE), offset: String(off),
       })
       if (ch) qs.set('channel', ch)
+      if (st) qs.set('status', st)
       if (q.trim()) qs.set('q', q.trim())
       if (withCancel) qs.set('cancelled', '1')
       const res = await fetch(`/api/web/core?${qs}`)
@@ -81,7 +90,7 @@ export default function CoreSalesPage() {
     } finally {
       setLoading(false)
     }
-  }, [days, channel, cancelled, q])
+  }, [days, channel, status, cancelled, q])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -101,10 +110,14 @@ export default function CoreSalesPage() {
   const rows = data?.rows ?? []
   const shown = offset + rows.length
 
-  // แท็บช่องทาง — ZORT ใช้แท็บสถานะพร้อมจำนวนในวงเล็บ ของเราใช้ช่องทางเพราะมีข้อมูลจริง
+  // แท็บสถานะพร้อมจำนวนในวงเล็บ — ลอกจาก ZORT (ทั้งหมด · รอโอน (21) · รอชำระ (12) · สำเร็จ)
+  // byStatus จากเซิร์ฟเวอร์ไม่ถูกกรองด้วยสถานะที่เลือกอยู่ แท็บอื่นจึงยังบอกจำนวนได้เสมอ
+  const allCount = (data?.byStatus ?? []).reduce((s2, r) => s2 + Number(r.orders || 0), 0)
   const tabs = [
-    { id: '', label: 'ทั้งหมด', count: data?.total },
-    ...(data?.byChannel ?? []).map((c) => ({ id: c.channel, label: c.channel, count: c.orders })),
+    { id: '', label: 'ทั้งหมด', count: allCount || data?.total },
+    ...(data?.byStatus ?? []).map((r) => ({
+      id: r.status, label: r.status || 'ไม่ระบุสถานะ', count: r.orders,
+    })),
   ]
 
   return (
@@ -138,6 +151,14 @@ export default function CoreSalesPage() {
         advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
         right={
           <>
+            <select
+              value={channel}
+              onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
+              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+            >
+              <option value="">ทุกช่องทาง</option>
+              {(data?.channels ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
             <span className="text-[13px] text-gray-500">แสดง</span>
             <select
               value={days}
@@ -167,8 +188,8 @@ export default function CoreSalesPage() {
         <>
           <Tabs
             tabs={tabs}
-            active={channel}
-            onChange={(id) => { setChannel(id); load(0, { channel: id }) }}
+            active={status}
+            onChange={(id) => { setStatus(id); load(0, { status: id }) }}
           />
 
           <TableWrap>
@@ -182,11 +203,12 @@ export default function CoreSalesPage() {
                   <th className={TH}>ช่องทาง</th>
                   <th className={THR}>มูลค่า</th>
                   <th className={TH}>สถานะ</th>
+                  <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={7} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบใบขายในเงื่อนไขนี้</td></tr>
+                  <tr><td colSpan={8} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบใบขายในเงื่อนไขนี้</td></tr>
                 )}
                 {rows.map((r, i) => (
                   <tr
@@ -195,14 +217,32 @@ export default function CoreSalesPage() {
                     className="border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50"
                   >
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap text-gray-500`}>{r.order_date}</td>
+                    {/* ZORT เขียน "วันนี้/เมื่อวานนี้" ไม่ใช่วันที่ดิบ — อ่านเร็วกว่าตอนกวาดตา */}
+                    <td className={`${TD} whitespace-nowrap text-gray-500`} title={r.order_date}>
+                      {relDay(r.order_date)}
+                    </td>
                     <td className={TD}>
                       <span className="text-blue-600 font-medium">{r.number}</span>
                     </td>
                     <td className={`${TD} max-w-[190px] truncate`}>{r.customer || '—'}</td>
-                    <td className={TD}>{r.channel || '—'}</td>
+                    <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>
                     <td className={TDR}>{fmtBaht(r.amount)}</td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status)}>{r.status || '—'}</Pill></td>
+                    <td className={`${TD} text-right`} onClick={(e) => e.stopPropagation()}>
+                      <RowMenu
+                        items={[
+                          { label: 'เปิดรายละเอียด', onClick: () => openDetail(r.id, i) },
+                          {
+                            label: 'คัดลอกเลขที่ใบ',
+                            onClick: () => { navigator.clipboard?.writeText(r.number).catch(() => {}) },
+                          },
+                          {
+                            label: `ดูเฉพาะ ${r.channel || 'ช่องทางนี้'}`,
+                            onClick: () => { setChannel(r.channel); load(0, { channel: r.channel }) },
+                          },
+                        ]}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>

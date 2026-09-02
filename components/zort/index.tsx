@@ -9,7 +9,7 @@
 //   ชื่อจอตัวใหญ่หนา → บรรทัดสรุป "จำนวน N รายการ, มูลค่าทั้งหมด X บาท" → ปุ่มขวาบน
 //   → แถวค้นหา (ช่องกลม + ลิงก์ค้นหาขั้นสูง · ขวาเป็นตัวกรอง) → แท็บสถานะมีจำนวนในวงเล็บ
 //   → ตารางหัวเทาตัวเล็ก คอลัมน์แรกเป็นเลขลำดับ ลิงก์สีน้ำเงิน สถานะเป็นป้ายกลม เลขลบสีแดง
-import type { ReactNode } from 'react'
+import { useState, type ReactNode } from 'react'
 
 export const ZORT_BLUE = '#1b3b73'
 
@@ -173,6 +173,73 @@ export function Num({ v, zeroRed = false }: { v: number; zeroRed?: boolean }) {
   return (
     <span className={red ? 'text-red-500 font-semibold' : 'text-gray-800'}>
       {v.toLocaleString('th-TH')}
+    </span>
+  )
+}
+
+/* ── ป้ายช่องทางขาย ────────────────────────────────────────────────────
+   ZORT วางโลโก้แพลตฟอร์มนำหน้าชื่อช่องทาง เพื่อให้กวาดตาแล้วรู้ทันทีว่าใบไหนมาจากไหน
+   ⚠️ เรามีแต่โลโก้ TikTok ในโปรเจกต์ ไม่มี Shopee/Lazada — **ไม่ใช้โลโก้ปลอม**
+      ใช้จุดสีประจำช่องทางแทน ได้ผลเดียวกันคือกวาดตาแล้วแยกออก และไม่อ้างของที่ไม่มี */
+const CHANNEL_DOT: [RegExp, string][] = [
+  [/shopee/i, 'bg-orange-500'],
+  [/lazada/i, 'bg-indigo-500'],
+  [/tiktok/i, 'bg-gray-900'],
+  [/gucut|เว็บ|web/i, 'bg-red-500'],
+  [/pos|หน้าร้าน/i, 'bg-emerald-500'],
+]
+export function ChannelTag({ name }: { name: string }) {
+  if (!name) return <span className="text-gray-400">—</span>
+  const dot = CHANNEL_DOT.find(([re]) => re.test(name))?.[1] ?? 'bg-gray-400'
+  return (
+    <span className="inline-flex items-center gap-1.5 min-w-0">
+      <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />
+      <span className="truncate">{name}</span>
+    </span>
+  )
+}
+
+/** วันที่แบบ ZORT: ใบล่าสุดเขียน "วันนี้ / เมื่อวานนี้" ไม่ใช่วันที่ดิบ
+ *  ⚠️ เทียบด้วย "วันแบบไทย" เท่านั้น — ใช้วันของเครื่องผู้ใช้จะเพี้ยนถ้าเขาตั้งโซนเวลาอื่น */
+export function relDay(day: string): string {
+  if (!day) return '—'
+  const thai = (back: number) =>
+    new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
+  if (day === thai(0)) return 'วันนี้'
+  if (day === thai(1)) return 'เมื่อวานนี้'
+  return day
+}
+
+/* ── เมนูจุดสามจุดท้ายแถว ──────────────────────────────────────────────
+   ⚠️ ใส่เฉพาะคำสั่งที่ทำได้จริง — ปุ่มที่กดแล้วไม่เกิดอะไรแย่กว่าไม่มีปุ่ม */
+export function RowMenu({ items }: { items: { label: string; onClick: () => void }[] }) {
+  const [open, setOpen] = useState(false)
+  return (
+    <span className="relative inline-block">
+      <button
+        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
+        className="w-6 h-6 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 leading-none"
+        title="เมนูลัด"
+      >
+        ⋮
+      </button>
+      {open && (
+        <>
+          {/* คลิกที่ไหนก็ได้เพื่อปิด — ไม่งั้นเมนูค้างจนกว่าจะกดปุ่มเดิมซ้ำ */}
+          <span className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false) }} />
+          <span className="absolute right-0 top-7 z-20 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[150px] block">
+            {items.map((it) => (
+              <button
+                key={it.label}
+                onClick={(e) => { e.stopPropagation(); setOpen(false); it.onClick() }}
+                className="block w-full text-left text-[12.5px] text-gray-700 px-3 py-1.5 hover:bg-gray-50"
+              >
+                {it.label}
+              </button>
+            ))}
+          </span>
+        </>
+      )}
     </span>
   )
 }
