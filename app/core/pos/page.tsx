@@ -87,6 +87,9 @@ export default function CorePosPage() {
   const [cats, setCats] = useState<Cat[]>([])
   const [cat, setCat] = useState('')          // หมวดที่เปิดอยู่ ('' = ยังไม่ได้เลือก)
   const [catTotal, setCatTotal] = useState(0) // มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
+  // ⚠️ ผลค้นหาก็ต้องบอกจำนวนที่เจอจริงเหมือนกัน — ไม่งั้นคนขายค้นแล้วเห็น 20 ตัว
+  //    นึกว่าร้านมีแค่นั้น ทั้งที่มี 124 ตัว (โรคเดิม: ตัวเลขกับรายการมาคนละที่)
+  const [searchTotal, setSearchTotal] = useState(0)
   const [cart, setCart] = useState<CartLine[]>([])
   const [customer, setCustomer] = useState('')
   const [saving, setSaving] = useState(false)
@@ -276,8 +279,12 @@ export default function CorePosPage() {
     const t = setTimeout(() => {
       fetch(`/api/web/core?poslookup=${encodeURIComponent(term)}&limit=20`)
         .then((r) => r.json())
-        .then((d) => { if (alive) setFound(Array.isArray(d?.rows) ? d.rows : []) })
-        .catch(() => { if (alive) setFound([]) })
+        .then((d) => {
+          if (!alive) return
+          setFound(Array.isArray(d?.rows) ? d.rows : [])
+          setSearchTotal(Number(d?.total) || 0)
+        })
+        .catch(() => { if (alive) { setFound([]); setSearchTotal(0) } })
         .finally(() => { if (alive) setLooking(false) })
     }, 300)
     return () => { alive = false; clearTimeout(t) }
@@ -599,6 +606,20 @@ export default function CorePosPage() {
               className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1b3b73]"
             />
             {looking && <p className="text-[12px] text-gray-400 mt-1">กำลังค้น…</p>}
+            {!looking && q.trim() !== '' && (
+              <p className="text-[12px] mt-1">
+                {found.length === 0
+                  ? <span className="text-gray-500">ไม่พบสินค้าที่ตรงกับ &quot;{q.trim()}&quot;</span>
+                  : searchTotal > found.length
+                    ? (
+                      <span className="text-amber-700">
+                        พบ <b>{searchTotal.toLocaleString('th-TH')}</b> รายการ แสดง {found.length} รายการแรก
+                        — พิมพ์ให้เจาะจงขึ้นถ้ายังไม่เจอตัวที่ต้องการ
+                      </span>
+                    )
+                    : <span className="text-gray-400">พบ {found.length.toLocaleString('th-TH')} รายการ</span>}
+              </p>
+            )}
           </div>
 
           {/* ── ปุ่มหมวดหมู่ — เครื่องจริงเลือกจากตรงนี้เป็นหลัก ── */}
