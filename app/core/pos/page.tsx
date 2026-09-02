@@ -45,6 +45,12 @@ interface SaleRow {
 
 const BRANCH_KEY = 'gucut-pos-branch'
 const HOLD_KEY = 'gucut-pos-held'   // บิลที่พักไว้ — เก็บในเครื่อง ไม่แตะเซิร์ฟเวอร์
+// บิลที่กำลังคิดอยู่ — เก็บไว้กันรีโหลด/แท็บปิด/เบราว์เซอร์เด้ง
+// ⚠️ ของที่ยิงเข้าบิลไปสิบกว่าตัวแล้วหายเพราะเผลอรีเฟรช คือเรื่องใหญ่ตอนลูกค้ายืนรอ
+// ⚠️ แต่ **ห้ามกู้บิลข้ามวัน** — บิลค้างจากเมื่อวานโผล่ขึ้นมาแล้วคนขายไม่ทันสังเกต
+//    จะกลายเป็นขายซ้ำหรือคิดเงินผิด ⇒ กู้เฉพาะที่ยังไม่เกิน 8 ชั่วโมง และต้องบอกให้เห็นชัด
+const DRAFT_KEY = 'gucut-pos-draft'
+const DRAFT_MAX_AGE = 8 * 3600e3
 
 interface HeldBill { id: string; at: string; customer: string; lines: CartLine[] }
 // 🪚 ใบอนุญาตเลื่อยโซ่ยนต์ — **ใช้ธง permit จากเซิร์ฟเวอร์เท่านั้น ห้ามเดาจากชื่อสินค้า**
@@ -108,14 +114,38 @@ export default function CorePosPage() {
   const [billDiscount, setBillDiscount] = useState('')   // ส่วนลดท้ายบิล (บาท)
   const searchRef = useRef<HTMLInputElement>(null)
 
-  // บิลที่พักไว้ — อ่านครั้งเดียวตอนเปิดจอ
+  // บิลที่พักไว้ + บิลที่กำลังคิดค้างอยู่ — อ่านครั้งเดียวตอนเปิดจอ
   useEffect(() => {
     try {
       const raw = localStorage.getItem(HOLD_KEY)
       const arr = raw ? JSON.parse(raw) : []
       if (Array.isArray(arr)) setHeld(arr)
     } catch { /* ของพังในเครื่องไม่ควรทำให้เปิดจอขายไม่ได้ */ }
+    try {
+      const raw = localStorage.getItem(DRAFT_KEY)
+      if (!raw) return
+      const d = JSON.parse(raw)
+      const age = Date.now() - Number(d?.at || 0)
+      if (!Array.isArray(d?.lines) || d.lines.length === 0) return
+      if (age > DRAFT_MAX_AGE) { localStorage.removeItem(DRAFT_KEY); return }
+      setCart(d.lines.map((l: CartLine) => ({ ...l, discount: Number(l.discount) || 0 })))
+      setCustomer(String(d.customer ?? ''))
+      const when = new Date(Number(d.at)).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      setNotice({
+        tone: 'info',
+        text: `กู้บิลที่ค้างไว้ตั้งแต่ ${when} มาให้ (${d.lines.length} รายการ) — `
+          + 'ถ้าไม่ใช่บิลที่กำลังคิดอยู่ กด "ล้างบิล" ได้เลย',
+      })
+    } catch { /* ร่างพังไม่ควรขวางการขาย */ }
   }, [])
+
+  // เก็บบิลที่กำลังคิดทุกครั้งที่เปลี่ยน — เขียนแค่ localStorage ไม่แตะเซิร์ฟเวอร์
+  useEffect(() => {
+    try {
+      if (cart.length === 0) localStorage.removeItem(DRAFT_KEY)
+      else localStorage.setItem(DRAFT_KEY, JSON.stringify({ at: Date.now(), customer, lines: cart }))
+    } catch {}
+  }, [cart, customer])
 
   const saveHeld = (list: HeldBill[]) => {
     setHeld(list)
