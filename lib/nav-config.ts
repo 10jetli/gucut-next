@@ -69,6 +69,7 @@ export const NAV_ITEMS: NavItem[] = [
     //    ของเราจึงโชว์รายรับจากการขายจริงแทน ซึ่งมีประโยชน์กว่าลอกจอเปล่ามา
     children: [
       { href: '/core/finance', label: 'ภาพรวม' },
+      { href: '/core/peak', label: 'สะพานส่งเข้า PEAK' },
       { href: '/bills', label: 'รวมบิลทุกเจ้า' },
       ...BILL_VENDORS.map((v) => ({ href: `/bills/${v.id}`, label: v.name })),
     ],
