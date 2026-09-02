@@ -32,6 +32,7 @@ export const NAV_ITEMS: NavItem[] = [
     icon: '🧾',
     label: 'รายการขาย',
     children: [
+      { href: '/core/pos', label: '🧮 ขายหน้าร้าน (POS)' },
       { href: '/core/sales', label: 'ดูรายการขาย' },
       { href: '/tracker', label: 'ติดตามออเดอร์' },
       { href: '/returns', label: 'สินค้าที่ลูกค้าคืน' },
