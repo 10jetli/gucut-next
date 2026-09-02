@@ -56,15 +56,55 @@ interface Arch {
 const W = 1160          // ความกว้าง viewBox
 const M = 60            // ขอบซ้าย/ขวา
 const IN = W - M * 2    // 1040
-const ACT_Y = 40, ACT_H = 62
-const SITE_Y = 180, SITE_H = 104
-const STO_Y = 380, STO_H = 100
+const ACT_Y = 40
 const SITE_W = 470
 const SITE_R_X = W - M - SITE_W   // 630
 const STO_W = (IN - 24 * 3) / 4   // 242
 const stoX = (i: number) => M + i * (STO_W + 24)
 const actW = (IN - 26 * 3) / 4    // 240.5
 const actX = (i: number) => M + i * (actW + 26)
+
+/* ── ความสูงกล่องต้องคิดจากเนื้อในจริง ห้ามตั้งค่าคงที่ ──
+   ⚠️ 3 ก.ย. 2569 เจอของจริงบนจอ: ตัวหนังสือทะลุกรอบ 9 จุด
+      เส้นขอบส้มของกล่อง gucut.com ลากผ่ากลางบรรทัดล่างสุด · ชื่อถัง 4 ใบล้นออกทั้งสองข้าง
+      สาเหตุ: ตั้งความสูง/ความกว้างเป็นค่าคงที่ แต่ **ภาษาไทยมีสระบนล่าง**
+      (ำ ุ ู ่ ้ ๊) กินความสูงมากกว่าที่ค่าเริ่มต้นเผื่อไว้ และชื่อถังภาษาอังกฤษยาวกว่ากล่อง
+   ⚠️ **หน้านี้ทั้งหน้ามีไว้เพื่อห้ามผังโกหก แต่กรอบดันตัดตัวเลขของตัวเองทิ้ง**
+      ตัวเลขถูกทุกตัวแต่คนอ่านเห็นไม่ครบ = โรคเดิม ย้ายจาก "ข้อมูลผิด" มาเป็น
+      "ข้อมูลถูกแต่มองไม่เห็น" · build ผ่าน ไม่มีอะไรฟ้อง ต้องเปิดจอถึงเห็น */
+const PAD_T = 18, PAD_B = 15, LINE_H = 22
+
+/** ความกว้างข้อความโดยประมาณ — ไทยกับอังกฤษปนกัน ใช้ 0.53em เป็นค่ากลาง
+ *  ประมาณให้**เกินจริงเล็กน้อย**ดีกว่าขาด เพราะขาดแปลว่าล้นกรอบ */
+function estW(text: string, fs: number) {
+  return String(text ?? '').length * fs * 0.53
+}
+
+/** ตัดบรรทัดยาวตรงคั่น " · " ให้พอดีกล่อง — ตัดไม่ได้ก็คืนทั้งก้อน (ยอมล้นดีกว่าตัดคำ) */
+function fitLines(text: string, w: number, fs: number): string[] {
+  const max = w - 32
+  if (!text) return []
+  if (estW(text, fs) <= max) return [text]
+  const parts = String(text).split(' · ')
+  const out: string[] = []
+  let cur = ''
+  for (const part of parts) {
+    const next = cur ? `${cur} · ${part}` : part
+    if (!cur || estW(next, fs) <= max) cur = next
+    else { out.push(cur); cur = part }
+  }
+  if (cur) out.push(cur)
+  return out
+}
+
+const bodyLines = (lines: (string | undefined)[] | undefined, w: number) =>
+  (lines ?? []).filter(Boolean).flatMap((l) => fitLines(String(l), w, 14))
+
+/** ความสูงที่กล่องต้องใช้จริง — Card ใช้สูตรเดียวกันนี้ จึงไม่มีทางไม่ตรงกัน */
+function cardH(lines: (string | undefined)[] | undefined, w: number, hasMeta = false, accent = false) {
+  const titleSize = accent ? 21 : 16
+  return PAD_T + titleSize * 0.8 + (hasMeta ? 22 : 0) + bodyLines(lines, w).length * LINE_H + PAD_B
+}
 
 /** งานตามเวลาบน Netlify ตั้งเป็น **เวลาสากล** — แปลงเป็นเวลาไทยให้อ่านออก
  *  ⚠️ แปลเฉพาะรูปที่แน่ใจจริง ๆ · รูปอื่นคืน null แล้วโชว์ค่าดิบ
@@ -90,38 +130,44 @@ function cronThai(cron: string): string | null {
 /* ── ชิ้นส่วนของ SVG ── */
 
 function Card({
-  x, y, w, h, title, meta, lines, accent, fill, dashed, titleAnchor = 'middle',
+  x, y, w, title, meta, lines, accent, fill, dashed, titleAnchor = 'middle', h,
 }: {
-  x: number; y: number; w: number; h: number
+  x: number; y: number; w: number
   title: string
   meta?: string
-  lines?: string[]
+  lines?: (string | undefined)[]
   accent?: boolean
   fill?: string
   dashed?: boolean
   titleAnchor?: 'middle' | 'start'
+  /** ความสูงของแถว — กล่องจะสูงอย่างน้อยเท่าเนื้อในเสมอ ไม่ยอมให้ตัวหนังสือทะลุ */
+  h?: number
 }) {
+  const titleSize = accent ? 21 : 16
+  const body = bodyLines(lines, w)
+  const need = cardH(lines, w, !!meta, !!accent)
+  const box = Math.max(h ?? 0, need)
   const cx = titleAnchor === 'middle' ? x + w / 2 : x + 22
-  let ty = y + (meta ? 34 : 30)
+  let ty = y + PAD_T + titleSize * 0.8
   return (
     <g>
       <rect
-        x={x} y={y} width={w} height={h} rx="12"
+        x={x} y={y} width={w} height={box} rx="12"
         fill={fill ?? C.surface}
         stroke={accent ? C.accent : C.line}
         strokeWidth={accent ? 2.2 : 1.4}
         strokeDasharray={dashed ? '7 6' : undefined}
       />
-      <text x={cx} y={ty} textAnchor={titleAnchor} fontSize={accent ? 21 : 16} fontWeight="600" fill={C.ink}>
+      <text x={cx} y={ty} textAnchor={titleAnchor} fontSize={titleSize} fontWeight="600" fill={C.ink}>
         {title}
       </text>
       {meta && (
-        <text x={cx} y={(ty += 24)} textAnchor={titleAnchor} fontSize="13.5" fill={C.muted} fontFamily="ui-monospace, monospace">
+        <text x={cx} y={(ty += 22)} textAnchor={titleAnchor} fontSize="13.5" fill={C.muted} fontFamily="ui-monospace, monospace">
           {meta}
         </text>
       )}
-      {(lines ?? []).map((l, i) => (
-        <text key={i} x={cx} y={(ty += i === 0 && !meta ? 22 : 24)} textAnchor={titleAnchor} fontSize="14" fill={i === 0 && accent ? C.ink : C.muted}>
+      {body.map((l, i) => (
+        <text key={i} x={cx} y={(ty += LINE_H)} textAnchor={titleAnchor} fontSize="14" fill={C.muted}>
           {l}
         </text>
       ))}
@@ -196,23 +242,63 @@ export default function ArchPage() {
     ? new Date(A.generatedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
     : null
 
-  // ── ความสูงของสองแผงล่างขึ้นกับจำนวนบริการ จึงคำนวณก่อนวาด ──
-  const PER_ROW = 5, SB_H = 62, SB_GAP = 12
-  const liveRows = Math.max(1, Math.ceil(live.length / PER_ROW))
-  const PANEL_Y = 580
-  const PANEL_H = 42 + liveRows * SB_H + (liveRows - 1) * SB_GAP + 18
+  const n = (v?: number) => (typeof v === 'number' ? v.toLocaleString('th-TH') : 'ไม่ทราบ')
+
+  // ── ความสูงทุกแถวคิดจากเนื้อในจริง แล้วค่อยวางตำแหน่ง ──
+  //    ทำแบบนี้ตั้งแต่แรกก็ไม่มีปัญหาตัวหนังสือทะลุกรอบ (แผงล่างทำถูกอยู่แล้ว แถวบนลืมทำ)
+  const actLines = [
+    ['เบราว์เซอร์ · แอปที่ติดตั้ง (PWA)'],
+    [scheduled.length ? `${scheduled.length} ตัว · ทำงานเองตามเวลา` : 'ทำงานเองตามเวลา'],
+    ['เบราว์เซอร์'],
+    ['แจ้งเตือน + ปุ่มอนุมัติ'],
+  ]
+  const ACT_H = Math.max(...actLines.map((l) => cardH(l, actW)))
+
+  const siteLeftLines = [
+    'หน้าร้าน · ตะกร้า · เช็คเอาต์ · ฟีดคลิป · ขอทะเบียน',
+    `ไฟล์นิ่ง ${n(d?.pages?.count)} หน้า + ฟังก์ชัน ${n(fn?.count)} ตัว`
+    + (edge.length ? ` + edge ${edge.length} ตัว` : ''),
+  ]
+  const siteRightLines = [
+    `หลังร้านตัวจริง · จอ ${n(A.pages?.count)} หน้า (โครงการแก่น ${n(A.pages?.core)})`,
+    `API ของตัวเอง ${n(A.apiRoutes?.count)} เส้นทาง · ท่อกลางอนุญาต ${n(A.pipe?.count)}`,
+  ]
+  const SITE_H = Math.max(cardH(siteLeftLines, SITE_W, true, true), cardH(siteRightLines, SITE_W, true, true))
+  const SITE_Y = ACT_Y + ACT_H + 76
+
+  const stoLines: string[][] = [
+    ['ออเดอร์ · แชท · คนเข้าเว็บ', 'ลงเวลา · รีวิวรอเข้า · สมาชิก', 'ใบ ลซ.๒ · รูปบัตร (ถังปิด)'],
+    ['คลังเงา — กระจกของ ZORT', tables.length ? `${tables.length} ตาราง` : 'ไม่ทราบจำนวนตาราง', 'และเก็บสำเนาสำรองของถังซ้าย'],
+    hasR2
+      ? ['คลิปวิดีโอ (HLS) · รูปสินค้า', 'เบราว์เซอร์ลูกค้าโหลดตรง', 'จากที่นี่ ไม่ผ่านตัวเว็บ']
+      : ['ตัวสแกนไม่พบว่าต่ออยู่'],
+    ['ของฝั่งหลังร้าน', adminBlobs.join(' · ') || '—', 'คนละชุดกับฝั่งซ้ายสนิท'],
+  ]
+  const STO_H = Math.max(...stoLines.map((l) => cardH(l, STO_W)))
+  const STO_Y = SITE_Y + SITE_H + 96
+
+  // ── สองแผงล่าง: จำนวนแถวขึ้นกับจำนวนบริการ · ความสูงกล่องขึ้นกับคำอธิบายที่ยาวที่สุด ──
+  const PER_ROW = 5, SB_GAP = 12
   const sbW = (IN - 28 - (PER_ROW - 1) * SB_GAP) / PER_ROW
   const WAIT_PER_ROW = 3
+  const wbW = (IN - (WAIT_PER_ROW - 1) * 24) / WAIT_PER_ROW
+  const liveWhat = live.map((it) => fitLines(it.what, sbW, 12.5))
+  const waitWhat = waiting.map((it) => fitLines(it.partial ? `${it.what} · ตั้งคีย์ไม่ครบ` : it.what, wbW, 12.5))
+  const maxLines = (arr: string[][]) => arr.reduce((m, a) => Math.max(m, a.length), 1)
+  const SB_H = 30 + maxLines(liveWhat) * 18 + 12
+  const WB_H = 30 + maxLines(waitWhat) * 18 + 12
+
+  const liveRows = Math.max(1, Math.ceil(live.length / PER_ROW))
+  const PANEL_Y = STO_Y + STO_H + 140
+  const PANEL_H = 42 + liveRows * SB_H + (liveRows - 1) * SB_GAP + 18
   const waitRows = Math.ceil(waiting.length / WAIT_PER_ROW)
   const WAIT_LABEL_Y = PANEL_Y + PANEL_H + 34
   const WAIT_Y = WAIT_LABEL_Y + 16
-  const wbW = (IN - (WAIT_PER_ROW - 1) * 24) / WAIT_PER_ROW
-  const H = waitRows > 0 ? WAIT_Y + waitRows * SB_H + (waitRows - 1) * SB_GAP + 30 : PANEL_Y + PANEL_H + 30
+  const H = waitRows > 0 ? WAIT_Y + waitRows * WB_H + (waitRows - 1) * SB_GAP + 30 : PANEL_Y + PANEL_H + 30
 
   const stamp = d?.generatedAt
     ? new Date(d.generatedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
     : null
-  const n = (v?: number) => (typeof v === 'number' ? v.toLocaleString('th-TH') : 'ไม่ทราบ')
 
   return (
     <div className="p-4 md:p-6">
@@ -270,20 +356,13 @@ export default function ArchPage() {
                 x={M} y={SITE_Y} w={SITE_W} h={SITE_H} accent titleAnchor="start"
                 title={d.site ?? 'หน้าร้าน'}
                 meta={`Netlify · ${d.project ?? '—'} · repo ${d.repo ?? '—'}`}
-                lines={[
-                  'หน้าร้าน · ตะกร้า · เช็คเอาต์ · ฟีดคลิป · ขอทะเบียน',
-                  `ไฟล์นิ่ง ${n(d.pages?.count)} หน้า + ฟังก์ชัน ${n(fn?.count)} ตัว`
-                  + (edge.length ? ` + edge ${edge.length} ตัว` : ''),
-                ]}
+                lines={siteLeftLines}
               />
               <Card
                 x={SITE_R_X} y={SITE_Y} w={SITE_W} h={SITE_H} accent titleAnchor="start"
                 title={A.site ?? 'admin.gucut.com'}
                 meta={`Netlify · ${A.project ?? '—'} · repo ${A.repo ?? '—'}`}
-                lines={[
-                  `หลังร้านตัวจริง · จอ ${n(A.pages?.count)} หน้า (โครงการแก่น ${n(A.pages?.core)})`,
-                  `API ของตัวเอง ${n(A.apiRoutes?.count)} เส้นทาง · ท่อกลางอนุญาต ${n(A.pipe?.count)}`,
-                ]}
+                lines={siteRightLines}
               />
               {/* ท่อกลาง — ลูกศรชี้ซ้าย เพราะหลังร้านเป็นฝ่ายเรียกไปหาหน้าร้าน */}
               <path d={`M ${SITE_R_X - 8} ${SITE_Y + 52} L ${M + SITE_W + 10} ${SITE_Y + 52}`}
@@ -299,24 +378,22 @@ export default function ArchPage() {
               {/* ── ชั้น 3: ที่เก็บข้อมูล ── */}
               <Card x={stoX(0)} y={STO_Y} w={STO_W} h={STO_H}
                 title={`Netlify Blobs · ${blobs.length ? `${blobs.length} ถัง` : 'ไม่ทราบ'}`}
-                lines={['ออเดอร์ · แชท · คนเข้าเว็บ', 'ลงเวลา · รีวิวรอเข้า · สมาชิก', 'ใบ ลซ.๒ · รูปบัตร (ถังปิด)']} />
+                lines={stoLines[0]} />
               <Card x={stoX(1)} y={STO_Y} w={STO_W} h={STO_H}
                 title="Cloudflare D1"
-                lines={['คลังเงา — กระจกของ ZORT',
-                  tables.length ? `${tables.length} ตาราง` : 'ไม่ทราบจำนวนตาราง',
-                  'และเก็บสำเนาสำรองของถังซ้าย']} />
+                lines={stoLines[1]} />
               {hasR2 ? (
                 <Card x={stoX(2)} y={STO_Y} w={STO_W} h={STO_H}
                   title="Cloudflare R2"
-                  lines={['คลิปวิดีโอ (HLS) · รูปสินค้า', 'เบราว์เซอร์ลูกค้าโหลดตรง', 'จากที่นี่ ไม่ผ่านตัวเว็บ']} />
+                  lines={stoLines[2]} />
               ) : (
                 <Card x={stoX(2)} y={STO_Y} w={STO_W} h={STO_H} fill={C.surface2}
-                  title="Cloudflare R2" lines={['ตัวสแกนไม่พบว่าต่ออยู่']} />
+                  title="Cloudflare R2" lines={stoLines[2]} />
               )}
               {/* ⚠️ ถังฝั่งหลังร้าน — ผังต้นฉบับเขียน "4 ถัง" แต่ตัวสแกนมองไม่เห็น จึงไม่ใส่ตัวเลข */}
               <Card x={stoX(3)} y={STO_Y} w={STO_W} h={STO_H}
                 title={`Netlify Blobs · ${adminBlobs.length ? `${adminBlobs.length} ถัง` : 'ไม่ทราบ'}`}
-                lines={['ของฝั่งหลังร้าน', adminBlobs.join(' · ') || '—', 'คนละชุดกับฝั่งซ้ายสนิท']} />
+                lines={stoLines[3]} />
 
               <Arrow x1={M + 120} y1={SITE_Y + SITE_H} x2={stoX(0) + STO_W / 2} y2={STO_Y - 6} />
               <Arrow x1={M + 260} y1={SITE_Y + SITE_H} x2={stoX(1) + STO_W / 2} y2={STO_Y - 6} />
@@ -348,8 +425,10 @@ export default function ArchPage() {
                 return (
                   <g key={it.id}>
                     <rect x={x} y={y} width={sbW} height={SB_H} rx="10" fill={C.surface2} />
-                    <text x={x + sbW / 2} y={y + 25} textAnchor="middle" fontSize="14.5" fontWeight="600" fill={C.ink}>{it.name}</text>
-                    <text x={x + sbW / 2} y={y + 45} textAnchor="middle" fontSize="12.5" fill={C.muted}>{it.what}</text>
+                    <text x={x + sbW / 2} y={y + 24} textAnchor="middle" fontSize="14.5" fontWeight="600" fill={C.ink}>{it.name}</text>
+                    {(liveWhat[i] ?? []).map((t, k) => (
+                      <text key={k} x={x + sbW / 2} y={y + 42 + k * 18} textAnchor="middle" fontSize="12.5" fill={C.muted}>{t}</text>
+                    ))}
                   </g>
                 )
               })}
@@ -366,15 +445,15 @@ export default function ArchPage() {
                   {waiting.map((it, i) => {
                     const r = Math.floor(i / WAIT_PER_ROW), c = i % WAIT_PER_ROW
                     const x = M + c * (wbW + 24)
-                    const y = WAIT_Y + r * (SB_H + SB_GAP)
+                    const y = WAIT_Y + r * (WB_H + SB_GAP)
                     return (
                       <g key={it.id}>
-                        <rect x={x} y={y} width={wbW} height={SB_H} rx="10" fill="none"
+                        <rect x={x} y={y} width={wbW} height={WB_H} rx="10" fill="none"
                           stroke={C.line} strokeWidth="1.4" strokeDasharray="7 6" />
-                        <text x={x + wbW / 2} y={y + 25} textAnchor="middle" fontSize="14.5" fontWeight="600" fill={C.muted}>{it.name}</text>
-                        <text x={x + wbW / 2} y={y + 45} textAnchor="middle" fontSize="12.5" fill={C.muted}>
-                          {it.partial ? `${it.what} · ตั้งคีย์ไม่ครบ` : it.what}
-                        </text>
+                        <text x={x + wbW / 2} y={y + 24} textAnchor="middle" fontSize="14.5" fontWeight="600" fill={C.muted}>{it.name}</text>
+                        {(waitWhat[i] ?? []).map((t, k) => (
+                          <text key={k} x={x + wbW / 2} y={y + 42 + k * 18} textAnchor="middle" fontSize="12.5" fill={C.muted}>{t}</text>
+                        ))}
                       </g>
                     )
                   })}
