@@ -266,13 +266,18 @@ export default function ArchPage() {
   const SITE_H = Math.max(cardH(siteLeftLines, SITE_W, true, true), cardH(siteRightLines, SITE_W, true, true))
   const SITE_Y = ACT_Y + ACT_H + 76
 
+  // ⚠️ **ชื่อในกล่องต้องมาจากการสแกน ไม่ใช่คำบรรยายที่พิมพ์ไว้เอง**
+  //    เจ้าของร้านย้ำ 3 ก.ย. 2569: "มันไม่ใช่ภาพนะ มันปรับเปลี่ยนตามงานตลอด"
+  //    ของเดิมเขียนว่า "ออเดอร์ · แชท · คนเข้าเว็บ" ไว้เอง ⇒ จำนวนถังอัปเดตตามจริง
+  //    แต่รายชื่อข้างในแช่แข็ง วันที่เพิ่มถังใหม่ ผังจะบอกจำนวนถูกแต่บอกชื่อผิด
+  //    ซึ่งเนียนกว่าเดิมอีก เพราะดูเหมือนอัปเดตอยู่
   const stoLines: string[][] = [
-    ['ออเดอร์ · แชท · คนเข้าเว็บ', 'ลงเวลา · รีวิวรอเข้า · สมาชิก', 'ใบ ลซ.๒ · รูปบัตร (ถังปิด)'],
-    ['คลังเงา — กระจกของ ZORT', tables.length ? `${tables.length} ตาราง` : 'ไม่ทราบจำนวนตาราง', 'และเก็บสำเนาสำรองของถังซ้าย'],
+    blobs.length ? [blobs.join(' · ')] : ['ไม่ทราบรายชื่อถัง'],
+    tables.length ? ['คลังเงา — กระจกของ ZORT', tables.join(' · ')] : ['คลังเงา — กระจกของ ZORT', 'ไม่ทราบรายชื่อตาราง'],
     hasR2
-      ? ['คลิปวิดีโอ (HLS) · รูปสินค้า', 'เบราว์เซอร์ลูกค้าโหลดตรง', 'จากที่นี่ ไม่ผ่านตัวเว็บ']
+      ? ['คลิปวิดีโอ (HLS) · รูปสินค้า', 'เบราว์เซอร์ลูกค้าโหลดตรง ไม่ผ่านตัวเว็บ']
       : ['ตัวสแกนไม่พบว่าต่ออยู่'],
-    ['ของฝั่งหลังร้าน', adminBlobs.join(' · ') || '—', 'คนละชุดกับฝั่งซ้ายสนิท'],
+    adminBlobs.length ? [adminBlobs.join(' · ')] : ['ไม่ทราบรายชื่อถัง'],
   ]
   const STO_H = Math.max(...stoLines.map((l) => cardH(l, STO_W)))
   const STO_Y = SITE_Y + SITE_H + 96
@@ -515,8 +520,16 @@ export default function ArchPage() {
               <div className="space-y-1.5 text-[12px]" style={{ color: C.muted }}>
                 {logins.length > 0 && <p>เข้าสู่ระบบด้วย: <b style={{ color: C.ink }}>{logins.join(' · ')}</b></p>}
                 {edge.length > 0 && <p>ตัวดักที่ขอบเครือข่าย: <b style={{ color: C.ink }}>{edge.join(' · ')}</b> (ใช้กับบอตของ AI)</p>}
-                {blobs.length > 0 && <p className="font-mono text-[11px] leading-relaxed">ถัง: {blobs.join(' · ')}</p>}
-                {tables.length > 0 && <p className="font-mono text-[11px] leading-relaxed">ตาราง: {tables.join(' · ')}</p>}
+                <p>
+                  ทุกชื่อและทุกตัวเลขในผัง<b>มาจากการสแกนโค้ดจริงตอน build</b> —
+                  เพิ่มฟังก์ชัน ถัง ตาราง หรือบริการใหม่แล้ว deploy ผังเปลี่ยนตามเอง
+                  ไม่มีใครต้องมาแก้ผัง
+                </p>
+                <p>
+                  ที่<b>ไม่ได้</b>มาจากการสแกนมีสามอย่าง: ชื่อกล่องแถวบนสุด (ลูกค้า · งานตั้งเวลา ·
+                  เจ้าของร้าน · Telegram) · ป้าย &quot;webhook ยิงกลับเข้ามา&quot; ·
+                  และตำแหน่งของกล่องกับลูกศร — สามอย่างนี้เป็นการจัดหน้า ไม่ใช่ข้อมูล
+                </p>
               </div>
             </div>
           </div>
