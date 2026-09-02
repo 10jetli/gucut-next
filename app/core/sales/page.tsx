@@ -7,6 +7,7 @@
 //              → แถวค้นหา + ตัวเลือกช่วงเวลา → แท็บสถานะมีจำนวนในวงเล็บ
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -45,6 +46,7 @@ const RANGES = [
 ]
 
 export default function CoreSalesPage() {
+  const router = useRouter()
   const [days, setDays] = useState(90)
   const [channel, setChannel] = useState('')
   const [q, setQ] = useState('')
@@ -54,8 +56,6 @@ export default function CoreSalesPage() {
   const [data, setData] = useState<ListResp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [detail, setDetail] = useState<Detail | null>(null)
-  const [detailFor, setDetailFor] = useState('')
 
   const load = useCallback(async (off = 0, opt?: { days?: number; channel?: string; cancelled?: boolean }) => {
     const d = opt?.days ?? days
@@ -85,16 +85,17 @@ export default function CoreSalesPage() {
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function openDetail(id: string) {
-    if (detailFor === id) { setDetailFor(''); setDetail(null); return }
-    setDetailFor(id)
-    setDetail(null)
-    try {
-      const res = await fetch(`/api/web/core?order=${encodeURIComponent(id)}`)
-      setDetail(await res.json())
-    } catch (e) {
-      setDetail({ error: String(e instanceof Error ? e.message : e) })
-    }
+  // ZORT กดแถวแล้วไป "หน้ารายละเอียดรายการขาย" เต็มหน้า ไม่ใช่กางในตาราง
+  // ส่งลำดับใบ (i) กับตัวกรองเดิมไปด้วย เพื่อให้หน้านั้นมีลูกศรเลื่อนใบก่อน/ถัดไปได้
+  function openDetail(id: string, i: number) {
+    const qs = new URLSearchParams({
+      id, i: String(offset + i),
+      from: thaiDay(days - 1), to: thaiDay(0),
+    })
+    if (channel) qs.set('channel', channel)
+    if (q.trim()) qs.set('q', q.trim())
+    if (cancelled) qs.set('cancelled', '1')
+    router.push(`/core/sales/detail?${qs}`)
   }
 
   const rows = data?.rows ?? []
@@ -190,8 +191,8 @@ export default function CoreSalesPage() {
                 {rows.map((r, i) => (
                   <tr
                     key={r.id}
-                    onClick={() => openDetail(r.id)}
-                    className={`border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50 ${detailFor === r.id ? 'bg-blue-50/50' : ''}`}
+                    onClick={() => openDetail(r.id, i)}
+                    className="border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50"
                   >
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{r.order_date}</td>
@@ -224,42 +225,6 @@ export default function CoreSalesPage() {
             )}
           </TableWrap>
 
-          {detailFor && (
-            <div className="mt-4 bg-white border border-gray-200 rounded-md">
-              <div className="px-4 py-3 border-b border-gray-200">
-                <p className="text-[13.5px] font-semibold text-gray-800">
-                  รายละเอียดใบ {detail?.order?.number ?? detailFor}
-                </p>
-              </div>
-              {!detail && <p className="text-[13px] text-gray-400 p-4">กำลังโหลด…</p>}
-              {detail?.error && <p className="text-[13px] text-red-500 p-4">{detail.error}</p>}
-              {detail?.items && detail.items.length === 0 && (
-                <p className="text-[13px] text-gray-400 p-4">ใบนี้ไม่มีรายการสินค้าในคลังเงา</p>
-              )}
-              {detail?.items && detail.items.length > 0 && (
-                <table className="w-full min-w-[480px]">
-                  <thead className="border-b border-gray-200">
-                    <tr>
-                      <th className={TH}>รหัสสินค้า</th>
-                      <th className={TH}>สินค้า</th>
-                      <th className={THR}>จำนวน</th>
-                      <th className={THR}>ยอด</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {detail.items.map((it) => (
-                      <tr key={it.line} className="border-b border-gray-100 last:border-0">
-                        <td className={`${TD} text-blue-600`}>{it.sku || '—'}</td>
-                        <td className={TD}>{it.name}</td>
-                        <td className={TDR}>{it.qty.toLocaleString('th-TH')}</td>
-                        <td className={TDR}>{fmtBaht(it.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
-          )}
         </>
       )}
     </div>
