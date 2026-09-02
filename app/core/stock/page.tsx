@@ -50,7 +50,7 @@ const SORTS = [
 export default function CoreStockPage() {
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('qty')
-  const [tab, setTab] = useState<'all' | 'out' | 'low'>('all')
+  const [tab, setTab] = useState<'all' | 'out' | 'low' | 'active' | 'inactive'>('all')
   // ⚠️ ค่าตั้งต้นซ่อน "บริการ" (ค่าส่ง · ค่าซ่อม · ค่าน้ำมัน ฯลฯ) ออกจากจอสินค้า
   //    เพราะของพวกนี้ไม่มีสต็อกจริง แต่ติดลบหนัก (-712 · -200) เลยยึดสองแถวบนสุด
   //    ของแท็บ "ของหมด" ⇒ จอที่คนเปิดดูว่า "ต้องสั่งอะไร" ขึ้นของที่สั่งไม่ได้ก่อน
@@ -194,10 +194,20 @@ export default function CoreStockPage() {
               { id: 'all', label: 'ทั้งหมด', count: tab === 'all' ? inTab : data.total },
               { id: 'out', label: 'ของหมด', count: tab === 'out' ? inTab : data.outOfStock },
               { id: 'low', label: 'เหลือน้อย', count: tab === 'low' ? inTab : data.low },
+              // แท็บของ ZORT — เซิร์ฟเวอร์กรองให้ที่ฐานข้อมูล (only=active/inactive)
+              // จำนวน "เปิดใช้งาน" = ทั้งหมด − ปิดใช้งาน · ไม่มี inactive ก็ไม่ต้องเดา
+              {
+                id: 'active',
+                label: 'เปิดใช้งาน',
+                count: tab === 'active'
+                  ? inTab
+                  : (typeof data.inactive === 'number' ? data.total - data.inactive : undefined),
+              },
+              { id: 'inactive', label: 'ปิดใช้งาน', count: tab === 'inactive' ? inTab : data.inactive },
             ]}
             active={tab}
             onChange={(id) => {
-              const t = id as 'all' | 'out' | 'low'
+              const t = id as 'all' | 'out' | 'low' | 'active' | 'inactive'
               setTab(t)
               load(0, sort, t)
             }}
@@ -221,7 +231,14 @@ export default function CoreStockPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={10} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบสินค้าในเงื่อนไขนี้</td></tr>
+                  <tr>
+                    <td colSpan={10} className="px-3 py-6 text-[13px] text-gray-400 text-center">
+                      {/* ⚠️ แท็บว่างต้องบอกว่า "ไม่มีของแบบนี้" ไม่ใช่ปล่อยให้ดูเหมือนโหลดพลาด */}
+                      {tab === 'inactive'
+                        ? 'ยังไม่มีสินค้าที่ปิดใช้งาน — สินค้าทุกตัวในคลังเปิดขายอยู่'
+                        : 'ไม่พบสินค้าในเงื่อนไขนี้'}
+                    </td>
+                  </tr>
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
