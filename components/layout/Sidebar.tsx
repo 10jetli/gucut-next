@@ -2,11 +2,15 @@
 // Sidebar เดสก์ท็อป — **ลอกจาก ZORT ของจริง** (ภาพ ~/claude-shared/zort-ui/)
 //
 // สิ่งที่ต้องเหมือนและห้ามเปลี่ยนกลับ:
-//   · พื้นขาว เส้นแบ่งขวาสีเทาอ่อน กว้าง ~165px (ของเดิมเป็นน้ำเงินเข้มไล่สี — เจ้าของร้าน
-//     สั่งยึด ZORT เป็นแบบ ทับคำสั่งเก่าที่ให้ทำแนว Stripe/Shopify)
+//   · พื้นแถบขาว เส้นแบ่งขวาสีเทาอ่อน กว้าง ~165px
 //   · เมนูย่อย **กางลงมาในแถบเดียวกัน ไม่ใช่ flyout ลอยออกมา**
-//   · รายการที่เลือกอยู่ = พื้นน้ำเงินเข้มเต็มความกว้าง ตัวหนังสือขาว
-//   · เมนูหลักมีไอคอนหน้าทุกอัน + ลูกศรพับ/กางด้านขวา
+//   · **กลุ่มที่กางอยู่กลายเป็นบล็อกน้ำเงินเข้มทั้งก้อน** ตั้งแต่หัวข้อลงมาถึงลูกทุกตัว
+//     หัวข้อกลุ่มมีเส้นน้ำเงินสว่างคาดใต้ · ลูกที่เลือกอยู่พื้นสว่างกว่าพื้นบล็อก
+//   · ลูกศรชี้ขึ้นตอนกาง ชี้ลงตอนพับ · เมนูหลักมีไอคอนหน้าทุกอัน
+//
+// ⚠️ **รอบแรกผมสรุปผิดว่าเมนูย่อยเป็นพื้นขาว** เพราะอ่านจากภาพเต็มความละเอียดต่ำ
+//    เจ้าของร้านส่งภาพครอปมาให้ถึงเห็นว่าเป็นบล็อกน้ำเงินเข้ม
+//    ⇒ บทเรียน: สีกับพื้นหลังต้องดูจากภาพครอปที่ชัดพอ อย่าสรุปจากภาพย่อทั้งหน้า
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { NavItem } from '@/lib/nav-config'
@@ -15,8 +19,13 @@ import type { NavItem } from '@/lib/nav-config'
 // ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
 const isStaticLink = (href: string) => href.startsWith('/catalog/')
 
-// น้ำเงินเข้มของแถบที่เลือก — เทียบจากภาพจอ ZORT
-const ACTIVE_BG = '#1b3b73'
+// สีจาก ZORT ของจริง (ภาพครอปที่เจ้าของร้านส่งมา 2 ก.ย. 2569 — ชัดกว่าภาพเต็มมาก)
+// ⚠️ รอบแรกผมอ่านจากภาพเต็มความละเอียดต่ำแล้วสรุปผิดว่าเมนูย่อยเป็นพื้นขาว
+//    ของจริงคือ **บล็อกน้ำเงินเข้มทั้งก้อน** ตั้งแต่หัวข้อลงมาถึงลูกทุกตัว
+const GROUP_BG = '#1e2a52'      // พื้นบล็อกกลุ่มที่กางอยู่
+const GROUP_LINE = '#2f6fe0'    // เส้นสว่างคาดใต้หัวข้อกลุ่ม
+const CHILD_ACTIVE = '#2b4a8f'  // ลูกที่เลือกอยู่ — สว่างกว่าพื้นบล็อกให้เห็นชัด
+const ITEM_ACTIVE = '#1b3b73'   // เมนูเดี่ยว (ไม่มีลูก) ที่เลือกอยู่
 
 interface SidebarProps {
   navItems: NavItem[]
@@ -90,47 +99,54 @@ export default function Sidebar({
       <nav className="flex-1 overflow-y-auto py-2">
         {navItems.map((item) =>
           item.children ? (
-            <div key={item.label}>
-              <button
-                onClick={() => toggleGroup(item.label)}
-                title={item.label}
-                className={`w-full flex items-center gap-2.5 py-2.5 text-[13px] transition-colors ${
-                  collapsed ? 'justify-center px-0' : 'px-3'
-                } ${openGroups[item.label] ? 'text-gray-900 font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
-              >
-                <span className="text-[15px] w-5 text-center shrink-0">{item.icon}</span>
-                {!collapsed && (
-                  <>
-                    <span className="truncate flex-1 text-left">{item.label}</span>
-                    <span className={`text-[9px] text-gray-400 transition-transform ${openGroups[item.label] ? 'rotate-180' : ''}`}>▾</span>
-                  </>
-                )}
-              </button>
-              {/* กางลงมาในแถบเดียวกัน — ZORT ไม่ใช้ flyout */}
-              {!collapsed && openGroups[item.label] && (
-                <div>
-                  {item.children.map((c) => {
-                    const active = isActive(c.href) && !(c.href === '/bills' && pathname !== '/bills')
-                    const cls = `block py-2 pl-10 pr-3 text-[12.5px] transition-colors ${
-                      active ? 'text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'
-                    }`
-                    const style = active ? { background: ACTIVE_BG } : undefined
-                    return isStaticLink(c.href) ? (
-                      <a key={c.href} href={c.href} className={cls} style={style}>{c.label}</a>
-                    ) : (
-                      <Link key={c.href} href={c.href} className={cls} style={style}>{c.label}</Link>
-                    )
-                  })}
+            (() => {
+              const open = !!openGroups[item.label] && !collapsed
+              return (
+                <div key={item.label} style={open ? { background: GROUP_BG } : undefined}>
+                  <button
+                    onClick={() => toggleGroup(item.label)}
+                    title={item.label}
+                    className={`w-full flex items-center gap-2.5 py-2.5 text-[13px] transition-colors ${
+                      collapsed ? 'justify-center px-0' : 'px-3'
+                    } ${open ? 'text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'}`}
+                    style={open ? { borderBottom: `2px solid ${GROUP_LINE}` } : undefined}
+                  >
+                    <span className="text-[15px] w-5 text-center shrink-0">{item.icon}</span>
+                    {!collapsed && (
+                      <>
+                        <span className="truncate flex-1 text-left">{item.label}</span>
+                        {/* ZORT ใช้ลูกศรชี้ขึ้นตอนกาง ชี้ลงตอนพับ */}
+                        <span className={`text-[9px] ${open ? 'text-white/70' : 'text-gray-400'}`}>{open ? '⌃' : '⌄'}</span>
+                      </>
+                    )}
+                  </button>
+                  {/* กางลงมาในแถบเดียวกัน — ZORT ไม่ใช้ flyout · ทั้งบล็อกเป็นพื้นน้ำเงินเข้ม */}
+                  {open && (
+                    <div className="py-1">
+                      {item.children!.map((c) => {
+                        const active = isActive(c.href) && !(c.href === '/bills' && pathname !== '/bills')
+                        const cls = `block py-2 pl-11 pr-3 text-[12.5px] transition-colors ${
+                          active ? 'text-white font-semibold' : 'text-white/80 hover:bg-white/10'
+                        }`
+                        const style = active ? { background: CHILD_ACTIVE } : undefined
+                        return isStaticLink(c.href) ? (
+                          <a key={c.href} href={c.href} className={cls} style={style}>{c.label}</a>
+                        ) : (
+                          <Link key={c.href} href={c.href} className={cls} style={style}>{c.label}</Link>
+                        )
+                      })}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              )
+            })()
           ) : (
             (() => {
               const active = isActive(item.href!)
               const cls = `flex items-center gap-2.5 py-2.5 text-[13px] transition-colors ${
                 collapsed ? 'justify-center px-0' : 'px-3'
               } ${active ? 'text-white font-semibold' : 'text-gray-600 hover:bg-gray-50'}`
-              const style = active ? { background: ACTIVE_BG } : undefined
+              const style = active ? { background: ITEM_ACTIVE } : undefined
               const inner = (
                 <>
                   <span className="text-[15px] w-5 text-center shrink-0">{item.icon}</span>
@@ -146,6 +162,25 @@ export default function Sidebar({
           ),
         )}
       </nav>
+
+      {/* การ์ดสถานะมุมล่างซ้าย — ZORT มีอันนี้ติดอยู่ทุกจอ (ภาพครอปจากเจ้าของร้าน)
+          ⚠️ ของ ZORT เช็คเองอัตโนมัติ **แต่ของเราห้าม** — เจ้าของร้านสั่งไว้ว่า
+             หน้าสถานะระบบต้องกดเช็คเอง (ประหยัดทรัพยากร · ตัวตรวจยิงของจริง 24 เรื่อง)
+             การ์ดนี้จึงเป็นทางเข้าเฉย ๆ ไม่ยิงอะไรตอนโหลดหน้า และ **ห้ามเขียนว่า "ทุกระบบปกติ"**
+             เพราะเราไม่ได้ตรวจ — เขียนแบบนั้นคือจอที่โกหก */}
+      {!collapsed && (
+        <div className="p-2 shrink-0">
+          <Link
+            href="/web/status"
+            className="block rounded-lg border border-gray-200 bg-white px-3 py-2.5 hover:bg-gray-50 transition-colors"
+          >
+            <p className="text-[12px] font-semibold text-gray-700">สถานะระบบ</p>
+            <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+              กดเพื่อตรวจของจริง 24 เรื่อง
+            </p>
+          </Link>
+        </div>
+      )}
     </aside>
   )
 }
