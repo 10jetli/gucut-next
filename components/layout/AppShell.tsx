@@ -59,8 +59,9 @@ export default function AppShell({ children, role }: AppShellProps) {
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
 
-  const sidebarW = collapsed ? 'md:w-16' : 'md:w-56'
-  const mainMl = collapsed ? 'md:ml-16' : 'md:ml-56'
+  // ⚠️ กว้าง 165px ตามแถบข้างของ ZORT (วัดจากภาพจอจริง) — ของเดิม 224px (w-56)
+  const sidebarW = collapsed ? 'md:w-14' : 'md:w-[165px]'
+  const mainMl = collapsed ? 'md:ml-14' : 'md:ml-[165px]'
   const anim = ready ? 'transition-all duration-200' : ''
 
   return (

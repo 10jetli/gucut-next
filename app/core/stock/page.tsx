@@ -1,15 +1,20 @@
 'use client'
-// สินค้า/สต็อก — อ่านจากคลังเงาของเราเอง (D1) ไม่แตะ ZORT
+// สินค้า — อ่านจากคลังเงาของเราเอง (D1) ไม่แตะ ZORT
 //
-// ตัวแทนหน้า "สินค้า" ของ ZORT · หน้าเดิม /products ยิงไป ZORT ตรง ๆ
-// ⚠️ ตัวเลขที่นี่คือ "ภาพถ่ายสต็อกตอนตี 1" ไม่ใช่สดวินาทีนี้ — ต้องเขียนบอกบนจอเสมอ
+// **หน้าตาลอกจากจอ "สินค้า" ของ ZORT ของจริง** (~/claude-shared/zort-ui/02-สินค้า.jpg)
+// ผังที่ลอกมา: ชื่อจอ → "จำนวน N รายการ" → ปุ่มขวาบน → แถวค้นหา
+//              → แท็บ ทั้งหมด/เปิดใช้งาน/ปิดใช้งาน → ตาราง # · รหัส · ชื่อสินค้า ·
+//                ราคาซื้อ · ราคาขาย · คงเหลือ · พร้อมขาย
+// ⚠️ **คงเหลือติดลบต้องเป็นสีแดง** — ZORT ทำแบบนี้ (เห็นในภาพ -2 -3) เป็นสัญญาณว่าขายเกิน
+// ⚠️ ตัวเลขที่นี่คือ "ภาพถ่ายสต็อกตอนตี 1" ไม่ใช่ยอดสด — ต้องเขียนบอกบนจอเสมอ
 //    ปล่อยให้เข้าใจว่าสดจะกลายเป็นจอที่โกหกเงียบ ๆ ตอนของขยับระหว่างวัน
 import { useCallback, useEffect, useState } from 'react'
-import { fmtBaht, fmtNum } from '@/lib/format'
-import Card from '@/components/ui/Card'
-import StatCard from '@/components/ui/StatCard'
+import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import {
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText,
+} from '@/components/zort'
 
 interface Row { sku: string; name: string; qty: number; price: number; sold: number }
 interface Resp {
@@ -23,12 +28,13 @@ const PAGE = 50
 const SORTS = [
   { id: 'qty', label: 'ของใกล้หมดก่อน' },
   { id: 'sold', label: 'ขายดีก่อน' },
-  { id: 'sku', label: 'เรียงตาม SKU' },
+  { id: 'sku', label: 'เรียงตามรหัส' },
 ]
 
 export default function CoreStockPage() {
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('qty')
+  const [tab, setTab] = useState<'all' | 'out' | 'low'>('all')
   const [offset, setOffset] = useState(0)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
@@ -56,113 +62,121 @@ export default function CoreStockPage() {
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const rows = data?.rows ?? []
-  const shown = offset + rows.length
+  // ⚠️ แท็บกรองเฉพาะ "หน้าที่กำลังดู" เท่านั้น (เซิร์ฟเวอร์ยังไม่มีตัวกรองนี้)
+  //    จึงต้องเขียนบอกบนจอ ไม่งั้นคนอ่านจะนึกว่าเห็นครบทั้งคลัง
+  const all = data?.rows ?? []
+  const rows = tab === 'out' ? all.filter((r) => r.qty <= 0)
+    : tab === 'low' ? all.filter((r) => r.qty > 0 && r.qty <= 3)
+      : all
+  const shown = offset + all.length
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div>
-        <h1 className="text-xl font-bold text-gray-900 tracking-tight">📦 สินค้า / สต็อก — จากคลังของเราเอง</h1>
-        <span className="text-[11px] text-gray-400">
-          อ่านจากฐาน GUCUT Core (D1) ล้วน · จอนี้ยังทำงานได้แม้วันที่เลิกใช้ ZORT แล้ว
-        </span>
-      </div>
+    <div className="p-4 md:p-6">
+      <PageHead
+        title="สินค้า"
+        summary={
+          data ? (
+            <>
+              จำนวน {data.total.toLocaleString('th-TH')} รายการ | ของหมด{' '}
+              <span className="text-red-500 font-semibold">{data.outOfStock.toLocaleString('th-TH')}</span> ·
+              เหลือน้อย <span className="text-orange-600 font-semibold">{data.low.toLocaleString('th-TH')}</span> ·
+              มูลค่าสต็อก {fmtBaht(data.value)}
+            </>
+          ) : 'กำลังโหลด…'
+        }
+        actions={
+          <BtnGhost onClick={() => load(offset)} disabled={loading}>
+            {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
+          </BtnGhost>
+        }
+      />
 
-      <Card>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-2.5 items-end">
-          <label className="text-[12px] text-gray-500 md:col-span-2">
-            ค้น SKU หรือชื่อสินค้า
-            <input value={q} onChange={(e) => setQ(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') load(0) }}
-              placeholder="เช่น โซ่ หรือ NW-1234"
-              className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5" />
-          </label>
-          <label className="text-[12px] text-gray-500">
-            เรียงลำดับ
-            <select value={sort}
+      <SearchRow
+        value={q}
+        onChange={setQ}
+        onSubmit={() => load(0)}
+        placeholder="ค้นหา รหัสสินค้า หรือชื่อสินค้า"
+        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
+        right={
+          <>
+            <span className="text-[13px] text-gray-500">เรียง</span>
+            <select
+              value={sort}
               onChange={(e) => { setSort(e.target.value); load(0, e.target.value) }}
-              className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+            >
               {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
-          </label>
-          <button onClick={() => load(0)} disabled={loading}
-            className="text-[13px] font-semibold text-white bg-blue-600 rounded-lg px-3.5 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50">
-            {loading ? '⏳ กำลังค้น…' : '🔍 ค้นหา'}
-          </button>
-        </div>
-      </Card>
+          </>
+        }
+      />
 
-      {error && <ErrorBox title="ดึงสต็อกไม่ได้">{error}</ErrorBox>}
+      {error && <ErrorBox title="ดึงสินค้าไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
-      {data?.skip && <Card><p className="text-[13px] text-gray-500">{data.skip}</p></Card>}
+      {data?.skip && (
+        <div className="bg-white border border-gray-200 rounded-md p-4 text-[13px] text-gray-500">{data.skip}</div>
+      )}
 
       {data && !data.skip && (
         <>
-          <Card>
-            <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-              ⚠️ ตัวเลขนี้คือ <b>ภาพถ่ายสต็อกของวันที่ {data.day}</b> (ถ่ายตอนตี 1) ไม่ใช่ยอดสดวินาทีนี้ ·
-              ของที่ขยับระหว่างวันจะเห็นในภาพถ่ายรอบถัดไป
-            </p>
-          </Card>
-
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <StatCard icon="🧮" tone="blue" label="SKU ทั้งหมด" value={fmtNum(data.total)} unit="ตัว" />
-            <StatCard icon="🚫" tone="red" label="ของหมด" value={fmtNum(data.outOfStock)} unit="ตัว" />
-            <StatCard icon="⚠️" tone="orange" label="เหลือน้อย (≤3)" value={fmtNum(data.low)} unit="ตัว" />
-            <StatCard icon="💎" tone="green" label="มูลค่าสต็อก" value={fmtBaht(data.value)} />
+          <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
+            ⚠️ ตัวเลขนี้คือ <b>ภาพถ่ายสต็อกของวันที่ {data.day}</b> (ถ่ายตอนตี 1) ไม่ใช่ยอดสดวินาทีนี้
           </div>
 
-          <Card padded={false} className="overflow-hidden">
-            {rows.length === 0 && <p className="text-[13px] text-gray-400 p-4">ไม่พบสินค้าในเงื่อนไขนี้</p>}
-            {rows.length > 0 && (
-              <div className="overflow-x-auto">
-                <table className="w-full text-[12.5px] min-w-[620px]">
-                  <thead className="bg-gray-50 text-gray-500">
-                    <tr>
-                      <th className="text-left font-medium px-4 py-2.5">SKU</th>
-                      <th className="text-left font-medium px-3 py-2.5">ชื่อสินค้า</th>
-                      <th className="text-right font-medium px-3 py-2.5">คงเหลือ</th>
-                      <th className="text-right font-medium px-3 py-2.5">ขาย {data.soldDays} วัน</th>
-                      <th className="text-right font-medium px-4 py-2.5">ราคาขาย</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((r) => (
-                      <tr key={r.sku} className="border-t border-gray-50">
-                        <td className="px-4 py-2.5 font-medium text-gray-800 whitespace-nowrap">{r.sku}</td>
-                        <td className="px-3 py-2.5 text-gray-600 max-w-[280px] truncate">{r.name || '—'}</td>
-                        <td className={`px-3 py-2.5 text-right font-bold whitespace-nowrap ${
-                          r.qty <= 0 ? 'text-red-500' : r.qty <= 3 ? 'text-amber-600' : 'text-gray-900'
-                        }`}>
-                          {r.qty <= 0 ? 'หมด' : fmtNum(r.qty)}
-                        </td>
-                        <td className="px-3 py-2.5 text-right text-gray-500">{fmtNum(r.sold)}</td>
-                        <td className="px-4 py-2.5 text-right text-gray-600 whitespace-nowrap">{fmtBaht(r.price)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
+          <Tabs
+            tabs={[
+              { id: 'all', label: 'ทั้งหมด', count: all.length },
+              { id: 'out', label: 'ของหมด', count: all.filter((r) => r.qty <= 0).length },
+              { id: 'low', label: 'เหลือน้อย', count: all.filter((r) => r.qty > 0 && r.qty <= 3).length },
+            ]}
+            active={tab}
+            onChange={(id) => setTab(id as 'all' | 'out' | 'low')}
+          />
 
-            {data.total > PAGE && (
-              <div className="flex items-center justify-between gap-3 px-4 py-3 border-t border-gray-100">
-                <span className="text-[12px] text-gray-500">
-                  แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} ตัว
-                </span>
-                <div className="flex gap-2">
-                  <button onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}
-                    className="text-[12.5px] font-semibold text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 disabled:opacity-40">
-                    ← ก่อนหน้า
-                  </button>
-                  <button onClick={() => load(offset + PAGE)} disabled={loading || shown >= data.total}
-                    className="text-[12.5px] font-semibold text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 disabled:opacity-40">
-                    ถัดไป →
-                  </button>
-                </div>
+          <TableWrap>
+            <table className="w-full min-w-[760px]">
+              <thead className="bg-white border-b border-gray-200">
+                <tr>
+                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH}>รหัส</th>
+                  <th className={TH}>ชื่อสินค้า</th>
+                  <th className={THR}>ราคาขาย</th>
+                  <th className={THR}>คงเหลือ</th>
+                  <th className={THR}>ขาย {data.soldDays} วัน</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.length === 0 && (
+                  <tr><td colSpan={6} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบสินค้าในเงื่อนไขนี้</td></tr>
+                )}
+                {rows.map((r, i) => (
+                  <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
+                    <td className={TD}><span className="text-blue-600">{r.name || '—'}</span></td>
+                    <td className={TDR}>{r.price ? fmtBaht(r.price) : '0'}</td>
+                    <td className={TDR}><Num v={r.qty} zeroRed /></td>
+                    <td className={TDR}>{r.sold.toLocaleString('th-TH')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
+              <span className="text-[12px] text-gray-500">
+                แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {data.total.toLocaleString('th-TH')} รายการ
+                {tab !== 'all' && <span className="text-amber-600"> · แท็บกรองเฉพาะหน้านี้ ไม่ใช่ทั้งคลัง</span>}
+              </span>
+              <div className="flex gap-2">
+                <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
+                  ← ก่อนหน้า
+                </BtnGhost>
+                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= data.total}>
+                  ถัดไป →
+                </BtnGhost>
               </div>
-            )}
-          </Card>
+            </div>
+          </TableWrap>
         </>
       )}
     </div>
