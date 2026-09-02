@@ -15,6 +15,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { href: '/core', label: 'ภาพรวมคลังเงา' },
       { href: '/core/sales', label: 'รายการขาย (คลังเรา)' },
+      { href: '/core/stock', label: 'สินค้า / สต็อก (คลังเรา)' },
     ],
   },
   { href: '/tracker', icon: '📋', label: 'ติดตามออเดอร์' },
