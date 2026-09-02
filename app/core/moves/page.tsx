@@ -29,6 +29,17 @@ const REASONS: { id: string; label: string; dir: 'in' | 'out' }[] = [
 ]
 const labelOf = (id: string) => REASONS.find((r) => r.id === id)?.label ?? id
 
+/**
+ * ⚠️ `at` จากฐานเป็น **UTC** เสมอ (เขียนด้วย datetime('now') ไม่มีตัวบอกโซนต่อท้าย)
+ *    ห้ามโชว์ค่าดิบ — คนกรอกตอนเช้าไทยจะเห็นเวลาย้อนไปเมื่อวานแล้วนึกว่าระบบพัง
+ *    ค่าที่อ่านไม่ออกให้คืนค่าเดิม ดีกว่าโชว์ "Invalid Date"
+ */
+function thaiTime(at: string): string {
+  const d = new Date(`${String(at ?? '').trim().replace(' ', 'T')}Z`)
+  if (Number.isNaN(d.getTime())) return at
+  return new Date(d.getTime() + 7 * 3600e3).toISOString().replace('T', ' ').slice(0, 16)
+}
+
 export default function CoreMovesPage() {
   const [sku, setSku] = useState('')
   const [qty, setQty] = useState('')
@@ -214,7 +225,7 @@ export default function CoreMovesPage() {
             <table className="w-full text-[12.5px] min-w-[640px]">
               <thead className="bg-gray-50 text-gray-500">
                 <tr>
-                  <th className="text-left font-medium px-4 py-2.5">เมื่อไหร่</th>
+                  <th className="text-left font-medium px-4 py-2.5">เมื่อไหร่ (เวลาไทย)</th>
                   <th className="text-left font-medium px-3 py-2.5">SKU</th>
                   <th className="text-left font-medium px-3 py-2.5">เหตุผล</th>
                   <th className="text-left font-medium px-3 py-2.5">อ้างอิง</th>
@@ -225,7 +236,7 @@ export default function CoreMovesPage() {
               <tbody>
                 {moves.map((m) => (
                   <tr key={m.id} className="border-t border-gray-50">
-                    <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{m.at}</td>
+                    <td className="px-4 py-2.5 text-gray-500 whitespace-nowrap">{thaiTime(m.at)}</td>
                     <td className="px-3 py-2.5 font-medium text-gray-800">{m.sku}</td>
                     <td className="px-3 py-2.5 text-gray-600">{labelOf(m.reason)}</td>
                     <td className="px-3 py-2.5 text-gray-500 max-w-[160px] truncate">{m.ref}</td>
