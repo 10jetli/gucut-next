@@ -27,7 +27,7 @@ const isStaticLink = (href: string) => href.startsWith('/catalog/')
 //    บทเรียนซ้ำรอบที่สอง: **สีต้องดูจากภาพที่ชัดพอ** ภาพย่อทั้งหน้าอ่านสีพื้นไม่ได้
 const BAR_BG = '#1e2a52'        // พื้นแถบทั้งแถบ
 const GROUP_LINE = '#2f6fe0'    // เส้นสว่างคาดใต้หัวข้อกลุ่มที่กางอยู่
-const CHILD_ACTIVE = '#3b5bd0'  // ลูกที่เลือกอยู่ — น้ำเงินสว่างกว่าพื้นแถบ
+const CHILD_ACTIVE = '#4055f0'  // ลูกที่เลือกอยู่ — น้ำเงินสว่างชัดกว่าพื้นแถบมาก (วัดจากภาพซูม)
 const ITEM_ACTIVE = '#3b5bd0'   // เมนูเดี่ยว (ไม่มีลูก) ที่เลือกอยู่ ใช้สีเดียวกัน
 
 interface SidebarProps {
@@ -110,12 +110,12 @@ export default function Sidebar({
                   <button
                     onClick={() => toggleGroup(item.label)}
                     title={item.label}
-                    className={`w-full flex items-center gap-2.5 py-2.5 text-[13px] transition-colors ${
+                    className={`w-full flex items-center gap-2.5 py-3 text-[15px] transition-colors ${
                       collapsed ? 'justify-center px-0' : 'px-3'
-                    } ${open ? 'text-white font-semibold' : 'text-white/80 hover:bg-white/10'}`}
+                    } ${open ? 'text-white font-bold' : 'text-white/80 hover:bg-white/10'}`}
                     style={open ? { borderBottom: `2px solid ${GROUP_LINE}` } : undefined}
                   >
-                    <span className="text-[15px] w-5 text-center shrink-0">{item.icon}</span>
+                    <span className="text-[16px] w-5 text-center shrink-0">{item.icon}</span>
                     {!collapsed && (
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
@@ -129,14 +129,30 @@ export default function Sidebar({
                     <div className="py-1">
                       {item.children!.map((c) => {
                         const active = isActive(c.href) && !(c.href === '/bills' && pathname !== '/bills')
-                        const cls = `block py-2 pl-11 pr-3 text-[12.5px] transition-colors ${
-                          active ? 'text-white font-semibold' : 'text-white/80 hover:bg-white/10'
+                        // ระยะห่าง/ขนาดวัดจากภาพซูมของ ZORT — ลูกเมนูตัวโตเกือบเท่าหัวข้อ
+                        // และเว้นบรรทัดกว้าง กดด้วยนิ้วบนแท็บเล็ตได้
+                        // ⚠️ เมนูที่ยังไม่ได้ทำเนื้อหา (soon) แสดง **จางกว่า** ของที่ใช้ได้จริง
+                        //    เจ้าของร้านสั่งให้เมนูครบก่อน เนื้อหาใส่ทีหลัง — ถ้าดูไม่ออกว่าอันไหนพร้อม
+                        //    คนใช้จะเสียเวลากดหาทีละอัน
+                        const cls = `flex items-center gap-1.5 py-3 pl-10 pr-3 text-[14px] transition-colors ${
+                          active
+                            ? 'text-white font-semibold'
+                            : c.soon
+                              ? 'text-white/40 hover:bg-white/5'
+                              : 'text-white/85 hover:bg-white/10'
                         }`
                         const style = active ? { background: CHILD_ACTIVE } : undefined
+                        // จุดเล็ก ๆ ท้ายชื่อ = ยังไม่ได้ทำ (คนตาบอดสีก็แยกออก ไม่ได้พึ่งสีอย่างเดียว)
+                        const inner = (
+                          <>
+                            <span className="truncate">{c.label}</span>
+                            {c.soon && !active && <span className="text-[9px] shrink-0">◦</span>}
+                          </>
+                        )
                         return isStaticLink(c.href) ? (
-                          <a key={c.href} href={c.href} className={cls} style={style}>{c.label}</a>
+                          <a key={c.href} href={c.href} className={cls} style={style}>{inner}</a>
                         ) : (
-                          <Link key={c.href} href={c.href} className={cls} style={style}>{c.label}</Link>
+                          <Link key={c.href} href={c.href} className={cls} style={style}>{inner}</Link>
                         )
                       })}
                     </div>
