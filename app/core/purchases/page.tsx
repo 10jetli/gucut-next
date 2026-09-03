@@ -1,103 +1,104 @@
 'use client'
-// รายการซื้อ — ผังลอกจากจอ "รายการซื้อ" ของ ZORT (~/claude-shared/zort-ui/06-รายการซื้อ.jpg)
-// คอลัมน์ของ ZORT: # · วันที่ · รายการ (เลข PO) · ผู้ขาย · มูลค่า · สถานะ · ชำระเงิน
+// รายการซื้อ — **ใบสั่งซื้อ (PO) จาก ZORT** อ่านจากกระจกในคลังเงา ไม่ได้ยิง ZORT สด
 //
-// ⚠️ ของฝั่งเราไม่ได้อยู่ที่เดียวเหมือน ZORT — การซื้อจริงของร้านกระจายอยู่ 2 ที่:
-//    · สั่งของกับโรงงาน  → /api/sheets  (ใบสั่งซื้อจริงที่ทำให้ของเข้าคลัง)
-//    · ดรอปชิปปิ้ง       → /api/import  (ยัง "พิจารณา" อยู่ ไม่ใช่ใบซื้อ)
-//    จอนี้รวมให้ดูที่เดียวแบบ ZORT แต่ **ไม่ทำซ้ำหน้าที่หน้าเดิม** —
-//    แก้ไข/อัปรูป/เปลี่ยนสถานะ ยังทำที่ ติดตามออเดอร์ กับ ดรอปชิปปิ้ง เหมือนเดิม
-// ⚠️ การซื้อพวกนี้ **ยังไม่ตัดเข้าคลังเงา** — ZORT รับของเข้าแล้วสต็อกขึ้นเอง
-//    ของเราต้องบันทึกที่หน้า "ปรับสต็อกมือ" ก่อน · เขียนเตือนไว้บนจอ ห้ามถอด
-import { useCallback, useEffect, useMemo, useState } from 'react'
+// **หน้าตาลอกจาก `zort-ui/27-zort-รายการซื้อ.jpg`**
+// ผัง: ชื่อจอ → "จำนวน N รายการ, มูลค่าทั้งหมด X บาท | ตรวจสอบการรับสินค้าเข้า"
+//      → ปุ่ม นำเข้าไฟล์ (Excel) · สร้าง · สร้างอย่างง่าย
+//      → แถวค้นหา → แท็บ ทั้งหมด · รอโอน · รอชำระ · สำเร็จ
+//      → ตาราง # · วันที่ · รายการ · ผู้ติดต่อ · มูลค่า · สถานะ · ชำระเงิน · ⋮
+//
+// ⚠️ **จอนี้คนละอย่างกับ "สั่งของกับโรงงาน" ที่ร้านใช้อยู่** (ย้ายไป /core/factory-orders)
+//    ของเดิมอ่าน /api/sheets = ระบบสั่งของกับโรงงาน (สินค้า · มัดจำ · กำหนดส่ง)
+//    ส่วนจอนี้คือใบสั่งซื้อของ ZORT ⇒ **คนละข้อมูล คนละความหมาย**
+//    เคยคิดจะดัดจอเดิมให้หัวคอลัมน์ตรงภาพแล้วจบ ซึ่งง่ายกว่าและดูเหมือนเสร็จทันที
+//    แต่จะได้จอที่ **หน้าตาผ่านแต่ข้อมูลผิดความหมาย** — "เหมือน ZORT 100%"
+//    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import type { TrackerOrder, TrackerStatus } from '@/lib/types'
-import { fmtBaht } from '@/lib/format'
+import { fmtBaht, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText,
-  type PillTone,
+  PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
+  BtnGhost, LinkText, RowMenu, EmptyState,
 } from '@/components/zort'
 
-const STATUS_LABEL: Record<TrackerStatus, string> = {
-  pending: 'ยังไม่มัดจำ',
-  talking: 'เริ่มคุยแล้ว',
-  deposit: 'มัดจำแล้ว',
-  production: 'กำลังผลิต',
-  shipping: 'กำลังส่ง',
-  warehouse: 'ถึงโกดัง',
-  done: 'เสร็จแล้ว',
+interface Row {
+  number: string
+  vendor: string
+  po_date: string
+  status: string
+  amount: number
+  payment_status?: string
+  warehouse?: string
 }
-const STATUS_TONE: Record<TrackerStatus, PillTone> = {
-  pending: 'gray',
-  talking: 'blue',
-  deposit: 'orange',
-  production: 'blue',
-  shipping: 'blue',
-  warehouse: 'orange',
-  done: 'green',
+interface Resp {
+  skip?: string
+  total: number
+  amount: number
+  limit: number
+  offset: number
+  byStatus?: { status: string; c: number }[]
+  rows: Row[]
 }
-// ยังไม่จบ = ยังเป็นเงินที่ผูกไว้กับของที่ยังไม่ถึงมือ
-const OPEN: TrackerStatus[] = ['pending', 'talking', 'deposit', 'production', 'shipping']
 
-const money = (s: string) => Number(String(s ?? '').replace(/[^0-9.-]/g, '')) || 0
+const PAGE = 50
+
+// ชื่อสถานะในคลังเงาเป็นภาษาอังกฤษดิบจาก ZORT — **แปลบนจอเท่านั้น**
+// ค่าที่ส่งกลับ API ต้องเป็นค่าดิบ ไม่งั้นกรองไม่ตรง (กติกาเดียวกับจอรายการขาย)
+const STATUS_TH: Record<string, string> = {
+  Success: 'สำเร็จ',
+  Voided: 'ยกเลิก',
+  Pending: 'รอดำเนินการ',
+  Waiting: 'รอโอน',
+  WaitingPayment: 'รอชำระ',
+}
+const statusTh = (s: string) => STATUS_TH[s] ?? (s || 'ไม่ระบุสถานะ')
+const statusTone = (s: string) =>
+  s === 'Success' ? 'green' : s === 'Voided' ? 'red' : s ? 'orange' : 'gray'
 
 export default function CorePurchasesPage() {
-  const [orders, setOrders] = useState<TrackerOrder[]>([])
-  const [importCount, setImportCount] = useState<number | null>(null)
-  const [tab, setTab] = useState<'open' | 'all' | TrackerStatus>('open')
   const [q, setQ] = useState('')
+  const [tab, setTab] = useState('all')
+  const [offset, setOffset] = useState(0)
+  const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (off = 0, tabId = tab) => {
     setLoading(true)
     setError('')
-    const [sheetRes, impRes] = await Promise.allSettled([
-      fetch('/api/sheets').then((r) => r.json()),
-      fetch('/api/import').then((r) => r.json()),
-    ])
-    if (sheetRes.status === 'fulfilled' && Array.isArray(sheetRes.value?.orders)) {
-      setOrders(sheetRes.value.orders as TrackerOrder[])
-    } else {
-      // ใบสั่งซื้อดึงไม่ได้ต้องบอก ไม่ใช่โชว์ตารางว่างเหมือนไม่มีของสั่งค้าง
-      setError('ดึงรายการสั่งของกับโรงงานไม่ได้')
-      setOrders([])
+    try {
+      const qs = new URLSearchParams({ list: 'purchases', limit: String(PAGE), offset: String(off) })
+      if (tabId !== 'all') qs.set('status', tabId)
+      if (q.trim()) qs.set('q', q.trim())
+      const res = await fetch(`/api/web/core?${qs}`)
+      const d = await res.json()
+      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      setData(d)
+      setOffset(off)
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e))
+    } finally {
+      setLoading(false)
     }
-    setImportCount(
-      impRes.status === 'fulfilled' && Array.isArray(impRes.value?.items)
-        ? impRes.value.items.length
-        : null
-    )
-    setLoading(false)
-  }, [])
+  }, [q, tab])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const shown = useMemo(() => {
-    const needle = q.trim().toLowerCase()
-    return orders.filter((o) => {
-      if (tab === 'open' && !OPEN.includes(o.status)) return false
-      if (tab !== 'open' && tab !== 'all' && o.status !== tab) return false
-      if (!needle) return true
-      return (
-        String(o.product ?? '').toLowerCase().includes(needle) ||
-        String(o.factory ?? '').toLowerCase().includes(needle)
-      )
-    })
-  }, [orders, tab, q])
+  const rows = data?.rows ?? []
+  const shown = offset + rows.length
+  const byStatus = Array.isArray(data?.byStatus) ? data!.byStatus! : []
+  const countOf = (s: string) => byStatus.find((x) => x.status === s)?.c ?? 0
 
-  const openOrders = orders.filter((o) => OPEN.includes(o.status))
-  const openValue = openOrders.reduce((s, o) => s + money(o.total), 0)
-  const paidDeposit = openOrders.reduce((s, o) => s + money(o.deposit), 0)
-
+  // ⚠️ **แท็บที่เป็น 0 ก็ต้องโชว์** — ZORT โชว์ "รอโอน (0) · รอชำระ (0)" ไว้เสมอ
+  //    ถ้าโชว์เฉพาะแท็บที่มีของ วันที่มีใบรอชำระเข้ามาแท็บจะโผล่มาเองแบบไม่มีใครคาด
+  //    และคนใช้จะไม่รู้ว่าเคยมีตัวกรองนี้อยู่ตลอด
   const tabs = [
-    { id: 'open', label: 'ที่ยังไม่จบ', count: openOrders.length },
-    { id: 'all', label: 'ทั้งหมด', count: orders.length },
-    ...(Object.keys(STATUS_LABEL) as TrackerStatus[]).map((s) => ({
-      id: s, label: STATUS_LABEL[s], count: orders.filter((o) => o.status === s).length,
-    })),
+    { id: 'all', label: 'ทั้งหมด', count: data?.total },
+    { id: 'Waiting', label: 'รอโอน', count: countOf('Waiting') },
+    { id: 'WaitingPayment', label: 'รอชำระ', count: countOf('WaitingPayment') },
+    { id: 'Success', label: 'สำเร็จ', count: countOf('Success') },
   ]
 
   return (
@@ -105,89 +106,131 @@ export default function CorePurchasesPage() {
       <PageHead
         title="รายการซื้อ"
         summary={
-          <>
-            จำนวน {orders.length.toLocaleString('th-TH')} รายการ, ที่ยังไม่จบ{' '}
-            {openOrders.length.toLocaleString('th-TH')} ใบ มูลค่า {fmtBaht(openValue)}
-            {paidDeposit > 0 && <> · มัดจำไปแล้ว {fmtBaht(paidDeposit)}</>}
-            {' | '}
-            <Link href="/core/moves" className="text-blue-600 hover:underline">บันทึกรับของเข้าคลัง</Link>
-          </>
+          data
+            ? <>
+              จำนวน {fmtNum(data.total)} รายการ, มูลค่าทั้งหมด {fmtBaht(data.amount)}
+              {' | '}
+              <Link href="/core/moves" className="text-blue-600 hover:underline">ตรวจสอบการรับสินค้าเข้า</Link>
+            </>
+            : 'กำลังโหลด…'
         }
         actions={
-          <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+          <>
+            <BtnGhost onClick={() => load(offset)} disabled={loading}>
+              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
+            </BtnGhost>
+            {/* ปุ่มตามภาพ ZORT — พาไปหน้าที่บอกว่ายังไม่ได้ทำ ไม่ทำปุ่มหลอก */}
+            <Link href="/core/soon/buy-import"
+              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              นำเข้าไฟล์ (Excel)
+            </Link>
+            <Link href="/core/soon/buy-create"
+              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              style={{ background: '#1b3b73' }}>
+              สร้าง
+            </Link>
+            <Link href="/core/soon/buy-create-quick"
+              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              style={{ background: '#1b3b73' }}>
+              สร้างอย่างง่าย
+            </Link>
+          </>
         }
       />
 
       <SearchRow
         value={q}
         onChange={setQ}
-        onSubmit={() => {}}
-        placeholder="ค้นชื่อสินค้า หรือโรงงาน"
-        advanced={<LinkText onClick={() => {}}>ค้นหา</LinkText>}
-        right={
-          importCount !== null ? (
-            <Link href="/import" className="text-[13px] text-blue-600 hover:underline">
-              ดรอปชิปปิ้ง ({importCount.toLocaleString('th-TH')} รายการที่กำลังดู) →
-            </Link>
-          ) : undefined
-        }
+        onSubmit={() => load(0)}
+        placeholder="เลขที่ใบสั่งซื้อ หรือชื่อผู้ขาย"
+        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
       />
 
       {error && <ErrorBox title="ดึงรายการซื้อไม่ได้">{error}</ErrorBox>}
-      {loading && orders.length === 0 && <LoadingState />}
+      {loading && !data && <LoadingState />}
+      {data?.skip && (
+        <div className="bg-white border border-gray-200 rounded-md p-4 text-[13px] text-gray-500">{data.skip}</div>
+      )}
 
-      <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
-        ⚠️ <b>ของที่ซื้อเข้ามายังไม่บวกเข้าคลังเงาอัตโนมัติ</b> — ZORT รับของเข้าแล้วสต็อกขึ้นเอง
-        แต่ของเราต้องไปบันทึกที่หน้า <Link href="/core/moves" className="text-blue-600 underline">ปรับสต็อกมือ</Link> ก่อน
-      </div>
-
-      {!loading && (
+      {data && !data.skip && (
         <>
-          <Tabs tabs={tabs} active={tab} onChange={(id) => setTab(id as typeof tab)} />
+          <Tabs
+            tabs={tabs}
+            active={tab}
+            onChange={(id) => { setTab(id); load(0, id) }}
+          />
 
           <TableWrap>
-            <table className="w-full min-w-[820px]">
+            <table className="w-full min-w-[900px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}>สินค้า</th>
-                  <th className={TH}>ผู้ขาย / โรงงาน</th>
-                  <th className={THR}>จำนวน</th>
-                  <th className={THR}>มัดจำ</th>
+                  <th className={TH}>วันที่</th>
+                  <th className={TH}>รายการ</th>
+                  <th className={TH}>ผู้ติดต่อ</th>
                   <th className={THR}>มูลค่า</th>
                   <th className={TH}>สถานะ</th>
-                  <th className={TH}>กำหนด</th>
+                  <th className={TH}>ชำระเงิน</th>
+                  <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
               <tbody>
-                {shown.length === 0 && (
-                  <tr><td colSpan={8} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่มีใบสั่งซื้อในเงื่อนไขนี้</td></tr>
+                {rows.length === 0 && (
+                  q
+                    ? <EmptyState cols={8} icon="🔍" title="ไม่พบใบสั่งซื้อที่ค้นหา" detail="ลองพิมพ์เลขที่ใบหรือชื่อผู้ขายให้สั้นลง" />
+                    : <EmptyState cols={8} icon="🧾" title="ยังไม่มีใบสั่งซื้อในแท็บนี้"
+                        detail="ใบสั่งซื้อดึงมาจาก ZORT — เปิดใบใหม่ที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
-                {shown.map((o, i) => (
-                  <tr key={o.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                    <td className={`${TD} text-gray-400`}>{i + 1}</td>
-                    <td className={TD}><span className="text-blue-600">{o.product || '—'}</span></td>
-                    <td className={`${TD} text-gray-600 max-w-[190px] truncate`}>{o.factory || '—'}</td>
-                    <td className={TDR}>{Number(o.qty || 0).toLocaleString('th-TH')}</td>
-                    <td className={`${TDR} text-gray-500`}>{money(o.deposit) ? fmtBaht(money(o.deposit)) : '—'}</td>
-                    <td className={TDR}>{money(o.total) ? fmtBaht(money(o.total)) : '—'}</td>
+                {rows.map((r, i) => (
+                  <tr key={r.number} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    <td className={`${TD} whitespace-nowrap text-gray-500`}>{r.po_date}</td>
+                    <td className={TD}><span className="text-blue-600">{r.number}</span></td>
+                    <td className={TD}><span className="text-blue-600">{r.vendor || '—'}</span></td>
+                    <td className={TDR}>{fmtBaht(r.amount)}</td>
                     <td className={TD}>
-                      <Pill tone={STATUS_TONE[o.status] ?? 'gray'}>{STATUS_LABEL[o.status] ?? o.status}</Pill>
+                      <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
+                      {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
+                      {r.warehouse && <span className="block text-[11px] text-gray-400 mt-0.5">{r.warehouse}</span>}
                     </td>
-                    <td className={`${TD} text-gray-500 whitespace-nowrap`}>{o.due || '—'}</td>
+                    <td className={TD}>
+                      {r.payment_status
+                        ? <Pill tone={/ครบ|paid|Success/i.test(r.payment_status) ? 'green' : 'orange'}>{r.payment_status}</Pill>
+                        : <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className={`${TD} text-right`}>
+                      <RowMenu
+                        items={[
+                          { label: 'คัดลอกเลขที่ใบ', onClick: () => { navigator.clipboard?.writeText(r.number).catch(() => {}) } },
+                        ]}
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
+
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
-                แสดง {shown.length.toLocaleString('th-TH')} จาก {orders.length.toLocaleString('th-TH')} รายการ
+                แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
               </span>
-              <Link href="/tracker" className="text-[12px] text-blue-600 hover:underline">
-                แก้ไข / อัปรูป / เปลี่ยนสถานะ ที่หน้าติดตามออเดอร์ →
-              </Link>
+              <div className="flex gap-2">
+                <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
+                  ← ก่อนหน้า
+                </BtnGhost>
+                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= data.total}>
+                  ถัดไป →
+                </BtnGhost>
+              </div>
             </div>
           </TableWrap>
+
+          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+            ยอดรวมตรงกับ ZORT ทุกบาท (ตรวจแล้ว {fmtNum(data.total)} ใบ · {fmtBaht(data.amount)}) ·
+            จอนี้เป็น<b>ใบสั่งซื้อของ ZORT</b> คนละอย่างกับ{' '}
+            <Link href="/core/factory-orders" className="text-blue-600 hover:underline">สั่งของกับโรงงาน</Link>
+            {' '}ที่ร้านใช้ติดตามมัดจำและกำหนดส่ง
+          </p>
         </>
       )}
     </div>
