@@ -20,7 +20,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR,
+  PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, RowMenu, EmptyState,
 } from '@/components/zort'
 
@@ -60,19 +60,17 @@ function Qty({ n, unit }: { n?: number; unit?: string }) {
 
 export default function CoreBundlesPage() {
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState<'all' | 'active' | 'inactive'>('all')
   const [offset, setOffset] = useState(0)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const imgOf = useSkuImages()
 
-  const load = useCallback(async (off = 0, tabId = tab) => {
+  const load = useCallback(async (off = 0) => {
     setLoading(true)
     setError('')
     try {
       const qs = new URLSearchParams({ list: 'bundles', limit: String(PAGE), offset: String(off) })
-      if (tabId !== 'all') qs.set('only', tabId)
       if (q.trim()) qs.set('q', q.trim())
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
@@ -84,7 +82,7 @@ export default function CoreBundlesPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, tab])
+  }, [q])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -144,16 +142,11 @@ export default function CoreBundlesPage() {
             )}
           </div>
 
-          {/* ZORT ไม่มีแท็บในจอนี้ — เราเพิ่มเองเพราะมีธง active ครบและกรองที่ฐานข้อมูลได้ */}
-          <Tabs
-            tabs={[
-              { id: 'all', label: 'ทั้งหมด', count: data.total },
-              { id: 'active', label: 'เปิดใช้งาน', count: data.active },
-              { id: 'inactive', label: 'ปิดใช้งาน', count: data.inactive },
-            ]}
-            active={tab}
-            onChange={(id) => { const t = id as 'all' | 'active' | 'inactive'; setTab(t); load(0, t) }}
-          />
+          {/* ⚠️ **ZORT ไม่มีแท็บในจอนี้** — หลังแถวค้นหาคือหัวตารางเลย
+              เคยใส่แท็บ เปิด/ปิดใช้งาน ไว้เพราะมีธง active ครบและกรองที่ฐานข้อมูลได้
+              แต่กฎที่เจ้าของร้านสั่งคือ "เหมือน ZORT 100% ทุกจุด ไม่เหมือนให้แก้ใหม่"
+              และตอนนี้ปิดใช้งาน = 0 อยู่แล้ว แท็บจึงไม่ได้ช่วยอะไรด้วยซ้ำ ⇒ ถอดออก
+              (ตัวกรองยังอยู่ฝั่งเซิร์ฟเวอร์ `only=active|inactive` เอากลับมาได้ทันทีถ้าต้องการ) */}
 
           <TableWrap>
             <table className="w-full min-w-[940px]">
@@ -168,14 +161,15 @@ export default function CoreBundlesPage() {
                   <th className={THR}>พร้อมขาย</th>
                   <th className={TH}>วันหมดอายุรายการ</th>
                   <th className={TH}>สถานะ</th>
+                  <th className={TH}>Marketplace</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
                   q
-                    ? <EmptyState cols={10} icon="🔍" title="ไม่พบชุดที่ค้นหา" detail="ลองพิมพ์รหัสชุดหรือชื่อชุดให้สั้นลง" />
-                    : <EmptyState cols={10} icon="📦" title="ยังไม่มีสินค้าเป็นชุดในแท็บนี้"
+                    ? <EmptyState cols={11} icon="🔍" title="ไม่พบชุดที่ค้นหา" detail="ลองพิมพ์รหัสชุดหรือชื่อชุดให้สั้นลง" />
+                    : <EmptyState cols={11} icon="📦" title="ยังไม่มีสินค้าเป็นชุด"
                         detail="ชุดสินค้าดึงมาจาก ZORT — สร้างชุดที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
                 {rows.map((r, i) => (
@@ -207,6 +201,10 @@ export default function CoreBundlesPage() {
                         {r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
                       </span>
                     </td>
+                    {/* ⚠️ ZORT โชว์ไอคอนร้านมาร์เก็ตเพลสตรงนี้ แต่ **API ไม่ส่งข้อมูลนี้มาเลย**
+                        (Bundle/GetBundles ไม่มีช่อง marketplace) ⇒ มีหัวคอลัมน์ให้ผังตรง
+                        แต่ใส่ขีด และเขียนเหตุผลไว้ใต้ตาราง — เหมือนที่ทำกับมูลค่ารายคลัง */}
+                    <td className={TD}><span className="text-gray-300">—</span></td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
@@ -235,7 +233,11 @@ export default function CoreBundlesPage() {
             </div>
           </TableWrap>
 
-          {data.note && <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">{data.note}</p>}
+          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+            คอลัมน์ <b>Marketplace</b> ยังว่างทุกแถว เพราะ ZORT ไม่ส่งข้อมูลการผูกชุดกับร้าน
+            มาร์เก็ตเพลสออกมาทาง API — มีหัวคอลัมน์ไว้ให้ผังตรงกับ ZORT แต่ไม่เดาข้อมูลใส่
+            {data.note ? ` · ${data.note}` : ''}
+          </p>
         </>
       )}
     </div>
