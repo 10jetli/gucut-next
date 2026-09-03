@@ -35,6 +35,8 @@ interface DeadRow {
   sku: string; name?: string; category?: string
   lastSoldAt?: string | null; onhand?: number; value?: number
 }
+/** ค่าที่คัดมาจากจอหมวดหมู่ของ ZORT — ต้นทุนเฉลี่ยถ่วงน้ำหนักที่ API ไม่เปิดให้ดึง */
+interface CatResp { zortTotalValue?: number; zortCollectedAt?: string; zortCategories?: number }
 interface DeadResp {
   skip?: string; days?: number; total?: number; rows?: DeadRow[]
   /** มูลค่ารวมของสินค้าจมทั้งชุด (คิดจากราคาขาย) */
@@ -54,6 +56,7 @@ const DEAD_RANGES = [
 export default function CoreProductReportPage() {
   const [stock, setStock] = useState<StockResp | null>(null)
   const [dead, setDead] = useState<DeadResp | null>(null)
+  const [cat, setCat] = useState<CatResp | null>(null)
   const [deadErr, setDeadErr] = useState('')
   const [deadDays, setDeadDays] = useState(90)
   const [q, setQ] = useState('')
@@ -64,14 +67,17 @@ export default function CoreProductReportPage() {
     setLoading(true)
     setError('')
     try {
-      const [sRes, dRes] = await Promise.all([
+      const [sRes, dRes, cRes] = await Promise.all([
         fetch('/api/web/core?list=stock&limit=1').then((r) => r.json()),
         // ท่อนี้มีแล้ว · ล้มก็ไม่ทำให้ทั้งจอพัง แค่ตารางสินค้าจมว่าง
         // ⚠️ แต่ต้องจำไว้ว่า "ล้มเพราะอะไร" — ท่อพังกับไม่มีสินค้าจม เขียนเหมือนกันไม่ได้
         fetch(`/api/web/core?list=deadstock&days=${days}`).then((r) => r.json()).catch(() => null),
+        // ค่าที่คัดจาก ZORT — ล้มก็แค่ไม่มีบรรทัดเทียบ ไม่ทำให้ทั้งจอพัง
+        fetch('/api/web/core?list=categories').then((r) => r.json()).catch(() => null),
       ])
       if (sRes?.error) throw new Error(sRes.error)
       setStock(sRes)
+      setCat(cRes && !cRes.error ? cRes : null)
       setDead(dRes && !dRes.error ? dRes : null)
       setDeadErr(!dRes ? 'ยิงไปที่ท่อสินค้าจมไม่สำเร็จ' : (typeof dRes.error === 'string' ? dRes.error : ''))
     } catch (e) {
@@ -129,6 +135,26 @@ export default function CoreProductReportPage() {
                 {/* ⚠️ **ต้องโชว์ทั้งสองแบบพร้อมป้ายกำกับ ห้ามโชว์ตัวเดียวลอย ๆ**
                     เลขนี้ต่างจาก ZORT หลายล้าน คนเปิดสองจอเทียบกันแล้วไม่มีคำอธิบาย
                     = แย่กว่าไม่มีการ์ดนี้เลย (เจ้าของร้านสั่งเอง 3 ก.ย. 2569) */}
+                {/* 🟢 เลขที่ตรงกับ ZORT — ขึ้นก่อนเพราะเป็นตัวที่เอาไปใช้กับบัญชีจริง
+                    ⚠️ เป็นค่า "คัดมา" ต้องมีวันที่คัดกำกับเสมอ */}
+                {typeof cat?.zortTotalValue === 'number' && (
+                  <div className="text-center mb-5">
+                    <p className="text-[11.5px] text-gray-500">
+                      ต้นทุนเฉลี่ยถ่วงน้ำหนัก · คัดมาจากจอ ZORT {cat.zortCategories ?? 0} หมวด
+                    </p>
+                    <p className="text-[30px] font-semibold leading-none mt-0.5" style={{ color: 'rgb(19,175,130)' }}>
+                      {fmtMoney(cat.zortTotalValue)}
+                      <span className="text-[15px] text-gray-500 font-normal"> บาท</span>
+                    </p>
+                    <p className="text-[11.5px] text-gray-500 mt-1">
+                      + สินค้าที่ยังไม่ได้จัดหมวด {fmtMoney(ZORT_STOCK_VALUE - cat.zortTotalValue)} บาท
+                      {' '}= <b>{fmtMoney(ZORT_STOCK_VALUE)}</b> เท่ากับที่ ZORT แสดงทั้งร้าน
+                    </p>
+                    {cat.zortCollectedAt && (
+                      <p className="text-[11px] text-gray-400 mt-0.5">คัดมาเมื่อ {cat.zortCollectedAt}</p>
+                    )}
+                  </div>
+                )}
                 <p className="text-[11.5px] text-gray-500">คิดจากราคาขาย</p>
                 <p className="text-[30px] font-semibold text-blue-600 leading-none mt-0.5">
                   {typeof stock.value === 'number' ? fmtMoney(stock.value) : '—'}
@@ -160,7 +186,12 @@ export default function CoreProductReportPage() {
 
               {/* 🔴 กล่องนี้ห้ามถอด — ไม่มีมันคือปล่อยให้คนเชื่อว่าเลขเราควรเท่ากับ ZORT */}
               <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5 leading-relaxed">
-                <b>ทำไมไม่ตรงกับ ZORT</b> — จอเดียวกันของ ZORT แสดง <b>{fmtMoney(ZORT_STOCK_VALUE)} บาท</b>
+                {typeof cat?.zortTotalValue === 'number'
+                  ? <><b>ตอนนี้เลขบนสุดตรงกับ ZORT แล้ว</b> — สองเลขล่างเป็นวิธีคิดของเราเอง
+                      เก็บไว้ดูเทียบ · <b>ราคาซื้อในทะเบียนต่ำกว่าต้นทุนจริง 2-3 เท่า</b>
+                      (พิสูจน์รายหมวดแล้ว) ⇒ <b>อย่าเอาไปใช้กับบัญชี</b> · </>
+                  : null}
+                <b>ทำไมสองเลขล่างไม่ตรงกับ ZORT</b> — จอเดียวกันของ ZORT แสดง <b>{fmtMoney(ZORT_STOCK_VALUE)} บาท</b>
                 {' '}(ตรวจ {ZORT_CHECKED_AT}) เพราะ ZORT ใช้ <b>ต้นทุนเฉลี่ยถ่วงน้ำหนัก</b>
                 {' '}ที่คิดใหม่ทุกครั้งที่ซื้อของเข้า ซึ่ง <b>API ไม่เปิดให้ดึง</b> ⇒ เราคิดแบบเดียวกันไม่ได้
                 {' '}· ตัวเลขทั้งสองแบบข้างบนจึงคร่อมเลขของ ZORT อยู่ (ราคาขายสูงกว่า · ราคาทุนต่ำกว่า)
