@@ -33,20 +33,34 @@ interface Conn {
   retired?: boolean
   /** % การกระจายสินค้า ถ้ามี (ZORT โชว์คอลัมน์นี้ในกลุ่ม Marketplace/Website) */
   spread?: number | null
+  /** เวลาที่ใช้ยิงตรวจ — **ช้าไม่ใช่พัง เป็นคนละสถานะ** */
+  ms?: number
 }
 interface Resp {
   skip?: string
   checkedAt?: string
+  /** ตัวนับจากเซิร์ฟเวอร์ — **ใช้ของเขา ไม่นับเอง** จะได้ไม่มีวันขัดกันเองบนจอเดียว */
+  connected?: number
+  notConnected?: number
+  unchecked?: number
+  retired?: number
+  note?: string
   groups?: Record<string, Conn[]>
 }
 
 // ชื่อกลุ่มตาม ZORT — เขาใช้ภาษาอังกฤษในแถวหัวกลุ่มจริง ๆ จึงใช้ตาม
+// ⚠️ **กลุ่มที่ไม่มีในรายการนี้ต้องยังถูกวาด** (เช่น warehouse ที่ ZORT ไม่มี แต่เรามี ZORT 2 ร้าน)
+//    รายการตายตัวที่ "กรองทิ้งของที่ไม่รู้จัก" คือวิธีทำข้อมูลหายแบบเงียบที่สุด —
+//    เพิ่มกลุ่มใหม่ฝั่งเซิร์ฟเวอร์แล้วจอไม่ขึ้น และไม่มีอะไรฟ้องสักอย่าง
 const GROUPS: { key: string; label: string; spread?: boolean }[] = [
   { key: 'marketplace', label: 'Marketplace', spread: true },
   { key: 'website', label: 'Website', spread: true },
   { key: 'social', label: 'Social' },
   { key: 'accounting', label: 'Accounting' },
+  { key: 'warehouse', label: 'Warehouse (คลังต้นทาง)' },
 ]
+/** ช้ากว่านี้ถือว่า "ช้า" — เกณฑ์เดียวกับหน้าสถานะระบบฝั่งหน้าร้าน */
+const SLOW_MS = 2500
 
 function StatusPill({ c }: { c: Conn }) {
   if (c.retired) {
@@ -89,7 +103,12 @@ export default function ConnectionsRegistryPage() {
 
   const groups = data?.groups ?? {}
   const all = Object.values(groups).flat()
-  const unknown = all.filter((c) => c.connected === null && !c.retired).length
+  // กลุ่มที่เซิร์ฟเวอร์ส่งมาแต่ไม่มีในรายการข้างบน — ต้องวาดต่อท้าย ห้ามทิ้ง
+  const extraGroups = Object.keys(groups).filter((k) => !GROUPS.some((g) => g.key === k))
+  const shown = [...GROUPS, ...extraGroups.map((k) => ({ key: k, label: k, spread: false }))]
+  const unknown = typeof data?.unchecked === 'number'
+    ? data.unchecked
+    : all.filter((c) => c.connected === null && !c.retired).length
 
   return (
     <div className="p-4 md:p-6">
@@ -132,11 +151,15 @@ export default function ConnectionsRegistryPage() {
           <div className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
             ทุกบรรทัดในจอนี้<b>มาจากการยิงของจริง</b> ไม่มีบรรทัดไหนเขียนตายตัว
             {data.checkedAt && <> · ตรวจเมื่อ {new Date(data.checkedAt).toLocaleString('th-TH')}</>}
+            <br />
+            ✅ เชื่อมแล้ว <b>{data.connected ?? 0}</b> · ⬜ ยังไม่ได้เชื่อม <b>{data.notConnected ?? 0}</b>
+            {' '}· ❓ ยังไม่มีตัวตรวจ <b>{data.unchecked ?? 0}</b> · 🚫 เลิกใช้แล้ว <b>{data.retired ?? 0}</b>
             {unknown > 0 && (
               <>
                 <br />
-                ❓ ยังไม่มีตัวตรวจ <b>{unknown}</b> รายการ — <b>ไม่ได้แปลว่าไม่ได้เชื่อม</b>
-                {' '}แปลว่า<b>เรายังตรวจไม่ได้</b> · ช่องพวกนี้คือรายการงานที่เหลือของโครงการแก่น
+                {/* ⚠️ ไม่พูดเลขซ้ำกับบรรทัดบน — บอกแค่ว่ามันแปลว่าอะไร */}
+                ช่อง <b>ยังไม่มีตัวตรวจ</b> <b>ไม่ได้แปลว่าไม่ได้เชื่อม</b> แปลว่า<b>เรายังตรวจไม่ได้</b>
+                {' '}· ช่องพวกนี้คือรายการงานที่เหลือของโครงการแก่น
               </>
             )}
           </div>
@@ -152,7 +175,7 @@ export default function ConnectionsRegistryPage() {
             </TableWrap>
           )}
 
-          {GROUPS.map((g) => {
+          {shown.map((g) => {
             const rows = groups[g.key] ?? []
             if (rows.length === 0) return null
             return (
@@ -184,7 +207,15 @@ export default function ConnectionsRegistryPage() {
                                 : <span className="text-gray-300">—</span>)
                               : null}
                           </td>
-                          <td className={TD}><StatusPill c={c} /></td>
+                          <td className={TD}>
+                            <StatusPill c={c} />
+                            {/* ⚠️ ช้าไม่ใช่พัง — โชว์เวลาไว้ให้เห็น แต่ไม่เปลี่ยนสถานะเป็นแดง */}
+                            {typeof c.ms === 'number' && (
+                              <span className={`block text-[11px] mt-0.5 ${c.ms >= SLOW_MS ? 'text-amber-700' : 'text-gray-400'}`}>
+                                {c.ms >= SLOW_MS ? `ช้า ${(c.ms / 1000).toFixed(1)} วินาที` : `${c.ms} ms`}
+                              </span>
+                            )}
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -201,6 +232,9 @@ export default function ConnectionsRegistryPage() {
             ⚠️ ZORT มีตาราง <b>API</b> ต่อท้าย แสดง Store name กับ API Key ที่ปิดบางส่วน —
             <b> ของเราตั้งใจไม่ทำ</b> คีย์ทั้งหมดอยู่ในตัวแปรลับที่ Netlify
             การเอาคีย์มาโชว์บนจอ (ต่อให้ปิดบางส่วน) ไม่ได้ช่วยให้ทำงานอะไรได้เพิ่ม แต่เพิ่มที่ให้มันรั่ว
+            <br />
+            ⚠️ กลุ่ม <b>Warehouse</b> ไม่มีในจอ ZORT — เป็นของเราเอง (ZORT 2 ร้านคือ<b>ต้นทาง</b>ของคลังเงา)
+            · จอนี้<b>ยิงของจริงทุกครั้งที่กด</b> รวมถึงยิงไปหา ZORT ⇒ <b>ไม่มีรีเฟรชอัตโนมัติ</b> โดยตั้งใจ
           </p>
         </>
       )}
