@@ -22,7 +22,7 @@ import Link from 'next/link'
 import { fmtBaht, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
+import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState } from '@/components/zort'
 
 interface Row {
   name: string
@@ -174,9 +174,10 @@ export default function CoreCategoriesPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={5} className="px-3 py-6 text-[13px] text-gray-400 text-center">
-                    {q ? 'ไม่พบหมวดหมู่ที่ค้นหา' : 'ยังไม่มีหมวดหมู่'}
-                  </td></tr>
+                  q
+                    ? <EmptyState cols={5} icon="🔍" title="ไม่พบหมวดหมู่ที่ค้นหา" detail="ลองพิมพ์คำสั้นลง" />
+                    : <EmptyState cols={5} icon="🗂️" title="ยังไม่มีหมวดหมู่"
+                        detail="หมวดหมู่ดึงมาจาก ZORT — เพิ่มหมวดที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
                 {rows.map((r) => (
                   <tr key={r.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">

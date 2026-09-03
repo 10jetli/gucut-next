@@ -10,6 +10,7 @@
 //   → แถวค้นหา (ช่องกลม + ลิงก์ค้นหาขั้นสูง · ขวาเป็นตัวกรอง) → แท็บสถานะมีจำนวนในวงเล็บ
 //   → ตารางหัวเทาตัวเล็ก คอลัมน์แรกเป็นเลขลำดับ ลิงก์สีน้ำเงิน สถานะเป็นป้ายกลม เลขลบสีแดง
 import { useState, type ReactNode } from 'react'
+import Link from 'next/link'
 
 export const ZORT_BLUE = '#1b3b73'
 
@@ -268,4 +269,36 @@ export function summaryLine(count: number, amount?: number) {
     ? `, มูลค่าทั้งหมด ${amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
     : ''
   return `จำนวน ${count.toLocaleString('th-TH')} รายการ${a}`
+}
+
+/* ── จอว่าง แบบ ZORT ───────────────────────────────────────────────────
+   ⚠️ ZORT **ไม่โชว์ตารางเปล่า** ตอนไม่มีข้อมูล — หัวตารางยังอยู่ แต่ในตัวตาราง
+      เป็นรูปประกอบ + ลิงก์ชวนทำ + คำอธิบายว่าจอนี้มีไว้ทำอะไร
+      (ภาพจริง zort-ui/28-zort-รายจ่ายอื่น-ว่าง-empty-state.jpg)
+   ตารางเปล่าอ่านได้สองแบบ — "ไม่มีข้อมูล" กับ "โหลดไม่สำเร็จ" — และคนใช้แยกไม่ออก
+   ⇒ ต้องบอกให้ชัดว่าไม่มีข้อมูลจริง ๆ และทำอะไรต่อได้ */
+export function EmptyState({
+  icon = '📄', title, detail, action, href, cols,
+}: {
+  icon?: string
+  /** บรรทัดสีน้ำเงิน — ชวนให้ทำอะไรต่อ ไม่ใช่แค่บอกว่าว่าง */
+  title: string
+  detail?: string
+  action?: ReactNode
+  href?: string
+  /** จำนวนคอลัมน์ของตาราง — ต้องใส่ให้ตรง ไม่งั้นแถวจะกินไม่เต็มความกว้าง */
+  cols: number
+}) {
+  return (
+    <tr>
+      <td colSpan={cols} className="px-3 py-12 text-center">
+        <span className="block text-[40px] leading-none mb-2 opacity-70">{icon}</span>
+        {href
+          ? <Link href={href} className="block text-[13.5px] text-blue-600 hover:underline">{title}</Link>
+          : <span className="block text-[13.5px] text-blue-600">{title}</span>}
+        {detail && <span className="block text-[12.5px] text-gray-500 mt-1 max-w-[520px] mx-auto leading-relaxed">{detail}</span>}
+        {action && <span className="block mt-2.5">{action}</span>}
+      </td>
+    </tr>
+  )
 }

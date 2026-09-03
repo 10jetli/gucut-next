@@ -15,7 +15,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState,
 } from '@/components/zort'
 
 interface Row {
@@ -250,15 +250,14 @@ export default function CoreStockPage() {
                 </tr>
               </thead>
               <tbody>
+                {/* ⚠️ จอว่างใช้ผังแบบ ZORT — รูป + ลิงก์ชวนทำ + คำอธิบาย ไม่ใช่ตารางเปล่า
+                    ตารางเปล่าอ่านได้ทั้ง "ไม่มีข้อมูล" และ "โหลดไม่สำเร็จ" คนใช้แยกไม่ออก */}
                 {rows.length === 0 && (
-                  <tr>
-                    <td colSpan={9} className="px-3 py-6 text-[13px] text-gray-400 text-center">
-                      {/* ⚠️ แท็บว่างต้องบอกว่า "ไม่มีของแบบนี้" ไม่ใช่ปล่อยให้ดูเหมือนโหลดพลาด */}
-                      {tab === 'inactive'
-                        ? 'ยังไม่มีสินค้าที่ปิดใช้งาน — สินค้าทุกตัวในคลังเปิดขายอยู่'
-                        : 'ไม่พบสินค้าในเงื่อนไขนี้'}
-                    </td>
-                  </tr>
+                  tab === 'inactive'
+                    ? <EmptyState cols={9} icon="📦" title="ยังไม่มีสินค้าที่ปิดใช้งาน"
+                        detail="สินค้าทุกตัวในคลังเปิดขายอยู่ — ถ้าปิดใช้งานสินค้าที่ ZORT รายการจะมาโผล่ที่นี่" />
+                    : <EmptyState cols={9} icon="🔍" title="ไม่พบสินค้าในเงื่อนไขนี้"
+                        detail="ลองล้างคำค้น หรือเปลี่ยนแท็บ · ถ้าเพิ่งเพิ่มสินค้าที่ ZORT ต้องรอรอบซิงก์ถัดไป" />
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
