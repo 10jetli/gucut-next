@@ -245,7 +245,9 @@ export default function CoreStockPage() {
                   <th className={THR}>ราคาขาย</th>
                   <th className={THR}>คงเหลือ</th>
                   <th className={THR}>พร้อมขาย</th>
-                  <th className={THR}>ขาย {data.soldDays} วัน</th>
+                  {/* ⚠️ ZORT มีคอลัมน์นี้ระหว่าง พร้อมขาย กับ ⋮ — แต่ API ไม่ส่งข้อมูลผูก
+                      สินค้ากับร้านมาร์เก็ตเพลสมาเลย ⇒ มีหัวคอลัมน์ให้ผังตรง ใส่ขีด ไม่เดาข้อมูล */}
+                  <th className={TH}>Marketplace</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
@@ -316,7 +318,7 @@ export default function CoreStockPage() {
                         ? <Num v={r.available} />
                         : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className={TDR}>{r.sold.toLocaleString('th-TH')}</td>
+                    <td className={TD}><span className="text-gray-300">—</span></td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
@@ -333,6 +335,8 @@ export default function CoreStockPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
+                {' '}· คอลัมน์ <b>Marketplace</b> ยังว่างทุกแถว เพราะ ZORT ไม่ส่งข้อมูล
+                การผูกสินค้ากับร้านมาร์เก็ตเพลสออกมาทาง API
                 {tab === 'out' && (
                   <span className="text-gray-400">
                     {' '}· &quot;ของหมด&quot; รวมของที่<b>ติดลบ</b>ด้วย
