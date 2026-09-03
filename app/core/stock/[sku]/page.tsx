@@ -33,6 +33,9 @@ interface Move {
   id?: number; sku: string; qty: number; reason: string; ref?: string; at?: string
 }
 interface MovesResp { rows?: Move[]; reasons?: Record<string, string>; total?: number }
+/** ชุดที่มีรหัสนี้เป็นส่วนประกอบ — ถามด้วย `bundleitems&member=<รหัส>` */
+interface InBundle { bundleSku: string; bundleName?: string; qty?: number }
+interface MemberResp { applied?: { member?: string }; rows?: InBundle[]; collectedAt?: string }
 /** ยอดขายรายเดือนของรหัสนี้ — ถามทีละเดือนด้วย `topproducts&sku=` */
 interface MonthPoint { label: string; qty: number; amount: number }
 
@@ -90,15 +93,19 @@ export default function ProductDetailPage() {
   const [chartErr, setChartErr] = useState('')
   const [chartMode, setChartMode] = useState<'amount' | 'qty'>('amount')
   const [moveFilter, setMoveFilter] = useState('')
+  const [inBundles, setInBundles] = useState<MemberResp | null>(null)
+  const [showAllBundles, setShowAllBundles] = useState(false)
   const imgOf = useSkuImages()
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const [sRes, mRes] = await Promise.all([
+      const [sRes, mRes, bRes] = await Promise.all([
         fetch(`/api/web/core?list=stock&q=${encodeURIComponent(sku)}&limit=20&marketplaces=1`).then((r) => r.json()),
         fetch(`/api/web/core?list=moves&sku=${encodeURIComponent(sku)}&limit=100`).then((r) => r.json()).catch(() => null),
+        // "รหัสนี้อยู่ในชุดไหนบ้าง" — ถามกลับทางกับ list=bundleitems&sku=
+        fetch(`/api/web/core?list=bundleitems&member=${encodeURIComponent(sku)}`).then((r) => r.json()).catch(() => null),
       ])
       if (sRes?.error) throw new Error(sRes.error)
       const rows: Row[] = Array.isArray(sRes?.rows) ? sRes.rows : []
@@ -106,6 +113,9 @@ export default function ProductDetailPage() {
       setRow(rows.find((r) => r.sku === sku) ?? null)
       setMoves(mRes && !mRes.error ? mRes : null)
       setMovesErr(!mRes ? 'ยิงไปที่ท่อความเคลื่อนไหวไม่สำเร็จ' : (typeof mRes.error === 'string' ? mRes.error : ''))
+      // ⚠️ ด่านเดิม — เซิร์ฟเวอร์ต้องยืนยันว่าอ่าน member ที่เราส่งไปจริง
+      //    ไม่ยืนยัน = ถือว่าไม่รู้ ห้ามแปลว่า "ไม่อยู่ในชุดไหนเลย"
+      setInBundles(bRes?.applied?.member === sku ? bRes : null)
     } catch (e) {
       setRow(null)
       setError(String(e instanceof Error ? e.message : e))
@@ -313,10 +323,51 @@ export default function ProductDetailPage() {
                     {row.buy == null ? <span className="text-gray-300">-</span> : `${fmtMoney(row.buy)} บาท`}
                   </p>
                 </div>
-                <div>
+                <div className="sm:col-span-2">
                   <p className="text-[12px] text-gray-500">สินค้าในสินค้าเป็นชุด</p>
-                  {/* ท่อถามย้อน (รหัสนี้อยู่ในชุดไหน) กำลังทำ — ยังไม่มีก็บอกตรง ๆ */}
-                  <p className="text-[15px] text-gray-300">ยังดูย้อนไม่ได้</p>
+                  {(() => {
+                    const list = inBundles?.rows ?? []
+                    // ⚠️ ไม่มีคำตอบจากท่อ ≠ ไม่อยู่ในชุดไหน — ต้องเขียนต่างกัน
+                    if (!inBundles) return <p className="text-[13px] text-gray-400">ยังดูย้อนไม่ได้รอบนี้</p>
+                    if (list.length === 0) return <p className="text-[15px] text-gray-500">ไม่มีข้อมูล</p>
+                    const show = showAllBundles ? list : list.slice(0, 5)
+                    return (
+                      <>
+                        <p className="text-[13.5px] leading-relaxed">
+                          {show.map((b, i) => (
+                            <span key={b.bundleSku}>
+                              {i > 0 && ', '}
+                              <Link href={`/core/bundles/${encodeURIComponent(b.bundleSku)}`}
+                                className="text-blue-600 hover:underline" title={b.bundleName || ''}>
+                                {b.bundleSku}
+                              </Link>
+                            </span>
+                          ))}
+                          {!showAllBundles && list.length > 5 && (
+                            <>
+                              {' '}
+                              <button onClick={() => setShowAllBundles(true)} className="text-blue-600 hover:underline">
+                                ดูข้อมูล (อีก {list.length - 5} ชุด)
+                              </button>
+                            </>
+                          )}
+                        </p>
+                        {/* ⚠️ สูตรชุดเป็นภาพนิ่ง เก็บครั้งเดียว — ต้องบอกวันที่เก็บเสมอ */}
+                        {inBundles.collectedAt && (
+                          <p className="text-[11px] text-gray-400 mt-0.5">
+                            อยู่ใน {list.length} ชุด · สูตรชุดเก็บเมื่อ {inBundles.collectedAt.slice(0, 10)} (ไม่ได้ซิงก์เอง)
+                          </p>
+                        )}
+                      </>
+                    )
+                  })()}
+                </div>
+
+                <div>
+                  <p className="text-[12px] text-gray-500">น้ำหนัก (กรัม)</p>
+                  {/* ZORT มีช่องนี้ — คลังเงายังไม่ได้เก็บ ⇒ ขีดไว้ ห้ามใส่ 0 (0 กรัมคือของไม่มีน้ำหนัก) */}
+                  <p className="text-[15px] text-gray-300">-</p>
+                  <p className="text-[11px] text-gray-400">คลังเงายังไม่ได้เก็บช่องนี้จาก ZORT</p>
                 </div>
                 <div>
                   <p className="text-[12px] text-gray-500">ลงขายที่</p>
@@ -452,9 +503,9 @@ export default function ProductDetailPage() {
           </Card>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            ⚠️ ZORT มีการ์ด <b>กราฟยอดขาย</b> กับ <b>จำนวนคงเหลือรายคลัง</b> ในหน้านี้ด้วย —
-            ยังไม่ทำเพราะ<b>สต็อกรายคลัง ZORT ไม่เปิดให้ดึง</b> (ยิงมาแล้วไม่ผ่านทุกทาง)
-            และยอดขายรายสินค้าเป็นเดือนยังไม่มีท่อ · <b>ทำการ์ดเปล่าไว้ = สัญญาของที่ไม่มี</b> จึงไม่ทำ
+            ⚠️ ZORT มี <b>QR code กับบาร์โค้ด</b> มุมขวาของกล่องข้อมูล (ใช้คู่กับปุ่มพิมพ์เอกสาร) —
+            ยังไม่ทำเพราะปุ่มพิมพ์เอกสารเองก็ยังทำไม่ได้ · ทำบาร์โค้ดไว้เฉย ๆ โดยพิมพ์ไม่ได้
+            ก็ไม่ได้ช่วยอะไร · <b>น้ำหนัก</b> ZORT มีแต่คลังเงายังไม่ได้เก็บช่องนี้มา
           </p>
         </>
       )}
