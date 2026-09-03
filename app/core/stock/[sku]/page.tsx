@@ -87,6 +87,7 @@ export default function ProductDetailPage() {
   //    กติกาเจ้าของร้าน: จอที่ยิงหนักต้องกดเอง · และเปิดหน้าสินค้าบ่อยกว่าดูกราฟมาก
   const [chart, setChart] = useState<MonthPoint[] | null>(null)
   const [chartLoading, setChartLoading] = useState(false)
+  const [chartErr, setChartErr] = useState('')
   const [chartMode, setChartMode] = useState<'amount' | 'qty'>('amount')
   const [moveFilter, setMoveFilter] = useState('')
   const imgOf = useSkuImages()
@@ -115,32 +116,48 @@ export default function ProductDetailPage() {
 
   useEffect(() => { load() }, [load])
 
-  /** ถามยอดขายรายเดือนของรหัสนี้ — เดือนละหนึ่งครั้ง ย้อนไปเท่าที่คลังเงามีประวัติ
-   *  ⚠️ ท่อยังไม่มีโหมด "แยกรายเดือนในครั้งเดียว" ⇒ ต้องยิงหลายครั้ง จึงให้กดเอง */
+  /** ถามยอดขายรายเดือนของรหัสนี้ — **ยิงครั้งเดียว** ด้วย `by=month`
+   *  (เดิมยิงเดือนละครั้ง 12 ครั้ง · ฝั่งเซิร์ฟเวอร์ทำโหมดนี้ให้ ⇒ ลดการเรียก 92%)
+   *
+   *  🔴 **ท่อส่งมาเฉพาะเดือนที่มียอดขาย — เดือนที่ขายไม่ได้เลย "หายไปทั้งแถว"**
+   *     ของจริง: 00073 ไม่มีแถวเดือน 2026-05 เลย (ขายไม่ได้เลยเดือนนั้น)
+   *     ⇒ ถ้าเอา items มาวาดเรียงกันตรง ๆ **แกนเวลาจะข้ามเดือนนั้นไปเงียบ ๆ**
+   *       กราฟจะดูเหมือนขายต่อเนื่อง ทั้งที่มีเดือนที่ขายไม่ได้เลยคั่นอยู่
+   *     ⇒ **สร้างช่องเดือนให้ครบก่อน แล้วค่อยเติมค่าที่ได้มา** ห้ามวาดจาก items ตรง ๆ */
   const loadChart = useCallback(async () => {
     setChartLoading(true)
     try {
-      const months: { from: string; to: string; label: string }[] = []
       const now = new Date()
+      const slots: MonthPoint[] = []
+      const key: string[] = []
       for (let i = 11; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-        const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
-        const last = new Date(d.getFullYear(), d.getMonth() + 1, 0)
-        const to = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`
-        if (to < HISTORY_FROM) continue
-        months.push({ from, to, label: `${TH_MON[d.getMonth()]}/${String(d.getFullYear() + 543).slice(2)}` })
+        const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+        if (`${ym}-28` < HISTORY_FROM) continue
+        key.push(ym)
+        slots.push({ label: `${TH_MON[d.getMonth()]}/${String(d.getFullYear() + 543).slice(2)}`, qty: 0, amount: 0 })
       }
-      const out = await Promise.all(months.map(async (m) => {
-        const qs = new URLSearchParams({ list: 'topproducts', sku, from: m.from, to: m.to })
-        const j = await fetch(`/api/web/core?${qs}`).then((r) => r.json()).catch(() => null)
-        // ⚠️ ตรวจว่าเซิร์ฟเวอร์รับ sku ที่เราส่งไปจริง (`applied`) — ไม่รับ = ทิ้งค่าไปเลย
-        //    เคยเจอมาแล้วว่าพารามิเตอร์ที่ยังไม่รองรับถูกเมินเงียบ แล้วคืนสินค้าขายดีทั้งร้านแทน
-        //    เอามาวาดกราฟ = ขึ้นยอดขายของสินค้าตัวอื่นในหน้าสินค้าตัวนี้ โดยไม่มี error สักตัว
-        const ok = j?.applied?.sku === sku
-        const item = ok && Array.isArray(j.items) ? j.items.find((x: { sku: string }) => x.sku === sku) : null
-        return { label: m.label, qty: Number(item?.qty ?? 0), amount: Number(item?.amount ?? 0) }
-      }))
-      setChart(out)
+      const qs = new URLSearchParams({
+        list: 'topproducts', sku, by: 'month',
+        from: HISTORY_FROM, to: new Date().toISOString().slice(0, 10),
+      })
+      const j = await fetch(`/api/web/core?${qs}`).then((r) => r.json()).catch(() => null)
+      // ⚠️ ด่านเดิม: เซิร์ฟเวอร์ต้องยืนยันว่ารับทั้ง sku และโหมด month ที่เราส่งไปจริง
+      //    ไม่ตรง = ไม่วาดอะไรเลย ดีกว่าวาดยอดของสินค้าตัวอื่น/ช่วงเวลาอื่น
+      if (j?.applied?.sku !== sku || j?.applied?.by !== 'month') {
+        setChart(null)
+        setChartErr('เซิร์ฟเวอร์ไม่ได้ตอบตามรหัส/โหมดที่ขอ — ไม่วาดกราฟดีกว่าวาดผิด')
+        return
+      }
+      setChartErr('')
+      for (const it of (Array.isArray(j.items) ? j.items : [])) {
+        const i = key.indexOf(String(it.month))
+        if (i >= 0) {
+          slots[i].qty = Number(it.qty) || 0
+          slots[i].amount = Number(it.amount) || 0
+        }
+      }
+      setChart(slots)
     } finally {
       setChartLoading(false)
     }
@@ -335,12 +352,17 @@ export default function ProductDetailPage() {
                   <p className="text-[13px] text-gray-600">กดปุ่ม <b>แสดงกราฟ</b> เพื่อคิดยอดขายรายเดือน</p>
                   {/* ⚠️ บอกด้วยว่าทำไมไม่โหลดเอง — ไม่งั้นดูเหมือนจอโหลดไม่ขึ้น */}
                   <p className="text-[11.5px] text-gray-400 mt-1">
-                    ต้องถามทีละเดือน (12 ครั้ง) จึงไม่โหลดเองตอนเปิดหน้า
+                    ยิงครั้งเดียวได้ครบ 12 เดือน — แต่ไม่โหลดเองตอนเปิดหน้า
+                    เพราะคนเปิดหน้าสินค้าบ่อยกว่าดูกราฟมาก
                   </p>
+                  {chartErr && <p className="text-[12px] text-amber-800 mt-2">⚠️ {chartErr}</p>}
                 </div>
               )}
 
             <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
+              ⚠️ เดือนที่แท่งเป็นศูนย์คือ<b>ขายไม่ได้เลยเดือนนั้นจริง ๆ</b> — ท่อส่งมาเฉพาะเดือนที่มียอด
+              จอจึงสร้างช่องเดือนให้ครบก่อนแล้วค่อยเติม <b>ไม่ใช่วาดจากที่ท่อส่งมาตรง ๆ</b>
+              (ไม่งั้นแกนเวลาจะข้ามเดือนที่ขายไม่ได้ไปเงียบ ๆ) ·
               ⚠️ ย้อนได้ถึง <b>1 ก.ย. 2568</b> เท่านั้น (ประวัติใบขายที่คลังเงามี) — เดือนที่เป็นศูนย์
               ก่อนหน้านั้นแปลว่า<b>เราไม่มีข้อมูล</b> ไม่ใช่ขายไม่ได้ ·
               <b> กำไรจากการขาย</b>ที่ ZORT มี ทำไม่ได้เพราะต้องใช้ต้นทุนเฉลี่ยรายตัว
