@@ -37,6 +37,47 @@ async function getJson(url: string) {
   return d
 }
 
+/** การ์ดตัวเลขแบบแดชบอร์ด ZORT — ไอคอนกลมพื้นพาสเทลซ้าย · ป้ายเล็กกับเลขใหญ่ชิดขวา
+ *  (ลอกจาก zort-ui/23-zort-หน้าแรก-แดชบอร์ด.jpg) */
+function ZortStat({
+  icon, bg, fg, label, value, big, note,
+}: {
+  icon: string; bg: string; fg: string
+  label: string
+  value: string
+  big?: 'red' | 'plain'
+  note?: string
+}) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-md px-4 py-3.5 flex items-center gap-3">
+      <span className="w-10 h-10 rounded-full flex items-center justify-center text-[17px] shrink-0"
+        style={{ background: bg, color: fg }}>
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1 text-right">
+        <span className="block text-[12px] text-gray-500 truncate">{label}</span>
+        <span className={`block text-[24px] leading-tight font-semibold ${big === 'red' ? 'text-red-500' : 'text-gray-800'}`}>
+          {value}
+        </span>
+        {note && <span className="block text-[11px] text-gray-400 mt-0.5">{note}</span>}
+      </span>
+    </div>
+  )
+}
+
+/** ทางลัดแบบ ZORT — การ์ดใหญ่ ภาพกลาง ชื่ออยู่ใต้ภาพ */
+function Shortcut({ href, icon, label, soon }: { href: string; icon: string; label: string; soon?: boolean }) {
+  return (
+    <Link href={href}
+      className="bg-white border border-gray-200 rounded-md py-7 flex flex-col items-center gap-3 hover:border-gray-300 hover:shadow-sm transition-all">
+      <span className={`text-[38px] leading-none ${soon ? 'opacity-40 grayscale' : ''}`}>{icon}</span>
+      <span className={`text-[13px] ${soon ? 'text-gray-400' : 'text-gray-700'}`}>
+        {label}{soon ? ' ◦' : ''}
+      </span>
+    </Link>
+  )
+}
+
 export default function DashboardPage() {
   const [today, setToday] = useState<OrdersResp | null>(null)
   const [week, setWeek] = useState<OrdersResp | null>(null)
@@ -138,7 +179,52 @@ export default function DashboardPage() {
         </p>
       )}
 
-      {/* ── การ์ดตัวเลขหลัก ── */}
+      {/* ── ส่วน "รายงาน" — ลอกจากแดชบอร์ดหน้าแรกของ ZORT ตรง ๆ ──
+          ZORT วางไว้ 3 ใบเรียงกัน: ยอดขายวันนี้ · ค้างชำระเงิน · ค้างโอนสินค้า
+          ⚠️ สองใบหลัง **เรายังไม่มีข้อมูล** — คลังเงาเก็บสถานะรวม (Success/Pending/…)
+             ไม่ได้เก็บสถานะการชำระเงินกับสถานะการโอนสินค้าแยกกันแบบ ZORT
+             ⇒ เขียนว่า "ยังไม่มีข้อมูล" **ห้ามเอาสถานะรวมมาเดาแทน** จะได้เลขที่ดูน่าเชื่อแต่ผิด
+             (ฝั่งเซิร์ฟเวอร์ยืนยันแล้วว่าตาราง orders ไม่มีสองช่องนี้จริง ๆ) */}
+      <div>
+        <p className="text-[15px] font-semibold text-gray-800 mb-2.5">รายงาน</p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <ZortStat
+            icon="🛒" bg="#E8F0FE" fg="#2563eb"
+            label="ยอดขายวันนี้ (บาท)"
+            value={coreError ? '—' : fmtBaht(today?.totalAmount ?? 0)}
+            note={!coreError && today ? `${fmtNum(today.total)} ใบ` : undefined}
+          />
+          <ZortStat
+            icon="💲" bg="#FDECEC" fg="#dc2626"
+            label="รายการขาย ค้างชำระเงิน"
+            value="ยังไม่มีข้อมูล"
+            note="คลังเงายังไม่เก็บสถานะการชำระเงิน"
+          />
+          <ZortStat
+            icon="🎒" bg="#E6F7EF" fg="#059669"
+            label="รายการขาย ค้างโอนสินค้า"
+            value="ยังไม่มีข้อมูล"
+            note="คลังเงายังไม่เก็บสถานะการโอนสินค้า"
+          />
+        </div>
+      </div>
+
+      {/* ── ส่วน "ทางลัดของคุณ" — ชื่อและลำดับตาม ZORT ── */}
+      <div>
+        <p className="text-[15px] font-semibold text-gray-800 mb-2.5">ทางลัดของคุณ</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <Shortcut href="/core/reports" icon="📊" label="ดูรายงาน" />
+          <Shortcut href="/core/sales" icon="🧾" label="ดูรายการขาย" />
+          <Shortcut href="/core/pos" icon="🖥️" label="สร้างรายการขาย" />
+          <Shortcut href="/core/branches" icon="🏬" label="คลังสินค้า/สาขา" />
+          <Shortcut href="/core/stock" icon="📦" label="ดูสินค้า" />
+          {/* ZORT มีทางลัด "ดูบริการขนส่ง" — ของเรายังไม่ได้ทำ จึงจางและมีจุดกำกับ */}
+          <Shortcut href="/core/soon/shipping" icon="🚚" label="ดูบริการขนส่ง" soon />
+        </div>
+      </div>
+
+      {/* ── ตัวเลขเพิ่มเติมของเราเอง (ZORT ไม่มีในหน้านี้) ── */}
+      <p className="text-[15px] font-semibold text-gray-800 pt-1">ตัวเลขเพิ่มเติม</p>
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           icon="📦" tone="blue" label="ออเดอร์วันนี้"
