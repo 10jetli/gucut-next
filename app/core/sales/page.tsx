@@ -30,7 +30,9 @@ interface Row {
   ship_date?: string
   tracking_no?: string
   is_cod?: number | boolean
-  payment_status?: string
+  /** ⚠️ ชื่อจริงจากท่อคือ `pay_status` (Paid · Pending) — คนละอย่างกับ status ของใบ
+   *  เคยเดาชื่อไว้ว่า payment_status ถ้าไม่ได้ยิงของจริงเทียบ คอลัมน์จะเป็นขีดตลอดกาลแบบเงียบ ๆ */
+  pay_status?: string
 }
 interface ChannelRow { channel: string; orders: number; amount: number }
 interface StatusRow { status: string; orders: number; amount: number }
@@ -304,8 +306,8 @@ export default function CoreSalesPage() {
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill></td>
                     <td className={TD}>
-                      {r.payment_status
-                        ? <PaymentPill value={r.payment_status} />
+                      {r.pay_status
+                        ? <PaymentPill value={r.pay_status} />
                         : <span className="text-gray-300">—</span>}
                     </td>
                     <td className={`${TD} text-right`} onClick={(e) => e.stopPropagation()}>
@@ -347,7 +349,7 @@ export default function CoreSalesPage() {
 
           {/* ⚠️ สามคอลัมน์ที่เพิ่งเพิ่มยังไม่มีค่ามา — ต้องบอกว่า "ยังไม่ส่งมา" ไม่ใช่ปล่อยให้
               เห็นขีดยาวทั้งคอลัมน์แล้วเข้าใจว่าออเดอร์พวกนี้ไม่มีขนส่ง/ยังไม่จ่ายเงิน */}
-          {rows.length > 0 && rows.every((r) => !r.ship_channel && !r.ship_date && !r.payment_status) && (
+          {rows.length > 0 && rows.every((r) => !r.ship_channel && !r.ship_date && !r.pay_status) && (
             <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
               คอลัมน์ <b>บริการขนส่ง · วันส่งสินค้า · ชำระเงิน</b> ยังขึ้นเป็นขีดทุกแถว —
               <b> ไม่ได้แปลว่าออเดอร์ไม่มีขนส่งหรือยังไม่จ่ายเงิน</b> · ค่าพวกนี้<b>มีอยู่ในคลังเงาแล้ว</b>

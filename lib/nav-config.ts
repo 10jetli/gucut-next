@@ -51,8 +51,8 @@ export const NAV_ITEMS: NavItem[] = [
       // "สร้างรายการขาย" ของ ZORT = เปิดบิลใหม่ ⇒ ตรงกับจอขายหน้าร้านของเราพอดี
       { href: '/core/pos', label: 'สร้างรายการขาย (POS)' },
       { href: '/core/sales', label: 'ดูรายการขาย' },
-      soon('quotation', 'ใบเสนอราคา'),
-      soon('shipping', 'บริการส่งสินค้า'),
+      { href: '/core/quotations', label: 'ใบเสนอราคา' },
+      { href: '/core/logistics', label: 'บริการส่งสินค้า' },
       { href: '/returns', label: 'รับคืนสินค้า' },
       soon('packing', 'แพ็คสินค้า'),
       { href: '/tracker', label: 'ติดตามออเดอร์' },

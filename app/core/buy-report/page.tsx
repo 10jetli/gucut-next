@@ -4,9 +4,9 @@
 //      → การ์ดคู่: "สรุปยอดซื้อ" (ตัวเลขใหญ่ / ไม่มียอดซื้อ + Download Excel) | "รายงาน" (กราฟ)
 //      → การ์ด "ยอดซื้อ" รายสินค้า: รหัสสินค้า · สินค้า · จำนวน · ยอดซื้อ (บาท) · ยอดซื้อ (%)
 //
-// ⚠️ **ตารางรายสินค้าเติมไม่ได้ และต้องเขียนบอกว่าทำไม**
-//    คลังเงาเก็บ "หัวใบซื้อ" (เลขที่ · ผู้ขาย · วันที่ · ยอดรวม) แต่ไม่มีรายการสินค้าในใบ
-//    ⇒ ห้ามเอา ยอดรวมทั้งใบ ไปหารเฉลี่ยรายสินค้า ซึ่งเป็นการเดาที่หน้าตาเหมือนข้อมูลจริง
+// ✅ **ตารางรายสินค้าเติมได้แล้ว** (`list=purchaseitems` · 3 ก.ย. 2569) — 217 รหัส · 234 บรรทัด
+//    ⚠️ **แต่ท่อนี้ยังไม่รับช่วงวันที่** ⇒ ตารางรายสินค้าเป็น "ทุกช่วงเวลา" ไม่ใช่ช่วงที่เลือกด้านบน
+//       ต้องเขียนกำกับให้ชัด ไม่งั้นคนอ่านจะนึกว่ามันขยับตามตัวกรอง แล้วสรุปตัวเลขผิด
 //
 // ⚠️ **"ไม่มียอดซื้อในช่วงนี้" ≠ "ร้านไม่เคยซื้อของ"**
 //    ZORT เองก็ขึ้น "ไม่มียอดซื้อ" ในช่วง 3 เดือนล่าสุด เพราะใบซื้อทั้ง 32 ใบเก่ากว่านั้น
@@ -20,6 +20,8 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, 
 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
 interface Resp { total?: number; amount?: number; rows?: Po[] }
+interface ItemRow { sku: string; name?: string; qty?: number; amount?: number; orders?: number; lastDate?: string }
+interface ItemsResp { skus?: number; lines?: number; amount?: number; rows?: ItemRow[] }
 
 type Grain = 'day' | 'month' | 'quarter' | 'year'
 const GRAINS: { id: Grain; label: string }[] = [
@@ -92,6 +94,9 @@ export default function BuyReportPage() {
   const [adv, setAdv] = useState(false)
   const [grain, setGrain] = useState<Grain>('month')
   const [q, setQ] = useState('')
+  const [items, setItems] = useState<ItemsResp | null>(null)
+  const [itemsErr, setItemsErr] = useState('')
+  const [itemQ, setItemQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -100,7 +105,13 @@ export default function BuyReportPage() {
     setError('')
     try {
       // ใบซื้อมีหลักสิบใบ ดึงมาทั้งหมดครั้งเดียวแล้วกรองช่วงเวลาในเครื่อง
-      const res = await fetch('/api/web/core?list=purchases&limit=500')
+      const [res, iRes] = await Promise.all([
+        fetch('/api/web/core?list=purchases&limit=500'),
+        // ⚠️ ล้มก็ไม่ทำให้ทั้งจอพัง แต่ต้องจำไว้ว่าล้มเพราะอะไร (ท่อพัง ≠ ไม่มีของ)
+        fetch('/api/web/core?list=purchaseitems&limit=500').then((r) => r.json()).catch(() => null),
+      ])
+      setItems(iRes && !iRes.error ? iRes : null)
+      setItemsErr(!iRes ? 'ยิงไปที่ท่อรายการสินค้าในใบซื้อไม่สำเร็จ' : (typeof iRes.error === 'string' ? iRes.error : ''))
       const j: Resp = await res.json()
       if (!res.ok || (j as { error?: string })?.error) {
         throw new Error((j as { error?: string })?.error ?? `HTTP ${res.status}`)
@@ -148,6 +159,13 @@ export default function BuyReportPage() {
     }
     return Array.from(m.entries()).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v)
   }, [inRange, from, to, grain])
+
+  const itemAll = Array.isArray(items?.rows) ? items!.rows! : []
+  const itemRows = itemAll.filter((r) => {
+    const s2 = itemQ.trim().toLowerCase()
+    return !s2 || r.sku.toLowerCase().includes(s2) || (r.name ?? '').toLowerCase().includes(s2)
+  })
+  const itemsTotal = itemAll.reduce((a, r) => a + (Number(r.amount) || 0), 0)
 
   const listed = inRange.filter((r) => {
     const s = q.trim().toLowerCase()
@@ -263,11 +281,81 @@ export default function BuyReportPage() {
             </div>
           )}
 
+          {/* ── ตารางยอดซื้อรายสินค้าแบบ ZORT ── */}
           <Card padded={false} className="mt-4">
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <div className="flex items-center gap-2 mr-auto">
                 <span className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center text-[15px]">📊</span>
-                <p className="text-[15px] font-semibold text-gray-900">ยอดซื้อ</p>
+                <p className="text-[15px] font-semibold text-gray-900">ยอดซื้อ รายสินค้า</p>
+              </div>
+              <span className="text-[12.5px] text-gray-600 border border-gray-300 rounded px-2.5 py-1.5">สินค้า</span>
+              <input value={itemQ} onChange={(e) => setItemQ(e.target.value)} placeholder="พิมพ์คำค้นหา"
+                className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]" />
+            </div>
+
+            <TableWrap>
+              <table className="w-full min-w-[760px]">
+                <thead className="bg-white border-b border-gray-200">
+                  <tr>
+                    <th className={TH}>รหัสสินค้า</th>
+                    <th className={TH}>สินค้า</th>
+                    <th className={THR}>จำนวน</th>
+                    <th className={THR}>ยอดซื้อ (บาท)</th>
+                    <th className={THR}>ยอดซื้อ (%)</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {itemRows.length === 0 && (
+                    <EmptyState
+                      cols={5}
+                      icon={itemsErr ? '⚠️' : '📦'}
+                      title={itemsErr ? 'ดึงรายการสินค้าในใบซื้อไม่ได้' : 'ไม่มีข้อมูล'}
+                      detail={itemsErr
+                        ? `ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะไม่เคยซื้อสินค้า — ${itemsErr}`
+                        : (itemQ ? 'ไม่พบสินค้าที่ค้นหา' : 'ยังไม่มีรายการสินค้าในใบซื้อ')} />
+                  )}
+                  {itemRows.map((r) => (
+                    <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                      <td className={`${TD} text-blue-600 whitespace-nowrap`}>{r.sku}</td>
+                      <td className={TD}>
+                        <span className="text-blue-600">{r.name || '—'}</span>
+                        {r.lastDate && (
+                          <span className="block text-[11px] text-gray-400">
+                            ซื้อล่าสุด {thaiDate(r.lastDate)}{r.orders ? ` · ${fmtNum(r.orders)} ใบ` : ''}
+                          </span>
+                        )}
+                      </td>
+                      <td className={TDR}>{fmtNum(Number(r.qty ?? 0))}</td>
+                      <td className={TDR}>{fmtMoney(Number(r.amount ?? 0))}</td>
+                      <td className={TDR}>
+                        {itemsTotal > 0 ? `${((Number(r.amount ?? 0) / itemsTotal) * 100).toFixed(1)}%` : '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </TableWrap>
+
+            {/* 🔴 ห้ามถอด — ตารางนี้ไม่ขยับตามช่วงเวลาด้านบน คนอ่านต้องรู้ */}
+            {items && (
+              <p className="text-[12px] text-amber-800 bg-amber-50 border-t border-amber-200 px-4 py-2.5 leading-relaxed">
+                ⚠️ ตารางรายสินค้านี้เป็นยอด <b>ทุกช่วงเวลา</b> ไม่ได้ขยับตามช่วงวันที่ด้านบน
+                (ท่อยังไม่รับตัวกรองวันที่) · รวม <b>{fmtNum(items.skus ?? 0)}</b> รหัส
+                จาก <b>{fmtNum(items.lines ?? 0)}</b> บรรทัด เป็นเงิน <b>{fmtMoney(items.amount ?? 0)}</b> บาท
+                {typeof all?.amount === 'number' && Math.abs((items.amount ?? 0) - all.amount) > 1 && (
+                  <> · น้อยกว่ายอดรวมใบซื้อทั้งหมด <b>{fmtMoney(all.amount - (items.amount ?? 0))}</b> บาท
+                    เพราะบางใบไม่มีรายการสินค้าแนบมา</>
+                )}
+              </p>
+            )}
+          </Card>
+
+          {/* ── ตารางรายใบซื้อ (ของเราเอง ZORT ไม่มีจอนี้) ── */}
+          <Card padded={false} className="mt-4">
+            <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
+              <div className="flex items-center gap-2 mr-auto">
+                <span className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center text-[15px]">🧾</span>
+                <p className="text-[15px] font-semibold text-gray-900">ยอดซื้อ รายใบ</p>
               </div>
               {/* ZORT ให้เลือกดูรายสินค้า/รายผู้ขาย — เรามีแค่รายใบซื้อจริง ๆ จึงเขียนตามที่มี */}
               <span className="text-[12.5px] text-gray-600 border border-gray-300 rounded px-2.5 py-1.5">รายใบซื้อ</span>
@@ -305,11 +393,9 @@ export default function BuyReportPage() {
             </TableWrap>
           </Card>
 
-          {/* ⚠️ ข้อความนี้คือเหตุผลที่ตารางเป็น "รายใบซื้อ" ไม่ใช่ "รายสินค้า" แบบ ZORT — ห้ามถอด */}
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            ZORT แยกยอดซื้อ<b>รายสินค้า</b> (รหัสสินค้า · จำนวน) — ของเรายังทำไม่ได้เพราะคลังเงาเก็บ
-            <b>หัวใบซื้อ</b> (เลขที่ · ผู้ขาย · วันที่ · ยอดรวม) แต่ไม่มีรายการสินค้าในใบ ·
-            เอายอดรวมทั้งใบมาหารเฉลี่ยรายสินค้าได้ก็จริง แต่<b>นั่นคือการเดาที่หน้าตาเหมือนข้อมูลจริง</b> จึงไม่ทำ
+            ZORT มีเฉพาะตาราง<b>รายสินค้า</b> · ตาราง<b>รายใบ</b> เป็นของเพิ่มของเราเอง
+            เพราะช่วงเวลาที่เลือกด้านบนมีผลกับตารางนั้นจริง (ตารางรายสินค้ายังไม่ขยับตามช่วงเวลา)
           </p>
         </>
       )}
