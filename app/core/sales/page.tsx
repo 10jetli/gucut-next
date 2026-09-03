@@ -15,11 +15,22 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState,
+  thaiDate, PaymentPill,
 } from '@/components/zort'
 
 interface Row {
   id: string; source: string; number: string; channel: string
   status: string; amount: number; customer: string; order_date: string
+  // ── สามช่องที่ ZORT มีแต่จอเรายังไม่มี (ภาพ 01-รายการขาย.jpg) ──
+  // ⚠️ ค่าพวกนี้ **มีอยู่ในคลังเงาแล้ว** (ตาราง orders มีคอลัมน์ ship_channel · ship_date ·
+  //    tracking_no · is_cod และตัว sync เขียนลงจริง) แต่ `listOrders` ไม่ได้ SELECT ออกมา
+  //    ⇒ ข้อมูลมีแต่มองไม่เห็น · จอจึงเตรียมช่องไว้ พอฝั่งเซิร์ฟเวอร์ส่งมาก็ขึ้นเอง
+  ship_channel?: string
+  ship_name?: string
+  ship_date?: string
+  tracking_no?: string
+  is_cod?: number | boolean
+  payment_status?: string
 }
 interface ChannelRow { channel: string; orders: number; amount: number }
 interface StatusRow { status: string; orders: number; amount: number }
@@ -250,14 +261,17 @@ export default function CoreSalesPage() {
                   <th className={TH}>รายการ</th>
                   <th className={TH}>ลูกค้า</th>
                   <th className={TH}>ช่องทาง</th>
+                  <th className={TH}>บริการขนส่ง</th>
+                  <th className={TH}>วันส่งสินค้า</th>
                   <th className={THR}>มูลค่า</th>
                   <th className={TH}>สถานะ</th>
+                  <th className={TH}>ชำระเงิน</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <EmptyState cols={8} icon="🧾" title="ไม่พบใบขายในเงื่อนไขนี้"
+                  <EmptyState cols={11} icon="🧾" title="ไม่พบใบขายในเงื่อนไขนี้"
                     detail="ลองเปลี่ยนแท็บ ช่วงเวลา หรือช่องทาง · ออเดอร์ใหม่จากมาร์เก็ตเพลสจะเข้ามาในรอบซิงก์ถัดไป" />
                 )}
                 {rows.map((r, i) => (
@@ -276,8 +290,23 @@ export default function CoreSalesPage() {
                     </td>
                     <td className={`${TD} max-w-[190px] truncate`}>{r.customer || '—'}</td>
                     <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>
+                    {/* ⚠️ ไม่มีข้อมูลให้ขีด ห้ามเว้นว่าง — ช่องว่างอ่านได้ว่า "ไม่มีขนส่ง" */}
+                    <td className={`${TD} max-w-[150px] truncate`} title={r.tracking_no || ''}>
+                      {r.ship_channel || r.ship_name || <span className="text-gray-300">—</span>}
+                    </td>
+                    <td className={`${TD} whitespace-nowrap text-gray-600`}>
+                      {r.ship_date ? thaiDate(r.ship_date) : <span className="text-gray-300">—</span>}
+                      {(r.is_cod === 1 || r.is_cod === true) && (
+                        <span className="block text-[10.5px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 mt-0.5 w-fit">COD</span>
+                      )}
+                    </td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill></td>
+                    <td className={TD}>
+                      {r.payment_status
+                        ? <PaymentPill value={r.payment_status} />
+                        : <span className="text-gray-300">—</span>}
+                    </td>
                     <td className={`${TD} text-right`} onClick={(e) => e.stopPropagation()}>
                       <RowMenu
                         items={[
@@ -314,6 +343,17 @@ export default function CoreSalesPage() {
               </div>
             )}
           </TableWrap>
+
+          {/* ⚠️ สามคอลัมน์ที่เพิ่งเพิ่มยังไม่มีค่ามา — ต้องบอกว่า "ยังไม่ส่งมา" ไม่ใช่ปล่อยให้
+              เห็นขีดยาวทั้งคอลัมน์แล้วเข้าใจว่าออเดอร์พวกนี้ไม่มีขนส่ง/ยังไม่จ่ายเงิน */}
+          {rows.length > 0 && rows.every((r) => !r.ship_channel && !r.ship_date && !r.payment_status) && (
+            <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+              คอลัมน์ <b>บริการขนส่ง · วันส่งสินค้า · ชำระเงิน</b> ยังขึ้นเป็นขีดทุกแถว —
+              <b> ไม่ได้แปลว่าออเดอร์ไม่มีขนส่งหรือยังไม่จ่ายเงิน</b> · ค่าพวกนี้<b>มีอยู่ในคลังเงาแล้ว</b>
+              {' '}(ตาราง orders เก็บ ship_channel · ship_date · tracking_no · is_cod ครบ)
+              {' '}แต่ท่อ <code>list=orders</code> ยังไม่ได้ส่งออกมา ⇒ ขอไว้แล้ว พอส่งมาคอลัมน์จะขึ้นเอง
+            </p>
+          )}
 
         </>
       )}
