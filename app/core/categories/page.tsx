@@ -28,6 +28,12 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, RowMenu } 
 interface Row {
   name: string
   skus: number
+  /** 🟢 ค่าที่ **คัดมาจากจอ ZORT ของจริง** (ต้นทุนเฉลี่ยถ่วงน้ำหนัก ซึ่ง API ไม่เปิดให้ดึง)
+   *  ⚠️ เป็นค่าที่ "คัดมา" ไม่ใช่ "คิดเอง" ⇒ ซื้อของเข้าใหม่แล้วจะเก่าจนกว่าจะคัดใหม่
+   *     ต้องโชว์วันที่คัดควบไปเสมอ (กติกาเดียวกับสูตรสินค้าชุด) */
+  zortValue?: number | null
+  zortAvailable?: number | null
+  zortSkus?: number | null
   onhand_value?: number
   available_value?: number
   onhand_value_sell?: number
@@ -37,6 +43,9 @@ interface Row {
   zort?: boolean
 }
 interface Resp {
+  zortCollectedAt?: string
+  zortTotalValue?: number
+  zortCategories?: number
   categories?: number
   total?: number
   uncategorised?: number
@@ -58,8 +67,12 @@ export default function CoreCategoriesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [q, setQ] = useState('')
-  // มูลค่าคิดจากอะไร — ต้นทุน (ใกล้เคียงวิธี ZORT ที่สุดเท่าที่เรามี) หรือราคาขาย
-  const [basis, setBasis] = useState<'cost' | 'sell'>('cost')
+  /** มูลค่าคิดจากอะไร — สามแบบ
+   *  `zort` = ต้นทุนเฉลี่ยที่คัดมาจากจอ ZORT (**ตรงกับ ZORT เป๊ะ** — ตั้งเป็นค่าเริ่มต้น
+   *           เพราะเป็นเลขที่เจ้าของร้านเอาไปใช้กับบัญชีจริง)
+   *  `cost` = ราคาซื้อในทะเบียนสินค้าของเรา — **ต่ำกว่าความจริง 2-3 เท่า** พิสูจน์แล้ว
+   *  `sell` = ราคาขาย */
+  const [basis, setBasis] = useState<'zort' | 'cost' | 'sell'>('zort')
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -85,8 +98,14 @@ export default function CoreCategoriesPage() {
     return s ? all.filter((r) => (r.name || '').toLowerCase().includes(s)) : all
   }, [d, q])
 
-  const onhandOf = (r: Row) => (basis === 'cost' ? r.onhand_value : r.onhand_value_sell)
-  const availOf = (r: Row) => (basis === 'cost' ? r.available_value : r.available_value_sell)
+  const onhandOf = (r: Row) => (
+    basis === 'zort' ? (r.zortValue ?? undefined)
+      : basis === 'cost' ? r.onhand_value : r.onhand_value_sell
+  )
+  const availOf = (r: Row) => (
+    basis === 'zort' ? (r.zortAvailable ?? undefined)
+      : basis === 'cost' ? r.available_value : r.available_value_sell
+  )
 
   /** สีของตัวเลขมูลค่าใน ZORT — **ไม่ใช่แดงตลอดอย่างที่เราเคยทำ**
    *  ฝั่งเซิร์ฟเวอร์อ่านค่าสีจาก DOM ของ ZORT จริงมาให้ ตรงกัน 10/10 แถว:
@@ -157,7 +176,15 @@ export default function CoreCategoriesPage() {
           <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 flex flex-wrap items-center gap-3">
             <p className="text-[12.5px] text-gray-700 min-w-0 flex-1">
               มูลค่าสินค้าคงเหลือ, มูลค่าสินค้าพร้อมขาย · คิดจาก
-              <b>{basis === 'cost' ? 'ราคาซื้อในทะเบียนสินค้า' : 'ราคาขาย'}</b>
+              <b>
+                {basis === 'zort' ? 'ต้นทุนเฉลี่ยถ่วงน้ำหนัก (คัดมาจากจอ ZORT)'
+                  : basis === 'cost' ? 'ราคาซื้อในทะเบียนสินค้า' : 'ราคาขาย'}
+              </b>
+              {/* ⚠️ ค่าที่คัดมาต้องโชว์วันที่คัดเสมอ — ไม่งั้นคนอ่านนึกว่าเป็นค่าสด
+                  ซื้อของเข้าใหม่แล้วเลขนี้จะเก่าทันทีโดยไม่มีอะไรฟ้อง */}
+              {basis === 'zort' && d.zortCollectedAt && (
+                <span className="text-gray-500"> · คัดมาเมื่อ {d.zortCollectedAt}</span>
+              )}
               {/* ⚠️ ZORT เขียน "วันที่อัพเดทล่าสุด: 2 ก.ย. 2026 08:33" ตรงนี้ + ปุ่มอัพเดท
                   ของเราไม่มีเวลานั้นให้แสดง เพราะเลขคิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ
                   ⇒ เขียนความจริงแทนการใส่เวลาปลอมให้หน้าตาเหมือน */}
@@ -172,6 +199,14 @@ export default function CoreCategoriesPage() {
               </span>
             </p>
             <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setBasis('zort')}
+                className={`text-[12px] rounded-full px-3 py-1 border ${
+                  basis === 'zort' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
+                }`}
+              >
+                ต้นทุนเฉลี่ย (ตรงกับ ZORT)
+              </button>
               <button
                 onClick={() => setBasis('cost')}
                 className={`text-[12px] rounded-full px-3 py-1 border ${
@@ -193,7 +228,22 @@ export default function CoreCategoriesPage() {
 
           {/* ⚠️ ข้อความนี้ห้ามถอด — ตัวเลขหน้าตาเหมือน ZORT แต่คิดคนละวิธี
               ไม่บอก = คนเอาไปเทียบแล้วเชื่อว่าตรงกัน ทั้งที่ต่างกันหลักแสน */}
-          {d.matchesZort === false && (
+          {basis === 'zort' && d.matchesZort && (
+            <div className="text-[12.5px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+              ✅ <b>ตัวเลขชุดนี้ตรงกับ ZORT</b> — เป็นต้นทุนเฉลี่ยถ่วงน้ำหนักที่<b>คัดมาจากจอ ZORT</b>
+              {typeof d.zortTotalValue === 'number' && <> · รวมทุกหมวด <b>{fmtMoney(d.zortTotalValue)}</b> บาท</>}
+              {d.zortCollectedAt && <> · คัดเมื่อ {d.zortCollectedAt}</>}
+              <br />
+              ⚠️ <b>เป็นค่าที่คัดมา ไม่ใช่คิดเอง</b> — ซื้อของเข้าใหม่แล้วเลขนี้จะเก่าจนกว่าจะคัดใหม่
+              {' '}(ปีนี้มีใบซื้อใบเดียว 10 มี.ค. จึงแทบไม่ขยับ) · หมวด
+              {' '}<b>&quot;(ยังไม่ได้จัดหมวดใน ZORT)&quot;</b> ไม่มีค่าคัดมา เพราะ ZORT ไม่มีแถวนั้น
+              <br />
+              ⚠️ <b>ราคาซื้อในทะเบียนของเราต่ำกว่าต้นทุนจริง 2-3 เท่า</b> (อะไหล่ 7800 Turbo:
+              เรา ฿236,399 · ZORT ฿750,957) ⇒ กดดู &quot;ตามต้นทุน&quot; ได้ แต่<b>อย่าเอาไปใช้กับบัญชี</b>
+            </div>
+          )}
+
+          {basis !== 'zort' && d.matchesZort === false && (
             <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
               ⚠️ <b>มูลค่ายังเทียบกับ ZORT ตรง ๆ ไม่ได้</b> — ZORT ใช้ต้นทุนถัวเฉลี่ยเคลื่อนที่
               ซึ่งคิดจากประวัติการซื้อทุกครั้ง ส่วนเรามีแค่ราคาซื้อตั้งต้นในทะเบียนสินค้า
@@ -239,9 +289,27 @@ export default function CoreCategoriesPage() {
                       )}
                     </td>
                     {/* เลขจำนวน SKU ของ ZORT เป็นสีเขียวเสมอ ไม่ขึ้นกับเงื่อนไขอะไร */}
-                    <td className={TDR} style={{ color: ZORT_GREEN }}>{fmtNum(r.skus)}</td>
-                    <td className={TDR}>{val(onhandOf(r), onhandOf(r) === availOf(r))}</td>
-                    <td className={TDR}>{val(availOf(r), onhandOf(r) === availOf(r))}</td>
+                    {/* ⚠️ ZORT ส่งจำนวน SKU มาด้วย — ถ้าไม่ตรงกับของเราต้องเห็นทันที
+                        ไม่ตรง = กระจกสินค้าขาดหรือเกินในหมวดนั้น ซึ่งเป็นเรื่องใหญ่กว่ามูลค่า */}
+                    <td className={TDR} style={{ color: ZORT_GREEN }}>
+                      {fmtNum(r.skus)}
+                      {typeof r.zortSkus === 'number' && r.zortSkus !== r.skus && (
+                        <span className="block text-[10.5px] text-amber-700" title="จำนวนใน ZORT ไม่ตรงกับคลังเงา">
+                          ZORT {fmtNum(r.zortSkus)}
+                        </span>
+                      )}
+                    </td>
+                    <td className={TDR}>
+                      {basis === 'zort' && r.zortValue == null
+                        // ⚠️ ไม่มีค่าคัดมา ≠ มูลค่าศูนย์ — ต้องขีด ห้ามโชว์ 0
+                        ? <span className="text-gray-300" title="ZORT ไม่มีหมวดนี้ จึงไม่มีค่าให้คัด">—</span>
+                        : val(onhandOf(r), onhandOf(r) === availOf(r))}
+                    </td>
+                    <td className={TDR}>
+                      {basis === 'zort' && r.zortAvailable == null
+                        ? <span className="text-gray-300">—</span>
+                        : val(availOf(r), onhandOf(r) === availOf(r))}
+                    </td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
