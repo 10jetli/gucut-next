@@ -15,7 +15,7 @@ import { fmtBaht } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText, summaryLine,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText, summaryLine, EmptyState, thaiDate,
 } from '@/components/zort'
 
 interface Row { id: string; channel: string; amount: number; customer: string; order_date: string }
@@ -194,7 +194,8 @@ export default function CoreCustomersPage() {
               </thead>
               <tbody>
                 {shown.length === 0 && (
-                  <tr><td colSpan={6} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบลูกค้าในเงื่อนไขนี้</td></tr>
+                  <EmptyState cols={6} icon="👥" title="ไม่พบลูกค้าในเงื่อนไขนี้"
+                    detail="รายชื่อลูกค้ารวมจากใบขาย — ถ้าเพิ่งมีออเดอร์ใหม่ ต้องรอรอบซิงก์ถัดไป" />
                 )}
                 {shown.map((p, i) => (
                   <tr key={p.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
@@ -208,7 +209,7 @@ export default function CoreCustomersPage() {
                     <td className={`${TD} text-gray-500 max-w-[220px] truncate`}>{p.channels.join(' · ') || '—'}</td>
                     <td className={TDR}>{p.orders.toLocaleString('th-TH')}</td>
                     <td className={TDR}>{fmtBaht(p.amount)}</td>
-                    <td className={`${TDR} text-gray-500`}>{p.last || '—'}</td>
+                    <td className={`${TDR} text-gray-500`}>{thaiDate(p.last)}</td>
                   </tr>
                 ))}
               </tbody>

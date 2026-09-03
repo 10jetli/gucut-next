@@ -14,7 +14,7 @@ import { useCallback, useState } from 'react'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnPrimary, BtnGhost, Pill, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
+import { PageHead, BtnPrimary, BtnGhost, Pill, TableWrap, TH, THR, TD, TDR, thaiDate } from '@/components/zort'
 
 interface PeakStatus { ready?: boolean; live?: boolean; note?: string; token?: string; error?: string }
 interface DryProduct { code?: string; name?: string; quantity?: number; price?: number }
@@ -162,7 +162,7 @@ export default function CorePeakPage() {
             <>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <div className="border border-gray-200 rounded px-3 py-2.5">
-                  <p className="text-[11.5px] text-gray-400">ออเดอร์วันที่ {dry?.day}</p>
+                  <p className="text-[11.5px] text-gray-400">ออเดอร์วันที่ {thaiDate(dry?.day)}</p>
                   <p className="text-[18px] font-bold text-gray-900">{fmtNum(dry?.orders ?? 0)} <span className="text-[12px] font-normal text-gray-400">ใบ</span></p>
                 </div>
                 <div className="border border-gray-200 rounded px-3 py-2.5">

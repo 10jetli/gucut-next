@@ -14,7 +14,7 @@ import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost } from '@/components/zort'
+import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
 
 interface Row { amount: number; order_date: string }
 interface StockResp { total: number; value: number; outOfStock: number; day: string }
@@ -151,7 +151,7 @@ export default function CoreFinancePage() {
               note={stock ? `คิดที่ราคาขาย · ${fmtNum(stock.total)} SKU` : undefined} />
             <StatCard icon="🚫" tone="red" label="SKU ที่ของหมด"
               value={stock ? fmtNum(stock.outOfStock) : '—'} unit="ตัว"
-              note={stock ? `ภาพถ่าย ${stock.day}` : undefined} />
+              note={stock ? `ภาพถ่าย ${thaiDate(stock.day)}` : undefined} />
           </div>
 
           <Card>

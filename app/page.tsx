@@ -16,7 +16,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
-import { PageHead, BtnGhost } from '@/components/zort'
+import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
 
 interface CoreOrderRow {
   id: string; number: string; channel: string
@@ -288,7 +288,7 @@ export default function DashboardPage() {
               </div>
               <div className="flex items-center justify-between gap-2 mt-1">
                 <span className="text-[12px] text-gray-500 truncate">
-                  {o.order_date} · {o.customer || 'ไม่ระบุชื่อ'}
+                  {thaiDate(o.order_date)} · {o.customer || 'ไม่ระบุชื่อ'}
                 </span>
                 <span className="text-[13px] font-bold text-gray-900 shrink-0">{fmtBaht(o.amount)}</span>
               </div>

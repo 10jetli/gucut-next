@@ -17,7 +17,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText,
-  type PillTone,
+  type PillTone, EmptyState,
 } from '@/components/zort'
 
 const STATUS_LABEL: Record<TrackerStatus, string> = {
@@ -161,7 +161,8 @@ export default function CorePurchasesPage() {
               </thead>
               <tbody>
                 {shown.length === 0 && (
-                  <tr><td colSpan={8} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่มีใบสั่งซื้อในเงื่อนไขนี้</td></tr>
+                  <EmptyState cols={8} icon="🏭" title="ไม่มีใบสั่งของในเงื่อนไขนี้"
+                    detail="ลองเปลี่ยนแท็บสถานะ · ใบสั่งของกับโรงงานกรอกจากระบบสั่งของ ไม่ได้มาจาก ZORT" />
                 )}
                 {shown.map((o, i) => (
                   <tr key={o.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">

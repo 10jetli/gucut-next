@@ -13,7 +13,7 @@ import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnPrimary } from '@/components/zort'
+import { PageHead, BtnPrimary, thaiDate } from '@/components/zort'
 
 interface Row {
   sku: string; name: string; shopee: number
@@ -88,7 +88,7 @@ export default function CoreMissingSkuPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard icon="🔢" tone="blue" label="รหัสที่คลังไม่รู้จัก" value={fmtNum(data.total ?? 0)} unit="ตัว"
-              note={data.day ? `เทียบกับภาพถ่าย ${data.day}` : undefined} />
+              note={data.day ? `เทียบกับภาพถ่าย ${thaiDate(data.day)}` : undefined} />
             <StatCard icon="🔗" tone="orange" label="พอเดารหัสฐานได้" value={fmtNum(data.mappedToBase ?? 0)} unit="ตัว"
               note="แค่ชื่อคนละระดับ ไม่ใช่ของหาย" />
             <StatCard icon="❓" tone="red" label="ไม่รู้จักเลย" value={fmtNum(data.unknown ?? 0)} unit="ตัว"

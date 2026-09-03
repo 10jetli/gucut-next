@@ -15,7 +15,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
 
 interface Row {
@@ -170,7 +170,7 @@ export default function CoreStockPage() {
       {data && !data.skip && (
         <>
           <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
-            ⚠️ ตัวเลขนี้คือ <b>ภาพถ่ายสต็อกของวันที่ {data.day}</b> (ถ่ายตอนตี 1) ไม่ใช่ยอดสดวินาทีนี้
+            ⚠️ ตัวเลขนี้คือ <b>ภาพถ่ายสต็อกของวันที่ {thaiDate(data.day)}</b> (ถ่ายตอนตี 1) ไม่ใช่ยอดสดวินาทีนี้
           </div>
 
           {/* ⚠️ ซ่อนได้ แต่ต้องบอกว่าซ่อนอะไรไว้กี่รายการและกดกลับได้ตรงนี้เลย

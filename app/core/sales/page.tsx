@@ -14,7 +14,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu,
+  BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState,
 } from '@/components/zort'
 
 interface Row {
@@ -257,7 +257,8 @@ export default function CoreSalesPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <tr><td colSpan={8} className="px-3 py-6 text-[13px] text-gray-400 text-center">ไม่พบใบขายในเงื่อนไขนี้</td></tr>
+                  <EmptyState cols={8} icon="🧾" title="ไม่พบใบขายในเงื่อนไขนี้"
+                    detail="ลองเปลี่ยนแท็บ ช่วงเวลา หรือช่องทาง · ออเดอร์ใหม่จากมาร์เก็ตเพลสจะเข้ามาในรอบซิงก์ถัดไป" />
                 )}
                 {rows.map((r, i) => (
                   <tr
