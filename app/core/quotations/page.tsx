@@ -65,6 +65,12 @@ export default function QuotationsPage() {
     return !s || r.number.toLowerCase().includes(s) || (r.customer ?? '').toLowerCase().includes(s)
   })
   const sum = all.reduce((a, r) => a + (Number(r.amount) || 0), 0)
+  /** ⚠️ **ตาข่ายกันวันข้างหน้า ไม่ใช่กันวันนี้** — ตอนนี้ร้านมีใบเสนอราคา 3 ใบ ยังไม่ชนอะไร
+   *  แต่ท่อ `list` ทุกตัวตัดที่ 200 แถว และจอนี้ดึงครั้งเดียวไม่มีการแบ่งหน้า
+   *  ⇒ วันไหนใบเสนอราคาเกิน 200 **ยอดรวมข้างบนจะเงียบ ๆ ต่ำกว่าจริง**
+   *  บทเรียนจากจอรายงานยอดซื้อ: บรรทัดสรุปที่ถูก + ตารางที่ไม่ครบ อันตรายกว่าตัวเลขผิดตรง ๆ
+   *  เพราะไม่มีอะไรดูขัดตา — ตาข่ายจึงต้องใส่**ก่อน**ถึงวันนั้น ไม่ใช่รอให้มีคนเจอ */
+  const cut = Math.max(0, Number(data?.total ?? 0) - all.length)
 
   return (
     <div className="p-4 md:p-6">
@@ -159,6 +165,14 @@ export default function QuotationsPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {cut > 0 && (
+            <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
+              ตารางนี้แสดง <b>{all.length}</b> จาก <b>{Number(data?.total ?? 0)}</b> ใบ
+              — ขาดอีก <b>{cut}</b> ใบ (ท่อคืนได้สูงสุด 200 แถวต่อครั้ง และจอนี้ยังไม่มีการแบ่งหน้า)
+              ⇒ <b>ยอดรวมด้านบนจึงต่ำกว่าความจริง</b>
+            </p>
+          )}
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             ⚠️ ป้ายสถานะจอนี้เขียนว่า <b>รออนุมัติ / อนุมัติแล้ว</b> ตามจอ ZORT —
