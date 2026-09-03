@@ -3,6 +3,7 @@
 // เงา → เทียบ → สับสวิตช์: หน้านี้คือหน้าปัดของ "เทียบ" — นับถอยหลังยอดตรง 30 วัน
 // ข้อมูลผ่านท่อกลาง /api/web/core → gucut.com/api/core · รีเฟรช/สั่งงานด้วยปุ่มเท่านั้น
 import { useEffect, useState, useCallback } from 'react'
+import { thaiDate } from '@/components/zort'
 import { fmtBaht, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
@@ -197,7 +198,7 @@ export default function CorePage() {
                 return (
                   <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
                     <span className="text-[15px] shrink-0">{ok ? '✅' : '⚠️'}</span>
-                    <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{r.day}</span>
+                    <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
                     <span className="text-[12px] text-gray-500 flex-1">
                       ZORT {fmtNum(r.zort_orders)} ใบ · {fmtBaht(r.zort_amount)} — Core {fmtNum(r.core_orders)} ใบ · {fmtBaht(r.core_amount)}
                     </span>
@@ -219,7 +220,7 @@ export default function CorePage() {
               {(st.shopee ?? []).map((r) => (
                 <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
                   <span className="text-[15px] shrink-0">{r.match ? '✅' : '⚠️'}</span>
-                  <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{r.day}</span>
+                  <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
                   <span className="text-[12px] text-gray-500 flex-1">
                     API {fmtNum(r.api_orders)} ใบ · {fmtBaht(r.api_amount)} — ZORT {fmtNum(r.zort_orders)} ใบ · {fmtBaht(r.zort_amount)}
                   </span>
@@ -247,7 +248,7 @@ export default function CorePage() {
                 <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
                   {/* ศูนย์ SKU = ไม่มีอะไรให้เทียบ ห้ามขึ้นเขียวเด็ดขาด */}
                   <span className="text-[15px] shrink-0">{r.skus === 0 ? '❓' : r.mismatched === 0 ? '✅' : '⚠️'}</span>
-                  <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{r.day}</span>
+                  <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
                   <span className="text-[12px] text-gray-500 flex-1">
                     {r.skus === 0 ? r.notes : `เทียบ ${fmtNum(r.skus)} SKU · ตรง ${fmtNum(r.matched)}`}
                   </span>
@@ -319,7 +320,7 @@ export default function CorePage() {
             <Card padded={false} className="overflow-hidden">
               <div className="px-4 md:px-5 py-3 border-b border-gray-100">
                 <p className="text-[13px] font-semibold text-gray-700">
-                  📦 ส่วนต่างสต็อกรายตัว {stockDetail.baseDay && `(${stockDetail.baseDay} → ${stockDetail.curDay})`}
+                  📦 ส่วนต่างสต็อกรายตัว {stockDetail.baseDay && `(${thaiDate(stockDetail.baseDay)} → ${thaiDate(stockDetail.curDay)})`}
                 </p>
                 {stockDetail.skip ? (
                   <p className="text-[12px] text-gray-500 mt-1">{stockDetail.skip}</p>
