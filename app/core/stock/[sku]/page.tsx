@@ -28,6 +28,9 @@ interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
   buy?: number | null; available?: number | null; unit?: string | null
   service?: boolean; active?: boolean | null; marketplaces?: string[]
+  /** น้ำหนักหน่วยกรัม — **null = ยังไม่รู้ · 0 = ของไม่มีน้ำหนัก** คนละเรื่องกัน
+   *  ทั้งคลังมีน้ำหนักจริงแค่ 669 จาก 2,898 ตัว (23%) ⇒ ส่วนใหญ่ต้องขึ้น "—" */
+  weight?: number | null
 }
 interface Move {
   id?: number; sku: string; qty: number; reason: string; ref?: string; at?: string
@@ -365,9 +368,16 @@ export default function ProductDetailPage() {
 
                 <div>
                   <p className="text-[12px] text-gray-500">น้ำหนัก (กรัม)</p>
-                  {/* ZORT มีช่องนี้ — คลังเงายังไม่ได้เก็บ ⇒ ขีดไว้ ห้ามใส่ 0 (0 กรัมคือของไม่มีน้ำหนัก) */}
-                  <p className="text-[15px] text-gray-300">-</p>
-                  <p className="text-[11px] text-gray-400">คลังเงายังไม่ได้เก็บช่องนี้จาก ZORT</p>
+                  {/* ⚠️ null = ยังไม่ได้กรอกใน ZORT · 0 = ของไม่มีน้ำหนักจริง ๆ — ห้ามยุบรวมกัน
+                      ทั้งคลังมีน้ำหนักจริงแค่ 23% ⇒ ช่องนี้ขึ้นขีดเป็นเรื่องปกติ ไม่ใช่ท่อพัง */}
+                  <p className="text-[15px] text-gray-900">
+                    {row.weight == null
+                      ? <span className="text-gray-300">-</span>
+                      : `${fmtNum(Number(row.weight))} กรัม`}
+                  </p>
+                  {row.weight == null && (
+                    <p className="text-[11px] text-gray-400">ยังไม่ได้กรอกน้ำหนักที่ ZORT</p>
+                  )}
                 </div>
                 <div>
                   <p className="text-[12px] text-gray-500">ลงขายที่</p>
