@@ -105,7 +105,12 @@ export default function CoreStockPage() {
           data ? (
             <>
               {/* บรรทัดนี้ลอกรูปประโยคของ ZORT: "จำนวน N รายการ | ลิงก์ | ลิงก์" */}
-              จำนวน {data.total.toLocaleString('th-TH')} รายการ{' | '}
+              {/* ⚠️ **ห้ามเขียนว่านี่คือจำนวนสินค้าทั้งหมดของร้าน** — มันคือจำนวนที่คลังเงารู้จัก
+                  ZORT บอก 2,898 เรามี 2,666 ต่างกัน 232 รายการ (กำลังตรวจว่าเพราะสินค้า
+                  ที่ไม่มีรหัส SKU ถูกข้ามไปหรือเปล่า) · เขียนตัวเลขลอย ๆ = อ้างว่าครบทั้งที่ยังไม่ครบ */}
+              จำนวน {data.total.toLocaleString('th-TH')} รายการ
+              <span className="text-gray-400"> (เท่าที่คลังของเรารู้จัก)</span>
+              {' | '}
               <Link href="/core/soon/product-image" className="text-blue-600 hover:underline">จัดการรูปภาพสินค้า</Link>
               {' | '}
               <Link href="/core/soon/product-cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
@@ -114,6 +119,11 @@ export default function CoreStockPage() {
               <span className="text-red-500 font-semibold">{data.outOfStock.toLocaleString('th-TH')}</span> ·
               เหลือน้อย <span className="text-orange-600 font-semibold">{data.low.toLocaleString('th-TH')}</span> ·
               มูลค่าสต็อก {fmtMoney(data.value)}
+              <br />
+              <span className="text-amber-700">
+                ⚠️ ตัวเลขนี้อาจน้อยกว่าที่ ZORT แสดง — สินค้าที่<b>ไม่มีรหัส SKU</b>
+                อาจยังไม่ถูกดึงเข้าคลังของเรา กำลังตรวจอยู่
+              </span>
               {typeof data.inactive === 'number' && (
                 // ยังไม่ทำเป็นแท็บเพราะเซิร์ฟเวอร์ยังกรอง active ไม่ได้ — โชว์ตัวเลขไปก่อน
                 <> · ปิดใช้งาน {data.inactive.toLocaleString('th-TH')}</>
