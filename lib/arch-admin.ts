@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-02T23:13:07.345Z",
+  "generatedAt": "2026-09-03T22:27:58.370Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
@@ -48,29 +48,45 @@ export const ARCH_ADMIN = {
     ]
   },
   "pages": {
-    "count": 53,
-    "core": 20,
+    "count": 70,
+    "core": 36,
     "coreNames": [
       "/core",
+      "/core/accounting-docs",
       "/core/arch",
       "/core/backup",
       "/core/branches",
+      "/core/bundles",
+      "/core/bundles/[sku]",
+      "/core/buy-report",
       "/core/categories",
       "/core/channels",
       "/core/chat",
+      "/core/customer-report",
       "/core/customers",
+      "/core/factory-orders",
       "/core/finance",
+      "/core/logistics",
       "/core/manual",
       "/core/missing-sku",
+      "/core/money-transfers",
       "/core/moves",
+      "/core/other-expense",
+      "/core/other-income",
       "/core/peak",
       "/core/pos",
       "/core/purchases",
+      "/core/quotations",
       "/core/reports",
+      "/core/salepages",
       "/core/sales",
       "/core/sales/detail",
       "/core/soon/[key]",
-      "/core/stock"
+      "/core/stock",
+      "/core/stock/[sku]",
+      "/core/transfers",
+      "/core/usage",
+      "/core/variants"
     ]
   },
   "blobs": [

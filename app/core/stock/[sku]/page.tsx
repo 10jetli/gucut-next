@@ -11,7 +11,7 @@
 //    เจ้าของร้านกดจากมือถือ 5 จุดแล้วรายงานว่า "กดเข้าสินค้าไม่ได้เลย"
 //    **สีฟ้าในตาราง = สัญญาว่ากดได้** — จอกำลังบอกว่ามีทั้งที่ไม่มี
 //    ⇒ กลับด้านกับกรณี ZZFAKE999 ที่ซ่อนแล้วบอกว่าซ่อน · อันนี้โชว์ว่ากดได้ทั้งที่กดไม่ได้
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -32,10 +32,27 @@ interface Row {
    *  ทั้งคลังมีน้ำหนักจริงแค่ 669 จาก 2,898 ตัว (23%) ⇒ ส่วนใหญ่ต้องขึ้น "—" */
   weight?: number | null
 }
-interface Move {
-  id?: number; sku: string; qty: number; reason: string; ref?: string; at?: string
+/** หนึ่งแถวในสต็อกการ์ด — มาจาก `list=stockcard` (ขาย · ซื้อ · ปรับด้วยมือของเรา)
+ *  ⚠️ ไม่มี `จาก` / `ไป` / `คงเหลือ` เพราะกระจกใบโอนเก็บแค่หัวใบ ดูรายละเอียดที่ท้ายการ์ด */
+interface CardRow {
+  date?: string; kind?: string; status?: string; ref?: string; party?: string
+  qty?: number; amount?: number | null
 }
-interface MovesResp { rows?: Move[]; reasons?: Record<string, string>; total?: number }
+interface StockCardResp {
+  applied?: { sku?: string; kind?: string; limit?: number }
+  kinds?: { key: string; label: string }[]
+  /** ตัวเลือกที่ ZORT มีแต่เราทำไม่ได้ — **ต้องโชว์เป็นตัวเลือกสีเทา ห้ามซ่อน** */
+  missingKinds?: string[]
+  warehouses?: { key: string; label: string }[] | null
+  coverage?: string
+  /** พารามิเตอร์ที่ท่อไม่รู้จักและถอยไปใช้ค่าเริ่มต้นแทน + คำอธิบาย (ท่อเพิ่มให้ 181c6e5) */
+  ignored?: Record<string, string>
+  note?: string
+  rows?: CardRow[]
+  error?: string
+}
+/** เพดานแถวที่ขอจากท่อ — **ต้องบอกบนจอเมื่อชนเพดาน** ห้ามตัดเงียบ */
+const CARD_LIMIT = 100
 /** ชุดที่มีรหัสนี้เป็นส่วนประกอบ — ถามด้วย `bundleitems&member=<รหัส>` */
 interface InBundle { bundleSku: string; bundleName?: string; qty?: number }
 interface MemberResp { applied?: { member?: string }; rows?: InBundle[]; collectedAt?: string }
@@ -85,8 +102,10 @@ export default function ProductDetailPage() {
   const params = useParams<{ sku: string }>()
   const sku = decodeURIComponent(String(params?.sku ?? ''))
   const [row, setRow] = useState<Row | null>(null)
-  const [moves, setMoves] = useState<MovesResp | null>(null)
-  const [movesErr, setMovesErr] = useState('')
+  const [card, setCard] = useState<StockCardResp | null>(null)
+  const [cardErr, setCardErr] = useState('')
+  const [cardKind, setCardKind] = useState('all')
+  const [cardLoading, setCardLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   // ⚠️ กราฟต้องยิงเดือนละครั้ง (12 ครั้ง) ⇒ **ไม่โหลดเองตอนเปิดหน้า ต้องกดเอง**
@@ -95,7 +114,6 @@ export default function ProductDetailPage() {
   const [chartLoading, setChartLoading] = useState(false)
   const [chartErr, setChartErr] = useState('')
   const [chartMode, setChartMode] = useState<'amount' | 'qty'>('amount')
-  const [moveFilter, setMoveFilter] = useState('')
   const [inBundles, setInBundles] = useState<MemberResp | null>(null)
   const [showAllBundles, setShowAllBundles] = useState(false)
   const imgOf = useSkuImages()
@@ -104,9 +122,8 @@ export default function ProductDetailPage() {
     setLoading(true)
     setError('')
     try {
-      const [sRes, mRes, bRes] = await Promise.all([
+      const [sRes, bRes] = await Promise.all([
         fetch(`/api/web/core?list=stock&q=${encodeURIComponent(sku)}&limit=20&marketplaces=1`).then((r) => r.json()),
-        fetch(`/api/web/core?list=moves&sku=${encodeURIComponent(sku)}&limit=100`).then((r) => r.json()).catch(() => null),
         // "รหัสนี้อยู่ในชุดไหนบ้าง" — ถามกลับทางกับ list=bundleitems&sku=
         fetch(`/api/web/core?list=bundleitems&member=${encodeURIComponent(sku)}`).then((r) => r.json()).catch(() => null),
       ])
@@ -114,8 +131,6 @@ export default function ProductDetailPage() {
       const rows: Row[] = Array.isArray(sRes?.rows) ? sRes.rows : []
       // ⚠️ ค้นหาคืนหลายแถว — ต้องหาแถวที่รหัสตรงเป๊ะ ไม่ใช่หยิบแถวแรก
       setRow(rows.find((r) => r.sku === sku) ?? null)
-      setMoves(mRes && !mRes.error ? mRes : null)
-      setMovesErr(!mRes ? 'ยิงไปที่ท่อความเคลื่อนไหวไม่สำเร็จ' : (typeof mRes.error === 'string' ? mRes.error : ''))
       // ⚠️ ด่านเดิม — เซิร์ฟเวอร์ต้องยืนยันว่าอ่าน member ที่เราส่งไปจริง
       //    ไม่ยืนยัน = ถือว่าไม่รู้ ห้ามแปลว่า "ไม่อยู่ในชุดไหนเลย"
       setInBundles(bRes?.applied?.member === sku ? bRes : null)
@@ -128,6 +143,44 @@ export default function ProductDetailPage() {
   }, [sku])
 
   useEffect(() => { load() }, [load])
+
+  /** สต็อกการ์ด — ท่อ `list=stockcard` (ฝั่งเซิร์ฟเวอร์ทำเสร็จ 3 ก.ย. 2569)
+   *
+   *  🔴 **ตัวกรองย้ายไปอยู่ฝั่งเซิร์ฟเวอร์แล้ว ห้ามกรองซ้ำในจอ**
+   *     ของเดิมดึงมาทั้งก้อนแล้วกรองในเบราว์เซอร์ ⇒ เลือก "รายการขายเท่านั้น"
+   *     จะได้แค่ขายที่ติดมาใน 50 แถวแรก ไม่ใช่ 50 แถวขายจริง
+   *  🔴 **คำตอบที่มาช้าห้ามทับของใหม่** — กดสลับตัวกรองรัว ๆ คำขอเก่าอาจถึงทีหลัง
+   *     `seq` กันเรื่องลำดับ · `applied` กันเรื่องเนื้อหา — **คนละหน้าที่ ต้องมีทั้งคู่** */
+  const cardSeq = useRef(0)
+  const loadCard = useCallback(async (kind: string) => {
+    const my = ++cardSeq.current
+    setCardLoading(true)
+    try {
+      const qs = new URLSearchParams({ list: 'stockcard', sku, kind, limit: String(CARD_LIMIT) })
+      const j: StockCardResp | null = await fetch(`/api/web/core?${qs}`)
+        .then((r) => r.json()).catch(() => null)
+      if (my !== cardSeq.current) return // มีคำขอใหม่แซงไปแล้ว — ทิ้งของเก่า
+      if (!j || j.error) {
+        setCard(null)
+        setCardErr(j?.error || 'ยิงไปที่ท่อสต็อกการ์ดไม่สำเร็จ')
+        return
+      }
+      // ⚠️ ด่านจริง: เซิร์ฟเวอร์ต้องยืนยันว่าอ่านทั้งรหัสและตัวกรองที่เราส่งไป
+      //    ไม่ตรง = **ทิ้งทั้งชุด** ดีกว่าโชว์ความเคลื่อนไหวของสินค้าตัวอื่น/ตัวกรองอื่น
+      if (j.applied?.sku !== sku || j.applied?.kind !== kind) {
+        setCard(null)
+        // ท่อบอกเหตุผลมาเองได้ (note/ignored) — ใช้ของเขาดีกว่าเดาแทน
+        setCardErr(j.note || 'เซิร์ฟเวอร์ไม่ได้ตอบตามรหัส/ตัวกรองที่ขอ — ไม่แสดงตารางดีกว่าแสดงผิด')
+        return
+      }
+      setCardErr('')
+      setCard(j)
+    } finally {
+      if (my === cardSeq.current) setCardLoading(false)
+    }
+  }, [sku])
+
+  useEffect(() => { loadCard(cardKind) }, [loadCard, cardKind])
 
   /** ถามยอดขายรายเดือนของรหัสนี้ — **ยิงครั้งเดียว** ด้วย `by=month`
    *  (เดิมยิงเดือนละครั้ง 12 ครั้ง · ฝั่งเซิร์ฟเวอร์ทำโหมดนี้ให้ ⇒ ลดการเรียก 92%)
@@ -177,7 +230,10 @@ export default function ProductDetailPage() {
   }, [sku])
 
   const img = imgOf(sku)
-  const moveRows = (moves?.rows ?? []).filter((m) => !moveFilter || m.reason === moveFilter)
+  const cardRows = Array.isArray(card?.rows) ? card!.rows! : []
+  /** ยอดขายเดือนนี้ — ช่องสุดท้ายของกราฟคือเดือนปัจจุบันเสมอ (loop สร้างถึง i=0)
+   *  null = ยังไม่ได้กดดูกราฟ ⇒ **ยังไม่รู้** ไม่ใช่ "ขายไม่ได้เลย" — ห้ามแสดงเป็น 0 */
+  const thisMonth = chart && chart.length > 0 ? chart[chart.length - 1].amount : null
 
   return (
     <div className="p-4 md:p-6">
@@ -275,11 +331,28 @@ export default function ProductDetailPage() {
             </Card>
             <Card>
               <p className="text-[12px] text-gray-500 text-right">ยอดขายเดือนนี้ (บาท)</p>
-              <p className="text-[28px] font-semibold text-right leading-none mt-1 text-gray-300">-</p>
-              {/* ⚠️ ยังไม่มีท่อถามยอดขายรายสินค้าเป็นเดือน — ขอไว้แล้ว
-                  ห้ามเอา sold (จำนวนที่ขายได้ 30 วัน) มาคูณราคาขายแล้วบอกว่าเป็นยอดเงิน
-                  เพราะราคาที่ขายจริงต่างจากราคาป้ายได้ (ส่วนลด · โปรมาร์เก็ตเพลส) */}
-              <p className="text-[11px] text-gray-400 text-right mt-1">ยังไม่มีท่อยอดขายรายสินค้าเป็นเดือน</p>
+              {/* ⚠️ ห้ามเอา sold (จำนวนที่ขายได้ 30 วัน) มาคูณราคาขายแล้วบอกว่าเป็นยอดเงิน
+                  ราคาที่ขายจริงต่างจากราคาป้ายได้ (ส่วนลด · โปรมาร์เก็ตเพลส)
+                  🔴 บรรทัดล่างเคยเขียนว่า "ยังไม่มีท่อยอดขายรายสินค้าเป็นเดือน" แล้วค้าง
+                     หลังท่อ topproducts&sku=&by=month เสร็จ (3 ก.ย. 2569) — กราฟข้างล่าง
+                     ใช้ท่อนั้นอยู่ทั้งที่การ์ดนี้ยังบอกว่าไม่มี ⇒ ข้อความค้างจุดที่ 3 ของหน้าเดียวกัน
+                  ⚠️ ไม่ยิงเองตอนเปิดหน้าโดยตั้งใจ — ค่านี้มากับกราฟในคำขอเดียวกันอยู่แล้ว
+                     ยิงซ้ำ = เพิ่มการเรียกฟังก์ชันทุกครั้งที่เปิดหน้าสินค้า เพื่อเลขที่กดดูได้อยู่แล้ว */}
+              {thisMonth == null ? (
+                <>
+                  <p className="text-[28px] font-semibold text-right leading-none mt-1 text-gray-300">-</p>
+                  <p className="text-[11px] text-gray-400 text-right mt-1">
+                    กด &quot;ดูกราฟยอดขาย&quot; ด้านล่าง แล้วเลขนี้จะขึ้นเอง
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="text-[28px] font-semibold text-right leading-none mt-1 text-gray-900">
+                    {fmtMoney(thisMonth)}
+                  </p>
+                  <p className="text-[11px] text-gray-400 text-right mt-1">จากใบขายจริงในคลังเงา</p>
+                </>
+              )}
             </Card>
           </div>
 
@@ -448,74 +521,129 @@ export default function ProductDetailPage() {
             </div>
           </Card>
 
-          {/* การ์ด "รายงาน" — stock card เท่าที่คลังเงามี */}
+          {/* การ์ด "รายงาน" — สต็อกการ์ด ลอกผังจาก `zort-ui/21-รายละเอียดสินค้า.jpg`
+              หัวการ์ด "รายงาน" ซ้าย · ขวามีสองตัวกรอง (การแสดงผล · คลังสินค้า/สาขา)
+              คอลัมน์ ZORT 8 ช่อง: วันที่ · ประเภท · สถานะ · รายการ · จำนวน · จาก · ไป · คงเหลือ */}
           <Card padded={false} className="mt-4">
-            <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
-              <p className="text-[15px] font-semibold text-gray-900 mr-auto">รายงานการเคลื่อนไหว</p>
-              {/* ⚠️ ZORT มีตัวกรอง 8 แบบ + ตัวกรองคลัง — ของเรามีเท่าที่ข้อมูลรองรับจริง (6 เหตุผล)
-                  ใส่ให้ครบ 8 แบบตามเขา = ตัวเลือกที่เลือกแล้วไม่มีอะไรเปลี่ยน ซึ่งเป็นของหลอก */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 md:px-5 pt-4 pb-2">
+              <p className="text-[15px] font-semibold text-gray-900 mr-auto">รายงาน</p>
+
+              <label className="text-[12.5px] text-gray-500">การแสดงผล</label>
+              {/* ⚠️ ZORT มี 8 ตัวเลือก เราทำได้ 5 — **สามอันที่เหลือขึ้นเป็นตัวเลือกสีเทา**
+                  ซ่อนทิ้ง = ไม่มีอะไรบอกว่าขาดอะไร · ใส่ให้กดได้ = ตัวเลือกหลอก
+                  (ท่าเดียวกับปุ่ม "ปรับจำนวน" ที่เป็นสีเทาพร้อมเหตุผล) */}
               <select
-                value={moveFilter}
-                onChange={(e) => setMoveFilter(e.target.value)}
+                value={cardKind}
+                onChange={(e) => setCardKind(e.target.value)}
                 className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
               >
-                <option value="">ทุกประเภท</option>
-                {Object.entries(moves?.reasons ?? {}).map(([k, v]) => (
-                  <option key={k} value={k}>{v}</option>
+                {(card?.kinds ?? [{ key: 'all', label: 'การเคลื่อนไหว' }]).map((k) => (
+                  <option key={k.key} value={k.key}>{k.label}</option>
                 ))}
+                {(card?.missingKinds ?? []).map((m) => (
+                  <option key={m} value="" disabled>{m} — เรายังทำไม่ได้</option>
+                ))}
+              </select>
+
+              <label className="text-[12.5px] text-gray-500">คลังสินค้า/สาขา</label>
+              {/* ⚠️ ท่อส่ง warehouses: null มา = **ไม่มีข้อมูลรายคลังเลย** ไม่ใช่ "มีแต่ยังไม่ได้ต่อ"
+                  ทำ dropdown ที่เลือกได้แล้วไม่มีอะไรเปลี่ยน คือของหลอก ⇒ ล็อกไว้พร้อมเหตุผล */}
+              <select
+                disabled
+                title="คลังเงาเก็บสต็อกรวมทั้งร้าน ไม่มีข้อมูลแยกรายคลัง — ZORT ไม่เปิด API ให้ดึง"
+                className="text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 text-gray-400 cursor-not-allowed"
+              >
+                <option>ทั้งหมด</option>
               </select>
             </div>
 
             <TableWrap>
-              <table className="w-full min-w-[680px]">
+              <table className="w-full min-w-[860px]">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
                     <th className={TH}>วันที่</th>
                     <th className={TH}>ประเภท</th>
-                    <th className={TH}>อ้างอิง</th>
+                    <th className={TH}>สถานะ</th>
+                    <th className={TH}>รายการ</th>
                     <th className={THR}>จำนวน</th>
+                    <th className={TH}>จาก</th>
+                    <th className={TH}>ไป</th>
+                    <th className={THR}>คงเหลือ</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {moveRows.length === 0 && (
+                  {cardLoading && cardRows.length === 0 && (
+                    <EmptyState cols={8} icon="⏳" title="กำลังดึงความเคลื่อนไหว…" detail="" />
+                  )}
+                  {!cardLoading && cardRows.length === 0 && (
                     <EmptyState
-                      cols={4}
-                      icon={movesErr ? '⚠️' : '📋'}
-                      title={movesErr ? 'ดึงความเคลื่อนไหวไม่ได้' : 'ยังไม่มีรายการปรับสต็อกของรหัสนี้'}
-                      detail={movesErr
-                        ? `ตารางว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะไม่มีการเคลื่อนไหว — ${movesErr}`
-                        : 'ตารางนี้แสดงเฉพาะการปรับสต็อกด้วยมือ (รับของ · โอน · ปรับยอด · ของเสีย · รับคืน)'}
+                      cols={8}
+                      icon={cardErr ? '⚠️' : '📋'}
+                      title={cardErr ? 'ดึงความเคลื่อนไหวไม่ได้' : 'ไม่มีความเคลื่อนไหวของรหัสนี้ในตัวกรองที่เลือก'}
+                      detail={cardErr
+                        ? `ตารางว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะไม่มีการเคลื่อนไหว — ${cardErr}`
+                        : 'ลองเปลี่ยนตัวกรอง "การแสดงผล" เป็น "การเคลื่อนไหว" เพื่อดูทุกประเภทรวมกัน'}
                     />
                   )}
-                  {moveRows.map((m, i) => (
-                    <tr key={m.id ?? `${m.ref}-${i}`} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  {cardRows.map((m, i) => (
+                    <tr key={`${m.ref ?? ''}-${m.date ?? ''}-${i}`}
+                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                       <td className={`${TD} whitespace-nowrap text-gray-600`}>
-                        {m.at ? thaiDate(String(m.at).slice(0, 10)) : '-'}
+                        {m.date ? thaiDate(String(m.date).slice(0, 10)) : '-'}
                       </td>
-                      <td className={TD}>{moves?.reasons?.[m.reason] ?? m.reason}</td>
-                      <td className={`${TD} text-gray-500`}>{m.ref || '-'}</td>
+                      <td className={`${TD} whitespace-nowrap`}>{m.kind || '-'}</td>
+                      <td className={`${TD} text-gray-500 whitespace-nowrap`}>{m.status || '-'}</td>
+                      <td className={TD}>
+                        <span className="text-gray-700">{m.ref || '-'}</span>
+                        {m.party ? <span className="text-gray-400"> · {m.party}</span> : null}
+                      </td>
                       <td className={`${TDR} ${Number(m.qty) < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                         {Number(m.qty) > 0 ? '+' : ''}{fmtNum(Number(m.qty ?? 0))}
                       </td>
+                      {/* จาก · ไป · คงเหลือ — ขีดไว้ทุกแถวโดยตั้งใจ เหตุผลอยู่ใต้ตาราง */}
+                      <td className={`${TD} text-gray-300`}>–</td>
+                      <td className={`${TD} text-gray-300`}>–</td>
+                      <td className={`${TDR} text-gray-300`}>–</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </TableWrap>
 
-            {/* 🔴 ต้องบอกให้ชัดว่าตารางนี้ครอบคลุมแค่ไหน — ZORT รวมทุกทาง ของเรายังไม่ครบ */}
+            {/* 🔴 ข้อความนี้ **อ่านจากท่อ ไม่ใช่พิมพ์ไว้ในจอ**
+                ของเดิมพิมพ์ไว้ว่า "รอต่อท่อรวม" แล้วค้างอยู่อย่างนั้นหลังท่อเสร็จแล้ว
+                = จอบอกว่าทำไม่ได้ทั้งที่ทำได้ ซึ่งไม่มีใครไปตรวจเพราะไม่มีอะไรพัง */}
+            {/* 🔴 **ห้ามตัดแถวเงียบ** — ท่อไม่ส่ง total มา เรารู้แค่ว่า "ชนเพดานหรือยัง"
+                ชนเมื่อไหร่ต้องเขียนบอก ไม่งั้นตารางที่ถูกตัดจะอ่านเหมือนตารางที่ครบ
+                ของจริง: 00073 ตัวกรอง "รายการซื้อขายทั้งหมด" ได้ 100 แถวเป็นใบขายล้วน
+                ใบซื้อ 4 ใบถูกดันตกไปเพราะเก่ากว่า — ดูเผิน ๆ เหมือนไม่เคยซื้อเข้าเลย */}
+            {cardRows.length >= CARD_LIMIT && (
+              <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
+                แสดง <b>{CARD_LIMIT} รายการล่าสุด</b> เท่านั้น — ของจริงอาจมีมากกว่านี้ ·
+                รายการที่เก่ากว่านี้ถูกตัดออก <b>รวมถึงประเภทอื่นที่เก่ากว่า</b>
+                (เช่นใบซื้อที่เก่ากว่าใบขาย) ⇒ ถ้าจะดูใบซื้อ ให้เลือกตัวกรอง
+                <b> รายการซื้อเท่านั้น</b>
+              </p>
+            )}
             <p className="text-[12px] text-amber-800 bg-amber-50 border-t border-amber-200 px-4 py-2.5 leading-relaxed">
-              ⚠️ ตารางนี้<b>ยังไม่ใช่ Stock Card เต็มแบบ ZORT</b> — ตอนนี้แสดงเฉพาะ
-              <b> การปรับสต็อกด้วยมือ</b> ในระบบเรา · ยังไม่ได้รวม ขาย · ซื้อ · โอน เข้าด้วยกัน
-              (ข้อมูลมีครบในคลังเงาแล้ว รอต่อท่อรวม) · และจะขาดใบ &quot;ปรับ&quot; 194 ใบเสมอ
-              เพราะ API ของ ZORT เองไม่ส่งออกมา
+              ⚠️ {card?.coverage ?? 'ยังไม่ได้รับคำอธิบายความครอบคลุมจากเซิร์ฟเวอร์'}
+            </p>
+            <p className="text-[12px] text-gray-500 border-t border-gray-100 px-4 py-2.5 leading-relaxed">
+              คอลัมน์ <b>จาก · ไป · คงเหลือ</b> ขีดไว้ทุกแถว — <b>จาก/ไป</b> ต้องใช้ข้อมูลรายคลัง
+              ซึ่งไม่มี · <b>คงเหลือ</b> เป็นยอดสะสมที่ต้องนับจากความเคลื่อนไหว<b>ทุกใบ</b>
+              ตารางนี้ยังขาดใบ &quot;ปรับ&quot; และ &quot;ยกมา&quot; ของ ZORT ⇒ <b>ใส่ตัวเลขไปก็ผิด</b> ·
+              และจะขาดใบ &quot;ปรับ&quot; 194 ใบเสมอ เพราะ API ของ ZORT เองไม่ส่งออกมา
             </p>
           </Card>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             ⚠️ ZORT มี <b>QR code กับบาร์โค้ด</b> มุมขวาของกล่องข้อมูล (ใช้คู่กับปุ่มพิมพ์เอกสาร) —
             ยังไม่ทำเพราะปุ่มพิมพ์เอกสารเองก็ยังทำไม่ได้ · ทำบาร์โค้ดไว้เฉย ๆ โดยพิมพ์ไม่ได้
-            ก็ไม่ได้ช่วยอะไร · <b>น้ำหนัก</b> ZORT มีแต่คลังเงายังไม่ได้เก็บช่องนี้มา
+            ก็ไม่ได้ช่วยอะไร
+            {/* 🔴 บรรทัดนี้เคยเขียนว่า "น้ำหนักคลังเงายังไม่ได้เก็บช่องนี้มา" แล้วค้างอยู่
+                หลังท่อเก็บน้ำหนักเสร็จ (3 ก.ย. 2569) — ช่องน้ำหนักโชว์อยู่ข้างบนนี้แล้ว
+                ⇒ ข้อความ "ทำไม่ได้" ที่ค้าง อันตรายกว่าตัวตรวจที่เขียวทั้งที่พัง
+                   เพราะไม่มีอะไรให้ใครไปตรวจ คนอ่านแล้วเชื่อแล้วเลิกตาม */}
           </p>
         </>
       )}
