@@ -164,6 +164,8 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/settings/connections', label: 'เชื่อมต่อบริการอื่น' },
       // เจ้าของร้านสั่ง "ห้ามข้อมูลหาย · เรียกคืนได้ กันเหนียว" (2 ก.ย. 2569)
       { href: '/core/backup', label: 'สำรองข้อมูล' },
+      // เจ้าของร้านสั่งด่วน 3 ก.ย. 2569: "เครดิต Netlify กินหนัก ให้ทำแดชบอร์ดแยกส่วน"
+      { href: '/core/usage', label: 'การใช้งาน Netlify' },
     ],
   },
   {
