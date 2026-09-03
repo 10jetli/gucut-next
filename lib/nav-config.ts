@@ -120,9 +120,9 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { href: '/core/finance', label: 'ดูภาพรวม' },
       soon('wallet', 'กระเป๋าเงิน'),
-      soon('income-other', 'รายได้อื่น'),
-      soon('expense-other', 'รายจ่ายอื่น'),
-      soon('money-transfer', 'รายการโอนเงิน'),
+      { href: '/core/other-income', label: 'รายได้อื่น' },
+      { href: '/core/other-expense', label: 'รายจ่ายอื่น' },
+      { href: '/core/money-transfers', label: 'รายการโอนเงิน' },
       soon('cod-receive', 'รายการรับเงิน COD'),
       { href: '/core/peak', label: 'สะพานส่งเข้า PEAK' },
       { href: '/bills', label: 'รวมบิลทุกเจ้า' },
