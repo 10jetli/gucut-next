@@ -20,7 +20,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill,
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine,
 } from '@/components/zort'
 
 interface Row {
@@ -108,9 +108,13 @@ export default function CorePurchasesPage() {
         summary={
           data
             ? <>
-              จำนวน {fmtNum(data.total)} รายการ, มูลค่าทั้งหมด {fmtMoney(data.amount)}
+              {/* ⚠️ ลอกคำต่อคำจากภาพ — ซูมอ่านทีละคำแล้ว ไม่ได้อ่านรวมแล้วพิมพ์ตาม
+                  ZORT เขียน "ตรวจสอบการ**นับ**สินค้าเข้า" ไม่ใช่ "รับ"
+                  นับ = ตรวจนับสต็อกจริง · รับ = รับของเข้าคลัง คนละงานกัน
+                  ครั้งแรกอ่านเป็น "รับ" เพราะสมองเติมคำที่คุ้นให้เอง */}
+              {summaryLine(data.total, data.amount)}
               {' | '}
-              <Link href="/core/moves" className="text-blue-600 hover:underline">ตรวจสอบการรับสินค้าเข้า</Link>
+              <Link href="/core/soon/stock-count" className="text-blue-600 hover:underline">ตรวจสอบการนับสินค้าเข้า</Link>
             </>
             : 'กำลังโหลด…'
         }
