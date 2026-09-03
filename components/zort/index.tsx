@@ -348,3 +348,34 @@ export function EmptyState({
     </tr>
   )
 }
+
+/* ── โลโก้ช่องทางที่สินค้าลงขายอยู่ (คอลัมน์ Marketplace ของ ZORT) ──────────
+   ⚠️ ต้องมาจาก **รายการสินค้าจริงบนแพลตฟอร์ม ไม่ใช่ประวัติการขาย**
+      "เคยขายได้" กับ "กำลังลงขายอยู่" คนละเรื่อง
+   ⚠️ ช่องทางที่ยังไม่มีไฟล์โลโก้ให้แสดงชื่อเป็นตัวหนังสือ **ห้ามซ่อน**
+      ซ่อน = สินค้าดูเหมือนลงขายน้อยช่องทางกว่าความจริง
+   ⚠️ ไม่มีข้อมูลเลยให้แสดงขีด **ห้ามแสดงว่างเปล่า** — ช่องว่างอ่านได้ว่า "ไม่ได้ลงขาย"
+      ซึ่งเป็นคำกล่าวอ้างที่เรายังพิสูจน์ไม่ได้ */
+const MARKET_LOGO: Record<string, { src: string; label: string }> = {
+  shopee: { src: '/logos/shopee.png', label: 'Shopee' },
+  lazada: { src: '/logos/lazada.png', label: 'Lazada' },
+  tiktok: { src: '/logos/tiktok.png', label: 'TikTok' },
+  gucut: { src: '/logos/gucut.png', label: 'gucut.com' },
+}
+export function MarketLogos({ list }: { list?: string[] | null }) {
+  if (!Array.isArray(list) || list.length === 0) return <span className="text-gray-300">—</span>
+  return (
+    <span className="flex items-center gap-1">
+      {list.map((name) => {
+        const hit = MARKET_LOGO[String(name).toLowerCase()]
+        return hit
+          ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img key={name} src={hit.src} alt={hit.label} title={hit.label} width={16} height={16}
+              className="w-4 h-4 rounded-[3px] object-contain" />
+          )
+          : <span key={name} className="text-[10.5px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{name}</span>
+      })}
+    </span>
+  )
+}

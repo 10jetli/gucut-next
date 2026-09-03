@@ -15,7 +15,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos,
 } from '@/components/zort'
 
 interface Row {
@@ -47,26 +47,6 @@ interface Resp {
   /** จำนวนแถวของแท็บที่เลือกอยู่ — ใช้ทำเลขหน้า ห้ามใช้ total ตอนอยู่แท็บ out/low */
   shown?: number
   limit: number; offset: number; rows: Row[]
-}
-
-/** โลโก้ช่องทางขายเล็ก ๆ ท้ายแถว — ไฟล์เดียวกับที่ ChannelTag ใช้ */
-const MARKET_LOGO: Record<string, { src: string; label: string }> = {
-  shopee: { src: '/logos/shopee.png', label: 'Shopee' },
-  lazada: { src: '/logos/lazada.png', label: 'Lazada' },
-  tiktok: { src: '/logos/tiktok.png', label: 'TikTok' },
-  gucut: { src: '/logos/gucut.png', label: 'gucut.com' },
-}
-function MarketLogo({ name }: { name: string }) {
-  const hit = MARKET_LOGO[String(name).toLowerCase()]
-  if (!hit) {
-    // ⚠️ ช่องทางที่ยังไม่มีโลโก้ให้แสดงชื่อ **ห้ามซ่อน** ไม่งั้นสินค้าดูเหมือนลงขายน้อยกว่าจริง
-    return <span className="text-[10.5px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{name}</span>
-  }
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img src={hit.src} alt={hit.label} title={hit.label} width={16} height={16}
-      className="w-4 h-4 rounded-[3px] object-contain" />
-  )
 }
 
 const PAGE = 50

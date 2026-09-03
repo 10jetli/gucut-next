@@ -21,7 +21,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate,
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos,
 } from '@/components/zort'
 
 interface Row {
@@ -36,6 +36,8 @@ interface Row {
    *  ⚠️ null ไม่ใช่ 0 · ถ้าคิด 0 จะได้ราคารวมต่ำกว่าจริงแบบดูสมเหตุสมผล จับไม่ได้ด้วยตา */
   itemsValue?: number | null
   itemCount?: number
+  /** ช่องทางที่ชุดนี้ลงขายอยู่จริง — ZORT โชว์โลโก้ตรงคอลัมน์ Marketplace */
+  marketplaces?: string[]
 }
 interface BundleItem { line?: number; sku: string; name: string; qty: number }
 interface Resp {
@@ -264,7 +266,7 @@ export default function CoreBundlesPage() {
                     {/* ⚠️ ZORT โชว์ไอคอนร้านมาร์เก็ตเพลสตรงนี้ แต่ **API ไม่ส่งข้อมูลนี้มาเลย**
                         (Bundle/GetBundles ไม่มีช่อง marketplace) ⇒ มีหัวคอลัมน์ให้ผังตรง
                         แต่ใส่ขีด และเขียนเหตุผลไว้ใต้ตาราง — เหมือนที่ทำกับมูลค่ารายคลัง */}
-                    <td className={TD}><span className="text-gray-300">—</span></td>
+                    <td className={TD}><MarketLogos list={r.marketplaces} /></td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
