@@ -32,6 +32,10 @@ interface Row {
   available?: number
   active?: boolean
   unit?: string
+  /** ผลรวมราคาขายของส่วนประกอบ × จำนวน — **null = มีชิ้นส่วนที่ยังไม่มีราคา**
+   *  ⚠️ null ไม่ใช่ 0 · ถ้าคิด 0 จะได้ราคารวมต่ำกว่าจริงแบบดูสมเหตุสมผล จับไม่ได้ด้วยตา */
+  itemsValue?: number | null
+  itemCount?: number
 }
 interface BundleItem { line?: number; sku: string; name: string; qty: number }
 interface Resp {
@@ -239,8 +243,14 @@ export default function CoreBundlesPage() {
                         </span>
                       </span>
                     </td>
-                    {/* ⚠️ คำนวณไม่ได้จนกว่าจะรู้ส่วนประกอบ — ห้ามเอาราคาขายมาใส่แทน */}
-                    <td className={TDR}><span className="text-gray-300">—</span></td>
+                    {/* ผลรวมราคาขายของส่วนประกอบ — ตรวจกับ ZORT แล้วตรงเป๊ะ (00073-30-KK = 7,632)
+                        ⚠️ null = มีชิ้นส่วนที่ยังไม่มีราคา ⇒ แสดงขีด **ห้ามคิดเป็น 0**
+                           เพราะจะได้ราคารวมต่ำกว่าจริงแบบดูสมเหตุสมผล ไม่มีใครจับได้ */}
+                    <td className={TDR}>
+                      {typeof r.itemsValue === 'number'
+                        ? fmtMoney(r.itemsValue)
+                        : <span className="text-gray-300" title="มีชิ้นส่วนที่ยังไม่ได้ตั้งราคา จึงรวมไม่ได้">—</span>}
+                    </td>
                     <td className={TDR}>{typeof r.sellprice === 'number' ? fmtMoney(r.sellprice) : <span className="text-gray-300">—</span>}</td>
                     <td className={TDR}><Qty n={r.onhand} unit={r.unit} /></td>
                     <td className={TDR}><Qty n={r.available} unit={r.unit} /></td>

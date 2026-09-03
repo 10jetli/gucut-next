@@ -85,7 +85,11 @@ export const NAV_ITEMS: NavItem[] = [
       soon('product-variant', 'สินค้าหลากคุณสมบัติ'),
       { href: '/core/categories', label: 'หมวดหมู่' },
       { href: '/core/branches', label: 'คลังสินค้า/สาขา' },
-      { href: TRANSFER.href!, label: 'รายการโอนสินค้า' },
+      // ⚠️ "รายการโอนสินค้า" ของ ZORT = **รายการใบโอน** (กระจกจาก ZORT)
+      //    ส่วนเครื่องมือโอนของจริงที่ร้านใช้ทุกวันคือ /catalog#trf ⇒ แยกเป็นคนละเมนู
+      //    เอามารวมเป็นอันเดียวไม่ได้ อันหนึ่งคือ "ดูประวัติ" อีกอันคือ "ลงมือโอน"
+      { href: '/core/transfers', label: 'รายการโอนสินค้า' },
+      { href: TRANSFER.href!, label: 'เครื่องมือโอนสินค้า' },
       { href: '/core/missing-sku', label: 'SKU ที่คลังไม่รู้จัก' },
     ],
   },
