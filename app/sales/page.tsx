@@ -22,6 +22,10 @@ interface Report {
   // ยอดเงินรายสินค้ามาจาก /api/core?list=topproducts (รวมจาก order_items จริง)
   // ยังเป็น optional ไว้ เผื่อท่อนั้นล่ม — โชว์ขีดดีกว่าโชว์เลขที่เดาเอง
   topProducts: { name: string; sku: string; qty: number; amount?: number }[] | null
+  /** ⚠️ ท่อสินค้าขายดีล้มเหลว — ต้องแยกจาก "ไม่มียอดขาย" ให้ขาด
+   *  ตารางว่างเพราะยิงไม่ผ่าน แล้วเขียนว่า "ยังไม่มียอดขายในช่วงนี้"
+   *  = พูดแทนธุรกิจว่าขายไม่ได้ ทั้งที่เราแค่ถามไม่สำเร็จ */
+  topError?: string
 }
 
 interface CoreRow { number: string; channel: string; amount: number; order_date: string }
@@ -223,6 +227,9 @@ export default function SalesReportPage() {
       const prevByChan = new Map(prev.channels.map((c) => [c.channel, c.amount]))
       const bestRows: { sku: string; name: string; qty: number; amount: number }[] =
         Array.isArray(best?.items) ? best.items.filter((r: { qty: number }) => r.qty > 0) : []
+      const topError = !best ? 'ยิงไปที่ท่อสินค้าขายดีไม่สำเร็จ'
+        : (typeof best.error === 'string' ? best.error
+          : (Array.isArray(best.items) ? '' : 'ท่อสินค้าขายดีตอบมาในรูปแบบที่อ่านไม่ได้'))
 
       setReport({
         range: { from, to, days: d },
@@ -242,6 +249,7 @@ export default function SalesReportPage() {
           orders: c.orders,
           prevSales: prevByChan.get(c.channel) ?? 0,
         })),
+        topError,
         topProducts: bestRows.map((r) => ({
           name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount,
         })),
@@ -367,8 +375,13 @@ export default function SalesReportPage() {
                     </thead>
                     <tbody>
                       {(!report.topProducts || report.topProducts.length === 0) && (
-                        <EmptyState cols={5} icon="📊" title="ยังไม่มียอดขายรายสินค้าในช่วงนี้"
-                          detail="ลองขยายช่วงเวลาด้านบน · ตัวเลขนับจากรายการสินค้าในใบขายจริง" />
+                        <EmptyState
+                          cols={5}
+                          icon={report.topError ? '⚠️' : '📊'}
+                          title={report.topError ? 'ดึงยอดขายรายสินค้าไม่ได้' : 'ยังไม่มียอดขายรายสินค้าในช่วงนี้'}
+                          detail={report.topError
+                            ? `ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะขายไม่ได้ — ${report.topError}`
+                            : 'ลองขยายช่วงเวลาด้านบน · ตัวเลขนับจากรายการสินค้าในใบขายจริง'} />
                       )}
                       {(report.topProducts ?? []).map((p) => {
                         const amount = typeof p.amount === 'number' ? p.amount : null

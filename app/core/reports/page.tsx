@@ -32,6 +32,7 @@ const DEAD_RANGES = [
 export default function CoreProductReportPage() {
   const [stock, setStock] = useState<StockResp | null>(null)
   const [dead, setDead] = useState<DeadResp | null>(null)
+  const [deadErr, setDeadErr] = useState('')
   const [deadDays, setDeadDays] = useState(90)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
@@ -43,12 +44,14 @@ export default function CoreProductReportPage() {
     try {
       const [sRes, dRes] = await Promise.all([
         fetch('/api/web/core?list=stock&limit=1').then((r) => r.json()),
-        // ⚠️ ท่อนี้ยังไม่มี — ขอไว้แล้ว · ล้มก็ไม่ทำให้ทั้งจอพัง แค่ตารางสินค้าจมว่าง
+        // ท่อนี้มีแล้ว · ล้มก็ไม่ทำให้ทั้งจอพัง แค่ตารางสินค้าจมว่าง
+        // ⚠️ แต่ต้องจำไว้ว่า "ล้มเพราะอะไร" — ท่อพังกับไม่มีสินค้าจม เขียนเหมือนกันไม่ได้
         fetch(`/api/web/core?list=deadstock&days=${days}`).then((r) => r.json()).catch(() => null),
       ])
       if (sRes?.error) throw new Error(sRes.error)
       setStock(sRes)
       setDead(dRes && !dRes.error ? dRes : null)
+      setDeadErr(!dRes ? 'ยิงไปที่ท่อสินค้าจมไม่สำเร็จ' : (typeof dRes.error === 'string' ? dRes.error : ''))
     } catch (e) {
       setStock(null)
       setError(String(e instanceof Error ? e.message : e))
@@ -165,11 +168,15 @@ export default function CoreProductReportPage() {
                   {deadRows.length === 0 && (
                     <EmptyState
                       cols={5}
-                      icon="📦"
-                      title={dead ? 'ไม่มีสินค้าจมในช่วงนี้' : 'ยังไม่มีข้อมูลสินค้าจม'}
-                      detail={dead
-                        ? 'ทุกตัวที่มีของในคลังยังขายได้ในช่วงเวลาที่เลือก — ลองขยายช่วงเวลาด้านบน'
-                        : 'ต้องให้ฝั่งเซิร์ฟเวอร์คิด "วันที่ขายล่าสุด" ของแต่ละรหัสก่อน (ขอไว้แล้ว) — จอพร้อมแสดงทันทีที่ข้อมูลมา'}
+                      icon={deadErr ? '⚠️' : '📦'}
+                      title={deadErr ? 'ดึงรายการสินค้าจมไม่ได้' : (dead ? 'ไม่มีสินค้าจมในช่วงนี้' : 'ยังไม่มีข้อมูลสินค้าจม')}
+                      detail={deadErr
+                        // ⚠️ ห้ามเขียนว่า "ไม่มีสินค้าจม" ตอนท่อพัง — สินค้าจมคือเงินที่ค้างอยู่ในสต็อก
+                        //    บอกว่าไม่มีทั้งที่ยังไม่รู้ = ทำให้คนเลิกตามเรื่องที่ควรตาม
+                        ? `ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะไม่มีสินค้าจม — ${deadErr}`
+                        : (dead
+                          ? 'ทุกตัวที่มีของในคลังยังขายได้ในช่วงเวลาที่เลือก — ลองขยายช่วงเวลาด้านบน'
+                          : 'ยังไม่ได้รับข้อมูลจากฝั่งเซิร์ฟเวอร์ — จอพร้อมแสดงทันทีที่ข้อมูลมา')}
                     />
                   )}
                   {deadRows.map((r) => (

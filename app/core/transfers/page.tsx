@@ -74,6 +74,7 @@ export default function CoreTransfersPage() {
   const [offset, setOffset] = useState(0)
   const [data, setData] = useState<Resp | null>(null)
   const [names, setNames] = useState<Record<string, string>>({})
+  const [wErr, setWErr] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -96,6 +97,8 @@ export default function CoreTransfersPage() {
         if (w?.code) map[String(w.code)] = String(w.name || w.code)
       }
       setNames(map)
+      // ⚠️ ดึงชื่อคลังไม่ได้ = จอโชว์รหัสคลังดิบ ต้องบอก ไม่ใช่ปล่อยให้อ่านเป็นชื่อจริง
+      setWErr(!wRes || !Array.isArray(wRes?.warehouses))
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
     } finally {
@@ -246,6 +249,15 @@ export default function CoreTransfersPage() {
             <br />
             ช่อง <b>จาก</b> หรือ <b>ไป</b> ว่างเป็นเรื่องปกติของประเภท &quot;ปรับ&quot;
             (ปรับสต็อกในคลังเดียว ไม่ได้โอนข้ามคลัง)
+            {/* ⚠️ ดึงชื่อคลังไม่ได้ = ช่อง จาก/ไป เป็น "รหัสดิบ" ที่หน้าตาเหมือนชื่อคลัง
+                ไม่บอก = คนอ่านนึกว่าคลังชื่อนั้นจริง ๆ แล้วไปหาคลังที่ไม่มีอยู่ */}
+            {wErr && (
+              <>
+                <br />
+                <b className="text-amber-700">ดึงชื่อคลังไม่สำเร็จรอบนี้</b> — ช่อง จาก/ไป
+                จึงแสดงเป็น <b>รหัสคลัง</b> ไม่ใช่ชื่อ (กดรีเฟรชอีกครั้งได้)
+              </>
+            )}
             {data.note ? ` · ${data.note}` : ''}
           </div>
         </>
