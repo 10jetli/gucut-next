@@ -21,7 +21,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos,
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage,
 } from '@/components/zort'
 
 interface Row {
@@ -49,6 +49,7 @@ interface Resp {
   note?: string
   /** เก็บรายการในชุดครั้งเดียวเมื่อไหร่ — ต้องโชว์เสมอ เพราะไม่มีการซิงก์อัตโนมัติ */
   collectedAt?: string
+  checkedMarketplaces?: string[]
   bundlesWithItems?: number
   lines?: number
   limit?: number
@@ -100,7 +101,8 @@ export default function CoreBundlesPage() {
     setLoading(true)
     setError('')
     try {
-      const qs = new URLSearchParams({ list: 'bundles', limit: String(PAGE), offset: String(off) })
+      // ⚠️ จอนี้ต้องส่ง marketplaces=1 ถึงจะได้โลโก้ช่องทาง (ต่างจาก list=stock ที่ส่งมาให้เลย)
+      const qs = new URLSearchParams({ list: 'bundles', limit: String(PAGE), offset: String(off), marketplaces: '1' })
       if (q.trim()) qs.set('q', q.trim())
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
@@ -296,8 +298,7 @@ export default function CoreBundlesPage() {
           </TableWrap>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            คอลัมน์ <b>Marketplace</b> ยังว่างทุกแถว เพราะ ZORT ไม่ส่งข้อมูลการผูกชุดกับร้าน
-            มาร์เก็ตเพลสออกมาทาง API — มีหัวคอลัมน์ไว้ให้ผังตรงกับ ZORT แต่ไม่เดาข้อมูลใส่
+            <MarketCoverage checked={data.checkedMarketplaces} />
             {data.note ? ` · ${data.note}` : ''}
           </p>
         </>

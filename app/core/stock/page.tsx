@@ -15,7 +15,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage,
 } from '@/components/zort'
 
 interface Row {
@@ -322,12 +322,7 @@ export default function CoreStockPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
-                {' '}· คอลัมน์ <b>Marketplace</b>{' '}
-                {Array.isArray(data.checkedMarketplaces) && data.checkedMarketplaces.length > 0
-                  ? <>ตรวจจากรายการสินค้าจริงบน <b>{data.checkedMarketplaces.join(' · ')}</b> ·
-                    ช่องทางอื่นที่ยังต่อ API ไม่ได้จะไม่ขึ้นโลโก้ — <b>ไม่ได้แปลว่าไม่ได้ลงขาย</b> แปลว่าเรายังเช็คไม่ได้</>
-                  : <>ยังไม่มีข้อมูล เพราะ ZORT ไม่ส่งการผูกสินค้ากับร้านมาร์เก็ตเพลสมาทาง API
-                    (กำลังต่อจากรายการสินค้าจริงบน Shopee แทน)</>}
+                {' '}· <MarketCoverage checked={data.checkedMarketplaces} />
                 {' '}· ZORT แสดง <b>2,898</b> รายการ ต่างจากที่นี่ <b>226</b> รายการ —
                 เป็นรายการที่<b>ไม่มีรหัสสินค้า ไม่มีของในสต็อก และมูลค่ารวม 0 บาท</b>
                 (ตรวจแล้ว) จึงไม่ถูกดึงเข้ามา ไม่ใช่ข้อมูลตกหล่น

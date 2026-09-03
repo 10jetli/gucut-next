@@ -379,3 +379,31 @@ export function MarketLogos({ list }: { list?: string[] | null }) {
     </span>
   )
 }
+
+/** บอกว่ารอบนี้เช็คช่องทางไหนได้บ้าง — **จำเป็น ไม่ใช่รายละเอียดปลีกย่อย**
+ *
+ * ⚠️ ZORT บอกว่า Lazada เชื่อมไว้ **1,988 ตัว มากกว่า Shopee อีก** แต่เรายังเช็ค
+ *    Lazada ไม่ได้ (รอ review) ⇒ จอเราจะขาดโลโก้ Lazada เกือบสองพันตัว
+ *    **ถ้าไม่เขียนว่า "ยังเช็ค Lazada ไม่ได้" คนอ่านจะสรุปว่าร้านแทบไม่ได้ขายบน Lazada
+ *    ซึ่งตรงข้ามกับความจริงโดยสิ้นเชิง**
+ * ⚠️ Shopify จะไม่มีวันขึ้นเพราะร้านปิดไปแล้ว — เราถามแพลตฟอร์มเอง ไม่ได้ลอกจาก ZORT
+ *    (ZORT ยังโชว์โลโก้ Shopify ค้างอยู่ที่ระดับสินค้า แต่ไม่มีในหน้าเชื่อมต่อแล้ว) */
+export function MarketCoverage({ checked }: { checked?: string[] | null }) {
+  const list = Array.isArray(checked) ? checked : []
+  if (list.length === 0) {
+    return (
+      <>คอลัมน์ <b>Marketplace</b> ยังไม่มีข้อมูล — กำลังต่อจากรายการสินค้าจริงบนแพลตฟอร์ม</>
+    )
+  }
+  const ALL = ['shopee', 'lazada', 'tiktok']
+  const missing = ALL.filter((x) => !list.some((c) => String(c).toLowerCase() === x))
+  return (
+    <>
+      คอลัมน์ <b>Marketplace</b> ตรวจจากรายการสินค้าจริงบน <b>{list.join(' · ')}</b>
+      {missing.length > 0 && (
+        <> · <b className="text-amber-700">ยังเช็ค {missing.join(' · ')} ไม่ได้</b> —
+          สินค้าที่ไม่มีโลโก้ของเจ้านั้น <b>ไม่ได้แปลว่าไม่ได้ลงขาย</b> แปลว่าเรายังมองไม่เห็น</>
+      )}
+    </>
+  )
+}
