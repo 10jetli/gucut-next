@@ -13,14 +13,15 @@
 //    ⇒ กลับด้านกับกรณี ZZFAKE999 ที่ซ่อนแล้วบอกว่าซ่อน · อันนี้โชว์ว่ากดได้ทั้งที่กดไม่ได้
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
+import { productMenuItems } from '@/lib/product-menu'
 import {
-  PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, MarketLogos,
+  PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu,
 } from '@/components/zort'
 
 interface Row {
@@ -34,6 +35,7 @@ interface Move {
 interface MovesResp { rows?: Move[]; reasons?: Record<string, string>; total?: number }
 
 export default function ProductDetailPage() {
+  const router = useRouter()
   const params = useParams<{ sku: string }>()
   const sku = decodeURIComponent(String(params?.sku ?? ''))
   const [row, setRow] = useState<Row | null>(null)
@@ -88,7 +90,16 @@ export default function ProductDetailPage() {
         <>
           <PageHead
             title={`รายละเอียดสินค้า ${row.name || sku}`}
-            actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+            actions={
+              <>
+                {/* ZORT มี "Share Link" มุมขวาบน — ของเราคัดลอกลิงก์หน้านี้จริง ๆ
+                    (ทำได้จริงเลยทำ · ต่างจากปุ่มอื่นที่ต้องรอท่อ) */}
+                <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
+                  คัดลอกลิงก์หน้านี้
+                </BtnGhost>
+                <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+              </>
+            }
           />
 
           {/* ⚠️ ZORT มีปุ่ม 7 ปุ่มแถวนี้ — ของเราทำได้จริงเฉพาะที่มีท่อรองรับ
@@ -124,6 +135,18 @@ export default function ProductDetailPage() {
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               อัพเดทช่องทางอื่น
             </Link>
+            {/* ZORT มีปุ่มนี้ — ประวัติว่าใครแก้อะไรเมื่อไหร่ · คลังเงาไม่ได้เก็บเลย */}
+            <span
+              title="คลังเงาไม่ได้เก็บประวัติว่าใครแก้อะไรเมื่อไหร่ — ดูได้ที่ ZORT เท่านั้น"
+              className="text-[12.5px] text-gray-300 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed"
+            >
+              ดูกิจกรรมของรายการ
+            </span>
+            {/* ZORT มีปุ่ม "คำสั่ง ▾" รวมคำสั่งทั้งหมด — ใช้เมนูชุดเดียวกับ ⋮ ในตาราง */}
+            <span className="inline-flex items-center gap-1 text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-2 py-1">
+              คำสั่ง
+              <RowMenu items={productMenuItems(sku, (href) => router.push(href))} />
+            </span>
           </div>
 
           {/* การ์ด 3 ใบแบบ ZORT — ค่าว่างแสดงเป็น "-" ตามจอเขา */}
@@ -208,6 +231,23 @@ export default function ProductDetailPage() {
               </div>
             </div>
           </div>
+
+          {/* ⚠️ **มีการ์ดไว้พร้อมเหตุผล ดีกว่าไม่มีการ์ด** — กติกาเดียวกับ 4 จอที่ตกลงกันไว้
+              (จอมีอยู่ · ผังเหมือน · เขียนบอกตรง ๆ ว่าทำไมว่าง)
+              ⚠️ ต่างจาก "การ์ดเปล่า" ตรงที่ **มีเหตุผลกำกับ** — การ์ดเปล่าเฉย ๆ คือสัญญาของที่ไม่มี
+                 แต่การ์ดที่บอกว่าทำไมว่าง คือการรายงานความจริง */}
+          <Card className="mt-4">
+            <p className="text-[15px] font-semibold text-gray-900 mb-2">จำนวนสินค้าคงเหลือ รายคลัง</p>
+            <div className="flex flex-col items-center justify-center py-8 text-center">
+              <span className="text-[30px] opacity-60">🏬</span>
+              <p className="text-[13px] text-gray-700 mt-2">ยังไม่มีข้อมูลแยกรายคลัง</p>
+              <p className="text-[12px] text-gray-500 mt-1 max-w-[420px] leading-relaxed">
+                ZORT <b>ไม่เปิดช่องทางให้ดึงสต็อกแยกตามคลัง</b> (ยิงมาแล้วไม่ผ่านทุกทาง) ·
+                คลังเงาเก็บสต็อกรวมทั้งร้าน จึงแยกรายคลังไม่ได้ —
+                เป็น<b>ข้อจำกัดของต้นทาง ไม่ใช่ของที่ยังทำไม่เสร็จ</b>
+              </p>
+            </div>
+          </Card>
 
           {/* การ์ด "รายงาน" — stock card เท่าที่คลังเงามี */}
           <Card padded={false} className="mt-4">
