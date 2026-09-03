@@ -70,6 +70,8 @@ export default function CoreStockPage() {
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // ⚠️ ค่าเริ่มต้นคือซ่อน — แต่ต้องกดดูได้เสมอ ของที่ซ่อนแล้วเปิดดูไม่ได้คือของที่หายไป
+  const [showTest, setShowTest] = useState(false)
   // รูปสินค้า — โหลดแผนที่ SKU→ไฟล์ครั้งเดียวต่อการเปิดเว็บ
   const imgOf = useSkuImages()
 
@@ -103,7 +105,15 @@ export default function CoreStockPage() {
   // เซิร์ฟเวอร์กรองให้แล้ว (only=out/low) — แถวที่ได้คือของทั้งคลังในแท็บนั้น
   // ⚠️ เลขหน้าต้องใช้ shown (จำนวนแถวของแท็บที่เลือก) ไม่ใช่ total
   //    ใช้ total ตอนอยู่แท็บ out/low = โชว์ 54 หน้าทั้งที่มีของจริง 12 หน้า
-  const rows = data?.rows ?? []
+  /** 🧪 ของทดสอบที่ค้างอยู่ในทะเบียนสินค้าจริงของ ZORT
+   *  เจ้าของร้านสั่ง 3 ก.ย. 2569: **"ปล่อยไว้ก่อน แค่ซ่อนออกจากจอ"** — ไม่ลบที่ ZORT
+   *  ⚠️ ซ่อนแบบเงียบ ๆ ไม่ได้ เพราะหัวจอนับจากเซิร์ฟเวอร์ (รวมของทดสอบ)
+   *     ซ่อนแล้วไม่บอก = เลขบนหัวไม่ตรงกับจำนวนแถว แล้วคนนับจะงง (โรคเดิม)
+   *     ⇒ ซ่อนแล้ว **เขียนบอกว่าซ่อนกี่รายการ พร้อมปุ่มกดดูได้** */
+  const TEST_SKUS = ['ZZFAKE999']
+  const allRows = data?.rows ?? []
+  const hiddenRows = allRows.filter((r) => TEST_SKUS.includes(r.sku))
+  const rows = showTest ? allRows : allRows.filter((r) => !TEST_SKUS.includes(r.sku))
   const inTab = data?.shown ?? data?.total ?? 0
   const shown = offset + rows.length
 
@@ -117,7 +127,20 @@ export default function CoreStockPage() {
               {/* ⚠️ **รูปประโยคนี้ลอกจาก ZORT เป๊ะ** — "จำนวน N รายการ | ลิงก์ | ลิงก์"
                   เจ้าของร้านสั่ง 3 ก.ย. 2569 ให้ถอดของที่เราเพิ่มเองออกทั้งหมด
                   (ของหมด · เหลือน้อย · มูลค่าสต็อก) ⇒ ย้ายคำอธิบายส่วนต่างไปใต้ตาราง */}
-              จำนวน {data.total.toLocaleString('th-TH')} รายการ{' | '}
+              จำนวน {data.total.toLocaleString('th-TH')} รายการ
+              {hiddenRows.length > 0 && !showTest && (
+                <span className="text-gray-400">
+                  {' '}(ซ่อนของทดสอบ {hiddenRows.length} รายการ{' '}
+                  <button onClick={() => setShowTest(true)} className="text-blue-600 hover:underline">กดดู</button>)
+                </span>
+              )}
+              {showTest && hiddenRows.length > 0 && (
+                <span className="text-gray-400">
+                  {' '}(กำลังแสดงของทดสอบด้วย{' '}
+                  <button onClick={() => setShowTest(false)} className="text-blue-600 hover:underline">ซ่อน</button>)
+                </span>
+              )}
+              {' | '}
               <Link href="/core/soon/product-image" className="text-blue-600 hover:underline">จัดการรูปภาพสินค้า</Link>
               {' | '}
               <Link href="/core/soon/product-cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
