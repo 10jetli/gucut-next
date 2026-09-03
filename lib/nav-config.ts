@@ -38,7 +38,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { href: '/', label: 'ภาพรวม' },
       { href: '/sales', label: 'ยอดขาย' },
-      soon('buy-report', 'ยอดซื้อ'),
+      { href: '/core/buy-report', label: 'ยอดซื้อ' },
       { href: '/core/reports', label: 'สินค้า' },
       soon('customer-report', 'ลูกค้า'),
       { href: '/ads', label: 'โฆษณา' },
