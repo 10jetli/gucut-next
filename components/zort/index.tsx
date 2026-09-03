@@ -196,6 +196,10 @@ const CHANNEL_LOGO: [RegExp, string][] = [
   [/tiktok/i, '/logos/tiktok.png'],
   [/facebook|เฟ(ส|ซ)/i, '/logos/facebook.webp'],
   [/line|ไลน์/i, '/logos/line.png'],
+  // เว็บร้านเองก็เป็นช่องทางขายหนึ่ง — เจ้าของร้านส่งโลโก้มาให้ 3 ก.ย. 2569
+  // ⚠️ ต้องอยู่**ท้ายสุด** เพราะชื่อช่องทางอย่าง "Shopee-gucut" มีคำว่า gucut อยู่ด้วย
+  //    ถ้าวางไว้บน จะกลายเป็นโลโก้ร้านเราทับโลโก้ Shopee ทุกแถว
+  [/gucut|เว็บร้าน/i, '/logos/gucut.png'],
 ]
 const CHANNEL_DOT: [RegExp, string][] = [
   [/gucut|เว็บ|web/i, 'bg-red-500'],
