@@ -27,6 +27,10 @@ interface Row {
   unit?: string | null
   service?: boolean
   active?: boolean | null
+  /** ช่องทางที่สินค้าตัวนี้ลงขายอยู่จริง เช่น ["shopee","tiktok"]
+   *  ⚠️ มาจาก**รายการสินค้าจริงบนแพลตฟอร์ม** ไม่ใช่จากประวัติการขาย
+   *     เคยขายได้ กับ กำลังลงขายอยู่ เป็นคนละเรื่อง */
+  marketplaces?: string[]
 }
 interface Resp {
   skip?: string
@@ -36,9 +40,33 @@ interface Resp {
   services?: number
   /** จำนวนที่ปิดใช้งาน */
   inactive?: number
+  /** รอบนี้เช็คแพลตฟอร์มไหนได้บ้าง — ⚠️ จำเป็นมาก
+   *  ไม่มีโลโก้ Lazada อ่านได้สองแบบ: "ไม่ได้ลงขายที่ Lazada" กับ "เรายังเช็คไม่ได้"
+   *  หน้าตาเหมือนกันเป๊ะแต่คนละความหมาย ⇒ ต้องบอกว่าเช็คอะไรไปบ้าง */
+  checkedMarketplaces?: string[]
   /** จำนวนแถวของแท็บที่เลือกอยู่ — ใช้ทำเลขหน้า ห้ามใช้ total ตอนอยู่แท็บ out/low */
   shown?: number
   limit: number; offset: number; rows: Row[]
+}
+
+/** โลโก้ช่องทางขายเล็ก ๆ ท้ายแถว — ไฟล์เดียวกับที่ ChannelTag ใช้ */
+const MARKET_LOGO: Record<string, { src: string; label: string }> = {
+  shopee: { src: '/logos/shopee.png', label: 'Shopee' },
+  lazada: { src: '/logos/lazada.png', label: 'Lazada' },
+  tiktok: { src: '/logos/tiktok.png', label: 'TikTok' },
+  gucut: { src: '/logos/gucut.png', label: 'gucut.com' },
+}
+function MarketLogo({ name }: { name: string }) {
+  const hit = MARKET_LOGO[String(name).toLowerCase()]
+  if (!hit) {
+    // ⚠️ ช่องทางที่ยังไม่มีโลโก้ให้แสดงชื่อ **ห้ามซ่อน** ไม่งั้นสินค้าดูเหมือนลงขายน้อยกว่าจริง
+    return <span className="text-[10.5px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{name}</span>
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={hit.src} alt={hit.label} title={hit.label} width={16} height={16}
+      className="w-4 h-4 rounded-[3px] object-contain" />
+  )
 }
 
 const PAGE = 50
@@ -314,8 +342,12 @@ export default function CoreStockPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
-                {' '}· คอลัมน์ <b>Marketplace</b> ยังว่างทุกแถว เพราะ ZORT ไม่ส่งข้อมูล
-                การผูกสินค้ากับร้านมาร์เก็ตเพลสออกมาทาง API
+                {' '}· คอลัมน์ <b>Marketplace</b>{' '}
+                {Array.isArray(data.checkedMarketplaces) && data.checkedMarketplaces.length > 0
+                  ? <>ตรวจจากรายการสินค้าจริงบน <b>{data.checkedMarketplaces.join(' · ')}</b> ·
+                    ช่องทางอื่นที่ยังต่อ API ไม่ได้จะไม่ขึ้นโลโก้ — <b>ไม่ได้แปลว่าไม่ได้ลงขาย</b> แปลว่าเรายังเช็คไม่ได้</>
+                  : <>ยังไม่มีข้อมูล เพราะ ZORT ไม่ส่งการผูกสินค้ากับร้านมาร์เก็ตเพลสมาทาง API
+                    (กำลังต่อจากรายการสินค้าจริงบน Shopee แทน)</>}
                 {' '}· ZORT แสดง <b>2,898</b> รายการ ต่างจากที่นี่ <b>226</b> รายการ —
                 เป็นรายการที่<b>ไม่มีรหัสสินค้า ไม่มีของในสต็อก และมูลค่ารวม 0 บาท</b>
                 (ตรวจแล้ว) จึงไม่ถูกดึงเข้ามา ไม่ใช่ข้อมูลตกหล่น
