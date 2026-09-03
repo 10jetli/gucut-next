@@ -11,7 +11,7 @@
 //   · การสั่งของกับโรงงาน → /api/sheets (ไม่ใช่ ZORT อยู่แล้ว)
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
@@ -191,7 +191,7 @@ export default function DashboardPage() {
           <ZortStat
             icon="🛒" bg="#E8F0FE" fg="#2563eb"
             label="ยอดขายวันนี้ (บาท)"
-            value={coreError ? '—' : fmtBaht(today?.totalAmount ?? 0)}
+            value={coreError ? '—' : fmtMoney(today?.totalAmount ?? 0)}
             note={!coreError && today ? `${fmtNum(today.total)} ใบ` : undefined}
           />
           <ZortStat
@@ -232,7 +232,7 @@ export default function DashboardPage() {
         />
         <StatCard
           icon="💰" tone="green" label="ยอดขาย (7 วัน)"
-          value={coreError ? '—' : fmtBaht(week?.totalAmount ?? 0)}
+          value={coreError ? '—' : fmtMoney(week?.totalAmount ?? 0)}
           note={!coreError && week ? `${fmtNum(week.total)} ใบ` : undefined}
         />
         <StatCard
@@ -244,7 +244,7 @@ export default function DashboardPage() {
         <StatCard
           icon="↩️" tone="orange" label="สินค้าตีกลับ (30 วัน)"
           value={returns ? fmtNum(returns.total) : '—'} unit="รายการ"
-          note={returns && returns.total > 0 ? `มูลค่า ${fmtBaht(returns.amount)}` : undefined}
+          note={returns && returns.total > 0 ? `มูลค่า ${fmtMoney(returns.amount)}` : undefined}
           noteTone="red"
         />
       </div>
@@ -290,7 +290,7 @@ export default function DashboardPage() {
                 <span className="text-[12px] text-gray-500 truncate">
                   {thaiDate(o.order_date)} · {o.customer || 'ไม่ระบุชื่อ'}
                 </span>
-                <span className="text-[13px] font-bold text-gray-900 shrink-0">{fmtBaht(o.amount)}</span>
+                <span className="text-[13px] font-bold text-gray-900 shrink-0">{fmtMoney(o.amount)}</span>
               </div>
             </div>
           ))}

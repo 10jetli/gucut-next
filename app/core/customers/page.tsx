@@ -11,7 +11,7 @@
 // ⚠️ รวมยอดในเบราว์เซอร์จาก /api/core?list=orders ทีละหน้า (ท่อหลังบ้านเป็นเขตอีกฝั่ง)
 // ⚠️ จับลูกค้าด้วย "ชื่อ" ไม่ใช่เบอร์โทร — ชื่อซ้ำถูกนับรวมเป็นคนเดียว ต้องเขียนบอกบนจอ
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fmtBaht } from '@/lib/format'
+import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
@@ -208,7 +208,7 @@ export default function CoreCustomersPage() {
                     </td>
                     <td className={`${TD} text-gray-500 max-w-[220px] truncate`}>{p.channels.join(' · ') || '—'}</td>
                     <td className={TDR}>{p.orders.toLocaleString('th-TH')}</td>
-                    <td className={TDR}>{fmtBaht(p.amount)}</td>
+                    <td className={TDR}>{fmtMoney(p.amount)}</td>
                     <td className={`${TDR} text-gray-500`}>{thaiDate(p.last)}</td>
                   </tr>
                 ))}

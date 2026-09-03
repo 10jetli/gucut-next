@@ -11,7 +11,7 @@
 //      รหัสจะไม่ใช่ KLD/ANJ อีก แล้วการเดาจะพังเงียบ ๆ
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
@@ -146,7 +146,7 @@ export default function CoreBranchesPage() {
                       </td>
                       <td className={TDR}><span className="text-gray-300">—</span></td>
                       <td className={TDR}>{w.isPos ? fmtNum(s.orders) : <span className="text-gray-300">—</span>}</td>
-                      <td className={TDR}>{w.isPos ? fmtBaht(s.amount) : <span className="text-gray-300">—</span>}</td>
+                      <td className={TDR}>{w.isPos ? fmtMoney(s.amount) : <span className="text-gray-300">—</span>}</td>
                       <td className={`${TD} text-right`}>
                         <RowMenu
                           items={[

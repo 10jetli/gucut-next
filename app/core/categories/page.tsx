@@ -19,7 +19,7 @@
 //       **ใกล้ไม่ใช่เหมือน**
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState } from '@/components/zort'
@@ -80,7 +80,7 @@ export default function CoreCategoriesPage() {
   const onhandOf = (r: Row) => (basis === 'cost' ? r.onhand_value : r.onhand_value_sell)
   const availOf = (r: Row) => (basis === 'cost' ? r.available_value : r.available_value_sell)
   const val = (n?: number) =>
-    typeof n === 'number' ? <span className="text-red-500">{fmtBaht(n)}</span> : <span className="text-gray-300">—</span>
+    typeof n === 'number' ? <span className="text-red-500">{fmtMoney(n)}</span> : <span className="text-gray-300">—</span>
 
   const totalSkus = rows.reduce((a, r) => a + (Number(r.skus) || 0), 0)
   const totalOnhand = rows.reduce((a, r) => a + (Number(onhandOf(r)) || 0), 0)
@@ -208,7 +208,7 @@ export default function CoreCategoriesPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
               <span>
-                รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtBaht(totalOnhand)}
+                รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtMoney(totalOnhand)}
               </span>
               {guessed > 0 && <span className="text-gray-400">มี {fmtNum(guessed)} หมวดที่เดาจากชื่อสินค้า</span>}
             </div>

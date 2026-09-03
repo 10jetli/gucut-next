@@ -7,7 +7,7 @@
 // ⚠️ "สินค้าขายดี" มาจาก /api/core?list=stock ซึ่งนับเฉพาะ SKU ที่ยังมีในภาพถ่ายสต็อกวันล่าสุด
 //    ของที่เลิกขายไปแล้วจะไม่โผล่ — เขียนบอกไว้บนจอ
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
@@ -152,11 +152,11 @@ export default function CoreReportsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard icon="🧾" tone="blue" label={`ออเดอร์ ${days} วัน`} value={fmtNum(orders.length)} unit="ใบ" />
-            <StatCard icon="💰" tone="green" label="ยอดขายรวม" value={fmtBaht(totalAmount)} />
-            <StatCard icon="🧮" tone="purple" label="เฉลี่ยต่อใบ" value={fmtBaht(avg)} />
+            <StatCard icon="💰" tone="green" label="ยอดขายรวม" value={fmtMoney(totalAmount)} />
+            <StatCard icon="🧮" tone="purple" label="เฉลี่ยต่อใบ" value={fmtMoney(avg)} />
             <StatCard icon="🏆" tone="orange" label="เดือนที่ขายดีสุด"
               value={peakMonth ? monthLabel(peakMonth.ym) : '—'}
-              note={peakMonth ? fmtBaht(peakMonth.amount) : undefined} />
+              note={peakMonth ? fmtMoney(peakMonth.amount) : undefined} />
           </div>
 
           {/* ยอดรายเดือน */}
@@ -169,7 +169,7 @@ export default function CoreReportsPage() {
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <span className="text-[12.5px] font-medium text-gray-800">{monthLabel(m.ym)}</span>
                     <span className="text-[12.5px] text-gray-500">
-                      {fmtNum(m.orders)} ใบ · <b className="text-gray-900">{fmtBaht(m.amount)}</b>
+                      {fmtNum(m.orders)} ใบ · <b className="text-gray-900">{fmtMoney(m.amount)}</b>
                     </span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -192,7 +192,7 @@ export default function CoreReportsPage() {
                     <div className="flex items-center justify-between gap-2 mb-0.5">
                       <span className="text-[12.5px] font-medium text-gray-800 truncate">{c.channel}</span>
                       <span className="text-[12.5px] text-gray-500 shrink-0">
-                        {fmtNum(c.orders)} ใบ · <b className="text-gray-900">{fmtBaht(c.amount)}</b>
+                        {fmtNum(c.orders)} ใบ · <b className="text-gray-900">{fmtMoney(c.amount)}</b>
                       </span>
                     </div>
                     <div className="h-2 bg-gray-100 rounded-full overflow-hidden">

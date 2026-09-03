@@ -15,7 +15,7 @@
 //    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
@@ -108,7 +108,7 @@ export default function CorePurchasesPage() {
         summary={
           data
             ? <>
-              จำนวน {fmtNum(data.total)} รายการ, มูลค่าทั้งหมด {fmtBaht(data.amount)}
+              จำนวน {fmtNum(data.total)} รายการ, มูลค่าทั้งหมด {fmtMoney(data.amount)}
               {' | '}
               <Link href="/core/moves" className="text-blue-600 hover:underline">ตรวจสอบการรับสินค้าเข้า</Link>
             </>
@@ -187,7 +187,7 @@ export default function CorePurchasesPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
                     <td className={TD}><span className="text-blue-600">{r.number}</span></td>
                     <td className={TD}><span className="text-blue-600">{r.vendor || '—'}</span></td>
-                    <td className={TDR}>{fmtBaht(r.amount)}</td>
+                    <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}>
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
                       {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
@@ -224,7 +224,7 @@ export default function CorePurchasesPage() {
           </TableWrap>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            ยอดรวมตรงกับ ZORT ทุกบาท (ตรวจแล้ว {fmtNum(data.total)} ใบ · {fmtBaht(data.amount)}) ·
+            ยอดรวมตรงกับ ZORT ทุกบาท (ตรวจแล้ว {fmtNum(data.total)} ใบ · {fmtMoney(data.amount)}) ·
             จอนี้เป็น<b>ใบสั่งซื้อของ ZORT</b> คนละอย่างกับ{' '}
             <Link href="/core/factory-orders" className="text-blue-600 hover:underline">สั่งของกับโรงงาน</Link>
             {' '}ที่ร้านใช้ติดตามมัดจำและกำหนดส่ง

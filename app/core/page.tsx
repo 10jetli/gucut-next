@@ -4,7 +4,7 @@
 // ข้อมูลผ่านท่อกลาง /api/web/core → gucut.com/api/core · รีเฟรช/สั่งงานด้วยปุ่มเท่านั้น
 import { useEffect, useState, useCallback } from 'react'
 import { thaiDate } from '@/components/zort'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
@@ -200,7 +200,7 @@ export default function CorePage() {
                     <span className="text-[15px] shrink-0">{ok ? '✅' : '⚠️'}</span>
                     <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
                     <span className="text-[12px] text-gray-500 flex-1">
-                      ZORT {fmtNum(r.zort_orders)} ใบ · {fmtBaht(r.zort_amount)} — Core {fmtNum(r.core_orders)} ใบ · {fmtBaht(r.core_amount)}
+                      ZORT {fmtNum(r.zort_orders)} ใบ · {fmtMoney(r.zort_amount)} — Core {fmtNum(r.core_orders)} ใบ · {fmtMoney(r.core_amount)}
                     </span>
                     {!ok && <span className="text-[11px] font-semibold text-red-500 shrink-0">{r.diff_notes}</span>}
                   </div>
@@ -222,7 +222,7 @@ export default function CorePage() {
                   <span className="text-[15px] shrink-0">{r.match ? '✅' : '⚠️'}</span>
                   <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
                   <span className="text-[12px] text-gray-500 flex-1">
-                    API {fmtNum(r.api_orders)} ใบ · {fmtBaht(r.api_amount)} — ZORT {fmtNum(r.zort_orders)} ใบ · {fmtBaht(r.zort_amount)}
+                    API {fmtNum(r.api_orders)} ใบ · {fmtMoney(r.api_amount)} — ZORT {fmtNum(r.zort_orders)} ใบ · {fmtMoney(r.zort_amount)}
                   </span>
                   {!r.match && (
                     <span className="text-[11px] font-semibold text-red-500 shrink-0">
@@ -270,7 +270,7 @@ export default function CorePage() {
                   <div key={c.channel}>
                     <div className="flex items-center justify-between gap-2 mb-0.5">
                       <span className="text-[12.5px] font-medium text-gray-800 truncate">{c.channel}</span>
-                      <span className="text-[12.5px] text-gray-500 shrink-0">{fmtNum(c.orders)} ใบ · <b className="text-gray-900">{fmtBaht(c.amount)}</b></span>
+                      <span className="text-[12.5px] text-gray-500 shrink-0">{fmtNum(c.orders)} ใบ · <b className="text-gray-900">{fmtMoney(c.amount)}</b></span>
                     </div>
                     <div className="h-1.5 bg-gray-100 rounded-full overflow-hidden">
                       <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.max((c.amount / totalChan) * 100, 2)}%` }} />

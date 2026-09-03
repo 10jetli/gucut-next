@@ -9,7 +9,7 @@
 //    · บัญชี/ภาษี/ใบกำกับ ตัวจริงอยู่ที่ PEAK — จอนี้ไม่แสร้งทำแทน
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
@@ -143,11 +143,11 @@ export default function CoreFinancePage() {
           )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <StatCard icon="📅" tone="blue" label={`รายรับเดือนนี้ (${monthLabel(thisMonth())})`} value={fmtBaht(thisM)} />
-            <StatCard icon="💰" tone="green" label="รายรับ 6 เดือน" value={fmtBaht(total6)}
+            <StatCard icon="📅" tone="blue" label={`รายรับเดือนนี้ (${monthLabel(thisMonth())})`} value={fmtMoney(thisM)} />
+            <StatCard icon="💰" tone="green" label="รายรับ 6 เดือน" value={fmtMoney(total6)}
               note={`${fmtNum(rows.length)} ใบ`} />
             <StatCard icon="📦" tone="purple" label="มูลค่าของในคลัง"
-              value={stock ? fmtBaht(stock.value) : '—'}
+              value={stock ? fmtMoney(stock.value) : '—'}
               note={stock ? `คิดที่ราคาขาย · ${fmtNum(stock.total)} SKU` : undefined} />
             <StatCard icon="🚫" tone="red" label="SKU ที่ของหมด"
               value={stock ? fmtNum(stock.outOfStock) : '—'} unit="ตัว"
@@ -163,7 +163,7 @@ export default function CoreFinancePage() {
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <span className="text-[12.5px] font-medium text-gray-800">{monthLabel(m.ym)}</span>
                     <span className="text-[12.5px] text-gray-500">
-                      {fmtNum(m.orders)} ใบ · <b className="text-gray-900">{fmtBaht(m.sales)}</b>
+                      {fmtNum(m.orders)} ใบ · <b className="text-gray-900">{fmtMoney(m.sales)}</b>
                     </span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">

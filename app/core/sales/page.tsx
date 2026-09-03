@@ -9,7 +9,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { fmtBaht } from '@/lib/format'
+import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
@@ -156,7 +156,7 @@ export default function CoreSalesPage() {
                 วงเล็บจะซ้ำกับตัวเลขหลักเป๊ะ ๆ แล้วคนอ่านสะดุดว่าทำไมบอกสองรอบ */}
             {voided && toneOfStatus(status) !== 'red' && (
               <span className="text-gray-400">
-                {' '}(รวมใบยกเลิก {voided.orders.toLocaleString('th-TH')} ใบ {fmtBaht(voided.amount)})
+                {' '}(รวมใบยกเลิก {voided.orders.toLocaleString('th-TH')} ใบ {fmtMoney(voided.amount)})
               </span>
             )}
             {' | '}
@@ -276,7 +276,7 @@ export default function CoreSalesPage() {
                     </td>
                     <td className={`${TD} max-w-[190px] truncate`}>{r.customer || '—'}</td>
                     <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>
-                    <td className={TDR}>{fmtBaht(r.amount)}</td>
+                    <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill></td>
                     <td className={`${TD} text-right`} onClick={(e) => e.stopPropagation()}>
                       <RowMenu

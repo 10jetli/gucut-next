@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { TrackerOrder, TrackerStatus } from '@/lib/types'
-import { fmtBaht } from '@/lib/format'
+import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
@@ -107,8 +107,8 @@ export default function CorePurchasesPage() {
         summary={
           <>
             จำนวน {orders.length.toLocaleString('th-TH')} รายการ, ที่ยังไม่จบ{' '}
-            {openOrders.length.toLocaleString('th-TH')} ใบ มูลค่า {fmtBaht(openValue)}
-            {paidDeposit > 0 && <> · มัดจำไปแล้ว {fmtBaht(paidDeposit)}</>}
+            {openOrders.length.toLocaleString('th-TH')} ใบ มูลค่า {fmtMoney(openValue)}
+            {paidDeposit > 0 && <> · มัดจำไปแล้ว {fmtMoney(paidDeposit)}</>}
             {' | '}
             <Link href="/core/moves" className="text-blue-600 hover:underline">บันทึกรับของเข้าคลัง</Link>
           </>
@@ -170,8 +170,8 @@ export default function CorePurchasesPage() {
                     <td className={TD}><span className="text-blue-600">{o.product || '—'}</span></td>
                     <td className={`${TD} text-gray-600 max-w-[190px] truncate`}>{o.factory || '—'}</td>
                     <td className={TDR}>{Number(o.qty || 0).toLocaleString('th-TH')}</td>
-                    <td className={`${TDR} text-gray-500`}>{money(o.deposit) ? fmtBaht(money(o.deposit)) : '—'}</td>
-                    <td className={TDR}>{money(o.total) ? fmtBaht(money(o.total)) : '—'}</td>
+                    <td className={`${TDR} text-gray-500`}>{money(o.deposit) ? fmtMoney(money(o.deposit)) : '—'}</td>
+                    <td className={TDR}>{money(o.total) ? fmtMoney(money(o.total)) : '—'}</td>
                     <td className={TD}>
                       <Pill tone={STATUS_TONE[o.status] ?? 'gray'}>{STATUS_LABEL[o.status] ?? o.status}</Pill>
                     </td>

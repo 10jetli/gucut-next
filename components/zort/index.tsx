@@ -307,7 +307,8 @@ export function RowMenu({ items }: { items: { label: string; onClick: () => void
 /** บรรทัดสรุปใต้ชื่อจอแบบ ZORT: "จำนวน N รายการ, มูลค่าทั้งหมด X บาท" */
 export function summaryLine(count: number, amount?: number) {
   const a = typeof amount === 'number'
-    ? `, มูลค่าทั้งหมด ${amount.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} บาท`
+    // ZORT เขียน "1,804,130.3 บาท" — ทศนิยมท้ายที่เป็นศูนย์ไม่ถูกเติม
+    ? `, มูลค่าทั้งหมด ${amount.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท`
     : ''
   return `จำนวน ${count.toLocaleString('th-TH')} รายการ${a}`
 }

@@ -10,7 +10,7 @@
 //    (บทเรียนเดียวกับหน้าสถานะระบบฝั่งหน้าร้าน 19 ส.ค. 2569)
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
@@ -91,7 +91,7 @@ export default function CoreChannelsPage() {
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard icon="🏪" tone="blue" label="ช่องทางที่มียอด (30 วัน)" value={fmtNum(recent.length)} unit="ช่องทาง" />
-            <StatCard icon="💰" tone="green" label="ยอดรวม 30 วัน" value={fmtBaht(recentTotal)} />
+            <StatCard icon="💰" tone="green" label="ยอดรวม 30 วัน" value={fmtMoney(recentTotal)} />
             <StatCard icon="🔌" tone="purple" label="ท่อดึงตรงที่เดินอยู่"
               value={fmtNum(shopeeLive ? 1 : 0)} unit={`จาก ${PIPES.length} เจ้า`} />
           </div>
@@ -106,7 +106,7 @@ export default function CoreChannelsPage() {
                   <div className="flex items-center justify-between gap-2 mb-0.5">
                     <span className="text-[12.5px] font-medium text-gray-800 truncate">{c.channel}</span>
                     <span className="text-[12.5px] text-gray-500 shrink-0">
-                      {fmtNum(c.orders)} ใบ · <b className="text-gray-900">{fmtBaht(c.amount)}</b>
+                      {fmtNum(c.orders)} ใบ · <b className="text-gray-900">{fmtMoney(c.amount)}</b>
                     </span>
                   </div>
                   <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
@@ -167,7 +167,7 @@ export default function CoreChannelsPage() {
               {all.map((c) => (
                 <span key={c.channel} className="text-[12px] border border-gray-200 rounded-xl px-3 py-1.5">
                   <b className="text-gray-800">{c.channel}</b>
-                  <span className="text-gray-500"> · {fmtNum(c.orders)} ใบ · {fmtBaht(c.amount)}</span>
+                  <span className="text-gray-500"> · {fmtNum(c.orders)} ใบ · {fmtMoney(c.amount)}</span>
                 </span>
               ))}
             </div>

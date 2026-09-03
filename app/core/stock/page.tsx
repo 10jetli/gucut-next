@@ -10,7 +10,7 @@
 //    ปล่อยให้เข้าใจว่าสดจะกลายเป็นจอที่โกหกเงียบ ๆ ตอนของขยับระหว่างวัน
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtBaht } from '@/lib/format'
+import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
@@ -113,7 +113,7 @@ export default function CoreStockPage() {
               ของหมด{' '}
               <span className="text-red-500 font-semibold">{data.outOfStock.toLocaleString('th-TH')}</span> ·
               เหลือน้อย <span className="text-orange-600 font-semibold">{data.low.toLocaleString('th-TH')}</span> ·
-              มูลค่าสต็อก {fmtBaht(data.value)}
+              มูลค่าสต็อก {fmtMoney(data.value)}
               {typeof data.inactive === 'number' && (
                 // ยังไม่ทำเป็นแท็บเพราะเซิร์ฟเวอร์ยังกรอง active ไม่ได้ — โชว์ตัวเลขไปก่อน
                 <> · ปิดใช้งาน {data.inactive.toLocaleString('th-TH')}</>
@@ -297,10 +297,10 @@ export default function CoreStockPage() {
                     {/* ⚠️ ราคาซื้อ null = ยังไม่ได้กรอก ≠ ฿0 · เขียน ฿0 = บอกว่าของฟรี */}
                     <td className={TDR}>
                       {typeof r.buy === 'number' && r.buy > 0
-                        ? fmtBaht(r.buy)
+                        ? fmtMoney(r.buy)
                         : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className={TDR}>{r.price ? fmtBaht(r.price) : '0'}</td>
+                    <td className={TDR}>{r.price ? fmtMoney(r.price) : '0'}</td>
                     <td className={TDR}>
                       <Num v={r.qty} zeroRed />
                       {r.unit && <span className="ml-1 text-[11px] text-gray-400">{r.unit}</span>}
