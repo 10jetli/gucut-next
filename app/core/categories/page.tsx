@@ -1,36 +1,69 @@
 'use client'
-// หมวดหมู่สินค้า — ตัวแทนหน้า "สินค้า → หมวดหมู่" ของ ZORT
+// หมวดหมู่สินค้า — **หมวดจริงจาก ZORT** ไม่ใช่หมวดที่เดาจากชื่อสินค้าอีกแล้ว
 //
-// ใช้ข้อมูลชุดเดียวกับแผงหมวดใน POS (/api/core?list=poscats) จึงเป็นของจริง ไม่ใช่หน้าเปล่า
-// ⚠️ หมวดพวกนี้ **ไม่ใช่หมวดที่ตั้งไว้ใน ZORT** — เป็นการจัดกลุ่มจากชื่อสินค้าจริงทั้งคลัง
-//    ที่ฝั่งท่อหลังบ้านทำขึ้น ต้องเขียนบอกไว้ ไม่งั้นเข้าใจว่าแก้ที่นี่แล้วมีผลกับ ZORT
-import { useCallback, useEffect, useState } from 'react'
+// **หน้าตาลอกจาก `zort-ui/26-zort-หมวดหมู่-42หมวด.jpg`**
+// ผัง: ชื่อจอ → "จำนวน N รายการ" → ปุ่มขวาบน → ช่องค้นหา → แถบบอกที่มาของมูลค่า + ปุ่มอัพเดท
+//      → ตาราง ชื่อหมวดหมู่ · จำนวน SKU · มูลค่าสินค้าคงเหลือ · มูลค่าสินค้าพร้อมขาย
+//
+// 💡 บทเรียนที่ทำให้หน้านี้เกิด: โค้ดฝั่งเซิร์ฟเวอร์เคยเขียนคอมเมนต์ไว้เองว่า
+//    "ZORT ไม่มีหมวดหมู่ในข้อมูลสินค้า" แล้วทุกคนเชื่อตามนั้นมาตลอด
+//    จนเจ้าของร้านสั่งให้ไปเปิดดูของจริง — **มันมีมาตั้งแต่แรก 42 หมวด**
+//    เราสร้างของทดแทน (เดาจากชื่อ ครอบคลุม 52%) ที่แย่กว่าของจริงที่มีอยู่แล้ว
+//    ⇒ **คำกล่าวอ้างว่า "ระบบต้นทางไม่มีข้อมูลนี้" ต้องไปเปิดดูก่อนเสมอ**
+//
+// ⚠️ **มูลค่าเทียบกับ ZORT ตรง ๆ ไม่ได้ และต้องเขียนบอกบนจอ**
+//    ZORT ใช้ต้นทุนถัวเฉลี่ยเคลื่อนที่ (คิดจากประวัติการซื้อทุกครั้ง)
+//    ของเรามีแค่ราคาซื้อตั้งต้นในทะเบียนสินค้า ⇒ ตัวเลขคนละความหมาย
+//    ⚠️ ราคาขายบังเอิญใกล้เลข ZORT มากกว่าต้นทุน — **ห้ามเลือกอันนั้นเพราะมันใกล้กว่า**
+//       ได้จอที่หน้าตาเหมือนแต่ตัวเลขคนละเรื่อง แล้วคนที่เอาไปเทียบจะเชื่อว่าตรงกัน
+//       **ใกล้ไม่ใช่เหมือน**
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { fmtNum } from '@/lib/format'
+import { fmtBaht, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
 
-interface Cat { code: string; name: string; items: number }
+interface Row {
+  name: string
+  skus: number
+  onhand_value?: number
+  available_value?: number
+  onhand_value_sell?: number
+  available_value_sell?: number
+  no_cost?: number
+  services?: number
+  zort?: boolean
+}
+interface Resp {
+  categories?: number
+  total?: number
+  uncategorised?: number
+  noCost?: number
+  valueBasis?: string
+  matchesZort?: boolean
+  rows?: Row[]
+}
 
 export default function CoreCategoriesPage() {
-  const [cats, setCats] = useState<Cat[]>([])
-  const [unnamed, setUnnamed] = useState<number | null>(null)
+  const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [q, setQ] = useState('')
+  // มูลค่าคิดจากอะไร — ต้นทุน (ใกล้เคียงวิธี ZORT ที่สุดเท่าที่เรามี) หรือราคาขาย
+  const [basis, setBasis] = useState<'cost' | 'sell'>('cost')
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/web/core?list=poscats')
-      const d = await res.json()
-      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
-      setCats(Array.isArray(d?.cats) ? d.cats : [])
-      setUnnamed(typeof d?.unnamed === 'number' ? d.unnamed : null)
+      const res = await fetch('/api/web/core?list=categories')
+      const j = await res.json()
+      if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
+      setD(j)
     } catch (e) {
+      setD(null) // ไม่โชว์ของค้าง
       setError(String(e instanceof Error ? e.message : e))
-      setCats([])
     } finally {
       setLoading(false)
     }
@@ -38,64 +71,158 @@ export default function CoreCategoriesPage() {
 
   useEffect(() => { load() }, [load])
 
-  const total = cats.reduce((s, c) => s + (Number(c.items) || 0), 0)
+  const rows = useMemo(() => {
+    const all = Array.isArray(d?.rows) ? d!.rows! : []
+    const s = q.trim().toLowerCase()
+    return s ? all.filter((r) => (r.name || '').toLowerCase().includes(s)) : all
+  }, [d, q])
+
+  const onhandOf = (r: Row) => (basis === 'cost' ? r.onhand_value : r.onhand_value_sell)
+  const availOf = (r: Row) => (basis === 'cost' ? r.available_value : r.available_value_sell)
+  const val = (n?: number) =>
+    typeof n === 'number' ? <span className="text-red-500">{fmtBaht(n)}</span> : <span className="text-gray-300">—</span>
+
+  const totalSkus = rows.reduce((a, r) => a + (Number(r.skus) || 0), 0)
+  const totalOnhand = rows.reduce((a, r) => a + (Number(onhandOf(r)) || 0), 0)
+  const guessed = rows.filter((r) => r.zort === false).length
 
   return (
     <div className="p-4 md:p-6">
       <PageHead
         title="หมวดหมู่"
-        summary={`จำนวน ${cats.length.toLocaleString('th-TH')} หมวด · ครอบสินค้า ${total.toLocaleString('th-TH')} รายการ`}
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        summary={d ? `จำนวน ${fmtNum(d.categories ?? rows.length)} รายการ` : 'กำลังโหลด…'}
+        actions={
+          <>
+            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* ZORT มีสองปุ่มนี้ — พาไปหน้าที่บอกว่ายังไม่ได้ทำ ไม่ทำปุ่มหลอก */}
+            <Link href="/core/soon/product-import"
+              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              นำเข้าไฟล์ (Excel)
+            </Link>
+            <Link href="/core/soon/category-add"
+              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              style={{ background: '#1b3b73' }}>
+              เพิ่มหมวดหมู่
+            </Link>
+          </>
+        }
       />
 
-      <div className="text-[12.5px] text-blue-800 bg-blue-50 border border-blue-100 rounded px-3 py-2 mb-3 leading-relaxed">
-        ℹ️ หมวดพวกนี้ <b>จัดกลุ่มจากชื่อสินค้าจริงทั้งคลัง</b> ไม่ใช่หมวดที่ตั้งไว้ใน ZORT —
-        แก้ที่นี่ไม่มีผลกับ ZORT และแก้ที่ ZORT ก็ไม่มีผลกับที่นี่
-        · ใช้ชุดเดียวกับแผงเลือกสินค้าในจอขายหน้าร้าน
+      <div className="mb-3">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="ค้นหา"
+          className="w-full max-w-[320px] text-[13px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+        />
       </div>
 
       {error && <ErrorBox title="ดึงหมวดหมู่ไม่ได้">{error}</ErrorBox>}
-      {loading && cats.length === 0 && <LoadingState />}
+      {loading && !d && <LoadingState />}
 
-      {!loading && !error && (
-        <TableWrap>
-          <table className="w-full min-w-[520px]">
-            <thead className="bg-white border-b border-gray-200">
-              <tr>
-                <th className={TH} style={{ width: 44 }}>#</th>
-                <th className={TH}>หมวดหมู่</th>
-                <th className={TH}>รหัสหมวด</th>
-                <th className={THR}>จำนวนสินค้า</th>
-                <th className={TH} style={{ width: 90 }}></th>
-              </tr>
-            </thead>
-            <tbody>
-              {cats.length === 0 && (
-                <tr><td colSpan={5} className="px-3 py-6 text-[13px] text-gray-400 text-center">ยังไม่มีหมวดหมู่</td></tr>
-              )}
-              {cats.map((c, i) => (
-                <tr key={c.code} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
-                  <td className={`${TD} text-gray-400`}>{i + 1}</td>
-                  <td className={`${TD} text-gray-800 font-medium`}>{c.name}</td>
-                  <td className={`${TD} text-gray-400`}>{c.code}</td>
-                  <td className={TDR}>{fmtNum(c.items)}</td>
-                  <td className={`${TD} text-right`}>
-                    {/* เปิดจอขายหน้าร้านแล้วเลือกหมวดนี้ได้เลย — ทางลัดที่คนขายใช้จริง */}
-                    <Link href="/core/pos" className="text-[12px] text-blue-600 hover:underline">
-                      เปิดใน POS
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {unnamed !== null && unnamed > 0 && (
-            <p className="text-[12px] text-gray-500 px-3 py-3 border-t border-gray-200">
-              มีสินค้าอีก <b>{fmtNum(unnamed)}</b> รายการที่จัดหมวดไม่ได้ (ส่วนใหญ่ชื่อเป็นภาษาอังกฤษ
-              ไม่มีรหัสรุ่น) — อยู่ในหมวด &quot;อื่น ๆ&quot; · คนขายใช้ช่องค้นหาหรือยิงบาร์โค้ดหาแทนได้
+      {d && (
+        <>
+          {/* แถบเทาบอกที่มาของมูลค่า — ZORT มีแถบนี้พร้อมปุ่มอัพเดทมุมขวา */}
+          <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 flex flex-wrap items-center gap-3">
+            <p className="text-[12.5px] text-gray-700 min-w-0 flex-1">
+              มูลค่าสินค้าคงเหลือ, มูลค่าสินค้าพร้อมขาย · คิดจาก
+              <b>{basis === 'cost' ? 'ราคาซื้อในทะเบียนสินค้า' : 'ราคาขาย'}</b>
             </p>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={() => setBasis('cost')}
+                className={`text-[12px] rounded-full px-3 py-1 border ${
+                  basis === 'cost' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
+                }`}
+              >
+                ตามต้นทุน
+              </button>
+              <button
+                onClick={() => setBasis('sell')}
+                className={`text-[12px] rounded-full px-3 py-1 border ${
+                  basis === 'sell' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
+                }`}
+              >
+                ตามราคาขาย
+              </button>
+            </div>
+          </div>
+
+          {/* ⚠️ ข้อความนี้ห้ามถอด — ตัวเลขหน้าตาเหมือน ZORT แต่คิดคนละวิธี
+              ไม่บอก = คนเอาไปเทียบแล้วเชื่อว่าตรงกัน ทั้งที่ต่างกันหลักแสน */}
+          {d.matchesZort === false && (
+            <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+              ⚠️ <b>มูลค่ายังเทียบกับ ZORT ตรง ๆ ไม่ได้</b> — ZORT ใช้ต้นทุนถัวเฉลี่ยเคลื่อนที่
+              ซึ่งคิดจากประวัติการซื้อทุกครั้ง ส่วนเรามีแค่ราคาซื้อตั้งต้นในทะเบียนสินค้า
+              ⇒ ใช้ดู<b>สัดส่วนระหว่างหมวด</b>ได้ แต่อย่าเอาตัวเลขไปเทียบกับ ZORT ทีละบาท
+              {typeof d.noCost === 'number' && d.noCost > 0 && (
+                <> · มีสินค้า <b>{fmtNum(d.noCost)}</b> ตัวที่ยังไม่ได้กรอกราคาซื้อ จึงคิดเป็น 0</>
+              )}
+            </div>
           )}
-        </TableWrap>
+
+          <TableWrap>
+            <table className="w-full min-w-[720px]">
+              <thead className="bg-white border-b border-gray-200">
+                <tr>
+                  <th className={TH}>ชื่อหมวดหมู่</th>
+                  <th className={THR}>จำนวน SKU</th>
+                  <th className={THR}>มูลค่าสินค้าคงเหลือ</th>
+                  <th className={THR}>มูลค่าสินค้าพร้อมขาย</th>
+                  <th className={TH} style={{ width: 90 }}></th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.length === 0 && (
+                  <tr><td colSpan={5} className="px-3 py-6 text-[13px] text-gray-400 text-center">
+                    {q ? 'ไม่พบหมวดหมู่ที่ค้นหา' : 'ยังไม่มีหมวดหมู่'}
+                  </td></tr>
+                )}
+                {rows.map((r) => (
+                  <tr key={r.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <td className={TD}>
+                      <span className="text-blue-600">{r.name}</span>
+                      {/* ⚠️ หมวดที่ยัง "เดาจากชื่อสินค้า" ต้องดูออก — ไม่งั้นเข้าใจว่าทุกหมวดมาจาก ZORT */}
+                      {r.zort === false && (
+                        <span className="ml-1.5 text-[10.5px] text-gray-600 bg-gray-100 rounded px-1.5 py-0.5">
+                          เดาจากชื่อสินค้า
+                        </span>
+                      )}
+                      {Number(r.no_cost) > 0 && (
+                        <span className="ml-1.5 text-[10.5px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">
+                          ไม่มีราคาซื้อ {fmtNum(Number(r.no_cost) || 0)}
+                        </span>
+                      )}
+                    </td>
+                    <td className={TDR}>{fmtNum(r.skus)}</td>
+                    <td className={TDR}>{val(onhandOf(r))}</td>
+                    <td className={TDR}>{val(availOf(r))}</td>
+                    <td className={`${TD} text-right`}>
+                      <Link href="/core/pos" className="text-[12px] text-blue-600 hover:underline">เปิดใน POS</Link>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
+              <span>
+                รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtBaht(totalOnhand)}
+              </span>
+              {guessed > 0 && <span className="text-gray-400">มี {fmtNum(guessed)} หมวดที่เดาจากชื่อสินค้า</span>}
+            </div>
+          </TableWrap>
+
+          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+            หมวดหมู่ชุดนี้<b>ดึงมาจาก ZORT ของจริง</b> ไม่ใช่หมวดที่เดาจากชื่อสินค้าเหมือนก่อน ·
+            {typeof d.uncategorised === 'number' && (
+              <> สินค้าที่ ZORT ยังไม่ได้จัดหมวด <b>{fmtNum(d.uncategorised)}</b> ตัว
+                ระบบเดาหมวดให้จากชื่อ (แถวที่มีป้าย &quot;เดาจากชื่อสินค้า&quot;)</>
+            )}
+            <br />
+            แก้หมวดที่นี่ไม่มีผลกับ ZORT และแก้ที่ ZORT จะเข้ามาที่นี่ในรอบซิงก์ถัดไป
+          </p>
+        </>
       )}
     </div>
   )
