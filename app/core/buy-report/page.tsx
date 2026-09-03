@@ -107,9 +107,9 @@ export default function BuyReportPage() {
     try {
       // ใบซื้อมีหลักสิบใบ ดึงมาทั้งหมดครั้งเดียวแล้วกรองช่วงเวลาในเครื่อง
       const [res, iRes] = await Promise.all([
-        fetch('/api/web/core?list=purchases&limit=500'),
+        fetch('/api/web/core?list=purchases&limit=200'),
         // ⚠️ ล้มก็ไม่ทำให้ทั้งจอพัง แต่ต้องจำไว้ว่าล้มเพราะอะไร (ท่อพัง ≠ ไม่มีของ)
-        fetch('/api/web/core?list=purchaseitems&limit=500').then((r) => r.json()).catch(() => null),
+        fetch('/api/web/core?list=purchaseitems&limit=200').then((r) => r.json()).catch(() => null),
       ])
       setItems(iRes && !iRes.error ? iRes : null)
       setItemsErr(!iRes ? 'ยิงไปที่ท่อรายการสินค้าในใบซื้อไม่สำเร็จ' : (typeof iRes.error === 'string' ? iRes.error : ''))
@@ -166,6 +166,13 @@ export default function BuyReportPage() {
     const s2 = itemQ.trim().toLowerCase()
     return !s2 || r.sku.toLowerCase().includes(s2) || (r.name ?? '').toLowerCase().includes(s2)
   })
+  /** 🔴 **ท่อตัดที่ 200 แถวเสมอ ไม่ว่าจะขอเท่าไหร่** — จอนี้เคยขอ `limit=500`
+   *  แล้วเชื่อว่าได้ครบ · ของจริง: สรุปบอก 217 รหัส แต่ตารางมี 200 แถว **ไม่มีอะไรฟ้อง**
+   *  (ท่อไม่ส่ง `applied` และไม่ส่ง `truncated` มา ⇒ จอเดาเองไม่ได้ ต้องเทียบกับ `skus`)
+   *  เจอตอนยิงของจริง 4 ก.ย. 2569 — คลาสเดียวกับ stockcard ที่ตัดใบซื้อตกไป */
+  const itemsCut = Math.max(0, Number(items?.skus ?? 0) - itemAll.length)
+  /** ⚠️ ฐานของคอลัมน์ % คือ **ผลรวมของแถวที่แสดงจริง** ไม่ใช่ยอดรวมในบรรทัดสรุป
+   *  สองค่านี้ต่างกันเมื่อมีแถวถูกตัด ⇒ ต้องเขียนกำกับ ไม่งั้น % รวมกันไม่ครบ 100 แบบไร้คำอธิบาย */
   const itemsTotal = itemAll.reduce((a, r) => a + (Number(r.amount) || 0), 0)
 
   const listed = inRange.filter((r) => {
@@ -349,6 +356,20 @@ export default function BuyReportPage() {
                   <> · น้อยกว่ายอดรวมใบซื้อทั้งหมด <b>{fmtMoney(all.amount - (items.amount ?? 0))}</b> บาท
                     เพราะบางใบไม่มีรายการสินค้าแนบมา</>
                 )}
+              </p>
+            )}
+
+            {/* 🔴 **ห้ามตัดแถวเงียบ** — บรรทัดสรุปข้างบนบอก 217 รหัส แต่ตารางมี 200 แถว
+                ท่อตัดที่ 200 เสมอไม่ว่าจะขอเท่าไหร่ และไม่ส่ง applied/truncated มาบอก
+                ⇒ ต้องเทียบกับ `skus` เอง · บรรทัดสรุปที่ถูก + ตารางที่ไม่ครบ = อ่านแล้วเข้าใจผิด
+                ว่าเห็นครบทุกรหัสแล้ว ซึ่งอันตรายกว่าตัวเลขผิดตรง ๆ เพราะไม่มีอะไรดูขัดตา */}
+            {itemsCut > 0 && (
+              <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
+                ตารางนี้แสดง <b>{fmtNum(itemAll.length)}</b> จาก <b>{fmtNum(Number(items?.skus ?? 0))}</b> รหัส
+                — ขาดอีก <b>{fmtNum(itemsCut)}</b> รหัส เป็นเงิน{' '}
+                <b>{fmtMoney(Math.max(0, Number(items?.amount ?? 0) - itemsTotal))}</b> บาท
+                (ท่อคืนได้สูงสุด 200 แถวต่อครั้ง · ที่ขาดคือรหัสที่ยอดเงินน้อยที่สุด) ·
+                คอลัมน์ <b>%</b> คิดจากผลรวมของ <b>แถวที่แสดงจริง</b> ไม่ใช่ยอดรวมในบรรทัดข้างบน
               </p>
             )}
           </Card>
