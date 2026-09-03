@@ -33,6 +33,46 @@ interface Move {
   id?: number; sku: string; qty: number; reason: string; ref?: string; at?: string
 }
 interface MovesResp { rows?: Move[]; reasons?: Record<string, string>; total?: number }
+/** ยอดขายรายเดือนของรหัสนี้ — ถามทีละเดือนด้วย `topproducts&sku=` */
+interface MonthPoint { label: string; qty: number; amount: number }
+
+/** เดือนไทยย่อ — ใช้เป็นป้ายแกนนอน */
+const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+
+/** ⚠️ คลังเงามีประวัติใบขายย้อนถึงวันนี้เท่านั้น — กราฟจึงเริ่มจากตรงนี้ ไม่ใช่ "ตลอดกาล" */
+const HISTORY_FROM = '2025-09-01'
+
+/** กราฟแท่งยอดขายรายเดือน — SVG ล้วน ไม่พึ่งไลบรารี */
+function SalesBars({ points, mode }: { points: MonthPoint[]; mode: 'amount' | 'qty' }) {
+  const W = 720, H = 200, PAD = 10, BOTTOM = 26
+  const vals = points.map((p) => (mode === 'amount' ? p.amount : p.qty))
+  const max = Math.max(...vals, 1)
+  const n = Math.max(points.length, 1)
+  const bw = Math.min(46, ((W - PAD * 2) / n) * 0.6)
+  const x = (i: number) => PAD + ((W - PAD * 2) * (i + 0.5)) / n
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="กราฟยอดขายรายเดือน">
+      {points.map((p, i) => {
+        const v = mode === 'amount' ? p.amount : p.qty
+        const h = (v / max) * (H - BOTTOM - 22)
+        return (
+          <g key={p.label}>
+            <rect x={x(i) - bw / 2} y={H - BOTTOM - h} width={bw} height={Math.max(h, 1)} rx={3}
+              className="fill-[#7c9cf0]" />
+            {v > 0 && (
+              <text x={x(i)} y={H - BOTTOM - h - 5} textAnchor="middle" className="fill-gray-500 text-[9px]">
+                {mode === 'amount'
+                  ? (v >= 1000 ? `${Math.round(v / 1000)}K` : Math.round(v))
+                  : Math.round(v)}
+              </text>
+            )}
+            <text x={x(i)} y={H - 8} textAnchor="middle" className="fill-gray-400 text-[10px]">{p.label}</text>
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
 
 export default function ProductDetailPage() {
   const router = useRouter()
@@ -43,6 +83,12 @@ export default function ProductDetailPage() {
   const [movesErr, setMovesErr] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  // ⚠️ กราฟต้องยิงเดือนละครั้ง (12 ครั้ง) ⇒ **ไม่โหลดเองตอนเปิดหน้า ต้องกดเอง**
+  //    กติกาเจ้าของร้าน: จอที่ยิงหนักต้องกดเอง · และเปิดหน้าสินค้าบ่อยกว่าดูกราฟมาก
+  const [chart, setChart] = useState<MonthPoint[] | null>(null)
+  const [chartLoading, setChartLoading] = useState(false)
+  const [chartMode, setChartMode] = useState<'amount' | 'qty'>('amount')
+  const [moveFilter, setMoveFilter] = useState('')
   const imgOf = useSkuImages()
 
   const load = useCallback(async () => {
@@ -69,8 +115,39 @@ export default function ProductDetailPage() {
 
   useEffect(() => { load() }, [load])
 
+  /** ถามยอดขายรายเดือนของรหัสนี้ — เดือนละหนึ่งครั้ง ย้อนไปเท่าที่คลังเงามีประวัติ
+   *  ⚠️ ท่อยังไม่มีโหมด "แยกรายเดือนในครั้งเดียว" ⇒ ต้องยิงหลายครั้ง จึงให้กดเอง */
+  const loadChart = useCallback(async () => {
+    setChartLoading(true)
+    try {
+      const months: { from: string; to: string; label: string }[] = []
+      const now = new Date()
+      for (let i = 11; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+        const from = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-01`
+        const last = new Date(d.getFullYear(), d.getMonth() + 1, 0)
+        const to = `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`
+        if (to < HISTORY_FROM) continue
+        months.push({ from, to, label: `${TH_MON[d.getMonth()]}/${String(d.getFullYear() + 543).slice(2)}` })
+      }
+      const out = await Promise.all(months.map(async (m) => {
+        const qs = new URLSearchParams({ list: 'topproducts', sku, from: m.from, to: m.to })
+        const j = await fetch(`/api/web/core?${qs}`).then((r) => r.json()).catch(() => null)
+        // ⚠️ ตรวจว่าเซิร์ฟเวอร์รับ sku ที่เราส่งไปจริง (`applied`) — ไม่รับ = ทิ้งค่าไปเลย
+        //    เคยเจอมาแล้วว่าพารามิเตอร์ที่ยังไม่รองรับถูกเมินเงียบ แล้วคืนสินค้าขายดีทั้งร้านแทน
+        //    เอามาวาดกราฟ = ขึ้นยอดขายของสินค้าตัวอื่นในหน้าสินค้าตัวนี้ โดยไม่มี error สักตัว
+        const ok = j?.applied?.sku === sku
+        const item = ok && Array.isArray(j.items) ? j.items.find((x: { sku: string }) => x.sku === sku) : null
+        return { label: m.label, qty: Number(item?.qty ?? 0), amount: Number(item?.amount ?? 0) }
+      }))
+      setChart(out)
+    } finally {
+      setChartLoading(false)
+    }
+  }, [sku])
+
   const img = imgOf(sku)
-  const moveRows = moves?.rows ?? []
+  const moveRows = (moves?.rows ?? []).filter((m) => !moveFilter || m.reason === moveFilter)
 
   return (
     <div className="p-4 md:p-6">
@@ -232,6 +309,45 @@ export default function ProductDetailPage() {
             </div>
           </div>
 
+          <Card className="mt-4">
+            <div className="flex flex-wrap items-center gap-3 mb-2">
+              <p className="text-[15px] font-semibold text-gray-900 mr-auto">ยอดขาย</p>
+              {/* ZORT มี 3 แบบ: ยอดขาย · จำนวนที่ขายได้ · **กำไรจากการขาย**
+                  ⇒ กำไรทำไม่ได้ เพราะต้องใช้ต้นทุนเฉลี่ย**รายตัว** ซึ่งเรามีแค่ระดับหมวด */}
+              <select
+                value={chartMode}
+                onChange={(e) => setChartMode(e.target.value as 'amount' | 'qty')}
+                className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              >
+                <option value="amount">ยอดขาย (บาท)</option>
+                <option value="qty">จำนวนที่ขายได้</option>
+                <option value="profit" disabled>กำไรจากการขาย — ยังทำไม่ได้</option>
+              </select>
+              <BtnGhost onClick={loadChart} disabled={chartLoading}>
+                {chartLoading ? 'กำลังคิด…' : chart ? 'คิดใหม่' : 'แสดงกราฟ'}
+              </BtnGhost>
+            </div>
+
+            {chart
+              ? <SalesBars points={chart} mode={chartMode} />
+              : (
+                <div className="py-10 text-center">
+                  <p className="text-[13px] text-gray-600">กดปุ่ม <b>แสดงกราฟ</b> เพื่อคิดยอดขายรายเดือน</p>
+                  {/* ⚠️ บอกด้วยว่าทำไมไม่โหลดเอง — ไม่งั้นดูเหมือนจอโหลดไม่ขึ้น */}
+                  <p className="text-[11.5px] text-gray-400 mt-1">
+                    ต้องถามทีละเดือน (12 ครั้ง) จึงไม่โหลดเองตอนเปิดหน้า
+                  </p>
+                </div>
+              )}
+
+            <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
+              ⚠️ ย้อนได้ถึง <b>1 ก.ย. 2568</b> เท่านั้น (ประวัติใบขายที่คลังเงามี) — เดือนที่เป็นศูนย์
+              ก่อนหน้านั้นแปลว่า<b>เราไม่มีข้อมูล</b> ไม่ใช่ขายไม่ได้ ·
+              <b> กำไรจากการขาย</b>ที่ ZORT มี ทำไม่ได้เพราะต้องใช้ต้นทุนเฉลี่ยรายตัว
+              ซึ่งเรามีแค่<b>ระดับหมวด</b>
+            </p>
+          </Card>
+
           {/* ⚠️ **มีการ์ดไว้พร้อมเหตุผล ดีกว่าไม่มีการ์ด** — กติกาเดียวกับ 4 จอที่ตกลงกันไว้
               (จอมีอยู่ · ผังเหมือน · เขียนบอกตรง ๆ ว่าทำไมว่าง)
               ⚠️ ต่างจาก "การ์ดเปล่า" ตรงที่ **มีเหตุผลกำกับ** — การ์ดเปล่าเฉย ๆ คือสัญญาของที่ไม่มี
@@ -253,6 +369,18 @@ export default function ProductDetailPage() {
           <Card padded={false} className="mt-4">
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <p className="text-[15px] font-semibold text-gray-900 mr-auto">รายงานการเคลื่อนไหว</p>
+              {/* ⚠️ ZORT มีตัวกรอง 8 แบบ + ตัวกรองคลัง — ของเรามีเท่าที่ข้อมูลรองรับจริง (6 เหตุผล)
+                  ใส่ให้ครบ 8 แบบตามเขา = ตัวเลือกที่เลือกแล้วไม่มีอะไรเปลี่ยน ซึ่งเป็นของหลอก */}
+              <select
+                value={moveFilter}
+                onChange={(e) => setMoveFilter(e.target.value)}
+                className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              >
+                <option value="">ทุกประเภท</option>
+                {Object.entries(moves?.reasons ?? {}).map(([k, v]) => (
+                  <option key={k} value={k}>{v}</option>
+                ))}
+              </select>
             </div>
 
             <TableWrap>
