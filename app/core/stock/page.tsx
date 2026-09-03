@@ -46,6 +46,13 @@ interface Resp {
   checkedMarketplaces?: string[]
   /** จำนวนแถวของแท็บที่เลือกอยู่ — ใช้ทำเลขหน้า ห้ามใช้ total ตอนอยู่แท็บ out/low */
   shown?: number
+  /** 🔴 สินค้าใน ZORT ที่ **ไม่มีรหัสสินค้า** จึงเก็บเข้าคลังเงาไม่ได้เลยโดยโครงสร้าง
+   *  (คลังเงาใช้ SKU เป็นกุญแจหลัก) — 226 ตัวจาก 2,898 · **สต็อกเป็นศูนย์ทั้งหมด มูลค่า ฿0**
+   *  ⚠️ ต้องเขียนบนจอเสมอ ไม่งั้นคนเปิดเทียบกับ ZORT จะเห็นเลขต่างกัน 226 โดยไม่มีคำอธิบาย
+   *     กฎเดียวกับของทดสอบที่ซ่อน: **ซ่อนได้ แต่ต้องบอกว่าซ่อน** */
+  noSkuInZort?: number
+  /** จำนวนสินค้าทั้งหมดที่ ZORT มี (รวมตัวที่ไม่มีรหัส) */
+  zortTotal?: number
   limit: number; offset: number; rows: Row[]
 }
 
@@ -138,6 +145,14 @@ export default function CoreStockPage() {
                 <span className="text-gray-400">
                   {' '}(กำลังแสดงของทดสอบด้วย{' '}
                   <button onClick={() => setShowTest(false)} className="text-blue-600 hover:underline">ซ่อน</button>)
+                </span>
+              )}
+              {/* ⚠️ ZORT แสดง 2,898 · เราแสดง 2,672 — ต่างกัน 226 ต้องมีคำอธิบายติดอยู่ตรงนี้
+                  ไม่ใช่ให้คนไปสงสัยเอาเองว่าข้อมูลหาย */}
+              {Number(data.noSkuInZort) > 0 && (
+                <span className="text-gray-400">
+                  {' '}(ZORT มี {(data.zortTotal ?? 0).toLocaleString('th-TH')} — ที่ขาดคือสินค้า
+                  {' '}<b>ไม่มีรหัส {Number(data.noSkuInZort).toLocaleString('th-TH')} ตัว</b> สต็อกเป็นศูนย์ทั้งหมด)
                 </span>
               )}
               {' | '}
