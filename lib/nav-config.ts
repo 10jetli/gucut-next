@@ -111,7 +111,7 @@ export const NAV_ITEMS: NavItem[] = [
       // ZORT แยกแชทเป็น "แอป" ต่างหาก (เปิดจากตารางจุด 9 ช่อง) เราใส่ไว้ในเมนูด้วย
       // เพราะเมนูคือที่ที่คนมองหาของ — ของที่เปิดได้ทางเดียวคือของที่หาไม่เจอ
       { href: '/core/chat', label: 'แชทคอมเมิร์ซ' },
-      soon('salepage', 'เซลเพจ'),
+      { href: '/core/salepages', label: 'เซลเพจ' },
     ],
   },
   {
@@ -134,7 +134,7 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'เอกสาร',
     children: [
       soon('files', 'ไฟล์'),
-      soon('accounting-doc', 'เอกสารบัญชี'),
+      { href: '/core/accounting-docs', label: 'เอกสารบัญชี' },
       { href: '/web/permits', label: 'ใบ ลซ.๒ ที่ลูกค้าส่งมา' },
     ],
   },
