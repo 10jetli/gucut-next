@@ -18,11 +18,12 @@
 //       ได้จอที่หน้าตาเหมือนแต่ตัวเลขคนละเรื่อง แล้วคนที่เอาไปเทียบจะเชื่อว่าตรงกัน
 //       **ใกล้ไม่ใช่เหมือน**
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState } from '@/components/zort'
+import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, RowMenu } from '@/components/zort'
 
 interface Row {
   name: string
@@ -46,6 +47,7 @@ interface Resp {
 }
 
 export default function CoreCategoriesPage() {
+  const router = useRouter()
   const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -79,8 +81,16 @@ export default function CoreCategoriesPage() {
 
   const onhandOf = (r: Row) => (basis === 'cost' ? r.onhand_value : r.onhand_value_sell)
   const availOf = (r: Row) => (basis === 'cost' ? r.available_value : r.available_value_sell)
-  const val = (n?: number) =>
-    typeof n === 'number' ? <span className="text-red-500">{fmtMoney(n)}</span> : <span className="text-gray-300">—</span>
+
+  /** สีของตัวเลขมูลค่าใน ZORT — **ไม่ใช่แดงตลอดอย่างที่เราเคยทำ**
+   *  ฝั่งเซิร์ฟเวอร์อ่านค่าสีจาก DOM ของ ZORT จริงมาให้ ตรงกัน 10/10 แถว:
+   *    เขียว rgb(19,175,130) เมื่อ **คงเหลือ = พร้อมขาย** (รวมกรณี 0/0)
+   *    แดง  rgb(242,87,87)  เมื่อ **ต่างกัน** = มีของถูกจองไว้ในออเดอร์ที่ยังไม่ตัด
+   *  ⚠️ สีจึงมีความหมาย ไม่ใช่ของตกแต่ง — ทำแดงหมดคือทิ้งข้อมูลไปหนึ่งชั้น */
+  const val = (n?: number, same?: boolean) => {
+    if (typeof n !== 'number') return <span className="text-gray-300">—</span>
+    return <span className={same ? 'text-emerald-600' : 'text-red-500'}>{fmtMoney(n)}</span>
+  }
 
   const totalSkus = rows.reduce((a, r) => a + (Number(r.skus) || 0), 0)
   const totalOnhand = rows.reduce((a, r) => a + (Number(onhandOf(r)) || 0), 0)
@@ -127,6 +137,13 @@ export default function CoreCategoriesPage() {
             <p className="text-[12.5px] text-gray-700 min-w-0 flex-1">
               มูลค่าสินค้าคงเหลือ, มูลค่าสินค้าพร้อมขาย · คิดจาก
               <b>{basis === 'cost' ? 'ราคาซื้อในทะเบียนสินค้า' : 'ราคาขาย'}</b>
+              {/* ⚠️ ZORT เขียน "วันที่อัพเดทล่าสุด: 2 ก.ย. 2026 08:33" ตรงนี้ + ปุ่มอัพเดท
+                  ของเราไม่มีเวลานั้นให้แสดง เพราะเลขคิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ
+                  ⇒ เขียนความจริงแทนการใส่เวลาปลอมให้หน้าตาเหมือน */}
+              <span className="block text-[11.5px] text-gray-500 mt-0.5">
+                คิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ — ไม่ใช่ภาพถ่ายสต็อกรายวัน
+                จึงไม่มี &quot;วันที่อัพเดทล่าสุด&quot; แบบ ZORT
+              </span>
             </p>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
@@ -195,11 +212,20 @@ export default function CoreCategoriesPage() {
                         </span>
                       )}
                     </td>
-                    <td className={TDR}>{fmtNum(r.skus)}</td>
-                    <td className={TDR}>{val(onhandOf(r))}</td>
-                    <td className={TDR}>{val(availOf(r))}</td>
+                    {/* เลขจำนวน SKU ของ ZORT เป็นสีเขียวเสมอ ไม่ขึ้นกับเงื่อนไขอะไร */}
+                    <td className={`${TDR} text-emerald-600`}>{fmtNum(r.skus)}</td>
+                    <td className={TDR}>{val(onhandOf(r), onhandOf(r) === availOf(r))}</td>
+                    <td className={TDR}>{val(availOf(r), onhandOf(r) === availOf(r))}</td>
                     <td className={`${TD} text-right`}>
-                      <Link href="/core/pos" className="text-[12px] text-blue-600 hover:underline">เปิดใน POS</Link>
+                      <RowMenu
+                        items={[
+                          {
+                            label: 'คัดลอกชื่อหมวดหมู่',
+                            onClick: () => { navigator.clipboard?.writeText(r.name ?? '').catch(() => {}) },
+                          },
+                          { label: 'เปิดใน POS', onClick: () => router.push('/core/pos') },
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
@@ -213,6 +239,19 @@ export default function CoreCategoriesPage() {
               {guessed > 0 && <span className="text-gray-400">มี {fmtNum(guessed)} หมวดที่เดาจากชื่อสินค้า</span>}
             </div>
           </TableWrap>
+
+          {/* ⚠️ เรื่องลำดับ + ดาว — ตอนนี้เรารู้ "เหตุผลจริง" แล้ว ไม่ใช่แค่ "ไม่มีข้อมูล"
+              เปิดเมนู ⋮ ใน ZORT เทียบสองแถว: มีดาว → "ถอนหมุดจากบนสุด" · ไม่มีดาว → "ปักหมุดไว้บนสุด"
+              ⇒ ดาว = หมวดที่ปักหมุด และนั่นคือเหตุผลที่ ZORT เรียง โซ่ → บาร์ → เลื่อยยนต์ → อะไหล่
+                 ไม่ใช่ลำดับที่ตั้งเอง · ข้อมูลนี้ไม่มีใน API (ไม่มี Category endpoint เลยสักตัว)
+              ⇒ **ห้ามใส่ดาวมั่ว และห้ามเดาลำดับให้เหมือน** */}
+          <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+            <b>ทำไมลำดับไม่ตรงกับ ZORT</b> — ที่ ZORT เรียง โซ่ → บาร์ → เลื่อยยนต์ แล้วค่อยอะไหล่
+            เพราะ 12 หมวดแรกถูก <b>ปักหมุดไว้บนสุด</b> (ดาวเหลืองหน้าชื่อ) ไม่ใช่ลำดับที่ตั้งค่าไว้ ·
+            การปักหมุดเป็นข้อมูลที่ <b>API ไม่เปิดให้ดึง</b> (ZORT ไม่มี endpoint หมวดหมู่เลยสักตัว)
+            ⇒ จอนี้เรียงตามจำนวน SKU มากไปน้อยแทน และ<b>ไม่ใส่ดาว</b>
+            เพราะใส่โดยไม่รู้ว่าหมวดไหนถูกปักหมุดจริงคือการเดา
+          </div>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             หมวดหมู่ชุดนี้<b>ดึงมาจาก ZORT ของจริง</b> ไม่ใช่หมวดที่เดาจากชื่อสินค้าเหมือนก่อน ·
