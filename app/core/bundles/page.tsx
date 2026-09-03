@@ -71,12 +71,13 @@ export default function CoreBundlesPage() {
   const [error, setError] = useState('')
   const imgOf = useSkuImages()
   // ส่วนประกอบในชุด — โหลดตอนกดกางเท่านั้น (360 ชุดถ้าโหลดหมดตั้งแต่แรกคือเปล่าประโยชน์)
-  const [openSku, setOpenSku] = useState<string | null>(null)
+  const [hoverSku, setHoverSku] = useState<string | null>(null)
   const [items, setItems] = useState<Record<string, BundleItem[] | 'loading' | 'error'>>({})
 
-  const toggleItems = useCallback(async (sku: string) => {
-    if (openSku === sku) { setOpenSku(null); return }
-    setOpenSku(sku)
+  // ⚠️ ZORT โชว์รายการในชุดเป็น **ป๊อปอัพตอนเอาเมาส์ชี้ชื่อชุด** (ไม่ใช่กางแถว)
+  //    และกดที่ชื่อจะไปหน้ารายละเอียดของชุด ⇒ ทำทั้งสองอย่างตามต้นแบบ
+  const showItems = useCallback(async (sku: string) => {
+    setHoverSku(sku)
     if (items[sku] && items[sku] !== 'error') return
     setItems((m) => ({ ...m, [sku]: 'loading' }))
     try {
@@ -87,7 +88,7 @@ export default function CoreBundlesPage() {
     } catch {
       setItems((m) => ({ ...m, [sku]: 'error' }))
     }
-  }, [openSku, items])
+  }, [items])
 
   const load = useCallback(async (off = 0) => {
     setLoading(true)
@@ -209,14 +210,33 @@ export default function CoreBundlesPage() {
                               className="w-10 h-10 rounded border border-gray-200 object-cover bg-white shrink-0" />
                           )
                           : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0" />}
-                        <button
-                          onClick={() => toggleItems(r.sku)}
-                          className="text-blue-600 min-w-0 text-left hover:underline"
-                          title="กดดูว่าในชุดมีอะไรบ้าง"
+                        <span
+                          className="relative min-w-0"
+                          onMouseEnter={() => showItems(r.sku)}
+                          onMouseLeave={() => setHoverSku(null)}
                         >
-                          {r.name || '—'}
-                          <span className="ml-1.5 text-[11px] text-gray-400">{openSku === r.sku ? '▲' : '▼'}</span>
-                        </button>
+                          <Link href={`/core/bundles/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                            {r.name || '—'}
+                          </Link>
+                          {hoverSku === r.sku && (
+                            <span className="absolute left-0 top-full z-20 mt-1 w-[420px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] p-3.5 block">
+                              <span className="block text-[13.5px] font-semibold text-gray-900">{r.name}</span>
+                              <span className="block text-[11.5px] text-gray-400 mt-0.5 mb-1.5">รายการ</span>
+                              {items[r.sku] === 'loading' && <span className="block text-[12.5px] text-gray-400">กำลังโหลด…</span>}
+                              {items[r.sku] === 'error' && <span className="block text-[12.5px] text-red-600">ดึงรายการในชุดไม่ได้</span>}
+                              {Array.isArray(items[r.sku]) && (items[r.sku] as BundleItem[]).length === 0 && (
+                                <span className="block text-[12.5px] text-gray-500">ชุดนี้ยังไม่มีรายการส่วนประกอบที่เก็บไว้</span>
+                              )}
+                              {Array.isArray(items[r.sku]) && (items[r.sku] as BundleItem[]).map((it, k) => (
+                                <span key={`${it.sku}-${k}`} className="flex items-start gap-2 py-1 border-b border-gray-50 last:border-0">
+                                  <span className="text-[12.5px] text-gray-400 w-4 shrink-0">{k + 1}.</span>
+                                  <span className="text-[12.5px] text-gray-800 min-w-0 flex-1">{it.name || it.sku}</span>
+                                  <span className="text-[12.5px] text-gray-700 shrink-0">{fmtNum(it.qty)}</span>
+                                </span>
+                              ))}
+                            </span>
+                          )}
+                        </span>
                       </span>
                     </td>
                     {/* ⚠️ คำนวณไม่ได้จนกว่าจะรู้ส่วนประกอบ — ห้ามเอาราคาขายมาใส่แทน */}
@@ -242,32 +262,6 @@ export default function CoreBundlesPage() {
                           { label: 'ดูในจอสินค้า', onClick: () => { window.location.href = `/core/stock?q=${encodeURIComponent(r.sku)}` } },
                         ]}
                       />
-                    </td>
-                  </tr>
-                ))}
-                {/* แถวกางส่วนประกอบ — ตามหลังชุดที่กด */}
-                {rows.map((r) => openSku === r.sku && (
-                  <tr key={`${r.sku}-items`} className="bg-gray-50 border-b border-gray-100">
-                    <td colSpan={11} className="px-6 py-3">
-                      <p className="text-[12.5px] font-semibold text-gray-700 mb-1.5">ในชุดนี้มี</p>
-                      {items[r.sku] === 'loading' && <p className="text-[12.5px] text-gray-400">กำลังโหลด…</p>}
-                      {items[r.sku] === 'error' && (
-                        <p className="text-[12.5px] text-red-600">ดึงรายการในชุดไม่ได้ — กดที่ชื่อชุดอีกครั้งเพื่อลองใหม่</p>
-                      )}
-                      {Array.isArray(items[r.sku]) && (items[r.sku] as BundleItem[]).length === 0 && (
-                        <p className="text-[12.5px] text-gray-500">ชุดนี้ยังไม่มีรายการส่วนประกอบที่เก็บไว้</p>
-                      )}
-                      {Array.isArray(items[r.sku]) && (items[r.sku] as BundleItem[]).length > 0 && (
-                        <div className="space-y-1">
-                          {(items[r.sku] as BundleItem[]).map((it, k) => (
-                            <div key={`${it.sku}-${k}`} className="flex flex-wrap items-baseline gap-2 text-[12.5px]">
-                              <span className="font-mono text-gray-500 w-[110px] shrink-0">{it.sku}</span>
-                              <span className="text-gray-800 min-w-0 flex-1">{it.name || '—'}</span>
-                              <span className="text-gray-600">× {fmtNum(it.qty)}</span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </td>
                   </tr>
                 ))}
