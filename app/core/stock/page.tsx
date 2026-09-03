@@ -77,8 +77,10 @@ export default function CoreStockPage() {
     setLoading(true)
     setError('')
     try {
+      // ⚠️ `marketplaces=1` ต้องส่งเสมอ ไม่งั้นคอลัมน์ Marketplace ว่างทุกแถวแบบเงียบ ๆ
+      //    (ยิงของจริงเทียบแล้ว: ไม่ส่ง → marketplaces:null · ส่ง → ['shopee'] · 3 ก.ย. 2569)
       const qs = new URLSearchParams({
-        list: 'stock', sort: sortId, limit: String(PAGE), offset: String(off),
+        list: 'stock', sort: sortId, limit: String(PAGE), offset: String(off), marketplaces: '1',
       })
       // กรองฝั่งเซิร์ฟเวอร์แล้ว — แท็บจึงกรองทั้งคลังจริง ไม่ใช่แค่หน้าที่กำลังดู
       if (tabId !== 'all') qs.set('only', tabId)

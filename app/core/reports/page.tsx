@@ -16,12 +16,34 @@ import {
   PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate,
 } from '@/components/zort'
 
-interface StockResp { skip?: string; day?: string; total?: number; value?: number }
+interface StockResp {
+  skip?: string; day?: string; total?: number
+  /** มูลค่าคิดจาก **ราคาขาย** */
+  value?: number
+  /** มูลค่าคิดจาก **ราคาทุนในทะเบียนสินค้า** */
+  valueCost?: number
+  /** จำนวนรหัสที่ยังไม่ได้กรอกราคาทุน — ทำให้ valueCost ต่ำกว่าความจริงเสมอ */
+  noCostSkus?: number
+}
+
+// ⚠️ **ตัวเลขของ ZORT ที่เอาไว้เทียบ — วัดจากจอจริง ไม่ใช่คำนวณเอง**
+//    ZORT ใช้ต้นทุนเฉลี่ยถ่วงน้ำหนัก (moving average) ซึ่ง API ไม่เปิดให้ดึง
+//    ⇒ เราคิดให้ตรงไม่ได้ทั้งสองแบบ · ห้ามเลือกแบบที่ "ใกล้กว่า" แล้วเงียบ
+const ZORT_STOCK_VALUE = 16424587.22
+const ZORT_CHECKED_AT = '3 ก.ย. 2569'
 interface DeadRow {
   sku: string; name?: string; category?: string
   lastSoldAt?: string | null; onhand?: number; value?: number
 }
-interface DeadResp { skip?: string; days?: number; total?: number; rows?: DeadRow[] }
+interface DeadResp {
+  skip?: string; days?: number; total?: number; rows?: DeadRow[]
+  /** มูลค่ารวมของสินค้าจมทั้งชุด (คิดจากราคาขาย) */
+  value?: number
+  /** ประวัติใบขายที่คลังเงามีย้อนไปถึงวันไหน — **ตัวตัดสินว่าคำว่า "ไม่เคยขาย" แปลว่าอะไร** */
+  historyFrom?: string
+  enoughHistory?: boolean
+  cut?: string
+}
 
 const DEAD_RANGES = [
   { days: 90, label: 'ขายไม่ได้เกิน 3 เดือน' },
@@ -68,7 +90,11 @@ export default function CoreProductReportPage() {
       ['รายงานมูลค่าสินค้าทั้งหมด'],
       ['วันที่ภาพถ่ายสต็อก', stock.day ?? ''],
       ['จำนวนรายการ', String(stock.total ?? '')],
-      ['มูลค่ารวม (บาท)', String(stock.value ?? '')],
+      // ⚠️ ไฟล์ที่โหลดออกไปก็ต้องกำกับวิธีคิด ไม่งั้นเลขหลุดออกไปลอย ๆ แล้วถูกเอาไปเทียบผิด
+      ['มูลค่ารวม คิดจากราคาขาย (บาท)', String(stock.value ?? '')],
+      ['มูลค่ารวม คิดจากราคาทุนในทะเบียนสินค้า (บาท)', String(stock.valueCost ?? '')],
+      ['รหัสที่ยังไม่ได้กรอกราคาทุน', String(stock.noCostSkus ?? '')],
+      ['ZORT แสดงเท่าไหร่ (ต้นทุนเฉลี่ยถ่วงน้ำหนัก · API ไม่เปิดให้ดึง)', String(ZORT_STOCK_VALUE)],
     ]
     const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
@@ -99,14 +125,28 @@ export default function CoreProductReportPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
               <p className="text-[15px] font-semibold text-gray-900 mb-2">สรุปมูลค่าสินค้าทั้งหมด</p>
-              <div className="flex flex-col items-center justify-center py-10">
-                <p className="text-[32px] font-semibold text-blue-600 leading-none">
+              <div className="flex flex-col items-center justify-center py-8">
+                {/* ⚠️ **ต้องโชว์ทั้งสองแบบพร้อมป้ายกำกับ ห้ามโชว์ตัวเดียวลอย ๆ**
+                    เลขนี้ต่างจาก ZORT หลายล้าน คนเปิดสองจอเทียบกันแล้วไม่มีคำอธิบาย
+                    = แย่กว่าไม่มีการ์ดนี้เลย (เจ้าของร้านสั่งเอง 3 ก.ย. 2569) */}
+                <p className="text-[11.5px] text-gray-500">คิดจากราคาขาย</p>
+                <p className="text-[30px] font-semibold text-blue-600 leading-none mt-0.5">
                   {typeof stock.value === 'number' ? fmtMoney(stock.value) : '—'}
                   <span className="text-[15px] text-gray-500 font-normal"> บาท</span>
                 </p>
+                <p className="text-[11.5px] text-gray-500 mt-4">คิดจากราคาทุนในทะเบียนสินค้า</p>
+                <p className="text-[22px] font-semibold text-gray-700 leading-none mt-0.5">
+                  {typeof stock.valueCost === 'number' ? fmtMoney(stock.valueCost) : '—'}
+                  <span className="text-[13px] text-gray-500 font-normal"> บาท</span>
+                </p>
+                {Number(stock.noCostSkus) > 0 && (
+                  <p className="text-[11.5px] text-amber-800 mt-1">
+                    ⚠️ ยังไม่ได้กรอกราคาทุน {fmtNum(Number(stock.noCostSkus))} รหัส — ตัวเลขทุนจึง<b>ต่ำกว่าความจริง</b>
+                  </p>
+                )}
                 {stock.day && (
                   // ⚠️ ต้องบอกว่าเป็นภาพถ่ายวันไหน ไม่ใช่ยอดสดวินาทีนี้
-                  <p className="text-[12px] text-gray-500 mt-2">
+                  <p className="text-[12px] text-gray-500 mt-3">
                     จากภาพถ่ายสต็อกวันที่ {thaiDate(stock.day)} · {fmtNum(stock.total ?? 0)} รายการ
                   </p>
                 )}
@@ -116,6 +156,15 @@ export default function CoreProductReportPage() {
                 >
                   Download Excel
                 </button>
+              </div>
+
+              {/* 🔴 กล่องนี้ห้ามถอด — ไม่มีมันคือปล่อยให้คนเชื่อว่าเลขเราควรเท่ากับ ZORT */}
+              <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5 leading-relaxed">
+                <b>ทำไมไม่ตรงกับ ZORT</b> — จอเดียวกันของ ZORT แสดง <b>{fmtMoney(ZORT_STOCK_VALUE)} บาท</b>
+                {' '}(ตรวจ {ZORT_CHECKED_AT}) เพราะ ZORT ใช้ <b>ต้นทุนเฉลี่ยถ่วงน้ำหนัก</b>
+                {' '}ที่คิดใหม่ทุกครั้งที่ซื้อของเข้า ซึ่ง <b>API ไม่เปิดให้ดึง</b> ⇒ เราคิดแบบเดียวกันไม่ได้
+                {' '}· ตัวเลขทั้งสองแบบข้างบนจึงคร่อมเลขของ ZORT อยู่ (ราคาขายสูงกว่า · ราคาทุนต่ำกว่า)
+                {' '}<b>ห้ามเอาไปเทียบทีละบาท</b> ใช้ดูแนวโน้มและสัดส่วนได้
               </div>
             </Card>
 
@@ -186,9 +235,18 @@ export default function CoreProductReportPage() {
                         <span className="text-blue-600">{r.name || '—'}</span>
                         {r.category && <span className="block text-[11px] text-gray-400">หมวดหมู่: {r.category}</span>}
                       </td>
-                      {/* ⚠️ ไม่เคยขายเลย ≠ ขายล่าสุดนานแล้ว — ต้องเขียนต่างกัน */}
+                      {/* ⚠️ ไม่เคยขายเลย ≠ ขายล่าสุดนานแล้ว — ต้องเขียนต่างกัน
+                          ⚠️ และคำว่า "ไม่เคยขาย" แรงเกินกว่าที่เรารู้จริง — เรารู้แค่ว่า
+                             **ไม่มีใบขายในประวัติที่คลังเงาเก็บไว้** (ย้อนถึง historyFrom เท่านั้น)
+                             ของที่ขายไปก่อนหน้านั้นเราไม่มีทางเห็น ⇒ ต้องเขียนขอบเขตกำกับเสมอ */}
                       <td className={`${TD} text-gray-600 whitespace-nowrap`}>
-                        {r.lastSoldAt ? thaiDate(r.lastSoldAt) : <span className="text-gray-400">ยังไม่เคยขาย</span>}
+                        {r.lastSoldAt
+                          ? thaiDate(r.lastSoldAt)
+                          : (
+                            <span className="text-gray-400">
+                              ไม่มีใบขาย{dead?.historyFrom ? `ตั้งแต่ ${thaiDate(dead.historyFrom)}` : 'ในประวัติที่มี'}
+                            </span>
+                          )}
                       </td>
                       <td className={TDR}>{fmtNum(Number(r.onhand ?? 0))}</td>
                       <td className={TDR}>{typeof r.value === 'number' ? fmtMoney(r.value) : <span className="text-gray-300">—</span>}</td>
@@ -198,6 +256,21 @@ export default function CoreProductReportPage() {
               </table>
             </TableWrap>
           </Card>
+
+          {dead && (dead.total ?? 0) > 0 && (
+            <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+              สินค้าจมในช่วงที่เลือก <b>{fmtNum(dead.total ?? 0)}</b> รหัส
+              {typeof dead.value === 'number' && <> · มูลค่ารวม <b>{fmtMoney(dead.value)}</b> บาท</>}
+              {' '}(คิดจาก<b>ราคาขาย</b> ไม่ใช่ต้นทุน)
+              {dead.historyFrom && (
+                <>
+                  <br />
+                  ⚠️ นับจากใบขายที่คลังเงามีตั้งแต่ <b>{thaiDate(dead.historyFrom)}</b> เท่านั้น —
+                  ของที่ขายไปก่อนหน้านั้นระบบมองไม่เห็น จึงอาจมีบางรหัสที่จริง ๆ เคยขายแล้ว
+                </>
+              )}
+            </div>
+          )}
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             การวิเคราะห์ยอดขาย (ยอดรายเดือน · ช่องทางที่ทำเงิน · สินค้าขายดี) ย้ายไปอยู่ที่
