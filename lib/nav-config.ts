@@ -81,7 +81,7 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       { href: '/core/stock', label: 'สินค้า' },
       soon('product-add', 'เพิ่มสินค้า'),
-      soon('product-bundle', 'สินค้าเป็นชุด'),
+      { href: '/core/bundles', label: 'สินค้าเป็นชุด' },
       soon('product-variant', 'สินค้าหลากคุณสมบัติ'),
       { href: '/core/categories', label: 'หมวดหมู่' },
       { href: '/core/branches', label: 'คลังสินค้า/สาขา' },
