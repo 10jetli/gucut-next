@@ -102,10 +102,20 @@ export default function ProductDetailPage() {
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               ลบ
             </Link>
-            <Link href={`/core/moves?sku=${encodeURIComponent(sku)}`}
-              className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
+            {/* 🔴 **ห้ามชี้ปุ่มนี้ไป /core/moves** — จอนี้เป็นกระจกของ ZORT
+                สูตรเทียบสต็อกคือ (สต็อกเมื่อวาน − ที่ขายไป + stock_moves) − สต็อกวันนี้จาก ZORT
+                ⇒ เขียนลง stock_moves โดยไม่ยิงกลับ ZORT = สูตรคิดว่ามีของเข้ามาเพิ่ม
+                  แต่ ZORT ไม่รู้เรื่อง ⇒ **ตัวเทียบยอดจะขึ้นส่วนต่างทุกวันตลอดไป**
+                  แล้วคนที่มาดูจะนึกว่ากระจกเพี้ยน ทั้งที่เป็นเพราะเรากดปุ่มเอง
+                ⚠️ **เสียงเตือนปลอมทำให้คนเลิกเชื่อตัวเตือนทั้งระบบ** ซึ่งแพงกว่าปุ่มที่ใช้ไม่ได้มาก
+                (stock_moves ไม่ได้ผิด — มันมีไว้สำหรับของที่เราเป็นเจ้าของเอง เช่น POS หน้าร้าน
+                 หน้า /core/moves จึงยังใช้ได้ตามปกติ แค่ห้ามให้จอกระจกชี้ไปที่นั่น) */}
+            <span
+              title="ต้องปรับที่ ZORT ก่อน · ปรับที่นี่อย่างเดียวจะทำให้สองระบบไม่ตรงกัน และตัวเทียบยอดจะขึ้นส่วนต่างทุกวัน"
+              className="text-[12.5px] text-gray-300 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed"
+            >
               ปรับจำนวน
-            </Link>
+            </span>
             <Link href="/core/soon/product-print"
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               พิมพ์เอกสาร

@@ -285,7 +285,17 @@ export function PaymentPill({ value }: { value?: string | null }) {
 
 /* ── เมนูจุดสามจุดท้ายแถว ──────────────────────────────────────────────
    ⚠️ ใส่เฉพาะคำสั่งที่ทำได้จริง — ปุ่มที่กดแล้วไม่เกิดอะไรแย่กว่าไม่มีปุ่ม */
-export function RowMenu({ items }: { items: { label: string; onClick: () => void }[] }) {
+export interface RowMenuItem {
+  label: string
+  onClick?: () => void
+  /** 🔴 ทำไม่ได้ตอนนี้ — ใส่ **เหตุผล** ไม่ใช่แค่ true
+   *  ⚠️ เมนูที่ตัดรายการที่ทำไม่ได้ทิ้ง จะทำให้คนที่ชิน ZORT หาไม่เจอแล้วนึกว่าระบบเราทำไม่ได้
+   *     ⇒ โชว์ให้ครบตามผัง แต่กดไม่ได้ **พร้อมบอกว่าทำไมและต้องไปทำที่ไหนแทน**
+   *  ⚠️ ห้ามใส่แค่ "ยังไม่พร้อม" — คนอ่านต้องรู้ว่าต้องไปทำที่ไหนต่อ */
+  disabled?: string
+}
+
+export function RowMenu({ items }: { items: RowMenuItem[] }) {
   const [open, setOpen] = useState(false)
   return (
     <span className="relative inline-block">
@@ -302,14 +312,32 @@ export function RowMenu({ items }: { items: { label: string; onClick: () => void
           <span className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false) }} />
           <span className="absolute right-0 top-7 z-20 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[150px] block">
             {items.map((it) => (
-              <button
-                key={it.label}
-                onClick={(e) => { e.stopPropagation(); setOpen(false); it.onClick() }}
-                className="block w-full text-left text-[12.5px] text-gray-700 px-3 py-1.5 hover:bg-gray-50"
-              >
-                {it.label}
-              </button>
+              it.disabled
+                ? (
+                  <span
+                    key={it.label}
+                    title={it.disabled}
+                    className="block w-full text-left text-[12.5px] text-gray-300 px-3 py-1.5 cursor-not-allowed"
+                  >
+                    {it.label}
+                  </span>
+                )
+                : (
+                  <button
+                    key={it.label}
+                    onClick={(e) => { e.stopPropagation(); setOpen(false); it.onClick?.() }}
+                    className="block w-full text-left text-[12.5px] text-gray-700 px-3 py-1.5 hover:bg-gray-50"
+                  >
+                    {it.label}
+                  </button>
+                )
             ))}
+            {/* รายการสีเทาคือของที่ ZORT มีแต่เรายังทำไม่ได้ — ชี้ค้างเพื่อดูเหตุผล */}
+            {items.some((it) => it.disabled) && (
+              <span className="block text-[11px] text-gray-400 px-3 py-1.5 border-t border-gray-100">
+                รายการสีเทายังทำไม่ได้ — ชี้ค้างเพื่อดูเหตุผล
+              </span>
+            )}
           </span>
         </>
       )}
