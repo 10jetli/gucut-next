@@ -165,7 +165,10 @@ export default function LogisticsPage() {
                       {/* ZORT โชว์เลขพัสดุสองบรรทัด (ลิงก์ + เลขเดิมซ้ำตัวเล็ก) และมีโลโก้ขนส่งข้างหน้า
                           ⇒ บรรทัดล่างของเราใส่ **ชื่อขนส่ง** แทนการซ้ำเลขเดิม
                              เพราะเรายังไม่มีโลโก้ ถ้าซ้ำเลขด้วยจะไม่เหลือที่บอกว่าส่งกับเจ้าไหนเลย */}
-                      <span className="text-blue-600 font-medium">{r.trackingNo || r.number}</span>
+                      {/* กดแล้วไปใบขายของพัสดุนั้น — ปลายทางมีจริง */}
+                      <Link href={`/core/sales/detail?id=${encodeURIComponent(r.id)}`} className="text-blue-600 hover:underline font-medium">
+                        {r.trackingNo || r.number}
+                      </Link>
                       <span className="block text-[11px] text-gray-400">
                         {r.carrier || 'ไม่ระบุขนส่ง'}
                       </span>

@@ -244,7 +244,16 @@ function DetailInner() {
                     <tr key={it.line} className="border-b border-gray-100 last:border-0">
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={`${TD} whitespace-nowrap`}>{it.sku || '—'}</td>
-                      <td className={TD}><span className="text-blue-600">{it.name || '—'}</span></td>
+                      <td className={TD}>
+                        {/* รายการในใบขายกดไปดูสินค้าได้ — ปลายทางมีจริงแล้ว */}
+                        {it.sku
+                          ? (
+                            <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
+                              {it.name || '—'}
+                            </Link>
+                          )
+                          : <span className="text-gray-700">{it.name || '—'}</span>}
+                      </td>
                       <td className={TDR}>{Number(it.qty).toLocaleString('th-TH')}</td>
                       <td className={TDR}>{it.qty ? fmtMoney(it.amount / it.qty) : '—'}</td>
                       {/* ⚠️ ZORT มีคอลัมน์นี้ (โชว์ 0) แต่คลังเงาไม่ได้เก็บส่วนลดรายบรรทัด

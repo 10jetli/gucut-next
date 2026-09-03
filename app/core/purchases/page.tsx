@@ -189,8 +189,9 @@ export default function CorePurchasesPage() {
                   <tr key={r.number} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
-                    <td className={TD}><span className="text-blue-600">{r.number}</span></td>
-                    <td className={TD}><span className="text-blue-600">{r.vendor || '—'}</span></td>
+                    {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
+                    <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
+                    <td className={TD}><span className="text-gray-800">{r.vendor || '—'}</span></td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}>
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>

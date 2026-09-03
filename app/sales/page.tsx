@@ -6,6 +6,7 @@
 //    ตัวเลขชุดเดียวกับที่ /core/sales ใช้ จึงเทียบกันได้ตรง ๆ ไม่ใช่คนละแหล่ง
 // รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน)
 import { useEffect, useState, useCallback } from 'react'
+import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
@@ -390,7 +391,11 @@ export default function SalesReportPage() {
                         return (
                           <tr key={p.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                             <td className={`${TD} text-blue-600 whitespace-nowrap`}>{p.sku}</td>
-                            <td className={TD}><span className="text-blue-600">{p.name}</span></td>
+                            <td className={TD}>
+                              <Link href={`/core/stock/${encodeURIComponent(p.sku)}`} className="text-blue-600 hover:underline">
+                                {p.name}
+                              </Link>
+                            </td>
                             <td className={TDR}>{fmtNum(p.qty)}</td>
                             {/* ⚠️ ไม่มียอดเงินจริงให้แสดงขีด ห้ามคูณ qty × ราคาขาย ซึ่งเป็นการเดา */}
                             <td className={TDR}>{amount !== null ? fmtMoney(amount) : <span className="text-gray-300">—</span>}</td>

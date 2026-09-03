@@ -275,7 +275,8 @@ export default function CoreCategoriesPage() {
                 {rows.map((r) => (
                   <tr key={r.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={TD}>
-                      <span className="text-blue-600">{r.name}</span>
+                      {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
+                      <span className="text-gray-800">{r.name}</span>
                       {/* ⚠️ หมวดที่ยัง "เดาจากชื่อสินค้า" ต้องดูออก — ไม่งั้นเข้าใจว่าทุกหมวดมาจาก ZORT */}
                       {r.zort === false && (
                         <span className="ml-1.5 text-[10.5px] text-gray-600 bg-gray-100 rounded px-1.5 py-0.5">

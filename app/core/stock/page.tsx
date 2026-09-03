@@ -308,7 +308,12 @@ export default function CoreStockPage() {
                           )
                           : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0" />}
                         <span className="min-w-0">
-                      <span className="text-blue-600">{r.name || '—'}</span>
+                      {/* 🔴 เคยเป็น span สีฟ้าที่กดไม่ได้ — เจ้าของร้านกดจากมือถือ 5 จุดแล้วแจ้งว่า
+                          "กดเข้าสินค้าไม่ได้เลย" · **สีฟ้าในตาราง = สัญญาว่ากดได้**
+                          แก้โดยทำหน้าจริงขึ้นมา ไม่ใช่ถอดสีฟ้าออก (3 ก.ย. 2569) */}
+                      <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                        {r.name || '—'}
+                      </Link>
                       {r.service && (
                         // ติดป้ายเฉพาะตอนแสดงบริการด้วย จะได้รู้ทันทีว่าทำไมแถวนี้ติดลบ
                         <span className="ml-1.5 text-[10.5px] font-semibold text-gray-600 bg-gray-100 rounded px-1 py-0.5">

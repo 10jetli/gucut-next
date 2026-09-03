@@ -203,7 +203,7 @@ export default function CoreTransfersPage() {
                   <tr key={`${r.number}-${i}`} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(r.transferdate)}</td>
-                    <td className={TD}><span className="text-blue-600">{r.number}</span></td>
+                    <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
                     <td className={`${TD} text-gray-700`}>{typeTh(r.transferType)}</td>
                     <td className={TD}>{wh(r.fromwarehousecode)}</td>
                     <td className={TD}>{wh(r.towarehousecode)}</td>

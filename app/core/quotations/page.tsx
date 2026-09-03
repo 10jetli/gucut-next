@@ -146,7 +146,7 @@ export default function QuotationsPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className={TD}><span className="text-blue-600 font-medium">{r.number}</span></td>
+                    <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
                     <td className={`${TD} max-w-[220px] truncate`} title={r.phone || ''}>
                       {r.customer || <span className="text-gray-300">-</span>}
                     </td>

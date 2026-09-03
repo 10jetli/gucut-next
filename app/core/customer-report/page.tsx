@@ -199,7 +199,8 @@ export default function CoreCustomersPage() {
                   <tr key={p.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={`${TD} text-gray-400`}>{page * PER_PAGE + i + 1}</td>
                     <td className={TD}>
-                      <span className="text-blue-600 font-medium">{p.name}</span>
+                      {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
+                      <span className="text-gray-900 font-medium">{p.name}</span>
                       {p.name === NO_NAME && (
                         <span className="ml-1.5 text-[11px] text-gray-400">(หลายคนรวมกัน)</span>
                       )}

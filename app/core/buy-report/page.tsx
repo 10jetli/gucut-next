@@ -11,6 +11,7 @@
 // ⚠️ **"ไม่มียอดซื้อในช่วงนี้" ≠ "ร้านไม่เคยซื้อของ"**
 //    ZORT เองก็ขึ้น "ไม่มียอดซื้อ" ในช่วง 3 เดือนล่าสุด เพราะใบซื้อทั้ง 32 ใบเก่ากว่านั้น
 //    ถ้าจอเงียบ ๆ ว่าง คนอ่านจะสรุปผิดทันที ⇒ ต้องบอกว่ามีกี่ใบและใบล่าสุดเมื่อไหร่
+import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -318,7 +319,9 @@ export default function BuyReportPage() {
                     <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                       <td className={`${TD} text-blue-600 whitespace-nowrap`}>{r.sku}</td>
                       <td className={TD}>
-                        <span className="text-blue-600">{r.name || '—'}</span>
+                        <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                          {r.name || '—'}
+                        </Link>
                         {r.lastDate && (
                           <span className="block text-[11px] text-gray-400">
                             ซื้อล่าสุด {thaiDate(r.lastDate)}{r.orders ? ` · ${fmtNum(r.orders)} ใบ` : ''}

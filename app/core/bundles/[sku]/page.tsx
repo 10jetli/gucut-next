@@ -149,7 +149,11 @@ export default function BundleDetailPage() {
                         {it.sku}
                       </Link>
                     </td>
-                    <td className={TD}><span className="text-blue-600">{it.name || '—'}</span></td>
+                    <td className={TD}>
+                      <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
+                        {it.name || '—'}
+                      </Link>
+                    </td>
                     <td className={TDR}>{fmtNum(it.qty)}</td>
                   </tr>
                 ))}

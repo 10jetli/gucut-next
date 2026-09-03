@@ -134,7 +134,7 @@ export default function CoreBranchesPage() {
                     <tr key={w.code} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={`${TD} text-gray-700 font-medium whitespace-nowrap`}>{w.code}</td>
-                      <td className={TD}><span className="text-blue-600">{w.name || w.code}</span></td>
+                      <td className={TD}><span className="text-gray-800">{w.name || w.code}</span></td>
                       <td className={TD}>
                         <span className="text-gray-600">ทั่วไป</span>
                         {/* ⚠️ ธงนี้มาจากเซิร์ฟเวอร์ ไม่ได้เดาจากรหัส — โกดังเปิดบิลขายไม่ได้ */}

@@ -167,7 +167,7 @@ export default function CorePurchasesPage() {
                 {shown.map((o, i) => (
                   <tr key={o.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={`${TD} text-gray-400`}>{i + 1}</td>
-                    <td className={TD}><span className="text-blue-600">{o.product || '—'}</span></td>
+                    <td className={TD}><span className="text-gray-800">{o.product || '—'}</span></td>
                     <td className={`${TD} text-gray-600 max-w-[190px] truncate`}>{o.factory || '—'}</td>
                     <td className={TDR}>{Number(o.qty || 0).toLocaleString('th-TH')}</td>
                     <td className={`${TDR} text-gray-500`}>{money(o.deposit) ? fmtMoney(money(o.deposit)) : '—'}</td>

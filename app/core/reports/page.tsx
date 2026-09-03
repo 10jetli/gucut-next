@@ -7,6 +7,7 @@
 // ⚠️ จอนี้เคยเป็นรายงาน "ยอดรายเดือน · ช่องทาง · สินค้าขายดี" ซึ่ง **ซ้ำกับจอยอดขาย**
 //    และไม่ตรงกับชื่อเมนู (รายงาน → สินค้า) ⇒ จัดใหม่ตาม ZORT
 //    ของเดิมไม่ได้หาย — การวิเคราะห์ยอดขายอยู่ที่ รายงาน → ยอดขาย (/sales) ครบอยู่แล้ว
+import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -263,7 +264,9 @@ export default function CoreProductReportPage() {
                     <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                       <td className={`${TD} text-blue-600 whitespace-nowrap`}>{r.sku}</td>
                       <td className={TD}>
-                        <span className="text-blue-600">{r.name || '—'}</span>
+                        <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                          {r.name || '—'}
+                        </Link>
                         {r.category && <span className="block text-[11px] text-gray-400">หมวดหมู่: {r.category}</span>}
                       </td>
                       {/* ⚠️ ไม่เคยขายเลย ≠ ขายล่าสุดนานแล้ว — ต้องเขียนต่างกัน

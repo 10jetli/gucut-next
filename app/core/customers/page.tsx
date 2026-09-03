@@ -213,7 +213,8 @@ export default function CoreContactsPage() {
                       <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                       <td className={`${TD} whitespace-nowrap`}>{r.code || DASH}</td>
                       <td className={TD}>
-                        <span className="text-blue-600">{r.name || DASH}</span>
+                        {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
+                        <span className="text-gray-800">{r.name || DASH}</span>
                         {/* ZORT ต่อท้ายชื่อสาขาในวงเล็บ — ค่าที่ได้มาบางแถวเป็นรหัสดิบ ("1")
                             แสดงตามที่ต้นทางให้มา ไม่แต่งเอง แล้วอธิบายไว้ท้ายตาราง */}
                         {r.branchName && <span className="text-gray-400"> ({r.branchName})</span>}
