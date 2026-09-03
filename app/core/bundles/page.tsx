@@ -21,7 +21,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState,
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
 
 interface Row {
@@ -33,6 +33,7 @@ interface Row {
   active?: boolean
   unit?: string
 }
+interface BundleItem { line?: number; sku: string; name: string; qty: number }
 interface Resp {
   skip?: string
   total: number
@@ -40,6 +41,10 @@ interface Resp {
   inactive?: number
   negative?: number
   note?: string
+  /** เก็บรายการในชุดครั้งเดียวเมื่อไหร่ — ต้องโชว์เสมอ เพราะไม่มีการซิงก์อัตโนมัติ */
+  collectedAt?: string
+  bundlesWithItems?: number
+  lines?: number
   limit?: number
   offset?: number
   rows: Row[]
@@ -65,6 +70,24 @@ export default function CoreBundlesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const imgOf = useSkuImages()
+  // ส่วนประกอบในชุด — โหลดตอนกดกางเท่านั้น (360 ชุดถ้าโหลดหมดตั้งแต่แรกคือเปล่าประโยชน์)
+  const [openSku, setOpenSku] = useState<string | null>(null)
+  const [items, setItems] = useState<Record<string, BundleItem[] | 'loading' | 'error'>>({})
+
+  const toggleItems = useCallback(async (sku: string) => {
+    if (openSku === sku) { setOpenSku(null); return }
+    setOpenSku(sku)
+    if (items[sku] && items[sku] !== 'error') return
+    setItems((m) => ({ ...m, [sku]: 'loading' }))
+    try {
+      const res = await fetch(`/api/web/core?list=bundleitems&sku=${encodeURIComponent(sku)}`)
+      const d = await res.json()
+      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      setItems((m) => ({ ...m, [sku]: Array.isArray(d?.rows) ? d.rows : [] }))
+    } catch {
+      setItems((m) => ({ ...m, [sku]: 'error' }))
+    }
+  }, [openSku, items])
 
   const load = useCallback(async (off = 0) => {
     setLoading(true)
@@ -128,14 +151,14 @@ export default function CoreBundlesPage() {
 
       {data && !data.skip && (
         <>
-          {/* 🔴 ข้อความนี้ห้ามถอด — เป็นข้อจำกัดที่กระทบความถูกต้องของสต็อก ไม่ใช่แค่ช่องว่าง */}
+          {/* 🔴 ข้อความนี้ห้ามถอด — ตอนนี้เรารู้ส่วนประกอบแล้ว แต่เป็นภาพนิ่งครั้งเดียว
+              ไม่ได้ซิงก์เอง (ZORT ไม่เปิด API ให้ดึง ต้องกดเข้าไปดูทีละชุด)
+              ⇒ ร้านแก้สูตรชุดเมื่อไหร่ **ไม่มีอะไรเตือน** ⇒ ต้องโชว์วันที่เก็บเสมอ */}
           <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
-            ⚠️ <b>เรายังไม่รู้ว่าในแต่ละชุดมีสินค้าอะไรบ้าง</b> — ZORT ไม่เปิดช่องทางให้ดึง
-            รายการส่วนประกอบของชุด (ลองครบทุกทางแล้ว)
-            <br />
-            ⇒ คอลัมน์ <b>ราคาสินค้ารวม</b> คำนวณไม่ได้ (มันคือผลรวมราคาส่วนประกอบ) ·
-            และ<b>การตัดสต็อกตอนขายชุดจะยังไม่ตรงความจริง</b> เพราะขายชุดหนึ่งชุด
-            ต้องตัดของหลายตัว แต่ระบบยังไม่รู้ว่าตัวไหนบ้าง
+            ⚠️ <b>รายการสินค้าในชุดเป็นภาพนิ่งที่เก็บครั้งเดียว</b>
+            {data.collectedAt ? <> เมื่อ <b>{thaiDate(String(data.collectedAt).slice(0, 10))}</b></> : ''}
+            {' '}— ZORT ไม่เปิดช่องทางให้ดึงอัตโนมัติ ต้องกดเข้าไปดูทีละชุด
+            ⇒ <b>ถ้าร้านแก้สูตรชุดที่ ZORT จะไม่มีอะไรเตือน</b> และตัวเลขที่นี่จะเก่าโดยไม่มีใครรู้
             {typeof data.negative === 'number' && data.negative > 0 && (
               <> · ตอนนี้มีชุดที่คงเหลือ<b>ติดลบ {fmtNum(data.negative)} ชุด</b> —
                 ZORT เองก็มีติดลบเหมือนกัน แปลว่าแม้แต่ต้นทางก็ตามไม่ทัน</>
@@ -186,7 +209,14 @@ export default function CoreBundlesPage() {
                               className="w-10 h-10 rounded border border-gray-200 object-cover bg-white shrink-0" />
                           )
                           : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0" />}
-                        <span className="text-blue-600 min-w-0">{r.name || '—'}</span>
+                        <button
+                          onClick={() => toggleItems(r.sku)}
+                          className="text-blue-600 min-w-0 text-left hover:underline"
+                          title="กดดูว่าในชุดมีอะไรบ้าง"
+                        >
+                          {r.name || '—'}
+                          <span className="ml-1.5 text-[11px] text-gray-400">{openSku === r.sku ? '▲' : '▼'}</span>
+                        </button>
                       </span>
                     </td>
                     {/* ⚠️ คำนวณไม่ได้จนกว่าจะรู้ส่วนประกอบ — ห้ามเอาราคาขายมาใส่แทน */}
@@ -212,6 +242,32 @@ export default function CoreBundlesPage() {
                           { label: 'ดูในจอสินค้า', onClick: () => { window.location.href = `/core/stock?q=${encodeURIComponent(r.sku)}` } },
                         ]}
                       />
+                    </td>
+                  </tr>
+                ))}
+                {/* แถวกางส่วนประกอบ — ตามหลังชุดที่กด */}
+                {rows.map((r) => openSku === r.sku && (
+                  <tr key={`${r.sku}-items`} className="bg-gray-50 border-b border-gray-100">
+                    <td colSpan={11} className="px-6 py-3">
+                      <p className="text-[12.5px] font-semibold text-gray-700 mb-1.5">ในชุดนี้มี</p>
+                      {items[r.sku] === 'loading' && <p className="text-[12.5px] text-gray-400">กำลังโหลด…</p>}
+                      {items[r.sku] === 'error' && (
+                        <p className="text-[12.5px] text-red-600">ดึงรายการในชุดไม่ได้ — กดที่ชื่อชุดอีกครั้งเพื่อลองใหม่</p>
+                      )}
+                      {Array.isArray(items[r.sku]) && (items[r.sku] as BundleItem[]).length === 0 && (
+                        <p className="text-[12.5px] text-gray-500">ชุดนี้ยังไม่มีรายการส่วนประกอบที่เก็บไว้</p>
+                      )}
+                      {Array.isArray(items[r.sku]) && (items[r.sku] as BundleItem[]).length > 0 && (
+                        <div className="space-y-1">
+                          {(items[r.sku] as BundleItem[]).map((it, k) => (
+                            <div key={`${it.sku}-${k}`} className="flex flex-wrap items-baseline gap-2 text-[12.5px]">
+                              <span className="font-mono text-gray-500 w-[110px] shrink-0">{it.sku}</span>
+                              <span className="text-gray-800 min-w-0 flex-1">{it.name || '—'}</span>
+                              <span className="text-gray-600">× {fmtNum(it.qty)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}
