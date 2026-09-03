@@ -20,7 +20,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState,
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill,
 } from '@/components/zort'
 
 interface Row {
@@ -184,7 +184,7 @@ export default function CorePurchasesPage() {
                 {rows.map((r, i) => (
                   <tr key={r.number} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap text-gray-500`}>{r.po_date}</td>
+                    <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
                     <td className={TD}><span className="text-blue-600">{r.number}</span></td>
                     <td className={TD}><span className="text-blue-600">{r.vendor || '—'}</span></td>
                     <td className={TDR}>{fmtBaht(r.amount)}</td>
@@ -194,9 +194,7 @@ export default function CorePurchasesPage() {
                       {r.warehouse && <span className="block text-[11px] text-gray-400 mt-0.5">{r.warehouse}</span>}
                     </td>
                     <td className={TD}>
-                      {r.payment_status
-                        ? <Pill tone={/ครบ|paid|Success/i.test(r.payment_status) ? 'green' : 'orange'}>{r.payment_status}</Pill>
-                        : <span className="text-gray-300">—</span>}
+                      <PaymentPill value={r.payment_status} />
                     </td>
                     <td className={`${TD} text-right`}>
                       <RowMenu

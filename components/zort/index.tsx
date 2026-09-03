@@ -226,7 +226,48 @@ export function relDay(day: string): string {
     new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
   if (day === thai(0)) return 'วันนี้'
   if (day === thai(1)) return 'เมื่อวานนี้'
-  return day
+  return thaiDate(day)
+}
+
+const TH_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
+  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+
+/** "2026-03-10" → "10 มี.ค. 2569" — รูปแบบเดียวกับที่ ZORT ใช้ทั้งระบบ
+ *
+ * ⚠️ **ทั้งร้านอ่านปี พ.ศ.** — โชว์ 2026 คู่กับ 2569 ต่างกัน 543 ปี
+ *    คนที่กวาดตาเร็ว ๆ จะอ่านผิดปีทันที และไม่มีอะไรบนจอบอกว่ามันคนละระบบปี
+ * ⚠️ **แปลงที่จอ ไม่ใช่ให้เซิร์ฟเวอร์ส่งวันที่ไทยมาเพิ่มอีกช่อง**
+ *    ค่าดิบต้องใช้เรียงลำดับ/กรอง/ส่งต่อ PEAK ⇒ มีสองช่องเมื่อไหร่ วันหนึ่งจะไม่ตรงกัน
+ *    หลักเดียวกับที่เราทำกับชื่อสถานะอยู่แล้ว: **เก็บดิบ แปลตอนแสดง**
+ * ⚠️ อ่านไม่ออกให้คืนค่าเดิม ห้ามคืนค่าว่าง — วันที่หายทั้งคอลัมน์แย่กว่าวันที่รูปแบบแปลก */
+export function thaiDate(raw?: string | null): string {
+  const s = String(raw ?? '').trim()
+  if (!s) return '—'
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s)
+  if (!m) return s
+  const year = Number(m[1]), mon = Number(m[2]), day = Number(m[3])
+  if (!year || mon < 1 || mon > 12 || !day) return s
+  return `${day} ${TH_MONTH_SHORT[mon - 1]} ${year + 543}`
+}
+
+/* ── สถานะการชำระเงิน ─────────────────────────────────────────────────
+   ⚠️ ค่าที่เซิร์ฟเวอร์ส่งมาเป็นค่าดิบจาก ZORT (Paid/Unpaid/PartialPaid)
+      **เก็บดิบ แปลตอนแสดง** เหมือนชื่อสถานะ — ส่งค่าไทยกลับไปกรองจะกรองไม่ตรง
+   ⚠️ ค่าที่ไม่รู้จักให้แสดงค่าดิบไปตรง ๆ **ห้ามเดาว่าเป็นชำระครบ**
+      เดาผิดข้างนี้ = จอบอกว่าเก็บเงินแล้วทั้งที่ยังไม่ได้เงิน */
+const PAY_TH: Record<string, { text: string; tone: PillTone }> = {
+  Paid: { text: 'ชำระครบ', tone: 'green' },
+  Unpaid: { text: 'ยังไม่ชำระ', tone: 'orange' },
+  PartialPaid: { text: 'ชำระบางส่วน', tone: 'orange' },
+  Partial: { text: 'ชำระบางส่วน', tone: 'orange' },
+  Overpaid: { text: 'ชำระเกิน', tone: 'blue' },
+  Voided: { text: 'ยกเลิก', tone: 'red' },
+}
+export function PaymentPill({ value }: { value?: string | null }) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return <span className="text-gray-300">—</span>
+  const hit = PAY_TH[raw]
+  return <Pill tone={hit?.tone ?? 'gray'}>{hit?.text ?? raw}</Pill>
 }
 
 /* ── เมนูจุดสามจุดท้ายแถว ──────────────────────────────────────────────
