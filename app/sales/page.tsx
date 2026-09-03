@@ -6,11 +6,13 @@
 //    ตัวเลขชุดเดียวกับที่ /core/sales ใช้ จึงเทียบกันได้ตรง ๆ ไม่ใช่คนละแหล่ง
 // รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน)
 import { useEffect, useState, useCallback } from 'react'
-import { fmtBaht, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
-import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import {
+  PageHead, BtnGhost, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag,
+} from '@/components/zort'
 
 interface Report {
   range: { from: string; to: string; days: number }
@@ -59,11 +61,65 @@ async function fetchRange(from: string, to: string, wantRows: boolean) {
   return { rows, total, amount, channels }
 }
 
+// ⚠️ ZORT ตั้งต้นที่ "ย้อนหลัง 3 เดือน" — เราจึงต้องมีช่วงนั้นให้เลือกด้วย
 const PERIODS = [
   { days: 1, label: 'วันนี้' },
-  { days: 7, label: '7 วัน' },
-  { days: 30, label: '30 วัน' },
+  { days: 7, label: 'ย้อนหลัง 7 วัน' },
+  { days: 30, label: 'ย้อนหลัง 1 เดือน' },
+  { days: 90, label: 'ย้อนหลัง 3 เดือน' },
 ]
+
+/** รวมยอดรายวันเป็นถัง วัน/เดือน/ไตรมาส/ปี — ZORT มีปุ่มสี่อันนี้ที่มุมขวาล่างของกราฟ */
+type Bucket = 'day' | 'month' | 'quarter' | 'year'
+const BUCKETS: { id: Bucket; label: string }[] = [
+  { id: 'day', label: 'วัน' },
+  { id: 'month', label: 'เดือน' },
+  { id: 'quarter', label: 'ไตรมาส' },
+  { id: 'year', label: 'ปี' },
+]
+function bucketKey(date: string, b: Bucket): string {
+  const [y, m] = date.split('-')
+  if (b === 'year') return y
+  if (b === 'quarter') return `${y}-Q${Math.floor((Number(m) - 1) / 3) + 1}`
+  if (b === 'month') return `${y}-${m}`
+  return date
+}
+function groupDaily(daily: Report['daily'], b: Bucket): Report['daily'] {
+  if (b === 'day') return daily
+  const map = new Map<string, { sales: number; orders: number }>()
+  for (const d of daily) {
+    const k = bucketKey(d.date, b)
+    const cur = map.get(k) ?? { sales: 0, orders: 0 }
+    cur.sales += d.sales
+    cur.orders += d.orders
+    map.set(k, cur)
+  }
+  return Array.from(map.entries()).map(([date, v]) => ({ date, ...v }))
+}
+
+/** ดาวน์โหลดสรุปยอดขายเป็นไฟล์ Excel เปิดได้ (CSV + BOM ให้ Excel อ่านภาษาไทยออก)
+ *  ⚠️ ZORT มีปุ่มนี้จริง ⇒ ของเราต้องทำงานจริงด้วย ไม่ใช่ปุ่มประดับ */
+function downloadSummary(report: Report) {
+  const lines = [
+    ['ช่วงวันที่', `${report.range.from} ถึง ${report.range.to}`],
+    ['ยอดขายรวม (บาท)', String(report.totals.sales)],
+    ['จำนวนใบขาย', String(report.totals.orders)],
+    ['เฉลี่ยต่อใบ (บาท)', String(Math.round(report.totals.avg))],
+    [],
+    ['วันที่', 'ยอดขาย (บาท)', 'จำนวนใบ'],
+    ...report.daily.map((d) => [d.date, String(d.sales), String(d.orders)]),
+    [],
+    ['ช่องทาง', 'ยอดขาย (บาท)', 'จำนวนใบ'],
+    ...report.channels.map((c) => [c.name, String(c.sales), String(c.orders)]),
+  ]
+  const csv = lines.map((r) => (r ?? []).map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+  const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `สรุปยอดขาย-${report.range.from}-ถึง-${report.range.to}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 // สีประจำช่องทาง — เทียบจากชื่อจริงใน ZORT ไม่ตรงกับใครใช้สีเทา
 function chanColor(name: string): string {
@@ -133,6 +189,8 @@ export default function SalesReportPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshed, setRefreshed] = useState(new Date())
+  const [tab, setTab] = useState<'all' | 'branch' | 'chan' | 'mkt'>('all')
+  const [bucket, setBucket] = useState<Bucket>('day')
 
   const load = useCallback(async (d: number) => {
     setLoading(true)
@@ -198,143 +256,189 @@ export default function SalesReportPage() {
 
   useEffect(() => { load(days) }, [load, days])
 
-  const maxChanSales = Math.max(...(report?.channels.map((c) => c.sales) ?? [0]), 1)
+
+  const grouped = report ? groupDaily(report.daily, bucket) : []
+  // ⚠️ แยก "ช่องทางมาร์เก็ตเพลส" กับ "คลัง/สาขา" ด้วยชื่อช่องทางจริง ไม่ใช่เดาจากลำดับ
+  const MKT = /shopee|lazada|tiktok/i
+  const POSCH = /pos|หน้าร้าน/i
+  const chans = report?.channels ?? []
+  const shown =
+    tab === 'mkt' ? chans.filter((c) => MKT.test(c.name))
+      : tab === 'branch' ? chans.filter((c) => POSCH.test(c.name))
+        : chans
+  const maxShown = Math.max(...shown.map((c) => c.sales), 1)
 
   return (
-    <div className="p-4 md:p-6 space-y-4 md:space-y-5">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <h1 className="text-xl font-bold text-gray-900 tracking-tight">ยอดขายทุกช่องทาง</h1>
-          <span className="text-[11px] text-gray-400" suppressHydrationWarning>
-            Shopee · Lazada · TikTok · GUCUT.com · หน้าร้าน 2 สาขา — อัพเดต {refreshed.toLocaleTimeString('th-TH')}
-          </span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex bg-gray-100 rounded-xl p-1">
-            {PERIODS.map((p) => (
-              <button
-                key={p.days}
-                onClick={() => setDays(p.days)}
-                className={`px-3 py-1.5 text-[12px] font-semibold rounded-lg transition-colors ${
-                  days === p.days ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-700'
-                }`}
-              >
-                {p.label}
-              </button>
-            ))}
-          </div>
-          <button
-            onClick={() => load(days)}
-            disabled={loading}
-            className="text-[12px] md:text-[13px] font-semibold text-blue-600 bg-white border border-gray-200 rounded-xl px-3.5 py-2 shadow-sm flex items-center gap-1.5 hover:bg-blue-50 transition-colors disabled:opacity-50"
-          >
-            <span className={loading ? 'spinner inline-block' : ''}>🔄</span> รีเฟรช
-          </button>
-        </div>
+    <div className="p-4 md:p-6">
+      {/* หัวจอแบบ ZORT: ชื่อจอ → บรรทัดช่วงเวลา → แท็บ (ภาพ 03-รายงานยอดขาย.jpg) */}
+      <PageHead
+        title="ยอดขาย"
+        actions={
+          <BtnGhost onClick={() => load(days)} disabled={loading}>
+            {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
+          </BtnGhost>
+        }
+      />
+
+      <div className="flex flex-wrap items-center gap-3 mb-3">
+        <select
+          value={days}
+          onChange={(e) => setDays(Number(e.target.value))}
+          className="text-[14px] font-semibold text-gray-800 bg-transparent border-0 outline-none cursor-pointer"
+        >
+          {PERIODS.map((p) => <option key={p.days} value={p.days}>{p.label}</option>)}
+        </select>
+        <span className="text-[12.5px] text-gray-400" suppressHydrationWarning>
+          {report ? `${report.range.from} – ${report.range.to}` : ''} · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
+        </span>
       </div>
+
+      <Tabs
+        tabs={[
+          { id: 'all', label: 'ทั้งหมด' },
+          { id: 'branch', label: 'ตามคลัง/สาขา' },
+          { id: 'chan', label: 'ตามช่องทางการขาย' },
+          { id: 'mkt', label: 'ตาม Marketplace' },
+        ]}
+        active={tab}
+        onChange={(id) => setTab(id as typeof tab)}
+      />
 
       {error && <ErrorBox title="ดึงข้อมูลจากคลังของเราไม่สำเร็จ">{error}</ErrorBox>}
       {loading && !report && <LoadingState />}
 
       {report && (
-        <>
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <StatCard
-              icon="💰" tone="green" label={`ยอดขาย (${days === 1 ? 'วันนี้' : `${days} วัน`})`}
-              value={fmtBaht(report.totals.sales)}
-              note={`ช่วงก่อนหน้า ${fmtBaht(report.totals.prevSales)} · ${pct(report.totals.sales, report.totals.prevSales).text}`}
-              noteTone={report.totals.sales >= report.totals.prevSales ? 'green' : 'red'}
-            />
-            <StatCard
-              icon="📦" tone="blue" label="คำสั่งซื้อ"
-              value={fmtNum(report.totals.orders)} unit="orders"
-              note={`ช่วงก่อนหน้า ${fmtNum(report.totals.prevOrders)} · ${pct(report.totals.orders, report.totals.prevOrders).text}`}
-              noteTone={report.totals.orders >= report.totals.prevOrders ? 'green' : 'red'}
-            />
-            <StatCard icon="🧾" tone="purple" label="เฉลี่ยต่อออเดอร์" value={fmtBaht(report.totals.avg)} />
-            <StatCard icon="🛒" tone="orange" label="ช่องทางที่มียอด" value={report.channels.length} unit="ช่องทาง" />
-          </div>
-
-          <div className="grid grid-cols-1 xl:grid-cols-5 gap-4">
-            {/* อันดับช่องทาง */}
-            <Card className="xl:col-span-2">
-              <p className="text-[13px] font-semibold text-gray-700 mb-3">🏪 อันดับช่องทางการขาย</p>
-              {report.channels.length === 0 && <p className="text-[13px] text-gray-400">ไม่มียอดขายในช่วงนี้</p>}
-              <div className="space-y-3">
-                {report.channels.map((c, i) => (
-                  <div key={`${c.name}|${c.store}`}>
-                    <div className="flex items-center justify-between gap-2 mb-1">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span className="text-[11px] font-bold text-gray-400 w-5 shrink-0">#{i + 1}</span>
-                        <span className="text-[13px] font-semibold text-gray-800 truncate">{c.label}</span>
-                        <span className="text-[11px] text-gray-400 shrink-0">{fmtNum(c.orders)} ออเดอร์</span>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[13px] font-bold text-gray-900">{fmtBaht(c.sales)}</span>
-                        <PctBadge cur={c.sales} prev={c.prevSales} />
-                      </div>
-                    </div>
-                    <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                      <div
-                        className={`h-full rounded-full ${chanColor(c.name)}`}
-                        style={{ width: `${Math.max((c.sales / maxChanSales) * 100, 2)}%` }}
-                      />
-                    </div>
+        <div className="space-y-4 mt-4">
+          {tab === 'all' && (
+            <>
+              {/* สองการ์ดคู่กันแบบ ZORT: สรุปยอดขายรวม | รายงาน (กราฟ) */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <Card>
+                  <p className="text-[15px] font-semibold text-gray-900 mb-2">สรุปยอดขายรวม</p>
+                  <div className="flex flex-col items-center justify-center py-8">
+                    <p className="text-[34px] font-semibold text-blue-600 leading-none">
+                      {fmtMoney(report.totals.sales)}
+                    </p>
+                    <p className="text-[12.5px] text-gray-500 mt-2">
+                      {fmtNum(report.totals.orders)} ใบ · เฉลี่ยใบละ {fmtMoney(report.totals.avg)} บาท
+                    </p>
+                    <button
+                      onClick={() => downloadSummary(report)}
+                      className="mt-5 text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50"
+                    >
+                      Download Excel – สรุปยอดขาย
+                    </button>
                   </div>
-                ))}
-              </div>
-            </Card>
+                </Card>
 
-            {/* กราฟแนวโน้ม */}
-            <Card className="xl:col-span-3">
-              <div className="flex items-center justify-between mb-3">
-                <p className="text-[13px] font-semibold text-gray-700">📈 แนวโน้มรายวัน</p>
-                <div className="flex items-center gap-3 text-[11px] text-gray-400">
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-sm bg-blue-500/80 inline-block" /> ยอดขาย</span>
-                  <span className="flex items-center gap-1"><span className="w-2.5 h-0.5 bg-emerald-500 inline-block" /> ออเดอร์</span>
-                </div>
-              </div>
-              {days === 1 ? (
-                <p className="text-[13px] text-gray-400">โหมด &quot;วันนี้&quot; ไม่มีกราฟรายวัน — เลือก 7 หรือ 30 วันเพื่อดูแนวโน้ม</p>
-              ) : (
-                <TrendChart daily={report.daily} />
-              )}
-            </Card>
-          </div>
-
-          {/* สินค้าขายดี */}
-          <Card padded={false} className="overflow-hidden">
-            <div className="px-4 md:px-5 py-3 border-b border-gray-100">
-              <p className="text-[13px] font-semibold text-gray-700">🏆 สินค้าขายดี ({days === 1 ? 'วันนี้' : `${days} วันล่าสุด`})</p>
-            </div>
-            {report.topProducts === null ? (
-              <p className="text-[13px] text-gray-400 p-4 md:p-5">ยังไม่มีข้อมูลสินค้าขายดี</p>
-            ) : report.topProducts.length === 0 ? (
-              <p className="text-[13px] text-gray-400 p-4 md:p-5">ไม่มีข้อมูลสินค้าในช่วงนี้</p>
-            ) : (
-              report.topProducts.map((p, i) => (
-                <div key={p.name} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
-                  <span className={`w-6 h-6 rounded-md flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                    i < 3 ? 'bg-amber-50 text-amber-600' : 'bg-gray-50 text-gray-400'
-                  }`}>{i + 1}</span>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-[13px] font-medium text-gray-800 truncate">{p.name}</p>
-                    {p.sku && <p className="text-[11px] text-gray-400">{p.sku}</p>}
+                <Card>
+                  <p className="text-[15px] font-semibold text-gray-900 mb-2">รายงาน</p>
+                  <TrendChart daily={grouped} />
+                  {/* ปุ่มสลับช่วงมุมขวาล่างของการ์ด — ตำแหน่งเดียวกับ ZORT */}
+                  <div className="flex justify-end gap-1 mt-2">
+                    {BUCKETS.map((b) => (
+                      <button
+                        key={b.id}
+                        onClick={() => setBucket(b.id)}
+                        className={`text-[12px] px-2.5 py-1 rounded ${
+                          bucket === b.id ? 'text-blue-600 font-semibold underline' : 'text-gray-500 hover:text-gray-700'
+                        }`}
+                      >
+                        {b.label}
+                      </button>
+                    ))}
                   </div>
-                  <span className="text-[12px] text-gray-500 shrink-0">×{fmtNum(p.qty)}</span>
-                  <span className="text-[13px] font-bold text-gray-900 w-24 text-right shrink-0">
-                    {typeof p.amount === 'number' ? fmtBaht(p.amount) : '—'}
-                  </span>
-                </div>
-              ))
-            )}
-            {report.topProducts !== null && report.topProducts.some((p) => typeof p.amount !== 'number') && (
-              <p className="text-[11px] text-gray-400 px-4 md:px-5 py-3 border-t border-gray-50">
-                ช่องที่เป็นขีดคือดึงยอดเงินรายสินค้าไม่ได้รอบนี้ — ขีดดีกว่าเลขที่เดาเอง
+                </Card>
+              </div>
+
+              {/* การ์ดยอดขายรายสินค้า — คอลัมน์ตามภาพ ZORT */}
+              <Card padded={false}>
+                <p className="text-[15px] font-semibold text-gray-900 px-4 md:px-5 pt-4">ยอดขาย</p>
+                <TableWrap>
+                  <table className="w-full min-w-[720px]">
+                    <thead className="bg-white border-b border-gray-200">
+                      <tr>
+                        <th className={TH}>รหัสสินค้า</th>
+                        <th className={TH}>สินค้า</th>
+                        <th className={THR}>จำนวน</th>
+                        <th className={THR}>ยอดขาย(บาท)</th>
+                        <th className={THR}>ยอดขาย (%)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(!report.topProducts || report.topProducts.length === 0) && (
+                        <EmptyState cols={5} icon="📊" title="ยังไม่มียอดขายรายสินค้าในช่วงนี้"
+                          detail="ลองขยายช่วงเวลาด้านบน · ตัวเลขนับจากรายการสินค้าในใบขายจริง" />
+                      )}
+                      {(report.topProducts ?? []).map((p) => {
+                        const amount = typeof p.amount === 'number' ? p.amount : null
+                        const share = amount !== null && report.totals.sales
+                          ? (amount / report.totals.sales) * 100 : null
+                        return (
+                          <tr key={p.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                            <td className={`${TD} text-blue-600 whitespace-nowrap`}>{p.sku}</td>
+                            <td className={TD}><span className="text-blue-600">{p.name}</span></td>
+                            <td className={TDR}>{fmtNum(p.qty)}</td>
+                            {/* ⚠️ ไม่มียอดเงินจริงให้แสดงขีด ห้ามคูณ qty × ราคาขาย ซึ่งเป็นการเดา */}
+                            <td className={TDR}>{amount !== null ? fmtMoney(amount) : <span className="text-gray-300">—</span>}</td>
+                            <td className={TDR}>
+                              {share !== null
+                                ? <span className="text-[11.5px] font-semibold text-blue-700 bg-blue-50 rounded px-1.5 py-0.5">{share.toFixed(2)}%</span>
+                                : <span className="text-gray-300">—</span>}
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              </Card>
+            </>
+          )}
+
+          {tab !== 'all' && (
+            <Card padded={false}>
+              <p className="text-[15px] font-semibold text-gray-900 px-4 md:px-5 pt-4">
+                {tab === 'branch' ? 'ยอดขายตามคลัง/สาขา' : tab === 'mkt' ? 'ยอดขายตาม Marketplace' : 'ยอดขายตามช่องทางการขาย'}
               </p>
-            )}
-          </Card>
-        </>
+              <TableWrap>
+                <table className="w-full min-w-[620px]">
+                  <thead className="bg-white border-b border-gray-200">
+                    <tr>
+                      <th className={TH}>ช่องทาง</th>
+                      <th className={THR}>จำนวนใบ</th>
+                      <th className={THR}>ยอดขาย(บาท)</th>
+                      <th className={THR}>เทียบช่วงก่อน</th>
+                      <th className={TH} style={{ width: 160 }}>สัดส่วน</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shown.length === 0 && (
+                      <EmptyState cols={5} icon="🏪" title="ยังไม่มียอดขายในกลุ่มนี้"
+                        detail={tab === 'branch'
+                          ? 'ยอดขายหน้าร้านจะขึ้นเมื่อเปิดบิลผ่านจอขายหน้าร้าน'
+                          : 'ออเดอร์จากมาร์เก็ตเพลสจะเข้ามาในรอบซิงก์ถัดไป'} />
+                    )}
+                    {shown.map((c) => (
+                      <tr key={c.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                        <td className={TD}><ChannelTag name={c.name} /></td>
+                        <td className={TDR}>{fmtNum(c.orders)}</td>
+                        <td className={TDR}>{fmtMoney(c.sales)}</td>
+                        <td className={TDR}><PctBadge cur={c.sales} prev={c.prevSales} /></td>
+                        <td className={TD}>
+                          <span className="block h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <span className={`block h-full rounded-full ${chanColor(c.name)}`}
+                              style={{ width: `${Math.max(2, (c.sales / maxShown) * 100)}%` }} />
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableWrap>
+            </Card>
+          )}
+        </div>
       )}
     </div>
   )
