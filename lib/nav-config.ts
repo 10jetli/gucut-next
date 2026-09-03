@@ -40,7 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/sales', label: 'ยอดขาย' },
       { href: '/core/buy-report', label: 'ยอดซื้อ' },
       { href: '/core/reports', label: 'สินค้า' },
-      soon('customer-report', 'ลูกค้า'),
+      { href: '/core/customer-report', label: 'ลูกค้า' },
       { href: '/ads', label: 'โฆษณา' },
     ],
   },
