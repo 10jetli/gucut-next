@@ -82,7 +82,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/stock', label: 'สินค้า' },
       soon('product-add', 'เพิ่มสินค้า'),
       { href: '/core/bundles', label: 'สินค้าเป็นชุด' },
-      soon('product-variant', 'สินค้าหลากคุณสมบัติ'),
+      { href: '/core/variants', label: 'สินค้าหลากคุณสมบัติ' },
       { href: '/core/categories', label: 'หมวดหมู่' },
       { href: '/core/branches', label: 'คลังสินค้า/สาขา' },
       // ⚠️ "รายการโอนสินค้า" ของ ZORT = **รายการใบโอน** (กระจกจาก ZORT)
