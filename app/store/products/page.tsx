@@ -13,7 +13,7 @@ type ShopifyProduct = {
   priceRangeV2: { minVariantPrice: ShopifyMoney; maxVariantPrice: ShopifyMoney }
 }
 
-function fmtBaht(amount: string) {
+function fmtMoney(amount: string) {
   const n = parseFloat(amount || '0')
   return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
@@ -75,7 +75,7 @@ export default function StoreProductsPage() {
           const st = statusLabel(p.status)
           const min = p.priceRangeV2?.minVariantPrice?.amount ?? '0'
           const max = p.priceRangeV2?.maxVariantPrice?.amount ?? '0'
-          const priceText = min === max ? fmtBaht(min) : `${fmtBaht(min)} - ${fmtBaht(max)}`
+          const priceText = min === max ? fmtMoney(min) : `${fmtMoney(min)} - ${fmtMoney(max)}`
           return (
             <div key={p.id} className="flex items-center gap-3 px-4 py-3 border-b border-gray-50 last:border-0">
               <div className="w-12 h-12 rounded-lg bg-gray-100 overflow-hidden flex-shrink-0">

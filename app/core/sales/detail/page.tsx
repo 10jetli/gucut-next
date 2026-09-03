@@ -14,7 +14,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { fmtBaht } from '@/lib/format'
+import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE } from '@/components/zort'
@@ -230,12 +230,13 @@ function DetailInner() {
                     <th className={TH}>ชื่อสินค้า</th>
                     <th className={THR}>จำนวน</th>
                     <th className={THR}>มูลค่าต่อหน่วย</th>
+                    <th className={THR}>ส่วนลดต่อหน่วย</th>
                     <th className={THR}>รวม</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.length === 0 && (
-                    <tr><td colSpan={6} className="px-3 py-6 text-[13px] text-gray-400 text-center">
+                    <tr><td colSpan={7} className="px-3 py-6 text-[13px] text-gray-400 text-center">
                       ใบนี้ไม่มีรายการสินค้าในคลังเงา
                     </td></tr>
                   )}
@@ -245,8 +246,12 @@ function DetailInner() {
                       <td className={`${TD} whitespace-nowrap`}>{it.sku || '—'}</td>
                       <td className={TD}><span className="text-blue-600">{it.name || '—'}</span></td>
                       <td className={TDR}>{Number(it.qty).toLocaleString('th-TH')}</td>
-                      <td className={TDR}>{it.qty ? fmtBaht(it.amount / it.qty) : '—'}</td>
-                      <td className={TDR}>{fmtBaht(it.amount)}</td>
+                      <td className={TDR}>{it.qty ? fmtMoney(it.amount / it.qty) : '—'}</td>
+                      {/* ⚠️ ZORT มีคอลัมน์นี้ (โชว์ 0) แต่คลังเงาไม่ได้เก็บส่วนลดรายบรรทัด
+                          ⇒ แสดงขีด **ห้ามเขียน 0** เพราะ 0 คือคำกล่าวอ้างว่าไม่มีส่วนลด
+                             ส่วนขีดคือ "ไม่รู้" — ต่างกันตอนมีใบที่ลดจริง */}
+                      <td className={TDR}><span className="text-gray-300">—</span></td>
+                      <td className={TDR}>{fmtMoney(it.amount)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -265,16 +270,20 @@ function DetailInner() {
                   <span className="text-gray-800">{qty.toLocaleString('th-TH')}</span>
                 </div>
                 <div className="flex justify-between py-1.5 text-[12.5px]">
+                  <span className="text-gray-500">ส่วนลด</span>
+                  <span className="text-gray-300">—</span>
+                </div>
+                <div className="flex justify-between py-1.5 text-[12.5px]">
                   <span className="text-gray-500">มูลค่าสุทธิก่อนภาษี</span>
-                  <span className="text-gray-800">{fmtBaht(net)}</span>
+                  <span className="text-gray-800">{fmtMoney(net)}</span>
                 </div>
                 <div className="flex justify-between py-1.5 text-[12.5px]">
                   <span className="text-gray-500">ภาษีมูลค่าเพิ่ม (7%)</span>
-                  <span className="text-gray-800">{fmtBaht(vat)}</span>
+                  <span className="text-gray-800">{fmtMoney(vat)}</span>
                 </div>
                 <div className="flex justify-between py-2.5 px-3 mt-1 bg-gray-100 rounded">
                   <span className="text-[13px] font-bold text-gray-800">มูลค่ารวมสุทธิ</span>
-                  <span className="text-[13px] font-bold text-gray-900">{fmtBaht(total)}</span>
+                  <span className="text-[13px] font-bold text-gray-900">{fmtMoney(total)}</span>
                 </div>
                 <p className="text-[10.5px] text-gray-400 mt-2 leading-relaxed">
                   ⚠️ ยอดก่อนภาษีกับภาษีเป็น<b>ค่าที่คำนวณจากยอดรวม</b> โดยถือว่าราคารวมภาษีแล้ว

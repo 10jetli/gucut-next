@@ -1,7 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import type { Product } from '@/lib/types'
-import { fmtBaht } from '@/lib/format'
+import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import Card from '@/components/ui/Card'
 
@@ -29,7 +29,7 @@ export default function ProductsPage() {
                 <p className="text-[11px] text-gray-400 mt-0.5">SKU: {p.sku}</p>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-[13px] font-bold text-gray-900">{fmtBaht(parseFloat(p.sellprice ?? '0'))}</p>
+                <p className="text-[13px] font-bold text-gray-900">{fmtMoney(parseFloat(p.sellprice ?? '0'))}</p>
                 <p className={`text-[11px] font-semibold mt-0.5 ${
                   parseFloat(p.stock ?? '0') <= 0 ? 'text-red-500' : 'text-emerald-600'
                 }`}>
