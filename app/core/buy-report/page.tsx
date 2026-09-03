@@ -16,7 +16,7 @@ import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate } from '@/components/zort'
+import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, thaiShort } from '@/components/zort'
 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
 interface Resp { total?: number; amount?: number; rows?: Po[] }
@@ -29,11 +29,6 @@ const GRAINS: { id: Grain; label: string }[] = [
   { id: 'year', label: 'ปี' },
 ]
 
-/** วันแบบ ZORT ในหัวจอ: 1/6/2569 (ค.ศ.→พ.ศ.) */
-function thaiShort(iso: string) {
-  const [y, m, d] = iso.split('-').map(Number)
-  return `${d}/${m}/${y + 543}`
-}
 function isoAgo(months: number) {
   const t = new Date()
   t.setMonth(t.getMonth() - months)

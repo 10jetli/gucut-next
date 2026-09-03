@@ -15,7 +15,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState,
-  thaiDate, PaymentPill,
+  thaiDate, thaiShort, PaymentPill,
 } from '@/components/zort'
 
 interface Row {
@@ -233,7 +233,8 @@ export default function CoreSalesPage() {
 
       {data && (
         <div className="text-[12.5px] text-gray-500 mb-3">
-          🔍 ค้นหา: วันที่ {data.from} – {data.to}
+          {/* ZORT เขียนวันแบบ 1/6/2569–2/9/2569 ไม่ใช่ ISO — ตรงนี้คือบรรทัดเดียวกันของเขา */}
+          🔍 ค้นหา: วันที่ {thaiShort(data.from)} – {thaiShort(data.to)}
           {channel && ` · ช่องทาง ${channel}`}
         </div>
       )}
@@ -253,7 +254,7 @@ export default function CoreSalesPage() {
           />
 
           <TableWrap>
-            <table className="w-full min-w-[860px]">
+            <table className="w-full min-w-[1080px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
