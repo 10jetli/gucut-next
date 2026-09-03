@@ -17,13 +17,24 @@ export default function SoonPage({ params }: { params: { key: string } }) {
         </h1>
 
         <div className="mt-4 bg-white border border-gray-200 rounded-md p-5">
-          <span className="inline-block text-[11.5px] font-semibold text-amber-800 bg-amber-100 rounded px-2 py-0.5">
-            ยังไม่ได้ทำ
+          {/* 🔴 "ทำไม่ได้จริง" กับ "ยังไม่ได้ทำ" ต้องแยกป้ายให้ขาด
+              ป้ายเดียวกัน = คนรอของที่ไม่มีวันมา และคนทำงานรอบหน้าไปลองซ้ำที่พิสูจน์แล้วว่าไม่มีทาง */}
+          <span className={`inline-block text-[11.5px] font-semibold rounded px-2 py-0.5 ${
+            info?.impossible ? 'text-red-800 bg-red-100' : 'text-amber-800 bg-amber-100'
+          }`}>
+            {info?.impossible ? 'ทำไม่ได้ — ไม่ใช่ยังไม่ได้ทำ' : 'ยังไม่ได้ทำ'}
           </span>
 
           {info ? (
             <>
               <p className="text-[14px] text-gray-800 mt-3 leading-relaxed">{info.what}</p>
+              {info.impossible && (
+                <p className="text-[13px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
+                  <b>ทำไม่ได้เพราะ:</b> {info.impossible}
+                  <br />
+                  ⇒ ของชุดนี้ต้อง <b>กด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> ทำหลังปิดไม่ได้อีก
+                </p>
+              )}
               {info.meanwhile && (
                 <p className="text-[13px] text-gray-600 mt-3 leading-relaxed">
                   <b>ระหว่างนี้:</b> {info.meanwhile}
