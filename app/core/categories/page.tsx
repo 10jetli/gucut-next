@@ -46,6 +46,12 @@ interface Resp {
   rows?: Row[]
 }
 
+/** เฉดสีจริงของ ZORT — อ่านค่าจาก DOM ของเขา ไม่ได้เทียบด้วยตาจากภาพ
+ *  ⚠️ ใช้ค่าตรง ๆ ไม่ใช้สีสำเร็จของ Tailwind เพราะ emerald-600/red-500 ใกล้แต่ไม่เท่า
+ *     กฎของเจ้าของร้านคือ "เหมือน 100%" — และ **ใกล้ไม่ใช่เหมือน** */
+const ZORT_GREEN = 'rgb(19,175,130)'
+const ZORT_RED = 'rgb(242,87,87)'
+
 export default function CoreCategoriesPage() {
   const router = useRouter()
   const [d, setD] = useState<Resp | null>(null)
@@ -89,9 +95,11 @@ export default function CoreCategoriesPage() {
    *  ⚠️ สีจึงมีความหมาย ไม่ใช่ของตกแต่ง — ทำแดงหมดคือทิ้งข้อมูลไปหนึ่งชั้น */
   const val = (n?: number, same?: boolean) => {
     if (typeof n !== 'number') return <span className="text-gray-300">—</span>
-    return <span className={same ? 'text-emerald-600' : 'text-red-500'}>{fmtMoney(n)}</span>
+    return <span style={{ color: same ? ZORT_GREEN : ZORT_RED }}>{fmtMoney(n)}</span>
   }
 
+  // แถวพิเศษที่ ZORT ไม่มี — สินค้าที่ยังไม่ได้จัดหมวดในระบบเขา
+  const extraBucket = rows.some((r) => r.name?.includes('ยังไม่ได้จัดหมวด'))
   const totalSkus = rows.reduce((a, r) => a + (Number(r.skus) || 0), 0)
   const totalOnhand = rows.reduce((a, r) => a + (Number(onhandOf(r)) || 0), 0)
   const guessed = rows.filter((r) => r.zort === false).length
@@ -100,7 +108,20 @@ export default function CoreCategoriesPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="หมวดหมู่"
-        summary={d ? `จำนวน ${fmtNum(d.categories ?? rows.length)} รายการ` : 'กำลังโหลด…'}
+        summary={
+          d
+            ? (
+              <>
+                {/* ⚠️ **หัวจอต้องนับให้ตรงกับจำนวนแถวที่เห็น** — เดิมเขียน "42 รายการ"
+                    แต่ในตารางมี 43 แถว เพราะมีกลุ่ม "(ยังไม่ได้จัดหมวดใน ZORT)" 139 SKU
+                    ซึ่ง **ถูกต้องที่จะมี** (เป็นของจริงที่ ZORT ซ่อนไว้) แต่คนนับแล้วงง
+                    ⇒ เขียนแยกให้ชัด · คง "42" ไว้เพราะนั่นคือเลขที่คนเอาไปเทียบกับ ZORT */}
+                จำนวน {fmtNum(d.categories ?? 0)} หมวด
+                {extraBucket && <> + 1 กลุ่มที่ยังไม่ได้จัดหมวด</>}
+              </>
+            )
+            : 'กำลังโหลด…'
+        }
         actions={
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
@@ -140,9 +161,14 @@ export default function CoreCategoriesPage() {
               {/* ⚠️ ZORT เขียน "วันที่อัพเดทล่าสุด: 2 ก.ย. 2026 08:33" ตรงนี้ + ปุ่มอัพเดท
                   ของเราไม่มีเวลานั้นให้แสดง เพราะเลขคิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ
                   ⇒ เขียนความจริงแทนการใส่เวลาปลอมให้หน้าตาเหมือน */}
+              {/* ✅ **เจ้าของร้านเลือกเองแล้ว 3 ก.ย. 2569: เก็บปุ่มสลับของเราไว้**
+                  ZORT ตรงนี้เป็น "วันที่อัพเดทล่าสุด + ปุ่มอัพเดท" — เป็นข้อยกเว้นของกฎ
+                  "เหมือน 100%" ที่เจ้าของร้านสั่งเอง (กรณีเดียวกับจอการเงินที่เขาให้เก็บของเราไว้)
+                  ⚠️ ห้ามเปลี่ยนกลับให้เหมือน ZORT โดยไม่ถามเขาก่อน */}
               <span className="block text-[11.5px] text-gray-500 mt-0.5">
                 คิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ — ไม่ใช่ภาพถ่ายสต็อกรายวัน
-                จึงไม่มี &quot;วันที่อัพเดทล่าสุด&quot; แบบ ZORT
+                จึงไม่มี &quot;วันที่อัพเดทล่าสุด&quot; แบบ ZORT · ปุ่มสลับวิธีคิดมูลค่าเป็นของเราเอง
+                (เจ้าของร้านเลือกให้เก็บไว้ เพราะต้นทุนกับราคาขายต่างกันหลักสิบล้าน)
               </span>
             </p>
             <div className="flex items-center gap-1.5 shrink-0">
@@ -213,7 +239,7 @@ export default function CoreCategoriesPage() {
                       )}
                     </td>
                     {/* เลขจำนวน SKU ของ ZORT เป็นสีเขียวเสมอ ไม่ขึ้นกับเงื่อนไขอะไร */}
-                    <td className={`${TDR} text-emerald-600`}>{fmtNum(r.skus)}</td>
+                    <td className={TDR} style={{ color: ZORT_GREEN }}>{fmtNum(r.skus)}</td>
                     <td className={TDR}>{val(onhandOf(r), onhandOf(r) === availOf(r))}</td>
                     <td className={TDR}>{val(availOf(r), onhandOf(r) === availOf(r))}</td>
                     <td className={`${TD} text-right`}>
