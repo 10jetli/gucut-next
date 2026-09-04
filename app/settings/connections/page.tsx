@@ -131,7 +131,15 @@ export default function ConnectionsRegistryPage() {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/web/core?connections=1')
+      /* 🔬 **ส่งต่อ ?budget= จาก URL ไปให้ท่อ — ไว้เปิดดูสถานะ "ตรวจไม่ทัน" ได้ตามต้องการ**
+         (ฝั่งท่อขอ 5 ก.ย. 2569 และเหตุผลเดียวกับที่เขาเปิดพารามิเตอร์นี้ในท่อ)
+         **ทางเดินที่ไม่มีวิธีเรียกดู ก็ตรวจไม่ได้** — ป้ายส้มจะโผล่เฉพาะตอนปลายทางช้าจริง
+         ซึ่งอาจไม่เกิดเลยเป็นเดือน ⇒ ไม่มีใครรู้ว่ามันหน้าตายังไงจนถึงวันที่ของพังจริง
+         เปิด /settings/connections?budget=50 แล้วจะเห็นป้ายส้มทันที
+         ⚠️ ไม่ใส่ = ท่อใช้งบตั้งต้น (18 วิ) เหมือนเดิม · จอไม่ได้ตั้งค่าอะไรเองเลย */
+      const budget = new URLSearchParams(window.location.search).get('budget')
+      const qs = budget && /^\d{2,5}$/.test(budget) ? `&budget=${budget}` : ''
+      const res = await fetch(`/api/web/core?connections=1${qs}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
       setData(j)
@@ -202,12 +210,13 @@ export default function ConnectionsRegistryPage() {
             ✅ เชื่อมแล้ว <b>{data.connected ?? 0}</b> · ⬜ ยังไม่ได้เชื่อม <b>{data.notConnected ?? 0}</b>
             {' '}· ❓ ยังไม่มีตัวตรวจ <b>{data.unchecked ?? 0}</b> · 🚫 เลิกใช้แล้ว <b>{data.retired ?? 0}</b>
             {/* ⚠️ นับแยกจาก "ยังไม่มีตัวตรวจ" เสมอ — ทั้งคู่ได้ connected: null เหมือนกัน
-                แต่ตัวหนึ่งคืองานที่เรายังไม่ได้ทำ อีกตัวคือปลายทางช้าจนตรวจไม่ทัน */}
-            {(data.timedOut ?? 0) > 0 && (
-              <>
-                {' '}· ⏱ <b className="text-orange-800">ตรวจไม่ทัน {data.timedOut}</b>
-              </>
-            )}
+                แต่ตัวหนึ่งคืองานที่เรายังไม่ได้ทำ อีกตัวคือปลายทางช้าจนตรวจไม่ทัน
+                🔴 **โชว์แม้เป็น 0** — กติกาเดียวกับถัง "ไม่รู้จัก" ในการ์ดสถานะออเดอร์
+                   คนต้องรู้ว่ามีกองนี้อยู่ ถึงจะรู้ว่าวันไหนมันไม่เป็นศูนย์
+                   ถ้าโผล่เฉพาะตอนมีปัญหา คนเห็นครั้งแรกจะไม่รู้ว่ามันคืออะไร แล้วก็จะไม่เชื่อ */}
+            {' '}· ⏱ <b className={(data.timedOut ?? 0) > 0 ? 'text-orange-800' : ''}>
+              ตรวจไม่ทัน {data.timedOut ?? 0}
+            </b>
             {typeof data.budgetMs === 'number' && (
               <span className="text-gray-400">
                 {' '}· ตัดจบที่ {(data.budgetMs / 1000).toLocaleString('th-TH')} วินาที
