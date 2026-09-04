@@ -32,6 +32,10 @@ interface Row {
    *  ⚠️ มาจาก**รายการสินค้าจริงบนแพลตฟอร์ม** ไม่ใช่จากประวัติการขาย
    *     เคยขายได้ กับ กำลังลงขายอยู่ เป็นคนละเรื่อง */
   marketplaces?: string[]
+  /** จับคู่รหัสได้ยังไง (`exact` | `base`) + รหัสเต็มบนแพลตฟอร์มถ้าเป็นการเดา
+   *  ⚠️ ต้องโชว์ให้เห็นว่าแถวไหนมาจากการเดา — 98% ตรงตัว แต่ ~1% เดา */
+  marketplacesBy?: Record<string, string>
+  marketplacesFrom?: Record<string, string[]>
 }
 interface Resp {
   skip?: string
@@ -278,8 +282,14 @@ export default function CoreStockPage() {
                   <th className={THR}>ราคาขาย</th>
                   <th className={THR}>คงเหลือ</th>
                   <th className={THR}>พร้อมขาย</th>
-                  {/* ⚠️ ZORT มีคอลัมน์นี้ระหว่าง พร้อมขาย กับ ⋮ — แต่ API ไม่ส่งข้อมูลผูก
-                      สินค้ากับร้านมาร์เก็ตเพลสมาเลย ⇒ มีหัวคอลัมน์ให้ผังตรง ใส่ขีด ไม่เดาข้อมูล */}
+                  {/* 🔴 **เคยเขียนไว้ว่า "API ไม่ส่งข้อมูลผูกสินค้ากับร้านมาร์เก็ตเพลสมาเลย
+                      ⇒ ใส่ขีด" แล้วค้าง** — ท่อส่ง `marketplaces` มาตั้งแต่ 3 ก.ย. 2569
+                      จอรายละเอียดสินค้ากับจอสินค้าชุดวาดโลโก้ได้มาตลอด **แต่จอนี้ยังขีดตายอยู่**
+                      ⇒ เจ้าของร้านเปิดจอนี้แล้วเห็นขีด เลยถามว่า "เชื่อมต่อยัง"
+                         ทั้งที่ต่อแล้วและข้อมูลมาถึงหน้าจอแล้ว (4 ก.ย. 2569)
+                      ⚠️ **บทเรียน: ข้อความค้างที่แย่ที่สุดคือข้อความที่กลายเป็นโค้ดไปแล้ว**
+                         คอมเมนต์ผิดคนอ่านโค้ดเข้าใจผิด · แต่อันนี้กลายเป็น `—` ตายตัวบนจอ
+                         ไม่มีใครเห็นว่ามันไม่ได้อ่านข้อมูลเลย เพราะขีดกับ "ไม่ได้ลงขาย" หน้าตาเหมือนกัน */}
                   <th className={TH}>Marketplace</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
@@ -356,7 +366,9 @@ export default function CoreStockPage() {
                         ? <Num v={r.available} />
                         : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className={TD}><span className="text-gray-300">—</span></td>
+                    <td className={TD}>
+                      <MarketLogos list={r.marketplaces} by={r.marketplacesBy} from={r.marketplacesFrom} />
+                    </td>
                     <td className={`${TD} text-right`}>
                       {/* เมนูชุดเดียวกับปุ่ม "คำสั่ง ▾" ในหน้ารายละเอียด — อยู่ที่ lib/product-menu.ts */}
                       <RowMenu items={productMenuItems(r.sku, (href) => { window.location.href = href })} />

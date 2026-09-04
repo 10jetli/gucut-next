@@ -28,6 +28,9 @@ interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
   buy?: number | null; available?: number | null; unit?: string | null
   service?: boolean; active?: boolean | null; marketplaces?: string[]
+  /** จับคู่รหัสได้ยังไง (`exact` | `base`) + รหัสเต็มบนแพลตฟอร์มถ้าเป็นการเดา */
+  marketplacesBy?: Record<string, string>
+  marketplacesFrom?: Record<string, string[]>
   /** น้ำหนักหน่วยกรัม — **null = ยังไม่รู้ · 0 = ของไม่มีน้ำหนัก** คนละเรื่องกัน
    *  ทั้งคลังมีน้ำหนักจริงแค่ 669 จาก 2,898 ตัว (23%) ⇒ ส่วนใหญ่ต้องขึ้น "—" */
   weight?: number | null
@@ -460,7 +463,7 @@ export default function ProductDetailPage() {
                 </div>
                 <div>
                   <p className="text-[12px] text-gray-500">ลงขายที่</p>
-                  <div className="text-[15px]"><MarketLogos list={row.marketplaces} /></div>
+                  <div className="text-[15px]"><MarketLogos list={row.marketplaces} by={row.marketplacesBy} from={row.marketplacesFrom} /></div>
                 </div>
               </div>
             </div>

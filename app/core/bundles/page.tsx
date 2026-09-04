@@ -38,6 +38,10 @@ interface Row {
   itemCount?: number
   /** ช่องทางที่ชุดนี้ลงขายอยู่จริง — ZORT โชว์โลโก้ตรงคอลัมน์ Marketplace */
   marketplaces?: string[]
+  /** จับคู่รหัสได้ยังไง (`exact` | `base`) + รหัสเต็มบนแพลตฟอร์มถ้าเป็นการเดา
+   *  ⚠️ ต้องโชว์ให้เห็นว่าแถวไหนมาจากการเดา — 98% ตรงตัว แต่ ~1% เดา */
+  marketplacesBy?: Record<string, string>
+  marketplacesFrom?: Record<string, string[]>
 }
 interface BundleItem { line?: number; sku: string; name: string; qty: number }
 interface Resp {
@@ -273,7 +277,7 @@ export default function CoreBundlesPage() {
                     {/* ⚠️ ZORT โชว์ไอคอนร้านมาร์เก็ตเพลสตรงนี้ แต่ **API ไม่ส่งข้อมูลนี้มาเลย**
                         (Bundle/GetBundles ไม่มีช่อง marketplace) ⇒ มีหัวคอลัมน์ให้ผังตรง
                         แต่ใส่ขีด และเขียนเหตุผลไว้ใต้ตาราง — เหมือนที่ทำกับมูลค่ารายคลัง */}
-                    <td className={TD}><MarketLogos list={r.marketplaces} /></td>
+                    <td className={TD}><MarketLogos list={r.marketplaces} by={r.marketplacesBy} from={r.marketplacesFrom} /></td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[

@@ -423,19 +423,44 @@ export function CarrierMark({ name }: { name?: string | null }) {
   )
 }
 
-export function MarketLogos({ list }: { list?: string[] | null }) {
+export function MarketLogos(
+  { list, by, from }: {
+    list?: string[] | null
+    /** จับคู่รหัสได้ยังไง — `exact` = รหัสตรงตัว · `base` = **เดารหัสฐานจากรหัสตัวเลือก** */
+    by?: Record<string, string> | null
+    /** ถ้าเดา: รหัสเต็มบนแพลตฟอร์มที่ตัดมา — ไล่กลับได้ในคลิกเดียว */
+    from?: Record<string, string[]> | null
+  },
+) {
   if (!Array.isArray(list) || list.length === 0) return <span className="text-gray-300">—</span>
   return (
     <span className="flex items-center gap-1">
       {list.map((name) => {
-        const hit = MARKET_LOGO[String(name).toLowerCase()]
-        return hit
-          ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img key={name} src={hit.src} alt={hit.label} title={hit.label} width={16} height={16}
-              className="w-4 h-4 rounded-[3px] object-contain" />
-          )
-          : <span key={name} className="text-[10.5px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{name}</span>
+        const k = String(name).toLowerCase()
+        const hit = MARKET_LOGO[k]
+        /* 🔴 **โลโก้ที่มาจากการเดาต้องดูออกว่าเดา**
+           98% จับคู่ด้วยรหัสตรงตัว · อีก ~1% เดารหัสฐานจากรหัสตัวเลือก (00073-11.8-KK → 00073)
+           วัดแล้วเดาถูกทุกตัวเท่าที่ตรวจ **แต่ "ถูกตอนนี้" ไม่เท่ากับ "ตรวจไม่ได้"**
+           ⇒ ติดจุดส้มมุมบน แล้วชี้ค้างเห็นรหัสเต็มที่ตัดมา
+           เกณฑ์ที่ตกลงกัน: การตีความทำได้ แต่ **ต้องพาไปดูของดิบได้จากจอที่คนใช้จริง** */
+        const guessed = by?.[k] === 'base'
+        const raw = from?.[k]
+        const tip = guessed
+          ? `${hit?.label ?? name} — จับคู่จากการเดารหัสฐาน\nรหัสบนแพลตฟอร์ม: ${(raw ?? []).join(' · ') || 'ไม่ทราบ'}`
+          : (hit?.label ?? name)
+        return (
+          <span key={name} className="relative inline-flex shrink-0" title={tip}>
+            {hit
+              // eslint-disable-next-line @next/next/no-img-element
+              ? <img src={hit.src} alt={hit.label} width={16} height={16}
+                  className="w-4 h-4 rounded-[3px] object-contain" />
+              : <span className="text-[10.5px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{name}</span>}
+            {guessed && (
+              <span aria-label="จับคู่จากการเดารหัสฐาน"
+                className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 ring-1 ring-white" />
+            )}
+          </span>
+        )
       })}
     </span>
   )
