@@ -15,7 +15,7 @@ import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
-  PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState,
+  PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
 
 interface Warehouse {
@@ -23,6 +23,8 @@ interface Warehouse {
   /** มูลค่าสินค้าคงเหลือของคลังนั้น — ท่อยังไม่ส่งมา (ZORT ไม่เปิดให้ดึงสต็อกแยกคลัง)
    *  รับไว้ก่อนเพื่อไม่ต้องกลับมาแก้จอ วันที่มีข้อมูล */
   stockValue?: number
+  /** วันที่คลังนั้นเคลื่อนไหวล่าสุด — ท่อยังไม่ส่งมา รับไว้ก่อน */
+  movedAt?: string
 }
 interface ChannelRow { channel: string; orders: number; amount: number }
 
@@ -110,8 +112,11 @@ export default function CoreBranchesPage() {
           <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 text-[12.5px] text-gray-700">
             {/* ⚠️ ZORT มีคอลัมน์มูลค่าสินค้าคงเหลือกับเคลื่อนไหวล่าสุด — เรายังไม่มีข้อมูลสองอย่างนี้
                 เขียนบอกตรงนี้ ดีกว่าปล่อยคอลัมน์ "—" ให้เดาเอาเองว่าคือไม่มีของหรือดึงไม่ได้ */}
-            มูลค่าสินค้าคงเหลือรายคลัง <b>ยังไม่มีข้อมูล</b> — คลังเงาเก็บสต็อกรวมทั้งร้าน
-            ยังไม่ได้แยกตามคลัง (ขอจากฝั่งเซิร์ฟเวอร์ไว้แล้ว)
+            มูลค่าสินค้าคงเหลือรายคลัง กับ เคลื่อนไหวล่าสุด <b>ยังไม่ได้ดึงมา</b> —
+            คลังเงาเก็บสต็อกรวมทั้งร้าน ยังไม่ได้แยกตามคลัง
+            {' '}<b>จอ ZORT มีตัวเลขสองช่องนี้อยู่</b> (ตรวจจากภาพจอจริง 4 ก.ย. 2569)
+            ⇒ เป็นของที่<b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b> · ขอจากฝั่งเซิร์ฟเวอร์ไว้แล้ว
+            ถ้า API ไม่ส่งมาก็คัดมาด้วยมือได้ (มีแค่ 3 คลัง)
           </div>
 
           <TableWrap>
@@ -123,6 +128,10 @@ export default function CoreBranchesPage() {
                   <th className={TH}>ชื่อคลัง/สาขา</th>
                   <th className={TH}>ประเภท</th>
                   <th className={THR}>มูลค่าสินค้าคงเหลือ</th>
+                  {/* ZORT มีคอลัมน์นี้ต่อจากมูลค่า — ของเรายังไม่มีข้อมูล แต่ต้องมีคอลัมน์ให้ผังตรง
+                      ⚠️ ZORT ขึ้นเป็นสีแดงเมื่อคลังนั้นไม่ขยับนาน (ANJ = 13 มี.ค. 2568 สีแดง)
+                         สีเป็นข้อมูล ไม่ใช่การตกแต่ง — วันไหนมีข้อมูลต้องทำสีตามด้วย */}
+                  <th className={TH}>เคลื่อนไหวล่าสุด</th>
                   <th className={THR}>บิล 30 วัน</th>
                   <th className={THR}>ยอดขาย 30 วัน</th>
                   <th className={TH} style={{ width: 40 }}></th>
@@ -130,7 +139,7 @@ export default function CoreBranchesPage() {
               </thead>
               <tbody>
                 {list.length === 0 && (
-                  <EmptyState cols={8} icon="🏬" title={q ? 'ไม่พบคลังที่ค้นหา' : 'ยังไม่มีคลังสินค้า'}
+                  <EmptyState cols={9} icon="🏬" title={q ? 'ไม่พบคลังที่ค้นหา' : 'ยังไม่มีคลังสินค้า'}
                     detail="คลังสินค้าดึงมาจาก ZORT — เพิ่มคลังที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
                 {list.map((w, i) => {
@@ -149,14 +158,22 @@ export default function CoreBranchesPage() {
                           {w.isPos ? 'จุดขาย' : 'โกดัง — เปิดบิลไม่ได้'}
                         </span>
                       </td>
-                      {/* มูลค่าสินค้าคงเหลือรายคลัง — **ZORT ไม่เปิดให้ดึงสต็อกแยกตามคลัง**
-                          (ยิงมาแล้วไม่ผ่านทุกทาง) คลังเงาเก็บสต็อกรวมทั้งร้าน
-                          ⚠️ อ่านจากข้อมูลไว้ก่อน วันไหนมีค่าจะขึ้นเอง — ห้ามเขียนขีดตาย
-                             และขีดต้องบอกเหตุผลตอนชี้ค้าง ไม่งั้นแยกไม่ออกจาก "มูลค่าเป็นศูนย์" */}
+                      {/* 🔴 **แก้คำอธิบายที่เคยผิด (4 ก.ย. 2569)** — เคยเขียนว่า
+                          "ZORT ไม่เปิดให้ดึงสต็อกแยกตามคลัง" ⇒ อ่านแล้วเข้าใจว่า **ทำไม่ได้**
+                          แต่พอเปิดภาพจอจริง (`zort-ui/25-zort-คลังสินค้า-สาขา.jpg`)
+                          **ZORT มีตัวเลขนี้อยู่ครบทั้ง 3 คลัง** (โกดัง 16,456,971.3 · KLD 1,562.32 · ANJ 0)
+                          ⇒ ของจริงคือ **API ไม่ส่งมา** ไม่ใช่ **ZORT ไม่มี** — คนละเรื่องกัน
+                             และแปลว่าคัดตัวเลขมาด้วยมือได้ (ท่าเดียวกับต้นทุนเฉลี่ย 42 หมวด)
+                          ⇒ **นี่คือ ⏳ ยังไม่ได้ทำ ไม่ใช่ ❌ ทำไม่ได้** ห้ามเขียนสลับกันอีก */}
                       <td className={TDR}>
                         {typeof w.stockValue === 'number'
                           ? fmtMoney(w.stockValue)
-                          : <span className="text-gray-300" title="ZORT ไม่เปิดให้ดึงสต็อกแยกตามคลัง — คลังเงาเก็บสต็อกรวมทั้งร้าน จึงแยกรายคลังไม่ได้">—</span>}
+                          : <span className="text-gray-300" title="ยังไม่ได้ดึงมา — จอ ZORT มีตัวเลขนี้อยู่ แต่ API ไม่ส่งค่าแยกรายคลังมา ยังคัดมาด้วยมือได้">—</span>}
+                      </td>
+                      <td className={TD}>
+                        {w.movedAt
+                          ? thaiDate(String(w.movedAt).slice(0, 10))
+                          : <span className="text-gray-300" title="ยังไม่ได้ดึงมา — จอ ZORT มีช่องนี้ แต่ API ไม่ส่งมา">—</span>}
                       </td>
                       <td className={TDR}>{w.isPos ? fmtNum(s.orders) : <span className="text-gray-300">—</span>}</td>
                       <td className={TDR}>{w.isPos ? fmtMoney(s.amount) : <span className="text-gray-300">—</span>}</td>
