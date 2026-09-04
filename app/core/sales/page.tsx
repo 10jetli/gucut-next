@@ -61,6 +61,8 @@ interface ListResp {
   rows: Row[]; byChannel: ChannelRow[]; byStatus: StatusRow[]; channels: string[]
   /** สรุปสถานะจัดส่งเป็นกอง — ท่อแปลรหัสของ 3 แพลตฟอร์มมาให้แล้ว จอไม่ต้องรู้จักรหัสดิบ */
   shipStatusGroups?: ShipGroup[]
+  /** ข้อความบอกขอบเขตของตัวเลขในกอง — จอเอาไปแสดง **และตรวจซ้ำกับ total เสมอ** */
+  shipStatusScope?: string | null
 }
 interface Detail {
   error?: string
@@ -284,7 +286,7 @@ export default function CoreSalesPage() {
           <ShipStatusCard
             groups={data.shipStatusGroups}
             total={data.total}
-            unverified={rows.some((r) => r.shipStatusUnverified)}
+            scope={data.shipStatusScope}
           />
 
           <Tabs
@@ -342,7 +344,30 @@ export default function CoreSalesPage() {
                       )}
                     </td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
-                    <td className={TD}><Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill></td>
+                    <td className={TD}>
+                      <Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill>
+                      {/* ⚠️ **สองสถานะนี้คนละเรื่องกัน ห้ามเอามาแทนกัน**
+                          ป้ายบน = สถานะใบในระบบเรา/ZORT (สำเร็จ · รอ · ยกเลิก)
+                          บรรทัดล่าง = สถานะฝั่งแพลตฟอร์ม (รอจัดส่ง · กำลังส่ง · ส่งถึงแล้ว)
+                          ใบเดียวเป็น "สำเร็จ" ในระบบเรา แต่ยัง "กำลังส่ง" ที่ Shopee ได้พร้อมกัน
+                          ⇒ วางซ้อนกันโดยไม่บอกที่มา = คนอ่านนึกว่าจอขัดกันเอง
+                          คำแปลมาจากท่อล้วน ๆ จอไม่รู้จักรหัสดิบเลย */}
+                      {r.shipStatus && r.shipStatus !== '—' && (
+                        <span
+                          className="block text-[11px] text-gray-500 mt-1"
+                          title={[
+                            `สถานะฝั่งแพลตฟอร์ม${r.shipStatusFrom ? ` (${r.shipStatusFrom})` : ''}`,
+                            r.integrationStatus ? `ค่าดิบ: ${r.integrationStatus}` : '',
+                            r.shipStatusUnverified ? 'คำแปลนี้ยังไม่ได้ยืนยันกับเอกสารทางการ' : '',
+                          ].filter(Boolean).join('\n')}
+                        >
+                          🚚 {r.shipStatus}
+                          {/* จุดส้ม = คำแปลยังไม่ยืนยัน (รหัสตัวเลขของ TikTok)
+                              ต้องมีอะไรบอกสายตา ไม่งั้นคนเชื่อคำแปล TikTok เท่ากับ Shopee */}
+                          {r.shipStatusUnverified && <span className="text-amber-600"> •</span>}
+                        </span>
+                      )}
+                    </td>
                     <td className={TD}>
                       {r.pay_status
                         ? <PaymentPill value={r.pay_status} />
