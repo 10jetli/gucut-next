@@ -24,7 +24,7 @@ export interface Freshness {
 }
 
 /** "2026-09-04 16:19:38" (UTC) → Date · คืน null ถ้าอ่านไม่ออก (ห้ามโยน error ใส่จอ) */
-function parseUtc(s?: string | null): Date | null {
+export function parseUtc(s?: string | null): Date | null {
   const raw = String(s ?? '').trim()
   if (!raw) return null
   const iso = raw.includes('T') ? raw : raw.replace(' ', 'T')
@@ -41,7 +41,8 @@ function thaiClock(d: Date): string {
   return `${hh}:${mm} น.`
 }
 
-function thaiDayTime(d: Date): string {
+/** "04/09 23:19 น." (เวลาไทย) — ใช้ร่วมกับจออื่นได้ เช่นวันหมดอายุ token */
+export function thaiDayTime(d: Date): string {
   const t = new Date(d.getTime() + 7 * 3600e3)
   const dd = String(t.getUTCDate()).padStart(2, '0')
   const mo = String(t.getUTCMonth() + 1).padStart(2, '0')

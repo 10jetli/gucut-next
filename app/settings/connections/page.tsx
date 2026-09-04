@@ -22,6 +22,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState } from '@/components/zort'
+import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 
 interface Conn {
   name: string
@@ -35,6 +36,13 @@ interface Conn {
   spread?: number | null
   /** เวลาที่ใช้ยิงตรวจ — **ช้าไม่ใช่พัง เป็นคนละสถานะ** */
   ms?: number
+  /* ── วันหมดอายุ token (UTC) — **ช่องนี้ยังรอฝั่งท่อส่งมา** (ขอไว้ 4 ก.ย. 2569) ──
+     ทำไมต้องมี: token ของ Lazada อายุ 7 วัน · ต่ออายุอัตโนมัติมีแล้ว (วิ่งตี 3 ครึ่ง)
+     แต่ **วันที่มันหลุดจริง อาการจะเหมือน "API พัง" ทุกประการ** ⇒ คนจะไล่หาผิดที่
+     ⚠️ ตอนนี้เลขวันมาในข้อความ `detail` ("token เหลือ 6 วัน") ซึ่งจอ **ไม่แกะ**
+        แกะตัวเลขจากประโยค = พังเงียบทันทีที่ฝั่งท่อแก้คำ ⇒ รอฟิลด์จริงดีกว่า
+     จอเตรียมช่องไว้แล้ว พอท่อส่งมาก็ขึ้นเอง ไม่ต้องแก้จอ */
+  tokenExpiresAtUtc?: string | null
 }
 interface Resp {
   skip?: string
@@ -61,6 +69,29 @@ const GROUPS: { key: string; label: string; spread?: boolean }[] = [
 ]
 /** ช้ากว่านี้ถือว่า "ช้า" — เกณฑ์เดียวกับหน้าสถานะระบบฝั่งหน้าร้าน */
 const SLOW_MS = 2500
+
+/** วันหมดอายุ token — เตือนแรงขึ้นเมื่อใกล้หมด
+ *  ⚠️ **หมดอายุแล้ว ≠ พัง** — ตัวต่ออายุอัตโนมัติวิ่งตี 3 ครึ่งทุกวัน
+ *     แต่ถ้ามันตายเงียบ token จะหลุดจริง และอาการจะเหมือน "API พัง" ทุกประการ
+ *     ⇒ โชว์วันที่ไว้เสมอ ไม่ต้องรอให้ใกล้หมดถึงค่อยขึ้น */
+function TokenExpiry({ at }: { at?: string | null }) {
+  const d = parseUtc(at)
+  if (!d) return null
+  const hours = Math.round((d.getTime() - Date.now()) / 3600e3)
+  const gone = hours <= 0
+  const soon = hours <= 48
+  return (
+    <span
+      className={`block text-[11px] mt-0.5 ${gone ? 'text-red-700 font-medium' : soon ? 'text-amber-700' : 'text-gray-400'}`}
+      title={'ต่ออายุอัตโนมัติวิ่งทุกวันตี 3 ครึ่ง — เลขนี้บอกว่าถ้าตัวต่ออายุหยุดทำงาน จะเหลือเวลาอีกเท่าไหร่'}
+    >
+      🔑 token {gone
+        ? <b>หมดอายุแล้ว</b>
+        : `เหลือ ${hours < 48 ? `${hours} ชม.` : `${Math.round(hours / 24)} วัน`}`}
+      {' '}· ถึง {thaiDayTime(d)} (เวลาไทย)
+    </span>
+  )
+}
 
 function StatusPill({ c }: { c: Conn }) {
   if (c.retired) {
@@ -197,6 +228,7 @@ export default function ConnectionsRegistryPage() {
                           <td className={TD}>
                             <span className={c.retired ? 'text-gray-500 line-through' : 'text-blue-600'}>{c.name}</span>
                             {c.detail && <span className="block text-[11.5px] text-gray-400">{c.detail}</span>}
+                            <TokenExpiry at={c.tokenExpiresAtUtc} />
                           </td>
                           <td className={TD}>
                             {/* ⚠️ ZORT โชว์ 100% ทุกแถว — ของเราไม่มีระบบกระจายสินค้า
