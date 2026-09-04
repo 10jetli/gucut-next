@@ -37,9 +37,12 @@ function cpc(cost: number, clicks: number) {
 function PlatformCard({ title, logo, color, bgColor, data }: {
   title: string; logo: string; color: string; bgColor: string; data: PlatformData
 }) {
-  const totalImpressions = data.campaigns.reduce((s, c) => s + c.impressions, 0)
-  const totalClicks = data.campaigns.reduce((s, c) => s + c.clicks, 0)
-  const totalCost = data.campaigns.reduce((s, c) => s + c.cost, 0)
+  /* ⚠️ ท่อตอบมาไม่ครบรูปแบบ = จอตายทั้งหน้า (จอกับ API deploy คนละรอบเสมอ)
+     ⇒ กันด้วย Array.isArray ทุกจุดที่วนข้อมูลจากท่อ */
+  const campaigns = Array.isArray(data.campaigns) ? data.campaigns : []
+  const totalImpressions = campaigns.reduce((s, c) => s + c.impressions, 0)
+  const totalClicks = campaigns.reduce((s, c) => s + c.clicks, 0)
+  const totalCost = campaigns.reduce((s, c) => s + c.cost, 0)
   const periodLabel = data.period === 'last_7_days' ? '7 วันหลัง' : '30 วันลวลวรง'
 
   return (
@@ -65,7 +68,7 @@ function PlatformCard({ title, logo, color, bgColor, data }: {
           <p className="text-[10px] text-gray-400">impression</p>
         </div>
       </div>
-      {data.campaigns.map((c, i) => (
+      {campaigns.map((c, i) => (
         <div key={i} className="px-4 py-3 border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/70">
           <p className="text-[12px] font-semibold text-gray-800 truncate">{c.name}</p>
           <div className="flex flex-wrap gap-x-3 mt-1 text-[11px] text-gray-500">
@@ -106,7 +109,10 @@ export default function AdsPage() {
   )
   if (!data) return null
 
-  const totalCost = [...data.google.campaigns, ...data.facebook.campaigns].reduce((s, c) => s + c.cost, 0)
+  const totalCost = [
+    ...(Array.isArray(data.google?.campaigns) ? data.google.campaigns : []),
+    ...(Array.isArray(data.facebook?.campaigns) ? data.facebook.campaigns : []),
+  ].reduce((s, c) => s + c.cost, 0)
 
   return (
     <div className="p-4 space-y-4">

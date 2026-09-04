@@ -25,7 +25,14 @@ interface Item { line?: number; sku: string; name: string; qty: number }
 
 export default function BundleDetailPage() {
   const params = useParams<{ sku: string }>()
-  const sku = decodeURIComponent(String(params?.sku ?? ''))
+  /* 🔴 **decodeURIComponent โยน error ได้ถ้าเจอ % ที่ไม่ใช่รหัส** — และมันอยู่ตอนวาดหน้า
+     ⇒ ลิงก์เสียหนึ่งลิงก์ = **ทั้งหน้าตายเป็นจอขาว** ไม่ใช่แค่ช่องนั้นว่าง
+     รหัสสินค้าของร้านมีทั้งไทยและอักขระพิเศษ (เช่น 01209-22.5T · โซ่-…) ⇒ เกิดได้จริง
+     (จอคนเข้าเว็บเคยตายด้วยเหตุนี้มาแล้ว — ที่นั่นมี safeDecode ตั้งแต่ตอนนั้น) */
+  const sku = (() => {
+    const raw = String(params?.sku ?? '')
+    try { return decodeURIComponent(raw) } catch { return raw }
+  })()
   const [bundle, setBundle] = useState<BundleRow | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [collectedAt, setCollectedAt] = useState('')
