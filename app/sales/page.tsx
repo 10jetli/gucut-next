@@ -35,35 +35,32 @@ interface CoreChan { channel: string; orders: number; amount: number }
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
 
-/** ดึงออเดอร์ทั้งช่วงจากคลังเงา (ทีละหน้า) — คืนแถวทั้งหมด + ยอดรวม + ยอดแยกช่องทาง */
-async function fetchRange(from: string, to: string, wantRows: boolean) {
-  const rows: CoreRow[] = []
-  let total = 0
-  let amount = 0
-  let channels: CoreChan[] = []
-  let page = 0
-  const LIMIT = wantRows ? 200 : 1
-  // 12 หน้า = 2,400 ใบ พอสำหรับช่วง 30 วันของร้านนี้หลายเท่า
-  while (page < 12) {
-    const qs = new URLSearchParams({
-      list: 'orders', from, to, limit: String(LIMIT), offset: String(page * LIMIT),
-    })
-    const res = await fetch(`/api/web/core?${qs}`)
-    const d = await res.json()
-    if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
-    if (d?.skip) throw new Error(d.skip)
-    if (page === 0) {
-      total = Number(d.total ?? 0)
-      amount = Number(d.totalAmount ?? 0)
-      channels = Array.isArray(d.byChannel) ? d.byChannel : []
-    }
-    if (!wantRows) break
-    const got: CoreRow[] = Array.isArray(d.rows) ? d.rows : []
-    rows.push(...got)
-    page++
-    if (got.length < LIMIT || rows.length >= total) break
+/** ดึงยอดรวมของช่วง — **ไม่ดึงแถวออเดอร์แล้ว** (แก้ 5 ก.ย. 2569)
+ *  🔴 เดิมวนดึงทีละ 200 ใบ สูงสุด 12 หน้า = 2,400 ใบ มาบวกเป็นกราฟรายวันเองในเบราว์เซอร์
+ *     ⇒ ช้าโดยไม่จำเป็น และ **ถ้าช่วงไหนเกิน 2,400 ใบ กราฟจะขาดหายเงียบ ๆ**
+ *     (โรคเดียวกับจอการเงินที่เพิ่งแก้ — ค่าที่ต้องเห็นข้อมูลทั้งชุด ต้องให้ฐานคิดให้) */
+async function fetchRange(from: string, to: string) {
+  const qs = new URLSearchParams({ list: 'orders', from, to, limit: '1' })
+  const res = await fetch(`/api/web/core?${qs}`)
+  const d = await res.json()
+  if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+  if (d?.skip) throw new Error(d.skip)
+  return {
+    total: Number(d.total ?? 0),
+    amount: Number(d.totalAmount ?? 0),
+    channels: (Array.isArray(d.byChannel) ? d.byChannel : []) as CoreChan[],
   }
-  return { rows, total, amount, channels }
+}
+
+/** ยอดรายวันจากฐานข้อมูล — GROUP BY วัน ยิงครั้งเดียวได้ทั้งช่วง
+ *  ⚠️ **วันที่ไม่มีออเดอร์จะไม่มีแถวคืนมา** (ท่อเขียนเตือนไว้ในคำตอบเอง)
+ *     ฝั่งกราฟต้องเติมวันว่างเป็น 0 เสมอ ไม่งั้นเส้นลากข้ามวันที่ขายไม่ได้
+ *     แล้วกราฟจะดูเหมือนร้านขายได้ทุกวัน */
+async function fetchDaily(days: number) {
+  const res = await fetch(`/api/web/core?daily=1&days=${days}`)
+  const d = await res.json()
+  if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+  return (Array.isArray(d.days) ? d.days : []) as { day: string; orders: number; sales: number }[]
 }
 
 // ⚠️ ZORT ตั้งต้นที่ "ย้อนหลัง 3 เดือน" — เราจึงต้องมีช่วงนั้นให้เลือกด้วย
@@ -206,23 +203,26 @@ export default function SalesReportPage() {
       const prevTo = thaiDay(d)
       const prevFrom = thaiDay(d * 2 - 1)
 
-      const [cur, prev, best] = await Promise.all([
-        fetchRange(from, to, true),
-        fetchRange(prevFrom, prevTo, false),
+      const [cur, prev, best, daily] = await Promise.all([
+        fetchRange(from, to),
+        fetchRange(prevFrom, prevTo),
         // ยอดขายรายสินค้าพร้อม "ยอดเงินจริง" จาก order_items (ไม่ใช่ qty คูณราคาขาย ซึ่งเป็นการเดา)
         fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=10`)
           .then((r) => r.json())
           .catch(() => null),
+        fetchDaily(d),
       ])
 
-      // ยอดรายวัน — เติมวันที่ไม่มีออเดอร์ให้เป็นศูนย์ ไม่งั้นกราฟกระโดดข้ามวัน
+      // ยอดรายวัน — ฐานรวมมาให้แล้ว จอแค่**เติมวันที่ไม่มีออเดอร์ให้เป็นศูนย์**
+      // ⚠️ ท่อไม่คืนแถวของวันที่ขายไม่ได้ ถ้าไม่เติมเอง เส้นกราฟจะลากข้ามวันนั้น
+      //    แล้วดูเหมือนร้านขายได้ทุกวัน — ซึ่งเป็นการโกหกด้วยการละเว้น
       const byDay = new Map<string, { sales: number; orders: number }>()
       for (let i = d - 1; i >= 0; i--) byDay.set(thaiDay(i), { sales: 0, orders: 0 })
-      for (const o of cur.rows) {
-        const slot = byDay.get(o.order_date)
+      for (const row of daily) {
+        const slot = byDay.get(row.day)
         if (!slot) continue
-        slot.sales += Number(o.amount) || 0
-        slot.orders += 1
+        slot.sales = Number(row.sales) || 0
+        slot.orders = Number(row.orders) || 0
       }
 
       const prevByChan = new Map(prev.channels.map((c) => [c.channel, c.amount]))

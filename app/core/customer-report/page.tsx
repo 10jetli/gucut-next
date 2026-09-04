@@ -17,10 +17,10 @@ import {
 } from '@/components/zort'
 
 interface Row { id: string; channel: string; amount: number; customer: string; order_date: string }
-interface Person { name: string; orders: number; amount: number; last: string; channels: string[] }
+/** ⚠️ ตัดช่อง channels ออกแล้ว — ท่อ bycustomer=1 ยังไม่ส่งช่องทางรายคนมา
+ *  ขอไว้แล้ว · ระหว่างนี้เอาคอลัมน์ออกดีกว่าปล่อยขีดกลางทั้งคอลัมน์ ซึ่งอ่านได้ว่า "ไม่มีช่องทาง" */
+interface Person { name: string; orders: number; amount: number; last: string }
 
-const PAGE_FETCH = 200
-const MAX_PAGES = 12
 const PER_PAGE = 50
 const NO_NAME = 'ไม่ระบุชื่อ'
 
@@ -41,6 +41,8 @@ export default function CoreCustomersPage() {
 
   const [people, setPeople] = useState<Person[]>([])
   const [scanned, setScanned] = useState(0)
+  /** ท่อบอกเองว่านับรวมกี่ร้าน — ห้ามจอเดา */
+  const [scope, setScope] = useState('')
   const [truncated, setTruncated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -50,46 +52,38 @@ export default function CoreCustomersPage() {
     setError('')
     setTruncated(false)
     try {
-      const from = thaiDay(range - 1)
-      const to = thaiDay(0)
-      const all: Row[] = []
-      let total = Infinity
-      let p = 0
-      while (all.length < total && p < MAX_PAGES) {
-        const qs = new URLSearchParams({
-          list: 'orders', from, to, limit: String(PAGE_FETCH), offset: String(p * PAGE_FETCH),
-        })
-        const res = await fetch(`/api/web/core?${qs}`)
-        const d = await res.json()
-        if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
-        if (d?.skip) throw new Error(d.skip)
-        total = Number(d.total ?? 0)
-        const rows: Row[] = Array.isArray(d.rows) ? d.rows : []
-        all.push(...rows)
-        p++
-        if (rows.length < PAGE_FETCH) break
-      }
-      if (all.length < total) setTruncated(true)
+      /* 🔴 **เดิมดึงออเดอร์ทั้งช่วงมาจัดกลุ่มเองในเบราว์เซอร์** (แก้ 5 ก.ย. 2569)
+         สูงสุด 12 หน้า × 200 = 2,400 ใบ · เกินกว่านั้น **อันดับลูกค้าจะผิดเงียบ ๆ**
+         เพราะคนที่ซื้อในใบที่ไม่ได้ดึงมาจะหายไปจากตารางทั้งคน
+         ⇒ ให้ฐาน GROUP BY ชื่อลูกค้าให้ ยิงครั้งเดียวได้ทั้งช่วง
 
-      const map = new Map<string, Person>()
-      for (const o of all) {
-        const name = (o.customer || '').trim() || NO_NAME
-        const cur = map.get(name)
-        if (cur) {
-          cur.orders += 1
-          cur.amount += Number(o.amount) || 0
-          if (o.order_date > cur.last) cur.last = o.order_date
-          if (o.channel && !cur.channels.includes(o.channel)) cur.channels.push(o.channel)
-        } else {
-          map.set(name, {
-            name, orders: 1, amount: Number(o.amount) || 0,
-            last: o.order_date || '', channels: o.channel ? [o.channel] : [],
-          })
-        }
+         ⚠️ **ใบที่ไม่มีชื่อลูกค้า ท่อแยกมาให้ต่างหาก ไม่ปนในตารางอันดับ**
+            ของจริง 90 วัน = 819 ใบ · 325,980 บาท (เกือบทั้งหมดเป็น POS หน้าร้าน)
+            ถ้าปล่อยให้รวมเป็นแถวเดียว มันจะขึ้นเป็น "ลูกค้าอันดับ 1 ซื้อ 819 ใบ"
+            ซึ่งไม่ใช่คน แต่เป็นกองของคนที่ไม่ได้ระบุชื่อ */
+      const res = await fetch(`/api/web/core?bycustomer=1&days=${range}&limit=500`)
+      const d = await res.json()
+      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      if (d?.skip) throw new Error(d.skip)
+      // ตัดที่ limit เมื่อไหร่ต้องบอก — ท่อส่งธงมาเอง จอไม่ต้องเดา
+      setTruncated(d?.truncated === true)
+      setScope(typeof d.store === 'string' ? d.store : '')
+
+      const list: Person[] = (Array.isArray(d.customers) ? d.customers : []).map(
+        (c: { name: string; orders: number; sales: number; lastDay: string }) => ({
+          name: c.name, orders: Number(c.orders) || 0,
+          amount: Number(c.sales) || 0, last: c.lastDay || '',
+        }),
+      )
+      const un = d?.unnamed
+      if (un && Number(un.orders) > 0) {
+        list.push({
+          name: NO_NAME, orders: Number(un.orders) || 0,
+          amount: Number(un.sales) || 0, last: un.lastDay || '',
+        })
       }
-      // Array.from ไม่ใช่ spread — tsconfig ของโปรเจกต์นี้ target ต่ำกว่า es2015
-      setPeople(Array.from(map.values()))
-      setScanned(all.length)
+      setPeople(list)
+      setScanned(list.reduce((n, x) => n + x.orders, 0))
       setDays(range)
       setPage(0)
     } catch (e) {
@@ -126,7 +120,9 @@ export default function CoreCustomersPage() {
           <>
             {summaryLine(people.length, totalAmount)}
             {' | '}
-            <span className="text-gray-400">รวมจากออเดอร์ {scanned.toLocaleString('th-TH')} ใบในคลังของเราเอง</span>
+            <span className="text-gray-400">
+              รวมจากออเดอร์ {scanned.toLocaleString('th-TH')} ใบในคลังของเราเอง{scope ? ` · ${scope}` : ''}
+            </span>
           </>
         }
         actions={
@@ -163,8 +159,8 @@ export default function CoreCustomersPage() {
         <>
           {truncated && (
             <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
-              ⚠️ ออเดอร์ในช่วงนี้เยอะเกินกว่าที่ดึงไหวรอบเดียว — รวมจาก {scanned.toLocaleString('th-TH')} ใบแรกเท่านั้น
-              <b> ตัวเลขยังไม่ครบ</b> ลองเลือกช่วงที่สั้นลง
+              ⚠️ ช่วงนี้มีลูกค้ามากกว่า 500 ราย — ตารางแสดง <b>500 รายที่ยอดสูงสุด</b> เท่านั้น
+              <b> ไม่ใช่ทั้งหมด</b> · ยอดของแต่ละรายที่แสดงถูกต้องครบถ้วน แต่รายที่ยอดน้อยกว่านั้นไม่ได้อยู่ในตาราง
             </div>
           )}
 
@@ -184,7 +180,6 @@ export default function CoreCustomersPage() {
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>ชื่อ</th>
-                  <th className={TH}>ช่องทางที่ซื้อ</th>
                   <th className={THR}>จำนวนใบ</th>
                   <th className={THR}>ยอดรวม</th>
                   <th className={THR}>ซื้อล่าสุด</th>
@@ -205,7 +200,6 @@ export default function CoreCustomersPage() {
                         <span className="ml-1.5 text-[11px] text-gray-400">(หลายคนรวมกัน)</span>
                       )}
                     </td>
-                    <td className={`${TD} text-gray-500 max-w-[220px] truncate`}>{p.channels.join(' · ') || '—'}</td>
                     <td className={TDR}>{p.orders.toLocaleString('th-TH')}</td>
                     <td className={TDR}>{fmtMoney(p.amount)}</td>
                     <td className={`${TDR} text-gray-500`}>{thaiDate(p.last)}</td>
