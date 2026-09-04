@@ -17,6 +17,7 @@ import {
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill,
 } from '@/components/zort'
+import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
 
 interface Row {
   id: string; source: string; number: string; channel: string
@@ -33,6 +34,19 @@ interface Row {
   /** ⚠️ ชื่อจริงจากท่อคือ `pay_status` (Paid · Pending) — คนละอย่างกับ status ของใบ
    *  เคยเดาชื่อไว้ว่า payment_status ถ้าไม่ได้ยิงของจริงเทียบ คอลัมน์จะเป็นขีดตลอดกาลแบบเงียบ ๆ */
   pay_status?: string
+  // ── สถานะฝั่งมาร์เก็ตเพลส (คนละเรื่องกับ status ของใบ) ──
+  /** ค่าดิบจากแพลตฟอร์ม — ส่งมาคู่กับคำแปลเสมอ ไว้ให้คนไล่ปัญหาเห็นของจริง */
+  integrationStatus?: string | null
+  /** คำแปลไทยจากท่อ · **จอห้ามแปลเอง** ค่าดิบของ 3 เจ้าสะกดชนกันได้ */
+  shipStatus?: string | null
+  shipStatusGroup?: string | null
+  shipStatusKnown?: boolean
+  shipStatusFrom?: string
+  /** true = คำแปลนี้ยังไม่ได้ยืนยันกับเอกสารทางการ (รหัสตัวเลขของ TikTok) */
+  shipStatusUnverified?: boolean
+  /** เหตุผลที่ช่องสถานะว่าง — none_expected = ช่องทางนี้ไม่มีใครบอกสถานะ (ปกติ)
+   *  source_empty = ช่องทางนี้ควรมีค่า แต่ใบนี้ต้นทางไม่ส่งมา */
+  blankReason?: 'none_expected' | 'source_empty'
 }
 interface ChannelRow { channel: string; orders: number; amount: number }
 interface StatusRow { status: string; orders: number; amount: number }
@@ -45,6 +59,8 @@ interface ListResp {
   statusUnreliable?: string | null
   limit: number; offset: number
   rows: Row[]; byChannel: ChannelRow[]; byStatus: StatusRow[]; channels: string[]
+  /** สรุปสถานะจัดส่งเป็นกอง — ท่อแปลรหัสของ 3 แพลตฟอร์มมาให้แล้ว จอไม่ต้องรู้จักรหัสดิบ */
+  shipStatusGroups?: ShipGroup[]
 }
 interface Detail {
   error?: string
@@ -262,6 +278,15 @@ export default function CoreSalesPage() {
 
       {data && !data.skip && (
         <>
+          {/* การ์ดสถานะจัดส่ง — วางเหนือแท็บ เพราะเป็นภาพรวมของชุดที่กรองอยู่
+              ⚠️ คนละเรื่องกับแท็บด้านล่าง: แท็บคือ "สถานะใบ" ที่ ZORT ใช้ (สำเร็จ · รอ · ยกเลิก)
+                 การ์ดนี้คือ "สถานะจัดส่ง" ที่มาจากแพลตฟอร์ม ⇒ ใบเดียวมีได้ทั้งสองอย่างพร้อมกัน */}
+          <ShipStatusCard
+            groups={data.shipStatusGroups}
+            total={data.total}
+            unverified={rows.some((r) => r.shipStatusUnverified)}
+          />
+
           <Tabs
             tabs={tabs}
             active={status}
