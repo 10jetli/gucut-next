@@ -22,7 +22,14 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
 interface Resp { total?: number; amount?: number; rows?: Po[] }
 interface ItemRow { sku: string; name?: string; qty?: number; amount?: number; orders?: number; lastDate?: string }
-interface ItemsResp { skus?: number; lines?: number; amount?: number; rows?: ItemRow[] }
+interface ItemsResp {
+  skus?: number; lines?: number; amount?: number; rows?: ItemRow[]
+  /** ⚠️ ท่อส่งธงบอกการตัดมาเองแล้ว (5 ก.ย. 2569) — จอไม่ต้องเดาจากการเทียบตัวเลขอีก
+   *  `truncated` = ยังมีของเหลืออีกนอกเหนือจากที่ส่งมา (คนละเรื่องกับ `limitClamped`
+   *  ซึ่งแปลว่า "ให้น้อยกว่าที่ขอเพราะชนเพดาน") */
+  total?: number; shown?: number; truncated?: boolean
+  limitClamped?: boolean; limitNote?: string
+}
 
 type Grain = 'day' | 'month' | 'quarter' | 'year'
 const GRAINS: { id: Grain; label: string }[] = [
@@ -166,11 +173,14 @@ export default function BuyReportPage() {
     const s2 = itemQ.trim().toLowerCase()
     return !s2 || r.sku.toLowerCase().includes(s2) || (r.name ?? '').toLowerCase().includes(s2)
   })
-  /** 🔴 **ท่อตัดที่ 200 แถวเสมอ ไม่ว่าจะขอเท่าไหร่** — จอนี้เคยขอ `limit=500`
-   *  แล้วเชื่อว่าได้ครบ · ของจริง: สรุปบอก 217 รหัส แต่ตารางมี 200 แถว **ไม่มีอะไรฟ้อง**
-   *  (ท่อไม่ส่ง `applied` และไม่ส่ง `truncated` มา ⇒ จอเดาเองไม่ได้ ต้องเทียบกับ `skus`)
-   *  เจอตอนยิงของจริง 4 ก.ย. 2569 — คลาสเดียวกับ stockcard ที่ตัดใบซื้อตกไป */
-  const itemsCut = Math.max(0, Number(items?.skus ?? 0) - itemAll.length)
+  /** 🔴 **ท่อตัดที่ 200 แถวเสมอ ไม่ว่าจะขอเท่าไหร่** — จอนี้เคยขอ `limit=500` แล้วเชื่อว่าได้ครบ
+   *  ของจริง: สรุปบอก 217 รหัส แต่ตารางมี 200 แถว **ไม่มีอะไรฟ้อง** (เจอตอนยิงจริง 4 ก.ย. 2569)
+   *  ✅ **5 ก.ย. 2569 ท่อส่ง `truncated` + `total`/`shown` มาแล้ว** ⇒ อ่านจากท่อเป็นหลัก
+   *     เก็บวิธีเทียบกับ `skus` ไว้เป็นทางถอยกลับ เผื่อ endpoint เก่าที่ยังไม่มีธง
+   *     ⚠️ ห้ามทิ้งทางถอยกลับ — จอกับท่อ deploy คนละรอบเสมอ */
+  const itemsCut = items?.truncated === true && Number(items?.total) > 0
+    ? Math.max(0, Number(items.total) - Number(items.shown ?? itemAll.length))
+    : Math.max(0, Number(items?.skus ?? 0) - itemAll.length)
   /** ⚠️ ฐานของคอลัมน์ % คือ **ผลรวมของแถวที่แสดงจริง** ไม่ใช่ยอดรวมในบรรทัดสรุป
    *  สองค่านี้ต่างกันเมื่อมีแถวถูกตัด ⇒ ต้องเขียนกำกับ ไม่งั้น % รวมกันไม่ครบ 100 แบบไร้คำอธิบาย */
   const itemsTotal = itemAll.reduce((a, r) => a + (Number(r.amount) || 0), 0)
@@ -360,9 +370,9 @@ export default function BuyReportPage() {
             )}
 
             {/* 🔴 **ห้ามตัดแถวเงียบ** — บรรทัดสรุปข้างบนบอก 217 รหัส แต่ตารางมี 200 แถว
-                ท่อตัดที่ 200 เสมอไม่ว่าจะขอเท่าไหร่ และไม่ส่ง applied/truncated มาบอก
-                ⇒ ต้องเทียบกับ `skus` เอง · บรรทัดสรุปที่ถูก + ตารางที่ไม่ครบ = อ่านแล้วเข้าใจผิด
-                ว่าเห็นครบทุกรหัสแล้ว ซึ่งอันตรายกว่าตัวเลขผิดตรง ๆ เพราะไม่มีอะไรดูขัดตา */}
+                บรรทัดสรุปที่ถูก + ตารางที่ไม่ครบ = อ่านแล้วเข้าใจผิดว่าเห็นครบทุกรหัสแล้ว
+                ซึ่งอันตรายกว่าตัวเลขผิดตรง ๆ เพราะไม่มีอะไรดูขัดตา
+                ✅ ตอนนี้ท่อส่ง `truncated` มาเองแล้ว ⇒ อ่านจากท่อก่อน แล้วค่อยถอยไปเทียบ `skus` */}
             {itemsCut > 0 && (
               <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
                 ตารางนี้แสดง <b>{fmtNum(itemAll.length)}</b> จาก <b>{fmtNum(Number(items?.skus ?? 0))}</b> รหัส
