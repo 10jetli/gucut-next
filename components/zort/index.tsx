@@ -492,6 +492,26 @@ export function MarketLogos(
  *     สิ่งที่ห้ามใช้ตัดสินใจ ไม่ใช่ใต้มัน 50 แถว
  *  🔎 เกณฑ์: **ถ้าต้องเลื่อนจอเพื่อเห็นคำเตือน = วางผิดที่แล้ว**
  */
+/** 🔴 แถบเตือนทั่วไป "ข้อมูลบนจอนี้เชื่อไม่ได้ตอนนี้" — **วางบนหัวจอเท่านั้น**
+ *
+ *  ใช้กับตัวเลขที่จอโชว์อยู่แล้วและหน้าตาเหมือนของจริง (เลขบนแท็บ · ยอดรวม · จำนวนแถว)
+ *  ⚠️ จอ **ไม่รู้จักเนื้อหาของปัญหา** — อ่านข้อความจากท่อล้วน ๆ
+ *     ฝั่งท่อใส่ธงตอนไม่แน่ใจ · ตั้งเป็น null ตอนยืนยันได้ ⇒ **จอหยุดเตือนเอง**
+ *     ห้ามฮาร์ดโค้ดเงื่อนไขลงจอ ไม่งั้นจะเตือนค้างหลังปัญหาหายแล้ว (กฎ nets-expire-silently กลับด้าน)
+ *  🔎 ตำแหน่ง: หัวจอ เหนือตาราง — **ถ้าต้องเลื่อนจอถึงจะเห็น = วางผิดที่** (กฎ warning-placement)
+ */
+export function DataUnreliableBanner(
+  { reason, what = 'ตัวเลขบนจอนี้' }: { reason?: string | null; what?: string },
+) {
+  const msg = String(reason ?? '').trim()
+  if (!msg) return null
+  return (
+    <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+      🔴 <b>{what}เชื่อไม่ได้ตอนนี้</b> — {msg}
+    </div>
+  )
+}
+
 export function MarketUnreliableBanner({ unreliable }: { unreliable?: Record<string, string> | null }) {
   const bad: [string, string][] = Object.entries(unreliable ?? {})
   if (bad.length === 0) return null

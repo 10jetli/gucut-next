@@ -14,7 +14,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState,
+  BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill,
 } from '@/components/zort'
 
@@ -40,6 +40,9 @@ interface ListResp {
   skip?: string
   from: string; to: string
   total: number; totalAmount: number
+  /** ข้อความบอกว่าตัวเลขสถานะเชื่อไม่ได้ตอนนี้ + เหตุผล — null/ว่าง = เชื่อได้
+   *  ⚠️ จอไม่ตัดสินเอง อ่านจากท่อล้วน ๆ (กลไกเดียวกับ marketplacesUnreliable) */
+  statusUnreliable?: string | null
   limit: number; offset: number
   rows: Row[]; byChannel: ChannelRow[]; byStatus: StatusRow[]; channels: string[]
 }
@@ -240,6 +243,10 @@ export default function CoreSalesPage() {
           {channel && ` · ช่องทาง ${channel}`}
         </div>
       )}
+
+      {/* 🔴 เลขบนแท็บมาจากกระจก ซึ่งอาจค้างสถานะเก่า — ฝั่งท่อกำลังตรวจ (4 ก.ย. 2569)
+          จอไม่รู้จักเนื้อหาปัญหา อ่านข้อความจากท่อล้วน ๆ ⇒ ยืนยันเสร็จเมื่อไหร่ จอหยุดเตือนเอง */}
+      <DataUnreliableBanner reason={data?.statusUnreliable} what="ตัวเลขบนแท็บสถานะ" />
 
       {error && <ErrorBox title="ดึงรายการขายไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
