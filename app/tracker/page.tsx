@@ -181,7 +181,17 @@ export default function TrackerPage() {
 
   const advance = async (o: TrackerOrder) => {
     const idx = STATUS_ORDER.indexOf(o.status)
-    if (idx === -1 || idx === STATUS_ORDER.length - 1) return
+    /* 🔴 **ปุ่มที่กดแล้วเงียบ = ปุ่มที่คนกดซ้ำแล้วนึกว่าจอพัง** (แก้ 5 ก.ย. 2569)
+       เดิม `return` เฉย ๆ ทั้งสองกรณี ⇒ คนกดแล้วไม่มีอะไรเกิดขึ้น และไม่รู้ว่าทำไม
+       สองกรณีนี้ยังเป็นคนละเรื่องกันด้วย: ขั้นสุดท้ายแล้ว (ปกติ) กับ สถานะที่จอไม่รู้จัก (ผิดปกติ) */
+    if (idx === -1) {
+      alert(`เลื่อนขั้นไม่ได้ — จอไม่รู้จักสถานะ "${o.status}"\nน่าจะมีสถานะใหม่ในระบบที่จอยังไม่ได้อัปเดต`)
+      return
+    }
+    if (idx === STATUS_ORDER.length - 1) {
+      alert('ใบนี้อยู่ขั้นสุดท้ายแล้ว')
+      return
+    }
     const next = STATUS_ORDER[idx + 1]
     const r = await fetch('/api/tracker', {
       method: 'PUT',

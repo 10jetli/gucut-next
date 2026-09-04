@@ -59,6 +59,7 @@ export default function CoreProductReportPage() {
   const [dead, setDead] = useState<DeadResp | null>(null)
   const [cat, setCat] = useState<CatResp | null>(null)
   const [deadErr, setDeadErr] = useState('')
+  const [catErr, setCatErr] = useState('')
   const [deadDays, setDeadDays] = useState(90)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
@@ -78,7 +79,11 @@ export default function CoreProductReportPage() {
       ])
       if (sRes?.error) throw new Error(sRes.error)
       setStock(sRes)
+      /* 🔴 **ดึงไม่ได้ ≠ ไม่มีข้อมูล** (แก้ 5 ก.ย. 2569 ตอนไล่ตรวจทั้งระบบ)
+         เดิมท่อหมวดหมู่ล้ม ⇒ cat = null ⇒ การ์ดมูลค่าตามต้นทุนเฉลี่ย **หายไปทั้งใบเงียบ ๆ**
+         คนอ่านจะนึกว่าจอไม่มีข้อมูลนั้น ทั้งที่แค่ยิงไม่ผ่านรอบนี้ (โรคเดียวกับ deadstock ที่ข้าง ๆ กันมีตัวบอกแล้ว) */
       setCat(cRes && !cRes.error ? cRes : null)
+      setCatErr(!cRes ? 'ยิงไปที่ท่อหมวดหมู่ไม่สำเร็จ' : (typeof cRes.error === 'string' ? cRes.error : ''))
       setDead(dRes && !dRes.error ? dRes : null)
       setDeadErr(!dRes ? 'ยิงไปที่ท่อสินค้าจมไม่สำเร็จ' : (typeof dRes.error === 'string' ? dRes.error : ''))
     } catch (e) {
@@ -138,6 +143,11 @@ export default function CoreProductReportPage() {
                     = แย่กว่าไม่มีการ์ดนี้เลย (เจ้าของร้านสั่งเอง 3 ก.ย. 2569) */}
                 {/* 🟢 เลขที่ตรงกับ ZORT — ขึ้นก่อนเพราะเป็นตัวที่เอาไปใช้กับบัญชีจริง
                     ⚠️ เป็นค่า "คัดมา" ต้องมีวันที่คัดกำกับเสมอ */}
+                {catErr && (
+                  <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+                    ⚠️ ดึงมูลค่าตามต้นทุนเฉลี่ยไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าไม่มีข้อมูล</b> ({catErr})
+                  </p>
+                )}
                 {typeof cat?.zortTotalValue === 'number' && (
                   <div className="text-center mb-5">
                     <p className="text-[11.5px] text-gray-500">

@@ -168,7 +168,9 @@ export default function DashboardPage() {
         title="ภาพรวมร้าน"
         summary={
           <span suppressHydrationWarning>
-            ตัวเลขจากคลังของเราเอง (ไม่ได้ยิง ZORT) · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
+            {/* ⚠️ ตัวเลขทุกใบบนหน้านี้มาจาก list=orders ซึ่งไม่ได้กรองร้าน ⇒ เป็นของสองร้านรวมกัน */}
+            ตัวเลขจากคลังของเราเอง (ไม่ได้ยิง ZORT) · <b>รวมทั้ง 2 ร้าน</b>
+            {' · '}อัพเดต {refreshed.toLocaleTimeString('th-TH')}
           </span>
         }
         actions={
