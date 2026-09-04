@@ -18,6 +18,7 @@ import {
   thaiDate, thaiShort, PaymentPill,
 } from '@/components/zort'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
+import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
 
 interface Row {
   id: string; source: string; number: string; channel: string
@@ -63,6 +64,8 @@ interface ListResp {
   shipStatusGroups?: ShipGroup[]
   /** ข้อความบอกขอบเขตของตัวเลขในกอง — จอเอาไปแสดง **และตรวจซ้ำกับ total เสมอ** */
   shipStatusScope?: string | null
+  /** อายุข้อมูล — ทุกตัวเลขบนจอนี้มาจากกระจก ไม่ได้ยิง ZORT สด ⇒ ต้องบอกว่าเก่าแค่ไหน */
+  freshness?: Freshness | null
 }
 interface Detail {
   error?: string
@@ -339,6 +342,9 @@ export default function CoreSalesPage() {
 
       {/* 🔴 เลขบนแท็บมาจากกระจก ซึ่งอาจค้างสถานะเก่า — ฝั่งท่อกำลังตรวจ (4 ก.ย. 2569)
           จอไม่รู้จักเนื้อหาปัญหา อ่านข้อความจากท่อล้วน ๆ ⇒ ยืนยันเสร็จเมื่อไหร่ จอหยุดเตือนเอง */}
+      {/* วางไว้เหนือแถบเตือน เพราะ "ข้อมูลเก่า" ต้องรู้ก่อนอ่านเลขทุกตัวบนจอ */}
+      <DataFreshness freshness={data?.freshness} />
+
       <DataUnreliableBanner reason={data?.statusUnreliable} what="ตัวเลขบนแท็บสถานะ" />
 
       {error && <ErrorBox title="ดึงรายการขายไม่ได้">{error}</ErrorBox>}
