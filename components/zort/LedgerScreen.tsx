@@ -16,9 +16,23 @@
 // ⚠️ ปุ่ม "สร้าง…" กับ "นำเข้าไฟล์" พาไปหน้าที่บอกตรง ๆ ว่ายังทำอะไรไม่ได้
 //    ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง
 import Link from 'next/link'
-import { PageHead, TableWrap, TH, THR } from './index'
+import { PageHead, TableWrap, TH, THR, thaiDate } from './index'
 
 export interface LedgerCol { label: string; right?: boolean }
+
+/** วันที่ไปเปิดดูจอ ZORT ของจริงล่าสุด — **แก้ที่นี่ที่เดียวเมื่อไปตรวจใหม่**
+ *  🔴 เดิมเขียนตายตัวว่า "ตรวจเมื่อ 3 ก.ย. 2569 มี 0 รายการ" ฝังในข้อความ
+ *     ⇒ ไม่มีอะไรบังคับให้อัปเดต · อีกสามเดือนจอจะยังยืนยันเลขของวันนั้น
+ *     ⇒ **เป็น stale-state บนหน้าจอ ซึ่งแย่กว่าในคอมเมนต์ เพราะคนใช้เห็นและเอาไปตัดสินใจ**
+ *  ⇒ ตอนนี้จอ **บอกอายุตัวเอง** และ **ประกาศวันหมดอายุของตัวเอง** */
+const CHECKED_AT = '2026-09-03'
+/** เกินกี่วันถือว่าข้อมูลที่คัดมาเก่าเกินจะอ้างอิง */
+const STALE_DAYS = 45
+
+function ageOf(iso: string) {
+  const d = Math.floor((Date.now() - new Date(`${iso}T00:00:00+07:00`).getTime()) / 86400000)
+  return Number.isFinite(d) && d >= 0 ? d : null
+}
 
 export default function LedgerScreen({
   title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, purpose, meanwhile,
@@ -44,13 +58,14 @@ export default function LedgerScreen({
   /** ตอนนี้ร้านทำเรื่องนี้ที่ไหน */
   meanwhile: string
 }) {
+  const age = ageOf(CHECKED_AT)
   return (
     <div className="p-4 md:p-6">
       <PageHead
         title={title}
         // ⚠️ ZORT เขียน "จำนวน 0 รายการ, …0 บาท" — ของเราเขียนแบบนั้นไม่ได้
         //    เพราะเราไม่ได้นับอะไรเลย ต้องบอกว่ายังไม่ได้ต่อ
-        summary={<span>ยังไม่ได้ต่อกับ ZORT — ที่ ZORT ตอนนี้ {sumLabel}</span>}
+        summary={<span>ยังไม่ได้ต่อกับ ZORT — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</span>}
         actions={
           <>
             {withImport && (
@@ -108,13 +123,39 @@ export default function LedgerScreen({
                   {/* 🔴 ประโยคนี้คือหัวใจของจอนี้ — ห้ามถอด
                       ตารางว่างที่ไม่บอกเหตุผล จะถูกอ่านว่า "ร้านไม่มีรายการพวกนี้เลย" */}
                   ตารางว่างเพราะ<b>ยังไม่ได้ดึงข้อมูล</b> ไม่ใช่เพราะร้านไม่มีรายการ ·
-                  ที่ ZORT ตรวจเมื่อ 3 ก.ย. 2569 มี <b>0 รายการ</b> · {meanwhile}
+                  ตอนไปเปิดดูจอ ZORT ของจริงเมื่อ <b>{thaiDate(CHECKED_AT)}</b>
+                  {age != null && <> ({age === 0 ? 'วันนี้' : `${age} วันที่แล้ว`})</>} มี{' '}
+                  <b>{sumLabel}</b> · {meanwhile}
                 </p>
+                {/* 🔴 **ตาข่ายที่ประกาศวันหมดอายุของตัวเอง** — กฎ nets-expire-silently
+                    ตัวเลขที่คัดมาด้วยมือจะเก่าลงทุกวันโดยไม่มีอะไรฟ้อง
+                    ⇒ ให้จอบอกเองว่ามันเก่าเกินจะอ้างอิงแล้ว ดีกว่ารอให้มีคนสังเกต */}
+                {age != null && age > STALE_DAYS && (
+                  <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3 max-w-[520px] mx-auto leading-relaxed">
+                    ⚠️ ตัวเลขข้างบนคัดมาด้วยมือเมื่อ <b>{age} วันที่แล้ว</b> —
+                    เก่าเกินจะเชื่อแล้ว <b>ไปเปิดจอ ZORT ดูอีกครั้ง</b> แล้วแก้ค่า
+                    <code className="mx-1">CHECKED_AT</code> ใน <code>LedgerScreen.tsx</code>
+                  </p>
+                )}
               </td>
             </tr>
           </tbody>
         </table>
       </TableWrap>
+
+      {/* แถบท้ายตารางตามผัง ZORT — ขวามือ "จำนวน N รายการ | จำนวนต่อหน้า [20]"
+          ⚠️ ล็อกไว้ทั้งคู่ เพราะยังไม่มีข้อมูลให้แบ่งหน้า · โชว์ตามผังแต่ไม่แกล้งใช้ได้
+             และ **ห้ามเขียนจำนวนเป็นเลข** เพราะเรายังไม่ได้นับอะไรเลย ศูนย์ของเรา = "ยังไม่รู้" */}
+      <div className="flex flex-wrap items-center justify-end gap-3 mt-3">
+        <span className="text-[12.5px] text-gray-400">ยังไม่ได้ดึงข้อมูล | จำนวนต่อหน้า</span>
+        <select
+          disabled
+          title="ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีข้อมูลให้แบ่งหน้า"
+          className="text-[12.5px] border border-gray-200 rounded px-2 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
+        >
+          <option>20</option>
+        </select>
+      </div>
 
       <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
         ผังจอลอกจาก ZORT ของจริง{!noCreate && <> · ปุ่ม <b>{createLabel}</b></>}
