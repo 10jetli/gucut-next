@@ -147,7 +147,9 @@ export const NAV_ITEMS: NavItem[] = [
     children: [
       // "วางแผนสั่งซื้อซ้ำ" ของ ZORT = ดูว่าอะไรใกล้หมดต้องสั่งเพิ่ม ⇒ ตรงกับระบบสั่งของ
       { href: '/catalog/index.html', label: 'วางแผนสั่งซื้อซ้ำ' },
-      soon('leadtime', 'กลุ่ม Lead Time'),
+      // ⚠️ ทำจอจริงแล้ว (ผังจาก zort-ui/38) — หน้า /core/soon/leadtime **ยังอยู่**
+      //    ปุ่ม "เพิ่มกลุ่มใหม่" ในจอชี้ไปที่นั่น ห้ามลบ
+      { href: '/core/leadtime', label: 'กลุ่ม Lead Time' },
     ],
   },
   { href: '/core', icon: '🌳', label: 'โครงการแก่น' },
