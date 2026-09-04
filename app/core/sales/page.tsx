@@ -103,6 +103,20 @@ const statusTh = (s: string) => STATUS_TH[s] ?? (s || 'ไม่ระบุส�
       ⇒ เตือน 21% ของทุกหน้า = เสียงหอนที่คนเลิกอ่าน แล้ววันที่มันจริงก็ไม่มีใครดู
       เหลือเฉพาะ "ยังไม่ออกจากร้าน" 43 ใบ = 7% · อายุกลาง 10 วัน · เกิน 14 วันถึง 13 ใบ
       **นั่นคือใบที่ระบบเรานับปิดแล้วแต่แพลตฟอร์มยังบอกว่าของยังไม่ออก** — อันนี้ควรเห็น */
+/* 🔴 **ป้ายนี้ถูกหรี่ลงชั่วคราว — 4 ก.ย. 2569 เวลา ~23:00**
+   ฝั่งท่อเจอว่า ZORT ส่งฟิลด์สถานะมา **4 ตัว** ไม่ใช่ 2 และมีตัวที่เรา **ไม่เคยเก็บ**
+   คือ `marketplaceshippingstatus` = สถานะ "การจัดส่ง" ฝั่งแพลตฟอร์ม
+   ส่วน `integration_status` ที่การ์ดกับป้ายนี้ใช้อยู่ = สถานะ "ออเดอร์"
+
+   ⇒ 42 ใบ Lazada ที่ค้าง `confirmed` **อาจส่งไปแล้วก็ได้** เราแค่ดูคนละฟิลด์
+      ถ้าเป็นแบบนั้น ป้ายแรง ๆ ว่า "ยังไม่ได้ส่ง" คือจอโกหก ซึ่งแย่กว่าไม่มีป้าย
+   ⇒ ระหว่างยังตอบไม่ได้ ให้ทุกใบใช้ป้ายอ่อน + เขียนเหตุผลไว้ในคำอธิบาย
+
+   **ปลดเมื่อไหร่**: ฝั่งท่อยืนยันว่า `marketplaceshippingstatus` บอกอะไร
+   แล้วเก็บเข้ากระจก ⇒ ตั้งค่านี้เป็น false (หรือย้ายธงไปอยู่ที่ท่อแบบ statusUnreliable)
+   ⚠️ ถ้าไม่มีใครกลับมาปลด ป้ายจะอ่อนตลอดกาลโดยไม่มีอะไรฟ้อง — ดู nets-expire-silently */
+const SHIP_FIELD_UNSURE = true
+
 const NOT_SHIPPED_YET = ['waiting_pay', 'waiting_confirm', 'waiting_ship']
 const isMismatch = (r: Row) =>
   r.status === 'Success' && !!r.shipStatusGroup && NOT_SHIPPED_YET.includes(r.shipStatusGroup)
@@ -403,7 +417,7 @@ export default function CoreSalesPage() {
                       {isMismatch(r) && (
                         <span
                           className={`block w-fit text-[10.5px] rounded px-1.5 py-0.5 mt-1 ${
-                            r.shipStatusUnverified
+                            r.shipStatusUnverified || SHIP_FIELD_UNSURE
                               ? 'bg-gray-100 text-gray-500'
                               : 'bg-amber-100 text-amber-800 font-medium'
                           }`}
@@ -417,10 +431,15 @@ export default function CoreSalesPage() {
                             })(),
                             r.shipStatusUnverified
                               ? 'คำแปลของแพลตฟอร์มนี้ยังไม่ได้ยืนยัน ⇒ ป้ายนี้จึงเป็นแค่ข้อสังเกต'
-                              : 'ใบนี้ถูกนับว่าปิดแล้ว แต่แพลตฟอร์มยังบอกว่าของยังไม่ออกจากร้าน',
+                              : 'ใบนี้ถูกนับว่าปิดแล้ว แต่สถานะออเดอร์ฝั่งแพลตฟอร์มยังไม่ถึงขั้นจัดส่ง',
+                            SHIP_FIELD_UNSURE
+                              ? 'ค่านี้อ่านจากสถานะ "ออเดอร์" ของแพลตฟอร์ม · ZORT ยังมีฟิลด์สถานะ "การจัดส่ง" อีกตัวที่เรายังไม่ได้เก็บ ⇒ ใบนี้อาจส่งไปแล้วก็ได้ กำลังตรวจอยู่'
+                              : '',
                           ].filter(Boolean).join('\n')}
                         >
-                          {r.shipStatusUnverified ? 'อาจยังไม่ได้ส่ง' : '⚠ ปิดใบแล้วแต่ยังไม่ได้ส่ง'}
+                          {r.shipStatusUnverified || SHIP_FIELD_UNSURE
+                            ? 'อาจยังไม่ได้ส่ง'
+                            : '⚠ ปิดใบแล้วแต่ยังไม่ได้ส่ง'}
                         </span>
                       )}
                     </td>
