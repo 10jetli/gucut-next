@@ -122,7 +122,10 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'การเงิน',
     children: [
       { href: '/core/finance', label: 'ดูภาพรวม' },
-      soon('wallet', 'กระเป๋าเงิน'),
+      /* ⚠️ ไม่ใช่หน้า soon แล้ว — มีจอจริงที่ลอกผังจาก ZORT พร้อมกล่องแดงบอกว่า
+         ทำไมไม่มีข้อมูล (ZORT ไม่เปิด API) · ยังคงจุด soon ไว้ให้เห็นว่ายังใช้งานไม่ได้เต็ม
+         **จุด ◦ ที่นี่แปลว่า "กดได้แต่ยังไม่มีข้อมูล" ไม่ได้แปลว่า "ยังไม่มีหน้า"** */
+      { href: '/core/wallet', label: 'กระเป๋าเงิน', soon: true },
       { href: '/core/other-income', label: 'รายได้อื่น' },
       { href: '/core/other-expense', label: 'รายจ่ายอื่น' },
       { href: '/core/money-transfers', label: 'รายการโอนเงิน' },
