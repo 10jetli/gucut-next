@@ -53,6 +53,8 @@ interface Resp {
    *  ⚠️ "ล่ม" กับ "ยังไม่ได้เชื่อม" คนละเรื่อง — อันหลังเจ้าของร้านกดเองได้เลย */
   marketplacesFailed?: Record<string, string>
   marketplacesNotConnected?: Record<string, string>
+  /** ช่องทางที่ตอบมาแล้วแต่เชื่อไม่ได้ — ข้อมูลขึ้นจอไปแล้วและหน้าตาเหมือนของจริง */
+  marketplacesUnreliable?: Record<string, string>
   marketplacesAt?: string
   /** จำนวนแถวของแท็บที่เลือกอยู่ — ใช้ทำเลขหน้า ห้ามใช้ total ตอนอยู่แท็บ out/low */
   shown?: number
@@ -400,6 +402,7 @@ export default function CoreStockPage() {
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
                 {' '}· <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
+              unreliable={data.marketplacesUnreliable}
               at={data.marketplacesAt} />
                 {/* 🔴 เดิมเขียนเลข 2,898 กับ 226 **ตายตัวในข้อความ** ทั้งที่ท่อส่ง
                     `zortTotal` / `noSkuInZort` มาให้อยู่แล้ว ⇒ ร้านเพิ่มสินค้าเมื่อไหร่

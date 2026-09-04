@@ -483,12 +483,16 @@ export function MarketLogos(
  * ⚠️ Shopify จะไม่มีวันขึ้นเพราะร้านปิดไปแล้ว — เราถามแพลตฟอร์มเอง ไม่ได้ลอกจาก ZORT
  *    (ZORT ยังโชว์โลโก้ Shopify ค้างอยู่ที่ระดับสินค้า แต่ไม่มีในหน้าเชื่อมต่อแล้ว) */
 export function MarketCoverage(
-  { checked, failed, notConnected, at }: {
+  { checked, failed, notConnected, unreliable, at }: {
     checked?: string[] | null
     /** เจ้าที่ยิงแล้วพัง + **เหตุผล** (ท่อส่งมาตั้งแต่ 4 ก.ย. 2569) */
     failed?: Record<string, string> | null
     /** เจ้าที่ยังไม่ได้เชื่อมร้าน + เหตุผล */
     notConnected?: Record<string, string> | null
+    /** 🔴 เจ้าที่ **ตอบมาแล้วแต่เชื่อไม่ได้** + เหตุผล
+     *  ต่างจาก failed/notConnected ตรงที่ **ข้อมูลขึ้นจอไปแล้ว** และหน้าตาเหมือนของจริงทุกประการ
+     *  ⇒ ต้องเตือนแรงกว่า เพราะคนอ่านไม่มีทางรู้ว่าแถวไหนเชื่อได้แถวไหนไม่ได้ */
+    unreliable?: Record<string, string> | null
     /** เวลาที่ถามแพลตฟอร์มล่าสุด — เป็น UTC ต้องบวก 7 ก่อนโชว์ */
     at?: string | null
   },
@@ -498,6 +502,7 @@ export function MarketCoverage(
    *  ของจริง: TikTok ไม่ได้พัง — มันยังไม่เคยถูกกดอนุญาต ซึ่งเป็นงานที่เจ้าของร้านทำได้เลย
    *  เขียนแค่ "เช็คไม่ได้" คนอ่านจะนึกว่าเป็นข้อจำกัดของระบบแล้วเลิกตาม (กฎ ❌ vs ⏳) */
   const why = (k: string) => (failed?.[k] ?? notConnected?.[k] ?? '').trim()
+  const bad: [string, string][] = Object.entries(unreliable ?? {})
   if (list.length === 0) {
     return (
       <>คอลัมน์ <b>Marketplace</b> ยังไม่มีข้อมูล — กำลังต่อจากรายการสินค้าจริงบนแพลตฟอร์ม</>
@@ -521,6 +526,14 @@ export function MarketCoverage(
           </span>
         </>
       )}
+      {/* 🔴 **เชื่อไม่ได้ ≠ เช็คไม่ได้** — อันหลังคือช่องว่างที่มองเห็น
+          อันนี้คือ**ข้อมูลผิดที่อยู่บนจอแล้ว** ⇒ เตือนสีแดง ไม่ใช่สีเหลือง */}
+      {bad.map(([k, reason]) => (
+        <span key={k} className="block text-red-700 mt-1">
+          🔴 <b>ข้อมูลของ {k} เชื่อไม่ได้ตอนนี้</b> — {reason}
+          {' '}<b>อย่าใช้คอลัมน์นี้ตัดสินใจกับ {k} จนกว่าจะแก้เสร็จ</b>
+        </span>
+      ))}
       {missing.length > 0 && (
         <> · <b className="text-amber-700">ยังเช็ค {missing.join(' · ')} ไม่ได้</b> —
           สินค้าที่ไม่มีโลโก้ของเจ้านั้น <b>ไม่ได้แปลว่าไม่ได้ลงขาย</b> แปลว่าเรายังมองไม่เห็น

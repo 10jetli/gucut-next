@@ -58,6 +58,8 @@ interface Resp {
    *  ⚠️ "ล่ม" กับ "ยังไม่ได้เชื่อม" คนละเรื่อง — อันหลังเจ้าของร้านกดเองได้เลย */
   marketplacesFailed?: Record<string, string>
   marketplacesNotConnected?: Record<string, string>
+  /** ช่องทางที่ตอบมาแล้วแต่เชื่อไม่ได้ — ข้อมูลขึ้นจอไปแล้วและหน้าตาเหมือนของจริง */
+  marketplacesUnreliable?: Record<string, string>
   marketplacesAt?: string
   bundlesWithItems?: number
   lines?: number
@@ -309,6 +311,7 @@ export default function CoreBundlesPage() {
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
+              unreliable={data.marketplacesUnreliable}
               at={data.marketplacesAt} />
             {data.note ? ` · ${data.note}` : ''}
           </p>
