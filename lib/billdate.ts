@@ -48,7 +48,11 @@ export async function pdfBillMonth(buf: Buffer): Promise<string | null> {
 // ตรวจว่าเนื้อหา PDF มีเลขบัญชี/รหัสนี้อยู่หรือไม่ (ทนช่องว่างคั่นระหว่างตัวเลข)
 export function pdfHasAccountId(text: string, accountId: string): boolean {
     if (!accountId) return true
-        const re = new RegExp(accountId.split('').join('\\s*'))
+        /* ⚠️ สร้าง RegExp จากค่าที่คนกรอก ⇒ ตัวอักษรพิเศษ (+ ( ) . *) ทำให้โยน error
+           ⇒ หนีอักขระทีละตัวก่อนต่อ (ไล่ตรวจทั้งระบบ 5 ก.ย. 2569) */
+        const re = new RegExp(
+            accountId.split('').map((ch) => ch.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s*'),
+        )
             return re.test(text)
 }
 
