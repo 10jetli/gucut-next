@@ -45,6 +45,9 @@ interface Conn {
         แกะตัวเลขจากประโยค = พังเงียบทันทีที่ฝั่งท่อแก้คำ ⇒ รอฟิลด์จริงดีกว่า
      จอเตรียมช่องไว้แล้ว พอท่อส่งมาก็ขึ้นเอง ไม่ต้องแก้จอ */
   tokenExpiresAtUtc?: string | null
+  /** คำตอบตรง ๆ จากท่อว่าหมดอายุหรือยัง — **null = ไม่รู้ ไม่ใช่ยังไม่หมด**
+   *  ⚠️ ห้ามคำนวณจากชั่วโมงที่ปัดแล้ว (tokenHoursLeft) เด็ดขาด */
+  tokenExpired?: boolean | null
 }
 interface Resp {
   skip?: string
@@ -82,20 +85,36 @@ const SLOW_MS = 2500
  *  ⚠️ **หมดอายุแล้ว ≠ พัง** — ตัวต่ออายุอัตโนมัติวิ่งตี 3 ครึ่งทุกวัน
  *     แต่ถ้ามันตายเงียบ token จะหลุดจริง และอาการจะเหมือน "API พัง" ทุกประการ
  *     ⇒ โชว์วันที่ไว้เสมอ ไม่ต้องรอให้ใกล้หมดถึงค่อยขึ้น */
-function TokenExpiry({ at }: { at?: string | null }) {
+function TokenExpiry({ at, expired }: { at?: string | null; expired?: boolean | null }) {
   const d = parseUtc(at)
   if (!d) return null
-  const hours = Math.round((d.getTime() - Date.now()) / 3600e3)
-  const gone = hours <= 0
+  /* 🔴 **ห้ามปัดเศษก่อนตัดสินว่าหมดอายุหรือยัง** (แก้ 5 ก.ย. 2569)
+     ของเดิม: hours = Math.round(...) แล้วเช็ค hours <= 0
+     ⇒ เหลือจริง 17 นาที ปัดได้ 0 ⇒ จอเขียนว่า **หมดอายุแล้ว** ทั้งที่ยังไม่หมด
+     แล้วประโยคเดียวกันยังบอกเวลาหมดเป็นอนาคตอีก 17 นาทีข้างหน้าต่อท้าย
+     ⇒ **ประโยคเดียวขัดกันเอง** ฝั่งท่อเปิดจอตรวจตอนตี 1:26 น. แล้วเจอ
+     **0 ที่มาจากการปัด กับ 0 ที่เป็นค่าจริง หน้าตาเหมือนกันเป๊ะ**
+     ⇒ ตัดสินจากมิลลิวินาทีจริง · ปัดเศษเฉพาะตอนเอาไปแสดงเท่านั้น */
+  const msLeft = d.getTime() - Date.now()
+  // ท่อส่งคำตอบตรง ๆ มาก็ใช้ของท่อ (ไม่รู้ = null ⇒ ถอยไปคิดจากเวลาจริง)
+  const gone = typeof expired === 'boolean' ? expired : msLeft <= 0
+  const mins = Math.max(0, Math.round(msLeft / 60000))
+  const hours = msLeft / 3600e3
   const soon = hours <= 48
+
+  /** เหลือน้อยกว่าชั่วโมง ต้องบอกเป็นนาที — "เหลือ 0 ชม." อ่านแล้วเหมือนหมดแล้ว */
+  const left = mins < 60
+    ? `เหลือ ${mins.toLocaleString('th-TH')} นาที`
+    : hours < 48
+      ? `เหลือ ${Math.floor(hours).toLocaleString('th-TH')} ชม.`
+      : `เหลือ ${Math.round(hours / 24).toLocaleString('th-TH')} วัน`
+
   return (
     <span
       className={`block text-[11px] mt-0.5 ${gone ? 'text-red-700 font-medium' : soon ? 'text-amber-700' : 'text-gray-400'}`}
       title={'ต่ออายุอัตโนมัติวิ่งทุกวันตี 3 ครึ่ง — เลขนี้บอกว่าถ้าตัวต่ออายุหยุดทำงาน จะเหลือเวลาอีกเท่าไหร่'}
     >
-      🔑 token {gone
-        ? <b>หมดอายุแล้ว</b>
-        : `เหลือ ${hours < 48 ? `${hours} ชม.` : `${Math.round(hours / 24)} วัน`}`}
+      🔑 token {gone ? <b>หมดอายุแล้ว</b> : left}
       {' '}· ถึง {thaiDayTime(d)} (เวลาไทย)
     </span>
   )
@@ -302,7 +321,7 @@ export default function ConnectionsRegistryPage() {
                           <td className={TD}>
                             <span className={c.retired ? 'text-gray-500 line-through' : 'text-blue-600'}>{c.name}</span>
                             {c.detail && <span className="block text-[11.5px] text-gray-400">{c.detail}</span>}
-                            <TokenExpiry at={c.tokenExpiresAtUtc} />
+                            <TokenExpiry at={c.tokenExpiresAtUtc} expired={c.tokenExpired} />
                           </td>
                           <td className={TD}>
                             {/* ⚠️ ZORT โชว์ 100% ทุกแถว — ของเราไม่มีระบบกระจายสินค้า
