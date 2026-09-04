@@ -22,15 +22,22 @@ import {
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
 
+/* 🔴 **ชื่อฟิลด์เคยผิดทั้งชุด — คอลัมน์ขึ้นขีดกลางทุกแถวโดยไม่มีอะไรฟ้อง** (แก้ 5 ก.ย. 2569)
+   จอเดาชื่อไว้ว่า transferdate · transferType · fromwarehousecode · towarehousecode
+   ของจริงที่ท่อส่งคือ  transfer_date · kind · from_wh · to_wh  (ยิง list=transfers ยืนยันแล้ว)
+   ⇒ อ่านไม่เจอ = undefined ⇒ **จอไม่พัง มันวาดขีดกลางให้สวย ๆ แทน**
+      อ่านแล้วเหมือน "ZORT ไม่ได้ส่งข้อมูลมา" ทั้งที่ข้อมูลอยู่ครบทุกช่อง
+   ⇒ เจอตอนเอาภาพหน้าจอจริงไปวางเทียบเท่านั้น — build ผ่าน · tsc ผ่าน · ไม่มี error สักตัว
+   **ห้ามเดาชื่อฟิลด์อีก ให้ยิงของจริงดูคีย์ก่อนเขียนจอเสมอ** */
 interface Row {
   number: string
-  transferType?: string | number
-  fromwarehousecode?: string
-  towarehousecode?: string
+  kind?: string | number
+  from_wh?: string
+  to_wh?: string
   status?: string
-  transferdate?: string
+  transfer_date?: string
   reference?: string
-  description?: string
+  note?: string
 }
 interface Resp {
   skip?: string
@@ -116,6 +123,13 @@ export default function CoreTransfersPage() {
   }
 
   const rows = data?.rows ?? []
+  /* 🔴 **ตาข่ายกันบั๊กที่เพิ่งเจอไม่ให้กลับมาเงียบ ๆ อีก**
+     ถ้ามีแถวแต่ทุกแถวไม่มีช่องที่จอต้องใช้เลย = ท่อเปลี่ยนชื่อฟิลด์ (หรือจอเดาผิดอีกรอบ)
+     เดิมอาการคือคอลัมน์ขึ้นขีดกลางทุกแถว **ซึ่งอ่านได้ว่า "ไม่มีข้อมูล" ทั้งที่ข้อมูลอยู่ครบ**
+     ⇒ ให้จอฟ้องพร้อมบอกชื่อคีย์จริงที่ได้มา จะได้แก้ได้ทันทีโดยไม่ต้องเปิดฐาน */
+  const shapeBroken = rows.length > 0
+    && rows.every((r) => r.transfer_date === undefined && r.kind === undefined)
+  const seenKeys = shapeBroken ? Object.keys(rows[0] ?? {}).join(' · ') : ''
   const shown = offset + rows.length
   const byStatus = Array.isArray(data?.byStatus) ? data!.byStatus! : []
   const countOf = (s: string) => byStatus.find((x) => x.status === s)?.c ?? 0
@@ -160,6 +174,15 @@ export default function CoreTransfersPage() {
       />
 
       {error && <ErrorBox title="ดึงรายการโอนสินค้าไม่ได้">{error}</ErrorBox>}
+
+      {shapeBroken && (
+        <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+          🔴 <b>ท่อส่งชื่อฟิลด์ที่จอไม่รู้จัก</b> — คอลัมน์ วันที่ · ประเภท · จาก · ไป
+          จะขึ้นขีดกลางทุกแถว <b>ไม่ได้แปลว่าไม่มีข้อมูล</b>
+          <br />
+          คีย์ที่ได้มาจริง: <code className="text-[11.5px]">{seenKeys}</code>
+        </div>
+      )}
       {loading && !data && <LoadingState />}
       {data?.skip && (
         <div className="bg-white border border-gray-200 rounded-md p-4 text-[13px] text-gray-500">{data.skip}</div>
@@ -202,11 +225,11 @@ export default function CoreTransfersPage() {
                 {rows.map((r, i) => (
                   <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(r.transferdate)}</td>
+                    <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(r.transfer_date)}</td>
                     <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
-                    <td className={`${TD} text-gray-700`}>{typeTh(r.transferType)}</td>
-                    <td className={TD}>{wh(r.fromwarehousecode)}</td>
-                    <td className={TD}>{wh(r.towarehousecode)}</td>
+                    <td className={`${TD} text-gray-700`}>{typeTh(r.kind)}</td>
+                    <td className={TD}>{wh(r.from_wh)}</td>
+                    <td className={TD}>{wh(r.to_wh)}</td>
                     <td className={TD}><Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill></td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
