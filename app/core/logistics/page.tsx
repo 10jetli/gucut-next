@@ -28,7 +28,8 @@ interface Row {
   isCod?: boolean; lines?: number
 }
 interface Resp {
-  total: number; shipped?: number; unshipped?: number; cod?: number
+  /** ขอบเขตทั้งหมด (ใช้ทำป้ายบนแท็บ) · `shown` = จำนวนของแท็บที่เลือก (ใช้กับเลขหน้า) */
+  total: number; shown?: number; shipped?: number; unshipped?: number; cod?: number
   limit: number; offset: number; only?: string | null
   coversFrom?: string; zortShows?: number; note?: string
   rows: Row[]
@@ -81,13 +82,18 @@ export default function LogisticsPage() {
   ]
 
   /** จำนวนจริงของแท็บที่เลือกอยู่ — **ห้ามใช้ `data.total` ตอนกรอง**
-   *  ท่อส่ง `total` เป็นยอดทั้งหมดเสมอ ไม่ได้กรองตาม `only`
-   *  ⇒ ใช้ตรง ๆ จะได้ "แสดง 10 จาก 558" และปุ่มถัดไปกดได้ทั้งที่ไม่มีหน้าถัดไป */
+   *  กติกาที่ตกลงกับฝั่งท่อ (4 ก.ย. 2569):
+   *  · `total` = ขอบเขตทั้งหมด ใช้ทำป้ายบนแท็บ
+   *  · `shown` = จำนวนของแท็บที่เลือก ใช้กับเลขหน้าและปุ่มถัดไป
+   *  ใช้ `total` ตรง ๆ จะได้ "แสดง 7 จาก 559" และปุ่มถัดไปกดได้ทั้งที่ไม่มีหน้าถัดไป
+   *  ⚠️ ทางถอยยังต้องมี — จอใหม่อาจเจอท่อเก่าที่ยังไม่ส่ง `shown` ตอน deploy เหลื่อม */
   const tabTotal = Number(
-    (only === 'unshipped' ? data?.unshipped
+    data?.shown
+    ?? (only === 'unshipped' ? data?.unshipped
       : only === 'shipped' ? data?.shipped
         : only === 'cod' ? data?.cod
-          : data?.total) ?? data?.total ?? 0
+          : data?.total)
+    ?? data?.total ?? 0
   )
 
   /** 🔴 **ด่านชั้นสอง: ตรวจ "เนื้อข้อมูล" ไม่ใช่แค่คำสะท้อนกลับ**
