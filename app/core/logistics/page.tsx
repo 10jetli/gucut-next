@@ -73,8 +73,35 @@ export default function LogisticsPage() {
   const rows = data?.rows ?? []
   const tabs = [
     { id: '', label: 'ทั้งหมด', count: data?.total },
+    // 🔴 **แท็บ "ยังไม่มีเลขพัสดุ" คือของที่ต้องลงมือจริง** — ท่อส่ง unshipped มาตั้งแต่แรก
+    //    แต่จอไม่เคยเอามาใช้ ⇒ ใบที่ยังไม่ได้ส่งจมอยู่ในกอง 558 ใบโดยไม่มีใครเห็น
+    { id: 'unshipped', label: 'ยังไม่มีเลขพัสดุ', count: data?.unshipped },
+    { id: 'shipped', label: 'ส่งแล้ว', count: data?.shipped },
     { id: 'cod', label: 'เก็บเงินปลายทาง', count: data?.cod },
   ]
+
+  /** จำนวนจริงของแท็บที่เลือกอยู่ — **ห้ามใช้ `data.total` ตอนกรอง**
+   *  ท่อส่ง `total` เป็นยอดทั้งหมดเสมอ ไม่ได้กรองตาม `only`
+   *  ⇒ ใช้ตรง ๆ จะได้ "แสดง 10 จาก 558" และปุ่มถัดไปกดได้ทั้งที่ไม่มีหน้าถัดไป */
+  const tabTotal = Number(
+    (only === 'unshipped' ? data?.unshipped
+      : only === 'shipped' ? data?.shipped
+        : only === 'cod' ? data?.cod
+          : data?.total) ?? data?.total ?? 0
+  )
+
+  /** 🔴 **ด่านชั้นสอง: ตรวจ "เนื้อข้อมูล" ไม่ใช่แค่คำสะท้อนกลับ**
+   *  ด่าน `applied`/`only` เช็คได้แค่ว่าเซิร์ฟเวอร์ **บอกว่า** อ่านตัวกรองแล้ว
+   *  ไม่ได้เช็คว่า **ทำจริงไหม** — ของจริง 4 ก.ย. 2569: `only=cod` สะท้อน `cod` กลับมา
+   *  แต่คืนแถวชุดเดียวกับตอนไม่กรองทุกประการ (มีใบที่ไม่ใช่ COD ปนมา)
+   *  ⇒ แท็บ COD โชว์ของผิดโดยที่ทุกด่านผ่านหมด */
+  const mismatch = (() => {
+    if (!data || rows.length === 0) return ''
+    if (only === 'cod' && rows.some((r) => !r.isCod)) return 'เก็บเงินปลายทาง'
+    if (only === 'unshipped' && rows.some((r) => r.trackingNo)) return 'ยังไม่มีเลขพัสดุ'
+    if (only === 'shipped' && rows.some((r) => !r.trackingNo)) return 'ส่งแล้ว'
+    return ''
+  })()
 
   return (
     <div className="p-4 md:p-6">
@@ -140,6 +167,16 @@ export default function LogisticsPage() {
 
           <Tabs tabs={tabs} active={only} onChange={(id) => { setOnly(id); load(0, id) }} />
 
+          {/* ⚠️ เตือนตรง ๆ ว่าตารางข้างล่างไม่ตรงกับแท็บที่กด — **ห้ามเงียบ**
+              ตารางที่กรองไม่จริงแต่ดูเหมือนกรองแล้ว คือของที่คนเอาไปตัดสินใจผิดได้ทันที */}
+          {mismatch && (
+            <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+              ⚠️ <b>ตารางข้างล่างยังไม่ได้ถูกกรองจริง</b> — กดแท็บ &quot;{mismatch}&quot; แล้ว
+              แต่ยังมีแถวที่ไม่เข้าเงื่อนไขปนอยู่ · เซิร์ฟเวอร์ตอบกลับมาว่ารับตัวกรองแล้ว
+              แต่ข้อมูลที่ส่งมาไม่ตรง ⇒ <b>อย่าเพิ่งใช้ตัวเลขจากแท็บนี้ตัดสินใจ</b> (แจ้งฝั่งท่อแล้ว)
+            </div>
+          )}
+
           <TableWrap>
             <table className="w-full min-w-[900px]">
               <thead className="bg-white border-b border-gray-200">
@@ -166,8 +203,12 @@ export default function LogisticsPage() {
                           ⇒ บรรทัดล่างของเราใส่ **ชื่อขนส่ง** แทนการซ้ำเลขเดิม
                              เพราะเรายังไม่มีโลโก้ ถ้าซ้ำเลขด้วยจะไม่เหลือที่บอกว่าส่งกับเจ้าไหนเลย */}
                       {/* กดแล้วไปใบขายของพัสดุนั้น — ปลายทางมีจริง */}
-                      <Link href={`/core/sales/detail?id=${encodeURIComponent(r.id)}`} className="text-blue-600 hover:underline font-medium">
-                        {r.trackingNo || r.number}
+                      {/* ⚠️ เดิมเขียน `r.trackingNo || r.number` ⇒ ใบที่ยังไม่มีเลขพัสดุ
+                          จะโชว์เลขที่ใบขาย**ซ้ำกับคอลัมน์ "หมายเลขออเดอร์" ในแถวเดียวกัน**
+                          อ่านแล้วนึกว่าเลขนั้นคือเลขพัสดุ ⇒ ยังไม่มีก็ต้องบอกว่ายังไม่มี */}
+                      <Link href={`/core/sales/detail?id=${encodeURIComponent(r.id)}`}
+                        className={r.trackingNo ? 'text-blue-600 hover:underline font-medium' : 'text-gray-400 hover:underline'}>
+                        {r.trackingNo || 'ยังไม่มีเลขพัสดุ'}
                       </Link>
                       <span className="block text-[11px] text-gray-400">
                         {r.carrier || 'ไม่ระบุขนส่ง'}
@@ -189,8 +230,14 @@ export default function LogisticsPage() {
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
+                          // ⚠️ ไม่มีเลขพัสดุแล้วยังให้กดคัดลอกได้ = คัดลอกค่าว่างแบบเงียบ ๆ
+                          //    คนกดจะไปวางแล้วได้ช่องว่าง โดยไม่มีอะไรบอกว่าเกิดอะไรขึ้น
                           {
                             label: 'คัดลอกเลขพัสดุ',
+                            // `disabled` เป็น **ข้อความเหตุผล** ไม่ใช่ boolean — และต้องบอกว่าไปทำที่ไหนต่อ
+                            disabled: r.trackingNo
+                              ? undefined
+                              : 'ใบนี้ยังไม่มีเลขพัสดุ — เลขจะขึ้นเองเมื่อขนส่งรับของแล้ว ดูสถานะได้ที่ใบขาย',
                             onClick: () => { navigator.clipboard?.writeText(r.trackingNo ?? '').catch(() => {}) },
                           },
                           {
@@ -207,11 +254,14 @@ export default function LogisticsPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
               <span>
-                แสดง {fmtNum(offset + rows.length)} จาก {fmtNum(data.total)} รายการ
+                แสดง {fmtNum(offset + rows.length)} จาก {fmtNum(tabTotal)} รายการ
+                {only && <span className="text-gray-400"> (เฉพาะแท็บที่เลือก)</span>}
               </span>
               <span className="flex gap-2">
                 <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>ก่อนหน้า</BtnGhost>
-                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || offset + rows.length >= data.total}>ถัดไป</BtnGhost>
+                {/* ⚠️ เทียบกับจำนวนของแท็บ ไม่ใช่ยอดรวมทั้งหมด — ไม่งั้นปุ่มนี้กดได้ทั้งที่ไม่มีหน้าถัดไป
+                    แล้วคนกดจะเจอหน้าว่าง ซึ่งอ่านเหมือน "ข้อมูลหาย" มากกว่า "หมดแล้ว" */}
+                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || offset + rows.length >= tabTotal}>ถัดไป</BtnGhost>
               </span>
             </div>
           </TableWrap>
