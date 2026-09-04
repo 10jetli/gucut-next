@@ -36,6 +36,8 @@ interface Conn {
   spread?: number | null
   /** เวลาที่ใช้ยิงตรวจ — **ช้าไม่ใช่พัง เป็นคนละสถานะ** */
   ms?: number
+  /** true = ตรวจไม่ทันในงบเวลา ปลายทางช้า — **ไม่ได้แปลว่าไม่ได้เชื่อม** */
+  timedOut?: boolean
   /* ── วันหมดอายุ token (UTC) — **ช่องนี้ยังรอฝั่งท่อส่งมา** (ขอไว้ 4 ก.ย. 2569) ──
      ทำไมต้องมี: token ของ Lazada อายุ 7 วัน · ต่ออายุอัตโนมัติมีแล้ว (วิ่งตี 3 ครึ่ง)
      แต่ **วันที่มันหลุดจริง อาการจะเหมือน "API พัง" ทุกประการ** ⇒ คนจะไล่หาผิดที่
@@ -51,6 +53,10 @@ interface Resp {
   connected?: number
   notConnected?: number
   unchecked?: number
+  /** จำนวนช่องที่ตรวจไม่ทัน (คนละกองกับ unchecked) */
+  timedOut?: number
+  /** งบเวลาที่ท่อใช้ตัดจบ — โชว์ไว้ให้รู้ว่าเลขนี้วัดจากอะไร */
+  budgetMs?: number
   retired?: number
   note?: string
   groups?: Record<string, Conn[]>
@@ -94,6 +100,14 @@ function TokenExpiry({ at }: { at?: string | null }) {
 }
 
 function StatusPill({ c }: { c: Conn }) {
+  /* 🔴 **ตรวจไม่ทัน ≠ ยังไม่มีตัวตรวจ** (เพิ่ม 5 ก.ย. 2569)
+     timedOut = มีตัวตรวจแล้ว แต่ปลายทางช้าจนตัดจบก่อน ⇒ **เป็นปัญหาที่ต้องดู**
+     ยังไม่มีตัวตรวจ = งานฝั่งเราที่ยังไม่ได้ทำ ⇒ เป็นรายการงาน คนละเรื่องกัน
+     ทั้งคู่ส่ง connected: null มาเหมือนกัน ⇒ **ห้ามจอเดาเอาจาก null เฉย ๆ**
+     ต้องอ่านธง timedOut ที่ท่อส่งมาแยกต่างหาก */
+  if (c.timedOut) {
+    return <span className="text-[11.5px] font-semibold text-orange-800 bg-orange-100 rounded px-2 py-0.5">ตรวจไม่ทัน</span>
+  }
   if (c.retired) {
     return <span className="text-[11.5px] font-semibold text-gray-600 bg-gray-100 rounded px-2 py-0.5">เลิกใช้แล้ว</span>
   }
@@ -137,9 +151,11 @@ export default function ConnectionsRegistryPage() {
   // กลุ่มที่เซิร์ฟเวอร์ส่งมาแต่ไม่มีในรายการข้างบน — ต้องวาดต่อท้าย ห้ามทิ้ง
   const extraGroups = Object.keys(groups).filter((k) => !GROUPS.some((g) => g.key === k))
   const shown = [...GROUPS, ...extraGroups.map((k) => ({ key: k, label: k, spread: false }))]
+  // ⚠️ ทางถอยกลับต้อง **ไม่นับช่องที่ตรวจไม่ทัน** รวมมาด้วย — สองกองนี้ได้ null เหมือนกัน
+  //    ถ้านับรวม จอจะบอกว่า "ยังไม่มีตัวตรวจ" ทั้งที่ตัวตรวจมีอยู่ แค่ปลายทางช้า
   const unknown = typeof data?.unchecked === 'number'
     ? data.unchecked
-    : all.filter((c) => c.connected === null && !c.retired).length
+    : all.filter((c) => c.connected === null && !c.retired && !c.timedOut).length
 
   return (
     <div className="p-4 md:p-6">
@@ -185,6 +201,25 @@ export default function ConnectionsRegistryPage() {
             <br />
             ✅ เชื่อมแล้ว <b>{data.connected ?? 0}</b> · ⬜ ยังไม่ได้เชื่อม <b>{data.notConnected ?? 0}</b>
             {' '}· ❓ ยังไม่มีตัวตรวจ <b>{data.unchecked ?? 0}</b> · 🚫 เลิกใช้แล้ว <b>{data.retired ?? 0}</b>
+            {/* ⚠️ นับแยกจาก "ยังไม่มีตัวตรวจ" เสมอ — ทั้งคู่ได้ connected: null เหมือนกัน
+                แต่ตัวหนึ่งคืองานที่เรายังไม่ได้ทำ อีกตัวคือปลายทางช้าจนตรวจไม่ทัน */}
+            {(data.timedOut ?? 0) > 0 && (
+              <>
+                {' '}· ⏱ <b className="text-orange-800">ตรวจไม่ทัน {data.timedOut}</b>
+              </>
+            )}
+            {typeof data.budgetMs === 'number' && (
+              <span className="text-gray-400">
+                {' '}· ตัดจบที่ {(data.budgetMs / 1000).toLocaleString('th-TH')} วินาที
+              </span>
+            )}
+            {(data.timedOut ?? 0) > 0 && (
+              <>
+                <br />
+                ⏱ ช่องที่ <b>ตรวจไม่ทัน</b> <b>ไม่ได้แปลว่าไม่ได้เชื่อม</b> — มีตัวตรวจแล้ว
+                {' '}แต่ปลายทางตอบช้ากว่างบเวลา ⇒ ลองกดรีเฟรชอีกครั้ง ถ้ายังไม่ทันซ้ำ ๆ ค่อยไปดูที่ปลายทาง
+              </>
+            )}
             {unknown > 0 && (
               <>
                 <br />
