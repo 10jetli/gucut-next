@@ -18,6 +18,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
 
 interface ChannelRow { channel: string; orders: number; amount: number }
+interface StoreRow { source: string; name?: string; orders?: number }
 interface ShopeeRow {
   day: string; api_orders: number; api_amount: number
   zort_orders: number; zort_amount: number; match: boolean
@@ -42,6 +43,7 @@ const PIPES = [
 export default function CoreChannelsPage() {
   const [st, setSt] = useState<Status | null>(null)
   const [recent, setRecent] = useState<ChannelRow[]>([])
+  const [recentStores, setRecentStores] = useState<StoreRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -56,6 +58,7 @@ export default function CoreChannelsPage() {
       if (sRes?.error) throw new Error(sRes.error)
       setSt(sRes)
       setRecent(Array.isArray(rRes?.byChannel) ? rRes.byChannel : [])
+      setRecentStores(Array.isArray(rRes?.stores) ? rRes.stores : [])
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
       setSt(null)
@@ -68,6 +71,11 @@ export default function CoreChannelsPage() {
   useEffect(() => { load() }, [load])
 
   const all = st?.channels ?? []
+  /** ร้านที่มีบิลจริงในช่วงที่ดึงมา — มาจากท่อ (`stores`) ไม่ใช่จอนับเอง */
+  const storeList: StoreRow[] = Array.isArray(recentStores) ? recentStores : []
+  const storeLabel = storeList.length
+    ? `${storeList.length} ร้าน (${storeList.map((s2) => s2.name || s2.source).join(' · ')})`
+    : 'ทุกร้าน'
   const shopee = st?.shopee ?? []
   const maxRecent = Math.max(...recent.map((c) => c.amount), 1)
   const recentTotal = recent.reduce((s, c) => s + c.amount, 0)
@@ -87,8 +95,9 @@ export default function CoreChannelsPage() {
             {/* 🔴 **ชื่อช่องทางซ้ำกันข้ามร้านได้** — TIKTOK มีทั้งใน z1 (ยังขาย) และ z2 (เลิกขาย 22 ก.พ. 69)
                 ตัวเลขบรรทัดนี้จึงเป็นของสองร้านรวมกัน ⇒ ต้องเขียนบอก ไม่งั้นคนอ่านสรุปผิดเรื่องร้าน
                 (ฝั่งท่อเกือบรายงานผิดด้วยเหตุนี้จริง 5 ก.ย. 2569) */}
-            <b>ตัวเลขรวมทั้ง 2 ร้าน</b>
-            <span className="text-gray-400"> — ชื่อช่องทางเดียวกันอาจมีอยู่ทั้งสองร้าน</span>
+            {/* 🔴 อ่านรายชื่อร้านจากท่อ ห้ามเขียนจำนวนตายตัว — วันที่มีร้านที่สามป้ายเปลี่ยนเอง */}
+            <b>ตัวเลขรวม {storeLabel}</b>
+            <span className="text-gray-400"> — ชื่อช่องทางเดียวกันอาจมีอยู่มากกว่าหนึ่งร้าน</span>
           </>
         }
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}

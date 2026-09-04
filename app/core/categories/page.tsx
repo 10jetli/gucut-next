@@ -52,6 +52,8 @@ interface Resp {
   noCost?: number
   valueBasis?: string
   matchesZort?: boolean
+  /** ประโยคอธิบายที่มาของหมวดทั้งจอ — อ่านจากท่อ ห้ามเขียนเอง */
+  zortNote?: string
   rows?: Row[]
 }
 
@@ -121,13 +123,14 @@ export default function CoreCategoriesPage() {
   const extraBucket = rows.some((r) => r.name?.includes('ยังไม่ได้จัดหมวด'))
   const totalSkus = rows.reduce((a, r) => a + (Number(r.skus) || 0), 0)
   const totalOnhand = rows.reduce((a, r) => a + (Number(onhandOf(r)) || 0), 0)
-  /* 🔴 **ตาข่ายที่ไม่มีวันทำงาน — เจอตอนไล่ตรวจทั้งระบบ 5 ก.ย. 2569**
-     เดิมนับ `r.zort === false` เพื่อบอกว่าหมวดไหน "เดาจากชื่อสินค้า"
-     แต่ท่อ **ไม่เคยส่งช่อง `zort` มาสักแถวเดียว** (ยิงจริง 43 หมวด · มีคีย์นี้ 0 แถว)
-     ⇒ ตัวนับเป็น 0 เสมอ · ป้ายไม่มีวันขึ้น · และไม่มีอะไรฟ้อง
-     ⇒ ของที่ท่อบอกได้จริงคือ `matchesZort` ระดับทั้งจอ ⇒ ใช้ตัวนั้นแทน
-     ⚠️ ถ้าวันหนึ่งอยากได้ระดับรายหมวดจริง ๆ ต้องขอให้ท่อส่งมา ไม่ใช่เดาจากที่มีอยู่ */
-  const cantTellPerRow = rows.length > 0 && rows.every((r) => r.zort === undefined)
+  /* 🔴 **ตัวนับนี้เคยอยู่ผิดที่มาตลอด** (แก้ 5 ก.ย. 2569)
+     เดิมนับ `r.zort === false` ที่จอนี้เพื่อบอกว่า "หมวดไหนเดาจากชื่อสินค้า"
+     แต่จอนี้ไม่มีการเดาเลยสักหมวด — ทุกแถวมาจากคอลัมน์ category ในทะเบียนสินค้า ZORT
+     แถวเดียวที่ `zort === false` คือ **ถังรวมของที่ยังไม่ได้จัดหมวด** ซึ่งคนละความหมาย
+     ⇒ ตัวนับ "หมวดที่จัดให้เอง" ตัวจริงอยู่ที่จอ POS (`list=poscats` · 15 จาก 57 หมวด)
+        ย้ายไปติดจุดไว้ที่นั่นแล้ว
+     ⇒ ที่นี่แสดง `zortNote` จากท่อแทน ซึ่งอธิบายที่มาของทั้งจอในประโยคเดียว */
+  const notFromZort = rows.filter((r) => r.zort === false).length
 
   return (
     <div className="p-4 md:p-6">
@@ -337,11 +340,13 @@ export default function CoreCategoriesPage() {
               <span>
                 รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtMoney(totalOnhand)}
               </span>
-              {cantTellPerRow && (
-                <span className="text-gray-400">
-                  ท่อยังไม่ได้บอกเป็นรายหมวดว่าหมวดไหนมาจาก ZORT — ดูภาพรวมได้จากแถบด้านบน
-                </span>
-              )}
+              {d.zortNote
+                ? <span className="text-gray-400">{d.zortNote}</span>
+                : notFromZort > 0 && (
+                  <span className="text-gray-400">
+                    มี {fmtNum(notFromZort)} แถวที่ไม่ได้มาจากทะเบียนหมวดของ ZORT
+                  </span>
+                )}
             </div>
           </TableWrap>
 

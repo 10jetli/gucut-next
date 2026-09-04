@@ -22,7 +22,13 @@ interface CoreOrderRow {
   id: string; number: string; channel: string
   status: string; amount: number; customer: string; order_date: string
 }
-interface OrdersResp { skip?: string; total: number; totalAmount: number; rows: CoreOrderRow[] }
+interface StoreRow { source: string; name?: string; orders?: number; amount?: number }
+interface OrdersResp {
+  skip?: string; total: number; totalAmount: number; rows: CoreOrderRow[]
+  /** ร้านที่มีบิลจริง **ในช่วงที่กรองอยู่** — ห้ามเขียนจำนวนร้านตายตัว
+   *  ช่วงที่ร้านไหนไม่มีบิลเลย จะไม่โผล่ในรายการนี้ ⇒ นับจากตรงนี้เท่านั้น */
+  stores?: StoreRow[]
+}
 interface StockResp { skip?: string; total: number; outOfStock: number; low: number }
 /** ใบค้างแยกเป็นกอง — คีย์เป็นภาษาไทยตามที่ท่อส่งมาจริง (`/api/core?pending=1`) */
 interface PendingResp {
@@ -161,6 +167,12 @@ export default function DashboardPage() {
   useEffect(() => { load() }, [load])
 
   const skip = today?.skip || week?.skip || stock?.skip
+  /** ชื่อร้านที่มีบิลในช่วงที่ดึงมา — อ่านจากท่อ ไม่นับเอง ไม่เขียนตายตัว */
+  const storeNames = (() => {
+    const list = week?.stores ?? today?.stores ?? []
+    if (!Array.isArray(list) || list.length === 0) return ''
+    return `${list.length} ร้าน (${list.map((s2) => s2.name || s2.source).join(' · ')})`
+  })()
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
@@ -168,8 +180,11 @@ export default function DashboardPage() {
         title="ภาพรวมร้าน"
         summary={
           <span suppressHydrationWarning>
-            {/* ⚠️ ตัวเลขทุกใบบนหน้านี้มาจาก list=orders ซึ่งไม่ได้กรองร้าน ⇒ เป็นของสองร้านรวมกัน */}
-            ตัวเลขจากคลังของเราเอง (ไม่ได้ยิง ZORT) · <b>รวมทั้ง 2 ร้าน</b>
+            {/* 🔴 **ห้ามเขียนจำนวนร้านตายตัว** — ท่อส่งรายชื่อร้านที่มีบิลจริงในช่วงนั้นมาให้
+                วันที่มีร้านที่สาม ป้ายนี้เปลี่ยนตามเอง · และช่วงที่ร้านไหนไม่มีบิล ก็จะไม่ถูกนับ
+                (เดิมเขียนว่า "รวมทั้ง 2 ร้าน" ซึ่งถูกวันนี้ แต่เป็นข้อความที่จะโกหกวันหนึ่ง) */}
+            ตัวเลขจากคลังของเราเอง (ไม่ได้ยิง ZORT)
+            {storeNames && <> · <b>รวม {storeNames}</b></>}
             {' · '}อัพเดต {refreshed.toLocaleTimeString('th-TH')}
           </span>
         }
