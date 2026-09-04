@@ -125,7 +125,7 @@ export default function ProductDetailPage() {
   const [chartMode, setChartMode] = useState<'amount' | 'qty'>('amount')
   const [inBundles, setInBundles] = useState<MemberResp | null>(null)
   const [showAllBundles, setShowAllBundles] = useState(false)
-  const imgOf = useSkuImages()
+  const imgOf = useSkuImages(640)
 
   const load = useCallback(async () => {
     setLoading(true)

@@ -11,7 +11,12 @@
 import { useEffect, useState } from 'react'
 
 const MAP_URL = 'https://gucut.com/sku-images.json'
-const IMG_BASE = 'https://video.gucut.com/i/128'
+/** ขั้นย่อที่มีบน R2 — ยิงจริงยืนยันแล้วครบทั้ง 4 ขั้น (5 ก.ย. 2569)
+ *  ⚠️ ขอขั้นที่ไม่มี = 404 รูปหายทั้งจอ ⇒ เพิ่มขั้นใหม่ต้องยิงเช็คก่อน
+ *  (ตารางขั้นจริงอยู่ที่ `LADDER` ใน gucut-web/src/lib/image-loader.js) */
+const STEPS = [128, 256, 384, 640] as const
+export type ImgStep = typeof STEPS[number]
+const IMG_BASE = 'https://video.gucut.com/i'
 
 type SkuMap = Record<string, string>
 
@@ -39,7 +44,12 @@ function load(): Promise<SkuMap> {
   return p
 }
 
-export function useSkuImages() {
+/* 🔴 **ขนาดรูปต้องเลือกตามที่จอวาดจริง ไม่ใช่ค่าเดียวทั้งระบบ** (แก้ 5 ก.ย. 2569)
+   เดิมทุกจอใช้ขั้น 128 เหมือนกันหมด — พอเอาไปวางในกรอบ 220×160 บนจอ Retina
+   ต้องขยายราว 3.4 เท่า ⇒ **เบลอจนอ่านตัวหนังสือบนกล่องสินค้าไม่ออก** (เจ้าของร้านทัก)
+   ⇒ ตารางเล็ก/การ์ด POS ใช้ 128 ต่อไป (เร็วและพอ) · หน้ารายละเอียดขอขั้นใหญ่ขึ้น
+   ⚠️ อย่าใช้ 640 กับตารางที่มีหลายสิบแถว — รูปละ 50KB × 50 แถว = 2.5MB ต่อการเปิดหน้า */
+export function useSkuImages(step: ImgStep = 128) {
   const [map, setMap] = useState<SkuMap>(cache ?? {})
   useEffect(() => {
     let alive = true
@@ -49,6 +59,6 @@ export function useSkuImages() {
   /** คืน URL รูปของ SKU นั้น หรือ null ถ้าไม่มีรูป (ให้จอโชว์กล่องเทาแทน) */
   return (sku: string): string | null => {
     const f = map[String(sku ?? '').trim()]
-    return f ? `${IMG_BASE}/${f}` : null
+    return f ? `${IMG_BASE}/${step}/${f}` : null
   }
 }

@@ -31,7 +31,7 @@ export default function BundleDetailPage() {
   const [collectedAt, setCollectedAt] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const imgOf = useSkuImages()
+  const imgOf = useSkuImages(384)
 
   const load = useCallback(async () => {
     setLoading(true)
