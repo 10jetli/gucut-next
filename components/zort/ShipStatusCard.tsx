@@ -95,13 +95,21 @@ export default function ShipStatusCard(
   return (
     <div className="bg-white border border-gray-200 rounded-md px-3.5 py-3 mb-3">
       <div className="flex items-baseline gap-2 flex-wrap mb-2.5">
-        <h2 className="text-[13.5px] font-semibold text-gray-800">สถานะการจัดส่ง</h2>
+        {/* 🔴 **ชื่อการ์ดเคยเป็น "สถานะการจัดส่ง" — เปลี่ยนแล้ว 4 ก.ย. 2569**
+            ค่าที่นับคือ integration_status = แพลตฟอร์มว่า "ออเดอร์" อยู่ขั้นไหน
+            ไม่ได้บอกว่าของออกจากร้านหรือยัง (พิสูจน์แล้ว: ใบ Lazada ที่ค้าง confirmed
+            มีเลขพัสดุครบทุกใบ) ⇒ ชื่อเดิมทำให้คนอ่านตอบผิดคำถาม
+            ของที่ตอบเรื่องการจัดส่งจริงคือ tracking_no · ship_date · คอลัมน์บริการขนส่ง */}
+        <h2 className="text-[13.5px] font-semibold text-gray-800">สถานะออเดอร์ฝั่งแพลตฟอร์ม</h2>
         <span className="text-[12px] text-gray-500">
           {wholeRange
             ? `ทั้งช่วงที่กรอง ${all.toLocaleString('th-TH')} ใบ`
             : `เฉพาะหน้านี้ ${sum.toLocaleString('th-TH')} ใบ${all ? ` จากทั้งหมด ${all.toLocaleString('th-TH')} ใบ` : ''}`}
         </span>
-        <span className="text-[12px] text-gray-400">· มาจากแพลตฟอร์ม ไม่ใช่สถานะใบของ ZORT</span>
+        <span className="text-[12px] text-gray-400">
+          · Shopee/Lazada/TikTok เป็นคนบอก ไม่ใช่สถานะใบของเรา ·{' '}
+          <b>ไม่ได้บอกว่าของออกจากร้านหรือยัง</b> เรื่องนั้นดูที่เลขพัสดุกับวันส่ง
+        </span>
       </div>
 
       <div className="flex gap-2 flex-wrap">
