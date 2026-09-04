@@ -16,12 +16,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
 
-interface Row { amount: number; order_date: string }
 interface StockResp { total: number; value: number; outOfStock: number; day: string }
 interface Bill { vendorId: string; vendorName: string; emoji: string; subject: string; date: string }
 
-const PAGE = 200
-const MAX_PAGES = 12
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
 const thisMonth = () => thaiDay(0).slice(0, 7)
@@ -33,9 +30,11 @@ const monthLabel = (ym: string) => {
 }
 
 export default function CoreFinancePage() {
-  const [rows, setRows] = useState<Row[]>([])
+  /** ยอดรายเดือนที่ฐานข้อมูลรวมมาให้แล้ว — จอไม่ได้บวกเอง */
+  const [months, setMonths] = useState<{ ym: string; orders: number; sales: number }[]>([])
+  /** ท่อบอกว่าตัวเลขชุดนี้นับรวมกี่ร้าน (เช่น "ทั้ง 2 ร้าน") — เอาไปเขียนกำกับบนจอ */
+  const [scope, setScope] = useState('')
   const [stock, setStock] = useState<StockResp | null>(null)
-  const [truncated, setTruncated] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -46,36 +45,31 @@ export default function CoreFinancePage() {
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
-    setTruncated(false)
     try {
-      const from = thaiDay(180)
-      const to = thaiDay(0)
-      const all: Row[] = []
-      let total = Infinity
-      let page = 0
-      while (all.length < total && page < MAX_PAGES) {
-        const qs = new URLSearchParams({
-          list: 'orders', from, to, limit: String(PAGE), offset: String(page * PAGE),
-        })
-        const res = await fetch(`/api/web/core?${qs}`)
-        const d = await res.json()
-        if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
-        if (d?.skip) throw new Error(d.skip)
-        total = Number(d.total ?? 0)
-        const got: Row[] = Array.isArray(d.rows) ? d.rows : []
-        all.push(...got)
-        page++
-        if (got.length < PAGE) break
-      }
-      if (all.length < total) setTruncated(true)
-      setRows(all)
+      /* 🔴 **เดิมจอนี้ดึงออเดอร์ทั้ง 180 วันมาทีละ 200 ใบ แล้วบวกเองในเบราว์เซอร์**
+         ~3,300 ใบ = 17 รอบเรียงกัน ⇒ จอไม่เคยโหลดจบเลย (รอ 30 วิ ยังขึ้น "กำลังโหลด…")
+         และไม่ได้แค่ช้า — มี MAX_PAGES กันไว้ ⇒ ชนเพดานเมื่อไหร่ **ยอดรายเดือนจะน้อยกว่าจริง**
+         ⇒ ตอนนี้ให้ฐานข้อมูล GROUP BY ให้ ยิงครั้งเดียวจบ ไม่มีทางตกหล่น
+
+         📌 กฎที่ตกลงกับฝั่งท่อ (5 ก.ย. 2569) — สองข้อนี้เป็นด้านกลับของกันและกัน
+            ค่าที่เดินตามเวลา (อายุ · เหลือกี่ชั่วโมง) → ท่อส่งเวลาดิบ **จอคิดเอง**
+            ค่าที่ต้องเห็นข้อมูลทั้งชุด (ผลรวม · ผลนับ) → **ท่อคิดให้** จอห้ามดึงแถวมานับเอง
+         จอนี้เคยตกอยู่ในข้อหลังแต่ทำแบบข้อแรก ⇒ ได้ทั้งช้าและเสี่ยงตกหล่น
+         ⚠️ จอไหนมี while คู่กับ offset ให้สงสัยว่าเป็นโรคเดียวกันไว้ก่อน */
+      const res = await fetch('/api/web/core?monthly=1&months=6')
+      const d = await res.json()
+      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      if (d?.skip) throw new Error(d.skip)
+      setMonths(Array.isArray(d.months) ? d.months : [])
+      // ท่อบอกมาเองว่านับรวมกี่ร้าน — **ห้ามจอเดา** ชื่อช่องทางซ้ำกันข้ามร้านได้
+      setScope(typeof d.store === 'string' ? d.store : '')
 
       const sRes = await fetch('/api/web/core?list=stock&limit=1')
       const sd = await sRes.json()
       setStock(sd?.skip ? null : sd)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
-      setRows([])
+      setMonths([])
       setStock(null)
     } finally {
       setLoading(false)
@@ -101,20 +95,9 @@ export default function CoreFinancePage() {
     }
   }
 
-  const byMonth = new Map<string, { sales: number; orders: number }>()
-  for (const o of rows) {
-    const ym = (o.order_date || '').slice(0, 7)
-    if (!ym) continue
-    const cur = byMonth.get(ym) ?? { sales: 0, orders: 0 }
-    cur.sales += Number(o.amount) || 0
-    cur.orders += 1
-    byMonth.set(ym, cur)
-  }
-  const months = Array.from(byMonth.entries())
-    .map(([ym, v]) => ({ ym, ...v }))
-    .sort((a, b) => b.ym.localeCompare(a.ym))
-  const total6 = rows.reduce((s, o) => s + (Number(o.amount) || 0), 0)
-  const thisM = byMonth.get(thisMonth())?.sales ?? 0
+  // ⚠️ ตัวเลขทุกตัวมาจากท่อแล้ว — ที่เหลือคือรวมยอดของสิ่งที่ท่อรวมมาให้ ไม่ใช่การนับแถวเอง
+  const total6 = months.reduce((s, m) => s + (Number(m.sales) || 0), 0)
+  const thisM = months.find((m) => m.ym === thisMonth())?.sales ?? 0
   const maxMonth = Math.max(...months.map((m) => m.sales), 1)
 
   return (
@@ -126,7 +109,7 @@ export default function CoreFinancePage() {
       />
 
       {error && <ErrorBox title="ดึงข้อมูลการเงินไม่ได้">{error}</ErrorBox>}
-      {loading && rows.length === 0 && <LoadingState />}
+      {loading && months.length === 0 && <LoadingState />}
 
       <p className="text-[12px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
         ℹ️ <b>บัญชี ภาษี และใบกำกับตัวจริงอยู่ที่ PEAK</b> — จอนี้ไม่ได้ทำแทน
@@ -135,17 +118,11 @@ export default function CoreFinancePage() {
 
       {!loading && !error && (
         <>
-          {truncated && (
-            <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-              ⚠️ ออเดอร์ 6 เดือนเยอะเกินกว่าที่ดึงไหวรอบเดียว — คิดจาก {fmtNum(rows.length)} ใบแรก
-              <b> ตัวเลขยังไม่ครบ</b>
-            </p>
-          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <StatCard icon="📅" tone="blue" label={`รายรับเดือนนี้ (${monthLabel(thisMonth())})`} value={fmtMoney(thisM)} />
             <StatCard icon="💰" tone="green" label="รายรับ 6 เดือน" value={fmtMoney(total6)}
-              note={`${fmtNum(rows.length)} ใบ`} />
+              note={`${fmtNum(months.reduce((n, m) => n + (Number(m.orders) || 0), 0))} ใบ${scope ? ` · ${scope}` : ''}`} />
             <StatCard icon="📦" tone="purple" label="มูลค่าของในคลัง"
               value={stock ? fmtMoney(stock.value) : '—'}
               note={stock ? `คิดที่ราคาขาย · ${fmtNum(stock.total)} SKU` : undefined} />
