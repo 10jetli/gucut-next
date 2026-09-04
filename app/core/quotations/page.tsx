@@ -80,7 +80,11 @@ export default function QuotationsPage() {
           data
             ? (
               <>
-                จำนวน {fmtNum(all.length)} รายการ, มูลค่าทั้งหมด {fmtMoney(sum)} บาท
+                {/* ⚠️ จำนวนต้องใช้ `total` จากเซิร์ฟเวอร์ ไม่ใช่ `all.length`
+                    ZORT โชว์จำนวนจริงทั้งหมด ไม่ใช่จำนวนแถวที่เห็นบนจอ
+                    วันไหนโดนตัดที่ 200 สองค่านี้จะต่างกัน — บรรทัดใต้ตารางอธิบายไว้แล้ว */}
+                จำนวน {fmtNum(Number(data.total ?? all.length))} รายการ,
+                มูลค่าทั้งหมด {fmtMoney(sum)} บาท
                 {' | '}
                 {/* ⚠️ ต้องบอกว่าจอนี้ยิง ZORT สด ต่างจากจออื่นที่อ่านคลังเงา */}
                 <span className="text-gray-400">
@@ -174,8 +178,37 @@ export default function QuotationsPage() {
             </p>
           )}
 
+          {/* แถบท้ายตารางตามผัง ZORT (`zort-ui/51-zort-ใบเสนอราคา.jpg`)
+              ซ้าย: ปุ่มหน้า · ขวา: "จำนวน N รายการ | จำนวนต่อหน้า [20]"
+              ⚠️ **ปุ่มหน้ากับจำนวนต่อหน้าเป็นสีเทา** — จอนี้ดึงครั้งเดียวไม่มีการแบ่งหน้า
+                 ทำให้กดได้ทั้งที่ไม่มีหน้าที่ 2 = ปุ่มหลอก · ซ่อนทิ้ง = ผังไม่ตรง
+                 ⇒ โชว์ตามผังแต่ล็อกไว้ พร้อมเหตุผลตอนชี้ค้าง (ท่าเดียวกับ dropdown คลังสินค้า) */}
+          <div className="flex flex-wrap items-center gap-3 mt-3">
+            <span
+              title="จอนี้ดึงใบเสนอราคาครั้งเดียวทั้งหมด จึงมีหน้าเดียวเสมอ"
+              className="text-[13px] text-gray-400 bg-gray-50 border border-gray-200 rounded px-2.5 py-1 cursor-not-allowed"
+            >
+              1
+            </span>
+            <span className="ml-auto text-[12.5px] text-gray-500">
+              จำนวน {fmtNum(Number(data.total ?? all.length))} รายการ
+            </span>
+            <span className="text-[12.5px] text-gray-400">| จำนวนต่อหน้า</span>
+            <select
+              disabled
+              title="จอนี้ดึงครั้งเดียวทั้งหมด ยังไม่มีการแบ่งหน้า — เลือกได้ก็ไม่มีอะไรเปลี่ยน"
+              className="text-[12.5px] border border-gray-200 rounded px-2 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
+            >
+              <option>ทั้งหมด</option>
+            </select>
+          </div>
+
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            ⚠️ ป้ายสถานะจอนี้เขียนว่า <b>รออนุมัติ / อนุมัติแล้ว</b> ตามจอ ZORT —
+            {/* ⚠️ ZORT มีปุ่ม "Export to Excel ▾" มุมซ้ายล่าง — **ยังไม่ทำ ไม่ใช่ทำไม่ได้**
+                ทำได้จริง (แปลงแถวเป็น CSV ในเบราว์เซอร์) แต่เป็นฟีเจอร์ใหม่ที่ยังไม่ได้สั่ง
+                ⇒ เขียนบอกไว้ ดีกว่าใส่ปุ่มสีเทาที่อ่านแล้วนึกว่าทำไม่ได้ตลอดกาล */}
+            ⚠️ ZORT มีปุ่ม <b>Export to Excel</b> มุมซ้ายล่าง — <b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b> ·
+            ป้ายสถานะจอนี้เขียนว่า <b>รออนุมัติ / อนุมัติแล้ว</b> ตามจอ ZORT —
             ค่าดิบเป็น Pending/Success ชุดเดียวกับใบขาย แต่ในบริบทใบเสนอราคาแปลว่า<b>การอนุมัติ</b>
             ไม่ใช่การส่งของ · <b>เบอร์ลูกค้าดูได้จากการชี้ค้างที่ชื่อ</b> ไม่แสดงตรง ๆ บนตาราง
           </p>
