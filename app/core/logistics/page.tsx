@@ -19,7 +19,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu,
+  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark,
 } from '@/components/zort'
 
 interface Row {
@@ -187,7 +187,7 @@ export default function LogisticsPage() {
               {data.carrierGroups.map((g) => (
                 <details key={g.carrier} className="inline-block align-top mr-3">
                   <summary className="cursor-pointer list-none inline">
-                    <b>{g.carrier}</b> {fmtNum(g.c)} ใบ
+                    <CarrierMark name={g.carrier} /> <b>{g.carrier}</b> {fmtNum(g.c)} ใบ
                     {Array.isArray(g.names) && g.names.length > 1 && (
                       <span className="text-gray-400"> (รวมจาก {g.names.length} ชื่อ ▾)</span>
                     )}
@@ -255,7 +255,8 @@ export default function LogisticsPage() {
                         className={r.trackingNo ? 'text-blue-600 hover:underline font-medium' : 'text-gray-400 hover:underline'}>
                         {r.trackingNo || 'ยังไม่มีเลขพัสดุ'}
                       </Link>
-                      <span className="block text-[11px] text-gray-400">
+                      <span className="flex items-center gap-1 text-[11px] text-gray-400 mt-0.5">
+                        <CarrierMark name={r.carrier} />
                         {r.carrier || 'ไม่ระบุขนส่ง'}
                       </span>
                     </td>

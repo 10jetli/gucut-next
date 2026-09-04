@@ -399,6 +399,30 @@ const MARKET_LOGO: Record<string, { src: string; label: string }> = {
   tiktok: { src: '/logos/tiktok.png', label: 'TikTok' },
   gucut: { src: '/logos/gucut.png', label: 'gucut.com' },
 }
+/** ตราย่อของขนส่ง — **ไม่ใช่โลโก้ของเจ้านั้น และตั้งใจไม่ให้เหมือน**
+ *
+ * ZORT โชว์โลโก้จริงในคอลัมน์บริการขนส่ง แต่การเอาโลโก้ของขนส่งมาใช้
+ * ต้องดูเงื่อนไขเครื่องหมายการค้าของเขาก่อน (ข้อสังเกตจากฝั่งท่อ 4 ก.ย. 2569)
+ * ⇒ ใช้ **ตัวอักษรย่อบนพื้นสีกลาง** แทน — สื่อสารได้เท่ากันในตาราง
+ *   ไม่ต้องโหลดไฟล์เพิ่ม และ **ไม่มีทางถูกเข้าใจว่าเป็นตราของเจ้านั้น**
+ * ⚠️ ห้ามเปลี่ยนไปใช้สีประจำแบรนด์ของขนส่ง — สีประจำแบรนด์ก็เป็นส่วนหนึ่งของตราเหมือนกัน
+ */
+export function CarrierMark({ name }: { name?: string | null }) {
+  const n = String(name ?? '').trim()
+  if (!n) return null
+  // เอาตัวแรกของคำแรกที่เป็นตัวอักษร — ชื่อไทย/อังกฤษใช้ได้เหมือนกัน
+  const ch = (n.match(/[A-Za-zก-ฮ]/)?.[0] ?? '?').toUpperCase()
+  return (
+    <span
+      title={n}
+      aria-label={n}
+      className="inline-flex items-center justify-center w-4 h-4 rounded-[3px] bg-slate-200 text-slate-600 text-[9px] font-bold leading-none shrink-0"
+    >
+      {ch}
+    </span>
+  )
+}
+
 export function MarketLogos({ list }: { list?: string[] | null }) {
   if (!Array.isArray(list) || list.length === 0) return <span className="text-gray-300">—</span>
   return (
