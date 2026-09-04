@@ -17,9 +17,13 @@ import {
 } from '@/components/zort'
 
 interface Row { id: string; channel: string; amount: number; customer: string; order_date: string }
-/** ⚠️ ตัดช่อง channels ออกแล้ว — ท่อ bycustomer=1 ยังไม่ส่งช่องทางรายคนมา
- *  ขอไว้แล้ว · ระหว่างนี้เอาคอลัมน์ออกดีกว่าปล่อยขีดกลางทั้งคอลัมน์ ซึ่งอ่านได้ว่า "ไม่มีช่องทาง" */
-interface Person { name: string; orders: number; amount: number; last: string }
+/** ⚠️ channels เป็น **อาร์เรย์ของ object** ไม่ใช่ข้อความคั่นลูกน้ำ (ฝั่งท่อเลือกแบบนี้ และถูก)
+ *  ชื่อช่องทางคนตั้งเอง วันไหนมีลูกน้ำในชื่อ จอจะแตกชื่อเดียวเป็นสองช่องทางเงียบ ๆ
+ *  — คอลัมน์ขนส่งเคยมีของแบบนี้จริงมาแล้ว */
+interface Person {
+  name: string; orders: number; amount: number; last: string
+  channels?: { channel: string; orders: number }[]
+}
 
 const PER_PAGE = 50
 const NO_NAME = 'ไม่ระบุชื่อ'
@@ -70,9 +74,10 @@ export default function CoreCustomersPage() {
       setScope(typeof d.store === 'string' ? d.store : '')
 
       const list: Person[] = (Array.isArray(d.customers) ? d.customers : []).map(
-        (c: { name: string; orders: number; sales: number; lastDay: string }) => ({
+        (c: { name: string; orders: number; sales: number; lastDay: string; channels?: { channel: string; orders: number }[] }) => ({
           name: c.name, orders: Number(c.orders) || 0,
           amount: Number(c.sales) || 0, last: c.lastDay || '',
+          channels: Array.isArray(c.channels) ? c.channels : [],
         }),
       )
       const un = d?.unnamed
@@ -180,6 +185,7 @@ export default function CoreCustomersPage() {
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>ชื่อ</th>
+                  <th className={TH}>ช่องทางที่ซื้อ</th>
                   <th className={THR}>จำนวนใบ</th>
                   <th className={THR}>ยอดรวม</th>
                   <th className={THR}>ซื้อล่าสุด</th>
@@ -199,6 +205,13 @@ export default function CoreCustomersPage() {
                       {p.name === NO_NAME && (
                         <span className="ml-1.5 text-[11px] text-gray-400">(หลายคนรวมกัน)</span>
                       )}
+                    </td>
+                    {/* ⚠️ โชว์จำนวนใบต่อช่องทางด้วย — "ซื้อ 4 ใบ" กับ "ซื้อทาง Shopee 4 ใบ"
+                        ต่างกันตอนคนคนเดียวซื้อหลายช่องทาง · ไม่มีข้อมูล = ขีด ไม่ใช่เว้นว่าง */}
+                    <td className={`${TD} text-gray-500 max-w-[240px]`}>
+                      {p.channels && p.channels.length > 0
+                        ? p.channels.map((c) => `${c.channel} (${c.orders})`).join(' · ')
+                        : <span className="text-gray-300">—</span>}
                     </td>
                     <td className={TDR}>{p.orders.toLocaleString('th-TH')}</td>
                     <td className={TDR}>{fmtMoney(p.amount)}</td>
