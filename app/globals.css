@@ -7,13 +7,12 @@ html, body {
   font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
-/* พื้นหลังหลักของระบบ — โทนฟ้าเทาอ่อนนวลๆ แทนสีเทาแบนเดิม ให้การ์ดสีขาวเด่นขึ้น */
+/* พื้นหลังหลักของระบบ — **สีแบนตาม ZORT ไม่มีไล่สี**
+   วัดจากพิกเซลภาพจอจริง 4 ก.ย. 2569 ได้ #f0f2f9 (พบ 72%)
+   ⚠️ ของเดิมเป็น #f3f5f9 + ไล่สีเรเดียลสองชั้น ซึ่ง ZORT ไม่มีเลย
+      เจ้าของร้านสั่ง "ทำให้เหมือนทุกจุด สีก็เหมือน" ⇒ ถอดไล่สีออก */
 .bg-app {
-  background-color: #f3f5f9;
-  background-image:
-    radial-gradient(1200px 480px at 100% -10%, rgba(37, 99, 235, 0.05), transparent 55%),
-    radial-gradient(900px 400px at -10% 0%, rgba(23, 56, 107, 0.04), transparent 55%);
-  background-attachment: fixed;
+  background-color: #f0f2f9;
 }
 
 /* จำกัดความกว้างเฉพาะจอมือถือ — บนจอ PC ใช้เต็มจอแบบระบบหลังบ้าน */

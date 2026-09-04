@@ -148,7 +148,7 @@ export default function CoreBundlesPage() {
             </Link>
             <Link href="/core/soon/bundle-add"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               เพิ่มสินค้าเป็นชุดใหม่
             </Link>
           </>
@@ -220,7 +220,7 @@ export default function CoreBundlesPage() {
                         detail="ชุดสินค้าดึงมาจาก ZORT — สร้างชุดที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
                     {/* รูปอยู่ในคอลัมน์ชื่อ แบบเดียวกับจอสินค้าของ ZORT */}

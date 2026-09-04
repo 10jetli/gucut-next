@@ -88,7 +88,7 @@ export default function CoreBranchesPage() {
             </Link>
             <Link href="/core/soon/warehouse-add"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               เพิ่มคลังสินค้า/สาขา
             </Link>
           </>
@@ -156,7 +156,7 @@ export default function CoreBranchesPage() {
                 {list.map((w, i) => {
                   const s = statOf(w.code)
                   return (
-                    <tr key={w.code} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <tr key={w.code} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={`${TD} text-gray-700 font-medium whitespace-nowrap`}>{w.code}</td>
                       <td className={TD}><span className="text-gray-800">{w.name || w.code}</span></td>

@@ -105,7 +105,7 @@ export default function QuotationsPage() {
             </Link>
             <Link href="/core/soon/quotation"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               สร้าง
             </Link>
           </>
@@ -153,7 +153,7 @@ export default function QuotationsPage() {
                     detail={q || tab ? 'ลองล้างคำค้นหรือกลับไปแท็บทั้งหมด' : 'ยังไม่มีใบเสนอราคาใน ZORT'} />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={r.number} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={r.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}

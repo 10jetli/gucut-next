@@ -187,7 +187,7 @@ export default function CoreStockPage() {
             </Link>
             <Link href="/core/soon/product-add"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               เพิ่มสินค้าใหม่
             </Link>
           </>
@@ -328,7 +328,7 @@ export default function CoreStockPage() {
                         detail="ลองล้างคำค้น หรือเปลี่ยนแท็บ · ถ้าเพิ่งเพิ่มสินค้าที่ ZORT ต้องรอรอบซิงก์ถัดไป" />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
                     {/* ⚠️ ZORT วางรูปไว้**ในคอลัมน์ชื่อสินค้า** ไม่ใช่คอลัมน์แยก (ภาพ 02-สินค้า.jpg)

@@ -77,7 +77,7 @@ export default function LedgerScreen({
             {!noCreate && (
               <Link href={`/core/soon/${soonKey}`}
                 className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-                style={{ background: '#1b3b73' }}>
+                style={{ background: '#4669e5' }}>
                 {createLabel}
               </Link>
             )}

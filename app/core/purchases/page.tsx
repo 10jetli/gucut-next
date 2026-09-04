@@ -130,12 +130,12 @@ export default function CorePurchasesPage() {
             </Link>
             <Link href="/core/soon/buy-create"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               สร้าง
             </Link>
             <Link href="/core/soon/buy-create-quick"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               สร้างอย่างง่าย
             </Link>
           </>
@@ -186,7 +186,7 @@ export default function CorePurchasesPage() {
                         detail="ใบสั่งซื้อดึงมาจาก ZORT — เปิดใบใหม่ที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={r.number} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={r.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
                     {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}

@@ -143,7 +143,7 @@ export default function LogisticsPage() {
             </Link>
             <Link href="/core/soon/shipping"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               ขนส่ง
             </Link>
           </>
@@ -242,7 +242,7 @@ export default function LogisticsPage() {
                     detail={q ? 'ลองพิมพ์คำสั้นลง หรือค้นด้วยเลขพัสดุเต็ม' : 'ยังไม่มีใบที่มีเลขพัสดุในเงื่อนไขนี้'} />
                 )}
                 {rows.map((r) => (
-                  <tr key={r.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={r.id} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={TD}>
                       {/* ZORT โชว์เลขพัสดุสองบรรทัด (ลิงก์ + เลขเดิมซ้ำตัวเล็ก) และมีโลโก้ขนส่งข้างหน้า
                           ⇒ บรรทัดล่างของเราใส่ **ชื่อขนส่ง** แทนการซ้ำเลขเดิม

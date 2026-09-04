@@ -12,7 +12,20 @@
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
 
-export const ZORT_BLUE = '#1b3b73'
+/* ── จานสี ZORT — **วัดจากพิกเซลของภาพจอจริง ไม่ใช่เดาด้วยตา** ────────────
+   ที่มา: `zort-ui/` ภาพความละเอียด 3108×1482 (เจ้าของร้านส่งมา 4 ก.ย. 2569)
+   วิธีวัด: นับสีที่พบมากที่สุดในแต่ละบริเวณด้วย PIL — ไม่ได้กะจากสายตา
+
+   🔴 **ของเดิม ZORT_BLUE = '#4669e5' ผิด** — นั่นคือน้ำเงินกรมท่าเข้ม
+      ของจริงเป็นน้ำเงินสดกว่ามาก **#4669e5** (พบ 90% ในแถบเมนูที่เลือก
+      และ 58% ในโซนปุ่มหลัก) ⇒ ปุ่มหลักทุกจอของเราเข้มกว่า ZORT มาตลอด
+   ⚠️ จะแก้สีต้องวัดจากภาพใหม่เท่านั้น **ห้ามปรับด้วยสายตา** */
+export const ZORT_BLUE = '#4669e5'        // ปุ่มหลัก · เมนูที่เลือก · ขีดใต้แท็บ
+export const ZORT_SIDEBAR = '#222a57'     // พื้นแถบเมนูซ้าย
+export const ZORT_PAGE_BG = '#f0f2f9'     // พื้นหลังหน้า (แบน ไม่มีไล่สี)
+export const ZORT_ROW_BG = '#f8f9fa'      // พื้นแถวในตาราง
+export const ZORT_LINE = '#e8ecf8'        // เส้นคั่นแถว
+export const ZORT_LINK = '#457ab2'        // ลิงก์ในตาราง (ฟ้าอมเทา ไม่ใช่ blue-600)
 
 /* ── หัวจอ ────────────────────────────────────────────────────────────── */
 export function PageHead({
@@ -131,12 +144,14 @@ export function Tabs({
 /* ── ป้ายกลมบอกสถานะ ───────────────────────────────────────────────────
    ZORT: เขียว = สำเร็จ/ชำระครบ · ส้ม = รอโอน/รอชำระ · แดง = ยกเลิก · เทา = อื่น ๆ */
 export type PillTone = 'green' | 'orange' | 'red' | 'gray' | 'blue'
+/* สีป้ายวัดจากภาพจริงเช่นกัน — ZORT ใช้พื้นอ่อนมากกับตัวหนังสือเข้มปานกลาง
+   เขียว พื้น #d8fef2 ตัว #458e72 · ส้ม พื้น #fef8e8 ตัว #de9353 · ฟ้า(COD) พื้น #edf6fe ตัว #498dd8 */
 const PILL: Record<PillTone, string> = {
-  green: 'bg-emerald-50 text-emerald-700',
-  orange: 'bg-orange-50 text-orange-700',
+  green: 'bg-[#d8fef2] text-[#458e72]',
+  orange: 'bg-[#fef8e8] text-[#de9353]',
   red: 'bg-red-50 text-red-600',
   gray: 'bg-gray-100 text-gray-600',
-  blue: 'bg-blue-50 text-blue-700',
+  blue: 'bg-[#edf6fe] text-[#498dd8]',
 }
 export function Pill({ tone = 'gray', children }: { tone?: PillTone; children: ReactNode }) {
   return (
@@ -159,8 +174,11 @@ export function toneOfStatus(s: string): PillTone {
 /* ── ตาราง ─────────────────────────────────────────────────────────────
    หัวตารางตัวเล็กสีเทา · เส้นคั่นบาง · แถวมี hover · ตัวเลขชิดขวา */
 export function TableWrap({ children }: { children: ReactNode }) {
+  /* ⚠️ พื้นตารางของ ZORT ไม่ใช่ขาวสนิท — วัดได้ #f8f9fa (พบ 85% ในบริเวณแถว)
+     ขาวสนิทบนพื้นหน้า #f0f2f9 จะดูตัดกันแรงกว่าของจริง */
   return (
-    <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
+    <div className="border rounded-md overflow-hidden"
+      style={{ background: ZORT_ROW_BG, borderColor: ZORT_LINE }}>
       <div className="overflow-x-auto">{children}</div>
     </div>
   )

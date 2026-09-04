@@ -128,7 +128,7 @@ export default function ManualPage() {
         </Section>
 
         <div className="flex flex-wrap gap-2 mt-4">
-          <Link href="/core/pos" className="text-[13px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#1b3b73' }}>
+          <Link href="/core/pos" className="text-[13px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4669e5' }}>
             เปิดจอขายหน้าร้าน
           </Link>
           <Link href="/core" className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50">

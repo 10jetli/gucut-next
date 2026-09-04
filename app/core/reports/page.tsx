@@ -268,7 +268,7 @@ export default function CoreProductReportPage() {
                     />
                   )}
                   {deadRows.map((r) => (
-                    <tr key={r.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-blue-600 whitespace-nowrap`}>{r.sku}</td>
                       <td className={TD}>
                         <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">

@@ -151,7 +151,7 @@ export default function CoreCategoriesPage() {
             </Link>
             <Link href="/core/soon/category-add"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               เพิ่มหมวดหมู่
             </Link>
           </>
@@ -273,7 +273,7 @@ export default function CoreCategoriesPage() {
                         detail="หมวดหมู่ดึงมาจาก ZORT — เพิ่มหมวดที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
                 {rows.map((r) => (
-                  <tr key={r.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={r.name} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={TD}>
                       {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
                       <span className="text-gray-800">{r.name}</span>

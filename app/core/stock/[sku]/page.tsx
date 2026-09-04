@@ -596,7 +596,7 @@ export default function ProductDetailPage() {
                   )}
                   {cardRows.map((m, i) => (
                     <tr key={`${m.ref ?? ''}-${m.date ?? ''}-${i}`}
-                      className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                      className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} whitespace-nowrap text-gray-600`}>
                         {m.date ? thaiDate(String(m.date).slice(0, 10)) : '-'}
                       </td>

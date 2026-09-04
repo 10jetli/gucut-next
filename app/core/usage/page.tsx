@@ -134,7 +134,7 @@ export default function CoreUsagePage() {
                 key={x.d}
                 onClick={() => setWin(x.d)}
                 className={`text-[12.5px] rounded-full px-3 py-1.5 border transition-colors ${
-                  win === x.d ? 'bg-[#1b3b73] text-white border-[#1b3b73]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
+                  win === x.d ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                 }`}
               >
                 {x.label}
@@ -191,7 +191,7 @@ export default function CoreUsagePage() {
                   {rowsBySite.map((r) => {
                     const a = r.builds && r.minutes ? r.minutes / r.builds : null
                     return (
-                      <tr key={siteName(r)} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                      <tr key={siteName(r)} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                         <td className={`${TD} text-gray-800 font-medium`}>{siteName(r)}</td>
                         <td className={TDR}>{fmtNum(Number(r.builds) || 0)}</td>
                         <td className={TDR}>{mins(r.minutes)}</td>

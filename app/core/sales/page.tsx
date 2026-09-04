@@ -196,12 +196,12 @@ export default function CoreSalesPage() {
             </Link>
             <Link href="/core/soon/sale-create"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               สร้าง
             </Link>
             <Link href="/core/pos"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               สร้างอย่างง่าย
             </Link>
           </>

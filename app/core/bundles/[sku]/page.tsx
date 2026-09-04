@@ -142,7 +142,7 @@ export default function BundleDetailPage() {
                     detail="รายการในชุดเก็บมาจากหน้ารายละเอียดของ ZORT ทีละชุด — ชุดนี้อาจยังไม่ถูกเก็บ" />
                 )}
                 {items.map((it, i) => (
-                  <tr key={`${it.sku}-${i}`} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={`${it.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{it.line ?? i + 1}</td>
                     <td className={`${TD} whitespace-nowrap`}>
                       <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">

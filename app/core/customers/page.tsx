@@ -111,7 +111,7 @@ export default function CoreContactsPage() {
             </Link>
             <Link href="/core/soon/contact-add"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               เพิ่มผู้ติดต่อใหม่
             </Link>
           </>
@@ -209,7 +209,7 @@ export default function CoreContactsPage() {
                       detail={q ? 'ค้นได้จาก ชื่อ · เบอร์โทร · รหัสผู้ติดต่อ' : 'ยังไม่มีรายชื่อในคลังเงา — ต้องสั่งซิงก์ก่อน'} />
                   )}
                   {rows.map((r, i) => (
-                    <tr key={r.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                    <tr key={r.id} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                       <td className={`${TD} whitespace-nowrap`}>{r.code || DASH}</td>
                       <td className={TD}>

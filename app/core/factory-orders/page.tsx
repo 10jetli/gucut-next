@@ -165,7 +165,7 @@ export default function CorePurchasesPage() {
                     detail="ลองเปลี่ยนแท็บสถานะ · ใบสั่งของกับโรงงานกรอกจากระบบสั่งของ ไม่ได้มาจาก ZORT" />
                 )}
                 {shown.map((o, i) => (
-                  <tr key={o.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={o.id} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{i + 1}</td>
                     <td className={TD}><span className="text-gray-800">{o.product || '—'}</span></td>
                     <td className={`${TD} text-gray-600 max-w-[190px] truncate`}>{o.factory || '—'}</td>

@@ -268,7 +268,7 @@ export default function BackupPage() {
                   <tr><td colSpan={5} className="px-3 py-6 text-[13px] text-gray-400 text-center">ยังไม่มีสำเนาสักถัง</td></tr>
                 )}
                 {stores.map((s) => (
-                  <tr key={s.store} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={s.store} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-800 font-medium`}>{s.store}</td>
                     <td className={TDR}>{num(s.keys)}</td>
                     <td className={TDR}>{fmtBytes(s.bytes)}</td>

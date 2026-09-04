@@ -57,7 +57,7 @@ export default function SoonPage({ params }: { params: { key: string } }) {
           <Link
             href="/"
             className="text-[13px] font-semibold text-white rounded-full px-5 py-2"
-            style={{ background: '#1b3b73' }}
+            style={{ background: '#4669e5' }}
           >
             กลับหน้าภาพรวม
           </Link>

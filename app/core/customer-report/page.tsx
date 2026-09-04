@@ -196,7 +196,7 @@ export default function CoreCustomersPage() {
                     detail="รายชื่อลูกค้ารวมจากใบขาย — ถ้าเพิ่งมีออเดอร์ใหม่ ต้องรอรอบซิงก์ถัดไป" />
                 )}
                 {shown.map((p, i) => (
-                  <tr key={p.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={p.name} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{page * PER_PAGE + i + 1}</td>
                     <td className={TD}>
                       {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}

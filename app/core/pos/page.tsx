@@ -547,7 +547,7 @@ export default function CorePosPage() {
                 onClick={() => pickBranch(b.code)}
                 className={`text-[14px] font-semibold rounded-lg px-4 py-2.5 border transition-colors ${
                   branch === b.code
-                    ? 'bg-[#1b3b73] text-white border-[#1b3b73]'
+                    ? 'bg-[#4669e5] text-white border-[#4669e5]'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -654,7 +654,7 @@ export default function CorePosPage() {
                     onClick={() => setPayMethod(id)}
                     className={`flex-1 text-[13px] font-semibold py-2.5 border transition-colors ${
                       payMethod === id
-                        ? 'bg-[#1b3b73] text-white border-[#1b3b73]'
+                        ? 'bg-[#4669e5] text-white border-[#4669e5]'
                         : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                     }`}
                   >
@@ -723,7 +723,7 @@ export default function CorePosPage() {
                 if (e.key === 'Enter' && found.length > 0) addToCart(found[0])
               }}
               placeholder="สแกนบาร์โค้ด / พิมพ์รหัสหรือชื่อสินค้า แล้วกด Enter"
-              className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#1b3b73]"
+              className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#4669e5]"
             />
             {looking && <p className="text-[12px] text-gray-400 mt-1">กำลังค้น…</p>}
             {!looking && q.trim() !== '' && (
@@ -830,7 +830,7 @@ export default function CorePosPage() {
                   </div>
                   <button
                     onClick={() => resumeBill(h.id)}
-                    className="text-[12.5px] font-semibold text-white bg-[#1b3b73] rounded-lg px-3 py-2 shrink-0"
+                    className="text-[12.5px] font-semibold text-white bg-[#4669e5] rounded-lg px-3 py-2 shrink-0"
                   >
                     เรียกคืน
                   </button>
@@ -990,7 +990,7 @@ export default function CorePosPage() {
             onClick={() => (step === 'cart' ? setStep('pay') : checkout())}
             disabled={saving || !branch || cart.length === 0 || (hasZero && !allowZero)}
             className="w-full text-[18px] font-bold text-white py-4 disabled:opacity-40"
-            style={{ background: '#1b3b73' }}
+            style={{ background: '#4669e5' }}
           >
             {saving
               ? 'กำลังบันทึก…'

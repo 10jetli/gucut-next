@@ -144,7 +144,7 @@ export default function CoreTransfersPage() {
             {/* โอนสินค้าจริงร้านทำที่เครื่องมือเดิมอยู่แล้ว ⇒ ปุ่มนี้พาไปของจริง ไม่ใช่หน้า soon */}
             <Link href="/catalog/index.html#trf"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#1b3b73' }}>
+              style={{ background: '#4669e5' }}>
               สร้างรายการโอนสินค้า
             </Link>
           </>
@@ -200,7 +200,7 @@ export default function CoreTransfersPage() {
                         detail="ใบโอนดึงมาจาก ZORT — โอนของที่ ZORT หรือที่เครื่องมือโอนสินค้าแล้วรอบซิงก์ถัดไปจะเข้ามา" />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={`${r.number}-${i}`} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                  <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(r.transferdate)}</td>
                     <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
