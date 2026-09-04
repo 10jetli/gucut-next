@@ -40,11 +40,17 @@ const GRAINS: { id: Grain; label: string }[] = [
 ]
 
 function isoAgo(months: number) {
-  const t = new Date()
+  // ⚠️ ต้องบวก 7 เหมือน todayIso ไม่งั้นต้นช่วงกับปลายช่วงคิดคนละเขตเวลา
+  const t = new Date(Date.now() + 7 * 3600e3)
   t.setMonth(t.getMonth() - months)
   return t.toISOString().slice(0, 10)
 }
-function todayIso() { return new Date().toISOString().slice(0, 10) }
+/* 🔴 **วันแบบ UTC ไม่ใช่วันของร้าน** (แก้ 5 ก.ย. 2569 ตอนไล่ตรวจทั้งระบบ)
+   ร้านอยู่ไทย UTC+7 · `new Date().toISOString()` ให้วันแบบ UTC
+   ⇒ **ตี 1 ถึง 7 โมงเช้าเวลาไทย จะได้ "เมื่อวาน"** ⇒ ช่วงวันที่ตั้งต้นจบที่เมื่อวาน
+      ใบซื้อที่ทำเช้านั้นหายจากรายงานเงียบ ๆ และไม่มีอะไรฟ้อง
+   (ร้านนี้ทำงานตี 3 จริง — ชั่วโมงที่บั๊กนี้ทำงานพอดี) */
+function todayIso() { return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) }
 
 /** ป้ายแกนนอนตามความละเอียดที่เลือก — ต้องเรียงตามเวลาจริง ไม่ใช่เรียงตามตัวอักษร */
 function bucketOf(iso: string, g: Grain) {

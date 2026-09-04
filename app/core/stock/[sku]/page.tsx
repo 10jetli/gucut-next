@@ -221,7 +221,9 @@ export default function ProductDetailPage() {
       }
       const qs = new URLSearchParams({
         list: 'topproducts', sku, by: 'month',
-        from: HISTORY_FROM, to: new Date().toISOString().slice(0, 10),
+        // ⚠️ วันแบบไทย (UTC+7) — ใช้ UTC ตรง ๆ จะได้ "เมื่อวาน" ในช่วงตี 1 ถึง 7 โมงเช้า
+        //    ⇒ ความเคลื่อนไหวของเช้าวันนั้นหายจากประวัติสต็อกเงียบ ๆ
+        from: HISTORY_FROM, to: new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10),
       })
       const j = await fetch(`/api/web/core?${qs}`).then((r) => r.json()).catch(() => null)
       // ⚠️ ด่านเดิม: เซิร์ฟเวอร์ต้องยืนยันว่ารับทั้ง sku และโหมด month ที่เราส่งไปจริง
