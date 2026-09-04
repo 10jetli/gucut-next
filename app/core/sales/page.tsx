@@ -84,6 +84,37 @@ const STATUS_TH: Record<string, string> = {
 }
 const statusTh = (s: string) => STATUS_TH[s] ?? (s || 'ไม่ระบุสถานะ')
 
+/* ── ใบที่สองแหล่งพูดไม่ตรงกัน ────────────────────────────────────────
+   เจอของจริง 4 ก.ย. 2569: ใบ TikTok ที่ ZORT บอก "สำเร็จ" แต่ TikTok บอก "กำลังส่ง (121)"
+   ⇒ ถ้านับใบสำเร็จจากสถานะฝั่ง ZORT อย่างเดียว ใบนี้ถูกนับปิดทั้งที่ของยังอยู่บนรถ
+   **ป้ายนี้ไม่แก้ตัวเลขไหนทั้งนั้น หน้าที่เดียวคือทำให้เห็น**
+
+   ⚠️ เทียบ `status` แบบ **ตรงตัว** ไม่ใช่ดูจากคำที่มีอยู่ในข้อความ
+      คลังมีสถานะแค่ 3 แบบ (Success · Voided · Pending — ยิงจริง 4 ก.ย. 2569)
+      สถานะใหม่ที่ยังไม่รู้จักจะ **ไม่ถูกติดป้าย** — เงียบไว้ดีกว่าเตือนผิด
+
+   ⚠️ ไม่นับกลุ่ม returning/problem เป็น "ไม่ตรงกัน" โดยตั้งใจ
+      ขายสำเร็จแล้วลูกค้าคืนของทีหลังเป็นเรื่องปกติ ไม่ใช่สองแหล่งขัดกัน
+
+   🔴 **และไม่นับกลุ่ม shipping ด้วย — วัดจากของจริงก่อนตัดสิน** (4 ก.ย. 2569)
+      เกณฑ์ตั้งต้นคือ "รอจัดส่ง + กำลังจัดส่ง" · ลองกับ 600 ใบจริงแล้วติดป้าย 124 ใบ = 21%
+      แต่ 81 ใบในนั้นคือกลุ่ม shipping ซึ่งอายุกลาง 4 วัน — ของอยู่บนรถตามปกติ
+      (56 ใบเป็น "รอผู้ซื้อกดรับ" = ถึงมือลูกค้าแล้วด้วยซ้ำ)
+      ⇒ เตือน 21% ของทุกหน้า = เสียงหอนที่คนเลิกอ่าน แล้ววันที่มันจริงก็ไม่มีใครดู
+      เหลือเฉพาะ "ยังไม่ออกจากร้าน" 43 ใบ = 7% · อายุกลาง 10 วัน · เกิน 14 วันถึง 13 ใบ
+      **นั่นคือใบที่ระบบเรานับปิดแล้วแต่แพลตฟอร์มยังบอกว่าของยังไม่ออก** — อันนี้ควรเห็น */
+const NOT_SHIPPED_YET = ['waiting_pay', 'waiting_confirm', 'waiting_ship']
+const isMismatch = (r: Row) =>
+  r.status === 'Success' && !!r.shipStatusGroup && NOT_SHIPPED_YET.includes(r.shipStatusGroup)
+
+/** อายุใบเป็นวัน — ใส่ในคำอธิบายป้าย เพราะ "ยังไม่ออก 3 วัน" กับ "ยังไม่ออก 20 วัน" คนละเรื่อง */
+function ageDays(day?: string): number | null {
+  if (!day) return null
+  const t = Date.parse(`${day}T00:00:00+07:00`)
+  if (!Number.isFinite(t)) return null
+  return Math.floor((Date.now() - t) / 864e5)
+}
+
 const PAGE = 50
 const RANGES = [
   { days: 7, label: 'ย้อนหลัง 7 วัน' },
@@ -365,6 +396,31 @@ export default function CoreSalesPage() {
                           {/* จุดส้ม = คำแปลยังไม่ยืนยัน (รหัสตัวเลขของ TikTok)
                               ต้องมีอะไรบอกสายตา ไม่งั้นคนเชื่อคำแปล TikTok เท่ากับ Shopee */}
                           {r.shipStatusUnverified && <span className="text-amber-600"> •</span>}
+                        </span>
+                      )}
+                      {/* ⚠️ ป้ายอ่อนกว่าเมื่อคำแปลยังไม่ยืนยัน — เตือนแรงบนของที่เราเองยังไม่มั่นใจ
+                          จะกลายเป็นเสียงหอนที่คนเลิกฟัง แล้ววันที่มันจริงก็ไม่มีใครดู */}
+                      {isMismatch(r) && (
+                        <span
+                          className={`block w-fit text-[10.5px] rounded px-1.5 py-0.5 mt-1 ${
+                            r.shipStatusUnverified
+                              ? 'bg-gray-100 text-gray-500'
+                              : 'bg-amber-100 text-amber-800 font-medium'
+                          }`}
+                          title={[
+                            `ระบบเราบอกว่า "${statusTh(r.status)}"`,
+                            `แต่${r.shipStatusFrom ? ` ${r.shipStatusFrom}` : 'แพลตฟอร์ม'}บอกว่า "${r.shipStatus}"`,
+                            r.integrationStatus ? `ค่าดิบ: ${r.integrationStatus}` : '',
+                            (() => {
+                              const d = ageDays(r.order_date)
+                              return d === null ? '' : `ใบนี้อายุ ${d.toLocaleString('th-TH')} วันแล้ว`
+                            })(),
+                            r.shipStatusUnverified
+                              ? 'คำแปลของแพลตฟอร์มนี้ยังไม่ได้ยืนยัน ⇒ ป้ายนี้จึงเป็นแค่ข้อสังเกต'
+                              : 'ใบนี้ถูกนับว่าปิดแล้ว แต่แพลตฟอร์มยังบอกว่าของยังไม่ออกจากร้าน',
+                          ].filter(Boolean).join('\n')}
+                        >
+                          {r.shipStatusUnverified ? 'อาจยังไม่ได้ส่ง' : '⚠ ปิดใบแล้วแต่ยังไม่ได้ส่ง'}
                         </span>
                       )}
                     </td>
