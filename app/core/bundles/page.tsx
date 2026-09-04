@@ -50,6 +50,11 @@ interface Resp {
   /** เก็บรายการในชุดครั้งเดียวเมื่อไหร่ — ต้องโชว์เสมอ เพราะไม่มีการซิงก์อัตโนมัติ */
   collectedAt?: string
   checkedMarketplaces?: string[]
+  /** เจ้าที่ยิงแล้วล่ม + เหตุผล · เจ้าที่ยังไม่ได้เชื่อมร้าน + เหตุผล · เวลาที่ถามล่าสุด (UTC)
+   *  ⚠️ "ล่ม" กับ "ยังไม่ได้เชื่อม" คนละเรื่อง — อันหลังเจ้าของร้านกดเองได้เลย */
+  marketplacesFailed?: Record<string, string>
+  marketplacesNotConnected?: Record<string, string>
+  marketplacesAt?: string
   bundlesWithItems?: number
   lines?: number
   limit?: number
@@ -298,7 +303,9 @@ export default function CoreBundlesPage() {
           </TableWrap>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            <MarketCoverage checked={data.checkedMarketplaces} />
+            <MarketCoverage checked={data.checkedMarketplaces}
+              failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
+              at={data.marketplacesAt} />
             {data.note ? ` · ${data.note}` : ''}
           </p>
         </>

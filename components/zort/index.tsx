@@ -433,8 +433,22 @@ export function MarketLogos({ list }: { list?: string[] | null }) {
  *    (ลิงก์อนุญาตขึ้นว่า "ไม่มีจำหน่ายในภูมิภาคของร้านค้าของคุณ")
  * ⚠️ Shopify จะไม่มีวันขึ้นเพราะร้านปิดไปแล้ว — เราถามแพลตฟอร์มเอง ไม่ได้ลอกจาก ZORT
  *    (ZORT ยังโชว์โลโก้ Shopify ค้างอยู่ที่ระดับสินค้า แต่ไม่มีในหน้าเชื่อมต่อแล้ว) */
-export function MarketCoverage({ checked }: { checked?: string[] | null }) {
+export function MarketCoverage(
+  { checked, failed, notConnected, at }: {
+    checked?: string[] | null
+    /** เจ้าที่ยิงแล้วพัง + **เหตุผล** (ท่อส่งมาตั้งแต่ 4 ก.ย. 2569) */
+    failed?: Record<string, string> | null
+    /** เจ้าที่ยังไม่ได้เชื่อมร้าน + เหตุผล */
+    notConnected?: Record<string, string> | null
+    /** เวลาที่ถามแพลตฟอร์มล่าสุด — เป็น UTC ต้องบวก 7 ก่อนโชว์ */
+    at?: string | null
+  },
+) {
   const list = Array.isArray(checked) ? checked : []
+  /** ⚠️ **"ยังเช็คไม่ได้" เฉย ๆ ไม่พอ ต้องบอกว่าเพราะอะไร**
+   *  ของจริง: TikTok ไม่ได้พัง — มันยังไม่เคยถูกกดอนุญาต ซึ่งเป็นงานที่เจ้าของร้านทำได้เลย
+   *  เขียนแค่ "เช็คไม่ได้" คนอ่านจะนึกว่าเป็นข้อจำกัดของระบบแล้วเลิกตาม (กฎ ❌ vs ⏳) */
+  const why = (k: string) => (failed?.[k] ?? notConnected?.[k] ?? '').trim()
   if (list.length === 0) {
     return (
       <>คอลัมน์ <b>Marketplace</b> ยังไม่มีข้อมูล — กำลังต่อจากรายการสินค้าจริงบนแพลตฟอร์ม</>
@@ -449,9 +463,23 @@ export function MarketCoverage({ checked }: { checked?: string[] | null }) {
   return (
     <>
       คอลัมน์ <b>Marketplace</b> ตรวจจากรายการสินค้าจริงบน <b>{list.join(' · ')}</b>
+      {at && (
+        // ⚠️ ค่าที่ท่อส่งมาเป็น UTC — ต้องบวก 7 แล้วเขียนกำกับว่าเป็นเวลาไทย
+        <> · ถามล่าสุด{' '}
+          <span title={String(at)}>
+            {new Date(new Date(at).getTime() + 7 * 3600 * 1000)
+              .toISOString().slice(11, 16)} น. (เวลาไทย)
+          </span>
+        </>
+      )}
       {missing.length > 0 && (
         <> · <b className="text-amber-700">ยังเช็ค {missing.join(' · ')} ไม่ได้</b> —
-          สินค้าที่ไม่มีโลโก้ของเจ้านั้น <b>ไม่ได้แปลว่าไม่ได้ลงขาย</b> แปลว่าเรายังมองไม่เห็น</>
+          สินค้าที่ไม่มีโลโก้ของเจ้านั้น <b>ไม่ได้แปลว่าไม่ได้ลงขาย</b> แปลว่าเรายังมองไม่เห็น
+          {/* บอกเหตุผลรายเจ้า — ต่างกันคนละเรื่อง: ยังไม่กดอนุญาต vs ยิงแล้วล่ม */}
+          {missing.filter((k) => why(k)).map((k) => (
+            <span key={k} className="block text-gray-500">· {k}: {why(k)}</span>
+          ))}
+        </>
       )}
     </>
   )

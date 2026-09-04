@@ -45,6 +45,11 @@ interface Resp {
    *  ไม่มีโลโก้ Lazada อ่านได้สองแบบ: "ไม่ได้ลงขายที่ Lazada" กับ "เรายังเช็คไม่ได้"
    *  หน้าตาเหมือนกันเป๊ะแต่คนละความหมาย ⇒ ต้องบอกว่าเช็คอะไรไปบ้าง */
   checkedMarketplaces?: string[]
+  /** เจ้าที่ยิงแล้วล่ม + เหตุผล · เจ้าที่ยังไม่ได้เชื่อมร้าน + เหตุผล · เวลาที่ถามล่าสุด (UTC)
+   *  ⚠️ "ล่ม" กับ "ยังไม่ได้เชื่อม" คนละเรื่อง — อันหลังเจ้าของร้านกดเองได้เลย */
+  marketplacesFailed?: Record<string, string>
+  marketplacesNotConnected?: Record<string, string>
+  marketplacesAt?: string
   /** จำนวนแถวของแท็บที่เลือกอยู่ — ใช้ทำเลขหน้า ห้ามใช้ total ตอนอยู่แท็บ out/low */
   shown?: number
   /** 🔴 สินค้าใน ZORT ที่ **ไม่มีรหัสสินค้า** จึงเก็บเข้าคลังเงาไม่ได้เลยโดยโครงสร้าง
@@ -364,7 +369,9 @@ export default function CoreStockPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
-                {' '}· <MarketCoverage checked={data.checkedMarketplaces} />
+                {' '}· <MarketCoverage checked={data.checkedMarketplaces}
+              failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
+              at={data.marketplacesAt} />
                 {' '}· ZORT แสดง <b>2,898</b> รายการ ต่างจากที่นี่ <b>226</b> รายการ —
                 เป็นรายการที่<b>ไม่มีรหัสสินค้า ไม่มีของในสต็อก และมูลค่ารวม 0 บาท</b>
                 (ตรวจแล้ว) จึงไม่ถูกดึงเข้ามา ไม่ใช่ข้อมูลตกหล่น
