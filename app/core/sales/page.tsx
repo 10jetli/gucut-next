@@ -139,6 +139,13 @@ const RANGES = [
 export default function CoreSalesPage() {
   const router = useRouter()
   const [days, setDays] = useState(90)
+  /* 🔴 **ตัวกรองร้าน — ต้องมีคู่กับตัวกรองช่องทางเสมอ** (เพิ่ม 4 ก.ย. 2569)
+     ชื่อช่องทางซ้ำกันข้ามร้านจริง: TIKTOK มีทั้งใน z1 (753 ใบ ยังขายอยู่)
+     และ z2 (58 ใบ เลิกขาย 22 ก.พ. 69) ⇒ กรองแค่ช่องทางแล้วอ่านวันล่าสุด
+     จะได้ "วันนี้" แล้วสรุปว่าร้านที่เลิกไปแล้วยังขายอยู่
+     **ตัวกรองที่ไม่ครอบคลุมมิติที่ข้อมูลมีจริง จะให้คำตอบที่ดูสมเหตุสมผลเสมอ
+     และไม่มีอะไรฟ้องว่าคำตอบมาจากของสองกองปนกัน** (ฝั่งท่อเกือบสรุปผิดมาแล้ว) */
+  const [store, setStore] = useState('')
   const [channel, setChannel] = useState('')
   // ⚠️ แท็บของ ZORT เป็น "สถานะ" ไม่ใช่ช่องทาง — คนที่ชิน ZORT จะมองหาแท็บ "รอโอน"
   //    ช่องทางของ ZORT อยู่เป็นคอลัมน์ + ตัวกรอง เราจึงย้ายมาเป็น dropdown ให้ตรงกัน
@@ -152,11 +159,12 @@ export default function CoreSalesPage() {
 
   const load = useCallback(async (
     off = 0,
-    opt?: { days?: number; channel?: string; status?: string },
+    opt?: { days?: number; channel?: string; status?: string; store?: string },
   ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
     const st = opt?.status ?? status
+    const sr = opt?.store ?? store
     setLoading(true)
     setError('')
     try {
@@ -166,6 +174,7 @@ export default function CoreSalesPage() {
       })
       if (ch) qs.set('channel', ch)
       if (st) qs.set('status', st)
+      if (sr) qs.set('store', sr)
       if (q.trim()) qs.set('q', q.trim())
       // ⚠️ **ส่ง cancelled=1 เสมอ** — ค่าเริ่มต้นของ API ตัดใบยกเลิกทิ้ง
       //    ถ้าไม่ส่ง byStatus จะไม่มี "Voided" เลย ⇒ ไม่มีแท็บยกเลิกให้กด
@@ -182,7 +191,7 @@ export default function CoreSalesPage() {
     } finally {
       setLoading(false)
     }
-  }, [days, channel, status, q])
+  }, [days, channel, status, q, store])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -196,6 +205,8 @@ export default function CoreSalesPage() {
     if (channel) qs.set('channel', channel)
     if (status) qs.set('status', status)
     if (q.trim()) qs.set('q', q.trim())
+    // ⚠️ ต้องส่งร้านไปด้วย ไม่งั้นลูกศรเลื่อนใบก่อน/ถัดไปจะข้ามไปคนละชุดที่รวมสองร้าน
+    if (store) qs.set('store', store)
     // ต้องตรงกับตัวกรองที่ใช้ดึงรายการเป๊ะ ไม่งั้นลูกศรเลื่อนใบข้ามไปคนละชุด
     qs.set('cancelled', '1')
     router.push(`/core/sales/detail?${qs}`)
@@ -278,6 +289,18 @@ export default function CoreSalesPage() {
         advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
         right={
           <>
+            {/* ⚠️ ชื่อร้านมาจากบัญชี ZORT สองบัญชีของร้าน — z1 คือบริษัทที่ขายบนเว็บ
+                z2 คือบัญชีที่สอง ซึ่งตอนนี้เป็นเครื่องคิดเงินหน้าร้านล้วน
+                (เลิกขายออนไลน์ 22 ก.พ. 2569 — ฝั่งท่อไล่วันจริงยืนยันแล้ว) */}
+            <select
+              value={store}
+              onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
+              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+            >
+              <option value="">ทุกร้าน (2 ร้าน)</option>
+              <option value="z1">ศีตกาล เทรดดิ้ง</option>
+              <option value="z2">ceojet (หน้าร้าน)</option>
+            </select>
             <select
               value={channel}
               onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
@@ -302,6 +325,8 @@ export default function CoreSalesPage() {
         <div className="text-[12.5px] text-gray-500 mb-3">
           {/* ZORT เขียนวันแบบ 1/6/2569–2/9/2569 ไม่ใช่ ISO — ตรงนี้คือบรรทัดเดียวกันของเขา */}
           🔍 ค้นหา: วันที่ {thaiShort(data.from)} – {thaiShort(data.to)}
+          {/* ⚠️ เลขทุกตัวบนจอนี้ต้องบอกว่ามาจากกี่ร้าน — ชื่อช่องทางซ้ำกันข้ามร้านได้ */}
+          {' '}· ร้าน {store === 'z1' ? 'ศีตกาล เทรดดิ้ง' : store === 'z2' ? 'ceojet (หน้าร้าน)' : <b>รวมทั้ง 2 ร้าน</b>}
           {channel && ` · ช่องทาง ${channel}`}
           {/* 🔴 **เลขบนแท็บนับเฉพาะช่วงนี้ ไม่ใช่ทั้งคลัง — ต้องเขียนบอก**
               ของจริง 4 ก.ย. 2569: แท็บ "รอดำเนินการ" ขึ้น 17 (ในกรอบ 3 เดือน)
