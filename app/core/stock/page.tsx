@@ -252,6 +252,23 @@ export default function CoreStockPage() {
             )}
           </p>
 
+          {/* แถบเหนือแท็บตามผัง ZORT (`zort-ui/35-zort-สินค้า-รายการ.jpg`)
+              ขวามือมี ปุ่ม "Marketplace Dashboard" + ไอคอนสลับมุมมอง (รายการ / ตาราง) */}
+          <div className="flex flex-wrap items-center justify-end gap-2 mb-1">
+            {/* ✅ ปุ่มนี้มีปลายทางจริง — จอช่องทางขายของเราคือจอเดียวกับ Marketplace Dashboard ของ ZORT */}
+            <Link href="/core/channels"
+              className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-2.5 py-1 hover:bg-gray-50">
+              Marketplace Dashboard
+            </Link>
+            {/* ⚠️ ZORT มีไอคอนสลับ "มุมมองรายการ / มุมมองตาราง" — เรามีแต่มุมมองรายการ
+                ⇒ โชว์ตามผังแต่ล็อกไว้พร้อมเหตุผล · ทำปุ่มที่กดแล้วไม่เปลี่ยนอะไรคือปุ่มหลอก
+                   และซ่อนทิ้งก็ไม่ได้ เพราะคนที่ชิน ZORT จะหาแล้วไม่เจอ แล้วนึกว่าระบบเราทำไม่ได้ */}
+            <span title="มุมมองรายการ — จอนี้มีมุมมองเดียว"
+              className="text-[13px] leading-none px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-600">☰</span>
+            <span title="มุมมองตารางรูป — ยังไม่ได้ทำ (ไม่ใช่ทำไม่ได้) · ตอนนี้ดูรูปได้ในหน้ารายละเอียดสินค้า"
+              className="text-[13px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">▦</span>
+          </div>
+
           <Tabs
             // ⚠️ **ลอกจาก ZORT ทั้งชุด** (ภาพ 02-สินค้า.jpg) — สามแท็บ **ไม่มีเลขในวงเล็บ**
             //    เจ้าของร้านสั่ง 3 ก.ย. 2569: "ถอดของที่เราเพิ่มเองออกให้เหมือน ZORT เป๊ะ"
@@ -384,9 +401,24 @@ export default function CoreStockPage() {
                 {' '}· <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
               at={data.marketplacesAt} />
-                {' '}· ZORT แสดง <b>2,898</b> รายการ ต่างจากที่นี่ <b>226</b> รายการ —
-                เป็นรายการที่<b>ไม่มีรหัสสินค้า ไม่มีของในสต็อก และมูลค่ารวม 0 บาท</b>
-                (ตรวจแล้ว) จึงไม่ถูกดึงเข้ามา ไม่ใช่ข้อมูลตกหล่น
+                {/* 🔴 เดิมเขียนเลข 2,898 กับ 226 **ตายตัวในข้อความ** ทั้งที่ท่อส่ง
+                    `zortTotal` / `noSkuInZort` มาให้อยู่แล้ว ⇒ ร้านเพิ่มสินค้าเมื่อไหร่
+                    บรรทัดนี้กลายเป็นคำโกหกทันที โดยไม่มีอะไรฟ้อง (โรคเดียวกับคอลัมน์ Marketplace)
+                    ⚠️ ไม่มีค่ามาก็ไม่ต้องเขียนบรรทัดนี้ — ดีกว่าเขียนเลขที่เดาเอง */}
+                {typeof data.zortTotal === 'number' && typeof data.noSkuInZort === 'number' && (
+                  <>
+                    {' '}· ZORT แสดง <b>{data.zortTotal.toLocaleString('th-TH')}</b> รายการ
+                    ต่างจากที่นี่ <b>{data.noSkuInZort.toLocaleString('th-TH')}</b> รายการ —
+                    เป็นรายการที่<b>ไม่มีรหัสสินค้า ไม่มีของในสต็อก และมูลค่ารวม 0 บาท</b>
+                    (ตรวจแล้ว) จึงไม่ถูกดึงเข้ามา ไม่ใช่ข้อมูลตกหล่น
+                  </>
+                )}
+                {/* ⚠️ ZORT มีปุ่ม "Connect" ในทุกแถวของคอลัมน์ Marketplace (ผูกสินค้ากับร้านบนแพลตฟอร์ม)
+                    เราไม่ทำ เพราะเป็นการ **เขียนกลับ**ไปที่แพลตฟอร์ม ซึ่งยังไม่มีสิทธิ์
+                    ⇒ ปุ่มสีเทาทุกแถว 2,672 แถวไม่ได้ช่วยใคร แต่ **ห้ามเงียบ** จึงเขียนบอกตรงนี้แทน */}
+                {' '}· ZORT มีปุ่ม <b>Connect</b> ในคอลัมน์ Marketplace ทุกแถว (ผูกสินค้ากับร้าน
+                บนแพลตฟอร์ม) — <b>เรายังทำไม่ได้</b> เพราะต้องเขียนกลับไปที่แพลตฟอร์ม
+                ซึ่งยังไม่มีสิทธิ์ · ตอนนี้ต้องไปผูกที่หน้าร้านของแต่ละเจ้าเอง
                 {tab === 'out' && (
                   <span className="text-gray-400">
                     {' '}· &quot;ของหมด&quot; รวมของที่<b>ติดลบ</b>ด้วย
