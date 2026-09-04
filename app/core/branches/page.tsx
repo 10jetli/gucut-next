@@ -18,7 +18,12 @@ import {
   PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState,
 } from '@/components/zort'
 
-interface Warehouse { code: string; name: string; province?: string; isPos?: boolean }
+interface Warehouse {
+  code: string; name: string; province?: string; isPos?: boolean
+  /** มูลค่าสินค้าคงเหลือของคลังนั้น — ท่อยังไม่ส่งมา (ZORT ไม่เปิดให้ดึงสต็อกแยกคลัง)
+   *  รับไว้ก่อนเพื่อไม่ต้องกลับมาแก้จอ วันที่มีข้อมูล */
+  stockValue?: number
+}
 interface ChannelRow { channel: string; orders: number; amount: number }
 
 const thaiDay = (back = 0) =>
@@ -144,7 +149,15 @@ export default function CoreBranchesPage() {
                           {w.isPos ? 'จุดขาย' : 'โกดัง — เปิดบิลไม่ได้'}
                         </span>
                       </td>
-                      <td className={TDR}><span className="text-gray-300">—</span></td>
+                      {/* มูลค่าสินค้าคงเหลือรายคลัง — **ZORT ไม่เปิดให้ดึงสต็อกแยกตามคลัง**
+                          (ยิงมาแล้วไม่ผ่านทุกทาง) คลังเงาเก็บสต็อกรวมทั้งร้าน
+                          ⚠️ อ่านจากข้อมูลไว้ก่อน วันไหนมีค่าจะขึ้นเอง — ห้ามเขียนขีดตาย
+                             และขีดต้องบอกเหตุผลตอนชี้ค้าง ไม่งั้นแยกไม่ออกจาก "มูลค่าเป็นศูนย์" */}
+                      <td className={TDR}>
+                        {typeof w.stockValue === 'number'
+                          ? fmtMoney(w.stockValue)
+                          : <span className="text-gray-300" title="ZORT ไม่เปิดให้ดึงสต็อกแยกตามคลัง — คลังเงาเก็บสต็อกรวมทั้งร้าน จึงแยกรายคลังไม่ได้">—</span>}
+                      </td>
                       <td className={TDR}>{w.isPos ? fmtNum(s.orders) : <span className="text-gray-300">—</span>}</td>
                       <td className={TDR}>{w.isPos ? fmtMoney(s.amount) : <span className="text-gray-300">—</span>}</td>
                       <td className={`${TD} text-right`}>

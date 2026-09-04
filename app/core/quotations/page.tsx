@@ -18,6 +18,8 @@ import {
 } from '@/components/zort'
 
 interface Row {
+  /** ช่องทาง — ท่อยังไม่ส่งมา แต่รับไว้ก่อนเพื่อไม่ต้องกลับมาแก้จอ */
+  channel?: string
   number: string; customer?: string; phone?: string
   amount?: number; status?: string; date?: string; reference?: string
 }
@@ -160,8 +162,16 @@ export default function QuotationsPage() {
                     <td className={`${TD} max-w-[220px] truncate`} title={r.phone || ''}>
                       {r.customer || <span className="text-gray-300">-</span>}
                     </td>
-                    {/* ZORT มีคอลัมน์ช่องทางแต่ทั้ง 3 ใบเป็นขีด — ไม่มีค่าให้แสดงจริง ๆ */}
-                    <td className={TD}><span className="text-gray-300">-</span></td>
+                    {/* ZORT มีคอลัมน์ช่องทาง แต่ทั้ง 3 ใบใน ZORT เองก็เป็นขีด และท่อก็ไม่ส่งช่องนี้มา
+                        ⚠️ **อ่านจากข้อมูลไว้ก่อน อย่าเขียนขีดตาย** — วันไหนท่อส่ง `channel` มา
+                           จอจะขึ้นเอง ไม่ต้องมีใครจำได้ว่าต้องกลับมาแก้ตรงนี้
+                           (บทเรียน 4 ก.ย. 2569: คอลัมน์ Marketplace เขียนขีดตายไว้ข้ามวัน
+                            ทั้งที่ท่อส่งข้อมูลมาแล้ว และไม่มีใครเห็นเพราะขีดหน้าตาเหมือนกันหมด) */}
+                    <td className={TD}>
+                      {r.channel || (
+                        <span className="text-gray-300" title="ท่อยังไม่ส่งช่องทางของใบเสนอราคามา — ที่ ZORT เองก็เป็นขีดทุกใบ">-</span>
+                      )}
+                    </td>
                     <td className={TDR}>{fmtMoney(Number(r.amount) || 0)}</td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status ?? '')}>{statusTh(r.status)}</Pill></td>
                   </tr>
