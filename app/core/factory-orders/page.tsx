@@ -132,8 +132,12 @@ export default function CorePurchasesPage() {
         value={q}
         onChange={setQ}
         onSubmit={() => {}}
-        placeholder="ค้นชื่อสินค้า หรือโรงงาน"
-        advanced={<LinkText onClick={() => {}}>ค้นหา</LinkText>}
+        placeholder="ค้นชื่อสินค้า หรือโรงงาน (กรองทันทีที่พิมพ์)"
+        /* 🔴 **ปุ่มที่กดแล้วไม่เกิดอะไรคือของหลอก** (ถอดออก 5 ก.ย. 2569 ตอนไล่ตรวจทั้งระบบ)
+           เดิมมีลิงก์ "ค้นหา" ที่ onClick เป็นฟังก์ชันเปล่า — จอนี้กรองทันทีที่พิมพ์อยู่แล้ว
+           ⇒ คนกดแล้วไม่มีอะไรเกิด จะกดซ้ำแล้วนึกว่าจอค้าง
+           ⇒ เอาปุ่มออก แล้วบอกในช่องค้นหาแทนว่ากรองทันที */
+        advanced={q ? <LinkText onClick={() => setQ('')}>ล้างคำค้น</LinkText> : undefined}
         right={
           importCount !== null ? (
             <Link href="/import" className="text-[13px] text-blue-600 hover:underline">
