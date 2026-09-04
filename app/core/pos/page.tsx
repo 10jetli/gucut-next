@@ -37,7 +37,11 @@ interface Found {
   sku: string; name: string; price: number; qty: number
   permit?: Permit; permitModel?: string; permitWhy?: string
 }
-interface Cat { code: string; name: string; items: number }
+/** ⚠️ `zort: false` = หมวดนี้ **จัดจากชื่อสินค้าให้** ไม่ได้มาจากทะเบียนสินค้า ZORT
+ *  ของจริงตอนนี้ 15 จาก 57 หมวดเป็นแบบนี้ (ครอบ 139 รายการที่ยังไม่มีหมวดใน ZORT)
+ *  🔴 **การตีความต้องดูออกว่าเป็นการตีความ** — คนขายหน้าร้านกดหมวดพวกนี้ทุกวัน
+ *     ถ้าไม่บอก จะเข้าใจว่าเป็นหมวดที่ร้านตั้งไว้จริง แล้วแปลกใจว่าทำไมของไม่อยู่ในหมวดที่คิด */
+interface Cat { code: string; name: string; items: number; zort?: boolean }
 interface CartLine { sku: string; name: string; price: number; qty: number; discount: number; permit?: Permit }
 interface SaleRow {
   number: string; channel: string; status: string
@@ -130,6 +134,8 @@ export default function CorePosPage() {
   const [found, setFound] = useState<Found[]>([])
   const [looking, setLooking] = useState(false)
   const [cats, setCats] = useState<Cat[]>([])
+  /** ข้อความอธิบายที่มาของหมวด — อ่านจากท่อ ห้ามเขียนตายตัว (ตัวเลขขยับได้ทุกวัน) */
+  const [catNote, setCatNote] = useState('')
   const [cat, setCat] = useState('')          // หมวดที่เปิดอยู่ ('' = ยังไม่ได้เลือก)
   const [catTotal, setCatTotal] = useState(0) // มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
   // ⚠️ ผลค้นหาก็ต้องบอกจำนวนที่เจอจริงเหมือนกัน — ไม่งั้นคนขายค้นแล้วเห็น 20 ตัว
@@ -284,7 +290,10 @@ export default function CorePosPage() {
   useEffect(() => {
     fetch('/api/web/core?list=poscats')
       .then((r) => r.json())
-      .then((d) => setCats(Array.isArray(d?.cats) ? d.cats : []))
+      .then((d) => {
+        setCats(Array.isArray(d?.cats) ? d.cats : [])
+        setCatNote(typeof d?.note === 'string' ? d.note : '')
+      })
       .catch(() => setCats([]))
   }, [])
 
@@ -756,13 +765,25 @@ export default function CorePosPage() {
               {!cat && (
                 <div className="grid grid-cols-1 gap-1.5 max-h-[420px] overflow-y-auto">
                   {cats.length === 0 && <p className="text-[12.5px] text-gray-400">กำลังโหลดหมวด…</p>}
+                  {catNote && (
+                    <p className="text-[11.5px] text-gray-500 leading-relaxed mb-1">
+                      {catNote}
+                      {cats.some((c) => c.zort === false) && <> · หมวดที่มีจุด <span className="text-amber-600">•</span> คือหมวดที่จัดให้จากชื่อสินค้า</>}
+                    </p>
+                  )}
                   {cats.map((c) => (
                     <button
                       key={c.code}
                       onClick={() => openCat(c.code)}
                       className="w-full flex items-center justify-between gap-2 text-left border border-gray-300 rounded-lg px-3 py-3 hover:bg-blue-50 transition-colors"
                     >
-                      <span className="text-[13.5px] text-gray-800 truncate">{c.name}</span>
+                      <span className="text-[13.5px] text-gray-800 truncate">
+                        {c.name}
+                        {/* จุดส้ม = หมวดที่จัดจากชื่อสินค้าให้ ไม่ได้มาจากทะเบียน ZORT */}
+                        {c.zort === false && (
+                          <span className="ml-1 text-amber-600" title="หมวดนี้จัดจากชื่อสินค้าให้ ไม่ได้มาจากทะเบียนสินค้าใน ZORT">•</span>
+                        )}
+                      </span>
                       <span className="text-[12px] text-gray-400 shrink-0">{c.items.toLocaleString('th-TH')}</span>
                     </button>
                   ))}
