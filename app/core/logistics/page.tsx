@@ -30,6 +30,12 @@ interface Row {
 interface Resp {
   /** ขอบเขตทั้งหมด (ใช้ทำป้ายบนแท็บ) · `shown` = จำนวนของแท็บที่เลือก (ใช้กับเลขหน้า) */
   total: number; shown?: number; shipped?: number; unshipped?: number; cod?: number
+  /** ขนส่งที่รวมชื่อสะกดต่าง ๆ เข้าเป็นเจ้าเดียวแล้ว — `names` คือชื่อดิบที่ถูกรวมเข้ามา
+   *  ⚠️ **ต้องกดดูชื่อดิบได้เสมอ** วันไหนต้องไล่ว่าใบไหนมาจากชื่อไหน ต้องยังไล่ได้
+   *  ⚠️ `carrierUngrouped` = ตาข่ายกันเจ้าใหม่โผล่แล้วถูกกลืนหายเงียบ ๆ */
+  carrierGroups?: { carrier: string; c: number; known?: boolean; names?: { name: string; c: number }[] }[]
+  carrierUngrouped?: number
+  carrierUngroupedNames?: number
   limit: number; offset: number; only?: string | null
   coversFrom?: string; zortShows?: number; note?: string
   rows: Row[]
@@ -171,6 +177,39 @@ export default function LogisticsPage() {
             {data.note && <><br /><span className="text-amber-900/70">{data.note}</span></>}
           </div>
 
+          {/* สรุปขนส่งรายเจ้า — ZORT มีคอลัมน์นี้เป็นโลโก้ ของเราเป็นชื่อที่ ZORT ส่งมา
+              ซึ่งสะกดได้หลายแบบ ⇒ ฝั่งท่อรวมให้แล้ว (a03c019) จอโชว์ชื่อกลุ่มเป็นหลัก
+              🔴 **แต่ต้องกดดูชื่อดิบได้เสมอ** — รวมกลุ่มคือการตีความ ไม่ใช่ความจริงดิบ
+                 วันไหนต้องไล่ว่าใบไหนมาจากชื่อไหน ต้องยังไล่ได้ ไม่งั้นเราทับข้อมูลต้นทางทิ้ง */}
+          {Array.isArray(data.carrierGroups) && data.carrierGroups.length > 0 && (
+            <div className="text-[12.5px] text-gray-700 bg-white border border-gray-200 rounded-md px-3.5 py-2.5 mb-3">
+              <span className="text-gray-500">ขนส่งที่ใช้:</span>{' '}
+              {data.carrierGroups.map((g) => (
+                <details key={g.carrier} className="inline-block align-top mr-3">
+                  <summary className="cursor-pointer list-none inline">
+                    <b>{g.carrier}</b> {fmtNum(g.c)} ใบ
+                    {Array.isArray(g.names) && g.names.length > 1 && (
+                      <span className="text-gray-400"> (รวมจาก {g.names.length} ชื่อ ▾)</span>
+                    )}
+                  </summary>
+                  <span className="block text-[11.5px] text-gray-500 mt-1 ml-3">
+                    {(g.names ?? []).map((n) => (
+                      <span key={n.name} className="block">· {n.name} — {fmtNum(n.c)} ใบ</span>
+                    ))}
+                  </span>
+                </details>
+              ))}
+              {/* ⚠️ ตาข่ายกันเจ้าใหม่โผล่แล้วถูกกลืนหาย — 0 คือค่าที่ถูก ไม่ใช่ค่าที่ไม่มีความหมาย */}
+              {Number(data.carrierUngrouped) > 0 && (
+                <span className="block text-amber-800 mt-1">
+                  ⚠️ มีอีก <b>{fmtNum(Number(data.carrierUngrouped))}</b> ใบจาก{' '}
+                  <b>{fmtNum(Number(data.carrierUngroupedNames ?? 0))}</b> ชื่อที่<b>ยังไม่ได้จัดกลุ่ม</b>
+                  {' '}— อาจเป็นขนส่งเจ้าใหม่ที่ยังไม่มีในรายชื่อ
+                </span>
+              )}
+            </div>
+          )}
+
           <Tabs tabs={tabs} active={only} onChange={(id) => { setOnly(id); load(0, id) }} />
 
           {/* ⚠️ เตือนตรง ๆ ว่าตารางข้างล่างไม่ตรงกับแท็บที่กด — **ห้ามเงียบ**
@@ -273,9 +312,14 @@ export default function LogisticsPage() {
           </TableWrap>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            ZORT มีคอลัมน์ <b>บริการขนส่ง</b> เป็นโลโก้ขนส่ง — ของเราเก็บเป็นชื่อที่ ZORT ส่งมา
-            ซึ่งสะกดได้หลายแบบ (Flash express · Flash Express · FLASH) จึงยังไม่จับคู่โลโก้
-            <b> ใส่โลโก้จากการเดาชื่อไม่ได้</b> เดี๋ยวจะติดโลโก้ผิดเจ้า
+            {/* 🔴 ข้อความเดิมตรงนี้เขียนว่า "สะกดหลายแบบ จึงยังจับคู่โลโก้ไม่ได้"
+                ซึ่งค้างข้ามวันที่ฝั่งท่อรวมชื่อให้แล้ว (4 ก.ย. 2569) — เขียนใหม่ตามสภาพจริง
+                กฎ stale-state-comments แต่เป็นข้อความบนจอ ไม่ใช่คอมเมนต์ */}
+            ZORT มีคอลัมน์ <b>บริการขนส่ง</b> เป็น<b>โลโก้</b>ขนส่ง — ของเราขึ้นเป็นชื่อ ·
+            ชื่อดิบที่ ZORT ส่งมาสะกดได้หลายแบบ ตอนนี้<b>รวมกลุ่มให้แล้วด้วยการเทียบชื่อตรงตัว</b>
+            (ไม่ใช่เดาจากคำที่มีอยู่ในชื่อ) กดที่ชื่อกลุ่มด้านบนเพื่อดูชื่อดิบทั้งหมดได้ ·
+            <b> ยังไม่ใส่โลโก้เพราะยังไม่มีไฟล์โลโก้ของขนส่ง</b> — เป็นเรื่องของที่ยังไม่ได้ทำ
+            ไม่ใช่ทำไม่ได้
           </p>
         </>
       )}
