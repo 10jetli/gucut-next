@@ -16,7 +16,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import { productMenuItems } from '@/lib/product-menu'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner,
 } from '@/components/zort'
 
 interface Row {
@@ -214,6 +214,10 @@ export default function CoreStockPage() {
         }
       />
 
+      {/* 🔴 คำเตือนว่าข้อมูลเชื่อไม่ได้ — **ต้องอยู่หัวจอ เหนือตาราง**
+          เคยวางท้ายตารางแล้วไม่มีใครเห็น แม้แต่คนที่ตั้งใจหา (4 ก.ย. 2569) */}
+      <MarketUnreliableBanner unreliable={data?.marketplacesUnreliable} />
+
       {error && <ErrorBox title="ดึงสินค้าไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
       {data?.skip && (
@@ -402,7 +406,6 @@ export default function CoreStockPage() {
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
                 {' '}· <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
-              unreliable={data.marketplacesUnreliable}
               at={data.marketplacesAt} />
                 {/* 🔴 เดิมเขียนเลข 2,898 กับ 226 **ตายตัวในข้อความ** ทั้งที่ท่อส่ง
                     `zortTotal` / `noSkuInZort` มาให้อยู่แล้ว ⇒ ร้านเพิ่มสินค้าเมื่อไหร่

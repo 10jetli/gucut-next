@@ -21,7 +21,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage,
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner,
 } from '@/components/zort'
 
 interface Row {
@@ -162,6 +162,10 @@ export default function CoreBundlesPage() {
         placeholder="ค้นหา รหัสชุด หรือชื่อชุด"
         advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
       />
+
+      {/* 🔴 คำเตือนว่าข้อมูลเชื่อไม่ได้ — **ต้องอยู่หัวจอ เหนือตาราง**
+          เคยวางท้ายตารางแล้วไม่มีใครเห็น แม้แต่คนที่ตั้งใจหา (4 ก.ย. 2569) */}
+      <MarketUnreliableBanner unreliable={data?.marketplacesUnreliable} />
 
       {error && <ErrorBox title="ดึงสินค้าเป็นชุดไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
@@ -311,7 +315,6 @@ export default function CoreBundlesPage() {
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
-              unreliable={data.marketplacesUnreliable}
               at={data.marketplacesAt} />
             {data.note ? ` · ${data.note}` : ''}
           </p>
