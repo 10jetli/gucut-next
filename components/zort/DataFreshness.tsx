@@ -71,14 +71,18 @@ export default function DataFreshness(
 
   const mins = Math.max(0, Math.round((Date.now() - synced.getTime()) / 60000))
   /* เตือนเมื่อขาดไป 3 รอบติด — รอบเดียวที่หลุดเป็นเรื่องปกติ (deploy · ZORT ช้า)
-     เตือนตั้งแต่รอบแรกที่หลุด = เตือนบ่อยจนคนเลิกอ่าน แล้ววันที่ตายจริงก็ไม่มีใครดู */
-  const stale = mins > everyMinutes * 3
+     เตือนตั้งแต่รอบแรกที่หลุด = เตือนบ่อยจนคนเลิกอ่าน แล้ววันที่ตายจริงก็ไม่มีใครดู
+     ⚠️ **+10 นาทีเผื่อ Netlify เลื่อนรอบ** — cron ตั้งไว้นาทีที่ 13 กับ 43 ของทุกชั่วโมง
+        (`netlify/functions/core-sync.mjs`) แต่ของจริงเลื่อนได้ไม่กี่นาที
+        ไม่เผื่อ = หอนตอนคาบเกี่ยวพอดีทั้งที่ซิงก์ยังวิ่งอยู่ */
+  const graceMins = everyMinutes * 3 + 10
+  const stale = mins > graceMins
 
   const tip = [
     `ซิงก์ล่าสุด ${thaiDayTime(synced)} (เวลาไทย)`,
     changed ? `ข้อมูลเปลี่ยนล่าสุด ${thaiDayTime(changed)}` : '',
     rangeChanged ? `ในช่วงที่กรองอยู่ เปลี่ยนล่าสุด ${thaiDayTime(rangeChanged)}` : '',
-    `ตัวซิงก์วิ่งทุก ${everyMinutes} นาที · เตือนเมื่อเงียบเกิน ${everyMinutes * 3} นาที`,
+    `ตัวซิงก์วิ่งทุก ${everyMinutes} นาที (นาทีที่ 13 และ 43) · เตือนเมื่อเงียบเกิน ${graceMins} นาที`,
     'นับจากครั้งที่ไปดู ZORT ไม่ใช่ครั้งที่ข้อมูลเปลี่ยน — คืนที่ร้านเงียบ ข้อมูลไม่เปลี่ยนก็ไม่ได้แปลว่าซิงก์ตาย',
   ].filter(Boolean).join('\n')
 

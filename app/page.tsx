@@ -24,6 +24,14 @@ interface CoreOrderRow {
 }
 interface OrdersResp { skip?: string; total: number; totalAmount: number; rows: CoreOrderRow[] }
 interface StockResp { skip?: string; total: number; outOfStock: number; low: number }
+/** ใบค้างแยกเป็นกอง — คีย์เป็นภาษาไทยตามที่ท่อส่งมาจริง (`/api/core?pending=1`) */
+interface PendingResp {
+  skip?: string
+  counts?: Record<string, number>
+  amounts?: Record<string, number>
+  /** จำนวนวันที่ถือว่าช่องทาง "เงียบ" — เอาไว้เขียนกำกับ ไม่ให้ตัวเลขลอยไร้เกณฑ์ */
+  dormantDays?: number
+}
 
 // วันแบบไทย (UTC+7) — ต้องตรงกับฝั่งเซิร์ฟเวอร์ ไม่งั้น "วันนี้" ของสองฝั่งคนละวัน
 // ของเดิมใช้ toISOString() ตรง ๆ = ก่อนเจ็ดโมงเช้าจะไปถามยอดของ "เมื่อวาน"
@@ -83,6 +91,13 @@ export default function DashboardPage() {
   const [week, setWeek] = useState<OrdersResp | null>(null)
   const [stock, setStock] = useState<StockResp | null>(null)
   const [recent, setRecent] = useState<CoreOrderRow[]>([])
+  /* ⚠️ **สองการ์ดของ ZORT ที่เคยเขียนว่า "ยังไม่มีข้อมูล" — ตอนนี้มีแล้ว** (4 ก.ย. 2569)
+     ท่อเปิด `/api/core?pending=1` แยกใบค้างเป็น 3 กอง โดยตัดสินจากข้อมูล
+     (ช่องทางมีใบใหม่ล่าสุดเมื่อไหร่) ไม่ใช่จากชื่อช่องทาง
+     ⚠️ **กอง "ใบผี" ยังเชื่อไม่ได้ ฝั่งท่อประกาศเอง** — เกณฑ์ "เงียบ 30 วัน" ตัดสิน
+        "ร้านปิดถาวร" ไม่ได้จริง (ช่องทางที่แค่ขายไม่ดี 2 เดือนจะถูกเหมารวม)
+        ⇒ **จอไม่โชว์กองนั้น** จนกว่าเจ้าของร้านจะประกาศรายชื่อช่องทางที่ปิดแล้วเอง */
+  const [pending, setPending] = useState<PendingResp | null>(null)
   const [returns, setReturns] = useState<{ total: number; amount: number } | null>(null)
   const [factory, setFactory] = useState({ production: 0, pending: 0 })
   const [coreError, setCoreError] = useState('')
@@ -96,19 +111,22 @@ export default function DashboardPage() {
     setSideNote('')
 
     const d0 = thaiDay(0)
-    const [tRes, wRes, sRes, rRes, retRes, sheetRes] = await Promise.allSettled([
+    const [tRes, wRes, sRes, rRes, retRes, sheetRes, pendRes] = await Promise.allSettled([
       getJson(`/api/web/core?list=orders&from=${d0}&to=${d0}&limit=1`),
       getJson(`/api/web/core?list=orders&from=${thaiDay(6)}&to=${d0}&limit=1`),
       getJson(`/api/web/core?list=stock&limit=1`),
       getJson(`/api/web/core?list=orders&from=${thaiDay(30)}&to=${d0}&limit=6`),
       getJson('/api/returns?days=30'),
       getJson('/api/sheets'),
+      getJson('/api/web/core?pending=1'),
     ])
 
     if (tRes.status === 'fulfilled') setToday(tRes.value)
     if (wRes.status === 'fulfilled') setWeek(wRes.value)
     if (sRes.status === 'fulfilled') setStock(sRes.value)
     if (rRes.status === 'fulfilled') setRecent(Array.isArray(rRes.value?.rows) ? rRes.value.rows : [])
+    // พังไม่ควรทำให้ทั้งหน้าแดง — สองการ์ดนั้นกลับไปเขียนว่า "ยังไม่มีข้อมูล" ตามเดิม
+    setPending(pendRes.status === 'fulfilled' ? (pendRes.value as PendingResp) : null)
 
     // ตัวเลขหลักดึงไม่ได้ = ต้องขึ้นแดง ห้ามปล่อยให้เห็นเลข 0 เฉย ๆ
     const coreFails = [tRes, wRes, sRes, rRes].filter((x) => x.status === 'rejected')
@@ -194,17 +212,31 @@ export default function DashboardPage() {
             value={coreError ? '—' : fmtMoney(today?.totalAmount ?? 0)}
             note={!coreError && today ? `${fmtNum(today.total)} ใบ` : undefined}
           />
+          {/* ⚠️ **คำอธิบายเดิมบนสองใบนี้กลายเป็นคำโกหกไปแล้ว** (แก้ 4 ก.ย. 2569)
+              เคยเขียนว่า "คลังเงายังไม่เก็บสถานะการชำระเงิน/การโอนสินค้า"
+              ตอนนี้เก็บแล้วทั้งคู่ (`pay_status` มาในทุกแถว · ท่อเปิด `pending=1` ให้)
+              ⇒ คำอธิบายที่เคยถูกแล้วไม่มีใครกลับมาแก้ = โกหกเงียบ ๆ ดู stale-state-comments
+              ⚠️ **ยังไม่ได้เทียบใบต่อใบกับการ์ดของ ZORT** — ZORT เคยโชว์ 24 กับ 132
+                 ของเราได้ 24 ตรงกัน แต่ฝั่งค้างจ่ายได้คนละเลข ⇒ เขียนกำกับไว้ ห้ามบอกว่าตรงกันแล้ว */}
           <ZortStat
             icon="💲" bg="#FDECEC" fg="#dc2626"
             label="รายการขาย ค้างชำระเงิน"
-            value="ยังไม่มีข้อมูล"
-            note="คลังเงายังไม่เก็บสถานะการชำระเงิน"
+            value={pending?.counts?.['รอจ่ายอยู่'] === undefined
+              ? 'ยังไม่มีข้อมูล'
+              : `${fmtNum(pending.counts['รอจ่ายอยู่'])} ใบ`}
+            note={pending?.amounts?.['รอจ่ายอยู่'] === undefined
+              ? 'ดึงจากคลังเงาไม่ได้รอบนี้'
+              : `${fmtMoney(pending.amounts['รอจ่ายอยู่'])} · นิยามของเรา ยังไม่ได้เทียบใบต่อใบกับการ์ด ZORT`}
           />
           <ZortStat
             icon="🎒" bg="#E6F7EF" fg="#059669"
             label="รายการขาย ค้างโอนสินค้า"
-            value="ยังไม่มีข้อมูล"
-            note="คลังเงายังไม่เก็บสถานะการโอนสินค้า"
+            value={pending?.counts?.['ต้องส่งของ'] === undefined
+              ? 'ยังไม่มีข้อมูล'
+              : `${fmtNum(pending.counts['ต้องส่งของ'])} ใบ`}
+            note={pending?.amounts?.['ต้องส่งของ'] === undefined
+              ? 'ดึงจากคลังเงาไม่ได้รอบนี้'
+              : `${fmtMoney(pending.amounts['ต้องส่งของ'])} · จ่ายแล้วรอเราส่ง`}
           />
         </div>
       </div>
