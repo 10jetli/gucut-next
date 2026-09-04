@@ -23,10 +23,20 @@ interface Order {
   id: string; source: string; number: string; channel: string
   status: string; amount: number; customer: string; order_date: string
   updated_at?: string
+  /** สถานะการชำระเงิน · ขนส่งที่ใช้ · เก็บเงินปลายทางไหม — ท่อ list=orders ส่งมาอยู่แล้ว */
+  pay_status?: string | null
+  ship_channel?: string | null
+  ship_name?: string | null
+  is_cod?: number | boolean | null
 }
 interface Item { line: number; sku: string; name: string; qty: number; amount: number }
 
 const VAT_RATE = 0.07
+
+/** แปลสถานะการชำระเงินตามคำที่ ZORT ใช้บนจอ (ภาพ 04) — **ไม่รู้จัก = บอกว่าไม่รู้จัก ห้ามเดาเป็นเขียว** */
+const PAY_TH: Record<string, string> = { Paid: 'ชำระครบ', Partial: 'ชำระบางส่วน', Unpaid: 'ยังไม่ชำระ' }
+const payTh = (s?: string | null) =>
+  !s ? 'ยังไม่ได้เก็บช่องนี้' : (PAY_TH[s] ?? s)
 
 function Card({ title, icon, children, className = '' }: {
   title?: string; icon?: string; children: React.ReactNode; className?: string
@@ -190,14 +200,32 @@ function DetailInner() {
 
       {order && (
         <div className="space-y-4">
-          {/* การ์ดสถานะ 3 ใบ */}
+          {/* การ์ดสถานะ 3 ใบ — **ลอกจาก `zort-ui/04-รายละเอียดใบขาย.jpg`**
+              ZORT ใช้สามใบนี้ตอบคำถามที่คนเปิดใบขายอยากรู้จริง ๆ:
+                **เงินมาหรือยัง · ของออกหรือยัง · ส่งกับใคร**
+              🔴 ของเดิมเป็น สถานะรายการ · ช่องทางการขาย · ที่มาของข้อมูล
+                 ⇒ สองใบหลังซ้ำกับกล่อง "ข้อมูล" ที่อยู่ใต้ลงมาไม่ถึงจอ
+                    และไม่มีใบไหนตอบว่า "เงินมาหรือยัง" ซึ่งเป็นคำถามแรกของคนเปิดใบขาย */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <StatusCard
-              icon="💳" label="สถานะรายการ" value={order.status || '—'}
-              tone={toneOfStatus(order.status) === 'green' ? 'green' : toneOfStatus(order.status) === 'orange' ? 'orange' : 'gray'}
+              icon="💳" label="สถานะการชำระเงิน"
+              value={payTh(order.pay_status)}
+              tone={order.pay_status === 'Paid' ? 'green' : order.pay_status ? 'orange' : 'gray'}
             />
-            <StatusCard icon="🏪" label="ช่องทางการขาย" value={order.channel || '—'} />
-            <StatusCard icon="🗄" label="ที่มาของข้อมูล" value={order.source === 'z2' ? 'ZORT สาขา 2' : 'ZORT สาขา 1'} />
+            {/* ⚠️ ZORT โชว์ "รอโอนสินค้า / จัดส่งแล้ว" จากช่อง integrationStatus (ค่าดิบเช่น AWAITING_SHIPMENT)
+                **กระจกยังไม่เก็บช่องนี้** (ขอฝั่งท่อไว้แล้ว 4 ก.ย. 2569)
+                ⇒ เขียนบอกตรง ๆ ว่ายังไม่ได้เก็บ **ห้ามเอา status ของใบมาแทน** — คนละเรื่องกัน
+                   ใบที่ status=Success อาจยังไม่ได้ส่งของก็ได้ */}
+            <StatusCard
+              icon="📦" label="สถานะการจัดส่ง"
+              value="ยังไม่ได้เก็บช่องนี้"
+              tone="gray"
+            />
+            <StatusCard
+              icon="🚚" label="การจัดส่งสินค้า"
+              value={[order.ship_channel || order.ship_name || 'ไม่ระบุขนส่ง',
+                (order.is_cod === 1 || order.is_cod === true) ? '(COD)' : ''].filter(Boolean).join(' ')}
+            />
           </div>
 
           {/* การ์ดคู่: ข้อมูล / ลูกค้า */}
@@ -208,6 +236,10 @@ function DetailInner() {
                 <Field label="ประเภทรายการ" value="รายการขาย" />
                 <Field label="วันที่" value={order.order_date || '—'} />
                 <Field label="ช่องทางการขาย" value={order.channel || '—'} />
+                {/* 🔵 ZORT ไม่มีช่องนี้ — เราเพิ่มเอง เพราะร้านมี ZORT สองบัญชี ต้องรู้ว่าใบนี้มาจากร้านไหน
+                    ย้ายลงมาจากการ์ดบนสุด เพื่อเอาที่ว่างให้การ์ดที่ ZORT ใช้จริง */}
+                <Field label="ที่มาของข้อมูล +เรา"
+                  value={order.source === 'z2' ? 'ZORT สาขา 2' : 'ZORT สาขา 1'} />
               </div>
             </Card>
             <Card title="ลูกค้า" icon="👤">
