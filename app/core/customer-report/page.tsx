@@ -123,7 +123,12 @@ export default function CoreCustomersPage() {
         title="ลูกค้า"
         summary={
           <>
-            {summaryLine(people.length, totalAmount)}
+            {/* 🔴 **ยอดรวมนี้บวกจากแถวที่แสดงเท่านั้น** — ตอนถูกตัดที่ 500 ราย มันคือยอดของ 500 รายแรก
+                ไม่ใช่ยอดทั้งช่วง ⇒ ต้องเขียนกำกับ ไม่ใช่ปล่อยให้อ่านเป็นยอดรวมจริง
+                (คลาสเดียวกับที่จับได้ทั้งวัน — ตัวเลขถูกในขอบเขตของตัวเอง แต่ป้ายไม่บอกขอบเขต) */}
+            {truncated
+              ? <>จำนวน {people.length.toLocaleString('th-TH')} ราย · ยอดรวมของรายที่แสดง {fmtMoney(totalAmount)} บาท</>
+              : summaryLine(people.length, totalAmount)}
             {' | '}
             <span className="text-gray-400">
               รวมจากออเดอร์ {scanned.toLocaleString('th-TH')} ใบในคลังของเราเอง{scope ? ` · ${scope}` : ''}

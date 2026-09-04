@@ -121,7 +121,13 @@ export default function CoreCategoriesPage() {
   const extraBucket = rows.some((r) => r.name?.includes('ยังไม่ได้จัดหมวด'))
   const totalSkus = rows.reduce((a, r) => a + (Number(r.skus) || 0), 0)
   const totalOnhand = rows.reduce((a, r) => a + (Number(onhandOf(r)) || 0), 0)
-  const guessed = rows.filter((r) => r.zort === false).length
+  /* 🔴 **ตาข่ายที่ไม่มีวันทำงาน — เจอตอนไล่ตรวจทั้งระบบ 5 ก.ย. 2569**
+     เดิมนับ `r.zort === false` เพื่อบอกว่าหมวดไหน "เดาจากชื่อสินค้า"
+     แต่ท่อ **ไม่เคยส่งช่อง `zort` มาสักแถวเดียว** (ยิงจริง 43 หมวด · มีคีย์นี้ 0 แถว)
+     ⇒ ตัวนับเป็น 0 เสมอ · ป้ายไม่มีวันขึ้น · และไม่มีอะไรฟ้อง
+     ⇒ ของที่ท่อบอกได้จริงคือ `matchesZort` ระดับทั้งจอ ⇒ ใช้ตัวนั้นแทน
+     ⚠️ ถ้าวันหนึ่งอยากได้ระดับรายหมวดจริง ๆ ต้องขอให้ท่อส่งมา ไม่ใช่เดาจากที่มีอยู่ */
+  const cantTellPerRow = rows.length > 0 && rows.every((r) => r.zort === undefined)
 
   return (
     <div className="p-4 md:p-6">
@@ -331,7 +337,11 @@ export default function CoreCategoriesPage() {
               <span>
                 รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtMoney(totalOnhand)}
               </span>
-              {guessed > 0 && <span className="text-gray-400">มี {fmtNum(guessed)} หมวดที่เดาจากชื่อสินค้า</span>}
+              {cantTellPerRow && (
+                <span className="text-gray-400">
+                  ท่อยังไม่ได้บอกเป็นรายหมวดว่าหมวดไหนมาจาก ZORT — ดูภาพรวมได้จากแถบด้านบน
+                </span>
+              )}
             </div>
           </TableWrap>
 

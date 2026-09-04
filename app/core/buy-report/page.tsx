@@ -142,6 +142,10 @@ export default function BuyReportPage() {
     [rows, from, to],
   )
   const sum = inRange.reduce((a, r) => a + (Number(r.amount) || 0), 0)
+  /* 🔴 **ยอดนี้บวกจากแถวที่ดึงมาได้เท่านั้น** — จอขอ limit=200
+     วันนี้ใบซื้อทั้งหมด 32 ใบ จึงยังครบ แต่วันที่เกิน 200 ยอดจะน้อยกว่าจริงแบบเงียบ ๆ
+     ⇒ เทียบจำนวนแถวกับตัวนับของท่อ แล้วเตือนทันทีที่ชนเพดาน ไม่ต้องรอให้มีคนสังเกต */
+  const cutRows = Boolean(all && typeof all.total === 'number' && (rows?.length ?? 0) < all.total)
 
   const points = useMemo(() => {
     const m = new Map<string, { label: string; value: number }>()
@@ -234,6 +238,13 @@ export default function BuyReportPage() {
               className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
           <BtnGhost onClick={() => { setFrom(isoAgo(3)); setTo(todayIso()) }}>ย้อนหลัง 3 เดือน</BtnGhost>
+        </div>
+      )}
+
+      {cutRows && (
+        <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+          🔴 <b>ใบซื้อถูกตัด</b> — ท่อบอกว่ามี {fmtNum(Number(all?.total) || 0)} ใบ แต่จอดึงมาได้ {fmtNum(rows?.length ?? 0)} ใบ
+          {' '}⇒ <b>ยอดรวมและกราฟด้านล่างยังไม่ครบ</b> อย่าเพิ่งเอาไปตัดสินใจ
         </div>
       )}
 
