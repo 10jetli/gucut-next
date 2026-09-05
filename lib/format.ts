@@ -16,8 +16,19 @@ export function fmtMoney(n: number) {
   return (Number(n) || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 })
 }
 
-export function fmtNum(n: number) {
-  return n.toLocaleString('th-TH')
+/** 🔴 **ทนค่าที่ไม่ใช่ตัวเลขได้ — เพราะเดิมมันทำทั้งหน้าตาย**
+ *  ของเดิมเรียก `n.toLocaleString()` ตรง ๆ ⇒ ส่ง null/undefined เข้ามาเมื่อไหร่
+ *  โยน "Cannot read properties of null" **ตอนวาดหน้า = จอขาวทั้งจอ** ไม่ใช่แค่ช่องนั้นว่าง
+ *  เจอจริง 5 ก.ย. 2569: ท่อส่ง `linkStock: null` มา (แปลว่ายังไม่มีรหัสข้อต่อในคลัง)
+ *  ⇒ จอที่เพิ่งทำเสร็จจะขาวทันทีที่มีแถวแบบนั้น และ tsc ไม่เห็นเพราะชนิดข้อมูลมาจาก API
+ *
+ *  ⚠️ **คืน "—" ไม่ใช่ 0** — 0 ที่แปลว่า "ไม่มีข้อมูล" คือของอันตรายที่สุดในโปรเจกต์นี้
+ *     (ทั้งวันนี้เราไล่ปิดกรณี "null ถูกอ่านเป็นศูนย์" มาแล้วหลายจุด) */
+export function fmtNum(n: number | null | undefined) {
+  // ⚠️ `Number(null)` = 0 ⇒ เช็ค null แยกก่อน ไม่งั้น "ไม่มีข้อมูล" จะกลายเป็น "ศูนย์" อีกรอบ
+  if (n === null || n === undefined) return '—'
+  const v = Number(n)
+  return Number.isFinite(v) ? v.toLocaleString('th-TH') : '—'
 }
 
 export const TH_MONTHS = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']

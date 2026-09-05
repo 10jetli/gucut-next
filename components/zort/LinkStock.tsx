@@ -21,7 +21,9 @@ interface LinkRow {
   brand: string
   /** อาจเป็น null — แปลว่าคลังไม่มีรหัสข้อต่อเบอร์นี้เลย (คนละเรื่องกับมีแล้วเหลือ 0) */
   linkSku?: string | null
-  linkStock: number
+  /** 🔴 **เป็น null ได้** — null = ไม่มีรหัสข้อต่อในคลังเลย · 0 = มีรหัสแต่ของหมด
+   *  สองอย่างนี้ต่างกันสิ้นเชิง และ `fmtNum(null)` **โยน error ทั้งหน้า** (ไม่ใช่แสดง 0) */
+  linkStock?: number | null
   rollSkus?: string[]
   rollTeeth?: number
   teethSold?: number
@@ -129,8 +131,10 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
                 {/* ไม่มีรหัส ≠ มีรหัสแล้วเหลือ 0 — ต้องเขียนต่างกัน ไม่ใช่ปล่อยช่องว่าง */}
                 {r.linkSku || <span className="text-amber-700">ยังไม่มีรหัสในคลัง</span>}
               </td>
-              <td className={`px-3 py-2.5 text-[12.5px] text-right ${r.linkStock < 0 ? 'text-red-600 font-semibold' : 'text-gray-800'}`}>
-                {fmtNum(r.linkStock)}
+              <td className={`px-3 py-2.5 text-[12.5px] text-right ${Number(r.linkStock) < 0 ? 'text-red-600 font-semibold' : 'text-gray-800'}`}>
+                {typeof r.linkStock === 'number'
+                  ? fmtNum(r.linkStock)
+                  : <span className="text-gray-300" title="ยังไม่มีรหัสข้อต่อเบอร์นี้ในคลัง — คนละเรื่องกับมีรหัสแล้วเหลือ 0">—</span>}
               </td>
               <td className="px-3 py-2.5 text-[12.5px] text-right text-gray-600">
                 {/* ⚠️ ช่วง ห้ามยุบเป็นเลขเดียว — ใบขายเก็บเป็นฟัน ไม่รู้ว่าแตกเป็นกี่เส้น */}
