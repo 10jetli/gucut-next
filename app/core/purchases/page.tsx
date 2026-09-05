@@ -158,11 +158,19 @@ export default function CorePurchasesPage() {
 
       {data && !data.skip && (
         <>
-          <Tabs
-            tabs={tabs}
-            active={tab}
-            onChange={(id) => { setTab(id); load(0, id) }}
-          />
+          {/* ผัง ZORT (ภาพ 27): ปุ่มรีเฟรชวงกลมมุมขวาแถบแท็บ — ชั้นแถบแท็บ จุดบอดประจำ (จอที่ 4 แล้ว) */}
+          <div className="flex items-end justify-between gap-3">
+            <Tabs
+              tabs={tabs}
+              active={tab}
+              onChange={(id) => { setTab(id); load(0, id) }}
+            />
+            <button onClick={() => load(0, tab)} disabled={loading} aria-label="โหลดใหม่" title="โหลดใหม่"
+              className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
+                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+              {loading ? '⏳' : '⟳'}
+            </button>
+          </div>
 
           <TableWrap>
             <table className="w-full min-w-[900px]">
