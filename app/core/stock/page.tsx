@@ -18,6 +18,7 @@ import { productMenuItems } from '@/lib/product-menu'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner,
 } from '@/components/zort'
+import BlockedStock from '@/components/zort/BlockedStock'
 
 interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
@@ -274,6 +275,9 @@ export default function CoreStockPage() {
             <span title="มุมมองตารางรูป — ยังไม่ได้ทำ (ไม่ใช่ทำไม่ได้) · ตอนนี้ดูรูปได้ในหน้ารายละเอียดสินค้า"
               className="text-[13px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">▦</span>
           </div>
+
+          {/* 🔴 วางไว้เหนือแท็บ — ของที่ลูกค้าซื้อไม่ได้ ต้องเห็นก่อนตัวเลขอื่นทั้งหมด */}
+          <BlockedStock />
 
           <Tabs
             // ⚠️ **ลอกจาก ZORT ทั้งชุด** (ภาพ 02-สินค้า.jpg) — สามแท็บ **ไม่มีเลขในวงเล็บ**
