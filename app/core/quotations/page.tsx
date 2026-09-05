@@ -125,14 +125,31 @@ export default function QuotationsPage() {
 
       {data && (
         <>
-          <Tabs
-            tabs={[
-              { id: '', label: 'ทั้งหมด', count: all.length },
-              { id: 'approved', label: 'อนุมัติแล้ว', count: all.filter((r) => r.status === 'Success').length },
-            ]}
-            active={tab}
-            onChange={setTab}
-          />
+          {/* ⚠️ ZORT มีปุ่มรีเฟรช (วงกลมลูกศร) อยู่ **มุมขวาของแถบแท็บ** ระดับเดียวกับ ทั้งหมด/อนุมัติแล้ว
+              (ฝั่งท่อเปิดภาพ zort-ui/51 เจอ 5 ก.ย. 2569 — ผมเทียบรอบแรกแล้วมองข้าม)
+              ของเรามีปุ่มรีเฟรชอยู่แล้วแต่ไปอยู่บนหัวจอ ⇒ **มีของครบแต่วางคนละที่**
+              คนที่ชิน ZORT จะกวาดตาหาตรงนี้ ⇒ วางไว้ทั้งสองที่ ไม่ใช่ย้าย
+              (ย้ายขึ้นไปที่เดียวก็ผิดผัง · ย้ายลงมาที่เดียวก็หายจากที่คนของเราชินอยู่) */}
+          <div className="flex items-end justify-between gap-3">
+            <Tabs
+              tabs={[
+                { id: '', label: 'ทั้งหมด', count: all.length },
+                { id: 'approved', label: 'อนุมัติแล้ว', count: all.filter((r) => r.status === 'Success').length },
+              ]}
+              active={tab}
+              onChange={setTab}
+            />
+            <button
+              onClick={load}
+              disabled={loading}
+              aria-label="โหลดใหม่"
+              title="โหลดใหม่ — จอนี้ดึงสดจาก ZORT ทุกครั้ง"
+              className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
+                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              {loading ? '⏳' : '⟳'}
+            </button>
+          </div>
 
           <TableWrap>
             <table className="w-full min-w-[780px]">
@@ -145,11 +162,13 @@ export default function QuotationsPage() {
                   <th className={TH}>ช่องทาง</th>
                   <th className={THR}>มูลค่า</th>
                   <th className={TH}>สถานะ</th>
+                  {/* ช่องว่างสำหรับเมนู ⋮ — ต้องมีหัวคอลัมน์ด้วย ไม่งั้นตารางเหลื่อมหนึ่งช่อง */}
+                  <th className={TH} style={{ width: 36 }} aria-label="คำสั่ง" />
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <EmptyState cols={7} icon="📄" title="ไม่มีใบเสนอราคาในเงื่อนไขนี้"
+                  <EmptyState cols={8} icon="📄" title="ไม่มีใบเสนอราคาในเงื่อนไขนี้"
                     detail={q || tab ? 'ลองล้างคำค้นหรือกลับไปแท็บทั้งหมด' : 'ยังไม่มีใบเสนอราคาใน ZORT'} />
                 )}
                 {rows.map((r, i) => (
@@ -174,6 +193,16 @@ export default function QuotationsPage() {
                     </td>
                     <td className={TDR}>{fmtMoney(Number(r.amount) || 0)}</td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status ?? '')}>{statusTh(r.status)}</Pill></td>
+                    {/* ⚠️ ZORT มีเมนู ⋮ ท้ายแถว (ยืนยันจากภาพจอจริง zort-ui/51 · ตรวจสองคนแล้ว 5 ก.ย. 2569)
+                        ของเราไม่มีคำสั่งอะไรให้ทำกับใบเสนอราคาเลย — จอนี้ดึงสดจาก ZORT อ่านอย่างเดียว
+                        แก้/ลบ/อนุมัติ ต้องทำใน ZORT ⇒ เมนูที่กดแล้วว่างเปล่าคือเมนูหลอก
+                        **แต่ซ่อนทิ้งก็ไม่ได้** คนที่ชิน ZORT จะกวาดตาหาช่องขวาสุดแล้วไม่เจอ
+                        แล้วนึกว่าจอเราโหลดไม่ครบ ⇒ โชว์ตามผังแต่ล็อกไว้พร้อมเหตุผล
+                        (ท่าเดียวกับไอคอนสลับมุมมองในจอสินค้า และปุ่ม "จัดการร้าน" ในจอ Marketplace) */}
+                    <td className={`${TD} text-right`}>
+                      <span title="ZORT มีเมนูคำสั่งท้ายแถว — จอนี้อ่านอย่างเดียว ดึงสดจาก ZORT ทุกครั้ง แก้ไขต้องทำใน ZORT"
+                        className="text-gray-300 cursor-not-allowed select-none">⋮</span>
+                    </td>
                   </tr>
                 ))}
               </tbody>
