@@ -18,7 +18,7 @@
 //    ⚠️ `chainsCountable: false` แปลว่า **นับไม่ได้** ไม่ใช่ "ไม่มีการตัด" — ต้องเขียนให้ต่างกัน
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtNum } from '@/lib/format'
+import { fmtNum, TH_MONTHS } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, EmptyState } from '@/components/zort'
@@ -52,6 +52,12 @@ interface Resp {
 }
 
 const DAYS = [30, 90, 180]
+
+/** วันที่แบบ ZORT — "5 กันยายน 2569" · คิดเป็นเวลาไทยเสมอ (UTC ตรง ๆ จะได้เมื่อวานตอนเช้ามืด) */
+function todayThai() {
+  const t = new Date(Date.now() + 7 * 3600e3)
+  return `${t.getUTCDate()} ${TH_MONTHS[t.getUTCMonth()]} ${t.getUTCFullYear() + 543}`
+}
 
 /** สีตามความด่วน — เกณฑ์เดียวกับที่ใช้ทั้งระบบ: แดง = ต้องทำวันนี้ */
 function DaysPill({ d }: { d?: number | null }) {
@@ -124,6 +130,46 @@ export default function ReorderPage() {
 
       {d && !d.skip && (
         <>
+          {/* ── ผัง ZORT ①: แถบ "ขั้นตอนวางแผนซื้อซ้ำ" 3 ขั้น (ภาพ 37) ──
+              ⚠️ ข้อความในขั้นตอนเขียนตามที่ **ระบบเราทำได้จริง** ไม่ได้ลอกคำของ ZORT ทั้งดุ้น
+                 ZORT ขั้นแรกคือ "ตั้งค่า Lead Time" ซึ่งร้านไม่เคยตั้ง ⇒ เขียนตรง ๆ ว่ายังไม่มี */}
+          <div className="bg-white border border-gray-200 rounded-md px-4 py-3.5 mb-3">
+            <p className="text-center text-[13px] font-semibold text-gray-700 mb-3">ขั้นตอนวางแผนซื้อซ้ำ</p>
+            <div className="flex items-start justify-center gap-4 flex-wrap">
+              {[
+                { i: '⏱', t: 'ตั้งค่า Lead Time', n: 'ยังไม่ได้ตั้ง — จอนี้จึงคิดจากยอดขายจริงแทน' },
+                { i: '📋', t: 'ดูว่าอะไรจะหมดก่อน', n: `คิดจากยอดขาย ${days} วันล่าสุด` },
+                { i: '🏭', t: 'สั่งกับโรงงาน', n: 'ทำที่เมนู รายการซื้อ → สั่งของกับโรงงาน' },
+              ].map((s2, i2) => (
+                <div key={s2.t} className="flex items-start gap-4">
+                  {i2 > 0 && <span className="text-gray-300 text-[15px] mt-3">→</span>}
+                  <div className="text-center w-[170px]">
+                    <span className="inline-flex w-9 h-9 rounded-full bg-[#eef1fa] items-center justify-center text-[16px]">{s2.i}</span>
+                    <p className="text-[12.5px] text-gray-700 mt-1.5">{s2.t}</p>
+                    <p className="text-[11px] text-gray-400 leading-relaxed">{s2.n}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ── ผัง ZORT ②: หัวการ์ด "โกดัง" + ตัวเลือกคลัง/สาขาชิดขวา ──
+              🔴 **ไม่ทำเป็นกล่องเลือกที่กดได้** — คลังเงาเก็บสต็อกรวมทั้งร้าน ไม่ได้แยกรายคลัง
+                 กล่องที่กดแล้วตัวเลขไม่เปลี่ยน = ของหลอก · เขียนบอกตรง ๆ ดีกว่า */}
+          <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-3 flex items-center justify-between gap-3 flex-wrap">
+            <p className="text-[14px] font-semibold text-gray-800">โกดัง</p>
+            <p className="text-[12px] text-gray-500">
+              คลังสินค้า/สาขา: <b className="text-gray-700">ทุกคลังรวมกัน</b>
+              <span className="text-gray-400"> — ZORT ไม่เปิดช่องทางให้ดึงสต็อกแยกรายคลัง (ยิงมาแล้วไม่ผ่านทุกทาง)</span>
+            </p>
+          </div>
+
+          {/* ── ผัง ZORT ③: แถบวันที่คั่นก่อนตาราง ── */}
+          <div className="bg-white border border-gray-200 border-b-0 rounded-t-md px-4 py-2.5 flex items-center gap-2">
+            <span className="text-[15px]">📅</span>
+            <span className="text-[13.5px] font-semibold text-gray-800">{todayThai()}</span>
+          </div>
+
           {/* 🔴 ขอบเขตของตัวเลขต้องอยู่บนจอ ไม่ใช่ในคอมเมนต์ */}
           {d.scope && (
             <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
@@ -159,28 +205,32 @@ export default function ReorderPage() {
             </button>
           </div>
 
+          {/* ต่อจากแถบวันที่ด้านบน — ให้ดูเป็นการ์ดเดียวกันแบบ ZORT */}
           <TableWrap>
-            <table className="w-full min-w-[1040px]">
+            <table className="w-full min-w-[1180px]">
               <thead className="bg-white border-b border-gray-200">
+                {/* 🔴 **ลำดับคอลัมน์ลอกจาก ZORT เป๊ะ** (ภาพ 37) — คนที่ใช้ ZORT ทุกวันจะกวาดตาหาที่เดิมเจอ
+                    คอลัมน์ที่ ZORT มีแต่เราไม่มีข้อมูล **ยังต้องมีอยู่** แล้วเขียนว่าทำไมถึงว่าง
+                    (ห้ามลบคอลัมน์ทิ้ง — คนไล่เทียบกับภาพจะนึกว่าตัวเองอ่านผิด) */}
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>ชื่อสินค้า</th>
-                  <th className={THR}>คงเหลือ (ฟัน)</th>
-                  <th className={THR}>≈ ม้วน</th>
-                  <th className={THR}>ใช้ต่อวัน (ฟัน)</th>
-                  <th className={THR}>
+                  <th className={TH}>กลุ่ม Lead Time</th>
+                  <th className={TH}>คู่ค้า</th>
+                  <th className={THR}>คงเหลือ</th>
+                  <th className={THR}>จำนวนรอโอนเข้า</th>
+                  <th className={TH}>สั่งซื้อล่าสุด</th>
+                  {/* ZORT ทำสองคอลัมน์นี้เป็นสีแดง — สีคือข้อมูล ไม่ใช่การตกแต่ง */}
+                  <th className={THR} style={{ color: '#dc2626' }}>ของจะหมดเมื่อไหร่</th>
+                  <th className={THR} style={{ color: '#dc2626' }}>
                     ตัดไปกี่เส้น
                     <span className="ml-1 text-[10px] font-normal text-amber-600" title="ช่วง — ใบขายไม่ได้บอกความยาว จึงคำนวณเป็นช่วงจากความยาวที่ร้านลงขายจริง">≈</span>
-                  </th>
-                  <th className={THR}>
-                    พอขายอีก
-                    <span className="ml-1 text-[10px] font-normal text-blue-500" title="คอลัมน์นี้ ZORT ไม่มี — เราเพิ่มเอง">+เรา</span>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <EmptyState cols={7} icon="📦" title="ไม่มีรายการในเงื่อนไขนี้"
+                  <EmptyState cols={9} icon="📦" title="ไม่มีรายการในเงื่อนไขนี้"
                     detail="ลองสลับไปดูทุกสินค้า หรือขยายช่วงวันที่ใช้คิดยอดขาย" />
                 )}
                 {rows.map((r, i) => (
@@ -198,15 +248,24 @@ export default function ReorderPage() {
                         {r.ladderTeethMin && r.ladderTeethMax && <> ({fmtNum(r.ladderTeethMin)}–{fmtNum(r.ladderTeethMax)} ฟัน)</>}
                       </span>
                     </td>
+                    {/* ZORT มีสองคอลัมน์นี้ ของเราไม่มีข้อมูล — ขีดไว้ ไม่ใช่ลบทิ้ง */}
+                    <td className={`${TD} text-gray-300`} title="ร้านไม่เคยตั้งกลุ่ม Lead Time ใน ZORT ⇒ ไม่มีค่าให้ดึง">—</td>
+                    <td className={`${TD} text-gray-300`} title="ใบซื้อมีคู่ค้า แต่ยังไม่ได้ผูกกับสินค้ารายตัว">—</td>
                     <td className={`${TDR} ${Number(r.teeth) < 0 ? 'text-red-600 font-semibold' : ''}`}>
                       {fmtNum(Number(r.teeth ?? 0))}
+                      <span className="block text-[11px] text-gray-400">
+                        {/* หน่วยคือ "ฟัน" ไม่ใช่ม้วน — ม้วนเป็นค่าที่หารมาให้ดูเฉย ๆ */}
+                        ฟัน{r.teethPerRoll ? ` · ≈ ${Number(r.rolls ?? 0).toFixed(2)} ม้วน` : ''}
+                      </span>
                     </td>
-                    <td className={`${TDR} text-gray-500`}>
-                      {r.teethPerRoll
-                        ? <span title={`ตระกูลนี้ ${fmtNum(r.teethPerRoll)} ฟันต่อม้วน`}>{Number(r.rolls ?? 0).toFixed(2)}</span>
-                        : <span className="text-gray-300">—</span>}
+                    <td className={`${TDR} text-gray-300`} title="ยังไม่มีระบบใบโอนระหว่างคลังที่ผูกกับสินค้ารายตัว">—</td>
+                    <td className={`${TD} text-gray-300`} title="ท่อใบซื้อยังไม่ส่งวันสั่งล่าสุดรายสินค้ามา">—</td>
+                    <td className={TDR}>
+                      <DaysPill d={r.daysLeft} />
+                      <span className="block text-[11px] text-gray-400 mt-0.5">
+                        ใช้ {Number(r.teethPerDay ?? 0).toFixed(2)} ฟัน/วัน
+                      </span>
                     </td>
-                    <td className={TDR}>{Number(r.teethPerDay ?? 0).toFixed(2)}</td>
                     <td className={`${TDR} text-gray-600`}>
                       {/* นับไม่ได้ ≠ ไม่มีการตัด — เขียนให้ต่างกันชัด ๆ */}
                       {r.chainsCountable === false
@@ -215,9 +274,8 @@ export default function ReorderPage() {
                               {fmtNum(r.chainsEstMin)}–{fmtNum(r.chainsEstMax)}
                             </span>
                           : <span className="text-gray-300" title="ยังไม่มีข้อมูลพอจะประมาณ">—</span>)
-                        : fmtNum(Number(r.chainsEstMin ?? 0))}
+                        : fmtNum(r.chainsEstMin)}
                     </td>
-                    <td className={TDR}><DaysPill d={r.daysLeft} /></td>
                   </tr>
                 ))}
               </tbody>
