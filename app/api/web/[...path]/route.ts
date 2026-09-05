@@ -26,11 +26,29 @@ async function forward(req: NextRequest, path: string[]) {
   }
   if (req.method !== 'GET' && req.method !== 'HEAD') init.body = await req.text()
 
+  /* ⏱️ **วัดว่าท่อกลางเพิ่มเวลาไปเท่าไหร่ — ตอบคำถามที่เดาไม่ได้จากข้างนอก**
+     เจ้าของร้านบอกว่า admin ช้าทุกเมนู (5 ก.ย. 2569) ฝั่งนี้รับงาน "ท่อกลางกินเวลาเท่าไหร่"
+     แต่ **วัดจากข้างนอกไม่ได้** เพราะ /api/web/* ต้องล็อกอินก่อน ⇒ ให้ท่อบอกเวลาตัวเองมาเลย
+       x-upstream-ms = เวลาที่รอ gucut.com ตอบ (งานจริง — ฝั่งท่อรับไปแก้)
+       x-proxy-ms    = upstream + เวลาอ่าน body ออกมา
+       ส่วนต่างสองตัว = ราคาของการมีท่อกลาง **เฉพาะส่วนที่โค้ดนี้เห็น**
+     ⚠️ **ไม่รวมเวลาปลุกฟังก์ชัน (cold start)** เพราะนาฬิกาเริ่มจับตอนโค้ดวิ่งแล้ว
+        ตัวนั้นต้องวัดจากข้างนอก: เวลาที่เบราว์เซอร์เห็น ลบด้วย x-proxy-ms
+        (วัด /login จากนอก 5 ก.ย. ได้ 2.1 วิ ครั้งแรก แล้วเหลือ 0.7-0.95 วิ เมื่ออุ่น ⇒ ราว 1.2-1.4 วิ)
+     ⚠️ ใส่ใน header ไม่ใช่ใน body — body เป็นของ API ปลายทาง แตะไม่ได้
+        (จอบางจอ parse ตรง ๆ · เติมช่องเข้าไปคือเปลี่ยนสัญญาข้อมูลโดยไม่มีใครรู้)
+     ⚠️ ไม่ log ไม่เก็บ — แค่ส่งกลับให้คนที่เปิด DevTools ดูได้ทันที */
+  const t0 = Date.now()
   const r = await fetch(target, init)
+  const upstreamMs = Date.now() - t0
   const body = await r.arrayBuffer()
   return new NextResponse(body, {
     status: r.status,
-    headers: { 'content-type': r.headers.get('content-type') || 'application/json' },
+    headers: {
+      'content-type': r.headers.get('content-type') || 'application/json',
+      'x-upstream-ms': String(upstreamMs),
+      'x-proxy-ms': String(Date.now() - t0),
+    },
   })
 }
 
