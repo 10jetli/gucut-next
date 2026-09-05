@@ -42,14 +42,30 @@ async function forward(req: NextRequest, path: string[]) {
   const r = await fetch(target, init)
   const upstreamMs = Date.now() - t0
   const body = await r.arrayBuffer()
-  return new NextResponse(body, {
-    status: r.status,
-    headers: {
-      'content-type': r.headers.get('content-type') || 'application/json',
-      'x-upstream-ms': String(upstreamMs),
-      'x-proxy-ms': String(Date.now() - t0),
-    },
+
+  const out = new Headers({
+    'content-type': r.headers.get('content-type') || 'application/json',
+    'x-upstream-ms': String(upstreamMs),
+    'x-proxy-ms': String(Date.now() - t0),
   })
+  /* 🔴 **ท่อกลางสร้าง header ชุดใหม่ ⇒ header ของปลายทาง "หายทั้งหมด" โดยไม่มีอะไรฟ้อง**
+     เจอก่อนของจริงจะพัง 5 ก.ย. 2569 — ฝั่งท่อกำลังจะติด x-d1-count/x-d1-ms/x-d1-max
+     มากับทุกคำตอบเพื่อให้ดูได้ว่าคำขอนั้นยิง D1 กี่รอบ (เขาวัดได้ว่า **รอบละ 0.27 วิ**)
+     ถ้าไม่ส่งต่อ เขาจะเห็นหัวข้อมูลตอนยิงตรงที่ gucut.com แต่**หายเกลี้ยงเมื่อดูผ่านหน้าจอ**
+     แล้วสรุปผิดได้ว่า "จอไม่ได้ยิงเส้นนั้น" ทั้งที่ยิงอยู่
+     ⇒ ส่งต่อทุกหัวที่ขึ้นต้นด้วย x- **ยกเว้นสองตัวที่เป็นของท่อกลางเอง** (กันปลายทางทับ)
+     ⚠️ ส่งต่อแบบ "ขึ้นต้นด้วย x-" ไม่ใช่รายชื่อตายตัว — ฝั่งท่อเพิ่มหัวใหม่เมื่อไหร่
+        มันไหลผ่านมาเอง ไม่ต้องมีใครจำมาแก้ไฟล์นี้ (เหตุผลเดียวกับที่ `list=` ที่ไม่รู้จัก
+        ตัดสินจาก "ตกมาถึงบรรทัดท้ายสุด" ไม่ใช่จากรายชื่อ)
+     ⚠️ **ห้ามส่งต่อหัวอื่นแบบเหมารวม** — set-cookie / authorization ของปลายทาง
+        ไม่ควรไหลมาถึงเบราว์เซอร์ */
+  const MINE = new Set(['x-upstream-ms', 'x-proxy-ms'])
+  r.headers.forEach((v, k) => {
+    const key = k.toLowerCase()
+    if (key.startsWith('x-') && !MINE.has(key)) out.set(key, v)
+  })
+
+  return new NextResponse(body, { status: r.status, headers: out })
 }
 
 export async function GET(req: NextRequest, ctx: { params: { path: string[] } }) {
