@@ -64,7 +64,7 @@ export default function QuotationsPage() {
   const rows = all.filter((r) => {
     if (tab === 'approved' && r.status !== 'Success') return false
     const s = q.trim().toLowerCase()
-    return !s || r.number.toLowerCase().includes(s) || (r.customer ?? '').toLowerCase().includes(s)
+    return !s || String(r.number ?? '').toLowerCase().includes(s) || (r.customer ?? '').toLowerCase().includes(s)
   })
   const sum = all.reduce((a, r) => a + (Number(r.amount) || 0), 0)
   /** ⚠️ **ตาข่ายกันวันข้างหน้า ไม่ใช่กันวันนี้** — ตอนนี้ร้านมีใบเสนอราคา 3 ใบ ยังไม่ชนอะไร

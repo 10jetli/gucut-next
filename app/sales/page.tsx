@@ -167,7 +167,7 @@ function TrendChart({ daily }: { daily: Report['daily'] }) {
           <g key={d.date}>
             <rect x={x(i) - bw / 2} y={H - 24 - h} width={bw} height={Math.max(h, 1)} rx={4} className="fill-blue-500/80" />
             <text x={x(i)} y={H - 8} textAnchor="middle" className="fill-gray-400 text-[10px]">
-              {parseInt(d.date.slice(8), 10)}
+              {parseInt(String(d.date ?? '').slice(8), 10) || ''}
             </text>
             {d.sales > 0 && (
               <text x={x(i)} y={H - 30 - h} textAnchor="middle" className="fill-gray-500 text-[9px] font-medium">

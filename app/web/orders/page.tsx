@@ -182,7 +182,7 @@ export default function WebOrdersPage() {
       if (filter !== 'all' && o.status !== filter) return false
       if (!needle) return true
       return (
-        o.id.toLowerCase().includes(needle) ||
+        String(o.id ?? '').toLowerCase().includes(needle) ||
         (o.customer?.name || '').toLowerCase().includes(needle) ||
         (o.customer?.phone || '').includes(needle)
       )

@@ -119,7 +119,7 @@ export default function CoreProductReportPage() {
 
   const deadRows = (dead?.rows ?? []).filter((r) => {
     const s = q.trim().toLowerCase()
-    return !s || r.sku.toLowerCase().includes(s) || (r.name ?? '').toLowerCase().includes(s)
+    return !s || String(r.sku ?? '').toLowerCase().includes(s) || (r.name ?? '').toLowerCase().includes(s)
   })
 
   return (

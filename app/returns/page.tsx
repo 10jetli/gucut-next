@@ -116,7 +116,7 @@ export default function ReturnsPage() {
 
   const preList = (data?.list || [])
     .filter((o) => !ch || o.channel === ch)
-    .filter((o) => !low || o.number.toLowerCase().includes(low) || o.customer.toLowerCase().includes(low)
+    .filter((o) => !low || String(o.number ?? '').toLowerCase().includes(low) || String(o.customer ?? '').toLowerCase().includes(low)
       || o.lines.some((l) => l.sku.toLowerCase().includes(low)))
   const nRecv = preList.filter((o) => recv[o.number]?.received).length
   const nDeliv = preList.filter((o) => recv[o.number]?.delivered && !recv[o.number]?.received).length
@@ -131,7 +131,7 @@ export default function ReturnsPage() {
       if (recvFilter === 'delivered') return !!st?.delivered && !st?.received
       return !st?.delivered && !st?.received
     })
-    .filter((o) => !low || o.number.toLowerCase().includes(low) || o.customer.toLowerCase().includes(low)
+    .filter((o) => !low || String(o.number ?? '').toLowerCase().includes(low) || String(o.customer ?? '').toLowerCase().includes(low)
       || o.lines.some((l) => l.sku.toLowerCase().includes(low)))
     .slice(0, 100)
 

@@ -43,7 +43,7 @@ export default function WebClipStatsPage() {
               <span className="text-[11px] font-black text-gray-300 w-5 text-right tabular-nums shrink-0">{i + 1}</span>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img src={POSTER(r.id)} alt="" className="w-9 h-14 rounded-lg object-cover bg-gray-100 shrink-0" loading="lazy" />
-              <span className="text-[11.5px] text-gray-400 truncate" dir="ltr">{r.id.slice(0, 12)}…</span>
+              <span className="text-[11.5px] text-gray-400 truncate" dir="ltr">{String(r.id ?? '').slice(0, 12)}…</span>
             </span>
             <span className="md:text-right text-[13px] font-black text-gray-900 tabular-nums max-md:ml-auto">{r.views.toLocaleString('th-TH')}</span>
             <span className="md:text-right text-[12px] text-gray-500 tabular-nums">{pct(r.half, r.views)}%</span>

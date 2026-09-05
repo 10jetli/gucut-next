@@ -70,7 +70,7 @@ export default function CoreMissingSkuPage() {
 
   const shown = all
     .filter((r) => (view === 'buildable' ? hasRecipe(r) : view === 'mapped' ? !!r.baseSku : !r.baseSku))
-    .filter((r) => !needle || r.sku.toLowerCase().includes(needle) || (r.name ?? '').toLowerCase().includes(needle))
+    .filter((r) => !needle || String(r.sku ?? '').toLowerCase().includes(needle) || (r.name ?? '').toLowerCase().includes(needle))
 
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">

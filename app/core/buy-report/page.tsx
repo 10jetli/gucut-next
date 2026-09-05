@@ -181,7 +181,7 @@ export default function BuyReportPage() {
   const itemAll = Array.isArray(items?.rows) ? items!.rows! : []
   const itemRows = itemAll.filter((r) => {
     const s2 = itemQ.trim().toLowerCase()
-    return !s2 || r.sku.toLowerCase().includes(s2) || (r.name ?? '').toLowerCase().includes(s2)
+    return !s2 || String(r.sku ?? '').toLowerCase().includes(s2) || (r.name ?? '').toLowerCase().includes(s2)
   })
   /** 🔴 **ท่อตัดที่ 200 แถวเสมอ ไม่ว่าจะขอเท่าไหร่** — จอนี้เคยขอ `limit=500` แล้วเชื่อว่าได้ครบ
    *  ของจริง: สรุปบอก 217 รหัส แต่ตารางมี 200 แถว **ไม่มีอะไรฟ้อง** (เจอตอนยิงจริง 4 ก.ย. 2569)
@@ -197,7 +197,7 @@ export default function BuyReportPage() {
 
   const listed = inRange.filter((r) => {
     const s = q.trim().toLowerCase()
-    return !s || r.number.toLowerCase().includes(s) || (r.vendor ?? '').toLowerCase().includes(s)
+    return !s || String(r.number ?? '').toLowerCase().includes(s) || (r.vendor ?? '').toLowerCase().includes(s)
   })
 
   function downloadExcel() {
