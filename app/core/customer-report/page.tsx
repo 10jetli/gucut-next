@@ -24,7 +24,16 @@ interface Row { id: string; channel: string; amount: number; customer: string; o
 interface Person {
   name: string; orders: number; amount: number; last: string
   channels?: { channel: string; orders: number }[]
+  /** วันซื้อครั้งแรก **ทั้งประวัติ** (ไม่ใช่แค่ในช่วง) — ฝั่งท่อเพิ่ม 6 ก.ย. ขึ้นรอบ 21:00
+   *  ⚠️ ก่อน deploy ท่อ ช่องนี้ undefined ⇒ จอถอยไปใช้นิยามช่วงแบบเดิมเอง ห้ามพัง */
+  firstDay?: string | null
+  /** ท่อคิดให้เสร็จ: คนนี้เป็นลูกค้าใหม่ในช่วงที่เลือกไหม (firstDay อยู่ในช่วง) */
+  newInRange?: boolean
 }
+
+/** กราฟรายเดือนสามเส้น — ⚠️ **สองกองแรกนับเป็นคน กองไม่ระบุชื่อนับเป็นใบ ห้ามบวกรวมกัน**
+ *  (ฝั่งท่อกำชับตอนออกแบบ 6 ก.ย. — หน่วยต่างกัน เส้นอยู่กราฟเดียวกันได้แต่ต้องมีป้ายหน่วย) */
+interface MonthlyRow { month: string; newCustomers?: number; repeatCustomers?: number; unnamedOrders?: number }
 
 const PER_PAGE = 50
 const NO_NAME = 'ไม่ระบุชื่อ'
@@ -38,6 +47,51 @@ const RANGES = [
   { days: 365, label: 'ย้อนหลัง 1 ปี' },
 ]
 
+
+/** กราฟแนวโน้มรายเดือนแบบ ZORT (ภาพ 75) — สามเส้น
+ *  ⚠️ **สองเส้นแรกหน่วยเป็น "คน" เส้นไม่ระบุชื่อหน่วยเป็น "ใบ" — ห้ามบวกรวมกัน**
+ *     (ฝั่งท่อกำชับตอนออกแบบ) ⇒ เส้นใบใช้**แกนขวาแยก** + ป้ายหน่วยกำกับทั้งสองแกน
+ *     สามเส้นบนกราฟเดียวที่หน่วยไม่เท่ากันโดยไม่มีป้าย = ชวนให้คนอ่านบวกรวมโดยไม่รู้ตัว */
+function TrendChart({ rows }: { rows: MonthlyRow[] }) {
+  const W = 460; const H = 180; const padL = 34; const padR = 38; const padY = 22
+  const n = rows.length
+  if (n === 0) return null
+  const maxP = Math.max(...rows.map((r) => Math.max(Number(r.newCustomers) || 0, Number(r.repeatCustomers) || 0)), 1)
+  const maxU = Math.max(...rows.map((r) => Number(r.unnamedOrders) || 0), 1)
+  const x = (i: number) => padL + (n === 1 ? (W - padL - padR) / 2 : (i * (W - padL - padR)) / (n - 1))
+  const yP = (v: number) => H - padY - (v / maxP) * (H - padY * 2)
+  const yU = (v: number) => H - padY - (v / maxU) * (H - padY * 2)
+  const line = (get: (r: MonthlyRow) => number, y: (v: number) => number) =>
+    rows.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(get(r)).toFixed(1)}`).join(' ')
+  const mLabel = (m: string) => {
+    const [yy, mm] = String(m).split('-').map(Number)
+    const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+    return mm >= 1 && mm <= 12 ? `${M[mm - 1]}/${(yy + 543) % 100}` : String(m)
+  }
+  return (
+    <div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] mb-1">
+        <span><span className="inline-block w-2.5 h-2.5 rounded-full align-middle mr-1" style={{ background: '#8ea8f8' }} />ลูกค้าใหม่ (คน)</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded-full align-middle mr-1" style={{ background: '#f2938c' }} />ซื้อซ้ำ (คน)</span>
+        <span><span className="inline-block w-2.5 h-2.5 rounded-full align-middle mr-1 bg-gray-400" />ไม่ระบุชื่อ (<b>ใบ</b> — แกนขวา)</span>
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="แนวโน้มลูกค้ารายเดือน">
+        {[0.5, 1].map((f2) => (
+          <line key={f2} x1={padL} x2={W - padR} y1={yP(maxP * f2)} y2={yP(maxP * f2)} stroke="#eef1f7" />
+        ))}
+        <path d={line((r) => Number(r.unnamedOrders) || 0, yU)} fill="none" stroke="#9ca3af" strokeWidth="1.5" strokeDasharray="4 3" />
+        <path d={line((r) => Number(r.newCustomers) || 0, yP)} fill="none" stroke="#8ea8f8" strokeWidth="2" />
+        <path d={line((r) => Number(r.repeatCustomers) || 0, yP)} fill="none" stroke="#f2938c" strokeWidth="2" />
+        {rows.map((r, i) => (
+          <text key={r.month} x={x(i)} y={H - 6} textAnchor="middle" className="fill-gray-400 text-[9px]">{mLabel(r.month)}</text>
+        ))}
+        <text x={2} y={yP(maxP) + 4} className="fill-gray-400 text-[9px]">{maxP} คน</text>
+        <text x={W - 2} y={yU(maxU) + 4} textAnchor="end" className="fill-gray-400 text-[9px]">{maxU} ใบ</text>
+      </svg>
+    </div>
+  )
+}
+
 export default function CoreCustomersPage() {
   const [days, setDays] = useState(90)
   const [q, setQ] = useState('')
@@ -49,6 +103,9 @@ export default function CoreCustomersPage() {
   /** ท่อบอกเองว่านับรวมกี่ร้าน — ห้ามจอเดา */
   const [scope, setScope] = useState('')
   const [truncated, setTruncated] = useState(false)
+  /** วันแรกสุดที่กระจกมีข้อมูล — '' = ท่อยังไม่ส่ง (ก่อน deploy รอบ 21:00) */
+  const [historyFrom, setHistoryFrom] = useState('')
+  const [monthly, setMonthly] = useState<MonthlyRow[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -75,12 +132,19 @@ export default function CoreCustomersPage() {
       setScope(typeof d.store === 'string' ? d.store : '')
 
       const list: Person[] = (Array.isArray(d.customers) ? d.customers : []).map(
-        (c: { name: string; orders: number; sales: number; lastDay: string; channels?: { channel: string; orders: number }[] }) => ({
+        (c: { name: string; orders: number; sales: number; lastDay: string; channels?: { channel: string; orders: number }[]
+              firstDay?: string | null; newInRange?: boolean }) => ({
           name: c.name, orders: Number(c.orders) || 0,
           amount: Number(c.sales) || 0, last: c.lastDay || '',
           channels: Array.isArray(c.channels) ? c.channels : [],
+          firstDay: typeof c.firstDay === 'string' ? c.firstDay : null,
+          // รับได้ทั้งไม่มีฟิลด์ (ท่อยังไม่ deploy) และมีเป็น boolean — ชนิดอื่นถือว่าไม่รู้
+          newInRange: typeof c.newInRange === 'boolean' ? c.newInRange : undefined,
         }),
       )
+      // ขอบประวัติของกระจก — ตัวกันนิยาม "ใหม่" เพี้ยนตรงขอบ (กระจกเริ่ม ~มิ.ย. 2569)
+      setHistoryFrom(typeof d.historyFrom === 'string' ? d.historyFrom : '')
+      setMonthly(Array.isArray(d.monthly) ? d.monthly : [])
       const un = d?.unnamed
       if (un && Number(un.orders) > 0) {
         list.push({
@@ -187,26 +251,59 @@ export default function CoreCustomersPage() {
               {named.length === 0
                 ? <p className="text-[13px] text-gray-400">ยังไม่มีลูกค้าที่ระบุชื่อในช่วงนี้</p>
                 : (() => {
-                  const total = named.length
-                  const pctRepeat = Math.round((repeat.length / total) * 1000) / 10
-                  const pctOnce = Math.round((once.length / total) * 1000) / 10
+                  /* ✅ นิยามแบบ ZORT ("ใหม่" = ซื้อครั้งแรกทั้งประวัติอยู่ในช่วง) ใช้ได้เมื่อ
+                     ท่อส่ง newInRange มา (รอบ 21:00 6 ก.ย.) · ก่อนหน้านั้นถอยไปนิยามช่วงแบบเดิม
+                     ⚠️ ตัดสินว่า "ท่อพร้อม" จากการ **มีฟิลด์จริงในข้อมูล** ไม่ใช่จากวันที่ —
+                        จอนี้ต้องทำงานถูกทั้งก่อนและหลัง deploy ของอีกฝั่ง ไม่ว่าใครขึ้นก่อน */
+                  const hasZortDef = named.some((p) => typeof p.newInRange === 'boolean')
+                  const newC = hasZortDef ? named.filter((p) => p.newInRange === true) : once
+                  const repC = hasZortDef ? named.filter((p) => p.newInRange === false) : repeat
+                  /* ⚠️ **newInRange เป็นสามสถานะ: true/false/null — null คือ "ไม่รู้" ห้ามตีเป็น false**
+                     (ฝั่งท่อกำชับ 6 ก.ย. — และสารภาพว่ารุ่นแรกของเขาเผลอให้ข้อมูลหายกลายเป็น false
+                      คำถามเรื่องสัญญาข้อมูลจับได้ก่อน push) ⇒ คนที่ไม่รู้ต้อง**นับและโชว์แยก**
+                     ไม่ใช่หายจากวงกลมเงียบ ๆ — คนหายจากกราฟคือคำตอบที่ผิดแบบมองไม่เห็น */
+                  const unkC = hasZortDef ? named.filter((p) => typeof p.newInRange !== 'boolean') : []
+                  const total = newC.length + repC.length || 1
+                  const pctNew = Math.round((newC.length / total) * 1000) / 10
+                  const pctRep = Math.round((repC.length / total) * 1000) / 10
                   const C = 2 * Math.PI * 42
                   return (
                     <div className="flex items-center gap-6 flex-wrap">
                       <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
                         <circle cx="50" cy="50" r="42" fill="none" stroke="#8ea8f8" strokeWidth="16" />
                         <circle cx="50" cy="50" r="42" fill="none" stroke="#f2938c" strokeWidth="16"
-                          strokeDasharray={`${(repeat.length / total) * C} ${C}`} />
+                          strokeDasharray={`${(repC.length / total) * C} ${C}`} />
                       </svg>
                       <div className="text-[13px] space-y-1.5">
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
-                          ซื้อครั้งเดียวในช่วง <b>{once.length.toLocaleString('th-TH')}</b> ราย ({pctOnce}%)</p>
+                          {hasZortDef ? 'ลูกค้าใหม่' : 'ซื้อครั้งเดียวในช่วง'}{' '}
+                          <b>{newC.length.toLocaleString('th-TH')}</b> ราย ({pctNew}%)</p>
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
-                          ซื้อซ้ำในช่วง <b>{repeat.length.toLocaleString('th-TH')}</b> ราย ({pctRepeat}%)</p>
-                        <p className="text-[11px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
-                          นับเฉพาะช่วงที่เลือก — ZORT นับ &ldquo;ใหม่/ซื้อซ้ำ&rdquo; จากประวัติทั้งหมด
-                          จึงเทียบตัวเลขกันตรง ๆ ไม่ได้ (นิยามคนละช่วงเวลา)
-                        </p>
+                          {hasZortDef ? 'ลูกค้าซื้อซ้ำ' : 'ซื้อซ้ำในช่วง'}{' '}
+                          <b>{repC.length.toLocaleString('th-TH')}</b> ราย ({pctRep}%)</p>
+                        {unkC.length > 0 && (
+                          <p className="text-[12px] text-gray-500">
+                            <span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-300" />
+                            ไม่ทราบสถานะ <b>{unkC.length.toLocaleString('th-TH')}</b> ราย
+                            <span className="text-gray-400"> (หา firstDay ไม่ได้ — ไม่ได้อยู่ในวงกลม)</span>
+                          </p>
+                        )}
+                        {hasZortDef ? (
+                          <p className="text-[11px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
+                            นิยามแบบ ZORT: &ldquo;ใหม่&rdquo; = ซื้อครั้งแรก(ทั้งประวัติ)อยู่ในช่วงที่เลือก
+                            {/* ⚠️ ขอบประวัติ — กระจกเริ่มเก็บ ~มิ.ย. 2569 คนที่ซื้อก่อนหน้านั้น
+                                จะดูเป็น "ใหม่" เกินจริง (ฝั่งท่อกำชับให้เขียนกำกับ 6 ก.ย.) */}
+                            {historyFrom && (
+                              <> · <b className="text-amber-700">ข้อมูลย้อนได้ถึง {thaiDate(historyFrom)}</b> —
+                                คนที่เคยซื้อก่อนหน้านั้นจะถูกนับเป็น &ldquo;ใหม่&rdquo; เกินจริง</>
+                            )}
+                          </p>
+                        ) : (
+                          <p className="text-[11px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
+                            นับเฉพาะช่วงที่เลือก — ZORT นับ &ldquo;ใหม่/ซื้อซ้ำ&rdquo; จากประวัติทั้งหมด
+                            จึงเทียบตัวเลขกันตรง ๆ ไม่ได้ (นิยามคนละช่วงเวลา)
+                          </p>
+                        )}
                       </div>
                     </div>
                   )
@@ -217,13 +314,16 @@ export default function CoreCustomersPage() {
               {/* ⚠️ ZORT วาดเส้นรายเดือน ลูกค้าใหม่/ซื้อซ้ำ/ไม่ระบุ — ต้องมีข้อมูลรายเดือนถึงจะวาดได้
                   ท่อ bycustomer ตอบเป็นยอดรวมทั้งช่วง ไม่มีมิติเวลา ⇒ วาดไม่ได้โดยไม่เดา
                   **การ์ดต้องอยู่ตามผังพร้อมเหตุผล** ไม่ใช่หายไปเฉย ๆ (คนที่ชิน ZORT จะหา) */}
-              <p className="text-[13px] text-gray-500 leading-relaxed">
-                ZORT วาดกราฟลูกค้าใหม่/ซื้อซ้ำรายเดือน — ของเรายังวาดไม่ได้
-                เพราะท่อสรุปยอดมาทั้งช่วงเป็นก้อนเดียว ไม่มีแยกรายเดือน
-                <span className="block text-[11.5px] text-gray-400 mt-1.5">
-                  ขอฝั่งท่อไว้แล้ว (bycustomer แบบแยกเดือน) — ได้เมื่อไหร่กราฟขึ้นเอง ไม่ต้องแก้จอ
-                </span>
-              </p>
+              {monthly.length > 0
+                ? <TrendChart rows={monthly} />
+                : (
+                  <p className="text-[13px] text-gray-500 leading-relaxed">
+                    ZORT วาดกราฟลูกค้าใหม่/ซื้อซ้ำรายเดือน — ท่อยังไม่ส่งข้อมูลรายเดือนมา
+                    <span className="block text-[11.5px] text-gray-400 mt-1.5">
+                      ฝั่งท่อเขียนเสร็จแล้ว ขึ้นพร้อมกันรอบ 21:00 — ขึ้นเมื่อไหร่กราฟวาดเอง ไม่ต้องแก้จอ
+                    </span>
+                  </p>
+                )}
             </div>
           </div>
 
