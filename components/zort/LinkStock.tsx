@@ -31,7 +31,7 @@ interface LinkRow {
   pairsNeedMax?: number
   daysLeftMin?: number
   daysLeftMax?: number
-  verdict: string
+  verdict?: string | null
   /** เหตุผลของคำตัดสิน — ใช้แยก "ไม่มีรหัสข้อต่อในคลัง" ออกจาก "ช่วงนี้ไม่มีการขาย"
    *  ⚠️ สองอย่างนี้ขึ้นคำว่า "ยังตอบไม่ได้" เหมือนกัน แต่ **สิ่งที่ต้องทำต่อคนละเรื่อง** */
   reason?: 'negative' | 'short_sure' | 'short_maybe' | 'ok' | 'no_link_sku' | 'no_sales' | string
@@ -51,7 +51,10 @@ interface Resp {
 }
 
 /** สีของคำตัดสิน — ท่อเป็นคนตัดสิน จอแค่ทำให้เห็น ห้ามจอคิดเกณฑ์เอง */
-function verdictTone(v: string, reason?: string): 'red' | 'orange' | 'green' | 'gray' {
+function verdictTone(v?: string | null, reason?: string): 'red' | 'orange' | 'green' | 'gray' {
+  // ⚠️ ท่อส่ง verdict ว่างมาเมื่อไหร่ `v.startsWith` จะโยน error = จอขาว
+  //    (คลาสเดียวกับ fmtNum(null) ที่เพิ่งเจอเมื่อชั่วโมงที่แล้ว — เช็คก่อนเรียกเมธอดเสมอ)
+  if (typeof v !== 'string') return 'gray'
   /* ⚠️ "ยังตอบไม่ได้" มีสองแบบที่ต้องดูต่างกัน
      no_sales   = ช่วงนี้ไม่มีการขาย ⇒ **ไม่ใช่ปัญหา** ปล่อยเทา
      no_link_sku = คลังไม่มีรหัสข้อต่อเบอร์นี้เลย ⇒ **เป็นงานที่ต้องทำ** ให้สะดุดตา
@@ -159,7 +162,7 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
                     : <span className="text-gray-300">—</span>}
               </td>
               <td className="px-3 py-2.5">
-                <Pill tone={verdictTone(r.verdict, r.reason)}>{r.verdict}</Pill>
+                <Pill tone={verdictTone(r.verdict, r.reason)}>{r.verdict || 'ไม่มีคำตัดสินจากท่อ'}</Pill>
                 {/* ประโยคสั่งงานมาจากท่อ — จอแค่แสดง ไม่คิดเอง */}
                 {r.nextStep && <span className="block text-[11px] text-gray-500 mt-1 leading-relaxed">{r.nextStep}</span>}
               </td>
