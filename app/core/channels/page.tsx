@@ -32,6 +32,17 @@ interface Status {
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
 
+/** เส้นที่ใช้ขอ "ยอด 30 วัน + รายชื่อร้าน" — **แยกออกมาเป็นค่าเดียว จะได้เปลี่ยนที่เดียว**
+ *
+ *  ⏳ ฝั่งท่อทำเส้นเบา `?list=orderfacets` ไว้แล้ว (ยิง D1 แค่ 2 รอบ ไม่ดึงแถวออเดอร์เลย)
+ *     คืนฟิลด์ชื่อและรูปแบบเดียวกันเป๊ะ ⇒ สลับมาใช้ **แก้บรรทัดเดียว** ไม่ต้องแตะโค้ดอ่านข้อมูล
+ *  ⚠️ **ยังไม่สลับ** เส้นนั้นยังไม่ขึ้นเว็บ (รอ push 21:00 พร้อมกัน)
+ *     ตกลงกับฝั่งท่อแล้วว่าจะเปลี่ยนหลังเขายืนยันว่ายิงของจริงผ่าน
+ *  ⚠️ **ห้ามสลับแล้วเชื่อว่าใช้ได้เพราะได้ 200** — วันนี้ยิงเส้นที่ยังไม่ deploy แล้วได้
+ *     200 + ขนาด body สมเหตุสมผล แต่เป็นคำตอบสรุปหน้าแรกคนละชุด (`list=` ที่ไม่รู้จัก
+ *     ตกไปที่คำตอบนั้นเงียบ ๆ) ⇒ ต้องเช็คว่า body **มีฟิลด์ที่สัญญาไว้** จริงด้วยทุกครั้ง */
+const RECENT_QS = `/api/web/core?list=orders&from=${thaiDay(30)}&to=${thaiDay(0)}&limit=1`
+
 // ท่อที่ "ควรจะมี" ตามแผน — มีไว้เพื่อบอกว่าอันไหนยังไม่เห็นข้อมูล
 // ห้ามใส่คำว่าอนุมัติ/รออนุมัติ ตรงนี้ ให้ดูจากข้อมูลอย่างเดียว
 const PIPES = [
@@ -44,21 +55,38 @@ export default function CoreChannelsPage() {
   const [st, setSt] = useState<Status | null>(null)
   const [recent, setRecent] = useState<ChannelRow[]>([])
   const [recentStores, setRecentStores] = useState<StoreRow[]>([])
+  /** ⚠️ **ต้องแยกจาก `loading` ไม่งั้นได้เร็วแลกกับตัวเลขปลอม**
+   *  ระหว่างที่ยอด 30 วันยังไม่มา `recent` เป็น [] ⇒ การ์ดขึ้น "0 ช่องทาง · ฿0"
+   *  และแถบล่างขึ้น "ยังไม่มียอดใน 30 วันล่าสุด" — ทั้งคู่อ่านว่า **ร้านไม่มียอดเลย**
+   *  ซึ่งคนละเรื่องกับ "ยังโหลดไม่เสร็จ" (ตาข่ายเดียวกับ salesLoading ในจอคลังสินค้า/สาขา) */
+  const [recentLoading, setRecentLoading] = useState(true)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
   const load = useCallback(async () => {
     setLoading(true)
+    setRecentLoading(true) // ⚠️ กดรีเฟรชแล้วต้องกลับไป "ยังไม่รู้" ไม่ใช่ค้างเลขรอบก่อน
     setError('')
     try {
-      const [sRes, rRes] = await Promise.all([
-        fetch('/api/web/core').then((r) => r.json()),
-        fetch(`/api/web/core?list=orders&from=${thaiDay(30)}&to=${thaiDay(0)}&limit=1`).then((r) => r.json()),
-      ])
+      /* 🔴 **เดิม Promise.all กักไม่ให้วาดอะไรเลยจนกว่าจะครบทั้งสองเส้น**
+         วัดของจริง 5 ก.ย. 2569: `/api/web/core` เปล่า ~2.9 วิ · เส้นยอด 30 วัน **~4.2 วิ**
+         ⇒ การ์ดท่อ + ยอดสะสม (ใช้แค่เส้นแรก) ถูกกักไว้อีก 1.3 วิเพื่อรอของประกอบ
+         ตอนนี้เส้นแรกมาแล้ววาดเลย · ยอด 30 วันเติมทีหลัง (ท่าเดียวกับจอคลังสินค้า/สาขา) */
+      const recentSoon = fetch(RECENT_QS)
+        .then((r) => r.json())
+        .then((rRes) => {
+          setRecent(Array.isArray(rRes?.byChannel) ? rRes.byChannel : [])
+          setRecentStores(Array.isArray(rRes?.stores) ? rRes.stores : [])
+        })
+        .catch(() => { /* ยอด 30 วันเป็นของประกอบ — ล้มก็แค่การ์ดนั้นว่าง ไม่ล้มทั้งจอ */ })
+        .finally(() => setRecentLoading(false))
+
+      const sRes = await fetch('/api/web/core').then((r) => r.json())
       if (sRes?.error) throw new Error(sRes.error)
       setSt(sRes)
-      setRecent(Array.isArray(rRes?.byChannel) ? rRes.byChannel : [])
-      setRecentStores(Array.isArray(rRes?.stores) ? rRes.stores : [])
+      setLoading(false) // ← การ์ดท่อ + ยอดสะสมขึ้นได้แล้ว
+      // ⚠️ ต้อง await ไว้ท้ายสุด ไม่งั้นเป็น promise ลอย (กติกาเหล็กของโปรเจกต์)
+      await recentSoon
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
       setSt(null)
@@ -73,9 +101,12 @@ export default function CoreChannelsPage() {
   const all = st?.channels ?? []
   /** ร้านที่มีบิลจริงในช่วงที่ดึงมา — มาจากท่อ (`stores`) ไม่ใช่จอนับเอง */
   const storeList: StoreRow[] = Array.isArray(recentStores) ? recentStores : []
-  const storeLabel = storeList.length
-    ? `${storeList.length} ร้าน (${storeList.map((s2) => s2.name || s2.source).join(' · ')})`
-    : 'ทุกร้าน'
+  /* ⚠️ ระหว่างรอ ห้ามเขียน "ทุกร้าน" — เป็นคำยืนยันขอบเขตของตัวเลขที่ยังไม่รู้ */
+  const storeLabel = recentLoading && storeList.length === 0
+    ? 'กำลังดูว่านับรวมกี่ร้าน…'
+    : storeList.length
+      ? `${storeList.length} ร้าน (${storeList.map((s2) => s2.name || s2.source).join(' · ')})`
+      : 'ทุกร้าน'
   const shopee = st?.shopee ?? []
   const maxRecent = Math.max(...recent.map((c) => c.amount), 1)
   const recentTotal = recent.reduce((s, c) => s + c.amount, 0)
@@ -109,8 +140,11 @@ export default function CoreChannelsPage() {
       {st && !error && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard icon="🏪" tone="blue" label="ช่องทางที่มียอด (30 วัน)" value={fmtNum(recent.length)} unit="ช่องทาง" />
-            <StatCard icon="💰" tone="green" label="ยอดรวม 30 วัน" value={fmtMoney(recentTotal)} />
+            {/* ⚠️ ระหว่างรอ ห้ามโชว์ 0 / ฿0 — อ่านว่า "30 วันนี้ขายไม่ได้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
+            <StatCard icon="🏪" tone="blue" label="ช่องทางที่มียอด (30 วัน)"
+              value={recentLoading ? '…' : fmtNum(recent.length)} unit="ช่องทาง" />
+            <StatCard icon="💰" tone="green" label="ยอดรวม 30 วัน"
+              value={recentLoading ? '…' : fmtMoney(recentTotal)} />
             <StatCard icon="🔌" tone="purple" label="ท่อดึงตรงที่เดินอยู่"
               value={fmtNum(shopeeLive ? 1 : 0)} unit={`จาก ${PIPES.length} เจ้า`} />
           </div>
@@ -118,7 +152,9 @@ export default function CoreChannelsPage() {
           {/* ยอดรายช่องทาง 30 วัน */}
           <Card>
             <p className="text-[13px] font-semibold text-gray-700 mb-3">ยอดขายรายช่องทาง (30 วันล่าสุด)</p>
-            {recent.length === 0 && <p className="text-[13px] text-gray-400">ยังไม่มียอดใน 30 วันล่าสุด</p>}
+            {recentLoading
+              ? <p className="text-[13px] text-gray-400">กำลังโหลดยอด 30 วัน…</p>
+              : recent.length === 0 && <p className="text-[13px] text-gray-400">ยังไม่มียอดใน 30 วันล่าสุด</p>}
             <div className="space-y-2.5">
               {recent.map((c) => (
                 <div key={c.channel}>
