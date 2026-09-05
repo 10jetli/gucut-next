@@ -105,10 +105,14 @@ export default function LedgerScreen({
           ))}
           {/* ผัง ZORT มีปุ่มรีเฟรช (วงกลมลูกศร) มุมขวาของแถบแท็บ — จอชุดนี้ไม่มีข้อมูลให้โหลดใหม่
               ปุ่มที่กดแล้วไม่เกิดอะไรคือปุ่มหลอก ⇒ โชว์ตามผังแต่ล็อกพร้อมเหตุผล
-              (ท่าเดียวกับ ⋮ ในจอใบเสนอราคา — เจอตอนไล่เทียบเป็นชั้น 6 ก.ย. 2569) */}
-          <span title="ZORT มีปุ่มโหลดใหม่ตรงนี้ — จอนี้ยังไม่ได้ต่อข้อมูล ไม่มีอะไรให้โหลด"
-            className="ml-auto mb-1 w-7 h-7 grid place-items-center rounded border border-gray-200
-              bg-gray-50 text-gray-300 cursor-not-allowed select-none">⟳</span>
+              ⚠️ **เฉพาะแท็บชุดรายได้/รายจ่าย (withTabs) เท่านั้น** — เทียบภาพจริงทีละจอแล้ว:
+                 ภาพ 53/28 (รายได้อื่น/รายจ่ายอื่น) **มี** ปุ่มนี้ · ภาพ 18 (เอกสารบัญชี แท็บ custom)
+                 **ไม่มี** ⇒ ถ้าโชว์ทุกจอ tooltip ที่เขียนว่า "ZORT มีปุ่มตรงนี้" จะโกหกในจอ 18 */}
+          {withTabs && !tabs && (
+            <span title="ZORT มีปุ่มโหลดใหม่ตรงนี้ — จอนี้ยังไม่ได้ต่อข้อมูล ไม่มีอะไรให้โหลด"
+              className="ml-auto mb-1 w-7 h-7 grid place-items-center rounded border border-gray-200
+                bg-gray-50 text-gray-300 cursor-not-allowed select-none">⟳</span>
+          )}
         </div>
       )}
 
