@@ -35,6 +35,11 @@ export default function CoreFinancePage() {
   /** ท่อบอกว่าตัวเลขชุดนี้นับรวมกี่ร้าน (เช่น "ทั้ง 2 ร้าน") — เอาไปเขียนกำกับบนจอ */
   const [scope, setScope] = useState('')
   const [stock, setStock] = useState<StockResp | null>(null)
+  /** ⚠️ **ผมเป็นคนทำให้เคสนี้เงียบลงเอง** (เจอตอนไล่อ่านซ้ำ 5 ก.ย. 2569)
+   *  ก่อนแก้เป็น allSettled ถ้าเส้นสต็อกล้ม **ทั้งจอขึ้น error ให้เห็น**
+   *  พอแยกให้ล้มแยกกัน มันกลายเป็นการ์ดขึ้น "—" เฉย ๆ ซึ่งอ่านว่า "ไม่มีค่านี้"
+   *  ⇒ ความทนทานที่ได้มา แลกกับความเงียบ — ต้องจ่ายคืนด้วยการเขียนบอกว่าล้ม */
+  const [stockFailed, setStockFailed] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -44,6 +49,7 @@ export default function CoreFinancePage() {
 
   const load = useCallback(async () => {
     setLoading(true)
+    setStockFailed(false)
     setError('')
     try {
       /* 🔴 **เดิมจอนี้ดึงออเดอร์ทั้ง 180 วันมาทีละ 200 ใบ แล้วบวกเองในเบราว์เซอร์**
@@ -78,7 +84,12 @@ export default function CoreFinancePage() {
 
       // สต็อกเป็นของประกอบ — ล้มก็แค่ไม่โชว์การ์ดนั้น ไม่ล้มทั้งจอ
       const sd = sRes.status === 'fulfilled' ? sRes.value : null
-      setStock(sd?.skip ? null : sd)
+      const stockBad = sRes.status === 'rejected' || Boolean(sd?.error)
+      setStockFailed(stockBad)
+      /* ⚠️ **ก้อน error เป็น object ⇒ `stock ? ...` ยังเป็นจริง** แล้วการ์ดจะไปอ่าน
+         `stock.value` ที่ไม่มีอยู่ ⇒ ได้ค่าว่างที่ดูเหมือนตัวเลขจริงที่ยังไม่มา
+         ต้องปัดเป็น null ให้ชัด ไม่ใช่ส่งก้อนที่ "จริงแต่ไม่มีเนื้อ" เข้าไป */
+      setStock(stockBad || sd?.skip ? null : sd)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
       setMonths([])
@@ -137,10 +148,12 @@ export default function CoreFinancePage() {
               note={`${fmtNum(months.reduce((n, m) => n + (Number(m.orders) || 0), 0))} ใบ${scope ? ` · ${scope}` : ''}`} />
             <StatCard icon="📦" tone="purple" label="มูลค่าของในคลัง"
               value={stock ? fmtMoney(stock.value) : '—'}
-              note={stock ? `คิดที่ราคาขาย · ${fmtNum(stock.total)} SKU` : undefined} />
+              note={stock ? `คิดที่ราคาขาย · ${fmtNum(stock.total)} SKU`
+                : stockFailed ? 'ดึงสต็อกไม่สำเร็จ — ไม่ใช่ว่าไม่มีของ กดรีเฟรช' : undefined} />
             <StatCard icon="🚫" tone="red" label="SKU ที่ของหมด"
               value={stock ? fmtNum(stock.outOfStock) : '—'} unit="ตัว"
-              note={stock ? `ภาพถ่าย ${thaiDate(stock.day)}` : undefined} />
+              note={stock ? `ภาพถ่าย ${thaiDate(stock.day)}`
+                : stockFailed ? 'ดึงสต็อกไม่สำเร็จ — ไม่ใช่ว่าไม่มีของหมด' : undefined} />
           </div>
 
           <Card>
