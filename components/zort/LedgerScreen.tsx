@@ -95,12 +95,20 @@ export default function LedgerScreen({
 
       {(withTabs || tabs) && (
         <div className="flex flex-wrap items-center gap-6 border-b border-gray-200 mb-0 px-1">
-          {(tabs ?? ['ทั้งหมด', 'รอชำระ', 'สำเร็จ']).map((t, i) => (
+          {/* ⚠️ ป้าย "รอชำระ (0)" มีวงเล็บศูนย์ตามจอจริง (zort-ui/53) — ZORT ใส่ตัวเลขเฉพาะแท็บนี้
+              และศูนย์ตรงนี้เป็นความจริง (ร้านไม่ใช้จอนี้ ตัวจริงลงที่ PEAK) ไม่ใช่เลขแต่ง */}
+          {(tabs ?? ['ทั้งหมด', 'รอชำระ (0)', 'สำเร็จ']).map((t, i) => (
             <span key={t}
               className={`text-[13.5px] pb-2 ${i === 0 ? 'text-blue-600 border-b-2 border-blue-600 font-medium' : 'text-gray-400'}`}>
               {t}
             </span>
           ))}
+          {/* ผัง ZORT มีปุ่มรีเฟรช (วงกลมลูกศร) มุมขวาของแถบแท็บ — จอชุดนี้ไม่มีข้อมูลให้โหลดใหม่
+              ปุ่มที่กดแล้วไม่เกิดอะไรคือปุ่มหลอก ⇒ โชว์ตามผังแต่ล็อกพร้อมเหตุผล
+              (ท่าเดียวกับ ⋮ ในจอใบเสนอราคา — เจอตอนไล่เทียบเป็นชั้น 6 ก.ย. 2569) */}
+          <span title="ZORT มีปุ่มโหลดใหม่ตรงนี้ — จอนี้ยังไม่ได้ต่อข้อมูล ไม่มีอะไรให้โหลด"
+            className="ml-auto mb-1 w-7 h-7 grid place-items-center rounded border border-gray-200
+              bg-gray-50 text-gray-300 cursor-not-allowed select-none">⟳</span>
         </div>
       )}
 
