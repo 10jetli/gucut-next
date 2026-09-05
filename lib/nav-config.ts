@@ -173,7 +173,9 @@ export const NAV_ITEMS: NavItem[] = [
       soon('setting-company', 'บริษัท/ร้านค้า'),
       soon('setting-users', 'ผู้ใช้งาน'),
       soon('setting-roles', 'สิทธิ์การใช้งาน'),
-      soon('setting-notify', 'การแจ้งเตือน'),
+      // ✅ มีจอจริงแล้ว 6 ก.ย. (ลอกผังจาก zort-ui/55) — เลิกชี้หน้า soon
+      //    คลาสเดียวกับทางลัดขนส่งบนหน้าแรก: จอเกิดทีหลังเมนู แล้วไม่มีใครวนกลับมาอัป
+      { href: '/core/setting-notify', label: 'การแจ้งเตือน' },
       soon('setting-autoreport', 'รายงานอัตโนมัติ'),
       { href: '/settings/connections', label: 'เชื่อมต่อบริการอื่น' },
       // ⚠️ ตัวตรวจสุขภาพเดิมย้ายมาเป็นจอลูก — ต้องมีในเมนูด้วย ไม่งั้นกลายเป็นของที่หาไม่เจอ
