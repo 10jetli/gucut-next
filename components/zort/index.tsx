@@ -545,6 +545,22 @@ export function MarketUnreliableBanner({ unreliable }: { unreliable?: Record<str
   )
 }
 
+/** เวลา UTC จากท่อ → "ชม.:นาที" เวลาไทย · อ่านไม่ออก = คืนค่าว่าง ไม่ใช่เดา
+ *
+ *  ⚠️ **สองกับดักที่เจอจริงตอนไล่ทดสอบ 5 ก.ย. 2569**
+ *  1. `new Date("ขยะ").toISOString()` **โยน error** ⇒ จอขาวทั้งหน้า
+ *     (คลาสเดียวกับ fmtNum(null) · verdictTone(null) ที่เพิ่งเจอวันนี้)
+ *  2. ถ้าเผลอรับตัวเลขมา `new Date(12345)` ได้ค่าที่ดู "สมเหตุสมผล" คือ 07:00
+ *     ⇒ ไม่ได้พังให้เห็น แต่**โชว์เวลาปลอม** ซึ่งแย่กว่า — จึงบังคับว่าต้องเป็นสตริงเท่านั้น
+ *
+ *  ชนิดข้อมูลใน TypeScript กันไม่ได้ เพราะค่านี้มาจาก JSON ของท่อซึ่งไม่มีชนิดจริง */
+export function thaiHm(at?: unknown): string {
+  if (typeof at !== 'string' || !at.trim()) return ''
+  const t = new Date(at).getTime()
+  if (!Number.isFinite(t)) return ''
+  return new Date(t + 7 * 3600e3).toISOString().slice(11, 16)
+}
+
 export function MarketCoverage(
   { checked, failed, notConnected, at }: {
     checked?: string[] | null
@@ -575,14 +591,11 @@ export function MarketCoverage(
   return (
     <>
       คอลัมน์ <b>Marketplace</b> ตรวจจากรายการสินค้าจริงบน <b>{list.join(' · ')}</b>
-      {at && (
-        // ⚠️ ค่าที่ท่อส่งมาเป็น UTC — ต้องบวก 7 แล้วเขียนกำกับว่าเป็นเวลาไทย
-        <> · ถามล่าสุด{' '}
-          <span title={String(at)}>
-            {new Date(new Date(at).getTime() + 7 * 3600 * 1000)
-              .toISOString().slice(11, 16)} น. (เวลาไทย)
-          </span>
-        </>
+      {/* ⚠️ ค่าที่ท่อส่งมาเป็น UTC — ต้องบวก 7 แล้วเขียนกำกับว่าเป็นเวลาไทย
+          เดิมเรียก `new Date(at).toISOString()` ตรง ๆ ⇒ ท่อส่งค่าที่อ่านไม่ออกมาเมื่อไหร่
+          โยน error ตอนวาด = **จอขาวทั้งจอสินค้าและจอสินค้าเป็นชุด** (แก้ 5 ก.ย. 2569) */}
+      {thaiHm(at) && (
+        <> · ถามล่าสุด <span title={String(at)}>{thaiHm(at)} น. (เวลาไทย)</span></>
       )}
       {missing.length > 0 && (
         <> · <b className="text-amber-700">ยังเช็ค {missing.join(' · ')} ไม่ได้</b> —
@@ -593,6 +606,19 @@ export function MarketCoverage(
           ))}
         </>
       )}
+      {/* ⚠️ **โลโก้ตอบคำถามคนละข้อกับ ZORT — ต้องเขียนไว้ ไม่งั้นคนอ่านสรุปผิด**
+          ของเรา  = "ตอนนี้ลงขายอยู่จริง" (Shopee ถามเฉพาะสถานะ NORMAL)
+          ของ ZORT = "เชื่อมต่อไว้" (นับของที่ผูกรหัสกันไว้ ถึงจะปิดการขายอยู่ก็นับ)
+          วัดของจริง 5 ก.ย. 2569 ด้วยการไล่ทั้ง 2,672 รหัส (14 หน้า ไม่ใช่หน้าแรกหน้าเดียว):
+            ติดโลโก้ Shopee 76 · Lazada 1,661 · เว็บร้าน 2,027 · ไม่ติดเลย 556 (21%)
+          ส่วนจอ Marketplace Dashboard ของ ZORT วันเดียวกันเขียน Shopee 1,926 · Lazada 1,988
+          ⇒ ต่างกัน 25 เท่าที่ Shopee **ไม่ใช่ของหาย** — ฝั่งท่อไล่นับแล้ว 4 ก.ย.
+            ลงขายอยู่จริง 37 สินค้า · 310 ตัวเลือก · กรอกรหัสครบทุกตัว
+          ห้ามลบบรรทัดนี้จนกว่าจะมีตัวเลข "เชื่อมต่อ" ของเราเองมาวางคู่กัน */}
+      {' '}· <span className="text-gray-500">
+        โลโก้ = <b>กำลังลงขายอยู่</b> ไม่ใช่ &ldquo;เชื่อมต่อไว้&rdquo; —
+        เลขนี้จึงน้อยกว่าจอ Marketplace Dashboard ของ ZORT โดยไม่ได้แปลว่ามีของหาย
+      </span>
     </>
   )
 }

@@ -110,6 +110,8 @@ export const NAV_ITEMS: NavItem[] = [
     icon: '🏪',
     label: 'ร้านค้าออนไลน์',
     children: [
+      // ผัง ZORT: "Marketplace Dashboard" อยู่ในกลุ่มนี้เป็นเมนูแรก (`zort-ui/32`)
+      { href: '/core/marketplace', label: 'Marketplace Dashboard' },
       { href: '/core/channels', label: 'ช่องทางขาย' },
       // ZORT แยกแชทเป็น "แอป" ต่างหาก (เปิดจากตารางจุด 9 ช่อง) เราใส่ไว้ในเมนูด้วย
       // เพราะเมนูคือที่ที่คนมองหาของ — ของที่เปิดได้ทางเดียวคือของที่หาไม่เจอ
