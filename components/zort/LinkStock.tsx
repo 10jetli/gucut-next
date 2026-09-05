@@ -19,7 +19,8 @@ import { Pill } from '@/components/zort'
 interface LinkRow {
   pitch: string
   brand: string
-  linkSku: string
+  /** อาจเป็น null — แปลว่าคลังไม่มีรหัสข้อต่อเบอร์นี้เลย (คนละเรื่องกับมีแล้วเหลือ 0) */
+  linkSku?: string | null
   linkStock: number
   rollSkus?: string[]
   rollTeeth?: number
@@ -29,6 +30,13 @@ interface LinkRow {
   daysLeftMin?: number
   daysLeftMax?: number
   verdict: string
+  /** เหตุผลของคำตัดสิน — ใช้แยก "ไม่มีรหัสข้อต่อในคลัง" ออกจาก "ช่วงนี้ไม่มีการขาย"
+   *  ⚠️ สองอย่างนี้ขึ้นคำว่า "ยังตอบไม่ได้" เหมือนกัน แต่ **สิ่งที่ต้องทำต่อคนละเรื่อง** */
+  reason?: 'negative' | 'short_sure' | 'short_maybe' | 'ok' | 'no_link_sku' | 'no_sales' | string
+  /** ประโยคสั่งงานจากท่อ — จอเอามาแสดง **ห้ามเขียนเอง** (ท่อรู้เกณฑ์ จอไม่รู้) */
+  nextStep?: string
+  /** ติดลบอยู่กี่คู่ — มีเฉพาะกองที่ติดลบ */
+  overdrawnPairs?: number
 }
 interface CrossRow { pitch: string; linkStockAllBrands: number; pairsNeedMin?: number; pairsNeedMax?: number }
 interface Resp {
@@ -41,7 +49,13 @@ interface Resp {
 }
 
 /** สีของคำตัดสิน — ท่อเป็นคนตัดสิน จอแค่ทำให้เห็น ห้ามจอคิดเกณฑ์เอง */
-function verdictTone(v: string): 'red' | 'orange' | 'green' | 'gray' {
+function verdictTone(v: string, reason?: string): 'red' | 'orange' | 'green' | 'gray' {
+  /* ⚠️ "ยังตอบไม่ได้" มีสองแบบที่ต้องดูต่างกัน
+     no_sales   = ช่วงนี้ไม่มีการขาย ⇒ **ไม่ใช่ปัญหา** ปล่อยเทา
+     no_link_sku = คลังไม่มีรหัสข้อต่อเบอร์นี้เลย ⇒ **เป็นงานที่ต้องทำ** ให้สะดุดตา
+     ถ้าใช้สีเดียวกันทั้งคู่ ของที่ต้องทำจะจมหายไปกับของที่ไม่ต้องทำ */
+  if (reason === 'no_link_sku') return 'orange'
+  if (reason === 'no_sales') return 'gray'
   if (v.startsWith('ติดลบ')) return 'red'
   if (v === 'ขาดแน่นอน') return 'red'
   if (v === 'อาจไม่พอ') return 'orange'
@@ -76,7 +90,8 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
   if (!d || d.skip) return null
   const rows = Array.isArray(d.rows) ? d.rows : []
   if (rows.length === 0) return null
-  const bad = rows.filter((r) => verdictTone(r.verdict) === 'red').length
+  // ⚠️ ต้องส่ง reason ไปด้วยให้ตรงกับสีในตาราง ไม่งั้นเลขบนหัวจอกับสีในแถวไม่ตรงกัน
+  const bad = rows.filter((r) => verdictTone(r.verdict, r.reason) === 'red').length
 
   return (
     <div className="bg-white border border-gray-200 rounded-md mb-3 overflow-hidden">
@@ -98,7 +113,7 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
             <th className="text-right font-normal text-[12px] text-gray-500 px-3 py-2">ข้อต่อคงเหลือ</th>
             <th className="text-right font-normal text-[12px] text-gray-500 px-3 py-2">ต้องใช้ (คู่)</th>
             <th className="text-right font-normal text-[12px] text-gray-500 px-3 py-2">พอขายอีก</th>
-            <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2">สรุป</th>
+            <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2">สรุป · ต้องทำอะไรต่อ</th>
           </tr>
         </thead>
         <tbody>
@@ -110,7 +125,10 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
                   ม้วนที่ใช้ข้อต่อนี้ {fmtNum((r.rollSkus ?? []).length)} รหัส · {fmtNum(Number(r.rollTeeth ?? 0))} ฟัน
                 </span>
               </td>
-              <td className="px-3 py-2.5 text-[12.5px] text-gray-600">{r.linkSku}</td>
+              <td className="px-3 py-2.5 text-[12.5px] text-gray-600">
+                {/* ไม่มีรหัส ≠ มีรหัสแล้วเหลือ 0 — ต้องเขียนต่างกัน ไม่ใช่ปล่อยช่องว่าง */}
+                {r.linkSku || <span className="text-amber-700">ยังไม่มีรหัสในคลัง</span>}
+              </td>
               <td className={`px-3 py-2.5 text-[12.5px] text-right ${r.linkStock < 0 ? 'text-red-600 font-semibold' : 'text-gray-800'}`}>
                 {fmtNum(r.linkStock)}
               </td>
@@ -123,13 +141,24 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
                   : <span className="text-gray-300">—</span>}
               </td>
               <td className="px-3 py-2.5 text-[12.5px] text-right text-gray-600">
-                {typeof r.daysLeftMin === 'number'
-                  ? (r.daysLeftMax !== undefined && Math.round(r.daysLeftMin) !== Math.round(r.daysLeftMax)
-                    ? <>{fmtNum(Math.round(r.daysLeftMin))}–{fmtNum(Math.round(Number(r.daysLeftMax)))} วัน</>
-                    : <>{fmtNum(Math.round(r.daysLeftMin))} วัน</>)
-                  : <span className="text-gray-300">—</span>}
+                {/* 🔴 **ติดลบมาก่อนแล้ว ไม่ใช่ "เหลือ 0 วัน"** — สองอย่างนี้ต่างกันมาก
+                    0 วัน = หมดพอดีวันนี้ · ติดลบ = ขายเกินของที่มีไปแล้ว และค้างอยู่
+                    (ท่อเปิดให้ daysLeft ติดลบได้แล้ว หลังจอทักไป 5 ก.ย. 2569) */}
+                {typeof r.overdrawnPairs === 'number' && r.overdrawnPairs > 0
+                  ? <span className="text-red-600 font-medium" title={`ขายเกินของที่มีไปแล้ว ${fmtNum(r.overdrawnPairs)} คู่`}>
+                      ค้าง {fmtNum(r.overdrawnPairs)} คู่
+                    </span>
+                  : typeof r.daysLeftMin === 'number'
+                    ? (r.daysLeftMax !== undefined && Math.round(r.daysLeftMin) !== Math.round(r.daysLeftMax)
+                      ? <>{fmtNum(Math.round(r.daysLeftMin))}–{fmtNum(Math.round(Number(r.daysLeftMax)))} วัน</>
+                      : <>{fmtNum(Math.round(r.daysLeftMin))} วัน</>)
+                    : <span className="text-gray-300">—</span>}
               </td>
-              <td className="px-3 py-2.5"><Pill tone={verdictTone(r.verdict)}>{r.verdict}</Pill></td>
+              <td className="px-3 py-2.5">
+                <Pill tone={verdictTone(r.verdict, r.reason)}>{r.verdict}</Pill>
+                {/* ประโยคสั่งงานมาจากท่อ — จอแค่แสดง ไม่คิดเอง */}
+                {r.nextStep && <span className="block text-[11px] text-gray-500 mt-1 leading-relaxed">{r.nextStep}</span>}
+              </td>
             </tr>
           ))}
         </tbody>
