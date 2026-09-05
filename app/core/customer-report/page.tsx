@@ -1,8 +1,9 @@
 'use client'
 // รายงาน → ลูกค้า — **ใครซื้อเท่าไหร่** รวมยอดจากออเดอร์ในคลังเงา (D1)
 //
-// ⚠️ **จอนี้ไม่ได้ลอกจาก ZORT** — ยังไม่เคยเห็นจอ รายงาน→ลูกค้า ของจริง
-//    (ยิงไปแล้วถูกพาไปหน้า error ของ ZORT) ⇒ เป็นของเราเอง ห้ามเขียนว่าเหมือน ZORT
+// ✅ **ได้ภาพจอจริงแล้ว 6 ก.ย. 2569** (zort-ui/75·76 — เดิม 404 เพราะ URL ต้องมี ? ต่อท้าย)
+//    ผัง: การ์ดคู่ จำนวนลูกค้า(วงกลม)|แนวโน้ม(เส้น) → ตารางจังหวัด → ตารางลูกค้า+ยอดขาย(%)
+//    ลอกครบเท่าที่ข้อมูลมี · ที่ทำไม่ได้เขียนบนจอพร้อมเหตุผล (แนวโน้มรายเดือน · จังหวัด)
 //    เดิมจออยู่ที่ /core/customers แล้วย้ายมาที่นี่ 3 ก.ย. 2569 เพราะ **ผู้ติดต่อ** ของ ZORT
 //    คือ *ทะเบียนรายชื่อ* คนละเรื่องกับ *รายงานว่าใครซื้อเท่าไหร่* — เอาไปทับกันไม่ได้
 //    ⇒ ทะเบียนผู้ติดต่อ 28,250 ราย อยู่ที่ /core/customers ตามเดิม
@@ -174,6 +175,67 @@ export default function CoreCustomersPage() {
             </div>
           )}
 
+          {/* ── ผัง ZORT (ภาพ 75): การ์ดคู่ "จำนวนลูกค้า" (วงกลม) | "แนวโน้ม" (กราฟเส้น) ──
+              ได้ภาพจอจริงครั้งแรก 6 ก.ย. 2569 (เดิม 404 เพราะ URL ต้องมี ? ต่อท้าย — ฝั่งท่อไขได้)
+              ⚠️ นิยามของ ZORT: "ลูกค้าใหม่ vs ลูกค้าซื้อซ้ำ" — น่าจะดูจากประวัติทั้งหมด
+                 ของเรามีข้อมูลแค่ในช่วงที่เลือก ⇒ ใช้ "ซื้อครั้งเดียว vs ซื้อซ้ำ **ในช่วง**" แทน
+                 คนที่ซื้อครั้งแรกเมื่อปีก่อนแล้วกลับมาซื้อใบเดียวในช่วงนี้ ZORT นับซื้อซ้ำ เรานับครั้งเดียว
+                 **ต้องเขียนนิยามบนจอ** ไม่งั้นคนเทียบสองจอแล้วงงว่าทำไมเลขไม่ตรง */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
+            <div className="bg-white border border-gray-200 rounded-md p-4">
+              <p className="text-[15px] font-semibold text-gray-900 mb-3">👥 จำนวนลูกค้า</p>
+              {named.length === 0
+                ? <p className="text-[13px] text-gray-400">ยังไม่มีลูกค้าที่ระบุชื่อในช่วงนี้</p>
+                : (() => {
+                  const total = named.length
+                  const pctRepeat = Math.round((repeat.length / total) * 1000) / 10
+                  const pctOnce = Math.round((once.length / total) * 1000) / 10
+                  const C = 2 * Math.PI * 42
+                  return (
+                    <div className="flex items-center gap-6 flex-wrap">
+                      <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#8ea8f8" strokeWidth="16" />
+                        <circle cx="50" cy="50" r="42" fill="none" stroke="#f2938c" strokeWidth="16"
+                          strokeDasharray={`${(repeat.length / total) * C} ${C}`} />
+                      </svg>
+                      <div className="text-[13px] space-y-1.5">
+                        <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
+                          ซื้อครั้งเดียวในช่วง <b>{once.length.toLocaleString('th-TH')}</b> ราย ({pctOnce}%)</p>
+                        <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
+                          ซื้อซ้ำในช่วง <b>{repeat.length.toLocaleString('th-TH')}</b> ราย ({pctRepeat}%)</p>
+                        <p className="text-[11px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
+                          นับเฉพาะช่วงที่เลือก — ZORT นับ &ldquo;ใหม่/ซื้อซ้ำ&rdquo; จากประวัติทั้งหมด
+                          จึงเทียบตัวเลขกันตรง ๆ ไม่ได้ (นิยามคนละช่วงเวลา)
+                        </p>
+                      </div>
+                    </div>
+                  )
+                })()}
+            </div>
+            <div className="bg-white border border-gray-200 rounded-md p-4">
+              <p className="text-[15px] font-semibold text-gray-900 mb-3">📈 แนวโน้ม</p>
+              {/* ⚠️ ZORT วาดเส้นรายเดือน ลูกค้าใหม่/ซื้อซ้ำ/ไม่ระบุ — ต้องมีข้อมูลรายเดือนถึงจะวาดได้
+                  ท่อ bycustomer ตอบเป็นยอดรวมทั้งช่วง ไม่มีมิติเวลา ⇒ วาดไม่ได้โดยไม่เดา
+                  **การ์ดต้องอยู่ตามผังพร้อมเหตุผล** ไม่ใช่หายไปเฉย ๆ (คนที่ชิน ZORT จะหา) */}
+              <p className="text-[13px] text-gray-500 leading-relaxed">
+                ZORT วาดกราฟลูกค้าใหม่/ซื้อซ้ำรายเดือน — ของเรายังวาดไม่ได้
+                เพราะท่อสรุปยอดมาทั้งช่วงเป็นก้อนเดียว ไม่มีแยกรายเดือน
+                <span className="block text-[11.5px] text-gray-400 mt-1.5">
+                  ขอฝั่งท่อไว้แล้ว (bycustomer แบบแยกเดือน) — ได้เมื่อไหร่กราฟขึ้นเอง ไม่ต้องแก้จอ
+                </span>
+              </p>
+            </div>
+          </div>
+
+          {/* ── ผัง ZORT (ภาพ 75): ตารางจังหวัด × จำนวนลูกค้า ──
+              คลังเงาไม่ได้เก็บที่อยู่/จังหวัดของใบขาย ⇒ ทำตารางจริงไม่ได้ ห้ามเดา
+              (ZORT ใช้ที่อยู่จัดส่ง — ของเรามีในระบบออเดอร์เว็บเท่านั้น ไม่ครอบคลุมมาร์เก็ตเพลส) */}
+          <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-4 text-[12.5px] text-gray-600">
+            ผัง ZORT มีตาราง <b>จังหวัด × จำนวนลูกค้า</b> ตรงนี้ (ภาพ 75: ไม่ระบุ 190 · เลย 21 · สงขลา 21 …)
+            — คลังเงายังไม่เก็บจังหวัดของใบขาย จึง<b>ยังทำไม่ได้ ไม่ใช่ลืม</b> ·
+            ที่อยู่มีเฉพาะออเดอร์ที่สั่งผ่านเว็บ (ไม่ครอบคลุมมาร์เก็ตเพลส) ทำตารางจากส่วนเดียวจะเอียง
+          </div>
+
           <Tabs
             tabs={[
               { id: 'all', label: 'ทั้งหมด', count: people.length },
@@ -193,12 +255,14 @@ export default function CoreCustomersPage() {
                   <th className={TH}>ช่องทางที่ซื้อ</th>
                   <th className={THR}>จำนวนใบ</th>
                   <th className={THR}>ยอดรวม</th>
+                  {/* ZORT (ภาพ 76) มีคอลัมน์ ยอดขาย (%) — สัดส่วนต่อยอดรวมของช่วง */}
+                  <th className={THR}>ยอดขาย (%)</th>
                   <th className={THR}>ซื้อล่าสุด</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.length === 0 && (
-                  <EmptyState cols={6} icon="👥" title="ไม่พบลูกค้าในเงื่อนไขนี้"
+                  <EmptyState cols={7} icon="👥" title="ไม่พบลูกค้าในเงื่อนไขนี้"
                     detail="รายชื่อลูกค้ารวมจากใบขาย — ถ้าเพิ่งมีออเดอร์ใหม่ ต้องรอรอบซิงก์ถัดไป" />
                 )}
                 {shown.map((p, i) => (
@@ -220,6 +284,11 @@ export default function CoreCustomersPage() {
                     </td>
                     <td className={TDR}>{p.orders.toLocaleString('th-TH')}</td>
                     <td className={TDR}>{fmtMoney(p.amount)}</td>
+                    {/* ⚠️ ตัวหารคือยอดรวมของช่วง (totalAmount) — ตอนถูกตัดที่ 500 ราย
+                        มันคือยอดของรายที่แสดง ป้ายหัวจอบอกขอบเขตแล้ว · กันหารศูนย์ด้วย */}
+                    <td className={`${TDR} text-gray-500`}>
+                      {totalAmount > 0 ? `${(Math.round((p.amount / totalAmount) * 1000) / 10).toLocaleString('th-TH')}%` : '—'}
+                    </td>
                     <td className={`${TDR} text-gray-500`}>{thaiDate(p.last)}</td>
                   </tr>
                 ))}
