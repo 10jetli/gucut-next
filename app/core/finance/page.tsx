@@ -56,16 +56,28 @@ export default function CoreFinancePage() {
             ค่าที่ต้องเห็นข้อมูลทั้งชุด (ผลรวม · ผลนับ) → **ท่อคิดให้** จอห้ามดึงแถวมานับเอง
          จอนี้เคยตกอยู่ในข้อหลังแต่ทำแบบข้อแรก ⇒ ได้ทั้งช้าและเสี่ยงตกหล่น
          ⚠️ จอไหนมี while คู่กับ offset ให้สงสัยว่าเป็นโรคเดียวกันไว้ก่อน */
-      const res = await fetch('/api/web/core?monthly=1&months=6')
-      const d = await res.json()
-      if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      /* 🔴 **สองเส้นนี้เคยยิงเรียงกัน ทั้งที่ไม่ได้ใช้ผลของกันและกัน** (แก้ 5 ก.ย. 2569)
+         วัดของจริงวันนี้: monthly 1.0-1.2 วิ · list=stock&limit=1 1.8-2.6 วิ
+         เรียงกัน = คนเปิดจอรอ ~3.5 วิ · ยิงพร้อมกัน = รอเท่าเส้นที่ช้าที่สุด ~2.6 วิ
+         ⚠️ ของแบบนี้ชนะด้วยการ**ลดจำนวนรอบไปกลับ**และยิงพร้อมกัน ไม่ใช่เขียนโค้ดให้เร็วขึ้น
+            (D1/Blobs อยู่ไกล หนึ่งรอบไปกลับราว 0.3-0.5 วิ — บทเรียนจาก /api/live ที่ช้า 25 วิ)
+         ⚠️ ใช้ allSettled ไม่ใช่ all — สต็อกล้มไม่ควรลากยอดรายเดือนตายไปด้วย
+            (เดิมเส้นสองอยู่หลัง await เส้นแรก ถ้าเส้นสองล้ม ทั้งจอขึ้น error ทั้งที่ยอดมาแล้ว) */
+      const [mRes, sRes] = await Promise.allSettled([
+        fetch('/api/web/core?monthly=1&months=6').then((r) => r.json().then((j) => ({ ok: r.ok, status: r.status, j }))),
+        fetch('/api/web/core?list=stock&limit=1').then((r) => r.json()),
+      ])
+
+      if (mRes.status === 'rejected') throw new Error(String(mRes.reason))
+      const { ok, status, j: d } = mRes.value
+      if (!ok || d?.error) throw new Error(d?.error ?? `HTTP ${status}`)
       if (d?.skip) throw new Error(d.skip)
       setMonths(Array.isArray(d.months) ? d.months : [])
       // ท่อบอกมาเองว่านับรวมกี่ร้าน — **ห้ามจอเดา** ชื่อช่องทางซ้ำกันข้ามร้านได้
       setScope(typeof d.store === 'string' ? d.store : '')
 
-      const sRes = await fetch('/api/web/core?list=stock&limit=1')
-      const sd = await sRes.json()
+      // สต็อกเป็นของประกอบ — ล้มก็แค่ไม่โชว์การ์ดนั้น ไม่ล้มทั้งจอ
+      const sd = sRes.status === 'fulfilled' ? sRes.value : null
       setStock(sd?.skip ? null : sd)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))

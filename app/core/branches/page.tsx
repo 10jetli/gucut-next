@@ -35,6 +35,10 @@ export default function CoreBranchesPage() {
   const [rows, setRows] = useState<Warehouse[]>([])
   const [note, setNote] = useState('')
   const [byChannel, setByChannel] = useState<ChannelRow[]>([])
+  /** ⚠️ **ต้องมีตัวนี้ ไม่ใช่ดูแค่ byChannel.length** — ระหว่างที่ยอดขายยังไม่มา
+   *  `statOf` จะคืน 0 ทุกคลัง แล้วช่องขึ้น "0 ใบ · ฿0" ซึ่งอ่านว่า **"คลังนี้ 30 วันขายไม่ได้เลย"**
+   *  นั่นคือการโกหกในช่วงโหลด — เป็นราคาที่ต้องจ่ายถ้าจะวาดจอก่อนข้อมูลครบ ⇒ ต้องเขียนว่า "กำลังโหลด" */
+  const [salesLoading, setSalesLoading] = useState(true)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -43,14 +47,27 @@ export default function CoreBranchesPage() {
     setLoading(true)
     setError('')
     try {
-      const [wRes, cRes] = await Promise.all([
-        fetch('/api/web/core?list=warehouses').then((r) => r.json()),
-        fetch(`/api/web/core?list=orders&from=${thaiDay(30)}&to=${thaiDay(0)}&limit=1`).then((r) => r.json()),
-      ])
+      /* 🔴 **เดิมรอทั้งสองเส้นก่อนวาดอะไรเลย ⇒ จอช้าเท่าเส้นที่ช้าที่สุดเสมอ**
+         วัดของจริง 5 ก.ย. 2569: `list=warehouses` 2.1 วิ · `list=orders` **4.2 วิ**
+         ⇒ ตารางคลัง (เนื้อหาหลักของจอ) ถูกกักไว้อีก 2 วินาทีเพื่อรอ "คอลัมน์ยอดขาย" ซึ่งเป็นของประกอบ
+         ตอนนี้แยกกัน: ตารางขึ้นทันทีที่คลังมา · คอลัมน์ยอดขายเติมทีหลังเอง
+         ⚠️ ยังยิงพร้อมกันเหมือนเดิม (ไม่ได้เปลี่ยนเป็นเรียง) แค่ **ไม่รอกันก่อนวาด**
+         ⚠️ `list=orders&limit=1` ช้าเท่า limit=200 เป๊ะ (วัดแล้ว 4.15 vs 4.21 วิ)
+            ⇒ ขอแถวเดียวไม่ได้ช่วยอะไร ต้นทุนอยู่ที่รอบไปกลับ D1 ไม่ใช่ขนาดข้อมูล */
+      setSalesLoading(true)
+      const salesSoon = fetch(`/api/web/core?list=orders&from=${thaiDay(30)}&to=${thaiDay(0)}&limit=1`)
+        .then((r) => r.json())
+        .then((cRes) => { setByChannel(Array.isArray(cRes?.byChannel) ? cRes.byChannel : []) })
+        .catch(() => { /* ยอดขายเป็นของประกอบ — ล้มก็แค่คอลัมน์ว่าง ไม่ล้มทั้งจอ */ })
+        .finally(() => setSalesLoading(false))
+
+      const wRes = await fetch('/api/web/core?list=warehouses').then((r) => r.json())
       if (wRes?.error) throw new Error(wRes.error)
       setRows(Array.isArray(wRes?.warehouses) ? wRes.warehouses : [])
       setNote(typeof wRes?.note === 'string' ? wRes.note : '')
-      setByChannel(Array.isArray(cRes?.byChannel) ? cRes.byChannel : [])
+      setLoading(false) // ← ตารางขึ้นได้แล้ว ไม่ต้องรอยอดขาย
+      // ⚠️ ต้อง await ไว้ท้ายสุด ไม่งั้นเป็น promise ลอย (กติกาเหล็กของโปรเจกต์)
+      await salesSoon
     } catch (e) {
       setRows([])
       setError(String(e instanceof Error ? e.message : e))
@@ -199,8 +216,13 @@ export default function CoreBranchesPage() {
                           ? thaiDate(String(w.movedAt).slice(0, 10))
                           : <span className="text-gray-300" title="ยังไม่ได้ดึงมา — จอ ZORT มีช่องนี้ แต่ API ไม่ส่งมา">—</span>}
                       </td>
-                      <td className={TDR}>{w.isPos ? fmtNum(s.orders) : <span className="text-gray-300">—</span>}</td>
-                      <td className={TDR}>{w.isPos ? fmtMoney(s.amount) : <span className="text-gray-300">—</span>}</td>
+                      {/* ⚠️ ระหว่างรอ ห้ามโชว์ 0 — 0 แปลว่า "ขายไม่ได้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
+                      <td className={TDR}>{!w.isPos ? <span className="text-gray-300">—</span>
+                        : salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
+                        : fmtNum(s.orders)}</td>
+                      <td className={TDR}>{!w.isPos ? <span className="text-gray-300">—</span>
+                        : salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
+                        : fmtMoney(s.amount)}</td>
                       <td className={`${TD} text-right`}>
                         <RowMenu
                           items={[
