@@ -88,7 +88,20 @@ export default function CorePage() {
       const res = await fetch(`/api/web/core?${qs}`)
       const data = await res.json()
       if (!res.ok || data?.error) throw new Error(data?.error ?? `HTTP ${res.status}`)
-      setActMsg(`✅ ${label} สำเร็จ`)
+      /* 🔴 **unmapped[] ห้ามกลืน** (ฝั่งท่อกำชับ 6 ก.ย.)
+         ผลของ tiktoksync มีฟิลด์ unmapped — ไม่ว่างแปลว่า **หาชื่อฟิลด์บางตัวไม่เจอ
+         แล้วเขียน 0/ค่าว่างลงฐานไปแล้ว** ⇒ ขึ้น "สำเร็จ" เฉย ๆ คือการโกหก
+         งานสำเร็จจริงในแง่ "ไม่ล้ม" แต่ข้อมูลที่เข้าฐานไม่ครบ — สองอย่างนี้ต้องแยกให้เห็น
+         ⚠️ คลาสเดียวกับ duplicate ของ move=1 ที่ห้ามแกล้งขึ้นเขียว */
+      const um = data?.unmapped
+      const umList = Array.isArray(um) ? um.filter((x: unknown) => typeof x === 'string') : []
+      if (umList.length > 0) {
+        setActMsg(`⚠️ ${label} เสร็จ แต่ **หาชื่อฟิลด์ไม่เจอ ${umList.length} ตัว** `
+          + `(${umList.slice(0, 6).join(' · ')}${umList.length > 6 ? ' …' : ''}) `
+          + '— ข้อมูลตรงนั้นถูกเขียนเป็น 0/ว่างลงฐานแล้ว ต้องแจ้งฝั่งท่อ')
+      } else {
+        setActMsg(`✅ ${label} สำเร็จ`)
+      }
       await load()
     } catch (e) {
       setActMsg(`⚠️ ${label} ไม่สำเร็จ: ${String(e instanceof Error ? e.message : e)}`)
@@ -291,6 +304,9 @@ export default function CorePage() {
                 { label: 'เทียบยอดเดี๋ยวนี้', qs: 'recon=1' },
                 { label: 'ดึงออเดอร์ Shopee (API)', qs: 'shopeesync=1&days=3' },
                 { label: 'Shopee ย้อน 15 วัน', qs: 'shopeesync=1&days=15' },
+                // TikTok เชื่อมสำเร็จ 6 ก.ย. 05:00 — ท่อ tiktoksync ขึ้นพร้อมกันรอบ 21:00
+                { label: 'ดึงออเดอร์ TikTok (API)', qs: 'tiktoksync=1&days=3' },
+                { label: 'TikTok ย้อน 15 วัน', qs: 'tiktoksync=1&days=15' },
                 { label: 'ถ่ายสต็อกเดี๋ยวนี้', qs: 'snapshot=1' },
               ].map((b) => (
                 <button

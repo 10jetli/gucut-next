@@ -27,6 +27,12 @@ interface Status {
   ready?: boolean
   channels?: ChannelRow[]
   shopee?: ShopeeRow[]
+  /** เทียบ API vs ZORT รายวันของ TikTok — ฝั่งท่อเพิ่ม 6 ก.ย. (ขึ้นรอบ 21:00)
+   *  ⚠️ รูปเดียวกับ shopee เป๊ะ ⇒ ใช้โค้ดอ่านตัวเดียวกันได้ ไม่ต้องเขียนสองแบบ */
+  tiktok?: ShopeeRow[]
+  /** ช่องทางที่ **ดึงไม่ได้** — ⚠️ คนละเรื่องกับ "ไม่มีข้อมูล" (สามสถานะ ฝั่งท่อกำชับ)
+   *  อยู่ใน failed = ท่อพัง · ไม่อยู่ใน failed แต่ไม่มีแถว = ยังไม่มีออเดอร์จริง */
+  failed?: string[] | Record<string, string>
 }
 
 const thaiDay = (back = 0) =>
@@ -124,6 +130,18 @@ export default function CoreChannelsPage() {
       ? `${storeList.length} ร้าน (${storeList.map((s2) => s2.name || s2.source).join(' · ')})`
       : 'ทุกร้าน'
   const shopee = st?.shopee ?? []
+  const tiktok = Array.isArray(st?.tiktok) ? st!.tiktok! : []
+  /** ⚠️ รับได้ทั้ง array และ object (ท่ออาจส่งพร้อมเหตุผล) — ชนิดไม่ตรงถือว่าไม่รู้ ไม่ใช่ไม่พัง */
+  const failedOf = (id: string): string | null => {
+    const f = st?.failed
+    if (Array.isArray(f)) return f.includes(id) ? 'ท่อรายงานว่าดึงไม่สำเร็จ' : null
+    if (f && typeof f === 'object') {
+      const v = (f as Record<string, string>)[id]
+      return typeof v === 'string' && v.trim() ? v : (id in f ? 'ท่อรายงานว่าดึงไม่สำเร็จ' : null)
+    }
+    return null
+  }
+  const rowsOf = (id: string) => (id === 'shopee' ? shopee : id === 'tiktok' ? tiktok : [])
   const maxRecent = Math.max(...recent.map((c) => c.amount), 1)
   const recentTotal = recent.reduce((s, c) => s + c.amount, 0)
 
@@ -162,7 +180,8 @@ export default function CoreChannelsPage() {
             <StatCard icon="💰" tone="green" label="ยอดรวม 30 วัน"
               value={recentLoading ? '…' : recentFailed ? '?' : fmtMoney(recentTotal)} />
             <StatCard icon="🔌" tone="purple" label="ท่อดึงตรงที่เดินอยู่"
-              value={fmtNum(shopeeLive ? 1 : 0)} unit={`จาก ${PIPES.length} เจ้า`} />
+              value={fmtNum(PIPES.filter((p) => !failedOf(p.id) && rowsOf(p.id).some((r) => Number(r.api_orders) > 0)).length)}
+              unit={`จาก ${PIPES.length} เจ้า`} />
           </div>
 
           {/* ยอดรายช่องทาง 30 วัน */}
@@ -200,22 +219,34 @@ export default function CoreChannelsPage() {
               </p>
             </div>
             {PIPES.map((p) => {
-              const live = p.id === 'shopee' && shopeeLive
+              /* 🔴 **สามสถานะ ห้ามยุบเหลือสอง** (ฝั่งท่อกำชับ 6 ก.ย.)
+                 ① ดึงไม่ได้ (อยู่ใน failed) — เป็นปัญหา ต้องแดง
+                 ② ยังไม่เห็นออเดอร์ — ท่อปกติ แค่ยังไม่มีของ
+                 ③ เดินอยู่ — เห็นออเดอร์จาก API แล้ว
+                 เดิมโค้ดผูกกับ shopee ตัวเดียว ⇒ TikTok ที่เพิ่งเชื่อม 6 ก.ย. จะขึ้น
+                 "ยังไม่เดิน" ตลอดกาลแม้ดึงได้จริง (คลาส hardcode ที่ไล่กันมาทั้งวัน) */
+              const fail = failedOf(p.id)
+              const rows = rowsOf(p.id)
+              const live = rows.some((r) => Number(r.api_orders) > 0)
+              const matchDays = rows.filter((r) => r.match).length
               return (
                 <div key={p.id} className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-gray-50 last:border-0">
                   <span className="text-[18px] shrink-0">{p.emoji}</span>
                   <div className="flex-1 min-w-0">
                     <p className="text-[13px] font-semibold text-gray-800">{p.name}</p>
                     <p className="text-[12px] text-gray-500">
-                      {live
-                        ? `เห็นออเดอร์จาก API แล้ว · เทียบกับ ZORT ตรงกัน ${shopeeMatchDays} จาก ${shopee.length} วันล่าสุด`
-                        : 'ยังไม่เห็นออเดอร์จากท่อนี้ในฐานของเรา'}
+                      {fail
+                        ? <span className="text-red-700">ดึงไม่สำเร็จ — {fail}</span>
+                        : live
+                          ? `เห็นออเดอร์จาก API แล้ว · เทียบกับ ZORT ตรงกัน ${matchDays} จาก ${rows.length} วันล่าสุด`
+                          : 'ยังไม่เห็นออเดอร์จากท่อนี้ในฐานของเรา'}
                     </p>
                   </div>
                   <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
-                    live ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
+                    fail ? 'bg-red-100 text-red-700'
+                      : live ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
                   }`}>
-                    {live ? 'เดินอยู่' : 'ยังไม่เดิน'}
+                    {fail ? 'ดึงไม่ได้' : live ? 'เดินอยู่' : 'ยังไม่เดิน'}
                   </span>
                 </div>
               )
