@@ -190,16 +190,26 @@ export default function CoreTransfersPage() {
 
       {data && !data.skip && (
         <>
-          <Tabs
-            // ZORT โชว์ ทั้งหมด · รอโอน (2) · สำเร็จ — แท็บที่เป็น 0 ก็ต้องโชว์
-            tabs={[
-              { id: 'all', label: 'ทั้งหมด', count: data.total },
-              { id: 'Pending', label: 'รอโอน', count: countOf('Pending') },
-              { id: 'Success', label: 'สำเร็จ', count: countOf('Success') },
-            ]}
-            active={tab}
-            onChange={(id) => { setTab(id); load(0, id) }}
-          />
+          {/* ผัง ZORT (ภาพ 31): ปุ่มรีเฟรชวงกลมอยู่มุมขวาของแถบแท็บ — วางเพิ่ม ไม่ย้ายอันบนหัวจอ
+              (กติกาเดียวกับจอใบเสนอราคา: ย้ายขึ้นที่เดียวผิดผัง ย้ายลงที่เดียวหายจากที่คนเราชิน) */}
+          <div className="flex items-end justify-between gap-3">
+            <Tabs
+              // ZORT โชว์ ทั้งหมด · รอโอน (2) · สำเร็จ — แท็บที่เป็น 0 ก็ต้องโชว์
+              tabs={[
+                { id: 'all', label: 'ทั้งหมด', count: data.total },
+                { id: 'Pending', label: 'รอโอน', count: countOf('Pending') },
+                { id: 'Success', label: 'สำเร็จ', count: countOf('Success') },
+              ]}
+              active={tab}
+              onChange={(id) => { setTab(id); load(0, id) }}
+            />
+            <button onClick={() => load(0)} disabled={loading} aria-label="โหลดใหม่"
+              title="โหลดใหม่"
+              className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
+                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+              {loading ? '⏳' : '⟳'}
+            </button>
+          </div>
 
           <TableWrap>
             <table className="w-full min-w-[860px]">
