@@ -15,8 +15,9 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill,
+  thaiDate, thaiShort, PaymentPill, StaleBar,
 } from '@/components/zort'
+import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
 
@@ -158,6 +159,8 @@ export default function CoreSalesPage() {
 
   const [data, setData] = useState<ListResp | null>(null)
   const [loading, setLoading] = useState(true)
+  /** อายุของข้อมูลที่กำลังโชว์ — ไม่ null = โชว์ของเก่าอยู่ และยังดึงของใหม่ไม่เสร็จ */
+  const [staleAge, setStaleAge] = useState<number | null>(null)
   const [error, setError] = useState('')
 
   const load = useCallback(async (
@@ -184,13 +187,28 @@ export default function CoreSalesPage() {
       //    และถ้าเผลอมีแท็บ กดแล้วจะได้ 0 ใบทั้งที่มี 44 ใบ (ฝั่งท่อหลังบ้านเตือนไว้)
       //    ZORT เองก็โชว์ใบยกเลิกในแท็บ "ทั้งหมด" เหมือนกัน — เราจึงตรงกับต้นแบบด้วย
       qs.set('cancelled', '1')
-      const res = await fetch(`/api/web/core?${qs}`)
+      /* ⚡ เห็นของเดิมทันทีตอนกดเมนูกลับมา แล้วอัปเดตเบื้องหลัง (ดูเหตุผลเต็มที่ lib/api-cache.ts)
+         ⚠️ คีย์คือ url เต็ม ซึ่งรวม from/to/channel/status/store/q/limit/offset ครบแล้ว
+            **ห้ามตัดตัวไหนออก** ไม่งั้นสลับร้าน/สลับสถานะแล้วเห็นตัวเลขของตัวกรองก่อนหน้า */
+      const url = `/api/web/core?${qs}`
+      const cached = peekApiCache<ListResp>(url)
+      if (cached) {
+        setData(cached.data)
+        setOffset(off)
+        setStaleAge(cached.ageMs)
+        setLoading(false)
+      }
+
+      const res = await fetch(url)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
+      putApiCache(url, j)
       setData(j)
       setOffset(off)
+      setStaleAge(null)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
+      setStaleAge(null) // ⚠️ ยิงพลาดแล้วต้องเลิกอ้างว่า "กำลังอัปเดต" ไม่งั้นแถบค้างตลอดกาล
     } finally {
       setLoading(false)
     }
@@ -239,6 +257,8 @@ export default function CoreSalesPage() {
 
   return (
     <div className="p-4 md:p-6">
+      {/* ⚠️ ชิ้นแรกสุด เหนือหัวจอ — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
+      <StaleBar ageMs={staleAge} ageText={ageText} />
       <PageHead
         title="รายการขาย"
         summary={

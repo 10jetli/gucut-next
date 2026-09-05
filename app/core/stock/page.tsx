@@ -14,9 +14,10 @@ import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
+import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar,
 } from '@/components/zort'
 import BlockedStock from '@/components/zort/BlockedStock'
 
@@ -95,6 +96,9 @@ export default function CoreStockPage() {
   // รูปสินค้า — โหลดแผนที่ SKU→ไฟล์ครั้งเดียวต่อการเปิดเว็บ
   const imgOf = useSkuImages()
 
+  /** อายุของข้อมูลที่กำลังโชว์ — ไม่ null = กำลังโชว์ของเก่าและยังดึงของใหม่ไม่เสร็จ */
+  const [staleAge, setStaleAge] = useState<number | null>(null)
+
   const load = useCallback(async (off = 0, sortId = sort, tabId = tab, kindId = kind) => {
     setLoading(true)
     setError('')
@@ -108,13 +112,30 @@ export default function CoreStockPage() {
       if (tabId !== 'all') qs.set('only', tabId)
       if (kindId === 'goods') qs.set('kind', 'goods')
       if (q.trim()) qs.set('q', q.trim())
-      const res = await fetch(`/api/web/core?${qs}`)
+      /* ⚡ **กดเมนูกลับมาแล้วเห็นของเดิมทันที แล้วค่อยอัปเดตเบื้องหลัง**
+         ฝั่งท่อวัดแล้ว: เวลา = 1.1 วิคงที่ + 0.27 วิต่อการยิงฐาน 1 รอบ
+         1.1 วินาทีนั้นลบไม่ได้ถ้ายังยิงอยู่ ⇒ ทางเดียวที่เร็วกว่านั้นคือ **ไม่ยิง**
+         ⚠️ `url` เป็นคีย์แคช และมันรวมพารามิเตอร์ทุกตัวแล้ว (sort/only/kind/q/limit/offset)
+            **ห้ามตัดตัวไหนออกจากคีย์** ไม่งั้นสลับแท็บ/ค้นหาแล้วเห็นข้อมูลของตัวกรองก่อนหน้า */
+      const url = `/api/web/core?${qs}`
+      const cached = peekApiCache<Resp>(url)
+      if (cached) {
+        setData(cached.data)
+        setOffset(off)
+        setStaleAge(cached.ageMs)
+        setLoading(false) // ← มีของให้ดูแล้ว ไม่ต้องขึ้นจอโหลด
+      }
+
+      const res = await fetch(url)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      putApiCache(url, d)
       setData(d)
       setOffset(off)
+      setStaleAge(null)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
+      setStaleAge(null) // ⚠️ ยิงพลาดแล้วต้องเลิกอ้างว่า "กำลังอัปเดต" ไม่งั้นแถบหมุนค้างตลอดกาล
     } finally {
       setLoading(false)
     }
@@ -139,6 +160,8 @@ export default function CoreStockPage() {
 
   return (
     <div className="p-4 md:p-6">
+      {/* ⚠️ ต้องเป็นชิ้นแรกสุด เหนือหัวจอ — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
+      <StaleBar ageMs={staleAge} ageText={ageText} />
       <PageHead
         title="สินค้า"
         summary={

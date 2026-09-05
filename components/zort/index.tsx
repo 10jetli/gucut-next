@@ -545,6 +545,25 @@ export function MarketUnreliableBanner({ unreliable }: { unreliable?: Record<str
   )
 }
 
+/** แถบ "กำลังอัปเดต" ของจอที่วาดจากแคชในหน่วยความจำ
+ *
+ *  ⚠️ **ต้องวางเป็นชิ้นแรกสุดของหน้า เหนือหัวจอ** — กติกาข้อ ④ ที่ตกลงกับฝั่งท่อ:
+ *     คำเตือนที่ต้องเลื่อนจอถึงจะเห็น คือคำเตือนที่วางผิดที่
+ *     คนอ่านตัวเลขจากจอนี้ต้องรู้ตั้งแต่วินาทีแรกว่ามันเป็นของเมื่อกี้ ไม่ใช่ของสด
+ *  ⚠️ ไม่มีแคช (`ageMs` เป็น null) = ไม่ต้องมีแถบ — จอปกติห้ามมีแถบอะไรมาเกะกะ */
+export function StaleBar({ ageMs, ageText }: { ageMs: number | null; ageText: (ms: number) => string }) {
+  if (ageMs === null || ageMs === undefined) return null
+  return (
+    <div className="sticky top-0 z-20 -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-3 px-4 md:px-6 py-2
+      bg-amber-50 border-b border-amber-200 text-[12.5px] text-amber-900 flex items-center gap-2">
+      <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+      <span>
+        ตัวเลขบนจอนี้เป็น<b>ข้อมูลเมื่อ {ageText(ageMs)}</b> · กำลังดึงของใหม่อยู่…
+      </span>
+    </div>
+  )
+}
+
 /** เวลา UTC จากท่อ → "ชม.:นาที" เวลาไทย · อ่านไม่ออก = คืนค่าว่าง ไม่ใช่เดา
  *
  *  ⚠️ **สองกับดักที่เจอจริงตอนไล่ทดสอบ 5 ก.ย. 2569**
