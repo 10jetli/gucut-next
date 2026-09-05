@@ -404,11 +404,19 @@ export default function CoreSalesPage() {
             </p>
           )}
 
-          <Tabs
-            tabs={tabs}
-            active={status}
-            onChange={(id) => { setStatus(id); load(0, { status: id }) }}
-          />
+          {/* ผัง ZORT (ภาพ 01): ปุ่มรีเฟรชวงกลมมุมขวาแถบแท็บ — ชั้นแถบแท็บ จุดบอดประจำ (จอที่ 5) */}
+          <div className="flex items-end justify-between gap-3">
+            <Tabs
+              tabs={tabs}
+              active={status}
+              onChange={(id) => { setStatus(id); load(0, { status: id }) }}
+            />
+            <button onClick={() => load(0)} disabled={loading} aria-label="โหลดใหม่" title="โหลดใหม่"
+              className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
+                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+              {loading ? '⏳' : '⟳'}
+            </button>
+          </div>
 
           <TableWrap>
             <table className="w-full min-w-[1080px]">
