@@ -267,8 +267,10 @@ export default function DashboardPage() {
           <Shortcut href="/core/pos" icon="🖥️" label="สร้างรายการขาย" />
           <Shortcut href="/core/branches" icon="🏬" label="คลังสินค้า/สาขา" />
           <Shortcut href="/core/stock" icon="📦" label="ดูสินค้า" />
-          {/* ZORT มีทางลัด "ดูบริการขนส่ง" — ของเรายังไม่ได้ทำ จึงจางและมีจุดกำกับ */}
-          <Shortcut href="/core/soon/shipping" icon="🚚" label="ดูบริการขนส่ง" soon />
+          {/* ✅ จอขนส่งมีจริงแล้ว (/core/logistics · เทียบภาพ 52 ผ่าน 6 ก.ย.) — เลิกชี้ไปหน้า soon
+              ⚠️ ทางลัดที่ชี้หน้า "ยังไม่ได้ทำ" ทั้งที่ของจริงมีแล้ว แย่พอ ๆ กับปุ่มหลอก:
+                 คนกดเจอป้ายว่ายังไม่มี แล้วเลิกหา ทั้งที่จอจริงอยู่ในเมนูมาตลอด */}
+          <Shortcut href="/core/logistics" icon="🚚" label="ดูบริการขนส่ง" />
         </div>
       </div>
 
