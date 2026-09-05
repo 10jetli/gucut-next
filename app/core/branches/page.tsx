@@ -39,6 +39,11 @@ export default function CoreBranchesPage() {
    *  `statOf` จะคืน 0 ทุกคลัง แล้วช่องขึ้น "0 ใบ · ฿0" ซึ่งอ่านว่า **"คลังนี้ 30 วันขายไม่ได้เลย"**
    *  นั่นคือการโกหกในช่วงโหลด — เป็นราคาที่ต้องจ่ายถ้าจะวาดจอก่อนข้อมูลครบ ⇒ ต้องเขียนว่า "กำลังโหลด" */
   const [salesLoading, setSalesLoading] = useState(true)
+  /** ⚠️ **ยิงยอดขายพลาด ≠ ขายไม่ได้** — เจอตอนไล่อ่านโค้ดตัวเองซ้ำ 5 ก.ย. 2569
+   *  เดิมพอยิงพลาด salesLoading เป็น false แล้ว byChannel ว่าง ⇒ ช่องขึ้น "0 ใบ · ฿0"
+   *  ซึ่งอ่านว่า **คลังนี้ 30 วันขายไม่ได้เลย** = ตัวเลขผิดที่หน้าตาปกติทุกประการ
+   *  (ผมกันเคส "กำลังโหลด" ไว้แล้ว แต่ลืมเคส "โหลดไม่สำเร็จ" ซึ่งจบลงที่หน้าตาเดียวกัน) */
+  const [salesFailed, setSalesFailed] = useState(false)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -55,10 +60,11 @@ export default function CoreBranchesPage() {
          ⚠️ `list=orders&limit=1` ช้าเท่า limit=200 เป๊ะ (วัดแล้ว 4.15 vs 4.21 วิ)
             ⇒ ขอแถวเดียวไม่ได้ช่วยอะไร ต้นทุนอยู่ที่รอบไปกลับ D1 ไม่ใช่ขนาดข้อมูล */
       setSalesLoading(true)
+      setSalesFailed(false)
       const salesSoon = fetch(`/api/web/core?list=orders&from=${thaiDay(30)}&to=${thaiDay(0)}&limit=1`)
         .then((r) => r.json())
         .then((cRes) => { setByChannel(Array.isArray(cRes?.byChannel) ? cRes.byChannel : []) })
-        .catch(() => { /* ยอดขายเป็นของประกอบ — ล้มก็แค่คอลัมน์ว่าง ไม่ล้มทั้งจอ */ })
+        .catch(() => { setSalesFailed(true) /* ล้มก็แค่คอลัมน์นี้ ไม่ล้มทั้งจอ — แต่ต้องบอกว่าล้ม */ })
         .finally(() => setSalesLoading(false))
 
       const wRes = await fetch('/api/web/core?list=warehouses').then((r) => r.json())
@@ -219,9 +225,11 @@ export default function CoreBranchesPage() {
                       {/* ⚠️ ระหว่างรอ ห้ามโชว์ 0 — 0 แปลว่า "ขายไม่ได้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
                       <td className={TDR}>{!w.isPos ? <span className="text-gray-300">—</span>
                         : salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
+                        : salesFailed ? <span className="text-red-500" title="ดึงยอดขาย 30 วันไม่สำเร็จ — ไม่ใช่ว่าไม่มียอด">?</span>
                         : fmtNum(s.orders)}</td>
                       <td className={TDR}>{!w.isPos ? <span className="text-gray-300">—</span>
                         : salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
+                        : salesFailed ? <span className="text-red-500" title="ดึงยอดขาย 30 วันไม่สำเร็จ — ไม่ใช่ว่าไม่มียอด">?</span>
                         : fmtMoney(s.amount)}</td>
                       <td className={`${TD} text-right`}>
                         <RowMenu

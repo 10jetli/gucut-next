@@ -161,6 +161,9 @@ export default function CoreSalesPage() {
   const [loading, setLoading] = useState(true)
   /** อายุของข้อมูลที่กำลังโชว์ — ไม่ null = โชว์ของเก่าอยู่ และยังดึงของใหม่ไม่เสร็จ */
   const [staleAge, setStaleAge] = useState<number | null>(null)
+  /** ⚠️ ยิงของใหม่พลาด **แต่ยังโชว์ของเก่าอยู่** — ต้องเปลี่ยนข้อความบนแถบ ไม่ใช่เอาแถบออก
+   *  เอาแถบออก = จอโชว์ตัวเลขอายุ 60 วิ โดยไม่มีอะไรบอกว่ามันเก่า */
+  const [staleFailed, setStaleFailed] = useState(false)
   const [error, setError] = useState('')
 
   const load = useCallback(async (
@@ -191,6 +194,7 @@ export default function CoreSalesPage() {
          ⚠️ คีย์คือ url เต็ม ซึ่งรวม from/to/channel/status/store/q/limit/offset ครบแล้ว
             **ห้ามตัดตัวไหนออก** ไม่งั้นสลับร้าน/สลับสถานะแล้วเห็นตัวเลขของตัวกรองก่อนหน้า */
       const url = `/api/web/core?${qs}`
+      setStaleFailed(false)
       const cached = peekApiCache<ListResp>(url)
       if (cached) {
         setData(cached.data)
@@ -208,7 +212,8 @@ export default function CoreSalesPage() {
       setStaleAge(null)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
-      setStaleAge(null) // ⚠️ ยิงพลาดแล้วต้องเลิกอ้างว่า "กำลังอัปเดต" ไม่งั้นแถบค้างตลอดกาล
+      // ⚠️ **ห้ามล้าง staleAge ตรงนี้** ของเก่ายังอยู่บนจอ ⇒ แถบต้องอยู่ต่อ แค่เปลี่ยนข้อความ
+      setStaleFailed(true)
     } finally {
       setLoading(false)
     }
@@ -258,7 +263,7 @@ export default function CoreSalesPage() {
   return (
     <div className="p-4 md:p-6">
       {/* ⚠️ ชิ้นแรกสุด เหนือหัวจอ — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
-      <StaleBar ageMs={staleAge} ageText={ageText} />
+      <StaleBar ageMs={staleAge} ageText={ageText} failed={staleFailed} />
       <PageHead
         title="รายการขาย"
         summary={

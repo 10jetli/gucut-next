@@ -98,6 +98,9 @@ export default function CoreStockPage() {
 
   /** อายุของข้อมูลที่กำลังโชว์ — ไม่ null = กำลังโชว์ของเก่าและยังดึงของใหม่ไม่เสร็จ */
   const [staleAge, setStaleAge] = useState<number | null>(null)
+  /** ⚠️ ยิงของใหม่พลาด **แต่ยังโชว์ของเก่าอยู่** — ต้องเปลี่ยนข้อความบนแถบ ไม่ใช่เอาแถบออก
+   *  เอาแถบออก = จอโชว์ตัวเลขอายุ 60 วิ โดยไม่มีอะไรบอกว่ามันเก่า */
+  const [staleFailed, setStaleFailed] = useState(false)
 
   const load = useCallback(async (off = 0, sortId = sort, tabId = tab, kindId = kind) => {
     setLoading(true)
@@ -118,6 +121,7 @@ export default function CoreStockPage() {
          ⚠️ `url` เป็นคีย์แคช และมันรวมพารามิเตอร์ทุกตัวแล้ว (sort/only/kind/q/limit/offset)
             **ห้ามตัดตัวไหนออกจากคีย์** ไม่งั้นสลับแท็บ/ค้นหาแล้วเห็นข้อมูลของตัวกรองก่อนหน้า */
       const url = `/api/web/core?${qs}`
+      setStaleFailed(false)
       const cached = peekApiCache<Resp>(url)
       if (cached) {
         setData(cached.data)
@@ -135,7 +139,8 @@ export default function CoreStockPage() {
       setStaleAge(null)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
-      setStaleAge(null) // ⚠️ ยิงพลาดแล้วต้องเลิกอ้างว่า "กำลังอัปเดต" ไม่งั้นแถบหมุนค้างตลอดกาล
+      // ⚠️ **ห้ามล้าง staleAge ตรงนี้** ของเก่ายังอยู่บนจอ ⇒ แถบต้องอยู่ต่อ แค่เปลี่ยนข้อความ
+      setStaleFailed(true)
     } finally {
       setLoading(false)
     }
@@ -161,7 +166,7 @@ export default function CoreStockPage() {
   return (
     <div className="p-4 md:p-6">
       {/* ⚠️ ต้องเป็นชิ้นแรกสุด เหนือหัวจอ — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
-      <StaleBar ageMs={staleAge} ageText={ageText} />
+      <StaleBar ageMs={staleAge} ageText={ageText} failed={staleFailed} />
       <PageHead
         title="สินค้า"
         summary={

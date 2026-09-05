@@ -551,14 +551,30 @@ export function MarketUnreliableBanner({ unreliable }: { unreliable?: Record<str
  *     คำเตือนที่ต้องเลื่อนจอถึงจะเห็น คือคำเตือนที่วางผิดที่
  *     คนอ่านตัวเลขจากจอนี้ต้องรู้ตั้งแต่วินาทีแรกว่ามันเป็นของเมื่อกี้ ไม่ใช่ของสด
  *  ⚠️ ไม่มีแคช (`ageMs` เป็น null) = ไม่ต้องมีแถบ — จอปกติห้ามมีแถบอะไรมาเกะกะ */
-export function StaleBar({ ageMs, ageText }: { ageMs: number | null; ageText: (ms: number) => string }) {
+export function StaleBar(
+  { ageMs, ageText, failed = false }: {
+    ageMs: number | null
+    ageText: (ms: number) => string
+    /** ⚠️ **ดึงของใหม่ไม่สำเร็จ แต่ยังโชว์ของเก่าอยู่ — ห้ามเอาแถบออก**
+     *  เจอตอนไล่อ่านโค้ดตัวเองซ้ำ 5 ก.ย. 2569: เดิมพอยิงพลาดจะล้างแถบทิ้ง
+     *  ⇒ จอโชว์ตัวเลขอายุ 60 วินาที **โดยไม่มีอะไรบอกว่ามันเก่า** มีแค่กล่องแดงบอกว่ายิงพลาด
+     *  ซึ่งคนอ่านจะตีว่า "โหลดไม่ได้" แล้วมองข้ามตัวเลขที่เห็นอยู่ตรงหน้าว่าเป็นของสด
+     *  **แถบเตือนที่หายไปตอนที่เงื่อนไขยังอยู่ คือแถบที่ทำร้ายคนอ่าน** */
+    failed?: boolean
+  },
+) {
   if (ageMs === null || ageMs === undefined) return null
   return (
-    <div className="sticky top-0 z-20 -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-3 px-4 md:px-6 py-2
-      bg-amber-50 border-b border-amber-200 text-[12.5px] text-amber-900 flex items-center gap-2">
-      <span className="inline-block w-2 h-2 rounded-full bg-amber-500 animate-pulse shrink-0" />
+    <div className={`sticky top-0 z-20 -mx-4 md:-mx-6 -mt-4 md:-mt-6 mb-3 px-4 md:px-6 py-2
+      border-b text-[12.5px] flex items-center gap-2 ${
+      failed ? 'bg-red-50 border-red-200 text-red-900' : 'bg-amber-50 border-amber-200 text-amber-900'}`}>
+      <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${
+        failed ? 'bg-red-500' : 'bg-amber-500 animate-pulse'}`} />
       <span>
-        ตัวเลขบนจอนี้เป็น<b>ข้อมูลเมื่อ {ageText(ageMs)}</b> · กำลังดึงของใหม่อยู่…
+        ตัวเลขบนจอนี้เป็น<b>ข้อมูลเมื่อ {ageText(ageMs)}</b>
+        {failed
+          ? <> · <b>ดึงของใหม่ไม่สำเร็จ</b> — ยังไม่ใช่ตัวเลขล่าสุด กดรีเฟรชอีกครั้ง</>
+          : <> · กำลังดึงของใหม่อยู่…</>}
       </span>
     </div>
   )
