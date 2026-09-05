@@ -31,6 +31,9 @@ interface Row {
   amount: number
   payment_status?: string
   warehouse?: string
+  /** โน้ตของใบซื้อ — ฝั่งท่อเพิ่ม 6 ก.ย. 2569 (มาจาก description ของ ZORT)
+   *  ⚠️ ขึ้นเว็บพร้อมกันรอบ 21:00 — ก่อน deploy ฝั่งท่อ ช่องนี้จะ undefined ซึ่งจอกันไว้แล้ว */
+  note?: string | null
 }
 interface Resp {
   skip?: string
@@ -205,6 +208,13 @@ export default function CorePurchasesPage() {
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
                       {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
                       {r.warehouse && <span className="block text-[11px] text-gray-400 mt-0.5">{r.warehouse}</span>}
+                      {/* ZORT มีลิงก์ "โน้ต" ใต้สถานะทุกแถว (ภาพ 27) — ของเราขึ้นเฉพาะใบที่มีโน้ตจริง
+                          ⚠️ ใบที่ไม่มีโน้ตไม่ขึ้นคำว่าโน้ต — ลิงก์ที่กดแล้วว่างเปล่าคือลิงก์หลอก
+                             (ZORT ขึ้นทุกแถวเพราะกดแล้วพิมพ์เพิ่มได้ แต่ของเราอ่านอย่างเดียว) */}
+                      {typeof r.note === 'string' && r.note.trim() && (
+                        <span className="block text-[11px] text-gray-500 mt-0.5 max-w-[260px] truncate"
+                          title={r.note}>📝 {r.note}</span>
+                      )}
                     </td>
                     <td className={TD}>
                       <PaymentPill value={r.payment_status} />
