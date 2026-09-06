@@ -140,6 +140,10 @@ export default function CorePosPage() {
    *  เดิมยุบเหลือ "cats ว่าง" ทั้งสามกรณี ⇒ ตอนเซิร์ฟเวอร์ล้ม จอ POS ขึ้นว่า
    *  "กำลังโหลดหมวด…" ค้างตลอดกาล **คนขายยืนอยู่หน้าลูกค้า** แล้วไม่รู้ว่าต้องทำอะไร */
   const [catErr, setCatErr] = useState('')
+  /** 🔴 ค้นไม่สำเร็จ ≠ ไม่มีสินค้าตัวนั้น — **ที่เคาน์เตอร์ สองอันนี้จบคนละแบบ**
+   *  "ไม่พบสินค้า" ทำให้คนขายบอกลูกค้าว่าร้านไม่มีของ แล้วลูกค้าเดินออก
+   *  ทั้งที่ของอาจมีอยู่เต็มชั้น แค่เซิร์ฟเวอร์ตอบไม่ได้ตอนนั้น */
+  const [searchErr, setSearchErr] = useState('')
   const [cat, setCat] = useState('')          // หมวดที่เปิดอยู่ ('' = ยังไม่ได้เลือก)
   const [catTotal, setCatTotal] = useState(0) // มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
   // ⚠️ ผลค้นหาก็ต้องบอกจำนวนที่เจอจริงเหมือนกัน — ไม่งั้นคนขายค้นแล้วเห็น 20 ตัว
@@ -371,10 +375,16 @@ export default function CorePosPage() {
         .then((r) => r.json())
         .then((d) => {
           if (!alive) return
-          setFound(Array.isArray(d?.rows) ? d.rows : [])
+          // ⚠️ ฝั่งท่อคืน ok:false + error เมื่อล้มเหลว (สัญญาใหม่ 6 ก.ย. 2569) — ห้ามกลืน
+          if (d?.error) { setSearchErr(String(d.error)); setFound([]); setSearchTotal(0); return }
+          if (!Array.isArray(d?.rows)) {
+            setSearchErr('เซิร์ฟเวอร์ไม่ได้ส่งรายการสินค้ามา'); setFound([]); setSearchTotal(0); return
+          }
+          setSearchErr('')
+          setFound(d.rows)
           setSearchTotal(Number(d?.total) || 0)
         })
-        .catch(() => { if (alive) { setFound([]); setSearchTotal(0) } })
+        .catch((e) => { if (alive) { setSearchErr(String(e?.message ?? e)); setFound([]); setSearchTotal(0) } })
         .finally(() => { if (alive) setLooking(false) })
     }, 300)
     return () => { alive = false; clearTimeout(t) }
@@ -746,7 +756,15 @@ export default function CorePosPage() {
             {looking && <p className="text-[12px] text-gray-400 mt-1">กำลังค้น…</p>}
             {!looking && q.trim() !== '' && (
               <p className="text-[12px] mt-1">
-                {found.length === 0
+                {/* 🔴 ค้นไม่สำเร็จต้องไม่เขียนว่า "ไม่พบสินค้า" — ดูเหตุผลที่ประกาศ searchErr */}
+                {searchErr
+                  ? (
+                    <span className="text-red-700">
+                      ⚠️ <b>ค้นไม่สำเร็จ</b> — {searchErr} · <b>ไม่ได้แปลว่าร้านไม่มีของตัวนี้</b>
+                      {' '}ลองพิมพ์ใหม่อีกครั้ง
+                    </span>
+                  )
+                  : found.length === 0
                   ? <span className="text-gray-500">ไม่พบสินค้าที่ตรงกับ &quot;{q.trim()}&quot;</span>
                   : searchTotal > found.length
                     ? (
