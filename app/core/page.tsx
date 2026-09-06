@@ -50,6 +50,11 @@ interface Status {
     zort_orders: number; zort_amount: number; match: boolean
   }[]
   stock?: StockLog[]
+  /** 🔴 ชื่อส่วนที่ **ดึงไม่สำเร็จ** — ท่อส่งมาให้อยู่แล้ว แต่จอนี้ไม่เคยอ่าน
+   *  ⚠️ มีชื่ออยู่ในนี้ = ส่วนนั้นดึงไม่ได้ **ไม่ใช่ว่าไม่มีข้อมูล**
+   *     ไม่อ่าน = จอเขียนว่า "ยังไม่มีข้อมูล" ตอนที่ความจริงคือ "ดึงไม่ได้"
+   *     แล้วยังบอกให้ไปกดปุ่มที่ไม่ได้ช่วยอะไรด้วย (เพิ่มความเสียหายอีกชั้น) */
+  failed?: string[]
 }
 
 const GOAL_DAYS = 30 // ประตูระยะ 2: ยอดตรงติดต่อกัน 30 วัน
@@ -227,8 +232,18 @@ export default function CorePage() {
                 <p className="text-[13px] font-semibold text-gray-700">🛒 Shopee ตรงจาก API vs ZORT (ขั้น 3 — รันคู่)</p>
                 <span className="text-[11px] text-gray-400">ต้องตรง 14 วันติดก่อนขยับ</span>
               </div>
+              {/* 🔴 **สองสถานะ ไม่ใช่หนึ่ง** — "ดึงไม่ได้" กับ "ยังไม่มีข้อมูล" เขียนต่างกัน
+                  และคำแนะนำก็ต้องต่างกัน: ดึงไม่ได้ ⇒ กดปุ่มดึงซ้ำก็ไม่ช่วย */}
               {(st.shopee ?? []).length === 0 && (
-                <p className="text-[13px] text-gray-400 p-4">ยังไม่มีข้อมูล — กด "ดึงออเดอร์ Shopee" ด้านล่าง</p>
+                (st.failed ?? []).includes('shopee') ? (
+                  <p className="text-[13px] text-red-700 bg-red-50 p-4 leading-relaxed">
+                    ⚠️ <b>ดึงข้อมูลเทียบ Shopee ไม่สำเร็จรอบนี้</b> — <b>ไม่ได้แปลว่าไม่มีข้อมูล</b>
+                    {' '}ลองรีเฟรชอีกครั้ง ถ้ายังเหมือนเดิมแปลว่าท่อฝั่ง Shopee มีปัญหา
+                    {' '}(กดปุ่ม &ldquo;ดึงออเดอร์ Shopee&rdquo; ตอนนี้ก็ไม่ช่วย)
+                  </p>
+                ) : (
+                  <p className="text-[13px] text-gray-400 p-4">ยังไม่มีข้อมูล — กด &ldquo;ดึงออเดอร์ Shopee&rdquo; ด้านล่าง</p>
+                )
               )}
               {(st.shopee ?? []).map((r) => (
                 <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
