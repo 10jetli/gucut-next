@@ -14,6 +14,7 @@
 //    ⇒ ตรวจตอนกดกระดิ่งเท่านั้น แล้วจำผลไว้ใน sessionStorage ให้หน้าอื่นใช้ต่อ (ปิดแท็บก็หาย)
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { warmCore } from '@/lib/warm'
 
 const CACHE_KEY = 'gucut-bell'
 /** ผลตรวจเก่ากว่านี้ถือว่าใช้ตัดสินใจไม่ได้แล้ว
@@ -338,6 +339,10 @@ function AppsButton() {
     <div className="relative" ref={ref}>
       <button
         onClick={() => setOpen((v) => !v)}
+        // ⚡ ปลุกเครื่องตั้งแต่ตอนเปิดแผง ไม่ใช่ตอนเลือกเมนู — คนกดจุด 9 ช่องแล้วต้องอ่านก่อน
+        //    ได้เวลาฟรีมาราวหนึ่งวินาที ซึ่งพอดีกับค่าเครื่องเย็นที่วัดไว้ (ดู lib/warm.ts)
+        //    ⚠️ ต้องเป็น pointerdown ไม่ใช่ mouseenter — เจ้าของร้านใช้ iPhone
+        onPointerDown={warmCore}
         title="แอปในเครือ"
         aria-label="แอปในเครือ"
         className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
@@ -358,6 +363,7 @@ function AppsButton() {
                 href={a.href}
                 target={a.blank ? '_blank' : undefined}
                 onClick={() => setOpen(false)}
+                onPointerDown={warmCore}
                 className="flex flex-col items-center gap-2 px-1 py-3 rounded-lg hover:bg-[#eef4ff] transition-colors text-center"
               >
                 <a.icon />
