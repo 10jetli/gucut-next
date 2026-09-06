@@ -36,6 +36,9 @@ export default function ReturnsPage() {
   const [recvFilter, setRecvFilter] = useState<'' | 'waiting' | 'delivered' | 'received'>('')
   // ชื่อคนรับ — จำไว้ในเครื่อง กรอกครั้งเดียวพอ
   const [recvName, setRecvName] = useState('')
+  /** รู้สถานะการรับของจริงหรือยัง — ไม่รู้ ห้ามให้จอทำเหมือน "ยังไม่มีใครรับ" */
+  const [recvKnown, setRecvKnown] = useState(false)
+  const [recvErr, setRecvErr] = useState('')
 
   // ── ชื่อ/เบอร์ผู้ซื้อตัวจริง (ถาม Shopee Open API ตอนกดปุ่ม) ──
   // เก็บในหน่วยความจำหน้าเท่านั้น ไม่ลง localStorage — เป็นข้อมูลส่วนบุคคลของลูกค้า
@@ -70,10 +73,17 @@ export default function ReturnsPage() {
   useEffect(() => { void load(days) }, [days, load])
 
   useEffect(() => {
+    /* 🔴 เดิม `.catch(() => {})` กลืนเงียบ ⇒ recv ว่าง ⇒ ทุกใบดูเหมือน **ยังไม่ได้รับของ**
+       ทั้งที่อาจกดรับไปแล้ว ⇒ คนไปตามของที่มาถึงแล้ว หรือกดรับซ้ำ
+       ⇒ ไม่รู้ต้องบอกว่าไม่รู้ (ตัวตรวจ check-honesty ชี้จุดนี้ 7 ก.ย. 2569) */
     fetch('/api/returns/received')
-      .then((r) => r.json())
-      .then((j) => { if (j?.map) setRecv(j.map) })
-      .catch(() => {})
+      .then(async (r) => {
+        const j = await r.json()
+        if (!r.ok || j?.error || !j || !('map' in j)) throw new Error(String(j?.error ?? 'ตอบมาไม่ครบ'))
+        return j
+      })
+      .then((j) => { setRecv(j.map || {}); setRecvKnown(true) })
+      .catch(() => setRecvErr('โหลดสถานะการรับของไม่สำเร็จ — ยังไม่รู้ว่าใบไหนรับของแล้ว (อย่าเพิ่งกดรับซ้ำ)'))
   }, [])
 
   useEffect(() => {
@@ -82,6 +92,7 @@ export default function ReturnsPage() {
 
   const markRecv = async (number: string, stage: 'delivered' | 'received' | 'clear') => {
     const by = stage === 'received' ? recvName.trim() : undefined
+    const recvSnapshot = recv // ภาพก่อนแก้ — ใช้ถอยกลับถ้าบันทึกไม่ผ่าน
     // ปรับหน้าจอทันที ไม่รอเซิร์ฟเวอร์ — พลาดค่อยเด้งกลับตอนรีเฟรช
     setRecv((prev) => {
       const next = { ...prev }
@@ -92,11 +103,23 @@ export default function ReturnsPage() {
       return next
     })
     if (stage === 'received') { try { localStorage.setItem('gucut-recv-name', recvName.trim()) } catch {} }
-    await fetch('/api/returns/received', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ number, stage, by }),
-    }).catch(() => {})
+    /* 🔴 **จอปรับหน้าจอไปแล้วก่อนเซิร์ฟเวอร์ตอบ (optimistic)** — ถ้าการบันทึกล้ม
+       แล้วเรากลืนเงียบ จอจะขึ้นว่า "รับของแล้ว" ตลอดไปทั้งที่เซิร์ฟเวอร์ไม่เคยรู้เรื่อง
+       ⇒ ของหายจากระบบโดยไม่มีใครรู้ · ต้อง **ถอยหน้าจอกลับ** แล้วบอกให้กดใหม่ */
+    const before = recvSnapshot
+    try {
+      const r = await fetch('/api/returns/received', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ number, stage, by }),
+      })
+      const j = await r.json().catch(() => null)
+      if (!r.ok || j?.error) throw new Error(String(j?.error ?? `HTTP ${r.status}`))
+      setRecvErr('')
+    } catch (e) {
+      setRecv(before)
+      setRecvErr(`บันทึกไม่สำเร็จ (ใบ ${number}) — หน้าจอถอยกลับให้แล้ว ลองกดใหม่ · ${String((e as Error)?.message || e)}`)
+    }
   }
 
   // ขนส่งรับไปแล้วเกิน 7 วันแต่ของยังไม่ถึง = ต้องทวงขนส่ง/แพลตฟอร์ม
@@ -170,6 +193,8 @@ export default function ReturnsPage() {
       </div>
 
       {err && <ErrorBox>{err}</ErrorBox>}
+      {/* ⚠️ คนละเรื่องกับ err ข้างบน (โหลดรายการคืนของ) — อันนี้คือสถานะ "รับของแล้วหรือยัง" */}
+      {recvErr && <ErrorBox title="สถานะการรับของ">{recvErr}</ErrorBox>}
       {data?.stale && (
         <ErrorBox>ดึงข้อมูลใหม่ไม่สำเร็จ — กำลังแสดงตัวเลขที่ดึงไว้ครั้งก่อน</ErrorBox>
       )}
@@ -253,12 +278,21 @@ export default function ReturnsPage() {
                 {nDeliv > 0 && <div className="bg-blue-500" style={{ width: `${(nDeliv / preList.length) * 100}%` }} />}
                 {nWait > 0 && <div className="bg-amber-400" style={{ width: `${(nWait / preList.length) * 100}%` }} />}
               </div>
-              <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />รับแล้ว <b className="tabular-nums">{nRecv}</b></span>
-                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" />ถึงแล้วรอตรวจ <b className="tabular-nums">{nDeliv}</b></span>
-                <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" />ยังไม่ได้รับ <b className="tabular-nums">{nWait}</b></span>
-                <span className="ml-auto text-gray-400">รวม {preList.length} ใบ</span>
-              </div>
+              {/* ⚠️ สามเลขนี้คิดจาก `recv` ⇒ ถ้าโหลดสถานะไม่สำเร็จ ทุกใบจะไปกอง "ยังไม่ได้รับ"
+                  ซึ่งอ่านแล้วเหมือนของค้างเต็มไปหมด ⇒ ต้องบอกก่อนว่ายังไม่รู้ */}
+              {!recvKnown ? (
+                <p className="mt-2 text-xs text-amber-800">
+                  ⚠️ ยังไม่รู้สถานะการรับของ (โหลดไม่สำเร็จ) — ตัวเลขแยกตามสถานะจึงยังบอกไม่ได้ ·
+                  รวม <b className="tabular-nums">{preList.length}</b> ใบ
+                </p>
+              ) : (
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs">
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-emerald-500" />รับแล้ว <b className="tabular-nums">{nRecv}</b></span>
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-500" />ถึงแล้วรอตรวจ <b className="tabular-nums">{nDeliv}</b></span>
+                  <span className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-400" />ยังไม่ได้รับ <b className="tabular-nums">{nWait}</b></span>
+                  <span className="ml-auto text-gray-400">รวม {preList.length} ใบ</span>
+                </div>
+              )}
 
               {/* เทียบรายเดือน: ใบคืนเดือนไหนเยอะผิดปกติเห็นทันที */}
               {Object.keys(data.byMonth).length > 1 && (() => {
