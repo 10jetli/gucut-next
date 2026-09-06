@@ -1,12 +1,12 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-06T00:31:48.746Z",
+  "generatedAt": "2026-09-06T00:47:39.376Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
   "apiRoutes": {
-    "count": 37,
+    "count": 38,
     "names": [
       "ads",
       "ai-visibility",
@@ -24,6 +24,7 @@ export const ARCH_ADMIN = {
       "google/auth",
       "google/callback",
       "import",
+      "ipcheck",
       "mailcheck",
       "netlify-credits",
       "reorder",
@@ -48,8 +49,8 @@ export const ARCH_ADMIN = {
     ]
   },
   "pages": {
-    "count": 81,
-    "core": 47,
+    "count": 82,
+    "core": 48,
     "coreNames": [
       "/core",
       "/core/accounting-docs",
@@ -97,7 +98,8 @@ export const ARCH_ADMIN = {
       "/core/transfers",
       "/core/usage",
       "/core/variants",
-      "/core/wallet"
+      "/core/wallet",
+      "/core/zort-noapi"
     ]
   },
   "blobs": [

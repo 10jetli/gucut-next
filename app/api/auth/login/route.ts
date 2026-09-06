@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authToken } from '@/lib/auth-token'
+import { clientIp } from '@/lib/client-ip'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,12 +28,12 @@ const WINDOW_MS = 15 * 60 * 1000
 const MAX_TRIES = 5
 const tries = new Map<string, { n: number; until: number }>()
 
-// 🔴 **ไม่รู้ IP = ไม่นับ ไม่ล็อก** (คืน null) — ห้ามยัดทุกคนลงกุญแจ 'unknown' ก้อนเดียว
+// 🔴 **ไม่รู้ IP = ไม่นับ ไม่ล็อก** (lib/client-ip.ts คืน null) — ห้ามยัดทุกคนลงกุญแจ 'unknown' ก้อนเดียว
 //    ถ้ายัดรวม: ใครก็ได้ยิงผิด 5 ครั้ง แล้ว **ทั้งร้านล็อกอินไม่ได้ 15 นาที**
 //    = เปลี่ยนตัวกันเดารหัส ให้กลายเป็นปุ่มปิดร้านที่ใครก็กดได้ (แย่กว่าไม่มีตัวกัน)
 //    เจอตอนทดสอบในเครื่อง 6 ก.ย. — ในเครื่องไม่มีหัวข้อมูลนี้ ทุกคำขอเลยตกถังเดียวกันหมด
 function whoIs(req: NextRequest): string | null {
-  return req.headers.get('x-nf-client-connection-ip') || null
+  return clientIp(req)
 }
 function blockedFor(ip: string | null): number {
   if (!ip) return 0
