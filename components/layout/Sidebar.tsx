@@ -12,6 +12,7 @@
 //    เจ้าของร้านส่งภาพครอปมาให้ถึงเห็นว่าเป็นบล็อกน้ำเงินเข้ม
 //    ⇒ บทเรียน: สีกับพื้นหลังต้องดูจากภาพครอปที่ชัดพอ อย่าสรุปจากภาพย่อทั้งหน้า
 import Link from 'next/link'
+import { warmCore } from '@/lib/warm'
 import { useEffect, useState } from 'react'
 import type { NavItem } from '@/lib/nav-config'
 
@@ -108,6 +109,8 @@ export default function Sidebar({
               return (
                 <div key={item.label}>
                   <button
+                    /* กางกลุ่ม = สัญญาณว่ากำลังจะเลือกเมนูย่อย ⇒ จังหวะปลุกที่ได้เวลานำหน้ามากที่สุด */
+                    onPointerDown={warmCore}
                     onClick={() => toggleGroup(item.label)}
                     title={item.label}
                     className={`w-full flex items-center gap-2.5 py-3 text-[15px] transition-colors ${
@@ -152,7 +155,11 @@ export default function Sidebar({
                         return isStaticLink(c.href) ? (
                           <a key={c.href} href={c.href} className={cls} style={style}>{inner}</a>
                         ) : (
-                          <Link key={c.href} href={c.href} className={cls} style={style}>{inner}</Link>
+                          <Link key={c.href} href={c.href} className={cls} style={style}
+                            /* 🔴 ปลุกเครื่องก่อนหน้าจะเปลี่ยน — pointerdown เกิดก่อน click
+                               และทำงานทั้งเมาส์และนิ้ว (เจ้าของร้านใช้ iPhone เป็นหลัก)
+                               ⚠️ ห้ามใช้ onMouseEnter อย่างเดียว มือถือไม่มี hover */
+                            onPointerDown={warmCore}>{inner}</Link>
                         )
                       })}
                     </div>
@@ -176,7 +183,8 @@ export default function Sidebar({
               return isStaticLink(item.href!) ? (
                 <a key={item.href} href={item.href} title={item.label} className={cls} style={style}>{inner}</a>
               ) : (
-                <Link key={item.href} href={item.href!} title={item.label} className={cls} style={style}>{inner}</Link>
+                <Link key={item.href} href={item.href!} title={item.label} className={cls} style={style}
+                  onPointerDown={warmCore}>{inner}</Link>
               )
             })()
           ),

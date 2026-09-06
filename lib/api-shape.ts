@@ -57,6 +57,8 @@ export function fromExpectedEndpoint(d: unknown, required: string[]): boolean {
    · ไม่มีหัว           ⇒ ท่อรุ่นเก่ากว่า 6 ก.ย. (หรือไม่ใช่ท่อเรา) ⇒ **ยังบอกไม่ได้**
    · มีหัว + มีคีย์ที่ขอ ⇒ เส้นนั้นขึ้นแล้วและตอบจริง
    · มีหัว + ไม่มีคีย์   ⇒ ท่อรุ่นใหม่แล้ว **แต่เส้นนั้นไม่มีอยู่จริง** */
+import { noteCoreCall } from './warm'
+
 export interface CoreResult<T> {
   data: T | null
   /** คำตอบดิบ **เสมอ** แม้รูปไม่ตรงที่ขอ
@@ -73,6 +75,8 @@ export interface CoreResult<T> {
 }
 
 export async function coreJson<T>(url: string, required: string[]): Promise<CoreResult<T>> {
+  // บอกตัวปลุกเครื่องว่า "เพิ่งคุยกับท่อไป" ⇒ มันจะได้ไม่ยิงปลุกซ้ำฟรี ๆ (lib/warm.ts)
+  noteCoreCall()
   const res = await fetch(url)
   const build = res.headers.get('x-core-build')
   const data = (await res.json().catch(() => null)) as T | null
