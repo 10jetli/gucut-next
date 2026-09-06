@@ -532,7 +532,7 @@ export default function ProductDetailPage() {
               <span className="text-[30px] opacity-60">🏬</span>
               <p className="text-[13px] text-gray-700 mt-2">ยังไม่มีข้อมูลแยกรายคลัง</p>
               <p className="text-[12px] text-gray-500 mt-1 max-w-[420px] leading-relaxed">
-                ZORT <b>ไม่เปิดช่องทางให้ดึงสต็อกแยกตามคลัง</b> (ยิงมาแล้วไม่ผ่านทุกทาง) ·
+                สต็อกแยกตามคลัง <b>ยังไม่พบทาง (กวาดชื่อเส้น 30+ ชื่อ 6 ก.ย. 2569 → 404 หมด แต่ยังไม่ได้ลองระดับพารามิเตอร์)</b> ·
                 คลังเงาเก็บสต็อกรวมทั้งร้าน จึงแยกรายคลังไม่ได้ —
                 เป็น<b>ข้อจำกัดของต้นทาง ไม่ใช่ของที่ยังทำไม่เสร็จ</b>
               </p>
@@ -568,7 +568,7 @@ export default function ProductDetailPage() {
                   ทำ dropdown ที่เลือกได้แล้วไม่มีอะไรเปลี่ยน คือของหลอก ⇒ ล็อกไว้พร้อมเหตุผล */}
               <select
                 disabled
-                title="คลังเงาเก็บสต็อกรวมทั้งร้าน ไม่มีข้อมูลแยกรายคลัง — ZORT ไม่เปิด API ให้ดึง"
+                title="คลังเงาเก็บสต็อกรวมทั้งร้าน (3 คลัง: โกดัง + จุดขาย 2) ยังไม่มีข้อมูลแยกรายคลัง — ยังไม่พบทาง (กวาดชื่อเส้น 30+ ชื่อ 6 ก.ย. 2569 → 404 หมด แต่ยังไม่ได้ลองระดับพารามิเตอร์)"
                 className="text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 text-gray-400 cursor-not-allowed"
               >
                 <option>ทั้งหมด</option>

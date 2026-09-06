@@ -357,7 +357,9 @@ export default function ReturnsPage() {
                   </div>
                   {o.ref && <p className="mt-0.5 text-xs text-gray-400">ออเดอร์เดิม #{o.ref}</p>}
 
-                  {/* ตามของสองขั้น: ขนส่งส่งถึง → ร้านตรวจรับ (จดว่าใครรับ) — กดเอง Flash ไม่เปิด API */}
+                  {/* ตามของสองขั้น: ขนส่งส่งถึง → ร้านตรวจรับ (จดว่าใครรับ) — กดเอง
+    ⚠️ Flash ไม่เปิดข้อมูลตำแหน่ง/ไทม์ไลน์ให้ระบบภายนอก (ยิงทดสอบแล้วโดนบล็อก · บันทึกไว้ 27 ส.ค. 2569)
+       ⇒ ไม่มีทางรู้อัตโนมัติว่าของถึงหรือยัง ต้องให้คนกด */}
                   <div className={`mt-2 flex flex-wrap items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs ${st.received ? 'bg-emerald-50' : st.delivered ? 'bg-blue-50' : overdue ? 'bg-red-50' : 'bg-amber-50'}`}>
                     <span className={`font-semibold ${st.received ? 'text-emerald-700' : st.delivered ? 'text-blue-700' : overdue ? 'text-red-700' : 'text-amber-700'}`}>
                       {st.received
