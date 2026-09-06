@@ -29,6 +29,8 @@ interface Job {
 interface Resp {
   counts?: Record<string, number>
   amounts?: Record<string, number>
+  /** วันตัดว่า "ช่องทางเงียบไปแล้ว" — ท่อคิดให้ ⇒ จอห้ามคิดเอง */
+  dormantCutoff?: string
   today?: string
   note?: string
   error?: string
@@ -126,6 +128,35 @@ export default function PackingPage() {
 
       {!loading && !error && d && (
         <>
+          {/* 🔴 **แสดงอีกสองกองที่ท่อคำนวณให้ แต่ไม่มีจอไหนเคยแสดง** (เจอ 6 ก.ย. 2569
+              ตอนไล่เทียบคีย์ที่ท่อส่ง vs คีย์ที่จออ่าน)
+              ⚠️ ของเดิมจอนี้เขียนว่า "ดูที่จอรายการขาย" ซึ่ง **เป็นคำแนะนำที่พาไปไม่ถึง**
+                 จอนั้นไม่ได้แยกกองแบบนี้ คนต้องไปเดาตัวกรองเอง
+              ⚠️ ตัวเลข "ใบผี" สำคัญกว่าที่เห็น: มันคือใบที่ยังนับรวมอยู่ในยอดค้างจ่าย
+                 ทั้งที่ไม่มีวันได้เงิน ⇒ ใครเอายอดค้างจ่ายไปคิดเป็นรายได้ที่จะเข้า จะสูงเกินจริง */}
+          {(d.counts?.['รอจ่ายอยู่'] || d.counts?.['ใบผี']) && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
+              <div className="bg-white border border-gray-200 rounded-md px-3.5 py-2.5">
+                <p className="text-[12px] text-gray-500">รอจ่ายอยู่ — ยังไม่จ่าย แต่ช่องทางยังขายอยู่</p>
+                <p className="text-[14px] text-gray-800 mt-0.5">
+                  <b>{fmtNum(d.counts?.['รอจ่ายอยู่'] ?? 0)}</b> ใบ · {fmtMoney(d.amounts?.['รอจ่ายอยู่'] ?? 0)}
+                  <span className="text-gray-400 text-[12px]"> — ยังมีโอกาสได้เงิน</span>
+                </p>
+              </div>
+              <div className="bg-white border border-amber-200 rounded-md px-3.5 py-2.5">
+                <p className="text-[12px] text-amber-800">ใบผี — ยังไม่จ่าย และช่องทางเงียบไปแล้ว</p>
+                <p className="text-[14px] text-gray-800 mt-0.5">
+                  <b>{fmtNum(d.counts?.['ใบผี'] ?? 0)}</b> ใบ · {fmtMoney(d.amounts?.['ใบผี'] ?? 0)}
+                  <span className="text-amber-700 text-[12px]"> — ไม่มีวันได้เงิน</span>
+                </p>
+                <p className="text-[11.5px] text-gray-500 mt-1 leading-relaxed">
+                  ยังไม่ได้ลบหรือยกเลิก ⇒ <b>ยังถูกนับรวมอยู่ในยอดค้างจ่าย</b>
+                  {d.dormantCutoff && <> · เกณฑ์ &ldquo;ช่องทางเงียบ&rdquo; = ไม่มีบิลหลัง {thaiDate(d.dormantCutoff)}</>}
+                </p>
+              </div>
+            </div>
+          )}
+
           {late.length > 0 && (
             /* 🔴 ค้างเกิน 3 วันคือของที่ต้องรีบ — ต้องเห็นก่อนตาราง ไม่ใช่ซ่อนในแท็บ
                (กฎ warning-placement: คำเตือนที่ต้องกดถึงเห็น คือวางผิดที่) */
@@ -202,8 +233,8 @@ export default function PackingPage() {
             ⚠️ <b>จอนี้อ่านอย่างเดียว ไม่มีปุ่มทำเครื่องหมายว่าแพ็คแล้วโดยตั้งใจ</b> —
             สถานะจริงอยู่ที่ ZORT ถ้ามีปุ่มที่เปลี่ยนแค่ในจอเรา จะได้จอสองใบที่ไม่ตรงกัน
             แล้วคนจะเชื่อใบผิด · ใบจะหายจากจอนี้เองเมื่อ ZORT ปิดใบ แล้วรอบซิงก์ถัดไปดูดกลับมา ·
-            <b> เกณฑ์: จ่ายแล้วแต่ใบยังไม่จบ</b> (ท่อแยกกองมาให้ — กอง &ldquo;รอจ่ายอยู่&rdquo;
-            กับ &ldquo;ใบผี&rdquo; เป็นงานคนละเรื่อง ดูที่จอรายการขาย) ·
+            <b> เกณฑ์: จ่ายแล้วแต่ใบยังไม่จบ</b> (ท่อแยกกองมาให้ 3 กอง — อีกสองกองแสดงไว้ข้างบนแล้ว
+            เป็นงานคนละเรื่องกับการแพ็คของ) ·
             ยังไม่มีภาพจอ ZORT ของเมนูนี้ จึงยังไม่ได้จัดผังตาม
           </p>
         </>
