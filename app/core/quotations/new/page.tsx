@@ -31,6 +31,19 @@ interface Line { sku: string; qty: string; price: string }
 
 const BLANK: Line = { sku: '', qty: '', price: '' }
 
+/** 🔴 **สวิตช์ปุ่ม "ส่งจริง" — ปิดไว้จนกว่าใบทดสอบใบแรกจะผ่าน**
+ *
+ *  เหตุผล (ฝั่งท่อทักไว้ 6 ก.ย. 2569 ก่อน push · ถูกต้อง):
+ *  สิ่งที่เจ้าของร้านอนุมัติคือ **ใบเดียว ที่ยิงแบบควบคุมได้** ไม่ใช่ "เปิดให้สร้างใบไม่จำกัด"
+ *  ถ้าปุ่มส่งจริงขึ้นเว็บพร้อม deploy ⇒ **การใช้งานจริงครั้งแรกอาจเป็นเจ้าของร้านกดกลางวันทำงาน**
+ *  ไม่ใช่การทดสอบที่เราคุมได้ · และถ้าชื่อฟิลด์ไม่ตรง เขาจะได้ใบที่ผิดโดยไม่รู้ตัว
+ *  (ZORT ไม่เปิด API ให้ลบใบ ⇒ ใบผิดค้างอยู่ถาวรจนกว่าจะเข้าไปจัดการเอง)
+ *
+ *  ⚠️ **เปิดได้ก็ต่อเมื่อ**: ฝั่งท่อยิงใบทดสอบผ่าน **และ** ดึงใบนั้นกลับมาดูแล้วว่าฟิลด์ตรง
+ *     (ยิงผ่านอย่างเดียวไม่พอ — resCode ตอบ 200 ไม่ได้แปลว่าข้อมูลเข้าถูกช่อง)
+ *  ⚠️ เปิดแล้วต้องแก้บรรทัดนี้บรรทัดเดียว ไม่ต้องแตะอย่างอื่น */
+const REAL_SEND_ENABLED = false
+
 export default function NewQuotationPage() {
   const [customer, setCustomer] = useState('')
   const [phone, setPhone] = useState('')
@@ -113,8 +126,9 @@ export default function NewQuotationPage() {
         จอนี้จึงบังคับให้ <b>ทดลองส่งผ่านก่อน</b> แล้วปุ่มส่งจริงถึงจะกดได้ ·
         แก้อะไรหลังทดลองส่ง <b>ต้องทดลองใหม่</b>
         <br />
-        ⚠️ <b>ยังไม่มีใครยิงของจริงผ่านเส้นนี้เลยสักใบ</b> — ใบแรกที่ส่งจริงคือการทดสอบตัวมันเอง
-        {' '}⇒ ใบแรกควรเป็นใบเล็ก ๆ ที่ยอมให้ผิดได้
+        ⚠️ <b>ตอนนี้ยังกดส่งจริงไม่ได้</b> — ใบแรกจะถูกยิงแบบควบคุมโดยฝั่งดูแลระบบก่อน
+        {' '}แล้วดึงใบนั้นกลับมาตรวจว่าข้อมูลเข้าถูกช่องจริง ⇒ ผ่านแล้วปุ่มถึงจะเปิด
+        {' '}<b>ทดลองส่งใช้ได้ตามปกติ</b> (ไม่มีอะไรเข้า ZORT)
       </div>
 
       <div className="bg-white border border-gray-200 rounded-md p-4 mb-3 space-y-3">
@@ -207,12 +221,17 @@ export default function NewQuotationPage() {
           className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !dryOk}
+        <button onClick={() => send(true)} disabled={busy || !dryOk || !REAL_SEND_ENABLED}
           className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-          style={{ background: dryOk ? '#c0392b' : '#9aa0a6' }}>
+          style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
           ส่งจริงเข้า ZORT
         </button>
-        {!dryOk && (
+        {!REAL_SEND_ENABLED ? (
+          <span className="text-[12.5px] text-amber-800">
+            <b>ยังไม่เปิดให้ส่งจริง</b> — รอผลยิงใบทดสอบใบแรกแบบควบคุมก่อน
+            {' '}(ทดลองส่งใช้ได้ตามปกติ ตรวจข้อมูลได้เต็มที่)
+          </span>
+        ) : !dryOk && (
           <span className="text-[12.5px] text-gray-500">
             {okDry === '' ? 'ต้องกดทดลองส่งให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลองส่ง — ต้องทดลองใหม่'}
           </span>
