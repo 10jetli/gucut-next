@@ -1,0 +1,229 @@
+'use client'
+// ตั้งค่า → บริษัท/ร้านค้า (ปิดแถว 38)
+//
+// ⚠️ **ยังไม่มีภาพจอ ZORT** ⇒ ไม่ได้ลอกผัง เขียนจากคำถามที่จอควรตอบ
+//
+// 🔴 **ข้อมูลนิติบุคคลมีแหล่งความจริงเดียว: `gucut-web/src/lib/shop.ts` + `licenses.ts`**
+//    จอนี้ **ห้ามคัดลอกมาเก็บไว้ฝั่งนี้เด็ดขาด** — ต่ออายุใบอนุญาตทีเดียวจะมีสองที่ให้แก้
+//    แล้วตกหล่นแน่นอน (กติกาโปรเจกต์: ห้ามพิมพ์ข้อมูลร้านซ้ำที่อื่น)
+//    ⇒ อ่านผ่าน `?shopinfo=1` ซึ่งฝั่งท่ออ่านจากไฟล์ต้นทางให้
+//
+// ⚠️ **สองนิติบุคคล ห้ามยุบรวมกัน** (กติกาเหล็กของร้าน)
+//    ผู้ขาย = บริษัท ศีตกาล เทรดดิ้ง (ออกใบกำกับภาษี) ·
+//    ผู้ผลิต/ผู้นำเข้า = หจก. นิวเวฟ ซันไชน์ (ถือใบอนุญาตเลื่อยโซ่ยนต์ทุกฉบับ)
+//    ⇒ **ห้ามเขียนว่าร้านถือใบอนุญาตเอง** สิ่งที่เป็นของร้านคือหนังสือแต่งตั้งตัวแทนจำหน่าย
+//
+// ⚠️ **ไม่มีที่อยู่ทั้งสองนิติบุคคลโดยตั้งใจ** — เจ้าของร้านสั่งไม่ให้ที่อยู่เป็นสาธารณะ
+//    ฝั่งท่อไม่ส่งมาให้เลย (ตกลงกัน 6 ก.ย.) ⇒ ส่งมาก็จะไปโผล่ในไฟล์ฝั่งนี้แทน = ย้ายปัญหา
+import { useCallback, useEffect, useState } from 'react'
+import LoadingState from '@/components/ui/LoadingState'
+import ErrorBox from '@/components/ui/ErrorBox'
+import { PageHead, BtnGhost, Pill } from '@/components/zort'
+
+interface Doc {
+  kind?: string; number?: string; issuedBy?: string
+  issuedAt?: string; expiresAt?: string; note?: string; scope?: string
+}
+interface Party { name?: string; nameEn?: string; taxId?: string; phone?: string; email?: string }
+interface Resp {
+  seller?: Party
+  licensee?: Party
+  licenses?: Doc[]
+  trademarks?: Doc[]
+  distributorships?: Doc[]
+  registry?: Record<string, string>
+  error?: string
+}
+
+/** วันหมดอายุผ่านไปแล้วหรือยัง — คิดสด ห้ามให้ท่อคิดแล้วแช่ค่า
+ *  (กฎที่ตกลงกัน: ค่าที่เดินตามเวลา จอคิดเอง · ค่าที่ต้องเห็นข้อมูลทั้งชุด ท่อคิดให้) */
+function expiryTone(iso?: string): { tone: 'green' | 'orange' | 'red' | 'gray'; text: string } {
+  if (!iso || typeof iso !== 'string') return { tone: 'gray', text: 'ไม่ระบุวันหมดอายุ' }
+  /* 🔴 **ต้องเทียบกับ "สิ้นวัน" ไม่ใช่ "ต้นวัน"** (แก้ 6 ก.ย. 2569 ตอนยิงเคสขอบ)
+     ใบที่เขียนว่าหมดอายุ 6 ก.ย. ยังใช้ได้**ตลอดทั้งวันที่ 6**
+     เทียบกับ 00:00 ของวันนั้น = พอผ่านเที่ยงคืนไปนิดเดียว จอจะขึ้น "หมดอายุแล้ว 1 วัน"
+     ⇒ **จอบอกว่าใบตายทั้งที่ยังใช้ได้อีกทั้งวัน** — ทำให้คนตกใจและอาจหยุดขายเปล่า ๆ
+     (คลาสเดียวกับ "คำเตือนที่ไม่มีเงื่อนไข ทำให้ตัดสินใจผิดทางตื่นตูม")
+     ⇒ บวกหนึ่งวันก่อนเทียบ · และแยกข้อความ "หมดอายุวันนี้" ออกมาให้ชัด */
+  const end = new Date(`${iso}T00:00:00+07:00`).getTime() + 86400000
+  if (!Number.isFinite(end)) return { tone: 'gray', text: 'อ่านวันที่ไม่ออก' }
+  const left = end - Date.now()
+  if (left <= 0) {
+    const gone = Math.ceil(-left / 86400000)
+    return { tone: 'red', text: `หมดอายุแล้ว ${gone.toLocaleString('th-TH')} วัน` }
+  }
+  const days = Math.floor(left / 86400000)
+  if (days === 0) return { tone: 'red', text: 'หมดอายุวันนี้ — วันสุดท้ายที่ใช้ได้' }
+  if (days <= 60) return { tone: 'orange', text: `เหลือ ${days.toLocaleString('th-TH')} วัน` }
+  return { tone: 'green', text: `เหลือ ${Math.round(days / 30).toLocaleString('th-TH')} เดือน` }
+}
+
+const thai = (iso?: string) => {
+  if (!iso || typeof iso !== 'string') return '—'
+  const [y, m, d] = iso.split('-').map(Number)
+  const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+  return m >= 1 && m <= 12 ? `${d} ${M[m - 1]} ${y + 543}` : iso
+}
+
+function PartyCard({ title, role, p, warn }: { title: string; role: string; p?: Party; warn?: string }) {
+  return (
+    <div className="bg-white border border-gray-200 rounded-md p-4">
+      <p className="text-[11.5px] text-gray-400">{role}</p>
+      <p className="text-[15px] font-semibold text-gray-900">{title}</p>
+      {p ? (
+        <dl className="text-[13px] mt-2 space-y-1.5">
+          <div><dt className="text-gray-400 text-[11.5px]">ชื่อตามทะเบียน</dt><dd className="text-gray-800">{p.name || '—'}</dd></div>
+          {p.nameEn && <div><dt className="text-gray-400 text-[11.5px]">ชื่ออังกฤษ</dt><dd className="text-gray-700">{p.nameEn}</dd></div>}
+          <div><dt className="text-gray-400 text-[11.5px]">เลขประจำตัวผู้เสียภาษี</dt>
+            <dd className="text-gray-800 font-mono">{p.taxId || '—'}</dd></div>
+          {p.phone && <div><dt className="text-gray-400 text-[11.5px]">โทร</dt><dd className="text-gray-700">{p.phone}</dd></div>}
+          {p.email && <div><dt className="text-gray-400 text-[11.5px]">อีเมล</dt><dd className="text-gray-700">{p.email}</dd></div>}
+        </dl>
+      ) : (
+        <p className="text-[12.5px] text-gray-400 mt-2">ท่อยังไม่ส่งข้อมูลนิติบุคคลนี้มา</p>
+      )}
+      {warn && (
+        <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mt-2 leading-relaxed">
+          ⚠️ {warn}
+        </p>
+      )}
+    </div>
+  )
+}
+
+function DocTable({ title, rows, empty }: { title: string; rows?: Doc[]; empty: string }) {
+  const list = Array.isArray(rows) ? rows : []
+  return (
+    <div className="mb-5">
+      <p className="text-[15px] font-semibold text-gray-800 mb-2">{title} {list.length > 0 && <span className="text-gray-400 text-[13px]">({list.length})</span>}</p>
+      {list.length === 0
+        ? <p className="text-[12.5px] text-gray-400">{empty}</p>
+        : (
+          <div className="border border-gray-200 rounded-md overflow-hidden bg-white overflow-x-auto">
+            <table className="w-full min-w-[640px]">
+              <thead className="bg-white border-b border-gray-200">
+                <tr>
+                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">เลขที่</th>
+                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">ชนิด / ขอบเขต</th>
+                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">ออกโดย</th>
+                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">ออกเมื่อ</th>
+                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">สถานะ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {list.map((d, i) => {
+                  const e = expiryTone(d.expiresAt)
+                  return (
+                    <tr key={`${d.number ?? i}`} className="border-b border-[#e8ecf8] last:border-0">
+                      <td className="px-3 py-3 text-[12.5px] text-gray-900 font-mono">{d.number || '—'}</td>
+                      <td className="px-3 py-3 text-[12.5px] text-gray-700">{d.kind || d.scope || '—'}</td>
+                      <td className="px-3 py-3 text-[12.5px] text-gray-600">{d.issuedBy || '—'}</td>
+                      <td className="px-3 py-3 text-[12.5px] text-gray-600 whitespace-nowrap">{thai(d.issuedAt)}</td>
+                      <td className="px-3 py-3 text-[12.5px] whitespace-nowrap">
+                        <Pill tone={e.tone}>{e.text}</Pill>
+                        {d.expiresAt && <span className="block text-[11px] text-gray-400 mt-0.5">ถึง {thai(d.expiresAt)}</span>}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+    </div>
+  )
+}
+
+export default function SettingsCompanyPage() {
+  const [d, setD] = useState<Resp | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const r = await fetch('/api/web/core?shopinfo=1').then((x) => x.json())
+      if (r?.error) throw new Error(r.error)
+      setD(r)
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e))
+      setD(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  /* ⚠️ ตัดสินว่า "ท่อพร้อม" จาก **การมีฟิลด์จริง** ไม่ใช่จากวันที่หรือคำบอกเล่า
+     ก่อน endpoint ขึ้นเว็บ จะไม่มี seller/licensee ⇒ จอขึ้นสถานะรอ ไม่ใช่พัง
+     (บทเรียน orderfacets: ยิงเส้นที่ยังไม่ deploy ได้ 200 พร้อม body คนละชุด) */
+  const ready = !!(d?.seller || d?.licensee)
+
+  return (
+    <div className="p-4 md:p-6">
+      <PageHead
+        title="บริษัท/ร้านค้า"
+        summary={
+          <>
+            ข้อมูลนิติบุคคลและเอกสารตามกฎหมายที่ระบบใช้อ้างอิงจริง
+            {' | '}
+            <span className="text-gray-400">อ่านจากแหล่งเดียวกับหน้าร้าน ไม่ได้พิมพ์ซ้ำ</span>
+          </>
+        }
+        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+      />
+
+      {error && <ErrorBox title="ดึงข้อมูลบริษัทไม่ได้">{error}</ErrorBox>}
+      {loading && !d && <LoadingState />}
+
+      {!loading && !error && !ready && (
+        <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 leading-relaxed">
+          ⏳ <b>ท่อยังไม่ส่งข้อมูลนิติบุคคลมา</b> — จอนี้อ่านจาก <code>?shopinfo=1</code> ซึ่งฝั่งท่ออ่าน
+          จากไฟล์ต้นทางไฟล์เดียวกับหน้าร้าน · ขึ้นเว็บเมื่อไหร่จอจะแสดงเอง ไม่ต้องแก้จอ
+        </div>
+      )}
+
+      {ready && (
+        <>
+          {/* 🔴 สองนิติบุคคล — ห้ามยุบรวม */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
+            <PartyCard role="ผู้ขายบนเว็บนี้ · ออกใบกำกับภาษี" title="ผู้จำหน่าย" p={d?.seller} />
+            <PartyCard
+              role="ผู้ผลิต/ผู้นำเข้า · ผู้ถือใบอนุญาตเลื่อยโซ่ยนต์"
+              title="ผู้ผลิต"
+              p={d?.licensee}
+              warn="ใบอนุญาตเลื่อยโซ่ยนต์ทุกฉบับออกในนามนิติบุคคลนี้ ไม่ใช่ของร้าน — สิ่งที่เป็นของร้านคือหนังสือแต่งตั้งตัวแทนจำหน่าย ห้ามเขียนสลับกัน"
+            />
+          </div>
+
+          <DocTable title="ใบอนุญาตเลื่อยโซ่ยนต์ (ของผู้ผลิต)" rows={d?.licenses}
+            empty="ท่อยังไม่ส่งรายการใบอนุญาตมา" />
+          <DocTable title="เครื่องหมายการค้า" rows={d?.trademarks}
+            empty="ท่อยังไม่ส่งรายการเครื่องหมายการค้ามา" />
+          <DocTable title="หนังสือแต่งตั้งตัวแทนจำหน่าย (ของร้าน)" rows={d?.distributorships}
+            empty="ท่อยังไม่ส่งรายการหนังสือแต่งตั้งมา" />
+
+          {d?.registry && Object.keys(d.registry).length > 0 && (
+            <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
+              <p className="text-[15px] font-semibold text-gray-800 mb-2">บัญชีทะเบียนราชการ</p>
+              <dl className="text-[13px] space-y-1.5">
+                {Object.entries(d.registry).map(([k, v]) => (
+                  <div key={k}><dt className="text-gray-400 text-[11.5px]">{k}</dt><dd className="text-gray-800">{String(v)}</dd></div>
+                ))}
+              </dl>
+            </div>
+          )}
+        </>
+      )}
+
+      <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
+        ⚠️ <b>ไม่มีที่อยู่ของทั้งสองนิติบุคคลโดยตั้งใจ</b> — เจ้าของร้านสั่งไม่ให้ที่อยู่เป็นสาธารณะ
+        และฝั่งท่อไม่ส่งมาให้เลย (ส่งมาก็จะไปติดในไฟล์ฝั่งนี้แทน = ย้ายปัญหา ไม่ใช่แก้) ·
+        <b> สถานะ &ldquo;หมดอายุ/เหลือกี่วัน&rdquo; จอคิดสดจากวันนี้</b> ไม่ได้ให้ท่อคิดแล้วแช่ค่า
+        (ค่าที่เดินตามเวลาต้องคิดตอนแสดงเสมอ) · แก้ข้อมูลต้องแก้ที่ไฟล์ต้นทางฝั่งหน้าร้าน
+        <b> จอนี้ไม่มีปุ่มแก้โดยตั้งใจ</b> — เอกสารตามกฎหมายไม่ควรแก้ผ่านหน้าเว็บ
+      </p>
+    </div>
+  )
+}
