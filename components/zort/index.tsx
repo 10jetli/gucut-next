@@ -671,3 +671,9 @@ export function MarketCoverage(
     </>
   )
 }
+
+/* ── ผลของการเขียนทะลุไป ZORT — อยู่ในไฟล์แยก ──────────────────
+   ⚠️ **สี่สถานะ ไม่ใช่สอง** และข้อที่สาม (unknown = ส่งแล้วไม่รู้ผล)
+      ห้ามแสดงว่า "ไม่สำเร็จ" เด็ดขาด — ดูเหตุผลเต็มในไฟล์ WriteResult.tsx */
+export { WriteResult } from './WriteResult'
+export type { WriteResp } from './WriteResult'
