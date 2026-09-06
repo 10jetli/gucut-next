@@ -110,7 +110,9 @@ export default function CoreBranchesPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="คลังสินค้า/สาขา"
-        summary={`จำนวน ${fmtNum(rows.length)} รายการ`}
+        /* 🔴 ดึงไม่ได้ **ห้ามเขียน "จำนวน 0 รายการ"** — หัวจอจะขัดกับกล่องแดงข้างล่างทันที
+           และคนอ่านหัวจอก่อนเสมอ (เจอด้วยท่อปลอม 6 ก.ย. 2569) */
+        summary={error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง' : `จำนวน ${fmtNum(rows.length)} รายการ`}
         actions={
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
