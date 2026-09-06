@@ -104,7 +104,9 @@ export default function CorePage() {
       const um = data?.unmapped
       const umList = Array.isArray(um) ? um.filter((x: unknown) => typeof x === 'string') : []
       if (umList.length > 0) {
-        setActMsg(`⚠️ ${label} เสร็จ แต่ **หาชื่อฟิลด์ไม่เจอ ${umList.length} ตัว** `
+        /* ⚠️ ข้อความนี้วาดเป็นตัวหนังสือธรรมดา — ใส่ ** จะโผล่เป็นดอกจันบนจอจริง
+           (เจอตอนกวาดหาดอกจันหลุดทั้งระบบ 7 ก.ย. 2569) */
+        setActMsg(`⚠️ ${label} เสร็จ แต่หาชื่อฟิลด์ไม่เจอ ${umList.length} ตัว `
           + `(${umList.slice(0, 6).join(' · ')}${umList.length > 6 ? ' …' : ''}) `
           + '— ข้อมูลตรงนั้นถูกเขียนเป็น 0/ว่างลงฐานแล้ว ต้องแจ้งฝั่งท่อ')
       } else {

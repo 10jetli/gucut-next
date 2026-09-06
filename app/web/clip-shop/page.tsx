@@ -21,11 +21,24 @@ export default function WebClipShopPage() {
    *  ⇒ คนผูกสินค้ากับคลิปจะสรุปว่า **ร้านไม่มีสินค้าตัวนั้น** ทั้งที่แค่โหลดดัชนีไม่ได้ */
   const [loadErr, setLoadErr] = useState('')
 
+  /** รู้หรือยังว่าคลิปไหนผูกไว้แล้ว — ไม่รู้ = ห้ามเขียนจำนวน และห้ามให้ตัวกรอง "ที่ยังไม่ผูก" หลอกตา */
+  const [mapKnown, setMapKnown] = useState(false)
+
   useEffect(() => {
     fetch('/api/webfile/feed.json').then((r) => r.json()).then(setClips)
       .catch(() => setLoadErr('โหลดรายชื่อคลิปไม่สำเร็จ'))
-    fetch('/api/web/clip-shop').then((r) => r.json()).then((d) => setMap(d.map ?? {}))
-      .catch(() => setLoadErr('โหลดรายการที่ผูกไว้ไม่สำเร็จ — สิ่งที่เห็นอาจไม่ใช่ของล่าสุด'))
+    /* 🔴 ท่อตอบ 500 พร้อม JSON ⇒ .json() ไม่ throw ⇒ catch ไม่ทำงาน ⇒ map = {} เงียบ ๆ
+       ⇒ หัวจอเขียน "ผูกแล้ว 0 คลิป" ทั้งที่ของจริงอาจผูกไว้แล้วหลายสิบ
+       ⇒ คนไปไล่ผูกใหม่ทับของเดิม (เจอด้วยท่อปลอม 7 ก.ย. 2569) */
+    fetch('/api/web/clip-shop')
+      .then(async (r) => {
+        const d = await r.json()
+        if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
+        if (!('map' in d)) throw new Error('ตอบมาไม่ครบ')
+        return d
+      })
+      .then((d) => { setMap(d.map ?? {}); setMapKnown(true) })
+      .catch(() => setLoadErr('โหลดรายการที่ผูกไว้ไม่สำเร็จ — ยังไม่รู้ว่าคลิปไหนผูกไว้แล้ว อย่าเพิ่งผูกทับ'))
     fetch('/api/webfile/search-index.json').then((r) => r.json()).then((d) => setIndex(d.items ?? d))
       .catch(() => setLoadErr('โหลดรายชื่อสินค้าไม่สำเร็จ — ค้นหาสินค้ายังใช้ไม่ได้'))
   }, [])
@@ -59,7 +72,10 @@ export default function WebClipShopPage() {
         <div className="mr-auto">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">ผูกสินค้ากับคลิป</h1>
-          <p className="text-[12px] text-gray-400 mt-0.5">ผูกแล้วคลิปในฟีดจะมีปุ่มกดซื้อ · ผูกแล้ว {Object.keys(map).length} คลิป</p>
+          <p className="text-[12px] text-gray-400 mt-0.5">
+            ผูกแล้วคลิปในฟีดจะมีปุ่มกดซื้อ · ผูกแล้ว{' '}
+            {mapKnown ? `${Object.keys(map).length} คลิป` : 'ยังไม่รู้ (โหลดไม่สำเร็จ)'}
+          </p>
         </div>
         <label className="flex items-center gap-1.5 text-[12.5px] text-gray-600">
           <input type="checkbox" checked={onlyEmpty} onChange={(e) => setOnlyEmpty(e.target.checked)} className="w-4 h-4 accent-blue-600" />

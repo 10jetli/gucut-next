@@ -75,7 +75,11 @@ export default function WebPermitsPage() {
         {items === null ? (
           <div className="p-4 space-y-3 animate-pulse">{[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-gray-50" />)}</div>
         ) : items.length === 0 ? (
-          <p className="py-14 text-center text-[13px] text-gray-400">ยังไม่มีลูกค้าทำเรื่องเข้ามา</p>
+          /* ⚠️ โหลดไม่สำเร็จ ห้ามพูดว่า "ยังไม่มีลูกค้าทำเรื่องเข้ามา" — ขัดกับกล่องแดงข้างบน
+             และเรื่องนี้คือ ลซ.๒ ที่ลูกค้าส่งมาแล้วรอร้านส่งเครื่องให้ · พลาดแล้วลูกค้ารอเก้อ */
+          <p className="py-14 text-center text-[13px] text-gray-400">
+            {err ? 'ยังดูไม่ได้ — โหลดรายการไม่สำเร็จ (ไม่ได้แปลว่าไม่มีใครส่งมา)' : 'ยังไม่มีลูกค้าทำเรื่องเข้ามา'}
+          </p>
         ) : items.map((d) => {
           const open_ = openId === d.phone
           const idx = idxOf(d.stage)
