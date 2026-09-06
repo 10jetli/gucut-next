@@ -67,7 +67,8 @@ export const NAV_ITEMS: NavItem[] = [
     icon: '🛒',
     label: 'รายการซื้อ',
     children: [
-      soon('buy-create', 'สร้างรายการซื้อ'),
+      // ✅ จอจริง 6 ก.ย. — ทดลองส่งได้เต็มที่ · **ปุ่มส่งจริงยังปิด** (รออนุมัติแยก)
+      { href: '/core/purchases/new', label: 'สร้างรายการซื้อ' },
       { href: '/core/purchases', label: 'ดูรายการซื้อ' },
       // ⚠️ จอสั่งของกับโรงงาน **ไม่ใช่จอเดียวกับ "ดูรายการซื้อ" ของ ZORT**
       //    ของ ZORT คือใบสั่งซื้อ (PO) · ของนี้คือระบบติดตามมัดจำ/กำหนดส่งกับโรงงานจีน
@@ -91,7 +92,9 @@ export const NAV_ITEMS: NavItem[] = [
     label: 'สินค้า',
     children: [
       { href: '/core/stock', label: 'สินค้า' },
-      soon('product-add', 'เพิ่มสินค้า'),
+      // ✅ จอจริง 6 ก.ย. — **ปุ่มส่งจริงยังปิด** จนกว่าจะรู้ว่า ZORT ดันสินค้าใหม่
+      //    ขึ้นมาร์เก็ตเพลสอัตโนมัติหรือเปล่า (ถ้าใช่ ของทดสอบจะโผล่หน้าร้านลูกค้า)
+      { href: '/core/stock/new', label: 'เพิ่มสินค้า' },
       { href: '/core/bundles', label: 'สินค้าเป็นชุด' },
       { href: '/core/variants', label: 'สินค้าหลากคุณสมบัติ' },
       { href: '/core/categories', label: 'หมวดหมู่' },

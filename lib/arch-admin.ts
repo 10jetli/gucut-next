@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-06T04:08:11.730Z",
+  "generatedAt": "2026-09-06T14:20:42.192Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
@@ -49,8 +49,8 @@ export const ARCH_ADMIN = {
     ]
   },
   "pages": {
-    "count": 87,
-    "core": 53,
+    "count": 89,
+    "core": 55,
     "coreNames": [
       "/core",
       "/core/accounting-docs",
@@ -81,6 +81,7 @@ export const ARCH_ADMIN = {
       "/core/peak",
       "/core/pos",
       "/core/purchases",
+      "/core/purchases/new",
       "/core/quotations",
       "/core/quotations/new",
       "/core/receive",
@@ -98,6 +99,7 @@ export const ARCH_ADMIN = {
       "/core/soon/[key]",
       "/core/stock",
       "/core/stock/[sku]",
+      "/core/stock/new",
       "/core/transfers",
       "/core/usage",
       "/core/variants",
