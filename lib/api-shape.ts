@@ -59,6 +59,12 @@ export function fromExpectedEndpoint(d: unknown, required: string[]): boolean {
    · มีหัว + ไม่มีคีย์   ⇒ ท่อรุ่นใหม่แล้ว **แต่เส้นนั้นไม่มีอยู่จริง** */
 export interface CoreResult<T> {
   data: T | null
+  /** คำตอบดิบ **เสมอ** แม้รูปไม่ตรงที่ขอ
+   *  🔴 ต้องมี เพราะคำตอบที่ล้มเหลวจะไม่มีคีย์ประจำตัวของเส้นนั้น (มีแต่ `error`)
+   *     ถ้าคืนแต่ `data` ที่กรองแล้ว จอจะไม่เห็นข้อความ error เลย
+   *     แล้วขึ้นว่า "เส้นยังไม่ขึ้นเว็บ" ทั้งที่ความจริงคือ **เส้นขึ้นแล้วแต่ทำงานล้มเหลว**
+   *     ⇒ ผิดคนละเรื่องกัน และพาคนไปรอ deploy ที่ไม่ได้แก้อะไร */
+  raw: unknown
   /** ท่อรุ่นใหม่พอที่จะตัดสินได้ไหม (มีหัว x-core-build) */
   known: boolean
   /** เส้นที่ขอมีอยู่จริงและตอบมาไหม */
@@ -71,5 +77,5 @@ export async function coreJson<T>(url: string, required: string[]): Promise<Core
   const build = res.headers.get('x-core-build')
   const data = (await res.json().catch(() => null)) as T | null
   const hit = fromExpectedEndpoint(data, required)
-  return { data: hit ? data : null, known: !!build, ok: hit, build }
+  return { data: hit ? data : null, raw: data, known: !!build, ok: hit, build }
 }

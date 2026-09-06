@@ -48,8 +48,14 @@ export default function ZortClaimsPage() {
     try {
       const got = await coreJson<Resp>('/api/web/core?zortclaims=1', ['claimsNowFalse', 'inconclusive', 'capabilitiesGone'])
       setKnown(got.known)
+      /* 🔴 อ่าน error จาก **คำตอบดิบ** ไม่ใช่จากตัวที่กรองรูปแล้ว
+         คำตอบที่ล้มเหลวไม่มีคีย์ประจำตัวของเส้นนี้ (มีแต่ error) ⇒ ถ้าดูแต่ตัวกรอง
+         จอจะขึ้นว่า "ยังไม่ขึ้นเว็บ" ทั้งที่ความจริงคือ "ขึ้นแล้วแต่ล้มเหลว"
+         ⚠️ ฝั่งท่อเปลี่ยนสัญญา 6 ก.ย. 2569: เส้นที่ล้มเหลวคืน ok:false + error
+            (เดิมคืน ok:true เสมอแม้ล้มเหลว) ⇒ ข้อความจริงมาถึงจอได้แล้ว ห้ามกลืนทิ้ง */
+      const rawErr = (got.raw as { error?: string } | null)?.error
+      if (rawErr) throw new Error(rawErr)
       const r = got.data
-      if (r?.error) throw new Error(r.error)
       /* 🔴 พิสูจน์ต้นทางก่อนตีความ — ใช้หัว x-core-build เป็นหลัก (ดู lib/api-shape.ts)
          แยก "ท่อยังไม่ deploy" ออกจาก "ท่อใหม่แล้วแต่เส้นหาย" ให้ขาด */
       if (!got.ok || !r) { setNotDeployed(true); setD(null); return }
