@@ -56,6 +56,16 @@ interface ListResp {
   skip?: string
   from: string; to: string
   total: number; totalAmount: number
+  /* ── เงินสามตัวที่ต้องแยกให้ขาด (ฝั่งท่อเพิ่มให้ 6 ก.ย. 2569) ──────────────
+     🔴 `totalAmount` **รวมใบที่ยังไม่จ่าย** — วัดจริง 1 ม.ค.–6 ก.ย.:
+        บวมเกินจริง 11.2% (฿640,345 เป็นใบยังไม่จ่าย เกือบทั้งหมดคือซากช่องทางที่ปิดไปแล้ว)
+        ⇒ ใครอ่านหัวจอแล้วคิดว่านั่นคือ "เงินที่ได้" จะเกินจริงเกือบเจ็ดแสน
+     ⚠️ ที่มาของบั๊กน่าจำ: ในคำตอบเดียวกันมี storeScope · shipStatusScope · freshnessNote
+        ประกาศขอบเขตครบทุกอย่าง **แต่ตัวเลขเงินซึ่งสำคัญที่สุดกลับไม่มีอะไรกำกับ**
+     ⚠️ ไม่มีคีย์พวกนี้ = ท่อรุ่นเก่า ⇒ ต้องยังอ่านรู้เรื่อง ห้ามพังและห้ามเงียบ */
+  totalPaidAmount?: number
+  totalUnpaidAmount?: number
+  totalScope?: string
   /** ข้อความบอกว่าตัวเลขสถานะเชื่อไม่ได้ตอนนี้ + เหตุผล — null/ว่าง = เชื่อได้
    *  ⚠️ จอไม่ตัดสินเอง อ่านจากท่อล้วน ๆ (กลไกเดียวกับ marketplacesUnreliable) */
   statusUnreliable?: string | null
@@ -268,7 +278,22 @@ export default function CoreSalesPage() {
         title="รายการขาย"
         summary={
           <>
-            {data ? summaryLine(data.total, data.totalAmount) : 'กำลังโหลด…'}
+            {/* 🔴 หัวจอต้องบอกว่าเลขเงินคือ "เงินที่ได้" หรือ "ยอดรวมทุกใบ"
+                ท่อรุ่นใหม่ส่งแยกให้แล้ว ⇒ โชว์ยอดที่จ่ายแล้วเป็นตัวหลัก
+                และบอกส่วนที่ยังไม่จ่ายต่อท้าย **ไม่ใช่ซ่อน** (มันคืองานตามเก็บเงิน) */}
+            {!data ? 'กำลังโหลด…'
+              : typeof data.totalPaidAmount === 'number'
+                ? (
+                  <>
+                    {summaryLine(data.total, data.totalPaidAmount).replace('มูลค่าทั้งหมด', 'จ่ายแล้ว')}
+                    {typeof data.totalUnpaidAmount === 'number' && data.totalUnpaidAmount > 0 && (
+                      <span className="text-amber-700">
+                        {' '}· ยังไม่จ่ายอีก {data.totalUnpaidAmount.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท
+                      </span>
+                    )}
+                  </>
+                )
+                : summaryLine(data.total, data.totalAmount)}
             {/* ⚠️ ซ่อนวงเล็บตอนอยู่แท็บ "ยกเลิก" — แท็บนั้นเป็นใบยกเลิกทั้งหมดอยู่แล้ว
                 วงเล็บจะซ้ำกับตัวเลขหลักเป๊ะ ๆ แล้วคนอ่านสะดุดว่าทำไมบอกสองรอบ */}
             {voided && toneOfStatus(status) !== 'red' && (

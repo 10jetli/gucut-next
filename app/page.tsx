@@ -25,6 +25,11 @@ interface CoreOrderRow {
 interface StoreRow { source: string; name?: string; orders?: number; amount?: number }
 interface OrdersResp {
   skip?: string; total: number; totalAmount: number; rows: CoreOrderRow[]
+  /* 🔴 `totalAmount` **รวมใบที่ยังไม่จ่าย** — วัดจริง 6 ก.ย. 2569 บวมเกินจริง 11.2%
+     ⇒ การ์ด "ยอดขาย" บนหน้าแรกคือเลขที่คนดูบ่อยที่สุดในระบบ **ห้ามให้มันเกินจริง**
+     ⚠️ ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ ตกกลับไปใช้ totalAmount แต่ต้องเขียนกำกับว่ารวมใบยังไม่จ่าย */
+  totalPaidAmount?: number
+  totalUnpaidAmount?: number
   /** ร้านที่มีบิลจริง **ในช่วงที่กรองอยู่** — ห้ามเขียนจำนวนร้านตายตัว
    *  ช่วงที่ร้านไหนไม่มีบิลเลย จะไม่โผล่ในรายการนี้ ⇒ นับจากตรงนี้เท่านั้น */
   stores?: StoreRow[]
@@ -226,8 +231,14 @@ export default function DashboardPage() {
           <ZortStat
             icon="🛒" bg="#E8F0FE" fg="#2563eb"
             label="ยอดขายวันนี้ (บาท)"
-            value={coreError ? '—' : fmtMoney(today?.totalAmount ?? 0)}
-            note={!coreError && today ? `${fmtNum(today.total)} ใบ` : undefined}
+            value={coreError ? '—' : fmtMoney(today?.totalPaidAmount ?? today?.totalAmount ?? 0)}
+            note={!coreError && today
+              ? typeof today.totalPaidAmount === 'number'
+                ? `${fmtNum(today.total)} ใบ · เฉพาะที่จ่ายแล้ว`
+                  + (today.totalUnpaidAmount ? ` · ยังไม่จ่าย ${fmtMoney(today.totalUnpaidAmount)}` : '')
+                // ท่อรุ่นเก่ายังไม่แยกให้ ⇒ ต้องบอกว่าเลขนี้รวมใบที่ยังไม่จ่าย
+                : `${fmtNum(today.total)} ใบ · รวมใบที่ยังไม่จ่าย`
+              : undefined}
           />
           {/* ⚠️ **คำอธิบายเดิมบนสองใบนี้กลายเป็นคำโกหกไปแล้ว** (แก้ 4 ก.ย. 2569)
               เคยเขียนว่า "คลังเงายังไม่เก็บสถานะการชำระเงิน/การโอนสินค้า"
@@ -283,8 +294,13 @@ export default function DashboardPage() {
         />
         <StatCard
           icon="💰" tone="green" label="ยอดขาย (7 วัน)"
-          value={coreError ? '—' : fmtMoney(week?.totalAmount ?? 0)}
-          note={!coreError && week ? `${fmtNum(week.total)} ใบ` : undefined}
+          value={coreError ? '—' : fmtMoney(week?.totalPaidAmount ?? week?.totalAmount ?? 0)}
+          note={!coreError && week
+            ? typeof week.totalPaidAmount === 'number'
+              ? `${fmtNum(week.total)} ใบ · เฉพาะที่จ่ายแล้ว`
+                + (week.totalUnpaidAmount ? ` · ยังไม่จ่าย ${fmtMoney(week.totalUnpaidAmount)}` : '')
+              : `${fmtNum(week.total)} ใบ · รวมใบที่ยังไม่จ่าย`
+            : undefined}
         />
         <StatCard
           icon="🛍" tone="purple" label="SKU ในคลัง"
