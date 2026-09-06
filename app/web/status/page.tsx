@@ -63,7 +63,10 @@ export default function WebStatusPage() {
 
       {rows === null && !busy ? (
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] py-16 text-center">
-          <p className="text-[13px] text-gray-400">กด &ldquo;ตรวจตอนนี้&rdquo; เพื่อยิงเช็คของจริงทั้ง 22 เรื่อง</p>
+          {/* 🔴 **ห้ามเขียนจำนวนเรื่อง** — เลขนี้โตทุกครั้งที่ฝั่งท่อเพิ่มตัวตรวจ โดยไม่มีใครมาแก้จอ
+              เขียนไว้ 22 · ของจริง 6 ก.ย. 2569 = 33 (นับ `check(` ใน status.mjs)
+              ⇒ จอนี้รู้จำนวนจริงอยู่แล้วหลังกดตรวจ (rows.length) ไม่ต้องเดาไว้ล่วงหน้า */}
+          <p className="text-[13px] text-gray-400">กด &ldquo;ตรวจตอนนี้&rdquo; เพื่อยิงเช็คของจริงทุกเรื่อง</p>
           <p className="text-[11.5px] text-gray-300 mt-1">ตั้งใจให้กดเองเท่านั้น ไม่ตรวจอัตโนมัติ — ประหยัดทรัพยากร</p>
         </div>
       ) : busy && rows === null ? (
