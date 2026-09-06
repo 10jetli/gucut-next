@@ -115,7 +115,9 @@ export default function MarketplaceProductsPage() {
       <PageHead
         title="สินค้าบน Marketplace"
         summary={
-          loading
+          /* 🔴 ล้มเหลวแล้วห้ามโชว์จำนวนรหัส — จะอ่านเป็น "คลังว่าง" ทั้งที่แค่ดึงไม่ได้ */
+          error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+            : loading
             ? 'กำลังไล่ทุกหน้า…'
             : (
               <>
