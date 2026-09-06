@@ -104,7 +104,9 @@ export default function ReorderPage() {
         title="วางแผนสั่งซื้อซ้ำ"
         summary={
           <>
-            {d ? <>เฝ้าดู {fmtNum(rows.length)} รายการ · ต้องสั่งภายใน 7 วัน <b className="text-red-600">{fmtNum(urgent)}</b></> : 'กำลังโหลด…'}
+            {/* 🔴 ล้มเหลวแล้วห้ามค้างที่ "กำลังโหลด…" (แก้ 6 ก.ย. 2569) */}
+            {error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+              : d ? <>เฝ้าดู {fmtNum(rows.length)} รายการ · ต้องสั่งภายใน 7 วัน <b className="text-red-600">{fmtNum(urgent)}</b></> : 'กำลังโหลด…'}
             {' | '}
             {/* ⚠️ ZORT จอนี้ว่างเปล่าจริง ต้องเขียนบอก ไม่งั้นคนนึกว่าเราลอกไม่ครบ */}
             <span className="text-gray-400">จอนี้ของเราเอง — ของ ZORT ว่างเปล่าเพราะร้านไม่เคยตั้งกลุ่ม Lead Time</span>

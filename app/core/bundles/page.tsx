@@ -139,7 +139,9 @@ export default function CoreBundlesPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="สินค้าเป็นชุด"
-        summary={data ? `จำนวน ${fmtNum(data.total)} รายการ` : 'กำลังโหลด…'}
+        /* 🔴 ล้มเหลวแล้วห้ามค้างที่ "กำลังโหลด…" (แก้ 6 ก.ย. 2569) */
+        summary={error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+          : data ? `จำนวน ${fmtNum(data.total)} รายการ` : 'กำลังโหลด…'}
         actions={
           <>
             <BtnGhost onClick={() => load(offset)} disabled={loading}>
