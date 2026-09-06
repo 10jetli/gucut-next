@@ -13,6 +13,7 @@ export default function OtherIncomePage() {
         { label: 'การชำระเงิน' },
       ]}
       createLabel="สร้างรายได้อื่น"
+      emptyProof="เปิดช่วงวันกว้าง 10 ปี (2560-2569) แล้วยิงตรวจซ้ำ 6 ก.ย. 2569 — ไม่มีรายการเลย"
       soonKey="income-other"
       withImport
       withTabs
