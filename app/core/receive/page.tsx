@@ -11,11 +11,18 @@
 //    กรอกลอย ๆ คนจะใส่ ref มั่ว/ว่าง แล้วกดสองครั้งของเข้าคลังสองรอบโดยไม่มีอะไรเตือน
 //    เริ่มจากเลขใบ = ref ถูกล็อกให้เป็นเลขใบนั้นเสมอ คนพิมพ์ผิดไม่ได้
 //
-// ⚠️ **สองอย่างที่ ZORT ทำได้แต่เราทำไม่ได้ — ต้องเขียนบนจอ ห้ามเงียบ**
-//    ① ค้นด้วย **Tracking No.** — คลังเงาไม่ได้เก็บเลขพัสดุของใบโอน (ตาราง transfers
-//       มีแค่ number/reference) ⇒ ค้นด้วยเลขพัสดุจะไม่เจอ **ต้องบอก ไม่ใช่ขึ้นว่า "ไม่พบใบ"**
-//    ② **รายการสินค้าในใบ** — เราเก็บแต่หัวใบ ไม่มีบรรทัดสินค้า ⇒ เติมให้ล่วงหน้าไม่ได้
-//       คนต้องพิมพ์ SKU เอง (ขอเส้นอ่านบรรทัดสินค้าไว้กับฝั่งท่อแล้ว)
+// 🔴 **หาใบสองทาง และต้องบอกว่าได้มาจากทางไหน**
+//    ① `?transfer=` ดึงสดจาก ZORT — ได้บรรทัดสินค้า + เลขพัสดุ ⇒ เติมรายการให้ล่วงหน้าได้
+//    ② ถ้าดึงสดไม่ได้ ถอยไปหาในกระจก (`list=transfers`) — **มีแต่หัวใบ ไม่มีบรรทัดสินค้า**
+//    ⚠️ **ต้องเขียนบนจอว่าใบนี้มาจากทางไหน** ไม่งั้นคนจะงงว่าทำไมบางใบมีรายการมาให้ บางใบไม่มี
+//       แล้วสรุปว่าระบบพัง ทั้งที่เป็นคนละแหล่งข้อมูล
+//
+// ⚠️ **`lines: null` ≠ `lines: []`** — null คือ ZORT ไม่ได้ส่งช่องบรรทัดสินค้ามาเลย
+//    ส่วน [] คือส่งช่องมาแต่ใบนี้ไม่มีของ ⇒ เขียนคนละคำ (ฝั่งท่อกำชับ)
+//
+// ⚠️ **ค้นด้วยเลขพัสดุยังไม่ยืนยัน** — ZORT จอจริงค้นได้ แต่เส้น `?transfer=` ส่ง id ไปตรง ๆ
+//    ยังไม่มีใครยิงของจริงว่ามันรับเลขพัสดุด้วยไหม ⇒ **ห้ามเขียนบนจอว่าค้นได้**
+//    ให้ลองแล้วถ้าไม่เจอค่อยบอกว่าเป็นไปได้สามอย่าง (พิมพ์ผิด/เป็นเลขพัสดุ/ใบยังไม่เข้ากระจก)
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
@@ -24,6 +31,17 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, thaiDate } from 
 interface Doc {
   id?: string; number?: string; kind?: string; status?: string
   from_wh?: string; to_wh?: string; transfer_date?: string; reference?: string; note?: string
+}
+/** รายละเอียดใบโอนที่ดึงสดจาก ZORT (`?transfer=`) — มีบรรทัดสินค้ากับเลขพัสดุด้วย
+ *  ⚠️ `lines: null` = **ZORT ไม่ได้ส่งช่องบรรทัดสินค้ามาเลย**
+ *     `lines: []`   = ส่งช่องมาแต่ใบนี้ไม่มีของ
+ *     สองอย่างนี้ต้องเขียนคนละคำ (ฝั่งท่อกำชับ · คลาสสามสถานะเดิม) */
+interface Detail {
+  live?: boolean; number?: string; status?: string; date?: string
+  from?: string; to?: string; tracking?: string
+  lines?: { sku?: string; name?: string; qty?: number }[] | null
+  fields?: string[]
+  error?: string
 }
 interface Line { sku: string; qty: string }
 
@@ -64,6 +82,10 @@ export default function ReceivePage() {
   const [step, setStep] = useState(0)
   const [q, setQ] = useState('')
   const [doc, setDoc] = useState<Doc | null>(null)
+  /** ใบที่ดึงสดจาก ZORT — null = ไม่ได้/ยังไม่มี ⇒ ตกไปใช้ข้อมูลจากกระจกแทน */
+  const [detail, setDetail] = useState<Detail | null>(null)
+  /** ข้อมูลใบมาจากไหน — **ต้องบอกคนใช้** ของสดกับกระจกให้รายละเอียดไม่เท่ากัน */
+  const [src, setSrc] = useState<'live' | 'mirror' | null>(null)
   const [lines, setLines] = useState<Line[]>([{ sku: '', qty: '' }])
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -74,8 +96,28 @@ export default function ReceivePage() {
   const find = useCallback(async () => {
     const term = q.trim()
     if (!term) return
-    setBusy(true); setErr(''); setNotFound(false)
+    setBusy(true); setErr(''); setNotFound(false); setDetail(null); setSrc(null)
     try {
+      /* ① ลองดึงสดจาก ZORT ก่อน — ได้บรรทัดสินค้ากับเลขพัสดุมาด้วย
+         ⚠️ ดึงสดสำคัญตรงนี้จริง ๆ เพราะคนกำลังยืนอยู่หน้าคลังกับของตรงหน้า
+            กระจกซิงก์ทุกครึ่งชั่วโมง = ใบที่เพิ่งเปิดจะยังไม่มี */
+      const d: Detail = await fetch(`/api/web/core?transfer=${encodeURIComponent(term)}`)
+        .then((x) => x.json()).catch(() => ({ error: 'เรียกไม่สำเร็จ' }))
+      if (d && !d.error && d.number) {
+        setDetail(d); setSrc('live')
+        setDoc({ number: d.number, status: d.status, from_wh: d.from, to_wh: d.to, transfer_date: d.date })
+        /* ⚠️ เติมบรรทัดให้เฉพาะตอนมีของจริง — `[]` กับ `null` ห้ามเติมมั่ว
+           และ **ยังแก้ได้ทุกช่อง** เพราะของที่มาจริงอาจไม่ตรงใบ (มาไม่ครบ/ของเสีย) */
+        if (Array.isArray(d.lines) && d.lines.length) {
+          setLines(d.lines.map((l) => ({ sku: String(l.sku ?? ''), qty: String(l.qty ?? '') })))
+        } else {
+          setLines([{ sku: '', qty: '' }])
+        }
+        setStep(1)
+        return
+      }
+      /* ② ดึงสดไม่ได้ ⇒ ถอยไปหาในกระจก — **ต้องบอกว่านี่คือของจากกระจก**
+         ไม่งั้นคนจะงงว่าทำไมบางใบมีรายการสินค้ามาให้ บางใบไม่มี */
       const r = await fetch(`/api/web/core?list=transfers&limit=5&q=${encodeURIComponent(term)}`)
         .then((x) => x.json())
       if (r?.error) throw new Error(r.error)
@@ -83,7 +125,7 @@ export default function ReceivePage() {
       if (!rows.length) { setNotFound(true); setDoc(null); return }
       /* ⚠️ เลขที่ใบใน ZORT **ซ้ำกันได้จริง** (ฝั่งท่อเจอ 546 เลขซ้ำ) ⇒ ค้นแล้วอาจได้หลายใบ
          เลือกใบล่าสุดให้ก่อน แต่ต้องโชว์ให้เห็นว่ามีหลายใบ ไม่ใช่เลือกเงียบ ๆ */
-      setDoc(rows[0])
+      setDoc(rows[0]); setSrc('mirror'); setLines([{ sku: '', qty: '' }])
       setStep(1)
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e)); setDoc(null)
@@ -144,9 +186,10 @@ export default function ReceivePage() {
           <p className="text-[13px] text-gray-600">กรอกหมายเลขใบโอน หรือเลขอ้างอิง</p>
           {/* 🔴 ต้องบอกตั้งแต่ก่อนกรอก ว่าเลขพัสดุใช้ไม่ได้ — ไม่ใช่ปล่อยให้ค้นแล้วขึ้น "ไม่พบ"
               ซึ่งจะทำให้คนสรุปผิดว่า "ไม่มีใบนี้ในระบบ" ทั้งที่ระบบแค่ค้นด้วยเลขนั้นไม่เป็น */}
-          <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mt-2.5 inline-block leading-relaxed">
-            ⚠️ ค้นด้วย <b>เลขพัสดุ (Tracking No.)</b> ยังไม่ได้ — คลังเงายังไม่ได้เก็บเลขพัสดุของใบโอน
-            {' '}(ZORT ค้นได้) ⇒ ใช้เลขใบโอนหรือเลขอ้างอิงแทน
+          <p className="text-[11.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 mt-2.5 inline-block leading-relaxed">
+            หาให้สองทาง: <b>ถาม ZORT สดก่อน</b> (ได้รายการสินค้ากับเลขพัสดุมาด้วย)
+            {' '}ไม่ได้ค่อยหาในคลังเงา ·
+            {' '}<b>เลขพัสดุยังไม่ยืนยันว่าค้นได้</b> ZORT จอจริงค้นได้แต่เรายังไม่เคยยิงทดสอบ
           </p>
           <div className="mt-4 flex flex-col items-center gap-3">
             <input
@@ -171,8 +214,10 @@ export default function ReceivePage() {
             <div className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-4 text-left leading-relaxed">
               <b>ไม่พบใบโอนที่ตรงกับ &ldquo;{q.trim()}&rdquo;</b> — ค้นจากเลขใบและเลขอ้างอิงในคลังเงา
               <br />
-              เป็นไปได้สามอย่าง: พิมพ์ผิด · เป็นเลขพัสดุ (ยังค้นไม่ได้) · ใบยังไม่ถูกดูดเข้าคลังเงา
-              (ซิงก์ทุกครึ่งชั่วโมง)
+              ค้นสองทางแล้วทั้งคู่: ดึงสดจาก ZORT และหาในคลังเงา
+              <br />
+              เป็นไปได้: พิมพ์ผิด · เป็นเลขพัสดุ (<b>ยังไม่ยืนยันว่าค้นด้วยเลขพัสดุได้ไหม</b>) ·
+              ใบยังไม่ถูกดูดเข้าคลังเงาและ ZORT ก็ตอบไม่ได้
               <br />
               ถ้าของมาถึงแล้วจริงและต้องบันทึกเดี๋ยวนี้ ใช้{' '}
               <Link href="/core/moves" className="text-blue-600 hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
@@ -199,6 +244,19 @@ export default function ReceivePage() {
               {doc.status && <Pill tone="gray">{doc.status}</Pill>}
             </div>
             {doc.note && <p className="text-[12px] text-gray-500 mt-2">{doc.note}</p>}
+            {/* 🔴 บอกแหล่งข้อมูลเสมอ — ของสดกับกระจกให้รายละเอียดไม่เท่ากัน
+                คนต้องรู้ว่าที่ไม่มีรายการสินค้ามาให้ เป็นเพราะอะไร */}
+            <p className="text-[11.5px] mt-2">
+              {src === 'live'
+                ? <span className="text-emerald-700">● อ่านสดจาก ZORT เมื่อครู่</span>
+                : <span className="text-amber-700">
+                    ● อ่านจาก<b>คลังเงา</b> (ดึงสดจาก ZORT ไม่ได้) — มีแต่หัวใบ
+                    {' '}ไม่มีรายการสินค้าและเลขพัสดุ · ข้อมูลอาจเก่าได้ถึงครึ่งชั่วโมง
+                  </span>}
+              {detail?.tracking && (
+                <span className="text-gray-600"> · เลขพัสดุ <b>{detail.tracking}</b></span>
+              )}
+            </p>
             {/* 🔴 ZORT บังคับว่าใบต้องเป็น "รอโอน/รอบางส่วน" — เราไม่รู้ชุดคำสถานะทั้งหมด
                 ⇒ **เตือน ไม่บล็อก** บล็อกด้วยคำที่เราเดาเอง = ของมาถึงแล้วบันทึกไม่ได้ */}
             <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
@@ -211,11 +269,36 @@ export default function ReceivePage() {
           <div className="bg-white border border-gray-200 rounded-md p-4">
             <p className="text-[14px] font-semibold text-gray-900 mb-1">รายการที่รับเข้าจริง</p>
             {/* 🔴 บอกตรง ๆ ว่าทำไมไม่มีรายการมาให้ล่วงหน้า */}
-            <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-3 leading-relaxed">
-              ⚠️ <b>เติมรายการสินค้าให้ล่วงหน้าไม่ได้</b> — คลังเงาเก็บแต่หัวใบโอน ยังไม่มีบรรทัดสินค้า
-              {' '}(ZORT มี) ⇒ ต้องพิมพ์รหัสสินค้าเอง · <b>กรอกเท่าที่รับได้จริง</b>
-              ไม่ต้องกรอกให้ครบตามใบ ของมาไม่ครบก็บันทึกเท่าที่มา
-            </p>
+            {/* 🔴 สามข้อความ สามสถานะจริง — ห้ามยุบรวม
+                ① เติมมาให้แล้วจากใบ ② ใบนี้ไม่มีของ ③ ไม่มีช่องบรรทัดสินค้ามาให้เลย */}
+            {src === 'live' && Array.isArray(detail?.lines) && detail!.lines!.length > 0 && (
+              <p className="text-[11.5px] text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2.5 py-1.5 mb-3 leading-relaxed">
+                ✓ เติมรายการจากใบโอนให้แล้ว <b>{fmtNum(detail!.lines!.length)} บรรทัด</b> —
+                {' '}<b>แก้ได้ทุกช่อง</b> ของที่มาถึงจริงอาจไม่ตรงใบ (มาไม่ครบ · ของเสีย · มาเกิน)
+                {' '}<b>บันทึกตามของที่นับได้จริง ไม่ใช่ตามใบ</b>
+              </p>
+            )}
+            {src === 'live' && Array.isArray(detail?.lines) && detail!.lines!.length === 0 && (
+              <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-3 leading-relaxed">
+                ⚠️ <b>ใบนี้ไม่มีรายการสินค้าใน ZORT</b> (ไม่ใช่ระบบอ่านไม่ได้) — ถ้ามีของมาถึงจริง
+                {' '}ให้พิมพ์เอง แล้วไปดูที่ ZORT ว่าใบถูกต้องไหม
+              </p>
+            )}
+            {src === 'live' && detail?.lines === null && (
+              <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-3 leading-relaxed">
+                ⚠️ <b>ZORT ไม่ได้ส่งรายการสินค้ามากับใบนี้</b> — คนละเรื่องกับ &ldquo;ใบนี้ไม่มีของ&rdquo;
+                {' '}⇒ ต้องพิมพ์รหัสสินค้าเอง
+                {Array.isArray(detail?.fields) && detail!.fields!.length > 0 && (
+                  <> · ช่องที่ ZORT ส่งมาจริง: <span className="font-mono">{detail!.fields!.join(', ')}</span></>
+                )}
+              </p>
+            )}
+            {src === 'mirror' && (
+              <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-3 leading-relaxed">
+                ⚠️ <b>เติมรายการให้ล่วงหน้าไม่ได้</b> — ใบนี้อ่านจากคลังเงาซึ่งเก็บแต่หัวใบ
+                {' '}⇒ ต้องพิมพ์รหัสสินค้าเอง · <b>กรอกเท่าที่รับได้จริง</b>
+              </p>
+            )}
 
             <TableWrap>
               <table className="w-full">
