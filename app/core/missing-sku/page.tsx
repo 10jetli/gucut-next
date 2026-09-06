@@ -97,9 +97,16 @@ export default function CoreMissingSkuPage() {
       )}
 
       {data?.skip && <Card><p className="text-[13px] text-gray-500">⏳ {data.skip}</p></Card>}
+      {/* 🔴 **`note` คือคำอธิบายประกอบ ไม่ใช่สัญญาณว่ามีปัญหา** (แก้ 6 ก.ย. 2569)
+          เดิมเขียน `!data.note` ในเงื่อนไขแสดงตาราง ⇒ วันที่ฝั่งท่อเติม note
+          อธิบายผลที่สำเร็จเข้ามา (เช่น "เทียบกับภาพถ่ายวันที่ …") **ตารางจะหายทั้งจอ**
+          แล้วเหลือแต่ข้อความที่อ่านแล้วดูสมเหตุสมผล = จอบอกว่าไม่มีข้อมูล ทั้งที่มี
+          ⚠️ ฝั่งท่อเพิ่งโดนคลาสนี้กับตัวเองวันนี้ (`if (c.skip || c.note) return skip`
+             ทำให้แผนดันสต็อก Lazada ไม่เคยถูกคำนวณเลยสักครั้ง โดยจอขึ้นเหตุผลสวยงาม)
+          ⇒ ตอนนี้ note แสดงเป็นข้อมูลประกอบ **ไม่มีอำนาจซ่อนอะไร** · มีแต่ `skip` ที่ซ่อนได้ */}
       {data?.note && <Card><p className="text-[13px] text-gray-500">{data.note}</p></Card>}
 
-      {data && !data.skip && !data.note && (
+      {data && !data.skip && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <StatCard icon="🔢" tone="blue" label="รหัสที่คลังไม่รู้จัก" value={fmtNum(data.total ?? 0)} unit="ตัว"
