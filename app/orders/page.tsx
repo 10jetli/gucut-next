@@ -9,14 +9,26 @@ import Card from '@/components/ui/Card'
 export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([])
   const [loading, setLoading] = useState(true)
+  /** 🔴 ดึงไม่สำเร็จ ≠ ไม่มีออเดอร์ — เดิม `.catch(console.error)` กลืนเงียบ
+   *  แล้วจอเขียนว่า "ไม่มี orders" ซึ่งเป็นคำโกหกที่ไม่มีอะไรฟ้อง (เจอ 7 ก.ย. 2569)
+   *  ⚠️ จอนี้ไม่มีลิงก์ในเมนูแล้ว แต่ยังเปิดด้วย URL ได้ ⇒ ยังต้องพูดความจริง */
+  const [err, setErr] = useState('')
   const [store, setStore] = useState('1')
 
   useEffect(() => {
     setLoading(true)
+    setErr('')
     fetch(`/api/zort?endpoint=Order/GetOrders&limit=50&store=${store}`)
-      .then(r => r.json())
+      .then(async r => {
+        const d = await r.json()
+        /* ⚠️ แยกสองเหตุผลให้ขาด — "HTTP 200" ที่โผล่บนจอตอนรูปข้อมูลไม่ตรง อ่านแล้วงง
+           (200 แปลว่าไม่มีอะไรผิด แต่จอบอกว่าดึงไม่สำเร็จ ⇒ ขัดกันเอง) */
+        if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
+        if (!d || !('list' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการ)')
+        return d
+      })
       .then(d => setOrders(d?.list ?? []))
-      .catch(console.error)
+      .catch(e => { setErr(String(e?.message || e)); setOrders([]) })
       .finally(() => setLoading(false))
   }, [store])
 
@@ -32,7 +44,10 @@ export default function OrdersPage() {
       <div className="p-4">
         <Card padded={false} className="overflow-hidden">
           {loading && <LoadingState />}
-          {!loading && orders.length === 0 && (
+          {!loading && err && (
+            <p className="text-center py-8 text-red-600 text-sm">ดึงรายการไม่สำเร็จ — ยังไม่รู้ว่ามีออเดอร์ไหม<br /><span className="text-gray-400 text-[12px]">{err}</span></p>
+          )}
+          {!loading && !err && orders.length === 0 && (
             <p className="text-center py-8 text-gray-400 text-sm">ไม่มี orders</p>
           )}
           {orders.map(o => <OrderCard key={o.number} order={o} />)}
