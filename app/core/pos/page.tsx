@@ -136,6 +136,10 @@ export default function CorePosPage() {
   const [cats, setCats] = useState<Cat[]>([])
   /** ข้อความอธิบายที่มาของหมวด — อ่านจากท่อ ห้ามเขียนตายตัว (ตัวเลขขยับได้ทุกวัน) */
   const [catNote, setCatNote] = useState('')
+  /** 🔴 **สามสถานะ ไม่ใช่สอง** — ยังโหลดอยู่ / โหลดไม่สำเร็จ / โหลดได้แต่ไม่มีหมวด
+   *  เดิมยุบเหลือ "cats ว่าง" ทั้งสามกรณี ⇒ ตอนเซิร์ฟเวอร์ล้ม จอ POS ขึ้นว่า
+   *  "กำลังโหลดหมวด…" ค้างตลอดกาล **คนขายยืนอยู่หน้าลูกค้า** แล้วไม่รู้ว่าต้องทำอะไร */
+  const [catErr, setCatErr] = useState('')
   const [cat, setCat] = useState('')          // หมวดที่เปิดอยู่ ('' = ยังไม่ได้เลือก)
   const [catTotal, setCatTotal] = useState(0) // มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
   // ⚠️ ผลค้นหาก็ต้องบอกจำนวนที่เจอจริงเหมือนกัน — ไม่งั้นคนขายค้นแล้วเห็น 20 ตัว
@@ -291,10 +295,15 @@ export default function CorePosPage() {
     fetch('/api/web/core?list=poscats')
       .then((r) => r.json())
       .then((d) => {
-        setCats(Array.isArray(d?.cats) ? d.cats : [])
+        /* ⚠️ ฝั่งท่อเปลี่ยนสัญญา 6 ก.ย. 2569: เส้นที่ล้มเหลวคืน ok:false + error
+           (เดิมคืน ok:true เสมอ) ⇒ ข้อความจริงมาถึงจอได้แล้ว **ห้ามกลืนเป็นกองว่าง** */
+        if (d?.error) { setCatErr(String(d.error)); setCats([]); return }
+        if (!Array.isArray(d?.cats)) { setCatErr('เซิร์ฟเวอร์ไม่ได้ส่งรายชื่อหมวดมา'); setCats([]); return }
+        setCatErr('')
+        setCats(d.cats)
         setCatNote(typeof d?.note === 'string' ? d.note : '')
       })
-      .catch(() => setCats([]))
+      .catch((e) => { setCatErr(String(e?.message ?? e)); setCats([]) })
   }, [])
 
   // เปิดหมวด — ดึงได้ถึง 200 ตัว และต้องบอกด้วยว่าทั้งหมวดมีกี่ตัว
@@ -764,7 +773,17 @@ export default function CorePosPage() {
               )}
               {!cat && (
                 <div className="grid grid-cols-1 gap-1.5 max-h-[420px] overflow-y-auto">
-                  {cats.length === 0 && <p className="text-[12.5px] text-gray-400">กำลังโหลดหมวด…</p>}
+                  {/* 🔴 ล้มเหลว ≠ ยังโหลดอยู่ — คนขายยืนอยู่หน้าลูกค้า ต้องรู้ว่าให้รอหรือให้ค้นเอา */}
+                  {cats.length === 0 && !catErr && (
+                    <p className="text-[12.5px] text-gray-400">กำลังโหลดหมวด…</p>
+                  )}
+                  {catErr && (
+                    <p className="text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-2 leading-relaxed">
+                      ⚠️ <b>ดึงรายชื่อหมวดไม่ได้</b> — {catErr}
+                      <br />
+                      <b>ยังขายได้ตามปกติ</b> ให้ใช้ช่องค้นหาพิมพ์ชื่อหรือรหัสสินค้าแทนการกดเลือกหมวด
+                    </p>
+                  )}
                   {catNote && (
                     <p className="text-[11.5px] text-gray-500 leading-relaxed mb-1">
                       {catNote}
