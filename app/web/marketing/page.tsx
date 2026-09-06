@@ -65,8 +65,21 @@ export default function WebMarketingPage() {
     finally { setBusy(false) }
   }
 
+  /* 🔴 **โหลดค่าไม่สำเร็จ = จอค้างที่โครงกระดูกตลอดกาล** (แก้ 6 ก.ย. 2569)
+     เดิม return ตรงนี้ก่อนถึงบรรทัดที่แสดง msg ⇒ ข้อความ "โหลดค่าไม่สำเร็จ"
+     **ไม่มีวันถูกแสดงเลย** ⇒ คนเห็นกล่องเทากะพริบไปเรื่อย ๆ โดยไม่รู้ว่าเกิดอะไร
+     ⚠️ จอนี้เก็บรหัสพิกเซลการตลาด — เข้าใจผิดว่า "ยังไม่ได้ตั้ง" แล้วกรอกใหม่ทับ
+        = ยิงเหตุการณ์ซ้ำสองทาง ยอดโฆษณาเพี้ยน */
   if (!cfg) return (
-    <div className="max-w-2xl space-y-3 animate-pulse">{[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-2xl bg-gray-100" />)}</div>
+    <div className="max-w-2xl space-y-3">
+      {msg
+        ? (
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+            ⚠️ {msg} · <b>ไม่ได้แปลว่ายังไม่ได้ตั้งค่า</b> — อย่าเพิ่งกรอกใหม่ ลองรีเฟรชหน้าก่อน
+          </p>
+        )
+        : <div className="space-y-3 animate-pulse">{[...Array(4)].map((_, i) => <div key={i} className="h-20 rounded-2xl bg-gray-100" />)}</div>}
+    </div>
   )
 
   return (

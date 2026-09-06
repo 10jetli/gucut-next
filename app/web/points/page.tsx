@@ -57,8 +57,16 @@ export default function WebPointsPage() {
             </button>
           )}
         </div>
+        {/* 🔴 โหลดไม่สำเร็จ ≠ ยังไม่ได้ตั้งค่า — จอนี้เก็บกติกาแต้มสะสม
+            กรอกใหม่ทับของเดิม = กติกาแต้มเปลี่ยนโดยไม่ตั้งใจ (ลูกค้าถือแต้มอยู่จริง) */}
         {!cfg ? (
-          <div className="space-y-3 animate-pulse">{[...Array(3)].map((_, i) => <div key={i} className="h-10 rounded-xl bg-gray-50" />)}</div>
+          msg
+            ? (
+              <p className="rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[12.5px] text-amber-800">
+                ⚠️ {msg} · <b>ไม่ได้แปลว่ายังไม่ได้ตั้งค่า</b> — อย่าเพิ่งกรอกใหม่ ลองรีเฟรชหน้าก่อน
+              </p>
+            )
+            : <div className="space-y-3 animate-pulse">{[...Array(3)].map((_, i) => <div key={i} className="h-10 rounded-xl bg-gray-50" />)}</div>
         ) : (
           <>
             <div className="grid grid-cols-2 gap-3">
