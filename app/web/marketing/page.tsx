@@ -47,7 +47,18 @@ export default function WebMarketingPage() {
   const [busy, setBusy] = useState(false)
 
   useEffect(() => {
-    fetch('/api/web/marketing').then((r) => r.json()).then(setCfg).catch(() => setMsg('โหลดค่าไม่สำเร็จ'))
+    /* 🔴 `.then(setCfg)` ตรง ๆ = เอา **ก้อน error** ไปตั้งเป็นค่าตั้งค่า
+       แล้วโค้ดข้างล่างอ่าน cfg.meta.on ⇒ undefined.on ⇒ **ทั้งหน้าพัง**
+       (ตัวจับพลาดของเว็บรับไว้ได้ แต่ขึ้นข้อความอังกฤษที่เจ้าของร้านอ่านไม่รู้เรื่อง)
+       ⇒ ตรวจก่อนตั้งเสมอ: ต้องมีช่องที่จอใช้จริง (เจอด้วยท่อปลอม 7 ก.ย. 2569) */
+    fetch('/api/web/marketing').then((r) => r.json())
+      .then((d) => {
+        if (!d || d.error || typeof d !== 'object' || !('meta' in d)) throw new Error('ตอบมาไม่ครบ')
+        setCfg(d)
+      })
+      /* ⚠️ ข้อความสั้น ๆ พอ — จอเติมประโยค "ไม่ได้แปลว่ายังไม่ได้ตั้งค่า" ต่อท้ายให้อยู่แล้ว
+         เขียนซ้ำสองรอบอ่านแล้วสะดุด (เห็นตอนเปิดดูจริง 7 ก.ย. 2569) */
+      .catch(() => setMsg('โหลดค่าพิกเซลไม่สำเร็จ'))
   }, [])
 
   async function save() {

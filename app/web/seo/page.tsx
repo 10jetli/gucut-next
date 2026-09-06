@@ -30,7 +30,13 @@ export default function WebSeoPage() {
   const [msg, setMsg] = useState('')
 
   useEffect(() => {
-    fetch('/api/web/seo-audit').then((r) => r.json()).then(setAudit).catch(() => setMsg('โหลดผลตรวจไม่สำเร็จ'))
+    /* 🔴 เหตุผลเดียวกัน — ก้อน error ถูกตั้งเป็นผลตรวจ แล้ว audit.scores.seo พัง */
+    fetch('/api/web/seo-audit').then((r) => r.json())
+      .then((d) => {
+        if (!d || d.error || typeof d !== 'object' || !('scores' in d)) throw new Error('ตอบมาไม่ครบ')
+        setAudit(d)
+      })
+      .catch(() => setMsg('โหลดผลตรวจไม่สำเร็จ — ยังดูคะแนนไม่ได้'))
     fetch('/api/web/ai-bots').then((r) => r.json()).then((d: BotDays) => {
       // รวมยอดต่อบอต: วันนี้ + 7 วันล่าสุด (ข้อมูลมาเป็นราย "วัน → บอต → จำนวนหน้า")
       const days = d?.days || {}

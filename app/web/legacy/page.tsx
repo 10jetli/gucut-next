@@ -22,7 +22,20 @@ export default function WebLegacyPage() {
   const [err, setErr] = useState('')
 
   useEffect(() => {
-    fetch('/api/web/legacy').then((r) => r.json()).then(setSum).catch(() => {})
+    /* 🔴 เหตุผลเดียวกัน + เดิม `.catch(() => {})` **กลืนเงียบ** ⇒ พังแบบไม่มีใครรู้ว่าทำไม */
+    fetch('/api/web/legacy').then((r) => r.json())
+      .then((d) => {
+        /* ⚠️ "เป็น object" ไม่พอ — ต้องมีช่องที่จอเอาไปคำนวณจริง
+           ป้อนก้อนที่ไม่มี orders/customers/revenue เข้าไป จอขึ้น
+           "[object Object] ออเดอร์ · ยอดรวม ฿NaN" ให้เห็นบนจอเลย (เจอตอนทดสอบทางปกติ 7 ก.ย. 2569)
+           ⇒ ตรวจ **ชนิดของแต่ละช่อง** ไม่ใช่แค่ว่ามีก้อนมา */
+        if (!d || d.error || typeof d !== 'object'
+          || typeof d.orders !== 'number' || typeof d.customers !== 'number' || typeof d.revenue !== 'number') {
+          throw new Error('ตอบมาไม่ครบ')
+        }
+        setSum(d)
+      })
+      .catch(() => setErr('โหลดสรุปลูกค้าเก่าไม่สำเร็จ — ยังดูตัวเลขไม่ได้'))
   }, [])
 
   const search = useCallback(async (term: string) => {

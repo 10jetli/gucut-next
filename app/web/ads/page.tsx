@@ -119,7 +119,13 @@ export default function WebAdsPage() {
   const [copied, setCopied] = useState(false)
 
   useEffect(() => {
-    fetch('/api/web/ad-stats').then((r) => r.json()).then(setCfg).catch(() => setMsg('โหลดการตั้งค่าไม่สำเร็จ'))
+    /* 🔴 เหตุผลเดียวกับจอพิกเซล — เอาก้อน error ไปตั้งเป็น cfg แล้ว cfg.google.pushedAt พัง */
+    fetch('/api/web/ad-stats').then((r) => r.json())
+      .then((d) => {
+        if (!d || d.error || typeof d !== 'object' || !('google' in d)) throw new Error('ตอบมาไม่ครบ')
+        setCfg(d)
+      })
+      .catch(() => setMsg('โหลดการตั้งค่าไม่สำเร็จ — ยังดูค่าโฆษณาไม่ได้'))
   }, [])
 
   async function run(d = days) {
