@@ -66,7 +66,11 @@ const CARD_LIMIT = 100
 interface InBundle { bundleSku: string; bundleName?: string; qty?: number }
 interface MemberResp { applied?: { member?: string }; rows?: InBundle[]; collectedAt?: string }
 /** ยอดขายรายเดือนของรหัสนี้ — ถามทีละเดือนด้วย `topproducts&sku=` */
-interface MonthPoint { label: string; qty: number; amount: number }
+/** จุดหนึ่งเดือนบนกราฟ
+ *  🔴 `amount` ที่ท่อส่งมา **รวมใบที่ยังไม่จ่าย** (ฝั่งท่อวัดจริง 6 ก.ย. 2569: ทั้งระบบ ~฿564,000)
+ *     ⇒ กราฟรายได้รายเดือนสูงเกินจริงมาตลอด · ท่อเพิ่ม unpaidAmount ให้แล้ว
+ *  ⚠️ ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ วาดเหมือนเดิมได้ **แต่ต้องเขียนกำกับว่ารวมใบที่ยังไม่จ่าย** */
+interface MonthPoint { label: string; qty: number; amount: number; unpaid: number }
 
 /** เดือนไทยย่อ — ใช้เป็นป้ายแกนนอน */
 const TH_MON = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
@@ -87,10 +91,23 @@ function SalesBars({ points, mode }: { points: MonthPoint[]; mode: 'amount' | 'q
       {points.map((p, i) => {
         const v = mode === 'amount' ? p.amount : p.qty
         const h = (v / max) * (H - BOTTOM - 22)
+        /* 🔴 แยกส่วนที่ **ยังไม่จ่าย** ออกให้เห็น แทนที่จะรวมเป็นแท่งเดียว
+           แท่งทึบ = เงินที่ได้จริง · แท่งจาง = ยังไม่จ่าย
+           ⇒ กราฟรายได้ที่รวมเงินที่ยังไม่ได้รับ อ่านแล้วเข้าใจผิดว่าเดือนนั้นขายดี
+           ⚠️ ท่อรุ่นเก่าไม่ส่ง unpaid ⇒ เป็น 0 ⇒ กราฟหน้าตาเหมือนเดิมทุกประการ */
+        const unpaid = mode === 'amount' ? Math.max(0, Math.min(p.unpaid, p.amount)) : 0
+        const hUnpaid = (unpaid / max) * (H - BOTTOM - 22)
+        const hPaid = Math.max(h - hUnpaid, 0)
         return (
           <g key={p.label}>
-            <rect x={x(i) - bw / 2} y={H - BOTTOM - h} width={bw} height={Math.max(h, 1)} rx={3}
+            <rect x={x(i) - bw / 2} y={H - BOTTOM - hPaid} width={bw} height={Math.max(hPaid, v > 0 ? 1 : 0)} rx={3}
               className="fill-[#7c9cf0]" />
+            {hUnpaid > 0 && (
+              <rect x={x(i) - bw / 2} y={H - BOTTOM - h} width={bw} height={hUnpaid} rx={3}
+                className="fill-[#f0c987]">
+                <title>ยังไม่จ่าย {Math.round(unpaid).toLocaleString('th-TH')} บาท</title>
+              </rect>
+            )}
             {v > 0 && (
               <text x={x(i)} y={H - BOTTOM - h - 5} textAnchor="middle" className="fill-gray-500 text-[9px]">
                 {mode === 'amount'
@@ -217,7 +234,7 @@ export default function ProductDetailPage() {
         const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
         if (`${ym}-28` < HISTORY_FROM) continue
         key.push(ym)
-        slots.push({ label: `${TH_MON[d.getMonth()]}/${String(d.getFullYear() + 543).slice(2)}`, qty: 0, amount: 0 })
+        slots.push({ label: `${TH_MON[d.getMonth()]}/${String(d.getFullYear() + 543).slice(2)}`, qty: 0, amount: 0, unpaid: 0 })
       }
       const qs = new URLSearchParams({
         list: 'topproducts', sku, by: 'month',
@@ -239,6 +256,8 @@ export default function ProductDetailPage() {
         if (i >= 0) {
           slots[i].qty = Number(it.qty) || 0
           slots[i].amount = Number(it.amount) || 0
+          // ⚠️ ท่อรุ่นเก่าไม่ส่งช่องนี้ ⇒ เป็น 0 แล้วจอจะไม่พูดถึงเรื่องยังไม่จ่ายเลย (ไม่ใช่พูดผิด)
+          slots[i].unpaid = Number(it.unpaidAmount) || 0
         }
       }
       setChart(slots)
@@ -498,7 +517,25 @@ export default function ProductDetailPage() {
             </div>
 
             {chart
-              ? <SalesBars points={chart} mode={chartMode} />
+              ? (
+                <>
+                  <SalesBars points={chart} mode={chartMode} />
+                  {/* 🔴 มีคำอธิบายสีเฉพาะตอนมีของจริง — ไม่มีเงินค้างก็ไม่ต้องรกจอ */}
+                  {chartMode === 'amount' && chart.some((p) => p.unpaid > 0) && (
+                    <p className="text-[11.5px] text-gray-500 mt-1 flex items-center gap-3 flex-wrap">
+                      <span className="flex items-center gap-1">
+                        <span className="inline-block w-3 h-3 rounded-sm bg-[#7c9cf0]" /> เงินที่ได้จริง
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <span className="inline-block w-3 h-3 rounded-sm bg-[#f0c987]" /> ยังไม่จ่าย
+                      </span>
+                      <span className="text-gray-400">
+                        — รวมกันคือยอดขายตามใบ · <b>ส่วนจางยังไม่ใช่เงินที่ได้รับ</b>
+                      </span>
+                    </p>
+                  )}
+                </>
+              )
               : (
                 <div className="py-10 text-center">
                   <p className="text-[13px] text-gray-600">กดปุ่ม <b>แสดงกราฟ</b> เพื่อคิดยอดขายรายเดือน</p>
