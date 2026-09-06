@@ -17,6 +17,7 @@
 //   node scripts/fake-pipe.mjs 4010 failedparts ← 200 แต่บอกเองว่าบางส่วนล้ม (failed[])
 //   node scripts/fake-pipe.mjs 4010 good    ← ตอบครบทุกช่อง (ใช้พิสูจน์ว่าตัวกันไม่ฟ้องมั่ว)
 //   node scripts/fake-pipe.mjs 4010 skip    ← สถานะที่สาม "ทำต่อไม่ได้" (ต้องขึ้นเหลือง ไม่ใช่แดง)
+//   node scripts/fake-pipe.mjs 4010 nocounts ← มีงานค้างแต่ไม่มียอดแยกกอง (เทสคำเตือน "ใบผี")
 // แล้วอีกหน้าต่าง:
 //   cd ~/gucut-next && GUCUT_WEB_BASE=http://127.0.0.1:4010 GUCUT_WEB_ADMIN_KEY=devkey123 \
 //     SITE_PASSWORD=devpass npx next dev -p 3101
@@ -167,6 +168,11 @@ const srv = createServer(async (req, res) => {
       failed: ['recon', 'stock', 'channels', 'shopee'],
       failedWhy: { recon: 'D1 ตอบช้าเกินกำหนด', stock: 'ไม่มีสิทธิ์อ่านตาราง' },
     }))
+  }
+  if (mode === 'nocounts') {
+    /* มีรายการงานค้างจริง แต่ **ไม่มีช่อง counts** — ใช้ทดสอบว่าคำเตือน "ใบผี" หายไปเงียบ ๆ ไหม */
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ 'ต้องส่งของ': [{ number: 'SO-9', channel: 'Shopee', day: '2026-09-05', amount: 500 }] }))
   }
   if (mode === 'empty') {
     res.writeHead(200, { 'content-type': 'application/json' })
