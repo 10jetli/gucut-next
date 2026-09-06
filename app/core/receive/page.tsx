@@ -385,12 +385,25 @@ export default function ReceivePage() {
       {step === 2 && result && (
         <div className="bg-white border border-gray-200 rounded-md p-6">
           <p className="text-[17px] font-semibold text-emerald-700 mb-1">✓ บันทึกเรียบร้อย</p>
-          <p className="text-[13px] text-gray-700 leading-relaxed">
-            ส่งไป <b>{fmtNum(result.sent ?? 0)}</b> บรรทัด ·
-            บันทึกใหม่ <b>{fmtNum(result.added ?? 0)}</b> ·
-            {/* 🔴 ของซ้ำไม่ใช่ความผิดพลาด — ต้องอธิบาย ไม่ใช่โชว์เลขเฉย ๆ ให้คนตกใจ */}
-            {' '}เป็นของที่เคยบันทึกไว้แล้ว <b>{fmtNum(result.duplicate ?? 0)}</b>
-          </p>
+          {/* 🔴 **ท่อไม่บอกจำนวน ≠ บันทึกได้ศูนย์บรรทัด** — เดิมเขียน `?? 0`
+              ⇒ ถ้าท่อตอบสำเร็จแต่ไม่ส่งเลขมา จอจะขึ้น "✓ บันทึกเรียบร้อย · บันทึกใหม่ 0"
+              ซึ่งอ่านแล้วขัดกันเอง และคนจะไปกรอกซ้ำเพราะคิดว่าไม่เข้า
+              ⇒ ไม่รู้ต้องเขียนว่าไม่รู้ พร้อมบอกว่าไปดูของจริงได้ที่ไหน */}
+          {typeof result.added === 'number' ? (
+            <p className="text-[13px] text-gray-700 leading-relaxed">
+              ส่งไป <b>{fmtNum(result.sent ?? 0)}</b> บรรทัด ·
+              บันทึกใหม่ <b>{fmtNum(result.added)}</b> ·
+              {/* 🔴 ของซ้ำไม่ใช่ความผิดพลาด — ต้องอธิบาย ไม่ใช่โชว์เลขเฉย ๆ ให้คนตกใจ */}
+              {' '}เป็นของที่เคยบันทึกไว้แล้ว <b>{fmtNum(result.duplicate ?? 0)}</b>
+            </p>
+          ) : (
+            <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 leading-relaxed">
+              ⚠️ ท่อรับเรื่องแล้วแต่ <b>ไม่ได้บอกจำนวนบรรทัดที่บันทึก</b> —
+              {' '}<b>ยังไม่ต้องกรอกซ้ำ</b> ให้เปิด{' '}
+              <Link href="/core/moves" className="text-blue-600 hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
+              ดูว่าเข้าครบไหมก่อน{doc?.number ? <> (เลขใบ <b>{doc.number}</b>)</> : null}
+            </p>
+          )}
           {!!result.duplicate && (
             <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-2.5 leading-relaxed">
               บรรทัดที่ซ้ำ <b>ไม่ได้ทำให้ของเข้าคลังสองรอบ</b> — ระบบกันไว้ให้แล้วจากเลขใบเดียวกัน

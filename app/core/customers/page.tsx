@@ -102,10 +102,16 @@ export default function CoreContactsPage() {
                 {typeof data.total === 'number'
                   ? <>จำนวน {fmtNum(data.total)} รายการ</>
                   : <>ต้องพิมพ์คำค้นก่อนถึงจะดูส่วนนี้ได้</>}
-                {typeof data.withPhone === 'number' && (
+                {/* ⚠️ **ท่อไม่ส่งเลขมา ≠ ไม่มีใครมีอีเมล** — เดิมเขียน `?? 0`
+                    ถ้าท่อรุ่นเก่าไม่มีคีย์นั้น จอจะประกาศว่า "มีอีเมล 0" เป็นข้อเท็จจริง
+                    ทั้งที่แปลว่า "ไม่รู้" ⇒ คนอ่านอาจสั่งงานจากเลขนั้น (เช่น เลิกทำเรื่องอีเมล)
+                    ⇒ ไม่รู้ต้องเขียนว่าไม่รู้ · เขียนเลขได้เฉพาะตอนมีเลขจริง */}
+                {(typeof data.withPhone === 'number' || typeof data.withEmail === 'number'
+                  || typeof data.withTax === 'number') && (
                   <span className="text-gray-400">
-                    {' '}· มีเบอร์ {fmtNum(data.withPhone)} · มีอีเมล {fmtNum(data.withEmail ?? 0)}
-                    {' '}· มีเลขผู้เสียภาษี {fmtNum(data.withTax ?? 0)}
+                    {' '}· มีเบอร์ {typeof data.withPhone === 'number' ? fmtNum(data.withPhone) : 'ไม่รู้'}
+                    {' '}· มีอีเมล {typeof data.withEmail === 'number' ? fmtNum(data.withEmail) : 'ไม่รู้'}
+                    {' '}· มีเลขผู้เสียภาษี {typeof data.withTax === 'number' ? fmtNum(data.withTax) : 'ไม่รู้'}
                   </span>
                 )}
               </>
