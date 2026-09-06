@@ -120,7 +120,13 @@ export default function WebCouponsPage() {
         ) : list.length === 0 ? (
           <div className="py-14 text-center">
             <span className="inline-flex w-12 h-12 items-center justify-center rounded-2xl bg-gray-50 text-gray-300 mb-3"><I d={IC.tag} className="w-6 h-6" /></span>
-            <p className="text-[13px] text-gray-400">ยังไม่มีโค้ด — กด &ldquo;สร้างโค้ดใหม่&rdquo; ได้เลย</p>
+            {/* 🔴 **โหลดไม่สำเร็จ ≠ ยังไม่มีโค้ด** (แก้ 6 ก.ย. 2569)
+                ตอนโหลดล้ม โค้ดเดิมทำ setList([]) ⇒ จอเขียนว่า "ยังไม่มีโค้ด — กดสร้างใหม่ได้เลย"
+                ⇒ **ชวนให้สร้างโค้ดซ้ำกับที่มีอยู่แล้ว** ซึ่งอาจชนกับโค้ดเดิมที่ลูกค้าถืออยู่ */}
+            <p className="text-[13px] text-gray-400">
+              {msg ? 'ยังดูไม่ได้ — โหลดรายการไม่สำเร็จ (ไม่ได้แปลว่าไม่มีโค้ด อย่าเพิ่งสร้างใหม่)'
+                : 'ยังไม่มีโค้ด — กด “สร้างโค้ดใหม่” ได้เลย'}
+            </p>
           </div>
         ) : list.map((c) => {
           const expired = c.until && Date.parse(c.until) < Date.now()

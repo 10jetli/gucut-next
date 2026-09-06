@@ -22,6 +22,9 @@ export default function WebSeoPage() {
   const [audit, setAudit] = useState<Audit | null>(null)
   const [tab, setTab] = useState<Cat>('seo')
   const [bots, setBots] = useState<BotRow[] | null>(null)
+  /** 🔴 ดึงสถิติบอตไม่สำเร็จ — คนละเรื่องกับ "ไม่มีบอตเข้ามา"
+   *  ข้อมูลนี้ใช้ตัดสินใจเรื่อง SEO/AI ⇒ สรุปผิดจากข้อมูลที่ไม่มีอยู่จริง แย่กว่าไม่มีข้อมูล */
+  const [botErr, setBotErr] = useState(false)
   const [blockable, setBlockable] = useState<Blockable[] | null>(null)
   const [blocked, setBlocked] = useState<Set<string>>(new Set())
   const [msg, setMsg] = useState('')
@@ -44,7 +47,7 @@ export default function WebSeoPage() {
         }
       }
       setBots(Array.from(agg.values()))
-    }).catch(() => setBots([]))
+    }).catch(() => { setBots([]); setBotErr(true) })
     fetch('/api/web/bot-rules').then((r) => r.json()).then((d) => {
       setBlockable(Array.isArray(d.blockable) ? d.blockable : [])
       setBlocked(new Set(Array.isArray(d.blocked) ? d.blocked : []))
@@ -122,7 +125,13 @@ export default function WebSeoPage() {
           {bots === null ? (
             <p className="px-5 py-6 text-[12.5px] text-gray-400">กำลังโหลด…</p>
           ) : bots.filter((b) => b.week > 0).length === 0 ? (
-            <p className="px-5 py-6 text-[12.5px] text-gray-400 text-center">7 วันนี้ยังไม่มีบอต AI เข้ามา</p>
+            /* 🔴 **ดึงสถิติไม่ได้ ≠ ไม่มีบอตเข้ามา** (แก้ 6 ก.ย. 2569)
+               ข้อความเดิมพาไปสรุปว่า AI ยังไม่เก็บเว็บเรา ซึ่งเป็นข้อมูลที่ใช้ตัดสินใจเรื่อง SEO
+               ⇒ สรุปผิดจากข้อมูลที่ไม่มีอยู่จริง แย่กว่าไม่มีข้อมูล */
+            <p className="px-5 py-6 text-[12.5px] text-gray-400 text-center">
+              {botErr ? 'ยังดูไม่ได้ — ดึงสถิติบอตไม่สำเร็จ (ไม่ได้แปลว่าไม่มีบอตเข้ามา)'
+                : '7 วันนี้ยังไม่มีบอต AI เข้ามา'}
+            </p>
           ) : bots.filter((b) => b.week > 0).sort((a, b) => b.week - a.week).slice(0, 10).map((b) => (
             <div key={b.bot} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
               <span className="flex-1 text-[13px] font-semibold text-gray-800">{b.bot}</span>
