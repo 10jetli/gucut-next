@@ -33,9 +33,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
-  EmptyState, Pill, relDay, thaiDate,
+  EmptyState, Pill, relDay, thaiDate, EndpointMissing,
 } from '@/components/zort'
-import { fromExpectedEndpoint } from '@/lib/api-shape'
+import { coreJson } from '@/lib/api-shape'
 
 interface Row {
   number?: string; reference?: string; customer?: string
@@ -70,17 +70,19 @@ export default function ReturnOrdersPage() {
   /** ⚠️ เส้นยังไม่ขึ้นเว็บ ≠ ดึงไม่สำเร็จ ≠ ไม่มีใบสักใบ — สามอย่างนี้ต้องเขียนคนละคำ
    *     เส้นที่ยังไม่มีจะ **ตอบ 200 พร้อมเนื้อหาอื่น** ⇒ ตรวจรูปร่าง ไม่ใช่ดูแค่รหัส 200 */
   const [notDeployed, setNotDeployed] = useState(false)
+  /** ท่อรุ่นใหม่พอจะตัดสินได้ไหม (มีหัว x-core-build) — แยก 'ยังไม่ deploy' ออกจาก 'เส้นหาย' */
+  const [known, setKnown] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setError(''); setNotDeployed(false)
     try {
-      const r: Resp = await fetch(`/api/web/core?list=returnorders&limit=${LIMIT}`).then((x) => x.json())
+      const got = await coreJson<Resp>(`/api/web/core?list=returnorders&limit=${LIMIT}`, ['rows', 'live'])
+      setKnown(got.known)
+      const r = got.data
       if (r?.error) throw new Error(r.error)
-      /* 🔴 `rows` อย่างเดียวไม่พอ — เส้นอื่นก็ส่ง rows เหมือนกัน
-         และคำตอบหน้าแรกมี stock/channels ที่หน้าตาคล้ายรายการ (ดู lib/api-shape.ts) */
-      if (!fromExpectedEndpoint(r, ['rows', 'live']) || !Array.isArray(r?.rows)) {
-        setNotDeployed(true); setD(null); return
-      }
+      /* 🔴 พิสูจน์ต้นทางก่อนตีความ — ใช้หัว x-core-build เป็นหลัก (ดู lib/api-shape.ts)
+         แยก "ท่อยังไม่ deploy" ออกจาก "ท่อใหม่แล้วแต่เส้นหาย" ให้ขาด */
+      if (!got.ok || !r) { setNotDeployed(true); setD(null); return }
       setD(r)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)
@@ -130,11 +132,8 @@ export default function ReturnOrdersPage() {
       {loading && !d && <LoadingState />}
 
       {!loading && notDeployed && (
-        <div className="text-[13px] text-amber-800 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
-          ⚠️ <b>เส้นอ่านใบคืนของยังไม่ขึ้นเว็บ</b> — จอนี้จะมีข้อมูลเองหลัง deploy รอบถัดไป
-          <br />
-          <b>ไม่ได้แปลว่าไม่มีใบคืนของ</b> — แปลว่ายังอ่านไม่ได้เท่านั้น
-        </div>
+        <EndpointMissing known={known} what="อ่านใบคืนของ"
+          effect="ไม่ได้แปลว่าไม่มีใบคืนของ — แปลว่ายังอ่านไม่ได้เท่านั้น" />
       )}
 
       {!loading && !error && d && (

@@ -20,8 +20,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, Pill, thaiDate } from '@/components/zort'
-import { fromExpectedEndpoint } from '@/lib/api-shape'
+import { PageHead, BtnGhost, Pill, thaiDate, EndpointMissing } from '@/components/zort'
+import { coreJson } from '@/lib/api-shape'
 
 interface Item { what?: string; at?: string; probe?: string; note?: string; untested?: boolean }
 interface Method {
@@ -44,16 +44,19 @@ export default function ZortNoApiPage() {
    *     ของเดิมที่ยังไม่มีพารามิเตอร์นี้จะ **ตอบ 200 พร้อมเนื้อหาอย่างอื่น** (ตกไปทางเดิม)
    *     ⇒ ถ้าเช็คแค่ 200 จะได้จอว่างเปล่าที่ดูเหมือน "ไม่มีข้อจำกัดอะไรเลย" ซึ่งกลับหัวความจริง */
   const [notDeployed, setNotDeployed] = useState(false)
+  /** ท่อรุ่นใหม่พอจะตัดสินได้ไหม (มีหัว x-core-build) — แยก 'ยังไม่ deploy' ออกจาก 'เส้นหาย' */
+  const [known, setKnown] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setError(''); setNotDeployed(false)
     try {
-      const r: Resp = await fetch('/api/web/core?zortnoapi=1').then((x) => x.json())
+      const got = await coreJson<Resp>('/api/web/core?zortnoapi=1', ['noApi', 'canButNotBuilt', 'method'])
+      setKnown(got.known)
+      const r = got.data
       if (r?.error) throw new Error(r.error)
-      // 🔴 พิสูจน์ต้นทางก่อนตีความ (ดู lib/api-shape.ts)
-      if (!fromExpectedEndpoint(r, ['noApi', 'canButNotBuilt', 'method'])) {
-        setNotDeployed(true); setD(null); return
-      }
+      /* 🔴 พิสูจน์ต้นทางก่อนตีความ — ใช้หัว x-core-build เป็นหลัก (ดู lib/api-shape.ts)
+         แยก "ท่อยังไม่ deploy" ออกจาก "ท่อใหม่แล้วแต่เส้นหาย" ให้ขาด */
+      if (!got.ok || !r) { setNotDeployed(true); setD(null); return }
       setD(r)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)
@@ -83,12 +86,8 @@ export default function ZortNoApiPage() {
       {loading && <LoadingState />}
 
       {!loading && notDeployed && (
-        <div className="text-[13px] text-amber-800 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
-          ⚠️ <b>ยังดึงรายการไม่ได้</b> — เส้น <code>?zortnoapi=1</code> ยังไม่ขึ้นเว็บ
-          {' '}(เว็บตอบกลับมาเป็นเนื้อหาอย่างอื่น) · จอนี้จะขึ้นเองหลัง deploy รอบถัดไป
-          <br />
-          <b>ไม่ได้แปลว่าไม่มีข้อจำกัด</b> — แปลว่ายังอ่านรายการไม่ได้เท่านั้น
-        </div>
+        <EndpointMissing known={known} what="รายการที่ ZORT ไม่เปิดให้"
+          effect="ไม่ได้แปลว่าไม่มีข้อจำกัด — แปลว่ายังอ่านรายการไม่ได้เท่านั้น" />
       )}
 
       {!loading && !error && d && (

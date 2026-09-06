@@ -44,3 +44,32 @@ export function fromExpectedEndpoint(d: unknown, required: string[]): boolean {
   const o = d as Record<string, unknown>
   return required.some((k) => k in o)
 }
+
+/* ── ทางที่แน่นที่สุด: หัวข้อมูล `x-core-build` ────────────────────────────
+   ฝั่งท่อติดหัวนี้ให้ **ทุกคำตอบ** ของ /api/core ตั้งแต่ 6 ก.ย. 2569
+   (ค่าคือเวลาที่ build ท่อรุ่นนั้น) · ท่อกลางส่งต่อหัวที่ขึ้นต้นด้วย x- อยู่แล้ว
+
+   🔴 ทำไมดีกว่าเดาจาก body: **มันมากับทุกคำตอบโดยไม่ต้องมีใครจำ**
+      สัญญาที่พึ่งความจำของคน (อย่าลืมใส่คีย์ · อย่าลืมบอกก่อนเปลี่ยนรูป)
+      จะพลาดวันที่คนเหนื่อย — หัวข้อมูลไม่ต้องพึ่งใครจำ
+
+   ตัดสินได้ 3 ทางแบบไม่กำกวม:
+   · ไม่มีหัว           ⇒ ท่อรุ่นเก่ากว่า 6 ก.ย. (หรือไม่ใช่ท่อเรา) ⇒ **ยังบอกไม่ได้**
+   · มีหัว + มีคีย์ที่ขอ ⇒ เส้นนั้นขึ้นแล้วและตอบจริง
+   · มีหัว + ไม่มีคีย์   ⇒ ท่อรุ่นใหม่แล้ว **แต่เส้นนั้นไม่มีอยู่จริง** */
+export interface CoreResult<T> {
+  data: T | null
+  /** ท่อรุ่นใหม่พอที่จะตัดสินได้ไหม (มีหัว x-core-build) */
+  known: boolean
+  /** เส้นที่ขอมีอยู่จริงและตอบมาไหม */
+  ok: boolean
+  build: string | null
+}
+
+export async function coreJson<T>(url: string, required: string[]): Promise<CoreResult<T>> {
+  const res = await fetch(url)
+  const build = res.headers.get('x-core-build')
+  const data = (await res.json().catch(() => null)) as T | null
+  const hit = fromExpectedEndpoint(data, required)
+  return { data: hit ? data : null, known: !!build, ok: hit, build }
+}

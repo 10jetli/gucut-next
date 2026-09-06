@@ -677,3 +677,35 @@ export function MarketCoverage(
       ห้ามแสดงว่า "ไม่สำเร็จ" เด็ดขาด — ดูเหตุผลเต็มในไฟล์ WriteResult.tsx */
 export { WriteResult } from './WriteResult'
 export type { WriteResp } from './WriteResult'
+
+/** ข้อความตอนเส้นที่ขอ "ไม่ตอบ" — **แยกสองกรณีที่หน้าตาเหมือนกันแต่คนละเรื่อง**
+ *
+ *  🔴 `known=false` (ท่อไม่ส่งหัว x-core-build มา) = ท่อยังเป็นรุ่นเก่า **เรายังบอกไม่ได้**
+ *  🔴 `known=true`  = ท่อรุ่นใหม่แล้ว **แต่เส้นนี้ไม่มีอยู่จริง** ⇒ นี่คือของที่ต้องแจ้งฝั่งท่อ
+ *
+ *  ⚠️ ยุบสองอันนี้เป็นข้อความเดียวเมื่อไหร่ = วันที่ deploy แล้วเส้นหาย จะดูเหมือน
+ *     "ยังไม่ deploy" ไปตลอดกาล แล้วไม่มีใครไปตามหาสาเหตุ
+ */
+export function EndpointMissing(
+  { known, what, effect }: { known: boolean; what: string; effect: string },
+) {
+  return (
+    <div className={`text-[13px] rounded-md px-3.5 py-2.5 leading-relaxed border ${
+      known ? 'text-red-900 bg-red-50 border-red-300' : 'text-amber-800 bg-amber-50 border-amber-300'
+    }`}>
+      {known ? (
+        <>
+          🔴 <b>ท่อขึ้นเวอร์ชันใหม่แล้ว แต่ไม่มีเส้น {what}</b> — ไม่ใช่เรื่องรอ deploy
+          {' '}<b>ต้องแจ้งฝั่งท่อ</b>
+        </>
+      ) : (
+        <>
+          ⚠️ <b>เส้น {what} ยังไม่ขึ้นเว็บ</b> (ท่อยังเป็นรุ่นก่อน 6 ก.ย. 2569) —
+          จอนี้จะมีข้อมูลเองหลัง deploy รอบถัดไป
+        </>
+      )}
+      <br />
+      <b>{effect}</b>
+    </div>
+  )
+}

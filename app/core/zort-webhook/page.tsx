@@ -17,8 +17,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost } from '@/components/zort'
-import { fromExpectedEndpoint } from '@/lib/api-shape'
+import { PageHead, BtnGhost, EndpointMissing } from '@/components/zort'
+import { coreJson } from '@/lib/api-shape'
 
 interface Resp {
   ok?: boolean
@@ -35,17 +35,19 @@ export default function ZortWebhookPage() {
   const [error, setError] = useState('')
   /** เส้นยังไม่ขึ้นเว็บ — ตอบ 200 พร้อมเนื้อหาอื่น ⇒ ต้องตรวจรูปร่าง ไม่ใช่ดูแค่รหัส 200 */
   const [notDeployed, setNotDeployed] = useState(false)
+  /** ท่อรุ่นใหม่พอจะตัดสินได้ไหม (มีหัว x-core-build) — แยก 'ยังไม่ deploy' ออกจาก 'เส้นหาย' */
+  const [known, setKnown] = useState(false)
 
   const load = useCallback(async () => {
     setLoading(true); setError(''); setNotDeployed(false)
     try {
-      const r: Resp = await fetch('/api/web/core?zortwebhook=1').then((x) => x.json())
-      /* 🔴 พิสูจน์ก่อนว่าคำตอบมาจากเส้นที่ตั้งใจถาม — **ห้ามใช้ `ok` เป็นเครื่องพิสูจน์เดี่ยว ๆ**
-         เส้นเกือบทุกเส้นส่ง ok:true เหมือนกันหมด · คำตอบหน้าแรกบังเอิญไม่มี ok
-         แต่นั่นคือความบังเอิญ ไม่ใช่สัญญา (ดู lib/api-shape.ts) */
-      if (!fromExpectedEndpoint(r, ['resCode', 'fields', 'rawHead', 'data'])) {
-        setNotDeployed(true); setD(null); return
-      }
+      const got = await coreJson<Resp>('/api/web/core?zortwebhook=1', ['resCode', 'fields', 'rawHead', 'data'])
+      setKnown(got.known)
+      const r = got.data
+      if (r?.error) throw new Error(r.error)
+      /* 🔴 พิสูจน์ต้นทางก่อนตีความ — ใช้หัว x-core-build เป็นหลัก (ดู lib/api-shape.ts)
+         แยก "ท่อยังไม่ deploy" ออกจาก "ท่อใหม่แล้วแต่เส้นหาย" ให้ขาด */
+      if (!got.ok || !r) { setNotDeployed(true); setD(null); return }
       setD(r)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)
@@ -80,11 +82,8 @@ export default function ZortWebhookPage() {
       {loading && <LoadingState />}
 
       {!loading && notDeployed && (
-        <div className="text-[13px] text-amber-800 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
-          ⚠️ <b>เส้นอ่าน webhook ยังไม่ขึ้นเว็บ</b> — จอนี้จะมีข้อมูลเองหลัง deploy รอบถัดไป
-          <br />
-          <b>ไม่ได้แปลว่าไม่มี webhook ตั้งไว้</b> — แปลว่ายังอ่านไม่ได้เท่านั้น
-        </div>
+        <EndpointMissing known={known} what="อ่านค่า webhook ของ ZORT"
+          effect="ไม่ได้แปลว่าไม่มี webhook ตั้งไว้ — แปลว่ายังอ่านไม่ได้เท่านั้น" />
       )}
 
       {!loading && !error && d && (

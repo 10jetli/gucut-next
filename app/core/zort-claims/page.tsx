@@ -18,8 +18,8 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, thaiDate, thaiHm } from '@/components/zort'
-import { fromExpectedEndpoint } from '@/lib/api-shape'
+import { PageHead, BtnGhost, thaiDate, thaiHm, EndpointMissing } from '@/components/zort'
+import { coreJson } from '@/lib/api-shape'
 
 interface Claim { what?: string; endpoint?: string; at?: string }
 interface Resp {
@@ -40,16 +40,19 @@ export default function ZortClaimsPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [notDeployed, setNotDeployed] = useState(false)
+  /** ท่อรุ่นใหม่พอจะตัดสินได้ไหม (มีหัว x-core-build) — แยก 'ยังไม่ deploy' ออกจาก 'เส้นหาย' */
+  const [known, setKnown] = useState(false)
 
   const run = useCallback(async () => {
     setLoading(true); setError(''); setNotDeployed(false)
     try {
-      const r: Resp = await fetch('/api/web/core?zortclaims=1').then((x) => x.json())
+      const got = await coreJson<Resp>('/api/web/core?zortclaims=1', ['claimsNowFalse', 'inconclusive', 'capabilitiesGone'])
+      setKnown(got.known)
+      const r = got.data
       if (r?.error) throw new Error(r.error)
-      // 🔴 พิสูจน์ต้นทางก่อนตีความ (ดู lib/api-shape.ts)
-      if (!fromExpectedEndpoint(r, ['claimsNowFalse', 'inconclusive', 'capabilitiesGone'])) {
-        setNotDeployed(true); setD(null); return
-      }
+      /* 🔴 พิสูจน์ต้นทางก่อนตีความ — ใช้หัว x-core-build เป็นหลัก (ดู lib/api-shape.ts)
+         แยก "ท่อยังไม่ deploy" ออกจาก "ท่อใหม่แล้วแต่เส้นหาย" ให้ขาด */
+      if (!got.ok || !r) { setNotDeployed(true); setD(null); return }
       setD(r)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)
@@ -90,11 +93,8 @@ export default function ZortClaimsPage() {
       {loading && <LoadingState />}
 
       {!loading && notDeployed && (
-        <div className="text-[13px] text-amber-800 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
-          ⚠️ <b>เส้นตรวจยังไม่ขึ้นเว็บ</b> — จอนี้ใช้ได้หลัง deploy รอบถัดไป
-          <br />
-          <b>ไม่ได้แปลว่าไม่มีปัญหา</b> — แปลว่ายังตรวจไม่ได้
-        </div>
+        <EndpointMissing known={known} what="ตรวจคำกล่าวอ้าง"
+          effect="ไม่ได้แปลว่าไม่มีปัญหา — แปลว่ายังตรวจไม่ได้" />
       )}
 
       {!loading && !error && d?.inconclusive && (
