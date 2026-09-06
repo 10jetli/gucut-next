@@ -111,6 +111,10 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({ skip: 'คลังเงายังไม่ได้ตั้งค่า D1 — ยังทำส่วนนี้ต่อไม่ได้' }))
   }
+  if (mode === 'good' && req.url.startsWith('/api/clip-stats')) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ ok: true, rows: [{ id: 'v1', views: 120, half: 80, full: 40, likes: 9, comments: 2, dur: 31 }] }))
+  }
   if (mode === 'good') {
     /* 🟢 โหมด "ปกติ" — ตอบครบทุกช่องที่จอฝั่งเราอ่าน
        ⚠️ **มีไว้พิสูจน์ว่าตัวกันของใหม่ไม่ฟ้องมั่ว** ไม่ได้มีไว้พิสูจน์ว่าข้อมูลถูก
@@ -137,6 +141,21 @@ const srv = createServer(async (req, res) => {
       warehouses: [{ code: 'NEW', name: 'โกดังหลัก' }],
       'ต้องส่งของ': [{ number: 'SO-001', channel: 'Shopee', day: '2026-09-05', amount: 1000 }],
       byPay: [], methods: {}, moves: [], items: [],
+      /* ── ของฝั่ง /web/* (คนละ endpoint แต่ท่อปลอมตอบก้อนเดียว) ── */
+      /* ⚠️ ต้องใส่ให้ครบตามชนิดข้อมูลจริงของจอ ไม่งั้นจอจะพัง (ตัวจับพลาดของหน้าเว็บรับไว้ได้
+         แต่เราจะทดสอบ "ทางที่ทุกอย่างปกติ" ไม่ได้เลย) */
+      orders: [
+        {
+          id: 'W-001', at: 1757000000000, status: 'new',
+          customer: { name: 'ลูกค้าเว็บ', phone: '0812345678', address: 'ที่อยู่ทดสอบ', province: 'หนองคาย', zip: '43000', note: '' },
+          items: [{ title: 'สินค้าทดสอบ', variant: '-', price: 1000, qty: 1 }],
+          paymentLabel: 'โอนผ่าน Beam', discount: 0, subtotal: 1000, shipping: 100, codFee: 0, total: 1100,
+          taxInvoice: null, hasSlip: false, paidAt: 1757000100000,
+        },
+      ],
+      /* สถิติคลิป — ชื่อช่องตามจอ /web/clips */
+      clipStats: [{ id: 'v1', views: 120, half: 80, full: 40, likes: 9, comments: 2, dur: 31 }],
+      counts: { orders: 12345, items: 2672, snapshots: 900 },
     }))
   }
   if (mode === 'failedparts') {

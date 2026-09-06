@@ -129,6 +129,7 @@ export default function WebOrdersPage() {
   const [busyId, setBusyId] = useState('')
   const [spin, setSpin] = useState(false)
 
+  /** รู้ตัวเลขจริงหรือยัง — **ต้องเป็น "โหลดสำเร็จ" ไม่ใช่ "มี array"** */
   const load = useCallback(async () => {
     setErr('')
     setSpin(true)
@@ -136,8 +137,14 @@ export default function WebOrdersPage() {
       const r = await fetch('/api/web/orders')
       if (!r.ok) throw new Error()
       const d = await r.json()
+      /* ⚠️ ตอบ 200 แต่ไม่มีช่อง orders = ยังไม่รู้ ไม่ใช่ "ไม่มีออเดอร์"
+         จอนี้เป็นจอเงิน — ศูนย์ที่ไม่มีที่มาอ่านได้ว่า "วันนี้ขายไม่ได้เลย" */
+      if (!d || !('orders' in d)) throw new Error('ตอบมาไม่ครบ')
       setOrders(Array.isArray(d.orders) ? d.orders : [])
     } catch {
+      /* ⚠️ ตั้ง orders เป็น [] เพื่อให้ตารางไม่ค้างที่โครงกระดูก — **แต่ [] ไม่ได้แปลว่า "ไม่มีออเดอร์"**
+         ⇒ การ์ดตัวเลขต้องดูที่ `err` ไม่ใช่ดูว่ามี array ไหม (เจอตอนยิงจริง 7 ก.ย. 2569:
+         แก้ให้ดู `orders ?` แล้วยังโชว์ 0 เพราะ orders เป็น [] ไม่ใช่ null) */
       setErr('โหลดรายการไม่สำเร็จ — ลองกดรีเฟรช')
       setOrders((o) => o ?? [])
     } finally {
@@ -145,6 +152,10 @@ export default function WebOrdersPage() {
     }
   }, [])
   useEffect(() => { load() }, [load])
+
+  /** ตัวเลขบนการ์ดเชื่อได้ก็ต่อเมื่อ **โหลดสำเร็จ** — มี array ไม่พอ (ตอนล้มเราก็ตั้งเป็น [])
+   *  🔴 กฎกลางของทั้งระบบคืนนี้: ล้มเหลวแล้ว **ห้ามเขียนเลข** โดยเฉพาะเลข 0 */
+  const known = !err && orders !== null
 
   const stat = useMemo(() => {
     const list = orders ?? []
@@ -255,7 +266,7 @@ export default function WebOrdersPage() {
       {/* ── แถวสถิติ + กราฟ ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <Stat icon={IC.bag} tone="bg-blue-50 text-blue-600" label="ออเดอร์วันนี้"
-          value={orders ? stat.today : '—'} sub={`ทั้งหมด ${orders?.length ?? '—'} ใบในระบบ`} />
+          value={known ? stat.today : '—'} sub={known ? `ทั้งหมด ${orders?.length ?? 0} ใบในระบบ` : 'ยังไม่รู้ — โหลดไม่สำเร็จ'} />
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
           <div className="flex items-start justify-between gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">รายได้ 7 วัน</p>
@@ -266,7 +277,7 @@ export default function WebOrdersPage() {
           <div className="flex items-end justify-between gap-3 mt-1">
             <div>
               {/* 🔴 โหลดไม่สำเร็จแล้วห้ามโชว์ ฿0 — อ่านเป็น "7 วันนี้ขายไม่ได้เลย" ซึ่งกลับหัวความจริง */}
-              <p className="text-[26px] md:text-[30px] font-black text-gray-900 tracking-tight tabular-nums leading-none">{orders ? baht(stat.last7) : '—'}</p>
+              <p className="text-[26px] md:text-[30px] font-black text-gray-900 tracking-tight tabular-nums leading-none">{known ? baht(stat.last7) : '—'}</p>
               {stat.trend !== null && (
                 <p className={`text-[12px] mt-1.5 font-semibold ${stat.trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                   {stat.trend >= 0 ? '▲' : '▼'} {Math.abs(stat.trend)}% เทียบ 7 วันก่อน
@@ -283,13 +294,19 @@ export default function WebOrdersPage() {
             </div>
           </div>
         </div>
+        {/* 🔴 **สองการ์ดนี้เคยโชว์ 0 ตอนโหลดไม่สำเร็จ** — และอันหนึ่งประกาศว่า "ไม่มียอดค้าง"
+            ⇒ อ่านได้ว่า "ไม่มีใครรอเราอยู่" ทั้งที่ความจริงคือเราไม่รู้
+            ⇒ ลูกค้าที่จ่ายแล้วรอของ จะไม่มีใครเห็น (เจอด้วยท่อปลอม 7 ก.ย. 2569)
+            การ์ดอีกสองใบข้าง ๆ กันไว้ตั้งแต่แรกแล้ว — สองใบนี้หลุด เพราะเขียนคนละครั้งกัน */}
         <Stat icon={IC.clock} tone="bg-amber-50 text-amber-600" label="รอชำระ"
-          value={stat.counts.pending || 0}
-          sub={stat.pendingValue > 0 ? `มูลค่าค้าง ${baht(stat.pendingValue)}` : 'ไม่มียอดค้าง'}
-          subTone={stat.pendingValue > 0 ? 'text-amber-600' : 'text-gray-400'} />
+          value={known ? (stat.counts.pending || 0) : '—'}
+          sub={!known ? 'ยังไม่รู้ — โหลดไม่สำเร็จ'
+            : stat.pendingValue > 0 ? `มูลค่าค้าง ${baht(stat.pendingValue)}` : 'ไม่มียอดค้าง'}
+          subTone={known && stat.pendingValue > 0 ? 'text-amber-600' : 'text-gray-400'} />
         <Stat icon={IC.truck} tone="bg-violet-50 text-violet-600" label="กำลังจัดส่ง"
-          value={stat.counts.shipped || 0}
-          sub={`สำเร็จแล้ว ${stat.counts.done || 0} ใบ`} subTone="text-emerald-600" />
+          value={known ? (stat.counts.shipped || 0) : '—'}
+          sub={known ? `สำเร็จแล้ว ${stat.counts.done || 0} ใบ` : 'ยังไม่รู้ — โหลดไม่สำเร็จ'}
+          subTone={known ? 'text-emerald-600' : 'text-gray-400'} />
       </div>
 
       {/* ── ตาราง ── */}

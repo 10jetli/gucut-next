@@ -20,7 +20,14 @@ export default function WebCommentsPage() {
 
   const load = useCallback(async () => {
     try {
-      const counts: Record<string, [number, number]> = await fetch('/api/web/social').then((r) => r.json()).then((d) => d.counts ?? {})
+      /* 🔴 **ท่อตอบ 500 พร้อม JSON ⇒ .json() ไม่ throw ⇒ catch ไม่ทำงาน**
+         ของเดิมจึงได้ counts = {} เงียบ ๆ แล้วจอประกาศว่า "ยังไม่มีคอมเมนต์ใต้คลิปไหนเลย"
+         ⇒ ร้านคิดว่าไม่มีใครคอมเมนต์ ทั้งที่แค่ดึงไม่ได้ (เจอด้วยท่อปลอม 7 ก.ย. 2569) */
+      const res = await fetch('/api/web/social')
+      const d = await res.json()
+      if (!res.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${res.status}`))
+      if (!('counts' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ')
+      const counts: Record<string, [number, number]> = d.counts ?? {}
       const ids = Object.entries(counts).filter(([, c]) => (c?.[1] ?? 0) > 0)
         .sort((a, b) => (b[1][1] ?? 0) - (a[1][1] ?? 0)).map(([id]) => id)
       const list = await Promise.all(ids.map(async (id) => ({
@@ -29,7 +36,7 @@ export default function WebCommentsPage() {
           .then((r) => r.json()).then((d) => (d.comments ?? []) as Cmt[]).catch(() => []),
       })))
       setClips(list.filter((c) => c.comments.length))
-    } catch { setErr('โหลดคอมเมนต์ไม่สำเร็จ'); setClips([]) }
+    } catch { setErr('โหลดคอมเมนต์ไม่สำเร็จ — ยังไม่รู้ว่ามีคอมเมนต์ไหม (ไม่ได้แปลว่าไม่มี)'); setClips([]) }
   }, [])
   useEffect(() => { load() }, [load])
 
@@ -59,7 +66,10 @@ export default function WebCommentsPage() {
         </div>
       ) : clips.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-sm py-16 text-center">
-          <p className="text-[13px] text-gray-400">ยังไม่มีคอมเมนต์ใต้คลิปไหนเลย</p>
+          {/* ⚠️ โหลดไม่สำเร็จ ห้ามพูดว่า "ยังไม่มีคอมเมนต์" — กล่องแดงข้างบนบอกไปแล้วว่าดึงไม่ได้ */}
+          <p className="text-[13px] text-gray-400">
+            {err ? 'ยังดูไม่ได้ — โหลดไม่สำเร็จ' : 'ยังไม่มีคอมเมนต์ใต้คลิปไหนเลย'}
+          </p>
         </div>
       ) : clips.map((c) => (
         <div key={c.id} className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">

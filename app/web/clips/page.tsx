@@ -11,10 +11,18 @@ export default function WebClipStatsPage() {
   const [err, setErr] = useState('')
 
   useEffect(() => {
+    /* 🔴 ท่อตอบ 500 พร้อม JSON ⇒ .json() ไม่ throw ⇒ catch ไม่ทำงาน
+       ของเดิมจึงได้ rows = [] เงียบ ๆ แล้วจอเขียนว่า "0 คลิปที่มีคนดู · ยังไม่มีคลิปที่มีคนดู"
+       ⇒ อ่านเป็น "คลิปเราไม่มีคนดูเลย" ซึ่งกลับหัวความจริง (เจอด้วยท่อปลอม 7 ก.ย. 2569) */
     fetch('/api/web/clip-stats')
-      .then((r) => r.json())
+      .then(async (r) => {
+        const d = await r.json()
+        if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
+        if (!('rows' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ')
+        return d
+      })
       .then((d) => setRows(Array.isArray(d.rows) ? d.rows : []))
-      .catch(() => { setErr('โหลดสถิติไม่สำเร็จ'); setRows([]) })
+      .catch(() => { setErr('โหลดสถิติไม่สำเร็จ — ยังไม่รู้ยอดคนดู (ไม่ได้แปลว่าไม่มีคนดู)'); setRows([]) })
   }, [])
 
   const totalViews = (rows ?? []).reduce((a, r) => a + r.views, 0)
@@ -24,7 +32,8 @@ export default function WebClipStatsPage() {
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">สถิติคลิป</h1>
-        {rows && <p className="text-[12px] text-gray-400 mt-0.5">{rows.length} คลิปที่มีคนดู · รวม {totalViews.toLocaleString('th-TH')} คนดู</p>}
+        {/* ⚠️ โหลดไม่สำเร็จ ห้ามสรุปยอดเป็นศูนย์ — บรรทัดนี้อยู่เหนือกล่องแดง คนอ่านก่อน */}
+        {rows && !err && <p className="text-[12px] text-gray-400 mt-0.5">{rows.length} คลิปที่มีคนดู · รวม {totalViews.toLocaleString('th-TH')} คนดู</p>}
       </div>
       {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
 
@@ -36,7 +45,9 @@ export default function WebClipStatsPage() {
         {rows === null ? (
           <div className="p-4 space-y-3 animate-pulse">{[...Array(6)].map((_, i) => <div key={i} className="h-12 rounded-xl bg-gray-50" />)}</div>
         ) : rows.length === 0 ? (
-          <p className="py-14 text-center text-[13px] text-gray-400">ยังไม่มีคลิปที่มีคนดู</p>
+          <p className="py-14 text-center text-[13px] text-gray-400">
+            {err ? 'ยังดูไม่ได้ — โหลดสถิติไม่สำเร็จ' : 'ยังไม่มีคลิปที่มีคนดู'}
+          </p>
         ) : rows.map((r, i) => (
           <div key={r.id} className="md:grid md:grid-cols-[1fr_90px_90px_90px_80px_80px] md:items-center flex flex-wrap items-center gap-2 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0 hover:bg-gray-50/70 transition-colors">
             <span className="flex items-center gap-3 min-w-0">

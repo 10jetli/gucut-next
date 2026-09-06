@@ -101,7 +101,12 @@ export default function WebLivePage() {
             <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-sky-50 text-sky-600"><I d={IC.phone2} className="w-[17px] h-[17px]" /></span>
           </div>
           <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{s?.pwa ? s.pwa.week : '—'}</p>
-          <p className="text-[11.5px] text-gray-400 mt-1.5">คนใน 7 วัน · วันนี้ {s?.pwa?.today ?? 0}{s?.pwa?.installs7 ? ` · ติดตั้งใหม่ +${s.pwa.installs7}` : ''}</p>
+          {/* ⚠️ เลขใหญ่กันไว้แล้วด้วย '—' แต่บรรทัดนี้ยังเขียน "วันนี้ 0" ตอนโหลดไม่สำเร็จ
+              ⇒ การ์ดใบเดียวพูดสองอย่าง: ข้างบนบอกว่าไม่รู้ ข้างล่างบอกว่าศูนย์ */}
+          <p className="text-[11.5px] text-gray-400 mt-1.5">
+            คนใน 7 วัน · วันนี้ {typeof s?.pwa?.today === 'number' ? s.pwa.today : '—'}
+            {s?.pwa?.installs7 ? ` · ติดตั้งใหม่ +${s.pwa.installs7}` : ''}
+          </p>
         </div>
       </div>
 
