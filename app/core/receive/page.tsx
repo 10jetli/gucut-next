@@ -134,10 +134,29 @@ export default function ReceivePage() {
 
   const submit = useCallback(async () => {
     if (!doc?.number) return
+    /* 🔴 **จำนวนต้องเป็นบวกเท่านั้นในจอนี้**
+       ท่อรับเลขติดลบได้ (ใช้กับ transfer_out/damage) ⇒ ถ้าปล่อยผ่าน คนพิมพ์ "-5" ในจอ "รับเข้า"
+       จะกลายเป็น **ตัดสต็อกออก** โดยบันทึกว่าเป็นการโอนเข้า ⇒ คลังเพี้ยนแบบมีหลักฐานสวยงาม
+       และไม่มีอะไรฟ้อง เพราะทุกอย่าง "สำเร็จ" ตามปกติ
+       ⚠️ ต้องบอกด้วยว่าบรรทัดไหนผิด ไม่ใช่เงียบแล้วข้ามทิ้ง (ข้ามเงียบ = ของเข้าไม่ครบโดยไม่มีใครรู้) */
+    const bad = lines.filter((l) => l.sku.trim() && !(Number(l.qty) > 0))
+    if (bad.length) {
+      setErr(`จำนวนต้องเป็นตัวเลขมากกว่า 0 — ตรวจบรรทัดของ ${bad.map((b) => b.sku.trim()).join(', ')}`)
+      return
+    }
     const moves = lines
       .map((l) => ({ sku: l.sku.trim(), qty: Number(l.qty), reason: 'transfer_in', ref: doc.number!.trim() }))
-      .filter((m) => m.sku && Number.isFinite(m.qty) && m.qty !== 0)
+      .filter((m) => m.sku && m.qty > 0)
     if (!moves.length) { setErr('ยังไม่ได้กรอกรายการที่รับเข้า'); return }
+    /* ⚠️ SKU ซ้ำในชุดเดียวกัน = ตาข่าย UNIQUE(reason,ref,sku) จะกลืนใบที่สอง
+       ⇒ ของเข้าน้อยกว่าที่กรอก **โดยจอขึ้นว่าสำเร็จ** ⇒ ต้องจับตั้งแต่ก่อนส่ง */
+    const dup = moves.map((m) => m.sku).filter((v, i, a) => a.indexOf(v) !== i)
+    if (dup.length) {
+      // ⚠️ Array.from แทน spread ของ Set — target ของโปรเจกต์นี้ spread Set ไม่ได้ (TS2802)
+      setErr(`รหัสสินค้าซ้ำกันในใบเดียว: ${Array.from(new Set(dup)).join(', ')} — รวมเป็นบรรทัดเดียวก่อน `
+        + '(ระบบกันซ้ำที่ระดับ รหัส+เลขใบ ⇒ บรรทัดหลังจะถูกกลืน แล้วของเข้าน้อยกว่าที่กรอก)')
+      return
+    }
     setBusy(true); setErr('')
     try {
       const r: MoveResp = await fetch('/api/web/core?move=1', {
