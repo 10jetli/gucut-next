@@ -838,7 +838,12 @@ async function loadAnalysis(force){
     state.ana={}; j.skus.forEach(x=>{ if(x.sku) state.ana[x.sku]=x; });
     state.anaInfo=j;
     const when=new Date(j.at).toLocaleString("th-TH",{dateStyle:"short",timeStyle:"short"});
-    anaBadge("วิเคราะห์จากออเดอร์จริง "+j.orders.toLocaleString()+" ใบ (12 เดือน ทุกแพลตฟอร์ม) · รอของ "+j.leadDays+" วัน · ข้อมูล ณ "+when+(j.stale?" · ⚠️ ของเก่า ดึงใหม่ไม่สำเร็จ":""), !!j.stale);
+    // ⚠️ ดึง "ของที่ลูกค้าคืน" ไม่สำเร็จ = ยอดขายสุทธิสูงเกินจริง ⇒ แผนจะสั่งของเกิน
+    //    ต้องขึ้นบนป้ายให้เห็น ไม่ใช่ซ่อน (เซิร์ฟเวอร์ส่งธง returnsUnavailable มาให้แล้ว)
+    anaBadge("วิเคราะห์จากออเดอร์จริง "+j.orders.toLocaleString()+" ใบ (12 เดือน ทุกแพลตฟอร์ม) · รอของ "+j.leadDays+" วัน · ข้อมูล ณ "+when
+      +(j.stale?" · ⚠️ ของเก่า ดึงใหม่ไม่สำเร็จ":"")
+      +(j.returnsUnavailable?" · ⚠️ ดึงรายการของคืนไม่ได้ ⇒ ยอดขายสูงเกินจริง แผนนี้อาจสั่งเกิน":""),
+      !!j.stale || !!j.returnsUnavailable);
   }catch(e){
     state.ana={};
     anaBadge("⚠️ ดึงข้อมูลสดไม่ได้ ("+e.message+") — กำลังใช้ตัวเลขเก่าจากไฟล์ 2 ส.ค.", true);

@@ -40,6 +40,11 @@ export interface SkuStat {
 }
 
 export interface ReorderResult {
+  /** 🔴 ดึงรายการ "ของที่ลูกค้าคืน" ไม่สำเร็จรอบนี้ — **ยอดขายสุทธิจึงสูงเกินจริง**
+   *  (ของคืนถูกหักออกจากยอดขาย ถ้าดึงไม่ได้ = เหมือนไม่มีใครคืนเลย)
+   *  ⇒ แผนสั่งซื้อจะ **สั่งเกิน** และไม่มีอะไรฟ้อง — เดิม `.catch(() => [])` เงียบสนิท
+   *  ⚠️ ใครแสดงผลตัวนี้ ต้องเขียนบอกบนจอ ห้ามซ่อน (เจอ 7 ก.ย. 2569) */
+  returnsUnavailable?: boolean
   at: number
   leadDays: number
   coverDays: number
@@ -110,9 +115,11 @@ export async function computeReorder(
   const start = new Date(today.getTime() - LOOKBACK_DAYS * 86400_000)
   const range = { orderdateafter: ymd(start), orderdatebefore: ymd(today) }
 
+  let returnsUnavailable = false
   const [orders, returns, products] = await Promise.all([
     pagedList('Order/GetOrders', range),
-    pagedList('ReturnOrder/GetReturnOrders', range, 20).catch(() => []),
+    // ⚠️ ดึงของคืนไม่ได้ ≠ ไม่มีใครคืน — จำไว้แล้วส่งออกไปให้คนที่แสดงผลรู้
+    pagedList('ReturnOrder/GetReturnOrders', range, 20).catch(() => { returnsUnavailable = true; return [] }),
     pagedList('Product/GetProducts', {}),
   ])
 
@@ -227,5 +234,6 @@ export async function computeReorder(
     orders: counted,
     season,
     skus,
+    ...(returnsUnavailable ? { returnsUnavailable: true } : {}),
   }
 }
