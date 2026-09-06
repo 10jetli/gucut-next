@@ -15,6 +15,10 @@
 //    · `.then(setCfg)` ที่ พิกเซล · โฆษณา · SEO · ลูกค้าเก่า
 //    · `.catch(() => {})` ที่ ลูกค้าเก่า
 //
+// ✅ **กฎฝั่ง API พิสูจน์แล้วด้วยการป้อนของเสีย 7 ก.ย. 2569** — แทรก
+//    `catch { return NextResponse.json({ map: {} }) }` เข้าไปชั่วคราว ⇒ ฟ้องถูกจุด · ถอดออกแล้วเงียบ
+//    (ท่านี้คือบั๊กจริงที่เจอในคืนเดียวกันที่ /api/returns/received และ /api/catalog/state)
+//
 // 📌 **ผลรอบแรก 7 ก.ย. 2569: 57 จุด ⇒ แคบตัวกรอง ⇒ 22 จุด ⇒ แก้ของจริง 2 จอ ⇒ เหลือ 18 จุด**
 //    18 จุดที่เหลือ **ตรวจด้วยตาแล้วและตัดสินว่ารับได้** — จดไว้เพื่อไม่ต้องไล่ซ้ำ:
 //    · เลขในบล็อกที่ถูกกันด้วยเงื่อนไขอยู่แล้ว (buy-report · packing · ป้ายแท็บ missing-sku)
@@ -36,6 +40,20 @@ function walk(dir) {
 }
 walk('app')
 walk('components')
+
+/* 🔴 **ฝั่งเซิร์ฟเวอร์ต้องกวาดด้วย** — บทเรียนคืน 7 ก.ย. 2569
+   ตาข่ายฝั่งจอถูกทำให้ไร้ผลได้ทันที ถ้าเซิร์ฟเวอร์ตอบ "200 + ก้อนถูกรูป + ว่างเปล่า"
+   (เจอสองจุด: /api/returns/received และ /api/catalog/state ซึ่งอันหลังลบข้อมูลของคนอื่นได้)
+   ⇒ ไฟล์ route.ts ต้องถูกไล่ด้วยกฎของมันเอง */
+const apiFiles = []
+function walkApi(dir) {
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name)
+    if (statSync(p).isDirectory()) walkApi(p)
+    else if (name === 'route.ts') apiFiles.push(p)
+  }
+}
+walkApi('app/api')
 
 /** ท่าที่รู้ว่าทำให้จอโกหกได้ — ทุกอันเคยเป็นบั๊กจริงมาแล้วอย่างน้อยหนึ่งครั้ง */
 const RULES = [
@@ -64,8 +82,33 @@ const RULES = [
   },
 ]
 
+/** กฎเฉพาะฝั่งเซิร์ฟเวอร์ — ดูทั้ง "บล็อก" ไม่ใช่บรรทัดเดียว เพราะท่าที่อันตรายกินหลายบรรทัด */
+const API_RULES = [
+  {
+    id: 'ล้มแล้วตอบเป็นของว่าง (ฝั่ง API)',
+    why: '`catch` แล้วคืนก้อนว่างพร้อม 200 ⇒ จอเห็นคำตอบที่ถูกรูปทุกประการ แล้วประกาศว่า "ไม่มีอะไร"',
+    /* จับ catch ที่ตามด้วย NextResponse.json ซึ่ง **ไม่มี status** และมีของว่างอยู่ในนั้น
+       ⚠️ ไม่จับ `{ error: ... }` เปล่า ๆ เพราะนั่นคือการบอกความจริงอยู่แล้ว */
+    /* ⚠️ **จับเฉพาะของว่างจริง ๆ (`[]` / `{}`)** — รอบแรกใส่ `: false` เข้าไปด้วย
+       แล้วมันไปโดน `cached: false` · `ok: false` ซึ่งเป็นการบอกความจริงอยู่แล้ว = เสียงหอน 2 จุด
+       🔑 เคสอันตรายจริงอย่าง `exists: false` (แปลว่า "ไม่มีของ") **จับด้วย regex ไม่ได้อย่างปลอดภัย**
+          เพราะรูปเหมือนธงปกติเป๊ะ ⇒ ข้อนั้นต้องใช้คนอ่าน ไม่ใช่ตัวตรวจ (จดไว้ให้รู้ว่ารูอยู่ตรงไหน) */
+    match: /catch[\s\S]{0,120}?NextResponse\.json\(\s*\{[^}]*(\[\]|\{\})[^}]*\}\s*\)(?!\s*,\s*\{\s*status)/,
+  },
+]
+
 let hits = 0
 const found = []
+for (const f of apiFiles) {
+  const src = readFileSync(f, 'utf8')
+  for (const r of API_RULES) {
+    const m = r.match.exec(src)
+    if (!m) continue
+    const line = src.slice(0, m.index).split('\n').length
+    hits++
+    found.push({ rule: r.id, why: r.why, at: `${f}:${line}`, code: m[0].replace(/\s+/g, ' ').slice(0, 88) })
+  }
+}
 for (const f of files) {
   const lines = readFileSync(f, 'utf8').split('\n')
   lines.forEach((line, i) => {
