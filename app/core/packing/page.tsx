@@ -1,0 +1,210 @@
+'use client'
+// รายการขาย → แพ็คสินค้า (ปิดแถว 11)
+//
+// ⚠️ **ยังไม่มีภาพจอ ZORT** ⇒ ไม่ได้ลอกผัง เขียนจากคำถามที่จอควรตอบ
+//
+// คำถามเดียวของจอนี้: **วันนี้ต้องแพ็คใบไหนบ้าง**
+// = ใบที่ลูกค้า**จ่ายแล้ว** แต่ใบยัง**ไม่จบ** (ยังไม่ได้ส่ง) ⇒ งานค้างจริงของร้าน
+//
+// 🔴 **จอนี้ไม่ทำอะไรกับข้อมูล — มีหน้าที่เดียวคือทำให้เห็นว่ามีงานค้างกี่ใบ**
+//    ไม่มีปุ่ม "ทำเครื่องหมายว่าแพ็คแล้ว" เพราะสถานะจริงอยู่ที่ ZORT
+//    ปุ่มที่กดแล้วเปลี่ยนแค่ในจอเรา = จอสองใบที่ไม่ตรงกัน แล้วคนเชื่อใบผิด
+//
+// ⚠️ ท่อ `?pending=1` แยกกองมาให้แล้ว 3 กอง — จอนี้ใช้แค่กอง **"ต้องส่งของ"**
+//    (อีกสองกองคือ "รอจ่ายอยู่" กับ "ใบผี" ซึ่งเป็นงานคนละเรื่อง อยู่ในจอรายการขาย)
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
+import { fmtMoney, fmtNum } from '@/lib/format'
+import LoadingState from '@/components/ui/LoadingState'
+import ErrorBox from '@/components/ui/ErrorBox'
+import {
+  PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
+  EmptyState, ChannelTag, thaiDate, Pill,
+} from '@/components/zort'
+
+interface Job {
+  number: string; channel: string; day: string; amount: number
+  status?: string; pay?: string; channelLastOrder?: string
+}
+interface Resp {
+  counts?: Record<string, number>
+  amounts?: Record<string, number>
+  today?: string
+  note?: string
+  error?: string
+  skip?: string
+  ['ต้องส่งของ']?: Job[]
+}
+
+/** ค้างมากี่วัน — คิดสดจากวันไทย
+ *  ⚠️ นี่คือ **อายุ** ไม่ใช่เส้นตาย ⇒ เทียบต้นวันถูกแล้ว (ได้เลขมากสุด = เตือนเร็วกว่าจริง)
+ *     ห้ามแก้เป็นสิ้นวันตามจอบริษัท/ร้านค้า — คนละความหมาย ทิศของความผิดกลับด้าน
+ *     (บทเรียน 6 ก.ย. 2569: โค้ดรูปเดียวกัน ความถูกต้องกลับด้าน) */
+function ageDays(iso?: string): number | null {
+  if (!iso || typeof iso !== 'string') return null
+  const t = new Date(`${iso}T00:00:00+07:00`).getTime()
+  if (!Number.isFinite(t)) return null
+  const d = Math.floor((Date.now() - t) / 86400000)
+  return d >= 0 ? d : 0
+}
+
+/** ยิ่งค้างนาน ยิ่งต้องเห็นชัด — ลูกค้าจ่ายเงินแล้วรออยู่ */
+function ageTone(d: number | null): 'green' | 'orange' | 'red' | 'gray' {
+  if (d === null) return 'gray'
+  if (d >= 3) return 'red'
+  if (d >= 1) return 'orange'
+  return 'green'
+}
+
+export default function PackingPage() {
+  const [d, setD] = useState<Resp | null>(null)
+  const [q, setQ] = useState('')
+  const [tab, setTab] = useState('all')
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const r: Resp = await fetch('/api/web/core?pending=1').then((x) => x.json())
+      if (r?.error) throw new Error(r.error)
+      if (r?.skip) throw new Error(r.skip)
+      setD(r)
+    } catch (e) {
+      setError(String(e instanceof Error ? e.message : e))
+      setD(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+  useEffect(() => { load() }, [load])
+
+  const jobs = useMemo(() => {
+    const raw = d?.['ต้องส่งของ']
+    return Array.isArray(raw) ? raw : []
+  }, [d])
+
+  /** ⚠️ จัดกลุ่มตามอายุ ไม่ใช่ตามช่องทาง — คนแพ็คของถามว่า "อันไหนช้าสุด" ไม่ได้ถามว่า "มาจากไหน" */
+  const late = jobs.filter((j) => (ageDays(j.day) ?? 0) >= 3)
+  const soon = jobs.filter((j) => { const a = ageDays(j.day) ?? 0; return a >= 1 && a < 3 })
+  const today = jobs.filter((j) => (ageDays(j.day) ?? 0) === 0)
+
+  const inTab = tab === 'late' ? late : tab === 'soon' ? soon : tab === 'today' ? today : jobs
+  const needle = q.trim().toLowerCase()
+  const rows = [...(needle
+    ? inTab.filter((j) => String(j.number ?? '').toLowerCase().includes(needle)
+      || String(j.channel ?? '').toLowerCase().includes(needle))
+    : inTab)].sort((a, b) => (ageDays(b.day) ?? 0) - (ageDays(a.day) ?? 0))
+
+  const totalAmount = jobs.reduce((s, j) => s + (Number(j.amount) || 0), 0)
+
+  return (
+    <div className="p-4 md:p-6">
+      <PageHead
+        title="แพ็คสินค้า"
+        summary={
+          loading ? 'กำลังโหลด…'
+            : (
+              <>
+                ต้องแพ็คและส่ง <b>{fmtNum(jobs.length)}</b> ใบ · รวม {fmtMoney(totalAmount)}
+                {' | '}
+                <span className="text-gray-400">
+                  ใบที่ลูกค้าจ่ายแล้วแต่ยังไม่ได้ส่ง — <b>ลูกค้ารออยู่จริง</b>
+                </span>
+              </>
+            )
+        }
+        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+      />
+
+      {error && <ErrorBox title="ดึงงานค้างไม่ได้">{error}</ErrorBox>}
+      {loading && !d && <LoadingState />}
+
+      {!loading && !error && d && (
+        <>
+          {late.length > 0 && (
+            /* 🔴 ค้างเกิน 3 วันคือของที่ต้องรีบ — ต้องเห็นก่อนตาราง ไม่ใช่ซ่อนในแท็บ
+               (กฎ warning-placement: คำเตือนที่ต้องกดถึงเห็น คือวางผิดที่) */
+            <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+              🔴 <b>ค้างเกิน 3 วัน {fmtNum(late.length)} ใบ</b> — ลูกค้าจ่ายเงินแล้วและยังไม่ได้ของ
+              {' '}(ใบเก่าสุดค้างมา <b>{fmtNum(Math.max(...late.map((j) => ageDays(j.day) ?? 0)))} วัน</b>)
+            </div>
+          )}
+
+          <SearchRow
+            value={q}
+            onChange={setQ}
+            onSubmit={() => {}}
+            placeholder="เลขที่ใบ หรือช่องทาง"
+            advanced={<LinkText onClick={() => setQ('')}>ล้างคำค้น</LinkText>}
+          />
+
+          <Tabs
+            tabs={[
+              { id: 'all', label: 'ทั้งหมด', count: jobs.length },
+              { id: 'late', label: 'ค้างเกิน 3 วัน', count: late.length },
+              { id: 'soon', label: 'ค้าง 1–2 วัน', count: soon.length },
+              { id: 'today', label: 'วันนี้', count: today.length },
+            ]}
+            active={tab}
+            onChange={setTab}
+          />
+
+          <TableWrap>
+            <table className="w-full min-w-[720px]">
+              <thead className="bg-white border-b border-gray-200">
+                <tr>
+                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH}>เลขที่ใบ</th>
+                  <th className={TH}>ช่องทาง</th>
+                  <th className={TH}>วันที่สั่ง</th>
+                  <th className={TH}>ค้างมา</th>
+                  <th className={THR}>มูลค่า</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.length === 0 && (
+                  <EmptyState cols={6} icon="📦"
+                    title={jobs.length === 0 ? 'ไม่มีใบค้างส่ง — แพ็คครบแล้ว' : 'ไม่พบใบในเงื่อนไขนี้'}
+                    detail={jobs.length === 0
+                      ? 'ทุกใบที่ลูกค้าจ่ายแล้วถูกส่งออกไปหมดแล้ว'
+                      : 'ลองล้างคำค้นหรือกลับไปแท็บทั้งหมด'} />
+                )}
+                {rows.map((j, i) => {
+                  const a = ageDays(j.day)
+                  return (
+                    <tr key={j.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                      <td className={`${TD} text-gray-400`}>{i + 1}</td>
+                      <td className={TD}>
+                        <Link href={`/core/sales/detail?id=${encodeURIComponent(j.number)}`}
+                          className="text-blue-600 hover:underline font-medium">{j.number}</Link>
+                      </td>
+                      <td className={TD}><ChannelTag name={j.channel} /></td>
+                      <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(j.day)}</td>
+                      <td className={TD}>
+                        <Pill tone={ageTone(a)}>
+                          {a === null ? 'ไม่ทราบ' : a === 0 ? 'วันนี้' : `${fmtNum(a)} วัน`}
+                        </Pill>
+                      </td>
+                      <td className={TDR}>{fmtMoney(j.amount)}</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </TableWrap>
+
+          <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
+            ⚠️ <b>จอนี้อ่านอย่างเดียว ไม่มีปุ่มทำเครื่องหมายว่าแพ็คแล้วโดยตั้งใจ</b> —
+            สถานะจริงอยู่ที่ ZORT ถ้ามีปุ่มที่เปลี่ยนแค่ในจอเรา จะได้จอสองใบที่ไม่ตรงกัน
+            แล้วคนจะเชื่อใบผิด · ใบจะหายจากจอนี้เองเมื่อ ZORT ปิดใบ แล้วรอบซิงก์ถัดไปดูดกลับมา ·
+            <b> เกณฑ์: จ่ายแล้วแต่ใบยังไม่จบ</b> (ท่อแยกกองมาให้ — กอง &ldquo;รอจ่ายอยู่&rdquo;
+            กับ &ldquo;ใบผี&rdquo; เป็นงานคนละเรื่อง ดูที่จอรายการขาย) ·
+            ยังไม่มีภาพจอ ZORT ของเมนูนี้ จึงยังไม่ได้จัดผังตาม
+          </p>
+        </>
+      )}
+    </div>
+  )
+}

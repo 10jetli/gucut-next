@@ -54,7 +54,8 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/quotations', label: 'ใบเสนอราคา' },
       { href: '/core/logistics', label: 'บริการส่งสินค้า' },
       { href: '/returns', label: 'รับคืนสินค้า' },
-      soon('packing', 'แพ็คสินค้า'),
+      // ✅ จอจริง 6 ก.ย. — อ่านกอง "ต้องส่งของ" จาก ?pending=1 (ท่อแยกกองมาให้แล้ว)
+      { href: '/core/packing', label: 'แพ็คสินค้า' },
       { href: '/tracker', label: 'ติดตามออเดอร์' },
     ],
   },
