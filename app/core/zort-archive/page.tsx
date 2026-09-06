@@ -29,17 +29,45 @@ interface Saved {
   emptyVerified?: boolean
   at?: string
 }
-interface ListResp { saved?: Saved[]; skip?: string; error?: string }
+interface ListResp {
+  saved?: Saved[]
+  /** จอที่ยังไม่ได้เก็บ — ต้องโชว์ ไม่งั้นคนนึกว่าเก็บครบแล้ว */
+  notYet?: string[]
+  note?: string
+  skip?: string; error?: string
+}
 
 interface OneResp {
   head?: string[]
-  rows?: (string | number | null)[][]
+  /** ⚠️ **แถวมาเป็น object ไม่ใช่ array** (ยืนยันจากคำตอบจริง 6 ก.ย. 2569)
+   *  เช่น {no, code, name, type, value, lastMove} เรียงตรงกับ head
+   *  ⇒ จอต้องรับได้ทั้งสองแบบ — เดาแบบเดียวแล้วผิด = ตารางขึ้นแถวว่างเปล่าโดยไม่มีอะไรฟ้อง */
+  rows?: (Record<string, unknown> | (string | number | null)[])[]
+  rowCount?: number
+  expected?: number
+  complete?: boolean
   source?: string
   at?: string
   emptyVerified?: boolean
   skip?: string
   error?: string
 }
+
+/** ดึงค่าของแถวออกมาเรียงตามหัวตาราง
+ *  ⚠️ object ใน JS เรียงตามลำดับที่ใส่เข้ามา และฝั่งท่อใส่ตรงกับ head
+ *     ⇒ ใช้ Object.values ได้ **แต่ต้องตัดให้ยาวเท่าหัวตาราง** ไม่งั้นคอลัมน์เกินจะดันตารางเพี้ยน */
+function cellsOf(row: unknown, headLen: number): unknown[] {
+  if (Array.isArray(row)) return row
+  if (row && typeof row === 'object') {
+    const v = Object.values(row as Record<string, unknown>)
+    return headLen > 0 ? v.slice(0, headLen) : v
+  }
+  return []
+}
+
+/** คีย์ในรายการรวมมี prefix (เช่น `t/branch`) แต่เส้น ?screen= ใช้ชื่อสั้น
+ *  ⚠️ ส่งคีย์เต็มไปจะไม่เจอจอ — เจอตอนเทียบกับคำตอบจริง ไม่ได้เดาเอา */
+const screenOf = (key?: string) => (key || '').split('/').pop() || ''
 
 /** ชื่อไทยของแต่ละจอ — ที่ไม่รู้จักให้โชว์ชื่อดิบ ไม่ใช่ซ่อน (จอใหม่ที่ท่อเพิ่มต้องโผล่เองได้) */
 const SCREEN_TH: Record<string, string> = {
@@ -65,6 +93,8 @@ function thaiTime(iso?: string) {
 
 export default function ZortArchivePage() {
   const [list, setList] = useState<Saved[] | null>(null)
+  /** เก็บคำตอบระดับบนไว้ด้วย — `notYet` อยู่ตรงนั้น ไม่ได้อยู่ในแต่ละแถว */
+  const [listMeta, setListMeta] = useState<ListResp | null>(null)
   const [pick, setPick] = useState('')
   const [one, setOne] = useState<OneResp | null>(null)
   const [loading, setLoading] = useState(true)
@@ -82,6 +112,7 @@ export default function ZortArchivePage() {
       /* ไม่มีช่อง saved = ตอบมาไม่ครบ ไม่ใช่ "ยังไม่เคยเก็บอะไรเลย" (กติกาเดียวกับทั้งระบบ) */
       if (!('saved' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการที่เก็บไว้)')
       setList(Array.isArray(d.saved) ? d.saved : [])
+      setListMeta(d)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
       setList(null)
@@ -95,6 +126,13 @@ export default function ZortArchivePage() {
       const d: OneResp = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
       if (d?.skip) throw new Error(SKIP + d.skip)
+      /* ⚠️ เช็ค "มีช่อง rows ไหม" ได้ เพราะ rows มีมาตั้งแต่ต้น
+         🔴 **แต่ห้ามเช็คแบบนั้นกับฟิลด์ที่เกิดทีหลัง** — `emptyVerified` ถูกเพิ่มระหว่างทาง
+            ระเบียนที่เก็บก่อนหน้านั้นจึงไม่มีช่องนี้ (เช่น wallet)
+            เช็ค "มีช่องไหม" กับของแบบนี้ = ของเก่าขึ้นแดงว่าตอบไม่ครบ ทั้งที่ปกติดี
+            ✅ ฝั่งท่อแก้ที่ต้นทางแล้ว (6 ก.ย. 2569) — เติม emptyVerified:false ให้ระเบียนเก่าเสมอ
+            ⚠️ จอยัง**เช็คด้วยค่า (`=== true`) ไม่ใช่การมีช่อง** ไว้เหมือนเดิมโดยตั้งใจ
+               ของเก่าที่ค้างอยู่ที่อื่น/ท่อรุ่นเก่า จะได้ไม่พังตาม */
       if (!('rows' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีตารางข้อมูล)')
       setOne(d)
     } catch (e) {
@@ -104,6 +142,8 @@ export default function ZortArchivePage() {
 
   useEffect(() => { loadList() }, [loadList])
 
+  const notYet = Array.isArray(listMeta?.notYet)
+    ? listMeta!.notYet.filter((x): x is string => typeof x === 'string') : []
   const rows = Array.isArray(one?.rows) ? one!.rows : []
   const head = Array.isArray(one?.head) ? one!.head : []
 
@@ -135,6 +175,16 @@ export default function ZortArchivePage() {
         <p className="text-[13px] text-gray-500">ยังไม่มีจอไหนถูกเก็บ</p>
       )}
 
+      {/* 🔴 **"ยังไม่ได้เก็บ" สำคัญกว่า "เก็บแล้ว"** — ของที่จะหายตอนเลิกจ่าย ZORT คือกองนี้
+          ไม่โชว์ = เปิดจอมาเห็นแต่ของที่เก็บแล้ว แล้วนึกว่าเก็บครบ */}
+      {notYet.length > 0 && (
+        <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+          🕳 <b>ยังไม่ได้เก็บอีก {fmtNum(notYet.length)} จอ</b> — {notYet.map(thName).join(' · ')}
+          <br />
+          ของพวกนี้ <b>จะหายไปพร้อมกับ ZORT</b> ถ้าไม่ได้เก็บก่อนวันเลิกใช้
+        </p>
+      )}
+
       {list && list.length > 0 && (
         <TableWrap>
           <table className="w-full min-w-[720px]">
@@ -148,10 +198,12 @@ export default function ZortArchivePage() {
               const when = thaiTime(s.at)
               return (
                 <tr key={s.key || i} className="border-t border-gray-100">
-                  <td className={TD}><b>{thName(s.key)}</b> <span className="text-gray-400 text-[11.5px]">{s.key}</span></td>
+                  {/* ⚠️ คีย์จริงมี prefix (`t/branch`) — ต้องตัดก่อนหาชื่อไทย ไม่งั้นได้ชื่อดิบทุกแถว */}
+                  <td className={TD}><b>{thName(screenOf(s.key))}</b>{' '}
+                    <span className="text-gray-400 text-[11.5px]">{s.key}</span></td>
                   <td className={TD}>
                     {/* 🔴 ว่างที่ "ตรวจแล้ว" กับว่างที่ "ยังไม่รู้" ต้องเขียนคนละแบบ */}
-                    {s.emptyVerified
+                    {s.emptyVerified === true
                       ? <span className="text-gray-600">ตรวจแล้วว่างจริง</span>
                       : typeof s.rows === 'number'
                         ? <>{fmtNum(s.rows)}{typeof s.expected === 'number' ? <span className="text-gray-400"> / {fmtNum(s.expected)}</span> : null}</>
@@ -165,8 +217,11 @@ export default function ZortArchivePage() {
                   {/* ⚠️ ไม่มีเวลา = เขียนว่าไม่รู้ ห้ามเว้นว่างให้เดาเอง */}
                   <td className={TD}>{when ?? <span className="text-gray-300">ไม่รู้ว่าเก็บเมื่อไหร่</span>}</td>
                   <td className={TD}>
-                    <button onClick={() => loadOne(String(s.key ?? ''))}
-                      disabled={!s.key}
+                    {/* ⚠️ ส่ง **ชื่อสั้น** เท่านั้น — คีย์ในรายการรวมมี prefix (`t/branch`)
+                        ส่งคีย์เต็มไป เส้น ?screen= จะหาไม่เจอแล้วคืนตารางว่าง
+                        ซึ่งหน้าตาเหมือน "ไม่มีข้อมูล" เป๊ะ (เจอตอนกดจริง 6 ก.ย. 2569) */}
+                    <button onClick={() => loadOne(screenOf(s.key))}
+                      disabled={!screenOf(s.key)}
                       className="text-[12.5px] text-blue-600 hover:underline disabled:text-gray-300">
                       เปิดดู
                     </button>
@@ -181,9 +236,9 @@ export default function ZortArchivePage() {
 
       {pick && (
         <div className="mt-5">
-          <p className="text-[14px] font-bold text-gray-800 mb-1.5">{thName(pick)}</p>
+          <p className="text-[14px] font-bold text-gray-800 mb-1.5">{thName(screenOf(pick))}</p>
 
-          {oneError && <ErrorBox title={`เปิด "${thName(pick)}" ไม่ได้`}>{oneError}</ErrorBox>}
+          {oneError && <ErrorBox title={`เปิด "${thName(screenOf(pick))}" ไม่ได้`}>{oneError}</ErrorBox>}
           {oneLoading && <LoadingState />}
 
           {one && (
@@ -195,7 +250,7 @@ export default function ZortArchivePage() {
                   : <> · <span className="text-amber-700">ไม่ได้บอกว่าเก็บด้วยช่วงไหน — ตัวเลขนี้เทียบกับอะไรไม่ได้</span></>}
               </p>
 
-              {one.emptyVerified && rows.length === 0 && (
+              {one.emptyVerified === true && rows.length === 0 && (
                 <p className="text-[13px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5">
                   ✅ <b>ตรวจแล้วว่างจริง</b> — เปิดช่วงวันกว้างแล้วยังไม่มีรายการ
                   {one.source ? <> ({one.source})</> : null}
@@ -204,7 +259,7 @@ export default function ZortArchivePage() {
                 </p>
               )}
 
-              {!one.emptyVerified && rows.length === 0 && (
+              {one.emptyVerified !== true && rows.length === 0 && (
                 <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5">
                   ⚠️ ไม่มีแถวในภาพถ่ายนี้ และ<b>ยังไม่ได้ยืนยันว่าว่างจริง</b> —
                   อาจเก็บด้วยช่วงวันที่แคบเกินไป <b>อย่าเพิ่งสรุปว่าไม่มีข้อมูล</b>
@@ -216,14 +271,14 @@ export default function ZortArchivePage() {
                   <table className="w-full min-w-[720px]">
                   <thead className="bg-white border-b border-gray-200">
                     <tr>
-                      {(head.length > 0 ? head : rows[0].map((_, i) => `คอลัมน์ ${i + 1}`))
+                      {(head.length > 0 ? head : cellsOf(rows[0], 0).map((_, i) => `คอลัมน์ ${i + 1}`))
                         .map((h, i) => <th key={i} className={TH}>{String(h)}</th>)}
                     </tr>
                   </thead>
                   <tbody>
                     {rows.map((r, i) => (
                       <tr key={i} className="border-t border-gray-100">
-                        {(Array.isArray(r) ? r : []).map((c, j) => (
+                        {cellsOf(r, head.length).map((c, j) => (
                           <td key={j} className={TD}>{c === null || c === undefined || c === ''
                             ? <span className="text-gray-300">-</span>
                             : String(c)}</td>

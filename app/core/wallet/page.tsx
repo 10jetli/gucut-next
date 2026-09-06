@@ -80,6 +80,14 @@ export default function WalletPage() {
           <Link href="/core/zort-noapi" className="underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>
           {' '}(ดึงสดจากผลยิงตรวจ ไม่ใช่ข้อความที่พิมพ์ไว้)
         </p>
+        {/* ✅ 6 ก.ย. 2569 — ของชุดนี้ถูกคัดออกมาเก็บแล้ว (ฝั่งท่ออ่านจากหน้าจอ ZORT)
+            ⇒ ต้องมีทางเข้าไปดูจากจอนี้ ไม่งั้นคนหาไม่เจอแล้วนึกว่ายังไม่มีใครทำ
+            ⚠️ **ยังเป็นภาพถ่าย ไม่ใช่ยอดสด** — จอปลายทางเขียนกำกับไว้ทุกตาราง */}
+        <p className="text-[13px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mt-2 leading-relaxed">
+          ✅ <b>คัดออกมาเก็บไว้แล้ว</b> — เปิดดูได้ที่{' '}
+          <Link href="/core/zort-archive" className="underline font-semibold">ของที่คัดจาก ZORT</Link>
+          {' '}(เลือกหัวข้อ &ldquo;กระเป๋าเงิน&rdquo;) · <b>เป็นภาพถ่าย ณ เวลาที่เก็บ ไม่ใช่ยอดปัจจุบัน</b>
+        </p>
         <p className="text-[13px] text-red-900 mt-2 leading-relaxed">
           ⚠️ <b>ต้องกด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> — กดหลังปิดไม่ได้อีก
           เพราะเข้าหน้าจอนั้นไม่ได้แล้ว · ดูรายการที่ต้องกดทั้งหมดใน{' '}
