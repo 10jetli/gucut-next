@@ -296,7 +296,9 @@ export default function ReorderPage() {
                     <td className={`${TD} text-gray-300`} title="ร้านไม่เคยตั้งกลุ่ม Lead Time ใน ZORT ⇒ ไม่มีค่าให้ดึง">—</td>
                     <td className={`${TD} text-gray-300`} title="ใบซื้อมีคู่ค้า แต่ยังไม่ได้ผูกกับสินค้ารายตัว">—</td>
                     <td className={`${TDR} ${Number(r.teeth) < 0 ? 'text-red-600 font-semibold' : ''}`}>
-                      {fmtNum(Number(r.teeth ?? 0))}
+                      {/* ⚠️ ท่อไม่ส่งจำนวนฟันมา ≠ เหลือศูนย์ฟัน — คอลัมน์นี้คือตัวตัดสินว่าต้องสั่งของ
+                          เขียน 0 ทั้งที่ไม่รู้ = ชวนให้สั่งของที่ยังไม่ต้องสั่ง (หรือกลับกัน) */}
+                      {typeof r.teeth === 'number' ? fmtNum(r.teeth) : <span className="text-gray-300">—</span>}
                       <span className="block text-[11px] text-gray-400">
                         {/* หน่วยคือ "ฟัน" ไม่ใช่ม้วน — ม้วนเป็นค่าที่หารมาให้ดูเฉย ๆ */}
                         ฟัน{r.teethPerRoll ? ` · ≈ ${Number(r.rolls ?? 0).toFixed(2)} ม้วน` : ''}
@@ -307,7 +309,9 @@ export default function ReorderPage() {
                     <td className={TDR}>
                       <DaysPill d={r.daysLeft} />
                       <span className="block text-[11px] text-gray-400 mt-0.5">
-                        ใช้ {Number(r.teethPerDay ?? 0).toFixed(2)} ฟัน/วัน
+                        {typeof r.teethPerDay === 'number'
+                          ? <>ใช้ {r.teethPerDay.toFixed(2)} ฟัน/วัน</>
+                          : <>ไม่รู้อัตราการใช้</>}
                       </span>
                     </td>
                     <td className={`${TDR} text-gray-600`}>

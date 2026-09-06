@@ -202,9 +202,16 @@ export default function CorePage() {
           </Card>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard icon="📦" tone="blue" label="ออเดอร์ในคลังเงา" value={fmtNum(st.counts?.orders ?? 0)} unit="ใบ" />
-            <StatCard icon="🧾" tone="purple" label="รายการสินค้า" value={fmtNum(st.counts?.items ?? 0)} unit="แถว" />
-            <StatCard icon="📸" tone="green" label="สแนปช็อตสต็อก" value={fmtNum(st.counts?.snapshots ?? 0)} unit="แถว (วัน×SKU)" />
+            {/* 🔴 **ท่อไม่ส่งจำนวนมา ≠ คลังว่างเปล่า** — เดิมเขียน `?? 0`
+                การ์ดจะขึ้น "ออเดอร์ในคลังเงา 0 ใบ" ตัวใหญ่ ๆ ซึ่งอ่านแล้วเหมือนข้อมูลหายทั้งคลัง
+                (จอนี้เป็นหน้าแรกของหลังร้าน คนเห็นก่อนใครเพื่อน) ⇒ ไม่รู้ต้องเขียนว่าไม่รู้ */}
+            <StatCard icon="📦" tone="blue" label="ออเดอร์ในคลังเงา" unit={typeof st.counts?.orders === 'number' ? 'ใบ' : undefined}
+              value={typeof st.counts?.orders === 'number' ? fmtNum(st.counts.orders) : <span className="text-gray-400">ไม่รู้</span>}
+              note={typeof st.counts?.orders === 'number' ? undefined : 'ท่อไม่ได้ส่งจำนวนมา — ไม่ใช่ว่าคลังว่าง'} noteTone="orange" />
+            <StatCard icon="🧾" tone="purple" label="รายการสินค้า" unit={typeof st.counts?.items === 'number' ? 'แถว' : undefined}
+              value={typeof st.counts?.items === 'number' ? fmtNum(st.counts.items) : <span className="text-gray-400">ไม่รู้</span>} />
+            <StatCard icon="📸" tone="green" label="สแนปช็อตสต็อก" unit={typeof st.counts?.snapshots === 'number' ? 'แถว (วัน×SKU)' : undefined}
+              value={typeof st.counts?.snapshots === 'number' ? fmtNum(st.counts.snapshots) : <span className="text-gray-400">ไม่รู้</span>} />
           </div>
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
