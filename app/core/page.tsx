@@ -144,13 +144,35 @@ export default function CorePage() {
   }
   const totalChan = Math.max(...(st?.channels?.map(c => c.amount) ?? [0]), 1)
 
+  /** ส่วนนี้ "ดึงไม่ได้" หรือ "ยังไม่มีข้อมูล" — สองอย่างนี้ต้องเขียนคนละแบบ
+   *  🔴 ท่อส่ง `failed[]` มาให้อยู่แล้ว แต่เดิมจอนี้อ่านแค่ของ Shopee ส่วนอีกสามกล่อง
+   *     เขียน "ยังไม่มีข้อมูล — กด backfill" ทั้งที่ความจริงคือดึงไม่สำเร็จ
+   *     ⇒ คนไปกดปุ่มหนัก ๆ ที่ไม่ช่วยอะไร แล้วสรุปผิดว่าคลังยังว่าง (เจอตอนทดสอบด้วยท่อปลอม 6 ก.ย. 2569)
+   *  ⚠️ คืน null เมื่อไม่ได้ล้ม เพื่อให้ผู้เรียกใช้ข้อความ "ยังไม่มีข้อมูล" ของเดิมต่อได้ */
+  const failedNote = (key: string) => {
+    if (!(st?.failed ?? []).includes(key)) return null
+    return (
+      <p className="text-[13px] text-red-700 bg-red-50 p-4 leading-relaxed">
+        ⚠️ <b>ดึงส่วนนี้ไม่สำเร็จรอบนี้</b> — <b>ไม่ได้แปลว่าไม่มีข้อมูล</b>
+        {st?.failedWhy?.[key] && <> · <b>{st.failedWhy[key]}</b></>}
+        {' '}ลองรีเฟรชอีกครั้ง · <b>กดปุ่มสั่งงานด้านล่างตอนนี้ไม่ช่วย</b>
+      </p>
+    )
+  }
+
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">🌳 โครงการแก่น — คลังเงา</h1>
+          {/* 🔴 **เวลา "อัพเดต" ต้องขึ้นเฉพาะตอนโหลดข้อมูลได้จริง**
+              เดิมขึ้นทุกกรณี ⇒ ตอนท่อล่ม หัวจอเขียน "อัพเดต 23:25:20" อยู่เหนือกล่องแดง
+              ที่เขียนว่าดึงข้อมูลไม่ได้ — สองข้อความขัดกันเอง และคนจะเชื่อบรรทัดบน
+              (เจอด้วยการทำให้ท่อล่มจริงแล้วเปิดดู 6 ก.ย. 2569 · อ่านโค้ดเฉย ๆ ไม่เห็น
+               เพราะแต่ละข้อความถูกของมันเอง — ผิดตอนอยู่ด้วยกันเท่านั้น) */}
           <span className="text-[11px] text-gray-400" suppressHydrationWarning>
-            กระจกออเดอร์ทุกช่องทางลงฐานของเราเอง วิ่งคู่ ZORT · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
+            กระจกออเดอร์ทุกช่องทางลงฐานของเราเอง วิ่งคู่ ZORT
+            {st ? <> · อัพเดต {refreshed.toLocaleTimeString('th-TH')}</> : null}
           </span>
         </div>
         <button
@@ -184,7 +206,11 @@ export default function CorePage() {
           <Card>
             <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
               <p className="text-[13px] font-semibold text-gray-700">🚪 ประตูระยะ 2 — ยอดตรงติดต่อกัน {GOAL_DAYS} วัน</p>
-              <p className="text-[13px] font-bold text-gray-900">{streak} / {GOAL_DAYS} วัน</p>
+              {/* ⚠️ ไม่มีผลเทียบยอดเลย ≠ "ตรงกัน 0 วัน" — อันแรกคือยังไม่รู้ อันหลังคือรู้แล้วว่าไม่ผ่าน
+                  เขียน 0 ทั้งที่ยังไม่มีข้อมูล = ดูเหมือนเราสอบตกทุกวัน ทั้งที่ยังไม่ได้สอบ */}
+              <p className="text-[13px] font-bold text-gray-900">
+                {recon.length === 0 ? '—' : streak} / {GOAL_DAYS} วัน
+              </p>
             </div>
             <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
               <div
@@ -196,7 +222,10 @@ export default function CorePage() {
               {streak >= GOAL_DAYS
                 ? '✅ ผ่านประตูแล้ว — พร้อมคุยเรื่องให้ Core เป็นตัวจริง'
                 : recon.length === 0
-                  ? 'ยังไม่มีผลเทียบยอด — ยามเทียบยอดวิ่งตี 1 ทุกคืน หรือกดปุ่ม "เทียบยอดเดี๋ยวนี้" ด้านล่าง'
+                  ? ((st?.failed ?? []).includes('recon')
+                    /* ⚠️ ต้องตรงกับกล่องข้างล่าง — ล้มเหลวแล้วยังชวนให้กดปุ่ม = สั่งงานหนักฟรี ๆ */
+                    ? 'ดึงผลเทียบยอดไม่สำเร็จรอบนี้ — ยังไม่รู้ว่าตรงกันกี่วัน (ไม่ใช่ว่าไม่เคยตรง)'
+                    : 'ยังไม่มีผลเทียบยอด — ยามเทียบยอดวิ่งตี 1 ทุกคืน หรือกดปุ่ม "เทียบยอดเดี๋ยวนี้" ด้านล่าง')
                   : 'ยอดไม่ตรงวันไหน ตัวนับเริ่มใหม่ — ความชัวร์ซื้อด้วยเวลา'}
             </p>
           </Card>
@@ -220,7 +249,7 @@ export default function CorePage() {
               <div className="px-4 md:px-5 py-3 border-b border-gray-100">
                 <p className="text-[13px] font-semibold text-gray-700">🪞 ผลเทียบยอดรายวัน (ZORT vs Core)</p>
               </div>
-              {recon.length === 0 && <p className="text-[13px] text-gray-400 p-4">ยังไม่มีข้อมูล</p>}
+              {recon.length === 0 && (failedNote('recon') ?? <p className="text-[13px] text-gray-400 p-4">ยังไม่มีข้อมูล</p>)}
               {recon.map((r) => {
                 const ok = r.diff_notes === 'ตรงกัน'
                 return (
@@ -279,11 +308,11 @@ export default function CorePage() {
                 <p className="text-[13px] font-semibold text-gray-700">📦 สต็อกที่เราคำนวณเอง vs ZORT (ขั้น 1)</p>
                 <span className="text-[11px] text-gray-400">ยังไม่ตัดสต็อกจริงที่ไหน</span>
               </div>
-              {(st.stock ?? []).length === 0 && (
+              {(st.stock ?? []).length === 0 && (failedNote('stock') ?? (
                 <p className="text-[13px] text-gray-400 p-4">
                   ยังไม่มีข้อมูล — ต้องมีภาพถ่ายสต็อกอย่างน้อยสองวันก่อน ยามตี 1 เป็นคนเทียบและจดให้เอง
                 </p>
-              )}
+              ))}
               {(st.stock ?? []).map((r) => (
                 <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
                   {/* ศูนย์ SKU = ไม่มีอะไรให้เทียบ ห้ามขึ้นเขียวเด็ดขาด */}
@@ -304,7 +333,7 @@ export default function CorePage() {
             {/* ช่องทางในคลังเงา */}
             <Card>
               <p className="text-[13px] font-semibold text-gray-700 mb-3">🏪 ช่องทางที่กระจกเข้ามาแล้ว (ยอดสะสม)</p>
-              {(st.channels ?? []).length === 0 && <p className="text-[13px] text-gray-400">ยังไม่มีข้อมูล — กด backfill ด้านล่าง</p>}
+              {(st.channels ?? []).length === 0 && (failedNote('channels') ?? <p className="text-[13px] text-gray-400">ยังไม่มีข้อมูล — กด backfill ด้านล่าง</p>)}
               <div className="space-y-2.5">
                 {(st.channels ?? []).map((c) => (
                   <div key={c.channel}>

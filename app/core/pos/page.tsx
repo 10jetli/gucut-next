@@ -174,6 +174,8 @@ export default function CorePosPage() {
   //    หรือคิดว่าขายไม่ได้ · ระบบทำงานถูกแต่สื่อสารผิด แล้วคนใช้ตัดสินใจผิดตาม
   const [notice, setNotice] = useState<{ tone: 'info' | 'warn' | 'good'; text: string } | null>(null)
   const [sales, setSales] = useState<SaleRow[]>([])
+  /** ดึงประวัติบิลวันนี้ไม่สำเร็จ — ต้องแยกจาก "วันนี้ยังไม่มีบิล" ให้ขาด (ดูเหตุผลใน loadSales) */
+  const [salesErr, setSalesErr] = useState('')
   // สรุปแยกตามวิธีจ่ายของวันนั้น — เอาไว้ปิดยอดสิ้นวัน
   // (เงินสดต้องนับในลิ้นชัก · โอนต้องเช็คสลิป · บัตรต้องกระทบยอดกับเครื่องรูด)
   const [byPay, setByPay] = useState<{ method: string; orders: number; amount: number }[]>([])
@@ -336,9 +338,20 @@ export default function CorePosPage() {
   }
 
   const loadSales = useCallback(async () => {
+    setSalesErr('')
     try {
       const res = await fetch(`/api/web/core?list=sales&day=${thaiToday()}&limit=50`)
       const d = await res.json()
+      /* 🔴 **ดึงประวัติไม่ได้ ≠ วันนี้ยังไม่มีบิล** — เจอด้วยการทำให้ท่อล่มจริง 6 ก.ย. 2569
+         ของเดิม: ท่อตอบ 500 พร้อม JSON ⇒ res.json() ไม่ throw ⇒ catch ไม่ทำงาน
+         ⇒ setSales([]) เงียบ ๆ ⇒ จอเขียนว่า **"ยังไม่มีบิลวันนี้"** เป็นข้อเท็จจริง
+         ⇒ คนขายหน้าร้านอ่านแล้วนึกว่าใบที่เพิ่งเปิด **ไม่เข้า** แล้วเปิดซ้ำ
+         = ยอดเบิ้ล ซึ่งเป็นอันตรายอันเดียวกับที่จอนี้เตือนไว้ข้างบนเป๊ะ ๆ
+         ⚠️ แต่ยังต้อง **ไม่ขวางการขาย** — แค่บอกความจริง ไม่ล้มทั้งจอ */
+      if (!res.ok || d?.error) {
+        setSalesErr(String(d?.error || `ดึงไม่สำเร็จ (HTTP ${res.status})`))
+        return
+      }
       setSales(Array.isArray(d?.rows) ? d.rows : [])
       // รับได้ทั้งรูป array และ object เผื่อรูปข้อมูลต่างจากที่คิด — จอต้องไม่พังเพราะรูปไม่ตรง
       const bp = d?.byPay
@@ -356,7 +369,10 @@ export default function CorePosPage() {
       )
       setPayNames(d?.methods && typeof d.methods === 'object' ? d.methods : {})
       setDayTotal({ orders: Number(d?.total) || 0, amount: Number(d?.totalAmount) || 0 })
-    } catch { /* ประวัติดึงไม่ได้ไม่ควรขวางการขาย */ }
+    } catch (e) {
+      // ประวัติดึงไม่ได้ไม่ควรขวางการขาย — แต่ต้องบอกให้รู้ ห้ามเงียบแล้วโชว์ว่า "ยังไม่มีบิล"
+      setSalesErr(String(e instanceof Error ? e.message : e))
+    }
   }, [])
 
   useEffect(() => { loadSales() }, [loadSales])
@@ -1092,7 +1108,16 @@ export default function CorePosPage() {
           <p className="text-[14px] font-bold text-gray-800">บิลของวันนี้</p>
           <button onClick={loadSales} className="text-[12.5px] text-blue-600 hover:underline">รีเฟรช</button>
         </div>
-        {sales.length === 0 && <p className="text-[13px] text-gray-400 px-4 py-5">ยังไม่มีบิลวันนี้</p>}
+        {salesErr
+          ? (
+            <p className="text-[13px] text-amber-900 bg-amber-50 border-t border-amber-200 px-4 py-3 leading-relaxed">
+              ⚠️ <b>ดึงบิลของวันนี้ไม่ได้</b> — {salesErr}
+              <br />
+              <b>อย่าเพิ่งสรุปว่าวันนี้ยังไม่มีบิล</b> และอย่าเปิดใบซ้ำ · ขายต่อได้ตามปกติ
+              {' '}กด <b>รีเฟรช</b> อีกครั้งเมื่อระบบกลับมา
+            </p>
+          )
+          : sales.length === 0 && <p className="text-[13px] text-gray-400 px-4 py-5">ยังไม่มีบิลวันนี้</p>}
         {sales.map((s) => {
           const voided = isVoid(s.status)
           return (

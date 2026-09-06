@@ -18,7 +18,17 @@ async function forward(req: NextRequest, path: string[]) {
   if (!path.length || !ALLOW.has(path[0])) return NextResponse.json({ error: 'not allowed' }, { status: 403 })
 
   const url = new URL(req.url)
-  const target = `https://gucut.com/api/${path.join('/')}${url.search}`
+  /* 🧪 **ปลายทางปลอมสำหรับทดสอบ "จอพูดอะไรตอนของพัง" — ใช้ได้เฉพาะตอนรันในเครื่อง**
+     ทำไมต้องมี: คำเตือนบนจอเกือบทุกอันเขียนไว้ว่า "ถ้าท่อล่มจะขึ้นแบบนี้"
+     แต่ **ไม่เคยมีใครทำให้ท่อล่มจริงเพื่อดูว่ามันขึ้นแบบนั้นจริงไหม**
+     ⇒ ตั้ง GUCUT_WEB_BASE ชี้ไปเซิร์ฟเวอร์ปลอมในเครื่อง แล้วป้อน 500 / ก้อนว่าง / ข้อมูลขาดช่อง
+     🔴 **ตัวแปรนี้ถูกเมินทิ้งตอน production เสมอ** — ตั้งบน Netlify ก็ไม่มีผล
+        ไม่งั้นมันจะกลายเป็นสวิตช์เปลี่ยนปลายทางของหลังร้านทั้งระบบ ซึ่งอันตรายกว่าที่ได้
+     ⚠️ ⇒ ใช้ได้กับ `npm run dev` เท่านั้น · `next start` นับเป็น production จึงเมินตัวแปรนี้ */
+  const base = process.env.NODE_ENV === 'production'
+    ? 'https://gucut.com'
+    : (process.env.GUCUT_WEB_BASE || 'https://gucut.com')
+  const target = `${base}/api/${path.join('/')}${url.search}`
   const init: RequestInit = {
     method: req.method,
     headers: { 'x-admin-key': key, 'content-type': req.headers.get('content-type') || 'application/json' },
