@@ -54,7 +54,20 @@ export async function GET(req: NextRequest) {
             zip.folder(sanitize(vendor.name))!.file(name, buf)
             attNames.push(name)
             added++
-          } catch { /* ข้ามไฟล์ที่ดึงไม่ได้ */ }
+          } catch (e: any) {
+            /* 🔴 **ไฟล์บิลที่ดึงไม่ได้ ห้ามหายเงียบ** — ซองนี้เอาไปให้บัญชียื่นภาษี
+               บิลหายหนึ่งใบ = เอกสารภาษีขาดหนึ่งใบ และไม่มีใครรู้ว่าขาด
+               (ก่อนหน้านี้ `catch` เปล่า ๆ พร้อมคอมเมนต์ว่า "ข้ามไฟล์ที่ดึงไม่ได้" — เจอ 7 ก.ย. 2569)
+               ⇒ ใส่บันทึกลงซองแทน ให้คนเห็นว่ามีอะไรขาดและขาดเพราะอะไร */
+            zip.folder(sanitize(vendor.name))!.file(
+              `⚠️ดึงไฟล์ไม่ได้_${sanitize(att.filename || 'ไฟล์แนบ')}.txt`,
+              `ดึงไฟล์แนบนี้จาก Gmail ไม่สำเร็จ\n`
+              + `ผู้ให้บริการ: ${vendor.name}\nอีเมล: ${b.subject}\nวันที่: ${b.date}\n`
+              + `ไฟล์: ${att.filename}\nสาเหตุ: ${String(e?.message ?? e)}\n\n`
+              + `⚠️ ซองนี้จึง **ขาดบิลใบนี้** — เปิดดูฉบับเต็มใน Gmail แล้วดาวน์โหลดเอง`,
+            )
+            missing.push(`${vendor.name} — ไฟล์ ${att.filename} (ดึงไม่สำเร็จ)`)
+          }
         }
         // อีเมลไม่มีไฟล์แนบ -> แปลงเนื้อหาอีเมลเป็น PDF จริง (เฉพาะอีเมลของเดือนนี้)
         if (!b.attachments.length && emailMonth === month) {
