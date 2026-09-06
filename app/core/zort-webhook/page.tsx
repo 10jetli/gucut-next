@@ -18,6 +18,7 @@ import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
+import { fromExpectedEndpoint } from '@/lib/api-shape'
 
 interface Resp {
   ok?: boolean
@@ -39,8 +40,12 @@ export default function ZortWebhookPage() {
     setLoading(true); setError(''); setNotDeployed(false)
     try {
       const r: Resp = await fetch('/api/web/core?zortwebhook=1').then((x) => x.json())
-      // ⚠️ คำตอบของเส้นนี้ต้องมี ok เสมอ (true/false) — ไม่มี = ตกไปคำตอบอย่างอื่น
-      if (typeof r?.ok !== 'boolean') { setNotDeployed(true); setD(null); return }
+      /* 🔴 พิสูจน์ก่อนว่าคำตอบมาจากเส้นที่ตั้งใจถาม — **ห้ามใช้ `ok` เป็นเครื่องพิสูจน์เดี่ยว ๆ**
+         เส้นเกือบทุกเส้นส่ง ok:true เหมือนกันหมด · คำตอบหน้าแรกบังเอิญไม่มี ok
+         แต่นั่นคือความบังเอิญ ไม่ใช่สัญญา (ดู lib/api-shape.ts) */
+      if (!fromExpectedEndpoint(r, ['resCode', 'fields', 'rawHead', 'data'])) {
+        setNotDeployed(true); setD(null); return
+      }
       setD(r)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)

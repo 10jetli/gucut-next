@@ -35,6 +35,7 @@ import {
   PageHead, BtnGhost, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
   EmptyState, Pill, relDay, thaiDate,
 } from '@/components/zort'
+import { fromExpectedEndpoint } from '@/lib/api-shape'
 
 interface Row {
   number?: string; reference?: string; customer?: string
@@ -75,7 +76,11 @@ export default function ReturnOrdersPage() {
     try {
       const r: Resp = await fetch(`/api/web/core?list=returnorders&limit=${LIMIT}`).then((x) => x.json())
       if (r?.error) throw new Error(r.error)
-      if (!Array.isArray(r?.rows)) { setNotDeployed(true); setD(null); return }
+      /* 🔴 `rows` อย่างเดียวไม่พอ — เส้นอื่นก็ส่ง rows เหมือนกัน
+         และคำตอบหน้าแรกมี stock/channels ที่หน้าตาคล้ายรายการ (ดู lib/api-shape.ts) */
+      if (!fromExpectedEndpoint(r, ['rows', 'live']) || !Array.isArray(r?.rows)) {
+        setNotDeployed(true); setD(null); return
+      }
       setD(r)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)

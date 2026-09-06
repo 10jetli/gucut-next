@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "prebuild": "node scripts/gen-arch.mjs",
+    "prebuild": "node scripts/gen-arch.mjs && node scripts/check-nav.mjs && node scripts/check-claims.mjs",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "check": "node scripts/check-nav.mjs && node scripts/check-claims.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.120.0",

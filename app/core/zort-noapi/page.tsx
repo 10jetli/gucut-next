@@ -21,6 +21,7 @@ import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill, thaiDate } from '@/components/zort'
+import { fromExpectedEndpoint } from '@/lib/api-shape'
 
 interface Item { what?: string; at?: string; probe?: string; note?: string; untested?: boolean }
 interface Method {
@@ -49,7 +50,8 @@ export default function ZortNoApiPage() {
     try {
       const r: Resp = await fetch('/api/web/core?zortnoapi=1').then((x) => x.json())
       if (r?.error) throw new Error(r.error)
-      if (!Array.isArray(r?.noApi) && !Array.isArray(r?.canButNotBuilt)) {
+      // 🔴 พิสูจน์ต้นทางก่อนตีความ (ดู lib/api-shape.ts)
+      if (!fromExpectedEndpoint(r, ['noApi', 'canButNotBuilt', 'method'])) {
         setNotDeployed(true); setD(null); return
       }
       setD(r)
