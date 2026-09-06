@@ -109,11 +109,16 @@ export default function CoreMissingSkuPage() {
       {data && !data.skip && (
         <>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            <StatCard icon="🔢" tone="blue" label="รหัสที่คลังไม่รู้จัก" value={fmtNum(data.total ?? 0)} unit="ตัว"
+            {/* ⚠️ ท่อไม่ส่งช่องนี้มา ≠ ศูนย์ตัว — จอนี้บอกว่า "มีของที่ไม่มีใครคุมสต็อกกี่ตัว"
+                เขียน 0 ตอนไม่รู้ = บอกว่าไม่มีปัญหา ทั้งที่ยังไม่ได้ตรวจ (ตัวตรวจ check-honesty ชี้จุดนี้) */}
+            <StatCard icon="🔢" tone="blue" label="รหัสที่คลังไม่รู้จัก" unit={typeof data.total === 'number' ? 'ตัว' : undefined}
+              value={typeof data.total === 'number' ? fmtNum(data.total) : <span className="text-gray-400">ไม่รู้</span>}
               note={data.day ? `เทียบกับภาพถ่าย ${thaiDate(data.day)}` : undefined} />
-            <StatCard icon="🔗" tone="orange" label="พอเดารหัสฐานได้" value={fmtNum(data.mappedToBase ?? 0)} unit="ตัว"
+            <StatCard icon="🔗" tone="orange" label="พอเดารหัสฐานได้" unit={typeof data.mappedToBase === 'number' ? 'ตัว' : undefined}
+              value={typeof data.mappedToBase === 'number' ? fmtNum(data.mappedToBase) : <span className="text-gray-400">ไม่รู้</span>}
               note="แค่ชื่อคนละระดับ ไม่ใช่ของหาย" />
-            <StatCard icon="❓" tone="red" label="ไม่รู้จักเลย" value={fmtNum(data.unknown ?? 0)} unit="ตัว"
+            <StatCard icon="❓" tone="red" label="ไม่รู้จักเลย" unit={typeof data.unknown === 'number' ? 'ตัว' : undefined}
+              value={typeof data.unknown === 'number' ? fmtNum(data.unknown) : <span className="text-gray-400">ไม่รู้</span>}
               note="ต้องตามหาว่าคือสินค้าอะไร" />
           </div>
 
