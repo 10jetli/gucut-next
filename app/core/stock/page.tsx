@@ -12,7 +12,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
@@ -177,7 +177,7 @@ export default function CoreStockPage() {
         title="สินค้า"
         summary={
           /* 🔴 ล้มเหลวแล้วห้ามค้างที่ "กำลังโหลด…" (แก้ 6 ก.ย. 2569 — เจอตอนเปิดจอจริงตอนของพัง) */
-          error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+          error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
           : data ? (
             <>
               {/* ⚠️ **รูปประโยคนี้ลอกจาก ZORT เป๊ะ** — "จำนวน N รายการ | ลิงก์ | ลิงก์"

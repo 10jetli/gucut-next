@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner,
@@ -116,7 +116,7 @@ export default function MarketplaceProductsPage() {
         title="สินค้าบน Marketplace"
         summary={
           /* 🔴 ล้มเหลวแล้วห้ามโชว์จำนวนรหัส — จะอ่านเป็น "คลังว่าง" ทั้งที่แค่ดึงไม่ได้ */
-          error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+          error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
             : loading
             ? 'กำลังไล่ทุกหน้า…'
             : (

@@ -12,7 +12,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText, summaryLine, EmptyState, thaiDate,
 } from '@/components/zort'
@@ -126,7 +126,7 @@ export default function CoreCustomersPage() {
       const res = await fetch(`/api/web/core?bycustomer=1&days=${range}&limit=500`)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
-      if (d?.skip) throw new Error(d.skip)
+      if (d?.skip) throw new Error(SKIP + d.skip)
       /* 🔴 ตอบ 200 แต่ไม่มีช่อง customers = ยังไม่รู้ ไม่ใช่ "ช่วงนี้ไม่มีลูกค้า"
          หัวจอเป็นตัวเลขเงินด้วย ⇒ ต้องไม่เขียนเลขเลยเมื่อไม่รู้ */
       if (!('customers' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายชื่อลูกค้า) — ยังสรุปยอดไม่ได้')
@@ -193,7 +193,9 @@ export default function CoreCustomersPage() {
           /* 🔴 ดึงไม่ได้ **ห้ามเขียนเลขใด ๆ** — เดิมขึ้น "จำนวน 0 ราย · 0 บาท · รวมจากออเดอร์ 0 ใบ"
              อยู่เหนือกล่องแดง ⇒ อ่านได้ว่า "ช่วงนี้ไม่มีลูกค้าเลย" ซึ่งเป็นคนละเรื่องกับ "ดึงไม่ได้"
              และเป็นตัวเลขเงินด้วย (เจอด้วยท่อปลอม 6 ก.ย. 2569) */
-          error ? <span className="text-red-600">ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง</span> : (
+          error ? (isSkip(error)
+            ? <span className="text-amber-800">ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง</span>
+            : <span className="text-red-600">ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง</span>) : (
           <>
             {/* 🔴 **ยอดรวมนี้บวกจากแถวที่แสดงเท่านั้น** — ตอนถูกตัดที่ 500 ราย มันคือยอดของ 500 รายแรก
                 ไม่ใช่ยอดทั้งช่วง ⇒ ต้องเขียนกำกับ ไม่ใช่ปล่อยให้อ่านเป็นยอดรวมจริง

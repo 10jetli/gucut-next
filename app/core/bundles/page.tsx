@@ -20,7 +20,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
@@ -140,7 +140,7 @@ export default function CoreBundlesPage() {
       <PageHead
         title="สินค้าเป็นชุด"
         /* 🔴 ล้มเหลวแล้วห้ามค้างที่ "กำลังโหลด…" (แก้ 6 ก.ย. 2569) */
-        summary={error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+        summary={error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
           : data ? `จำนวน ${fmtNum(data.total)} รายการ` : 'กำลังโหลด…'}
         actions={
           <>

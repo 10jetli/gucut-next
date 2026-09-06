@@ -16,7 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, ChannelTag, thaiDate, Pill,
@@ -71,7 +71,7 @@ export default function PackingPage() {
     try {
       const r: Resp = await fetch('/api/web/core?pending=1').then((x) => x.json())
       if (r?.error) throw new Error(r.error)
-      if (r?.skip) throw new Error(r.skip)
+      if (r?.skip) throw new Error(SKIP + r.skip)
       /* 🔴 **ตอบ 200 แต่ไม่มีช่องที่จอนี้ต้องใช้ = ยังไม่รู้ ไม่ใช่ "แพ็คครบแล้ว"**
          เจอด้วยท่อปลอมโหมดตอบ {} เปล่า ๆ (6 ก.ย. 2569): จอขึ้น
          "ต้องแพ็คและส่ง 0 ใบ · 📦 ไม่มีใบค้างส่ง — แพ็คครบแล้ว" **โดยไม่มีกล่องแดงสักอัน**
@@ -116,7 +116,7 @@ export default function PackingPage() {
         summary={
           /* 🔴 ล้มเหลวแล้วห้ามโชว์จำนวน — คนกวาดตาผ่านหัวจอจะอ่านว่า "ไม่มีงานค้าง"
              ทั้งที่ความจริงคือดึงไม่ได้ (คลาสเดียวกับที่เจอในจอใบคืนของ 6 ก.ย. 2569) */
-          error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+          error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
             : loading ? 'กำลังโหลด…'
             : (
               <>

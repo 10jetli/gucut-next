@@ -367,7 +367,12 @@ export default function CoreSalesPage() {
               className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               <option value="">ทุกช่องทาง</option>
-              {(data?.channels ?? []).map((c) => <option key={c} value={c}>{c}</option>)}
+              {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
+                  React จะโยน "Objects are not valid as a React child" แล้ว **ทิ้งทั้งหน้าเป็นจอขาว**
+                  (เจอจริงตอนป้อนข้อมูลปลอมที่ชนิดไม่ตรง 6 ก.ย. 2569 — ชนิดผิดช่องเดียว ล้มทั้งจอ)
+                  ⇒ ชนิดไม่ตรงก็แค่ตัวเลือกนั้นหาย ดีกว่าทั้งจอหาย */}
+              {(data?.channels ?? []).filter((c) => typeof c === 'string')
+                .map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <span className="text-[13px] text-gray-500">แสดง</span>
             <select

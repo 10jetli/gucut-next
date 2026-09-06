@@ -19,7 +19,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark,
@@ -127,7 +127,7 @@ export default function LogisticsPage() {
              แต่หัวจอยังบอกว่ากำลังโหลด ⇒ คนรอต่อไปเรื่อย ๆ โดยไม่รู้ว่าจบแล้ว
              (เจอด้วยการเปิดจอตอนดึงข้อมูลไม่ได้ 6 ก.ย. 2569 — อ่านโค้ดแล้วไม่เห็น
               เพราะสองข้อความอยู่คนละที่ในไฟล์ และแต่ละอันถูกของมันเอง) */
-          error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง' :
+          error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง') :
           data
             ? (
               <>

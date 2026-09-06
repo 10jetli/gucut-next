@@ -20,7 +20,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtNum, TH_MONTHS } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, EmptyState } from '@/components/zort'
 import LinkStock from '@/components/zort/LinkStock'
 
@@ -82,9 +82,15 @@ export default function ReorderPage() {
       const res = await fetch(`/api/web/core?reorder=1&days=${n}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
-      /* 🔴 ตอบ 200 แต่ไม่มีช่องรายการ = ยังไม่รู้ ไม่ใช่ "ไม่มีอะไรต้องสั่ง"
-         จอนี้ตัดสินใจเรื่องสั่งของ — เขียน "เฝ้าดู 0 รายการ" ตอนไม่รู้ = ชวนให้ไม่สั่งของที่ต้องสั่ง */
-      if (!j || !('rows' in j)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการสินค้า) — ยังสรุปไม่ได้ว่าต้องสั่งอะไร')
+      /* 🔴 **สามสถานะ ไม่ใช่สอง** (ฝั่งท่อยืนยันสัญญา 6 ก.ย. 2569)
+         ① มี `skip` = ทำต่อไม่ได้ (D1 ยังไม่ตั้งค่า · ยังไม่มีภาพถ่ายสต็อก) — **ไม่ใช่ error**
+            ⇒ ปล่อยผ่าน แล้วให้จอขึ้นเหตุผลของ skip (ท่อจะไม่ส่งช่องข้อมูลมาด้วยในกรณีนี้)
+         ② ไม่มี skip แต่ไม่มีช่องข้อมูล = ตอบมาไม่ครบ ⇒ แดง
+         ③ มีช่องแต่ว่าง = ไม่มีข้อมูลจริง ๆ ⇒ ข้อความว่างเปล่าตามปกติ
+         ⚠️ เรียงผิดลำดับ = จอขึ้นแดงทุกครั้งที่คลังเงายังไม่พร้อม ทั้งที่เป็นสถานะปกติของช่วงนี้ */
+      if (!j?.skip && (!j || !('rows' in j))) {
+        throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการสินค้า) — ยังสรุปไม่ได้ว่าต้องสั่งอะไร')
+      }
       setD(j)
       setDays(n)
     } catch (e) {
@@ -108,7 +114,10 @@ export default function ReorderPage() {
         summary={
           <>
             {/* 🔴 ล้มเหลวแล้วห้ามค้างที่ "กำลังโหลด…" (แก้ 6 ก.ย. 2569) */}
-            {error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+            {error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
+              /* ⚠️ มี skip = ท่อยังทำต่อไม่ได้ ⇒ **ห้ามเขียน "เฝ้าดู 0 รายการ"**
+                 ศูนย์ตรงนี้อ่านได้ว่า "ไม่มีอะไรต้องสั่ง" ซึ่งคนละเรื่องกับ "ยังดูให้ไม่ได้" */
+              : d?.skip ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง'
               : d ? <>เฝ้าดู {fmtNum(rows.length)} รายการ · ต้องสั่งภายใน 7 วัน <b className="text-red-600">{fmtNum(urgent)}</b></> : 'กำลังโหลด…'}
             {' | '}
             {/* ⚠️ ZORT จอนี้ว่างเปล่าจริง ต้องเขียนบอก ไม่งั้นคนนึกว่าเราลอกไม่ครบ */}

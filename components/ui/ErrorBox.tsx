@@ -11,6 +11,18 @@
 // ⚠️ **แปลเฉพาะแบบที่รู้จักจริง ๆ** ที่เหลือปล่อยผ่านตามเดิม — เดาความหมายผิดแล้วชี้ทางผิด
 //    แย่กว่าปล่อยข้อความอังกฤษไว้เฉย ๆ
 
+/** ตัวชี้ว่าข้อความนี้คือ **สถานะที่สาม** ไม่ใช่ความผิดพลาด
+ *  🔴 สัญญาฝั่งท่อ (6 ก.ย. 2569): `skip` = "ทำต่อไม่ได้" เช่น คลังเงายังไม่ตั้งค่า
+ *     หรือยังไม่มีภาพถ่ายสต็อกสักวัน — **ไม่ใช่ error และไม่ใช่ข้อมูลว่าง**
+ *  ⇒ ขึ้นแดงทั้งที่เป็นสถานะปกติของช่วงนี้ = สอนให้เจ้าของร้านเลิกสนใจสีแดง
+ *  วิธีใช้: `throw new Error(SKIP + ข้อความจากท่อ)` แล้วส่ง error เข้ากล่องนี้ตามปกติ */
+export const SKIP = '⏳'
+
+/** ข้อความนี้เป็นสถานะ "ทำต่อไม่ได้" ใช่ไหม — ให้หัวจอถามก่อนเขียนว่า "ดึงข้อมูลไม่สำเร็จ"
+ *  ⚠️ ไม่ถาม = หัวจอเขียนว่าล้มเหลว แต่กล่องข้างล่างเป็นสีเหลืองบอกว่าไม่ใช่ข้อผิดพลาด
+ *     สองข้อความขัดกันเอง (กฎเดียวกับที่ไล่แก้ทั้งคืน: **หัวจอกับกล่องต้องพูดเรื่องเดียวกัน**) */
+export const isSkip = (msg?: string) => typeof msg === 'string' && msg.startsWith(SKIP)
+
 /** ข้อความที่รู้จัก → คำอธิบายไทย + บอกว่าทำอะไรต่อ */
 const KNOWN: { match: RegExp; th: string }[] = [
   {
@@ -38,6 +50,19 @@ export default function ErrorBox({
   title = 'โหลดไม่ได้',
   children,
 }: { title?: string; children?: React.ReactNode }) {
+  // สถานะ "ทำต่อไม่ได้" — สีเหลือง ไม่ใช่แดง และเปลี่ยนหัวข้อให้ตรงความหมาย
+  if (typeof children === 'string' && children.startsWith(SKIP)) {
+    return (
+      <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900 flex gap-3">
+        <span className="text-lg leading-none shrink-0">⏳</span>
+        <div>
+          <p className="font-semibold">ยังทำงานส่วนนี้ต่อไม่ได้ (ไม่ใช่ข้อผิดพลาด)</p>
+          <p className="leading-relaxed">{children.slice(SKIP.length)}</p>
+        </div>
+      </div>
+    )
+  }
+
   const friendly = explain(children)
   return (
     <div className="bg-red-50 border border-red-100 rounded-2xl p-4 text-sm text-red-600 flex gap-3">

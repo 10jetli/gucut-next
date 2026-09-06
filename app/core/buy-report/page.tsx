@@ -16,11 +16,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, thaiShort } from '@/components/zort'
 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
-interface Resp { total?: number; amount?: number; rows?: Po[] }
+interface Resp { total?: number; amount?: number; rows?: Po[]
+  /** ⚠️ **สถานะที่สาม** — "ทำต่อไม่ได้" (คลังเงายังไม่พร้อม) ไม่ใช่ error และไม่ใช่ข้อมูลว่าง
+   *  ท่อจะไม่ส่งช่องข้อมูลมาด้วยเมื่อมีค่านี้ ⇒ ต้องเช็คก่อนตัวกัน "ตอบมาไม่ครบ" เสมอ */
+  skip?: string }
 interface ItemRow { sku: string; name?: string; qty?: number; amount?: number; orders?: number; lastDate?: string }
 interface ItemsResp {
   skus?: number; lines?: number; amount?: number; rows?: ItemRow[]
@@ -132,6 +135,8 @@ export default function BuyReportPage() {
       }
       /* 🔴 ตอบ 200 แต่ไม่มีช่อง rows = ยังไม่รู้ ไม่ใช่ "ไม่มียอดซื้อในช่วงนี้"
          (เจอด้วยท่อปลอมโหมดตอบ {} 6 ก.ย. 2569 — จอขึ้น "ไม่มียอดซื้อ 0 ใบ" โดยไม่มีกล่องแดง) */
+      /* ลำดับสำคัญ: skip (ทำต่อไม่ได้) ต้องมาก่อน "ตอบมาไม่ครบ" ไม่งั้นจอขึ้นแดงทุกครั้งที่คลังเงายังไม่พร้อม */
+      if (j?.skip) throw new Error(SKIP + j.skip)
       if (!j || !('rows' in j)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการใบซื้อ) — ยังสรุปยอดซื้อไม่ได้')
       setAll(j)
       setRows(Array.isArray(j.rows) ? j.rows : [])

@@ -13,7 +13,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
@@ -69,7 +69,9 @@ export default function CoreBranchesPage() {
 
       const wRes = await fetch('/api/web/core?list=warehouses').then((r) => r.json())
       if (wRes?.error) throw new Error(wRes.error)
-      /* 🔴 ตอบ 200 แต่ไม่มีช่อง warehouses = ยังไม่รู้ ไม่ใช่ "ร้านไม่มีคลังสักแห่ง" */
+      /* 🔴 ตอบ 200 แต่ไม่มีช่อง warehouses = ยังไม่รู้ ไม่ใช่ "ร้านไม่มีคลังสักแห่ง"
+         ⚠️ `skip` มาก่อนเสมอ — เป็นสถานะ "ทำต่อไม่ได้" ไม่ใช่ error (สัญญาฝั่งท่อ 6 ก.ย. 2569) */
+      if (typeof wRes?.skip === 'string' && wRes.skip) throw new Error(SKIP + wRes.skip)
       if (!wRes || !('warehouses' in wRes)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายชื่อคลัง)')
       setRows(Array.isArray(wRes?.warehouses) ? wRes.warehouses : [])
       setNote(typeof wRes?.note === 'string' ? wRes.note : '')
@@ -114,7 +116,7 @@ export default function CoreBranchesPage() {
         title="คลังสินค้า/สาขา"
         /* 🔴 ดึงไม่ได้ **ห้ามเขียน "จำนวน 0 รายการ"** — หัวจอจะขัดกับกล่องแดงข้างล่างทันที
            และคนอ่านหัวจอก่อนเสมอ (เจอด้วยท่อปลอม 6 ก.ย. 2569) */
-        summary={error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง' : `จำนวน ${fmtNum(rows.length)} รายการ`}
+        summary={error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง') : `จำนวน ${fmtNum(rows.length)} รายการ`}
         actions={
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>

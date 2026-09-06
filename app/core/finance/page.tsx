@@ -13,7 +13,7 @@ import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
 
 interface StockResp { total: number; value: number; outOfStock: number; day: string }
@@ -24,7 +24,13 @@ const thaiDay = (back = 0) =>
 const thisMonth = () => thaiDay(0).slice(0, 7)
 
 const THAI_MONTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-const monthLabel = (ym: string) => {
+/* ⚠️ **ห้ามสมมติว่ามีค่ามาเสมอ** — ตัวนี้ถูกเรียกในลูปวาดตาราง
+   ถ้าท่อเปลี่ยนชื่อช่อง (เช่น ym → month) ค่าจะเป็น undefined ⇒ .split โยน error
+   ⇒ React ทิ้งทั้งหน้า ⇒ **จอการเงินขาวสนิท ไม่มีข้อความอะไรเลย**
+   (เจอจริงตอนป้อนข้อมูลปลอมที่ชื่อช่องไม่ตรง 6 ก.ย. 2569 — ชื่อช่องผิดตัวเดียว ล้มทั้งจอ)
+   ⇒ ไม่รู้ก็เขียน "—" ไปตามตรง ดีกว่าล้มทั้งหน้า */
+const monthLabel = (ym?: string) => {
+  if (typeof ym !== 'string' || !ym.includes('-')) return '—'
   const [y, m] = ym.split('-')
   return `${THAI_MONTH[Number(m) - 1] ?? m} ${Number(y) + 543 - 2500}`
 }
@@ -77,7 +83,7 @@ export default function CoreFinancePage() {
       if (mRes.status === 'rejected') throw new Error(String(mRes.reason))
       const { ok, status, j: d } = mRes.value
       if (!ok || d?.error) throw new Error(d?.error ?? `HTTP ${status}`)
-      if (d?.skip) throw new Error(d.skip)
+      if (d?.skip) throw new Error(SKIP + d.skip)
       /* 🔴 ตอบ 200 แต่ **ไม่มีช่อง months** = ยังไม่รู้ ไม่ใช่ "รายได้ศูนย์บาท"
          เจอด้วยท่อปลอมโหมดตอบ {} (6 ก.ย. 2569): การ์ดขึ้น "รายรับเดือนนี้ 0 · 6 เดือน 0 · 0 ใบ"
          โดยไม่มีกล่องแดงเลย — เป็นตัวเลขเงิน คนเอาไปตัดสินใจได้ทันที */

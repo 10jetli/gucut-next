@@ -30,7 +30,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
   EmptyState, Pill, relDay, thaiDate, EndpointMissing,
@@ -116,7 +116,7 @@ export default function ReturnOrdersPage() {
              กล่องแดงบอกว่าดึงไม่ได้ แต่หัวจอยังเขียน "จำนวน 0 รายการ" อยู่ข้าง ๆ
              ⇒ คนกวาดตาผ่านหัวจอจะอ่านว่า **"ไม่มีใบคืนของ"** ซึ่งกลับหัวความจริง
              ⚠️ กล่อง error ที่ถูกต้อง ไม่ได้ช่วยอะไร ถ้าหัวจอยังพูดตัวเลขที่แต่งขึ้นเอง */
-          error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
+          error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
             : loading ? 'กำลังโหลด…'
             : (
               <>
