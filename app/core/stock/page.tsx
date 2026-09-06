@@ -183,7 +183,11 @@ export default function CoreStockPage() {
               {/* ⚠️ **รูปประโยคนี้ลอกจาก ZORT เป๊ะ** — "จำนวน N รายการ | ลิงก์ | ลิงก์"
                   เจ้าของร้านสั่ง 3 ก.ย. 2569 ให้ถอดของที่เราเพิ่มเองออกทั้งหมด
                   (ของหมด · เหลือน้อย · มูลค่าสต็อก) ⇒ ย้ายคำอธิบายส่วนต่างไปใต้ตาราง */}
-              จำนวน {data.total.toLocaleString('th-TH')} รายการ
+              {/* 🔴 ท่อไม่ส่ง total มา = undefined ⇒ .toLocaleString โยน error ⇒ **จอขาวทั้งหน้า**
+                  (เจอจริงด้วยท่อปลอมโหมดตอบ {} เปล่า ๆ 6 ก.ย. 2569 — 200 ทุกคำขอ ไม่มีกล่องแดงให้เห็นด้วย) */}
+              {typeof data.total === 'number'
+                ? <>จำนวน {data.total.toLocaleString('th-TH')} รายการ</>
+                : <>จำนวน — รายการ (เซิร์ฟเวอร์ไม่ได้ส่งจำนวนมา)</>}
               {hiddenRows.length > 0 && !showTest && (
                 <span className="text-gray-400">
                   {' '}(ซ่อนของทดสอบ {hiddenRows.length} รายการ{' '}

@@ -69,6 +69,8 @@ export default function CoreBranchesPage() {
 
       const wRes = await fetch('/api/web/core?list=warehouses').then((r) => r.json())
       if (wRes?.error) throw new Error(wRes.error)
+      /* 🔴 ตอบ 200 แต่ไม่มีช่อง warehouses = ยังไม่รู้ ไม่ใช่ "ร้านไม่มีคลังสักแห่ง" */
+      if (!wRes || !('warehouses' in wRes)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายชื่อคลัง)')
       setRows(Array.isArray(wRes?.warehouses) ? wRes.warehouses : [])
       setNote(typeof wRes?.note === 'string' ? wRes.note : '')
       setLoading(false) // ← ตารางขึ้นได้แล้ว ไม่ต้องรอยอดขาย

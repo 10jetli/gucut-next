@@ -374,11 +374,20 @@ export function RowMenu({ items }: { items: RowMenuItem[] }) {
 }
 
 /** บรรทัดสรุปใต้ชื่อจอแบบ ZORT: "จำนวน N รายการ, มูลค่าทั้งหมด X บาท" */
-export function summaryLine(count: number, amount?: number) {
+/* 🔴 **ตัวนี้เคยทำจอทั้งหน้าเป็นสีขาว** — เจอ 6 ก.ย. 2569 ด้วยท่อปลอมโหมด "ตอบ {} เปล่า ๆ"
+   ผู้เรียกส่ง `data.total` เข้ามา ซึ่งเป็น undefined ตอนท่อตอบไม่ครบ
+   ⇒ `count.toLocaleString` โยน TypeError ⇒ React ทิ้งทั้งหน้า ⇒ **จอว่างเปล่า ไม่มีข้อความอะไรเลย**
+   วัดของจริง: /core/sales · /core/stock · /core/purchases ขาวสนิททั้งสามหน้า (200 ทุกคำขอ ไม่มีกล่องแดง)
+   ⚠️ เป็นตัวใช้ร่วมหลายจอ ⇒ พังตัวเดียว ล้มพร้อมกันหลายจอ
+   ⇒ ไม่ใช่ตัวเลข ต้องเขียนว่า "ไม่รู้" ไม่ใช่โยน error และไม่ใช่แกล้งเป็น 0 */
+export function summaryLine(count?: number, amount?: number) {
   const a = typeof amount === 'number'
     // ZORT เขียน "1,804,130.3 บาท" — ทศนิยมท้ายที่เป็นศูนย์ไม่ถูกเติม
     ? `, มูลค่าทั้งหมด ${amount.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท`
     : ''
+  if (typeof count !== 'number' || !Number.isFinite(count)) {
+    return `จำนวน — รายการ (เซิร์ฟเวอร์ไม่ได้ส่งจำนวนมา)${a}`
+  }
   return `จำนวน ${count.toLocaleString('th-TH')} รายการ${a}`
 }
 

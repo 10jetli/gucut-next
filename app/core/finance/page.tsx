@@ -78,6 +78,10 @@ export default function CoreFinancePage() {
       const { ok, status, j: d } = mRes.value
       if (!ok || d?.error) throw new Error(d?.error ?? `HTTP ${status}`)
       if (d?.skip) throw new Error(d.skip)
+      /* 🔴 ตอบ 200 แต่ **ไม่มีช่อง months** = ยังไม่รู้ ไม่ใช่ "รายได้ศูนย์บาท"
+         เจอด้วยท่อปลอมโหมดตอบ {} (6 ก.ย. 2569): การ์ดขึ้น "รายรับเดือนนี้ 0 · 6 เดือน 0 · 0 ใบ"
+         โดยไม่มีกล่องแดงเลย — เป็นตัวเลขเงิน คนเอาไปตัดสินใจได้ทันที */
+      if (!('months' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มียอดรายเดือน) — ยังบอกตัวเลขรายรับไม่ได้')
       setMonths(Array.isArray(d.months) ? d.months : [])
       // ท่อบอกมาเองว่านับรวมกี่ร้าน — **ห้ามจอเดา** ชื่อช่องทางซ้ำกันข้ามร้านได้
       setScope(typeof d.store === 'string' ? d.store : '')

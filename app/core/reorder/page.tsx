@@ -82,6 +82,9 @@ export default function ReorderPage() {
       const res = await fetch(`/api/web/core?reorder=1&days=${n}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
+      /* 🔴 ตอบ 200 แต่ไม่มีช่องรายการ = ยังไม่รู้ ไม่ใช่ "ไม่มีอะไรต้องสั่ง"
+         จอนี้ตัดสินใจเรื่องสั่งของ — เขียน "เฝ้าดู 0 รายการ" ตอนไม่รู้ = ชวนให้ไม่สั่งของที่ต้องสั่ง */
+      if (!j || !('rows' in j)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการสินค้า) — ยังสรุปไม่ได้ว่าต้องสั่งอะไร')
       setD(j)
       setDays(n)
     } catch (e) {

@@ -127,6 +127,9 @@ export default function CoreCustomersPage() {
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
       if (d?.skip) throw new Error(d.skip)
+      /* 🔴 ตอบ 200 แต่ไม่มีช่อง customers = ยังไม่รู้ ไม่ใช่ "ช่วงนี้ไม่มีลูกค้า"
+         หัวจอเป็นตัวเลขเงินด้วย ⇒ ต้องไม่เขียนเลขเลยเมื่อไม่รู้ */
+      if (!('customers' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายชื่อลูกค้า) — ยังสรุปยอดไม่ได้')
       // ตัดที่ limit เมื่อไหร่ต้องบอก — ท่อส่งธงมาเอง จอไม่ต้องเดา
       setTruncated(d?.truncated === true)
       setScope(typeof d.store === 'string' ? d.store : '')

@@ -130,6 +130,9 @@ export default function BuyReportPage() {
       if (!res.ok || (j as { error?: string })?.error) {
         throw new Error((j as { error?: string })?.error ?? `HTTP ${res.status}`)
       }
+      /* 🔴 ตอบ 200 แต่ไม่มีช่อง rows = ยังไม่รู้ ไม่ใช่ "ไม่มียอดซื้อในช่วงนี้"
+         (เจอด้วยท่อปลอมโหมดตอบ {} 6 ก.ย. 2569 — จอขึ้น "ไม่มียอดซื้อ 0 ใบ" โดยไม่มีกล่องแดง) */
+      if (!j || !('rows' in j)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการใบซื้อ) — ยังสรุปยอดซื้อไม่ได้')
       setAll(j)
       setRows(Array.isArray(j.rows) ? j.rows : [])
     } catch (e) {
