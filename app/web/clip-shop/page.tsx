@@ -16,11 +16,18 @@ export default function WebClipShopPage() {
   const [q, setQ] = useState('')
   const [onlyEmpty, setOnlyEmpty] = useState(true)
   const [msg, setMsg] = useState('')
+  /** 🔴 โหลดของตั้งต้นไม่สำเร็จ ≠ ไม่มีของ (แก้ 6 ก.ย. 2569)
+   *  เดิม catch เปล่า ๆ ทั้งสามเส้น ⇒ รายชื่อสินค้าว่าง แล้วช่องค้นหาขึ้นว่า "ไม่พบสินค้า"
+   *  ⇒ คนผูกสินค้ากับคลิปจะสรุปว่า **ร้านไม่มีสินค้าตัวนั้น** ทั้งที่แค่โหลดดัชนีไม่ได้ */
+  const [loadErr, setLoadErr] = useState('')
 
   useEffect(() => {
-    fetch('/api/webfile/feed.json').then((r) => r.json()).then(setClips).catch(() => {})
-    fetch('/api/web/clip-shop').then((r) => r.json()).then((d) => setMap(d.map ?? {})).catch(() => {})
-    fetch('/api/webfile/search-index.json').then((r) => r.json()).then((d) => setIndex(d.items ?? d)).catch(() => {})
+    fetch('/api/webfile/feed.json').then((r) => r.json()).then(setClips)
+      .catch(() => setLoadErr('โหลดรายชื่อคลิปไม่สำเร็จ'))
+    fetch('/api/web/clip-shop').then((r) => r.json()).then((d) => setMap(d.map ?? {}))
+      .catch(() => setLoadErr('โหลดรายการที่ผูกไว้ไม่สำเร็จ — สิ่งที่เห็นอาจไม่ใช่ของล่าสุด'))
+    fetch('/api/webfile/search-index.json').then((r) => r.json()).then((d) => setIndex(d.items ?? d))
+      .catch(() => setLoadErr('โหลดรายชื่อสินค้าไม่สำเร็จ — ค้นหาสินค้ายังใช้ไม่ได้'))
   }, [])
 
   const shown = useMemo(() => (onlyEmpty ? clips.filter((c) => !c.p && !map[c.v.v]) : clips), [clips, map, onlyEmpty])
@@ -60,6 +67,12 @@ export default function WebClipShopPage() {
         </label>
       </div>
       {msg && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{msg}</p>}
+      {/* 🔴 โหลดของตั้งต้นไม่สำเร็จต้องขึ้นจอ — ไม่งั้นจอดูเหมือน "ไม่มีคลิป/ไม่มีสินค้า" */}
+      {loadErr && (
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+          ⚠️ {loadErr} · <b>ไม่ได้แปลว่าไม่มีของ</b> — ลองรีเฟรชหน้า
+        </p>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
         {shown.map((c) => {
@@ -88,7 +101,12 @@ export default function WebClipShopPage() {
                           {x.t} <span className="text-gray-400">฿{Number(x.p).toLocaleString('th-TH')}</span>
                         </button>
                       ))}
-                      {q.trim().length >= 2 && results.length === 0 && <p className="text-[10.5px] text-gray-400 px-1">ไม่พบสินค้า</p>}
+                      {/* 🔴 ดัชนีโหลดไม่ได้ = ค้นไม่ได้ **ไม่ใช่ไม่มีสินค้า** */}
+                      {q.trim().length >= 2 && results.length === 0 && (
+                        <p className={`text-[10.5px] px-1 ${index.length === 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                          {index.length === 0 ? 'ค้นไม่ได้ — ยังโหลดรายชื่อสินค้าไม่สำเร็จ' : 'ไม่พบสินค้า'}
+                        </p>
+                      )}
                     </div>
                     <button onClick={() => { setOpenFor(null); setQ('') }} className="w-full rounded-lg border border-gray-200 py-1 text-[10.5px] text-gray-400">ปิด</button>
                   </div>
