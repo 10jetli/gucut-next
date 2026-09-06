@@ -15,20 +15,37 @@ const PREFIX = 'rc/'
 
 export interface RecvState { delivered?: number; received?: number; by?: string }
 
+/* 🔴 **"อ่านไม่ได้" ห้ามตอบเป็น "ไม่มีอะไร"** — บทเรียนคืน 7 ก.ย. 2569
+   ของเดิม: list() ล้ม → `catch {}` → ตอบ `{ map: {} }` พร้อม **HTTP 200**
+   ⇒ จอเห็นคำตอบที่ถูกต้องทุกประการ แล้วประกาศว่า **ทุกใบยังไม่ได้รับของ**
+   ⇒ คนไปตามของที่มาถึงแล้ว หรือกดรับซ้ำ
+   ⚠️ และมันทำให้ตาข่ายฝั่งจอที่เพิ่งใส่ไป (เช็คว่ามีช่อง map ไหม) **ไร้ผลทันที**
+      เพราะช่องมีจริง แค่ว่างเปล่า ⇒ ฝั่งเซิร์ฟเวอร์ต้องบอกความจริงเองด้วย
+   (คลาสเดียวกับที่ฝั่งท่อเพิ่งเจอ: อ่าน DISTINCT ไม่ได้ = "ยังไม่เคยเขียนสักใบ" แล้วเขียนใหม่ทั้งระบบ) */
 export async function GET() {
   const store = getStore('returns')
   const map: Record<string, RecvState> = {}
+  let unreadable = 0
   try {
     const { blobs } = await store.list({ prefix: PREFIX })
     // ใบคืนมีไม่กี่สิบใบต่อปี อ่านทีละใบไหวสบาย
     await Promise.all(
       blobs.map(async (b) => {
-        const v = (await store.get(b.key, { type: 'json' }).catch(() => null)) as RecvState | null
+        const v = (await store.get(b.key, { type: 'json' }).catch(() => {
+          // อ่านใบนี้ไม่ได้ ≠ ใบนี้ไม่มีสถานะ ⇒ นับไว้แล้วบอกจอ
+          unreadable++
+          return null
+        })) as RecvState | null
         if (v) map[b.key.slice(PREFIX.length)] = v
       }),
     )
-  } catch {}
-  return NextResponse.json({ map })
+  } catch (e) {
+    return NextResponse.json(
+      { error: 'อ่านสถานะการรับของไม่ได้ — ' + String((e as Error)?.message || e) },
+      { status: 502 },
+    )
+  }
+  return NextResponse.json({ map, unreadable })
 }
 
 export async function POST(request: Request) {

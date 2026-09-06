@@ -82,7 +82,15 @@ export default function ReturnsPage() {
         if (!r.ok || j?.error || !j || !('map' in j)) throw new Error(String(j?.error ?? 'ตอบมาไม่ครบ'))
         return j
       })
-      .then((j) => { setRecv(j.map || {}); setRecvKnown(true) })
+      .then((j) => {
+        setRecv(j.map || {})
+        setRecvKnown(true)
+        /* ⚠️ อ่านบางใบไม่ได้ = สถานะบางใบหายไปจากจอ **โดยที่ตัวเลขรวมยังดูปกติ**
+           ⇒ ต้องบอก ไม่ใช่ปล่อยให้ใบพวกนั้นไปกอง "ยังไม่ได้รับ" เงียบ ๆ */
+        if (typeof j.unreadable === 'number' && j.unreadable > 0) {
+          setRecvErr(`อ่านสถานะไม่ได้ ${j.unreadable} ใบ — ใบพวกนั้นจะแสดงเหมือนยังไม่ได้รับ ทั้งที่อาจรับไปแล้ว`)
+        }
+      })
       .catch(() => setRecvErr('โหลดสถานะการรับของไม่สำเร็จ — ยังไม่รู้ว่าใบไหนรับของแล้ว (อย่าเพิ่งกดรับซ้ำ)'))
   }, [])
 
