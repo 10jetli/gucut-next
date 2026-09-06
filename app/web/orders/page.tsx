@@ -265,7 +265,8 @@ export default function WebOrdersPage() {
           </div>
           <div className="flex items-end justify-between gap-3 mt-1">
             <div>
-              <p className="text-[26px] md:text-[30px] font-black text-gray-900 tracking-tight tabular-nums leading-none">{baht(stat.last7)}</p>
+              {/* 🔴 โหลดไม่สำเร็จแล้วห้ามโชว์ ฿0 — อ่านเป็น "7 วันนี้ขายไม่ได้เลย" ซึ่งกลับหัวความจริง */}
+              <p className="text-[26px] md:text-[30px] font-black text-gray-900 tracking-tight tabular-nums leading-none">{orders ? baht(stat.last7) : '—'}</p>
               {stat.trend !== null && (
                 <p className={`text-[12px] mt-1.5 font-semibold ${stat.trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                   {stat.trend >= 0 ? '▲' : '▼'} {Math.abs(stat.trend)}% เทียบ 7 วันก่อน
@@ -319,7 +320,14 @@ export default function WebOrdersPage() {
         ) : shown.length === 0 ? (
           <div className="py-16 text-center">
             <span className="inline-flex w-12 h-12 items-center justify-center rounded-2xl bg-gray-50 text-gray-300 mb-3"><I d={IC.bag} className="w-6 h-6" /></span>
-            <p className="text-[13px] text-gray-400">{q ? `ไม่พบออเดอร์ที่ตรงกับ "${q}"` : 'ไม่มีออเดอร์ในหมวดนี้'}</p>
+            {/* 🔴 **โหลดไม่สำเร็จ ≠ ไม่มีออเดอร์** (แก้ 6 ก.ย. 2569 — เจอตอนเปิดจอจริงตอนของพัง)
+                เดิมกล่องแดงบอกว่าโหลดไม่สำเร็จ **แต่ในตารางเขียนว่า "ไม่มีออเดอร์ในหมวดนี้"**
+                ⇒ คนอ่านตารางแล้วสรุปว่าวันนี้ไม่มีออเดอร์ ทั้งที่ยังไม่รู้เลยว่ามีกี่ใบ
+                ⚠️ จอนี้คือจอที่ร้านใช้ดูออเดอร์เว็บทุกวัน — เข้าใจผิดตรงนี้ = ของไม่ถูกส่ง */}
+            <p className="text-[13px] text-gray-400">
+              {err ? 'ยังดูไม่ได้ — โหลดรายการไม่สำเร็จ (ไม่ได้แปลว่าไม่มีออเดอร์)'
+                : q ? `ไม่พบออเดอร์ที่ตรงกับ "${q}"` : 'ไม่มีออเดอร์ในหมวดนี้'}
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-gray-50">
