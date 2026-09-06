@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { authToken, sameToken } from '@/lib/auth-token'
 
 // ป้องกันทั้งเว็บด้วยรหัสผ่าน (ตั้งค่าใน env)
 // - SITE_PASSWORD  = แอดมิน เข้าได้ทุกหน้า
@@ -10,6 +11,12 @@ import { NextRequest, NextResponse } from 'next/server'
 // - ยกเว้น: /login, /api/auth/*, /api/google/* (OAuth callback), ไฟล์ static
 // - /api/bills/drivesync และ /api/bills/upload มี secret ของตัวเอง (DRIVESYNC_SECRET)
 // - /api/rokid (สะพานแว่น Rokid → Claude) มีกุญแจของตัวเอง (ROKID_BRIDGE_KEY)
+//
+// 🔴 **คุกกี้เก็บ "ลายนิ้วมือของรหัส" ไม่ใช่ตัวรหัส** (เปลี่ยน 6 ก.ย. 2569 — ดู lib/auth-token.ts)
+//    ของเดิมเทียบ `คุกกี้ == รหัสผ่าน` ตรง ๆ ⇒ คนยิงเดา **ไม่ต้องผ่านหน้าล็อกอินเลย**
+//    ตั้งคุกกี้แล้วขอหน้าไหนก็ได้ ⇒ ตัวกันเดาที่หน้าล็อกอินกันได้แค่ประตูเดียวจากสองประตู
+//    ตอนนี้เดาคุกกี้ให้ตรงต้องเดาเลข 256 บิต ⇒ ประตูที่สองปิดด้วยความยาวของเลข
+//    ⚠️ **ห้ามกลับไปเทียบกับตัวรหัสผ่านตรง ๆ อีก** ต่อให้เพิ่มตัวนับครั้งแล้วก็ตาม
 const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync', '/api/bills/upload', '/api/rokid']
 // เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
 const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer', '/api/catalog']
@@ -28,7 +35,7 @@ function staffPasswords() {
   return list
 }
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl
 
   if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next()
@@ -38,10 +45,17 @@ export function middleware(req: NextRequest) {
   if (!adminPass) return NextResponse.next() // ยังไม่ได้ตั้งรหัส = ไม่ล็อก
 
   const auth = req.cookies.get('gucut_auth')?.value
-  const isAdmin = !!auth && auth === adminPass
-  const isLegacyStaff = !isAdmin && !!staffPass && !!auth && auth === staffPass
-  const isNamedStaff = !isAdmin && !!auth && staffPasswords().includes(auth)
-  const isStaff = isLegacyStaff || isNamedStaff
+  // ⚠️ ไม่มีคุกกี้ = จบตรงนี้ ไม่ต้องเสียเวลาแฮชอะไรเลย (บอตยิงหน้าเว็บทั้งวัน)
+  const isAdmin = !!auth && sameToken(auth, await authToken(adminPass))
+  let isStaff = false
+  if (!isAdmin && auth) {
+    if (staffPass && sameToken(auth, await authToken(staffPass))) isStaff = true
+    else {
+      for (const p of staffPasswords()) {
+        if (sameToken(auth, await authToken(p))) { isStaff = true; break }
+      }
+    }
+  }
 
   if (!isAdmin && !isStaff) {
     if (pathname.startsWith('/api')) {

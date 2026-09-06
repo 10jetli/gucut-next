@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { authToken, sameToken } from '@/lib/auth-token'
 
 export const dynamic = 'force-dynamic'
 
@@ -23,12 +24,14 @@ export async function GET(req: NextRequest) {
 
   let role: 'admin' | 'staff' | null = null
   let name = ''
-  if (auth && adminPass && auth === adminPass) {
+  // 🔴 คุกกี้เป็นลายนิ้วมือ ไม่ใช่ตัวรหัส ⇒ ต้องแฮชฝั่งนี้แล้วเทียบ (ห้ามเทียบกับ pass ตรง ๆ)
+  if (auth && adminPass && sameToken(auth, await authToken(adminPass))) {
     role = 'admin'
   } else if (auth) {
-    const staffMatch = staffList().find(s => s.pass === auth)
-    if (staffMatch) { role = 'staff'; name = staffMatch.name }
-    else if (legacyStaffPass && auth === legacyStaffPass) { role = 'staff' }
+    for (const s of staffList()) {
+      if (sameToken(auth, await authToken(s.pass))) { role = 'staff'; name = s.name; break }
+    }
+    if (!role && legacyStaffPass && sameToken(auth, await authToken(legacyStaffPass))) role = 'staff'
   }
 
   return NextResponse.json({ role, name })
