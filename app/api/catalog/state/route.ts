@@ -19,8 +19,17 @@ export async function GET() {
       updatedAt: state.updatedAt ?? null,
     })
   } catch (e: any) {
-    // ถ้ายังไม่ได้ตั้งค่า Google OAuth หรือมีปัญหาชั่วคราว ให้ frontend fallback ไปใช้ localStorage เดิม
-    return NextResponse.json({ exists: false, error: String(e?.message ?? e) })
+    /* 🔴 **ห้ามตอบ `exists:false` ตอนอ่านไม่ได้** — นี่คือทางที่ข้อมูลส่วนกลางหายได้จริง
+       ฝั่งหน้า /catalog ตีความ exists:false ว่า "ยังไม่เคยมีสถานะบนเซิร์ฟเวอร์"
+       แล้ว **ดันของใน localStorage ของเครื่องนั้นทับขึ้นไป** (queueSync/pushNow)
+       ⇒ เครื่องที่มีข้อมูลเก่า/ไม่ครบ เขียนทับของกลางที่จริง ๆ ยังอยู่ครบ
+       ⇒ "อ่านไม่ได้" กลายเป็น "ไม่มีอะไร" แล้วลามไปเป็น "เขียนทับ" (เจอ 7 ก.ย. 2569)
+       ⚠️ คลาสเดียวกับที่ฝั่งท่อเจอกับ D1 คืนเดียวกัน — ต่างกันแค่ของเราลบของคนอื่นได้ด้วย
+       ⇒ ตอบ 502 ให้ชัด · ฝั่งหน้าเว็บถูกแก้ให้ "ไม่รู้ = ไม่ทำอะไร" แล้ว (public/catalog/sync.js) */
+    return NextResponse.json(
+      { error: 'อ่านสถานะคลังอะไหล่ไม่ได้ — ' + String(e?.message ?? e), readFailed: true },
+      { status: 502 },
+    )
   }
 }
 
