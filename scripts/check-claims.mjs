@@ -85,7 +85,10 @@ if (base !== null && Number.isFinite(base) && total < base) {
   console.log('   ถ้าไม่ได้ตั้งใจลบ แปลว่ามีคนแก้ถ้อยคำจนวลีที่ใช้จับขาดตอน ⇒ ตัวตรวจมองไม่เห็นแล้ว')
   console.log(`   ตั้งใจลบจริง → แก้เลขใน ${BASE} เอง (ห้ามให้สคริปต์แก้ให้)`)
 } else if (base === null || total > base) {
-  writeFileSync(BASE, String(total) + '\n')
+  // ⚠️ เขียนไม่ได้ก็ต้องไม่พัง — ตัวนี้รันใน prebuild บนเครื่อง build ของ Netlify
+  //    ถ้าที่นั่นเขียนไฟล์ไม่ได้แล้วเราปล่อยให้ throw = **ตัวตรวจทำ build ทั้งเว็บตก**
+  //    ซึ่งขัดกับหน้าที่ของมันเอง (ดูหัวไฟล์: ตัวนี้ห้ามทำให้ build ตก)
+  try { writeFileSync(BASE, String(total) + '\n') } catch { /* จดหมุดไม่ได้ก็ข้าม */ }
 }
 
 console.log('\n📌 มีวันที่ ≠ ยังจริง — ทุกครั้งที่ได้ความรู้ใหม่เรื่อง API ของ ZORT')
