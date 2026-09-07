@@ -159,6 +159,18 @@ const srv = createServer(async (req, res) => {
       marketplacesStaleMs: 3 * 3600e3 + 25 * 60e3,
     }))
   }
+  if (mode === 'good' && /[?&]order=/.test(req.url)) {
+    /* ใบเดียวพร้อมรายการสินค้า (จอ wizard แพ็คสินค้า) — รูปตาม getOrder ของจริง: {order, items} */
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      order: { id: 'z1-1', source: 'z1', number: 'SO-001', channel: 'Shopee', status: 'Pending',
+        amount: 1000, customer: 'ลูกค้าทดสอบ', order_date: '2026-09-05', tracking_no: 'TH000TEST', pay_status: 'paid' },
+      items: [
+        { line: 1, sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', qty: 1, amount: 500 },
+        { line: 2, sku: 'NW-02', name: 'สินค้าทดสอบสอง (หลายชิ้น)', qty: 3, amount: 500 },
+      ],
+    }))
+  }
   if (mode === 'good' && /[?&]shopinfo=/.test(req.url)) {
     /* ข้อมูลนิติบุคคล (จอ settings-company) — **ของปลอมทั้งชุด ห้ามเอาชื่อ/เลขจริงมาใส่**
        (กติกา: ห้ามพิมพ์ชื่อร้านลงไฟล์ · ที่นี่ยิ่งห้าม เพราะเป็น fixture ทดสอบ)
@@ -168,7 +180,7 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
       ok: true,
-      seller: { name: 'บริษัท ทดสอบผู้ขาย จำกัด', nameEn: 'TEST SELLER CO., LTD.', taxId: '0000000000001' },
+      seller: { name: 'บริษัท ทดสอบผู้ขาย จำกัด', nameEn: 'TEST SELLER CO., LTD.', taxId: '0000000000001', phone: '099-000-0000', email: 'test@example.com' },
       licensee: { name: 'หจก. ทดสอบผู้ผลิต', taxId: '0000000000002' },
       licenses: [
         { kind: 'ใบอนุญาตทดสอบ (หมดแล้ว)', no: 'ทส 1/2560', issued: '2017-01-01', expires: '2018-01-01', authority: 'หน่วยงานทดสอบ' },

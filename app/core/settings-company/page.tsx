@@ -277,9 +277,9 @@ export default function SettingsCompanyPage() {
 
             <p className="text-[13.5px] font-semibold text-gray-800 mt-5 mb-3">📞 ข้อมูลติดต่อ</p>
             <FormRow label="เบอร์โทรศัพท์" value={d?.seller?.phone} muted="ท่อยังไม่ส่งช่องนี้มา"
-              mutedWhy="ข้อมูลติดต่ออยู่ใน shop.ts ฝั่งหน้าร้าน — ขอเพิ่มใน ?shopinfo=1 แล้ว (7 ก.ย.)" />
+              mutedWhy="ท่อเพิ่ม seller.phone/email แล้ว 7 ก.ย. — ขึ้นค่าจริงหลัง deploy รอบ 21:00" />
             <FormRow label="อีเมล" value={d?.seller?.email} muted="ท่อยังไม่ส่งช่องนี้มา"
-              mutedWhy="ข้อมูลติดต่ออยู่ใน shop.ts ฝั่งหน้าร้าน — ขอเพิ่มใน ?shopinfo=1 แล้ว (7 ก.ย.)" />
+              mutedWhy="ท่อเพิ่ม seller.phone/email แล้ว 7 ก.ย. — ขึ้นค่าจริงหลัง deploy รอบ 21:00" />
             <FormRow label="Website" muted="ท่อยังไม่ส่งช่องนี้มา"
               mutedWhy="ที่อยู่เว็บอ่านจาก env ฝั่งหน้าร้าน — ห้ามพิมพ์ตายตัว (กติการ้านต้นแบบ)" />
           </div>

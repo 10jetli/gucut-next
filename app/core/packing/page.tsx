@@ -1,7 +1,10 @@
 'use client'
 // รายการขาย → แพ็คสินค้า (ปิดแถว 11)
 //
-// ⚠️ **ยังไม่มีภาพจอ ZORT** ⇒ ไม่ได้ลอกผัง เขียนจากคำถามที่จอควรตอบ
+// ✅ ได้ภาพจอ ZORT แล้ว 7 ก.ย. 2569 (`zort-ui/86`) — ของจริงเป็น **wizard แพ็คทีละใบ 3 ขั้น**
+//    ⇒ ลอกผังไว้ที่ `/core/packing/pack` (ปุ่ม "เริ่มแพ็คสินค้า" ข้างบน)
+//    จอนี้ (รายการงานค้าง) เป็นของที่เราเพิ่มเอง — ZORT ไม่มีจอสรุปว่าค้างกี่ใบ
+//    เก็บไว้ทั้งคู่: จอนี้ตอบ "วันนี้ต้องแพ็คใบไหน" · wizard ตอบ "ใบนี้หยิบครบยัง"
 //
 // คำถามเดียวของจอนี้: **วันนี้ต้องแพ็คใบไหนบ้าง**
 // = ใบที่ลูกค้า**จ่ายแล้ว** แต่ใบยัง**ไม่จบ** (ยังไม่ได้ส่ง) ⇒ งานค้างจริงของร้าน
@@ -128,7 +131,17 @@ export default function PackingPage() {
               </>
             )
         }
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        actions={
+          <div className="flex items-center gap-2">
+            {/* ผัง ZORT: เมนูแพ็คสินค้าเปิด wizard แพ็คทีละใบ — ของเราแยกไว้ที่ /pack */}
+            <Link href="/core/packing/pack"
+              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4669e5' }}>
+              เริ่มแพ็คสินค้า
+            </Link>
+            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+          </div>
+        }
       />
 
       {error && <ErrorBox title="ดึงงานค้างไม่ได้">{error}</ErrorBox>}
