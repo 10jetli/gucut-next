@@ -1,9 +1,11 @@
 'use client'
 // ร้านค้าออนไลน์ → สินค้าบน Marketplace — ตัวแทนเมนู `/Marketplace/List` ของ ZORT
 //
-// ⚠️ **ยังไม่มีภาพจอ ZORT ของเมนูนี้** ⇒ ไม่ได้ลอกผัง เขียนจากคำถามที่จอนี้ควรตอบ
-//    (กติกาโปรเจกต์: จอที่ยังไม่มีภาพ ห้ามเดาผัง — แต่ "ทำจอตอบคำถามเดียวกัน" ทำได้)
-//    ได้ภาพเมื่อไหร่ค่อยจัดผังให้ตรง
+// ✅ **ได้ภาพจริงแล้ว 7 ก.ย. 2569** (`zort-ui/83-…-ว่างเปล่า.jpg`) — จัดผังตามภาพ:
+//    breadcrumb "‹ Marketplace Dashboard" + หัวจอ "ร้าน" · แท็บ Shopee/Lazada/Tiktok Shop
+//    คอลัมน์ # · รหัส · ชื่อสินค้า · ลิงก์ Marketplace · วางจำหน่ายสินค้าⓘ · Export มุมล่างซ้าย
+//    ⚠️ จอ ZORT ของจริง **ว่างเปล่า 0 รายการ** (ร้านไม่เคยผูกสินค้าผ่านหน้านั้น)
+//    ⇒ ข้อมูลของเราจึง "เกินผัง" โดยธรรมชาติ — เก็บไว้เพราะตอบคำถามที่ ZORT ตอบไม่ได้
 //
 // คำถามที่จอนี้ตอบ: **สินค้าตัวไหนลงขายอยู่บนช่องทางไหนบ้าง — และตัวไหนยังไม่ได้ลงเลย**
 // ต่างจากคอลัมน์ Marketplace ในจอสินค้าตรงที่จอนั้นดูทีละแถว ส่วนจอนี้กรอง/นับได้ทั้งคลัง
@@ -43,10 +45,12 @@ const PAGE = 200
 /** เพดานรอบดึง — 2,672 รหัส ÷ 200 = 14 หน้า · เผื่อโต 50% */
 const MAX_PAGES = 20
 
+/* เรียงและสะกดตามแท็บในภาพ 83: Shopee · Lazada · Tiktok Shop
+   "เว็บร้าน" เป็นของเกินผัง (ZORT ไม่มีช่องทางนี้) — เก็บไว้เพราะเว็บเราคือช่องทางขายจริง */
 const PLATFORMS = [
   { id: 'shopee', label: 'Shopee' },
   { id: 'lazada', label: 'Lazada' },
-  { id: 'tiktok', label: 'TikTok' },
+  { id: 'tiktok', label: 'Tiktok Shop' },
   { id: 'gucut', label: 'เว็บร้าน' },
 ]
 
@@ -112,6 +116,8 @@ export default function MarketplaceProductsPage() {
 
   return (
     <div className="p-4 md:p-6">
+      {/* ผังภาพ 83: breadcrumb กลับไป Marketplace Dashboard อยู่เหนือหัวจอ */}
+      <Link href="/core/marketplace" className="text-[12.5px] text-blue-600 hover:underline">‹ Marketplace Dashboard</Link>
       <PageHead
         title="สินค้าบน Marketplace"
         summary={
@@ -174,13 +180,16 @@ export default function MarketplaceProductsPage() {
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>รหัส</th>
                   <th className={TH}>ชื่อสินค้า</th>
+                  {/* ผังภาพ 83: "ลิงก์ Marketplace" — เราไม่มี URL รายตัว (API ไม่ส่ง)
+                      ใช้โลโก้บอกว่าลงที่ไหนแทน ซึ่งตอบคำถามเดียวกัน · คอลัมน์คงเหลือเป็นของเกินผัง เก็บไว้ */}
+                  <th className={TH}>ลิงก์ Marketplace</th>
+                  <th className={TH} title="ZORT มีสวิตช์เปิด/ปิดวางจำหน่าย — ของเราอ่านได้อย่างเดียว สั่งเปิดปิดต้องทำใน ZORT">วางจำหน่ายสินค้า ⓘ</th>
                   <th className={THR}>คงเหลือ</th>
-                  <th className={TH}>ลงขายอยู่ที่</th>
                 </tr>
               </thead>
               <tbody>
                 {shown.length === 0 && (
-                  <EmptyState cols={5} icon="🛍" title="ไม่พบสินค้าในเงื่อนไขนี้"
+                  <EmptyState cols={6} icon="🛍" title="ไม่พบสินค้าในเงื่อนไขนี้"
                     detail={needle ? 'ลองพิมพ์คำสั้นลง' : 'ลองเปลี่ยนแท็บช่องทาง'} />
                 )}
                 {shown.map((r, i) => (
@@ -191,12 +200,21 @@ export default function MarketplaceProductsPage() {
                         className="text-blue-600 hover:underline font-medium">{r.sku}</Link>
                     </td>
                     <td className={`${TD} max-w-[380px] truncate`} title={r.name}>{r.name}</td>
-                    <td className={TDR}>{fmtNum(r.qty)}</td>
                     <td className={TD}>
                       {(r.marketplaces ?? []).length > 0
                         ? <MarketLogos list={r.marketplaces} by={r.marketplacesBy} from={r.marketplacesFrom} />
                         : <span className="text-gray-300">ยังไม่ได้ลง</span>}
                     </td>
+                    <td className={TD}>
+                      {/* "วางจำหน่าย" ตามข้อมูลจริงที่มี: active จากทะเบียนสินค้า —
+                          อ่านอย่างเดียว (สวิตช์จริงอยู่ใน ZORT) · ไม่รู้ = ขีด ไม่เดา */}
+                      {typeof r.active === 'boolean'
+                        ? (r.active
+                          ? <span className="inline-block text-[11.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">วางจำหน่าย</span>
+                          : <span className="inline-block text-[11.5px] text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">ปิดการขาย</span>)
+                        : <span className="text-gray-300" title="ทะเบียนสินค้าไม่ได้บอกสถานะตัวนี้มา">—</span>}
+                    </td>
+                    <td className={TDR}>{fmtNum(r.qty)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -222,7 +240,9 @@ export default function MarketplaceProductsPage() {
             ⚠️ จอนี้ไล่ดึง<b>ทุกหน้า</b>ก่อนนับ ไม่ใช่หน้าแรกหน้าเดียว — วัดจริง 5 ก.ย. 2569
             หน้าแรก 200 แถวให้ Shopee 11 รหัส แต่ทั้งคลังได้ 76 ⇒ <b>หน้าแรกไม่ใช่ตัวแทน</b> ·
             ตัวเลขชุดเดียวกับคอลัมน์ Marketplace ในจอสินค้า <b>สองจอต้องตรงกันเสมอ</b> ·
-            ยังไม่มีภาพจอ ZORT ของเมนูนี้ ⇒ จอนี้ตอบคำถามเดียวกันแต่ยังไม่ได้จัดผังตาม ZORT
+            ผังตามภาพจริง 83 (7 ก.ย. 2569) — จอ ZORT ของจริง<b>ว่างเปล่า 0 รายการ</b>
+            ข้อมูลของเราจึงเกินผังโดยธรรมชาติ · &ldquo;ลิงก์ Marketplace&rdquo; ของ ZORT เป็น URL รายตัว
+            ซึ่ง API ไม่ส่งมา — เราใช้โลโก้บอกว่าลงที่ไหนแทน
           </p>
         </>
       )}
