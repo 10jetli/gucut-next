@@ -159,6 +159,87 @@ const srv = createServer(async (req, res) => {
       marketplacesStaleMs: 3 * 3600e3 + 25 * 60e3,
     }))
   }
+  /* ══ ใบคืนสินค้า (จอ /returns/receive) — mock มี state จริงในหน่วยความจำ ══
+     สัญญาตาม lib/returns-api.ts (ร่างเสนอ 7 ก.ย. ดึก) · ท่อจริงยังไม่มี — จอสร้างล่วงหน้า
+     กติกาทดสอบที่ฝังไว้: orderId '2' (SO-002) = ถูก "สมชาย" ถืออยู่ → ทดสอบทาง lock/takeover
+     · grade ให้ moveResult ชิ้นที่สองเป็น duplicate → ทดสอบป้ายเหลือง "เคยบันทึกแล้ว" */
+  if (mode === 'good' && /return-receive=|return-grade=|return-photo=|return-takeover=|[?&]return=|list=returns-inbox/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const json = (obj, code = 200) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)) }
+    const body = req.method === 'POST'
+      ? await new Promise((ok) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } }) })
+      : null
+
+    globalThis.__returns ??= { seq: 1, docs: new Map() }
+    const st = globalThis.__returns
+
+    if (u.searchParams.get('list') === 'returns-inbox') {
+      const q = u.searchParams.get('q') ?? ''
+      const rows = [...st.docs.values()].filter((d) => !q || d.orderId === q || (d.orderNumber ?? '').includes(q))
+      return json({ rows, total: rows.length, reconHeartbeatAt: new Date(Date.now() - 3600e3).toISOString() })
+    }
+    if (u.searchParams.get('return')) {
+      const d = st.docs.get(u.searchParams.get('return'))
+      return d ? json({ doc: d }) : json({ error: 'ไม่พบใบนี้' }, 404)
+    }
+    if (u.searchParams.get('return-receive')) {
+      if (!body || !Array.isArray(body.items)) return json({ error: 'body ไม่ครบ' }, 400)
+      if (body.orderId === '2') {
+        /* จำลองใบขายถูกคนอื่นถือ — สร้างใบค้างไว้ให้ takeover ได้ */
+        const rid = 'RT-LOCKED-1'
+        if (!st.docs.has(rid)) st.docs.set(rid, {
+          returnId: rid, ref: 'RT-SO-002', state: 'received', unmatched: false,
+          orderId: '2', orderNumber: 'SO-002', customer: 'ลูกค้าทดสอบ 2',
+          lockedBy: 'สมชาย', lockSince: new Date(Date.now() - 20 * 60e3).toISOString(),
+          staff: 'สมชาย', createdAt: new Date(Date.now() - 20 * 60e3).toISOString(),
+          items: body.items.map((it) => ({ sku: it.sku ?? '', name: it.name ?? 'สินค้าทดสอบ', qty: it.qty })),
+        })
+        return json({ lockedBy: 'สมชาย', lockSince: st.docs.get(rid).lockSince, returnId: rid })
+      }
+      /* ใบค้างของ orderId เดิม → existing */
+      const open = [...st.docs.values()].find((d) => d.orderId === body.orderId && !d.unmatched && (d.state === 'received' || d.state === 'graded'))
+      if (open && body.orderId) return json({ returnId: open.returnId, ref: open.ref, state: open.state, existing: true })
+      const n = st.seq++
+      const rid = body.unmatched ? `RT-U${1000 + n}` : `RT-SO-00${n}`
+      const doc = {
+        returnId: rid, ref: body.unmatched ? rid : `RT-SO-001`, state: 'received',
+        unmatched: !!body.unmatched, quarantineNo: body.unmatched ? `Q-${String(n).padStart(3, '0')}` : undefined,
+        orderId: body.orderId ?? undefined, orderNumber: body.orderId ? 'SO-001' : undefined,
+        customer: body.orderId ? 'ลูกค้าทดสอบ' : undefined,
+        staff: 'devpass-admin', createdAt: new Date().toISOString(), lastActivityAt: new Date().toISOString(),
+        items: body.items.map((it) => ({ sku: it.sku ?? '', name: it.name ?? (it.sku === 'NW-01' ? 'สินค้าทดสอบหนึ่ง' : 'สินค้าทดสอบสอง (หลายชิ้น)'), qty: it.qty })),
+        photoCount: 0, noPhotoReason: body.noPhotoReason,
+      }
+      st.docs.set(rid, doc)
+      return json({ returnId: rid, ref: doc.ref, state: 'received' })
+    }
+    if (u.searchParams.get('return-photo')) {
+      const d = st.docs.get(body?.returnId)
+      if (!d) return json({ error: 'ไม่พบใบนี้' }, 404)
+      d.photoCount = (d.photoCount ?? 0) + 1
+      return json({ ok: true, stored: d.photoCount })
+    }
+    if (u.searchParams.get('return-grade')) {
+      const d = st.docs.get(body?.returnId)
+      if (!d) return json({ error: 'ไม่พบใบนี้' }, 404)
+      d.items = d.items.map((it, i) => {
+        const g = (body.items ?? []).find((x) => x.sku === it.sku) ?? body.items?.[i]
+        return { ...it, verdict: g?.verdict, note: g?.note, moveResult: d.unmatched ? undefined : (i === 1 ? 'duplicate' : 'added') }
+      })
+      d.state = d.unmatched ? 'graded' : 'moved'
+      d.lastActivityAt = new Date().toISOString()
+      return json({ returnId: d.returnId, state: d.state, items: d.items })
+    }
+    if (u.searchParams.get('return-takeover')) {
+      const d = st.docs.get(body?.returnId)
+      if (!d) return json({ error: 'ไม่พบใบนี้' }, 404)
+      if (!body?.reason) return json({ error: 'ต้องเลือกเหตุผล' }, 400)
+      delete d.lockedBy; delete d.lockSince
+      d.staff = 'devpass-admin (รับช่วงจาก สมชาย)'
+      return json({ doc: d })
+    }
+    return json({ error: 'เส้นใบคืนที่ไม่รู้จัก' }, 404)
+  }
   if (mode === 'good' && /[?&]order=/.test(req.url)) {
     /* ใบเดียวพร้อมรายการสินค้า (จอ wizard แพ็คสินค้า) — รูปตาม getOrder ของจริง: {order, items} */
     res.writeHead(200, { 'content-type': 'application/json' })
