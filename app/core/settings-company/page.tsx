@@ -25,6 +25,7 @@ import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill } from '@/components/zort'
+import { SettingsNav } from '@/components/zort/SettingsNav'
 
 /* 🔴 **ชื่อช่องต้องตรงกับ SHOP_DATA ของจริง** (netlify/lib/shop-data.mjs ฝั่งท่อ)
    ใบอนุญาต: no · issued · expires · authority · note
@@ -223,27 +224,7 @@ export default function SettingsCompanyPage() {
       />
 
       <div className="flex gap-5 items-start">
-        {/* ── เมนูย่อยฝั่งซ้ายตามผังภาพ 84 — 10 รายการของ ZORT ──
-            จอที่ยังไม่มีพาไปหน้า soon (ห้ามลิงก์หลอก) · ภาพจอจริง 87-98 มีแล้ว รอลอกทีละจอ */}
-        <nav className="hidden md:block w-[190px] shrink-0 bg-white border border-gray-200 rounded-md py-1.5 text-[12.5px]">
-          {[
-            ['บริษัท / ร้านค้า', '/core/settings-company', true],
-            ['ตั้งค่าโปรแกรม', '/core/soon/setting-program', false],
-            ['ตั้งค่าเอกสาร', '/core/soon/setting-docs', false],
-            ['ตั้งค่าช่องทางจัดส่ง', '/core/soon/setting-shipping', false],
-            ['ตั้งค่าช่องทางการขาย', '/core/soon/setting-channels', false],
-            ['ตั้งค่า SMS', '/core/soon/setting-sms', false],
-            ['ตั้งค่าการชำระเงิน', '/core/soon/setting-payment', false],
-            ['ตั้งค่าการตรวจสอบสลิปอัตโนมัติ', '/core/soon/setting-slipcheck', false],
-            ['Tracking & Analytics', '/core/soon/setting-tracking', false],
-            ['รีเซ็ตข้อมูลทั้งหมด', '/core/soon/setting-reset', false],
-          ].map(([label, href, active]) => (
-            <a key={String(href)} href={String(href)}
-              className={`block px-3 py-1.5 ${active ? 'text-blue-700 font-semibold border-l-2 border-blue-600 bg-blue-50/50' : 'text-gray-600 hover:bg-gray-50'}`}>
-              {label}
-            </a>
-          ))}
-        </nav>
+        <SettingsNav active="company" />
 
         <div className="flex-1 min-w-0">
           {error && <ErrorBox title="ดึงข้อมูลบริษัทไม่ได้">{error}</ErrorBox>}
