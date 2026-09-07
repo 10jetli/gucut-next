@@ -57,12 +57,26 @@ export interface ReturnDoc {
   photoCount?: number
   /** เหตุผลตอนถ่ายรูปไม่ได้ — มี = ใบนี้ไม่มีรูปโดยแจ้งเหตุ ไม่ใช่รูปหาย */
   noPhotoReason?: string
+  cancelReason?: string
+  cancelledBy?: string
+  cancelledAt?: string
+}
+
+/** ใบถูกคนอื่นถือ — grade/photo/cancel ตอบก้อนนี้แทนผลงาน (e6c9087: lockBlock ทั้งคลาส)
+ *  🔴 `blocked` คือฟิลด์ตัดสินใจ — ไม่ใช้ error เพราะ error โดน throw แล้ว lockedBy หายไปกับ Error
+ *  ไม่มี state/items ติดกลับมาโดยตั้งใจ (กันจอเผลออ่านว่าสำเร็จ) */
+export interface LockBlock {
+  blocked?: boolean
+  lockedBy?: string
+  lockSince?: string
 }
 
 /* ── คำตอบมาตรฐาน — ทุก endpoint ตอบ error/skip แบบเดียวกับ /api/core เส้นอื่น ── */
 interface BaseResp { error?: string; skip?: string }
 
 export interface InboxResp extends BaseResp {
+  /** ช่องที่ q ค้นจริง — มาจากรายการเดียวกับ WHERE ฝั่งท่อ ใครแก้ช่องค้น จอรู้ทันที */
+  qFields?: string[]
   rows?: ReturnDoc[]
   total?: number
   /** heartbeat ของ job recon ใบคืน (เวที #4) — ไม่มี/เก่าเกิน = จอต้องบอกว่าตัววัดตาบอดอยู่ */
@@ -81,9 +95,15 @@ export interface ReceiveResp extends BaseResp {
   lockSince?: string
   /** คงเหลือคืนได้ต่อ SKU หลังหักทุกใบที่ยืนยันแล้ว (กันคืนสะสมเกิน — รู Codex #1) */
   remaining?: Record<string, number>
+  /** ขอคืนเกินโควตาสะสม — **ไม่สร้างใบเลย** (กันใบทางตัน — เจอตอนประกบ 7 ก.ย. ดึก)
+   *  ไม่เป็น error เพราะของอยู่ในมือพนักงานแล้ว ปฏิเสธความจริงไม่ได้ — จอต้องเสนอทางออก
+   *  (รับเท่าที่คืนได้ · ส่วนเกินเปิดใบกักให้แอดมินสาง) · คีย์ใน over เป็นไทยตามท่อจริง */
+  overQuota?: boolean
+  over?: Array<{ sku: string; 'ขอคืน': number; 'คืนได้': number }>
+  orderNumber?: string
 }
 
-export interface GradeResp extends BaseResp {
+export interface GradeResp extends BaseResp, LockBlock {
   returnId?: string
   /** moved = ทุกชิ้นมี moveResult · move_failed = ลงไม่ครบ จอชี้ชิ้นค้าง+ปุ่มยิงซ้ำ */
   state?: ReturnState
@@ -158,7 +178,7 @@ export const returnsApi = {
   /** อัปรูปทีละใบ (base64 ย่อแล้ว ≤1400px) — ต้องได้ ok ก่อนนับว่ารูปมีจริง
    *  ล้มเหลว = สถานะ upload_failed ฝั่งจอ retry ได้ (ล้มเหลว ≠ ไม่มีรูป — เวที #4) */
   photo: (body: { returnId: string; index: number; dataUrl: string }) =>
-    call<BaseResp & { ok?: boolean; stored?: number }>('/api/returns?return-photo=1', {
+    call<BaseResp & LockBlock & { ok?: boolean; stored?: number }>('/api/returns?return-photo=1', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     }),
 
@@ -167,6 +187,14 @@ export const returnsApi = {
   photoGet: (returnId: string, i: number) =>
     call<BaseResp & { ok?: boolean; dataUrl?: string }>(
       `/api/returns?returnphoto=${encodeURIComponent(returnId)}&i=${i}`),
+
+  /** ยกเลิกใบ — เฉพาะ **คนถือใบ** (คนอื่นต้อง takeover ก่อน = ได้บันทึกใครแย่งเพราะอะไรฟรี)
+   *  🔴 ใบที่ลงบัญชีสต็อกแล้วแม้ชิ้นเดียว ยกเลิกไม่ได้ — ยกเลิกไม่ถอนของออกจากคลัง
+   *  ทางแก้ของใบที่ moved คือแอดมิน adjust ด้วย ref <ref>-fix · ยกเลิกแล้วปลดล็อกใบขายทันที */
+  cancel: (body: { returnId: string; reason: string }) =>
+    call<GetReturnResp & LockBlock>('/api/returns?return-cancel=1', {
+      method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
+    }),
 
   /** ขอรับช่วงใบที่คนก่อนถือค้าง — ต้องเลือกเหตุผล (ข้อสังเคราะห์เวที #2) */
   takeover: (body: { returnId: string; reason: 'shift-change' | 'unreachable' | 'other'; note?: string }) =>
@@ -180,6 +208,17 @@ export const returnsApi = {
    สุทธิ = 0 บนสต็อกขายได้ ซึ่งถูก เพราะของถูกตัดไปตั้งแต่ตอนขายแล้ว
    ลง damage −qty แถวเดียว = ตัดซ้ำสองรอบจากการขายครั้งเดียว สต็อกขาดเงียบ ๆ
    ⇒ จอที่โชว์ move ตาม ref RT-* ต้องเตรียมรับ 2 แถวต่อชิ้นชำรุด ห้ามทักว่าซ้ำ */
+
+/** แปลงเวลาจากท่อ → epoch ms — **เวลาท่อเป็น UTC เสมอ แม้ไม่มีตัวบอกโซน**
+ *  🐛 เจอตอนยิงประกบ (8 ก.ย. 00:00): ท่อส่ง 'YYYY-MM-DD HH:MM:SS' (UTC ไม่มี Z)
+ *  new Date() ตีความเป็นเวลาท้องถิ่น ⇒ บนเครื่องไทยจอโชว์ 16:58 แทน 23:58 (ขาด 7 ชม.)
+ *  และอายุใบพองเกินจริง 7 ชม. — จอทุกตัวต้องแปลงผ่านตัวนี้ ห้าม new Date ตรง ๆ */
+export function serverTimeMs(iso?: string | null): number | null {
+  if (!iso || typeof iso !== 'string') return null
+  const withZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)
+  const t = new Date(withZone ? iso : iso.replace(' ', 'T') + 'Z').getTime()
+  return Number.isFinite(t) ? t : null
+}
 
 /* ── ป้ายสถานะกลาง — จอทุกตัวใช้ชุดเดียวกัน ห้ามพิมพ์ซ้ำ ── */
 export const STATE_LABEL: Record<ReturnState, { text: string; tone: 'blue' | 'orange' | 'green' | 'red' | 'gray' }> = {

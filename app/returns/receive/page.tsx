@@ -111,12 +111,19 @@ export default function ReturnReceivePage() {
   const [result, setResult] = useState<ReturnDoc['items'] | null>(null)
   /* "ไม่รู้ผล" — grade ส่งแล้วอ่านคำตอบไม่ออก ห้ามกดซ้ำ ต้อง resume ดูสถานะจริง */
   const [unknownResult, setUnknownResult] = useState(false)
+  /* ขอคืนเกินโควตาสะสม — เซิร์ฟเวอร์ไม่สร้างใบ ส่งเลขมาให้เสนอทางออก (e6c9087) */
+  const [overQ, setOverQ] = useState<{ over: Array<{ sku: string; 'ขอคืน': number; 'คืนได้': number }>; remaining: Record<string, number> } | null>(null)
+  /* ยกเลิกใบ — เฉพาะคนถือ · ใบ moved แล้วยกเลิกไม่ได้ (เซิร์ฟเวอร์กัน จอก็ไม่ยื่นปุ่ม) */
+  const [cancelOpen, setCancelOpen] = useState(false)
+  const [cancelReason, setCancelReason] = useState('')
+  const [cancelledDoc, setCancelledDoc] = useState<ReturnDoc | null>(null)
 
   const reset = () => {
     setStep(0); setBusy(false); setError(''); setQ(''); setCandidates(null); setOrder(null)
     setPick([]); setUnmatched(false); setUnmatchedNote(''); setPendingDoc(null)
     setPhotos([]); setNoPhoto(false); setNoPhotoReason(''); setDoc(null); setLocked(null)
     setVerdicts({}); setResult(null); setUnknownResult(false)
+    setOverQ(null); setCancelOpen(false); setCancelReason(''); setCancelledDoc(null)
   }
 
   /* ── ขั้น ①: ค้นใบขาย (เส้นเดียวกับ wizard แพ็ค — number/customer/tracking_no) ── */
@@ -142,8 +149,11 @@ export default function ReturnReceivePage() {
   const openOrder = useCallback(async (id: string) => {
     setBusy(true); setError('')
     try {
-      /* ใบค้างของใบขายนี้มีไหม — ต้องรู้ก่อนให้เลือกชิ้น (รู Codex #2: ห้ามเปิดใบซ้ำเงียบ ๆ) */
-      const inbox = await returnsApi.inbox(id).catch(() => null)
+      /* ใบค้างของใบขายนี้มีไหม — ต้องรู้ก่อนให้เลือกชิ้น (รู Codex #2: ห้ามเปิดใบซ้ำเงียบ ๆ)
+         ⚠️ ดึงทั้งกล่องแล้วกรองฝั่งจอ — ตอนยิงประกบ (7 ก.ย. ดึก) พบว่า q ของ inbox
+         แต่ละฝั่งตีความคนละช่อง (จอส่ง orderId · ท่อค้นช่องอื่น) = ใบค้างหลุดเงียบ
+         กรองเองจาก orderId ตรง ๆ ไม่พึ่งความหมายของ q ที่สัญญาไม่เคยระบุ */
+      const inbox = await returnsApi.inbox().catch(() => null)
       const open = inbox && Array.isArray(inbox.rows)
         ? inbox.rows.find((r) => r.orderId === id && (r.state === 'received' || r.state === 'graded'))
         : null
@@ -170,6 +180,11 @@ export default function ReturnReceivePage() {
       if (!d.doc) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี doc)')
       setDoc(d.doc); setPendingDoc(null); setUnknownResult(false)
       if (d.doc.state === 'moved') { setResult(d.doc.items); setStep(3) }
+      else if (d.doc.state === 'received' && !(d.doc.photoCount ?? 0) && !d.doc.noPhotoReason) {
+        /* เจอตอนยิงประกบ 7 ก.ย. ดึก: ใบ resume ที่ไม่มีรูป — เซิร์ฟเวอร์จะตีกลับตอน grade
+           (ด่านรูปฝั่งท่อ ข้อ ③ รีวิว) ⇒ ต้องพาไปเติมรูปก่อน ไม่ใช่ปล่อยให้ชนกำแพงตอนยืนยัน */
+        setStep(1)
+      }
       else if (d.doc.state === 'received') {
         setVerdicts(Object.fromEntries(d.doc.items.map((it) => [it.sku, { verdict: it.verdict, note: it.note ?? '' }])))
         setStep(2)
@@ -205,6 +220,12 @@ export default function ReturnReceivePage() {
         items, noPhotoReason: noPhoto ? noPhotoReason : undefined,
       })
       if (r.lockedBy) { setLocked({ by: r.lockedBy, since: r.lockSince, returnId: r.returnId }); return }
+      if (r.overQuota) {
+        /* ไม่สร้างใบ — โชว์เลขแล้วเสนอปรับอัตโนมัติ (ของอยู่ในมือพนักงานแล้ว ต้องมีทางออก) */
+        setOverQ({ over: Array.isArray(r.over) ? r.over : [], remaining: r.remaining ?? {} })
+        setStep(0)
+        return
+      }
       if (!r.returnId) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี returnId)')
       if (r.existing) {
         /* ใบมีอยู่แล้ว (กดซ้ำ/ใบค้าง) — พาไปทำต่อ ไม่ใช่แจ้งเตือนเฉย ๆ */
@@ -253,6 +274,11 @@ export default function ReturnReceivePage() {
         sku: it.sku, verdict: verdicts[it.sku]?.verdict as Verdict, note: verdicts[it.sku]?.note || undefined,
       }))
       const r = await returnsApi.grade({ returnId: doc.returnId, items })
+      if (r.blocked) {
+        /* ล็อกทั้งคลาส grade/photo/cancel (e6c9087) — พาเข้าแผงรับช่วง ไม่ใช่ error */
+        setLocked({ by: r.lockedBy ?? 'ไม่ทราบชื่อ', since: r.lockSince, returnId: doc.returnId })
+        return
+      }
       if (!Array.isArray(r.items)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี items)')
       setResult(r.items)
       /* state จากเซิร์ฟเวอร์คือความจริง — moved ต่อเมื่อทุกชิ้นมี moveResult (รีวิวท่อ) */
@@ -276,6 +302,48 @@ export default function ReturnReceivePage() {
         ช่วงเดินคู่ขนาน: ใบคืนใน <b>ZORT ยังทำมือตามเดิม</b> — จอนี้บันทึกฝั่งเรา แล้ว recon รายวันเทียบสองฝั่ง
       </p>
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดำเนินการต่อไม่ได้'}>{error}</ErrorBox>}
+
+      {/* ── ขอคืนเกินโควตาสะสม — เซิร์ฟเวอร์ไม่สร้างใบ (กันใบทางตัน) จอเสนอทางออก ── */}
+      {overQ && (
+        <div className="bg-amber-50 border border-amber-300 rounded-md p-4 mb-4">
+          <p className="text-[13px] font-semibold text-amber-900 mb-1">คืนเกินจำนวนที่คืนได้ — ยังไม่ได้บันทึกอะไร</p>
+          <div className="text-[12.5px] text-amber-900 mb-2">
+            {overQ.over.map((o) => (
+              <span key={o.sku} className="block">
+                · {o.sku}: ขอคืน {o['ขอคืน']} แต่คืนได้อีก <b>{o['คืนได้']}</b> (นับรวมใบคืนก่อนหน้าแล้ว)
+              </span>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => {
+              setPick((p) => p.map((it) => {
+                const cap = overQ.remaining[it.sku]
+                return typeof cap === 'number' && it.qty > cap ? { ...it, qty: cap } : it
+              }))
+              setOverQ(null)
+            }} className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5" style={{ background: '#b45309' }}>
+              ปรับเหลือเท่าที่คืนได้
+            </button>
+            <span className="text-[11.5px] text-amber-800 self-center">
+              ส่วนเกินให้รับแยกเป็น &ldquo;หาใบไม่เจอ&rdquo; (เข้ากองกัก รอแอดมินสาง) — อย่ารับรวมใบเดียว
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* ── ใบถูกยกเลิกสำเร็จ ── */}
+      {cancelledDoc && (
+        <div className="bg-white border border-gray-300 rounded-md p-5 mb-4 text-center">
+          <div className="text-[32px] mb-1">🗑️</div>
+          <p className="text-[14px] font-bold text-gray-900">ยกเลิกใบ {cancelledDoc.returnId} แล้ว</p>
+          <p className="text-[12px] text-gray-500 mb-3">
+            เหตุผล: {cancelledDoc.cancelReason || '—'} · ล็อกใบขายปลดแล้ว เปิดใบใหม่ได้ทันที
+          </p>
+          <button onClick={reset} className="text-[13px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4669e5' }}>
+            รับใบถัดไป
+          </button>
+        </div>
+      )}
 
       {/* ── ใบถูกคนอื่นถือ — อ่านได้ กดไม่ได้ + รับช่วงต้องเลือกเหตุผล (เวที #2) ── */}
       {locked && (
@@ -466,8 +534,16 @@ export default function ReturnReceivePage() {
             <button onClick={() => fileRef.current?.click()}
               className="w-20 h-20 rounded border-2 border-dashed border-gray-300 text-gray-400 text-[24px]">📷</button>
           </div>
-          {/* escape ตามข้อยุติเวที #1 ข้อ 3 — กล้องพังต้องไปต่อได้ แต่เหตุผลบังคับ */}
-          {photos.length === 0 && (
+          {doc && (
+            <p className="text-[12px] text-blue-900 bg-blue-50 border border-blue-200 rounded px-2.5 py-1.5 mb-3">
+              📌 ใบ <span className="font-mono">{doc.returnId}</span> ถูกรับไว้แล้วแต่<b>ยังไม่มีรูป</b> —
+              เซิร์ฟเวอร์ไม่ให้ประเมินจนกว่าจะมีรูป · ถ่ายแล้วกดส่งเข้าใบเดิมได้เลย
+              (ทางแจ้งเหตุผลแทนรูปใช้ได้เฉพาะตอนรับครั้งแรก — ใบนี้เลยจุดนั้นแล้ว)
+            </p>
+          )}
+          {/* escape ตามข้อยุติเวที #1 ข้อ 3 — กล้องพังต้องไปต่อได้ แต่เหตุผลบังคับ
+              (โหมด resume ไม่มี escape — เหตุผลบันทึกได้ตอน receive เท่านั้น) */}
+          {photos.length === 0 && !doc && (
             <label className="flex items-start gap-2 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mb-3">
               <input type="checkbox" checked={noPhoto} onChange={(e) => setNoPhoto(e.target.checked)} className="mt-0.5" />
               <span>ถ่ายไม่ได้ (กล้องพัง/ไม่มีสิทธิ์) — ต้องพิมพ์เหตุผลติดใบไว้ให้แอดมินเห็น
@@ -481,7 +557,12 @@ export default function ReturnReceivePage() {
           )}
           <div className="flex gap-2">
             <button onClick={() => setStep(0)} className="text-[12.5px] text-gray-500 px-3">← กลับ</button>
-            {photos.some((p) => p.status === 'failed') ? (
+            {doc ? (
+              <button onClick={retryPhotos} disabled={photos.length === 0 || busy}
+                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#4669e5' }}>
+                {busy ? 'กำลังส่ง…' : `ส่งรูปเข้าใบ ${doc.returnId}`}
+              </button>
+            ) : photos.some((p) => p.status === 'failed') ? (
               <button onClick={retryPhotos} disabled={busy}
                 className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#b45309' }}>
                 {busy ? 'กำลังส่ง…' : 'ส่งรูปซ้ำ (ใบคืนสร้างแล้ว ไม่หาย)'}
@@ -497,7 +578,7 @@ export default function ReturnReceivePage() {
       )}
 
       {/* ══ ขั้น ③ ประเมินทีละชิ้น ══ */}
-      {step === 2 && doc && (
+      {step === 2 && doc && !locked && !cancelledDoc && (
         <div className="bg-white border border-gray-200 rounded-md p-4 md:p-6">
           <p className="text-[12px] text-gray-500 mb-0.5">ใบคืน <span className="font-mono">{doc.returnId}</span>
             {doc.unmatched && <> · 🚩 unmatched{doc.quarantineNo && <> · เลขกัก <b className="font-mono">{doc.quarantineNo}</b> (เขียนติดของ)</>}</>}</p>
@@ -537,11 +618,39 @@ export default function ReturnReceivePage() {
             className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#4669e5' }}>
             ถัดไป: สรุปทวนกับลูกค้า
           </button>
+          {/* ยกเลิกใบ — คนถือเท่านั้น · ใบที่ moved แล้วเซิร์ฟเวอร์ไม่ให้ (ไม่ยื่นปุ่มตอนนั้นอยู่แล้ว) */}
+          <div className="mt-3 text-center">
+            {!cancelOpen ? (
+              <button onClick={() => setCancelOpen(true)} className="text-[11.5px] text-gray-400 hover:text-red-600 hover:underline">
+                ลูกค้าเปลี่ยนใจ/รับผิดใบ → ยกเลิกใบนี้
+              </button>
+            ) : (
+              <div className="flex items-center justify-center gap-2">
+                <input value={cancelReason} onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="เหตุผลที่ยกเลิก (บังคับ)" autoFocus
+                  className="text-[12.5px] border border-red-300 rounded px-2 py-1.5 w-[220px]" />
+                <button disabled={cancelReason.trim().length < 4 || busy}
+                  onClick={async () => {
+                    setBusy(true); setError('')
+                    try {
+                      const r = await returnsApi.cancel({ returnId: doc.returnId, reason: cancelReason.trim() })
+                      if (r.blocked) { setLocked({ by: r.lockedBy ?? 'ไม่ทราบชื่อ', since: r.lockSince, returnId: doc.returnId }); return }
+                      if (!r.doc) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี doc)')
+                      setCancelledDoc(r.doc)
+                    } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
+                  }}
+                  className="text-[12.5px] font-semibold text-white rounded px-3 py-1.5 disabled:opacity-40" style={{ background: '#b91c1c' }}>
+                  ยืนยันยกเลิก
+                </button>
+                <button onClick={() => { setCancelOpen(false); setCancelReason('') }} className="text-[12px] text-gray-500">ไม่ยกเลิก</button>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* ══ ขั้น ④ สรุป → ยืนยัน → ผลจริง ══ */}
-      {step === 3 && doc && (
+      {step === 3 && doc && !locked && !cancelledDoc && (
         <div className="bg-white border border-gray-200 rounded-md p-4 md:p-6">
           {unknownResult ? (
             <div className="text-center">

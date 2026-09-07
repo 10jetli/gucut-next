@@ -17,7 +17,7 @@ export const dynamic = 'force-dynamic'
 
 /** พารามิเตอร์หลักที่จอรับคืนใช้ — อย่างอื่น 403 ทั้งหมด */
 const PRIMARY_GET = ['return', 'order', 'returnphoto'] as const
-const PRIMARY_POST = ['return-receive', 'return-grade', 'return-photo', 'return-takeover'] as const
+const PRIMARY_POST = ['return-receive', 'return-grade', 'return-photo', 'return-takeover', 'return-cancel'] as const
 /** พารามิเตอร์ประกอบที่ยอมให้ติดมา (ต่อเมื่อมีพารามิเตอร์หลักถูกต้องแล้ว) */
 const EXTRA_OK = new Set(['q', 'from', 'to', 'limit', 'list', 'i'])
 

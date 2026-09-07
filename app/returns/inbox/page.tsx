@@ -16,8 +16,8 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, Pill, TableWrap, TH, TD, thaiDate } from '@/components/zort'
-import { returnsApi, ReturnDoc, STATE_LABEL } from '@/lib/returns-api'
+import { PageHead, BtnGhost, Pill, TableWrap, TH, TD } from '@/components/zort'
+import { returnsApi, serverTimeMs, ReturnDoc, STATE_LABEL } from '@/lib/returns-api'
 
 /* เกณฑ์ "ค้างเกินกำหนด" ต่อสถานะ (ชั่วโมง) — เลขเริ่มต้นที่ประกาศบนจอ ปรับได้เมื่อมีข้อมูลจริง
    (ตามบทเรียนเวที #3: เลขเดาต้องประกาศตัวว่าเดา และมีตัววัดตามหลัง) */
@@ -25,9 +25,8 @@ const OVERDUE_HOURS: Record<string, number> = { received: 4, graded: 24, move_fa
 const UNMATCHED_OVERDUE_H = 48
 
 const hoursSince = (iso?: string) => {
-  if (!iso) return null
-  const t = new Date(iso).getTime()
-  return Number.isFinite(t) ? (Date.now() - t) / 3600e3 : null
+  const t = serverTimeMs(iso)
+  return t === null ? null : (Date.now() - t) / 3600e3
 }
 
 function overdue(d: ReturnDoc): { late: boolean; why: string } {
@@ -43,10 +42,12 @@ function overdue(d: ReturnDoc): { late: boolean; why: string } {
 }
 
 const thaiTime = (iso?: string) => {
-  if (!iso) return '—'
-  const t = new Date(iso)
-  if (!Number.isFinite(t.getTime())) return '—'
-  return `${thaiDate(iso)} ${String((t.getUTCHours() + 7) % 24).padStart(2, '0')}:${String(t.getUTCMinutes()).padStart(2, '0')}`
+  const ms = serverTimeMs(iso)
+  if (ms === null) return '—'
+  /* บวก 7 แล้วอ่านช่อง UTC ของค่าที่ขยับแล้ว — ไม่พึ่งโซนของเครื่องคนดู */
+  const t = new Date(ms + 7 * 3600e3)
+  const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+  return `${t.getUTCDate()} ${M[t.getUTCMonth()]} ${t.getUTCFullYear() + 543} ${String(t.getUTCHours()).padStart(2, '0')}:${String(t.getUTCMinutes()).padStart(2, '0')}`
 }
 
 export default function ReturnsInboxPage() {
