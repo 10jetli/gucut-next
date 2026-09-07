@@ -38,6 +38,10 @@ const statusTh = (s?: string) => STATUS_TH[String(s ?? '')] ?? (s || 'ไม่�
 export default function QuotationsPage() {
   const [data, setData] = useState<Resp | null>(null)
   const [tab, setTab] = useState('')
+  /* ค้นหาขั้นสูง — กรองช่วงวันที่ (ของจริง ไม่ใช่ลิงก์หลอก) */
+  const [adv, setAdv] = useState(false)
+  const [dFrom, setDFrom] = useState('')
+  const [dTo, setDTo] = useState('')
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -63,6 +67,10 @@ export default function QuotationsPage() {
   const all = Array.isArray(data?.rows) ? data!.rows! : []
   const rows = all.filter((r) => {
     if (tab === 'approved' && r.status !== 'Success') return false
+    /* ค้นหาขั้นสูง: กรองช่วงวันที่จากแถวที่โหลดมา — จอนี้ดึงสดทั้งชุด (ตอนนี้ 3 ใบ)
+       ⇒ กรองฝั่งจอคือกรองของจริงทั้งหมด · วันไหนโดนตัด 200 แถว ตาข่าย `cut` ข้างล่างฟ้องเอง */
+    if (dFrom && (!r.date || r.date.slice(0, 10) < dFrom)) return false
+    if (dTo && (!r.date || r.date.slice(0, 10) > dTo)) return false
     const s = q.trim().toLowerCase()
     return !s || String(r.number ?? '').toLowerCase().includes(s) || (r.customer ?? '').toLowerCase().includes(s)
   })
@@ -124,8 +132,29 @@ export default function QuotationsPage() {
         onChange={setQ}
         onSubmit={() => {}}
         placeholder="เลขรายการขาย ชื่อลูกค้า ช่องทางการขาย และอื่นๆ"
-        advanced={<LinkText onClick={() => setQ('')}>ล้างคำค้น</LinkText>}
+        /* ผัง ZORT มีลิงก์ "ค้นหาขั้นสูง" ตรงนี้ (ภาพ 51) — เดิมของเราเป็น "ล้างคำค้น"
+           ตอนนี้เป็นของจริง: เปิดแผงกรองช่วงวันที่ (ปิดแถวที่ค้างในเช็คลิสต์ 7 ก.ย. 2569) */
+        advanced={<LinkText onClick={() => setAdv((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
       />
+
+      {adv && (
+        <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-3 flex flex-wrap items-end gap-4">
+          <label className="text-[12px] text-gray-600">
+            วันที่ตั้งแต่
+            <input type="date" value={dFrom} onChange={(e) => setDFrom(e.target.value)}
+              className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
+          </label>
+          <label className="text-[12px] text-gray-600">
+            ถึง
+            <input type="date" value={dTo} onChange={(e) => setDTo(e.target.value)}
+              className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
+          </label>
+          <BtnGhost onClick={() => { setDFrom(''); setDTo(''); setQ('') }}>ล้างตัวกรองทั้งหมด</BtnGhost>
+          {(dFrom || dTo) && (
+            <span className="text-[12px] text-gray-500">กรองแล้วเหลือ {rows.length} จาก {all.length} ใบ</span>
+          )}
+        </div>
+      )}
 
       {error && <ErrorBox title="ดึงใบเสนอราคาไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
