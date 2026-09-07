@@ -14,8 +14,9 @@
 //    ทำปุ่มที่ดูเหมือนบันทึกแต่ไม่บันทึก = จอโกหก (กติกาข้อ 6: ผลสำเร็จของการเขียน
 //    เขียนได้เฉพาะเมื่อปลายทางยืนยัน) ⇒ ค่าของจอนี้คือ **เช็คของครบชิ้นก่อนปิดกล่อง**
 //
-// ⚠️ ค้นได้ด้วย **เลขที่ใบ** เท่านั้น — `list=orders&q=` ค้น number+customer
-//    ยังไม่ค้น tracking_no (ขอท่อเพิ่มแล้ว 7 ก.ย. — ระหว่างนี้บอกบนจอตรง ๆ ห้ามเงียบ)
+// ✅ ค้นได้ทั้ง **เลขที่ใบ และเลขพัสดุ** — ท่อเพิ่ม tracking_no ใน q ให้แล้ว 7 ก.ย.
+//    (ขึ้นพร้อมกันใน deploy 21:00 เดียวกัน จึงไม่มีช่วงที่จอพูดเกินจริง)
+//    ท่อยิงพิสูจน์แล้ว: ใบออนไลน์เดือนล่าสุดมีเลขพัสดุครบ ใบไม่มีเลขเป็น POS ล้วน
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
@@ -91,7 +92,7 @@ export default function PackWizardPage() {
       if (typeof d?.skip === 'string') throw new Error(d.skip)
       if (!Array.isArray(d?.rows)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)')
       if (d.rows.length === 0) {
-        setError(`ไม่พบใบที่ตรงกับ "${term}" ใน 120 วันหลังสุด — จอนี้ค้นด้วยเลขที่ใบ (เลขพัสดุยังค้นไม่ได้ ท่อยังไม่รองรับ)`)
+        setError(`ไม่พบใบที่ตรงกับ "${term}" ใน 120 วันหลังสุด — ค้นได้ทั้งเลขที่ใบและเลขพัสดุ (ใบ POS ไม่มีเลขพัสดุ ใช้เลขที่ใบ)`)
       } else if (d.rows.length === 1 && d.rows[0]?.id) {
         await openOrder(String(d.rows[0].id))
       } else {
@@ -115,14 +116,14 @@ export default function PackWizardPage() {
       {step === 0 && (
         <div className="bg-white border border-gray-200 rounded-md p-6 md:p-10 text-center">
           <h1 className="text-[19px] font-bold text-gray-900 mb-2">เริ่มต้นการแพ็คสินค้า</h1>
-          <p className="text-[12.5px] text-gray-500 mb-1">กรอกหมายเลขรายการ แล้วกด &ldquo;แพ็คสินค้า&rdquo;</p>
+          <p className="text-[12.5px] text-gray-500 mb-1">กรอกหมายเลขรายการ หรือ Tracking No. แล้วกด &ldquo;แพ็คสินค้า&rdquo;</p>
           <p className="text-[11.5px] text-gray-400 mb-4">
-            ⚠️ ผัง ZORT รับ Tracking No. ด้วย — ของเรายังค้นด้วย<b>เลขที่ใบ</b>เท่านั้น
-            (ขอท่อเพิ่มการค้นเลขพัสดุแล้ว 7 ก.ย.)
+            ยิงเลขพัสดุจากใบปะหน้าได้เลย — ใบขายออนไลน์มีเลขพัสดุในคลังเงาครบ
+            (ใบ POS ไม่มีเลขพัสดุ ให้ค้นด้วยเลขที่ใบแทน)
           </p>
           <form onSubmit={(e) => { e.preventDefault(); search() }} className="flex flex-col items-center gap-3">
             <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus
-              placeholder="เช่น SO2609-…"
+              placeholder="เลขที่ใบ หรือเลขพัสดุ"
               className="w-[260px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500" />
             <button type="submit" disabled={busy || !q.trim()}
               className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
