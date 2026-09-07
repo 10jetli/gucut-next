@@ -7,6 +7,7 @@ import { getNavItems } from '@/lib/nav-config'
 import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import { MobileHeader, MobileBottomNav, MobileDrawer } from './MobileNav'
+import ZortReadyBar from '@/components/layout/ZortReadyBar'
 
 const STORAGE_KEY = 'gucut-sidebar-collapsed'
 const GROUPS_KEY = 'gucut-sidebar-groups'
@@ -105,7 +106,8 @@ export default function AppShell({ children, role }: AppShellProps) {
       {/* ⚠️ เนื้อหาเต็มความกว้างเหมือน ZORT — ของเดิมจำกัด 1300px แล้วจัดกลาง
           ทำให้จอกว้างเหลือที่ว่างข้างขวาเป็นแถบใหญ่ ต่างจาก ZORT ที่ตารางกินเต็มจอ
           (เห็นชัดตอนเทียบภาพหลังร้านเรากับ ZORT — ตารางเยอะคอลัมน์ต้องการที่) */}
-      <main className={`${mainMl} md:pt-14 ${anim}`}>{children}</main>
+      {/* ป้าย "ใช้แทน ZORT ได้หรือยัง" — ทะเบียนเดียว จุดวาดเดียว (lib/zort-ready.ts) */}
+      <main className={`${mainMl} md:pt-14 ${anim}`}><ZortReadyBar />{children}</main>
 
       <MobileBottomNav navItems={navItems} onMenu={() => setDrawerOpen(true)} />
       <MobileDrawer navItems={navItems} open={drawerOpen} onClose={() => setDrawerOpen(false)} />

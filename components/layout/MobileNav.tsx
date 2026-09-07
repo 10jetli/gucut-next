@@ -7,6 +7,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { NavItem } from '@/lib/nav-config'
 import UserMenu from './UserMenu'
+import { READY_BADGE, zortReadyOf } from '@/lib/zort-ready'
 
 // ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
 // ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
@@ -126,6 +127,10 @@ export function MobileDrawer({ navItems, open, onClose }: {
                       <NavAnchor key={c.href} href={c.href} onClick={onClose}
                         className={`block py-2.5 pl-[52px] pr-4 text-[13.5px] border-l-2 ${isActive(c.href) ? 'border-white bg-black/25 text-white font-semibold' : 'border-transparent text-white/85 active:bg-black/15'}`}>
                         {c.label}
+                        {/* จุดสถานะแทน ZORT — ทะเบียนเดียวกับ Sidebar (lib/zort-ready.ts) */}
+                        {(() => { const r = zortReadyOf(c.href); return r
+                          ? <span className="ml-1.5 text-[7px]" title={READY_BADGE[r].text}>{READY_BADGE[r].dot}</span>
+                          : null })()}
                       </NavAnchor>
                     ))}
                   </div>

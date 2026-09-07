@@ -14,6 +14,7 @@
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import type { NavItem } from '@/lib/nav-config'
+import { READY_BADGE, zortReadyOf } from '@/lib/zort-ready'
 
 // ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
 // ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
@@ -146,6 +147,10 @@ export default function Sidebar({
                         const inner = (
                           <>
                             <span className="truncate">{c.label}</span>
+                            {/* จุดสถานะ "ใช้แทน ZORT ได้หรือยัง" — อ่านจากทะเบียนเดียว lib/zort-ready.ts */}
+                            {(() => { const r = zortReadyOf(c.href); return r
+                              ? <span className="text-[7px] shrink-0" title={READY_BADGE[r].text}>{READY_BADGE[r].dot}</span>
+                              : null })()}
                             {c.soon && !active && <span className="text-[9px] shrink-0">◦</span>}
                           </>
                         )
