@@ -6,7 +6,7 @@ import { authToken, sameToken } from '@/lib/auth-token'
 
 export const metadata: Metadata = {
   title: 'gucut Ai',
-  description: 'GUCUT Business Dashboard',
+  description: 'gucut Ai — ระบบหลังร้าน',
 }
 
 // 🔴 คุกกี้เป็น "ลายนิ้วมือของรหัส" ไม่ใช่ตัวรหัส (6 ก.ย. 2569 — ดู lib/auth-token.ts)

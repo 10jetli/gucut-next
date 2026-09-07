@@ -26,7 +26,7 @@ export default function ManualPage() {
       <div className="max-w-[760px]">
         <h1 className="text-[26px] leading-tight font-semibold text-gray-900">คู่มือการใช้งาน</h1>
         <p className="text-[13px] text-gray-500 mt-1 mb-4">
-          ระบบหลังร้าน GUCUT · เขียนจากสิ่งที่ระบบทำได้จริงตอนนี้ ไม่ใช่สิ่งที่ตั้งใจจะทำ
+          ระบบหลังร้าน gucut Ai · เขียนจากสิ่งที่ระบบทำได้จริงตอนนี้ ไม่ใช่สิ่งที่ตั้งใจจะทำ
         </p>
 
         <Section title="ระบบนี้คืออะไร">
