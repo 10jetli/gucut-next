@@ -363,7 +363,8 @@ export default function WebOrdersPage() {
                       <span className="min-w-0">
                         <span className="block text-[13.5px] font-bold text-gray-900 truncate">{o.customer?.name || '-'}</span>
                         <span className="block text-[11px] text-gray-400 truncate tabular-nums">
-                          #{o.id} · {o.items.length} รายการ
+                          {/* ⚠️ แถวมาแต่ไม่มีช่อง items ⇒ .length พังทั้งหน้า (เจอด้วยโหมด partialgood 7 ก.ย. 2569) */}
+                          #{o.id} · {Array.isArray(o.items) ? `${o.items.length} รายการ` : 'ไม่รู้จำนวนรายการ'}
                           {o.zort && !o.zort.ok && !o.zort.skipped && <span className="text-amber-500"> · ZORT ⚠</span>}
                         </span>
                       </span>
@@ -393,10 +394,13 @@ export default function WebOrdersPage() {
                         <div className="grid md:grid-cols-3 gap-3">
                           <div className="rounded-xl border border-gray-100 bg-white p-4">
                             <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5"><I d={IC.doc} className="w-3.5 h-3.5" /> รายการสินค้า</p>
-                            {o.items.map((i, n) => (
+                            {/* 🔴 บล็อกรายละเอียดถูกวาด **ทุกแถวแม้ยังพับอยู่** (grid-rows trick
+                                ใช้ CSS ซ่อน ไม่ใช่เงื่อนไข) ⇒ แถวที่ไม่มีช่อง items พังทั้งหน้า
+                                ทั้งที่ผู้ใช้ยังไม่ได้กดเปิดดูอะไรเลย (เจอด้วยโหมด partialgood 7 ก.ย. 2569) */}
+                            {(Array.isArray(o.items) ? o.items : []).map((i, n) => (
                               <p key={n} className="text-[13px] text-gray-700 flex justify-between gap-2 py-0.5">
                                 <span className="truncate">{i.title}{i.variant && i.variant !== '-' ? ` (${i.variant})` : ''} ×{i.qty}</span>
-                                <span className="shrink-0 tabular-nums">{baht(i.price * i.qty)}</span>
+                                <span className="shrink-0 tabular-nums">{typeof i.price === 'number' && typeof i.qty === 'number' ? baht(i.price * i.qty) : '—'}</span>
                               </p>
                             ))}
                             <div className="mt-2.5 pt-2.5 border-t border-dashed border-gray-200 text-[12.5px] text-gray-500 space-y-1">

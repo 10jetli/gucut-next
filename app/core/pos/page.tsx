@@ -837,7 +837,8 @@ export default function CorePosPage() {
                           <span className="ml-1 text-amber-600" title="หมวดนี้จัดจากชื่อสินค้าให้ ไม่ได้มาจากทะเบียนสินค้าใน ZORT">•</span>
                         )}
                       </span>
-                      <span className="text-[12px] text-gray-400 shrink-0">{c.items.toLocaleString('th-TH')}</span>
+                      {/* ⚠️ ท่อไม่ส่งจำนวนของหมวดมา ≠ หมวดนี้ไม่มีของ — และห้ามพังทั้งจอเพราะช่องเดียว */}
+                      <span className="text-[12px] text-gray-400 shrink-0">{typeof c.items === 'number' ? c.items.toLocaleString('th-TH') : '—'}</span>
                     </button>
                   ))}
                 </div>
@@ -1089,7 +1090,7 @@ export default function CorePosPage() {
               <div key={r.method} className="bg-white px-4 py-3">
                 <p className="text-[12px] text-gray-500">{payNames[r.method] || r.method}</p>
                 <p className="text-[20px] font-black text-gray-900 leading-tight">{fmtBaht(r.amount)}</p>
-                <p className="text-[11.5px] text-gray-400">{r.orders.toLocaleString('th-TH')} ใบ</p>
+                <p className="text-[11.5px] text-gray-400">{typeof r.orders === 'number' ? `${r.orders.toLocaleString('th-TH')} ใบ` : '— ใบ'}</p>
               </div>
             ))}
           </div>

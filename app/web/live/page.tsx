@@ -123,7 +123,7 @@ export default function WebLivePage() {
           <div className="divide-y divide-gray-50">
             {(s?.pages ?? []).slice(0, 8).map((p) => (
               <div key={p.p} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
-                <span className="flex-1 min-w-0 text-[12.5px] text-gray-700 truncate" dir="ltr">{safeDecode(p.p)}</span>
+                <span className="flex-1 min-w-0 text-[12.5px] text-gray-700 truncate" dir="ltr">{typeof p.p === 'string' ? safeDecode(p.p) : '(ไม่รู้ว่าหน้าไหน)'}</span>
                 <span className="text-[12.5px] font-black text-gray-900 tabular-nums">{p.n}</span>
               </div>
             ))}

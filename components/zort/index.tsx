@@ -199,7 +199,15 @@ export const TD = 'px-3 py-3 text-[12.5px] text-gray-700 align-top'
 export const TDR = 'px-3 py-3 text-[12.5px] text-gray-800 align-top text-right whitespace-nowrap'
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
-export function Num({ v, zeroRed = false }: { v: number; zeroRed?: boolean }) {
+/* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**
+   เจอ 7 ก.ย. 2569 ตอนกวาดด้วยโหมด "ตอบ 200 แต่ก้อนขาดช่องลูก":
+   แถวมาเป็น `{}` ⇒ `v` เป็น undefined ⇒ `.toLocaleString` โยน error ⇒ **จอสินค้ากับจอ POS ขาวทั้งหน้า**
+   ⚠️ ชนิดข้อมูลบอกว่าเป็น `number` ก็จริง — **แต่ชนิดข้อมูลไม่ได้บังคับข้อมูลที่วิ่งมาจากเซิร์ฟเวอร์**
+   ⇒ ไม่ใช่ตัวเลข = เขียน "—" ไปตรง ๆ ดีกว่าล้มทั้งจอ (และห้ามแกล้งเป็น 0) */
+export function Num({ v, zeroRed = false }: { v?: number | null; zeroRed?: boolean }) {
+  if (typeof v !== 'number' || !Number.isFinite(v)) {
+    return <span className="text-gray-300">—</span>
+  }
   const red = v < 0 || (zeroRed && v === 0)
   return (
     <span className={red ? 'text-red-500 font-semibold' : 'text-gray-800'}>

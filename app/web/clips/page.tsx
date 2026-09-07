@@ -1,4 +1,5 @@
 'use client'
+import { fmtNum } from '@/lib/format'
 // สถิติคลิป — ฉบับเนื้อเดียว · ท่อ /api/web/clip-stats
 import { useEffect, useState } from 'react'
 
@@ -25,7 +26,8 @@ export default function WebClipStatsPage() {
       .catch(() => { setErr('โหลดสถิติไม่สำเร็จ — ยังไม่รู้ยอดคนดู (ไม่ได้แปลว่าไม่มีคนดู)'); setRows([]) })
   }, [])
 
-  const totalViews = (rows ?? []).reduce((a, r) => a + r.views, 0)
+  // ⚠️ แถวที่ไม่มี views ต้องไม่ทำให้ผลรวมกลายเป็น NaN ทั้งคอลัมน์
+  const totalViews = (rows ?? []).reduce((a, r) => a + (typeof r.views === 'number' ? r.views : 0), 0)
 
   return (
     <div className="space-y-4 max-w-3xl">
@@ -56,11 +58,11 @@ export default function WebClipStatsPage() {
               <img src={POSTER(r.id)} alt="" className="w-9 h-14 rounded-lg object-cover bg-gray-100 shrink-0" loading="lazy" />
               <span className="text-[11.5px] text-gray-400 truncate" dir="ltr">{String(r.id ?? '').slice(0, 12)}…</span>
             </span>
-            <span className="md:text-right text-[13px] font-black text-gray-900 tabular-nums max-md:ml-auto">{r.views.toLocaleString('th-TH')}</span>
+            <span className="md:text-right text-[13px] font-black text-gray-900 tabular-nums max-md:ml-auto">{fmtNum(r.views)}</span>
             <span className="md:text-right text-[12px] text-gray-500 tabular-nums">{pct(r.half, r.views)}%</span>
             <span className="md:text-right text-[12px] text-gray-500 tabular-nums">{pct(r.full, r.views)}%</span>
-            <span className="md:text-right text-[12px] text-rose-500 tabular-nums">{r.likes.toLocaleString('th-TH')}</span>
-            <span className="md:text-right text-[12px] text-gray-500 tabular-nums">{r.comments.toLocaleString('th-TH')}</span>
+            <span className="md:text-right text-[12px] text-rose-500 tabular-nums">{fmtNum(r.likes)}</span>
+            <span className="md:text-right text-[12px] text-gray-500 tabular-nums">{fmtNum(r.comments)}</span>
           </div>
         ))}
       </div>

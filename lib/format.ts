@@ -1,6 +1,13 @@
 // ฟังก์ชันและค่าคงที่สำหรับจัดรูปแบบตัวเลข/วันที่ — ใช้ร่วมทุกหน้า ห้ามเขียนซ้ำในเพจ
-export function fmtBaht(n: number) {
-  return '฿' + n.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+/** 🔴 **ทนค่าที่ไม่ใช่ตัวเลขได้ — เดิมทำทั้งหน้าตาย** (แก้ 7 ก.ย. 2569)
+ *  เจอตอนกวาดด้วยโหมด "ตอบ 200 แต่ก้อนขาดช่องลูก": แถวมาเป็น `{}` ⇒ `n` เป็น undefined
+ *  ⇒ `n.toLocaleString` โยน error **ตอนวาดหน้า = จอ POS ขาวทั้งจอ**
+ *  ⚠️ ชนิดข้อมูลเขียนว่า `number` ก็จริง **แต่ชนิดข้อมูลไม่ได้บังคับข้อมูลที่มาจากเซิร์ฟเวอร์**
+ *  ⚠️ คืน "—" ไม่ใช่ "฿0" — ศูนย์บาทที่แปลว่า "ไม่รู้" คือของอันตรายที่สุดในจอเงิน */
+export function fmtBaht(n?: number | null) {
+  const v = Number(n)
+  if (n === null || n === undefined || !Number.isFinite(v)) return '—'
+  return '฿' + v.toLocaleString('th-TH', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
 /** เงินแบบ ZORT — **ไม่มีสัญลักษณ์ ฿** และ **ไม่ปัดทศนิยมทิ้ง**
@@ -12,8 +19,13 @@ export function fmtBaht(n: number) {
  *    และไม่มีทางรู้ว่าต่างเพราะการปัด หรือเพราะข้อมูลไม่ตรงจริง ๆ
  * ทศนิยมท้ายที่เป็นศูนย์ถูกตัดเอง (6,243,402.2 ไม่ใช่ 6,243,402.20) ตรงกับที่ ZORT แสดง
  */
-export function fmtMoney(n: number) {
-  return (Number(n) || 0).toLocaleString('th-TH', { maximumFractionDigits: 2 })
+export function fmtMoney(n?: number | null) {
+  /* ⚠️ ของเดิมเขียน `Number(n) || 0` ⇒ **undefined กลายเป็น 0** ซึ่งคือโรคที่ไล่ปิดกันทั้งคืน
+     (0 บาทที่แปลว่า "ไม่รู้" อ่านไม่ต่างจาก 0 บาทที่แปลว่า "ไม่มียอด")
+     ⇒ ไม่ใช่ตัวเลข = "—" · ส่วนเลข 0 จริง ๆ ยังขึ้น 0 ตามเดิม */
+  if (n === null || n === undefined) return '—'
+  const v = Number(n)
+  return Number.isFinite(v) ? v.toLocaleString('th-TH', { maximumFractionDigits: 2 }) : '—'
 }
 
 /** 🔴 **ทนค่าที่ไม่ใช่ตัวเลขได้ — เพราะเดิมมันทำทั้งหน้าตาย**
