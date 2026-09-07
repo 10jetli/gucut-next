@@ -45,7 +45,7 @@ export default function WebLivePage() {
   }, [])
   useEffect(() => { load() }, [load])
 
-  const maxDay = Math.max(1, ...(s?.days ?? []).map((d) => d.n))
+  const maxDay = Math.max(1, ...(s?.days ?? []).map((d) => (typeof d.n === "number" ? d.n : 0)))
 
   return (
     <div className="space-y-4 max-w-4xl">
@@ -68,18 +68,18 @@ export default function WebLivePage() {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ออนไลน์ตอนนี้</p>
             <span className="relative flex w-2.5 h-2.5 mt-1"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-emerald-500" /></span>
           </div>
-          <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{s ? s.online : '—'}</p>
+          <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{typeof s?.online === 'number' ? s.online : '—'}</p>
           <p className="text-[11.5px] text-gray-400 mt-1.5">เคลื่อนไหวใน {s?.onlineWindowMin ?? 5} นาทีล่าสุด</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">วันนี้</p>
           <div className="flex items-end justify-between gap-2 mt-1">
-            <p className="text-[30px] font-black text-gray-900 tabular-nums leading-none">{s ? s.today.toLocaleString('th-TH') : '—'}</p>
+            <p className="text-[30px] font-black text-gray-900 tabular-nums leading-none">{typeof s?.today === 'number' ? s.today.toLocaleString('th-TH') : '—'}</p>
             <div className="flex items-end gap-[3px] h-10 pb-0.5">
               {(s?.days ?? []).map((d, i, arr) => (
-                <span key={d.d} title={`${d.d} · ${d.n.toLocaleString('th-TH')} คน`}
+                <span key={d.d} title={`${d.d} · ${(typeof d.n === 'number' ? d.n : 0).toLocaleString('th-TH')} คน`}
                   className={`w-[8px] rounded-full ${i === arr.length - 1 ? 'bg-blue-500' : 'bg-blue-100'}`}
-                  style={{ height: `${Math.max(10, (d.n / maxDay) * 100)}%` }} />
+                  style={{ height: `${Math.max(10, ((typeof d.n === "number" ? d.n : 0) / maxDay) * 100)}%` }} />
               ))}
             </div>
           </div>
@@ -121,7 +121,14 @@ export default function WebLivePage() {
                 <span className="text-[12.5px] font-black text-gray-900 tabular-nums">{p.n}</span>
               </div>
             ))}
-            {s && s.pages.length === 0 && <p className="px-5 py-6 text-[12.5px] text-gray-400 text-center">ยังเงียบอยู่</p>}
+            {/* ⚠️ `s && s.pages.length` — มีก้อน s แต่ไม่มีช่อง pages ⇒ undefined.length ⇒ ทั้งหน้าพัง
+                และถ้าไม่มีช่องนี้จริง ๆ ก็ **ห้ามเขียนว่า "ยังเงียบอยู่"** เพราะนั่นคือการสรุปแทนข้อมูลที่ไม่มี */}
+            {s && Array.isArray(s.pages) && s.pages.length === 0 && (
+              <p className="px-5 py-6 text-[12.5px] text-gray-400 text-center">ยังเงียบอยู่</p>
+            )}
+            {s && !Array.isArray(s.pages) && (
+              <p className="px-5 py-6 text-[12.5px] text-amber-700 text-center">เซิร์ฟเวอร์ไม่ได้ส่งรายการหน้ามา — ยังบอกไม่ได้ว่ามีใครดูอะไรอยู่</p>
+            )}
           </div>
           <p className="px-4 md:px-5 pt-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 border-t border-gray-100">มาจากช่องทางไหน (วันนี้)</p>
           <div className="px-4 md:px-5 pb-4 flex flex-wrap gap-1.5">
@@ -140,7 +147,8 @@ export default function WebLivePage() {
               <div key={c.cc} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
                 <span className="text-[16px]">{flag(c.cc)}</span>
                 <span className="flex-1 text-[12.5px] text-gray-700">{c.cc === 'ZZ' ? 'ไม่ทราบ' : countryName(c.cc)}</span>
-                <span className="text-[12.5px] font-black text-gray-900 tabular-nums">{c.n.toLocaleString('th-TH')}</span>
+                {/* ⚠️ กันแบบเดียวกับช่องอื่น — แถวมีอยู่ ไม่ได้แปลว่าทุกช่องในแถวมีค่า */}
+                <span className="text-[12.5px] font-black text-gray-900 tabular-nums">{(typeof c.n === 'number' ? c.n : 0).toLocaleString('th-TH')}</span>
               </div>
             ))}
           </div>
