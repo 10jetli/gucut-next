@@ -1,7 +1,11 @@
 'use client'
 // ตั้งค่า → ข้อมูลส่วนตัว (ปิดแถว 37)
 //
-// ⚠️ **ยังไม่มีภาพจอ ZORT** ⇒ ไม่ได้ลอกผัง เขียนจากคำถามที่จอควรตอบ
+// ✅ ได้ภาพจอ ZORT แล้ว 7 ก.ย. 2569 (`zort-ui/103`) — ผังคือการ์ดฟอร์มกลางจอ:
+//    ข้อมูลส่วนตัว (ชื่อผู้ใช้ · อีเมล+ยืนยัน · รหัสผ่าน+เปลี่ยน · สวิตช์ 2FA ปิดอยู่)
+//    + ตั้งค่าอื่นๆ (ลายเซ็นดิจิทัล · ภาษา) + ปุ่มบันทึก
+//    ⇒ ใส่การ์ดฟอร์มตามผังไว้บนสุด แต่ละแถวตอบด้วยของจริงของเรา — แถวที่เราไม่มี
+//      เขียนเหตุผลตรง ๆ (ห้ามทำช่องกรอก/สวิตช์หลอกที่กดแล้วไม่บันทึก)
 //
 // ZORT เมนูนี้ = โปรไฟล์ของคนที่ล็อกอินอยู่ (ชื่อ อีเมล เปลี่ยนรหัส ตั้งการแจ้งเตือน)
 // ของเรา **ไม่มีบัญชีผู้ใช้จริง** — ล็อกอินด้วยรหัสผ่านล้วน ไม่มีชื่อผู้ใช้ ไม่มีอีเมล
@@ -93,6 +97,30 @@ export default function SettingsProfilePage() {
             )}
           </div>
 
+          {/* ── ผังตามภาพ 103: การ์ดฟอร์มโปรไฟล์ของ ZORT — แถวไหนเราไม่มี บอกเหตุผลแทน ── */}
+          <div className="bg-white border border-gray-200 rounded-md p-4 md:p-5 mb-4">
+            <p className="text-[13.5px] font-semibold text-gray-800 mb-3">👤 ข้อมูลส่วนตัว <span className="text-[11px] font-normal text-gray-400">(ผังตาม ZORT)</span></p>
+            {([
+              ['ชื่อผู้ใช้งาน', role === 'admin' ? 'แอดมิน (เจ้าของร้าน)' : role === 'staff' ? (w?.name || 'พนักงาน (รหัสรวมรุ่นเก่า — ระบบแยกไม่ออกว่าใคร)') : '—', ''],
+              ['อีเมล', '', 'ไม่มีในระบบเรา — บัญชีผูกกับรหัสผ่าน ไม่ใช่อีเมล (ZORT ผูกกับอีเมล)'],
+              ['รหัสผ่าน', '******', ''],
+              ['รหัสยืนยันสองขั้นตอน', '', 'ไม่มีในระบบเรา — ZORT ของร้านก็ปิดสวิตช์นี้อยู่ (ภาพจอจริง 7 ก.ย. 2569)'],
+              ['ลายเซ็นดิจิทัล', '', 'ไม่มีในระบบเรา — ไม่มีเอกสารที่ต้องใช้ลายเซ็นบนจอฝั่งนี้'],
+              ['ภาษา', 'ภาษาไทย', ''],
+            ] as Array<[string, string, string]>).map(([label, value, why]) => (
+              <div key={label} className="flex items-start gap-3 mb-2.5">
+                <span className="w-[170px] shrink-0 text-[12px] text-gray-500 pt-1.5">{label}</span>
+                {value
+                  ? <span className="flex-1 max-w-[420px] text-[12.5px] text-gray-800 bg-gray-50 border border-gray-200 rounded px-3 py-1.5">{value}</span>
+                  : <span className="flex-1 max-w-[420px] text-[12px] text-gray-400 bg-gray-50/60 border border-dashed border-gray-200 rounded px-3 py-1.5">{why}</span>}
+              </div>
+            ))}
+            <p className="text-[11.5px] text-gray-400 mt-3">
+              ไม่มีปุ่ม &ldquo;บันทึก&rdquo; ของ ZORT — จอนี้อ่านอย่างเดียว
+              (เปลี่ยนรหัสดูกล่อง &ldquo;เปลี่ยนรหัสผ่าน&rdquo; ข้างล่าง)
+            </p>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="bg-white border border-gray-200 rounded-md p-4">
               <p className="text-[14px] font-semibold text-gray-900 mb-1.5">การเข้าสู่ระบบครั้งนี้</p>
@@ -149,7 +177,6 @@ export default function SettingsProfilePage() {
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
             ZORT เมนูนี้มีชื่อ อีเมล และการแจ้งเตือนรายคน — ของเรา<b>ยังไม่มีบัญชีผู้ใช้จริง</b>
             {' '}จึงมีได้เท่านี้ (ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้) ·
-            ยังไม่มีภาพจอ ZORT ของเมนูนี้ จึงยังไม่ได้จัดผังตาม ·
             อยากออกจากระบบเครื่องนี้เครื่องเดียว ใช้ปุ่ม{' '}
             <Link href="/login" className="text-blue-600 hover:underline">เข้าสู่ระบบ</Link>{' '}
             แล้วออกจากระบบที่นั่น
