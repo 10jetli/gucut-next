@@ -55,6 +55,20 @@ export default function ReturnsInboxPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  /* ดูรูปรายใบ — ดึงผ่านท่อ (dataUrl) เปิด URL ตรง ๆ ไม่ได้เพราะรหัสอยู่ในหัวข้อความ */
+  const [photoView, setPhotoView] = useState<{ returnId: string; urls: string[]; failed: number } | null>(null)
+  const viewPhotos = useCallback(async (returnId: string, count: number) => {
+    setPhotoView({ returnId, urls: [], failed: 0 })
+    const urls: string[] = []; let failed = 0
+    for (let i = 0; i < count; i++) {
+      try {
+        const r = await returnsApi.photoGet(returnId, i)
+        if (r.dataUrl) urls.push(r.dataUrl); else failed++
+      } catch { failed++ }
+    }
+    setPhotoView({ returnId, urls, failed })
+  }, [])
+
   const load = useCallback(async () => {
     setLoading(true); setError('')
     try {
@@ -180,7 +194,8 @@ export default function ReturnsInboxPage() {
                         </td>
                         <td className={TD}>
                           {typeof d.photoCount === 'number' && d.photoCount > 0
-                            ? <span>{d.photoCount} รูป</span>
+                            ? <button onClick={() => viewPhotos(d.returnId, d.photoCount!)}
+                                className="text-blue-600 hover:underline">{d.photoCount} รูป — ดู</button>
                             : d.noPhotoReason
                               ? <span className="text-amber-700" title={d.noPhotoReason}>ไม่มีรูป (มีเหตุผล)</span>
                               /* ไม่มีรูปและไม่มีเหตุผล = ผิดกติกา ต้องเห็นเป็นแดง ไม่ใช่ขีดเฉย ๆ */
@@ -195,12 +210,31 @@ export default function ReturnsInboxPage() {
             </TableWrap>
           )}
 
+          {photoView && (
+            <div className="bg-white border border-gray-300 rounded-md p-3 mt-4">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-[12.5px] font-semibold text-gray-800">รูปใบ <span className="font-mono">{photoView.returnId}</span></p>
+                <button onClick={() => setPhotoView(null)} className="text-[12px] text-gray-500 hover:underline">ปิด</button>
+              </div>
+              {photoView.urls.length === 0 && photoView.failed === 0 && <LoadingState />}
+              <div className="flex flex-wrap gap-2">
+                {photoView.urls.map((u, i) => (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img key={i} src={u} alt={`รูปที่ ${i + 1}`} className="h-40 rounded border border-gray-200" />
+                ))}
+              </div>
+              {photoView.failed > 0 && (
+                <p className="text-[12px] text-red-700 mt-2">ดึงรูปไม่สำเร็จ {photoView.failed} ใบ — ลองกดดูใหม่ (ดึงไม่ได้ ≠ ไม่มีรูป)</p>
+              )}
+            </div>
+          )}
+
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
             เกณฑ์ค้างเกินกำหนด (ชม.): รอประเมิน {OVERDUE_HOURS.received} · รอเข้าสต็อก {OVERDUE_HOURS.graded} ·
             เข้าสต็อกไม่ครบ {OVERDUE_HOURS.move_failed} · unmatched {UNMATCHED_OVERDUE_H} —
             <b> เลขชุดแรกเป็นค่าตั้งต้นที่ยังไม่มีข้อมูลรองรับ</b> (ประกาศตัวตามกติกาเวที #3)
-            เดือนแรกวัดจากของจริงแล้วค่อยปรับ · รูปใบคืนดูผ่านจอนี้ไม่ได้จนกว่าเส้นรูปของท่อขึ้น —
-            ตอนนี้บอกแค่จำนวน ไม่แกล้งทำปุ่มดูรูปที่กดแล้วพัง
+            เดือนแรกวัดจากของจริงแล้วค่อยปรับ · รูปดึงผ่านท่อเป็น dataUrl (เส้น returnphoto — ท่อเพิ่มให้ 7 ก.ย. ดึก)
+            เปิด URL ตรง ๆ ไม่ได้เพราะรหัสอยู่ในหัวข้อความ
           </p>
         </>
       )}

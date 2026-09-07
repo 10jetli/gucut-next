@@ -162,12 +162,24 @@ export const returnsApi = {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     }),
 
+  /** ดูรูปใบคืนทีละใบ — GET ?returnphoto=<returnId>&i=<n> → {ok, dataUrl}
+   *  🔴 ต้องดึงผ่านท่อ (รหัสอยู่ในหัวข้อความ) เปิด URL ตรง ๆ ไม่ได้ — กติกาเดียวกับรูปสลิป/ลงเวลา */
+  photoGet: (returnId: string, i: number) =>
+    call<BaseResp & { ok?: boolean; dataUrl?: string }>(
+      `/api/returns?returnphoto=${encodeURIComponent(returnId)}&i=${i}`),
+
   /** ขอรับช่วงใบที่คนก่อนถือค้าง — ต้องเลือกเหตุผล (ข้อสังเคราะห์เวที #2) */
   takeover: (body: { returnId: string; reason: 'shift-change' | 'unreachable' | 'other'; note?: string }) =>
     call<GetReturnResp>('/api/returns?return-takeover=1', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     }),
 }
+
+/* 📌 **ของชำรุดลงบัญชีสองแถวต่อชิ้น — ตกลงกับท่อ 7 ก.ย. ดึก (อ่านก่อนทำจอประวัติ move)**
+   verdict=damage ⇒ ledger ได้ return_in +qty (ของกลับมาจริง) แล้ว damage −qty (ตัดทิ้ง)
+   สุทธิ = 0 บนสต็อกขายได้ ซึ่งถูก เพราะของถูกตัดไปตั้งแต่ตอนขายแล้ว
+   ลง damage −qty แถวเดียว = ตัดซ้ำสองรอบจากการขายครั้งเดียว สต็อกขาดเงียบ ๆ
+   ⇒ จอที่โชว์ move ตาม ref RT-* ต้องเตรียมรับ 2 แถวต่อชิ้นชำรุด ห้ามทักว่าซ้ำ */
 
 /* ── ป้ายสถานะกลาง — จอทุกตัวใช้ชุดเดียวกัน ห้ามพิมพ์ซ้ำ ── */
 export const STATE_LABEL: Record<ReturnState, { text: string; tone: 'blue' | 'orange' | 'green' | 'red' | 'gray' }> = {

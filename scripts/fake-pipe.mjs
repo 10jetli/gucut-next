@@ -174,7 +174,7 @@ const srv = createServer(async (req, res) => {
       ],
     }))
   }
-  if (mode === 'good' && /return-receive=|return-grade=|return-photo=|return-takeover=|[?&]return=|list=returns-inbox/.test(req.url)) {
+  if (mode === 'good' && /return-receive=|return-grade=|return-photo=|return-takeover=|returnphoto=|[?&]return=|list=returns-inbox/.test(req.url)) {
     const u = new URL(req.url, 'http://x')
     const json = (obj, code = 200) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(obj)) }
     const body = req.method === 'POST'
@@ -194,6 +194,11 @@ const srv = createServer(async (req, res) => {
       const q = u.searchParams.get('q') ?? ''
       const rows = [...st.docs.values()].filter((d) => !q || d.orderId === q || (d.orderNumber ?? '').includes(q))
       return json({ rows, total: rows.length, reconHeartbeatAt: new Date(Date.now() - 30 * 3600e3).toISOString() })
+    }
+    if (u.searchParams.get('returnphoto')) {
+      const d = st.docs.get(u.searchParams.get('returnphoto'))
+      if (!d || !(d.photoCount > 0)) return json({ error: 'ไม่มีรูปใบนี้' }, 404)
+      return json({ ok: true, dataUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==' })
     }
     if (u.searchParams.get('return')) {
       const d = st.docs.get(u.searchParams.get('return'))

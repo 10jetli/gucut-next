@@ -16,10 +16,10 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 
 /** พารามิเตอร์หลักที่จอรับคืนใช้ — อย่างอื่น 403 ทั้งหมด */
-const PRIMARY_GET = ['return', 'order'] as const
+const PRIMARY_GET = ['return', 'order', 'returnphoto'] as const
 const PRIMARY_POST = ['return-receive', 'return-grade', 'return-photo', 'return-takeover'] as const
 /** พารามิเตอร์ประกอบที่ยอมให้ติดมา (ต่อเมื่อมีพารามิเตอร์หลักถูกต้องแล้ว) */
-const EXTRA_OK = new Set(['q', 'from', 'to', 'limit', 'list'])
+const EXTRA_OK = new Set(['q', 'from', 'to', 'limit', 'list', 'i'])
 
 function pickPrimary(u: URL, method: string): string | null {
   if (u.searchParams.get('list') === 'returns-inbox') return 'list=returns-inbox'
