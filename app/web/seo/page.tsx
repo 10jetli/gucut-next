@@ -99,7 +99,13 @@ export default function WebSeoPage() {
 
       {/* รายการงาน */}
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
-        {audit === null ? (
+        {/* 🔴 โหลดไม่สำเร็จแล้ว **โครงกระดูกห้ามกะพริบตลอดกาล** — เดิมเช็คแค่ audit === null
+            ⇒ ตอนล้ม audit ยังเป็น null ตลอด กล่องนี้เลยขึ้น animate-pulse ค้างไว้
+            ข้าง ๆ ข้อความ "โหลดผลตรวจไม่สำเร็จ" ⇒ จอบอกสองอย่างพร้อมกัน: พังแล้ว แต่ยังโหลดอยู่
+            (เจอด้วยตัวกวาดสามสถานะ 7 ก.ย. 2569 — มันรอ "โหลดจบ" แล้วไม่จบสักที) */}
+        {audit === null && msg ? (
+          <p className="py-12 text-center text-[13px] text-gray-400">ยังดูรายการงานไม่ได้ — โหลดผลตรวจไม่สำเร็จ</p>
+        ) : audit === null ? (
           <div className="p-4 space-y-3 animate-pulse">{[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-gray-50" />)}</div>
         ) : shown.length === 0 ? (
           <p className="py-12 text-center text-[13px] text-emerald-600 font-semibold">ด้านนี้ไม่มีงานค้าง ✓</p>
