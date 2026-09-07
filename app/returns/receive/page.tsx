@@ -26,7 +26,7 @@ import Link from 'next/link'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { ChannelTag, Pill, thaiDate } from '@/components/zort'
 import {
-  returnsApi, ReturnDoc, Verdict, STATE_LABEL, TAKEOVER_REASONS,
+  returnsApi, setStaffPin, ReturnDoc, Verdict, STATE_LABEL, TAKEOVER_REASONS,
 } from '@/lib/returns-api'
 
 /* ── ชิ้นที่กำลังเลือกในขั้น ① — ฝั่งจอเท่านั้น ยังไม่ถึงเซิร์ฟเวอร์ ── */
@@ -171,8 +171,9 @@ export default function ReturnReceivePage() {
       else if (d.doc.state === 'received') {
         setVerdicts(Object.fromEntries(d.doc.items.map((it) => [it.sku, { verdict: it.verdict, note: it.note ?? '' }])))
         setStep(2)
-      } else if (d.doc.state === 'graded') {
+      } else if (d.doc.state === 'graded' || d.doc.state === 'move_failed') {
         setVerdicts(Object.fromEntries(d.doc.items.map((it) => [it.sku, { verdict: it.verdict, note: it.note ?? '' }])))
+        if (d.doc.state === 'move_failed') setResult(d.doc.items)
         setStep(3)
       } else setError(`ใบ ${returnId} ถูกยกเลิกไปแล้ว — เริ่มใบใหม่ได้`)
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
@@ -252,6 +253,8 @@ export default function ReturnReceivePage() {
       const r = await returnsApi.grade({ returnId: doc.returnId, items })
       if (!Array.isArray(r.items)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี items)')
       setResult(r.items)
+      /* state จากเซิร์ฟเวอร์คือความจริง — moved ต่อเมื่อทุกชิ้นมี moveResult (รีวิวท่อ) */
+      setDoc((cur) => (cur ? { ...cur, state: r.state ?? cur.state, items: r.items ?? cur.items } : cur))
     } catch (e) {
       const msg = String(e instanceof Error ? e.message : e)
       if (msg.includes('อ่านคำตอบไม่ออก')) { setUnknownResult(true); setError('') }
@@ -315,7 +318,14 @@ export default function ReturnReceivePage() {
           {!order && !unmatched && (
             <>
               <h1 className="text-[17px] font-bold text-gray-900 text-center mb-1">รับคืนสินค้า</h1>
-              <p className="text-[12px] text-gray-500 text-center mb-4">กรอกเลขที่ใบขาย หรือเลขพัสดุจากกล่อง</p>
+              <p className="text-[12px] text-gray-500 text-center mb-2">กรอกเลขที่ใบขาย หรือเลขพัสดุจากกล่อง</p>
+              {/* ตัวตนพนักงาน: PIN ลงเวลา → header x-staff-pin เซิร์ฟเวอร์แปลงเป็นชื่อเอง
+                  ห้ามส่งชื่อจาก body (ตกลงกับท่อ) — ตอนนี้ยังไม่บังคับ รอท่อเปิดด่าน */}
+              <p className="text-center mb-4">
+                <input type="password" inputMode="numeric" maxLength={6} placeholder="PIN พนักงาน"
+                  onChange={(e) => setStaffPin(e.target.value)}
+                  className="w-[120px] text-center text-[13px] border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-400" />
+              </p>
               <form onSubmit={(e) => { e.preventDefault(); search() }} className="flex justify-center gap-2 mb-3">
                 <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="เลขที่ใบ หรือเลขพัสดุ"
                   className="w-[240px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500" />
@@ -542,6 +552,31 @@ export default function ReturnReceivePage() {
               <button onClick={() => resume(doc.returnId)} disabled={busy}
                 className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4669e5' }}>
                 {busy ? 'กำลังเช็ค…' : 'เช็คสถานะจริงของใบนี้'}
+              </button>
+            </div>
+          ) : result && doc.state === 'move_failed' ? (
+            <div className="text-center">
+              <div className="text-[36px] mb-1">⚠️</div>
+              <p className="text-[15px] font-bold text-red-800 mb-1">บันทึกแล้ว แต่เข้าสต็อกไม่ครบ — ใบ {doc.returnId}</p>
+              <p className="text-[12px] text-gray-600 mb-3">
+                คำตัดสินถูกบันทึกครบ · ชิ้นที่ขึ้น <b>&ldquo;ยังไม่ลงสต็อก&rdquo;</b> ยิงซ้ำได้ปลอดภัย
+                (ชิ้นที่ลงแล้วระบบไม่บวกซ้ำ) — <b>ห้ามเริ่มใบใหม่</b>
+              </p>
+              <div className="text-left border border-gray-200 rounded-md divide-y divide-gray-100 mb-3">
+                {result.map((it) => (
+                  <div key={it.sku || it.name} className="flex items-center gap-2 px-3 py-2 text-[12.5px]">
+                    <span className="flex-1">{it.name || it.sku} × {it.qty}</span>
+                    {it.moveResult
+                      ? <Pill tone={it.verdict === 'return_in' ? 'green' : 'red'}>
+                          {it.verdict === 'return_in' ? 'กลับเข้าสต็อกแล้ว' : 'เข้ากองเสียหายแล้ว'}
+                        </Pill>
+                      : <Pill tone="red">ยังไม่ลงสต็อก</Pill>}
+                  </div>
+                ))}
+              </div>
+              <button onClick={confirm} disabled={busy}
+                className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#b91c1c' }}>
+                {busy ? 'กำลังยิงซ้ำ…' : 'ลองส่งเข้าสต็อกอีกครั้ง'}
               </button>
             </div>
           ) : result ? (

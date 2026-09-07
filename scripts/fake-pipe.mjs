@@ -222,11 +222,18 @@ const srv = createServer(async (req, res) => {
     if (u.searchParams.get('return-grade')) {
       const d = st.docs.get(body?.returnId)
       if (!d) return json({ error: 'ไม่พบใบนี้' }, 404)
+      /* จำลอง move ล้มบางชิ้นรอบแรก (ชิ้นที่สอง) → move_failed · ยิงซ้ำรอบสอง → ครบ = moved
+         ทดสอบทั้งจอ "เข้าสต็อกไม่ครบ" และกติกา retry-ชุดเดิม (รีวิวท่อ 7 ก.ย. ดึก) */
+      const firstTry = !d._retried
+      d._retried = true
       d.items = d.items.map((it, i) => {
         const g = (body.items ?? []).find((x) => x.sku === it.sku) ?? body.items?.[i]
-        return { ...it, verdict: g?.verdict, note: g?.note, moveResult: d.unmatched ? undefined : (i === 1 ? 'duplicate' : 'added') }
+        const mv = d.unmatched ? undefined
+          : (i === 1 ? (firstTry && d.items.length > 1 ? undefined : 'duplicate') : 'added')
+        return { ...it, verdict: g?.verdict, note: g?.note, moveResult: mv }
       })
-      d.state = d.unmatched ? 'graded' : 'moved'
+      d.state = d.unmatched ? 'graded'
+        : (d.items.every((it) => it.moveResult) ? 'moved' : 'move_failed')
       d.lastActivityAt = new Date().toISOString()
       return json({ returnId: d.returnId, state: d.state, items: d.items })
     }

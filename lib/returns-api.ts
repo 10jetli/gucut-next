@@ -15,7 +15,10 @@
 //   - รูป: ยืนยันอัปโหลดสำเร็จก่อนเปลี่ยนสถานะ · upload_failed ≠ ไม่มีรูป
 //   - ตัวเลขที่ใช้ตัดสินพก observed_at/source/scope/fresh_until · ไม่มีเรคคอร์ด = UNKNOWN
 
-export type ReturnState = 'received' | 'graded' | 'moved' | 'cancelled'
+/* move_failed (รีวิวท่อ 7 ก.ย. ดึก): ประเมินครบ · ยิง move แล้ว · **ยังลงไม่ครบทุกชิ้น**
+   ยิงซ้ำปลอดภัย (UNIQUE ref ทำให้ชิ้นที่ลงแล้วตอบ duplicate) · `moved` ออกได้ต่อเมื่อ
+   ทุกชิ้นมี moveResult เท่านั้น — ไม่มีสถานะนี้ = moved โกหกตอนยิง 5 สำเร็จ 3 */
+export type ReturnState = 'received' | 'graded' | 'move_failed' | 'moved' | 'cancelled'
 export type Verdict = 'return_in' | 'damage'
 
 export interface ReturnItem {
@@ -79,8 +82,12 @@ export interface ReceiveResp extends BaseResp {
 
 export interface GradeResp extends BaseResp {
   returnId?: string
+  /** moved = ทุกชิ้นมี moveResult · move_failed = ลงไม่ครบ จอชี้ชิ้นค้าง+ปุ่มยิงซ้ำ */
   state?: ReturnState
   items?: ReturnItem[]
+  /** คงเหลือคืนได้ ณ เวลา grade — เซิร์ฟเวอร์คิดใหม่เสมอ ไม่ใช้ค่าตอน receive
+   *  (ระหว่างใบค้าง คนอื่นอาจคืนใบขายเดียวกันจนหมด — ช่องที่ท่อจับได้ตอนรีวิว) */
+  remaining?: Record<string, number>
 }
 
 /** ดึงใบเดียวตาม returnId — ใช้ resume หลังเน็ตหลุด/timeout (รู Codex #2) */
@@ -90,8 +97,16 @@ export interface GetReturnResp extends BaseResp {
 
 /* ═══ ตัวเรียก — ทุกตัวกันสามสถานะครบ: HTTP พัง · error/skip · รูปคำตอบไม่ครบ ═══ */
 
+/* ── ตัวตนพนักงาน — PIN จากระบบลงเวลา ส่งเป็น header ให้เซิร์ฟเวอร์แปลงเป็นชื่อเอง
+   🔴 **ห้ามส่ง "ชื่อ" จาก body เด็ดขาด** — ใครก็อ้างเป็นใครก็ได้
+   (คลาสเดียวกับห้ามรับเบอร์จาก body ใน /api/push — ช่องที่ท่อจับได้ตอนรีวิว) ── */
+let staffPin = ''
+export function setStaffPin(pin: string) { staffPin = pin.trim() }
+
 async function call<T extends BaseResp>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(path, init)
+  const headers = new Headers(init?.headers)
+  if (staffPin) headers.set('x-staff-pin', staffPin)
+  const res = await fetch(path, { ...init, headers })
   const d = (await res.json().catch(() => null)) as T | null
   /* ท่อตอบ 500 พร้อม JSON ⇒ .json() ไม่ throw — ต้องเช็คเอง (กฎเหล็กจอ ข้อ 3) */
   if (d === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status}) — ไม่รู้ผล ห้ามกดซ้ำ`)
@@ -124,7 +139,12 @@ export const returnsApi = {
 
   /** ขั้นประเมิน+ยืนยัน (ปุ่มเดียวของขั้น ④): เซิร์ฟเวอร์บันทึกคำตัดสิน **และยิง move ในธุรกรรมเดียว**
    *  ตอบกลับพร้อม moveResult ต่อชิ้น (added/duplicate) — idempotent ต่อ returnId
-   *  (ผัง v2: "กด 1 ครั้ง → ระบบยิง move อัตโนมัติ" — แยกสอง POST = เปิดหน้าต่างเน็ตหลุดคาอีกขั้น) */
+   *  (ผัง v2: "กด 1 ครั้ง → ระบบยิง move อัตโนมัติ" — แยกสอง POST = เปิดหน้าต่างเน็ตหลุดคาอีกขั้น)
+   *  กติกาฝั่งเซิร์ฟเวอร์ (ตกลงกับท่อ 7 ก.ย. ดึก):
+   *  - เช็ค remaining ใหม่ ณ เวลานี้เสมอ — เกิน = ปฏิเสธพร้อมเลข ไม่ยิง move แล้วค่อยรู้
+   *  - ใบที่ moved/move_failed แล้ว **ปฏิเสธคำตัดสินชุดใหม่** (แก้ = ทางแอดมิน adjust RT-…-fix)
+   *    แต่ยิงซ้ำ "ชุดเดิม" ได้ = ทางยิงชิ้นค้างของ move_failed
+   *  - ปฏิเสธถ้า photoCount === 0 && !noPhotoReason — จอบังคับไม่พอ POST ตรงข้ามจอได้ */
   grade: (body: {
     returnId: string
     items: Array<{ sku: string; verdict: Verdict; note?: string }>
@@ -147,9 +167,10 @@ export const returnsApi = {
 }
 
 /* ── ป้ายสถานะกลาง — จอทุกตัวใช้ชุดเดียวกัน ห้ามพิมพ์ซ้ำ ── */
-export const STATE_LABEL: Record<ReturnState, { text: string; tone: 'blue' | 'orange' | 'green' | 'gray' }> = {
+export const STATE_LABEL: Record<ReturnState, { text: string; tone: 'blue' | 'orange' | 'green' | 'red' | 'gray' }> = {
   received: { text: 'รับแล้ว · รอประเมิน', tone: 'blue' },
   graded: { text: 'ประเมินแล้ว · รอเข้าสต็อก', tone: 'orange' },
+  move_failed: { text: 'เข้าสต็อกไม่ครบ — ยิงซ้ำได้', tone: 'red' },
   moved: { text: 'เข้าสต็อกแล้ว', tone: 'green' },
   cancelled: { text: 'ยกเลิก', tone: 'gray' },
 }
