@@ -231,7 +231,9 @@ export default function DashboardPage() {
           <ZortStat
             icon="🛒" bg="#E8F0FE" fg="#2563eb"
             label="ยอดขายวันนี้ (บาท)"
-            value={coreError ? '—' : fmtMoney(today?.totalPaidAmount ?? today?.totalAmount ?? 0)}
+            /* ⚠️ ตัดหาง `?? 0` ทิ้ง (เจอตอนรีวิว diff ก่อนรอบ 21:00 · 7 ก.ย. 2569) —
+               ท่อไม่ส่งยอดมา ≠ วันนี้ขายได้ศูนย์บาท · fmtMoney รับ undefined แล้วคืน "—" เองแล้ว */
+            value={coreError ? '—' : fmtMoney(today?.totalPaidAmount ?? today?.totalAmount)}
             note={!coreError && today
               ? typeof today.totalPaidAmount === 'number'
                 ? `${fmtNum(today.total)} ใบ · เฉพาะที่จ่ายแล้ว`
@@ -290,11 +292,11 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
         <StatCard
           icon="📦" tone="blue" label="ออเดอร์วันนี้"
-          value={coreError ? '—' : fmtNum(today?.total ?? 0)} unit="ใบ"
+          value={coreError ? '—' : fmtNum(today?.total)} unit="ใบ"
         />
         <StatCard
           icon="💰" tone="green" label="ยอดขาย (7 วัน)"
-          value={coreError ? '—' : fmtMoney(week?.totalPaidAmount ?? week?.totalAmount ?? 0)}
+          value={coreError ? '—' : fmtMoney(week?.totalPaidAmount ?? week?.totalAmount)}
           note={!coreError && week
             ? typeof week.totalPaidAmount === 'number'
               ? `${fmtNum(week.total)} ใบ · เฉพาะที่จ่ายแล้ว`
