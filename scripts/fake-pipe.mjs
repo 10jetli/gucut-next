@@ -159,6 +159,26 @@ const srv = createServer(async (req, res) => {
       marketplacesStaleMs: 3 * 3600e3 + 25 * 60e3,
     }))
   }
+  if (mode === 'good' && /[?&]shopinfo=/.test(req.url)) {
+    /* ข้อมูลนิติบุคคล (จอ settings-company) — **ของปลอมทั้งชุด ห้ามเอาชื่อ/เลขจริงมาใส่**
+       (กติกา: ห้ามพิมพ์ชื่อร้านลงไฟล์ · ที่นี่ยิ่งห้าม เพราะเป็น fixture ทดสอบ)
+       ใส่วันหมดอายุสามแบบให้จอพิสูจน์ expiryTone: หมดแล้ว · ใกล้หมด · เหลือยาว */
+    const soon = new Date(Date.now() + 20 * 86400e3).toISOString().slice(0, 10)
+    const far = new Date(Date.now() + 400 * 86400e3).toISOString().slice(0, 10)
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      seller: { name: 'บริษัท ทดสอบผู้ขาย จำกัด', nameEn: 'TEST SELLER CO., LTD.', taxId: '0000000000001' },
+      licensee: { name: 'หจก. ทดสอบผู้ผลิต', taxId: '0000000000002' },
+      licenses: [
+        { kind: 'ใบอนุญาตทดสอบ (หมดแล้ว)', no: 'ทส 1/2560', issued: '2017-01-01', expires: '2018-01-01', authority: 'หน่วยงานทดสอบ' },
+        { kind: 'ใบอนุญาตทดสอบ (ใกล้หมด)', no: 'ทส 2/2569', issued: '2026-01-01', expires: soon, authority: 'หน่วยงานทดสอบ' },
+        { kind: 'ใบอนุญาตทดสอบ (เหลือยาว)', no: 'ทส 3/2569', issued: '2026-01-01', expires: far, authority: 'หน่วยงานทดสอบ' },
+      ],
+      trademarks: [{ mark: 'TESTMARK', regNo: '000000000', owner: 'หจก. ทดสอบผู้ผลิต', registered: '2020-01-01', expires: far }],
+      distributorships: [{ brand: 'TESTMARK', appointer: 'หจก. ทดสอบผู้ผลิต', appointee: 'บริษัท ทดสอบผู้ขาย จำกัด', scope: 'ตัวแทนทดสอบ', issued: '2026-01-01', expires: null }],
+    }))
+  }
   if (mode === 'good') {
     /* 🟢 โหมด "ปกติ" — ตอบครบทุกช่องที่จอฝั่งเราอ่าน
        ⚠️ **มีไว้พิสูจน์ว่าตัวกันของใหม่ไม่ฟ้องมั่ว** ไม่ได้มีไว้พิสูจน์ว่าข้อมูลถูก
