@@ -139,8 +139,11 @@ export default function PackWizardPage() {
               </p>
               <div className="border border-gray-200 rounded-md divide-y divide-gray-100 bg-white">
                 {candidates.map((r, i) => (
+                  /* ⚠️ แถวที่ไม่มี id เปิดต่อไม่ได้จริง — ต้อง disabled ให้เห็น ไม่ใช่ปุ่มกดแล้วเงียบ */
                   <button key={r.id ?? i} onClick={() => r.id && openOrder(String(r.id))}
-                    className="w-full text-left px-3 py-2.5 hover:bg-blue-50/50 flex items-center gap-3">
+                    disabled={!r.id}
+                    title={r.id ? undefined : 'ใบนี้ท่อไม่ส่ง id มา — เปิดรายละเอียดไม่ได้'}
+                    className="w-full text-left px-3 py-2.5 hover:bg-blue-50/50 flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed">
                     <span className="font-mono text-[12.5px] text-gray-900">{r.number || '—'}</span>
                     <ChannelTag name={r.channel || ''} />
                     <span className="text-[12px] text-gray-600 flex-1 truncate">{r.customer || ''}</span>
