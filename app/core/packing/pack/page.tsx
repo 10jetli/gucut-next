@@ -96,6 +96,9 @@ export default function PackWizardPage() {
       } else if (d.rows.length === 1 && d.rows[0]?.id) {
         await openOrder(String(d.rows[0].id))
       } else {
+        /* หลายใบ หรือใบเดียวแต่ไม่มี id — โชว์รายการเสมอ (แถวไร้ id จะเป็นปุ่ม disabled
+           พร้อมเหตุผล) · เดิมเช็ค length > 1 ตอนวาด ⇒ ใบเดียวไร้ id = จอเงียบสนิท
+           ไม่มีทั้ง error ทั้งรายการ (จับได้ด้วยโหมด partialgood 7 ก.ย. 2569) */
         setCandidates(d.rows)
       }
     } catch (e) {
@@ -132,7 +135,7 @@ export default function PackWizardPage() {
             </button>
           </form>
 
-          {Array.isArray(candidates) && candidates.length > 1 && (
+          {Array.isArray(candidates) && candidates.length > 0 && (
             <div className="mt-5 text-left">
               <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
                 พบ {candidates.length} ใบที่ตรงคำค้น — เลือกใบที่จะแพ็ค (จอไม่เดาให้ เดาผิด = แพ็คผิดกล่อง)
