@@ -174,9 +174,15 @@ const srv = createServer(async (req, res) => {
     const st = globalThis.__returns
 
     if (u.searchParams.get('list') === 'returns-inbox') {
+      if (!st.docs.has('RT-U9001')) st.docs.set('RT-U9001', {
+        returnId: 'RT-U9001', ref: 'RT-U9001', state: 'received', unmatched: true, quarantineNo: 'Q-901',
+        staff: 'สมหญิง', createdAt: new Date(Date.now() - 50 * 3600e3).toISOString(),
+        lastActivityAt: new Date(Date.now() - 50 * 3600e3).toISOString(),
+        items: [{ sku: '', name: 'ของทดสอบค้างกอง', qty: 1 }], photoCount: 1,
+      })
       const q = u.searchParams.get('q') ?? ''
       const rows = [...st.docs.values()].filter((d) => !q || d.orderId === q || (d.orderNumber ?? '').includes(q))
-      return json({ rows, total: rows.length, reconHeartbeatAt: new Date(Date.now() - 3600e3).toISOString() })
+      return json({ rows, total: rows.length, reconHeartbeatAt: new Date(Date.now() - 30 * 3600e3).toISOString() })
     }
     if (u.searchParams.get('return')) {
       const d = st.docs.get(u.searchParams.get('return'))
@@ -242,6 +248,7 @@ const srv = createServer(async (req, res) => {
       if (!d) return json({ error: 'ไม่พบใบนี้' }, 404)
       if (!body?.reason) return json({ error: 'ต้องเลือกเหตุผล' }, 400)
       delete d.lockedBy; delete d.lockSince
+      d.takeovers = [...(d.takeovers ?? []), { at: new Date().toISOString(), from: 'สมชาย', to: 'devpass-admin', reason: body.reason, note: body.note }]
       d.staff = 'devpass-admin (รับช่วงจาก สมชาย)'
       return json({ doc: d })
     }

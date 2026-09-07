@@ -43,6 +43,7 @@ export const ZORT_READY: Record<string, ZortReady> = {
   /* จอรับคืนหน้าร้าน (ร่าง v2): เขียนเข้าระบบเรา แต่ใบคืนใน ZORT ยังทำมือตามเดิมช่วงเงา
      ⇒ 🟡 — ถ้าปล่อยให้ไหลตามป้ายแม่ (/returns เขียว) จะโกหกว่างานคืนจบที่นี่แล้ว */
   '/returns/receive': 'readonly',
+  '/returns/inbox': 'readonly', // รายการใบคืนฝั่งเรา — ใบคืนใน ZORT ยังทำมือ ห้ามอ่านจอนี้ว่าครบ
   '/core/packing': 'replace',
   '/core/packing/pack': 'replace', // เช็คของก่อนปิดกล่อง — ไม่เขียนอะไร ใช้แทนได้เลย
 

@@ -51,6 +51,9 @@ export interface ReturnDoc {
   createdAt?: string
   lastActivityAt?: string
   items: ReturnItem[]
+  /** ประวัติการรับช่วง — ข้อสังเคราะห์เวที #2: "ทุกการรับช่วงโผล่บนจอแอดมินเป็นรายการแยก"
+   *  (ส่วนเสริมหลังรีวิวท่อรอบแรก — แจ้งท่อแล้ว 7 ก.ย. ดึก) */
+  takeovers?: Array<{ at: string; from?: string; to?: string; reason: string; note?: string }>
   photoCount?: number
   /** เหตุผลตอนถ่ายรูปไม่ได้ — มี = ใบนี้ไม่มีรูปโดยแจ้งเหตุ ไม่ใช่รูปหาย */
   noPhotoReason?: string
