@@ -121,11 +121,11 @@ async function call<T extends BaseResp>(path: string, init?: RequestInit): Promi
 export const returnsApi = {
   /** กล่องใบคืนทั้งหมด (จอแอดมิน + เช็คใบค้างของใบขายก่อนเปิดใหม่) */
   inbox: (q = '') =>
-    call<InboxResp>(`/api/web/core?list=returns-inbox${q ? `&q=${encodeURIComponent(q)}` : ''}`),
+    call<InboxResp>(`/api/returns?list=returns-inbox${q ? `&q=${encodeURIComponent(q)}` : ''}`),
 
   /** ใบเดียวตาม returnId — resume */
   get: (returnId: string) =>
-    call<GetReturnResp>(`/api/web/core?return=${encodeURIComponent(returnId)}`),
+    call<GetReturnResp>(`/api/returns?return=${encodeURIComponent(returnId)}`),
 
   /** ขั้นรับ: สร้าง/ทวนใบ + ล็อกใบขาย · เซิร์ฟเวอร์ออก returnId
    *  unmatched: ส่ง orderId เป็น null + เหตุผล */
@@ -136,7 +136,7 @@ export const returnsApi = {
     /** unmatched อนุญาต sku ว่าง (ของที่ระบุรหัสไม่ได้หน้าเคาน์เตอร์) — แอดมินเติมตอนผูกใบ */
     items: Array<{ sku?: string; name?: string; qty: number }>
     noPhotoReason?: string
-  }) => call<ReceiveResp>('/api/web/core?return-receive=1', {
+  }) => call<ReceiveResp>('/api/returns?return-receive=1', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
   }),
 
@@ -151,20 +151,20 @@ export const returnsApi = {
   grade: (body: {
     returnId: string
     items: Array<{ sku: string; verdict: Verdict; note?: string }>
-  }) => call<GradeResp>('/api/web/core?return-grade=1', {
+  }) => call<GradeResp>('/api/returns?return-grade=1', {
     method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
   }),
 
   /** อัปรูปทีละใบ (base64 ย่อแล้ว ≤1400px) — ต้องได้ ok ก่อนนับว่ารูปมีจริง
    *  ล้มเหลว = สถานะ upload_failed ฝั่งจอ retry ได้ (ล้มเหลว ≠ ไม่มีรูป — เวที #4) */
   photo: (body: { returnId: string; index: number; dataUrl: string }) =>
-    call<BaseResp & { ok?: boolean; stored?: number }>('/api/web/core?return-photo=1', {
+    call<BaseResp & { ok?: boolean; stored?: number }>('/api/returns?return-photo=1', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     }),
 
   /** ขอรับช่วงใบที่คนก่อนถือค้าง — ต้องเลือกเหตุผล (ข้อสังเคราะห์เวที #2) */
   takeover: (body: { returnId: string; reason: 'shift-change' | 'unreachable' | 'other'; note?: string }) =>
-    call<GetReturnResp>('/api/web/core?return-takeover=1', {
+    call<GetReturnResp>('/api/returns?return-takeover=1', {
       method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
     }),
 }

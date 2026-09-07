@@ -1,46 +1,86 @@
-// /api/returns — สินค้าที่ลูกค้าคืน รวมทุกช่องทาง
+// ท่อกลางเฉพาะจอรับคืนสินค้า — /api/returns?<เส้นเดียวกับ /api/core>
 //
-//   GET /api/returns              อ่านจากแคช (เร็ว)
-//   GET /api/returns?refresh=1    บังคับดึงใหม่จาก ZORT
-//   GET /api/returns?days=90      ย้อนหลังกี่วัน (ค่าเริ่มต้น 365)
+// ทำไมต้องมีท่อแยกจาก /api/web/core (ร่าง /returns v2 ข้อ 6 — ผ่านเวทีถกสามเสียง):
+// พนักงานหน้าร้านต้องใช้จอรับคืนบนมือถือด้วย**รหัสรายคน** แต่ /api/web/* เปิดให้เฉพาะแอดมิน
+// เปิด /api/web ทั้งก้อนให้ staff = พนักงานเห็นยอดขาย/ต้นทุน/คูปองทั้งระบบ ⇒ 🔴 ห้าม
+// ⇒ ท่อนี้ whitelist **เฉพาะพารามิเตอร์ที่จอรับคืนใช้จริง** แล้ว middleware เปิดให้ staff
+//    (STAFF_ALLOWED_PREFIXES มี /api/returns — เพิ่มพร้อมไฟล์นี้)
 //
-// ⚠️ ต้องมีแคช — ใบคืนของหลายร้อยใบ ดึงใหม่ทุกครั้งที่เปิดหน้าจะช้าและยิง ZORT ถี่เกิน
-//    ตัวเลขพวกนี้ไม่เปลี่ยนรายนาที เก็บ 6 ชั่วโมงพอดี · อยากได้สดกดปุ่มดึงใหม่ได้
-import { NextResponse } from 'next/server'
-import { getStore } from '@netlify/blobs'
-import { computeReturns, type ReturnsResult } from '@/lib/returns'
+// ⚠️ กติกา whitelist: เช็ค "พารามิเตอร์หลักหนึ่งตัวต่อคำขอ" ไม่ใช่เช็คว่าคำต้องห้ามไม่อยู่
+//    (default-deny — พารามิเตอร์ที่ไม่รู้จัก = 403 ไม่ใช่ปล่อยผ่าน)
+// ⚠️ list=orders ผ่านท่อนี้**ต้องมีคำค้น ≥ 3 ตัว** — จอใช้ค้นใบเพื่อรับคืนเท่านั้น
+//    ไม่ใส่เงื่อนไขนี้ = พนักงานเปิดดูรายการขายทั้งร้านย้อนหลังได้ (เกินหน้าที่จอนี้)
+// ⚠️ x-staff-pin ส่งต่อให้ปลายทางแปลงเป็นชื่อเอง — ห้ามรับ/ส่งชื่อจาก body (ตกลงกับท่อ)
+import { NextRequest, NextResponse } from 'next/server'
 
 export const dynamic = 'force-dynamic'
-// ⚠️ Netlify ให้ฟังก์ชันแบบรอผลทำงานได้สูงสุด 26 วินาที ใส่มากกว่านี้ไม่มีผล
-export const maxDuration = 26
 
-const STORE = 'returns'
-const FRESH_MS = 6 * 60 * 60 * 1000
+/** พารามิเตอร์หลักที่จอรับคืนใช้ — อย่างอื่น 403 ทั้งหมด */
+const PRIMARY_GET = ['return', 'order'] as const
+const PRIMARY_POST = ['return-receive', 'return-grade', 'return-photo', 'return-takeover'] as const
+/** พารามิเตอร์ประกอบที่ยอมให้ติดมา (ต่อเมื่อมีพารามิเตอร์หลักถูกต้องแล้ว) */
+const EXTRA_OK = new Set(['q', 'from', 'to', 'limit', 'list'])
 
-export async function GET(request: Request) {
-  const url = new URL(request.url)
-  // ⚠️ ต่ำสุด 1 วัน ไม่ใช่ 7 — เจ้าของร้านต้องดูของที่เพิ่งคืนเมื่อวานได้
-  //    ของคืนเป็นเรื่องที่ต้องรีบรู้ ไม่ใช่รอสรุปรายเดือน
-  const days = Math.min(1095, Math.max(1, Number(url.searchParams.get('days')) || 30))
-  const refresh = url.searchParams.get('refresh') === '1'
-  const key = `v2-${days}`
-
-  const store = getStore(STORE)
-  if (!refresh) {
-    const cached = (await store.get(key, { type: 'json' }).catch(() => null)) as ReturnsResult | null
-    if (cached?.at && Date.now() - cached.at < FRESH_MS) {
-      return NextResponse.json({ ...cached, cached: true })
-    }
+function pickPrimary(u: URL, method: string): string | null {
+  if (u.searchParams.get('list') === 'returns-inbox') return 'list=returns-inbox'
+  if (method === 'GET' && u.searchParams.get('list') === 'orders') {
+    const q = (u.searchParams.get('q') ?? '').trim()
+    /* ค้นเท่านั้น ห้าม browse — คำค้นสั้น/ว่าง = เจอครึ่งร้าน */
+    return q.length >= 3 ? 'list=orders' : null
   }
+  const pool = method === 'POST' ? PRIMARY_POST : PRIMARY_GET
+  for (const k of pool) if (u.searchParams.get(k)) return k
+  return null
+}
+
+async function forward(req: NextRequest) {
+  const key = process.env.GUCUT_WEB_ADMIN_KEY
+  if (!key) return NextResponse.json({ error: 'ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY' }, { status: 503 })
+
+  const u = new URL(req.url)
+  const primary = pickPrimary(u, req.method)
+  if (!primary) {
+    return NextResponse.json(
+      { error: 'ท่อนี้เปิดเฉพาะเส้นจอรับคืนสินค้า (และค้นใบขายต้องมีคำค้นอย่างน้อย 3 ตัว)' },
+      { status: 403 })
+  }
+  /* พารามิเตอร์แปลกปลอม = ปฏิเสธทั้งคำขอ — กันคนพ่วงเส้นอื่นมากับคำขอที่หน้าตาถูก */
+  for (const k of Array.from(u.searchParams.keys())) {
+    const known = (PRIMARY_GET as readonly string[]).includes(k)
+      || (PRIMARY_POST as readonly string[]).includes(k) || EXTRA_OK.has(k)
+    if (!known) return NextResponse.json({ error: `พารามิเตอร์ไม่รู้จัก: ${k}` }, { status: 403 })
+  }
+
+  /* dev override เดียวกับท่อกลางหลัก — production เมินตัวแปรเสมอ (เหตุผลเต็มใน /api/web) */
+  const base = process.env.NODE_ENV === 'production'
+    ? 'https://gucut.com'
+    : (process.env.GUCUT_WEB_BASE || 'https://gucut.com')
+  const target = `${base}/api/core${u.search}`
+
+  const headers: Record<string, string> = {
+    'x-admin-key': key,
+    'content-type': req.headers.get('content-type') || 'application/json',
+  }
+  const pin = req.headers.get('x-staff-pin')
+  if (pin) headers['x-staff-pin'] = pin
+
+  const init: RequestInit = { method: req.method, headers, signal: AbortSignal.timeout(25000) }
+  if (req.method === 'POST') init.body = await req.text()
 
   try {
-    const data = await computeReturns(days)
-    await store.setJSON(key, data).catch(() => {})
-    return NextResponse.json({ ...data, cached: false })
+    const res = await fetch(target, init)
+    const body = await res.text()
+    return new NextResponse(body, {
+      status: res.status,
+      headers: { 'content-type': res.headers.get('content-type') || 'application/json' },
+    })
   } catch (e) {
-    // ⚠️ ดึงใหม่ไม่สำเร็จต้องไม่ทำให้หน้าว่างเปล่า — คืนของเก่าไปก่อนแล้วบอกว่าเป็นของเก่า
-    const cached = (await store.get(key, { type: 'json' }).catch(() => null)) as ReturnsResult | null
-    if (cached) return NextResponse.json({ ...cached, cached: true, stale: true })
-    return NextResponse.json({ error: String((e as Error)?.message || e) }, { status: 502 })
+    /* หมดเวลา/ต่อไม่ติด — บอกตรง ๆ ให้จอแยก "ท่อพัง" ออกจาก "ปลายทางปฏิเสธ" ได้ */
+    return NextResponse.json(
+      { error: `ต่อหลังร้านเว็บไม่ได้: ${e instanceof Error ? e.message : String(e)}` },
+      { status: 502 })
   }
 }
+
+export async function GET(req: NextRequest) { return forward(req) }
+export async function POST(req: NextRequest) { return forward(req) }

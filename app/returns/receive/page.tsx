@@ -123,11 +123,13 @@ export default function ReturnReceivePage() {
   const search = useCallback(async () => {
     const term = q.trim()
     if (!term) return
+    /* ท่อ /api/returns บังคับคำค้น ≥ 3 ตัว (กัน browse) — จอบอกก่อนยิง ไม่ให้เจอ 403 งง ๆ */
+    if (term.length < 3) { setError('พิมพ์อย่างน้อย 3 ตัวอักษร — จอนี้ค้นเพื่อรับคืนเท่านั้น เปิดไล่ดูทั้งร้านไม่ได้'); return }
     setBusy(true); setError(''); setCandidates(null); setOrder(null); setPendingDoc(null)
     try {
       const to = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
       const from = new Date(Date.now() - 365 * 86400e3).toISOString().slice(0, 10)
-      const res = await fetch(`/api/web/core?list=orders&q=${encodeURIComponent(term)}&from=${from}&to=${to}&limit=10`)
+      const res = await fetch(`/api/returns?list=orders&q=${encodeURIComponent(term)}&from=${from}&to=${to}&limit=10`)
       const d = await res.json().catch(() => null)
       if (d === null || !res.ok || d?.error) throw new Error(d?.error || `ท่อตอบ ${res.status}`)
       if (typeof d?.skip === 'string') throw new Error(d.skip)
@@ -147,7 +149,7 @@ export default function ReturnReceivePage() {
         : null
       if (open) setPendingDoc(open)
 
-      const res = await fetch(`/api/web/core?order=${encodeURIComponent(id)}`)
+      const res = await fetch(`/api/returns?order=${encodeURIComponent(id)}`)
       const d = await res.json().catch(() => null)
       if (d === null || !res.ok || d?.error) throw new Error(d?.error || `ท่อตอบ ${res.status}`)
       if (!d?.order || !Array.isArray(d?.items)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี order/items)')

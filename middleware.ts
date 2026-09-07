@@ -19,7 +19,9 @@ import { authToken, sameToken } from '@/lib/auth-token'
 //    ⚠️ **ห้ามกลับไปเทียบกับตัวรหัสผ่านตรง ๆ อีก** ต่อให้เพิ่มตัวนับครั้งแล้วก็ตาม
 const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync', '/api/bills/upload', '/api/rokid']
 // เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
-const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer', '/api/catalog']
+/* /returns/receive + /api/returns เพิ่ม 7 ก.ย. 2569 (ร่าง /returns v2 ข้อ 6 — ผ่านเวทีสามเสียง):
+   จอรับคืนบนมือถือพนักงาน · ท่อ /api/returns เป็น whitelist เฉพาะเส้นจอนี้ ไม่ใช่ /api/web ทั้งก้อน */
+const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer', '/api/catalog', '/returns/receive', '/api/returns']
 
 function staffAllowed(pathname: string) {
   return STAFF_ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))
