@@ -45,7 +45,7 @@ function LoginForm() {
       <div className="w-12 h-12 mx-auto rounded-2xl bg-gradient-to-br from-blue-500 to-[#17386b] flex items-center justify-center shadow-[0_8px_20px_-6px_rgba(37,99,235,0.55)] mb-4">
         <span className="text-lg font-black text-white">G</span>
       </div>
-      <div className="text-[24px] font-black tracking-tight text-gray-900 mb-1">GUCUT</div>
+      <div className="text-[24px] font-black tracking-tight text-gray-900 mb-1">gucut <span className="text-orange-600">Ai</span></div>
       <div className="text-[13px] text-gray-400 mb-6">ใส่รหัสผ่านเพื่อเข้าใช้งานระบบหลังบ้าน</div>
 
       <input

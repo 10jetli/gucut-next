@@ -5,7 +5,7 @@ import AppShell from '@/components/layout/AppShell'
 import { authToken, sameToken } from '@/lib/auth-token'
 
 export const metadata: Metadata = {
-  title: 'GUCUT Dashboard',
+  title: 'gucut Ai',
   description: 'GUCUT Business Dashboard',
 }
 

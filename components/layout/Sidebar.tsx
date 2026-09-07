@@ -66,7 +66,7 @@ export default function Sidebar({
         </div>
         {!collapsed && (
           <>
-            <span className="text-[17px] font-black tracking-tight text-white">GUCUT</span>
+            <span className="text-[17px] font-black tracking-tight text-white">gucut <span className="text-orange-500">Ai</span></span>
             <button
               onClick={toggleCollapse}
               title="ย่อเมนู"
