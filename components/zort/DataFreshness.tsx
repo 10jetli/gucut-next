@@ -100,3 +100,47 @@ export default function DataFreshness(
     </p>
   )
 }
+
+/* ── แถบ "ข้อมูล Marketplace เป็นของเก่า" ─────────────────────────────────
+   🔴 **ทำไมต้องมี** (7 ก.ย. 2569) — ฝั่งท่อแก้เรื่องจอช้า (คอลัมน์ Marketplace เคยกิน 16.5 วิ
+   ตอนแคชหมดอายุ) ด้วยวิธี **คืนของเก่าก่อนแล้วรีเฟรชเบื้องหลัง** (เพดานเก่าสุด 6 ชม.)
+   ⇒ จอเร็วขึ้นมาก แต่แลกกับ "โลโก้ที่เห็นอาจเป็นภาพเมื่อหลายชั่วโมงก่อน"
+   ⇒ ฝั่งท่อขอไว้ตรง ๆ: **มี stale ต้องขึ้นบนจอว่าเป็นของเก่ากี่นาที ห้ามแสดงเหมือนของสด**
+
+   ชื่อฟิลด์ตามที่ฝั่งท่อยืนยัน (7 ก.ย. 2569 — ยิงถามก่อน ไม่เดา):
+   · `marketplacesStale: true`  — มีเฉพาะตอนได้ของเก่า · **ไม่มีฟิลด์ = ของสด** (เช็คด้วยค่า ไม่ใช่การมีช่อง)
+   · `marketplacesStaleMs`     — อายุก้อนเป็น ms
+   · `marketplacesAt`          — ISO เวลากวาดจริงล่าสุด (มีเสมอ)
+   ส่งเฉพาะ `list=stock` กับ `list=bundles` ตอนขอ `marketplaces=1` · อยู่ระดับบนของคำตอบ */
+export function MarketStaleBar({ stale, staleMs, at }: {
+  stale?: boolean
+  staleMs?: number
+  at?: string | null
+}) {
+  // ⚠️ เช็คด้วย `=== true` — ฟิลด์นี้ "มีเฉพาะตอนเก่า" ตามสัญญา ท่อรุ่นเก่า/ของสดจะไม่มีมาเลย
+  if (stale !== true) return null
+
+  // อายุ: ใช้ staleMs ก่อน (ตรงสุด) · ไม่มีก็คิดจาก at · ไม่มีทั้งคู่ = บอกว่าไม่รู้อายุ ห้ามเดา
+  const atDate = parseUtc(at)
+  const ms = typeof staleMs === 'number' && Number.isFinite(staleMs) && staleMs >= 0
+    ? staleMs
+    : atDate ? Math.max(0, Date.now() - atDate.getTime()) : null
+  const mins = ms === null ? null : Math.round(ms / 60000)
+  const age = mins === null ? null
+    : mins < 1 ? 'ไม่ถึงนาที'
+      : mins < 60 ? `${mins.toLocaleString('th-TH')} นาที`
+        : `${Math.floor(mins / 60)} ชม. ${mins % 60} นาที`
+
+  return (
+    <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+      🕰 <b>คอลัมน์ Marketplace เป็นภาพเก่า{age ? ` ${age}` : ''}</b>
+      {atDate && <> (กวาดจริงล่าสุด {thaiDayTime(atDate)} เวลาไทย)</>}
+      {age === null && <> — เก่าแค่ไหนไม่รู้ (เซิร์ฟเวอร์ไม่ได้บอกอายุ)</>}
+      {' '}— ระบบกำลังกวาดรอบใหม่ให้เบื้องหลัง <b>รีเฟรชอีกครั้งในสักครู่จะได้ของสด</b>
+      <br />
+      <span className="text-amber-800">
+        สินค้าที่เพิ่งลง/เพิ่งถอดจากมาร์เก็ตเพลสในช่วงนี้ อาจยังไม่สะท้อนในโลโก้ที่เห็น
+      </span>
+    </p>
+  )
+}

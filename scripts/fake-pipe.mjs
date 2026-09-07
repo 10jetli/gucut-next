@@ -19,6 +19,7 @@
 //   node scripts/fake-pipe.mjs 4010 partialgood ← 🔴 **โหมดหลักที่ควรใช้กวาด** — 200 + ก้อนถูกรูปแต่ขาดช่องลูก
 //   node scripts/fake-pipe.mjs 4010 skip    ← สถานะที่สาม "ทำต่อไม่ได้" (ต้องขึ้นเหลือง ไม่ใช่แดง)
 //   node scripts/fake-pipe.mjs 4010 nocounts ← มีงานค้างแต่ไม่มียอดแยกกอง (เทสคำเตือน "ใบผี")
+//   node scripts/fake-pipe.mjs 4010 mkstale ← คอลัมน์ Marketplace เป็นของเก่า (เทสแถบ MarketStaleBar)
 // แล้วอีกหน้าต่าง:
 //   cd ~/gucut-next && GUCUT_WEB_BASE=http://127.0.0.1:4010 GUCUT_WEB_ADMIN_KEY=devkey123 \
 //     SITE_PASSWORD=devpass npx next dev -p 3101
@@ -140,6 +141,22 @@ const srv = createServer(async (req, res) => {
       orders: [{}], 'ต้องส่งของ': [{}],
       members: {}, pwa: {}, days: [{}], countries: [{}], pages: [{}], channelsToday: [{}],
       total: undefined, saved: [{}],
+    }))
+  }
+  if (mode === 'mkstale' && req.url.includes('list=')) {
+    /* ทดสอบแถบ MarketStaleBar — ตอบแบบ good แต่ติดธง "คอลัมน์ Marketplace เป็นของเก่า"
+       (สามฟิลด์ตามสัญญาท่อ 7 ก.ย. 2569: stale มีเฉพาะตอนเก่า · staleMs · at มีเสมอ) */
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, total: 2, shown: 2, limit: 50, offset: 0,
+      rows: [
+        { sku: 'NW-01', name: 'ทดสอบ 1', qty: 5, buy: 100, sell: 200, marketplaces: ['shopee'] },
+        { sku: 'NW-02', name: 'ทดสอบ 2', qty: 0, buy: 50, sell: 90, marketplaces: [] },
+      ],
+      checkedMarketplaces: ['gucut', 'shopee', 'lazada', 'tiktok'],
+      marketplacesAt: new Date(Date.now() - 3 * 3600e3).toISOString(),
+      marketplacesStale: true,
+      marketplacesStaleMs: 3 * 3600e3 + 25 * 60e3,
     }))
   }
   if (mode === 'good') {

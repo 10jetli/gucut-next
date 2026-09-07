@@ -21,6 +21,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
@@ -64,6 +65,10 @@ interface Resp {
   /** ช่องทางที่ตอบมาแล้วแต่เชื่อไม่ได้ — ข้อมูลขึ้นจอไปแล้วและหน้าตาเหมือนของจริง */
   marketplacesUnreliable?: Record<string, string>
   marketplacesAt?: string
+  /** เฉพาะตอนได้ของเก่าระหว่างรีเฟรชเบื้องหลัง — **ไม่มีฟิลด์ = ของสด** (สัญญาท่อ 7 ก.ย. 2569)
+   *  จอต้องขึ้น MarketStaleBar เสมอเมื่อ true — ห้ามแสดงเหมือนของสด (ฝั่งท่อขอไว้ตรง ๆ) */
+  marketplacesStale?: boolean
+  marketplacesStaleMs?: number
   bundlesWithItems?: number
   lines?: number
   limit?: number
@@ -200,6 +205,8 @@ export default function CoreBundlesPage() {
               และตอนนี้ปิดใช้งาน = 0 อยู่แล้ว แท็บจึงไม่ได้ช่วยอะไรด้วยซ้ำ ⇒ ถอดออก
               (ตัวกรองยังอยู่ฝั่งเซิร์ฟเวอร์ `only=active|inactive` เอากลับมาได้ทันทีถ้าต้องการ) */}
 
+          {/* 🕰 คอลัมน์ Marketplace มาจากแคชเซิร์ฟเวอร์ที่ "คืนของเก่าก่อน" ได้ — แถบนี้ห้ามถอด */}
+          <MarketStaleBar stale={data.marketplacesStale} staleMs={data.marketplacesStaleMs} at={data.marketplacesAt} />
           <TableWrap>
             <table className="w-full min-w-[940px]">
               <thead className="bg-white border-b border-gray-200">

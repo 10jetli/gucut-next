@@ -13,6 +13,7 @@ import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
@@ -58,6 +59,10 @@ interface Resp {
   /** ช่องทางที่ตอบมาแล้วแต่เชื่อไม่ได้ — ข้อมูลขึ้นจอไปแล้วและหน้าตาเหมือนของจริง */
   marketplacesUnreliable?: Record<string, string>
   marketplacesAt?: string
+  /** เฉพาะตอนได้ของเก่าระหว่างรีเฟรชเบื้องหลัง — **ไม่มีฟิลด์ = ของสด** (สัญญาท่อ 7 ก.ย. 2569)
+   *  จอต้องขึ้น MarketStaleBar เสมอเมื่อ true — ห้ามแสดงเหมือนของสด (ฝั่งท่อขอไว้ตรง ๆ) */
+  marketplacesStale?: boolean
+  marketplacesStaleMs?: number
   /** จำนวนแถวของแท็บที่เลือกอยู่ — ใช้ทำเลขหน้า ห้ามใช้ total ตอนอยู่แท็บ out/low */
   shown?: number
   /** 🔴 สินค้าใน ZORT ที่ **ไม่มีรหัสสินค้า** จึงเก็บเข้าคลังเงาไม่ได้เลยโดยโครงสร้าง
@@ -354,6 +359,8 @@ export default function CoreStockPage() {
             }}
           />
 
+          {/* 🕰 คอลัมน์ Marketplace มาจากแคชเซิร์ฟเวอร์ที่ "คืนของเก่าก่อน" ได้ — แถบนี้ห้ามถอด */}
+          <MarketStaleBar stale={data.marketplacesStale} staleMs={data.marketplacesStaleMs} at={data.marketplacesAt} />
           <TableWrap>
             <table className="w-full min-w-[920px]">
               <thead className="bg-white border-b border-gray-200">
