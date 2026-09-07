@@ -90,9 +90,14 @@ export default function WebLivePage() {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">สมาชิก</p>
             <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-violet-50 text-violet-600"><I d={IC.users} className="w-[17px] h-[17px]" /></span>
           </div>
-          <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{s?.members ? s.members.total : '—'}</p>
+          {/* ⚠️ **`members` เป็น null ได้โดยตั้งใจ** (ฝั่งท่อ `.catch(() => null)` เพื่อไม่ให้
+              การนับสมาชิกพลาดแล้วล้มสถิติที่เหลือ) ⇒ null แปลว่า **"นับไม่ได้" ไม่ใช่ "ไม่มีสมาชิก"**
+              ⇒ ต้องขึ้น "—" ห้ามขึ้น 0 · และเช็ค total เป็นตัวเลขด้วย ไม่ใช่เช็คแค่ก้อนแม่ */}
+          <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{typeof s?.members?.total === 'number' ? s.members.total : '—'}</p>
           <p className={`text-[11.5px] mt-1.5 font-medium ${s?.members?.new7 ? 'text-emerald-600' : 'text-gray-400'}`}>
-            {s?.members?.new7 ? `+${s.members.new7} ใน 7 วัน` : 'คน'}
+            {typeof s?.members?.new7 === 'number'
+              ? (s.members.new7 > 0 ? `+${s.members.new7} ใน 7 วัน` : 'คน')
+              : (s && !s.members ? 'นับสมาชิกไม่ได้รอบนี้' : 'คน')}
           </p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
@@ -100,7 +105,8 @@ export default function WebLivePage() {
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เปิดจากแอป (PWA)</p>
             <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-sky-50 text-sky-600"><I d={IC.phone2} className="w-[17px] h-[17px]" /></span>
           </div>
-          <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{s?.pwa ? s.pwa.week : '—'}</p>
+          {/* ⚠️ `pwa` เป็น null ได้โดยตั้งใจเหมือน members — null = นับไม่ได้ ไม่ใช่ศูนย์คน */}
+          <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{typeof s?.pwa?.week === 'number' ? s.pwa.week : '—'}</p>
           {/* ⚠️ เลขใหญ่กันไว้แล้วด้วย '—' แต่บรรทัดนี้ยังเขียน "วันนี้ 0" ตอนโหลดไม่สำเร็จ
               ⇒ การ์ดใบเดียวพูดสองอย่าง: ข้างบนบอกว่าไม่รู้ ข้างล่างบอกว่าศูนย์ */}
           <p className="text-[11.5px] text-gray-400 mt-1.5">
