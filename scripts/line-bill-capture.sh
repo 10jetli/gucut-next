@@ -50,6 +50,17 @@ CONF="$HOME/.gucut-bills.env"
 mkdir -p "$(dirname "$LOG")"
 say() { echo "$(date '+%Y-%m-%d %H:%M:%S') $*" >> "$LOG"; }
 
+# ── ตัววัดอายุ session (เวทีถก #5 · CEO เสนอ 8 ก.ย. 2569) ──
+# 🔴 **ทั้งทีมเถียงกันเรื่อง "ต้องล็อกอินบ่อยแค่ไหน" โดยไม่มีตัวเลขสักตัว**
+#    session อยู่ได้ 30 วัน ⇒ ล็อกอินเดือนละครั้ง = ต้นทุนเท่าออโต้เต็มตัว (บิลออกเดือนละใบ)
+#    session อยู่ได้ 5 วัน  ⇒ เดือนละ 6 ครั้ง = ค่อยคุยเรื่องล็อกอินอัตโนมัติ
+#    ⇒ เก็บไว้ก่อน สองเดือนได้คำตอบ ตัดสินด้วยตัวเลขแทนความรู้สึก
+# ⚠️ **สามสถานะ ห้ามยุบเหลือสอง** — IN / OUT / UNKNOWN(เหตุผล)
+#    "วันที่วัดไม่ได้" ต้องเป็น UNKNOWN ห้ามนับเป็น "ยังอยู่" (บทเรียนเวทีถก #4)
+SESSLOG="$HOME/Library/Logs/gucut-line-session.csv"
+[ -f "$SESSLOG" ] || echo "observed_at,state,note" > "$SESSLOG"
+mark() { echo "$(date '+%Y-%m-%dT%H:%M:%S%z'),$1,${2:-}" >> "$SESSLOG"; }
+
 tg() {
   if [ -z "${GUCUT_WEB_ADMIN_KEY:-}" ]; then say "เตือนไม่ได้: ไม่มี GUCUT_WEB_ADMIN_KEY"; return 1; fi
   local body; body=$(python3 -c 'import json,sys; print(json.dumps({"text": sys.argv[1]}))' "$1")
@@ -74,6 +85,7 @@ trap 'rm -f "$LOCK"' EXIT
 
 if ! pgrep -xq "Google Chrome"; then
   say "ข้าม: Chrome ไม่ได้เปิดอยู่ (ไม่ใช่ความผิดพลาด — ลองใหม่รอบหน้า)"
+  mark UNKNOWN chrome-ไม่ได้เปิด
   exit 0
 fi
 
@@ -117,6 +129,7 @@ PROBE=$(runjs 'String(1+1)')
 if [ -z "$PROBE" ]; then
   # perl alarm ฆ่า osascript ⇒ ได้ค่าว่าง = ค้างรอกล่องขออนุญาตของ macOS
   say "🔴 osascript หมดเวลา — น่าจะติดกล่องขออนุญาตควบคุม Chrome"
+  mark UNKNOWN ติดสิทธิ์เครื่อง
   tg "🔴 <b>ตัวดึงบิล LINE ติดสิทธิ์เครื่อง</b>
 macOS ขออนุญาตให้สคริปต์ควบคุม Google Chrome แล้วรอคนกด
 เปิด <b>การตั้งค่าระบบ → ความเป็นส่วนตัวและความปลอดภัย → การอัตโนมัติ</b>
@@ -125,6 +138,7 @@ macOS ขออนุญาตให้สคริปต์ควบคุม G
 fi
 if printf '%s' "$PROBE" | grep -qi "javascript"; then
   say "🔴 สวิตช์ Apple Events ยังปิดอยู่: $PROBE"
+  mark UNKNOWN สวิตช์ปิด
   tg "🔴 <b>ตัวดึงบิล LINE ทำงานไม่ได้</b>
 สวิตช์ใน Chrome ยังปิด — เปิดครั้งเดียวจบ:
 View → Developer → Allow JavaScript from Apple Events
@@ -137,12 +151,15 @@ if [ "$PROBE" = "NOTAB" ]; then say "🔴 หาแท็บ manager.line.biz �
 LOGGED=$(runjs 'String(location.pathname.indexOf("/login")>=0 || location.host.indexOf("account.line.biz")>=0 ? "NO":"YES")')
 if [ "$LOGGED" != "YES" ]; then
   say "🔴 session หมดอายุ ($LOGGED)"
+  mark OUT ""
   tg "🔴 <b>ตัวดึงบิล LINE: session หมดอายุ</b>
 เปิด manager.line.biz แล้วล็อกอิน @gucut1 หนึ่งครั้ง
 (ระบบไม่ล็อกอินให้เองโดยตั้งใจ — ไม่เก็บรหัสไว้ที่ไหนเลย)
 ใบกำกับภาษี LINE โหลดได้จากหน้านี้ทางเดียว ไม่มี API และไม่ส่งเข้าอีเมล"
   exit 1
 fi
+
+mark IN ""
 
 # ── ด่าน 3: เก็บใบของเดือนนี้ + เดือนที่แล้ว แล้วอัปเข้าคลัง ──
 # ทำในหน้าเว็บทั้งหมด (same-origin ⇒ เบราว์เซอร์แนบ session ให้เอง)
