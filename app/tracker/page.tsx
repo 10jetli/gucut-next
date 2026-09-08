@@ -207,7 +207,7 @@ export default function TrackerPage() {
     <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-gray-800">ติดตามออเดอร์</h1>
+          <h1 className="text-lg font-bold text-gray-800">ติดตามสินค้าจากจีน</h1>
           <p className="text-[11.5px] text-gray-400 mt-0.5">ระบบติดตามบิลสั่งผลิต — เก็บข้อมูลบนเซิร์ฟเวอร์เว็บนี้โดยตรง</p>
         </div>
         <button
