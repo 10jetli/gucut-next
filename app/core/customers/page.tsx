@@ -24,6 +24,7 @@
 //    ③ เดินลึกเกินแถวที่ 500 โดยไม่ค้นหา เซิร์ฟเวอร์จะตอบ needQuery — ต้องอธิบายให้คนใช้เข้าใจ
 //       ไม่ใช่โชว์ตารางว่างเฉย ๆ (ตาข่ายกันไล่ดึงทั้งฐานทีละหน้า)
 import { useCallback, useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -53,6 +54,7 @@ const PAGE = 50
 const DASH = <span className="text-gray-300">-</span>
 
 export default function CoreContactsPage() {
+  const router = useRouter()
   const [data, setData] = useState<Resp | null>(null)
   const [q, setQ] = useState('')
   const [tab, setTab] = useState('')
@@ -248,6 +250,20 @@ export default function CoreContactsPage() {
                       <td className={`${TD} text-right`}>
                         <RowMenu
                           items={[
+                            /* ลำดับตาม ZORT (⋮ ผู้ติดต่อ: ปักหมุด · ดูภาพรวม · ซื้อเข้า · ขายออก ·
+                               แก้ไข · Tag · ลบ) — ของเราใส่เฉพาะที่กดแล้วได้ผลจริง
+                               ที่เหลือเป็น disabled พร้อมเหตุผล ไม่ตัดทิ้ง (คนใช้ ZORT จะได้ไม่หาไม่เจอ) */
+                            {
+                              label: 'ดูภาพรวม',
+                              onClick: () => router.push(`/core/customers/detail?name=${encodeURIComponent(r.name ?? '')}`),
+                            },
+                            {
+                              label: 'ขายออก (เปิดบิลที่ POS)',
+                              onClick: () => router.push('/core/pos'),
+                            },
+                            { label: 'ซื้อเข้า', disabled: 'ยังไม่มีท่อเปิดใบซื้อ — เปิดที่ ZORT ก่อน แล้วรอบซิงก์จะเข้ามาเอง' },
+                            { label: 'แก้ไข', disabled: 'ผู้ติดต่อเป็นกระจกจาก ZORT — แก้ที่ ZORT เท่านั้น' },
+                            { label: 'เพิ่ม Tag', disabled: 'คลังเงายังไม่ได้เก็บ Tag ของผู้ติดต่อ' },
                             {
                               label: 'คัดลอกเบอร์โทร',
                               onClick: () => { navigator.clipboard?.writeText(r.phone ?? '').catch(() => {}) },
