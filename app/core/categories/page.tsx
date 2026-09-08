@@ -331,6 +331,8 @@ export default function CoreCategoriesPage() {
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
+                          // ลำดับตาม ZORT (⋮ หมวดหมู่: ปักหมุด · ดูภาพรวม · แก้ไข · ลบ) — เรามีเฉพาะที่ทำได้จริง
+                          { label: 'ดูภาพรวม', onClick: () => router.push(`/core/categories/detail?name=${encodeURIComponent(r.name ?? '')}`) },
                           {
                             label: 'คัดลอกชื่อหมวดหมู่',
                             onClick: () => { navigator.clipboard?.writeText(r.name ?? '').catch(() => {}) },
