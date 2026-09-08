@@ -45,5 +45,19 @@ export const BILL_VENDORS: BillVendorInfo[] = [
         วันไหน Netlify เริ่มส่งใบเสร็จเข้าเมล มันจะเข้าเองโดยไม่ต้องแก้อะไร
         ระหว่างนี้เอาใบจริงเข้าระบบด้วยการอัปโหลด (ไฟล์ `YYYY-MM_REAL_*.pdf`) */
   { id: 'netlify', name: 'Netlify',           emoji: '🌐', gridName: 'Netlify',      gridOrder: 8, logo: '/logos/netlify.webp', note: 'ค่าโฮสต์เว็บ — Netlify ไม่ส่งใบเสร็จเข้าเมล ต้องโหลดจากแดชบอร์ดแล้วอัปเอง', everyMonth: true, /* Pro plan รายเดือน (เริ่ม ส.ค. 2569) */ query: 'from:netlify.com subject:(receipt OR invoice OR "payment received" OR ใบเสร็จ)' },
+  /* Cloudflare — เจ้าของร้านสั่งเพิ่ม 8 ก.ย. 2569 (โดเมน gucut.com + R2 ที่เก็บคลิป/รูปทั้งเว็บ + D1)
+     บิลอยู่ที่ dash.cloudflare.com/<account>/billing/invoices
+     ✅ **ส่งเข้าเมลจริง** (ต่างจาก Netlify) — ยิงตรวจแล้ว 8 ก.ย. 2569 เจอ 2 ใบ:
+        16 ส.ค. IN-75520671 $10.46 (ต่ออายุโดเมน) · 2 ก.ย. IN-77550881 $2.10 (ค่าใช้งาน)
+     🔴 **subject ต้องเป็น "Your invoice is available" เป๊ะ ๆ ห้ามกว้างกว่านี้**
+        `noreply@notify.cloudflare.com` ส่งเมลเตือนเยอะมากจากที่อยู่เดียวกัน:
+        "[Alert] D1 daily operation limit exceeded" · "[Alert] ...90% reached" ·
+        "[Confirmation] Purchase confirmed" (ตัวหลังนี้บอกว่า "ใบจะพร้อมใน 24 ชม." ยังไม่ใช่ใบ)
+        ⇒ ตั้งกว้าง = จับเมลเตือนมาทำเป็นใบเสร็จปลอม (พลาดมาแล้วกับ Netlify วันนี้ 14 ใบ)
+     ⚠️ **ไม่ตั้ง everyMonth** — มีข้อมูลแค่ 2 ใบ และ Cloudflare เก็บตามการใช้งานจริง
+        เดือนที่ใช้น้อยอาจไม่มีใบเลย ⇒ ตั้งไปจะเตือนผิดจนคนเลิกอ่าน (บทเรียนเวทีถก #5)
+     ⚠️ เมลไม่มีไฟล์แนบ — ระบบจะสร้างใบจากเนื้อเมล (มีเลขที่ใบ + ยอด ครบ)
+        อยากได้ PDF ตัวจริงต้องโหลดจากแดชบอร์ดแล้วอัปเอง */
+  { id: 'cloudflare', name: 'Cloudflare',   emoji: '☁️', gridName: 'Cloudflare',  gridOrder: 9, logo: '/logos/cloudflare.webp', note: 'โดเมน gucut.com + R2 (คลิป/รูปทั้งเว็บ) + D1', query: 'from:notify.cloudflare.com subject:"Your invoice is available"' },
   { id: 'omise',   name: 'Omise',             emoji: '💳', gridName: 'Omise',         gridOrder: 7, query: 'from:omise.co ใบเสร็จ' },
 ]
