@@ -17,7 +17,7 @@
 import Link from 'next/link'
 import { PageHead, Pill } from '@/components/zort'
 
-const CHECKED_AT = '6 ก.ย. 2569'
+const CHECKED_AT = '8 ก.ย. 2569'
 
 interface Job {
   name: string
@@ -92,6 +92,16 @@ const JOBS: Job[] = [
     src: 'netlify/functions/live-sweep.mjs',
     howToTell: 'จอคนเข้าเว็บยังเปิดได้เร็ว (เคยช้า 25 วิเพราะคีย์สะสม)',
     ifDead: 'คีย์สะสมจนจอคนเข้าเว็บช้าลงเรื่อย ๆ',
+  },
+  {
+    name: 'เก็บบิลจาก Gmail',
+    cron: '0 22 * * *', when: 'ตี 5 ทุกเช้า',
+    what: 'ยิง /api/bills/drivesync ครบทั้ง 8 เจ้าพร้อมกัน — บิลเข้าระบบเองโดยไม่ต้องมีคนเปิดหน้า /bills',
+    /* ⚠️ งานเดียวในรายการนี้ที่ตัวฟังก์ชันอยู่ repo นี้เอง (ที่เหลืออยู่ฝั่ง gucut-web) */
+    src: 'netlify/functions/bills-daily.mjs (repo นี้)',
+    howToTell: 'มีบิลใหม่/มีเจ้าพัง = เด้ง Telegram · วันปกติเงียบโดยตั้งใจ — เงียบนานผิดปกติ '
+      + 'ให้เปิด /bills ดูวันที่บิลล่าสุด (เงียบเพราะไม่มีบิล กับเงียบเพราะงานตาย หน้าตาเหมือนกัน)',
+    ifDead: 'บิลหยุดสะสมเงียบ ๆ เหมือนยุคก่อนมีตัวนี้ — จะรู้ตัวตอนทำบัญชีสิ้นเดือน',
   },
 ]
 
