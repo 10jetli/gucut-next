@@ -492,7 +492,10 @@ export default function CoreSalesPage() {
                       {relDay(r.order_date)}
                     </td>
                     <td className={TD}>
-                      <span className="text-blue-600 font-medium">{r.number}</span>
+                      {/* เลขที่ใบต้องกดได้ — ZORT กดเลขเข้ารายละเอียดตรง ๆ (เดิมเป็น span สีฟ้า
+                          ที่กดไม่ได้ = ผิดสัญญาสีฟ้าที่จอหมวดหมู่จดไว้เอง · กวาดคลาส 8 ก.ย. 2569) */}
+                      <button onClick={() => openDetail(r.id, i)}
+                        className="text-blue-600 font-medium hover:underline">{r.number}</button>
                     </td>
                     <td className={`${TD} max-w-[190px] truncate`}>{r.customer || '—'}</td>
                     <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>

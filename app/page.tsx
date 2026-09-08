@@ -350,7 +350,9 @@ export default function DashboardPage() {
           {recent.map((o) => (
             <div key={o.id} className="px-4 py-3 border-b border-gray-50 last:border-0 hover:bg-gray-50/70 transition-colors">
               <div className="flex items-start justify-between gap-2">
-                <span className="text-[13px] font-semibold text-blue-600 truncate">#{o.number}</span>
+                {/* สีฟ้า = สัญญาว่ากดได้ (กวาดคลาส 8 ก.ย. 2569) — เข้าใบจริงได้เลย */}
+                <Link href={`/core/sales/detail?id=${encodeURIComponent(o.id)}`}
+                  className="text-[13px] font-semibold text-blue-600 truncate hover:underline">#{o.number}</Link>
                 <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 shrink-0">
                   {o.channel || 'ไม่ระบุ'}
                 </span>
