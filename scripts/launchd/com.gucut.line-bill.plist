@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  ดึงใบกำกับภาษี LINE OA เข้าคลังบิล — วันละ 2 รอบ
+  สร้าง 8 ก.ย. 2569 · ตัวสคริปต์อยู่ใน git ที่ ~/gucut-next/scripts/line-bill-capture.sh
+
+  ทำไม 2 รอบ: สคริปต์ทำงานได้เฉพาะตอน Chrome เปิดอยู่ (มันยืม session ของเบราว์เซอร์)
+  ยิงเช้า+ค่ำเพิ่มโอกาสเจอจังหวะที่เครื่องเปิด · ของซ้ำถูกปฏิเสธที่ปลายทางอยู่แล้ว
+  จึงยิงกี่รอบก็ไม่ทำให้บิลบวม
+
+  RunAtLoad = false โดยตั้งใจ — ไม่ต้องวิ่งทันทีที่ล็อกอินเครื่อง
+-->
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.gucut.line-bill</string>
+
+  <key>ProgramArguments</key>
+  <array>
+    <string>/bin/bash</string>
+    <string>/Users/atitboonprakob/gucut-next/scripts/line-bill-capture.sh</string>
+  </array>
+
+  <key>StartCalendarInterval</key>
+  <array>
+    <dict><key>Hour</key><integer>9</integer><key>Minute</key><integer>30</integer></dict>
+    <dict><key>Hour</key><integer>20</integer><key>Minute</key><integer>30</integer></dict>
+  </array>
+
+  <key>RunAtLoad</key>
+  <false/>
+
+  <key>StandardOutPath</key>
+  <string>/Users/atitboonprakob/Library/Logs/gucut-line-bill.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/atitboonprakob/Library/Logs/gucut-line-bill.err.log</string>
+</dict>
+</plist>
