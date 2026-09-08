@@ -174,8 +174,10 @@ const srv = createServer(async (req, res) => {
     }
     if (req.method === 'POST') {
       const body = await new Promise((ok) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } }) })
-      const t = globalThis.__office.tasks.find((x) => x.id === body?.taskDone)
-      if (t) { t.done = true; t.doneAt = Date.now() }
+      const t = globalThis.__office.tasks.find((x) => x.id === (body?.taskDone ?? body?.taskUndo ?? body?.taskReady))
+      if (t && body?.taskDone) { t.done = true; t.doneAt = Date.now() }
+      if (t && body?.taskUndo) { t.done = false; delete t.doneAt; delete t.ready; delete t.readyAt }
+      if (t && body?.taskReady) { t.ready = true; t.readyAt = Date.now() }
       res.writeHead(200, { 'content-type': 'application/json' })
       return res.end(JSON.stringify({ ok: true, tasks: globalThis.__office.tasks }))
     }

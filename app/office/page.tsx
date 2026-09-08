@@ -34,6 +34,8 @@ interface AgentRow {
 interface OwnerTask {
   id?: string; text?: string; note?: string; done?: boolean
   at?: number | null; doneAt?: number | null
+  /** เจ้าของร้านกด "พร้อมทำ" — ท่อเด้ง Telegram เรียก AI แล้ว (8 ก.ย. 2569) */
+  ready?: boolean; readyAt?: number | null
 }
 interface Resp { now?: number; agents?: AgentRow[]; tasks?: OwnerTask[]; error?: string; skip?: string }
 
@@ -93,15 +95,20 @@ export default function OfficePage() {
     return undefined
   }, [load, live])
 
-  /* ติ๊กจบงานเจ้าของร้าน — ผลสำเร็จเขียนได้เมื่อปลายทางยืนยัน (ตอบอ่านไม่ออก = ไม่รู้ผล ห้ามกดซ้ำ) */
+  /* งานเจ้าของร้าน — ผลสำเร็จเขียนได้เมื่อปลายทางยืนยัน (ตอบอ่านไม่ออก = ไม่รู้ผล ห้ามกดซ้ำ) */
   const [taskBusy, setTaskBusy] = useState('')
   const [taskErr, setTaskErr] = useState('')
-  const tickDone = useCallback(async (id: string) => {
-    setTaskBusy(id); setTaskErr('')
+  /* กันมือลั่นบนมือถือ (เหตุจริง 8 ก.ย.: เจ้าของร้าน tap พลาดติ๊กจบ 2 ข้อแล้วย้อนไม่ได้)
+     — ติ๊กจบต้องกดสองจังหวะ: แตะช่อง → แถวขึ้นปุ่มยืนยัน/ยกเลิก · ปุ่มอื่นไม่ต้อง confirm
+     (ถอนติ๊ก/พร้อมทำ ย้อนได้เองอยู่แล้ว ความเสียหายจากมือลั่นต่ำ) */
+  const [confirmId, setConfirmId] = useState('')
+  const postTask = useCallback(async (body: Record<string, string>) => {
+    const id = Object.values(body)[0]
+    setTaskBusy(id); setTaskErr(''); setConfirmId('')
     try {
       const res = await fetch('/api/web/office', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ taskDone: id }),
+        body: JSON.stringify(body),
       })
       const j = await res.json().catch(() => null)
       if (j === null) { setTaskErr('ส่งแล้วแต่อ่านคำตอบไม่ออก — ไม่รู้ผล อย่าเพิ่งกดซ้ำ กดรีเฟรชดูสถานะจริงก่อน'); return }
@@ -212,16 +219,52 @@ export default function OfficePage() {
                     {t.done ? (
                       <span className="text-emerald-500 text-[14px] leading-5">✓</span>
                     ) : (
-                      <button onClick={() => t.id && tickDone(t.id)} disabled={!t.id || taskBusy === t.id}
-                        title={t.id ? 'ติ๊กว่าเสร็จแล้ว' : 'งานนี้ไม่มี id — ติ๊กไม่ได้'}
+                      <button onClick={() => t.id && setConfirmId(t.id)} disabled={!t.id || taskBusy === t.id}
+                        title={t.id ? 'ติ๊กว่าเสร็จแล้ว (มีขั้นยืนยันก่อน)' : 'งานนี้ไม่มี id — ติ๊กไม่ได้'}
                         className="w-[18px] h-[18px] mt-0.5 rounded border-2 border-gray-300 hover:border-emerald-500 disabled:opacity-40 shrink-0" />
                     )}
-                    <span className={`text-[13px] leading-5 ${t.done ? 'text-gray-300 line-through' : 'text-gray-800'}`}>
+                    <span className={`text-[13px] leading-5 min-w-0 ${t.done ? 'text-gray-300 line-through' : 'text-gray-800'}`}>
                       {t.text || '(ไม่มีข้อความ)'}
+                      {!t.done && t.ready && (
+                        <span className="ml-1.5 text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 no-underline whitespace-nowrap">
+                          🙋 รอ AI พาทำ
+                        </span>
+                      )}
                       {t.note && <span className={`block text-[11px] ${t.done ? 'text-gray-300' : 'text-gray-400'}`}>{t.note}</span>}
+                      {/* ยืนยันสองจังหวะ — เหตุจริง: มือลั่นบนมือถือติ๊กจบผิด 2 ข้อ */}
+                      {confirmId === t.id && !t.done && (
+                        <span className="block mt-1">
+                          <button onClick={() => t.id && postTask({ taskDone: t.id })}
+                            className="text-[11px] font-semibold text-white bg-emerald-600 rounded px-2.5 py-1 mr-1.5">
+                            ✓ ยืนยัน เสร็จแล้วจริง
+                          </button>
+                          <button onClick={() => setConfirmId('')} className="text-[11px] text-gray-500 border border-gray-300 rounded px-2.5 py-1">
+                            ยกเลิก
+                          </button>
+                        </span>
+                      )}
                     </span>
-                    <span className="text-[10.5px] text-gray-400 ml-auto whitespace-nowrap mt-0.5">
-                      {t.done ? 'เสร็จแล้ว' : ageText ? `ค้าง ${ageText}` : ''}
+                    <span className="text-[10.5px] text-gray-400 ml-auto whitespace-nowrap mt-0.5 text-right">
+                      {t.done ? (
+                        <>
+                          เสร็จแล้ว
+                          <button onClick={() => t.id && postTask({ taskUndo: t.id })} disabled={!t.id || taskBusy === t.id}
+                            className="block text-[10px] text-gray-400 hover:text-amber-700 hover:underline disabled:opacity-40">
+                            ถอนติ๊ก
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          {ageText ? `ค้าง ${ageText}` : ''}
+                          {!t.ready && (
+                            <button onClick={() => t.id && postTask({ taskReady: t.id })} disabled={!t.id || taskBusy === t.id}
+                              title="ติดธงว่าพร้อมทำ แล้วเด้ง Telegram เรียกทีม AI"
+                              className="block text-[10px] text-blue-600 hover:underline disabled:opacity-40">
+                              🙋 พร้อมทำ — เรียก AI
+                            </button>
+                          )}
+                        </>
+                      )}
                     </span>
                   </li>
                 )
