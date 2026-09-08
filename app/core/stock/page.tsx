@@ -8,7 +8,8 @@
 // ⚠️ **คงเหลือติดลบต้องเป็นสีแดง** — ZORT ทำแบบนี้ (เห็นในภาพ -2 -3) เป็นสัญญาณว่าขายเกิน
 // ⚠️ ตัวเลขที่นี่คือ "ภาพถ่ายสต็อกตอนตี 1" ไม่ใช่ยอดสด — ต้องเขียนบอกบนจอเสมอ
 //    ปล่อยให้เข้าใจว่าสดจะกลายเป็นจอที่โกหกเงียบ ๆ ตอนของขยับระหว่างวัน
-import { useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -88,7 +89,11 @@ const SORTS = [
   { id: 'sku', label: 'เรียงตามรหัส' },
 ]
 
-export default function CoreStockPage() {
+function CoreStockInner() {
+  /* กรองตามหมวด — มาจากลิงก์ชื่อหมวดในจอหมวดหมู่ (เจ้าของร้านจับได้ 8 ก.ย. ว่า ZORT กดได้แต่เราไม่)
+     ค่าพิเศษ '(ยังไม่ได้จัดหมวดใน ZORT)' = แถว category ว่าง (สัญญากับท่อ 66d2c0f · จับคู่ตรงตัวไม่ใช่ LIKE) */
+  const sp = useSearchParams()
+  const [category, setCategory] = useState(() => sp.get('category') ?? '')
   const [q, setQ] = useState('')
   const [sort, setSort] = useState('qty')
   const [tab, setTab] = useState<'all' | 'out' | 'low' | 'active' | 'inactive'>('all')
@@ -126,6 +131,7 @@ export default function CoreStockPage() {
       if (tabId !== 'all') qs.set('only', tabId)
       if (kindId === 'goods') qs.set('kind', 'goods')
       if (q.trim()) qs.set('q', q.trim())
+      if (category) qs.set('category', category)
       /* ⚡ **กดเมนูกลับมาแล้วเห็นของเดิมทันที แล้วค่อยอัปเดตเบื้องหลัง**
          ฝั่งท่อวัดแล้ว: เวลา = 1.1 วิคงที่ + 0.27 วิต่อการยิงฐาน 1 รอบ
          1.1 วินาทีนั้นลบไม่ได้ถ้ายังยิงอยู่ ⇒ ทางเดียวที่เร็วกว่านั้นคือ **ไม่ยิง**
@@ -157,7 +163,7 @@ export default function CoreStockPage() {
     }
   }, [q, sort, tab, kind])
 
-  useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { load(0) }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // เซิร์ฟเวอร์กรองให้แล้ว (only=out/low) — แถวที่ได้คือของทั้งคลังในแท็บนั้น
   // ⚠️ เลขหน้าต้องใช้ shown (จำนวนแถวของแท็บที่เลือก) ไม่ใช่ total
@@ -360,6 +366,15 @@ export default function CoreStockPage() {
           />
 
           {/* 🕰 คอลัมน์ Marketplace มาจากแคชเซิร์ฟเวอร์ที่ "คืนของเก่าก่อน" ได้ — แถบนี้ห้ามถอด */}
+          {category && (
+            <p className="text-[12.5px] mb-3">
+              <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-full px-3 py-1">
+                🗂️ กรองหมวด: <b>{category}</b>
+                <button onClick={() => setCategory('')} title="ถอดตัวกรองหมวด"
+                  className="text-blue-500 hover:text-blue-800 font-bold ml-0.5">✕</button>
+              </span>
+            </p>
+          )}
           <MarketStaleBar stale={data.marketplacesStale} staleMs={data.marketplacesStaleMs} at={data.marketplacesAt} />
           <TableWrap>
             <table className="w-full min-w-[920px]">
@@ -514,5 +529,14 @@ export default function CoreStockPage() {
         </>
       )}
     </div>
+  )
+}
+
+export default function CoreStockPage() {
+  // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (แพตเทิร์นเดียวกับ sales/detail)
+  return (
+    <Suspense fallback={<div className="p-6"><LoadingState /></div>}>
+      <CoreStockInner />
+    </Suspense>
   )
 }
