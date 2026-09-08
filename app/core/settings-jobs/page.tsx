@@ -103,6 +103,17 @@ const JOBS: Job[] = [
       + 'ให้เปิด /bills ดูวันที่บิลล่าสุด (เงียบเพราะไม่มีบิล กับเงียบเพราะงานตาย หน้าตาเหมือนกัน)',
     ifDead: 'บิลหยุดสะสมเงียบ ๆ เหมือนยุคก่อนมีตัวนี้ — จะรู้ตัวตอนทำบัญชีสิ้นเดือน',
   },
+  {
+    name: 'เก็บใบเสร็จ Netlify',
+    cron: '30 22 * * *', when: 'ตี 5 ครึ่งทุกเช้า',
+    what: 'ดึงใบเสร็จค่าโฮสต์จาก API ของ Netlify ตรง ๆ แล้วอัปเข้าคลังบิล — '
+      + 'ไม่ผ่าน Gmail เพราะ **Netlify ไม่ส่งใบเสร็จเข้าเมลเลยสักใบ** (ยิงตรวจแล้ว 8 ก.ย. 2569: '
+      + 'from:netlify.com มี 21 ฉบับ เป็นเตือนโควตาล้วน)',
+    src: 'netlify/functions/bills-netlify.mjs (repo นี้)',
+    howToTell: 'มีใบใหม่ = เด้ง Telegram · เปิด /bills/netlify ดูใบล่าสุดว่าตรงกับ '
+      + 'app.netlify.com → Usage & billing → Paid invoice receipts ไหม',
+    ifDead: 'ค่าโฮสต์หายไปจากบัญชีเงียบ ๆ — และเป็นเจ้าเดียวที่ตัวเก็บทางเมลรับช่วงต่อไม่ได้',
+  },
 ]
 
 export default function SettingsJobsPage() {
