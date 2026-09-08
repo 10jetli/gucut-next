@@ -206,7 +206,12 @@ export default function CorePurchasesPage() {
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
                     {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
-                    <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
+                    <td className={TD}>
+                      {/* เลขที่ใบ → รายละเอียดรายใบ (แบบแผนข้อ 1 ของ ZORT: เลขเอกสารกดได้เสมอ)
+                          เส้น ?purchase= เปิดให้แล้ว 8 ก.ย. 2569 */}
+                      <Link href={`/core/purchases/detail?no=${encodeURIComponent(r.number)}`}
+                        className="text-blue-600 hover:underline font-medium">{r.number}</Link>
+                    </td>
                     <td className={TD}><span className="text-gray-800">{r.vendor || '—'}</span></td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}>
