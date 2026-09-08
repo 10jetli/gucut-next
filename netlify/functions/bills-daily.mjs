@@ -17,18 +17,10 @@
 // เจ้าใหม่ต้องเพิ่มสองที่: vendors.ts และที่นี่ · ตัวกันลืมคือแจ้งเตือน "ไม่รู้จัก vendor"
 const VENDOR_IDS = ["tiktok", "meta", "google", "shopify", "line", "adobe", "apple", "omise", "netlify"];
 
+import { notify } from "./lib-notify.mjs";
+
 const SITE = process.env.URL || "https://admin.gucut.com";
 
-async function tg(text) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chat = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chat) return; // ไม่ได้ตั้ง = ข้ามเงียบ (งานหลักคือเก็บบิล ไม่ใช่แจ้งเตือน)
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ chat_id: chat, text, parse_mode: "HTML" }),
-  }).catch(() => {});
-}
 
 export default async function handler() {
   const secret = process.env.DRIVESYNC_SECRET;
@@ -45,6 +37,7 @@ export default async function handler() {
     })
   );
 
+  let tgResult = null;
   const ok = results.filter((r) => r.status === "fulfilled").map((r) => r.value);
   const dead = results
     .map((r, i) => (r.status === "rejected" ? `${VENDOR_IDS[i]} (${String(r.reason?.message ?? r.reason).slice(0, 80)})` : null))
@@ -60,11 +53,11 @@ export default async function handler() {
       lines.push(`  ⚠️ ไฟล์ที่ดึงไม่สำเร็จ ${failedFiles} ใบ: ${ok.filter((x) => x.failed > 0).map((x) => x.name).join(", ")}`);
     if (dead.length) lines.push(`  🔴 เจ้าที่สแกนไม่ได้เลย: ${dead.join(" · ")}`);
     lines.push(`ดูที่ ${SITE}/bills`);
-    await tg(lines.join("\n"));
+    tgResult = await notify(lines.join("\n"));
   }
 
   return new Response(
-    JSON.stringify({ ok: dead.length === 0, uploaded, failedFiles, vendors: ok.length, dead }),
+    JSON.stringify({ ok: dead.length === 0, uploaded, failedFiles, vendors: ok.length, dead, telegram: tgResult }),
     { headers: { "content-type": "application/json" } }
   );
 }

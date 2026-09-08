@@ -22,20 +22,12 @@
 //    (กติกาเดียวกับตัวรับรีวิว/ตัวนับคนเข้าเว็บ: ให้ปลายทางปฏิเสธของซ้ำเอง
 //     ตัวเก็บจะได้ยิงซ้ำทุกวันโดยไม่ต้องจำอะไร)
 
+import { notify } from "./lib-notify.mjs";
+
 const API = "https://api.netlify.com/api/v1";
 const TEAM = process.env.NETLIFY_TEAM_SLUG || "10jetli";
 const SITE = process.env.URL || "https://admin.gucut.com";
 
-async function tg(text) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chat = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chat) return;
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ chat_id: chat, text, parse_mode: "HTML" }),
-  }).catch(() => {});
-}
 
 /** ชื่อไฟล์ต้องคงที่ต่อใบ — เปลี่ยนสูตรนี้เมื่อไหร่ ของเก่าจะถูกอัปซ้ำเป็นใบใหม่ทั้งหมด */
 const fileNameFor = (r) => {
@@ -67,6 +59,7 @@ export default async function handler() {
     return fail(`ดึงรายการใบเสร็จไม่ได้: ${e.message}`);
   }
 
+  let tgResult = null;
   const added = [];
   const dup = [];
   const errs = [];
@@ -116,7 +109,7 @@ export default async function handler() {
     for (const n of added) lines.push(`  ✅ ${n}`);
     for (const e of errs) lines.push(`  🔴 ${e}`);
     lines.push(`ดูที่ ${SITE}/bills/netlify`);
-    await tg(lines.join("\n"));
+    tgResult = await notify(lines.join("\n"));
   }
 
   return json({
@@ -125,6 +118,8 @@ export default async function handler() {
     added: added.length,
     duplicate: dup.length,
     errors: errs,
+    /* ส่งเตือนไม่ออกต้องเห็นในคำตอบ ห้ามกลืน */
+    telegram: tgResult,
   });
 }
 

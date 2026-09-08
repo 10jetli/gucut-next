@@ -13,19 +13,9 @@
 // ⚠️ **ห้ามเขียนว่า "ไม่ได้ถูกเรียกเก็บ"** — เรารู้แค่ว่า "ยังไม่มีในคลัง"
 //    คนละคำถามกัน ข้อความต้องสั่งให้ไป **ตรวจ** ไม่ใช่สรุปแทน
 
-const SITE = process.env.URL || "https://admin.gucut.com";
+import { notify } from "./lib-notify.mjs";
 
-async function tg(text) {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  const chat = process.env.TELEGRAM_CHAT_ID;
-  if (!token || !chat) return false;
-  const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ chat_id: chat, text, parse_mode: "HTML", disable_web_page_preview: true }),
-  }).catch(() => null);
-  return !!r?.ok;
-}
+const SITE = process.env.URL || "https://admin.gucut.com";
 
 const json = (b, s = 200) =>
   new Response(JSON.stringify(b), { status: s, headers: { "content-type": "application/json" } });
@@ -53,8 +43,8 @@ export default async function handler() {
   } catch (e) {
     /* ตัวเฝ้าพังเองก็ต้องดัง ไม่งั้นเราจะได้ "ตัวเฝ้าที่เงียบ" ซึ่งแย่กว่าไม่มีตัวเฝ้า
        เพราะทุกคนจะเชื่อว่ามีคนเฝ้าอยู่ */
-    await tg(`🔴 <b>ตัวเฝ้าบิลทำงานไม่ได้</b>\n${e.message}\nไปดูที่ ${SITE}/bills`);
-    return json({ ok: false, error: e.message }, 502);
+    const n = await notify(`🔴 <b>ตัวเฝ้าบิลทำงานไม่ได้</b>\n${e.message}\nไปดูที่ ${SITE}/bills`);
+    return json({ ok: false, error: e.message, telegram: n }, 502);
   }
 
   const { month, missing = [], unreadable = [], found = [] } = d;
@@ -73,9 +63,11 @@ export default async function handler() {
   lines.push("");
   lines.push("<i>แปลว่า “ยังไม่มีในคลัง” เท่านั้น ไม่ได้แปลว่าไม่ถูกเรียกเก็บ — ให้ไปตรวจ</i>");
   lines.push(`${SITE}/bills`);
-  const sent = await tg(lines.join("\n"));
+  const n = await notify(lines.join("\n"));
 
-  return json({ ok: false, month, missing, unreadable, telegramSent: sent });
+  /* 🔴 ส่งไม่ออก = ต้องเห็นในคำตอบ ห้ามกลืน — ไม่งั้นได้ "ตัวเฝ้าที่ไม่มีใครได้ยิน"
+     ซึ่งแย่กว่าไม่มีตัวเฝ้า เพราะทุกคนเชื่อว่ามีคนเฝ้าอยู่ */
+  return json({ ok: false, month, missing, unreadable, telegram: n });
 }
 
 // วันที่ 10 · 17 · 24 ของทุกเดือน เวลา 08:00 ไทย (01:00 UTC)
