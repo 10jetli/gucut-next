@@ -15,7 +15,7 @@
 
 // รายชื่อเจ้าตรงกับ lib/vendors.ts — จงใจไม่ import ไฟล์ .ts (ฟังก์ชัน .mjs import ไม่ได้)
 // เจ้าใหม่ต้องเพิ่มสองที่: vendors.ts และที่นี่ · ตัวกันลืมคือแจ้งเตือน "ไม่รู้จัก vendor"
-const VENDOR_IDS = ["tiktok", "meta", "google", "shopify", "line", "adobe", "apple", "omise"];
+const VENDOR_IDS = ["tiktok", "meta", "google", "shopify", "line", "adobe", "apple", "omise", "netlify"];
 
 const SITE = process.env.URL || "https://admin.gucut.com";
 
