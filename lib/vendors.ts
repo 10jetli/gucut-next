@@ -62,16 +62,6 @@ export const BILL_VENDORS: BillVendorInfo[] = [
   /* ── สามเจ้าที่เพิ่ม 8 ก.ย. 2569 (เจ้าของร้านสั่ง "ดึงบิลทุกอัน") ──
      ทุกตัวตั้ง query จาก **ผู้ส่ง+subject ของเมลจริงที่เปิดดูแล้ว** ไม่ได้เดา */
 
-  /* ZORT — ค่าระบบคลังที่ร้านใช้อยู่ทุกวัน · **คือตัวที่โครงการ "แก่น" กำลังจะตัด**
-     เก็บไว้เพื่อให้วันที่ตัดสำเร็จ พิสูจน์ได้ว่าประหยัดเดือนละเท่าไหร่
-     ✅ ใบมาทางเมลพร้อม **PDF ตัวจริงที่ประทับรับรองเวลาจากกรมสรรพากร** (e-Tax Invoice by Email)
-        ชื่อไฟล์จริง: TS25690908_RT-202609483_ใบเสร็จรับเงิน_ใบกำกับภาษี.pdf
-     🔴 ใช้ฉบับที่ **csemail@etax.teda.th** ส่ง ไม่ใช่ฉบับจาก payment@zortout.com โดยตรง
-        เพราะฉบับนี้คือฉบับที่ประทับเวลาแล้ว = ใช้ยื่นภาษีได้จริง
-     ⚠️ `to:payment@zortout.com` คือตัวแยกที่แม่นที่สุด — etax.teda.th รับรองใบของหลายเจ้า
-        ถ้าตัดเงื่อนไขนี้ออก จะดูดใบของเจ้าอื่นเข้ามาปนทันที
-     ⚠️ ไม่ตั้ง everyMonth — ใบมาถี่ไม่แน่นอน (บางวันมี 2 ใบ) เดี๋ยวค่อยดูจากของจริง */
-  { id: 'zort', name: 'ZORT', emoji: '📦', gridName: 'ZORT', gridOrder: 10, note: 'ค่าระบบคลัง — ตัวที่โครงการแก่นกำลังจะตัด', query: '(from:csemail@etax.teda.th to:payment@zortout.com) OR (from:payment@zortout.com subject:"[INV]")' },
 
   /* Anthropic — ค่า Claude ที่ทีม AI ของร้านใช้ทำงานทุกวัน
      ✅ ใบมาทางเมลจาก invoice+statements@mail.anthropic.com subject "Your receipt from Anthropic"
