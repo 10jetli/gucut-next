@@ -9,7 +9,9 @@ import { authToken, sameToken } from '@/lib/auth-token'
 // - API ที่ยังไม่ล็อกอิน → 401
 // - พนักงานเปิดหน้าอื่นนอกเหนือสิทธิ์ → เด้งกลับไปหน้าโอนสินค้า (หรือ 403 ถ้าเป็น API)
 // - ยกเว้น: /login, /api/auth/*, /api/google/* (OAuth callback), ไฟล์ static
-// - /api/bills/drivesync และ /api/bills/upload มี secret ของตัวเอง (DRIVESYNC_SECRET)
+// - /api/bills/drivesync, /api/bills/upload และ /api/bills/watch มี secret ของตัวเอง (DRIVESYNC_SECRET)
+//   ⚠️ เพิ่มเส้นที่ใช้ DRIVESYNC_SECRET ต้องมาเพิ่มที่ PUBLIC_PATHS ด้วยเสมอ — ไม่งั้นด่านล็อกอิน
+//   จะตอบ 401 ก่อนถึงโค้ดที่ตรวจ secret แล้วมันจะ **หน้าตาเหมือน secret ผิด** (เจอมาแล้ว 8 ก.ย. 2569)
 // - /api/rokid (สะพานแว่น Rokid → Claude) มีกุญแจของตัวเอง (ROKID_BRIDGE_KEY)
 //
 // 🔴 **คุกกี้เก็บ "ลายนิ้วมือของรหัส" ไม่ใช่ตัวรหัส** (เปลี่ยน 6 ก.ย. 2569 — ดู lib/auth-token.ts)
@@ -17,7 +19,7 @@ import { authToken, sameToken } from '@/lib/auth-token'
 //    ตั้งคุกกี้แล้วขอหน้าไหนก็ได้ ⇒ ตัวกันเดาที่หน้าล็อกอินกันได้แค่ประตูเดียวจากสองประตู
 //    ตอนนี้เดาคุกกี้ให้ตรงต้องเดาเลข 256 บิต ⇒ ประตูที่สองปิดด้วยความยาวของเลข
 //    ⚠️ **ห้ามกลับไปเทียบกับตัวรหัสผ่านตรง ๆ อีก** ต่อให้เพิ่มตัวนับครั้งแล้วก็ตาม
-const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync', '/api/bills/upload', '/api/rokid']
+const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/api/bills/drivesync', '/api/bills/upload', '/api/bills/watch', '/api/rokid']
 // เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
 /* /returns/receive + /api/returns เพิ่ม 7 ก.ย. 2569 (ร่าง /returns v2 ข้อ 6 — ผ่านเวทีสามเสียง):
    จอรับคืนบนมือถือพนักงาน · ท่อ /api/returns เป็น whitelist เฉพาะเส้นจอนี้ ไม่ใช่ /api/web ทั้งก้อน */
