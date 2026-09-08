@@ -16,6 +16,12 @@ interface AppShellProps { children: React.ReactNode; role: 'admin' | 'staff' | n
 
 export default function AppShell({ children, role }: AppShellProps) {
   const pathname = usePathname()
+  /* 🔴 ยังไม่ล็อกอิน = ไม่วาดเปลือกเลย (เจ้าของร้านจับได้ 8 ก.ย. 2569: หน้า /login
+     โชว์แผงเมนูทั้งหมด + ชื่อบริษัทก่อนล็อกอิน) — ด่านเดิมกั้นแค่ "เนื้อหา" (middleware
+     เด้งหน้า/401 API) แต่ "เปลือก" (Sidebar/TopBar/จุดสถานะ) วาดจากโค้ดฝั่งเบราว์เซอร์
+     ⇒ คนนอกเห็นโครงระบบทั้งแผงและชื่อนิติบุคคลฟรี ๆ · role ตัดสินฝั่งเซิร์ฟเวอร์
+     จากคุกกี้ (layout.tsx) จึงเชื่อได้ตั้งแต่ render แรก — ไม่มีเปลือกกะพริบ */
+  if (!role) return <main>{children}</main>
   const [collapsed, setCollapsed] = useState(false)
   const [ready, setReady] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
