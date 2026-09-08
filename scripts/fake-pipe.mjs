@@ -299,6 +299,36 @@ const srv = createServer(async (req, res) => {
       ],
     }))
   }
+  /* ประวัติดันสต็อกขึ้นแพลตฟอร์ม (จอ /core/stock-push) — โครงจาก payload จริง 8 ก.ย. 2569 */
+  if (mode === 'good' && /stockpushlog=|stockpushverify=/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    res.writeHead(200, { 'content-type': 'application/json' })
+    if (u.searchParams.get('stockpushverify')) {
+      const skus = (u.searchParams.get('stockpushverify') || '').split(',')
+      return res.end(JSON.stringify({
+        ok: true,
+        landed: skus.slice(1),
+        notLanded: skus.slice(0, 1).map((sku) => ({ sku, 'ยังต้องดัน': '714→716' })),
+        note: 'เทียบกับสต็อกสดบนแพลตฟอร์ม',
+      }))
+    }
+    return res.end(JSON.stringify({
+      ok: true,
+      log: [
+        { at: new Date(Date.now() - 20 * 60e3).toISOString(), platform: 'lazada', fired: 15, pushed: 15, rejected: 0,
+          rows: [
+            { sku: '03409-3', from: 0, to: 503, kind: 'reopen' },
+            { sku: '03496-3', from: 505, to: 510, kind: 'up' },
+            { sku: '05086', from: 3, to: 0, kind: 'close' },
+            { sku: '00291', from: 120, to: 118, kind: 'down' },
+          ] },
+        { at: new Date(Date.now() - 21 * 60e3).toISOString(), platform: 'lazada', fired: 1, pushed: 1, rejected: 0,
+          rows: [{ sku: '00313', from: 714, to: 716, kind: 'up' }] },
+        { at: new Date(Date.now() - 26 * 3600e3).toISOString(), platform: 'lazada', fired: 2, pushed: 1, rejected: 1,
+          rows: [{ sku: 'XX-BAD', from: 1, to: 2, kind: 'up' }] },
+      ],
+    }))
+  }
   if (mode === 'good' && /[?&]shopinfo=/.test(req.url)) {
     /* ข้อมูลนิติบุคคล (จอ settings-company) — **ของปลอมทั้งชุด ห้ามเอาชื่อ/เลขจริงมาใส่**
        (กติกา: ห้ามพิมพ์ชื่อร้านลงไฟล์ · ที่นี่ยิ่งห้าม เพราะเป็น fixture ทดสอบ)

@@ -129,6 +129,8 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/marketplace', label: 'Marketplace Dashboard' },
       // ผัง ZORT: `/Marketplace/List` อยู่ต่อจาก Dashboard ในกลุ่มเดียวกัน
       { href: '/core/marketplace-products', label: 'สินค้าบน Marketplace' },
+      // งานเขียนชิ้นแรกแทน ZORT — Lazada ยิงจริงแล้ว 8 ก.ย. 2569 (จอดูประวัติ+verify เท่านั้น)
+      { href: '/core/stock-push', label: 'ดันสต็อกขึ้นแพลตฟอร์ม' },
       { href: '/core/channels', label: 'ช่องทางขาย' },
       // ZORT แยกแชทเป็น "แอป" ต่างหาก (เปิดจากตารางจุด 9 ช่อง) เราใส่ไว้ในเมนูด้วย
       // เพราะเมนูคือที่ที่คนมองหาของ — ของที่เปิดได้ทางเดียวคือของที่หาไม่เจอ
