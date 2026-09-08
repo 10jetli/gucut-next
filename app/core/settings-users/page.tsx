@@ -59,8 +59,10 @@ export default function SettingsUsersPage({ searchParams }: { searchParams?: { q
           <span className="text-gray-400">อ่านจากการตั้งค่าจริงที่ Netlify ไม่ใช่ตารางที่พิมพ์ไว้</span></>}
         actions={
           /* ผัง ZORT: ปุ่มน้ำเงิน "เพิ่มผู้ใช้งาน" — ของเราพาไปหน้าที่บอกวิธีเพิ่มจริง (Netlify env)
-             ไม่ทำฟอร์มบนเว็บ เพราะฟอร์มที่ตั้งรหัสได้ต้องส่งรหัสผ่านหน้าเว็บ */
-          <Link href="/core/soon/user-add"
+             ไม่ทำฟอร์มบนเว็บ เพราะฟอร์มที่ตั้งรหัสได้ต้องส่งรหัสผ่านหน้าเว็บ
+             8 ก.ย. 2569: เลิกพาไป /core/soon/user-add (หน้า "ยังไม่ได้ทำ" กลาง ๆ)
+             ไปหน้าจริงที่บอกช่องว่างถัดไป + ลิงก์ตรง + ข้อ "ต้อง deploy ใหม่" ที่พิสูจน์แล้ว */
+          <Link href="/core/settings-users/add"
             className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
             style={{ background: '#4669e5' }}>
             เพิ่มผู้ใช้งาน
