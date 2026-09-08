@@ -223,7 +223,13 @@ export default function QuotationsPage() {
                         : <span className="text-gray-900 font-medium" title="ใบนี้ ZORT ไม่ส่ง id มา — เปิดรายละเอียดไม่ได้">{r.number}</span>}
                     </td>
                     <td className={`${TD} max-w-[220px] truncate`} title={r.phone || ''}>
-                      {r.customer || <span className="text-gray-300">-</span>}
+                      {/* ลิงก์ข้ามจอตาม ZORT: ชื่อลูกค้าในใบเสนอราคา → ContactDetail (8 ก.ย. 2569)
+                          ⚠️ ชื่อที่แพลตฟอร์มปิดบัง (มี *) กดได้เหมือนกัน — จอปลายทางจะขึ้นกล่องเหลือง
+                             อธิบายว่าจับคู่ประวัติไม่ได้ ดีกว่าปิดปุ่มเงียบ ๆ แล้วคนสงสัยว่าทำไมกดไม่ได้ */}
+                      {r.customer ? (
+                        <Link href={`/core/customers/detail?name=${encodeURIComponent(r.customer)}`}
+                          className="text-blue-600 hover:underline">{r.customer}</Link>
+                      ) : <span className="text-gray-300">-</span>}
                     </td>
                     {/* ZORT มีคอลัมน์ช่องทาง แต่ทั้ง 3 ใบใน ZORT เองก็เป็นขีด และท่อก็ไม่ส่งช่องนี้มา
                         ⚠️ **อ่านจากข้อมูลไว้ก่อน อย่าเขียนขีดตาย** — วันไหนท่อส่ง `channel` มา

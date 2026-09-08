@@ -232,8 +232,12 @@ export default function CoreContactsPage() {
                       <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                       <td className={`${TD} whitespace-nowrap`}>{r.code || DASH}</td>
                       <td className={TD}>
-                        {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
-                        <span className="text-gray-800">{r.name || DASH}</span>
+                        {/* ✅ 8 ก.ย. 2569: มีหน้าปลายทางแล้ว (/core/customers/detail + เส้น ?customer=)
+                            ⇒ ทำเป็นลิงก์ตาม ZORT (ชื่อ → ContactDetail) · สีฟ้า = สัญญาว่ากดได้ ตอนนี้จริงแล้ว */}
+                        {r.name ? (
+                          <Link href={`/core/customers/detail?name=${encodeURIComponent(r.name)}`}
+                            className="text-blue-600 hover:underline">{r.name}</Link>
+                        ) : <span className="text-gray-800">{DASH}</span>}
                         {/* ZORT ต่อท้ายชื่อสาขาในวงเล็บ — ค่าที่ได้มาบางแถวเป็นรหัสดิบ ("1")
                             แสดงตามที่ต้นทางให้มา ไม่แต่งเอง แล้วอธิบายไว้ท้ายตาราง */}
                         {r.branchName && <span className="text-gray-400"> ({r.branchName})</span>}
