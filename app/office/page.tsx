@@ -31,7 +31,11 @@ interface AgentRow {
   commits?: number | null
   at?: number | null
 }
-interface Resp { now?: number; agents?: AgentRow[]; error?: string; skip?: string }
+interface OwnerTask {
+  id?: string; text?: string; note?: string; done?: boolean
+  at?: number | null; doneAt?: number | null
+}
+interface Resp { now?: number; agents?: AgentRow[]; tasks?: OwnerTask[]; error?: string; skip?: string }
 
 /** ทะเบียนทีม — ใครควรมีแถว · คนหายต้องเห็นเป็นแถว "รอรายงาน" ไม่ใช่หายเงียบ */
 const TEAM: Array<{ key: string; label: string; role: string }> = [
@@ -88,6 +92,23 @@ export default function OfficePage() {
     }
     return undefined
   }, [load, live])
+
+  /* ติ๊กจบงานเจ้าของร้าน — ผลสำเร็จเขียนได้เมื่อปลายทางยืนยัน (ตอบอ่านไม่ออก = ไม่รู้ผล ห้ามกดซ้ำ) */
+  const [taskBusy, setTaskBusy] = useState('')
+  const [taskErr, setTaskErr] = useState('')
+  const tickDone = useCallback(async (id: string) => {
+    setTaskBusy(id); setTaskErr('')
+    try {
+      const res = await fetch('/api/web/office', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ taskDone: id }),
+      })
+      const j = await res.json().catch(() => null)
+      if (j === null) { setTaskErr('ส่งแล้วแต่อ่านคำตอบไม่ออก — ไม่รู้ผล อย่าเพิ่งกดซ้ำ กดรีเฟรชดูสถานะจริงก่อน'); return }
+      if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
+      await load()
+    } catch (e) { setTaskErr(String(e instanceof Error ? e.message : e)) } finally { setTaskBusy('') }
+  }, [load])
 
   const rows = TEAM.map((m) => {
     const r = (d?.agents ?? []).find((a) => (a.agent ?? '').toLowerCase() === m.key)
@@ -166,6 +187,47 @@ export default function OfficePage() {
               )}
             </div>
           ))}
+        </div>
+      )}
+
+      {/* ── กระดานงานรอเจ้าของร้าน (เจ้าของร้านสั่งเพิ่ม 8 ก.ย. 2569) ──
+          สามสถานะ: ท่อรุ่นเก่าไม่ส่ง tasks ≠ ส่งมาแต่ว่าง ≠ ยังโหลด · done เก็บให้เห็น ไม่ซ่อนทันที */}
+      {d && (
+        <div className="bg-white border border-gray-200 rounded-md p-4 mt-4">
+          <p className="text-[14px] font-semibold text-gray-900 mb-2">📋 งานรอเจ้าของร้าน</p>
+          {taskErr && <p className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5 mb-2">{taskErr}</p>}
+          {!Array.isArray(d.tasks) ? (
+            <p className="text-[12px] text-gray-400">ท่อรุ่นที่รันอยู่ยังไม่ส่งรายการงานมา — ขึ้นเองหลัง deploy รุ่นใหม่ ไม่ต้องแก้จอ</p>
+          ) : d.tasks.length === 0 ? (
+            <p className="text-[12.5px] text-emerald-700">ไม่มีงานค้าง 🎉</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {[...d.tasks].sort((a, b) => Number(a.done ?? false) - Number(b.done ?? false)).map((t) => {
+                const ageMin = typeof t.at === 'number' && typeof d.now === 'number'
+                  ? Math.max(0, (d.now - t.at) / 60e3) : null
+                const ageText = ageMin === null ? '' : ageMin < 60 ? `${Math.floor(ageMin)} นาที`
+                  : ageMin < 1440 ? `${Math.floor(ageMin / 60)} ชม.` : `${Math.floor(ageMin / 1440)} วัน`
+                return (
+                  <li key={t.id ?? t.text} className="flex items-start gap-2.5">
+                    {t.done ? (
+                      <span className="text-emerald-500 text-[14px] leading-5">✓</span>
+                    ) : (
+                      <button onClick={() => t.id && tickDone(t.id)} disabled={!t.id || taskBusy === t.id}
+                        title={t.id ? 'ติ๊กว่าเสร็จแล้ว' : 'งานนี้ไม่มี id — ติ๊กไม่ได้'}
+                        className="w-[18px] h-[18px] mt-0.5 rounded border-2 border-gray-300 hover:border-emerald-500 disabled:opacity-40 shrink-0" />
+                    )}
+                    <span className={`text-[13px] leading-5 ${t.done ? 'text-gray-300 line-through' : 'text-gray-800'}`}>
+                      {t.text || '(ไม่มีข้อความ)'}
+                      {t.note && <span className={`block text-[11px] ${t.done ? 'text-gray-300' : 'text-gray-400'}`}>{t.note}</span>}
+                    </span>
+                    <span className="text-[10.5px] text-gray-400 ml-auto whitespace-nowrap mt-0.5">
+                      {t.done ? 'เสร็จแล้ว' : ageText ? `ค้าง ${ageText}` : ''}
+                    </span>
+                  </li>
+                )
+              })}
+            </ul>
+          )}
         </div>
       )}
 

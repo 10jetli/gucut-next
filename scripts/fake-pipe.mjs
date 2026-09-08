@@ -165,9 +165,24 @@ const srv = createServer(async (req, res) => {
      · grade ให้ moveResult ชิ้นที่สองเป็น duplicate → ทดสอบป้ายเหลือง "เคยบันทึกแล้ว" */
   /* ห้องทำงาน AI (จอ /office) — ทดสอบครบสามกติกา: แถวสด · แถวเก่า+ฟิลด์ null · ไม่มีแถว (Codex) */
   if (mode === 'good' && req.url.startsWith('/api/office')) {
+    globalThis.__office ??= {
+      tasks: [
+        { id: 't1', text: 'ไปกด GRUB หน้าเครื่อง g1', note: 'บูตค้างจากเคอร์เนล 139', done: false, at: Date.now() - 2 * 3600e3 },
+        { id: 't2', text: 'เอา PEAK API key มาให้ทีม', done: false, at: Date.now() - 26 * 3600e3 },
+        { id: 't3', text: 'กรอกตัวเลข sold.json', done: true, at: Date.now() - 3 * 86400e3, doneAt: Date.now() - 3600e3 },
+      ],
+    }
+    if (req.method === 'POST') {
+      const body = await new Promise((ok) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } }) })
+      const t = globalThis.__office.tasks.find((x) => x.id === body?.taskDone)
+      if (t) { t.done = true; t.doneAt = Date.now() }
+      res.writeHead(200, { 'content-type': 'application/json' })
+      return res.end(JSON.stringify({ ok: true, tasks: globalThis.__office.tasks }))
+    }
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
       now: Date.now(),
+      tasks: globalThis.__office.tasks,
       agents: [
         { agent: 'gucut', five: 5, week: 46, ctx: 97, model: 'Opus 5 (1M)', cost: 131.5, commits: 8, at: Date.now() - 40e3 },
         { agent: 'gucut2', five: 30, week: 39, ctx: null, model: 'Opus 5 (1M)', cost: 99.9, commits: 4, at: Date.now() - 11 * 60e3 },
