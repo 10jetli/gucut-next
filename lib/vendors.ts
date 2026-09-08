@@ -59,5 +59,29 @@ export const BILL_VENDORS: BillVendorInfo[] = [
      ⚠️ เมลไม่มีไฟล์แนบ — ระบบจะสร้างใบจากเนื้อเมล (มีเลขที่ใบ + ยอด ครบ)
         อยากได้ PDF ตัวจริงต้องโหลดจากแดชบอร์ดแล้วอัปเอง */
   { id: 'cloudflare', name: 'Cloudflare',   emoji: '☁️', gridName: 'Cloudflare',  gridOrder: 9, logo: '/logos/cloudflare.webp', note: 'โดเมน gucut.com + R2 (คลิป/รูปทั้งเว็บ) + D1', query: 'from:notify.cloudflare.com subject:"Your invoice is available"' },
+  /* ── สามเจ้าที่เพิ่ม 8 ก.ย. 2569 (เจ้าของร้านสั่ง "ดึงบิลทุกอัน") ──
+     ทุกตัวตั้ง query จาก **ผู้ส่ง+subject ของเมลจริงที่เปิดดูแล้ว** ไม่ได้เดา */
+
+  /* ZORT — ค่าระบบคลังที่ร้านใช้อยู่ทุกวัน · **คือตัวที่โครงการ "แก่น" กำลังจะตัด**
+     เก็บไว้เพื่อให้วันที่ตัดสำเร็จ พิสูจน์ได้ว่าประหยัดเดือนละเท่าไหร่
+     ✅ ใบมาทางเมลพร้อม **PDF ตัวจริงที่ประทับรับรองเวลาจากกรมสรรพากร** (e-Tax Invoice by Email)
+        ชื่อไฟล์จริง: TS25690908_RT-202609483_ใบเสร็จรับเงิน_ใบกำกับภาษี.pdf
+     🔴 ใช้ฉบับที่ **csemail@etax.teda.th** ส่ง ไม่ใช่ฉบับจาก payment@zortout.com โดยตรง
+        เพราะฉบับนี้คือฉบับที่ประทับเวลาแล้ว = ใช้ยื่นภาษีได้จริง
+     ⚠️ `to:payment@zortout.com` คือตัวแยกที่แม่นที่สุด — etax.teda.th รับรองใบของหลายเจ้า
+        ถ้าตัดเงื่อนไขนี้ออก จะดูดใบของเจ้าอื่นเข้ามาปนทันที
+     ⚠️ ไม่ตั้ง everyMonth — ใบมาถี่ไม่แน่นอน (บางวันมี 2 ใบ) เดี๋ยวค่อยดูจากของจริง */
+  { id: 'zort', name: 'ZORT', emoji: '📦', gridName: 'ZORT', gridOrder: 10, note: 'ค่าระบบคลัง — ตัวที่โครงการแก่นกำลังจะตัด', query: '(from:csemail@etax.teda.th to:payment@zortout.com) OR (from:payment@zortout.com subject:"[INV]")' },
+
+  /* Anthropic — ค่า Claude ที่ทีม AI ของร้านใช้ทำงานทุกวัน
+     ✅ ใบมาทางเมลจาก invoice+statements@mail.anthropic.com subject "Your receipt from Anthropic"
+     ⚠️ ที่อยู่ผู้ส่งมี `+` — Gmail query ต้องใส่ทั้งก้อนในเครื่องหมายคำพูด ไม่งั้นตัดที่ + */
+  { id: 'anthropic', name: 'Anthropic (Claude)', emoji: '🤖', gridName: 'Anthropic', gridOrder: 11, note: 'ค่า AI ที่ทีมใช้ทำงาน', query: 'from:mail.anthropic.com subject:"Your receipt from Anthropic"' },
+
+  /* Lazada — ใบกำกับภาษีค่าธรรมเนียมผู้ขาย (e-Tax ใช้ยื่น VAT ได้)
+     ⚠️ **มาทุกสัปดาห์ ไม่ใช่รายเดือน** ⇒ เดือนหนึ่งจะมี 4-5 ใบเป็นเรื่องปกติ ไม่ใช่ของซ้ำ
+     ⚠️ ส่งเข้ากล่อง gucut1@gmail.com (คนละกล่องกับเจ้าอื่น) — ถ้าวันไหนหาไม่เจอ ให้เช็คตรงนี้ก่อน */
+  { id: 'lazada', name: 'Lazada (ค่าธรรมเนียม)', emoji: '🛍️', gridName: 'Lazada', gridOrder: 12, note: 'ใบกำกับภาษีค่าธรรมเนียมผู้ขาย — มาทุกสัปดาห์', query: 'from:support.lazada.co.th subject:"Tax invoice for the period"' },
+
   { id: 'omise',   name: 'Omise',             emoji: '💳', gridName: 'Omise',         gridOrder: 7, query: 'from:omise.co ใบเสร็จ' },
 ]
