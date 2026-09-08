@@ -299,6 +299,27 @@ const srv = createServer(async (req, res) => {
       ],
     }))
   }
+  /* รายละเอียดใบเสนอราคา/ใบโอน (จอ detail ใหม่ — โครงจากซอร์สท่อจริง) */
+  if (mode === 'good' && /[?&]quotation=/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      live: true, number: 'QT-6809-001',
+      'เงินที่ ZORT เก็บไว้': { amount: 12500, vatamount: 817.76, totalprice: 12500 },
+      lines: [
+        { 'ทุกช่องในบรรทัด': { sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', number: 1, pricepernumber: 12500, totalprice: 12500 } },
+      ],
+      fields: ['amount', 'customerid', 'list', 'number', 'status', 'totalprice', 'vatamount'],
+    }))
+  }
+  if (mode === 'good' && /[?&]transfer=/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      live: true, number: 'TF-6809-002', status: 'Pending', date: '2026-09-08',
+      from: 'NEW', to: 'SHOP2', tracking: 'TH000TRF',
+      lines: [{ sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', qty: 3 }],
+      fields: ['fromwarehousecode', 'list', 'number', 'status', 'towarehousecode', 'trackingno', 'transferdate'],
+    }))
+  }
   /* ประวัติดันสต็อกขึ้นแพลตฟอร์ม (จอ /core/stock-push) — โครงจาก payload จริง 8 ก.ย. 2569 */
   if (mode === 'good' && /stockpushlog=|stockpushverify=/.test(req.url)) {
     const u = new URL(req.url, 'http://x')

@@ -30,6 +30,8 @@ import {
    ⇒ เจอตอนเอาภาพหน้าจอจริงไปวางเทียบเท่านั้น — build ผ่าน · tsc ผ่าน · ไม่มี error สักตัว
    **ห้ามเดาชื่อฟิลด์อีก ให้ยิงของจริงดูคีย์ก่อนเขียนจอเสมอ** */
 interface Row {
+  /** id ZORT (กุญแจจริง — เลขที่ใบซ้ำกันได้ 546 เลข) · เส้นรายใบรับ id เท่านั้น */
+  id?: string | number | null
   number: string
   kind?: string | number
   from_wh?: string
@@ -241,7 +243,12 @@ export default function CoreTransfersPage() {
                   <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(r.transfer_date)}</td>
-                    <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
+                    <td className={TD}>
+                      {r.id !== null && r.id !== undefined
+                        ? <Link href={`/core/transfers/detail?id=${encodeURIComponent(String(r.id))}`}
+                            className="text-blue-600 font-medium hover:underline">{r.number}</Link>
+                        : <span className="text-gray-900 font-medium" title="แถวนี้ไม่มี id — เปิดรายละเอียดไม่ได้">{r.number}</span>}
+                    </td>
                     <td className={`${TD} text-gray-700`}>{typeTh(r.kind)}</td>
                     <td className={TD}>{wh(r.from_wh)}</td>
                     <td className={TD}>{wh(r.to_wh)}</td>

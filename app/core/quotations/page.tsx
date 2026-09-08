@@ -18,6 +18,8 @@ import {
 } from '@/components/zort'
 
 interface Row {
+  /** id ในระบบ ZORT — เส้นรายใบรับ id เท่านั้น (ส่งเลขที่ใบ = ค่าว่างเงียบ ๆ · ท่อเตือนไว้เอง) */
+  id?: string | number | null
   /** ช่องทาง — ท่อยังไม่ส่งมา แต่รับไว้ก่อนเพื่อไม่ต้องกลับมาแก้จอ */
   channel?: string
   number: string; customer?: string; phone?: string
@@ -213,7 +215,13 @@ export default function QuotationsPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
                     </td>
-                    <td className={TD}><span className="text-gray-900 font-medium">{r.number}</span></td>
+                    <td className={TD}>
+                      {/* กดเลขเข้ารายละเอียด (ZORT กดได้ — กวาดคลาส 8 ก.ย.) · ใบไร้ id = บอกตรง ๆ */}
+                      {r.id !== null && r.id !== undefined
+                        ? <Link href={`/core/quotations/detail?id=${encodeURIComponent(String(r.id))}`}
+                            className="text-blue-600 font-medium hover:underline">{r.number}</Link>
+                        : <span className="text-gray-900 font-medium" title="ใบนี้ ZORT ไม่ส่ง id มา — เปิดรายละเอียดไม่ได้">{r.number}</span>}
+                    </td>
                     <td className={`${TD} max-w-[220px] truncate`} title={r.phone || ''}>
                       {r.customer || <span className="text-gray-300">-</span>}
                     </td>
