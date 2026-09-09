@@ -301,6 +301,18 @@ const srv = createServer(async (req, res) => {
   }
   /* รายละเอียดใบเสนอราคา/ใบโอน (จอ detail ใหม่ — โครงจากซอร์สท่อจริง) */
   if (mode === 'good' && /[?&]quotation=/.test(req.url)) {
+    /* id ที่ขึ้นต้นด้วย bad = จำลอง **บั๊กของจริง 9 ก.ย. 2569**: ท่อหยิบบรรทัดสินค้ามาเป็นหัวใบ
+       ⇒ number กลายเป็นจำนวนสินค้า · fields เป็นช่องของบรรทัด · lines เป็น null
+       จอต้องจับได้แล้วหยุดแสดงตัวเลข ไม่ใช่โชว์เงินผิดเงียบ ๆ */
+    if (/[?&]quotation=bad/.test(req.url)) {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      return res.end(JSON.stringify({
+        live: true, number: '3',
+        'เงินที่ ZORT เก็บไว้': { pricepernumber: 10, totalprice: 30 },
+        lines: null,
+        fields: ['bundleCode', 'id', 'name', 'number', 'pricepernumber', 'productid', 'sku', 'unittext'],
+      }))
+    }
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
       live: true, number: 'QT-6809-001',

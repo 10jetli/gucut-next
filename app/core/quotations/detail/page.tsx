@@ -43,17 +43,37 @@ function Inner() {
   useEffect(() => { load() }, [load])
 
   const money = d?.['เงินที่ ZORT เก็บไว้']
+  /* 🔴 ด่านกัน "ท่อส่งของผิดชั้น" (เจอของจริง 9 ก.ย. 2569)
+     ท่อหยิบ **บรรทัดสินค้า** มาเป็นหัวใบ ⇒ number = จำนวนสินค้า (3/2/1) ไม่ใช่เลขที่ใบ
+     และกล่องเงินกลายเป็น pricepernumber ของบรรทัดแรก ซึ่ง**หน้าตาเหมือนยอดใบทุกประการ**
+     ⇒ จอต้องจับได้เองแล้วหยุดแสดงตัวเลข ดีกว่าโชว์เงินผิดเงียบ ๆ รอท่อแก้
+     เกณฑ์: ช่องที่มีได้เฉพาะในบรรทัดสินค้า (sku/productid/pricepernumber) โผล่ในรายชื่อช่องหัวใบ
+     🗑️ ท่อแก้แล้วให้ลบด่านนี้ทิ้ง — ตรวจด้วยการเปิดใบจริงแล้วดูว่าเลขที่ใบตรงกับที่กดเข้ามาไหม */
+  const LINE_ONLY = ['sku', 'productid', 'pricepernumber', 'bundleitemid']
+  const wrongLevel = (d?.fields ?? []).some((f) => LINE_ONLY.includes(String(f).toLowerCase()))
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
       <p className="text-[12px] mb-2"><Link href="/core/quotations" className="text-blue-600 hover:underline">‹ ใบเสนอราคา</Link></p>
-      <PageHead title={`ใบเสนอราคา ${d?.number || ''}`}
+      {/* ⚠️ ห้ามเอา number ขึ้นหัวเรื่องตอนท่อส่งผิดชั้น — มันคือจำนวนสินค้า ไม่ใช่เลขที่ใบ */}
+      <PageHead title={`ใบเสนอราคา ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน</span>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
 
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดึงใบเสนอราคาไม่ได้'}>{error}</ErrorBox>}
       {loading && <LoadingState />}
 
-      {!loading && !error && d && (
+      {!loading && !error && d && wrongLevel && (
+        <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mb-4 text-[12.5px] text-red-800">
+          <b>ท่อส่งข้อมูลผิดชั้น — ตัวเลขในใบนี้เชื่อไม่ได้</b>
+          <p className="mt-1 text-[11.5px] text-red-700">
+            สิ่งที่ได้กลับมาเป็น<b>บรรทัดสินค้าบรรทัดเดียว</b> ไม่ใช่หัวใบ (เห็นจากช่อง sku · productid ·
+            pricepernumber ที่ติดมากับหัวใบ) ⇒ เลขที่ใบด้านบนคือ<b>จำนวนสินค้าในบรรทัด</b> ไม่ใช่เลขที่ใบ
+            และช่องเงินคือราคาต่อหน่วย ไม่ใช่ยอดของใบ · แจ้งฝั่งท่อแล้ว 9 ก.ย. 2569 — ระหว่างนี้ให้ดูใบจริงที่ ZORT
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && d && !wrongLevel && (
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
             <p className="text-[13px] font-semibold text-gray-800 mb-2">ช่องเงินที่ ZORT เก็บไว้ (ทุกช่องที่มีค่า)</p>

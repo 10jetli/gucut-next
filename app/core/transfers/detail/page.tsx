@@ -37,17 +37,35 @@ function Inner() {
   }, [id])
   useEffect(() => { load() }, [load])
 
+  /* 🔴 ด่านกัน "ท่อส่งของผิดชั้น" (เจอของจริง 9 ก.ย. 2569 — คลาสเดียวกับใบเสนอราคา)
+     ท่อหยิบบรรทัดสินค้ามาเป็นหัวใบ ⇒ number = จำนวนสินค้า (37/148/11) ไม่ใช่เลขที่ใบ
+     ⇒ จอจับได้เองแล้วหยุดแสดง ดีกว่าโชว์เลขผิดเงียบ ๆ
+     🗑️ ท่อแก้แล้วให้ลบด่านนี้ทิ้ง — ตรวจด้วยการเปิดใบจริงแล้วดูว่าเลขที่ใบตรงกับที่กดเข้ามาไหม */
+  const LINE_ONLY = ['sku', 'productid', 'pricepernumber', 'bundleitemid']
+  const wrongLevel = (d?.fields ?? []).some((f) => LINE_ONLY.includes(String(f).toLowerCase()))
+
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
       <p className="text-[12px] mb-2"><Link href="/core/transfers" className="text-blue-600 hover:underline">‹ รายการโอนสินค้า</Link></p>
-      <PageHead title={`ใบโอน ${d?.number || ''}`}
+      <PageHead title={`ใบโอน ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
 
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดึงใบโอนไม่ได้'}>{error}</ErrorBox>}
       {loading && <LoadingState />}
 
-      {!loading && !error && d && (
+      {!loading && !error && d && wrongLevel && (
+        <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mb-4 text-[12.5px] text-red-800">
+          <b>ท่อส่งข้อมูลผิดชั้น — ค่าในใบนี้เชื่อไม่ได้</b>
+          <p className="mt-1 text-[11.5px] text-red-700">
+            สิ่งที่ได้กลับมาเป็น<b>บรรทัดสินค้าบรรทัดเดียว</b> ไม่ใช่หัวใบ (เห็นจากช่อง sku · productid
+            ที่ติดมากับหัวใบ) ⇒ เลขที่ใบด้านบนคือ<b>จำนวนสินค้าในบรรทัด</b> ไม่ใช่เลขที่ใบ ·
+            แจ้งฝั่งท่อแล้ว 9 ก.ย. 2569 — ระหว่างนี้ให้ดูใบจริงที่ ZORT
+          </p>
+        </div>
+      )}
+
+      {!loading && !error && d && !wrongLevel && (
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
             <div><p className="text-gray-400 text-[11px]">สถานะ</p><Pill tone={d.status === 'Success' ? 'green' : 'orange'}>{d.status || '—'}</Pill></div>
