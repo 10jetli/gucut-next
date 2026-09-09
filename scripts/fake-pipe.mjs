@@ -320,6 +320,25 @@ const srv = createServer(async (req, res) => {
       fields: ['fromwarehousecode', 'list', 'number', 'status', 'towarehousecode', 'trackingno', 'transferdate'],
     }))
   }
+  /* ยอดรายเดือน (จอ /core/coverage "กระจกครบไหม") — โครงจากซอร์สท่อจริง ?monthly=
+     ⚠️ ต้องทดสอบ **สองทิศ**: mode good = ไม่มีเดือนหาย · mode gap = หายกลางช่วง
+        ถ้าจอไม่เปลี่ยนหน้าตาระหว่างสองโหมดนี้ แปลว่าจอนั้นแยกแยะไม่ได้ = ยังไม่ได้ทดสอบ */
+  if ((mode === 'good' || mode === 'gap') && /[?&]monthly=/.test(req.url)) {
+    const months = []
+    for (let i = 11; i >= 0; i--) {
+      const dt = new Date(Date.UTC(2026, 8 - i, 1))
+      const ym = dt.toISOString().slice(0, 7)
+      if (mode === 'gap' && (ym === '2026-03' || ym === '2026-04')) continue // เดือนที่ SQL ไม่คืนแถว
+      months.push({ ym, orders: 120 + i, sales: 250000 + i * 1000 })
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, store: 'ทั้ง 2 ร้าน', from: '2025-10-01', to: '2026-09-09',
+      months: months.reverse(),
+      totalOrders: months.reduce((a, m) => a + m.orders, 0),
+      totalSales: months.reduce((a, m) => a + m.sales, 0),
+    }))
+  }
   /* ประวัติดันสต็อกขึ้นแพลตฟอร์ม (จอ /core/stock-push) — โครงจาก payload จริง 8 ก.ย. 2569 */
   if (mode === 'good' && /stockpushlog=|stockpushverify=/.test(req.url)) {
     const u = new URL(req.url, 'http://x')

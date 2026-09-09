@@ -263,6 +263,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/zort-claims', label: 'คำกล่าวอ้างยังจริงไหม' },   // เครื่องมือตรวจ ZORT — งาน AI
       { href: '/core/zort-archive', label: 'ของที่คัดจาก ZORT' },   // เครื่องมือตรวจ ZORT — งาน AI
       { href: '/settings/connections/health', label: 'ตรวจสุขภาพการเชื่อมต่อ' },   // ตรวจสุขภาพการเชื่อมต่อ — งาน AI
+      { href: '/core/coverage', label: 'กระจกครบไหม (รายเดือน)' },   // จับเดือนที่หายทั้งเดือน — งาน AI
       { href: '/core/backup', label: 'สำรองข้อมูล' },   // สำรอง/กู้คืนข้อมูล — งาน AI
     ],
   },
