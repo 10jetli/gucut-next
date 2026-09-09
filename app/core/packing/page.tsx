@@ -286,7 +286,14 @@ export default function PackingPage() {
                             {j.number}{opening === j.number && ' …'}
                           </button>
                         )}
-                        {openErr?.number === j.number && (
+                        {/* 🔴 **หน้าพังทั้งหน้าเพราะบรรทัดนี้** (เจอด้วยโหมด partialgood 9 ก.ย. 2569)
+                            เดิมเขียน `openErr?.number === j.number` — พอท่อส่งแถวที่ไม่มี number มา
+                            จะกลายเป็น `undefined === undefined` = **true** ⇒ เข้าไปอ่าน `openErr.msg`
+                            ของ null ⇒ TypeError ⇒ **จอขาวทั้งหน้า** ไม่ใช่แค่ช่องนั้นว่าง
+                            ⚠️ optional chaining ฝั่งซ้ายไม่ได้กันฝั่งขวา และ tsc มองไม่เห็น
+                               เพราะชนิดข้อมูลบอกว่า j.number เป็น string เสมอ
+                            ⇒ ต้องเช็คว่ามี openErr จริงก่อน แล้วค่อยเทียบ */}
+                        {openErr && openErr.number === j.number && (
                           <span className="ml-2 text-[11px] text-red-700">{openErr.msg}</span>
                         )}
                       </td>

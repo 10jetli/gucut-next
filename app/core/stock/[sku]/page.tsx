@@ -677,8 +677,11 @@ export default function ProductDetailPage() {
                           <span className="text-gray-700">{m.ref || '-'}</span>
                         )}
                         {m.party ? <span className="text-gray-400"> · {m.party}</span> : null}
-                        {refErr?.ref === m.ref && (
-                          <span className="ml-2 text-[11px] text-red-700">{refErr?.msg}</span>
+                        {/* คลาสเดียวกับที่ทำให้จอแพ็คสินค้าจอขาว (9 ก.ย. 2569):
+                            `refErr?.ref === m.ref` กลายเป็น undefined === undefined = true
+                            เมื่อแถวไม่มี ref ⇒ ต้องเช็คว่ามี refErr จริงก่อนเสมอ */}
+                        {refErr && refErr.ref === m.ref && (
+                          <span className="ml-2 text-[11px] text-red-700">{refErr.msg}</span>
                         )}
                       </td>
                       <td className={`${TDR} ${Number(m.qty) < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
