@@ -313,14 +313,37 @@ const srv = createServer(async (req, res) => {
         fields: ['bundleCode', 'id', 'name', 'number', 'pricepernumber', 'productid', 'sku', 'unittext'],
       }))
     }
+    /* id ที่ขึ้นต้นด้วย old = **ท่อรุ่นก่อน 9 ก.ย. 2569** ที่ยังไม่ตั้งชื่อช่องเงิน
+       ต้องมีไว้ทดสอบ เพราะ deploy สองฝั่งเหลื่อมกันเสมอ — จอเจอรุ่นเก่าได้จริง
+       จอต้องไม่เดาว่าช่องไหนคือยอดใบ แต่ก็ต้องไม่พังหรือขึ้นว่างเปล่า */
+    if (/[?&]quotation=old/.test(req.url)) {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      return res.end(JSON.stringify({
+        live: true, number: 'QT-6809-OLD',
+        'เงินที่ ZORT เก็บไว้': { amount: 12500, vatamount: 817.76, totalprice: 12500 },
+        lines: [{ 'ทุกช่องในบรรทัด': { sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', number: 1, pricepernumber: 12500 } }],
+        fields: ['amount', 'customerid', 'list', 'number', 'status', 'totalprice', 'vatamount'],
+      }))
+    }
+    /* ท่อรุ่นใหม่ (6ab53c6 ขึ้นไป) — มีช่องที่ตั้งชื่อแล้ว + บรรทัดที่แยกช่องแล้ว
+       ⚠️ ยอด ฿0 ในบรรทัดที่สองตั้งใจใส่ไว้: จอต้องเขียน ฿0 ไม่ใช่ขีด (0 เป็นค่าที่ถูกต้อง) */
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
       live: true, number: 'QT-6809-001',
-      'เงินที่ ZORT เก็บไว้': { amount: 12500, vatamount: 817.76, totalprice: 12500 },
+      status: 'Pending', date: '2026-09-08', customer: 'สมชาย ใจดี',
+      amount: 12500, vatAmount: 817.76, discountAmount: 0, shippingAmount: 100,
+      'เงินที่ ZORT เก็บไว้': { amount: 12500, vatamount: 817.76, totalprice: 12500, shippingamount: 100 },
       lines: [
-        { 'ทุกช่องในบรรทัด': { sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', number: 1, pricepernumber: 12500, totalprice: 12500 } },
+        {
+          sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', qty: 1, unit: 'ชิ้น', pricePerUnit: 12500, total: 12500,
+          'ทุกช่องในบรรทัด': { sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', number: 1, pricepernumber: 12500, totalprice: 12500 },
+        },
+        {
+          sku: 'NW-FREE', name: 'ของแถม', qty: 2, unit: 'ชิ้น', pricePerUnit: 0, total: 0,
+          'ทุกช่องในบรรทัด': { sku: 'NW-FREE', name: 'ของแถม', number: 2, pricepernumber: 0, totalprice: 0 },
+        },
       ],
-      fields: ['amount', 'customerid', 'list', 'number', 'status', 'totalprice', 'vatamount'],
+      fields: ['amount', 'customerid', 'customername', 'list', 'number', 'quotationdate', 'status', 'totalprice', 'vatamount'],
     }))
   }
   if (mode === 'good' && /[?&]transfer=/.test(req.url)) {
