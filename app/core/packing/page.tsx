@@ -17,6 +17,7 @@
 //    (อีกสองกองคือ "รอจ่ายอยู่" กับ "ใบผี" ซึ่งเป็นงานคนละเรื่อง อยู่ในจอรายการขาย)
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
@@ -62,11 +63,39 @@ function ageTone(d: number | null): 'green' | 'orange' | 'red' | 'gray' {
 }
 
 export default function PackingPage() {
+  const router = useRouter()
   const [d, setD] = useState<Resp | null>(null)
   const [q, setQ] = useState('')
   const [tab, setTab] = useState('all')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  const [opening, setOpening] = useState('')
+  const [openErr, setOpenErr] = useState<{ number: string; msg: string } | null>(null)
+
+  /** เปิดใบขายจากเลขที่ใบ — ต้องหา id จริงก่อน เพราะ id = `<ร้าน>/<เลขที่ใบ>`
+   *  ⚠️ สามสถานะ ห้ามยุบ: หาไม่เจอ · เจอหลายใบ (คนละร้านเลขซ้ำกันได้) · ท่อล่ม
+   *     ทั้งสามต้องบอกตรง ๆ ตรงแถวนั้น ห้ามพาไปหน้าที่เขียนว่าไม่พบแล้วให้คนเดาเอง */
+  const openOrder = useCallback(async (number: string) => {
+    setOpening(number); setOpenErr(null)
+    try {
+      const res = await fetch(`/api/web/core?list=orders&q=${encodeURIComponent(number)}&limit=5`)
+      const j = await res.json().catch(() => null)
+      const rows: Array<{ id?: string; number?: string }> = Array.isArray(j?.rows) ? j.rows : []
+      const hit = rows.filter((r) => r.number === number)
+      if (hit.length === 1 && hit[0].id) {
+        router.push(`/core/sales/detail?id=${encodeURIComponent(hit[0].id)}`)
+        return
+      }
+      setOpenErr({
+        number,
+        msg: !res.ok ? `เปิดไม่ได้ (ท่อตอบ ${res.status})`
+          : hit.length === 0 ? 'ไม่พบใบนี้ในคลังเงา — อาจยังไม่ถึงรอบซิงก์'
+          : 'เจอหลายใบเลขเดียวกัน เปิดให้อัตโนมัติไม่ได้ — ค้นในจอรายการขาย',
+      })
+    } catch (e) {
+      setOpenErr({ number, msg: `เปิดไม่ได้: ${e instanceof Error ? e.message : String(e)}` })
+    } finally { setOpening('') }
+  }, [router])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -253,8 +282,21 @@ export default function PackingPage() {
                     <tr key={j.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={TD}>
-                        <Link href={`/core/sales/detail?id=${encodeURIComponent(j.number)}`}
-                          className="text-blue-600 hover:underline font-medium">{j.number}</Link>
+                        {/* 🔴 บั๊กที่แก้ 9 ก.ย. 2569: เดิมเป็น Link ส่ง `j.number` ไปเป็น id
+                            แต่ `getOrder` ค้นด้วยคอลัมน์ `id` ซึ่งของจริงคือ `z1/<number>`
+                            ⇒ กดแล้วได้ "ไม่พบใบนี้ในคลังเงา" **ทุกใบ** (พิสูจน์ด้วยการยิงสามแบบ)
+                            ⚠️ เดา prefix เองไม่ได้ — `pending=1` ไม่ส่ง `source` มาด้วย
+                               ใบของร้านที่สองจะพังอีกแบบโดยไม่มีอะไรฟ้อง
+                            ⇒ หา id จริงตอนกด (ยิงครั้งเดียวต่อการกด ไม่ใช่ต่อแถว)
+                            🗑️ ถ้าท่อเพิ่ม `id` ใน pending=1 เมื่อไหร่ ให้ตัดตัวหานี้ทิ้งแล้วกลับไปเป็น Link */}
+                        <button type="button" onClick={() => openOrder(j.number)}
+                          disabled={opening === j.number}
+                          className="text-blue-600 hover:underline font-medium disabled:opacity-50">
+                          {j.number}{opening === j.number && ' …'}
+                        </button>
+                        {openErr?.number === j.number && (
+                          <span className="ml-2 text-[11px] text-red-700">{openErr.msg}</span>
+                        )}
                       </td>
                       <td className={TD}><ChannelTag name={j.channel} /></td>
                       <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(j.day)}</td>

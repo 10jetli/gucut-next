@@ -320,6 +320,18 @@ const srv = createServer(async (req, res) => {
       fields: ['fromwarehousecode', 'list', 'number', 'status', 'towarehousecode', 'trackingno', 'transferdate'],
     }))
   }
+  /* ค้นใบขายด้วยเลขที่ใบ (จอแพ็คสินค้าใช้หา id จริงตอนกด — id = `<ร้าน>/<เลขที่ใบ>`)
+     ⚠️ ต้องแยกสองเคสให้ทดสอบได้: q=SO-001 → เจอหนึ่งใบ · q อื่น → ไม่เจอ
+        เพราะทางที่จอต้องทำต่างกันคนละทิศ (เด้งไป detail vs เขียนบอกตรงแถว) */
+  if (mode === 'good' && /list=orders/.test(req.url) && /[?&]q=/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const q = u.searchParams.get('q') || ''
+    const rows = q === 'SO-001'
+      ? [{ id: 'z1/SO-001', number: 'SO-001', channel: 'Shopee', status: 'Pending', amount: 1000 }]
+      : []
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ ok: true, rows, total: rows.length, limit: 5, offset: 0 }))
+  }
   /* สรุปลูกค้า (จอ /core/customer-report) — โครงจากซอร์สท่อจริง ?bycustomer=
      ⚠️ ต้องมีทั้ง **ลูกค้ามีชื่อ** และกอง **unnamed** ในคำตอบเดียว เพราะจอต้องทำสองอย่างต่างกัน:
         ชื่อจริง = กดเข้าหน้ารายคนได้ · ไม่ระบุชื่อ = **ห้ามกด** (มันคือหลายคนรวมกัน ไม่ใช่ลูกค้าหนึ่งราย)
@@ -430,7 +442,13 @@ const srv = createServer(async (req, res) => {
       months: [{ ym: '2026-09', orders: 2, sales: 2000 }],
       customers: [{ name: 'ลูกค้าทดสอบ', orders: 2, sales: 2000, lastDay: '2026-09-06' }],
       warehouses: [{ code: 'NEW', name: 'โกดังหลัก' }],
-      'ต้องส่งของ': [{ number: 'SO-001', channel: 'Shopee', day: '2026-09-05', amount: 1000 }],
+      /* ⚠️ ใบที่สองตั้งใจให้ **ค้นไม่เจอ** ใน list=orders — จอแพ็คต้องหา id เองตอนกด
+         (ท่อจริงไม่ส่ง id มากับ pending) ⇒ ต้องมีใบที่หาไม่เจอไว้ทดสอบทิศตรงข้าม
+         ไม่งั้นจะเห็นแต่ทางที่สำเร็จแล้วนึกว่าจอจัดการครบ */
+      'ต้องส่งของ': [
+        { number: 'SO-001', channel: 'Shopee', day: '2026-09-05', amount: 1000 },
+        { number: 'SO-ไม่มีในกระจก', channel: 'TIKTOK', day: '2026-09-08', amount: 2700 },
+      ],
       byPay: [], methods: {}, moves: [], items: [],
       /* ── ของฝั่ง /web/* (คนละ endpoint แต่ท่อปลอมตอบก้อนเดียว) ── */
       /* ⚠️ ต้องใส่ให้ครบตามชนิดข้อมูลจริงของจอ ไม่งั้นจอจะพัง (ตัวจับพลาดของหน้าเว็บรับไว้ได้
