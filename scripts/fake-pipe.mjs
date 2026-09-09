@@ -405,6 +405,33 @@ const srv = createServer(async (req, res) => {
       historyFrom: '2026-06-01', monthly: [],
     }))
   }
+  /* ใบคืนสินค้า: รายการ + รายใบ (จอ /core/return-orders → /detail)
+     ⚠️ แถวที่สองตั้งใจ **ไม่มี id** — ท่อรุ่นก่อน 8d22291 ไม่ส่ง id มา
+        จอต้องแสดงแถวนั้นเป็นข้อความธรรมดา ไม่ใช่ลิงก์ที่กดแล้วเปิดไม่ได้
+     ⚠️ ใบรายใบ **ไม่มีช่องเงินที่ตั้งชื่อแล้ว** ตามสัญญาท่อจริง — จอต้องไม่เดายอดคืนเอง */
+  if (mode === 'good' && /list=returnorders/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      rows: [
+        { id: 305814904, number: 'CN-001', reference: 'SO-001', customer: 'สมชาย ใจดี', amount: 57, status: 'Success', warehouse: 'NEW', date: '2026-09-09', paid: 'Paid' },
+        { number: 'CN-ไม่มี-id', reference: 'SO-002', customer: 'อ*****ก', amount: 120, status: 'Pending', warehouse: '', date: '2026-09-08', paid: '' },
+      ],
+      total: 2,
+    }))
+  }
+  if (mode === 'good' && /[?&]returnorder=/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      live: true, number: 'CN-001', status: 'Success', date: '2026-09-09',
+      customer: 'สมชาย ใจดี', reference: 'SO-001',
+      'เงินที่ ZORT เก็บไว้': { amount: 57, amount_pretax: 53.27, vatamount: 3.73, shippingamount_pretax: 9.35 },
+      lines: [
+        { sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', qty: 1, unit: 'ชิ้น', 'ทุกช่องในบรรทัด': { sku: 'NW-01', number: 1, name: 'สินค้าทดสอบหนึ่ง' } },
+      ],
+      fields: ['amount', 'customername', 'list', 'number', 'reference', 'returndate', 'status', 'vatamount'],
+    }))
+  }
   /* ขาที่สองของจอ /core/coverage — นับใบจาก ZORT ตรง ๆ ทีละเดือน (?zortmonthly=1&ym=YYYY-MM)
      ⚠️ ต้องมีครบ **สามผลลัพธ์** เพราะจอต้องเขียนคนละคำ:
         ZORT มีใบ (แต่กระจกว่าง = เรายังไม่กวาด) · ZORT ไม่มีใบจริง (ปิดคดี) · ถาม ZORT ไม่ได้
