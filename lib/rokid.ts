@@ -16,7 +16,29 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const cleanEnv = (v?: string) => (v ?? '').replace(/[\r\n\t]/g, '').trim().replace(/^["']+|["']+$/g, '').trim()
 
-export const DEFAULT_MODEL = 'claude-opus-5'
+// ⏱️ **เพดานแข็งของแว่น: 5000ms** — วัดจริง 9 ก.ย. 2569 บนแว่นของเจ้าของร้าน
+//    แว่นขึ้น "request timeout after 5000ms" แล้วทิ้งคำขอ ไม่ว่าคำตอบจะดีแค่ไหน
+//    วัดเวลาสะพานจากเครื่องในไทย (คำถามเดียวกัน "เลื่อยรุ่น 5800 ราคาเท่าไหร่"):
+//      claude-opus-5   → 9.79 / 9.99 / 8.34 วิ   ❌ ไม่ทันทุกครั้ง
+//      claude-sonnet-5 → 4.74 / 5.07 วิ          ⚠️ คาบเส้น เชื่อถือไม่ได้
+//    ⇒ ค่าเริ่มต้นจึงเป็น **Haiku 4.5** เพื่อให้ "ใช้งานได้จริง" มาก่อน "ฉลาดที่สุด"
+//    อยากได้คำตอบเก่งกว่าให้ตั้ง env `ROKID_MODEL=claude-opus-5` — **แต่จะเกิน 5 วิ**
+//    จนกว่าจะขยายเพดานฝั่งแว่นได้ (ยังหาวิธีตั้ง timeout ใน AIUI ไม่เจอ ณ 9 ก.ย.)
+export const DEFAULT_MODEL = 'claude-haiku-4-5'
+
+/**
+ * โมเดลที่รองรับ adaptive thinking — **ส่ง `thinking` ไปให้ตัวที่ไม่รองรับ = ตอบ 400 ทันที**
+ * เจอจริง 9 ก.ย. 2569: ยิง Haiku 4.5 แล้วได้ `adaptive thinking is not supported on this model`
+ * ⚠️ เพิ่มโมเดลใหม่เมื่อไหร่ต้องมาเติมที่นี่ ไม่งั้นมันจะพังแบบ 400 ทันทีทุกคำขอ
+ *    (เทียบด้วย startsWith เพราะรหัสจริงมีวันที่ต่อท้ายได้ เช่น claude-haiku-4-5-20251001)
+ */
+const ADAPTIVE_THINKING_PREFIXES = [
+  'claude-opus-5', 'claude-opus-4-8', 'claude-opus-4-7', 'claude-opus-4-6',
+  'claude-sonnet-5', 'claude-sonnet-4-6', 'claude-fable-5', 'claude-mythos-5',
+]
+function supportsAdaptiveThinking(model: string) {
+  return ADAPTIVE_THINKING_PREFIXES.some(p => model.startsWith(p))
+}
 
 /** ระดับความพยายามที่ Claude ใช้คิด — แว่นต้องการคำตอบไว จึงตั้ง low เป็นค่าเริ่มต้น */
 type Effort = 'low' | 'medium' | 'high' | 'xhigh' | 'max'
@@ -190,12 +212,23 @@ function client() {
 
 function requestParams(body: BridgeRequest) {
   const { system, messages } = parseRequest(body)
-  return {
-    model: cleanEnv(body.model) || bridgeModel(),
-    max_tokens: Math.min(Math.max(body.max_tokens ?? 1024, 256), 8192),
+  const model = cleanEnv(body.model) || bridgeModel()
+
+  const base = {
+    model,
+    // จอแว่นเล็กและอ่านออกเสียง — คำตอบยาวไม่มีประโยชน์ และยิ่งยาวยิ่งช้า
+    // 512 พอกับ "2-3 ประโยค" ที่ system prompt สั่งไว้ · ผู้เรียกทับได้ถ้าต้องการ
+    max_tokens: Math.min(Math.max(body.max_tokens ?? 512, 256), 8192),
     system,
     messages,
-    // แว่นแสดงผลจอเล็กและต้องการคำตอบไว — คิดแบบ adaptive แต่ใช้ effort ต่ำ
+  }
+
+  // ⚠️ ส่ง thinking ไปให้โมเดลที่ไม่รองรับ = 400 ทั้งคำขอ (ดู ADAPTIVE_THINKING_PREFIXES)
+  //    จึงติดให้เฉพาะตัวที่รองรับ — ตัวที่ไม่รองรับก็เร็วอยู่แล้วโดยไม่ต้องคิดแบบ adaptive
+  if (!supportsAdaptiveThinking(model)) return base
+
+  return {
+    ...base,
     thinking: { type: 'adaptive' as const },
     output_config: { effort: bridgeEffort() },
   }
