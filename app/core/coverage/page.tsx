@@ -74,7 +74,14 @@ function lowMonths(rows: Array<{ ym: string; orders: number; missing: boolean }>
 
 /** ผลถาม ZORT รายเดือน — **สามสถานะ ห้ามยุบ**
  *  count = ตัวเลขจริง · error = ถามไม่ได้ (ห้ามแปลว่า 0) · ยังไม่มีคีย์ = ยังไม่เคยถาม */
-interface ZortMonth { count?: number; error?: string; stores?: number }
+interface ZortMonth {
+  count?: number; error?: string; stores?: number
+  /** ได้ผลมาทางไหน — `all` = ท่อบวกให้ · `perStore` = จอถอยไปถามทีละร้านเอง
+   *  ⚠️ ต้องเก็บและ **แสดงบนจอ** เพราะทางถอยให้เลขถูกเหมือนกัน แค่ช้ากว่า
+   *     ⇒ ถ้าจอถอยตลอดกาลจะไม่มีอะไรฟ้องเลย (ตระกูล nets-expire-silently)
+   *     ฝั่งท่อชี้ประเด็นนี้เอง 9 ก.ย. 2569 ตอนเขียนกำกับว่าห้ามถอด `stores` */
+  via?: 'all' | 'perStore'
+}
 
 /** แปลผลเทียบ "กระจกเรา" กับ "ZORT" — คำตัดสินที่จอนี้ตั้งใจให้ได้มาตั้งแต่แรก
  *  ⚠️ ZORT **ยังไม่หักใบยกเลิก** ส่วนกระจกเราหักแล้ว ⇒ เลขสองฝั่งไม่ต้องเท่ากันเป๊ะ
@@ -125,7 +132,7 @@ export default function CoveragePage() {
         const { res, j } = await ask(store)
         if (!res.ok || !j || j.error || j.skip) throw new Error(String(j?.error || j?.skip || `ท่อตอบ ${res.status}`))
         if (typeof j.zortCount !== 'number') throw new Error('ท่อตอบมาไม่มีช่อง zortCount')
-        setZort((s) => ({ ...s, [ym]: { count: j.zortCount, stores: 1 } }))
+        setZort((s) => ({ ...s, [ym]: { count: j.zortCount, stores: 1, via: 'all' } }))
         return
       }
 
@@ -135,7 +142,7 @@ export default function CoveragePage() {
             ไม่งั้นได้เลขร้านเดียวมาเทียบกับกระจกสองร้าน ซึ่งคือบั๊กเดิมที่เพิ่งแก้ไป */
       const knowsAll = all.res.ok && all.j && all.j.store === 'all' && Array.isArray(all.j.stores)
       if (knowsAll && typeof all.j.zortCount === 'number') {
-        setZort((s) => ({ ...s, [ym]: { count: all.j.zortCount, stores: all.j.stores.length } }))
+        setZort((s) => ({ ...s, [ym]: { count: all.j.zortCount, stores: all.j.stores.length, via: 'all' } }))
         return
       }
       if (all.res.ok && all.j?.error && Array.isArray(all.j.failedParts)) {
@@ -156,7 +163,7 @@ export default function CoveragePage() {
         if (typeof j.zortCount !== 'number') throw new Error(`ร้าน ${st}: ท่อตอบมาไม่มีช่อง zortCount`)
         total += j.zortCount
       }
-      setZort((s) => ({ ...s, [ym]: { count: total, stores: stores.length } }))
+      setZort((s) => ({ ...s, [ym]: { count: total, stores: stores.length, via: 'perStore' } }))
     } catch (e) {
       setZort((s) => ({ ...s, [ym]: { error: String(e instanceof Error ? e.message : e) } }))
     } finally { setAsking('') }
@@ -293,6 +300,11 @@ export default function CoveragePage() {
                         <span className={verdict(r, z.count!).tone}>
                           {verdict(r, z.count!).text}
                           {(z.stores ?? 1) > 1 && <span className="text-gray-400"> (รวม {z.stores} ร้าน)</span>}
+                          {z.via === 'perStore' && (
+                            <span className="text-amber-700" title="ท่อไม่รู้จัก store=all ⇒ จอถามทีละร้านแล้วบวกเอง — เลขถูกแต่ช้ากว่า">
+                              {' '}· ทางถอย
+                            </span>
+                          )}
                         </span>
                       )}
                     </td>
