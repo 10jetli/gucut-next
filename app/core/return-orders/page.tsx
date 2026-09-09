@@ -38,6 +38,9 @@ import {
 import { coreJson } from '@/lib/api-shape'
 
 interface Row {
+  /** id ของ ZORT — ท่อเริ่มส่งมา 9 ก.ย. 2569 (8d22291) · ไม่มี = เปิดใบรายใบไม่ได้
+   *  ⚠️ เลขที่ใบ (`number`) ใช้แทนไม่ได้ เส้น ?returnorder= ค้นด้วย id เท่านั้น */
+  id?: string | number
   number?: string; reference?: string; customer?: string
   amount?: number; status?: string; warehouse?: string
   date?: string; paid?: string
@@ -192,7 +195,15 @@ export default function ReturnOrdersPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-600`} title={thaiDate(r.date)}>
                       {r.date ? relDay(r.date) : DASH}
                     </td>
-                    <td className={`${TD} font-medium text-gray-800`}>{r.number || DASH}</td>
+                    {/* เลขที่ใบกดเข้ารายละเอียดได้ตั้งแต่ 9 ก.ย. 2569 — ต้องมี id เท่านั้น
+                        ไม่มี id (ท่อรุ่นก่อน) = แสดงเป็นข้อความ **ห้ามส่ง number ไปแทน**
+                        เพราะจะได้หน้าที่เปิดไม่ได้ซึ่งดูเหมือนระบบพัง (บทเรียนจอแพ็คสินค้า) */}
+                    <td className={`${TD} font-medium text-gray-800`}>
+                      {r.id
+                        ? <Link href={`/core/return-orders/detail?id=${encodeURIComponent(String(r.id))}`}
+                            className="text-blue-600 hover:underline">{r.number || DASH}</Link>
+                        : (r.number || DASH)}
+                    </td>
                     <td className={`${TD} text-gray-600`}>{r.reference || DASH}</td>
                     <td className={TD}>
                       {/* ⚠️ แสดงตามที่ท่อส่งมาตรง ๆ — ชื่อที่ยังเป็นดาวคือ **มาร์เก็ตเพลสปิดมาเอง**

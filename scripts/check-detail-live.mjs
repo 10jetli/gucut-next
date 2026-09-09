@@ -59,6 +59,12 @@ const PAIRS = [
     identityNote: 'ชื่อที่คืนมาต้องตรงกับแถวที่กด',
   },
   {
+    name: 'ใบคืนสินค้า', list: 'list=returnorders&limit=1', param: 'returnorder', from: 'id',
+    screen: '/core/return-orders → /core/return-orders/detail?id=',
+    identity: (row, d) => d?.number === row.number,
+    identityNote: 'เลขที่ใบที่คืนมาต้องตรงกับแถวที่กด',
+  },
+  {
     name: 'ใบขาย', list: 'list=orders&limit=1', param: 'order', from: 'id',
     screen: '/core/sales · หน้าแรก · บริการส่งสินค้า → /core/sales/detail?id=',
     identity: (row, d) => d?.order?.id === row.id,
@@ -101,8 +107,8 @@ for (const p of PAIRS) {
   const row = (body?.['ต้องส่งของ'] ?? [])[0]
   if (!row) console.log('\n⚪ จอแพ็คสินค้า: ไม่มีใบค้างส่งให้ทดสอบ — ยังไม่รู้ว่าท่อเพิ่ม id หรือยัง')
   else if (row.id || row.source) {
-    console.log('\n🗑️ จอแพ็คสินค้า: ท่อส่ง ' + (row.id ? 'id' : 'source') + ' มาแล้ว'
-      + ' ⇒ ลบตัวหา id ตอนกดใน app/core/packing/page.tsx ได้ กลับไปเป็น Link ตรง ๆ')
+    console.log('\n✅ จอแพ็คสินค้า: ท่อส่ง ' + (row.id ? 'id' : 'source') + ' มาแล้ว'
+      + ' ⇒ จอใช้ลิงก์ตรงอยู่ (ตัวหา id เหลือไว้เป็นทางถอยเผื่อ rollback ท่อ)')
   } else {
     console.log('\n⏳ จอแพ็คสินค้า: pending=1 ยังไม่ส่ง id/source ⇒ ตัวหา id ตอนกดยังจำเป็นอยู่')
   }

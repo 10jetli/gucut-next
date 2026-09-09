@@ -28,6 +28,8 @@ import {
 } from '@/components/zort'
 
 interface Job {
+  /** id จริงของใบ (`z1/<number>`) — ท่อเริ่มส่งมา 9 ก.ย. 2569 · ท่อรุ่นก่อนไม่มี ⇒ ต้องเป็น optional */
+  id?: string
   number: string; channel: string; day: string; amount: number
   status?: string; pay?: string; channelLastOrder?: string
 }
@@ -269,18 +271,21 @@ export default function PackingPage() {
                     <tr key={j.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={TD}>
-                        {/* 🔴 บั๊กที่แก้ 9 ก.ย. 2569: เดิมเป็น Link ส่ง `j.number` ไปเป็น id
-                            แต่ `getOrder` ค้นด้วยคอลัมน์ `id` ซึ่งของจริงคือ `z1/<number>`
-                            ⇒ กดแล้วได้ "ไม่พบใบนี้ในคลังเงา" **ทุกใบ** (พิสูจน์ด้วยการยิงสามแบบ)
-                            ⚠️ เดา prefix เองไม่ได้ — `pending=1` ไม่ส่ง `source` มาด้วย
-                               ใบของร้านที่สองจะพังอีกแบบโดยไม่มีอะไรฟ้อง
-                            ⇒ หา id จริงตอนกด (ยิงครั้งเดียวต่อการกด ไม่ใช่ต่อแถว)
-                            🗑️ ถ้าท่อเพิ่ม `id` ใน pending=1 เมื่อไหร่ ให้ตัดตัวหานี้ทิ้งแล้วกลับไปเป็น Link */}
-                        <button type="button" onClick={() => openOrder(j.number)}
-                          disabled={opening === j.number}
-                          className="text-blue-600 hover:underline font-medium disabled:opacity-50">
-                          {j.number}{opening === j.number && ' …'}
-                        </button>
+                        {/* ท่อส่ง `id` มาแล้วตั้งแต่ 9 ก.ย. 2569 (2d6bfea) ⇒ ลิงก์ตรง ๆ ได้ เร็วกว่าและไม่ต้องยิงเพิ่ม
+                            ⚠️ **ทางถอยยังอยู่โดยตั้งใจ** — deploy สองฝั่งเหลื่อมกันเสมอ และ rollback ก็เกิดได้
+                               ท่อรุ่นก่อนส่งแต่ `number` ซึ่งเอาไปเปิดตรง ๆ ได้ "ไม่พบใบนี้" **ทุกใบ**
+                               (id จริงคือ `z1/<number>` และเดา prefix เองไม่ได้เพราะไม่มี `source`)
+                            🗑️ ตัดทางถอยได้เมื่อมั่นใจว่าไม่มีการ rollback ท่อแล้ว */}
+                        {j.id ? (
+                          <Link href={`/core/sales/detail?id=${encodeURIComponent(j.id)}`}
+                            className="text-blue-600 hover:underline font-medium">{j.number}</Link>
+                        ) : (
+                          <button type="button" onClick={() => openOrder(j.number)}
+                            disabled={opening === j.number}
+                            className="text-blue-600 hover:underline font-medium disabled:opacity-50">
+                            {j.number}{opening === j.number && ' …'}
+                          </button>
+                        )}
                         {openErr?.number === j.number && (
                           <span className="ml-2 text-[11px] text-red-700">{openErr.msg}</span>
                         )}
