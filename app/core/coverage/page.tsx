@@ -188,7 +188,14 @@ export default function CoveragePage() {
       if (j === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
       if (typeof j.skip === 'string') throw new Error(j.skip)
       if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
+      /* 🔴 **ตอบ 200 แต่ก้อนข้างในว่าง = ยังไม่รู้ ไม่ใช่ "ทุกเดือนเรียบร้อย"**
+         เจอด้วยท่อปลอมโหมด partialgood (9 ก.ย. 2569): ท่อส่ง months:[] มาโดยไม่มี from/to
+         ⇒ จอขึ้นกล่องขาว "ทุกเดือนใน 0 เดือนที่ตรวจ มีใบอยู่ในกระจก" + "รวม 0 ใบ"
+         ซึ่งอ่านแล้วเข้าใจว่าตรวจแล้วไม่มีปัญหา ทั้งที่ยังไม่ได้ตรวจอะไรเลยสักเดือน
+         ⚠️ ต้องเช็คสามอย่าง ไม่ใช่อย่างเดียว: มี months · เป็นอาร์เรย์ที่มีของ · มีช่วงวันครบ */
       if (!Array.isArray(j.months)) throw new Error('ท่อตอบมาไม่ครบ — ไม่มีช่อง months (อย่าถือว่าไม่มีข้อมูล)')
+      if (!j.from || !j.to) throw new Error('ท่อตอบมาไม่ครบ — ไม่มีช่วงวันที่ตรวจ (from/to) ⇒ ยังไล่เดือนไม่ได้')
+      if (j.months.length === 0) throw new Error('ท่อตอบมา 0 เดือน — ยังสรุปไม่ได้ว่ากระจกครบหรือไม่ครบ')
       setD(j)
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }
   }, [store])
