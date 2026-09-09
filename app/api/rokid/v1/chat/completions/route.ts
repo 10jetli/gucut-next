@@ -29,8 +29,24 @@ function sseChunk(id: string, model: string, created: number, delta: Record<stri
 }
 
 export async function POST(req: NextRequest) {
+  const deniedAt = Date.now()
   const denied = checkBridgeKey(req.headers)
   if (denied) {
+    /* 🔴 **ต้องบันทึกใบที่ถูกปฏิเสธด้วย** — ถ้าไม่บันทึก "กุญแจผิด" กับ
+       "คำขอไม่เคยมาถึงเลย" จะหน้าตาเหมือนกันเป๊ะในบันทึก (ว่างทั้งคู่)
+       แล้วเราจะไปไล่หาสาเหตุผิดที่ · เจอช่องโหว่นี้ของตัวเองเมื่อ 9 ก.ย. 2569
+       ตอนที่เจ้าของร้านพูดใส่แว่นแล้วบันทึกว่างเปล่า
+       ⚠️ **ห้ามบันทึกค่ากุญแจที่ส่งมา** เก็บแค่ "มีคนยิงมาแล้วโดนปฏิเสธ" + เหตุผล */
+    await logTurn({
+      at: new Date().toISOString(),
+      question: '',
+      answer: '',
+      model: '—',
+      ms: Date.now() - deniedAt,
+      ok: false,
+      error: `ถูกปฏิเสธที่ด่านกุญแจ: ${denied}`,
+      stream: false,
+    })
     return NextResponse.json({ error: { message: denied, type: 'authentication_error' } }, { status: 401 })
   }
 
@@ -38,6 +54,17 @@ export async function POST(req: NextRequest) {
   try {
     body = (await req.json()) as BridgeRequest
   } catch {
+    // อ่าน JSON ไม่ได้ก็ต้องบันทึก — ไม่งั้นคำขอที่รูปแบบเพี้ยนจะหายเงียบเหมือนกัน
+    await logTurn({
+      at: new Date().toISOString(),
+      question: '',
+      answer: '',
+      model: '—',
+      ms: Date.now() - deniedAt,
+      ok: false,
+      error: 'อ่าน JSON ของคำขอไม่ได้',
+      stream: false,
+    })
     return NextResponse.json({ error: { message: 'อ่าน JSON ของคำขอไม่ได้', type: 'invalid_request_error' } }, { status: 400 })
   }
 
