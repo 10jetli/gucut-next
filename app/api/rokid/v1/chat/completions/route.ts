@@ -68,6 +68,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: { message: 'อ่าน JSON ของคำขอไม่ได้', type: 'invalid_request_error' } }, { status: 400 })
   }
 
+  /* 🔔 **สัญญาณชีพจากแว่น** — ฝั่งจอเสนอ 9 ก.ย. 2569 และเป็นตัวที่คุ้มที่สุดของทั้งวัน
+     ตัว agent ยิงอันนี้ **ทันทีที่โค้ดถูกโหลดขึ้นเครื่อง ก่อนรอคำพูดใด ๆ**
+     ⇒ เห็นในบันทึก = **โค้ดถึงเครื่องแล้วแน่นอน** · ไม่เห็น = **ไม่เคยถึง**
+     ⇒ แยก "โหลดไม่ถึง" ออกจาก "ถึงแล้วแต่ไม่ทำงาน" ได้เด็ดขาด
+        ซึ่งตลอด 2 วันที่ผ่านมาเราแยกไม่ออกเลย และนั่นคือเหตุผลที่ไล่ผิดทางมาตลอด
+     ⚠️ **ห้ามเรียก Claude** — ping ต้องไม่เสียเครดิตและต้องตอบเร็ว
+        ไม่งั้นมันจะกลายเป็นภาระที่ทำให้คนอยากถอดออก แล้วตาข่ายก็หายไป
+     ⚠️ ส่ง build มาด้วยเสมอ ⇒ รู้ทันทีว่าเครื่องรันรุ่นไหน โดยไม่ต้องพึ่งใครมาบอก */
+  if ((body as { ping?: unknown })?.ping) {
+    const b = (body as { build?: unknown }).build
+    await logTurn({
+      at: new Date().toISOString(),
+      question: `🔔 สัญญาณชีพจากแว่น · รุ่น ${String(b ?? "ไม่ได้ระบุ").slice(0, 40)}`,
+      answer: "โค้ดถูกโหลดขึ้นเครื่องแล้ว",
+      model: "—",
+      ms: Date.now() - deniedAt,
+      ok: true,
+      stream: false,
+    })
+    return NextResponse.json({ ok: true, pong: true, build: b ?? null })
+  }
+
   const id = chunkId()
   const created = Math.floor(Date.now() / 1000)
   const startedAt = Date.now()
