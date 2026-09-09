@@ -166,7 +166,16 @@ export default function GlassesLogPage() {
               <div className="space-y-2 px-4 py-3 text-sm">
                 <p>
                   <span className="text-slate-500">พูดว่า: </span>
-                  <span className="font-medium">{e.question || <em className="text-slate-400">(ถอดเสียงไม่ได้ข้อความ)</em>}</span>
+                  {/* 🔴 **ห้ามเดาสาเหตุ** — จอรู้แค่ว่า "ช่องคำถามว่าง" ไม่รู้ว่าเพราะอะไร
+                      ข้อความเดิมเขียนว่า "(ถอดเสียงไม่ได้ข้อความ)" ซึ่งชี้นิ้วไปที่ไมค์
+                      ⇒ เกิดของจริง 9 ก.ย. 2569: ตัวเฝ้ายิง {ping:true} ใส่สะพานรุ่นเก่า
+                         คำขอ **ไม่มีข้อความมาตั้งแต่ต้นทาง** (ไมค์ไม่เกี่ยวเลย)
+                         แต่จอเขียนว่าถอดเสียงไม่ได้ ⇒ พาไปสงสัยไมค์แว่น
+                      กฎ guessed-cause-written-as-fact: อาการเดียวมีหลายสาเหตุ
+                      "ยังไม่รู้" ดีกว่าคำอธิบายที่ชี้ผิดทาง */}
+                  <span className="font-medium">
+                    {e.question || <em className="text-slate-400">(ไม่มีข้อความในคำขอนี้ — ยังไม่รู้ว่าเพราะไมค์ ถอดเสียง หรือต้นทางไม่ได้ส่งมา)</em>}
+                  </span>
                 </p>
                 {e.ok ? (
                   <p className="whitespace-pre-wrap text-slate-700">{e.answer}</p>
