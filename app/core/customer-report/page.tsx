@@ -10,6 +10,7 @@
 // ⚠️ รวมยอดในเบราว์เซอร์จาก /api/core?list=orders ทีละหน้า (ท่อหลังบ้านเป็นเขตอีกฝั่ง)
 // ⚠️ จับลูกค้าด้วย "ชื่อ" ไม่ใช่เบอร์โทร — ชื่อซ้ำถูกนับรวมเป็นคนเดียว ต้องเขียนบอกบนจอ
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
@@ -378,10 +379,18 @@ export default function CoreCustomersPage() {
                   <tr key={p.name} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{page * PER_PAGE + i + 1}</td>
                     <td className={TD}>
-                      {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
-                      <span className="text-gray-900 font-medium">{p.name}</span>
-                      {p.name === NO_NAME && (
-                        <span className="ml-1.5 text-[11px] text-gray-400">(หลายคนรวมกัน)</span>
+                      {/* มีหน้าปลายทางแล้วตั้งแต่ 8 ก.ย. 2569 (/core/customers/detail รับ ?name=)
+                          ⚠️ "ไม่ระบุชื่อ" กดไม่ได้โดยตั้งใจ — มันคือ **หลายคนรวมกัน** ไม่ใช่ลูกค้าหนึ่งราย
+                             ทำให้กดได้ = พาไปหน้าที่ค้นชื่อว่า "ไม่ระบุชื่อ" แล้วได้ผลที่ดูเหมือนจริงแต่ไม่ใช่ใคร
+                          ⚠️ ชื่อที่มีดาว (มาร์เก็ตเพลสปิดมาเอง) ยังกดได้ แต่หน้าปลายทางเตือนเองว่าผลไม่น่าเชื่อถือ */}
+                      {p.name === NO_NAME ? (
+                        <>
+                          <span className="text-gray-900 font-medium">{p.name}</span>
+                          <span className="ml-1.5 text-[11px] text-gray-400">(หลายคนรวมกัน — เปิดดูรายคนไม่ได้)</span>
+                        </>
+                      ) : (
+                        <Link href={`/core/customers/detail?name=${encodeURIComponent(p.name)}`}
+                          className="text-[#457ab2] hover:underline font-medium">{p.name}</Link>
                       )}
                     </td>
                     {/* ⚠️ โชว์จำนวนใบต่อช่องทางด้วย — "ซื้อ 4 ใบ" กับ "ซื้อทาง Shopee 4 ใบ"

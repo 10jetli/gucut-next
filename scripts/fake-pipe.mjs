@@ -320,6 +320,23 @@ const srv = createServer(async (req, res) => {
       fields: ['fromwarehousecode', 'list', 'number', 'status', 'towarehousecode', 'trackingno', 'transferdate'],
     }))
   }
+  /* สรุปลูกค้า (จอ /core/customer-report) — โครงจากซอร์สท่อจริง ?bycustomer=
+     ⚠️ ต้องมีทั้ง **ลูกค้ามีชื่อ** และกอง **unnamed** ในคำตอบเดียว เพราะจอต้องทำสองอย่างต่างกัน:
+        ชื่อจริง = กดเข้าหน้ารายคนได้ · ไม่ระบุชื่อ = **ห้ามกด** (มันคือหลายคนรวมกัน ไม่ใช่ลูกค้าหนึ่งราย)
+        ถ้า mock มีแต่ชื่อจริง จะทดสอบข้อห้ามนั้นไม่ได้เลย */
+  if (mode === 'good' && /[?&]bycustomer=/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      customers: [
+        { name: 'สมชาย ใจดี', orders: 12, sales: 48000, lastDay: '2026-09-07', channels: [{ channel: 'หน้าร้าน', orders: 12 }] },
+        { name: 'อ*****ก', orders: 3, sales: 5400, lastDay: '2026-09-05', channels: [{ channel: 'Shopee', orders: 3 }] },
+      ],
+      unnamed: { orders: 88, sales: 120000, lastDay: '2026-09-08' },
+      totalOrders: 103, totalSales: 173400, distinctNames: 2,
+      historyFrom: '2026-06-01', monthly: [],
+    }))
+  }
   /* ยอดรายเดือน (จอ /core/coverage "กระจกครบไหม") — โครงจากซอร์สท่อจริง ?monthly=
      ⚠️ ต้องทดสอบ **สองทิศ**: mode good = ไม่มีเดือนหาย · mode gap = หายกลางช่วง
         ถ้าจอไม่เปลี่ยนหน้าตาระหว่างสองโหมดนี้ แปลว่าจอนั้นแยกแยะไม่ได้ = ยังไม่ได้ทดสอบ */
