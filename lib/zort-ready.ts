@@ -36,6 +36,12 @@ export const ZORT_READY: Record<string, ZortReady> = {
   '/core/sales': 'replace',
   '/core/sales/detail': 'replace',
   '/core/quotations': 'replace', // ดูรายการ
+  /* 🔴 9 ก.ย. 2569: จอ detail ของใบเสนอราคาและใบโอนขึ้นตัวเลขไม่ได้ชั่วคราว —
+     ท่อ (getQuotationDetail/getTransferDetail) หยิบบรรทัดสินค้ามาเป็นหัวใบ
+     ⇒ ยังใช้แทน ZORT ไม่ได้ ต้องเปิดใบจริงที่ ZORT · ป้ายต้องพูดความจริงระหว่างรอท่อแก้
+     🗑️ ท่อแก้แล้วเปลี่ยนกลับเป็น 'replace' (ตรวจ: เปิดใบจริงแล้วเลขที่ใบตรงกับที่กดเข้ามา) */
+  '/core/quotations/detail': 'readonly',
+  '/core/transfers/detail': 'readonly',
   '/core/quotations/new': 'readonly', // ออกใบเสนอราคา = งานเอกสาร
   '/core/logistics': 'replace',
   '/core/return-orders': 'replace',
