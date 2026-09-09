@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { askClaude, checkBridgeKey, describeError, streamClaude, bridgeModel, type BridgeRequest } from '@/lib/rokid'
+import { logTurn } from '@/lib/rokid-log'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -42,6 +43,28 @@ export async function POST(req: NextRequest) {
 
   const id = chunkId()
   const created = Math.floor(Date.now() / 1000)
+  const startedAt = Date.now()
+
+  /* คำถามล่าสุดของผู้ใช้ — ใช้ทั้งบันทึกและไล่ปัญหา "ถอดเสียงได้ยินว่าอะไร"
+     ⚠️ content เป็นข้อความล้วนหรือเป็นชิ้นส่วนหลายชิ้น (ข้อความ+ภาพ) ก็ได้
+        จับให้ครบทั้งสองแบบ ไม่งั้นบันทึกจะว่างเปล่าเฉพาะตอนมีภาพ ซึ่งจับได้ยากมาก */
+  const lastUserText = (() => {
+    const msgs = Array.isArray(body.messages) ? body.messages : []
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      const m = msgs[i]
+      if (m?.role && m.role !== 'user') continue
+      const c = m?.content
+      if (typeof c === 'string') return c
+      if (Array.isArray(c)) {
+        const t = c
+          .map(p => (p && typeof p === 'object' && 'text' in p ? String((p as { text?: unknown }).text ?? '') : ''))
+          .filter(Boolean)
+          .join(' ')
+        if (t) return t
+      }
+    }
+    return ''
+  })()
 
   // ---- แบบสตรีม (SSE) — แว่นจะทยอยแสดงข้อความระหว่างที่ Claude ยังพิมพ์อยู่
   if (body.stream) {
@@ -49,17 +72,32 @@ export async function POST(req: NextRequest) {
     const stream = new ReadableStream<Uint8Array>({
       async start(controller) {
         controller.enqueue(sseChunk(id, model, created, { role: 'assistant', content: '' }, null))
+        let full = ''
+        let failed: string | undefined
         try {
           const res = await streamClaude(body, (text) => {
+            full += text
             controller.enqueue(sseChunk(id, model, created, { content: text }, null))
           })
           controller.enqueue(sseChunk(id, res.model, created, {}, 'stop'))
         } catch (err) {
           // สตรีมเริ่มไปแล้ว ส่ง status code ใหม่ไม่ได้ — บอกผู้ใช้ผ่านข้อความแทน
           const { message } = describeError(err)
+          failed = message
           controller.enqueue(sseChunk(id, model, created, { content: `ขออภัย เชื่อมต่อ Claude ไม่สำเร็จ: ${message}` }, 'stop'))
         }
         controller.enqueue(enc.encode('data: [DONE]\n\n'))
+        // ⚠️ ต้อง await ก่อนปิดสตรีม — ปิดแล้ว Netlify แช่แข็งฟังก์ชันทันที
+        await logTurn({
+          at: new Date().toISOString(),
+          question: lastUserText,
+          answer: full,
+          model,
+          ms: Date.now() - startedAt,
+          ok: !failed,
+          error: failed,
+          stream: true,
+        })
         controller.close()
       },
     })
@@ -77,6 +115,15 @@ export async function POST(req: NextRequest) {
   // ---- แบบตอบก้อนเดียว
   try {
     const res = await askClaude(body)
+    await logTurn({
+      at: new Date().toISOString(),
+      question: lastUserText,
+      answer: res.text,
+      model: res.model,
+      ms: Date.now() - startedAt,
+      ok: true,
+      stream: false,
+    })
     return NextResponse.json({
       id,
       object: 'chat.completion',
@@ -97,6 +144,18 @@ export async function POST(req: NextRequest) {
     })
   } catch (err) {
     const { status, message } = describeError(err)
+    // บันทึกใบที่ล้มด้วย — **ใบที่ล้มมีค่ากว่าใบที่สำเร็จตอนไล่ปัญหา**
+    // ถ้าเก็บเฉพาะใบที่สำเร็จ บันทึกจะสวยตลอดกาลแล้วเราจะสรุปผิดว่าไม่มีปัญหา
+    await logTurn({
+      at: new Date().toISOString(),
+      question: lastUserText,
+      answer: '',
+      model: bridgeModel(),
+      ms: Date.now() - startedAt,
+      ok: false,
+      error: message,
+      stream: false,
+    })
     return NextResponse.json({ error: { message, type: 'api_error' } }, { status })
   }
 }

@@ -1,0 +1,140 @@
+'use client'
+// บทสนทนาจากแว่น Rokid — สิ่งที่เจ้าของร้านพูดใส่แว่น และสิ่งที่แว่นตอบ
+//
+// **ทำไมหน้านี้มีค่า**: ก่อนมีหน้านี้ ไม่มีใครนอกจากคนใส่แว่นที่เห็นว่าเกิดอะไรขึ้น
+// วันที่ 9 ก.ย. 2569 เราไล่บั๊กด้วยการให้เจ้าของร้านถ่ายรูปเลนส์กับ**วาดรูปมาให้ดู**
+// ⇒ ช้ามาก และมองไม่เห็นสิ่งที่สำคัญที่สุด: **ตัวถอดเสียงได้ยินว่าอะไร**
+//    (พูดชัดแต่ถอดผิด = ไล่โทษเซิร์ฟเวอร์ทั้งวันโดยต้นเหตุอยู่ที่ไมค์)
+//
+// 🔒 เก็บ 7 วันแล้วลบเอง · เก็บข้อความไม่เก็บเสียง · ไม่ส่งเข้า Telegram
+//    (เจ้าของร้านตกลงเงื่อนไขนี้ก่อนเปิดใช้ 9 ก.ย. 2569)
+import { useCallback, useEffect, useState } from 'react'
+import Card from '@/components/ui/Card'
+import StatCard from '@/components/ui/StatCard'
+import LoadingState from '@/components/ui/LoadingState'
+import ErrorBox from '@/components/ui/ErrorBox'
+import { PageHead, BtnPrimary } from '@/components/zort'
+
+interface Entry {
+  at: string
+  question: string
+  answer: string
+  model: string
+  ms: number
+  ok: boolean
+  error?: string
+  stream: boolean
+}
+interface Resp { ok?: boolean; count?: number; pruned?: number; entries?: Entry[]; error?: string }
+
+/** เพดานของแว่น — เกินนี้แว่นทิ้งคำขอแล้วขึ้น "request timeout after 5000ms"
+ *  ⚠️ ตัวเลขนี้เป็นค่า **เริ่มต้น** ของ AIUI ไม่ใช่เพดานตายตัว
+ *     ถ้าวันไหนตั้ง `timeout` ในโค้ดแว่นแล้ว ต้องมาแก้เลขนี้ให้ตรง ไม่งั้นจอจะเตือนผิด */
+const GLASSES_TIMEOUT_MS = 5000
+
+/** UTC → เวลาไทย พร้อมเขียนกำกับ (กติกาเวลาใน CLAUDE.md: ห้ามโชว์ค่าดิบ) */
+function thaiTime(iso: string) {
+  const t = Date.parse(iso)
+  if (Number.isNaN(t)) return '—'
+  const d = new Date(t + 7 * 3600_000)
+  const p = (n: number) => String(n).padStart(2, '0')
+  return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`
+}
+
+export default function GlassesLogPage() {
+  const [data, setData] = useState<Resp | null>(null)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setError('')
+    try {
+      const r = await fetch('/api/glasses-log', { cache: 'no-store' })
+      const j: Resp = await r.json()
+      if (!r.ok || !j.ok) throw new Error(j.error || `ดึงไม่สำเร็จ (${r.status})`)
+      setData(j)
+    } catch (e) {
+      // "ดึงไม่สำเร็จ" ต้องไม่กลายเป็น "ไม่มีบทสนทนา" — คนละเรื่องกันคนละทาง
+      setError(e instanceof Error ? e.message : String(e))
+      setData(null)
+    } finally {
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => { void load() }, [load])
+
+  const entries = data?.entries ?? []
+  const slow = entries.filter(e => e.ms > GLASSES_TIMEOUT_MS).length
+  const failed = entries.filter(e => !e.ok).length
+
+  return (
+    <div className="space-y-4">
+      <PageHead
+        title="บทสนทนาจากแว่น"
+        summary="สิ่งที่พูดใส่แว่น Rokid และสิ่งที่ได้ตอบกลับ · เก็บ 7 วันแล้วลบอัตโนมัติ"
+        actions={<BtnPrimary onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'โหลดใหม่'}</BtnPrimary>}
+      />
+
+      {error && <ErrorBox>{error}</ErrorBox>}
+      {loading && !data && <LoadingState />}
+
+      {data && (
+        <>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            <StatCard icon="🕶️" label="บทสนทนา (7 วัน)" value={String(data.count ?? 0)} />
+            <StatCard
+              icon="⏱️"
+              label={`ช้าเกิน ${GLASSES_TIMEOUT_MS / 1000} วิ`}
+              value={String(slow)}
+              note="แว่นทิ้งคำขอพวกนี้ ถ้ายังไม่ได้ตั้ง timeout ในโค้ดแว่น"
+              tone={slow > 0 ? 'red' : 'gray'}
+            />
+            <StatCard icon="⚠️" label="ล้มเหลว" value={String(failed)} tone={failed > 0 ? 'red' : 'gray'} />
+          </div>
+
+          {entries.length === 0 && (
+            /* ⚠️ ข้อความนี้ต้องไม่กำกวม — "ยังไม่มี" ไม่เท่ากับ "ระบบพัง"
+               และเราแยก "ดึงไม่สำเร็จ" ออกไปอยู่ใน ErrorBox ข้างบนแล้ว */
+            <Card>
+              <p className="p-4 text-sm text-slate-600">
+                ยังไม่มีบทสนทนาในช่วง 7 วันที่ผ่านมา — ลองพูดใส่แว่นหนึ่งครั้งแล้วกดโหลดใหม่
+              </p>
+            </Card>
+          )}
+
+          {entries.map((e, i) => (
+            <Card key={`${e.at}-${i}`}>
+              <div className="flex flex-wrap items-center gap-2 border-b px-4 py-2 text-xs text-slate-500">
+                <span>{thaiTime(e.at)} น. (เวลาไทย)</span>
+                <span className={e.ms > GLASSES_TIMEOUT_MS ? 'font-semibold text-red-600' : 'text-slate-600'}>
+                  {(e.ms / 1000).toFixed(2)} วิ
+                  {e.ms > GLASSES_TIMEOUT_MS && ' — เกินเพดานแว่น'}
+                </span>
+                <span>{e.model}</span>
+                {e.stream && <span>สตรีม</span>}
+                {!e.ok && <span className="font-semibold text-red-600">ล้มเหลว</span>}
+              </div>
+              <div className="space-y-2 px-4 py-3 text-sm">
+                <p>
+                  <span className="text-slate-500">พูดว่า: </span>
+                  <span className="font-medium">{e.question || <em className="text-slate-400">(ถอดเสียงไม่ได้ข้อความ)</em>}</span>
+                </p>
+                {e.ok ? (
+                  <p className="whitespace-pre-wrap text-slate-700">{e.answer}</p>
+                ) : (
+                  <p className="text-red-600">{e.error || 'ไม่ทราบสาเหตุ'}</p>
+                )}
+              </div>
+            </Card>
+          ))}
+
+          {(data.pruned ?? 0) > 0 && (
+            <p className="text-xs text-slate-500">ลบของเกิน 7 วันไปแล้ว {data.pruned} รายการในรอบนี้</p>
+          )}
+        </>
+      )}
+    </div>
+  )
+}

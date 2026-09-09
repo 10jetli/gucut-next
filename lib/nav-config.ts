@@ -265,6 +265,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/settings/connections/health', label: 'ตรวจสุขภาพการเชื่อมต่อ' },   // ตรวจสุขภาพการเชื่อมต่อ — งาน AI
       { href: '/core/coverage', label: 'กระจกครบไหม (รายเดือน)' },   // จับเดือนที่หายทั้งเดือน — งาน AI
       { href: '/core/backup', label: 'สำรองข้อมูล' },   // สำรอง/กู้คืนข้อมูล — งาน AI
+      { href: '/core/glasses-log', label: 'บทสนทนาจากแว่น' },   // สิ่งที่พูดใส่แว่น Rokid — เจ้าของร้าน/AI ใช้ไล่ปัญหา
     ],
   },
 ]
