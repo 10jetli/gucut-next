@@ -77,10 +77,15 @@ export async function POST(req: NextRequest) {
         ไม่งั้นมันจะกลายเป็นภาระที่ทำให้คนอยากถอดออก แล้วตาข่ายก็หายไป
      ⚠️ ส่ง build มาด้วยเสมอ ⇒ รู้ทันทีว่าเครื่องรันรุ่นไหน โดยไม่ต้องพึ่งใครมาบอก */
   if ((body as { ping?: unknown })?.ping) {
-    const b = (body as { build?: unknown }).build
+    const b = String((body as { build?: unknown }).build ?? "").slice(0, 40)
     await logTurn({
       at: new Date().toISOString(),
-      question: `🔔 สัญญาณชีพจากแว่น · รุ่น ${String(b ?? "ไม่ได้ระบุ").slice(0, 40)}`,
+      /* ⚠️ **`ping`/`build` เป็นฟิลด์จริง — จอต้องอ่านจากตรงนี้ ห้ามอ่านจาก question**
+         ข้อความไทยข้างล่างมีไว้ให้คนอ่านเฉย ๆ · จอรุ่นเก่าที่ยังไม่รู้จัก ping
+         จะวาดเป็นการ์ดบทสนทนาซึ่ง**ยังอ่านรู้เรื่อง** ไม่ใช่การ์ดว่างที่ดูเหมือนไมค์พัง */
+      ping: true,
+      build: b || undefined,
+      question: `🔔 สัญญาณชีพจากแว่น · รุ่น ${b || "ไม่ได้ระบุ"}`,
       answer: "โค้ดถูกโหลดขึ้นเครื่องแล้ว",
       model: "—",
       ms: Date.now() - deniedAt,
