@@ -437,13 +437,21 @@ const srv = createServer(async (req, res) => {
         ZORT มีใบ (แต่กระจกว่าง = เรายังไม่กวาด) · ZORT ไม่มีใบจริง (ปิดคดี) · ถาม ZORT ไม่ได้
         ⚠️ กรณีสุดท้ายต้องเป็น error **ห้ามเป็น 0** — 0 แปลว่า "ไม่มีใบจริง" ซึ่งคนละเรื่อง */
   if ((mode === 'good' || mode === 'gap') && /[?&]zortmonthly=/.test(req.url)) {
-    const ym = new URL(req.url, 'http://x').searchParams.get('ym') || ''
+    const u = new URL(req.url, 'http://x')
+    const ym = u.searchParams.get('ym') || ''
+    /* 🔴 **ต้องตอบต่างกันตามร้าน** (บทเรียน 9 ก.ย. 2569 บ่าย)
+       ท่อจริง default เป็น z1 ร้านเดียว แต่ตัวเลขฝั่งกระจกรวมสองร้าน
+       ⇒ จอที่ลืมบวกสองร้านจะขึ้น "ต่างกันมาก" ทุกเดือนทั้งที่ไม่มีอะไรผิด
+       ท่อปลอมรุ่นก่อนตอบเลขเดียวไม่ว่าถามร้านไหน ⇒ **การทดสอบมองไม่เห็นมิตินี้เลย**
+       จอจึงผ่านครบทั้งห้าเส้นทางโดยที่บั๊กยังอยู่ครบ (เจอตอนยิงของจริงหลัง deploy) */
+    const store = u.searchParams.get('store') === 'z2' ? 'z2' : 'z1'
+    const part = (n) => (store === 'z2' ? Math.round(n * 0.6) : n - Math.round(n * 0.6))
     res.writeHead(200, { 'content-type': 'application/json' })
     if (ym === '2026-05') return res.end(JSON.stringify({ error: 'ZORT ตอบ 500' }))
     // เดือนที่กระจกว่างแต่ ZORT มีใบ = เคสที่ต้องขึ้นแดง "เรายังไม่ได้กวาด"
-    if (ym === '2026-04') return res.end(JSON.stringify({ ok: true, ym, zortCount: 95, zortAmount: 190000, countsCancelled: true }))
-    if (ym === '2026-03') return res.end(JSON.stringify({ ok: true, ym, zortCount: 0, zortAmount: 0, countsCancelled: true }))
-    return res.end(JSON.stringify({ ok: true, ym, zortCount: 118, zortAmount: 240000, countsCancelled: true }))
+    if (ym === '2026-04') return res.end(JSON.stringify({ ok: true, ym, store, zortCount: part(95), countsCancelled: true }))
+    if (ym === '2026-03') return res.end(JSON.stringify({ ok: true, ym, store, zortCount: 0, countsCancelled: true }))
+    return res.end(JSON.stringify({ ok: true, ym, store, zortCount: part(118), countsCancelled: true }))
   }
   /* ยอดรายเดือน (จอ /core/coverage "กระจกครบไหม") — โครงจากซอร์สท่อจริง ?monthly=
      ⚠️ ต้องทดสอบ **สองทิศ**: mode good = ไม่มีเดือนหาย · mode gap = หายกลางช่วง
