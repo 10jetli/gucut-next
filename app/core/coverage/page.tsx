@@ -111,14 +111,45 @@ export default function CoveragePage() {
          เทียบกับกระจก 1,103 ⇒ ต่างแค่ใบยกเลิกที่ ZORT ยังนับ ซึ่งท่อเขียนกำกับไว้แล้ว)
          ⚠️ ถ้าร้านใดร้านหนึ่งถามไม่ได้ **ห้ามบวกเฉพาะร้านที่ได้** — ผลรวมที่ขาดไปหนึ่งร้าน
             หน้าตาเหมือน "ZORT มีน้อยกว่าเรา" ซึ่งชี้ไปผิดทางทั้งหมด ⇒ ถือเป็น error ทั้งเดือน */
-      const stores: Array<'z1' | 'z2'> = store ? [store] : ['z1', 'z2']
+      /* ทางหลัก: `store=all` — ท่อบวกให้ในคำขอเดียว (ee196c1) และคืน `stores` มาด้วย
+         ⇒ **จอไม่ต้องรู้ว่าร้านมีกี่ร้าน** วันเพิ่มร้านที่สามจอไม่ต้องแก้อะไรเลย
+         และท่อรับประกันเองว่าร้านใดร้านหนึ่งล้ม = error ทั้งก้อน ไม่คืนผลรวมบางส่วน */
+      const ask = async (st: string) => {
+        const q = new URLSearchParams({ zortmonthly: '1', ym, store: st })
+        const res = await fetch(`/api/web/core?${q}`)
+        const j = await res.json().catch(() => null)
+        return { res, j }
+      }
+
+      if (store) {
+        const { res, j } = await ask(store)
+        if (!res.ok || !j || j.error || j.skip) throw new Error(String(j?.error || j?.skip || `ท่อตอบ ${res.status}`))
+        if (typeof j.zortCount !== 'number') throw new Error('ท่อตอบมาไม่มีช่อง zortCount')
+        setZort((s) => ({ ...s, [ym]: { count: j.zortCount, stores: 1 } }))
+        return
+      }
+
+      const all = await ask('all')
+      /* ⚠️ **ท่อรุ่นก่อน ee196c1 ไม่รู้จัก `all` แล้วตกกลับ z1 เงียบ ๆ** — ตอบ 200 หน้าตาปกติทุกอย่าง
+         ⇒ ห้ามเชื่อแค่ 200 · ต้องเห็นหลักฐานว่าท่อรู้จักจริง (`store === 'all'` + มี `stores`)
+            ไม่งั้นได้เลขร้านเดียวมาเทียบกับกระจกสองร้าน ซึ่งคือบั๊กเดิมที่เพิ่งแก้ไป */
+      const knowsAll = all.res.ok && all.j && all.j.store === 'all' && Array.isArray(all.j.stores)
+      if (knowsAll && typeof all.j.zortCount === 'number') {
+        setZort((s) => ({ ...s, [ym]: { count: all.j.zortCount, stores: all.j.stores.length } }))
+        return
+      }
+      if (all.res.ok && all.j?.error && Array.isArray(all.j.failedParts)) {
+        const which = all.j.failedParts.filter((p: { error?: string }) => p?.error)
+          .map((p: { store?: string; error?: string }) => `${p.store}: ${p.error}`).join(' · ')
+        throw new Error(`${all.j.error}${which ? ` (${which})` : ''}`)
+      }
+
+      // ทางถอย: ท่อรุ่นเก่า — ถามทีละร้านแล้วบวกเอง (โค้ดเดิมก่อน ee196c1)
+      const stores: Array<'z1' | 'z2'> = ['z1', 'z2']
       let total = 0
       for (const st of stores) {
-        const q = new URLSearchParams({ zortmonthly: '1', ym, store: st })
         // eslint-disable-next-line no-await-in-loop -- ท่อสั่งให้ถามทีละคำขอ ห้ามยิงพร้อมกัน
-        const res = await fetch(`/api/web/core?${q}`)
-        // eslint-disable-next-line no-await-in-loop
-        const j = await res.json().catch(() => null)
+        const { res, j } = await ask(st)
         if (!res.ok || !j || j.error || j.skip) {
           throw new Error(`ร้าน ${st}: ${String(j?.error || j?.skip || `ท่อตอบ ${res.status}`)}`)
         }
@@ -261,7 +292,7 @@ export default function CoveragePage() {
                       ) : (
                         <span className={verdict(r, z.count!).tone}>
                           {verdict(r, z.count!).text}
-                          {z.stores === 2 && <span className="text-gray-400"> (รวม 2 ร้าน)</span>}
+                          {(z.stores ?? 1) > 1 && <span className="text-gray-400"> (รวม {z.stores} ร้าน)</span>}
                         </span>
                       )}
                     </td>

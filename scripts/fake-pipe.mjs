@@ -444,7 +444,30 @@ const srv = createServer(async (req, res) => {
        ⇒ จอที่ลืมบวกสองร้านจะขึ้น "ต่างกันมาก" ทุกเดือนทั้งที่ไม่มีอะไรผิด
        ท่อปลอมรุ่นก่อนตอบเลขเดียวไม่ว่าถามร้านไหน ⇒ **การทดสอบมองไม่เห็นมิตินี้เลย**
        จอจึงผ่านครบทั้งห้าเส้นทางโดยที่บั๊กยังอยู่ครบ (เจอตอนยิงของจริงหลัง deploy) */
-    const store = u.searchParams.get('store') === 'z2' ? 'z2' : 'z1'
+    /* รองรับ store=all แบบท่อจริง (ee196c1) — ต้องมีเพื่อทดสอบทางหลักของจอ
+       ⚠️ และต้องมีโหมด "ท่อรุ่นเก่าที่ไม่รู้จัก all แล้วตกกลับ z1 เงียบ ๆ" ด้วย
+          (ym ที่ลงท้ายด้วย -07 จำลองท่อเก่า) — นั่นคือพฤติกรรมที่ทำให้บั๊กซ่อนอยู่ได้
+          จอต้องจับได้ว่าคำตอบไม่ใช่ของ all จริง แล้วถอยไปถามทีละร้าน */
+    const rawStore = u.searchParams.get('store') || 'z1'
+    const oldPipe = ym.endsWith('-07')
+    if (rawStore === 'all' && !oldPipe) {
+      const z1 = (n) => n - Math.round(n * 0.6)
+      const z2 = (n) => Math.round(n * 0.6)
+      const base = ym === '2026-04' ? 95 : ym === '2026-03' ? 0 : 118
+      if (ym === '2026-05') {
+        return res.end(JSON.stringify({
+          error: 'ถามไม่สำเร็จ 1 ใน 2 ร้าน — ไม่คืนผลรวมบางส่วน', ym, store: 'all',
+          failedParts: [{ store: 'z1', error: 'ZORT ตอบ 500' }, { store: 'z2', error: null }],
+        }))
+      }
+      return res.end(JSON.stringify({
+        ok: true, ym, store: 'all', stores: ['z1', 'z2'],
+        zortCount: z1(base) + z2(base),
+        perStore: [{ store: 'z1', zortCount: z1(base) }, { store: 'z2', zortCount: z2(base) }],
+        countsCancelled: true,
+      }))
+    }
+    const store = rawStore === 'z2' ? 'z2' : 'z1'
     const part = (n) => (store === 'z2' ? Math.round(n * 0.6) : n - Math.round(n * 0.6))
     res.writeHead(200, { 'content-type': 'application/json' })
     if (ym === '2026-05') return res.end(JSON.stringify({ error: 'ZORT ตอบ 500' }))
