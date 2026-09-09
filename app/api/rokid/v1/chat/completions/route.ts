@@ -95,6 +95,31 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, pong: true, build: b ?? null })
   }
 
+  /* 🔴 **คำขอที่ไม่มีข้อความเลย ต้องตีกลับ ห้ามส่งต่อให้ Claude**
+     เจอของจริง 9 ก.ย. 2569: ยิง `{ping:true}` ใส่สะพานรุ่นก่อนที่ยังไม่รู้จัก ping
+     ⇒ ไม่มี `messages` เลยสักใบ แต่สะพาน**ส่งต่อให้ Claude แล้วได้ "สวัสดีครับ!
+        ผมพร้อมช่วยคุณแล้ว" กลับมา** แล้วบันทึกเป็นบทสนทนาจริงเรียบร้อย
+     ⇒ เสียเครดิตจริง + ได้ใบที่ช่องคำถามว่าง ซึ่งบนจอเขียนว่า "(ถอดเสียงไม่ได้ข้อความ)"
+        = **หน้าตาเหมือนไมค์แว่นพัง** ทั้งที่ไมค์ไม่เกี่ยวอะไรเลย
+     🔑 คลาสเดียวกับ "สำเร็จแต่คืนกล่องเปล่า": ทุกชั้นตอบ ok แต่ไม่มีใครถามอะไรตั้งแต่ต้น
+        ⇒ ของที่ไม่มีข้อมูลนำเข้า ต้องตอบว่า "ไม่มีข้อมูลนำเข้า" ห้ามเดาให้ */
+  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+    await logTurn({
+      at: new Date().toISOString(),
+      question: '',
+      answer: '',
+      model: '—',
+      ms: Date.now() - deniedAt,
+      ok: false,
+      error: 'คำขอไม่มีข้อความ (messages ว่าง) — ไม่ได้ส่งต่อให้ Claude',
+      stream: false,
+    })
+    return NextResponse.json(
+      { error: { message: 'ต้องมี messages อย่างน้อยหนึ่งใบ', type: 'invalid_request_error' } },
+      { status: 400 },
+    )
+  }
+
   const id = chunkId()
   const created = Math.floor(Date.now() / 1000)
   const startedAt = Date.now()
