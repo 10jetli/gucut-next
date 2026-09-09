@@ -21,7 +21,10 @@ interface Resp {
   error?: string; skip?: string
 }
 
-const MONTH_CAP = 36 // เพดานของท่อ — เขียนไว้ตรงนี้ที่เดียว
+/* เพดานที่ **ขอ** จากท่อ — ท่อขยายเป็น 120 เดือนแล้ว (2d6bfea 9 ก.ย. 2569)
+   ⚠️ ขอเกินที่ท่อรับได้ไม่พัง — ท่อ clamp ให้เอง และจอเขียนบนหน้าจอว่า "ขอ X · ท่อตอบ Y"
+      ⇒ push จอก่อนท่อก็ยังปลอดภัย (ได้ 36 เดือนเหมือนเดิมพร้อมข้อความบอกตามจริง) */
+const MONTH_CAP = 120
 const TH_MONTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const thaiYm = (ym: string) => {
   const [y, m] = ym.split('-').map(Number)
@@ -68,11 +71,61 @@ function lowMonths(rows: Array<{ ym: string; orders: number; missing: boolean }>
   return { median, low: have.filter((r) => r.orders < median * LOW_RATIO).map((r) => r.ym) }
 }
 
+/** ผลถาม ZORT รายเดือน — **สามสถานะ ห้ามยุบ**
+ *  count = ตัวเลขจริง · error = ถามไม่ได้ (ห้ามแปลว่า 0) · ยังไม่มีคีย์ = ยังไม่เคยถาม */
+interface ZortMonth { count?: number; error?: string }
+
+/** แปลผลเทียบ "กระจกเรา" กับ "ZORT" — คำตัดสินที่จอนี้ตั้งใจให้ได้มาตั้งแต่แรก
+ *  ⚠️ ZORT **ยังไม่หักใบยกเลิก** ส่วนกระจกเราหักแล้ว ⇒ เลขสองฝั่งไม่ต้องเท่ากันเป๊ะ
+ *     สิ่งที่ตัดสินได้จริงคือ **0 กับ ไม่ใช่ 0** (ท่อเขียนกำกับไว้เอง) */
+function verdict(r: { orders: number; missing: boolean }, zortCount: number) {
+  const ours = r.missing ? 0 : r.orders
+  if (zortCount === 0 && ours === 0) return { text: '✅ ZORT ก็ไม่มีใบ — เดือนนี้ว่างจริง', tone: 'text-emerald-700' }
+  if (zortCount > 0 && ours === 0) return { text: `🔴 ZORT มี ${zortCount.toLocaleString('th-TH')} ใบ — เรายังไม่ได้กวาด`, tone: 'text-red-700' }
+  if (zortCount === 0 && ours > 0) return { text: 'ZORT ตอบ 0 แต่เรามีใบ — ต้องดูด้วยตา', tone: 'text-amber-800' }
+  const gap = Math.abs(zortCount - ours) / Math.max(zortCount, ours)
+  return gap > 0.2
+    ? { text: `🟡 ZORT ${zortCount.toLocaleString('th-TH')} ใบ vs เรา ${ours.toLocaleString('th-TH')} — ต่างกันมาก`, tone: 'text-amber-800' }
+    : { text: `ZORT ${zortCount.toLocaleString('th-TH')} ใบ — ใกล้เคียงกัน`, tone: 'text-gray-500' }
+}
+
 export default function CoveragePage() {
   const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [store, setStore] = useState<'' | 'z1' | 'z2'>('')
+  const [zort, setZort] = useState<Record<string, ZortMonth>>({})
+  const [asking, setAsking] = useState('')
+
+  /** ถาม ZORT ทีละเดือน — ท่อสั่งห้ามวนทั้งช่วงในคำขอเดียว (Netlify รอผลได้ ~26 วิ)
+   *  ⚠️ ถามไม่ได้ต้องเก็บเป็น error **ห้ามเก็บเป็น 0** — 0 แปลว่า "ไม่มีใบจริง" ซึ่งคนละเรื่องกัน */
+  const askZort = useCallback(async (ym: string) => {
+    setAsking(ym)
+    try {
+      const q = new URLSearchParams({ zortmonthly: '1', ym })
+      if (store) q.set('store', store)
+      const res = await fetch(`/api/web/core?${q}`)
+      const j = await res.json().catch(() => null)
+      if (!res.ok || !j || j.error || j.skip) {
+        setZort((s) => ({ ...s, [ym]: { error: String(j?.error || j?.skip || `ท่อตอบ ${res.status}`) } }))
+      } else if (typeof j.zortCount !== 'number') {
+        setZort((s) => ({ ...s, [ym]: { error: 'ท่อตอบมาไม่มีช่อง zortCount' } }))
+      } else {
+        setZort((s) => ({ ...s, [ym]: { count: j.zortCount } }))
+      }
+    } catch (e) {
+      setZort((s) => ({ ...s, [ym]: { error: String(e instanceof Error ? e.message : e) } }))
+    } finally { setAsking('') }
+  }, [store])
+
+  /** ถามเฉพาะเดือนที่น่าสงสัย ทีละเดือนเรียงกัน — ไม่ยิงพร้อมกันเพราะแต่ละครั้งไปถึง ZORT จริง */
+  const askSuspects = useCallback(async (yms: string[]) => {
+    for (const ym of yms) {
+      if (zort[ym]) continue
+      // eslint-disable-next-line no-await-in-loop -- ตั้งใจให้เรียงทีละเดือน (ท่อสั่ง)
+      await askZort(ym)
+    }
+  }, [askZort, zort])
 
   const load = useCallback(async () => {
     setLoading(true); setError('')
@@ -127,9 +180,14 @@ export default function CoveragePage() {
             <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mb-3 text-[12.5px] text-red-800">
               <b>พบ {gaps.length} เดือนที่กระจกไม่มีใบเลย</b> — {gaps.map((g) => thaiYm(g.ym)).join(' · ')}
               <p className="text-[11.5px] text-red-700 mt-1">
-                ยังไม่รู้ว่าเป็น &ldquo;ZORT ไม่มีใบในเดือนนั้นจริง&rdquo; หรือ &ldquo;เรายังไม่เคยกวาดเดือนนั้น&rdquo;
-                — สองอย่างนี้แยกกันไม่ได้จากจอนี้ ต้องนับใบจาก ZORT รายเดือนมาเทียบ
+                แยกไม่ออกจากตัวเลขฝั่งเราว่าเป็น &ldquo;ZORT ไม่มีใบจริง&rdquo; หรือ &ldquo;เรายังไม่เคยกวาด&rdquo;
+                — กด <b>ถาม ZORT</b> ในแถวนั้น (หรือปุ่มด้านล่าง) เพื่อให้ตัดสินได้
               </p>
+              <button type="button" onClick={() => askSuspects(gaps.map((g) => g.ym))}
+                disabled={!!asking}
+                className="mt-2 px-3 py-1.5 rounded bg-[#4669e5] text-white text-[12px] disabled:opacity-50">
+                {asking ? `กำลังถาม ${thaiYm(asking)}…` : `ถาม ZORT ให้ครบทั้ง ${gaps.length} เดือน (ทีละเดือน)`}
+              </button>
             </div>
           ) : (
             <div className="bg-white border border-gray-200 rounded-md px-3 py-2.5 mb-3 text-[12.5px] text-gray-700">
@@ -157,10 +215,15 @@ export default function CoveragePage() {
           <TableWrap>
             <table className="w-full min-w-[420px]">
               <thead className="bg-white border-b border-gray-200">
-                <tr><th className={TH}>เดือน</th><th className={THR}>จำนวนใบ</th><th className={THR}>ยอดขาย</th><th className={TH}>สถานะกระจก</th></tr>
+                <tr>
+                  <th className={TH}>เดือน</th><th className={THR}>จำนวนใบ</th><th className={THR}>ยอดขาย</th>
+                  <th className={TH}>สถานะกระจก</th><th className={TH}>ถาม ZORT</th>
+                </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
+                {rows.map((r) => {
+                  const z = zort[r.ym]
+                  return (
                   <tr key={r.ym} className={`border-b border-[#e8ecf8] last:border-0 ${r.missing ? 'bg-red-50' : lowSet.has(r.ym) ? 'bg-amber-50' : ''}`}>
                     <td className={`${TD} whitespace-nowrap`}>{thaiYm(r.ym)} <span className="text-gray-300 font-mono text-[11px]">{r.ym}</span></td>
                     <td className={TDR}>{r.missing ? <span className="text-gray-300">—</span> : r.orders.toLocaleString('th-TH')}</td>
@@ -172,8 +235,22 @@ export default function CoveragePage() {
                           ? <span className="text-amber-800">น้อยผิดปกติ — ควรตรวจ</span>
                           : <span className="text-gray-500">มีข้อมูล</span>}
                     </td>
+                    {/* ขาที่สอง: นับใบจาก ZORT ตรง ๆ — ตัวเดียวที่ตัดสินได้ว่าเดือนว่างเพราะอะไร
+                        ⚠️ กดเองทีละเดือน ไม่ยิงอัตโนมัติ (กติกาเจ้าของร้าน + ท่อขอให้จอวนเอง) */}
+                    <td className={TD}>
+                      {!z ? (
+                        <button type="button" onClick={() => askZort(r.ym)} disabled={asking === r.ym}
+                          className="text-blue-600 hover:underline disabled:opacity-50 disabled:no-underline">
+                          {asking === r.ym ? 'กำลังถาม…' : 'ถาม ZORT'}
+                        </button>
+                      ) : z.error ? (
+                        <span className="text-amber-800">⏳ {z.error}</span>
+                      ) : (
+                        <span className={verdict(r, z.count!).tone}>{verdict(r, z.count!).text}</span>
+                      )}
+                    </td>
                   </tr>
-                ))}
+                )})}
               </tbody>
             </table>
           </TableWrap>
@@ -185,6 +262,11 @@ export default function CoveragePage() {
               ก่อน {d.from} <b>ไม่ได้แปลว่าไม่มีข้อมูล</b> แค่จอนี้ยังไม่ได้ถาม
             </p>
             <p>ตัดใบยกเลิกออกแล้ว ให้ตรงกับจอรายการขาย</p>
+            <p>
+              ⚠️ ช่อง &ldquo;ถาม ZORT&rdquo; ยิงไปที่ ZORT สดทีละเดือน (ไม่ผ่านกระจก) และ
+              <b> ZORT ยังไม่หักใบยกเลิก</b> ส่วนตัวเลขฝั่งเราหักแล้ว ⇒ สองฝั่งไม่ต้องเท่ากันเป๊ะ
+              สิ่งที่ตัดสินได้จริงคือ <b>0 กับ ไม่ใช่ 0</b>
+            </p>
           </div>
         </>
       )}

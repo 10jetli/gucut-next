@@ -405,6 +405,19 @@ const srv = createServer(async (req, res) => {
       historyFrom: '2026-06-01', monthly: [],
     }))
   }
+  /* ขาที่สองของจอ /core/coverage — นับใบจาก ZORT ตรง ๆ ทีละเดือน (?zortmonthly=1&ym=YYYY-MM)
+     ⚠️ ต้องมีครบ **สามผลลัพธ์** เพราะจอต้องเขียนคนละคำ:
+        ZORT มีใบ (แต่กระจกว่าง = เรายังไม่กวาด) · ZORT ไม่มีใบจริง (ปิดคดี) · ถาม ZORT ไม่ได้
+        ⚠️ กรณีสุดท้ายต้องเป็น error **ห้ามเป็น 0** — 0 แปลว่า "ไม่มีใบจริง" ซึ่งคนละเรื่อง */
+  if ((mode === 'good' || mode === 'gap') && /[?&]zortmonthly=/.test(req.url)) {
+    const ym = new URL(req.url, 'http://x').searchParams.get('ym') || ''
+    res.writeHead(200, { 'content-type': 'application/json' })
+    if (ym === '2026-05') return res.end(JSON.stringify({ error: 'ZORT ตอบ 500' }))
+    // เดือนที่กระจกว่างแต่ ZORT มีใบ = เคสที่ต้องขึ้นแดง "เรายังไม่ได้กวาด"
+    if (ym === '2026-04') return res.end(JSON.stringify({ ok: true, ym, zortCount: 95, zortAmount: 190000, countsCancelled: true }))
+    if (ym === '2026-03') return res.end(JSON.stringify({ ok: true, ym, zortCount: 0, zortAmount: 0, countsCancelled: true }))
+    return res.end(JSON.stringify({ ok: true, ym, zortCount: 118, zortAmount: 240000, countsCancelled: true }))
+  }
   /* ยอดรายเดือน (จอ /core/coverage "กระจกครบไหม") — โครงจากซอร์สท่อจริง ?monthly=
      ⚠️ ต้องทดสอบ **สองทิศ**: mode good = ไม่มีเดือนหาย · mode gap = หายกลางช่วง
         ถ้าจอไม่เปลี่ยนหน้าตาระหว่างสองโหมดนี้ แปลว่าจอนั้นแยกแยะไม่ได้ = ยังไม่ได้ทดสอบ */
