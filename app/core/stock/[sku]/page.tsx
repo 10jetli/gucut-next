@@ -20,6 +20,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import { productMenuItems } from '@/lib/product-menu'
+import { findOrderId } from '@/lib/open-order'
 import {
   PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu,
 } from '@/components/zort'
@@ -185,6 +186,18 @@ export default function ProductDetailPage() {
    *  🔴 **คำตอบที่มาช้าห้ามทับของใหม่** — กดสลับตัวกรองรัว ๆ คำขอเก่าอาจถึงทีหลัง
    *     `seq` กันเรื่องลำดับ · `applied` กันเรื่องเนื้อหา — **คนละหน้าที่ ต้องมีทั้งคู่** */
   const cardSeq = useRef(0)
+
+  /* เปิดใบขายจากช่องอ้างอิงในสต็อกการ์ด — สามสถานะแยกกันชัด (ดู lib/open-order.ts) */
+  const [openingRef, setOpeningRef] = useState('')
+  const [refErr, setRefErr] = useState<{ ref: string; msg: string } | null>(null)
+  const openRef = useCallback(async (ref: string) => {
+    setOpeningRef(ref); setRefErr(null)
+    const r = await findOrderId(ref)
+    if (r.ok) router.push(`/core/sales/detail?id=${encodeURIComponent(r.id)}`)
+    else setRefErr({ ref, msg: r.msg })
+    setOpeningRef('')
+  }, [router])
+
   const loadCard = useCallback(async (kind: string) => {
     const my = ++cardSeq.current
     setCardLoading(true)
@@ -649,8 +662,24 @@ export default function ProductDetailPage() {
                       <td className={`${TD} whitespace-nowrap`}>{m.kind || '-'}</td>
                       <td className={`${TD} text-gray-500 whitespace-nowrap`}>{m.status || '-'}</td>
                       <td className={TD}>
-                        <span className="text-gray-700">{m.ref || '-'}</span>
+                        {/* แถวชนิด "ขาย" กดเข้าใบขายได้ — ต้องหา id จริงก่อน เพราะ ref คือ **เลขที่ใบ**
+                            ส่วน id ในกระจกคือ `<ร้าน>/<เลขที่ใบ>` (ดูเหตุผลเต็มใน lib/open-order.ts)
+                            ⚠️ ชนิดอื่น (ซื้อ · ปรับ · โอน) ยังเป็นข้อความโดยตั้งใจ — ปลายทางคนละจอ
+                               และยังไม่ได้ยืนยันว่า ref ของชนิดพวกนั้นผูกกลับใบไหนได้จริง
+                               เดาแล้วทำให้กดได้ = พาคนไปผิดใบ ซึ่งแย่กว่ากดไม่ได้ */}
+                        {m.kind === 'ขาย' && m.ref ? (
+                          <button type="button" onClick={() => openRef(String(m.ref))}
+                            disabled={openingRef === m.ref}
+                            className="text-blue-600 hover:underline disabled:opacity-50">
+                            {m.ref}{openingRef === m.ref && ' …'}
+                          </button>
+                        ) : (
+                          <span className="text-gray-700">{m.ref || '-'}</span>
+                        )}
                         {m.party ? <span className="text-gray-400"> · {m.party}</span> : null}
+                        {refErr?.ref === m.ref && (
+                          <span className="ml-2 text-[11px] text-red-700">{refErr?.msg}</span>
+                        )}
                       </td>
                       <td className={`${TDR} ${Number(m.qty) < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                         {Number(m.qty) > 0 ? '+' : ''}{fmtNum(Number(m.qty ?? 0))}

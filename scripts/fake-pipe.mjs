@@ -332,6 +332,27 @@ const srv = createServer(async (req, res) => {
       fields: ['fromwarehousecode', 'list', 'number', 'status', 'towarehousecode', 'trackingno', 'transferdate'],
     }))
   }
+  /* สต็อกการ์ด (จอ /core/stock/<sku> การ์ด "รายงาน")
+     ⚠️ ต้องมีสามแบบในตารางเดียว เพราะจอทำกับสามแบบนี้ต่างกัน:
+        ขาย+ค้นเจอ = กดเข้าใบได้ · ขาย+ค้นไม่เจอ = ต้องบอกตรงแถว · ซื้อ = **ต้องกดไม่ได้**
+        (ปลายทางของใบซื้อคนละจอ และยังไม่ยืนยันว่า ref ผูกกลับได้ ⇒ เดาแล้วพาไปผิดใบ) */
+  if (mode === 'good' && /list=stockcard/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      applied: { sku: new URL(req.url, 'http://x').searchParams.get('sku'), kind: new URL(req.url, 'http://x').searchParams.get('kind') || 'all', limit: 100 },
+      kinds: [{ key: 'all', label: 'การเคลื่อนไหว' }, { key: 'sale', label: 'รายการขายเท่านั้น' }],
+      missingKinds: ['รายการโอนระหว่างคลัง'],
+      warehouses: null,
+      total: 3, shown: 3, truncated: false,
+      counts: { sale: 2, buy: 1, adjust: 0 },
+      rows: [
+        { date: '2026-09-05', kind: 'ขาย', status: 'Success', ref: 'SO-001', party: 'สมชาย ใจดี', qty: -2, amount: 2000 },
+        { date: '2026-09-04', kind: 'ขาย', status: 'Success', ref: 'SO-ไม่มีในกระจก', party: 'อ*****ก', qty: -1, amount: 900 },
+        { date: '2026-09-01', kind: 'ซื้อ', status: 'Success', ref: 'PO-001', party: 'โรงงาน', qty: 50, amount: 25000 },
+      ],
+    }))
+  }
   /* ค้นใบขายด้วยเลขที่ใบ (จอแพ็คสินค้าใช้หา id จริงตอนกด — id = `<ร้าน>/<เลขที่ใบ>`)
      ⚠️ ต้องแยกสองเคสให้ทดสอบได้: q=SO-001 → เจอหนึ่งใบ · q อื่น → ไม่เจอ
         เพราะทางที่จอต้องทำต่างกันคนละทิศ (เด้งไป detail vs เขียนบอกตรงแถว) */

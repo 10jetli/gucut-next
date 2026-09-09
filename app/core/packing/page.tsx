@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { findOrderId } from '@/lib/open-order'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
@@ -77,24 +78,10 @@ export default function PackingPage() {
    *     ทั้งสามต้องบอกตรง ๆ ตรงแถวนั้น ห้ามพาไปหน้าที่เขียนว่าไม่พบแล้วให้คนเดาเอง */
   const openOrder = useCallback(async (number: string) => {
     setOpening(number); setOpenErr(null)
-    try {
-      const res = await fetch(`/api/web/core?list=orders&q=${encodeURIComponent(number)}&limit=5`)
-      const j = await res.json().catch(() => null)
-      const rows: Array<{ id?: string; number?: string }> = Array.isArray(j?.rows) ? j.rows : []
-      const hit = rows.filter((r) => r.number === number)
-      if (hit.length === 1 && hit[0].id) {
-        router.push(`/core/sales/detail?id=${encodeURIComponent(hit[0].id)}`)
-        return
-      }
-      setOpenErr({
-        number,
-        msg: !res.ok ? `เปิดไม่ได้ (ท่อตอบ ${res.status})`
-          : hit.length === 0 ? 'ไม่พบใบนี้ในคลังเงา — อาจยังไม่ถึงรอบซิงก์'
-          : 'เจอหลายใบเลขเดียวกัน เปิดให้อัตโนมัติไม่ได้ — ค้นในจอรายการขาย',
-      })
-    } catch (e) {
-      setOpenErr({ number, msg: `เปิดไม่ได้: ${e instanceof Error ? e.message : String(e)}` })
-    } finally { setOpening('') }
+    const r = await findOrderId(number)
+    if (r.ok) router.push(`/core/sales/detail?id=${encodeURIComponent(r.id)}`)
+    else setOpenErr({ number, msg: r.msg })
+    setOpening('')
   }, [router])
 
   const load = useCallback(async () => {
