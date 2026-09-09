@@ -74,6 +74,19 @@ function Inner() {
         </div>
       )}
 
+      {/* 🔴 ตอบ 200 แต่ไม่มีแม้แต่เลขที่ใบ = **ท่อตอบไม่ครบ ไม่ใช่ใบว่าง**
+          เจอด้วยท่อปลอมโหมด partialgood (9 ก.ย. 2569): ทุกช่องขึ้นขีดสวยงาม
+          อ่านแล้วเหมือนใบที่ไม่มีข้อมูล ทั้งที่ความจริงคือยังไม่ได้อะไรมาเลย */}
+      {!loading && !error && d && !wrongLevel && !d.number && (
+        <div className="bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mb-4 text-[12.5px] text-red-800">
+          <b>ท่อตอบมาไม่ครบ — ไม่มีแม้แต่เลขที่ใบ</b>
+          <p className="mt-1 text-[11.5px] text-red-700">
+            ช่องที่ขึ้นขีดข้างล่างคือ &ldquo;ยังไม่ได้ข้อมูล&rdquo; ไม่ใช่ &ldquo;ใบนี้ไม่มีข้อมูล&rdquo; ·
+            กดรีเฟรชอีกครั้ง ถ้ายังเหมือนเดิมให้ดูใบจริงที่ ZORT
+          </p>
+        </div>
+      )}
+
       {!loading && !error && d && !wrongLevel && (
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
