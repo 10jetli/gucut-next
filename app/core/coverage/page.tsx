@@ -74,7 +74,7 @@ function lowMonths(rows: Array<{ ym: string; orders: number; missing: boolean }>
 
 /** ผลถาม ZORT รายเดือน — **สามสถานะ ห้ามยุบ**
  *  count = ตัวเลขจริง · error = ถามไม่ได้ (ห้ามแปลว่า 0) · ยังไม่มีคีย์ = ยังไม่เคยถาม */
-interface ZortMonth { count?: number; error?: string }
+interface ZortMonth { count?: number; error?: string; stores?: number }
 
 /** แปลผลเทียบ "กระจกเรา" กับ "ZORT" — คำตัดสินที่จอนี้ตั้งใจให้ได้มาตั้งแต่แรก
  *  ⚠️ ZORT **ยังไม่หักใบยกเลิก** ส่วนกระจกเราหักแล้ว ⇒ เลขสองฝั่งไม่ต้องเท่ากันเป๊ะ
@@ -82,6 +82,7 @@ interface ZortMonth { count?: number; error?: string }
 function verdict(r: { orders: number; missing: boolean }, zortCount: number) {
   const ours = r.missing ? 0 : r.orders
   if (zortCount === 0 && ours === 0) return { text: '✅ ZORT ก็ไม่มีใบ — เดือนนี้ว่างจริง', tone: 'text-emerald-700' }
+  // (ข้อความข้างล่างเติมคำว่า "รวม N ร้าน" ที่ตัวเรียก — เลขต้องมีขอบเขตกำกับเสมอ)
   if (zortCount > 0 && ours === 0) return { text: `🔴 ZORT มี ${zortCount.toLocaleString('th-TH')} ใบ — เรายังไม่ได้กวาด`, tone: 'text-red-700' }
   if (zortCount === 0 && ours > 0) return { text: 'ZORT ตอบ 0 แต่เรามีใบ — ต้องดูด้วยตา', tone: 'text-amber-800' }
   const gap = Math.abs(zortCount - ours) / Math.max(zortCount, ours)
@@ -103,17 +104,28 @@ export default function CoveragePage() {
   const askZort = useCallback(async (ym: string) => {
     setAsking(ym)
     try {
-      const q = new URLSearchParams({ zortmonthly: '1', ym })
-      if (store) q.set('store', store)
-      const res = await fetch(`/api/web/core?${q}`)
-      const j = await res.json().catch(() => null)
-      if (!res.ok || !j || j.error || j.skip) {
-        setZort((s) => ({ ...s, [ym]: { error: String(j?.error || j?.skip || `ท่อตอบ ${res.status}`) } }))
-      } else if (typeof j.zortCount !== 'number') {
-        setZort((s) => ({ ...s, [ym]: { error: 'ท่อตอบมาไม่มีช่อง zortCount' } }))
-      } else {
-        setZort((s) => ({ ...s, [ym]: { count: j.zortCount } }))
+      /* 🔴 **ขอบเขตต้องตรงกันสองฝั่ง ไม่งั้นเทียบกันไม่ได้เลย** (เจอของจริง 9 ก.ย. 2569)
+         ตัวเลขฝั่งกระจกเมื่อเลือก "ทั้ง 2 ร้าน" = รวมสองร้าน
+         แต่ `zortmonthly` **default เป็น z1 ร้านเดียว** ⇒ ยิงเฉย ๆ จะได้ ZORT 367 vs เรา 1,103
+         แล้วจอจะขึ้น "ต่างกันมาก" ทุกเดือนทั้งที่ไม่มีอะไรผิด (วัดจริง: z1 367 + z2 761 = 1,128
+         เทียบกับกระจก 1,103 ⇒ ต่างแค่ใบยกเลิกที่ ZORT ยังนับ ซึ่งท่อเขียนกำกับไว้แล้ว)
+         ⚠️ ถ้าร้านใดร้านหนึ่งถามไม่ได้ **ห้ามบวกเฉพาะร้านที่ได้** — ผลรวมที่ขาดไปหนึ่งร้าน
+            หน้าตาเหมือน "ZORT มีน้อยกว่าเรา" ซึ่งชี้ไปผิดทางทั้งหมด ⇒ ถือเป็น error ทั้งเดือน */
+      const stores: Array<'z1' | 'z2'> = store ? [store] : ['z1', 'z2']
+      let total = 0
+      for (const st of stores) {
+        const q = new URLSearchParams({ zortmonthly: '1', ym, store: st })
+        // eslint-disable-next-line no-await-in-loop -- ท่อสั่งให้ถามทีละคำขอ ห้ามยิงพร้อมกัน
+        const res = await fetch(`/api/web/core?${q}`)
+        // eslint-disable-next-line no-await-in-loop
+        const j = await res.json().catch(() => null)
+        if (!res.ok || !j || j.error || j.skip) {
+          throw new Error(`ร้าน ${st}: ${String(j?.error || j?.skip || `ท่อตอบ ${res.status}`)}`)
+        }
+        if (typeof j.zortCount !== 'number') throw new Error(`ร้าน ${st}: ท่อตอบมาไม่มีช่อง zortCount`)
+        total += j.zortCount
       }
+      setZort((s) => ({ ...s, [ym]: { count: total, stores: stores.length } }))
     } catch (e) {
       setZort((s) => ({ ...s, [ym]: { error: String(e instanceof Error ? e.message : e) } }))
     } finally { setAsking('') }
@@ -247,7 +259,10 @@ export default function CoveragePage() {
                       ) : z.error ? (
                         <span className="text-amber-800">⏳ {z.error}</span>
                       ) : (
-                        <span className={verdict(r, z.count!).tone}>{verdict(r, z.count!).text}</span>
+                        <span className={verdict(r, z.count!).tone}>
+                          {verdict(r, z.count!).text}
+                          {z.stores === 2 && <span className="text-gray-400"> (รวม 2 ร้าน)</span>}
+                        </span>
                       )}
                     </td>
                   </tr>
