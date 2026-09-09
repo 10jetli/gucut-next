@@ -45,6 +45,29 @@ function fill(from: string, to: string, rows: Month[]): Array<Month & { missing:
   return out.reverse() // ใหม่สุดอยู่บน แบบเดียวกับจอรายการขาย
 }
 
+/** เดือนที่ "มีใบ แต่น้อยผิดปกติ" — ตาข่ายรูที่สองซึ่งจอรุ่นแรกมองไม่เห็น
+ *
+ *  🔑 เจอของจริง 9 ก.ย. 2569: ธ.ค. 2566 = 1,517 ใบ · **ม.ค. 2567 = 250 ใบ** · ก.พ. 2567 = 1,586 ใบ
+ *     เดือนแบบนี้ผ่านด่าน "ไม่มีแถวเลย" ไปสบาย ๆ แล้วขึ้นว่า "มีข้อมูล" เหมือนเดือนที่ครบทุกประการ
+ *
+ *  ⚠️ นี่คือ **ข้อสงสัย ไม่ใช่คำตัดสิน** — เดือนที่ขายน้อยจริงก็มี (ปิดร้าน · ช่วงต้นกิจการ)
+ *     จอต้องเขียนว่า "ควรตรวจ" ห้ามเขียนว่า "หาย"
+ *  ⚠️ ใช้ **มัธยฐาน** ไม่ใช่ค่าเฉลี่ย — เดือนที่หายเป็น 0 จะดึงค่าเฉลี่ยลงจนไม่มีอะไรผิดปกติอีกเลย
+ *  ⚠️ ต้องมีฐานขั้นต่ำ (≥6 เดือนที่มีของ) ไม่งั้นตัวหารเล็กจะชี้มั่ว (กฎ ratios-need-a-floor)
+ *  ⚠️ **เดือนปัจจุบันต้องยกเว้นเสมอ** — มันยังไม่จบเดือน ทุกวันที่ 1-10 จะเข้าเกณฑ์นี้หมด
+ *     ถ้าไม่ยกเว้น จอจะร้องทุกต้นเดือนจนคนเลิกเชื่อ (คลาสเดียวกับ heartbeat ที่เตือนเกิน)
+ */
+const LOW_RATIO = 0.3
+function lowMonths(rows: Array<{ ym: string; orders: number; missing: boolean }>, currentYm: string) {
+  const have = rows.filter((r) => !r.missing && r.ym !== currentYm)
+  if (have.length < 6) return { median: null as number | null, low: [] as string[] }
+  const sorted = have.map((r) => r.orders).sort((a, b) => a - b)
+  const mid = Math.floor(sorted.length / 2)
+  const median = sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2
+  if (!median) return { median: null, low: [] }
+  return { median, low: have.filter((r) => r.orders < median * LOW_RATIO).map((r) => r.ym) }
+}
+
 export default function CoveragePage() {
   const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
@@ -69,6 +92,10 @@ export default function CoveragePage() {
 
   const rows = d?.from && d?.to && d.months ? fill(d.from, d.to, d.months) : []
   const gaps = rows.filter((r) => r.missing)
+  /* เดือนปัจจุบันคิดจาก `to` ที่ท่อส่งมา (เวลาไทยฝั่งเซิร์ฟเวอร์) ไม่ใช่นาฬิกาเครื่องคนดู */
+  const currentYm = (d?.to ?? '').slice(0, 7)
+  const { median, low } = lowMonths(rows, currentYm)
+  const lowSet = new Set(low)
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
@@ -113,6 +140,20 @@ export default function CoveragePage() {
             </div>
           )}
 
+          {/* รูที่สอง: เดือนที่ **มีใบแต่น้อยผิดปกติ** ผ่านด่านแรกไปได้สบาย ๆ
+              (เจอจริง: ม.ค. 2567 = 250 ใบ ขณะที่เดือนข้าง ๆ 1,517 และ 1,586) */}
+          {low.length > 0 && (
+            <div className="bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5 mb-3 text-[12.5px] text-amber-900">
+              <b>{low.length} เดือนมีใบน้อยผิดปกติ — ควรตรวจว่ากวาดครบไหม</b>{' '}
+              {low.map((ym) => thaiYm(ym)).join(' · ')}
+              <p className="text-[11.5px] text-amber-800 mt-1">
+                เกณฑ์: น้อยกว่า {Math.round(LOW_RATIO * 100)}% ของค่ากลาง ({median?.toLocaleString('th-TH')} ใบ/เดือน)
+                · <b>เป็นข้อสงสัย ไม่ใช่คำตัดสิน</b> — เดือนที่ขายน้อยจริงก็มี ต้องนับใบจาก ZORT มาเทียบถึงจะรู้
+                · ไม่นับเดือนปัจจุบันเพราะยังไม่จบเดือน
+              </p>
+            </div>
+          )}
+
           <TableWrap>
             <table className="w-full min-w-[420px]">
               <thead className="bg-white border-b border-gray-200">
@@ -120,14 +161,16 @@ export default function CoveragePage() {
               </thead>
               <tbody>
                 {rows.map((r) => (
-                  <tr key={r.ym} className={`border-b border-[#e8ecf8] last:border-0 ${r.missing ? 'bg-red-50' : ''}`}>
+                  <tr key={r.ym} className={`border-b border-[#e8ecf8] last:border-0 ${r.missing ? 'bg-red-50' : lowSet.has(r.ym) ? 'bg-amber-50' : ''}`}>
                     <td className={`${TD} whitespace-nowrap`}>{thaiYm(r.ym)} <span className="text-gray-300 font-mono text-[11px]">{r.ym}</span></td>
                     <td className={TDR}>{r.missing ? <span className="text-gray-300">—</span> : r.orders.toLocaleString('th-TH')}</td>
                     <td className={TDR}>{r.missing ? <span className="text-gray-300">—</span> : `฿${Math.round(r.sales).toLocaleString('th-TH')}`}</td>
                     <td className={TD}>
                       {r.missing
                         ? <span className="text-red-700">ไม่มีใบเลย — ยังไม่รู้สาเหตุ</span>
-                        : <span className="text-gray-500">มีข้อมูล</span>}
+                        : lowSet.has(r.ym)
+                          ? <span className="text-amber-800">น้อยผิดปกติ — ควรตรวจ</span>
+                          : <span className="text-gray-500">มีข้อมูล</span>}
                     </td>
                   </tr>
                 ))}

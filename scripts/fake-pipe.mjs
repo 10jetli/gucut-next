@@ -414,7 +414,10 @@ const srv = createServer(async (req, res) => {
       const dt = new Date(Date.UTC(2026, 8 - i, 1))
       const ym = dt.toISOString().slice(0, 7)
       if (mode === 'gap' && (ym === '2026-03' || ym === '2026-04')) continue // เดือนที่ SQL ไม่คืนแถว
-      months.push({ ym, orders: 120 + i, sales: 250000 + i * 1000 })
+      /* โหมด gap มีเดือน "มีใบแต่น้อยผิดปกติ" ด้วย (ของจริง: ม.ค. 2567 = 250 ใบ ระหว่างเดือนพันกว่าใบ)
+         เดือนแบบนี้ผ่านด่าน "ไม่มีแถวเลย" ไปได้ ⇒ ต้องมีไว้ทดสอบด่านที่สอง ไม่งั้นไม่รู้ว่ามันทำงานไหม */
+      const low = mode === 'gap' && ym === '2026-06'
+      months.push({ ym, orders: low ? 12 : 120 + i, sales: low ? 24000 : 250000 + i * 1000 })
     }
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
