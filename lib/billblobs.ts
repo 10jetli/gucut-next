@@ -60,6 +60,17 @@ export async function syncBillToBlobs(
   return true
 }
 
+// ลบไฟล์บิล 1 ใบ — **ต้องระบุชื่อเต็มเป๊ะ ไม่มี wildcard ไม่มีลบเป็นชุด**
+// 🔴 มีไว้แก้ใบที่ถูกอัปเข้ามาผิด (เช่น ชื่อไฟล์คนละแบบจนกลายเป็นใบซ้ำ) เท่านั้น
+//    บิลคือเอกสารบัญชี — ลบแล้วไม่มีถังขยะให้กู้ ⇒ คืน false ถ้าไม่มีไฟล์ชื่อนั้น
+//    เพื่อให้คนเรียกแยก "ลบแล้ว" ออกจาก "ไม่เคยมี" ได้ ห้ามคืน true ลอย ๆ
+export async function deleteBillBlob(vendorId: string, filename: string): Promise<boolean> {
+  const store = getStore(STORE)
+  if (!(await blobFileExists(vendorId, filename))) return false
+  await store.delete(fkey(vendorId, filename))
+  return true
+}
+
 // list ไฟล์ทั้งหมดของ vendor — คืน size จาก metadata (ต่อเจ้ามีไม่กี่สิบไฟล์ getMetadata ไหว)
 export async function listVendorBlobFiles(vendorId: string): Promise<BlobBillFile[]> {
   const store = getStore(STORE)

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { syncBillToBlobs } from '@/lib/billblobs'
+import { deleteBillBlob, syncBillToBlobs } from '@/lib/billblobs'
 import { BILL_VENDORS } from '@/lib/vendors'
 
 export const dynamic = 'force-dynamic'
@@ -14,7 +14,7 @@ export const maxDuration = 60
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Methods': 'POST, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type',
 }
 
@@ -54,6 +54,33 @@ export async function POST(req: NextRequest) {
     const uploaded = await syncBillToBlobs(vendorId, driveName, 'application/pdf', buf)
 
     return json({ ok: true, uploaded, skipped: !uploaded, name: driveName, size: buf.length })
+  } catch (e: any) {
+    return json({ error: e.message ?? String(e) }, 500)
+  }
+}
+
+// DELETE /api/bills/upload?secret=<DRIVESYNC_SECRET>&vendor=<id>&name=<ชื่อไฟล์เต็ม>
+//
+// 🔴 มีไว้แก้ใบที่อัปเข้ามาผิดเท่านั้น — บิลเป็นเอกสารบัญชี ลบแล้วกู้ไม่ได้
+// ⚠️ **ต้องระบุ name เต็มเป๊ะ** (รวมส่วน `YYYY-MM_REAL_`) ไม่มี wildcard ไม่มีลบเป็นชุด
+//    โดยตั้งใจ — ตัวลบที่รับ pattern ได้ คือตัวที่วันหนึ่งจะลบทั้งเดือนเพราะพิมพ์ผิดตัวเดียว
+// ⚠️ แยกสองผลลัพธ์เสมอ: deleted=true (ลบจริง) vs 404 (ไม่มีไฟล์ชื่อนั้น)
+//    ห้ามตอบ ok เฉย ๆ ทั้งสองกรณี — คนเรียกจะแยกไม่ออกว่าลบถูกใบไหม
+export async function DELETE(req: NextRequest) {
+  try {
+    const sp = req.nextUrl.searchParams
+    const required = process.env.DRIVESYNC_SECRET
+    if (!required || (sp.get('secret') ?? '') !== required) return json({ error: 'Unauthorized' }, 401)
+
+    const vendorId = sp.get('vendor') ?? ''
+    if (!BILL_VENDORS.some(v => v.id === vendorId)) return json({ error: 'ไม่รู้จัก vendor นี้' }, 400)
+
+    const name = sp.get('name') ?? ''
+    if (!name || name !== safeName(name)) return json({ error: 'ต้องระบุ name เป็นชื่อไฟล์เต็มที่ถูกต้อง' }, 400)
+
+    const deleted = await deleteBillBlob(vendorId, name)
+    if (!deleted) return json({ error: 'ไม่พบไฟล์ชื่อนี้', vendor: vendorId, name }, 404)
+    return json({ ok: true, deleted: true, vendor: vendorId, name })
   } catch (e: any) {
     return json({ error: e.message ?? String(e) }, 500)
   }
