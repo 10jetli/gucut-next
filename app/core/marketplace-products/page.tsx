@@ -33,6 +33,13 @@ interface Row {
 }
 interface Resp {
   rows?: Row[]; total?: number
+  /** ท่อสะท้อนกลับว่ารับตัวกรองช่องทางแล้ว — **ไม่มีคีย์นี้ = ท่อรุ่นเก่า** (ดู SERVER_FILTER) */
+  channel?: string
+  /** เลขของทุกแท็บจากท่อ นับจากชุดเดียวกับแถวที่ส่งมา (มีเฉพาะตอนกรองช่องทาง) */
+  channelCounts?: Record<string, number>
+  /** จำนวนแถวที่เข้าเงื่อนไขทั้งหมด (ของแท็บที่เปิดอยู่) — ใช้ทำเลขหน้า */
+  rowsMatched?: number
+  rowsReturned?: number
   checkedMarketplaces?: string[] | null
   marketplacesFailed?: Record<string, string> | null
   marketplacesNotConnected?: Record<string, string> | null
@@ -41,8 +48,10 @@ interface Resp {
   error?: string
 }
 
-const PAGE = 200
-/** เพดานรอบดึง — 2,672 รหัส ÷ 200 = 14 หน้า · เผื่อโต 50% */
+/** ขนาดหน้าของตาราง — ใช้ทั้งตอนขอจากท่อและตอนเดินหน้า */
+const PAGE = 50
+/** เพดานรอบดึงของ **ทางถอย** (ท่อรุ่นเก่าที่ยังไม่รับ channel) · 2,672 ÷ 200 = 14 หน้า เผื่อโต 50% */
+const SWEEP_PAGE = 200
 const MAX_PAGES = 20
 
 /* เรียงและสะกดตามแท็บในภาพ 83: Shopee · Lazada · Tiktok Shop
@@ -64,29 +73,38 @@ export default function MarketplaceProductsPage() {
   const [error, setError] = useState('')
   /** ดึงไม่ครบทุกหน้า — ต้องบอก ไม่ใช่เงียบ (ตัวเลขที่ไม่ครบต้องประกาศขอบเขตตัวเอง) */
   const [partial, setPartial] = useState(false)
+  /** 🔴 **ทางถอย: ท่อรุ่นเก่ายังไม่รับ channel ⇒ จอกวาดทั้งคลังมานับเองเหมือนเดิม**
+   *  ต้องประกาศตัวบนจอเสมอ ไม่ใช่ถอยเงียบ ๆ — ทางถอยที่เงียบจะกลายเป็นทางหลัก
+   *  โดยไม่มีใครตัดสินใจ (กฎ fallbacks-must-announce) · วันที่ท่อขึ้นของใหม่ ป้ายนี้หายเอง */
+  const [serverFilter, setServerFilter] = useState<boolean | null>(null)
+  /** เลขแท็บจากท่อ (นับจากชุดเดียวกับแถว) — null = ยังไม่รู้ ⇒ ใช้ของที่นับเองแทน */
+  const [counts, setCounts] = useState<Record<string, number> | null>(null)
+  /** จำนวนแถวของแท็บที่เปิดอยู่ตามที่ท่อบอก — ใช้ทำเลขหน้าในโหมดท่อ */
+  const [matched, setMatched] = useState<number | null>(null)
 
-  const load = useCallback(async () => {
+  /* โหลดหน้าที่คนเปิดดูจริงเท่านั้น (โหมดท่อ) — ไม่กวาดทั้งคลังมานับในเบราว์เซอร์อีก
+     ⚠️ ส่ง q ให้ท่อด้วย ไม่กรองในจอ ไม่งั้น "หน้า 1 จาก N" จะนับจากของที่ยังไม่ได้กรอง */
+  const load = useCallback(async (tabNow = tab, pageNow = 0, qNow = q) => {
     setLoading(true)
     setError('')
     setPartial(false)
+    const qs = new URLSearchParams({ list: 'stock', marketplaces: '1', limit: String(PAGE), offset: String(pageNow * PAGE) })
+    if (qNow.trim()) qs.set('q', qNow.trim())
+    if (tabNow !== 'all') qs.set('channel', tabNow)
     try {
-      const all: Row[] = []
-      let first: Resp | null = null
-      let p = 0
-      for (; p < MAX_PAGES; p++) {
-        const url = `/api/web/core?list=stock&marketplaces=1&limit=${PAGE}&offset=${p * PAGE}`
-        const d: Resp = await fetch(url).then((r) => r.json())
-        if (d?.error) throw new Error(d.error)
-        if (!first) first = d
-        const got = Array.isArray(d.rows) ? d.rows : []
-        all.push(...got)
-        if (got.length < PAGE) break
-      }
-      // ⚠️ ชนเพดานแล้วยังไม่หมด = ตัวเลขข้างล่างไม่ใช่ทั้งคลัง ต้องประกาศ
-      if (p >= MAX_PAGES) setPartial(true)
-      setRows(all)
-      setMeta(first)
-      setPage(0)
+      const d: Resp = await fetch(`/api/web/core?${qs}`).then((r) => r.json())
+      if (d?.error) throw new Error(d.error)
+      /* 🔑 **ด่านแยกว่าท่อกรองให้จริงไหม** — ถาม "ท่อสะท้อนคีย์ channel กลับมาไหม"
+         ห้ามเดาจาก 200 เพราะท่อรุ่นเก่าก็ตอบ 200 แต่ส่งของทั้งคลังมาให้
+         (ถ้าเชื่อ 200 = จอจะโชว์ของทั้งคลังใต้หัวแท็บ Shopee โดยดูปกติทุกประการ) */
+      const ok = tabNow === 'all' ? typeof d.rowsMatched === 'number' : d.channel === tabNow
+      if (!ok) { await sweep(); return }
+      setServerFilter(true)
+      setRows(Array.isArray(d.rows) ? d.rows : [])
+      setMeta(d)
+      setMatched(typeof d.rowsMatched === 'number' ? d.rowsMatched : null)
+      if (d.channelCounts) setCounts(d.channelCounts)
+      setPage(pageNow)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
       setRows([])
@@ -94,25 +112,56 @@ export default function MarketplaceProductsPage() {
     } finally {
       setLoading(false)
     }
+  }, [tab, q]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* ── ทางถอย: กวาดทั้งคลังแล้วนับเองในเบราว์เซอร์ (วิธีเดิมก่อน 11 ก.ย. 2569) ──
+     เก็บไว้เพราะจอกับท่อ deploy คนละรอบเสมอ — แต่ **ต้องขึ้นป้ายบนจอว่ากำลังถอย** */
+  const sweep = useCallback(async () => {
+    setServerFilter(false)
+    setCounts(null)
+    setMatched(null)
+    const all: Row[] = []
+    let first: Resp | null = null
+    let p = 0
+    for (; p < MAX_PAGES; p++) {
+      const url = `/api/web/core?list=stock&marketplaces=1&limit=${SWEEP_PAGE}&offset=${p * SWEEP_PAGE}`
+      const d: Resp = await fetch(url).then((r) => r.json())
+      if (d?.error) throw new Error(d.error)
+      if (!first) first = d
+      const got = Array.isArray(d.rows) ? d.rows : []
+      all.push(...got)
+      if (got.length < SWEEP_PAGE) break
+    }
+    if (p >= MAX_PAGES) setPartial(true)
+    setRows(all)
+    setMeta(first)
+    setPage(0)
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load('all', 0, '') }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /** ⚠️ นับจาก rows ที่ดึงมาครบทุกหน้าแล้วเท่านั้น — ถ้า partial ต้องเขียนกำกับ */
-  const countOn = (id: string) => rows.filter((r) => (r.marketplaces ?? []).includes(id)).length
-  const none = rows.filter((r) => (r.marketplaces ?? []).length === 0)
+  /** นับเองจากชุดที่กวาดมา — **ใช้เฉพาะโหมดทางถอย** (โหมดท่อใช้เลขจากท่อ) */
+  const countOn = (id: string) => counts?.[id] ?? rows.filter((r) => (r.marketplaces ?? []).includes(id)).length
+  const noneCount = counts?.none ?? rows.filter((r) => (r.marketplaces ?? []).length === 0).length
 
-  const inTab = tab === 'all' ? rows
-    : tab === 'none' ? none
-      : rows.filter((r) => (r.marketplaces ?? []).includes(tab))
-
+  /* โหมดท่อ: ท่อกรอง+แบ่งหน้ามาแล้ว จอแสดงตามนั้นตรง ๆ ห้ามกรองซ้ำ
+     โหมดทางถอย: กรองในจอเหมือนเดิม */
   const needle = q.trim().toLowerCase()
-  const filtered = needle
-    ? inTab.filter((r) => String(r.sku ?? '').toLowerCase().includes(needle)
+  const inTab = serverFilter ? rows
+    : tab === 'all' ? rows
+      : tab === 'none' ? rows.filter((r) => (r.marketplaces ?? []).length === 0)
+        : rows.filter((r) => (r.marketplaces ?? []).includes(tab))
+  const filtered = serverFilter || !needle
+    ? inTab
+    : inTab.filter((r) => String(r.sku ?? '').toLowerCase().includes(needle)
       || String(r.name ?? '').toLowerCase().includes(needle))
-    : inTab
-  const shown = filtered.slice(page * 50, page * 50 + 50)
-  const pageCount = Math.max(1, Math.ceil(filtered.length / 50))
+  const shown = serverFilter ? filtered : filtered.slice(page * PAGE, page * PAGE + PAGE)
+  /** จำนวนทั้งหมดของแท็บที่เปิดอยู่ — โหมดท่อเอาจาก rowsMatched · ทางถอยนับจากชุดที่กวาด */
+  const totalInTab = serverFilter ? (matched ?? shown.length) : filtered.length
+  const pageCount = Math.max(1, Math.ceil(totalInTab / PAGE))
+  const goTab = (id: string) => { setTab(id); setPage(0); if (serverFilter !== false) load(id, 0, q); }
+  const goPage = (next: number) => { setPage(next); if (serverFilter) load(tab, next, q) }
+  const goSearch = (v: string) => { setQ(v); setPage(0); if (serverFilter) load(tab, 0, v) }
 
   return (
     <div className="p-4 md:p-6">
@@ -127,7 +176,7 @@ export default function MarketplaceProductsPage() {
             ? 'กำลังไล่ทุกหน้า…'
             : (
               <>
-                จำนวน {fmtNum(rows.length)} รหัสในคลัง
+                จำนวน {fmtNum(meta?.total ?? rows.length)} รหัสในคลัง
                 {' | '}
                 <span className="text-gray-400">
                   ลงขายอยู่จริงบนแต่ละเจ้า — ไม่ใช่ &ldquo;เชื่อมต่อไว้&rdquo; แบบที่ ZORT นับ
@@ -135,7 +184,7 @@ export default function MarketplaceProductsPage() {
               </>
             )
         }
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        actions={<BtnGhost onClick={() => load(tab, page, q)} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
       />
 
       {error && <ErrorBox title="ดึงรายการสินค้าไม่ได้">{error}</ErrorBox>}
@@ -144,6 +193,15 @@ export default function MarketplaceProductsPage() {
       {!loading && !error && (
         <>
           <MarketUnreliableBanner unreliable={meta?.marketplacesUnreliable} />
+
+          {/* 🔴 กำลังใช้ทางถอย = ต้องเห็น ไม่ใช่ถอยเงียบ ๆ (กฎ fallbacks-must-announce) */}
+          {serverFilter === false && (
+            <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+              ⚠️ <b>กำลังใช้วิธีเดิม: กวาดทั้งคลังมานับในเบราว์เซอร์</b> — ท่อรุ่นที่รันอยู่ยังไม่รับตัวกรองช่องทาง
+              (จอถามแล้วท่อไม่ได้สะท้อนกลับมา) · ตัวเลขยังถูกต้อง แต่ช้ากว่าและกินเน็ตมากกว่า ·
+              ป้ายนี้จะหายเองเมื่อท่อรุ่นใหม่ขึ้น <b>ไม่ต้องมาแก้จอ</b>
+            </div>
+          )}
 
           {/* ⚠️ ชนเพดานแล้วต้องประกาศ — เลขที่ไม่ครบต้องบอกขอบเขตตัวเอง
               (คลาสเดียวกับ truncated ของจอรายงานลูกค้า) */}
@@ -156,21 +214,21 @@ export default function MarketplaceProductsPage() {
 
           <SearchRow
             value={q}
-            onChange={(v) => { setQ(v); setPage(0) }}
-            onSubmit={() => setPage(0)}
+            onChange={goSearch}
+            onSubmit={() => goSearch(q)}
             placeholder="รหัสสินค้า หรือชื่อสินค้า"
-            advanced={<LinkText onClick={() => { setQ(''); setPage(0) }}>ล้างคำค้น</LinkText>}
+            advanced={<LinkText onClick={() => goSearch('')}>ล้างคำค้น</LinkText>}
           />
 
           <Tabs
             tabs={[
-              { id: 'all', label: 'ทั้งหมด', count: rows.length },
+              { id: 'all', label: 'ทั้งหมด', count: meta?.total ?? rows.length },
               ...PLATFORMS.map((p) => ({ id: p.id, label: p.label, count: countOn(p.id) })),
               // 🔴 แท็บนี้คือของที่มีค่าที่สุดในจอ — ของที่ยังไม่ได้ลงขายที่ไหนเลย
-              { id: 'none', label: 'ยังไม่ได้ลงที่ไหนเลย', count: none.length },
+              { id: 'none', label: 'ยังไม่ได้ลงที่ไหนเลย', count: noneCount },
             ]}
             active={tab}
-            onChange={(id) => { setTab(id); setPage(0) }}
+            onChange={goTab}
           />
 
           <TableWrap>
@@ -222,23 +280,26 @@ export default function MarketplaceProductsPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12px] text-gray-500">
-                แสดง {filtered.length === 0 ? 0 : fmtNum(page * 50 + 1)}–{fmtNum(Math.min((page + 1) * 50, filtered.length))}
-                {' '}จาก {fmtNum(filtered.length)} รหัส
+                แสดง {totalInTab === 0 ? 0 : fmtNum(page * PAGE + 1)}–{fmtNum(Math.min(page * PAGE + shown.length, totalInTab))}
+                {' '}จาก {fmtNum(totalInTab)} รหัส
                 {' '}· <MarketCoverage checked={meta?.checkedMarketplaces}
                   failed={meta?.marketplacesFailed} notConnected={meta?.marketplacesNotConnected}
                   at={meta?.marketplacesAt} />
               </span>
               <div className="flex items-center gap-2">
-                <BtnGhost onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>← ก่อนหน้า</BtnGhost>
+                <BtnGhost onClick={() => goPage(Math.max(0, page - 1))} disabled={loading || page === 0}>← ก่อนหน้า</BtnGhost>
                 <span className="text-[12px] text-gray-500">หน้า {page + 1} / {pageCount}</span>
-                <BtnGhost onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} disabled={page + 1 >= pageCount}>ถัดไป →</BtnGhost>
+                <BtnGhost onClick={() => goPage(Math.min(pageCount - 1, page + 1))} disabled={loading || page + 1 >= pageCount}>ถัดไป →</BtnGhost>
               </div>
             </div>
           </TableWrap>
 
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
-            ⚠️ จอนี้ไล่ดึง<b>ทุกหน้า</b>ก่อนนับ ไม่ใช่หน้าแรกหน้าเดียว — วัดจริง 5 ก.ย. 2569
-            หน้าแรก 200 แถวให้ Shopee 11 รหัส แต่ทั้งคลังได้ 76 ⇒ <b>หน้าแรกไม่ใช่ตัวแทน</b> ·
+            {serverFilter
+              ? <>✅ <b>ท่อกรองและนับให้ที่เดียว</b> (11 ก.ย. 2569) — จอโหลดเฉพาะหน้าที่เปิดดูจริง
+                เลขบนแท็บกับแถวในตารางมาจาก<b>ชุดเดียวกัน</b> จึงไม่มีทางไม่ตรงกัน ·</>
+              : <>⚠️ โหมดนี้จอไล่ดึง<b>ทุกหน้า</b>ก่อนนับ ไม่ใช่หน้าแรกหน้าเดียว — วัดจริง 5 ก.ย. 2569
+                หน้าแรก 200 แถวให้ Shopee 11 รหัส แต่ทั้งคลังได้ 76 ⇒ <b>หน้าแรกไม่ใช่ตัวแทน</b> ·</>}
             ตัวเลขชุดเดียวกับคอลัมน์ Marketplace ในจอสินค้า <b>สองจอต้องตรงกันเสมอ</b> ·
             ผังตามภาพจริง 83 (7 ก.ย. 2569) — จอ ZORT ของจริง<b>ว่างเปล่า 0 รายการ</b>
             ข้อมูลของเราจึงเกินผังโดยธรรมชาติ · &ldquo;ลิงก์ Marketplace&rdquo; ของ ZORT เป็น URL รายตัว

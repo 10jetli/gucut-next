@@ -439,6 +439,41 @@ const srv = createServer(async (req, res) => {
       fields: ['amount', 'customername', 'list', 'number', 'reference', 'returndate', 'status', 'vatamount'],
     }))
   }
+  /* จอสินค้าบน Marketplace — โหมดท่อรุ่นใหม่ (รับ channel + คืน channelCounts)
+     ⚠️ สลับเป็นท่อรุ่นเก่าได้ด้วย mode 'oldpipe' เพื่อทดสอบว่าจอถอยกลับไปกวาดเองแล้วขึ้นป้าย */
+  if ((mode === 'good' || mode === 'oldpipe') && /[?&]list=stock\b/.test(req.url) && /[?&]marketplaces=1/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const limit = Math.min(200, Number(u.searchParams.get('limit')) || 50)
+    const offset = Math.max(0, Number(u.searchParams.get('offset')) || 0)
+    const channel = (u.searchParams.get('channel') || '').trim()
+    const q = (u.searchParams.get('q') || '').trim().toLowerCase()
+    const TOTAL = 300
+    // แจกช่องทางแบบคาดเดาได้: หาร 3 ลงตัว = shopee · หาร 5 = lazada · หาร 7 = tiktok · ที่เหลือไม่ลงเลย
+    const all = []
+    for (let i = 1; i <= TOTAL; i++) {
+      const tags = []
+      if (i % 3 === 0) tags.push('shopee')
+      if (i % 5 === 0) tags.push('lazada')
+      if (i % 7 === 0) tags.push('tiktok')
+      if (i % 2 === 0) tags.push('gucut')
+      all.push({ sku: `MP-${String(i).padStart(3, '0')}`, name: `สินค้าทดสอบ ${i}`, qty: i, active: true, marketplaces: tags })
+    }
+    const counts = { shopee: 0, lazada: 0, tiktok: 0, gucut: 0, none: 0 }
+    for (const r of all) { if (!r.marketplaces.length) counts.none++; for (const t of r.marketplaces) counts[t]++ }
+    let pool = all
+    if (q) pool = pool.filter((r) => r.sku.toLowerCase().includes(q) || r.name.toLowerCase().includes(q))
+    // 🔴 ท่อรุ่นเก่า: **เมินตัวกรองเงียบ ๆ แล้วตอบ 200** — เคสที่จอต้องจับให้ได้
+    const oldPipe = mode === 'oldpipe'
+    if (channel && !oldPipe) pool = pool.filter((r) => channel === 'none' ? !r.marketplaces.length : r.marketplaces.includes(channel))
+    const page = pool.slice(offset, offset + limit)
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, day: '2026-09-11', total: TOTAL, rows: page,
+      checkedMarketplaces: ['shopee', 'lazada', 'tiktok'], marketplacesAt: '2026-09-11T08:00:00.000Z',
+      ...(oldPipe ? {} : { rowsMatched: pool.length, rowsReturned: page.length }),
+      ...(channel && !oldPipe ? { channel, channelCounts: counts } : {}),
+    }))
+  }
   /* หมวดหมู่ + สินค้าในหมวด — มี 218 รหัสโดยตั้งใจ (เลขจริงของหมวด 'อะไหล่ 5200…')
      เพื่อให้ทดสอบขอบของการแบ่งหน้าได้: หน้าแรก 200 · หน้าสอง 18 · ปุ่มถัดไปต้องดับ */
   if (mode === 'good' && /[?&]list=categories\b/.test(req.url)) {
