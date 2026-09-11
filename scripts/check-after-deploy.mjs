@@ -173,7 +173,10 @@ async function channelChecks() {
 async function coverageChecks() {
   const r = await get('core?stockcompare=1')
   const body = r.body ?? {}
-  const shop = body.shopee ?? body
+  /* ⚠️ ค่าอยู่ใต้คีย์ `stock` ไม่ใช่ชั้นบนและไม่ใช่ใต้ `shopee` — ยืนยันจากการยิงจริง 11 ก.ย. 2569
+     (รอบแรกเดาที่อยู่ผิด แล้วด่านขึ้น "ยังตรวจไม่ได้" ซึ่ง **ถูกต้องแล้ว**:
+      หาไม่เจอ = ไม่รู้ ไม่ใช่ผ่าน ⇒ ตัวตรวจพาไปหาที่อยู่จริงแทนที่จะเขียวหลอก) */
+  const shop = body.stock ?? body.shopee ?? body
   const flag = shop?.sawAllItems
   if (flag === undefined) {
     say('ตาข่ายความครบ', 'Shopee ไล่หน้าครบ', 'unknown',
