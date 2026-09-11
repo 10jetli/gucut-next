@@ -576,6 +576,33 @@ const srv = createServer(async (req, res) => {
     }))
   }
   /* ประวัติดันสต็อกขึ้นแพลตฟอร์ม (จอ /core/stock-push) — โครงจาก payload จริง 8 ก.ย. 2569 */
+  /* แผนดันสต็อกรอบถัดไป (?stockpush=1) — โครงจากการยิงของจริง 11 ก.ย. 2569
+     ⚠️ จงใจให้ **สามเจ้าไม่เหมือนกัน**: shopee ปกติ · lazada bucketsAddUp=false (ต้องขึ้นแดง)
+        · tiktok ตอบ skip (ต้องขึ้นเหลือง ไม่ใช่ 0) — ทดสอบว่าจอแยกสามทิศได้จริง */
+  if (mode === 'good' && /[?&]stockpush=1/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      mode: 'ซ้อมอย่างเดียว — ไม่เขียนอะไรกลับแพลตฟอร์ม',
+      shopee: {
+        platformSkus: 320, same: 205, wouldPush: 73, reopen: 14, close: 0, up: 59, down: 0,
+        skipNegative: 27, skipUnknown: 15, bucketsAddUp: true, day: '2026-09-11',
+        pushSample: [
+          { sku: '03386-33.5T', name: 'โซ่เลื่อยยนต์ NEWWAVE 3623', from: 0, to: 587, delta: 587, kind: 'reopen' },
+          { sku: '00313', name: 'หัวเทียนเลื่อยยนต์ NEWWAVE', from: 702, to: 705, delta: 3, kind: 'up' },
+        ],
+      },
+      lazada: {
+        platformSkus: 1964, same: 1678, wouldPush: 76, reopen: 1, close: 0, up: 74, down: 1,
+        skipNegative: 6, skipUnknown: 10, bucketsAddUp: false, day: '2026-09-11',
+        excludedGuess: 2, excludedOneToMany: 192, excludedOneToManyKeys: 91,
+        pushSample: [{ sku: 'LZ-001', name: 'ของทดสอบ Lazada', from: 10, to: 12, delta: 2, kind: 'up' }],
+      },
+      tiktok: { skip: 'ยังไม่มีตารางแปลง id — ดันไม่ได้จนกว่าจะทำเสร็จ' },
+      safetyNote: 'ห้ามดันรหัสที่คลังเราติดลบ · ห้ามดันรหัสที่คลังไม่รู้จัก',
+      readNote: 'reopen = ของมีแต่ปิดขายอยู่ · close = แพลตฟอร์มโชว์ว่ามีแต่เราไม่มี · ผลตรงข้ามกัน',
+    }))
+  }
   if (mode === 'good' && /stockpushlog=|stockpushverify=/.test(req.url)) {
     const u = new URL(req.url, 'http://x')
     res.writeHead(200, { 'content-type': 'application/json' })
