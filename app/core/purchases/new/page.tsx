@@ -9,7 +9,7 @@
 //    UpdatePurchaseOrder = 404 · EditPurchaseOrder มีเส้นแต่ยังไม่เคยยิงจริง)
 //    ⇒ ใบที่ส่งผิดจะค้างใน ZORT จนกว่าจะเข้าไปจัดการเอง
 //    ⇒ จอนี้จึงบังคับซ้อมก่อนเหมือนจอใบเสนอราคา และผูกสถานะซ้อมกับ "เนื้อหา" ไม่ใช่ "การกดปุ่ม"
-import { Suspense, useCallback, useMemo, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
@@ -39,8 +39,19 @@ function NewPurchaseOrderInner() {
   const [err, setErr] = useState('')
   const [res, setRes] = useState<WriteResp | null>(null)
   const [okDry, setOkDry] = useState('')
-  /** ⚠️ สร้างครั้งเดียวตอนเปิดหน้า — สร้างใหม่ตอนกด = กดสองครั้งได้ใบสองใบ */
-  const [ref] = useState(() => `PO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+  /** เลขอ้างอิงของใบนี้ — ตัวกันยิงซ้ำที่ฝั่งเซิร์ฟเวอร์ใช้ (UNIQUE กับ ref)
+   *  ⚠️ **สร้างครั้งเดียวตอนเปิดหน้า** — สร้างใหม่ตอนกด = กดสองครั้งได้ใบสองใบ
+   *  🔴 **ต้องสร้างใน effect ไม่ใช่ใน lazy initializer** (แก้ 12 ก.ย. 2569)
+   *     หน้านี้ถูกวาดล่วงหน้าฝั่งเซิร์ฟเวอร์ด้วย ⇒ Math.random ทำให้สองฝั่งได้คนละเลข
+   *     React เตือน hydration mismatch ทุกครั้งที่เปิดหน้า · ของจริงไม่พังเพราะสุดท้าย
+   *     ยึดค่าฝั่งเบราว์เซอร์ **แต่คำเตือนที่ไม่กระทบอะไรคือของอันตราย**:
+   *     สะสมไว้นาน ๆ คนจะเลิกอ่าน console แล้ววันที่มีของจริงโผล่มาจะไม่มีใครเห็น
+   *     (คลาสเดียวกับตาข่ายที่เขียวตลอดกาล — เสียงเตือนที่ไม่มีความหมายทำให้เสียงจริงถูกกลบ)
+   *  ⚠️ ว่างระหว่างเฟรมแรก = ปุ่มส่งยังกดไม่ได้อยู่แล้ว (ต้องกดทดลองส่งก่อน) จึงไม่มีช่องโหว่ */
+  const [ref, setRef] = useState('')
+  useEffect(() => {
+    setRef(`PO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+  }, [])
 
   const clean = useMemo(() => lines
     .map((l) => ({ sku: l.sku.trim(), name: l.name.trim(), qty: Number(l.qty), price: l.price.trim() === '' ? null : Number(l.price) }))

@@ -138,11 +138,35 @@ export default function MarketplaceProductsPage() {
     setPage(0)
   }, [])
 
-  useEffect(() => { load('all', 0, '') }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  /* ท่อคืน channelCounts (เลขครบทุกแท็บ) **เฉพาะตอนที่ถูกถามแบบมีตัวกรองช่องทาง**
+     เพราะตอนนั้นเท่านั้นที่มันถือชุดเต็มอยู่ในมือ ⇒ จอต้องถามให้ครั้งหนึ่ง
+     ⚠️ ขอ limit=1 เพราะเราต้องการแค่ตัวนับ ไม่ได้ต้องการแถว (แถวมาจากคำขอหลัก)
+     ⚠️ ล้มเหลว = ปล่อยให้เป็น undefined ⇒ แท็บไม่มีตัวเลข **ห้ามเดาเลขมาเติม** */
+  const loadCounts = useCallback(async () => {
+    try {
+      const d: Resp = await fetch('/api/web/core?list=stock&marketplaces=1&limit=1&channel=none').then((r) => r.json())
+      if (d?.channelCounts) setCounts(d.channelCounts)
+    } catch { /* ไม่มีเลขดีกว่าเลขผิด */ }
+  }, [])
 
-  /** นับเองจากชุดที่กวาดมา — **ใช้เฉพาะโหมดทางถอย** (โหมดท่อใช้เลขจากท่อ) */
-  const countOn = (id: string) => counts?.[id] ?? rows.filter((r) => (r.marketplaces ?? []).includes(id)).length
-  const noneCount = counts?.none ?? rows.filter((r) => (r.marketplaces ?? []).length === 0).length
+  useEffect(() => { load('all', 0, ''); loadCounts() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* 🔴 **เลขบนแท็บ: ไม่รู้ = ไม่โชว์เลข ห้ามนับจากแถวที่โหลดมาหน้าเดียว**
+     บั๊กที่เจอบน production 12 ก.ย. 2569 (CEO เปิดจอจริงแล้วจับได้):
+     โหมดท่อโหลดมาแค่หน้าละ 50 แถว แต่โค้ดเดิมตกไปนับจาก `rows` เมื่อยังไม่มี channelCounts
+     ⇒ ได้ Shopee 9 · Lazada 8 · Tiktok 7 ทั้งที่ของจริง 76 · 1,657 · 62
+     **ผิดแบบดูสมเหตุสมผล** ซึ่งอันตรายกว่าจอช้า เพราะคนอ่านแล้วเชื่อ
+     (ของเดิมนับถูกเพราะกวาดทั้งคลัง ⇒ รอบนี้เร็วขึ้นแต่เลขผิด = แย่กว่าเดิม)
+     ⇒ กติกา: นับเองได้เฉพาะตอนที่ `rows` คือทั้งคลังจริง ๆ (โหมดทางถอย) เท่านั้น
+        โหมดท่อยังไม่ได้เลขจากท่อ = คืน undefined ⇒ แท็บไม่โชว์ตัวเลข (ดีกว่าโชว์เลขผิด) */
+  const countOn = (id: string): number | undefined => {
+    if (counts && typeof counts[id] === 'number') return counts[id]
+    if (serverFilter === false) return rows.filter((r) => (r.marketplaces ?? []).includes(id)).length
+    return undefined
+  }
+  const noneCount = counts && typeof counts.none === 'number' ? counts.none
+    : serverFilter === false ? rows.filter((r) => (r.marketplaces ?? []).length === 0).length
+      : undefined
 
   /* โหมดท่อ: ท่อกรอง+แบ่งหน้ามาแล้ว จอแสดงตามนั้นตรง ๆ ห้ามกรองซ้ำ
      โหมดทางถอย: กรองในจอเหมือนเดิม */
@@ -184,7 +208,7 @@ export default function MarketplaceProductsPage() {
               </>
             )
         }
-        actions={<BtnGhost onClick={() => load(tab, page, q)} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        actions={<BtnGhost onClick={() => { load(tab, page, q); loadCounts() }} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
       />
 
       {error && <ErrorBox title="ดึงรายการสินค้าไม่ได้">{error}</ErrorBox>}
@@ -220,6 +244,13 @@ export default function MarketplaceProductsPage() {
             advanced={<LinkText onClick={() => goSearch('')}>ล้างคำค้น</LinkText>}
           />
 
+          {/* ⚠️ ไม่มีตัวเลขบนแท็บ = ยังไม่ได้เลขจากท่อ **ต้องเขียนบอก** ไม่ใช่ปล่อยให้เดาเอง */}
+          {serverFilter && !counts && (
+            <p className="text-[11.5px] text-gray-500 mb-1">
+              กำลังขอจำนวนรายช่องทางจากเซิร์ฟเวอร์… — แท็บจะยังไม่มีตัวเลขจนกว่าจะได้ของจริง
+              (ไม่โชว์ตัวเลขดีกว่าโชว์เลขที่นับจากหน้าเดียว)
+            </p>
+          )}
           <Tabs
             tabs={[
               { id: 'all', label: 'ทั้งหมด', count: meta?.total ?? rows.length },
