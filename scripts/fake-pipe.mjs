@@ -432,6 +432,17 @@ const srv = createServer(async (req, res) => {
       fields: ['amount', 'customername', 'list', 'number', 'reference', 'returndate', 'status', 'vatamount'],
     }))
   }
+  /* ค้นสินค้าในจอขายหน้าร้าน (?poslookup=<คำค้น>) — เจอเฉพาะ NW-01 เพื่อให้ทดสอบได้สองทิศ */
+  if (mode === 'good' && /[?&]poslookup=/.test(req.url)) {
+    const term = decodeURIComponent((req.url.match(/[?&]poslookup=([^&]*)/) || [])[1] || '')
+    const hit = term && 'NW-01'.toLowerCase().includes(term.toLowerCase())
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      rows: hit ? [{ sku: 'NW-01', name: 'ทดสอบ', price: 100, stock: 1 }] : [],
+      total: hit ? 1 : 0,
+    }))
+  }
   /* ใบสั่งซื้อรายใบ (?purchase=<เลขใบ>) — โครงตาม getPurchaseDetail ของท่อจริง */
   if (mode === 'good' && /[?&]purchase=/.test(req.url)) {
     const no = decodeURIComponent(req.url.match(/[?&]purchase=([^&]*)/)[1] || '')

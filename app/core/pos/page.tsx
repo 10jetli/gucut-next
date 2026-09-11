@@ -134,7 +134,9 @@ function CorePosInner() {
   const sp = useSearchParams()
   const [branches, setBranches] = useState<Branch[]>([])
   const [branch, setBranch] = useState('')
-  const [q, setQ] = useState('')
+  // ?sku= มาจากเมนู ⋮ "ขายสินค้า" ของจอสินค้า — เติมช่องค้นหาให้ แล้ว effect ค้นหา
+  // เดิมทำงานต่อเอง (การกดเมนูของคนขายคือเจตนาค้นตัวนั้นอยู่แล้ว ไม่ใช่ auto-poll)
+  const [q, setQ] = useState(() => (sp.get('sku') ?? '').trim())
   const [found, setFound] = useState<Found[]>([])
   const [looking, setLooking] = useState(false)
   const [cats, setCats] = useState<Cat[]>([])

@@ -18,7 +18,8 @@ export function productMenuItems(sku: string, go: (href: string) => void): RowMe
        และจอ /core/purchases/new เกิดขึ้นแล้ว (เจอตอนกวาดคลาส stale-state 11 ก.ย. 2569)
        จอนั้นประกาศข้อจำกัดของตัวเองครบ (ส่งจริงยังปิด รอเจ้าของร้านอนุมัติ · ซ้อมได้) */
     { label: 'ซื้อสินค้า', onClick: () => go(`/core/purchases/new?sku=${encodeURIComponent(sku)}`) },
-    { label: 'ขายสินค้า', onClick: () => go('/core/pos') },
+    // ติดรหัสไปในช่องค้นหาของ POS เลย — คนกดเลือกสินค้าตัวนี้มาแล้ว ไม่ควรต้องพิมพ์ซ้ำ
+    { label: 'ขายสินค้า', onClick: () => go(`/core/pos?sku=${encodeURIComponent(sku)}`) },
     { label: 'โอนสินค้า', onClick: () => go('/catalog/index.html#trf') },
     {
       // 🔴 ห้ามเปิดปุ่มนี้โดยไม่มีท่อยิงกลับ ZORT — เหตุผลเต็มอยู่ในหน้ารายละเอียดสินค้า
