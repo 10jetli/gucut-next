@@ -259,7 +259,9 @@ export default function CoreContactsPage() {
                             },
                             {
                               label: 'ขายออก (เปิดบิลที่ POS)',
-                              onClick: () => router.push('/core/pos'),
+                              // ส่งชื่อไปเติมช่องลูกค้าให้เลย — ถ้า POS มีบิลค้างอยู่ บิลค้างชนะ
+                              // และ POS จะเขียนบอกบนจอเองว่าชื่อจากลิงก์ยังไม่ถูกใส่
+                              onClick: () => router.push(`/core/pos?customer=${encodeURIComponent(r.name ?? '')}`),
                             },
                             /* เดิม disabled "ยังไม่มีท่อเปิดใบซื้อ" — ค้างตั้งแต่มี ?addpo=1
                                และจอ /core/purchases/new (กวาดคลาส stale-state 11 ก.ย. 2569) */

@@ -26,7 +26,8 @@
 //    ⇒ **คำเตือนบนหัวจอห้ามถอด** จนกว่าจะเลิกใช้ ZORT จริง
 // ⚠️ **ยิง sale=1 ตอนกด "เก็บเงิน" ครั้งเดียวเท่านั้น** ห้ามยิงตอนพิมพ์หรือแก้ตะกร้า
 //    (โควตาเขียนของ D1 มีจำกัด · และใบซ้ำแก้ทีหลังยาก)
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { fmtBaht } from '@/lib/format'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, Pill } from '@/components/zort'
@@ -127,7 +128,10 @@ function PermitBadge({ permit }: { permit: Permit }) {
 
 const thaiToday = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
 
-export default function CorePosPage() {
+function CorePosInner() {
+  // รับชื่อลูกค้ามาจากเมนู ⋮ "ขายออก" ของจอผู้ติดต่อได้ — เติมตั้งแต่ตอนสร้าง state
+  // ⚠️ บิลค้าง (draft) ชนะ prefill เสมอ — ดูเหตุผลใน effect กู้บิลข้างล่าง
+  const sp = useSearchParams()
   const [branches, setBranches] = useState<Branch[]>([])
   const [branch, setBranch] = useState('')
   const [q, setQ] = useState('')
@@ -150,7 +154,7 @@ export default function CorePosPage() {
   //    นึกว่าร้านมีแค่นั้น ทั้งที่มี 124 ตัว (โรคเดิม: ตัวเลขกับรายการมาคนละที่)
   const [searchTotal, setSearchTotal] = useState(0)
   const [cart, setCart] = useState<CartLine[]>([])
-  const [customer, setCustomer] = useState('')
+  const [customer, setCustomer] = useState(() => (sp.get('customer') ?? '').trim())
   const [saving, setSaving] = useState(false)
   const [done, setDone] = useState<{
     number: string
@@ -201,23 +205,47 @@ export default function CorePosPage() {
       const arr = raw ? JSON.parse(raw) : []
       if (Array.isArray(arr)) setHeld(arr)
     } catch { /* ของพังในเครื่องไม่ควรทำให้เปิดจอขายไม่ได้ */ }
+    /* ชื่อลูกค้าที่มากับลิงก์ (เมนู "ขายออก" ของจอผู้ติดต่อ) — ช่องชื่อลูกค้าโผล่
+       เฉพาะตอนตะกร้ามีของ ⇒ ชื่อที่เติมไว้ใน state มองไม่เห็นตอนเปิดจอ
+       ต้องบอกบนจอ ไม่งั้นคนกดเมนูมาแล้วไม่รู้ว่าติดมาหรือเปล่า */
+    const linked = new URLSearchParams(window.location.search).get('customer')?.trim() ?? ''
     try {
       const raw = localStorage.getItem(DRAFT_KEY)
-      if (!raw) return
+      if (!raw) {
+        /* functional + ?? — ห้ามทับ notice ที่ตั้งไปแล้ว: strict mode ของ dev รัน effect นี้สองรอบ
+           รอบแรกกู้บิล+ตั้ง notice แล้ว effect เซฟร่างลบ DRAFT (เห็น cart เริ่มต้นว่าง)
+           รอบสองเลยเข้าเส้น !raw — เขียนทับตรง ๆ = notice กู้บิลหายทั้งที่บิลถูกกู้ (เจอด้วยตา 11 ก.ย. 2569) */
+        if (linked) setNotice((prev) => prev ?? { tone: 'info', text: `เปิดบิลของลูกค้า "${linked}" — ชื่อจะติดไปกับบิลเมื่อเพิ่มสินค้า` })
+        return
+      }
       const d = JSON.parse(raw)
       const age = Date.now() - Number(d?.at || 0)
-      if (!Array.isArray(d?.lines) || d.lines.length === 0) return
-      if (age > DRAFT_MAX_AGE) { localStorage.removeItem(DRAFT_KEY); return }
+      if (!Array.isArray(d?.lines) || d.lines.length === 0) {
+        if (linked) setNotice((prev) => prev ?? { tone: 'info', text: `เปิดบิลของลูกค้า "${linked}" — ชื่อจะติดไปกับบิลเมื่อเพิ่มสินค้า` })
+        return
+      }
+      if (age > DRAFT_MAX_AGE) {
+        localStorage.removeItem(DRAFT_KEY)
+        if (linked) setNotice((prev) => prev ?? { tone: 'info', text: `เปิดบิลของลูกค้า "${linked}" — ชื่อจะติดไปกับบิลเมื่อเพิ่มสินค้า` })
+        return
+      }
       setCart(d.lines.map((l: CartLine) => ({ ...l, discount: Number(l.discount) || 0 })))
+      /* ⚠️ **บิลค้างชนะชื่อลูกค้าที่มากับลิงก์ (?customer=) เสมอ** — ตะกร้าค้างเป็น
+         บิลของลูกค้าเดิม เอาชื่อใหม่ไปแปะทับ = ใบเดียวปนสองคน แล้วไม่มีอะไรฟ้อง
+         ⇒ ทับกลับด้วยชื่อในบิลค้าง และถ้าชื่อจากลิงก์ต่างออกไป ต้องบอกบนจอ
+         ไม่ปล่อยให้หายเงียบ (คนกดเมนู "ขายออก" ของลูกค้า ข. มาจะได้รู้ว่าต้องล้างบิลก่อน) */
       setCustomer(String(d.customer ?? ''))
       // กู้รหัสประจำบิลมาด้วย — บิลเดิมต้องใช้ ref เดิม ไม่งั้นกดเปิดบิลหลังรีเฟรช
       // จะกลายเป็นบิลใหม่ในสายตาเซิร์ฟเวอร์ แล้วได้สองใบ (ร่างเก่าที่ไม่มี ref จะได้ตัวใหม่)
       if (typeof d.ref === 'string' && d.ref) setBillRef(d.ref)
       const when = new Date(Number(d.at)).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })
+      const clash = linked && linked !== String(d.customer ?? '').trim()
       setNotice({
         tone: 'info',
         text: `กู้บิลที่ค้างไว้ตั้งแต่ ${when} มาให้ (${d.lines.length} รายการ) — `
-          + 'ถ้าไม่ใช่บิลที่กำลังคิดอยู่ กด "ล้างบิล" ได้เลย',
+          + 'ถ้าไม่ใช่บิลที่กำลังคิดอยู่ กด "ล้างบิล" ได้เลย'
+          + (clash ? ` · ⚠️ ชื่อลูกค้า "${linked}" ที่ส่งมากับลิงก์ยังไม่ถูกใส่ `
+            + 'เพราะบิลค้างเป็นของลูกค้าเดิม — ล้างบิลก่อนแล้วค่อยกรอกชื่อใหม่' : ''),
       })
     } catch { /* ร่างพังไม่ควรขวางการขาย */ }
   }, [])
@@ -1139,5 +1167,14 @@ export default function CorePosPage() {
         })}
       </div>
     </div>
+  )
+}
+
+export default function CorePosPage() {
+  // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (idiom เดียวกับจอ moves)
+  return (
+    <Suspense fallback={<div className="p-6 text-[13px] text-gray-500">กำลังโหลด...</div>}>
+      <CorePosInner />
+    </Suspense>
   )
 }
