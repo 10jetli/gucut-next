@@ -446,7 +446,7 @@ const srv = createServer(async (req, res) => {
   /* โหมด 'midpipe' = ท่อรุ่นกลาง: **รับตัวกรองช่องทางแล้ว แต่ยังไม่คืน channelCounts**
      (คือสภาพจริงของ production ช่วง 11-12 ก.ย. 2569) — ใช้ทดสอบว่าจอ
      **ไม่โชว์ตัวเลขบนแท็บ** แทนที่จะนับจากแถวหน้าเดียวแล้วได้เลขผิดแบบดูสมเหตุสมผล */
-  if ((mode === 'good' || mode === 'oldpipe' || mode === 'midpipe') && /[?&]list=stock\b/.test(req.url) && /[?&]marketplaces=1/.test(req.url)) {
+  if ((mode === 'good' || mode === 'oldpipe' || mode === 'midpipe' || mode === 'nototal') && /[?&]list=stock\b/.test(req.url) && /[?&]marketplaces=1/.test(req.url)) {
     const u = new URL(req.url, 'http://x')
     const limit = Math.min(200, Number(u.searchParams.get('limit')) || 50)
     const offset = Math.max(0, Number(u.searchParams.get('offset')) || 0)
@@ -473,7 +473,7 @@ const srv = createServer(async (req, res) => {
     const page = pool.slice(offset, offset + limit)
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
-      ok: true, day: '2026-09-11', total: TOTAL, rows: page,
+      ok: true, day: '2026-09-11', ...(mode === 'nototal' ? {} : { total: TOTAL }), rows: page,
       checkedMarketplaces: ['shopee', 'lazada', 'tiktok'], marketplacesAt: '2026-09-11T08:00:00.000Z',
       ...(oldPipe ? {} : { rowsMatched: pool.length, rowsReturned: page.length }),
       ...(channel && !oldPipe ? { channel, ...(mode === 'midpipe' ? {} : { channelCounts: counts }) } : {}),

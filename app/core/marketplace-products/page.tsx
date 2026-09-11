@@ -200,7 +200,14 @@ export default function MarketplaceProductsPage() {
             ? 'กำลังไล่ทุกหน้า…'
             : (
               <>
-                จำนวน {fmtNum(meta?.total ?? rows.length)} รหัสในคลัง
+                {/* 🔴 **ไม่มีเลขจากท่อ = ไม่โชว์เลข** ห้ามถอยไปนับจาก rows
+                    ในโหมดท่อ rows คือหน้าเดียว (50 แถว) ⇒ จะได้ "จำนวน 50 รหัสในคลัง"
+                    ซึ่งผิดแบบดูสมเหตุสมผล — คลาสเดียวกับเลขแท็บที่เพิ่งแก้ไปเมื่อเช้า
+                    ⚠️ total ของท่อ **ไม่ถูกกรองด้วยช่องทาง** (ยืนยันจากโค้ดท่อ 12 ก.ย. 2569)
+                       ⇒ กดแท็บ Shopee แล้วหัวจอยังเป็นยอดทั้งคลังตามเดิม ถูกต้องแล้ว */}
+                {typeof meta?.total === 'number'
+                  ? <>จำนวน {fmtNum(meta.total)} รหัสในคลัง</>
+                  : <span className="text-gray-400">ยังไม่รู้จำนวนรหัสในคลัง (ท่อไม่ได้ส่งยอดรวมมา)</span>}
                 {' | '}
                 <span className="text-gray-400">
                   ลงขายอยู่จริงบนแต่ละเจ้า — ไม่ใช่ &ldquo;เชื่อมต่อไว้&rdquo; แบบที่ ZORT นับ
@@ -253,7 +260,8 @@ export default function MarketplaceProductsPage() {
           )}
           <Tabs
             tabs={[
-              { id: 'all', label: 'ทั้งหมด', count: meta?.total ?? rows.length },
+              // ไม่มีเลขจากท่อ = ไม่ใส่ count ⇒ แท็บไม่โชว์ตัวเลข (ดีกว่าโชว์เลขของหน้าเดียว)
+              { id: 'all', label: 'ทั้งหมด', count: typeof meta?.total === 'number' ? meta.total : undefined },
               ...PLATFORMS.map((p) => ({ id: p.id, label: p.label, count: countOn(p.id) })),
               // 🔴 แท็บนี้คือของที่มีค่าที่สุดในจอ — ของที่ยังไม่ได้ลงขายที่ไหนเลย
               { id: 'none', label: 'ยังไม่ได้ลงที่ไหนเลย', count: noneCount },
