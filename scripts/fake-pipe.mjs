@@ -432,6 +432,29 @@ const srv = createServer(async (req, res) => {
       fields: ['amount', 'customername', 'list', 'number', 'reference', 'returndate', 'status', 'vatamount'],
     }))
   }
+  /* หมวดหมู่ + สินค้าในหมวด — มี 218 รหัสโดยตั้งใจ (เลขจริงของหมวด 'อะไหล่ 5200…')
+     เพื่อให้ทดสอบขอบของการแบ่งหน้าได้: หน้าแรก 200 · หน้าสอง 18 · ปุ่มถัดไปต้องดับ */
+  if (mode === 'good' && /[?&]list=categories\b/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      rows: [{ name: 'หมวดทดสอบ 218', skus: 218, onhand_value: 1000, available_value: 900, zort: true }],
+      total: 1,
+    }))
+  }
+  if (mode === 'good' && /[?&]list=stock\b/.test(req.url) && /[?&]category=/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const limit = Math.min(200, Number(u.searchParams.get('limit')) || 200)
+    const offset = Math.max(0, Number(u.searchParams.get('offset')) || 0)
+    /* ชื่อหมวดมีคำว่า 'เล็ก' = หมวดที่ของไม่ถึงหน้าเดียว — ใช้ทดสอบว่าปุ่มหน้าต้องไม่โผล่ */
+    const TOTAL = /เล็ก/.test(u.searchParams.get('category') || '') ? 5 : 218
+    const rows = []
+    for (let i = offset; i < Math.min(TOTAL, offset + limit); i++) {
+      rows.push({ sku: `CAT-${String(i + 1).padStart(3, '0')}`, name: `สินค้าทดสอบ ${i + 1}`, onhand: 1, available: 1 })
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ ok: true, total: TOTAL, shown: TOTAL, rows }))
+  }
   /* ประวัติของเข้า-ออก (?list=moves[&sku=]) — มีแถวของ NW-01 ให้เห็นว่าตัวกรองทำงาน */
   if (mode === 'good' && /[?&]list=moves\b/.test(req.url)) {
     const sku = decodeURIComponent((req.url.match(/[?&]sku=([^&]*)/) || [])[1] || '').trim()

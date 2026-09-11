@@ -31,23 +31,31 @@ interface StockRow {
 
 const NUM = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 
+/** เพดานของท่อคือ 200 ต่อคำขอ (core-stock.mjs) — ขอมากกว่านี้ไม่ได้ จึงใช้เป็นขนาดหน้าเลย */
+const PAGE = 200
+
 function Inner() {
   const catName = useSearchParams().get('name') ?? ''
   const [cat, setCat] = useState<CatRow | null>(null)
   const [items, setItems] = useState<StockRow[] | null>(null)
   const [total, setTotal] = useState<number | null>(null)
+  const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [warn, setWarn] = useState('')
 
-  const load = useCallback(async () => {
+  /* 🔴 **หนึ่งคำขอต่อการกดหนึ่งครั้ง — ห้ามวนกวาดทุกหน้ามานับเอง**
+     ท่อ cap limit ไว้ 200 ตายตัว และส่ง total ของหมวดมาให้แล้ว ⇒ ใช้ total ปิดปุ่ม
+     ท่าเดียวกับจอสินค้า/รายการขาย (ดู stock/page.tsx: shown = offset + rows.length) */
+  const load = useCallback(async (off = 0) => {
     if (!catName) { setError('ไม่ได้ระบุหมวด (ต้องเปิดจากจอหมวดหมู่)'); setLoading(false); return }
     setLoading(true); setError(''); setWarn('')
     try {
       /* ยิงสองเส้นพร้อมกัน — เส้นไหนล้มบอกเฉพาะเส้นนั้น ไม่ทำให้ทั้งจอว่าง */
       const [cRes, sRes] = await Promise.allSettled([
         fetch('/api/web/core?list=categories').then((r) => r.json()),
-        fetch(`/api/web/core?list=stock&category=${encodeURIComponent(catName)}&limit=200&marketplaces=1`).then((r) => r.json()),
+        fetch(`/api/web/core?list=stock&category=${encodeURIComponent(catName)}`
+          + `&limit=${PAGE}&offset=${off}&marketplaces=1`).then((r) => r.json()),
       ])
 
       if (cRes.status === 'fulfilled' && Array.isArray(cRes.value?.rows)) {
@@ -59,18 +67,23 @@ function Inner() {
       if (sRes.status === 'fulfilled' && Array.isArray(sRes.value?.rows)) {
         setItems(sRes.value.rows as StockRow[])
         setTotal(NUM(sRes.value.total))
+        // ขยับตัวชี้หน้า **หลังคำขอสำเร็จเท่านั้น** — ล้มแล้วขยับ = ปุ่มกับของบนจอไม่ตรงกัน
+        setOffset(off)
       } else {
         setItems(null)
         throw new Error('ดึงรายการสินค้าในหมวดนี้ไม่ได้')
       }
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }
   }, [catName])
-  useEffect(() => { load() }, [load])
+  // เปลี่ยนหมวด = กลับไปหน้าแรกเสมอ (หมวดใหม่ไม่มีเหตุผลให้เริ่มที่หน้า 2 ของหมวดเก่า)
+  useEffect(() => { load(0) }, [load])
 
   /* ตัวเลขสองแหล่งต้องตรงกัน — ไม่ตรง = บอกให้เห็น ไม่ใช่เลือกข้างเงียบ ๆ
      (จำนวน SKU จาก list=categories vs total จาก list=stock&category) */
   const catSkus = NUM(cat?.skus)
   const mismatch = catSkus !== null && total !== null && catSkus !== total
+  /** ดูไปแล้วถึงแถวที่เท่าไหร่ (นับจากหน้าแรก) — ตัวเดียวกับที่จอสินค้าใช้ปิดปุ่ม "ถัดไป" */
+  const seen = offset + (items?.length ?? 0)
 
   return (
     <div className="p-4 md:p-6">
@@ -84,7 +97,9 @@ function Inner() {
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5" style={{ background: '#4669e5' }}>
               เปิดในจอสินค้า
             </Link>
-            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* รีเฟรช = โหลดหน้าที่กำลังดูซ้ำ ไม่ใช่กระโดดกลับหน้าแรก
+                (ส่ง offset เองเสมอ — ปล่อย onClick={load} ตรง ๆ จะส่ง MouseEvent ไปเป็นเลขหน้า) */}
+            <BtnGhost onClick={() => load(offset)} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
           </div>
         }
       />
@@ -138,13 +153,20 @@ function Inner() {
           {mismatch && (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
               ⚠️ <b>ตัวเลขสองแหล่งไม่ตรงกัน</b>: หน้าหมวดหมู่นับ {fmtNum(catSkus!)} SKU ·
-              ดึงรายการสินค้าในหมวดนี้ได้ {fmtNum(total!)} รายการ — อาจเป็นเพราะเพดานดึง 200
-              หรือการนับคนละนิยาม (รวม/ไม่รวมรายการบริการ) · <b>ยังไม่สรุปว่าตัวไหนถูก</b>
+              เส้นรายการสินค้าบอกว่าหมวดนี้มี {fmtNum(total!)} รายการ — น่าจะเป็นการนับคนละนิยาม
+              (รวม/ไม่รวมรายการบริการ) · <b>ยังไม่สรุปว่าตัวไหนถูก</b>
+              {/* เดิมเขียนว่า "อาจเป็นเพราะเพดานดึง 200" — ใช้ไม่ได้แล้วตั้งแต่จอนี้แบ่งหน้า
+                  เพราะ total เป็นยอดของหมวดทั้งหมด ไม่ได้ถูกเพดานตัด (11 ก.ย. 2569) */}
             </p>
           )}
 
+          {/* หัวตาราง: บอก "ช่วงที่กำลังดู จากทั้งหมด" ไม่ใช่แค่จำนวนแถวในหน้านี้
+              (แถวที่ 1–200 จาก 218 อ่านรู้เรื่องกว่า "200 จาก 218" เมื่อมีหลายหน้า) */}
           <p className="text-[12.5px] font-semibold text-gray-700 mb-1.5">
-            สินค้าในหมวดนี้ {items ? `(${fmtNum(items.length)}${total !== null && total > items.length ? ` จาก ${fmtNum(total)}` : ''})` : ''}
+            สินค้าในหมวดนี้{' '}
+            {!items ? '' : total !== null && total > items.length
+              ? `(แถวที่ ${fmtNum(offset + 1)}–${fmtNum(seen)} จาก ${fmtNum(total)})`
+              : `(${fmtNum(items.length)})`}
           </p>
           {!items ? null : items.length === 0 ? (
             <p className="text-[12.5px] text-gray-400 bg-white border border-gray-200 rounded-md px-4 py-6 text-center">
@@ -180,11 +202,24 @@ function Inner() {
             </TableWrap>
           )}
 
-          {total !== null && items && total > items.length && (
-            <p className="text-[11.5px] text-gray-400 mt-2">
-              แสดง {fmtNum(items.length)} จาก {fmtNum(total)} รายการ (เพดานดึง 200 ต่อครั้ง) —
-              ดูครบที่ <Link href={`/core/stock?category=${encodeURIComponent(catName)}`} className="text-blue-600 hover:underline">จอสินค้า</Link>
-            </p>
+          {/* ปุ่มหน้า — โชว์เมื่อมีของเกินหนึ่งหน้าเท่านั้น (หมวดเล็กไม่ต้องมีปุ่มให้รำคาญ)
+              ⚠️ ปิด "ถัดไป" ด้วย total ของท่อ ไม่ใช่ "หน้านี้ได้ครบ 200 ไหม" —
+                 หน้าสุดท้ายที่ได้ครบ 200 พอดีจะทำให้ปุ่มเปิดค้างแล้วกดไปเจอหน้าว่าง */}
+          {items !== null && total !== null && (total > PAGE || offset > 0) && (
+            <div className="flex items-center justify-between gap-3 mt-2 flex-wrap">
+              <p className="text-[11.5px] text-gray-400">
+                ดึงได้ {fmtNum(PAGE)} รายการต่อครั้ง (เพดานของท่อ) · ดูทั้งหมดพร้อมตัวกรองได้ที่{' '}
+                <Link href={`/core/stock?category=${encodeURIComponent(catName)}`} className="text-blue-600 hover:underline">จอสินค้า</Link>
+              </p>
+              <div className="flex gap-2">
+                <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
+                  ← ก่อนหน้า
+                </BtnGhost>
+                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || seen >= total}>
+                  ถัดไป →
+                </BtnGhost>
+              </div>
+            </div>
           )}
         </>
       )}
