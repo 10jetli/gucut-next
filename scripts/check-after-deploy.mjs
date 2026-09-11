@@ -188,7 +188,26 @@ async function coverageChecks() {
     + (flag === null ? ' ⇒ แพลตฟอร์มไม่ได้บอกยอดรวม = ยังไม่ได้ตรวจ' : ''))
 }
 
-const groups = [officeChecks, stockPushChecks, channelChecks, coverageChecks]
+/* ── ชุดที่ 5: คีย์ที่จอรุ่นใหม่พึ่งพา ──
+   จอ 6 ใบที่แก้วันนี้อ่านคีย์พวกนี้จากท่อ ถ้าวันหนึ่งท่อเลิกส่ง จอจะกลับไปเงียบ/เดาเอง
+   ⇒ ตรวจว่า "คีย์ยังอยู่" เป็นด่านของตัวเอง ไม่ใช่รอให้คนเปิดจอแล้วสังเกตเอง
+   ⚠️ ตรวจแค่ว่ามีคีย์และเป็นตัวเลข **ไม่ตรวจว่าเลขถูก** (เลขถูกพิสูจน์ตอนเทียบกับจอ) */
+async function screenContractChecks() {
+  const cases = [
+    ['customer-report ต้องมี distinctNames', 'core?bycustomer=1&days=7&limit=5', (b) => typeof b?.distinctNames === 'number', (b) => `distinctNames=${b?.distinctNames}`],
+    ['missing-sku ต้องมี computed/agreeWithShopee', 'core?list=missing-sku', (b) => typeof b?.computed === 'number' && typeof b?.agreeWithShopee === 'number', (b) => `computed=${b?.computed} · agree=${b?.agreeWithShopee}`],
+    ['categories ต้องมี total', 'core?list=categories', (b) => typeof b?.total === 'number', (b) => `total=${b?.total} · rows=${(b?.rows ?? []).length}`],
+    ['orders ต้องมี unreadable', 'orders', (b) => typeof b?.unreadable === 'number', (b) => `unreadable=${b?.unreadable} · orders=${(b?.orders ?? []).length}`],
+  ]
+  for (const [name, path, ok, detail] of cases) {
+    const r = await get(path)
+    const good = r.status === 200 && ok(r.body)
+    say('คีย์ที่จอพึ่งพา', name, good ? 'ok' : r.status === 200 ? 'fail' : 'unknown',
+      `HTTP ${r.status} · ${r.body ? detail(r.body) : r.raw}`)
+  }
+}
+
+const groups = [officeChecks, stockPushChecks, channelChecks, coverageChecks, screenContractChecks]
 for (const g of groups) {
   try { await g() } catch (e) { say('ระบบ', g.name, 'unknown', `ด่านล้มกลางทาง: ${String(e?.message || e)}`) }
 }
