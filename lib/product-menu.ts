@@ -14,7 +14,10 @@ export function productMenuItems(sku: string, go: (href: string) => void): RowMe
     { label: 'ปักหมุดไว้บนสุด', disabled: 'ZORT ไม่เปิด API หมวดหมู่/การปักหมุด — ปักได้ที่ ZORT เท่านั้น' },
     { label: 'ดูภาพรวม', onClick: () => go(`/core/stock/${encodeURIComponent(sku)}`) },
     { label: 'คัดลอกรหัสสินค้า', onClick: () => { navigator.clipboard?.writeText(sku).catch(() => {}) } },
-    { label: 'ซื้อสินค้า', disabled: 'ยังไม่มีท่อเปิดใบซื้อ — เปิดใบซื้อที่ ZORT ก่อน แล้วรอบซิงก์ถัดไปจะเข้ามาเอง' },
+    /* เดิม disabled ด้วยเหตุผล "ยังไม่มีท่อเปิดใบซื้อ" — ค้างตั้งแต่ท่อเปิด ?addpo=1
+       และจอ /core/purchases/new เกิดขึ้นแล้ว (เจอตอนกวาดคลาส stale-state 11 ก.ย. 2569)
+       จอนั้นประกาศข้อจำกัดของตัวเองครบ (ส่งจริงยังปิด รอเจ้าของร้านอนุมัติ · ซ้อมได้) */
+    { label: 'ซื้อสินค้า', onClick: () => go(`/core/purchases/new?sku=${encodeURIComponent(sku)}`) },
     { label: 'ขายสินค้า', onClick: () => go('/core/pos') },
     { label: 'โอนสินค้า', onClick: () => go('/catalog/index.html#trf') },
     {

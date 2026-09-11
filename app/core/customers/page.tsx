@@ -261,7 +261,12 @@ export default function CoreContactsPage() {
                               label: 'ขายออก (เปิดบิลที่ POS)',
                               onClick: () => router.push('/core/pos'),
                             },
-                            { label: 'ซื้อเข้า', disabled: 'ยังไม่มีท่อเปิดใบซื้อ — เปิดที่ ZORT ก่อน แล้วรอบซิงก์จะเข้ามาเอง' },
+                            /* เดิม disabled "ยังไม่มีท่อเปิดใบซื้อ" — ค้างตั้งแต่มี ?addpo=1
+                               และจอ /core/purchases/new (กวาดคลาส stale-state 11 ก.ย. 2569) */
+                            {
+                              label: 'ซื้อเข้า',
+                              onClick: () => router.push(`/core/purchases/new?vendor=${encodeURIComponent(r.name ?? '')}`),
+                            },
                             { label: 'แก้ไข', disabled: 'ผู้ติดต่อเป็นกระจกจาก ZORT — แก้ที่ ZORT เท่านั้น' },
                             { label: 'เพิ่ม Tag', disabled: 'คลังเงายังไม่ได้เก็บ Tag ของผู้ติดต่อ' },
                             {

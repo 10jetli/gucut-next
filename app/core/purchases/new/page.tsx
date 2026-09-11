@@ -9,7 +9,8 @@
 //    UpdatePurchaseOrder = 404 · EditPurchaseOrder มีเส้นแต่ยังไม่เคยยิงจริง)
 //    ⇒ ใบที่ส่งผิดจะค้างใน ZORT จนกว่าจะเข้าไปจัดการเอง
 //    ⇒ จอนี้จึงบังคับซ้อมก่อนเหมือนจอใบเสนอราคา และผูกสถานะซ้อมกับ "เนื้อหา" ไม่ใช่ "การกดปุ่ม"
-import { useCallback, useMemo, useState } from 'react'
+import { Suspense, useCallback, useMemo, useState } from 'react'
+import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
@@ -23,10 +24,17 @@ const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
  *  ⇒ ใบผิดที่ค้างอยู่ อาจทำให้มีคนสั่งของตามใบนั้น */
 const REAL_SEND_ENABLED = false
 
-export default function NewPurchaseOrderPage() {
-  const [vendor, setVendor] = useState('')
+function NewPurchaseOrderInner() {
+  // รับรหัสสินค้ามาจากเมนู ⋮ ของจอสินค้า/ลูกค้าได้ ("ซื้อสินค้า" → เปิดใบพร้อมบรรทัดแรก)
+  // เติมตั้งแต่ตอนสร้าง state ไม่ใช่ใน effect — กติกาเดียวกับจอ moves (กันช่องกระพริบว่าง)
+  const sp = useSearchParams()
+  // ?vendor= มาจากเมนู ⋮ "ซื้อเข้า" ของจอผู้ติดต่อ (คนนั้นคือคู่ค้าของใบนี้)
+  const [vendor, setVendor] = useState(() => (sp.get('vendor') ?? '').trim())
   const [note, setNote] = useState('')
-  const [lines, setLines] = useState<Line[]>([{ ...BLANK }])
+  const [lines, setLines] = useState<Line[]>(() => {
+    const sku = (sp.get('sku') ?? '').trim()
+    return [sku ? { ...BLANK, sku } : { ...BLANK }]
+  })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [res, setRes] = useState<WriteResp | null>(null)
@@ -175,5 +183,14 @@ export default function NewPurchaseOrderPage() {
         ระหว่างนี้ถือว่า <b>ทำใบให้ถูกตั้งแต่แรก</b>
       </p>
     </div>
+  )
+}
+
+export default function NewPurchaseOrderPage() {
+  // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (กติกาเดียวกับจอ moves)
+  return (
+    <Suspense fallback={<div className="p-6 text-[13px] text-gray-500">กำลังโหลด...</div>}>
+      <NewPurchaseOrderInner />
+    </Suspense>
   )
 }
