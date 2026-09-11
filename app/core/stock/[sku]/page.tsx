@@ -58,6 +58,10 @@ interface StockCardResp {
   shown?: number
   counts?: { sale?: number; buy?: number; adjust?: number }
   truncated?: boolean
+  /** คีย์ใหม่ความหมายเดียว — rowsReturned = ที่ส่งกลับจริงในคำตอบนี้ · rowsMatched = เข้าเงื่อนไขทั้งหมด
+   *  (แทน shown ที่ความหมายต่างกันข้ามเส้น · ทางถอย shown ยังอ่านอยู่ตอนท่อรุ่นเก่า) */
+  rowsReturned?: number
+  rowsMatched?: number
   rows?: CardRow[]
   error?: string
 }
@@ -752,9 +756,9 @@ export default function ProductDetailPage() {
                 ตอนนี้ท่อส่งเลขจริงมาแล้ว (93bd13f) — **เลิกเดาจากการชนเพดาน**
                 ⚠️ แต่ยังต้องมีทางถอย เผื่อจอใหม่เจอท่อเก่าตอน deploy เหลื่อม */}
             {typeof card?.total === 'number' ? (
-              (card.truncated || card.total !== (card.shown ?? cardRows.length)) && (
+              (card.truncated || card.total !== (card.rowsReturned ?? card.shown ?? cardRows.length)) && (
                 <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
-                  แสดง <b>{fmtNum(card.shown ?? cardRows.length)}</b> จาก{' '}
+                  แสดง <b>{fmtNum(card.rowsReturned ?? card.shown ?? cardRows.length)}</b> จาก{' '}
                   <b>{fmtNum(card.total)}</b> รายการ
                   {card.counts && (
                     <> — ขาย {fmtNum(Number(card.counts.sale ?? 0))} ·

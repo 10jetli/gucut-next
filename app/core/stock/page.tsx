@@ -80,6 +80,9 @@ interface Resp {
   /** จำนวนสินค้าทั้งหมดที่ ZORT มี (รวมตัวที่ไม่มีรหัส) */
   zortTotal?: number
   limit: number; offset: number; rows: Row[]
+  /** คีย์ใหม่ความหมายเดียว — แถวที่เข้าเงื่อนไขทั้งหมด (แทน shown ที่กำกวม) */
+  rowsMatched?: number
+  rowsReturned?: number
 }
 
 const PAGE = 50
@@ -177,7 +180,11 @@ function CoreStockInner() {
   const allRows = data?.rows ?? []
   const hiddenRows = allRows.filter((r) => TEST_SKUS.includes(r.sku))
   const rows = showTest ? allRows : allRows.filter((r) => !TEST_SKUS.includes(r.sku))
-  const inTab = data?.shown ?? data?.total ?? 0
+  /* จำนวนของแท็บที่เลือก — อ่านคีย์ใหม่ก่อนเสมอ
+     ท่อเพิ่ม rowsMatched (= แถวที่เข้าเงื่อนไขทั้งหมด) แทน shown ที่ความหมายกำกวม
+     (shown ของ list=stock = แถวของแท็บ · ของ list=stockcard = แถวที่ส่งกลับ ⇒ ชื่อเดียวสองความหมาย)
+     ⚠️ ทางถอย shown ยังต้องมี เพราะจอกับท่อ deploy คนละรอบเสมอ — หายได้เมื่อเลิกส่ง shown แล้ว */
+  const inTab = data?.rowsMatched ?? data?.shown ?? data?.total ?? 0
   const shown = offset + rows.length
 
   return (

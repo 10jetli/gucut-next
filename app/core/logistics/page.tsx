@@ -33,6 +33,8 @@ interface Row {
 interface Resp {
   /** ขอบเขตทั้งหมด (ใช้ทำป้ายบนแท็บ) · `shown` = จำนวนของแท็บที่เลือก (ใช้กับเลขหน้า) */
   total: number; shown?: number; shipped?: number; unshipped?: number; cod?: number
+  /** คีย์ใหม่ความหมายเดียว — แถวที่เข้าเงื่อนไขทั้งหมด (แทน shown ที่กำกวมข้ามเส้น) */
+  rowsMatched?: number; rowsReturned?: number
   /** ขนส่งที่รวมชื่อสะกดต่าง ๆ เข้าเป็นเจ้าเดียวแล้ว — `names` คือชื่อดิบที่ถูกรวมเข้ามา
    *  ⚠️ **ต้องกดดูชื่อดิบได้เสมอ** วันไหนต้องไล่ว่าใบไหนมาจากชื่อไหน ต้องยังไล่ได้
    *  ⚠️ `carrierUngrouped` = ตาข่ายกันเจ้าใหม่โผล่แล้วถูกกลืนหายเงียบ ๆ */
@@ -97,7 +99,8 @@ export default function LogisticsPage() {
    *  ใช้ `total` ตรง ๆ จะได้ "แสดง 7 จาก 559" และปุ่มถัดไปกดได้ทั้งที่ไม่มีหน้าถัดไป
    *  ⚠️ ทางถอยยังต้องมี — จอใหม่อาจเจอท่อเก่าที่ยังไม่ส่ง `shown` ตอน deploy เหลื่อม */
   const tabTotal = Number(
-    data?.shown
+    data?.rowsMatched   // คีย์ใหม่ความหมายเดียว — มาก่อน shown ที่ความหมายกำกวมข้ามเส้น
+    ?? data?.shown
     ?? (only === 'unshipped' ? data?.unshipped
       : only === 'shipped' ? data?.shipped
         : only === 'cod' ? data?.cod
