@@ -71,7 +71,11 @@ function MovesInner() {
 
   const [moves, setMoves] = useState<Move[]>([])
   const [total, setTotal] = useState(0)
-  const [filterSku, setFilterSku] = useState('')
+  /* มาจากลิงก์พร้อมรหัส = กรองประวัติด้วยรหัสนั้นทันที **ไม่ใช่แค่ความสะดวก**
+     ตาข่ายกันซ้ำคือ UNIQUE(reason,ref,sku) ซึ่งกันได้เฉพาะ "ยิงซ้ำกุญแจเดิม" —
+     คนที่ไม่เห็นว่าของเข้าไปแล้วจะกรอกใบใหม่ด้วย ref ใหม่ แล้วสต็อกบวมเงียบ ๆ
+     (กฎ guard-stops-retry-not-reentry) ⇒ ให้เห็นประวัติของรหัสนั้นตั้งแต่เปิดจอ */
+  const [filterSku, setFilterSku] = useState(() => sp.get('sku')?.trim() ?? '')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -98,7 +102,8 @@ function MovesInner() {
     }
   }, [filterSku])
 
-  useEffect(() => { load('') }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  // โหลดรอบแรกตามตัวกรองเริ่มต้น (ว่าง = ทุกรหัส · มาจากลิงก์ = รหัสนั้น)
+  useEffect(() => { load(filterSku) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const dir = REASONS.find((r) => r.id === reason)?.dir ?? 'in'
 

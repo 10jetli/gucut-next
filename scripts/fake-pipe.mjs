@@ -432,6 +432,17 @@ const srv = createServer(async (req, res) => {
       fields: ['amount', 'customername', 'list', 'number', 'reference', 'returndate', 'status', 'vatamount'],
     }))
   }
+  /* ประวัติของเข้า-ออก (?list=moves[&sku=]) — มีแถวของ NW-01 ให้เห็นว่าตัวกรองทำงาน */
+  if (mode === 'good' && /[?&]list=moves\b/.test(req.url)) {
+    const sku = decodeURIComponent((req.url.match(/[?&]sku=([^&]*)/) || [])[1] || '').trim()
+    const all = [
+      { id: 2, sku: 'NW-01', qty: 50, reason: 'receive', ref: 'PO-001', at: '2026-09-01 02:10:00' },
+      { id: 1, sku: 'NW-99', qty: -2, reason: 'damage', ref: 'DMG-001', at: '2026-08-30 04:00:00' },
+    ]
+    const rows = sku ? all.filter((r) => r.sku === sku) : all
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ ok: true, rows, total: rows.length }))
+  }
   /* ค้นสินค้าในจอขายหน้าร้าน (?poslookup=<คำค้น>) — เจอเฉพาะ NW-01 เพื่อให้ทดสอบได้สองทิศ */
   if (mode === 'good' && /[?&]poslookup=/.test(req.url)) {
     const term = decodeURIComponent((req.url.match(/[?&]poslookup=([^&]*)/) || [])[1] || '')
