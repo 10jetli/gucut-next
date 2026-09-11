@@ -432,6 +432,15 @@ const srv = createServer(async (req, res) => {
       fields: ['amount', 'customername', 'list', 'number', 'reference', 'returndate', 'status', 'vatamount'],
     }))
   }
+  /* ตรวจตัวกรองรายคลังกับ ZORT (?zortwarehouse=) — การ์ดรายคลังในหน้าสินค้าใช้ */
+  if (mode === 'good' && /[?&]zortwarehouse=/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true,
+      verdict: 'ยังไม่พบว่าตัวกรองคลังมีผล — ทุกท่าคืนข้อมูลชุดเดิม (ZORT น่าจะเมินพารามิเตอร์)',
+      note: 'ตอบ 200 ไม่ได้แปลว่าใช้ได้',
+    }))
+  }
   /* ขาที่สองของจอ /core/coverage — นับใบจาก ZORT ตรง ๆ ทีละเดือน (?zortmonthly=1&ym=YYYY-MM)
      ⚠️ ต้องมีครบ **สามผลลัพธ์** เพราะจอต้องเขียนคนละคำ:
         ZORT มีใบ (แต่กระจกว่าง = เรายังไม่กวาด) · ZORT ไม่มีใบจริง (ปิดคดี) · ถาม ZORT ไม่ได้

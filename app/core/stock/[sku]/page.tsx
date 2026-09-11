@@ -190,6 +190,27 @@ export default function ProductDetailPage() {
   /* เปิดใบขายจากช่องอ้างอิงในสต็อกการ์ด — สามสถานะแยกกันชัด (ดู lib/open-order.ts) */
   const [openingRef, setOpeningRef] = useState('')
   const [refErr, setRefErr] = useState<{ ref: string; msg: string } | null>(null)
+  /* ตรวจกับ ZORT สด ๆ ว่าตัวกรองรายคลังใช้ได้หรือยัง — ท่อเปิดเส้น ?zortwarehouse= ให้แล้ว
+     (ยิงเฉพาะตอนกด ตามกติกาห้ามเช็คอัตโนมัติ) · สามสถานะ: ยังไม่ถาม · ถามไม่ได้ · ได้คำตัดสิน */
+  const [whProbe, setWhProbe] = useState<{ verdict?: string; error?: string } | null>(null)
+  const [whAsking, setWhAsking] = useState(false)
+  const probeWarehouse = useCallback(async () => {
+    setWhAsking(true)
+    try {
+      const res = await fetch(`/api/web/core?zortwarehouse=1&sku=${encodeURIComponent(sku)}`)
+      const j = await res.json().catch(() => null)
+      if (!res.ok || !j || j.error || j.skip) {
+        setWhProbe({ error: String(j?.error || j?.skip || `ท่อตอบ ${res.status}`) })
+      } else if (typeof j.verdict !== 'string') {
+        setWhProbe({ error: 'ท่อตอบมาไม่มีคำตัดสิน (verdict)' })
+      } else {
+        setWhProbe({ verdict: j.verdict })
+      }
+    } catch (e) {
+      setWhProbe({ error: String(e instanceof Error ? e.message : e) })
+    } finally { setWhAsking(false) }
+  }, [sku])
+
   const openRef = useCallback(async (ref: string) => {
     setOpeningRef(ref); setRefErr(null)
     const r = await findOrderId(ref)
@@ -581,11 +602,27 @@ export default function ProductDetailPage() {
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <span className="text-[30px] opacity-60">🏬</span>
               <p className="text-[13px] text-gray-700 mt-2">ยังไม่มีข้อมูลแยกรายคลัง</p>
-              <p className="text-[12px] text-gray-500 mt-1 max-w-[420px] leading-relaxed">
-                สต็อกแยกตามคลัง <b>ยังไม่พบทาง (กวาดชื่อเส้น 30+ ชื่อ 6 ก.ย. 2569 → 404 หมด แต่ยังไม่ได้ลองระดับพารามิเตอร์)</b> ·
-                คลังเงาเก็บสต็อกรวมทั้งร้าน จึงแยกรายคลังไม่ได้ —
-                เป็น<b>ข้อจำกัดของต้นทาง ไม่ใช่ของที่ยังทำไม่เสร็จ</b>
+              <p className="text-[12px] text-gray-500 mt-1 max-w-[440px] leading-relaxed">
+                {/* เดิมเขียนว่า "ยังไม่ได้ลองระดับพารามิเตอร์" — ค้างแล้ว: ท่อลองให้แล้ว (?zortwarehouse=)
+                    ผลยิงจริง 10 ก.ย. 2569: ใส่ warehouseid แล้ว **เลขไม่เปลี่ยน** = ZORT เมินพารามิเตอร์ */}
+                ตรวจระดับพารามิเตอร์แล้ว (10 ก.ย. 2569): ส่ง warehouseid ให้ ZORT
+                แล้ว<b>ตัวเลขไม่เปลี่ยน</b> — ZORT เมินตัวกรองคลัง ·
+                คลังเงาจึงเก็บได้แค่สต็อกรวมทั้งร้าน เป็น<b>ข้อจำกัดของต้นทาง ไม่ใช่ของที่ยังทำไม่เสร็จ</b>
               </p>
+              {/* ปุ่มตรวจซ้ำ — วันที่ ZORT เริ่มรองรับจริง คำตัดสินบนจอจะเปลี่ยนเอง
+                  (กติกา nets-expire-silently: ข้อจำกัดของต้นทางก็หมดอายุได้ ต้องมีทางตรวจใหม่) */}
+              <div className="mt-3">
+                <button type="button" onClick={probeWarehouse} disabled={whAsking}
+                  className="text-[12px] text-blue-600 hover:underline disabled:opacity-50">
+                  {whAsking ? 'กำลังถาม ZORT…' : 'ตรวจกับ ZORT อีกครั้ง (รหัสนี้)'}
+                </button>
+                {whProbe?.verdict && (
+                  <p className="text-[12px] text-gray-700 mt-1 max-w-[440px]">ผลสด: {whProbe.verdict}</p>
+                )}
+                {whProbe?.error && (
+                  <p className="text-[12px] text-amber-700 mt-1">⏳ ถามไม่ได้: {whProbe.error}</p>
+                )}
+              </div>
             </div>
           </Card>
 
@@ -618,7 +655,7 @@ export default function ProductDetailPage() {
                   ทำ dropdown ที่เลือกได้แล้วไม่มีอะไรเปลี่ยน คือของหลอก ⇒ ล็อกไว้พร้อมเหตุผล */}
               <select
                 disabled
-                title="คลังเงาเก็บสต็อกรวมทั้งร้าน (3 คลัง: โกดัง + จุดขาย 2) ยังไม่มีข้อมูลแยกรายคลัง — ยังไม่พบทาง (กวาดชื่อเส้น 30+ ชื่อ 6 ก.ย. 2569 → 404 หมด แต่ยังไม่ได้ลองระดับพารามิเตอร์)"
+                title="คลังเงาเก็บสต็อกรวมทั้งร้าน (3 คลัง: โกดัง + จุดขาย 2) — ตรวจระดับพารามิเตอร์แล้ว 10 ก.ย. 2569: ZORT เมินตัวกรองคลัง (ใส่ warehouseid แล้วเลขไม่เปลี่ยน)"
                 className="text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 text-gray-400 cursor-not-allowed"
               >
                 <option>ทั้งหมด</option>
