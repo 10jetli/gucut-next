@@ -166,10 +166,17 @@ const srv = createServer(async (req, res) => {
   /* ห้องทำงาน AI (จอ /office) — ทดสอบครบสามกติกา: แถวสด · แถวเก่า+ฟิลด์ null · ไม่มีแถว (Codex) */
   if (mode === 'good' && req.url.startsWith('/api/office')) {
     globalThis.__office ??= {
+      /* ⚠️ คละเจ้าของโดยตั้งใจ — ต้องมีครบทุกกลุ่ม + แถวที่ **ไม่มี owner** (ท่อรุ่นเก่า)
+         + กลุ่มที่มีแต่งานเสร็จแล้ว (g1) เพื่อทดสอบว่าหัวกลุ่มซ่อนแต่แถวยังเห็น */
       tasks: [
-        { id: 't1', text: 'ไปกด GRUB หน้าเครื่อง g1', note: 'บูตค้างจากเคอร์เนล 139', done: false, at: Date.now() - 2 * 3600e3 },
-        { id: 't2', text: 'เอา PEAK API key มาให้ทีม', done: false, at: Date.now() - 26 * 3600e3 },
-        { id: 't3', text: 'กรอกตัวเลข sold.json', done: true, at: Date.now() - 3 * 86400e3, doneAt: Date.now() - 3600e3 },
+        { id: 't1', text: 'ไปกด GRUB หน้าเครื่อง g1', note: 'บูตค้างจากเคอร์เนล 139', owner: 'ประธาน', done: false, at: Date.now() - 2 * 3600e3 },
+        { id: 't2', text: 'เอา PEAK API key มาให้ทีม', owner: 'ประธาน', done: false, at: Date.now() - 26 * 3600e3 },
+        { id: 't3', text: 'กรอกตัวเลข sold.json', owner: 'ประธาน', done: true, at: Date.now() - 3 * 86400e3, doneAt: Date.now() - 3600e3 },
+        { id: 't4', text: '🔧 [Codex] แก้ bycustomer ชน D1', owner: 'codex', done: false, at: Date.now() - 5 * 3600e3 },
+        { id: 't5', text: '🖥 [gucut2] จัดกลุ่มกระดานตามเจ้าของ', owner: 'gucut2', done: false, at: Date.now() - 30 * 60e3 },
+        { id: 't6', text: '📦 [รอ push 21:00] งานวันนี้', owner: 'gucut', done: false, at: Date.now() - 4 * 3600e3 },
+        { id: 't7', text: '⚙️ [g1] ทำ systemd ให้ตัวบริการแว่น', owner: 'g1', done: true, at: Date.now() - 2 * 86400e3, doneAt: Date.now() - 7200e3 },
+        { id: 't8', text: 'งานเก่าจากท่อรุ่นก่อนหน้า (ยังไม่มีเจ้าของ)', done: false, at: Date.now() - 45 * 60e3 },
       ],
     }
     if (req.method === 'POST') {

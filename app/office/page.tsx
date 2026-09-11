@@ -36,7 +36,24 @@ interface OwnerTask {
   at?: number | null; doneAt?: number | null
   /** เจ้าของร้านกด "พร้อมทำ" — ท่อเด้ง Telegram เรียก AI แล้ว (8 ก.ย. 2569) */
   ready?: boolean; readyAt?: number | null
+  /** ใครรับงานนี้ไป — ท่อเป็นคนตัดสิน **จอห้ามเดาเอง** (ท่านประธานสั่งแยกกลุ่ม 11 ก.ย. 2569)
+   *  ไม่มีค่า = ท่อรุ่นเก่าที่ยังไม่ได้ deploy ⇒ ลงกลุ่ม "ไม่ระบุ" ห้ามหายเงียบ */
+  owner?: string | null
 }
+
+/** กลุ่มบนกระดาน — **เรียงตามนี้เสมอ ท่านประธานอยู่บนสุด** (ท่านสั่งเอง 11 ก.ย. 2569
+ *  ว่า "ใส่ส่วนของผมลงไปด้วย" ⇒ เป็นกลุ่มจริงกลุ่มหนึ่ง ไม่ใช่กองที่เหลือ)
+ *  ⚠️ ใช้คำที่คนอ่านเข้าใจ ไม่ใช่ชื่อตัวแปร — ท่านกำลังฝึกใช้ระบบอยู่ */
+const OWNER_GROUPS: Array<{ key: string; label: string; hint: string }> = [
+  { key: 'ประธาน', label: '🙋 รอท่านประธาน', hint: 'ต้องให้ท่านกดเอง AI ทำแทนไม่ได้' },
+  { key: 'gucut', label: '🤖 gucut (CEO)', hint: 'ฝั่งท่อ · แจกงาน · รอบ push 21:00' },
+  { key: 'gucut2', label: '🖥 gucut2 (คุณส้ม)', hint: 'ฝั่งจอ · ตรวจด้วยตา' },
+  { key: 'codex', label: '🔧 Codex', hint: 'งานขอบเขตชัด จบในตัว' },
+  { key: 'g1', label: '⚙️ เครื่อง g1', hint: 'งานรันยาว · สคริปต์ · ตัวเฝ้า' },
+  /* 🔴 ถังสุดท้ายสำหรับแถวที่ท่อยังไม่ได้เติมเจ้าของ (ท่อรุ่นเก่า) —
+     ต้องมีเสมอ ไม่งั้นงานจะหายจากกระดานโดยไม่มีใครรู้ว่าหายไปไหน */
+  { key: '', label: '❔ ไม่ระบุเจ้าของ', hint: 'ท่อรุ่นที่รันอยู่ยังไม่ได้บอกว่าเป็นของใคร' },
+]
 interface Resp { now?: number; agents?: AgentRow[]; tasks?: OwnerTask[]; error?: string; skip?: string }
 
 /** ทะเบียนทีม — ใครควรมีแถว · คนหายต้องเห็นเป็นแถว "รอรายงาน" ไม่ใช่หายเงียบ */
@@ -125,6 +142,71 @@ export default function OfficePage() {
     return { ...m, r, ageMin }
   })
 
+  /* วาดงานหนึ่งแถว — แยกออกมาเพราะตอนนี้ต้องวาดหลายกลุ่ม (แยกตามเจ้าของ)
+     ⚠️ เนื้อในเหมือนเดิมทุกบรรทัด ไม่ได้เปลี่ยนพฤติกรรมปุ่มใด ๆ */
+  const renderTask = (t: OwnerTask) => {
+              /* อายุจากนาฬิกาเซิร์ฟเวอร์เหมือนเดิม — ใช้ d?.now เพราะตัววาดนี้อยู่นอก
+                 บล็อกที่การันตีว่า d ไม่ว่าง (ตัวช่วยถูกเรียกจากหลายกลุ่มแล้ว) */
+              const ageMin = typeof t.at === 'number' && typeof d?.now === 'number'
+                ? Math.max(0, (d.now - t.at) / 60e3) : null
+              const ageText = ageMin === null ? '' : ageMin < 60 ? `${Math.floor(ageMin)} นาที`
+                : ageMin < 1440 ? `${Math.floor(ageMin / 60)} ชม.` : `${Math.floor(ageMin / 1440)} วัน`
+              return (
+                <li key={t.id ?? t.text} className="flex items-start gap-2.5">
+                  {t.done ? (
+                    <span className="text-emerald-500 text-[14px] leading-5">✓</span>
+                  ) : (
+                    <button onClick={() => t.id && setConfirmId(t.id)} disabled={!t.id || taskBusy === t.id}
+                      title={t.id ? 'ติ๊กว่าเสร็จแล้ว (มีขั้นยืนยันก่อน)' : 'งานนี้ไม่มี id — ติ๊กไม่ได้'}
+                      className="w-[18px] h-[18px] mt-0.5 rounded border-2 border-gray-300 hover:border-emerald-500 disabled:opacity-40 shrink-0" />
+                  )}
+                  <span className={`text-[13px] leading-5 min-w-0 ${t.done ? 'text-gray-300 line-through' : 'text-gray-800'}`}>
+                    {t.text || '(ไม่มีข้อความ)'}
+                    {!t.done && t.ready && (
+                      <span className="ml-1.5 text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 no-underline whitespace-nowrap">
+                        🙋 รอ AI พาทำ
+                      </span>
+                    )}
+                    {t.note && <span className={`block text-[11px] ${t.done ? 'text-gray-300' : 'text-gray-400'}`}>{t.note}</span>}
+                    {/* ยืนยันสองจังหวะ — เหตุจริง: มือลั่นบนมือถือติ๊กจบผิด 2 ข้อ */}
+                    {confirmId === t.id && !t.done && (
+                      <span className="block mt-1">
+                        <button onClick={() => t.id && postTask({ taskDone: t.id })}
+                          className="text-[11px] font-semibold text-white bg-emerald-600 rounded px-2.5 py-1 mr-1.5">
+                          ✓ ยืนยัน เสร็จแล้วจริง
+                        </button>
+                        <button onClick={() => setConfirmId('')} className="text-[11px] text-gray-500 border border-gray-300 rounded px-2.5 py-1">
+                          ยกเลิก
+                        </button>
+                      </span>
+                    )}
+                  </span>
+                  <span className="text-[10.5px] text-gray-400 ml-auto whitespace-nowrap mt-0.5 text-right">
+                    {t.done ? (
+                      <>
+                        เสร็จแล้ว
+                        <button onClick={() => t.id && postTask({ taskUndo: t.id })} disabled={!t.id || taskBusy === t.id}
+                          className="block text-[10px] text-gray-400 hover:text-amber-700 hover:underline disabled:opacity-40">
+                          ถอนติ๊ก
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        {ageText ? `ค้าง ${ageText}` : ''}
+                        {!t.ready && (
+                          <button onClick={() => t.id && postTask({ taskReady: t.id })} disabled={!t.id || taskBusy === t.id}
+                            title="ติดธงว่าพร้อมทำ แล้วเด้ง Telegram เรียกทีม AI"
+                            className="block text-[10px] text-blue-600 hover:underline disabled:opacity-40">
+                            🙋 พร้อมทำ — เรียก AI
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </span>
+                </li>
+              )
+  }
+
   return (
     <div className="p-4 md:p-6">
       <PageHead
@@ -208,68 +290,28 @@ export default function OfficePage() {
           ) : d.tasks.length === 0 ? (
             <p className="text-[12.5px] text-emerald-700">ไม่มีงานค้าง 🎉</p>
           ) : (
-            <ul className="space-y-1.5">
-              {[...d.tasks].sort((a, b) => Number(a.done ?? false) - Number(b.done ?? false)).map((t) => {
-                const ageMin = typeof t.at === 'number' && typeof d.now === 'number'
-                  ? Math.max(0, (d.now - t.at) / 60e3) : null
-                const ageText = ageMin === null ? '' : ageMin < 60 ? `${Math.floor(ageMin)} นาที`
-                  : ageMin < 1440 ? `${Math.floor(ageMin / 60)} ชม.` : `${Math.floor(ageMin / 1440)} วัน`
+            <div className="space-y-3">
+              {OWNER_GROUPS.map((g) => {
+                const mine = (d.tasks ?? []).filter((t) => (t.owner ?? '') === g.key)
+                if (!mine.length) return null
+                const pending = mine.filter((t) => !t.done).length
+                /* ⚠️ "ไม่มีงานค้าง" = ซ่อนหัวกลุ่ม แต่ **งานที่เสร็จแล้วยังต้องเห็น**
+                   (ท่านประธานต้องเห็นว่าอะไรเพิ่งเสร็จไป — กติกาเดิมของกระดานนี้) */
                 return (
-                  <li key={t.id ?? t.text} className="flex items-start gap-2.5">
-                    {t.done ? (
-                      <span className="text-emerald-500 text-[14px] leading-5">✓</span>
-                    ) : (
-                      <button onClick={() => t.id && setConfirmId(t.id)} disabled={!t.id || taskBusy === t.id}
-                        title={t.id ? 'ติ๊กว่าเสร็จแล้ว (มีขั้นยืนยันก่อน)' : 'งานนี้ไม่มี id — ติ๊กไม่ได้'}
-                        className="w-[18px] h-[18px] mt-0.5 rounded border-2 border-gray-300 hover:border-emerald-500 disabled:opacity-40 shrink-0" />
+                  <div key={g.key || 'ไม่ระบุ'}>
+                    {pending > 0 && (
+                      <p className="text-[12.5px] font-semibold text-gray-800 mb-1">
+                        {g.label}
+                        <span className="ml-1.5 text-[11px] font-normal text-gray-500">ค้าง {pending} งาน · {g.hint}</span>
+                      </p>
                     )}
-                    <span className={`text-[13px] leading-5 min-w-0 ${t.done ? 'text-gray-300 line-through' : 'text-gray-800'}`}>
-                      {t.text || '(ไม่มีข้อความ)'}
-                      {!t.done && t.ready && (
-                        <span className="ml-1.5 text-[10px] text-blue-700 bg-blue-50 border border-blue-200 rounded px-1.5 py-0.5 no-underline whitespace-nowrap">
-                          🙋 รอ AI พาทำ
-                        </span>
-                      )}
-                      {t.note && <span className={`block text-[11px] ${t.done ? 'text-gray-300' : 'text-gray-400'}`}>{t.note}</span>}
-                      {/* ยืนยันสองจังหวะ — เหตุจริง: มือลั่นบนมือถือติ๊กจบผิด 2 ข้อ */}
-                      {confirmId === t.id && !t.done && (
-                        <span className="block mt-1">
-                          <button onClick={() => t.id && postTask({ taskDone: t.id })}
-                            className="text-[11px] font-semibold text-white bg-emerald-600 rounded px-2.5 py-1 mr-1.5">
-                            ✓ ยืนยัน เสร็จแล้วจริง
-                          </button>
-                          <button onClick={() => setConfirmId('')} className="text-[11px] text-gray-500 border border-gray-300 rounded px-2.5 py-1">
-                            ยกเลิก
-                          </button>
-                        </span>
-                      )}
-                    </span>
-                    <span className="text-[10.5px] text-gray-400 ml-auto whitespace-nowrap mt-0.5 text-right">
-                      {t.done ? (
-                        <>
-                          เสร็จแล้ว
-                          <button onClick={() => t.id && postTask({ taskUndo: t.id })} disabled={!t.id || taskBusy === t.id}
-                            className="block text-[10px] text-gray-400 hover:text-amber-700 hover:underline disabled:opacity-40">
-                            ถอนติ๊ก
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          {ageText ? `ค้าง ${ageText}` : ''}
-                          {!t.ready && (
-                            <button onClick={() => t.id && postTask({ taskReady: t.id })} disabled={!t.id || taskBusy === t.id}
-                              title="ติดธงว่าพร้อมทำ แล้วเด้ง Telegram เรียกทีม AI"
-                              className="block text-[10px] text-blue-600 hover:underline disabled:opacity-40">
-                              🙋 พร้อมทำ — เรียก AI
-                            </button>
-                          )}
-                        </>
-                      )}
-                    </span>
-                  </li>
+                    <ul className="space-y-1.5">
+                      {[...mine].sort((a, b) => Number(a.done ?? false) - Number(b.done ?? false)).map(renderTask)}
+                    </ul>
+                  </div>
                 )
               })}
-            </ul>
+            </div>
           )}
         </div>
       )}
