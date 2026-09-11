@@ -513,6 +513,28 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({ ok: true, rows, total: rows.length }))
   }
+  /* SKU ที่คลังไม่รู้จัก (?list=missing-sku) — จอต้องใช้เลขจากท่อ ไม่ใช่นับจากแถว
+     ⚠️ จงใจให้ **แถวที่ส่งมาน้อยกว่ายอดที่ประกาศ** เพื่อทดสอบว่าจอขึ้นป้ายเตือน
+        และเลขบนปุ่มยังถูกต้อง (มาจากท่อ ไม่ได้นับจากแถวที่ขาด) */
+  if (mode === 'good' && /[?&]list=missing-sku/.test(req.url)) {
+    const rows = []
+    for (let i = 1; i <= 10; i++) {
+      rows.push({
+        sku: `MS-${String(i).padStart(3, '0')}`, name: `รหัสไม่รู้จัก ${i}`, shopee: i,
+        baseSku: `MS-${i}`, baseQty: i * 2, baseName: `รหัสฐาน ${i}`,
+        buildable: i % 2 === 0 ? i : null,
+        matchesShopee: i % 4 === 0 ? false : i % 2 === 0 ? true : null,
+      })
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, day: '2026-09-12',
+      total: 276, mappedToBase: 276, unknown: 0,
+      withRecipe: 265, computed: 265, agreeWithShopee: 156,
+      recipeAt: '2026-09-06T10:00:00.000Z',
+      rows,
+    }))
+  }
   /* ค้นสินค้าในจอขายหน้าร้าน (?poslookup=<คำค้น>) — เจอเฉพาะ NW-01 เพื่อให้ทดสอบได้สองทิศ */
   if (mode === 'good' && /[?&]poslookup=/.test(req.url)) {
     const term = decodeURIComponent((req.url.match(/[?&]poslookup=([^&]*)/) || [])[1] || '')

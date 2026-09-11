@@ -30,6 +30,10 @@ interface Row {
 interface Resp {
   skip?: string; note?: string
   day?: string; total?: number; mappedToBase?: number; unknown?: number
+  /** ท่อนับมาให้แล้ว — **ต้องใช้ของท่อก่อนเสมอ ห้ามนับเองจากแถวที่ได้มา**
+   *  computed = รหัสที่คิดจากสูตรชุดได้ · agreeWithShopee = ในกองนั้นตรงกับเลขบน Shopee กี่รหัส
+   *  (ตรวจของจริง 12 ก.ย. 2569: total 276 · computed 265 · agreeWithShopee 156) */
+  withRecipe?: number; computed?: number; agreeWithShopee?: number
   /** สูตรชุดเก็บไว้เมื่อไหร่ — เป็นภาพนิ่ง ไม่ได้ซิงก์เอง ต้องโชว์ */
   recipeAt?: string
   rows?: Row[]
@@ -65,8 +69,24 @@ export default function CoreMissingSkuPage() {
   const all = data?.rows ?? []
   const needle = q.trim().toLowerCase()
   const hasRecipe = (r: Row) => typeof r.buildable === 'number'
-  const buildableCount = all.filter(hasRecipe).length
-  const mismatchCount = all.filter((r) => hasRecipe(r) && r.matchesShopee === false).length
+
+  /* 🔴 **เลขบนปุ่มต้องมาจากท่อ ไม่ใช่นับจากแถวที่ได้มา** (แก้ 12 ก.ย. 2569)
+     ปุ่มอีกสองปุ่มข้าง ๆ ใช้ data.unknown / data.mappedToBase จากท่อถูกอยู่แล้ว
+     มีแต่ปุ่มนี้ที่นับเอง ⇒ ถ้าวันไหนท่อตัดแถว ปุ่มนี้จะต่ำกว่าจริง **ยืนอยู่ข้างปุ่มที่ถูก**
+     แล้วคนอ่านไม่มีทางรู้ว่าปุ่มไหนเชื่อได้ (คลาสเดียวกับเลขแท็บ Shopee 9 เมื่อเช้า)
+     ⚠️ ตรวจของจริงแล้ววันนี้ **เลขตรงกันพอดี** (ท่อยังไม่ตัดแถวสำหรับเส้นนี้: ส่งมาครบ 276)
+        ⇒ นี่คือการกันไว้ก่อน ไม่ใช่การแก้เลขที่ผิดอยู่ — เขียนให้ชัดกันคนเข้าใจผิดว่ามีบั๊กอยู่
+     ⚠️ ท่อรุ่นเก่าไม่ส่งคีย์พวกนี้ ⇒ ถอยไปนับเอง **แต่ต้องมีตาข่ายเทียบจำนวนแถวข้างล่าง** */
+  const buildableCount = typeof data?.computed === 'number'
+    ? data.computed
+    : all.filter(hasRecipe).length
+  const mismatchCount = typeof data?.computed === 'number' && typeof data?.agreeWithShopee === 'number'
+    ? Math.max(0, data.computed - data.agreeWithShopee)
+    : all.filter((r) => hasRecipe(r) && r.matchesShopee === false).length
+  /* ตาข่ายข้ามแหล่ง: จำนวนแถวที่ได้มา เทียบกับยอดที่ท่อประกาศ
+     ไม่เท่ากัน = แถวถูกตัดระหว่างทาง ⇒ ตารางข้างล่างไม่ใช่ทั้งหมด **ต้องบอก ไม่ใช่เงียบ** */
+  const rowsCut = typeof data?.total === 'number' && all.length < data.total
+    ? data.total - all.length : 0
 
   const shown = all
     .filter((r) => (view === 'buildable' ? hasRecipe(r) : view === 'mapped' ? !!r.baseSku : !r.baseSku))
@@ -146,6 +166,14 @@ export default function CoreMissingSkuPage() {
                 className="text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-[180px]" />
             </div>
           </Card>
+
+          {rowsCut > 0 && (
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+              ⚠️ <b>ตารางข้างล่างไม่ใช่ทั้งหมด</b> — ท่อบอกว่ามี {fmtNum(data.total ?? 0)} รหัส
+              แต่ส่งมา {fmtNum(all.length)} ⇒ ขาดไป <b>{fmtNum(rowsCut)}</b> รหัส ·
+              เลขบนปุ่มยังถูกต้องเพราะมาจากท่อ แต่<b>แถวที่กดดูได้มีไม่ครบ</b>
+            </p>
+          )}
 
           <Card padded={false} className="overflow-hidden">
             {shown.length === 0 && (
