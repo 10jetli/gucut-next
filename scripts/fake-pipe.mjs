@@ -66,9 +66,11 @@ const PARTIAL = {
 const ARCHIVE = {
   ok: true,
   saved: [
+    /* ⚠️ แถวนี้จงใจ **ไม่มี expectedFrom** — สำเนาที่เก็บก่อนวันที่ท่อเพิ่มช่องนี้
+       จอต้องเขียนว่า "ไม่รู้ว่าเทียบกับเลขของใคร" ห้ามเดาว่าเป็นคนกรอก */
     { key: 't/wallet', rows: 46, expected: 46, complete: true, at: '2026-09-06T15:00:00.000Z' }, // ← ของเก่า ไม่มี emptyVerified
-    { key: 't/branch', rows: 3, expected: 3, complete: true, emptyVerified: false, at: '2026-09-06T17:01:54.453Z' },
-    { key: 't/income', rows: 0, expected: 0, complete: true, emptyVerified: true, at: '2026-09-06T15:20:00.000Z' },
+    { key: 't/branch', rows: 3, expected: 3, complete: true, expectedFrom: 'คนกรอก', emptyVerified: false, at: '2026-09-06T17:01:54.453Z' },
+    { key: 't/income', rows: 0, expected: 0, complete: true, expectedFrom: 'ยืนยันว่าจอว่าง', emptyVerified: true, at: '2026-09-06T15:20:00.000Z' },
     { key: 't/transfer', rows: 0, expected: 0, at: null },
   ],
   notYet: ['receipt', 'bank', 'return', 'cod'],

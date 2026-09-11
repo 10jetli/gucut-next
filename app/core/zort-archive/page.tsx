@@ -25,6 +25,9 @@ interface Saved {
   key?: string
   rows?: number
   expected?: number
+  /** ใครเป็นคนบอกตัวเลขที่เอามาเทียบ — "คนกรอก" · "ยืนยันว่าจอว่าง" · ไม่มี = ไม่รู้
+   *  🔴 ต้องเอาไปเขียนกำกับคู่กับคำว่า "ครบ" เสมอ (เหตุผลเต็มอยู่ที่ป้ายในตาราง) */
+  expectedFrom?: string | null
   complete?: boolean
   emptyVerified?: boolean
   at?: string
@@ -45,6 +48,7 @@ interface OneResp {
   rows?: (Record<string, unknown> | (string | number | null)[])[]
   rowCount?: number
   expected?: number
+  expectedFrom?: string | null
   complete?: boolean
   source?: string
   at?: string
@@ -210,9 +214,24 @@ export default function ZortArchivePage() {
                         : <span className="text-gray-300">ไม่รู้</span>}
                   </td>
                   <td className={TD}>
-                    {s.complete === true ? <Pill tone="green">ครบ</Pill>
-                      : s.complete === false ? <Pill tone="orange">ยังไม่ครบ</Pill>
-                        : <span className="text-gray-300">—</span>}
+                    {/* 🔴 **คำว่า "ครบ" ที่นี่ไม่ได้แปลว่าระบบนับเองแล้วครบ**
+                        มันแปลว่า "จำนวนแถวที่เก็บได้ ตรงกับเลขที่คนอ่านจากจอ ZORT มาพิมพ์"
+                        ⇒ ตัวหารมาจากคนกรอก ไม่ใช่จากระบบ · ZORT ไม่เปิด API ให้นับจอพวกนี้
+                           จึงไม่มีทางอื่น (ท่อเขียนเหตุผลเต็มไว้ใน zort-archive.mjs)
+                        ⇒ **ป้ายต้องบอกที่มาของตัวเลขเสมอ** ไม่งั้นคนอ่านจะเชื่อว่าระบบพิสูจน์ให้แล้ว
+                        ⚠️ ท่อรุ่นเก่า/สำเนาที่เก็บก่อนวันนี้ไม่มี expectedFrom ⇒ เขียนว่า
+                           "ไม่รู้ว่าเทียบกับเลขของใคร" **ห้ามเดาว่าเป็นคนกรอก** (ไม่รู้ ≠ รู้) */}
+                    {s.complete === true ? (
+                      <span className="inline-flex flex-col gap-0.5">
+                        <Pill tone="green">ครบ</Pill>
+                        <span className="text-[10.5px] text-gray-500 leading-tight">
+                          {s.expectedFrom === 'ยืนยันว่าจอว่าง' ? 'ยืนยันว่าจอว่างจริง'
+                            : s.expectedFrom === 'คนกรอก' ? 'ตามเลขที่คนกรอก ไม่ใช่ระบบนับเอง'
+                              : 'ไม่รู้ว่าเทียบกับเลขของใคร'}
+                        </span>
+                      </span>
+                    ) : s.complete === false ? <Pill tone="orange">ยังไม่ครบ</Pill>
+                      : <span className="text-gray-300">—</span>}
                   </td>
                   {/* ⚠️ ไม่มีเวลา = เขียนว่าไม่รู้ ห้ามเว้นว่างให้เดาเอง */}
                   <td className={TD}>{when ?? <span className="text-gray-300">ไม่รู้ว่าเก็บเมื่อไหร่</span>}</td>
