@@ -29,6 +29,8 @@ export default function AiVisibilityPage() {
   const [hasKey, setHasKey] = useState(true)
   const [summary, setSummary] = useState<BrandSummary[]>([])
   const [runs, setRuns] = useState<RunRecord[]>([])
+  /** จำนวนรอบที่ตรวจไปจริงทั้งหมด (ท่อนับสะสมให้) · null = ท่อยังไม่มีตัวนับ ⇒ จอต้องเขียนว่า "อย่างน้อย" */
+  const [totalRuns, setTotalRuns] = useState<number | null>(null)
   const [openRun, setOpenRun] = useState<string | null>(null)
 
   async function load() {
@@ -40,6 +42,7 @@ export default function AiVisibilityPage() {
       if (!data.ok) throw new Error(data.error)
       setSummary(data.summary ?? [])
       setRuns(data.runs ?? [])
+      setTotalRuns(typeof data.totalRuns === 'number' ? data.totalRuns : null)
       setHasKey(!!data.hasKey)
     } catch (e: any) {
       setError(e?.message ?? String(e))
@@ -119,12 +122,20 @@ export default function AiVisibilityPage() {
               note={us?.avgPosition ? 'ยิ่งน้อยยิ่งดี (1 = เอ่ยก่อนใคร)' : 'ยังไม่ถูกเอ่ยถึง'}
               tone="purple"
             />
+            {/* 🔴 **ห้ามใช้ runs.length เป็น "ตรวจไปแล้วกี่รอบ"** (แก้ 12 ก.ย. 2569)
+                ประวัติถูกตัดไว้ 60 รอบเพื่อไม่ให้ที่เก็บโตไม่จำกัด ⇒ พอครบ 60 การ์ดนี้
+                จะค้างที่ 60 **ตลอดกาล** ทั้งที่ตรวจไปหลายร้อยรอบ — เลขที่หยุดโตโดยไม่มีอะไรบอก
+                คือคำโกหกที่เงียบที่สุดแบบหนึ่ง (ไม่มีใครสงสัยเลขที่ดูปกติ)
+                ⇒ ใช้ตัวนับสะสมจากท่อ · ท่อยังไม่มีตัวนับ (ของเก่า) = เขียนว่า "อย่างน้อย N"
+                   ไม่ใช่ยืนยันเลขที่เรายังไม่รู้ */}
             <StatCard
               icon="🔁"
               label="ตรวจไปแล้ว"
-              value={runs.length}
+              value={totalRuns ?? runs.length}
               unit="รอบ"
-              note={lastRun ? `ล่าสุด ${fmtDate(lastRun.runAt)}` : 'ยังไม่เคยตรวจ'}
+              note={totalRuns === null
+                ? `อย่างน้อยเท่านี้ — เก็บประวัติไว้ ${runs.length} รอบล่าสุดเท่านั้น`
+                : lastRun ? `ล่าสุด ${fmtDate(lastRun.runAt)}` : 'ยังไม่เคยตรวจ'}
               tone="blue"
             />
             <StatCard
