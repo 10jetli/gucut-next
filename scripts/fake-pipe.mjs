@@ -432,6 +432,22 @@ const srv = createServer(async (req, res) => {
       fields: ['amount', 'customername', 'list', 'number', 'reference', 'returndate', 'status', 'vatamount'],
     }))
   }
+  /* ใบสั่งซื้อรายใบ (?purchase=<เลขใบ>) — โครงตาม getPurchaseDetail ของท่อจริง */
+  if (mode === 'good' && /[?&]purchase=/.test(req.url)) {
+    const no = decodeURIComponent(req.url.match(/[?&]purchase=([^&]*)/)[1] || '')
+    if (no !== 'PO-001') {
+      res.writeHead(200, { 'content-type': 'application/json' })
+      return res.end(JSON.stringify({ ok: true, error: `ไม่พบใบสั่งซื้อ ${no} ในกระจก` }))
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, number: 'PO-001', vendor: 'โรงงาน', poDate: '2026-09-01',
+      status: 'Success', paymentStatus: null, warehouse: null, note: null,
+      amount: 5000, lineTotal: 5000,
+      lines: [{ line: 1, sku: 'NW-01', name: 'ทดสอบ', qty: 50, price: 100 }],
+      updatedAt: '2026-09-01 03:00:00', source: 'กระจกคลังเงา (ไม่ได้ยิง ZORT สด)',
+    }))
+  }
   /* ตรวจตัวกรองรายคลังกับ ZORT (?zortwarehouse=) — การ์ดรายคลังในหน้าสินค้าใช้ */
   if (mode === 'good' && /[?&]zortwarehouse=/.test(req.url)) {
     res.writeHead(200, { 'content-type': 'application/json' })

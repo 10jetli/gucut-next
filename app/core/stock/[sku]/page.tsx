@@ -701,8 +701,11 @@ export default function ProductDetailPage() {
                       <td className={TD}>
                         {/* แถวชนิด "ขาย" กดเข้าใบขายได้ — ต้องหา id จริงก่อน เพราะ ref คือ **เลขที่ใบ**
                             ส่วน id ในกระจกคือ `<ร้าน>/<เลขที่ใบ>` (ดูเหตุผลเต็มใน lib/open-order.ts)
-                            ⚠️ ชนิดอื่น (ซื้อ · ปรับ · โอน) ยังเป็นข้อความโดยตั้งใจ — ปลายทางคนละจอ
-                               และยังไม่ได้ยืนยันว่า ref ของชนิดพวกนั้นผูกกลับใบไหนได้จริง
+                            ✅ แถว "ซื้อ" กดได้แล้ว (ยืนยันจากปลายทางจริง 11 ก.ย. 2569:
+                               ref ของแถวซื้อ = เลขที่ใบสั่งซื้อ และ ?purchase=<ref> เปิดได้ตรงใบ
+                               — เทียบเลขใบ·SKU·วันที่ตรงกันทั้งสามช่อง) ไม่ต้องค้น id แบบใบขาย
+                            ⚠️ ชนิดที่เหลือ (ปรับ · โอน) ยังเป็นข้อความโดยตั้งใจ —
+                               ยังไม่ได้ยืนยันว่า ref ผูกกลับใบไหนได้จริง
                                เดาแล้วทำให้กดได้ = พาคนไปผิดใบ ซึ่งแย่กว่ากดไม่ได้ */}
                         {m.kind === 'ขาย' && m.ref ? (
                           <button type="button" onClick={() => openRef(String(m.ref))}
@@ -710,6 +713,11 @@ export default function ProductDetailPage() {
                             className="text-blue-600 hover:underline disabled:opacity-50">
                             {m.ref}{openingRef === m.ref && ' …'}
                           </button>
+                        ) : m.kind === 'ซื้อ' && m.ref ? (
+                          <Link href={`/core/purchases/detail?no=${encodeURIComponent(String(m.ref))}`}
+                            className="text-blue-600 hover:underline">
+                            {m.ref}
+                          </Link>
                         ) : (
                           <span className="text-gray-700">{m.ref || '-'}</span>
                         )}
