@@ -104,6 +104,11 @@ export default function CoreCustomersPage() {
   /** ท่อบอกเองว่านับรวมกี่ร้าน — ห้ามจอเดา */
   const [scope, setScope] = useState('')
   const [truncated, setTruncated] = useState(false)
+  /** จำนวน "ชื่อลูกค้าที่แตกต่างกัน" ทั้งช่วง — ท่อส่งมาให้แล้ว (distinctNames)
+   *  ⚠️ หน่วยคือ **ชื่อ** และนับเฉพาะใบที่มีชื่อ · กอง unnamed (ส่วนใหญ่คือ POS) แยกต่างหาก
+   *     ⇒ ห้ามเอาสองกองมาบวกกัน และถ้าจะเขียนคำว่า "ลูกค้าทั้งหมด" ต้องบอกว่านับเฉพาะที่มีชื่อ
+   *  null = ท่อรุ่นเก่าไม่ส่งมา ⇒ ไม่เขียนเลขนั้นเลย ห้ามเดาจากจำนวนที่โหลดมา */
+  const [distinctNames, setDistinctNames] = useState<number | null>(null)
   /** วันแรกสุดที่กระจกมีข้อมูล — '' = ท่อยังไม่ส่ง (ก่อน deploy รอบ 21:00) */
   const [historyFrom, setHistoryFrom] = useState('')
   const [monthly, setMonthly] = useState<MonthlyRow[]>([])
@@ -133,6 +138,7 @@ export default function CoreCustomersPage() {
       if (!('customers' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายชื่อลูกค้า) — ยังสรุปยอดไม่ได้')
       // ตัดที่ limit เมื่อไหร่ต้องบอก — ท่อส่งธงมาเอง จอไม่ต้องเดา
       setTruncated(d?.truncated === true)
+      setDistinctNames(typeof d?.distinctNames === 'number' ? d.distinctNames : null)
       setScope(typeof d.store === 'string' ? d.store : '')
 
       const list: Person[] = (Array.isArray(d.customers) ? d.customers : []).map(
@@ -202,7 +208,13 @@ export default function CoreCustomersPage() {
                 ไม่ใช่ยอดทั้งช่วง ⇒ ต้องเขียนกำกับ ไม่ใช่ปล่อยให้อ่านเป็นยอดรวมจริง
                 (คลาสเดียวกับที่จับได้ทั้งวัน — ตัวเลขถูกในขอบเขตของตัวเอง แต่ป้ายไม่บอกขอบเขต) */}
             {truncated
-              ? <>จำนวน {people.length.toLocaleString('th-TH')} ราย · ยอดรวมของรายที่แสดง {fmtMoney(totalAmount)} บาท</>
+              ? (
+                <>
+                  แสดง {people.length.toLocaleString('th-TH')} ราย
+                  {distinctNames !== null && <> จากลูกค้าที่มีชื่อทั้งช่วง <b>{distinctNames.toLocaleString('th-TH')}</b> ราย</>}
+                  {' · '}ยอดรวมของรายที่แสดง {fmtMoney(totalAmount)} บาท
+                </>
+              )
               : summaryLine(people.length, totalAmount)}
             {' | '}
             <span className="text-gray-400">
@@ -346,6 +358,17 @@ export default function CoreCustomersPage() {
             ที่อยู่มีเฉพาะออเดอร์ที่สั่งผ่านเว็บ (ไม่ครอบคลุมมาร์เก็ตเพลส) ทำตารางจากส่วนเดียวจะเอียง
           </div>
 
+          {/* 🔴 **เลขบนแท็บนับจากรายที่โหลดมาเท่านั้น** — ตอนถูกตัด มันไม่ใช่ยอดของทั้งช่วง
+              ไม่เปลี่ยนเลขบนแท็บเป็น distinctNames เพราะ "ซื้อซ้ำ/ซื้อครั้งเดียว" คิดได้เฉพาะ
+              รายที่มีข้อมูลมาจริง ⇒ ถ้าเอาเลขทั้งช่วงไปใส่แท็บเดียว สามแท็บจะคนละฐานกัน
+              ⇒ เขียนขอบเขตกำกับไว้ข้างบนแทน ให้คนอ่านรู้ว่าเลขพวกนี้คิดจากกี่ราย */}
+          {truncated && (
+            <p className="text-[11.5px] text-gray-500 mb-1">
+              เลขบนแท็บนับจาก {people.length.toLocaleString('th-TH')} รายที่โหลดมา
+              {distinctNames !== null && <> — ลูกค้าที่มีชื่อทั้งช่วงมี {distinctNames.toLocaleString('th-TH')} ราย</>}
+              {' '}(ยอดเงินของแต่ละรายที่แสดงถูกต้องครบ ไม่ได้ถูกตัด)
+            </p>
+          )}
           <Tabs
             tabs={[
               { id: 'all', label: 'ทั้งหมด', count: people.length },

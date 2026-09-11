@@ -349,6 +349,16 @@ export default function CoreCategoriesPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
               <span>
                 รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtMoney(totalOnhand)}
+                {/* 🔎 **ตาข่ายข้ามแหล่ง**: ผลบวก SKU จากทุกแถว (คิดฝั่งจอ) ต้องเท่ากับ total
+                    ที่ท่อนับมาจากทะเบียนสินค้าทั้งตาราง (คนละที่คำนวณ) — ไม่เท่า = มีแถวหาย
+                    ระหว่างทางหรือท่อเริ่มตัดแถว ⇒ **ต้องเห็น ไม่ใช่เงียบ**
+                    (ท่อยืนยัน 12 ก.ย. 2569: list=categories ไม่มี LIMIT ในคิวรี จึงควรตรงเสมอ
+                     ⇒ วันที่ไม่ตรงคือวันที่สมมติฐานนั้นเปลี่ยน ซึ่งเป็นวันที่ต้องรู้ทันที) */}
+                {typeof d?.total === 'number' && d.total !== totalSkus && (
+                  <span className="text-amber-700"> · ⚠️ ท่อนับได้ {fmtNum(d.total)} SKU
+                    ต่างจากผลบวกในตารางนี้ {fmtNum(Math.abs(d.total - totalSkus))} รหัส —
+                    แปลว่าตารางนี้ไม่ครบ อย่าเพิ่งใช้ตัดสินใจ</span>
+                )}
               </span>
               {d.zortNote
                 ? <span className="text-gray-400">{d.zortNote}</span>
