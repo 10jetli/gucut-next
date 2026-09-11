@@ -513,6 +513,22 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({ ok: true, rows, total: rows.length }))
   }
+  /* ออเดอร์เว็บ (/api/orders) — จอ /web/orders
+     ⚠️ จงใจส่ง unreadable > 0 เพื่อทดสอบว่าจอ **ไม่พูดว่า "ทั้งหมด N ใบ"** ตอนมีใบอ่านไม่ได้
+        (ใบที่อ่านไม่ได้คือออเดอร์ลูกค้าจริงที่ร้านอาจไม่รู้ว่ามี) */
+  if (mode === 'good' && /\/api\/orders/.test(req.url) && req.method === 'GET') {
+    const now = Date.now()
+    const mk = (i, status) => ({
+      id: `ORD-${String(i).padStart(3, '0')}`, status, total: 1000 + i,
+      name: `ลูกค้า ${i}`, phone: '0800000000', at: new Date(now - i * 3600e3).toISOString(),
+      items: [{ sku: 'NW-01', name: 'ทดสอบ', qty: 1, price: 1000 + i }],
+    })
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      orders: [mk(1, 'new'), mk(2, 'pending'), mk(3, 'shipped'), mk(4, 'done')],
+      unreadable: 2,
+    }))
+  }
   /* SKU ที่คลังไม่รู้จัก (?list=missing-sku) — จอต้องใช้เลขจากท่อ ไม่ใช่นับจากแถว
      ⚠️ จงใจให้ **แถวที่ส่งมาน้อยกว่ายอดที่ประกาศ** เพื่อทดสอบว่าจอขึ้นป้ายเตือน
         และเลขบนปุ่มยังถูกต้อง (มาจากท่อ ไม่ได้นับจากแถวที่ขาด) */

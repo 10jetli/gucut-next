@@ -128,6 +128,11 @@ export default function WebOrdersPage() {
   const [slips, setSlips] = useState<Record<string, string | null>>({})
   const [busyId, setBusyId] = useState('')
   const [spin, setSpin] = useState(false)
+  /** 🔴 **ใบที่อ่านไม่ได้** — ท่อส่ง `unreadable` มาทุกครั้ง แต่จอนี้ไม่เคยอ่านเลย
+   *  ⇒ วันที่มีใบเสีย ประโยค "ทั้งหมด N ใบในระบบ" จะต่ำกว่าจริง **เงียบสนิท**
+   *  และนี่คือออเดอร์ของลูกค้าจริงที่ร้านอาจไม่รู้ว่ามี (ท่อเขียนกำกับไว้แล้วว่าจอต้องบอก)
+   *  ⚠️ ไม่มีคีย์นี้ = ท่อรุ่นเก่า ⇒ `null` = ไม่รู้ **ห้ามแทนด้วย 0** (ไม่รู้ ≠ ไม่มีใบเสีย) */
+  const [unreadable, setUnreadable] = useState<number | null>(null)
 
   /** รู้ตัวเลขจริงหรือยัง — **ต้องเป็น "โหลดสำเร็จ" ไม่ใช่ "มี array"** */
   const load = useCallback(async () => {
@@ -141,12 +146,15 @@ export default function WebOrdersPage() {
          จอนี้เป็นจอเงิน — ศูนย์ที่ไม่มีที่มาอ่านได้ว่า "วันนี้ขายไม่ได้เลย" */
       if (!d || !('orders' in d)) throw new Error('ตอบมาไม่ครบ')
       setOrders(Array.isArray(d.orders) ? d.orders : [])
+      setUnreadable(typeof d.unreadable === 'number' ? d.unreadable : null)
     } catch {
       /* ⚠️ ตั้ง orders เป็น [] เพื่อให้ตารางไม่ค้างที่โครงกระดูก — **แต่ [] ไม่ได้แปลว่า "ไม่มีออเดอร์"**
          ⇒ การ์ดตัวเลขต้องดูที่ `err` ไม่ใช่ดูว่ามี array ไหม (เจอตอนยิงจริง 7 ก.ย. 2569:
          แก้ให้ดู `orders ?` แล้วยังโชว์ 0 เพราะ orders เป็น [] ไม่ใช่ null) */
       setErr('โหลดรายการไม่สำเร็จ — ลองกดรีเฟรช')
       setOrders((o) => o ?? [])
+      // ⚠️ ล้างเป็น "ไม่รู้" เสมอ — ค่าเก่าจากรอบก่อนไม่ใช่ความจริงของรอบนี้
+      setUnreadable(null)
     } finally {
       setSpin(false)
     }
@@ -265,8 +273,14 @@ export default function WebOrdersPage() {
 
       {/* ── แถวสถิติ + กราฟ ── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+        {/* 🔴 คำว่า "ทั้งหมด" ใช้ได้เฉพาะตอนที่อ่านได้ครบจริง ๆ เท่านั้น
+            มีใบอ่านไม่ได้แม้แต่ใบเดียว = ต้องเขียนบอก ไม่ใช่ปัดทิ้งแล้วบอกว่าทั้งหมด */}
         <Stat icon={IC.bag} tone="bg-blue-50 text-blue-600" label="ออเดอร์วันนี้"
-          value={known ? stat.today : '—'} sub={known ? `ทั้งหมด ${orders?.length ?? 0} ใบในระบบ` : 'ยังไม่รู้ — โหลดไม่สำเร็จ'} />
+          value={known ? stat.today : '—'}
+          sub={!known ? 'ยังไม่รู้ — โหลดไม่สำเร็จ'
+            : unreadable && unreadable > 0
+              ? `อ่านได้ ${orders?.length ?? 0} ใบ · อ่านไม่ได้อีก ${unreadable} ใบ`
+              : `ทั้งหมด ${orders?.length ?? 0} ใบในระบบ`} />
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
           <div className="flex items-start justify-between gap-2">
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">รายได้ 7 วัน</p>
@@ -311,6 +325,14 @@ export default function WebOrdersPage() {
 
       {/* ── ตาราง ── */}
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
+        {/* 🔴 มีใบที่อ่านไม่ได้ = ตารางข้างล่างไม่ใช่ทุกใบ **ต้องเห็นตรงนี้ ไม่ใช่ซ่อนในการ์ด**
+            ออเดอร์ที่อ่านไม่ได้คือออเดอร์ของลูกค้าจริงที่ร้านอาจไม่รู้ว่ามี ⇒ วางไว้เหนือตารางเลย */}
+        {unreadable !== null && unreadable > 0 && (
+          <div className="px-4 md:px-5 py-2.5 bg-amber-50 border-b border-amber-200 text-[12.5px] text-amber-900 leading-relaxed">
+            ⚠️ <b>มี {unreadable} ใบที่อ่านข้อมูลไม่ได้</b> — ไม่ได้อยู่ในตารางข้างล่างและไม่ถูกนับในตัวเลขทุกช่อง
+            · ไม่ใช่ว่าไม่มีออเดอร์ แต่คือใบที่ระบบอ่านไม่ออก <b>ต้องตามดูที่ต้นทาง</b>
+          </div>
+        )}
         <div className="px-4 md:px-5 py-3 flex flex-wrap items-center gap-1.5 border-b border-gray-100">
           {(['all', ...STATUS.map((s) => s.key)] as const).map((k) => {
             const active = filter === k
