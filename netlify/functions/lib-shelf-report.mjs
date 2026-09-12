@@ -63,7 +63,7 @@ export function buildShelfReport({
   today, scope = {}, groups = [], stuckOrders = 0,
   rowsRead = null, rowsTotal = null, itemsFailed = 0, ordersBeyondCap = 0,
   tooOld = 0, tooNew = 0, byStore = null, byChannel = null,
-  olderTail = null, olderTailFrom = null,
+  olderTail = null, olderTailFrom = null, tailByChannel = null,
   yearWaiting = null, yearDone = null, yearFrom = null,
   error = null, pick = PICK, statusUnverified = true,
 }) {
@@ -187,6 +187,18 @@ export function buildShelfReport({
     tailLines.push(`📌 <b>ใบเก่ากว่าช่วงตรวจ (ค้างเกิน ${scope.days ?? 30} วัน): ${parts.join(" + ")}</b>`);
     tailLines.push(`   ใบยิ่งเก่ายิ่งเป็นสัญญาณว่าของหมดจริง — แต่กลุ่มนี้ <b>ยังยืนยันไม่ได้</b>`);
     /* 🔑 เหตุผลที่เทียบกันในบ้านเราเอง — ไม่ต้องอ้างพฤติกรรมของแพลตฟอร์มที่ยังพิสูจน์ไม่ได้ */
+    /* แยกหางตามช่องทาง — ท่านประธานแจ้งว่าร้าน ZAMA ปิดไปแล้ว ⇒ ใบของร้านที่ปิด
+       **จะไม่มีวันถูกส่ง** และมันไปพองอยู่ในกองนี้ ⇒ ต้องแยกให้เห็นว่าเป็นของช่องทางไหน
+       🚫 **ห้ามกรองทิ้งเงียบ ๆ** — ถ้าวันหนึ่งมีใบของร้านที่ปิดแล้วโผล่ใหม่ แปลว่ามีอะไรผิดปกติหนัก
+          กรองทิ้งไปแล้วจะไม่มีใครเห็น (กฎเดิม: แถวที่กันออกต้องโชว์) */
+    if (tailByChannel?.parts && Object.keys(tailByChannel.parts).length) {
+      const ch = Object.entries(tailByChannel.parts).sort((a, b) => b[1] - a[1])
+        .map(([k, v]) => `${k} ${n(v)}`).join(" · ");
+      tailLines.push(`   แยกตามช่องทาง: ${ch}`);
+      if (tailByChannel.complete === false) {
+        tailLines.push(`   ⚠️ ผลบวกรายช่องทาง (${n(tailByChannel.sum)}) ไม่เท่ายอดหาง — ยังมีช่องทางที่ยังไม่ได้ถาม`);
+      }
+    }
     if (yearWaiting !== null && yearDone !== null) {
       tailLines.push(`   ย้อน 1 ปี (ตั้งแต่ ${thaiDate(yearFrom)}): รอจัดส่ง <b>${n(yearWaiting)}</b> ใบ · สำเร็จ <b>${n(yearDone)}</b> ใบ`);
       if (yearWaiting > yearDone) {

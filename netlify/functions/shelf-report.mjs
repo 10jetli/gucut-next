@@ -106,13 +106,42 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
      ⚠️ นับไม่ได้ ≠ ไม่มี ⇒ ล้มเหลวให้เป็น null แล้วข้อความจะไม่พูดถึง ไม่ใช่พูดว่าศูนย์ */
   const tailTo = new Date(Date.parse(`${from}T00:00:00Z`) - 864e5).toISOString().slice(0, 10);
   const tailFrom = new Date(Date.parse(`${today}T00:00:00Z`) - 365 * 864e5).toISOString().slice(0, 10);
+  const groupOf_ = (d, group) => (Array.isArray(d?.shipStatusGroups) ? d.shipStatusGroups.find((x) => x.group === group) : null);
   const countOf = (d, group) => {
-    const g = Array.isArray(d?.shipStatusGroups) ? d.shipStatusGroups.find((x) => x.group === group) : null;
+    const g = groupOf_(d, group);
     return g ? Number(g.count) || 0 : null;
   };
-  let olderTail = null;
+  let olderTail = null, tailByChannel = null;
   try {
-    olderTail = countOf(await pipe(`list=orders&from=${tailFrom}&to=${tailTo}&limit=1`), "waiting_ship");
+    const tailResp = await pipe(`list=orders&from=${tailFrom}&to=${tailTo}&limit=1`);
+    olderTail = countOf(tailResp, "waiting_ship");
+
+    /* ── แยกหางใบเก่าตามช่องทาง (ท่านประธานแจ้ง 12 ก.ย. 2569 ว่าร้าน ZAMA ปิดไปแล้ว) ──
+       🔑 **ไม่เขียนกติกาแปลสถานะซ้ำที่นี่** — ท่อบอกเองว่ากองนี้ประกอบจากค่าดิบอะไร (`raws`)
+          แล้ว `statuscross` ให้ ช่องทาง × ค่าดิบ มาทั้งตาราง ⇒ เอามาประกบกันได้เลย
+          (ถ้าเขียนตารางแปลสถานะเองที่นี่ วันที่แพลตฟอร์มเพิ่มค่าใหม่ สองฝั่งจะไม่ตรงกัน —
+           คลาสเดียวกับบั๊กปุ่มหมวด POS ที่เพิ่งแก้วันนี้)
+       ⚠️ ใช้ statuscross แค่เพื่อ **หาว่าช่องทางไหนน่าสนใจ** (มันเป็นยอดทั้งตาราง ไม่ใช่ของช่วงหาง)
+          แล้วค่อยยิงถามเฉพาะช่องทางนั้นด้วยช่วงวันจริง ⇒ ตัวเลขที่เอาไปแสดงมีขอบเขตตรงกับที่เขียน */
+    const raws = Array.isArray(groupOf_(tailResp, "waiting_ship")?.raws) ? groupOf_(tailResp, "waiting_ship").raws : null;
+    if (raws?.length && olderTail) {
+      const cross = await pipe(`statuscross=1`);
+      const cand = new Set();
+      for (const r of Array.isArray(cross?.cross) ? cross.cross : []) {
+        if (raws.includes(String(r?.st)) && Number(r?.c) > 0) cand.add(String(r.ch));
+      }
+      const out = {};
+      for (const ch of [...cand].slice(0, 8)) {     // ไม่เกิน 8 ช่องทาง — งบเวลา
+        try {
+          const d = await pipe(`list=orders&from=${tailFrom}&to=${tailTo}&limit=1&channel=${encodeURIComponent(ch)}`);
+          const c = countOf(d, "waiting_ship");
+          if (c) out[ch] = c;
+        } catch { /* ช่องทางนี้ถามไม่ได้ = ไม่พูดถึง ไม่ใช่บอกว่าศูนย์ */ }
+      }
+      /* ⚠️ ผลบวกต้องเท่ากับยอดหาง ไม่งั้นมีช่องทางที่เรายังไม่ได้ถาม ⇒ ต้องบอก ไม่ใช่ปล่อย */
+      const sum = Object.values(out).reduce((a, b) => a + b, 0);
+      tailByChannel = { parts: out, sum, complete: sum === olderTail };
+    }
   } catch {
     olderTail = null;
   }
@@ -159,7 +188,7 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
     tooOld: picked.tooOld,
     tooNew: picked.tooNew,
     byStore, byChannel,
-    olderTail, olderTailFrom: tailFrom,
+    olderTail, olderTailFrom: tailFrom, tailByChannel,
     yearWaiting, yearDone, yearFrom: tailFrom,
     pick,
     statusUnverified: true,
@@ -171,7 +200,7 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
       tooOld: picked.tooOld, tooNew: picked.tooNew, badDay: picked.badDay,
       itemsRead: opened, itemsFailed, distinctSkus: groups.length,
       itemsMs: Date.now() - startedAt,
-      byStore, byChannel, olderTail, olderTailRange: `${tailFrom}..${tailTo}`,
+      byStore, byChannel, olderTail, olderTailRange: `${tailFrom}..${tailTo}`, tailByChannel,
       yearWaiting, yearDone,
     },
   };
