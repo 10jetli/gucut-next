@@ -33,6 +33,18 @@ export function thaiDate(ymd) {
 }
 const n = (v) => Number(v ?? 0).toLocaleString("th-TH");
 
+/** ชื่อสินค้าที่ขึ้นต้นด้วยรหัสตัวเอง ("00449 น๊อตยึด…") — ตัดรหัสซ้ำออก **ตอนแสดงเท่านั้น**
+ *  🚫 ห้ามไปแก้ชื่อในฐาน — ในบริบทอื่นชื่อแบบนั้นอาจถูกอยู่แล้ว (CEO กำกับ 12 ก.ย. 2569)
+ *  ⚠️ ตัดเฉพาะเมื่อขึ้นต้นด้วยรหัส **ตัวเดียวกัน** เท่านั้น ห้ามตัดเลขนำหน้าพล่อย ๆ
+ *     (ชื่อจริงหลายตัวขึ้นต้นด้วยเลขที่เป็นส่วนของชื่อ เช่น "3/8 โซ่…") */
+export function cleanName(sku, name) {
+  const s = String(name ?? "").trim();
+  const code = String(sku ?? "").trim();
+  if (!s || !code) return s;
+  const re = new RegExp(`^${code.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[\\s:\\-–]+`);
+  return s.replace(re, "").trim() || s;
+}
+
 /** เรียงลำดับรหัสที่ควรให้คนไปนับก่อน
  *  🔑 **เกณฑ์ต้องเขียนลงในข้อความด้วย** ไม่ใช่เรียงเงียบ ๆ — คนอ่านต้องรู้ว่าทำไมสามตัวนี้ถูกเลือก
  *     หลัก: ค้างหลายใบที่สุด (ลูกค้ารออยู่หลายคน = เสียหายมากกว่า)
@@ -50,7 +62,8 @@ export function rankForReport(groups) {
 export function buildShelfReport({
   today, scope = {}, groups = [], stuckOrders = 0,
   rowsRead = null, rowsTotal = null, itemsFailed = 0, ordersBeyondCap = 0,
-  tooOld = 0, error = null, pick = PICK, statusUnverified = true,
+  tooOld = 0, tooNew = 0, byStore = null, olderTail = null, olderTailFrom = null,
+  error = null, pick = PICK, statusUnverified = true,
 }) {
   const head = `📦 <b>ใบที่ยังไม่ได้ส่ง</b> — เช้า ${thaiDate(today)}`;
 
@@ -71,8 +84,15 @@ export function buildShelfReport({
 
   /* ① ขอบเขตต้องครบทุกมิติที่ทำให้เลขเปลี่ยนความหมาย: ร้าน · ช่วงวัน · เกณฑ์อายุ · อ่านได้กี่ใบ
      ขาดข้อใดข้อหนึ่ง ท่านประธานจะสั่งคนไปนับของในขอบเขตที่ไม่ตรงกับเลขที่อ่าน */
+  /* 🔴 **ห้ามเขียนชื่อร้านที่ไม่ได้กรองจริง** (แก้ 12 ก.ย. 2569 — CEO จับได้)
+     ของเดิมเขียน "ร้าน z1" ตายตัว ทั้งที่คำขอไม่ได้ส่ง store= ไปเลย ⇒ ข้อมูลเป็น **ทุกร้าน**
+     ⇒ เลขของผม 909 ใบ กับของ CEO 584 ใบ (z1) ต่างกันเพราะขอบเขตคนละอย่าง ไม่ใช่ข้อมูลผิด
+     ⇒ ป้ายต้องบอกตามที่ยิงจริง และแยกให้เห็นว่าแต่ละร้านมีกี่ใบ */
+  const storeLine = byStore
+    ? Object.entries(byStore).map(([s, c]) => `${s} ${n(c)} ใบ`).join(" · ")
+    : null;
   const scopeLine = [
-    `ขอบเขต: ร้าน ${scope.store ?? "—"}`,
+    `ขอบเขต: ${storeLine ? `ทุกร้าน (${storeLine})` : "ทุกร้าน"}`,
     `ใบวันที่ ${thaiDate(scope.from)} – ${thaiDate(scope.to)}${scope.days ? ` (${scope.days} วัน)` : ""}`,
     scope.minAge ? `เฉพาะใบที่ค้างเกิน ${scope.minAge} วัน` : null,
     rowsRead !== null && rowsTotal !== null ? `อ่านใบในช่วงนี้ ${n(rowsRead)} จาก ${n(rowsTotal)} ใบ` : null,
@@ -87,6 +107,11 @@ export function buildShelfReport({
         head,
         `✅ <b>ไม่มีใบค้างส่งในช่วงที่ตรวจ</b>`,
         scopeLine,
+        /* ⚠️ "ไม่มีใบค้าง" จะกลายเป็นคำโกหกถ้าเงียบเรื่องของที่ถูกกรองออก */
+        tooNew > 0 ? `(มี ${n(tooNew)} ใบเพิ่งค้างไม่ถึง ${scope.minAge ?? 2} วัน — ยังไม่นับ)` : null,
+        (olderTail ?? 0) > 0 || tooOld > 0
+          ? `📌 แต่มีใบเก่ากว่าช่วงตรวจ ${n((olderTail ?? 0) + tooOld)} ใบ — ยังยืนยันไม่ได้ว่าค้างจริงหรือสถานะไม่ขยับ`
+          : null,
         statusUnverified ? `หมายเหตุ: ดูจากสถานะที่ ZORT บอก — ยังไม่ได้ยืนยันกับแพลตฟอร์มโดยตรง` : null,
       ].filter(Boolean).join("\n"),
     };
@@ -110,6 +135,26 @@ export function buildShelfReport({
     lines.push(`⚠️ <b>ตัวเลขนี้ยังไม่ครบ</b> — ${gaps.join(" · ")} ⇒ ของจริงอาจมากกว่านี้`);
   }
 
+  /* ② **ตัวกรองที่มองไม่เห็น คือตัวกรองที่ไม่มีใครตั้งคำถาม** (CEO 12 ก.ย. 2569)
+     ต้องบอกว่าเกณฑ์ "ค้างเกิน 2 วัน" กรองออกไปกี่ใบ ไม่งั้นคนอ่านคิดว่า 65 คือทั้งหมด */
+  if (tooNew > 0) {
+    lines.push(`อีก ${n(tooNew)} ใบเพิ่งค้างไม่ถึง ${scope.minAge ?? 2} วัน — ยังไม่นับในรายงานนี้`);
+  }
+
+  /* ① **ใบที่เก่ากว่าช่วงตรวจ ห้ามทิ้ง** — CEO ตีกลับข้อนี้แรงที่สุด
+     ของเดิมผมตัดออกแล้วเขียนว่า "ไม่ใช่งานแพ็กวันนี้" ซึ่งเป็นการ **ตัดสินแทนท่านประธาน**
+     และซ่อนหลักฐานที่แรงที่สุด (ค้าง 3 วันอาจแพ็กไม่ทัน · ค้าง 40 วันคือไม่มีของแน่นอน)
+     ⚠️ แต่พอยิงนับจริงกลับได้ **หลายร้อยใบ** ⇒ ตัวเลขนี้ใหญ่เกินกว่าจะเป็นของค้างจริงทั้งหมด
+        ⇒ ต้องโชว์ตัวเลข **พร้อมบอกว่ายังไม่ยืนยัน** ห้ามเงียบ และห้ามสรุปแทนคนอ่าน */
+  if (tooOld > 0 || (olderTail ?? 0) > 0) {
+    const parts = [];
+    if (tooOld > 0) parts.push(`${n(tooOld)} ใบในช่วงที่อ่าน`);
+    if ((olderTail ?? 0) > 0) parts.push(`${n(olderTail)} ใบย้อนไปถึง ${thaiDate(olderTailFrom)}`);
+    lines.push(`📌 <b>ใบเก่ากว่าช่วงตรวจ (ค้างเกิน ${scope.days ?? 30} วัน): ${parts.join(" + ")}</b>`);
+    lines.push(`   ใบยิ่งเก่ายิ่งเป็นสัญญาณว่าของหมดจริง — แต่จำนวนที่มากขนาดนี้ <b>ยังยืนยันไม่ได้</b>`);
+    lines.push(`   ว่าค้างจริงทั้งหมด หรือเป็นสถานะที่ไม่ขยับหลังส่ง ⇒ ยังไม่เอามาจัดอันดับ`);
+  }
+
   if (statusUnverified) {
     lines.push(`หมายเหตุ: สถานะ "รอจัดส่ง" มาจากที่ ZORT บอก — <b>ยังไม่ได้ยืนยันกับแพลตฟอร์มโดยตรง</b>`);
   }
@@ -123,15 +168,12 @@ export function buildShelfReport({
     lines.push(`⚠️ อันดับนี้คิดจากใบที่เปิดดูทันเท่านั้น (${n(Math.max(0, stuckOrders - ordersBeyondCap))} จาก ${n(stuckOrders)} ใบ) — <b>ยังไม่ใช่อันดับของทั้งกอง</b>`);
   }
   top.forEach((g, i) => {
-    const name = g.name ? ` ${g.name}` : "";
-    lines.push(`${i + 1}. <b>${g.sku}</b>${name} — ค้าง ${n(g.orders?.length ?? 0)} ใบ · ใบเก่าสุด ${n(g.maxAge)} วัน`);
+    const nm = cleanName(g.sku, g.name);
+    lines.push(`${i + 1}. <b>${g.sku}</b>${nm ? ` ${nm}` : ""} — ค้าง ${n(g.orders?.length ?? 0)} ใบ · ใบเก่าสุด ${n(g.maxAge)} วัน`);
   });
 
   if (ranked.length > top.length) {
     lines.push(`อีก ${n(ranked.length - top.length)} รหัสก็ค้างอยู่เหมือนกัน — คัดมา ${top.length} เพื่อให้สั่งนับได้จริงในวันเดียว`);
-  }
-  if (tooOld > 0) {
-    lines.push(`(ไม่นับใบที่ค้างเกินช่วงที่ตรวจอีก ${n(tooOld)} ใบ — เป็นใบเก่าที่ไม่ใช่งานแพ็กวันนี้)`);
   }
 
   /* ② ย้ำท้ายข้อความด้วย เพราะคนอ่านบนมือถืออาจอ่านแค่หัวกับท้าย */

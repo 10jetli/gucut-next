@@ -49,7 +49,11 @@ async function pipeFetch(qs) {
  *  @param pipe (qs) => object  ขอบเครือข่าย (แทนที่ได้ตอนทดสอบ) */
 export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), minAge = MIN_AGE, maxAge = MAX_AGE, itemsCap = ITEMS_CAP, pick = PICK } = {}) {
   const from = new Date(Date.parse(`${today}T00:00:00Z`) - (maxAge + 1) * 864e5).toISOString().slice(0, 10);
-  const scope = { store: "z1", from, to: today, days: maxAge, minAge };
+  /* 🔴 **ไม่ส่ง store= ⇒ ข้อมูลเป็นทุกร้าน** — ป้ายต้องพูดตามนั้น (เคยเขียน "ร้าน z1" ไว้ผิด)
+     วัดจริง 12 ก.ย. 2569: ช่วงนี้มี z1 607 ใบ · z2 302 ใบ · และ **z2 มีใบรอจัดส่ง 0 ใบ**
+     (หน้าร้าน POS ลูกค้าหิ้วกลับ ไม่มีการจัดส่ง) ⇒ ครอบทุกร้านแล้วแยกตัวเลขให้เห็น
+     ปลอดภัยกว่ากรองร้านเดียวทิ้ง เพราะวันที่ z2 เริ่มส่งของ เราจะเห็นเองทันที */
+  const scope = { from, to: today, days: maxAge, minAge };
 
   /* ── ดึงใบในช่วง ── ไล่หน้าให้ครบ
      🔴 **หน้าไหนยิงไม่สำเร็จ = ดึงไม่สำเร็จทั้งรอบ ห้ามสรุปจากที่ได้มา**
@@ -76,6 +80,27 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
     today, minAge, maxAge,
     isStuck: (o) => o?.shipStatusGroup === "waiting_ship",
   });
+  /* แยกตามร้านจาก **ทั้งกองที่คัดได้** ไม่ใช่จากแถวที่เอาไปแสดง */
+  const byStore = {};
+  for (const o of picked.orders) {
+    const src = String(rows.find((r) => r.id === o.id)?.source ?? "(ไม่ระบุ)");
+    byStore[src] = (byStore[src] ?? 0) + 1;
+  }
+
+  /* ① **นับใบที่เก่ากว่าช่วงตรวจ — ห้ามทิ้ง** (CEO ตีกลับ 12 ก.ย. 2569)
+     🔑 นับด้วย **คำขอเดียว** ไม่ต้องไล่หน้า: ท่อคำนวณ `shipStatusGroups` จากทั้งช่วงที่กรอง
+        ให้มาพร้อมกันอยู่แล้ว ⇒ ขอ limit=1 ก็ได้ยอดของทั้งช่วง (ประหยัด ~50 คำขอ)
+     ⚠️ นับไม่ได้ ≠ ไม่มี ⇒ ล้มเหลวให้เป็น null แล้วข้อความจะไม่พูดถึง ไม่ใช่พูดว่าศูนย์ */
+  const tailTo = new Date(Date.parse(`${from}T00:00:00Z`) - 864e5).toISOString().slice(0, 10);
+  const tailFrom = new Date(Date.parse(`${today}T00:00:00Z`) - 365 * 864e5).toISOString().slice(0, 10);
+  let olderTail = null;
+  try {
+    const d = await pipe(`list=orders&from=${tailFrom}&to=${tailTo}&limit=1`);
+    const g = Array.isArray(d.shipStatusGroups) ? d.shipStatusGroups.find((x) => x.group === "waiting_ship") : null;
+    olderTail = g ? Number(g.count) || 0 : null;
+  } catch {
+    olderTail = null;
+  }
 
   /* ── เปิดดูรายการสินค้าของใบที่ค้าง (ใบเก่าสุดก่อน) ──
      🔴 ใบที่อ่านไม่ได้ **ห้ามนับเป็น "ไม่มีสินค้า"** — ต้องรายงานว่าอ่านไม่ได้กี่ใบ */
@@ -107,6 +132,9 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
     itemsFailed,
     ordersBeyondCap: Math.max(0, picked.orders.length - opened),
     tooOld: picked.tooOld,
+    tooNew: picked.tooNew,
+    byStore,
+    olderTail, olderTailFrom: tailFrom,
     pick,
     statusUnverified: true,
   });
@@ -117,6 +145,7 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
       tooOld: picked.tooOld, tooNew: picked.tooNew, badDay: picked.badDay,
       itemsRead: opened, itemsFailed, distinctSkus: groups.length,
       itemsMs: Date.now() - startedAt,
+      byStore, olderTail, olderTailRange: `${tailFrom}..${tailTo}`,
     },
   };
 }

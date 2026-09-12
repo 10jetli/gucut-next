@@ -27,8 +27,10 @@ const fakePipe = ({ rows, items = {}, total = null, failOrders = new Set(), thro
     return { ok: true, items: items[id] ?? [] }
   }
 }
-const order = (id, back, group = 'waiting_ship') =>
-  ({ id, number: id.replace('z1/', ''), channel: 'Lazada-gucut', order_date: day(back), shipStatusGroup: group })
+/* แถวจริงจากท่อมีช่อง `source` (z1/z2) เสมอ — ตัวแยกรายร้านอ่านช่องนี้
+   ถ้า fixture ไม่มี จะได้ "(ไม่ระบุ)" ซึ่งเป็นของปลอมที่ไม่เหมือนของจริง */
+const order = (id, back, group = 'waiting_ship', source = 'z1') =>
+  ({ id, source, number: id.replace('z1/', ''), channel: 'Lazada-gucut', order_date: day(back), shipStatusGroup: group })
 const line = (sku, name, qty = 1) => ({ sku, name, qty })
 
 let fail = 0
@@ -47,8 +49,9 @@ console.log('① มีใบค้าง ⇒ รหัสเรียงถู�
   ]
   const items = {
     'z1/A': [line('00313', 'หัวเทียน NEWWAVE')],
-    'z1/B': [line('00313', 'หัวเทียน NEWWAVE'), line('00627', 'สปริงเล็ก')],
+    'z1/B': [line('00313', 'หัวเทียน NEWWAVE'), line('00627', '00627 สปริงเล็ก')],
     'z1/C': [line('02779', 'โครงเครื่อง')],
+    // ชื่อจริงในฐานบางตัวขึ้นต้นด้วยรหัสตัวเอง — ต้องถูกตัดตอนแสดง (ข้อ ⑤ ของ CEO)
   }
   const r = await runShelfReport({ pipe: fakePipe({ rows, items }), today: TODAY })
   ok('สถานะเป็น ok', r.state === 'ok', r.state)
@@ -58,7 +61,14 @@ console.log('① มีใบค้าง ⇒ รหัสเรียงถู�
   ok('รหัสที่ค้างหลายใบที่สุดขึ้นก่อน (00313 ค้าง 2 ใบ)',
      r.text.indexOf('00313') < r.text.indexOf('02779'), r.text)
   ok('บอกยอดรวมทั้งหมด (ใบ + รหัส)', /ค้างอยู่ <b>3 ใบ<\/b> · <b>3 รหัสสินค้า<\/b>/.test(r.text), r.text)
-  ok('ขอบเขต: ร้าน', /ร้าน z1/.test(r.text))
+  /* 🔴 ป้ายต้องพูดตามที่ยิงจริง — คำขอไม่ได้กรองร้าน ⇒ ห้ามเขียนว่าร้านเดียว
+     (ของเดิมเขียน "ร้าน z1" ตายตัวทั้งที่ข้อมูลเป็นทุกร้าน — CEO จับได้ 12 ก.ย. 2569) */
+  ok('ขอบเขต: บอกว่าทุกร้าน พร้อมแยกจำนวนรายร้าน', /ทุกร้าน \(z1 3 ใบ\)/.test(r.text), r.text)
+  ok('🔴 ห้ามอ้างว่ากรองร้านเดียวโดยที่ไม่ได้กรอง', !/ขอบเขต: ร้าน z1 ·/.test(r.text))
+  ok('บอกจำนวนใบที่ถูกตัวกรองอายุกรองออก', /อีก 1 ใบเพิ่งค้างไม่ถึง 2 วัน/.test(r.text), r.text)
+  ok('ใบเก่ากว่าช่วงตรวจมีบรรทัดของตัวเอง ไม่ถูกทิ้ง', /ใบเก่ากว่าช่วงตรวจ/.test(r.text), r.text)
+  ok('🔴 ห้ามตัดสินแทนคนอ่านว่าใบเก่าไม่เกี่ยว', !/ไม่ใช่งานแพ็กวันนี้/.test(r.text))
+  ok('ชื่อสินค้าที่ขึ้นต้นด้วยรหัสตัวเอง ต้องไม่โชว์รหัสซ้ำ', !/00627 00627/.test(r.text), r.text)
   ok('ขอบเขต: ช่วงวันที่เป็นวันไทย', /ใบวันที่ .* – .*2569/.test(r.text), r.text)
   ok('ขอบเขต: เกณฑ์อายุ', /เฉพาะใบที่ค้างเกิน 2 วัน/.test(r.text))
   ok('ขอบเขต: อ่านได้กี่ใบจากกี่ใบ', /อ่านใบในช่วงนี้ 6 จาก 6 ใบ/.test(r.text), r.text)
@@ -77,7 +87,7 @@ console.log('② ไม่มีใบค้าง ⇒ ต้องส่งข�
   ok('สถานะเป็น empty', r.state === 'empty', r.state)
   ok('มีข้อความจริง ไม่ใช่ค่าว่าง', typeof r.text === 'string' && r.text.length > 40)
   ok('บอกว่าไม่มีใบค้างส่ง', /ไม่มีใบค้างส่ง/.test(r.text), r.text)
-  ok('ยังมีขอบเขตกำกับ', /ร้าน z1/.test(r.text) && /ใบวันที่/.test(r.text))
+  ok('ยังมีขอบเขตกำกับ', /ทุกร้าน/.test(r.text) && /ใบวันที่/.test(r.text), r.text)
 }
 
 console.log('③ ดึงข้อมูลล้ม ⇒ บอกว่าอ่านไม่ได้ ห้ามสรุปจากที่ได้มา')
