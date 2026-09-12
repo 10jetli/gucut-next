@@ -155,6 +155,14 @@ function CorePosInner() {
   const [searchErr, setSearchErr] = useState('')
   const [cat, setCat] = useState('')          // หมวดที่เปิดอยู่ ('' = ยังไม่ได้เลือก)
   const [catTotal, setCatTotal] = useState(0) // มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
+  /* 🔴 **สามสถานะของช่องที่ท่อรุ่นใหม่ส่งมา** — ท่อรุ่นเก่ายังไม่มีช่องเหล่านี้
+     ⇒ `undefined` = ท่อยังไม่บอก (ไม่ใช่ false) · ห้ามยุบให้เหลือสองสถานะ
+        ไม่งั้นช่วงที่จอขึ้นก่อนท่อ จอจะพูดแทนท่อว่า "ไม่ใช่หมวดที่เดา" ทั้งที่ยังไม่รู้ */
+  const [catUnknown, setCatUnknown] = useState<boolean | undefined>(undefined)
+  const [catGuessed, setCatGuessed] = useState<number | undefined>(undefined)
+  const [catLoadingMore, setCatLoadingMore] = useState(false)
+  /* จำนวนที่ปุ่มหมวดบอก — เอาไว้เทียบกับที่ท่อคืนจริง (ต่างกัน = มีอะไรไม่ตรง ต้องเห็น) */
+  const [catButtonItems, setCatButtonItems] = useState<number | null>(null)
   // ⚠️ ผลค้นหาก็ต้องบอกจำนวนที่เจอจริงเหมือนกัน — ไม่งั้นคนขายค้นแล้วเห็น 20 ตัว
   //    นึกว่าร้านมีแค่นั้น ทั้งที่มี 124 ตัว (โรคเดิม: ตัวเลขกับรายการมาคนละที่)
   const [searchTotal, setSearchTotal] = useState(0)
@@ -347,20 +355,34 @@ function CorePosInner() {
 
   // เปิดหมวด — ดึงได้ถึง 200 ตัว และต้องบอกด้วยว่าทั้งหมวดมีกี่ตัว
   // ⚠️ หมวดใหญ่สุดมี 462 ตัว ถ้าไม่บอก total คนขายจะนึกว่าเห็นครบแล้ว
-  const openCat = useCallback(async (code: string) => {
+  /* เปิดหมวด / โหลดเพิ่ม — ท่อรับ `offset` อยู่แล้ว (ยิงทดสอบจริงแล้ว 12 ก.ย. 2569)
+     🔴 ของเดิมขอ 200 ตัวแล้วจบ ⇒ หมวดที่มีของเกิน 200 (ใหญ่สุด 462) **ดูของที่เหลือไม่ได้เลย**
+        ป้ายบอกแค่ว่า "ใช้ช่องค้นหา" ซึ่งใช้ไม่ได้ถ้าคนขายไม่รู้ว่าจะค้นคำอะไร */
+  const openCat = useCallback(async (code: string, opts?: { offset?: number; buttonItems?: number | null }) => {
+    const offset = opts?.offset ?? 0
+    const append = offset > 0
     setCat(code)
     setQ('')
-    setLooking(true)
+    if (append) setCatLoadingMore(true); else {
+      setLooking(true)
+      setCatButtonItems(opts?.buttonItems ?? null)
+      setCatUnknown(undefined)
+      setCatGuessed(undefined)
+    }
     try {
-      const res = await fetch(`/api/web/core?poslookup=&cat=${encodeURIComponent(code)}&limit=200`)
+      const res = await fetch(`/api/web/core?poslookup=&cat=${encodeURIComponent(code)}&limit=200&offset=${offset}`)
       const d = await res.json()
-      setFound(Array.isArray(d?.rows) ? d.rows : [])
+      const rows: Found[] = Array.isArray(d?.rows) ? d.rows : []
+      setFound((prev) => (append ? [...prev, ...rows] : rows))
       setCatTotal(Number(d?.total) || 0)
+      /* ท่อรุ่นเก่าไม่มีช่องพวกนี้ ⇒ คงค่า undefined ไว้ ไม่แปลว่า false */
+      setCatUnknown(typeof d?.unknownCat === 'boolean' ? d.unknownCat : undefined)
+      setCatGuessed(typeof d?.guessedRows === 'number' ? d.guessedRows : undefined)
     } catch {
-      setFound([])
-      setCatTotal(0)
+      if (!append) { setFound([]); setCatTotal(0) }
     } finally {
       setLooking(false)
+      setCatLoadingMore(false)
     }
   }, [])
 
@@ -862,7 +884,7 @@ function CorePosInner() {
                   {cats.map((c) => (
                     <button
                       key={c.code}
-                      onClick={() => openCat(c.code)}
+                      onClick={() => openCat(c.code, { buttonItems: typeof c.items === 'number' ? c.items : null })}
                       className="w-full flex items-center justify-between gap-2 text-left border border-gray-300 rounded-lg px-3 py-3 hover:bg-blue-50 transition-colors"
                     >
                       <span className="text-[13.5px] text-gray-800 truncate">
@@ -878,11 +900,48 @@ function CorePosInner() {
                   ))}
                 </div>
               )}
-              {cat && catTotal > found.length && (
-                <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-2.5 py-1.5">
-                  หมวดนี้มีทั้งหมด <b>{catTotal.toLocaleString('th-TH')}</b> ตัว
-                  แสดง {found.length.toLocaleString('th-TH')} ตัวแรก — ใช้ช่องค้นหาด้านบนหาตัวที่ต้องการ
-                </p>
+              {/* 🔴 ป้ายขอบเขต + ปุ่มดูเพิ่ม อยู่ **เหนือรายการ** ตามกติกา: ขอบเขตมาถึงตาก่อนตัวเลข */}
+              {cat && !looking && (
+                <div className="space-y-1.5">
+                  {/* หมวดที่ท่อไม่รู้จัก — ต้องบอกตรง ๆ ห้ามปล่อยให้เหมือน "หมวดว่าง" */}
+                  {catUnknown === true && (
+                    <p className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded px-2.5 py-1.5 leading-relaxed">
+                      ⚠️ <b>ระบบไม่รู้จักหมวดนี้</b> — ไม่ใช่ว่าหมวดนี้ไม่มีของ แต่แปลว่ารหัสหมวดกับคลังไม่ตรงกัน
+                      {' '}⇒ แจ้งทีมดูแลระบบ และใช้ช่องค้นหาไปก่อน
+                    </p>
+                  )}
+                  {/* เลขบนปุ่มไม่ตรงกับของที่ได้ = มีอะไรไม่ตรงกันอยู่ ต้องเห็น ไม่ใช่เงียบ */}
+                  {catButtonItems !== null && catButtonItems !== catTotal && catUnknown !== true && (
+                    <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 leading-relaxed">
+                      ⚠️ <b>เลขบนปุ่มกับของที่ได้ไม่ตรงกัน</b> — ปุ่มบอก {catButtonItems.toLocaleString('th-TH')} ตัว
+                      {' '}แต่คลังคืนมา {catTotal.toLocaleString('th-TH')} ตัว ⇒ อย่าใช้เลขนี้ตัดสินว่าของครบ
+                    </p>
+                  )}
+                  {/* ทางสำรอง (หมวดที่เดาจากชื่อ) ต้องประกาศตัวเมื่อถูกใช้ */}
+                  {typeof catGuessed === 'number' && catGuessed > 0 && (
+                    <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5">
+                      ในรายการนี้มี <b>{catGuessed.toLocaleString('th-TH')}</b> ตัวที่ <b>จัดหมวดให้จากชื่อสินค้า</b>
+                      {' '}(ไม่ได้มาจากทะเบียนสินค้าใน ZORT)
+                    </p>
+                  )}
+                  {catTotal > found.length && (
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <p className="text-[12px] text-gray-700">
+                        หมวดนี้มี <b>{catTotal.toLocaleString('th-TH')}</b> ตัว · แสดงแล้ว {found.length.toLocaleString('th-TH')} ตัว
+                      </p>
+                      <button
+                        onClick={() => openCat(cat, { offset: found.length, buttonItems: catButtonItems })}
+                        disabled={catLoadingMore}
+                        className="text-[12.5px] font-semibold text-blue-600 hover:underline disabled:opacity-40"
+                      >
+                        {catLoadingMore ? 'กำลังโหลด…' : `ดูเพิ่มอีก ${Math.min(200, catTotal - found.length).toLocaleString('th-TH')} ตัว`}
+                      </button>
+                    </div>
+                  )}
+                  {catTotal > 0 && catTotal === found.length && found.length > 200 && (
+                    <p className="text-[12px] text-gray-500">ครบทั้งหมด {catTotal.toLocaleString('th-TH')} ตัวแล้ว</p>
+                  )}
+                </div>
               )}
             </div>
           )}
