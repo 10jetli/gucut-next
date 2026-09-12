@@ -127,6 +127,9 @@ function PermitBadge({ permit }: { permit: Permit }) {
 }
 
 const thaiToday = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
+/* เพดานรายการ "บิลของวันนี้" — **ค่าเดียวใช้ทั้งตอนขอและตอนเขียนป้าย**
+   แยกเป็นสองที่แล้ววันหนึ่งมีคนแก้ตัวเลขในคำขอ ป้ายจะโม้เลขเก่าต่อไปเงียบ ๆ */
+const SALES_LIMIT = 50
 
 function CorePosInner() {
   // รับชื่อลูกค้ามาจากเมนู ⋮ "ขายออก" ของจอผู้ติดต่อได้ — เติมตั้งแต่ตอนสร้าง state
@@ -370,7 +373,7 @@ function CorePosInner() {
   const loadSales = useCallback(async () => {
     setSalesErr('')
     try {
-      const res = await fetch(`/api/web/core?list=sales&day=${thaiToday()}&limit=50`)
+      const res = await fetch(`/api/web/core?list=sales&day=${thaiToday()}&limit=${SALES_LIMIT}`)
       const d = await res.json()
       /* 🔴 **ดึงประวัติไม่ได้ ≠ วันนี้ยังไม่มีบิล** — เจอด้วยการทำให้ท่อล่มจริง 6 ก.ย. 2569
          ของเดิม: ท่อตอบ 500 พร้อม JSON ⇒ res.json() ไม่ throw ⇒ catch ไม่ทำงาน
@@ -1141,6 +1144,25 @@ function CorePosInner() {
           <p className="text-[14px] font-bold text-gray-800">บิลของวันนี้</p>
           <button onClick={loadSales} className="text-[12.5px] text-blue-600 hover:underline">รีเฟรช</button>
         </div>
+
+        {/* 🔴 **รายการนี้ถูกตัดที่เพดาน แล้วเดิมไม่มีอะไรบอกเลย** (เพิ่ม 12 ก.ย. 2569)
+            อันตรายเฉพาะของจอนี้: คนขายหาบิลที่เพิ่งเปิดไม่เจอ ⇒ **เปิดใบใหม่ซ้ำ**
+            = ยอดเบิ้ล · สต็อกตัดสองรอบ · เข้า PEAK สองใบ ซึ่งเป็นอันตรายอันเดียว
+            ที่จอนี้ระวังที่สุดอยู่แล้ว (มีตัวกันบิลซ้ำทั้งระบบ) · สองสาขาใช้จอนี้ทุกวัน
+            ⚠️ เงื่อนไขต้องมีสองทาง ไม่ใช่ทางเดียว:
+               `dayTotal.orders > sales.length` จับกรณีปกติ
+               แต่ยอดของวัน **ไม่นับใบยกเลิก** ส่วนรายการ **นับ** ⇒ วันที่มีใบยกเลิกเยอะ
+               ตัวเลขแรกอาจน้อยกว่าจำนวนแถวทั้งที่รายการถูกตัดจริง
+               ⇒ ต้องเช็ค "แตะเพดาน" (`>= SALES_LIMIT`) ประกบด้วย
+            ⚠️ ป้ายอยู่ **เหนือรายการ** ตามกติกา: ขอบเขตต้องมาถึงตาก่อนตัวเลข */}
+        {!salesErr && (dayTotal.orders > sales.length || sales.length >= SALES_LIMIT) && (
+          <p className="text-[12.5px] text-amber-900 bg-amber-50 border-b border-amber-300 px-4 py-2.5 leading-relaxed">
+            ⚠️ <b>รายการนี้ไม่ครบ</b> — แสดงได้สูงสุด <b>{SALES_LIMIT}</b> ใบ
+            {dayTotal.orders > sales.length && <> · วันนี้มี <b>{dayTotal.orders.toLocaleString('th-TH')}</b> ใบ (ไม่นับใบยกเลิก)</>}
+            {' '}⇒ <b>หาบิลไม่เจอในนี้ ไม่ได้แปลว่ายังไม่ได้เปิด</b> อย่าเปิดใบใหม่ซ้ำ
+            {' '}ให้ค้นจากจอ <b>รายการขาย</b> ก่อน
+          </p>
+        )}
         {salesErr
           ? (
             <p className="text-[13px] text-amber-900 bg-amber-50 border-t border-amber-200 px-4 py-3 leading-relaxed">

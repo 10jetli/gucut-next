@@ -336,6 +336,23 @@ export default function BuyReportPage() {
                 className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]" />
             </div>
 
+            {/* 🔴 **ป้ายบอกขอบเขตของตารางทั้งใบ ต้องอยู่เหนือตาราง** (ย้ายขึ้นมา 12 ก.ย. 2569)
+                เดิมอยู่ใต้ตาราง (ซึ่งยาวได้ถึง 200 แถว) ⇒ คนเลือกช่วงวันที่ไว้ข้างบน
+                แล้วอ่านตารางนี้ว่าเป็นของช่วงนั้น — ผิดทั้งใบ โดยไม่มีอะไรดูขัดตา
+                กฎที่ CEO ยกขึ้นเป็นกติกา 12 ก.ย.: ป้ายขอบเขตมาก่อนตัวเลข ·
+                รายละเอียดวิธีคิด (เช่น "ที่ขาดคือรหัสยอดน้อยสุด") ปล่อยไว้ท้ายตารางได้ */}
+            {items && (
+              <p className="text-[12.5px] text-amber-900 bg-amber-50 border-y border-amber-300 px-4 py-2.5 leading-relaxed">
+                ⚠️ <b>ตารางนี้เป็นยอดทุกช่วงเวลา ไม่ได้ขยับตามช่วงวันที่ด้านบน</b>
+                {' '}(ท่อยังไม่รับตัวกรองวันที่) · รวม <b>{fmtNum(items.skus ?? 0)}</b> รหัส
+                จาก <b>{fmtNum(items.lines ?? 0)}</b> บรรทัด เป็นเงิน <b>{fmtMoney(items.amount ?? 0)}</b> บาท
+                {typeof all?.amount === 'number' && Math.abs((items.amount ?? 0) - all.amount) > 1 && (
+                  <> · น้อยกว่ายอดรวมใบซื้อทั้งหมด <b>{fmtMoney(all.amount - (items.amount ?? 0))}</b> บาท
+                    เพราะบางใบไม่มีรายการสินค้าแนบมา</>
+                )}
+              </p>
+            )}
+
             <TableWrap>
               <table className="w-full min-w-[760px]">
                 <thead className="bg-white border-b border-gray-200">
@@ -380,19 +397,6 @@ export default function BuyReportPage() {
                 </tbody>
               </table>
             </TableWrap>
-
-            {/* 🔴 ห้ามถอด — ตารางนี้ไม่ขยับตามช่วงเวลาด้านบน คนอ่านต้องรู้ */}
-            {items && (
-              <p className="text-[12px] text-amber-800 bg-amber-50 border-t border-amber-200 px-4 py-2.5 leading-relaxed">
-                ⚠️ ตารางรายสินค้านี้เป็นยอด <b>ทุกช่วงเวลา</b> ไม่ได้ขยับตามช่วงวันที่ด้านบน
-                (ท่อยังไม่รับตัวกรองวันที่) · รวม <b>{fmtNum(items.skus ?? 0)}</b> รหัส
-                จาก <b>{fmtNum(items.lines ?? 0)}</b> บรรทัด เป็นเงิน <b>{fmtMoney(items.amount ?? 0)}</b> บาท
-                {typeof all?.amount === 'number' && Math.abs((items.amount ?? 0) - all.amount) > 1 && (
-                  <> · น้อยกว่ายอดรวมใบซื้อทั้งหมด <b>{fmtMoney(all.amount - (items.amount ?? 0))}</b> บาท
-                    เพราะบางใบไม่มีรายการสินค้าแนบมา</>
-                )}
-              </p>
-            )}
 
             {/* 🔴 **ห้ามตัดแถวเงียบ** — บรรทัดสรุปข้างบนบอก 217 รหัส แต่ตารางมี 200 แถว
                 บรรทัดสรุปที่ถูก + ตารางที่ไม่ครบ = อ่านแล้วเข้าใจผิดว่าเห็นครบทุกรหัสแล้ว

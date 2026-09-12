@@ -76,6 +76,16 @@ function Inner() {
         summary={<span className="text-gray-400">ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา</span>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
 
+      {/* 🔴 **ข้อจำกัดการจับคู่ต้องอยู่ใต้ชื่อลูกค้า ไม่ใช่ท้ายจอ** (ย้ายขึ้นมา 12 ก.ย. 2569)
+          มันตอบคำถามว่า "ใบพวกนี้เป็นของคนนี้จริงไหม" ⇒ กำกับ**ทุกอย่างที่อยู่ใต้มัน**
+          เดิมอยู่บรรทัดสุดท้ายของจอด้วยสี gray-400 (อ่อนที่สุดในโปรเจกต์)
+          = คนอ่านประวัติการซื้อจบแล้วจึงเจอว่าอาจไม่ใช่คนเดียวกัน */}
+      {d?.matchNote && (
+        <p className="mb-3 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+          ⚠️ <b>ข้อจำกัดการจับคู่ลูกค้า</b> — {d.matchNote}
+        </p>
+      )}
+
       {/* 🔴 ชื่อถูกปิดบัง — ต้องบอกก่อนที่ผู้ใช้จะเห็นเลข 0 แล้วเข้าใจผิด */}
       {masked && (
         <div className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-[13px] text-amber-900">
@@ -169,8 +179,6 @@ function Inner() {
               </div>
             )}
 
-            {/* ข้อจำกัดการจับคู่ที่ท่อส่งมาเอง — โชว์ตรง ๆ ไม่ตีความใหม่ */}
-            {d.matchNote && <p className="mt-3 text-[12px] text-gray-400">⚠️ {d.matchNote}</p>}
           </section>
         </div>
       )}
