@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authToken, sameToken } from '@/lib/auth-token'
+import { isStaffToken, verifyStaffToken } from '@/lib/staff-token'
 
 // ป้องกันทั้งเว็บด้วยรหัสผ่าน (ตั้งค่าใน env)
 // - SITE_PASSWORD  = แอดมิน เข้าได้ทุกหน้า
 // - STAFF_PASSWORD = พนักงาน (รหัสเก่าใช้ร่วมกัน) เข้าได้เฉพาะหน้า "โอนสินค้า" (/catalog) + API โอนสินค้า
 // - STAFF_NAME_1..8 / STAFF_PASS_1..8 = พนักงานรายคน (คนละรหัส) สิทธิ์เท่ากับ STAFF_PASSWORD
+// - **ผู้ใช้ที่เพิ่มจากหน้าเว็บ** (/core/settings-users/add) = คุกกี้เป็นโทเคนเซ็นชื่อ
+//   สิทธิ์ **เท่ากับพนักงาน env เป๊ะ** ไม่มีสิทธิ์ใหม่ ไม่มีระบบสิทธิ์ใหม่ (คำสั่ง CEO ข้อ 4)
+//   🔴 ตรวจด้วย **ลายเซ็น** ไม่ใช่การอ่านฐาน — middleware รันบน edge runtime
+//      การอ่าน Blobs ที่นี่ยังไม่เคยพิสูจน์ว่าใช้ได้ และถ้าพลาด = ทั้งเว็บ 500 ทุกหน้า
+//      ⇒ แลกกับข้อจำกัดที่ต้องรู้: **ปิดผู้ใช้แล้ว คนที่ล็อกอินค้างอยู่จะยังเข้าได้จนโทเคนหมดอายุ**
+//      (ล็อกอินครั้งใหม่ถูกปิดทันที) · ดู lib/staff-token.ts
 // - ยังไม่ล็อกอิน → เด้งไปหน้า /login
 // - API ที่ยังไม่ล็อกอิน → 401
 // - พนักงานเปิดหน้าอื่นนอกเหนือสิทธิ์ → เด้งกลับไปหน้าโอนสินค้า (หรือ 403 ถ้าเป็น API)
@@ -53,7 +60,11 @@ export async function middleware(req: NextRequest) {
   const isAdmin = !!auth && sameToken(auth, await authToken(adminPass))
   let isStaff = false
   if (!isAdmin && auth) {
-    if (staffPass && sameToken(auth, await authToken(staffPass))) isStaff = true
+    /* ผู้ใช้จากหน้าเว็บมาก่อน — คุกกี้ขึ้นต้น 'gs1.' แยกจากท่าเดิม (เลขฐานสิบหก 64 ตัว) ได้ขาด
+       ⇒ ของเดิมไม่ถูกแตะเลย: คุกกี้ท่าเดิมไม่เคยเข้าเงื่อนไขนี้ */
+    if (isStaffToken(auth)) {
+      if (await verifyStaffToken(auth, adminPass)) isStaff = true
+    } else if (staffPass && sameToken(auth, await authToken(staffPass))) isStaff = true
     else {
       for (const p of staffPasswords()) {
         if (sameToken(auth, await authToken(p))) { isStaff = true; break }

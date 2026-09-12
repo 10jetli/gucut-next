@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authToken } from '@/lib/auth-token'
 import { clientIp } from '@/lib/client-ip'
+import { findStaffUserByPassword } from '@/lib/staff-users'
+import { signStaffToken, STAFF_TOKEN_TTL_SEC } from '@/lib/staff-token'
 
 export const dynamic = 'force-dynamic'
 
@@ -80,24 +82,59 @@ export async function POST(req: NextRequest) {
   } catch { /* ไม่มี body */ }
 
   const isAdmin = password === adminPass
-  const staffMatch = !isAdmin ? staffList().find(s => s.pass === password) : undefined
-  const isLegacyStaff = !isAdmin && !staffMatch && !!legacyStaffPass && password === legacyStaffPass
-  if (!isAdmin && !staffMatch && !isLegacyStaff) {
+
+  /* ── ผู้ใช้ที่เพิ่มจากหน้าเว็บ (เก็บแบบย้อนกลับไม่ได้ใน Blobs) ──
+     🔴 **ลองทางใหม่ก่อน แล้วค่อยตกไปทางเดิม** (คำสั่ง CEO 12 ก.ย. 2569 ข้อ 1)
+        ⇒ วันที่ที่เก็บใหม่ล่ม **ไม่มีใครถูกล็อกออก** เพราะ env ยังรับอยู่เหมือนเดิมทุกคน
+     ⚠️ **ทางถอยต้องประกาศตัวเมื่อถูกใช้** — เก็บเหตุผลไว้ใน storeError แล้วส่งกลับไปกับคำตอบ
+        (และหน้าผู้ใช้งานอ่านจาก /api/staff-users เพื่อขึ้นแถบเตือน)
+        ไม่งั้นทางถอยจะกลายเป็นทางหลักโดยไม่มีใครรู้ ([[fallbacks-must-announce]])
+     ⚠️ ไม่ลองทางนี้ถ้าเป็นแอดมิน — ประหยัดเวลาแฮช และแอดมินไม่เกี่ยวกับรายชื่อนี้ */
+  let webUser: { id: string; name: string } | null = null
+  let storeError: string | null = null
+  if (!isAdmin) {
+    try {
+      const u = await findStaffUserByPassword(password)
+      if (u) webUser = { id: u.id, name: u.name }
+    } catch (e: any) {
+      storeError = String(e?.message ?? e)
+    }
+  }
+
+  const staffMatch = !isAdmin && !webUser ? staffList().find(s => s.pass === password) : undefined
+  const isLegacyStaff = !isAdmin && !webUser && !staffMatch && !!legacyStaffPass && password === legacyStaffPass
+  if (!isAdmin && !webUser && !staffMatch && !isLegacyStaff) {
     countWrong(ip)
+    /* 🔴 ข้อความเดียวเสมอ — ห้ามแยก "ไม่มีชื่อนี้" ออกจาก "รหัสผิด" และห้ามบอกว่า
+       ถูกปิดการใช้งาน (คนที่ถูกปิดต้องได้ข้อความเดียวกับคนที่พิมพ์รหัสผิด) */
     return NextResponse.json({ error: 'รหัสผ่านไม่ถูกต้อง' }, { status: 401 })
   }
   if (ip) tries.delete(ip) // เข้าได้แล้ว = ล้างประวัติ ไม่งั้นคนพิมพ์ผิด 4 ครั้งแล้วถูกจะโดนล็อกทีหลังแบบงง ๆ
 
   const role = isAdmin ? 'admin' : 'staff'
-  const name = staffMatch ? staffMatch.name : ''
-  const res = NextResponse.json({ ok: true, role, name })
-  // 🔴 เก็บ **ลายนิ้วมือ** ไม่ใช่ตัวรหัส — ห้ามกลับไปใส่ password ตรง ๆ อีก (ดู lib/auth-token.ts)
-  res.cookies.set('gucut_auth', await authToken(password), {
+  const name = webUser ? webUser.name : staffMatch ? staffMatch.name : ''
+  /* ⚠️ บอกด้วยว่าเข้าทางไหน + ทางถอยถูกใช้หรือเปล่า — คนตรวจต้องแยกได้ว่าวันนี้
+     ระบบใหม่ทำงาน หรือเรากำลังอยู่บนทางถอยโดยไม่รู้ตัว */
+  const via = isAdmin ? 'admin' : webUser ? 'web-user' : staffMatch ? 'env-slot' : 'env-legacy'
+  const res = NextResponse.json({
+    ok: true, role, name, via,
+    ...(storeError ? { fallback: true, fallbackReason: `อ่านรายชื่อผู้ใช้จากที่เก็บไม่ได้ (${storeError}) — ใช้ช่อง env แทน` } : {}),
+  })
+
+  /* คุกกี้สองชนิด **โดยตั้งใจ** (อย่ายุบรวม):
+       ผู้ใช้ env → ลายนิ้วมือของรหัส (ท่าเดิม ไม่แตะ) — middleware แฮชรหัสใน env มาเทียบได้
+       ผู้ใช้จากหน้าเว็บ → โทเคนเซ็นชื่อ — เพราะรหัสถูกเก็บแบบย้อนกลับไม่ได้
+         middleware จึงแฮชเทียบไม่ได้ ต้องตรวจด้วยลายเซ็น (ดู lib/staff-token.ts) */
+  const cookie = webUser
+    ? await signStaffToken({ u: webUser.id, n: webUser.name }, adminPass)
+    : await authToken(password)
+  res.cookies.set('gucut_auth', cookie, {
     httpOnly: true,
     secure: true,
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 90, // 90 วัน
+    // ⏳ โทเคนพนักงานจากหน้าเว็บอายุสั้นกว่าโดยตั้งใจ — ยิ่งสั้น การปิดผู้ใช้ยิ่งมีผลเร็ว
+    maxAge: webUser ? STAFF_TOKEN_TTL_SEC : 60 * 60 * 24 * 90,
   })
   return res
 }
