@@ -14,8 +14,20 @@ import { buildShelfReport, PICK } from "./lib-shelf-report.mjs";
 import { notify } from "./lib-notify.mjs";
 
 const PIPE = "https://gucut.com/api/core";
-const ITEMS_CAP = 25;     // เปิดดูรายการสินค้าได้กี่ใบต่อรอบ (ใบเก่าสุดก่อน) — งบเวลา 26 วินาที
-const CONCURRENCY = 5;
+/* 🔴 **เพดานนี้เคยทำให้ "อันดับ" ผิด — วัดของจริง 12 ก.ย. 2569**
+   เดิมตั้งไว้ 25 ใบ แล้ววันนั้นมีใบค้าง 65 ใบ ⇒ อ่านได้ 25 ใบ จัดอันดับจาก 25 ใบนั้น
+   ผลที่ออกมา: สามอันดับแรกเป็น 00449 / 00040 / 00540 และ **รหัส 00313 ที่ค้างมากที่สุด
+   (10 ใบ · เก่าสุด 28 วัน) หลุดออกจากรายการไปเลย** — ซึ่งเป็นรหัสเดียวกับที่ท่านประธานห่วง
+   ⇒ เลขที่ตั้งไว้ "เพื่อไม่ให้เกินเวลา" ถูกเอาไปใช้ **ตัดสินว่าจะสั่งใครไปนับของ**
+   (กฎ display-limits-cant-decide) ⇒ ต้องครอบให้ครบ ไม่ใช่สุ่มมาจัดอันดับ
+   วัดจริง: 65 ใบ ใช้เวลา 9.6–11.3 วินาที (concurrency 5) ⇒ ยังอยู่ในงบ 26 วินาทีของ Netlify */
+const ITEMS_CAP = 120;
+/* วัดจริง 12 ก.ย.: 65 ใบที่ concurrency 5 ใช้ 13.8 วินาที (รวมทั้งรอบ 17.7 วิ) ซึ่งชิดงบ 26 วิเกินไป
+   ⇒ เพิ่มเป็น 8 · ปลายทางเป็นท่อของเราเอง ไม่ใช่ของนอกที่มีเพดานต่อวินาที */
+const CONCURRENCY = 8;
+/* ⏱️ **งบเวลาเป็นของใช้ร่วมกัน** — หยุดเปิดใบเพิ่มเมื่อใช้เวลาเกินนี้ แล้ว **รายงานว่าเหลืออีกกี่ใบ**
+   ดีกว่าปล่อยให้ฟังก์ชันตายกลางทางแล้วไม่มีรายงานเลย ([[time-budget-is-shared]]) */
+const TIME_BUDGET_MS = 15_000;
 const PAGE = 200;         // เพดานแถวต่อคำขอของท่อ
 const MAX_PAGES = 8;
 
@@ -70,8 +82,13 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
   const take = picked.orders.slice(0, itemsCap);
   const itemsByOrder = {};
   let itemsFailed = 0;
+  let opened = 0;
+  const startedAt = Date.now();
   for (let i = 0; i < take.length; i += CONCURRENCY) {
-    await Promise.all(take.slice(i, i + CONCURRENCY).map(async (o) => {
+    if (Date.now() - startedAt > TIME_BUDGET_MS) break;   // เหลือเท่าไหร่จะถูกรายงาน ไม่ใช่หายเงียบ
+    const part = take.slice(i, i + CONCURRENCY);
+    opened += part.length;
+    await Promise.all(part.map(async (o) => {
       try {
         const d = await pipe(`order=${encodeURIComponent(o.id)}`);
         if (!Array.isArray(d.items)) throw new Error("ไม่มีช่อง items");
@@ -88,7 +105,7 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
     stuckOrders: picked.orders.length,
     rowsRead: rows.length, rowsTotal,
     itemsFailed,
-    ordersBeyondCap: Math.max(0, picked.orders.length - take.length),
+    ordersBeyondCap: Math.max(0, picked.orders.length - opened),
     tooOld: picked.tooOld,
     pick,
     statusUnverified: true,
@@ -98,7 +115,8 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
     raw: {
       rowsRead: rows.length, rowsTotal, stuckOrders: picked.orders.length,
       tooOld: picked.tooOld, tooNew: picked.tooNew, badDay: picked.badDay,
-      itemsRead: take.length, itemsFailed, distinctSkus: groups.length,
+      itemsRead: opened, itemsFailed, distinctSkus: groups.length,
+      itemsMs: Date.now() - startedAt,
     },
   };
 }
