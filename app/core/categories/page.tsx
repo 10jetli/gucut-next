@@ -22,6 +22,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
+import { categoryCoverage } from '@/lib/category-net'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, RowMenu } from '@/components/zort'
 
@@ -75,15 +76,28 @@ export default function CoreCategoriesPage() {
    *  `cost` = ราคาซื้อในทะเบียนสินค้าของเรา — **ต่ำกว่าความจริง 2-3 เท่า** พิสูจน์แล้ว
    *  `sell` = ราคาขาย */
   const [basis, setBasis] = useState<'zort' | 'cost' | 'sell'>('zort')
+  /* เลขฝั่ง ZORT สำหรับตาข่ายข้ามแหล่ง — undefined = ยังไม่รู้ (ไม่ใช่ 0) */
+  const [zort, setZort] = useState<{ zortTotal?: number; noSkuInZort?: number; zortCountedAt?: string } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/web/core?list=categories')
+      /* 🔎 **ตัวหารของตาข่ายต้องมาจากนอกกอง** ⇒ ขอเลขที่ ZORT บอกมาด้วย (คำขอเบา limit=1)
+         ⚠️ ถ้าขอไม่ได้ ให้เป็น null = "ยังตรวจไม่ได้" **ห้ามตีเป็น 0 หรือถือว่าผ่าน** */
+      const [res, zres] = await Promise.all([
+        fetch('/api/web/core?list=categories'),
+        fetch('/api/web/core?list=stock&limit=1').catch(() => null),
+      ])
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
       setD(j)
+      const zj = zres ? await zres.json().catch(() => null) : null
+      setZort(
+        zj && typeof zj.zortTotal === 'number'
+          ? { zortTotal: zj.zortTotal, noSkuInZort: Number(zj.noSkuInZort) || 0, zortCountedAt: zj.zortCountedAt }
+          : null,
+      )
     } catch (e) {
       setD(null) // ไม่โชว์ของค้าง
       setError(String(e instanceof Error ? e.message : e))
@@ -349,16 +363,43 @@ export default function CoreCategoriesPage() {
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
               <span>
                 รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtMoney(totalOnhand)}
-                {/* 🔎 **ตาข่ายข้ามแหล่ง**: ผลบวก SKU จากทุกแถว (คิดฝั่งจอ) ต้องเท่ากับ total
-                    ที่ท่อนับมาจากทะเบียนสินค้าทั้งตาราง (คนละที่คำนวณ) — ไม่เท่า = มีแถวหาย
-                    ระหว่างทางหรือท่อเริ่มตัดแถว ⇒ **ต้องเห็น ไม่ใช่เงียบ**
-                    (ท่อยืนยัน 12 ก.ย. 2569: list=categories ไม่มี LIMIT ในคิวรี จึงควรตรงเสมอ
-                     ⇒ วันที่ไม่ตรงคือวันที่สมมติฐานนั้นเปลี่ยน ซึ่งเป็นวันที่ต้องรู้ทันที) */}
-                {typeof d?.total === 'number' && d.total !== totalSkus && (
-                  <span className="text-amber-700"> · ⚠️ ท่อนับได้ {fmtNum(d.total)} SKU
-                    ต่างจากผลบวกในตารางนี้ {fmtNum(Math.abs(d.total - totalSkus))} รหัส —
-                    แปลว่าตารางนี้ไม่ครบ อย่าเพิ่งใช้ตัดสินใจ</span>
-                )}
+                {/* 🔴 **ตาข่ายเดิมที่เคยอยู่ตรงนี้เป็น tautology — ถอดแล้ว 12 ก.ย. 2569**
+                    ของเดิมเทียบ "ผลบวก skus ที่จอบวกเอง" กับ `d.total` ของท่อ
+                    และเขียนคอมเมนต์ว่า "ตาข่ายข้ามแหล่ง" ⇒ **แต่ `d.total` ของท่อคือผลบวกของ
+                    แถวชุดเดียวกันนั้นเอง** (netlify/lib/pos.mjs: total: rows.reduce(...))
+                    ⇒ เอาผลบวกไปเทียบกับผลบวกของตัวเอง = เขียวตลอดกาล ไม่มีวันฟ้องอะไร
+                    🔑 และอันตรายกว่าการไม่มีตาข่าย เพราะคนอ่านรอบหน้าเห็นว่า "มีแล้ว"
+                       แล้วไม่สร้างของจริง (CEO คัดข้อนี้มาแก้เพราะเหตุนี้ ไม่ใช่เพราะมันเขียว)
+
+                    **ของจริง**: ตัวหารมาจาก ZORT ซึ่งอยู่นอกกองของเรา
+                      ผลบวกหมวด (จอบวก) + ตัวที่ ZORT มีแต่ไม่มีรหัส = จำนวนสินค้าที่ ZORT บอก
+                    ⚠️ วัดจริงก่อนตั้งเกณฑ์ (12 ก.ย. 2569): 2,672 + 226 = 2,898 ✅ ลงตัวพอดี
+                       ⇒ ส่วนต่าง 226 **มีเหตุผล**: สินค้าใน ZORT ที่ไม่มีรหัส เราจับคู่ไม่ได้
+                         จึงไม่เคยเข้าคลังเงา (ดูคำอธิบายเต็มใน netlify/lib/core-products.mjs)
+                       ⇒ ไม่บังคับให้ "เท่ากันเฉย ๆ" และไม่ตั้งค่าเผื่อลอย ๆ — ยอมรับส่วนต่างนี้
+                         **เฉพาะจำนวนที่ ZORT ยืนยันเองว่าไม่มีรหัส** เท่านั้น
+                    ⚠️ สินค้าหนึ่งตัวอยู่ได้หมวดเดียว (คอลัมน์ category เดียว) และตัวที่ไม่มีหมวด
+                       ถูกนับในถัง "(ยังไม่ได้จัดหมวดใน ZORT)" อยู่แล้ว ⇒ ผลบวกจึงครอบทุกตัวจริง */}
+                {(() => {
+                  /* 🔑 คิดที่ lib/category-net.ts ที่เดียว แล้วจอแค่เอามาแสดง
+                     ⇒ ตัวทดสอบเรียก **ฟังก์ชันตัวเดียวกับที่จอใช้** ไม่ใช่เลียนแบบตรรกะ
+                        (บทเรียนเช้าวันเดียวกัน: เทสที่เลียนแบบ เขียวทั้งที่ของพัง) */
+                  const cov = categoryCoverage({ sumSkus: totalSkus, zortTotal: zort?.zortTotal, noSkuInZort: zort?.noSkuInZort })
+                  if (cov.state === 'unknown') {
+                    /* สามสถานะ: ตรวจได้ · ตรวจไม่ได้ · ไม่ตรง — ห้ามยุบ "ตรวจไม่ได้" เป็น "ผ่าน" */
+                    return <span className="text-gray-500"> · ⏳ ยังเทียบกับจำนวนสินค้าใน ZORT ไม่ได้ (ไม่ได้ตัวเลขฝั่ง ZORT มา)</span>
+                  }
+                  if (cov.state === 'ok') {
+                    return (
+                      <span className="text-gray-400"> · ✅ ครบตามที่ ZORT มี: {fmtNum(cov.sumSkus)} + {fmtNum(cov.noSkuInZort ?? 0)} (ไม่มีรหัส) = {fmtNum(cov.zortTotal ?? 0)}</span>
+                    )
+                  }
+                  return (
+                    <span className="text-amber-700"> · ⚠️ ไม่ครบตามที่ ZORT มี — ผลบวกหมวด {fmtNum(cov.sumSkus)}
+                      {' '}+ ไม่มีรหัส {fmtNum(cov.noSkuInZort ?? 0)} ≠ ZORT {fmtNum(cov.zortTotal ?? 0)}
+                      {' '}({(cov.gap ?? 0) > 0 ? 'ขาด' : 'เกิน'} {fmtNum(Math.abs(cov.gap ?? 0))} รหัส) — อย่าเพิ่งใช้ตารางนี้ตัดสินใจ</span>
+                  )
+                })()}
               </span>
               {d.zortNote
                 ? <span className="text-gray-400">{d.zortNote}</span>
