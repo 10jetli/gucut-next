@@ -80,12 +80,25 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
     today, minAge, maxAge,
     isStuck: (o) => o?.shipStatusGroup === "waiting_ship",
   });
-  /* แยกตามร้านจาก **ทั้งกองที่คัดได้** ไม่ใช่จากแถวที่เอาไปแสดง */
+  /* แยกตามร้านจาก **ทั้งกองที่คัดได้** ไม่ใช่จากแถวที่เอาไปแสดง
+     🔴 **ต้องมีทุกร้านที่เห็นในข้อมูล รวมร้านที่เป็น 0** (CEO แก้ให้ 12 ก.ย. 2569)
+        เหตุผลที่ผมไม่กรอง z2 ทิ้งคือ "จะได้เห็นวันที่ z2 เริ่มส่งของ" — แต่ถ้าไม่พิมพ์ 0 ออกมา
+        เราจะไม่มีวันเห็นมันเปลี่ยน ⇒ เหตุผลของตัวเองเรียกร้องให้โชว์เลข 0 ด้วย */
   const byStore = {};
+  for (const r of rows) {
+    const src = String(r?.source ?? "(ไม่ระบุ)");
+    if (!(src in byStore)) byStore[src] = 0;
+  }
+  const srcOf = new Map(rows.map((r) => [r.id, String(r?.source ?? "(ไม่ระบุ)")]));
   for (const o of picked.orders) {
-    const src = String(rows.find((r) => r.id === o.id)?.source ?? "(ไม่ระบุ)");
+    const src = srcOf.get(o.id) ?? "(ไม่ระบุ)";
     byStore[src] = (byStore[src] ?? 0) + 1;
   }
+  /* ช่องทางที่รายงานนี้ "เห็น" — คนอ่านควรรู้ขอบเขตนี้ (CEO ยืนยันว่ายังต้องมี
+     แต่เหตุผลเปลี่ยน: ไม่ใช่เพราะเลขเพี้ยน แต่เพราะควรรู้ว่าเห็นช่องทางไหน)
+     ⚠️ ใบจากเว็บ/POS ไม่มีสถานะจากแพลตฟอร์ม ⇒ ไม่เคยเข้ากองนี้เลยตั้งแต่ต้น */
+  const byChannel = {};
+  for (const o of picked.orders) byChannel[o.channel] = (byChannel[o.channel] ?? 0) + 1;
 
   /* ① **นับใบที่เก่ากว่าช่วงตรวจ — ห้ามทิ้ง** (CEO ตีกลับ 12 ก.ย. 2569)
      🔑 นับด้วย **คำขอเดียว** ไม่ต้องไล่หน้า: ท่อคำนวณ `shipStatusGroups` จากทั้งช่วงที่กรอง
@@ -93,14 +106,26 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
      ⚠️ นับไม่ได้ ≠ ไม่มี ⇒ ล้มเหลวให้เป็น null แล้วข้อความจะไม่พูดถึง ไม่ใช่พูดว่าศูนย์ */
   const tailTo = new Date(Date.parse(`${from}T00:00:00Z`) - 864e5).toISOString().slice(0, 10);
   const tailFrom = new Date(Date.parse(`${today}T00:00:00Z`) - 365 * 864e5).toISOString().slice(0, 10);
+  const countOf = (d, group) => {
+    const g = Array.isArray(d?.shipStatusGroups) ? d.shipStatusGroups.find((x) => x.group === group) : null;
+    return g ? Number(g.count) || 0 : null;
+  };
   let olderTail = null;
   try {
-    const d = await pipe(`list=orders&from=${tailFrom}&to=${tailTo}&limit=1`);
-    const g = Array.isArray(d.shipStatusGroups) ? d.shipStatusGroups.find((x) => x.group === "waiting_ship") : null;
-    olderTail = g ? Number(g.count) || 0 : null;
+    olderTail = countOf(await pipe(`list=orders&from=${tailFrom}&to=${tailTo}&limit=1`), "waiting_ship");
   } catch {
     olderTail = null;
   }
+  /* 🔑 **หลักฐานที่เทียบกันในบ้านเราเอง ไม่ต้องอ้างพฤติกรรมของ Lazada** (CEO ให้มา 12 ก.ย. 2569)
+     ทั้งปี: กอง "รอจัดส่ง" มากกว่ากอง "สำเร็จ" ⇒ เป็นไปไม่ได้ถ้าร้านส่งของทุกวัน
+     ⇒ ใช้เป็นเหตุผลว่าทำไมยังเชื่อสถานะนี้ไม่ได้ แทนเหตุผลเดิม ("จำนวนมากเกินจริง")
+        ซึ่งอ่อนกว่าเพราะต้องเดาว่าแพลตฟอร์มทำตัวอย่างไร */
+  let yearWaiting = null, yearDone = null;
+  try {
+    const d = await pipe(`list=orders&from=${tailFrom}&to=${today}&limit=1`);
+    yearWaiting = countOf(d, "waiting_ship");
+    yearDone = countOf(d, "done");
+  } catch { /* นับไม่ได้ = ไม่พูดถึง ไม่ใช่พูดว่าศูนย์ */ }
 
   /* ── เปิดดูรายการสินค้าของใบที่ค้าง (ใบเก่าสุดก่อน) ──
      🔴 ใบที่อ่านไม่ได้ **ห้ามนับเป็น "ไม่มีสินค้า"** — ต้องรายงานว่าอ่านไม่ได้กี่ใบ */
@@ -133,8 +158,9 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
     ordersBeyondCap: Math.max(0, picked.orders.length - opened),
     tooOld: picked.tooOld,
     tooNew: picked.tooNew,
-    byStore,
+    byStore, byChannel,
     olderTail, olderTailFrom: tailFrom,
+    yearWaiting, yearDone, yearFrom: tailFrom,
     pick,
     statusUnverified: true,
   });
@@ -145,7 +171,8 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
       tooOld: picked.tooOld, tooNew: picked.tooNew, badDay: picked.badDay,
       itemsRead: opened, itemsFailed, distinctSkus: groups.length,
       itemsMs: Date.now() - startedAt,
-      byStore, olderTail, olderTailRange: `${tailFrom}..${tailTo}`,
+      byStore, byChannel, olderTail, olderTailRange: `${tailFrom}..${tailTo}`,
+      yearWaiting, yearDone,
     },
   };
 }
@@ -153,11 +180,24 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
 export default async function handler(req) {
   const url = new URL(req.url);
   const secret = process.env.DRIVESYNC_SECRET;
-  if (!secret) return json({ error: "ยังไม่ได้ตั้ง DRIVESYNC_SECRET — ปิดเส้นนี้ไว้" }, 503);
-  if (url.searchParams.get("secret") !== secret) return json({ error: "unauthorized" }, 401);
+
+  /* ตัวตั้งเวลาของ Netlify เรียกด้วย POST พร้อม body { next_run } และ **ไม่มี secret ใน query**
+     ⇒ ต้องรับทางนี้ด้วย ไม่งั้นงานตามเวลาจะได้ 401 ทุกเช้าแบบเงียบ ๆ
+     ⚠️ ทางเรียกด้วยมือยังต้องมี secret เหมือนเดิม — เส้นนี้เปิดโล่งไม่ได้ */
+  let scheduled = false;
+  if (req.method === "POST") {
+    const body = await req.json().catch(() => null);
+    scheduled = !!body && typeof body === "object" && "next_run" in body;
+  }
+  if (!scheduled) {
+    if (!secret) return json({ error: "ยังไม่ได้ตั้ง DRIVESYNC_SECRET — ปิดเส้นนี้ไว้" }, 503);
+    if (url.searchParams.get("secret") !== secret) return json({ error: "unauthorized" }, 401);
+  }
 
   const out = await runShelfReport();
-  const wantSend = url.searchParams.get("send") === "1";
+  /* ตัวตั้งเวลา = ส่งจริงเสมอ (รวมวันที่ไม่มีใบค้าง — เงียบแยกไม่ออกจากระบบตาย)
+     เรียกด้วยมือ = ต้องสั่ง send=1 เอง ไม่งั้นเป็นโหมดซ้อม */
+  const wantSend = scheduled || url.searchParams.get("send") === "1";
 
   /* 🚫 ยังไม่ส่งอัตโนมัติ — ต้องสั่ง send=1 เองเท่านั้น (CEO ขออ่านถ้อยคำก่อน)
      ⚠️ ตอบ `sent` ตามความจริงจาก notify() เสมอ **ห้ามตอบ ok ลอย ๆ ตอนส่งไม่ออก**
@@ -169,4 +209,7 @@ export default async function handler(req) {
   return json({ ok: true, dryRun: false, state: out.state, counts: out.counts, raw: out.raw, telegram: sent, text: out.text });
 }
 
-// 🚫 ไม่มี config.schedule จนกว่า CEO อ่านถ้อยคำแล้วอนุมัติ
+/* ⏰ ตี 7 ไทยทุกวัน (00:00 UTC) — CEO อนุมัติเปิดของจริง 12 ก.ย. 2569 หลังตรวจถ้อยคำ
+   ⚠️ **มีผลหลัง deploy รอบถัดไปเท่านั้น** · รอบแรกที่จะเข้ากลุ่มคือเช้าพรุ่งนี้
+   ⚠️ ส่งทุกวันแม้ไม่มีใบค้าง (บอกว่า "ไม่มี") — เงียบแยกไม่ออกจาก "งานตามเวลาไม่เคยรัน" */
+export const config = { schedule: "0 0 * * *" };

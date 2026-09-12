@@ -62,7 +62,9 @@ export function rankForReport(groups) {
 export function buildShelfReport({
   today, scope = {}, groups = [], stuckOrders = 0,
   rowsRead = null, rowsTotal = null, itemsFailed = 0, ordersBeyondCap = 0,
-  tooOld = 0, tooNew = 0, byStore = null, olderTail = null, olderTailFrom = null,
+  tooOld = 0, tooNew = 0, byStore = null, byChannel = null,
+  olderTail = null, olderTailFrom = null,
+  yearWaiting = null, yearDone = null, yearFrom = null,
   error = null, pick = PICK, statusUnverified = true,
 }) {
   const head = `📦 <b>ใบที่ยังไม่ได้ส่ง</b> — เช้า ${thaiDate(today)}`;
@@ -141,22 +143,13 @@ export function buildShelfReport({
     lines.push(`อีก ${n(tooNew)} ใบเพิ่งค้างไม่ถึง ${scope.minAge ?? 2} วัน — ยังไม่นับในรายงานนี้`);
   }
 
-  /* ① **ใบที่เก่ากว่าช่วงตรวจ ห้ามทิ้ง** — CEO ตีกลับข้อนี้แรงที่สุด
-     ของเดิมผมตัดออกแล้วเขียนว่า "ไม่ใช่งานแพ็กวันนี้" ซึ่งเป็นการ **ตัดสินแทนท่านประธาน**
-     และซ่อนหลักฐานที่แรงที่สุด (ค้าง 3 วันอาจแพ็กไม่ทัน · ค้าง 40 วันคือไม่มีของแน่นอน)
-     ⚠️ แต่พอยิงนับจริงกลับได้ **หลายร้อยใบ** ⇒ ตัวเลขนี้ใหญ่เกินกว่าจะเป็นของค้างจริงทั้งหมด
-        ⇒ ต้องโชว์ตัวเลข **พร้อมบอกว่ายังไม่ยืนยัน** ห้ามเงียบ และห้ามสรุปแทนคนอ่าน */
-  if (tooOld > 0 || (olderTail ?? 0) > 0) {
-    const parts = [];
-    if (tooOld > 0) parts.push(`${n(tooOld)} ใบในช่วงที่อ่าน`);
-    if ((olderTail ?? 0) > 0) parts.push(`${n(olderTail)} ใบย้อนไปถึง ${thaiDate(olderTailFrom)}`);
-    lines.push(`📌 <b>ใบเก่ากว่าช่วงตรวจ (ค้างเกิน ${scope.days ?? 30} วัน): ${parts.join(" + ")}</b>`);
-    lines.push(`   ใบยิ่งเก่ายิ่งเป็นสัญญาณว่าของหมดจริง — แต่จำนวนที่มากขนาดนี้ <b>ยังยืนยันไม่ได้</b>`);
-    lines.push(`   ว่าค้างจริงทั้งหมด หรือเป็นสถานะที่ไม่ขยับหลังส่ง ⇒ ยังไม่เอามาจัดอันดับ`);
+  if (byChannel && Object.keys(byChannel).length) {
+    const ch = Object.entries(byChannel).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${n(v)}`).join(" · ");
+    lines.push(`ช่องทางที่พบใบค้าง: ${ch}`);
   }
-
   if (statusUnverified) {
     lines.push(`หมายเหตุ: สถานะ "รอจัดส่ง" มาจากที่ ZORT บอก — <b>ยังไม่ได้ยืนยันกับแพลตฟอร์มโดยตรง</b>`);
+    lines.push(`ใบจากเว็บ/หน้าร้าน (POS) ไม่มีสถานะจากแพลตฟอร์ม จึงไม่เคยอยู่ในกองนี้`);
   }
 
   lines.push("");
@@ -175,6 +168,38 @@ export function buildShelfReport({
   if (ranked.length > top.length) {
     lines.push(`อีก ${n(ranked.length - top.length)} รหัสก็ค้างอยู่เหมือนกัน — คัดมา ${top.length} เพื่อให้สั่งนับได้จริงในวันเดียว`);
   }
+
+  /* ① **ใบที่เก่ากว่าช่วงตรวจ ห้ามทิ้ง** — CEO ตีกลับข้อนี้แรงที่สุด
+     ของเดิมผมตัดออกแล้วเขียนว่า "ไม่ใช่งานแพ็กวันนี้" ซึ่งเป็นการ **ตัดสินแทนท่านประธาน**
+     และซ่อนหลักฐานที่แรงที่สุด (ค้าง 3 วันอาจแพ็กไม่ทัน · ค้าง 40 วันคือไม่มีของแน่นอน)
+     ⚠️ แต่พอยิงนับจริงกลับได้ **หลายร้อยใบ** ⇒ ตัวเลขนี้ใหญ่เกินกว่าจะเป็นของค้างจริงทั้งหมด
+        ⇒ ต้องโชว์ตัวเลข **พร้อมบอกว่ายังไม่ยืนยัน** ห้ามเงียบ และห้ามสรุปแทนคนอ่าน */
+  /* 🔴 **ย้ายมาไว้ท้ายข้อความ (12 ก.ย. 2569)** — ของเดิมอยู่บน แล้วดัน "รหัสที่ต้องไปนับ"
+     ลงไปบรรทัดที่ 12 ⇒ คนอ่านบนมือถือเห็นคำอธิบายก่อนเห็นสิ่งที่ต้องลงมือ
+     กติกาที่ CEO ตั้งเอง: **ป้ายขอบเขต**ขึ้นก่อนตัวเลข · **รายละเอียดวิธีคิด**ไว้ท้ายได้
+     ⇒ บรรทัดขอบเขต/ตัวกรอง/ช่องทาง ยังอยู่บน (มันกำกับความหมายของ 65 ใบ)
+        ส่วนบล็อกนี้เป็นหลักฐานประกอบ ⇒ ลงท้าย แต่ **ห้ามตัดออก** */
+  const tailLines = [];
+  if (tooOld > 0 || (olderTail ?? 0) > 0) {
+    const parts = [];
+    if (tooOld > 0) parts.push(`${n(tooOld)} ใบในช่วงที่อ่าน`);
+    if ((olderTail ?? 0) > 0) parts.push(`${n(olderTail)} ใบย้อนไปถึง ${thaiDate(olderTailFrom)}`);
+    tailLines.push(`📌 <b>ใบเก่ากว่าช่วงตรวจ (ค้างเกิน ${scope.days ?? 30} วัน): ${parts.join(" + ")}</b>`);
+    tailLines.push(`   ใบยิ่งเก่ายิ่งเป็นสัญญาณว่าของหมดจริง — แต่กลุ่มนี้ <b>ยังยืนยันไม่ได้</b>`);
+    /* 🔑 เหตุผลที่เทียบกันในบ้านเราเอง — ไม่ต้องอ้างพฤติกรรมของแพลตฟอร์มที่ยังพิสูจน์ไม่ได้ */
+    if (yearWaiting !== null && yearDone !== null) {
+      tailLines.push(`   ย้อน 1 ปี (ตั้งแต่ ${thaiDate(yearFrom)}): รอจัดส่ง <b>${n(yearWaiting)}</b> ใบ · สำเร็จ <b>${n(yearDone)}</b> ใบ`);
+      if (yearWaiting > yearDone) {
+        tailLines.push(`   ⇒ <b>กองรอจัดส่งมากกว่ากองสำเร็จทั้งปี</b> ซึ่งเป็นไปไม่ได้ถ้าร้านส่งของทุกวัน`);
+        tailLines.push(`   ⇒ สถานะนี้น่าจะไม่ขยับหลังส่ง ⇒ <b>ยังไม่เอาใบกลุ่มเก่ามาจัดอันดับ</b>`);
+      }
+    } else {
+      tailLines.push(`   ว่าค้างจริงทั้งหมด หรือเป็นสถานะที่ไม่ขยับหลังส่ง ⇒ ยังไม่เอามาจัดอันดับ`);
+    }
+  }
+
+
+  if (tailLines.length) { lines.push(""); lines.push(...tailLines); }
 
   /* ② ย้ำท้ายข้อความด้วย เพราะคนอ่านบนมือถืออาจอ่านแค่หัวกับท้าย */
   lines.push("");
