@@ -25,12 +25,19 @@ function NavAnchor({ href, className, onClick, children }: {
 
 export function MobileHeader({ onMenu }: { onMenu: () => void }) {
   // เครดิต Netlify คงเหลือ — จุดเดียวกับป้ายใน sidebar เดสก์ท็อป (เจ้าของร้านสั่งให้โชว์บนมือถือด้วย)
-  const [credits, setCredits] = useState<number | null>(null)
+  /* สามสถานะ ห้ามยุบเหลือสอง: ยังโหลด / อ่านได้ / อ่านไม่ได้ (กฎจอข้อ 4) */
+  const [credits, setCredits] = useState<{ state: 'loading' | 'ok' | 'error'; left?: number }>({ state: 'loading' })
   useEffect(() => {
+    let alive = true
     fetch('/api/netlify-credits')
       .then((r) => r.json())
-      .then((j) => { if (typeof j?.left === 'number') setCredits(j.left) })
-      .catch(() => {})
+      .then((j) => {
+        if (!alive) return
+        if (typeof j?.left === 'number') setCredits({ state: 'ok', left: j.left })
+        else setCredits({ state: 'error' })
+      })
+      .catch(() => { if (alive) setCredits({ state: 'error' }) })
+    return () => { alive = false }
   }, [])
   return (
     <header className="md:hidden sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-100 px-3 py-2.5 flex items-center justify-between gap-2 shadow-sm">
@@ -47,12 +54,18 @@ export function MobileHeader({ onMenu }: { onMenu: () => void }) {
         <span className="text-lg font-black tracking-tight text-gray-900">gucut <span className="text-orange-600">Ai</span></span>
       </div>
       <div className="flex items-center gap-2">
-        {credits !== null && (
+        {/* อ่านไม่ได้ ให้ขึ้น ⚡? ไม่ใช่หายไปเงียบ — เหตุผลเดียวกับป้ายใน Sidebar
+            (มาตรวัดที่หายตอนตัวเองพัง หน้าตาเหมือน "ทุกอย่างปกติ") */}
+        {credits.state !== 'loading' && (
           <span
-            className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${credits < 1000 ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-500'}`}
-            title="เครดิต Netlify คงเหลือ (จาก 5,000/เดือน)"
+            className={`rounded-full px-2 py-0.5 text-[10.5px] font-bold ${
+              credits.state === 'error' ? 'bg-gray-100 text-gray-400'
+                : credits.left! < 1000 ? 'bg-orange-100 text-orange-600' : 'bg-gray-100 text-gray-500'}`}
+            title={credits.state === 'error'
+              ? 'อ่านเครดิต Netlify ไม่ได้รอบนี้ — ไม่ได้แปลว่าเครดิตหมด แปลว่ายังไม่รู้'
+              : 'เครดิต Netlify คงเหลือ (จาก 5,000/เดือน)'}
           >
-            ⚡{credits.toLocaleString('th-TH')}
+            ⚡{credits.state === 'error' ? '?' : credits.left!.toLocaleString('th-TH')}
           </span>
         )}
         <UserMenu />
