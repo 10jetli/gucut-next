@@ -113,6 +113,11 @@ export default function ChatCommercePage() {
   const [reply, setReply] = useState('')
   const [q, setQ] = useState('')
   const [err, setErr] = useState('')
+  /* 🔴 **คำเตือนเรื่องส่งไม่ออก ต้องไม่ใช้ช่องเดียวกับคำเตือนเรื่องโหลด** (เจอตอนทดสอบจริง 14 ก.ย. 2569)
+     `send()` ตั้ง err แล้วเรียก `loadRooms()` ต่อทันที · loadRooms สำเร็จ ⇒ `setErr('')`
+     ⇒ คำเตือนที่เพิ่งตั้งถูกลบทิ้งในเสี้ยววินาที คนใช้เห็นแค่ข้อความเด้งกลับเข้าช่องพิมพ์เฉย ๆ
+     ⇒ แก้ df055c5 รอบแรกจึง "ถูกในโค้ด แต่ไม่ถึงตาคน" — พิสูจน์ได้ก็ต่อเมื่อกดจริงเท่านั้น */
+  const [sendErr, setSendErr] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
 
   const loadRooms = useCallback(async () => {
@@ -159,7 +164,7 @@ export default function ChatCommercePage() {
     const text = reply.trim()
     if (!text || !open) return
     setReply('')
-    setErr('')
+    setSendErr('')
     setMsgs((m) => [...m, { from: 's', text, at: Date.now() }])
     try {
       const r = await fetch('/api/web/chat', {
@@ -171,7 +176,7 @@ export default function ChatCommercePage() {
       const d = await r.json().catch(() => null)
       if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
     } catch (e) {
-      setErr(`ส่งข้อความไม่สำเร็จ — ลูกค้ายังไม่ได้รับ (${String(e instanceof Error ? e.message : e)}) · ข้อความถูกคืนไว้ในช่องพิมพ์แล้ว`)
+      setSendErr(`ส่งข้อความไม่สำเร็จ — ลูกค้ายังไม่ได้รับ (${String(e instanceof Error ? e.message : e)}) · ข้อความถูกคืนไว้ในช่องพิมพ์แล้ว`)
       setReply(text)
     }
     loadThread(open)
@@ -385,6 +390,9 @@ export default function ChatCommercePage() {
                 <div ref={endRef} />
               </div>
 
+              {sendErr && (
+                <p className="text-[12px] text-red-700 bg-red-50 border-t border-red-100 px-3 py-2">{sendErr}</p>
+              )}
               <div className="flex items-center gap-2 border-t border-gray-200 px-3 py-2.5">
                 <input
                   value={reply}

@@ -166,6 +166,94 @@ const srv = createServer(async (req, res) => {
      กติกาทดสอบที่ฝังไว้: orderId '2' (SO-002) = ถูก "สมชาย" ถืออยู่ → ทดสอบทาง lock/takeover
      · grade ให้ moveResult ชิ้นที่สองเป็น duplicate → ทดสอบป้ายเหลือง "เคยบันทึกแล้ว" */
   /* ห้องทำงาน AI (จอ /office) — ทดสอบครบสามกติกา: แถวสด · แถวเก่า+ฟิลด์ null · ไม่มีแถว (Codex) */
+  /* ══ แชทคอมเมิร์ซ (จอ /core/chat กับ /web/chat) — mock มี state จริงในหน่วยความจำ ══
+     🔴 **ทำไมต้องมี** (14 ก.ย. 2569): สองจอนั้นมีเส้นทาง "เขียนแล้วล้มเหลว" ที่เพิ่งแก้ (df055c5)
+        แต่พิสูจน์ด้วยตาไม่ได้เลย เพราะท่อปลอมตอบก้อนว่าง ⇒ จอขึ้น "ยังไม่มีลูกค้าทักเข้ามา"
+        เปิดห้องไม่ได้ ⇒ กดส่ง/กดลบไม่ได้ ⇒ ไม่มีทางเห็นว่าตอนล้มมันพูดอะไร
+     ⚠️ ทางเดียวที่เหลือคือใช้ท่อจริงอ่านห้องแล้วดักเฉพาะ POST ให้ล้ม — **ห้ามทำ**
+        ถ้าตัวดักพลาด ข้อความทดสอบจะไปถึงลูกค้าจริง ⇒ จึงต้องมีของปลอมให้ครบแทน
+     รูปร่างตามที่จออ่านจริง: rooms[] ตาม interface Room · thread.messages[] ตาม interface Msg */
+  if (mode === 'good' && req.url.startsWith('/api/chat')) {
+    const u = new URL(req.url, 'http://x')
+    globalThis.__chat ??= {
+      rooms: new Map([
+        ['c1', { cid: 'c1', name: 'คุณสมชาย (ทดสอบ)', phone: '0812345678',
+                 product: { h: 'โซ่เลื่อยยนต์ NEWWAVE 3652', t: 'โซ่' }, unread: 2,
+                 messages: [
+                   { from: 'c', text: 'โซ่รุ่นนี้ยังมีของไหมครับ', at: Date.now() - 3600e3 },
+                   { from: 's', text: 'มีครับ เหลือ 3 เส้น', at: Date.now() - 3500e3, by: 'แอดมิน' },
+                   { from: 'c', text: 'ขอที่อยู่ร้านหน่อยครับ', at: Date.now() - 600e3 },
+                 ] }],
+        ['c2', { cid: 'c2', name: 'ลูกค้าไม่ระบุชื่อ', phone: '', product: null, unread: 0,
+                 messages: [{ from: 'c', text: 'สอบถามราคาบาร์ 22 นิ้ว', at: Date.now() - 2 * 86400e3 }] }],
+      ]),
+    }
+    const st = globalThis.__chat
+    const body = req.method === 'POST'
+      ? await new Promise((ok) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } }) })
+      : null
+    const json = (o, code = 200) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)) }
+
+    if (req.method === 'DELETE') {
+      const cid = u.searchParams.get('cid')
+      if (!st.rooms.has(cid)) return json({ error: 'ไม่มีห้องนี้' }, 404)
+      st.rooms.delete(cid)
+      return json({ ok: true })
+    }
+    if (req.method === 'POST') {
+      const r = st.rooms.get(body?.cid)
+      if (!r) return json({ error: 'ไม่มีห้องนี้' }, 404)
+      r.messages.push({ from: 's', text: String(body?.text ?? ''), at: Date.now(), by: 'แอดมิน' })
+      return json({ ok: true })
+    }
+    const cid = u.searchParams.get('cid')
+    if (cid) {
+      const r = st.rooms.get(cid)
+      if (!r) return json({ error: 'ไม่มีห้องนี้' }, 404)
+      r.unread = 0
+      return json({ ok: true, thread: { cid, messages: r.messages } })
+    }
+    return json({
+      ok: true,
+      rooms: [...st.rooms.values()].map((r) => ({
+        cid: r.cid, name: r.name, phone: r.phone, product: r.product,
+        last: r.messages.length ? r.messages[r.messages.length - 1] : null,
+        unread: r.unread, n: r.messages.length,
+      })),
+    })
+  }
+
+  /* ══ คูปอง (จอ /web/coupons) — เหตุผลเดียวกับแชท: ต้องกดลบได้ถึงจะเห็นเส้นทางตอนล้ม ══ */
+  if (mode === 'good' && req.url.startsWith('/api/coupon')) {
+    globalThis.__coupon ??= {
+      list: [
+        { code: 'WELCOME50', title: 'ลด 50 บาท ลูกค้าใหม่', type: 'amount', value: 50, max: 0, min: 300,
+          until: '2026-12-31', quota: 100, perUser: 1, visible: true, memberOnly: false, off: false, used: 12 },
+        { code: 'SAW10', title: 'ลด 10% เลื่อยยนต์', type: 'percent', value: 10, max: 500, min: 1000,
+          until: '2026-10-31', quota: 50, perUser: 1, visible: true, memberOnly: true, off: false, used: 3 },
+      ],
+    }
+    const st = globalThis.__coupon
+    const json = (o, code = 200) => { res.writeHead(code, { 'content-type': 'application/json' }); res.end(JSON.stringify(o)) }
+    if (req.method === 'POST') {
+      const body = await new Promise((ok) => { let b = ''; req.on('data', (c) => (b += c)); req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } }) })
+      if (body?.action === 'delete') {
+        const before = st.list.length
+        st.list = st.list.filter((c) => c.code !== body?.code)
+        if (st.list.length === before) return json({ error: 'ไม่มีโค้ดนี้' }, 404)
+        return json({ ok: true })
+      }
+      if (body?.code) {
+        const i = st.list.findIndex((c) => c.code === body.code)
+        if (i >= 0) st.list[i] = { ...st.list[i], ...body }
+        else st.list.push({ ...body, used: 0 })
+        return json({ ok: true })
+      }
+      return json({ error: 'ไม่รู้จักคำสั่งนี้' }, 400)
+    }
+    return json({ ok: true, coupons: st.list })
+  }
+
   if (mode === 'good' && req.url.startsWith('/api/office')) {
     globalThis.__office ??= {
       /* ⚠️ คละเจ้าของโดยตั้งใจ — ต้องมีครบทุกกลุ่ม + แถวที่ **ไม่มี owner** (ท่อรุ่นเก่า)

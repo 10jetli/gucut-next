@@ -35,6 +35,11 @@ export default function WebChatPage() {
   const [msgs, setMsgs] = useState<Msg[]>([])
   const [reply, setReply] = useState('')
   const [err, setErr] = useState('')
+  /* 🔴 คำเตือนของ "การกระทำ" (ส่ง/ลบ) ต้องแยกจากคำเตือนของ "การโหลด" (เจอตอนทดสอบจริง 14 ก.ย. 2569)
+     ของเดิมใช้ช่องเดียวกัน ⇒ `send()`/`removeRoom()` ตั้ง err แล้วโค้ดเรียก loadRooms ต่อ
+     loadRooms สำเร็จ ⇒ `setErr('')` ⇒ **คำเตือนถูกลบทิ้งก่อนคนได้อ่าน**
+     ⇒ ถูกในโค้ดแต่ไม่ถึงตาคน · จับได้ก็ต่อเมื่อกดจริงด้วยท่อปลอมเท่านั้น */
+  const [actErr, setActErr] = useState('')
   const endRef = useRef<HTMLDivElement>(null)
 
   const loadRooms = useCallback(async () => {
@@ -70,7 +75,7 @@ export default function WebChatPage() {
     const text = reply.trim()
     if (!text || !open) return
     setReply('')
-    setErr('')
+    setActErr('')
     setMsgs((m) => [...m, { from: 's', text, at: Date.now() }])
     try {
       const r = await fetch('/api/web/chat', {
@@ -81,7 +86,7 @@ export default function WebChatPage() {
       const d = await r.json().catch(() => null)
       if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
     } catch (e) {
-      setErr(`ส่งข้อความไม่สำเร็จ — ลูกค้ายังไม่ได้รับ (${String(e instanceof Error ? e.message : e)}) · ข้อความถูกคืนไว้ในช่องพิมพ์แล้ว`)
+      setActErr(`ส่งข้อความไม่สำเร็จ — ลูกค้ายังไม่ได้รับ (${String(e instanceof Error ? e.message : e)}) · ข้อความถูกคืนไว้ในช่องพิมพ์แล้ว`)
       setReply(text)
     }
     loadThread(open); loadRooms()
@@ -92,13 +97,13 @@ export default function WebChatPage() {
      ⇒ ผลสำเร็จของการลบ เขียนได้เฉพาะเมื่อปลายทางยืนยันเอง */
   async function removeRoom(cid: string) {
     if (!confirm('ลบห้องแชทนี้ทิ้ง? ข้อความทั้งหมดจะหายถาวร')) return
-    setErr('')
+    setActErr('')
     try {
       const r = await fetch(`/api/web/chat?cid=${cid}`, { method: 'DELETE' })
       const d = await r.json().catch(() => null)
       if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
     } catch (e) {
-      setErr(`ลบห้องแชทไม่สำเร็จ — ห้องนี้ยังอยู่ (${String(e instanceof Error ? e.message : e)})`)
+      setActErr(`ลบห้องแชทไม่สำเร็จ — ห้องนี้ยังอยู่ (${String(e instanceof Error ? e.message : e)})`)
       return
     }
     setOpen(null)
@@ -120,6 +125,8 @@ export default function WebChatPage() {
         </div>
       </div>
       {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+      {/* คำเตือนของการกระทำ — อยู่คนละก้อนกับคำเตือนการโหลด และไม่ถูกล้างตอนรีเฟรช */}
+      {actErr && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700">{actErr}</p>}
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden grid md:grid-cols-[300px_1fr] h-[calc(100vh-14rem)] min-h-[420px]">
         {/* รายชื่อห้อง */}
