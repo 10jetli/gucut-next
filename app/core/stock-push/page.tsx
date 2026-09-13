@@ -377,8 +377,12 @@ export default function StockPushPage() {
                   </div>
                   {bad && (
                     <p className="text-[11.5px] text-red-700 mt-2">
-                      ⚠️ รอบนี้มีแถวถูกปฏิเสธ {round.rejected} แถว — รายละเอียดรายตัว<b>ไม่อยู่ใน log</b>
-                      (จดเฉพาะแถวที่ยิงติด) ดูจากบันทึกตอนยิงหรือถามฝั่งท่อ
+                      ⚠️ รอบนี้มีแถวถูกปฏิเสธ {round.rejected} แถว — บอกไม่ได้ว่าแถวไหน
+                      {' '}ดูจากบันทึกตอนยิงหรือถามฝั่งท่อ
+                      {/* 🔴 ของเดิมเขียนว่า "จดเฉพาะแถวที่ยิงติด" — **ไม่จริง** (ยิงของจริงดู 14 ก.ย. 2569)
+                          รอบ 2026-09-08T03:06 และ 03:05 มี pushed=0 · rejected=1 · rows=1
+                          ⇒ rows **รวมแถวที่ถูกปฏิเสธด้วย** แค่ไม่ได้ติดป้ายว่าตัวไหนถูกปฏิเสธ
+                          คำอธิบายเดิมทำให้คนเชื่อว่าทุกรหัสในแถวด้านบนยิงสำเร็จหมด */}
                     </p>
                   )}
 
@@ -387,7 +391,23 @@ export default function StockPushPage() {
                       <p className="text-[12px] text-red-700 mt-2">ตรวจไม่สำเร็จ: {v.error} (ตรวจไม่ได้ ≠ ไม่ถึง — ลองใหม่ได้)</p>
                     ) : (
                       <div className="text-[12px] mt-2 border-t border-gray-100 pt-2">
+                        {/* 🔴 **ผลตรวจต้องบอกขอบเขตของตัวเองเสมอ** (งานกระดาน t_mtxx4x5k · แก้ 14 ก.ย. 2569)
+                            ของเดิมเขียนแค่ "ถึงหน้าร้านแล้ว N ตัว" ⇒ อ่านแล้วเหมือนตรวจครบทั้งรอบ
+                            แต่ตัวพิสูจน์ส่งไปเฉพาะรหัสที่อยู่ใน `rows` ของ log เท่านั้น
+                            ซึ่ง **ไม่รับประกันว่าเท่ากับจำนวนที่ยิงไปจริง** (`pushed`)
+                            ⇒ วันที่ log จดมาไม่ครบ จอจะรายงานความสำเร็จจากกองที่ถูกตัด
+                               โดยไม่มีอะไรบอก — โรคเดียวกับ "เลขทั้งกอง วางคู่กับแถวหน้าเดียว" */}
                         <span className="text-emerald-700">✅ ถึงหน้าร้านแล้ว {(v.landed ?? []).length} ตัว</span>
+                        <span className="text-gray-400">
+                          {' '}· ตรวจจากรหัสใน log {(round.rows ?? []).length} รหัส
+                          {typeof round.pushed === 'number' && ` (รอบนี้ยิงสำเร็จ ${round.pushed})`}
+                        </span>
+                        {typeof round.pushed === 'number' && (round.rows ?? []).length < round.pushed && (
+                          <span className="block text-amber-800 mt-0.5">
+                            ⚠️ <b>ตรวจไม่ครบรอบ</b> — log จดรหัสไว้ {(round.rows ?? []).length} จากที่ยิงสำเร็จ {round.pushed}
+                            {' '}⇒ อีก {round.pushed - (round.rows ?? []).length} รหัส <b>ยังไม่ถูกตรวจเลย</b> ไม่ใช่ตรวจแล้วผ่าน
+                          </span>
+                        )}
                         {(v.notLanded ?? []).length > 0 && (
                           <span className="block text-red-700 mt-0.5">
                             🔴 ยังไม่ถึง {(v.notLanded ?? []).length} ตัว:{' '}
