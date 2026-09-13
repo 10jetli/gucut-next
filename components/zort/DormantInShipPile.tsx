@@ -148,7 +148,7 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
       ) : rows.length === 0 ? (
         /* ⚠️ ตรวจแล้วไม่เจอ ต้องพูดออกมา — เงียบไป คนจะไม่รู้ว่ามีตัวตรวจนี้อยู่
            แล้ววันที่มันเงียบเพราะพัง ก็ดูเหมือนเดิมเป๊ะ */
-        <p className="text-gray-600">✅ ตรวจแล้ว — ท่อไม่ได้บอกว่ามีช่องทางไหนเงียบ (เทียบกับวันตัด {found.cutoff})</p>
+        <p className="text-gray-600">✅ ตรวจแล้ว — ท่อไม่ได้บอกว่ามีช่องทางไหนเงียบ (เทียบกับวันตัด {found?.cutoff})</p>
       ) : (
         <>
           <p className="font-semibold text-gray-800 mb-1">
