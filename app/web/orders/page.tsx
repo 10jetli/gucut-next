@@ -144,9 +144,9 @@ export default function WebOrdersPage() {
       const d = await r.json()
       /* ⚠️ ตอบ 200 แต่ไม่มีช่อง orders = ยังไม่รู้ ไม่ใช่ "ไม่มีออเดอร์"
          จอนี้เป็นจอเงิน — ศูนย์ที่ไม่มีที่มาอ่านได้ว่า "วันนี้ขายไม่ได้เลย" */
-      if (!d || !('orders' in d)) throw new Error('ตอบมาไม่ครบ')
-      setOrders(Array.isArray(d.orders) ? d.orders : [])
-      setUnreadable(typeof d.unreadable === 'number' ? d.unreadable : null)
+      if (d?.error || !Array.isArray(d?.orders)) throw new Error('ตอบมาไม่ครบ')
+      setOrders(d.orders)
+      setUnreadable(typeof d.unreadable === 'number' && Number.isSafeInteger(d.unreadable) && d.unreadable >= 0 ? d.unreadable : null)
     } catch {
       /* ⚠️ ตั้ง orders เป็น [] เพื่อให้ตารางไม่ค้างที่โครงกระดูก — **แต่ [] ไม่ได้แปลว่า "ไม่มีออเดอร์"**
          ⇒ การ์ดตัวเลขต้องดูที่ `err` ไม่ใช่ดูว่ามี array ไหม (เจอตอนยิงจริง 7 ก.ย. 2569:
@@ -278,7 +278,9 @@ export default function WebOrdersPage() {
         <Stat icon={IC.bag} tone="bg-blue-50 text-blue-600" label="ออเดอร์วันนี้"
           value={known ? stat.today : '—'}
           sub={!known ? 'ยังไม่รู้ — โหลดไม่สำเร็จ'
-            : unreadable && unreadable > 0
+            : unreadable === null
+              ? `อ่านได้ ${orders?.length ?? 0} ใบ · ยังยืนยันไม่ได้ว่าครบ`
+              : unreadable > 0
               ? `อ่านได้ ${orders?.length ?? 0} ใบ · อ่านไม่ได้อีก ${unreadable} ใบ`
               : `ทั้งหมด ${orders?.length ?? 0} ใบในระบบ`} />
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
@@ -327,8 +329,14 @@ export default function WebOrdersPage() {
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
         {/* 🔴 มีใบที่อ่านไม่ได้ = ตารางข้างล่างไม่ใช่ทุกใบ **ต้องเห็นตรงนี้ ไม่ใช่ซ่อนในการ์ด**
             ออเดอร์ที่อ่านไม่ได้คือออเดอร์ของลูกค้าจริงที่ร้านอาจไม่รู้ว่ามี ⇒ วางไว้เหนือตารางเลย */}
-        {unreadable !== null && unreadable > 0 && (
-          <div className="px-4 md:px-5 py-2.5 bg-amber-50 border-b border-amber-200 text-[12.5px] text-amber-900 leading-relaxed">
+        {known && unreadable === null && (
+          <div role="alert" className="px-4 md:px-5 py-2.5 bg-amber-50 border-b border-amber-200 text-[12.5px] text-amber-900 leading-relaxed">
+            ⚠️ <b>ยังยืนยันไม่ได้ว่าอ่านออเดอร์ครบ</b> — ระบบไม่ได้แจ้งจำนวนใบที่อ่านไม่ได้อย่างถูกต้อง
+            · ตารางและตัวเลขทุกช่องคิดเฉพาะใบที่อ่านได้ ลองรีเฟรช หากยังขึ้นข้อความนี้ให้แจ้งผู้ดูแล
+          </div>
+        )}
+        {known && unreadable !== null && unreadable > 0 && (
+          <div role="alert" className="px-4 md:px-5 py-2.5 bg-amber-50 border-b border-amber-200 text-[12.5px] text-amber-900 leading-relaxed">
             ⚠️ <b>มี {unreadable} ใบที่อ่านข้อมูลไม่ได้</b> — ไม่ได้อยู่ในตารางข้างล่างและไม่ถูกนับในตัวเลขทุกช่อง
             · ไม่ใช่ว่าไม่มีออเดอร์ แต่คือใบที่ระบบอ่านไม่ออก <b>ต้องตามดูที่ต้นทาง</b>
           </div>
@@ -336,8 +344,8 @@ export default function WebOrdersPage() {
         <div className="px-4 md:px-5 py-3 flex flex-wrap items-center gap-1.5 border-b border-gray-100">
           {(['all', ...STATUS.map((s) => s.key)] as const).map((k) => {
             const active = filter === k
-            const label = k === 'all' ? 'ทั้งหมด' : S_OF[k as Status].t
-            const n = k === 'all' ? orders?.length : stat.counts[k]
+            const label = k === 'all' ? (known && unreadable !== 0 ? 'อ่านได้' : 'ทั้งหมด') : S_OF[k as Status].t
+            const n = !known ? undefined : k === 'all' ? orders?.length : stat.counts[k]
             return (
               <button key={k} onClick={() => setFilter(k as 'all' | Status)}
                 className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-150 ${
@@ -365,6 +373,7 @@ export default function WebOrdersPage() {
                 ⚠️ จอนี้คือจอที่ร้านใช้ดูออเดอร์เว็บทุกวัน — เข้าใจผิดตรงนี้ = ของไม่ถูกส่ง */}
             <p className="text-[13px] text-gray-400">
               {err ? 'ยังดูไม่ได้ — โหลดรายการไม่สำเร็จ (ไม่ได้แปลว่าไม่มีออเดอร์)'
+                : known && unreadable !== 0 ? 'ไม่พบออเดอร์ที่ตรงกับตัวกรองในใบที่อ่านได้ — ยังยืนยันไม่ได้ว่าไม่มีออเดอร์อื่น'
                 : q ? `ไม่พบออเดอร์ที่ตรงกับ "${q}"` : 'ไม่มีออเดอร์ในหมวดนี้'}
             </p>
           </div>
