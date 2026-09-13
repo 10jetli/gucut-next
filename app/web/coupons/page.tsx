@@ -53,12 +53,22 @@ export default function WebCouponsPage() {
     } catch (e) { setMsg(String((e as Error).message || 'บันทึกไม่สำเร็จ')) }
     finally { setBusy(false) }
   }
+  /* 🔴 ลบไม่สำเร็จแล้วเงียบ ⇒ `load()` ดึงมาใหม่ โค้ดกลับมาอยู่ในรายการ
+     คนเห็นแล้วงงว่ากดลบไปแล้วทำไมยังอยู่ แล้วมักกดซ้ำหรือคิดว่าจอค้าง
+     ⇒ ผลของการเขียนข้อมูล เขียนได้เฉพาะเมื่อปลายทางยืนยันเอง (AGENTS.md ข้อ 6) */
   async function remove(code: string) {
     if (!confirm(`ลบโค้ด ${code}?`)) return
-    await fetch('/api/web/coupon', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', code }),
-    }).catch(() => {})
+    setMsg('')
+    try {
+      const r = await fetch('/api/web/coupon', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ action: 'delete', code }),
+      })
+      const d = await r.json().catch(() => null)
+      if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+    } catch (e) {
+      setMsg(`ลบโค้ด ${code} ไม่สำเร็จ — โค้ดนี้ยังใช้ได้อยู่ (${String(e instanceof Error ? e.message : e)})`)
+    }
     load()
   }
 

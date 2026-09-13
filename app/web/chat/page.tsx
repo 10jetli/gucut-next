@@ -60,20 +60,47 @@ export default function WebChatPage() {
   useEffect(() => { if (open) loadThread(open) }, [open, loadThread])
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [msgs])
 
+  /* 🔴 **ข้อความขึ้นในจอทันที แต่ถ้าส่งไม่ออกต้องบอก** (กฎ AGENTS.md ข้อ 6)
+     ของเดิมกลืน error ทิ้ง ⇒ ส่งไม่ออกก็เงียบ · ข้อความโผล่ในจอเหมือนส่งแล้ว
+     (อย่าเขียนตัวอย่างโค้ดที่กลืน error ลงคอมเมนต์ — ตัวตรวจ check-honesty grep ข้อความดิบ
+      แล้วจะชี้มาที่คอมเมนต์นี้ กลายเป็นรายการปลอมให้คนรอบหน้าตามเสียเวลา)
+     แล้ว `loadThread` ดึงของจริงมาทับ มันก็หายไปเฉย ๆ โดยไม่มีใครรู้ว่าลูกค้าไม่เคยได้รับ
+     ⇒ ล้มเหลวต้องพูด และต้องคืนข้อความให้คนพิมพ์ เพื่อกดส่งซ้ำได้โดยไม่ต้องพิมพ์ใหม่ */
   async function send() {
     const text = reply.trim()
     if (!text || !open) return
     setReply('')
+    setErr('')
     setMsgs((m) => [...m, { from: 's', text, at: Date.now() }])
-    await fetch('/api/web/chat', {
-      method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ cid: open, text }),
-    }).catch(() => {})
+    try {
+      const r = await fetch('/api/web/chat', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ cid: open, text }),
+      })
+      /* ⚠️ ท่อตอบ 500 พร้อม JSON ได้ ⇒ ต้องเช็ค res.ok กับ d.error เอง */
+      const d = await r.json().catch(() => null)
+      if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+    } catch (e) {
+      setErr(`ส่งข้อความไม่สำเร็จ — ลูกค้ายังไม่ได้รับ (${String(e instanceof Error ? e.message : e)}) · ข้อความถูกคืนไว้ในช่องพิมพ์แล้ว`)
+      setReply(text)
+    }
     loadThread(open); loadRooms()
   }
+  /* 🔴 **ลบไม่สำเร็จ แต่จอลบทิ้งเลย = คนเชื่อว่าประวัติแชทหายถาวรแล้วทั้งที่ยังอยู่**
+     ของเดิมกลืน error แล้ว `setRooms(filter)` ทันทีไม่ว่าผลเป็นยังไง
+     ⇒ ห้องหายจากจอ กลับมาใหม่ตอนรีเฟรช และไม่มีใครรู้ว่าเกิดอะไรขึ้น
+     ⇒ ผลสำเร็จของการลบ เขียนได้เฉพาะเมื่อปลายทางยืนยันเอง */
   async function removeRoom(cid: string) {
     if (!confirm('ลบห้องแชทนี้ทิ้ง? ข้อความทั้งหมดจะหายถาวร')) return
-    await fetch(`/api/web/chat?cid=${cid}`, { method: 'DELETE' }).catch(() => {})
+    setErr('')
+    try {
+      const r = await fetch(`/api/web/chat?cid=${cid}`, { method: 'DELETE' })
+      const d = await r.json().catch(() => null)
+      if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+    } catch (e) {
+      setErr(`ลบห้องแชทไม่สำเร็จ — ห้องนี้ยังอยู่ (${String(e instanceof Error ? e.message : e)})`)
+      return
+    }
     setOpen(null)
     setRooms((r) => (r ?? []).filter((x) => x.cid !== cid))
   }

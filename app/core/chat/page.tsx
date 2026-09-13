@@ -151,16 +151,29 @@ export default function ChatCommercePage() {
   useEffect(() => { if (open) loadThread(open) }, [open, loadThread])
   useEffect(() => { endRef.current?.scrollIntoView({ block: 'end' }) }, [msgs])
 
+  /* 🔴 **ข้อความขึ้นในจอทันที แต่ถ้าส่งไม่ออกต้องบอก** (กฎ AGENTS.md ข้อ 6)
+     ของเดิมกลืน error ⇒ ข้อความโผล่เหมือนส่งแล้ว แล้ว loadThread ดึงของจริงมาทับ
+     มันหายไปเฉย ๆ โดยไม่มีใครรู้ว่า **ลูกค้าไม่เคยได้รับ**
+     ⇒ ล้มเหลวต้องพูด + คืนข้อความให้ช่องพิมพ์ เพื่อกดส่งซ้ำได้โดยไม่ต้องพิมพ์ใหม่ */
   async function send() {
     const text = reply.trim()
     if (!text || !open) return
     setReply('')
+    setErr('')
     setMsgs((m) => [...m, { from: 's', text, at: Date.now() }])
-    await fetch('/api/web/chat', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ cid: open, text }),
-    }).catch(() => {})
+    try {
+      const r = await fetch('/api/web/chat', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ cid: open, text }),
+      })
+      /* ⚠️ ท่อตอบ 500 พร้อม JSON ได้ ⇒ ต้องเช็ค res.ok กับ d.error เอง */
+      const d = await r.json().catch(() => null)
+      if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+    } catch (e) {
+      setErr(`ส่งข้อความไม่สำเร็จ — ลูกค้ายังไม่ได้รับ (${String(e instanceof Error ? e.message : e)}) · ข้อความถูกคืนไว้ในช่องพิมพ์แล้ว`)
+      setReply(text)
+    }
     loadThread(open)
     loadRooms()
   }
