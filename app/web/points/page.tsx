@@ -16,8 +16,21 @@ export default function WebPointsPage() {
   const [n, setN] = useState('')
   const [note, setNote] = useState('')
 
+  /* 🔴 เดิมเอาคำตอบดิบไปตั้ง state — ท่อตอบ 500 พร้อม JSON ⇒ `.json()` ไม่ throw ⇒ catch ไม่ทำงาน
+     ⇒ `cfg` กลายเป็นก้อน error แล้วจอไปอ่านค่าแต้มต่อ ได้ undefined
+     ⇒ **จอแต้มสะสมจะโชว์ค่าที่อ่านไม่ได้ว่าง ๆ เหมือน "ยังไม่ได้ตั้งค่า"** ทั้งที่ตั้งไว้แล้ว
+        ซึ่งบนจอที่คุมเรื่องแต้มของลูกค้า อ่านผิดแล้วไปตั้งใหม่ทับ = แตะของที่เป็นเงิน (แก้ 14 ก.ย. 2569) */
   const load = useCallback(() => {
-    fetch('/api/web/points').then((r) => r.json()).then(setCfg).catch(() => setMsg('โหลดค่าไม่สำเร็จ'))
+    setMsg('')
+    fetch('/api/web/points')
+      .then(async (r) => {
+        const d = await r.json()
+        if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
+        if (!d || typeof d !== 'object') throw new Error('ตอบมาไม่ใช่ค่าตั้งแต้ม')
+        return d as Cfg
+      })
+      .then(setCfg)
+      .catch(() => setMsg('โหลดค่าไม่สำเร็จ — ยังไม่รู้ค่าที่ตั้งไว้ อย่าเพิ่งตั้งใหม่ทับ'))
   }, [])
   useEffect(load, [load])
 

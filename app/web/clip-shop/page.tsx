@@ -25,7 +25,18 @@ export default function WebClipShopPage() {
   const [mapKnown, setMapKnown] = useState(false)
 
   useEffect(() => {
-    fetch('/api/webfile/feed.json').then((r) => r.json()).then(setClips)
+    /* 🔴 เส้นนี้เคยเอาคำตอบดิบไปตั้ง state ตรง ๆ — ท่อตอบ 500 พร้อม JSON ⇒ `.json()` ไม่ throw
+       ⇒ `setClips(ก้อน error)` ⇒ ของที่ควรเป็น "รายการคลิป" กลายเป็นก้อน error
+       แล้วโค้ดข้างล่างไป `.map()`/`.filter()` ต่อ ⇒ **พังทั้งหน้า** โดยไม่มีใครรู้ว่าเพราะอะไร
+       ⇒ ใช้ท่าเดียวกับเส้น /api/web/clip-shop ด้านล่างที่ทำถูกอยู่แล้ว (แก้ 14 ก.ย. 2569) */
+    fetch('/api/webfile/feed.json')
+      .then(async (r) => {
+        const d = await r.json()
+        if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
+        if (!Array.isArray(d)) throw new Error('ตอบมาไม่ใช่รายการคลิป')
+        return d
+      })
+      .then(setClips)
       .catch(() => setLoadErr('โหลดรายชื่อคลิปไม่สำเร็จ'))
     /* 🔴 ท่อตอบ 500 พร้อม JSON ⇒ .json() ไม่ throw ⇒ catch ไม่ทำงาน ⇒ map = {} เงียบ ๆ
        ⇒ หัวจอเขียน "ผูกแล้ว 0 คลิป" ทั้งที่ของจริงอาจผูกไว้แล้วหลายสิบ
@@ -39,7 +50,17 @@ export default function WebClipShopPage() {
       })
       .then((d) => { setMap(d.map ?? {}); setMapKnown(true) })
       .catch(() => setLoadErr('โหลดรายการที่ผูกไว้ไม่สำเร็จ — ยังไม่รู้ว่าคลิปไหนผูกไว้แล้ว อย่าเพิ่งผูกทับ'))
-    fetch('/api/webfile/search-index.json').then((r) => r.json()).then((d) => setIndex(d.items ?? d))
+    /* เหตุผลเดียวกับเส้นบน · `d.items ?? d` ทำให้ก้อน error ไหลเข้า setIndex ได้เต็ม ๆ
+       (ก้อน error ไม่มีช่อง items ⇒ ตกไปใช้ตัวก้อนเอง) ⇒ ช่องค้นหาจะพังตอนวนรายการ */
+    fetch('/api/webfile/search-index.json')
+      .then(async (r) => {
+        const d = await r.json()
+        if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
+        const items = Array.isArray(d) ? d : d?.items
+        if (!Array.isArray(items)) throw new Error('ตอบมาไม่ใช่รายชื่อสินค้า')
+        return items
+      })
+      .then(setIndex)
       .catch(() => setLoadErr('โหลดรายชื่อสินค้าไม่สำเร็จ — ค้นหาสินค้ายังใช้ไม่ได้'))
   }, [])
 
