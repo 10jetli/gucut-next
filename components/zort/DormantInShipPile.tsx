@@ -26,8 +26,13 @@ interface ChannelRow { ch: string; lastOrder: string | null; orders: number; ali
 
 interface Found {
   cutoff: string | null
-  /** ช่องทางที่ท่อบอกว่าเงียบ + จำนวนใบ "รอจัดส่ง" ในช่วงที่กำลังดู */
-  rows: { ch: string; lastOrder: string | null; waiting: number | null; err?: string }[]
+  /** ช่องทางที่ท่อบอกว่าเงียบ + จำนวนใบ "รอจัดส่ง" ในช่วงที่กำลังดู
+   *  🔴 `outOfRange` = ใบล่าสุดของช่องทางนี้เก่ากว่าช่วงที่กรองอยู่ ⇒ **เป็นไปไม่ได้ที่จะมีใบในช่วงนี้**
+   *     ต้องเขียนว่า "อยู่นอกช่วงที่ดู" ไม่ใช่ "ไม่มีใบค้าง" — สองอย่างนี้คนละเรื่องสุดขั้ว
+   *     (เจอตอนจำลองกับข้อมูลจริง 13 ก.ย. 2569: ช่วงเริ่มต้นของจอคือ 90 วัน แต่ ZAMA
+   *      ปิดไปตั้งแต่ ก.พ. ⇒ ทุกช่องทางขึ้น "ไม่มีใบค้าง" รวม 0 ใบ ซึ่งอ่านแล้วแปลว่า
+   *      "ตรวจแล้วไม่มีปัญหา" ทั้งที่แปลว่า "ยังไม่ได้ตรวจถึงตรงนั้นเลย") */
+  rows: { ch: string; lastOrder: string | null; waiting: number | null; outOfRange: boolean; err?: string }[]
   /** ช่องทางที่ถามยอดไม่สำเร็จ — ต้องนับแยก ห้ามรวมกับ 0 */
   failed: number
 }
@@ -74,18 +79,22 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
       /* ② ถามยอด "รอจัดส่ง" ของแต่ละช่องทางที่เงียบ — ยอดทั้งช่วง ไม่ใช่จากแถว
          ⚠️ ส่ง cancelled=1 ด้วยเหตุผลเดียวกับจอหลัก (ค่าเริ่มต้นของท่อตัดใบยกเลิกทิ้ง) */
       const rows = await Promise.all(dormant.map(async (c) => {
+        /* ช่องทางที่ใบล่าสุดเก่ากว่าช่วงที่กรอง = เป็นไปไม่ได้ที่จะมีใบในช่วงนี้
+           ⇒ ไม่ต้องถาม (ประหยัดคำขอ) และที่สำคัญกว่าคือ **ห้ามเขียนว่า "ไม่มีใบค้าง"** */
+        const outOfRange = !!c.lastOrder && c.lastOrder < from
+        if (outOfRange) return { ch: c.ch, lastOrder: c.lastOrder, waiting: null, outOfRange: true }
         const qs = new URLSearchParams({ list: 'orders', from, to, limit: '1', cancelled: '1', channel: c.ch })
         try {
           const d = await getJson(`/api/web/core?${qs}`)
           const g = (d?.shipStatusGroups ?? []).find((x: { group?: string }) => x?.group === 'waiting_ship')
-          return { ch: c.ch, lastOrder: c.lastOrder, waiting: NUM(g?.count) }
+          return { ch: c.ch, lastOrder: c.lastOrder, waiting: NUM(g?.count), outOfRange: false }
         } catch (e) {
           /* 🔴 ถามไม่สำเร็จ ≠ ไม่มีใบ — ห้ามคืน 0 (จะกลายเป็น "ไม่มีปัญหา" ทั้งที่ยังไม่รู้) */
-          return { ch: c.ch, lastOrder: c.lastOrder, waiting: null, err: String(e instanceof Error ? e.message : e) }
+          return { ch: c.ch, lastOrder: c.lastOrder, waiting: null, outOfRange: false, err: String(e instanceof Error ? e.message : e) }
         }
       }))
       rows.sort((x, y) => (y.waiting ?? -1) - (x.waiting ?? -1))
-      setFound({ cutoff, rows, failed: rows.filter((r) => r.waiting === null).length })
+      setFound({ cutoff, rows, failed: rows.filter((r) => r.waiting === null && !r.outOfRange).length })
       setState('done')
     } catch (e) {
       setMsg(String(e instanceof Error ? e.message : e))
@@ -115,6 +124,7 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
   /* ⚠️ ผลรวมนับเฉพาะตัวที่ถามสำเร็จ — ตัวที่ถามไม่ได้ต้องประกาศแยก ไม่ใช่กลืนเป็น 0 */
   const sum = rows.reduce((a, r) => a + (r.waiting ?? 0), 0)
   const withOrders = rows.filter((r) => (r.waiting ?? 0) > 0)
+  const outOfRangeCount = rows.filter((r) => r.outOfRange).length
 
   return (
     <div className="text-[12.5px] bg-white border border-gray-200 rounded-md px-3 py-2.5 mb-3">
@@ -127,6 +137,7 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
           <p className="font-semibold text-gray-800 mb-1">
             🟠 ช่องทางที่เงียบไปแล้ว {fmt(rows.length)} ช่องทาง
             {withOrders.length > 0 && <> · มีใบค้างในกองรอจัดส่งรวม <b className="text-amber-800">{fmt(sum)}</b> ใบ</>}
+            {outOfRangeCount > 0 && <span className="font-normal text-gray-500"> · {fmt(outOfRangeCount)} ช่องทางอยู่นอกช่วงที่กรอง</span>}
           </p>
           <p className="text-gray-500 mb-2">
             เกณฑ์ของท่อ: ไม่มีบิลใหม่ตั้งแต่ <b>{found?.cutoff ?? '—'}</b> ถือว่าเงียบ (ตัดสินจากวันที่ใบล่าสุด ไม่ใช่จากชื่อช่องทาง)
@@ -140,15 +151,26 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
                   <span className="text-gray-400"> · ใบล่าสุด {r.lastOrder ?? '—'}</span>
                 </span>
                 <span className="tabular-nums">
-                  {r.waiting === null
-                    ? <span className="text-amber-800">ถามยอดไม่ได้</span>
-                    : r.waiting === 0
-                      ? <span className="text-gray-400">ไม่มีใบค้าง</span>
-                      : <b className="text-amber-800">{fmt(r.waiting)} ใบ</b>}
+                  {r.outOfRange
+                    ? <span className="text-gray-400">อยู่นอกช่วงที่ดู</span>
+                    : r.waiting === null
+                      ? <span className="text-amber-800">ถามยอดไม่ได้</span>
+                      : r.waiting === 0
+                        ? <span className="text-gray-400">ไม่มีใบค้าง</span>
+                        : <b className="text-amber-800">{fmt(r.waiting)} ใบ</b>}
                 </span>
               </li>
             ))}
           </ul>
+          {/* 🔴 จุดที่หลอกที่สุด: ช่วงเริ่มต้นของจอคือ 90 วัน แต่ร้านที่ปิดไปนานกว่านั้น
+              จะอยู่นอกช่วงทั้งหมด ⇒ ตารางขึ้น "อยู่นอกช่วงที่ดู" ทุกบรรทัด รวม 0 ใบ
+              ถ้าไม่เขียนบอก คนจะอ่านว่า "ตรวจแล้วไม่มีปัญหา" ทั้งที่แปลว่า "ยังไม่ได้ตรวจถึงตรงนั้น" */}
+          {rows.length > 0 && rows.every((r) => r.outOfRange) && (
+            <p className="text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mt-2">
+              ⚠️ ทุกช่องทางที่เงียบมีใบล่าสุด<b>เก่ากว่าช่วงที่กรองอยู่</b> ⇒ ยอดในช่วงนี้เป็น 0 โดยปริยาย
+              {' '}<b>ไม่ได้แปลว่าไม่มีใบค้าง</b> — ขยายช่วงวันข้างบนเป็น 1 ปี แล้วกดตรวจใหม่ถึงจะเห็นของจริง
+            </p>
+          )}
           {found && found.failed > 0 && (
             <p className="text-amber-800 mt-2">
               ⚠️ ถามยอดไม่สำเร็จ {fmt(found.failed)} ช่องทาง — ยอดรวม {fmt(sum)} ใบ <b>ยังไม่ครบ</b>
