@@ -86,8 +86,17 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
         const qs = new URLSearchParams({ list: 'orders', from, to, limit: '1', cancelled: '1', channel: c.ch })
         try {
           const d = await getJson(`/api/web/core?${qs}`)
-          const g = (d?.shipStatusGroups ?? []).find((x: { group?: string }) => x?.group === 'waiting_ship')
-          return { ch: c.ch, lastOrder: c.lastOrder, waiting: NUM(g?.count), outOfRange: false }
+          /* 🔴 **"กองนี้ไม่มีใบเลย" กับ "ถามยอดไม่ได้" คนละเรื่องสุดขั้ว** (เจอตอนเปิดดูจอจริง 13 ก.ย. 2569)
+             ท่อ **ไม่ส่งกองที่มี 0 ใบมาในรายการ** ⇒ `find()` ได้ undefined
+             ของเดิมแปลงเป็น null แล้วจอเขียนว่า "ถามยอดไม่ได้" ทั้งที่ท่าตอบ 200 เรียบร้อย
+             (เห็นกับตา: Shopify กับ ขายหน้าร้าน ขึ้นแดงทั้งคู่ แต่ log บอก 200 ทั้งคู่)
+             ⇒ ตอบมาแล้วแต่ไม่มีกองนั้น = 0 จริง · ที่เป็น "ไม่รู้" คือตอนไม่มีช่อง shipStatusGroups เลย */
+          const groups = Array.isArray(d?.shipStatusGroups) ? d.shipStatusGroups : null
+          if (!groups) {
+            return { ch: c.ch, lastOrder: c.lastOrder, waiting: null, outOfRange: false, err: 'ท่อไม่ได้ส่ง shipStatusGroups มา' }
+          }
+          const g = groups.find((x: { group?: string }) => x?.group === 'waiting_ship')
+          return { ch: c.ch, lastOrder: c.lastOrder, waiting: NUM(g?.count) ?? 0, outOfRange: false }
         } catch (e) {
           /* 🔴 ถามไม่สำเร็จ ≠ ไม่มีใบ — ห้ามคืน 0 (จะกลายเป็น "ไม่มีปัญหา" ทั้งที่ยังไม่รู้) */
           return { ch: c.ch, lastOrder: c.lastOrder, waiting: null, outOfRange: false, err: String(e instanceof Error ? e.message : e) }
@@ -128,10 +137,18 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
 
   return (
     <div className="text-[12.5px] bg-white border border-gray-200 rounded-md px-3 py-2.5 mb-3">
-      {rows.length === 0 ? (
+      {rows.length === 0 && !found?.cutoff ? (
+        /* 🔴 **"ไม่รู้" ห้ามเขียนเป็น "ไม่มี"** (กฎจอข้อ 1) — เจอตอนเปิดดูจอจริงด้วยท่อปลอม 13 ก.ย. 2569
+           ท่อไม่ส่ง `dormantCutoff` มา = **ประเมินไม่ได้ตั้งแต่แรก** ไม่ใช่ "ตรวจแล้วไม่เจอ"
+           ของเดิมขึ้น ✅ เขียว + คำว่า "ตรวจแล้ว" ซึ่งอ่านว่าเรียบร้อยดี ทั้งที่ยังไม่ได้ตรวจอะไรเลย */
+        <p className="text-amber-800">
+          ⚠️ <b>ยังตรวจไม่ได้</b> — ท่อไม่ได้ส่งวันตัด (<code>dormantCutoff</code>) มาด้วย
+          {' '}จึงบอกไม่ได้ว่าช่องทางไหนเงียบ · <b>ไม่ได้แปลว่าไม่มีช่องทางที่ปิดแล้ว</b>
+        </p>
+      ) : rows.length === 0 ? (
         /* ⚠️ ตรวจแล้วไม่เจอ ต้องพูดออกมา — เงียบไป คนจะไม่รู้ว่ามีตัวตรวจนี้อยู่
            แล้ววันที่มันเงียบเพราะพัง ก็ดูเหมือนเดิมเป๊ะ */
-        <p className="text-gray-600">✅ ตรวจแล้ว — ท่อไม่ได้บอกว่ามีช่องทางไหนเงียบ (เทียบกับวันตัด {found?.cutoff ?? '—'})</p>
+        <p className="text-gray-600">✅ ตรวจแล้ว — ท่อไม่ได้บอกว่ามีช่องทางไหนเงียบ (เทียบกับวันตัด {found.cutoff})</p>
       ) : (
         <>
           <p className="font-semibold text-gray-800 mb-1">
