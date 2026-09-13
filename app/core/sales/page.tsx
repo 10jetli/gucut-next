@@ -52,6 +52,8 @@ interface Row {
   blankReason?: 'none_expected' | 'source_empty'
 }
 interface ChannelRow { channel: string; orders: number; amount: number }
+/** รายชื่อช่องทางจากท่อ: วันขายล่าสุด/สถานะเงียบคิดที่ฐานทั้งประวัติแล้ว จอห้ามเดาเอง */
+interface ChannelOption { channel: string; lastOrder: string | null; orders: number; alive: boolean; dormantCutoff?: string }
 interface StatusRow { status: string; orders: number; amount: number }
 interface ListResp {
   skip?: string
@@ -71,7 +73,7 @@ interface ListResp {
    *  ⚠️ จอไม่ตัดสินเอง อ่านจากท่อล้วน ๆ (กลไกเดียวกับ marketplacesUnreliable) */
   statusUnreliable?: string | null
   limit: number; offset: number
-  rows: Row[]; byChannel: ChannelRow[]; byStatus: StatusRow[]; channels: string[]
+  rows: Row[]; byChannel: ChannelRow[]; byStatus: StatusRow[]; channels: (string | ChannelOption)[]
   /** สรุปสถานะจัดส่งเป็นกอง — ท่อแปลรหัสของ 3 แพลตฟอร์มมาให้แล้ว จอไม่ต้องรู้จักรหัสดิบ */
   shipStatusGroups?: ShipGroup[]
   /** ข้อความบอกขอบเขตของตัวเลขในกอง — จอเอาไปแสดง **และตรวจซ้ำกับ total เสมอ** */
@@ -371,12 +373,13 @@ export default function CoreSalesPage() {
               className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               <option value="">ทุกช่องทาง</option>
-              {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
-                  React จะโยน "Objects are not valid as a React child" แล้ว **ทิ้งทั้งหน้าเป็นจอขาว**
-                  (เจอจริงตอนป้อนข้อมูลปลอมที่ชนิดไม่ตรง 6 ก.ย. 2569 — ชนิดผิดช่องเดียว ล้มทั้งจอ)
-                  ⇒ ชนิดไม่ตรงก็แค่ตัวเลือกนั้นหาย ดีกว่าทั้งจอหาย */}
-              {(data?.channels ?? []).filter((c) => typeof c === 'string')
-                .map((c) => <option key={c} value={c}>{c}</option>)}
+              {/* ท่อรุ่นใหม่ส่งวันล่าสุด+alive มาแล้ว; รับ string ของท่อรุ่นเก่าด้วยเพื่อไม่ให้ deploy เหลื่อม
+                  ⚠️ alive คิดจากฐานทั้งประวัติ ไม่เดาจากชื่อช่องทางหรือแถวหน้าปัจจุบัน */}
+              {(data?.channels ?? []).flatMap((c) => {
+                if (typeof c === 'string') return [{ value: c, label: c }]
+                if (!c || typeof c.channel !== 'string') return []
+                return [{ value: c.channel, label: c.alive ? c.channel : `${c.channel} (ช่องทางเงียบ · ล่าสุด ${c.lastOrder ?? '—'})` }]
+              }).map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
             </select>
             <span className="text-[13px] text-gray-500">แสดง</span>
             <select
