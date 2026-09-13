@@ -3,6 +3,9 @@ import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessa
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 import { emailToPdf } from '@/lib/emailPdf'
 import { syncBillToBlobs, blobFileExists } from '@/lib/billblobs'
+/* 🔑 ตัวนับแยกเหตุผลอยู่ที่ lib/bill-tally.ts — `skipped` เป็นผลบวกที่คิดจากสามตัวนั้น
+   ⇒ บวกไม่ลงตัวไม่ได้โดยโครงสร้าง (CEO สั่งข้อนี้ตอนอนุมัติงาน 12 ก.ย. 2569) */
+import { emptyTally, countExists, countWrongAccount, countNoWrite, tallyReport } from '@/lib/bill-tally'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -33,8 +36,7 @@ async function syncVendor(vendor: (typeof VENDORS)[number], days: number) {
   const before = `${tomorrow.getFullYear()}/${pad(tomorrow.getMonth() + 1)}/${pad(tomorrow.getDate())}`
   const bills = await searchVendorBills(token, vendor, after, before)
 
-  let uploaded = 0, skipped = 0, failed = 0
-  let alreadyHave = 0, fetched = 0   // ① มีอยู่แล้วกี่ใบ (ไม่ยิง Gmail) · โหลดจริงกี่ใบ
+  const t = emptyTally()
   const errors: string[] = []
 
   for (const b of bills) {
@@ -46,41 +48,47 @@ async function syncVendor(vendor: (typeof VENDORS)[number], days: number) {
         try {
           const filenameNow = `${emailMonth}_${b.messageId}_${safeName(att.filename)}`
           // ① ชื่อไฟล์คำนวณได้ครบตั้งแต่ยังไม่โหลด ⇒ ถามถังก่อน ประหยัดคำขอ Gmail ทั้งใบ
-          if (await blobFileExists(vendor.id, filenameNow)) { alreadyHave++; skipped++; continue }
-          fetched++
+          if (await blobFileExists(vendor.id, filenameNow)) { countExists(t); continue }
+          t.fetched++
           const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
           if (vendor.accountId && /\.pdf$/i.test(att.filename)) {
             const { text } = await pdfBillInfo(buf)
-            if (!pdfHasAccountId(text, vendor.accountId)) { skipped++; continue }
+            /* ⚠️ text ว่าง (แกะ PDF ไม่ออก) กับ เลขบัญชีไม่ตรง **ยังถูกนับกองเดียวกันอยู่**
+               ⇒ ตั้งใจไว้แค่นี้รอบนี้: งานนี้คือแยก skipped ตามที่อนุมัติ ไม่ใช่แก้ตัวกรอง
+               🚫 ห้ามสรุปจาก skippedWrongAccount ว่า "เป็นบิลของบัญชีอื่น" จนกว่าจะพิสูจน์ว่าอ่าน PDF ออก */
+            if (!pdfHasAccountId(text, vendor.accountId)) {
+              countWrongAccount(t, { messageId: b.messageId, month: emailMonth, file: att.filename })
+              continue
+            }
           }
           const mimeType = /\.zip$/i.test(att.filename) ? 'application/zip' : 'application/pdf'
           const didUpload = await syncBillToBlobs(vendor.id, filenameNow, mimeType, buf)
-          didUpload ? uploaded++ : skipped++
+          didUpload ? t.uploaded++ : countNoWrite(t)
         } catch (e: any) {
-          failed++
+          t.failed++
           errors.push(`${b.messageId}: ${e.message ?? e}`)
         }
       }
     } else {
       try {
         const filenameNow = `${emailMonth}_${b.messageId}_ใบเสร็จ.pdf`
-        if (await blobFileExists(vendor.id, filenameNow)) { alreadyHave++; skipped++; continue }
-        fetched++
+        if (await blobFileExists(vendor.id, filenameNow)) { countExists(t); continue }
+        t.fetched++
         const detail = await fetchMessageDetail(token, b.messageId)
         const buf = await emailToPdf({
           vendorName: vendor.name, subject: detail.subject, from: detail.from,
           date: detail.date, amounts: [], body: detail.text, html: detail.html,
         })
         const didUpload = await syncBillToBlobs(vendor.id, filenameNow, 'application/pdf', buf)
-        didUpload ? uploaded++ : skipped++
+        didUpload ? t.uploaded++ : countNoWrite(t)
       } catch (e: any) {
-        failed++
+        t.failed++
         errors.push(`${b.messageId}: ${e.message ?? e}`)
       }
     }
   }
 
-  return { vendor: vendor.id, name: vendor.name, windowDays: days, total: bills.length, uploaded, skipped, alreadyHave, fetched, failed, errors: errors.slice(0, 5) }
+  return { vendor: vendor.id, name: vendor.name, windowDays: days, total: bills.length, ...tallyReport(t), errors: errors.slice(0, 5) }
 }
 
 async function handle(req: NextRequest) {
