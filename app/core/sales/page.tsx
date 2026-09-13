@@ -20,6 +20,7 @@ import {
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
+import DormantInShipPile from '@/components/zort/DormantInShipPile'
 
 interface Row {
   id: string; source: string; number: string; channel: string
@@ -428,6 +429,12 @@ export default function CoreSalesPage() {
             total={data.total}
             scope={data.shipStatusScope}
           />
+
+          {/* ใบของร้านที่ปิดแล้วยังพองอยู่ในกอง "รอจัดส่ง" — แยกให้เห็น ห้ามกรองทิ้งเงียบ
+              (ท่านประธานสั่ง 13 ก.ย. 2569 · งานกระดาน t_mtxss3pf)
+              ⚠️ ส่งช่วงวันชุดเดียวกับที่จอกำลังกรองอยู่ ไม่งั้นเลขในกล่องนี้จะพูดคนละช่วง
+                 กับการ์ดสถานะจัดส่งที่อยู่ข้างบน แล้วคนอ่านจะเทียบกันเองโดยไม่รู้ว่าคนละขอบเขต */}
+          <DormantInShipPile from={thaiDay(days - 1)} to={thaiDay(0)} />
 
           {/* ⚠️ ตัวตรวจที่ไม่เจออะไรเลย ต้องบอกว่า "ตรวจแล้วไม่เจอ" ไม่ใช่เงียบหาย
               ไม่งั้นไม่มีใครรู้ว่ามีตัวตรวจนี้อยู่ แล้ววันที่มันเงียบเพราะพัง ก็ดูเหมือนเดิมเป๊ะ
