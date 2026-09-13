@@ -19,7 +19,7 @@ execFileSync('npx', ['tsc', 'lib/bill-tally.ts', '--outDir', out,
   '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler', '--lib', 'es2020,dom'],
   { cwd: process.cwd(), stdio: 'inherit' })
 writeFileSync(join(out, 'package.json'), '{"type":"module"}')
-const { emptyTally, countExists, countWrongAccount, countNoWrite, skippedTotal, tallyReport } =
+const { emptyTally, countExists, countWrongAccount, countPdfUnreadable, countNoWrite, skippedTotal, tallyReport } =
   await import(join(out, 'bill-tally.js'))
 
 let fail = 0
@@ -29,20 +29,33 @@ const ok = (name, cond, extra = '') => {
 }
 const ref = (n) => ({ messageId: `m${n}`, month: '2026-09', file: `Statement_${n}.pdf` })
 
-console.log('① ผลรวมสามตัว = skipped เสมอ (ข้อที่ CEO สั่งตรึง)')
+console.log('① ผลรวมตัวนับย่อยทุกตัว = skipped เสมอ (ข้อที่ CEO สั่งตรึง)')
 {
-  /* ไล่ทุกส่วนผสมของสามเหตุผล 0–3 ครั้ง = 64 ชุด ไม่ใช่เคสที่เลือกมาให้ผ่าน */
+  /* ไล่ทุกส่วนผสมของ **สี่** เหตุผล 0–3 ครั้ง = 256 ชุด ไม่ใช่เคสที่เลือกมาให้ผ่าน
+     (เพิ่มมิติที่สี่ตอนแยก "อ่าน PDF ไม่ออก" ออกจาก "เลขบัญชีไม่ตรง" 14 ก.ย. 2569) */
   let bad = []
-  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let c = 0; c < 4; c++) {
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let c = 0; c < 4; c++) for (let d = 0; d < 4; d++) {
     const t = emptyTally()
     for (let i = 0; i < a; i++) countExists(t)
     for (let i = 0; i < b; i++) countWrongAccount(t, ref(i))
     for (let i = 0; i < c; i++) countNoWrite(t)
+    for (let i = 0; i < d; i++) countPdfUnreadable(t, ref(100 + i))
     const r = tallyReport(t)
-    if (r.skipped !== a + b + c) bad.push(`(${a},${b},${c}) ⇒ skipped=${r.skipped}`)
-    if (r.skipped !== skippedTotal(t)) bad.push(`(${a},${b},${c}) ⇒ รายงานไม่ตรงกับตัวคิด`)
+    if (r.skipped !== a + b + c + d) bad.push(`(${a},${b},${c},${d}) ⇒ skipped=${r.skipped}`)
+    if (r.skipped !== skippedTotal(t)) bad.push(`(${a},${b},${c},${d}) ⇒ รายงานไม่ตรงกับตัวคิด`)
   }
-  ok('ครบทั้ง 64 ส่วนผสม ผลรวมลงตัวทุกชุด', bad.length === 0, bad.slice(0, 3).join(' · '))
+  ok('ครบทั้ง 256 ส่วนผสม ผลรวมลงตัวทุกชุด', bad.length === 0, bad.slice(0, 3).join(' · '))
+}
+
+console.log('①ข อ่าน PDF ไม่ออก ต้องไม่ไปโผล่ในกอง "เลขบัญชีไม่ตรง" (ตีความคนละขั้ว)')
+{
+  const t = emptyTally()
+  countPdfUnreadable(t, ref(1)); countPdfUnreadable(t, ref(2))
+  const r = tallyReport(t)
+  ok('นับเข้า skippedPdfUnreadable = 2', r.skippedPdfUnreadable === 2, String(r.skippedPdfUnreadable))
+  ok('ไม่รั่วไปที่ skippedWrongAccount', r.skippedWrongAccount === 0, String(r.skippedWrongAccount))
+  ok('ยังรวมอยู่ใน skipped', r.skipped === 2, String(r.skipped))
+  ok('ใบที่เก็บไว้บอกเหตุผลกำกับ', (r.rejectedSample ?? []).every((x) => x.reason === 'อ่าน PDF ไม่ออก'))
 }
 
 console.log('② แต่ละเหตุผลลงคนละช่อง — ไม่ใช่แค่ผลรวมถูก')

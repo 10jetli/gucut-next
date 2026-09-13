@@ -5,7 +5,7 @@ import { emailToPdf } from '@/lib/emailPdf'
 import { syncBillToBlobs, blobFileExists } from '@/lib/billblobs'
 /* 🔑 ตัวนับแยกเหตุผลอยู่ที่ lib/bill-tally.ts — `skipped` เป็นผลบวกที่คิดจากสามตัวนั้น
    ⇒ บวกไม่ลงตัวไม่ได้โดยโครงสร้าง (CEO สั่งข้อนี้ตอนอนุมัติงาน 12 ก.ย. 2569) */
-import { emptyTally, countExists, countWrongAccount, countNoWrite, tallyReport } from '@/lib/bill-tally'
+import { emptyTally, countExists, countWrongAccount, countPdfUnreadable, countNoWrite, tallyReport } from '@/lib/bill-tally'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -53,9 +53,17 @@ async function syncVendor(vendor: (typeof VENDORS)[number], days: number) {
           const buf = await fetchAttachment(token, b.messageId, att.attachmentId)
           if (vendor.accountId && /\.pdf$/i.test(att.filename)) {
             const { text } = await pdfBillInfo(buf)
-            /* ⚠️ text ว่าง (แกะ PDF ไม่ออก) กับ เลขบัญชีไม่ตรง **ยังถูกนับกองเดียวกันอยู่**
-               ⇒ ตั้งใจไว้แค่นี้รอบนี้: งานนี้คือแยก skipped ตามที่อนุมัติ ไม่ใช่แก้ตัวกรอง
-               🚫 ห้ามสรุปจาก skippedWrongAccount ว่า "เป็นบิลของบัญชีอื่น" จนกว่าจะพิสูจน์ว่าอ่าน PDF ออก */
+            /* 🔴 **แยกแล้ว 14 ก.ย. 2569** — เดิมสองเคสนี้ถูกนับกองเดียวกัน แล้วรอบก่อนเขียนเตือนไว้เองว่า
+                  "ห้ามสรุปจาก skippedWrongAccount ว่าเป็นบิลของบัญชีอื่น จนกว่าจะพิสูจน์ว่าอ่าน PDF ออก"
+               ⇒ อ่านเนื้อไม่ออกเลย = **เราไม่รู้ว่าเป็นบิลของใคร** ไม่ใช่ "รู้แล้วว่าไม่ใช่ของเรา"
+                  ของที่อ่านไม่ออกอาจเป็นบิลจริงของร้านที่กำลังหายไปเงียบ ๆ ทุกวัน
+               ⚠️ เกณฑ์ "อ่านไม่ออก" ตั้งไว้หลวม ๆ ที่เนื้อว่างจริง ๆ เท่านั้น
+                  ไม่ตั้งเป็นจำนวนตัวอักษรขั้นต่ำ เพราะจะกลายเป็นเลขที่ไม่มีใครอธิบายที่มาได้ */
+            const readable = text.trim().length > 0
+            if (!readable) {
+              countPdfUnreadable(t, { messageId: b.messageId, month: emailMonth, file: att.filename })
+              continue
+            }
             if (!pdfHasAccountId(text, vendor.accountId)) {
               countWrongAccount(t, { messageId: b.messageId, month: emailMonth, file: att.filename })
               continue
