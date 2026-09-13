@@ -61,6 +61,10 @@ export interface ReturnsResult {
   byMonth: Record<string, number>
   skus: SkuReturn[]
   list: ReturnOrder[]
+  /** มีแหล่งคืนสินค้าบางส่วนที่อ่านไม่ได้ — ตัวเลขข้างบนจึงไม่ใช่ยอดครบ */
+  partial?: boolean
+  failedParts?: string[]
+  failedWhy?: Record<string, string>
 }
 
 const num = (v: unknown) => (typeof v === 'number' ? v : Number(v) || 0)
@@ -115,29 +119,36 @@ export function channelOf(raw: string): string {
 
 /**
  * ใบคืนของจากเว็บหน้าร้าน
- * ⚠️ ต้องมี GUCUT_ADMIN_KEY ใน env ถึงจะดึงได้ — ไม่มีก็แค่ไม่รวมเว็บเข้ามา
- *    ห้ามให้ทั้งหน้าพังเพราะเว็บล่มหรือยังไม่ได้ตั้งคีย์ ใบคืนจาก ZORT ยังต้องดูได้
+ * ⚠️ ต้องมี GUCUT_ADMIN_KEY ใน env ถึงจะดึงได้ แต่การไม่มีคีย์/เว็บตอบไม่ได้
+ *    ไม่เท่ากับไม่มีใบคืน: คงข้อมูล ZORT ที่อ่านได้ไว้ แล้วพกความไม่ครบกลับไปให้จอเตือน
  */
-async function siteReturns(days: number): Promise<ReturnOrder[]> {
+type SiteReturns = { list: ReturnOrder[]; why?: string }
+
+export async function siteReturns(days: number): Promise<SiteReturns> {
   const key = (process.env.GUCUT_ADMIN_KEY || '').trim()
-  if (!key) return []
+  if (!key) return { list: [], why: 'ยังไม่ได้ตั้ง GUCUT_ADMIN_KEY จึงไม่สามารถรวมใบคืนจากเว็บหน้าร้าน' }
   try {
     const r = await fetch(`${SITE}/api/returns-feed?days=${days}`, {
       headers: { 'x-admin-key': key },
       signal: AbortSignal.timeout(10000),
     })
-    if (!r.ok) return []
-    const j = (await r.json()) as { list?: ReturnOrder[] }
-    return Array.isArray(j.list) ? j.list : []
-  } catch {
-    return []
+    const j = (await r.json().catch(() => null)) as { list?: ReturnOrder[]; unreadable?: unknown; error?: unknown } | null
+    if (!r.ok) return { list: [], why: String(j?.error || `เว็บหน้าร้านตอบ HTTP ${r.status}`) }
+    if (!j || !Array.isArray(j.list)) return { list: [], why: 'เว็บหน้าร้านตอบมาไม่ครบ (ไม่มี list)' }
+    const unreadable = typeof j.unreadable === 'number' && Number.isSafeInteger(j.unreadable) && j.unreadable >= 0
+      ? j.unreadable : null
+    if (unreadable === null) return { list: j.list, why: 'เว็บหน้าร้านตอบค่า unreadable ไม่ถูกต้อง จึงยืนยันความครบไม่ได้' }
+    if (unreadable > 0) return { list: j.list, why: `เว็บหน้าร้านอ่านใบคืนไม่ได้ ${unreadable} ใบ` }
+    return { list: j.list }
+  } catch (e) {
+    return { list: [], why: `ดึงใบคืนจากเว็บหน้าร้านไม่สำเร็จ: ${e instanceof Error ? e.message : String(e)}` }
   }
 }
 
 export async function computeReturns(days = 30): Promise<ReturnsResult> {
   const today = new Date()
   const start = new Date(today.getTime() - days * 86400_000)
-  const [raw, fromSite] = await Promise.all([
+  const [raw, site] = await Promise.all([
     pagedList('ReturnOrder/GetReturnOrders', {
       returnorderdateafter: ymd(start),
       returnorderdatebefore: ymd(today),
@@ -214,7 +225,7 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
   }
 
   // รวมใบคืนจากเว็บหน้าร้านเข้าไปด้วย — นับเข้าช่องทาง/เดือน/SKU ชุดเดียวกัน
-  for (const o of fromSite) {
+  for (const o of site.list) {
     // ใบคืนจากเว็บอาจส่ง field ใหม่มาไม่ครบ — เติมค่าว่างเฉพาะช่องที่ขาด
     const defaults = {
       paymentStatus: '', shipping: 0, platformDiscount: 0, address: '', trackings: [],
@@ -243,6 +254,7 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
   list.sort((a, b) => (a.date < b.date ? 1 : -1))
   const skus = Array.from(skuMap.values()).sort((a, b) => b.qty - a.qty)
 
+  const sitePartial = !!site.why
   return {
     at: Date.now(),
     days,
@@ -252,5 +264,10 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
     byMonth,
     skus,
     list,
+    ...(sitePartial ? {
+      partial: true,
+      failedParts: ['web-returns'],
+      failedWhy: { 'web-returns': site.why! },
+    } : {}),
   }
 }

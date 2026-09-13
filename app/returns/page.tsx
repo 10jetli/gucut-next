@@ -206,6 +206,13 @@ export default function ReturnsPage() {
       {data?.stale && (
         <ErrorBox>ดึงข้อมูลใหม่ไม่สำเร็จ — กำลังแสดงตัวเลขที่ดึงไว้ครั้งก่อน</ErrorBox>
       )}
+      {data?.partial && (
+        <ErrorBox title="ข้อมูลใบคืนยังไม่ครบ">
+          {data.failedParts?.includes('web-returns')
+            ? `ยอดและรายการที่เห็นยังไม่รวมใบคืนจากเว็บหน้าร้านครบถ้วน — ${data.failedWhy?.['web-returns'] || 'ยังไม่ทราบสาเหตุ'}`
+            : 'มีแหล่งข้อมูลใบคืนบางส่วนอ่านไม่ได้ จึงห้ามสรุปว่าตัวเลขข้างล่างครบ'}
+        </ErrorBox>
+      )}
 
       {data && (
         <>
