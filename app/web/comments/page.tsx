@@ -1,6 +1,7 @@
 'use client'
 // คอมเมนต์ใต้คลิป — ฉบับเนื้อเดียว · ท่อ /api/web/social
 import { useCallback, useEffect, useState } from 'react'
+import { readWriteError } from '@/lib/write-error'
 
 interface Cmt { i: string; n: string; t: string; at: number }
 interface Clip { id: string; comments: Cmt[] }
@@ -43,7 +44,11 @@ export default function WebCommentsPage() {
   async function remove(id: string, cid: string) {
     if (!confirm('ลบคอมเมนต์นี้?')) return
     const r = await fetch(`/api/web/social?id=${encodeURIComponent(id)}&cid=${encodeURIComponent(cid)}`, { method: 'DELETE' }).catch(() => null)
-    if (!r?.ok) { setErr('ลบไม่สำเร็จ ลองใหม่'); return }
+    /* 🔴 เดิมขึ้นคำกลาง ๆ ว่า "ลบไม่สำเร็จ ลองใหม่" แล้วทิ้งเหตุผลจริงจากท่อ (แก้ 14 ก.ย. 2569)
+       ⚠️ ตอนนี้ท่อตอบ 503 พร้อมข้อความว่า **"ยังไม่ได้บันทึกอะไร"** ซึ่งเป็นข้อมูลที่สำคัญที่สุด
+          — บอกว่าคอมเมนต์ยังอยู่ครบ กดซ้ำได้ปลอดภัย · คำกลาง ๆ ตอบเรื่องนี้ไม่ได้เลย */
+    const bad = await readWriteError(r)
+    if (bad) { setErr(`ลบคอมเมนต์ไม่สำเร็จ — คอมเมนต์นี้ยังอยู่ · ${bad}`); return }
     setClips((cur) => (cur ?? []).map((c) => c.id === id ? { ...c, comments: c.comments.filter((x) => x.i !== cid) } : c).filter((c) => c.comments.length))
   }
 

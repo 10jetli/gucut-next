@@ -17,6 +17,7 @@
 //   node scripts/fake-pipe.mjs 4010 failedparts ← 200 แต่บอกเองว่าบางส่วนล้ม (failed[])
 //   node scripts/fake-pipe.mjs 4010 good    ← ตอบครบทุกช่อง (ใช้พิสูจน์ว่าตัวกันไม่ฟ้องมั่ว)
 //   node scripts/fake-pipe.mjs 4010 partialgood ← 🔴 **โหมดหลักที่ควรใช้กวาด** — 200 + ก้อนถูกรูปแต่ขาดช่องลูก
+//   node scripts/fake-pipe.mjs 4010 503     ← เขียนไม่ได้ ตอบ 503 + เหตุผลไทย (GET ยังปกติ)
 //   node scripts/fake-pipe.mjs 4010 skip    ← สถานะที่สาม "ทำต่อไม่ได้" (ต้องขึ้นเหลือง ไม่ใช่แดง)
 //   node scripts/fake-pipe.mjs 4010 nocounts ← มีงานค้างแต่ไม่มียอดแยกกอง (เทสคำเตือน "ใบผี")
 //   node scripts/fake-pipe.mjs 4010 mkstale ← คอลัมน์ Marketplace เป็นของเก่า (เทสแถบ MarketStaleBar)
@@ -44,7 +45,7 @@
 import { createServer } from 'node:http'
 
 const port = Number(process.argv[2] || 4010)
-const mode = String(process.argv[3] || '500')
+const rawMode = String(process.argv[3] || '500')
 
 /** ตอบครึ่ง ๆ กลาง ๆ — มีคีย์บางตัว ขาดตัวสำคัญ (แบบท่อรุ่นเก่า/รุ่นกำลังเปลี่ยน)
  *  จงใจ **ไม่ใส่** counts · totalPaidAmount · added เพื่อดูว่าจอเขียน 0 หรือเขียนว่าไม่รู้ */
@@ -100,6 +101,11 @@ const ARCHIVE_ONE = {
 }
 
 const srv = createServer(async (req, res) => {
+  /* 🔴 โหมด `503` = **อ่านได้ปกติ แต่เขียนไม่ได้** ⇒ ให้ GET เดินเข้าตัวจัดการของโหมด `good`
+     ไม่งั้นจอไม่มีข้อมูลให้กดลบ/กดบันทึกตั้งแต่แรก ⇒ ทดสอบทางเขียนไม่ได้เลย
+     (เจอกับตัวเอง 14 ก.ย. 2569: เปิดจอคอมเมนต์แล้วไม่มีปุ่มลบให้กด)
+     ⚠️ ตรงกับของจริงด้วย: Blobs อ่านสะดุดเป็นครั้งคราว ไม่ใช่ล่มทั้งระบบ */
+  const mode = rawMode === '503' && req.method === 'GET' ? 'good' : rawMode
   const now = new Date().toISOString()
   console.log(`[${now}] ${req.method} ${req.url}`)
   // เส้นคลังของที่คัดจาก ZORT — ตอบของจริงเสมอ ไม่สนโหมด (ยกเว้นโหมดพังทั้งท่อ)
@@ -117,6 +123,20 @@ const srv = createServer(async (req, res) => {
   if (mode === 'html') {
     res.writeHead(502, { 'content-type': 'text/html' })
     return res.end('<html><body>502 Bad Gateway</body></html>')
+  }
+  /* ── โหมด 503: ปลายทางอ่านข้อมูลเดิมไม่ได้ จึง "ไม่เขียนอะไรเลย" ───────────
+     🔴 **ท่าใหม่ของฝั่งท่อตั้งแต่ 14 ก.ย. 2569** (gucut-web 6428c2d · 5bce111)
+        ของเดิมอ่านพลาดแล้ว **เขียนความว่างเปล่าทับของจริง** แล้วตอบ ok
+        ตอนนี้อ่านพลาด ⇒ 503 + ข้อความไทยที่บอกว่า "ยังไม่ได้บันทึกอะไร"
+     ⇒ โหมดนี้มีไว้ตรวจว่า **จอเอาข้อความนั้นขึ้นให้คนเห็นจริงไหม**
+        หรือกลืนแล้วขึ้นคำกลาง ๆ ของตัวเองแทน (ซึ่งกลบข้อมูลสำคัญที่สุด: ของยังอยู่ครบ)
+     ⚠️ ใช้กับคำสั่งเขียนเท่านั้น (POST/DELETE/PATCH) — GET ยังตอบปกติ
+        เพราะของจริงก็เป็นแบบนั้น: อ่านได้ แต่เขียนไม่ได้ */
+  if (mode === '503' && req.method !== 'GET') {
+    res.writeHead(503, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      error: 'อ่านข้อมูลเดิมไม่ได้ชั่วคราว — ยังไม่ได้บันทึกอะไร ลองใหม่อีกครั้ง',
+    }))
   }
   if (mode === 'skip') {
     /* สถานะที่สาม: "ทำต่อไม่ได้" — คลังเงายังไม่ตั้งค่า / ยังไม่มีภาพถ่ายสต็อก
@@ -468,6 +488,37 @@ const srv = createServer(async (req, res) => {
       ],
       protected: [{ store: 'gucut-admin', what: 'ทุกคีย์', skip: [] }],
       never: [{ store: 'gucut-temp', why: 'ของชั่วคราว ไม่ต้องสำรอง' }],
+    }))
+  }
+
+  /* ── ผูกสินค้ากับคลิป (จอ /web/clip-shop) ──────────────────────────────
+     เส้นนี้ต้องมีเพื่อให้จอโหลด "รายการที่ผูกไว้" สำเร็จ ⇒ ปุ่มบันทึกถึงจะใช้งานได้
+     (รายชื่อคลิปมาจาก /api/webfile/feed.json ซึ่งยิงไป gucut.com จริงเสมอ ไม่ผ่านท่อปลอม) */
+  if (mode === 'good' && /\/api\/clip-shop/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ map: { 'clip-001': { h: '/p/nw-3860/', t: 'โซ่ NEWWAVE 3860' } } }))
+  }
+
+  /* ── คอมเมนต์ใต้คลิป (จอ /web/comments) ────────────────────────────────
+     🔴 **ต้องมี ไม่งั้นทดสอบทางลบไม่ได้เลย** — ก่อนหน้านี้ท่อปลอมไม่รู้จักเส้นนี้
+        ⇒ จอขึ้น "ยังไม่มีคอมเมนต์" ⇒ ไม่มีปุ่มลบให้กด ⇒ เส้นทางที่อยากทดสอบไม่เคยถูกเดินเลย
+     รูปคำตอบตามของจริง: GET เปล่า = { counts: { <คลิป>: [หัวใจ, จำนวนคอมเมนต์] } }
+                        GET ?id= = { comments: [{ i, n, t, at }] } */
+  if (mode === 'good' && /\/api\/social/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const id = u.searchParams.get('id')
+    res.writeHead(200, { 'content-type': 'application/json' })
+    if (id) {
+      return res.end(JSON.stringify({
+        comments: [
+          { i: 'c1', n: 'ลูกค้าทดสอบ', t: 'โซ่รุ่นนี้ใช้กับเครื่อง 5800 ได้ไหมครับ', at: Date.now() - 3600e3 },
+          { i: 'c2', n: 'สมชาย', t: 'ของถึงเร็วมาก ขอบคุณครับ', at: Date.now() - 7200e3 },
+        ],
+      }))
+    }
+    return res.end(JSON.stringify({
+      counts: { 'clip-001': [12, 2], 'clip-002': [3, 0] },
+      views: { 'clip-001': 340, 'clip-002': 88 },
     }))
   }
 
@@ -1062,6 +1113,6 @@ const srv = createServer(async (req, res) => {
 })
 
 srv.listen(port, '127.0.0.1', () => {
-  console.log(`ท่อปลอมโหมด "${mode}" ฟังอยู่ที่ http://127.0.0.1:${port}`)
+  console.log(`ท่อปลอมโหมด "${rawMode}" ฟังอยู่ที่ http://127.0.0.1:${port}`)
   console.log('ต่อไป: cd ~/gucut-next && GUCUT_WEB_BASE=http://127.0.0.1:' + port + ' npm run dev')
 })

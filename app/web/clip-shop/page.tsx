@@ -2,6 +2,7 @@
 // ผูกสินค้ากับคลิป — ฉบับเนื้อเดียว · ท่อ /api/web/clip-shop
 // ฟีดคลิปกับดัชนีสินค้าเป็นไฟล์สาธารณะของ gucut.com ดึงตรงได้
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { readWriteError } from '@/lib/write-error'
 
 interface FeedClip { v: { v: string; dur?: number }; p?: unknown }
 interface Pick { h: string; t: string; p: number; img: string | null }
@@ -79,7 +80,10 @@ export default function WebClipShopPage() {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ clip, product }),
     }).catch(() => null)
-    if (!r?.ok) { setMsg('บันทึกไม่สำเร็จ ลองใหม่'); return }
+    /* 🔴 เดิมขึ้นคำกลาง ๆ ว่า "บันทึกไม่สำเร็จ ลองใหม่" แล้วทิ้งเหตุผลจริงจากท่อ (แก้ 14 ก.ย. 2569)
+       ⚠️ ท่อบอกได้ว่า **"ยังไม่ได้บันทึกอะไร"** ⇒ การผูกสินค้าเดิมยังอยู่ครบ ไม่ได้ถูกลบทิ้ง */
+    const bad = await readWriteError(r)
+    if (bad) { setMsg(`บันทึกไม่สำเร็จ — การผูกสินค้าเดิมยังอยู่ · ${bad}`); return }
     setMap((cur) => {
       const next = { ...cur }
       if (product) next[clip] = product
