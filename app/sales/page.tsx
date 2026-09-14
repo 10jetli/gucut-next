@@ -18,10 +18,24 @@ import {
 interface Report {
   range: { from: string; to: string; days: number }
   totals: { sales: number; orders: number; avg: number; prevSales: number; prevOrders: number }
-  /** ใบคืนที่ **ออกในช่วงนี้** · `null` = ดึงไม่สำเร็จ ⇒ "ยังไม่รู้" ห้ามแสดง 0 */
+  /** 🔴 **ใบคืนของใบขายในตัวกรองนี้** — ท่อคิดมาให้แล้ว (gucut-web bea658d · 15 ก.ย. 2569)
+   *  `null` = อ่านตารางใบคืนไม่ได้ ⇒ "ยังไม่รู้" **ห้ามแสดง 0**
+   *  ⚠️ เดิมจอนับเอง จาก "ใบคืนที่ออกในช่วงนี้" ซึ่ง **คนละคำถาม** กับ
+   *     "ยอดขายในช่วงนี้ที่ถูกคืน" (ใบคืนที่ออกเดือนนี้อาจเป็นของที่ขายเดือนก่อน)
+   *     ⇒ ตอนนี้ท่อจับคู่ reference = orders.number และผูกขอบเขตกับ **วันที่ขาย** แล้ว
+   *        ⇒ หักตรง ๆ ได้ ไม่ต้องเขียนว่า "ราว" อีก */
   returns: { count: number; amount: number } | null
   /** ดึงใบคืนไม่สำเร็จเพราะอะไร — ต้องบอก ไม่ใช่เงียบแล้วปล่อยให้ยอดดูเหมือนสุทธิ */
   returnsError?: string
+  /** ใบคืนที่ออกในช่วงแต่ **หาใบขายต้นทางไม่เจอ** ⇒ ไม่ได้ถูกหักออกจากยอด
+   *  ⚠️ ไม่ผูกกับตัวกรองร้าน/ช่องทาง ⇒ ถ้ามี ต้องเขียนกำกับ ห้ามเงียบ */
+  unmatchedReturns?: { count: number; amount: number } | null
+  /** เวลาซิงก์ตารางใบคืนล่าสุด (UTC) · ซิงก์ทุกชั่วโมงนาทีที่ :07 ⇒ เก่าเกิน ~2 ชม. = หยุด */
+  returnsSyncedAtUtc?: string | null
+  /** false = ใบคืนยังไม่ครบ ⇒ **ห้ามเขียนว่าหักครบแล้ว** */
+  returnsSyncComplete?: boolean | null
+  /** คำอธิบายขอบเขตจากท่อ — เอาขึ้นจอตรง ๆ ไม่เขียนเอง */
+  returnsScope?: string | null
   daily: { date: string; sales: number; orders: number }[]
   channels: { label: string; name: string; store: string; sales: number; orders: number; prevSales: number }[]
   // ยอดเงินรายสินค้ามาจาก /api/core?list=topproducts (รวมจาก order_items จริง)
@@ -49,51 +63,42 @@ async function fetchRange(from: string, to: string) {
   const d = await res.json()
   if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
   if (d?.skip) throw new Error(d.skip)
+  /* 🔴 ช่องใบคืนเป็น null ได้ = **อ่านตารางใบคืนไม่ได้** ⇒ ส่ง null ต่อไปให้จอเขียนว่า "ยังไม่รู้"
+     ห้ามแปลงเป็น 0 ตรงนี้ — 0 แปลว่าไม่มีใครคืนของ ซึ่งคนละเรื่องกัน */
+  const num = (v: unknown) => (typeof v === 'number' ? v : null)
   return {
     total: Number(d.total ?? 0),
     amount: Number(d.totalAmount ?? 0),
     channels: (Array.isArray(d.byChannel) ? d.byChannel : []) as CoreChan[],
+    returnedCount: num(d.returnedCount),
+    returnedAmount: num(d.returnedAmount),
+    unmatchedReturns: d.unmatchedReturns && typeof d.unmatchedReturns === 'object'
+      ? { count: Number(d.unmatchedReturns.count ?? 0), amount: Number(d.unmatchedReturns.amount ?? 0) }
+      : null,
+    returnsSyncedAtUtc: typeof d.returnsSyncedAtUtc === 'string' ? d.returnsSyncedAtUtc : null,
+    returnsSyncComplete: typeof d.returnsSyncComplete === 'boolean' ? d.returnsSyncComplete : null,
+    returnsScope: typeof d.returnsScope === 'string' ? d.returnsScope : null,
   }
 }
 
-/* ── ใบคืนสินค้าในช่วง (CN-) ───────────────────────────────────────────────
-   🔴 **ยอดขายข้างบนนับใบที่ลูกค้าคืนของแล้วด้วย** (งานกระดาน t_mu1bkqes · ต่อจาก t_mtzx0wp4)
-      ZORT ไม่พลิกสถานะใบเดิมเป็นยกเลิกเมื่อมีใบคืน ⇒ ใบยังเป็น Success ⇒ ถูกนับเป็นยอดขาย
-   📏 วัดกับ production 14 ก.ย. 2569 21:19 น. (จับคู่ orders.number = returnorders.reference):
-        14 วัน  ยอด 381,657.20 · ถูกคืน 6 ใบ = 11,087.00 (2.9%)
-        90 วัน  ยอด 1,578,283.80 · ถูกคืน 50 ใบ = 34,039.70 (2.2%)
-        1 ปี    ยอด 9,169,074.27 · ถูกคืน 254 ใบ = 292,112.56 (3.2%)
-      วิธีวัดซ้ำ: ดึง list=returnorders ทุกหน้า แล้วจับคู่กับ list=orders ของช่วงนั้น
+/* ── ใบคืนสินค้า: ตอนนี้ท่อคิดมาให้แล้ว (15 ก.ย. 2569 · gucut-web bea658d) ──────
+   🔴 **ยอดขายนับใบที่ลูกค้าคืนของแล้วด้วย** — ZORT ไม่พลิกสถานะใบเดิมเป็นยกเลิกเมื่อมีใบคืน
+      ⇒ ใบยังเป็น Success ⇒ ถูกนับเป็นยอดขายต่อไป (งานกระดาน t_mu1bkqes)
 
-   ⚠️ **หักตรง ๆ จากจอไม่ได้** — ช่วง 1 ปีมีออเดอร์ 11,491 ใบ ต้องดึงมาจับคู่ทั้งหมด
-      (โรคเดียวกับที่ไฟล์นี้เคยแก้ไปแล้ว: ค่าที่ต้องเห็นข้อมูลทั้งชุด ต้องให้ฐานคิดให้)
-      ⇒ ขอให้ฝั่งท่อคิดมาให้แล้ว 14 ก.ย. 2569 · ระหว่างนี้จอ **บอกขนาดของปัญหาตรง ๆ**
+   ⚠️ **ถอด `fetchReturns()` ที่เคยอยู่ตรงนี้ทิ้งแล้ว** — มันวนดึง `list=returnorders`
+      ทุกหน้าแล้วจับคู่เองในเบราว์เซอร์ ซึ่งผิดสองชั้น:
+        ① นับ "ใบคืนที่ออกในช่วงนี้" ซึ่งเป็น**คนละคำถาม**กับ "ยอดขายในช่วงนี้ที่ถูกคืน"
+           ⇒ จอจึงต้องเขียนว่า "หักแล้วเหลือราว" มาตลอด
+        ② 🔴 **ใส่ Map โดยใช้ `number` เป็นกุญแจ** ทั้งที่เลขที่ใบคืนของ ZORT **ซ้ำกันได้จริง**
+           (689 ใบ มีเลขไม่ซ้ำแค่ 537 — ฝั่งท่อวัด 15 ก.ย. 2569 หลังผมเจอแถวซ้ำในไฟล์ส่งออก)
+           ⇒ ใบที่เลขซ้ำถูกทับหาย ⇒ **เลขใบคืนบนจอนี้ต่ำกว่าจริงมาตลอดโดยไม่มีอะไรฟ้อง**
+           ฝั่งท่อเจอบั๊กเดียวกันในกระจกของเขา แล้วย้ายไป `return_orders_v2` กุญแจ `id`
 
-   ⚠️ ที่จอทำได้ตอนนี้คือนับ **ใบคืนที่ออกในช่วงนี้** (ใช้วันที่บนใบคืน)
-      ซึ่งไม่ใช่ตัวเดียวกับ "ยอดขายในช่วงนี้ที่ถูกคืน" เป๊ะ ๆ — ใบคืนที่ออกเดือนนี้
-      อาจเป็นของที่ขายเดือนก่อน ⇒ **ต้องเขียนบนจอให้ตรงตามนั้น ห้ามเรียกว่ายอดขายที่ถูกคืน**
-      (วัดเทียบแล้ว: 90 วันได้เท่ากันเป๊ะ · 1 ปีต่างกัน 2,501 บาท จาก 292,112)
-   🔴 ดึงไม่สำเร็จ = **"ยังไม่รู้" ห้ามแสดง 0** — 0 แปลว่าไม่มีใครคืนของ ซึ่งคนละเรื่องกัน */
-async function fetchReturns(from: string, to: string) {
-  const seen = new Map<string, { amount?: number; date?: string }>()
-  /* ⚠️ เส้นนี้ใช้ `page=` **ไม่ใช่ `offset=`** (ยิงตรวจ 14 ก.ย. 2569: offset=200 คืนหน้าเดิม)
-     กับดักเดียวกับ GetOrders ของ ZORT ที่ CLAUDE.md จดไว้ — คนละเส้นคนละกติกา */
-  for (let page = 1; page <= 10; page++) {
-    const r = await fetch(`/api/web/core?list=returnorders&limit=200&page=${page}`)
-    const d = await r.json()
-    if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-    for (const row of (Array.isArray(d.rows) ? d.rows : [])) {
-      if (row?.number) seen.set(String(row.number), row)
-    }
-    if (page >= Number(d.pages || 1)) break
-  }
-  /* ⚠️ Array.from ไม่ใช่ [...] — โปรเจกต์นี้ tsc ไม่ได้ตั้ง target (เป็น ES5) กระจาย iterator ไม่ได้ */
-  const inRange = Array.from(seen.values()).filter((c) => c.date && c.date >= from && c.date <= to)
-  return {
-    count: inRange.length,
-    amount: inRange.reduce((sum, c) => sum + (Number(c.amount) || 0), 0),
-  }
-}
+   ✅ ตอนนี้ `?list=orders` ส่ง returnedCount · returnedAmount · unmatchedReturns ·
+      returnsSyncedAtUtc · returnsSyncComplete · returnsScope มาในคำขอเดียวกับยอดขาย
+      โดยจับคู่ `reference = orders.number` และผูกขอบเขตกับ **วันที่ขาย** ตัวเดียวกับตัวกรอง
+      ⇒ `totalAmount − returnedAmount` เป็นยอดสุทธิจริง ไม่ใช่ค่าประมาณ
+   🔴 ทั้งสามช่องเป็น null = อ่านตารางใบคืนไม่ได้ ⇒ "ยังไม่รู้" **ห้ามเป็น 0** */
 
 /** ยอดรายวันจากฐานข้อมูล — GROUP BY วัน ยิงครั้งเดียวได้ทั้งช่วง
  *  ⚠️ **วันที่ไม่มีออเดอร์จะไม่มีแถวคืนมา** (ท่อเขียนเตือนไว้ในคำตอบเอง)
@@ -154,12 +159,24 @@ function downloadSummary(report: Report) {
        หลุดออกไปอยู่ในไฟล์ที่คนเอาไปทำบัญชีต่อ โดยไม่มีอะไรบอกว่ามันเกินจริง
        ⚠️ ดึงไม่สำเร็จก็ต้องเขียนว่า "ยังไม่รู้" ห้ามเว้นว่างหรือใส่ 0 */
     report.returns === null
-      ? ['ใบคืนที่ออกในช่วงนี้', 'ยังไม่รู้ — ดึงรายการใบคืนไม่สำเร็จ (ยอดขายข้างบนยังไม่ได้หักใบคืน)']
-      : ['ใบคืนที่ออกในช่วงนี้ (ใบ)', String(report.returns.count)],
+      ? ['ใบขายในช่วงนี้ที่ถูกคืน', 'ยังไม่รู้ — ท่ออ่านตารางใบคืนไม่ได้ (ยอดขายข้างบนยังไม่ได้หักใบคืน)']
+      : ['ใบขายในช่วงนี้ที่ถูกคืน (ใบ)', String(report.returns.count)],
     ...(report.returns === null ? [] : [
-      ['มูลค่าใบคืนที่ออกในช่วงนี้ (บาท)', String(report.returns.amount)],
-      ['ยอดขายหลังหักใบคืน โดยประมาณ (บาท)', String(Math.round((report.totals.sales - report.returns.amount) * 100) / 100)],
-      ['หมายเหตุ', 'ยอดขายรวมด้านบนยังไม่ได้หักใบคืน · ใบคืนที่ออกในช่วงนี้บางใบเป็นของที่ขายก่อนช่วงนี้'],
+      ['มูลค่าที่ถูกคืน (บาท)', String(report.returns.amount)],
+      /* ✅ ไม่ใช่ "โดยประมาณ" อีกแล้ว — ท่อจับคู่ใบคืนกับใบขายในขอบเขตเดียวกับตัวกรองนี้ */
+      ['ยอดขายสุทธิหลังหักใบคืน (บาท)', String(Math.round((report.totals.sales - report.returns.amount) * 100) / 100)],
+      /* 🔴 ขอบเขตต้องมาจากท่อ ไม่ใช่เขียนเอง — ท่อรู้ว่าตัวเองจับคู่ด้วยอะไร */
+      ...(report.returnsScope ? [['ขอบเขตการหักใบคืน', report.returnsScope]] : []),
+      /* 🔴 ใบคืนที่หาใบขายต้นทางไม่เจอ = ไม่ได้ถูกหัก ⇒ ต้องอยู่ในไฟล์ด้วย
+         ไฟล์ออกนอกระบบไปแล้ว คนที่เอาไปทำบัญชีไม่มีทางย้อนมาอ่านคำเตือนบนจอ */
+      ...(report.unmatchedReturns && report.unmatchedReturns.count > 0
+        ? [['⚠️ ใบคืนที่หาใบขายต้นทางไม่เจอ (ยังไม่ได้หัก)',
+            `${report.unmatchedReturns.count} ใบ · ${report.unmatchedReturns.amount} บาท · นับรวมทุกร้าน/ทุกช่องทาง ไม่ผูกกับตัวกรองนี้`]]
+        : []),
+      ...(report.returnsSyncComplete === false
+        ? [['🔴 คำเตือน', 'ตารางใบคืนยังซิงก์ไม่ครบ — ยอดสุทธิข้างบนหักไม่ครบ']]
+        : []),
+      ['หมายเหตุ', 'ยอดขายรวมด้านบนยังไม่ได้หักใบคืน — ใช้บรรทัด "ยอดขายสุทธิหลังหักใบคืน" แทน'],
     ]),
     [],
     ['วันที่', 'ยอดขาย (บาท)', 'จำนวนใบ'],
@@ -239,6 +256,27 @@ function TrendChart({ daily }: { daily: Report['daily'] }) {
   )
 }
 
+/** 🕰 บอกอายุของตารางใบคืน — ท่อซิงก์ทุกชั่วโมงนาทีที่ :07
+ *  🔴 **null = ไม่รู้ ห้ามเขียนว่าซิงก์หยุด** (ท่อรุ่นเก่าอาจไม่ส่งช่องนี้)
+ *  ⚠️ เวลาจากท่อเป็น UTC ⇒ +7 ก่อนแสดง (บทเรียนเดิมทั้งโปรเจกต์) */
+function ReturnsFreshness({ utc }: { utc: string | null }) {
+  if (!utc) return null
+  const iso = /Z$|[+-]\d{2}:?\d{2}$/.test(utc) ? utc : `${utc.replace(' ', 'T')}Z`
+  const t = new Date(iso)
+  if (Number.isNaN(t.getTime())) return null
+  const ageMin = Math.round((Date.now() - t.getTime()) / 60000)
+  const th = new Date(t.getTime() + 7 * 3600e3)
+  const p = (n: number) => String(n).padStart(2, '0')
+  const at = `${p(th.getUTCDate())}/${p(th.getUTCMonth() + 1)} ${p(th.getUTCHours())}:${p(th.getUTCMinutes())} น.`
+  const stale = ageMin > 120
+  return (
+    <p className={`text-[11px] mt-2 text-center ${stale ? 'text-amber-800' : 'text-gray-400'}`}>
+      {stale ? '🔴 ' : '🕰 '}ตารางใบคืนซิงก์ล่าสุด <b>{at}</b> ({ageMin < 60 ? `${ageMin} นาที` : `${Math.floor(ageMin / 60)} ชม.`}ที่แล้ว)
+      {stale && <> — ควรซิงก์ทุกชั่วโมง <b>ตัวซิงก์น่าจะหยุด</b> ยอดที่หักอาจไม่ครบ</>}
+    </p>
+  )
+}
+
 export default function SalesReportPage() {
   const [days, setDays] = useState(7)
   const [report, setReport] = useState<Report | null>(null)
@@ -257,7 +295,7 @@ export default function SalesReportPage() {
       const prevTo = thaiDay(d)
       const prevFrom = thaiDay(d * 2 - 1)
 
-      const [cur, prev, best, daily, retRes] = await Promise.all([
+      const [cur, prev, best, daily] = await Promise.all([
         fetchRange(from, to),
         fetchRange(prevFrom, prevTo),
         // ยอดขายรายสินค้าพร้อม "ยอดเงินจริง" จาก order_items (ไม่ใช่ qty คูณราคาขาย ซึ่งเป็นการเดา)
@@ -265,15 +303,19 @@ export default function SalesReportPage() {
           .then((r) => r.json())
           .catch(() => null),
         fetchDaily(d),
-        /* ใบคืนเป็น "ของประกอบ" — ล้มแล้วต้องไม่ล้มทั้งจอ แต่ **ต้องบอกว่าล้ม**
-           ไม่งั้นยอดขายจะดูเหมือนหักใบคืนแล้ว ทั้งที่ไม่รู้ด้วยซ้ำว่ามีกี่ใบ */
-        fetchReturns(from, to).then(
-          (v) => ({ ok: true as const, v }),
-          (e) => ({ ok: false as const, e: String(e instanceof Error ? e.message : e) }),
-        ),
       ])
-      const ret = retRes.ok ? retRes.v : null
-      const retErr = retRes.ok ? undefined : retRes.e
+      /* 🔴 **เลิกนับใบคืนเองแล้ว** — ท่อคิดมาให้ในคำขอเดียวกับยอดขาย (15 ก.ย. 2569)
+         ของเดิมวนดึง `list=returnorders` ทุกหน้าแล้วจับคู่เองในเบราว์เซอร์ ซึ่งมีปัญหาสองชั้น:
+           ① นับ "ใบคืนที่ออกในช่วงนี้" ซึ่งเป็นคนละคำถามกับ "ยอดขายในช่วงนี้ที่ถูกคืน"
+           ② 🔴 **เก็บใส่ Map โดยใช้ `number` เป็นกุญแจ** — แต่เลขที่ใบคืนของ ZORT **ซ้ำกันได้จริง**
+              (ฝั่งท่อวัด 15 ก.ย. 2569: 689 ใบ มีเลขที่ไม่ซ้ำแค่ 537) ⇒ ใบที่เลขซ้ำถูกทับหาย
+              ⇒ เลขใบคืนบนจอนี้ **ต่ำกว่าจริงมาตลอด** โดยไม่มีอะไรฟ้อง
+              (ฝั่งท่อเจอบั๊กเดียวกันในกระจกของเขา แล้วย้ายไป return_orders_v2 กุญแจ id)
+         ⇒ ตอนนี้ใช้เลขจากท่อ ซึ่งจับคู่ด้วย id และผูกขอบเขตกับวันที่ขาย */
+      const ret = cur.returnedCount === null || cur.returnedAmount === null
+        ? null
+        : { count: cur.returnedCount, amount: cur.returnedAmount }
+      const retErr = ret === null ? 'ท่ออ่านตารางใบคืนไม่ได้รอบนี้' : undefined
 
       // ยอดรายวัน — ฐานรวมมาให้แล้ว จอแค่**เติมวันที่ไม่มีออเดอร์ให้เป็นศูนย์**
       // ⚠️ ท่อไม่คืนแถวของวันที่ขายไม่ได้ ถ้าไม่เติมเอง เส้นกราฟจะลากข้ามวันนั้น
@@ -315,6 +357,10 @@ export default function SalesReportPage() {
         topError,
         returns: ret,
         returnsError: retErr,
+        unmatchedReturns: cur.unmatchedReturns,
+        returnsSyncedAtUtc: cur.returnsSyncedAtUtc,
+        returnsSyncComplete: cur.returnsSyncComplete,
+        returnsScope: cur.returnsScope,
         topProducts: bestRows.map((r) => ({
           name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount,
         })),
@@ -410,21 +456,43 @@ export default function SalesReportPage() {
                       </p>
                     ) : report.returns.count === 0 ? (
                       <p className="text-[12px] text-gray-400 mt-3 text-center">
-                        ไม่มีใบคืนสินค้าที่ออกในช่วงนี้ · ยอดข้างบนจึงเท่ากับยอดสุทธิ
+                        ไม่มีใบขายในช่วงนี้ที่ถูกคืน · ยอดข้างบนจึงเท่ากับยอดสุทธิ
                       </p>
                     ) : (
-                      <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 max-w-[340px] leading-relaxed">
+                      /* ✅ **เลิกเขียนว่า "ราว" แล้ว** (15 ก.ย. 2569) — ท่อจับคู่ใบคืนกับใบขาย
+                         ด้วย reference = orders.number และผูกขอบเขตกับ **วันที่ขาย** ตัวเดียวกับตัวกรองนี้
+                         ⇒ totalAmount − returnedAmount เป็นยอดสุทธิจริง ไม่ใช่ค่าประมาณอีกต่อไป */
+                      <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 max-w-[360px] leading-relaxed">
                         🔴 <b>ยอดข้างบนยังไม่ได้หักของที่ลูกค้าคืน</b>
                         <br />
-                        ใบคืนที่ออกในช่วงนี้ <b>{fmtNum(report.returns.count)} ใบ</b>
+                        ใบขายในช่วงนี้ที่ถูกคืน <b>{fmtNum(report.returns.count)} ใบ</b>
                         {' '}รวม <b>{fmtMoney(report.returns.amount)}</b> บาท
                         <br />
-                        ⇒ หักแล้วเหลือราว <b>{fmtMoney(report.totals.sales - report.returns.amount)}</b> บาท
+                        ⇒ <b>ยอดสุทธิ {fmtMoney(report.totals.sales - report.returns.amount)} บาท</b>
+                        {/* 🔴 ใบคืนที่หาใบขายต้นทางไม่เจอ = **ไม่ได้ถูกหักออก** ⇒ ต้องบอก ห้ามเงียบ
+                            และมันไม่ผูกกับตัวกรองร้าน/ช่องทาง ⇒ เอาไปรวมเองไม่ได้ */}
+                        {report.unmatchedReturns && report.unmatchedReturns.count > 0 && (
+                          <span className="block text-[11px] text-amber-800 mt-1">
+                            ⚠️ และมีใบคืนอีก <b>{fmtNum(report.unmatchedReturns.count)} ใบ</b>
+                            {' '}({fmtMoney(report.unmatchedReturns.amount)} บาท) ที่<b>หาใบขายต้นทางไม่เจอ</b>
+                            {' '}⇒ <b>ยังไม่ได้ถูกหักออก</b> และนับรวมทุกร้าน/ทุกช่องทาง ไม่ผูกกับตัวกรองนี้
+                          </span>
+                        )}
+                        {/* 🔴 ใบคืนซิงก์ยังไม่ครบ ⇒ ห้ามเขียนว่าหักครบแล้ว */}
+                        {report.returnsSyncComplete === false && (
+                          <span className="block text-[11px] text-red-800 mt-1">
+                            🔴 <b>ตารางใบคืนยังซิงก์ไม่ครบ</b> — ยอดสุทธิข้างบนจึงยัง<b>หักไม่ครบ</b>
+                          </span>
+                        )}
                         <span className="block text-[11px] text-amber-800 mt-1">
-                          &ldquo;ราว&rdquo; เพราะใบคืนที่ออกในช่วงนี้ บางใบเป็นของที่ขายก่อนหน้าช่วงนี้
-                          {' '}· <Link href="/core/return-orders" className="underline">ดูใบคืนทั้งหมด</Link>
+                          <Link href="/core/return-orders" className="underline">ดูใบคืนทั้งหมด</Link>
                         </span>
                       </div>
+                    )}
+                    {/* 🕰 ความสดของตารางใบคืน — ท่อซิงก์ทุกชั่วโมงนาทีที่ :07
+                        ⇒ เก่าเกิน ~2 ชม. แปลว่าตัวซิงก์น่าจะหยุด · null = ไม่รู้ ห้ามเขียนว่าหยุด */}
+                    {report.returns !== null && (
+                      <ReturnsFreshness utc={report.returnsSyncedAtUtc ?? null} />
                     )}
                     <button
                       onClick={() => downloadSummary(report)}
