@@ -21,6 +21,8 @@
 //   node scripts/fake-pipe.mjs 4010 skip    ← สถานะที่สาม "ทำต่อไม่ได้" (ต้องขึ้นเหลือง ไม่ใช่แดง)
 //   node scripts/fake-pipe.mjs 4010 nocounts ← มีงานค้างแต่ไม่มียอดแยกกอง (เทสคำเตือน "ใบผี")
 //   node scripts/fake-pipe.mjs 4010 mkstale ← คอลัมน์ Marketplace เป็นของเก่า (เทสแถบ MarketStaleBar)
+//   node scripts/fake-pipe.mjs 4010 zcount ← เส้น ?zortlist= บอก count 350 แต่ส่งแถวมาแค่หน้าแรก
+//                                              (เทสคำเตือน "มีทั้งหมด N แสดง M" ซึ่งของจริงยังไม่มีชุดใหญ่ให้ลอง)
 // แล้วอีกหน้าต่าง:
 //   cd ~/gucut-next && GUCUT_WEB_BASE=http://127.0.0.1:4010 GUCUT_WEB_ADMIN_KEY=devkey123 \
 //     SITE_PASSWORD=devpass npx next dev -p 3101
@@ -519,6 +521,40 @@ const srv = createServer(async (req, res) => {
     return res.end(JSON.stringify({
       counts: { 'clip-001': [12, 2], 'clip-002': [3, 0] },
       views: { 'clip-001': 340, 'clip-002': 88 },
+    }))
+  }
+
+  /* ── zortlist: รายได้อื่น · รายจ่ายอื่น · โอนเงิน · สินค้าหลากคุณสมบัติ ───────
+     🔴 **ของจริงร้านมี 0 รายการทุกชุด** ⇒ ทางที่ "มีแถว" จะไม่มีวันถูกเดินบน production
+        ⇒ ถ้าไม่ใส่ mock ตรงนี้ เราจะไม่มีวันรู้ว่าตารางแสดงถูกไหม
+        (บทเรียนซ้ำจากจอสำรองข้อมูลและจอคอมเมนต์วันนี้: ท่อปลอมไม่รู้จักเส้น = เห็นแต่ทางว่างเปล่า)
+     ⚠️ ชื่อช่างมาจากเอกสาร ZORT ล้วน — ของจริงยังไม่เคยเห็น ⇒ ใส่ให้ครบตามเอกสาร
+        และจงใจให้ **แถวที่สองขาดช่องบางตัว** เพื่อพิสูจน์ว่าจอขึ้น "—" ไม่ใช่พัง */
+  if ((mode === 'good' || mode === 'zcount') && /[?&]zortlist=/.test(req.url)) {
+    const kind = new URL(req.url, 'http://x').searchParams.get('zortlist')
+    const data = {
+      incomes: [
+        { id: 1, incomedate: '2026-09-10T00:00:00', contactname: 'ลูกค้าทดสอบ', amount: 1500, paymentstatus: 'Paid' },
+        { id: 2, incomedate: '2026-09-08T00:00:00' },
+      ],
+      expenses: [
+        { id: 3, expensedate: '2026-09-09T00:00:00', contactname: 'ร้านค่าไฟ', amount: 2400, paymentstatus: 'Unpaid' },
+      ],
+      moneytransfers: [
+        { id: 4, actiondate: '2026-09-11T00:00:00', reference: 'MT-001', amount: 5000, status: 'Success' },
+      ],
+      variations: [
+        { id: 5, sku: 'NW-CHAIN', name: 'โซ่ NEWWAVE หลายความยาว', variants: [{ variantid: 1, variantname: '16 นิ้ว' }, { variantid: 2, variantname: '18 นิ้ว' }] },
+      ],
+    }
+    const rows = data[kind] || []
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, kind, label: kind, applied: { page: 1, limit: 200 },
+      /* 🔴 mode=zcount: `count` เป็นของทั้งชุด แต่แถวมาแค่หน้าแรก — ทางที่ต้องขึ้นคำเตือน
+            "มีทั้งหมด N แสดง M" (ของจริงเกิดเมื่อชุดเกิน 200 ซึ่งร้านนี้ไม่มีให้ลอง) */
+      count: mode === 'zcount' ? 350 : rows.length,
+      rowKeys: rows.length ? Object.keys(rows[0]) : [], rows,
     }))
   }
 

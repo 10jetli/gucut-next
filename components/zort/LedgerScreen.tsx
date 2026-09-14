@@ -15,6 +15,7 @@
 //
 // ⚠️ ปุ่ม "สร้าง…" กับ "นำเข้าไฟล์" พาไปหน้าที่บอกตรง ๆ ว่ายังทำอะไรไม่ได้
 //    ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง
+import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SOON } from '@/lib/zort-menu'
 import { PageHead, TableWrap, TH, THR, thaiDate } from './index'
@@ -46,9 +47,38 @@ function ageOf(iso: string) {
   return Number.isFinite(d) && d >= 0 ? d : null
 }
 
+/* ── แปลงแถวดิบของ ZORT เป็นช่องบนตาราง ──────────────────────────────────
+   🔴 **อยู่ในไฟล์นี้ ไม่ใช่รับเป็น prop** (แก้ 14 ก.ย. 2569)
+      รุ่นแรกผมให้แต่ละจอส่งฟังก์ชัน `mapRow` เข้ามา ⇒ Next ปฏิเสธ:
+      **"Functions cannot be passed directly to Client Components"**
+      ⇒ ทั้งสี่จอขึ้นหน้าเปล่า 500 · เจอเพราะเปิดดูด้วยตา ไม่ใช่เพราะ tsc (tsc ผ่านสบาย)
+      ⇒ ย้ายมาไว้ที่เดียวกับที่รู้สัญญาช่องอยู่แล้ว ดีกว่าเดิมด้วย
+
+   ⚠️ **ยังไม่เคยเห็นรูปแถวจริง** — ร้านมี 0 รายการทุกชุด (ฝั่งท่อยืนยัน 14 ก.ย. 2569)
+      ชื่อช่องมาจากเอกสารล้วน ⇒ อ่านแบบ **ทนฟิลด์หาย** และคืน null ให้จอแสดง "—" แทนการเดา */
+const pick = (r: Record<string, unknown>, ...keys: string[]) => {
+  for (const k of keys) {
+    const v = r[k]
+    if (v !== undefined && v !== null && v !== '') return typeof v === 'number' ? v : String(v)
+  }
+  return null
+}
+const day = (v: string | number | null) => (v === null ? null : String(v).slice(0, 10))
+
+const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number | null)[]> = {
+  incomes: (r) => [day(pick(r, 'incomedate', 'incomedateString', 'createdatetime')),
+    pick(r, 'contactname', 'customername'), pick(r, 'amount'), pick(r, 'paymentstatus')],
+  expenses: (r) => [day(pick(r, 'expensedate', 'expensedateString', 'createdatetime')),
+    pick(r, 'contactname', 'vendorname'), pick(r, 'amount'), pick(r, 'paymentstatus')],
+  moneytransfers: (r) => [day(pick(r, 'actiondate', 'createdatetime')),
+    pick(r, 'reference', 'description'), pick(r, 'amount'), pick(r, 'status')],
+  variations: (r) => [pick(r, 'sku'), pick(r, 'name'),
+    Array.isArray(r.variants) ? `${(r.variants as unknown[]).length} ตัวเลือก` : null, null, null, null],
+}
+
 export default function LedgerScreen({
   title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, purpose, meanwhile,
-  emptyProof,
+  emptyProof, zortList,
 }: {
   title: string
   cols: LedgerCol[]
@@ -76,8 +106,51 @@ export default function LedgerScreen({
   purpose: string
   /** ตอนนี้ร้านทำเรื่องนี้ที่ไหน */
   meanwhile: string
+  /** 🔴 **ต่อท่อจริงแล้ว** — ชื่อชุดข้อมูลของเส้น `?zortlist=` (ขึ้น production 14 ก.ย. 2569)
+   *  ไม่ส่ง = จอยังไม่ต่อท่อ พฤติกรรมเดิมทุกอย่าง (จอที่ยังไม่มีเส้นจะไม่ถูกแตะเลย)
+   *  ⚠️ `variations` **ห้ามส่ง from/to** (ท่อตอบ 400) */
+  zortList?: 'incomes' | 'expenses' | 'moneytransfers' | 'variations'
 }) {
   const age = ageOf(CHECKED_AT)
+
+  /* ── ถาม ZORT จริงผ่านท่อ (เส้น ?zortlist= ขึ้น production 14 ก.ย. 2569) ──────
+     🔴 **สามสถานะ ห้ามยุบ** (ฝั่งท่อกำชับ · ท่อตั้งใจไม่แนบ rows มาตอน 502)
+       ① ตอบแล้วมี 0 รายการ ⇒ "ZORT ตอบเองว่าไม่มี" — ต่างจากของเดิมที่เป็นคำบอกเล่าจากคนเปิดจอดู
+       ② ตอบแล้วมีแถว       ⇒ แสดงแถว
+       ③ 502 unknown        ⇒ **"ยังไม่รู้" ห้ามเขียนว่า "ไม่มีรายการ"**
+          ของจริงตอนนี้: moneytransfers ตอบ 502 เพราะ ZORT ตอบ resCode 500
+          **ไม่ใช่ว่าเส้นไม่มี** ⇒ ห้ามติดป้าย impossible ให้คีย์นั้น */
+  const [rows, setRows] = useState<Record<string, unknown>[] | null>(null)
+  const [zCount, setZCount] = useState<number | null>(null)
+  const [zErr, setZErr] = useState('')
+  const [zUnknown, setZUnknown] = useState(false)
+  const [zLoading, setZLoading] = useState(!!zortList)
+  const [rowKeys, setRowKeys] = useState<string[]>([])
+
+  const loadZort = useCallback(async () => {
+    if (!zortList) return
+    setZLoading(true); setZErr(''); setZUnknown(false)
+    try {
+      /* ⚠️ variations ห้ามส่ง from/to (ท่อตอบ 400) · เส้นอื่นไม่ส่งก็ได้ = เอาทั้งหมด */
+      const r = await fetch(`/api/web/core?zortlist=${zortList}&limit=200`)
+      const d = await r.json().catch(() => null)
+      if (d?.unknown || r.status === 502) {
+        setZUnknown(true)
+        setZErr(String(d?.error ?? 'ถาม ZORT ไม่สำเร็จ'))
+        return
+      }
+      if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
+      setRows(Array.isArray(d.rows) ? d.rows : [])
+      setZCount(typeof d.count === 'number' ? d.count : null)
+      setRowKeys(Array.isArray(d.rowKeys) ? d.rowKeys.map(String) : [])
+    } catch (e) {
+      setZErr(String(e instanceof Error ? e.message : e))
+    } finally { setZLoading(false) }
+  }, [zortList])
+  useEffect(() => { void loadZort() }, [loadZort])
+
+  /** ต่อท่อแล้วและตอบมาเรียบร้อย (มีแถวหรือไม่มีก็ตาม) */
+  const zortAnswered = !!zortList && !zLoading && !zUnknown && !zErr && rows !== null
   /* 🔴 **จอชุดนี้เคยพูดขัดกับทะเบียนหน้า** (เจอตอนกวาดจริง 14 ก.ย. 2569 · ใบ t_mu11ncpo)
      จอเขียนว่า "ยังไม่ได้ต่อท่อกับ ZORT" และ "ตารางว่างเพราะยังไม่ได้ดึงข้อมูล"
      ⇒ อ่านได้ว่า **เดี๋ยวก็ต่อ** · แต่ทะเบียนของสองคีย์ (product-variant · leadtime)
@@ -98,10 +171,21 @@ export default function LedgerScreen({
         title={title}
         // ⚠️ ZORT เขียน "จำนวน 0 รายการ, …0 บาท" — ของเราเขียนแบบนั้นไม่ได้
         //    เพราะเราไม่ได้นับอะไรเลย ต้องบอกว่ายังไม่ได้ต่อ
+        /* 🔴 **บรรทัดนี้ต้องเปลี่ยนตามสถานะจริงของรอบนี้** (แก้ 14 ก.ย. 2569 ตอนต่อท่อ)
+             เดิมเขียนตายตัวว่า "ยังไม่ได้ต่อกับ ZORT — ที่ ZORT เมื่อ 3 ก.ย. มี 0 รายการ"
+             ⇒ พอต่อท่อแล้วมันกลายเป็น **เท็จสองชั้น**: ต่อแล้ว และเลข 0 นั้นเป็นคำบอกเล่าเก่า
+             ⇒ จอโอนเงินหนักสุด: หัวจอยืนยัน "0 รายการ" ทั้งที่ข้างล่างบอก "ยังไม่รู้"
+                (โรคประจำของโปรเจกต์: ระบบทำงานถูก แต่สื่อสารผิด) */
         summary={cantRead
           /* หลักฐาน+วันที่ยิงตรวจแสดงในกล่อง "หลักฐาน:" ในตารางว่างข้างล่าง (ทะเบียน · 14 ก.ย. 2569) */
           ? <span>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้ — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</span>
-          : <span>ยังไม่ได้ต่อกับ ZORT — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</span>}
+          : !zortList
+            ? <span>ยังไม่ได้ต่อกับ ZORT — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</span>
+            : zLoading
+              ? <span className="text-gray-500">กำลังถาม ZORT…</span>
+              : (zUnknown || zErr)
+                ? <span className="text-amber-800">ถาม ZORT ไม่สำเร็จรอบนี้ — <b>ยังไม่รู้ว่ามีกี่รายการ</b> (ไม่ใช่ 0)</span>
+                : <span>ถาม ZORT สดรอบนี้ — <b>{zCount ?? rows?.length ?? 0} รายการ</b></span>}
         actions={
           <>
             {withImport && (
@@ -161,12 +245,47 @@ export default function LedgerScreen({
             </tr>
           </thead>
           <tbody>
+            {/* ── ต่อท่อแล้วและมีแถวจริง ⇒ แสดงแถว (สภาพที่ยังไม่เคยเกิดกับร้านนี้ เพราะทุกชุดมี 0 รายการ
+                   ⇒ ทดสอบด้วยท่อปลอมแทน — ถ้าไม่ทดสอบ ทางนี้จะไม่เคยถูกเดินเลยสักครั้ง) ── */}
+            {zortAnswered && rows!.length > 0 && rows!.map((r, i) => {
+              const cells = (zortList && ROW_MAPS[zortList]) ? ROW_MAPS[zortList](r) : []
+              return (
+                <tr key={i} className="border-b border-[#e8ecf8] last:border-0 bg-white">
+                  <td className="px-3 py-2.5 text-[12.5px] text-gray-400">{i + 1}</td>
+                  {cols.map((c, j) => (
+                    <td key={c.label} className={`px-3 py-2.5 text-[12.5px] text-gray-700 ${c.right ? 'text-right' : ''}`}>
+                      {/* ⚠️ ฟิลด์หาย = "—" **ห้ามเดาค่า** (ยังไม่เคยเห็นรูปแถวจริงของ ZORT) */}
+                      {cells[j] === null || cells[j] === undefined || cells[j] === '' ? '—' : String(cells[j])}
+                    </td>
+                  ))}
+                </tr>
+              )
+            })}
+            {zortAnswered && rows!.length > 0 && !(zortList && ROW_MAPS[zortList]) && (
+              <tr><td colSpan={cols.length + 1} className="px-3 py-2 text-[12px] text-amber-800 bg-amber-50">
+                ⚠️ ได้ข้อมูลมาแล้วแต่จอยังไม่รู้ว่าช่องไหนคืออะไร — ช่องที่ท่อส่งมา: {rowKeys.join(' · ') || '(ไม่ได้บอก)'}
+              </td></tr>
+            )}
+            {/* 🔴 **ตัวนับกับตัวแถวต้องมาที่เดียวกัน หรือไม่ก็บอกว่าต่างกัน** (CLAUDE.md กฎแท็บข้อ 4)
+                   เราขอท่อมาได้ครั้งละ 200 แถว แต่ `count` เป็นของทั้งชุด
+                   ⇒ ถ้าไม่เขียนกำกับ คนจะอ่านว่าแถวที่เห็น = ทั้งหมด แล้วสรุปยอดผิด
+                   (เคยพลาดมาแล้วสามเคสในวันเดียว: แท็บยกเลิก 44 · หมวดโซ่ · แท็บของหมด) */}
+            {zortAnswered && rows!.length > 0 && zCount !== null && zCount > rows!.length && (
+              <tr><td colSpan={cols.length + 1} className="px-3 py-2 text-[12px] text-amber-800 bg-amber-50">
+                ⚠️ ZORT บอกว่ามีทั้งหมด <b>{zCount} รายการ</b> แต่จอนี้ดึงมาได้ <b>{rows!.length} แถว</b> (ครั้งละ 200)
+                — แถวที่เห็นยังไม่ใช่ทั้งหมด
+              </td></tr>
+            )}
+            {!(zortAnswered && rows!.length > 0) && (
             <tr>
               <td colSpan={cols.length + 1} className="py-14 text-center">
                 <span className="text-[34px] block opacity-60">🗂️</span>
                 <p className="text-[14px] text-gray-800 mt-2">
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
-                  {cantRead ? 'ZORT ไม่เปิดเส้นให้ทำเรื่องนี้ — ไม่ใช่ยังไม่ได้ทำ'
+                  {zLoading ? 'กำลังถาม ZORT…'
+                    : zUnknown ? 'ถาม ZORT ไม่สำเร็จ — ยังไม่รู้ว่ามีกี่รายการ'
+                      : zortAnswered ? 'ZORT ตอบแล้วว่าไม่มีรายการ'
+                        : cantRead ? 'ZORT ไม่เปิดเส้นให้ทำเรื่องนี้ — ไม่ใช่ยังไม่ได้ทำ'
                     : impossible ? 'ยังไม่ได้ต่อท่อกับ ZORT (และสร้าง/แก้ผ่าน ZORT ไม่ได้ — ดูหลักฐานข้างล่าง)'
                       : 'ยังไม่ได้ต่อท่อกับ ZORT'}
                 </p>
@@ -182,19 +301,35 @@ export default function LedgerScreen({
                       ของคีย์นั้น ๆ และ **แสดงให้คนอ่านเห็นในกล่องข้างล่าง** ไม่ได้ซ่อนไว้ในโค้ด
                       (ทะเบียนเป็นที่เดียวที่วันที่จะถูกอัปเดตเมื่อยิงตรวจใหม่ · ตัวประกอบร่วมนี้
                        เขียนวันที่ตายตัวไม่ได้ เพราะใช้กับหลายคีย์ที่ยิงตรวจคนละวัน — 14 ก.ย. 2569) */}
-                  {cantRead
-                    ? <>ตารางว่างเพราะ<b>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้</b> — ไม่ใช่เพราะเรายังไม่ได้ทำ
-                      {' '}และไม่ใช่เพราะร้านไม่มีรายการ · </>
-                    : emptyProof
-                      ? <>ตารางว่างเพราะ<b>เรายังไม่ได้ต่อท่อ</b> — และ<b>ตรวจแล้วว่าใน ZORT ก็ไม่มีรายการจริง</b> · </>
-                      : <>ตารางว่างเพราะ<b>ยังไม่ได้ดึงข้อมูล</b> ไม่ใช่เพราะร้านไม่มีรายการ · </>}
+                  {/* 🔴 **ต่อท่อแล้ว ⇒ คำอธิบายต้องเป็นผลจริงจาก ZORT ไม่ใช่คำบอกเล่าเมื่อ 3 ก.ย.** */}
+                  {zUnknown
+                    ? <><b>ถาม ZORT ไม่สำเร็จ</b> ({zErr}) — <b>ยังไม่รู้ว่ามีรายการไหม</b>
+                      {' '}⚠️ <b>ไม่ได้แปลว่าไม่มีรายการ</b> และ<b>ไม่ได้แปลว่า ZORT ไม่มีเส้นนี้</b> —
+                      {' '}เส้นมีจริงแต่ ZORT ตอบผิดพลาดกลับมา ⇒ ลองรีเฟรชอีกครั้ง · </>
+                    : zErr
+                      ? <><b>ดึงข้อมูลไม่สำเร็จ</b> ({zErr}) — ยังไม่รู้ว่ามีรายการไหม · </>
+                      : zortAnswered
+                        ? <>ถาม ZORT สดตอนเปิดหน้านี้ — <b>ZORT ตอบเองว่ามี {zCount ?? rows!.length} รายการ</b>
+                          {' '}(ไม่ใช่คำบอกเล่าจากการเปิดจอดูเมื่อ {thaiDate(CHECKED_AT)} อีกแล้ว) · </>
+                        : cantRead
+                          ? <>ตารางว่างเพราะ<b>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้</b> — ไม่ใช่เพราะเรายังไม่ได้ทำ
+                            {' '}และไม่ใช่เพราะร้านไม่มีรายการ · </>
+                          : emptyProof
+                            ? <>ตารางว่างเพราะ<b>เรายังไม่ได้ต่อท่อ</b> — และ<b>ตรวจแล้วว่าใน ZORT ก็ไม่มีรายการจริง</b> · </>
+                            : <>ตารางว่างเพราะ<b>ยังไม่ได้ดึงข้อมูล</b> ไม่ใช่เพราะร้านไม่มีรายการ · </>}
                   {/* 🔴 **อย่าเติมคำว่า "มี" หน้า sumLabel** — ทุกจอที่เรียกใช้ส่งค่ามาว่า
                       "มี 0 รายการ" อยู่แล้ว ⇒ เดิมจอขึ้นว่า "มี มี 0 รายการ" (เจอตอนกวาดจริง 14 ก.ย. 2569)
                       บรรทัด summary ข้างบน (ที่ไม่เติม "มี") คือรูปแบบที่ถูก ⇒ ยึดอันนั้น
                       ⚠️ คำซ้ำแบบนี้ tsc ไม่จับ และอ่านโค้ดเฉย ๆ ก็ไม่เห็น เพราะสองท่อนอยู่คนละไฟล์ */}
-                  ตอนไปเปิดดูจอ ZORT ของจริงเมื่อ <b>{thaiDate(CHECKED_AT)}</b>
-                  {age != null && <> ({age === 0 ? 'วันนี้' : `${age} วันที่แล้ว`})</>}{' '}
-                  <b>{sumLabel}</b> · {meanwhile}
+                  {/* 🔴 **ถามสดได้แล้ว ⇒ เลิกอ้างคำบอกเล่าเมื่อ 3 ก.ย.** (14 ก.ย. 2569)
+                      ปล่อยไว้คู่กันจะอ่านเหมือนมีสองตัวเลขจากสองแหล่ง ซึ่งเป็นสิ่งที่กฎข้อ 4 ห้าม
+                      ⇒ จอที่ยังไม่ต่อท่อเท่านั้นที่ยังต้องใช้คำบอกเล่า */}
+                  {!zortAnswered && (
+                    <>ตอนไปเปิดดูจอ ZORT ของจริงเมื่อ <b>{thaiDate(CHECKED_AT)}</b>
+                      {age != null && <> ({age === 0 ? 'วันนี้' : `${age} วันที่แล้ว`})</>}{' '}
+                      <b>{sumLabel}</b> · </>
+                  )}
+                  {meanwhile}
                 </p>
                 {/* 🔴 (14 ก.ย. 2569) **หลักฐานต้องอยู่บนจอ ไม่ใช่แค่ในทะเบียน** — ถ้าจอบอกแค่ว่า "ZORT ไม่เปิดเส้น"
                     คนอ่านไม่มีทางรู้ว่าใครตรวจ ตรวจเมื่อไหร่ ลองชื่อไหนบ้าง แล้วจะเชื่อหรือไม่เชื่อก็ได้ทั้งคู่
@@ -206,8 +341,11 @@ export default function LedgerScreen({
                   </p>
                 )}
                 {/* ✅ ถ้ามีหลักฐานว่าว่างจริง ให้พูดให้ต่างจาก "ยังไม่ได้ดึง" อย่างชัดเจน
-                    — และชี้ไปที่ของที่เก็บไว้ ไม่งั้นคนหาไม่เจอว่ามีคนตรวจให้แล้ว */}
-                {emptyProof && (
+                    — และชี้ไปที่ของที่เก็บไว้ ไม่งั้นคนหาไม่เจอว่ามีคนตรวจให้แล้ว
+                    🔴 **แต่ซ่อนตอนถาม ZORT ไม่สำเร็จ** — หัวกล่องเพิ่งบอกว่า "ยังไม่รู้ว่ามีกี่รายการ"
+                       แล้วมีป้ายเขียว "ตรวจแล้วว่างจริง" ต่อท้าย = พูดสองอย่างขัดกันในกล่องเดียว
+                       และป้ายนี้เป็นของที่คัดด้วยมือเมื่อ 6 ก.ย. ไม่ใช่คำตอบของรอบนี้ */}
+                {emptyProof && !zUnknown && !zErr && (
                   <p className="text-[12.5px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-md px-3 py-2 mt-3 max-w-[520px] mx-auto leading-relaxed">
                     ✅ <b>ตรวจแล้วว่างจริง</b> — {emptyProof}
                     <br />
@@ -219,8 +357,10 @@ export default function LedgerScreen({
 
                 {/* 🔴 **ตาข่ายที่ประกาศวันหมดอายุของตัวเอง** — กฎ nets-expire-silently
                     ตัวเลขที่คัดมาด้วยมือจะเก่าลงทุกวันโดยไม่มีอะไรฟ้อง
-                    ⇒ ให้จอบอกเองว่ามันเก่าเกินจะอ้างอิงแล้ว ดีกว่ารอให้มีคนสังเกต */}
-                {age != null && age > STALE_DAYS && (
+                    ⇒ ให้จอบอกเองว่ามันเก่าเกินจะอ้างอิงแล้ว ดีกว่ารอให้มีคนสังเกต
+                    🔴 **เฉพาะจอที่ยังไม่ต่อท่อ** — จอที่ต่อแล้วไม่มี "ตัวเลขที่คัดมาด้วยมือ" ให้เก่า
+                       ถ้าไม่กั้น อีก 34 วันจอที่ต่อท่อแล้วจะสั่งให้คนไปแก้ CHECKED_AT เปล่า ๆ */}
+                {!zortList && age != null && age > STALE_DAYS && (
                   <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3 max-w-[520px] mx-auto leading-relaxed">
                     ⚠️ ตัวเลขข้างบนคัดมาด้วยมือเมื่อ <b>{age} วันที่แล้ว</b> —
                     เก่าเกินจะเชื่อแล้ว <b>ไปเปิดจอ ZORT ดูอีกครั้ง</b> แล้วแก้ค่า
@@ -229,6 +369,7 @@ export default function LedgerScreen({
                 )}
               </td>
             </tr>
+            )}
           </tbody>
         </table>
       </TableWrap>
@@ -239,7 +380,14 @@ export default function LedgerScreen({
       <div className="flex flex-wrap items-center justify-end gap-3 mt-3">
         <span className="text-[12.5px] text-gray-400">
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
-          {cantRead ? 'ไม่มีข้อมูลให้ดึง (ZORT ไม่เปิดเส้น)' : 'ยังไม่ได้ดึงข้อมูล'} | จำนวนต่อหน้า
+          {/* 🔴 ต่อท่อแล้วต้องบอกจำนวนจริง — ปล่อยเป็น "ยังไม่ได้ดึงข้อมูล" ทั้งที่ดึงมาแล้ว
+              คือข้อความที่ขัดกับตารางข้างบนในจอเดียวกัน (14 ก.ย. 2569) */}
+          {zortAnswered
+            ? (zCount !== null && zCount > rows!.length
+              ? `จำนวน ${zCount} รายการ (แสดง ${rows!.length})`
+              : `จำนวน ${zCount ?? rows!.length} รายการ`)
+            : zUnknown ? 'ยังไม่รู้จำนวน (ถาม ZORT ไม่สำเร็จ)'
+              : cantRead ? 'ไม่มีข้อมูลให้ดึง (ZORT ไม่เปิดเส้น)' : 'ยังไม่ได้ดึงข้อมูล'} | จำนวนต่อหน้า
         </span>
         <select
           disabled
@@ -256,8 +404,13 @@ export default function LedgerScreen({
       <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
         ผังจอลอกจาก ZORT ของจริง{!noCreate && <> · ปุ่ม <b>{createLabel}</b></>}
         {withImport && <> และ <b>นำเข้าไฟล์ (Excel)</b></>}{!noCreate && ' ยังทำงานไม่ได้ กดแล้วจะบอกว่าติดอะไรอยู่ · '}
-        <b> ไม่มีปุ่ม Export to Excel</b> แบบ ZORT เพราะไม่มีข้อมูลให้ส่งออก — ปุ่มที่กดแล้วได้ไฟล์เปล่า
-        แย่กว่าไม่มีปุ่ม
+        {/* ⚠️ เหตุผล "ไม่มีข้อมูลให้ส่งออก" ใช้ได้เฉพาะตอนไม่มีแถวจริง ๆ
+            พอต่อท่อแล้วมีแถว เหตุผลนี้กลายเป็นเท็จทันที ⇒ ต้องเปลี่ยนตามของจริง */}
+        {zortAnswered && rows!.length > 0
+          ? <><b> ยังไม่มีปุ่ม Export to Excel</b> แบบ ZORT — <b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b>
+            {' '}(ตอนนี้มีข้อมูลให้ส่งออกแล้ว)</>
+          : <><b> ไม่มีปุ่ม Export to Excel</b> แบบ ZORT เพราะไม่มีข้อมูลให้ส่งออก —
+            {' '}ปุ่มที่กดแล้วได้ไฟล์เปล่าแย่กว่าไม่มีปุ่ม</>}
       </p>
     </div>
   )

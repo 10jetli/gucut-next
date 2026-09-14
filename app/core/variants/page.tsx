@@ -16,6 +16,7 @@ export default function VariantsPage() {
         { label: 'จำนวนพร้อมขาย', right: true },
       ]}
       createLabel="เพิ่มสินค้าหลากคุณสมบัติ"
+      zortList="variations"
       soonKey="product-variant"
       purpose="ใช้กับสินค้าตัวเดียวที่มีหลายตัวเลือก เช่น สี/ขนาด แล้วให้แต่ละตัวเลือกมีสต็อกของตัวเอง"
       meanwhile="ร้านไม่ได้ใช้แบบนี้ — แต่ละรุ่นและแต่ละความยาวเป็นคนละรหัสสินค้าไปเลย ดูได้ที่ สินค้า → สินค้า"

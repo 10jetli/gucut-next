@@ -14,6 +14,7 @@ export default function OtherExpensePage() {
       ]}
       createLabel="สร้างรายจ่ายอื่น"
       emptyProof="เปิดช่วงวันกว้าง 10 ปี (2560-2569) แล้วยิงตรวจซ้ำ 6 ก.ย. 2569 — ไม่มีรายการเลย"
+      zortList="expenses"
       soonKey="expense-other"
       withImport
       withTabs
