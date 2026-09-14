@@ -402,6 +402,28 @@ const srv = createServer(async (req, res) => {
         เพราะกองที่ทำให้ของพังคือกองที่ "หน้าตาเหมือนไม่มีบาร์โค้ด" แต่ความจริงคือ "ไม่รู้"
      ⚠️ ส่ง ok:true พร้อม complete:false + failed ไม่ว่าง **โดยตั้งใจ**
         ถ้าจอตัดสินจาก ok อย่างเดียว มันจะบอกว่า "ครบ" ทั้งที่ขาด */
+  /* ── สถานะสำเนา (จอ /core/backup) ─────────────────────────────────────
+     📌 **รูปคำตอบลอกจากของจริง** ที่ฝั่งท่อยิงวัดให้ 14 ก.ย. 2569 (GET ?backupstatus=1)
+        { ok, ready, lastRun:"YYYY-MM-DD HH:MM:SS"(UTC), stores:[{store,keys,bytes,gone,last}],
+          protected:[{store,what,skip[]}], never:[{store,why}] }
+     🔴 **ทำไมต้องมี**: ก่อนหน้านี้ท่อปลอมไม่รู้จักเส้นนี้ ⇒ กวาดทีไรจอก็ขึ้นสภาพ "ว่างเปล่า"
+        ทุกครั้ง ⇒ เห็นแต่ทางพัง ไม่เคยเห็นทางที่ถูก ⇒ ตัดสินไม่ได้ว่าด่านใหม่กลบของจริงไหม
+        (ด่าน "เขียวได้เฉพาะเมื่อมีทั้งเวลาและคีย์จริง" ต้องพิสูจน์ทั้งสองทาง ไม่ใช่ทางเดียว) */
+  if (mode === 'good' && /[?&]backupstatus=/.test(req.url)) {
+    const t = new Date(Date.now() - 12 * 60000).toISOString().slice(0, 19).replace('T', ' ')
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, ready: true, lastRun: t,
+      stores: [
+        { store: 'gucut-admin', keys: 6, bytes: 20480, gone: 0, last: t },
+        { store: 'gucut-coupon', keys: 33, bytes: 157696, gone: 2, last: t },
+        { store: 'gucut-chat', keys: 15, bytes: 40960, gone: 0, last: t },
+      ],
+      protected: [{ store: 'gucut-admin', what: 'ทุกคีย์', skip: [] }],
+      never: [{ store: 'gucut-temp', why: 'ของชั่วคราว ไม่ต้องสำรอง' }],
+    }))
+  }
+
   if (mode === 'good' && /[?&]productlabels=/.test(req.url)) {
     const ask = decodeURIComponent(new URL(req.url, 'http://x').searchParams.get('productlabels') || '')
       .split(',').map((x) => x.trim()).filter(Boolean)
