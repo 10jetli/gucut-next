@@ -28,8 +28,15 @@ export default function SoonPage({ params }: { params: { key: string } }) {
               : info?.impossible ? 'text-red-800 bg-red-100'
                 : info?.awaitingDecision ? 'text-blue-800 bg-blue-100' : 'text-amber-800 bg-amber-100'
           }`}>
+            {/* 🔴 **`impossibleScope: 'write'` = อ่านได้ แต่สร้าง/แก้ไม่ได้ — ป้ายต้องไม่พูดเหมาว่า "ทำไม่ได้"**
+                   (เจอ 15 ก.ย. 2569 ตอนไล่ตรวจคู่ของ check-inherited)
+                   คีย์ product-variant ติดธงนี้ และ **อ่านได้จริง** — จอ /core/variants ดึงข้อมูลสดจาก ZORT อยู่
+                   แต่หน้านี้ขึ้นป้ายแดงว่า "ทำไม่ได้" เฉย ๆ ⇒ ขัดกับของที่ใช้งานอยู่จริงในระบบเดียวกัน
+                   ⚠️ LedgerScreen อ่าน impossibleScope ถูกมาตั้งแต่แรก แต่หน้านี้ไม่ได้อ่าน
+                      — บทเรียนซ้ำ: **บทเรียนที่แก้ไว้ทางหนึ่ง ไม่เดินไปหาพี่น้องของมันเอง** */}
             {info?.builtAt ? 'ทำเสร็จแล้ว — หน้านี้เลิกใช้'
-              : info?.impossible ? 'ทำไม่ได้ — ไม่ใช่ยังไม่ได้ทำ'
+              : info?.impossible
+                ? (info.impossibleScope === 'write' ? 'สร้าง/แก้ไม่ได้ — แต่อ่านได้' : 'ทำไม่ได้ — ไม่ใช่ยังไม่ได้ทำ')
                 : info?.awaitingDecision ? 'ทำได้ แต่รอท่านประธานตัดสิน — ไม่ใช่ทำไม่ทัน' : 'ยังไม่ได้ทำ'}
           </span>
 
@@ -54,7 +61,7 @@ export default function SoonPage({ params }: { params: { key: string } }) {
                         ไม่มีของค้าง = ไม่มีประโยคนี้ */}
               {info.impossible && (
                 <p className="text-[13px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
-                  <b>ทำไม่ได้เพราะ:</b> {info.impossible}
+                  <b>{info.impossibleScope === 'write' ? 'สร้าง/แก้ไม่ได้เพราะ:' : 'ทำไม่ได้เพราะ:'}</b> {info.impossible}
                   {info.exportByHand && (
                     <>
                       <br />
