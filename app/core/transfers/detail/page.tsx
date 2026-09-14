@@ -17,11 +17,28 @@ interface Resp {
   lines?: Line[] | null; fields?: string[]; error?: string; skip?: string
 }
 
+/** รหัสคลัง → ชื่อคลัง (กติกาเดียวกับจอรายการโอน)
+ *  ไม่มีค่า = "—" (ปกติของใบประเภท "ปรับ") · แปลงไม่ได้ = โชว์รหัสเดิมพร้อมวงเล็บบอกว่าเป็นรหัส */
+function wh(code: string | undefined, names: Record<string, string>) {
+  const c = String(code ?? '').trim()
+  if (!c) return <span className="text-gray-400">—</span>
+  const n = names[c]
+  return <span className="text-gray-800">{n ? `${n} (${c})` : c}</span>
+}
+
 function Inner() {
   const id = useSearchParams().get('id') ?? ''
   const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  /* 🔴 **จอรายการโอนจดกับดักนี้ไว้เองตั้งแต่ต้น แต่จอรายละเอียดไม่ได้รับบทเรียนตามมา**
+     (เจอกับของจริง 14 ก.ย. 2569 · ใบ TF-202609002)
+     ท่อส่ง **รหัสคลัง** มา (NEW · KLD · ANJ) ส่วน ZORT แสดง **ชื่อคลัง** ("โกดัง")
+     ⇒ จอรายการแปลงแล้วขึ้นว่า "ไป โกดัง" · จอนี้ไม่แปลง ขึ้นว่า "→ NEW"
+     ⇒ **ใบเดียวกัน สองจอบอกปลายทางคนละชื่อ** คนกดสลับไปมาแล้วนึกว่าคนละใบ
+     ⚠️ ดึงชื่อไม่ได้ = โชว์รหัสดิบ **แต่ต้องบอกว่านี่คือรหัส** ไม่ใช่ปล่อยให้อ่านเป็นชื่อ */
+  const [names, setNames] = useState<Record<string, string>>({})
+  const [whErr, setWhErr] = useState(false)
 
   const load = useCallback(async () => {
     if (!id) { setError('ไม่ได้ระบุใบ (ต้องเปิดจากจอรายการโอน)'); setLoading(false); return }
@@ -33,6 +50,13 @@ function Inner() {
       if (typeof j.skip === 'string') throw new Error(j.skip)
       if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
       setD(j)
+      const w = await fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null)
+      const map: Record<string, string> = {}
+      for (const x of (Array.isArray(w?.warehouses) ? w.warehouses : [])) {
+        if (x?.code) map[String(x.code)] = String(x.name || x.code)
+      }
+      setNames(map)
+      setWhErr(!w || !Array.isArray(w?.warehouses))
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }
   }, [id])
   useEffect(() => { load() }, [load])
@@ -81,7 +105,15 @@ function Inner() {
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
             <div><p className="text-gray-400 text-[11px]">สถานะ</p><Pill tone={d.status === 'Success' ? 'green' : 'orange'}>{d.status || '—'}</Pill></div>
             <div><p className="text-gray-400 text-[11px]">วันที่โอน</p>{thaiDate(d.date)}</div>
-            <div><p className="text-gray-400 text-[11px]">จากคลัง → ไปคลัง</p>{d.from || '—'} → {d.to || '—'}</div>
+            <div>
+              <p className="text-gray-400 text-[11px]">จากคลัง → ไปคลัง</p>
+              {wh(d.from, names)} → {wh(d.to, names)}
+              {whErr && (d.from || d.to) && (
+                <span className="block text-[10.5px] text-amber-700 mt-0.5">
+                  ⚠️ ดึงชื่อคลังไม่ได้ — ที่เห็นคือ<b>รหัสคลัง</b> ไม่ใช่ชื่อ
+                </span>
+              )}
+            </div>
             <div><p className="text-gray-400 text-[11px]">เลขพัสดุ</p>
               {d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>}</div>
           </div>

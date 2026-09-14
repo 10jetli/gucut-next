@@ -161,6 +161,9 @@ export default function ReturnOrdersPage() {
             <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2 mb-3 leading-relaxed">
               แสดง <b>{fmtNum(rows.length)}</b> ใบล่าสุด จากทั้งหมด <b>{fmtNum(total!)}</b> ใบ —
               ยอดเงินข้างบนเป็นของ<b>เฉพาะที่ดึงมา</b> ไม่ใช่ยอดสะสมทั้งหมด
+              <br />
+              ⚠️ และยอดนั้นบวกจากช่อง <b>amount</b> ของ ZORT ซึ่ง<b>ยังไม่ได้พิสูจน์ว่าคือยอดคืนของใบ</b>
+              {' '}— กดเข้าใบแล้วดูช่องเงินทั้งหมดก่อนเอาไปคิดเงินจริง
             </div>
           )}
 
@@ -216,6 +219,9 @@ export default function ReturnOrdersPage() {
                       {r.customer || DASH}
                     </td>
                     {/* ⚠️ ไม่มีมูลค่า ≠ มูลค่า 0 — ท่ออาจไม่ส่งช่องนี้มา ต้องขึ้นขีด ไม่ใช่ ฿0 */}
+                    {/* ⚠️ คอลัมน์นี้ใช้ช่อง `amount` ของ ZORT — **ไม่ได้พิสูจน์ว่านั่นคือยอดคืนของใบ**
+                        จอรายละเอียดของใบเดียวกันเขียนไว้ว่า "ท่อยังไม่ได้ตั้งชื่อช่องยอดคืน จอจะไม่เดา"
+                        ⇒ สองจอต้องพูดให้เข้ากัน ไม่งั้นคนอ่านไม่รู้ว่าตกลงระบบรู้หรือไม่รู้ (14 ก.ย. 2569) */}
                     <td className={TDR}>{typeof r.amount === 'number' ? fmtMoney(r.amount) : DASH}</td>
                     <td className={TD}>
                       {r.status ? <Pill tone={tone(r.status)}>{r.status}</Pill> : DASH}

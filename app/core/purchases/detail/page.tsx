@@ -18,7 +18,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, WriteResult } from '@/components/zort'
+import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 
 /* ── รับของ / ตรวจนับสินค้าเข้า (soon: stock-count · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
@@ -180,6 +180,15 @@ function ReceiveBox({ number, lines }: { number: string; lines: Line[] }) {
   )
 }
 
+/** "2026-09-03 00:40:08" → "3 ก.ย. 2569 00:40:08" — แปลงเฉพาะส่วนวัน คงเวลาไว้ทั้งหมด
+ *  ⚠️ ค่านี้ท่อส่งมาแบบไม่มีโซนเวลาติด ⇒ **ห้ามเอาไปคิดโซน** จะเลื่อนวันโดยไม่รู้ตัว
+ *     (ต่างจากกำหนดส่งของจอใบสั่งผลิตที่มี Z ติดมา ⇒ อันนั้นต้องแปลง) */
+function mirrorAt(v?: string | null): string | null | undefined {
+  const s = String(v ?? '').trim()
+  const m = /^(\d{4}-\d{2}-\d{2})[ T](.+)$/.exec(s)
+  return m ? `${thaiDate(m[1])} ${m[2]}` : v
+}
+
 interface Line { line?: number; sku?: string; name?: string; qty?: number; price?: number }
 interface Resp {
   number?: string; vendor?: string | null; poDate?: string | null
@@ -245,12 +254,17 @@ function Inner() {
               <h2 className="mb-2 text-[13px] font-semibold">หัวใบ</h2>
               <div className="grid gap-1">
                 <Field k="ผู้ขาย" v={d.vendor} />
-                <Field k="วันที่" v={d.poDate} />
+                {/* 🔴 เดิมโชว์ค่าดิบ "2026-03-10" — ทั้งร้านอ่านปี พ.ศ. และจออื่นแปลงหมดแล้ว
+                    จอเดียวที่ไม่แปลง = คนเทียบข้ามจอแล้วสะดุด และเสี่ยงอ่านปีผิดไป 543 ปี
+                    (เจอกับของจริงตอนเปิดใบ PO-202603001 · 14 ก.ย. 2569) */}
+                <Field k="วันที่" v={d.poDate ? thaiDate(d.poDate) : d.poDate} />
                 <Field k="สถานะ" v={d.status} />
                 <Field k="การชำระเงิน" v={d.paymentStatus} />
                 <Field k="คลังปลายทาง" v={d.warehouse} />
                 <Field k="โน้ต" v={d.note} />
-                <Field k="อัปเดตกระจก" v={d.updatedAt} />
+                {/* ⚠️ ค่านี้เป็น "เวลา" ไม่ใช่ "วันที่" ⇒ แปลงเฉพาะส่วนวัน แล้วคงเวลาไว้
+                    ห้ามตัดเวลาทิ้ง — คนใช้ดูว่ากระจกอัปเดตล่าสุดกี่โมงเพื่อตัดสินว่าข้อมูลเก่าไหม */}
+                <Field k="อัปเดตกระจก" v={mirrorAt(d.updatedAt)} />
               </div>
             </section>
 
