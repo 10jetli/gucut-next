@@ -398,7 +398,12 @@ const srv = createServer(async (req, res) => {
     const base = { id: 'z1-1', source: 'z1', number: 'SO-001', channel: 'Shopee', status: 'Pending',
       customer: 'ลูกค้าทดสอบ', order_date: '2026-09-05', tracking_no: 'TH000TEST', pay_status: 'paid',
       ship_channel: 'Flash express', ship_name: 'ผู้รับทดสอบ', ship_date: '2026-09-06' }
-    /* ผลรวมบรรทัด 1,000 − ส่วนลดบรรทัด (10×1 + 5×3 = 25) − ส่วนลดท้ายบิล 50 + ค่าส่ง 70 = 995 */
+    /* 🔴 **สัญญาจริง (ยืนยันกับใบจริง 14 ก.ย. 2569 18:06 น. ใบ 1118734271446942)**:
+         หัวใบ = ผลรวม items[].amount − bill_discount + ship_amount
+       ⚠️ **items[].amount หักส่วนลดรายบรรทัดมาแล้ว** ⇒ ส่วนลดรายบรรทัดไม่เข้าสมการ
+       🔴 ตัวเลขชุดเดิมในไฟล์นี้ผมแต่งให้เข้ากับสูตรที่ผมเชื่อ (ลบส่วนลดบรรทัดด้วย)
+          ⇒ **เทสที่สร้างจากความเข้าใจผิดเดียวกับโค้ด จะเขียวเสมอ** — บั๊กเลยรอดมาถึงใบจริง
+          ⇒ แก้ตัวเลขให้ตรงสัญญาจริง: 1,000 − 50 + 70 = 1,020 */
     const items = [
       { line: 1, sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', qty: 1, amount: 500 },
       { line: 2, sku: 'NW-02', name: 'สินค้าทดสอบสอง (หลายชิ้น)', qty: 3, amount: 500 },
@@ -406,7 +411,7 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     if (which === 'full') {
       return res.end(JSON.stringify({
-        order: { ...base, amount: 995, bill_discount: 50, ship_amount: 70 },
+        order: { ...base, amount: 1020, bill_discount: 50, ship_amount: 70 },
         items: [{ ...items[0], discount: 10 }, { ...items[1], discount: 5 }],
       }))
     }
@@ -426,7 +431,7 @@ const srv = createServer(async (req, res) => {
          ⇒ จอต้องขึ้นแดงว่า "ยังเหลือที่อธิบายไม่ได้" ไม่ใช่เงียบเพราะคิดว่าอธิบายได้แล้ว
          ⚠️ ถ้าไม่มีเคสนี้ จอที่คำนวณผิดจะดูเหมือนถูกตลอดกาล */
       return res.end(JSON.stringify({
-        order: { ...base, amount: 1100, bill_discount: 50, ship_amount: 70 },
+        order: { ...base, amount: 1125, bill_discount: 50, ship_amount: 70 },
         items: [{ ...items[0], discount: 10 }, { ...items[1], discount: 5 }],
       }))
     }

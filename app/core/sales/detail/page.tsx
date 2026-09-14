@@ -227,26 +227,27 @@ function DetailInner() {
   const lineDiscount = hasDiscountField && !lineDiscountUnknown
     ? items.reduce((s, it) => s + (Number(it.discount) || 0) * (Number(it.qty) || 0), 0)
     : null
-  /* 🔴 **ผมเกือบทำผิดข้อที่จอนี้เกิดมาแก้** (จับได้ตอนทวนกับใบจริง 14 ก.ย. 2569 17:46 น.)
-     ท่อจริงส่ง items[].discount เป็น **null** (ใบซิงก์ก่อน 5 ก.ย.) แต่โค้ดรุ่นแรกของผมเขียนว่า
-     `lineDiscount ?? 0` ⇒ **เอา "ไม่รู้" ไปคิดเป็น 0** แล้วประกาศว่ายอดลงตัว
-     ใบ SO-202609021 บังเอิญลงตัวพอดี (1,092 − 0 + 152 = 1,244) เพราะส่วนลดจริงเป็น 0
-     ⇒ **บังเอิญถูก ไม่ใช่ถูก** · ใบที่มีส่วนลดรายบรรทัดจริงจะขึ้นว่าลงตัวทั้งที่ไม่ลงตัว
-     ⇒ รู้ครบ = ต้องรู้ **ทั้งสามช่อง** · ขาดช่องไหนก็ยืนยันไม่ได้
-     ⚠️ แต่ถ้ามันลงตัวเมื่อถือว่าส่วนลดรายบรรทัดเป็น 0 ก็ควรบอก — เป็นเบาะแสที่มีประโยชน์
-        แค่ต้องเขียนว่า **"ลงตัวถ้าถือว่าเป็น 0" ไม่ใช่ "ลงตัว"** */
+  /* 🔴🔴 **สูตรรุ่นก่อนของผมผิด — ลบส่วนลดรายบรรทัดซ้ำสองรอบ**
+     จับได้ตอนเปิดใบจริงที่มีส่วนลดไม่เป็นศูนย์ (14 ก.ย. 2569 18:06 น. · ใบ 1118734271446942)
+       บรรทัด: qty 3 · discount 3.6 ต่อชิ้น · amount 169.2 · หัวใบ 169.2 · bill_discount 12 · ship 12
+       สูตรฝั่งท่อ  169.2 − 12 + 12 = 169.2 ✅ ตรงยอดใบ
+       สูตรของผม   169.2 − (3.6×3) − 12 + 12 = 158.4 ❌ ⇒ จอจะฟ้อง "เหลือ 10.80" ทั้งที่ใบถูก
+     ⇒ **`items[].amount` หักส่วนลดรายบรรทัดมาแล้ว** ส่วนลดรายบรรทัดจึงไม่เข้าสมการอีก
+     ⚠️ บั๊กนี้มองไม่เห็นเลยในใบที่ส่วนลดเป็น 0 — ซึ่งคือใบเกือบทั้งหมด
+        และ **ท่อปลอมที่ผมเขียนเองก็ตอกย้ำความเข้าใจผิด** เพราะผมแต่งตัวเลขให้เข้ากับสูตรที่ผมเชื่อ
+        ⇒ เทสที่สร้างจากความเข้าใจผิดเดียวกับโค้ด จะเขียวเสมอ (แก้ท่อปลอมให้ตรงสัญญาจริงแล้ว)
+     📌 บทเรียน: สูตรเงินต้องทวนกับ **ใบที่ทุกตัวแปรไม่เป็นศูนย์** อย่างน้อยหนึ่งใบ
+
+     ⇒ การเทียบยอดใช้แค่สองช่อง: bill_discount กับ ship_amount
+        ส่วนลดรายบรรทัดเป็น **ข้อมูลประกอบ** (บอกว่าลดไปเท่าไหร่ ซึ่งรวมในยอดบรรทัดแล้ว)
+        ⇒ ไม่รู้ค่าก็ยังเทียบยอดได้ตามปกติ */
   const lineDiscountKnown = hasDiscountField && !lineDiscountUnknown
-  const canExplain = typeof billDiscount === 'number' && typeof shipAmount === 'number' && lineDiscountKnown
-  /** ยอดที่คิดได้ถ้ารู้ครบ · ถ้าไม่รู้ส่วนลดรายบรรทัด จะคิดแบบ "สมมติว่า 0" ไว้บอกเป็นเบาะแส */
-  const knownPart = typeof billDiscount === 'number' && typeof shipAmount === 'number'
-    ? Math.round((linesTotal - (lineDiscount ?? 0) - billDiscount + shipAmount) * 100) / 100
+  const canExplain = typeof billDiscount === 'number' && typeof shipAmount === 'number'
+  const expected = canExplain
+    ? Math.round((linesTotal - billDiscount + shipAmount) * 100) / 100
     : null
-  const expected = canExplain ? knownPart : null
   const leftover = expected === null ? null : Math.round((total - expected) * 100) / 100
   const explained = leftover !== null && Math.abs(leftover) <= 0.009
-  /** ลงตัวพอดีแต่ต้องสมมติว่าส่วนลดรายบรรทัดเป็น 0 — เบาะแส ไม่ใช่คำยืนยัน */
-  const fitsIfZeroDiscount = !canExplain && knownPart !== null
-    && Math.abs(total - knownPart) <= 0.009
   // ⚠️ ยอดก่อนภาษีกับภาษีเป็น **ค่าคำนวณ** จากยอดรวม ไม่ใช่ค่าที่เก็บไว้
   //    ใช้กติกา "ราคารวมภาษีแล้ว" ตามที่ ZORT แสดงให้ร้านนี้ · เขียนกำกับใต้บล็อกเสมอ
   const net = total / (1 + VAT_RATE)
@@ -410,12 +411,18 @@ function DetailInner() {
                   <span className="text-gray-800">{fmtMoney(linesTotal)}</span>
                 </div>
                 {/* ── ส่วนลดรายบรรทัด ── */}
+                {/* ⚠️ **แถวนี้เป็นข้อมูลประกอบ ไม่ได้เข้าสมการเทียบยอด**
+                    ยอดในบรรทัดสินค้าหักส่วนลดนี้มาแล้ว ⇒ เอามาลบอีกคือลบซ้ำ (เคยพลาดมาแล้ว)
+                    ⇒ เขียนกำกับให้ชัด ไม่งั้นคนอ่านจะบวกลบตามเองแล้วได้เลขไม่ตรง */}
                 {hasDiscountField && (
                   <div className="flex justify-between py-1.5 text-[12.5px]">
-                    <span className="text-gray-500">ส่วนลดรายบรรทัด</span>
+                    <span className="text-gray-500">
+                      ส่วนลดรายบรรทัด
+                      <span className="text-gray-400"> (รวมในยอดบรรทัดแล้ว)</span>
+                    </span>
                     {lineDiscountUnknown
                       ? <span className="text-gray-400">ไม่รู้ (บางบรรทัดซิงก์ก่อนมีช่องนี้)</span>
-                      : <span className="text-gray-800">{(lineDiscount ?? 0) === 0 ? fmtMoney(0) : `−${fmtMoney(lineDiscount ?? 0)}`}</span>}
+                      : <span className="text-gray-800">{fmtMoney(lineDiscount ?? 0)}</span>}
                   </div>
                 )}
                 {/* ── ส่วนลดท้ายบิล ── */}
@@ -438,7 +445,7 @@ function DetailInner() {
                 </div>
                 {/* 🔴 ส่วนที่ยัง**อธิบายไม่ได้** — ขึ้นเฉพาะตอนที่รู้ครบแล้วยังไม่ลงตัว
                     หรือตอนที่ยังไม่มีช่องให้อธิบายเลย · **ลงตัวแล้วต้องเงียบ** ไม่งั้นกลายเป็นเสียงเตือนปลอม */}
-                {!canExplain && !fitsIfZeroDiscount && hasGap && (
+                {!canExplain && hasGap && (
                   <div className="flex justify-between py-1.5 text-[12.5px] text-amber-800">
                     <span>ส่วนต่างที่อธิบายไม่ได้</span>
                     <span className="font-semibold">{gap > 0 ? '+' : ''}{fmtMoney(gap)}</span>
@@ -448,12 +455,6 @@ function DetailInner() {
                   <div className="flex justify-between py-1.5 text-[12.5px] text-red-700">
                     <span>ยังเหลือที่อธิบายไม่ได้</span>
                     <span className="font-semibold">{(leftover ?? 0) > 0 ? '+' : ''}{fmtMoney(leftover ?? 0)}</span>
-                  </div>
-                )}
-                {fitsIfZeroDiscount && (
-                  <div className="flex justify-between py-1.5 text-[12px] text-gray-500">
-                    <span>ยอดลงตัว <b>ถ้า</b>ส่วนลดรายบรรทัดเป็น 0</span>
-                    <span>ยังยืนยันไม่ได้</span>
                   </div>
                 )}
                 <div className="flex justify-between py-1.5 text-[12.5px]">
@@ -468,14 +469,7 @@ function DetailInner() {
                   <span className="text-[13px] font-bold text-gray-800">มูลค่ารวมสุทธิ</span>
                   <span className="text-[13px] font-bold text-gray-900">{fmtMoney(total)}</span>
                 </div>
-                {fitsIfZeroDiscount && (
-                  <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-2.5 py-2 mt-2 leading-relaxed">
-                    ℹ️ ค่าส่งกับส่วนลดท้ายบิลของใบนี้<b>รู้แล้ว</b> และยอด<b>ลงตัวพอดีถ้าถือว่าส่วนลดรายบรรทัดเป็น 0</b>
-                    {' '}— แต่ช่องส่วนลดรายบรรทัดของใบนี้ยัง<b>ไม่รู้ค่า</b> (ซิงก์มาก่อนมีช่องนั้น)
-                    {' '}⇒ <b>ยังยืนยันไม่ได้ว่าถูก</b> · ถือเป็นเบาะแส ไม่ใช่คำยืนยัน
-                  </p>
-                )}
-                {!canExplain && !fitsIfZeroDiscount && hasGap && (
+                {!canExplain && hasGap && (
                   <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mt-2 leading-relaxed">
                     ⚠️ <b>บรรทัดสินค้ารวมได้ {fmtMoney(linesTotal)} แต่ยอดใบคือ {fmtMoney(total)}</b>
                     {' '}— ต่างกัน {fmtMoney(Math.abs(gap))}
