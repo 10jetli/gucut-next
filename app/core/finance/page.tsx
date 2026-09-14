@@ -129,8 +129,22 @@ export default function CoreFinancePage() {
   }
 
   // ⚠️ ตัวเลขทุกตัวมาจากท่อแล้ว — ที่เหลือคือรวมยอดของสิ่งที่ท่อรวมมาให้ ไม่ใช่การนับแถวเอง
-  const total6 = months.reduce((s, m) => s + (Number(m.sales) || 0), 0)
-  const thisM = months.find((m) => m.ym === thisMonth())?.sales ?? 0
+  /* 🔴 **ด่านเดิมกันแค่ "ไม่มีช่อง months" แต่ไม่ได้กัน "มี months ที่ข้างในว่าง"**
+     เจอด้วยท่อปลอมโหมด partialgood (14 ก.ย. 2569): ท่อตอบ `months: [{}]`
+     ⇒ ก้อนถูกรูปทุกอย่าง แต่ไม่มีเลขสักตัว ⇒ จอขึ้น **"รายรับเดือนนี้ 0 · 6 เดือน 0 · 0 ใบ"**
+        โดยไม่มีกล่องแดงเลย — เป็นตัวเลขเงิน คนเอาไปตัดสินใจได้ทันที
+     ⚠️ นี่คือโรคเดิมของด่านนี้เป๊ะ ๆ แค่ลึกลงไปอีกชั้นหนึ่ง
+        (รอบก่อนกันกรณี `{}` · รอบนี้คือ `{months:[{}]}`)
+     ⇒ กติกา: **แถวที่ไม่มีช่อง sales เป็นตัวเลข = อ่านไม่ได้ ไม่ใช่ศูนย์บาท**
+        ร้านที่ขายไม่ได้จริงจะมีแถวที่ sales เป็น 0 — ไม่ใช่แถวที่ไม่มีช่องนี้เลย */
+  const readable = months.filter((m) => typeof m.sales === 'number')
+  const unreadable = months.length - readable.length
+  const allUnreadable = months.length > 0 && readable.length === 0
+  const total6 = readable.reduce((s, m) => s + (Number(m.sales) || 0), 0)
+  const thisRow = months.find((m) => m.ym === thisMonth())
+  const thisM = typeof thisRow?.sales === 'number' ? thisRow.sales : null
+  const orders6 = months.reduce((n, m) => n + (Number(m.orders) || 0), 0)
+  const ordersKnown = months.some((m) => typeof m.orders === 'number')
   const maxMonth = Math.max(...months.map((m) => m.sales), 1)
 
   return (
@@ -153,9 +167,18 @@ export default function CoreFinancePage() {
         <>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <StatCard icon="📅" tone="blue" label={`รายรับเดือนนี้ (${monthLabel(thisMonth())})`} value={fmtMoney(thisM)} />
-            <StatCard icon="💰" tone="green" label="รายรับ 6 เดือน" value={fmtMoney(total6)}
-              note={`${fmtNum(months.reduce((n, m) => n + (Number(m.orders) || 0), 0))} ใบ${scope ? ` · ${scope}` : ''}`} />
+            {/* ⚠️ อ่านไม่ได้ ⇒ "—" ห้ามเป็น "0" · ตัวเลขเงินที่ผิดคนเอาไปตัดสินใจทันที */}
+            <StatCard icon="📅" tone="blue" label={`รายรับเดือนนี้ (${monthLabel(thisMonth())})`}
+              value={thisM === null ? '—' : fmtMoney(thisM)}
+              note={thisM === null
+                ? (months.length ? 'ท่อส่งเดือนนี้มาแต่ไม่มีตัวเลข — ยังไม่รู้ ไม่ใช่ศูนย์บาท' : 'ยังไม่มีข้อมูลเดือนนี้')
+                : undefined} />
+            <StatCard icon="💰" tone="green" label="รายรับ 6 เดือน"
+              value={allUnreadable ? '—' : fmtMoney(total6)}
+              note={allUnreadable
+                ? 'ท่อส่งแถวรายเดือนมาแต่ไม่มีตัวเลขสักแถว — ยังไม่รู้ ไม่ใช่ศูนย์บาท'
+                : `${ordersKnown ? fmtNum(orders6) : '—'} ใบ${scope ? ` · ${scope}` : ''}`
+                  + (unreadable ? ` · อ่านไม่ได้ ${unreadable} เดือน` : '')} />
             <StatCard icon="📦" tone="purple" label="มูลค่าของในคลัง"
               value={stock ? fmtMoney(stock.value) : '—'}
               note={stock ? `คิดที่ราคาขาย · ${fmtNum(stock.total)} SKU`
