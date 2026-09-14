@@ -28,6 +28,7 @@ function useCompanyName(): string {
     fetch('/api/web/core?shopinfo=1')
       .then((r) => (r.ok ? r.json() : null))
       .then((d) => { if (alive && typeof d?.seller?.name === 'string') setName(d.seller.name) })
+      // ตรวจแล้ว: ตั้งใจให้ว่างตอนโหลดไม่ได้ — ช่องว่างชั่วครู่ดีกว่าชื่อร้านผิด (เหตุผลเต็มอยู่เหนือฟังก์ชันนี้)
       .catch(() => {})
     return () => { alive = false }
   }, [])

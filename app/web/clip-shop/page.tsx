@@ -36,6 +36,7 @@ export default function WebClipShopPage() {
         if (!Array.isArray(d)) throw new Error('ตอบมาไม่ใช่รายการคลิป')
         return d
       })
+      // ตรวจแล้ว: ด่านข้างบนเช็ค res.ok + d.error + Array.isArray แล้ว ⇒ ค่าที่ถึง setClips เป็นรายการจริงเสมอ
       .then(setClips)
       .catch(() => setLoadErr('โหลดรายชื่อคลิปไม่สำเร็จ'))
     /* 🔴 ท่อตอบ 500 พร้อม JSON ⇒ .json() ไม่ throw ⇒ catch ไม่ทำงาน ⇒ map = {} เงียบ ๆ
@@ -60,6 +61,7 @@ export default function WebClipShopPage() {
         if (!Array.isArray(items)) throw new Error('ตอบมาไม่ใช่รายชื่อสินค้า')
         return items
       })
+      // ตรวจแล้ว: ด่านข้างบนคัดเอาเฉพาะ items ที่เป็น Array จริง ⇒ ก้อน error ไหลถึง setIndex ไม่ได้
       .then(setIndex)
       .catch(() => setLoadErr('โหลดรายชื่อสินค้าไม่สำเร็จ — ค้นหาสินค้ายังใช้ไม่ได้'))
   }, [])

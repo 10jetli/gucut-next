@@ -97,8 +97,34 @@ const API_RULES = [
   },
 ]
 
+/* ── รับรองรายจุด: "ตรวจแล้วและปลอดภัยด้วยเหตุผลนี้" ──────────────────────────────
+   🔴 **ปัญหาที่กลไกนี้เกิดมาแก้** (14 ก.ย. 2569)
+      บางท่าเป็นรูปแบบที่ตัวตรวจจับได้ แต่โค้ดจริงปลอดภัยแล้ว เช่น `.then(setX)`
+      ที่มีด่านเช็ค res.ok / d.error / ชนิดข้อมูล คั่นอยู่ก่อนหน้า
+      ⇒ ถ้าไม่มีทางรับรอง คนจะเลี่ยงด้วยการ **เขียนอ้อมให้ตัวตรวจมองไม่เห็น**
+         ซึ่งแย่กว่าเดิม เพราะตัวตรวจจะเชื่อถือไม่ได้สำหรับคนถัดไป
+   🔑 กติกาที่กันไม่ให้กลายเป็น "ที่ซ่อนของ"
+      ① ต้องเขียน **เหตุผลเป็นข้อความจริง** (มาร์กเกอร์เปล่าไม่ผ่าน — บังคับความยาวขั้นต่ำ)
+      ② คอมเมนต์ต้องอยู่ **ติดกับบรรทัดนั้นจริง ๆ** (เจอบรรทัดโค้ดคั่น = ไม่นับ)
+      ③ ทุกจุดที่รับรองไว้ **ยังถูกพิมพ์ออกมาครบ** แค่ไม่นับเป็น "ที่ต้องดู"
+         ⇒ ซ่อนไม่ได้ · ใครมารีวิวยังเห็นทั้งจุดและเหตุผล แล้วเถียงได้ถ้าไม่เห็นด้วย
+   วิธีเขียน:  // ตรวจแล้ว: <เหตุผลว่าทำไมจุดนี้ปลอดภัย>                              */
+const ACK = /(?:\/\/|\*)\s*ตรวจแล้ว:\s*(\S.{14,})/
+const isComment = (t) => t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')
+function ackReason(lines, i) {
+  for (let k = i - 1; k >= 0 && k >= i - 6; k--) {
+    const t = lines[k].trim()
+    if (!t) continue
+    const m = ACK.exec(t)
+    if (m) return m[1].trim()
+    if (!isComment(t)) return null   // มีโค้ดคั่น ⇒ คอมเมนต์ข้างบนไม่ได้กำกับบรรทัดนี้
+  }
+  return null
+}
+
 let hits = 0
 const found = []
+const acked = []
 for (const f of apiFiles) {
   const src = readFileSync(f, 'utf8')
   for (const r of API_RULES) {
@@ -114,10 +140,12 @@ for (const f of files) {
   lines.forEach((line, i) => {
     // ข้ามคอมเมนต์ — ในโปรเจกต์นี้คอมเมนต์อธิบายบั๊กเก่าเยอะมาก จะกลายเป็นเสียงหอนทันที
     const t = line.trim()
-    if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*')) return
+    if (isComment(t)) return
     for (const r of RULES) {
       if (!r.match.test(line)) continue
       if (r.skipLine && r.skipLine.test(line)) continue
+      const why = ackReason(lines, i)
+      if (why) { acked.push({ rule: r.id, at: `${f}:${i + 1}`, code: t.slice(0, 70), why }); continue }
       hits++
       found.push({ rule: r.id, why: r.why, at: `${f}:${i + 1}`, code: t.slice(0, 88) })
     }
@@ -140,4 +168,11 @@ if (hits) {
 } else {
   console.log('✅ ไม่เจอท่าที่รู้จัก')
 }
+/* จุดที่รับรองไว้ — พิมพ์เสมอ แม้ไม่มีของต้องดูเลย เพื่อไม่ให้กลายเป็นที่ซ่อนของ */
+if (acked.length) {
+  console.log(`\n🔖 รับรองไว้ ${acked.length} จุด (ตรวจแล้วว่าปลอดภัย — ไม่นับเป็นที่ต้องดู)`)
+  for (const a of acked) console.log(`   ${a.at}  ${a.code}\n     เหตุผล: ${a.why}`)
+  console.log('   ⚠️ ไม่เห็นด้วยกับเหตุผลไหน ให้ถอดคอมเมนต์ "ตรวจแล้ว:" ออก แล้วมันจะกลับมาเป็นของต้องดูทันที')
+}
+
 console.log('\n🧪 วิธีตรวจของจริง (ตัวตรวจนี้ไม่ได้แทน): node scripts/fake-pipe.mjs 4010 500')

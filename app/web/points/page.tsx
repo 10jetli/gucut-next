@@ -29,6 +29,7 @@ export default function WebPointsPage() {
         if (!d || typeof d !== 'object') throw new Error('ตอบมาไม่ใช่ค่าตั้งแต้ม')
         return d as Cfg
       })
+      // ตรวจแล้ว: ด่านข้างบนเช็ค res.ok + d.error + ชนิดเป็น object แล้ว ⇒ ก้อน error ไม่กลายเป็นค่าตั้งแต้ม
       .then(setCfg)
       .catch(() => setMsg('โหลดค่าไม่สำเร็จ — ยังไม่รู้ค่าที่ตั้งไว้ อย่าเพิ่งตั้งใหม่ทับ'))
   }, [])
