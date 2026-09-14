@@ -45,11 +45,23 @@ export default function SoonPage({ params }: { params: { key: string } }) {
           {info ? (
             <>
               <p className="text-[14px] text-gray-800 mt-3 leading-relaxed">{info.what}</p>
+              {/* 🔴 **ประโยค "ต้อง Export Excel" เคยผูกตายตัวไว้กับ `impossible` — ผิด 16 จาก 19 หน้า**
+                     (เจอ 14 ก.ย. 2569 ตอนจะติดป้ายปุ่มกลุ่มสินค้าชุด)
+                     คีย์ที่มี impossible มี 19 อัน แต่ส่วนใหญ่ **ไม่มีข้อมูลอะไรให้ export**
+                     (ล้างข้อมูลทั้งระบบ · เพิ่มสิทธิ์ · ตั้งค่าเอกสาร · วิธีชำระเงิน · Lead Time …)
+                     ⇒ จอสั่งงานด่วนที่ไม่มีอยู่จริงให้คนไปทำ และสั่งเหมือนกันหมดทุกหน้า
+                     ⇒ ตอนนี้แยกเป็นช่อง `exportByHand` ที่ต้องเขียนว่า **มีอะไรค้างอยู่เท่าไหร่**
+                        ไม่มีของค้าง = ไม่มีประโยคนี้ */}
               {info.impossible && (
                 <p className="text-[13px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
                   <b>ทำไม่ได้เพราะ:</b> {info.impossible}
-                  <br />
-                  ⇒ ของชุดนี้ต้อง <b>กด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> ทำหลังปิดไม่ได้อีก
+                  {info.exportByHand && (
+                    <>
+                      <br />
+                      ⇒ และ<b>มีของค้างอยู่ใน ZORT: {info.exportByHand}</b> ⇒ ต้อง
+                      {' '}<b>กด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> ทำหลังปิดไม่ได้อีก
+                    </>
+                  )}
                 </p>
               )}
               {info.awaitingDecision && (
