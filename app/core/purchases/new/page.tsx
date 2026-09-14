@@ -165,10 +165,24 @@ function NewPurchaseOrderInner() {
         <span className="text-[13px] text-gray-600">
           {clean.length === 0 ? <span className="text-gray-400">ยังไม่มีบรรทัดที่ใช้ได้</span>
             : priced === clean.length ? <>รวม <b>{fmtMoney(total)}</b> ({clean.length} บรรทัด)</>
-              : <>รวมเฉพาะ <b>{priced}</b> บรรทัดที่ใส่ราคา = <b>{fmtMoney(total)}</b>
-                {' '}<span className="text-amber-700">· อีก {clean.length - priced} บรรทัดปล่อยให้ ZORT คิดเอง</span></>}
+              : <>รวมเฉพาะ <b>{priced}</b> บรรทัดที่ใส่ราคา = <b>{fmtMoney(total)}</b></>}
         </span>
       </div>
+
+      {/* 🔴 ข้อความเดิมตรงนี้เขียนว่า "ปล่อยให้ ZORT คิดเอง" — **ไม่จริง** (แก้ 14 ก.ย. 2569)
+          กฎที่พิสูจน์แล้ว [[zort-sends-all-money-fields]]: ZORT ไม่คิดเงินให้สักชั้น
+          ต้องส่งครบ pricepernumber → totalprice → amount · ขาดชั้นไหนใบเป็น 0 บาทเงียบ ๆ
+          (ยิงโหมดซ้อมของจริงดูแล้ว 14 ก.ย. — บรรทัดที่ไม่ใส่ราคาถูกส่งไปโดยไม่มีช่องราคาเลย
+           และทั้งใบไม่มี amount หัวใบ · ท่อจงใจไม่ส่ง ดีกว่าส่งศูนย์)
+          ⚠️ หน้านี้ปุ่มส่งจริงยังปิดอยู่ แต่ข้อความต้องจริงตั้งแต่ตอนนี้
+             ไม่งั้นวันที่เปิดสวิตช์ คนจะเชื่อข้อความเก่าแล้วส่งใบ 0 บาทเข้า ZORT ที่ลบไม่ได้ */}
+      {clean.length > 0 && priced < clean.length && (
+        <div className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+          ⚠️ <b>มี {clean.length - priced} บรรทัดที่ยังไม่ใส่ราคา</b> — <b>ZORT ไม่คิดราคาให้เอง</b>
+          {' '}ถ้าส่งจริง บรรทัดพวกนั้นจะกลายเป็น <b>0 บาท</b> และใบนี้จะ<b>ไม่มียอดรวมหัวใบ</b>
+          {' '}· ZORT <b>ไม่มีเส้นลบใบสั่งซื้อ</b> ใบที่ผิดจะค้างถาวร
+        </div>
+      )}
 
       {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
       <WriteResult r={res} />

@@ -228,10 +228,26 @@ export default function NewQuotationPage() {
             ? <span className="text-gray-400">ยังไม่มีบรรทัดที่ใช้ได้</span>
             : priced === clean.length
               ? <>รวม <b>{fmtMoney(total)}</b> ({clean.length} บรรทัด)</>
-              : <>รวมเฉพาะ <b>{priced}</b> บรรทัดที่ใส่ราคา = <b>{fmtMoney(total)}</b>
-                {' '}<span className="text-amber-700">· อีก {clean.length - priced} บรรทัดปล่อยให้ ZORT คิดราคาเอง</span></>}
+              : <>รวมเฉพาะ <b>{priced}</b> บรรทัดที่ใส่ราคา = <b>{fmtMoney(total)}</b></>}
         </span>
       </div>
+
+      {/* 🔴 **ข้อความเดิมตรงนี้เขียนว่า "ปล่อยให้ ZORT คิดราคาเอง" ซึ่งไม่จริง** (แก้ 14 ก.ย. 2569)
+          กฎที่พิสูจน์แล้ว [[zort-sends-all-money-fields]]: **ZORT ไม่คิดเงินให้เลยสักชั้น**
+          ต้องส่งเองครบสามชั้น pricepernumber → totalprice → amount · ขาดชั้นไหนใบเป็น 0 บาทเงียบ ๆ
+          ยิงโหมดซ้อมดูของจริง 14 ก.ย.:
+            บรรทัดที่ใส่ราคา  → {'{'}pricepernumber:100, totalprice:100{'}'}
+            บรรทัดที่ไม่ใส่ → {'{'}sku, number{'}'} เท่านั้น **ไม่มีช่องราคาเลย**
+            และทั้งใบ **ไม่มี amount หัวใบ** (ท่อจงใจไม่ส่ง ดีกว่าส่งศูนย์)
+          ⇒ ใบที่ออกมาจะมีบรรทัดราคา 0 และยอดหัวใบหาย — ส่งให้ลูกค้าไม่ได้
+          🔴 หน้านี้ **เขียนเข้า ZORT จริง** และ ZORT **ลบใบผ่าน API ไม่ได้** ⇒ ต้องเตือนก่อนกด ไม่ใช่หลังกด */}
+      {clean.length > 0 && priced < clean.length && (
+        <div className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+          ⚠️ <b>มี {clean.length - priced} บรรทัดที่ยังไม่ใส่ราคา</b> — <b>ZORT ไม่คิดราคาให้เอง</b>
+          {' '}ถ้าส่งตอนนี้ บรรทัดพวกนั้นจะกลายเป็น <b>0 บาท</b> และใบนี้จะ<b>ไม่มียอดรวมหัวใบ</b>
+          {' '}· ใบที่ส่งผิดแล้ว <b>ลบผ่าน API ไม่ได้</b> ต้องเข้าไปจัดการใน ZORT เอง
+        </div>
+      )}
 
       {err && (
         <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>
