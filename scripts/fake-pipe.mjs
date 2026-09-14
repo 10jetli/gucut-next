@@ -586,7 +586,19 @@ const srv = createServer(async (req, res) => {
       ],
       unnamed: { orders: 88, sales: 120000, lastDay: '2026-09-08' },
       totalOrders: 103, totalSales: 173400, distinctNames: 2,
-      historyFrom: '2026-06-01', monthly: [],
+      /* 🔴 **เดิมเป็น `monthly: []`** ⇒ กราฟแนวโน้มในจอ /core/customer-report ไม่เคยวาดเลย
+         แม้แต่ในโหมด good ⇒ จอขึ้นข้อความสำรองว่า "ท่อยังไม่ส่งข้อมูลรายเดือนมา"
+         แล้วผมไปรายงาน CEO ว่าท่อจริงไม่ส่ง (14 ก.ย. 2569) — **ซึ่งไม่จริง ท่อจริงส่งครบ**
+         📌 บทเรียน: **ท่อปลอมที่ขาดมิติหนึ่ง ทำให้เราเห็นจอพูดเหมือนท่อจริงพัง**
+            ⇒ ก่อนรายงานว่าท่อไม่ส่งอะไร ต้องยิงของจริงเทียบก่อนเสมอ
+               ไม่มีคีย์ยิงเอง = ฝากคนที่มียิงให้ ไม่ใช่สรุปจากท่อปลอม */
+      historyFrom: '2026-06-01',
+      monthly: [
+        { ym: '2026-06', newCustomers: 12, repeatCustomers: 4 },
+        { ym: '2026-07', newCustomers: 9, repeatCustomers: 7 },
+        { ym: '2026-08', newCustomers: 15, repeatCustomers: 11 },
+        { ym: '2026-09', newCustomers: 6, repeatCustomers: 9 },
+      ],
     }))
   }
   /* ใบคืนสินค้า: รายการ + รายใบ (จอ /core/return-orders → /detail)
@@ -662,6 +674,9 @@ const srv = createServer(async (req, res) => {
       ok: true,
       rows: [{ name: 'หมวดทดสอบ 218', skus: 218, onhand_value: 1000, available_value: 900, zort: true }],
       total: 1,
+      /* ท่อจริงส่งจำนวนหมวดทั้งหมดมาด้วย (ยืนยัน 14 ก.ย. 2569) — ท่อปลอมเคยไม่ส่ง
+         ⇒ จอขึ้น "จำนวน ไม่รู้ (ท่อไม่ได้ส่งมา) หมวด" ซึ่งเป็นอาการของท่อปลอม ไม่ใช่ของจริง */
+      categories: 1,
     }))
   }
   if (mode === 'good' && /[?&]list=stock\b/.test(req.url) && /[?&]category=/.test(req.url)) {
