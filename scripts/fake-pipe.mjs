@@ -21,6 +21,8 @@
 //   node scripts/fake-pipe.mjs 4010 skip    ← สถานะที่สาม "ทำต่อไม่ได้" (ต้องขึ้นเหลือง ไม่ใช่แดง)
 //   node scripts/fake-pipe.mjs 4010 nocounts ← มีงานค้างแต่ไม่มียอดแยกกอง (เทสคำเตือน "ใบผี")
 //   node scripts/fake-pipe.mjs 4010 mkstale ← คอลัมน์ Marketplace เป็นของเก่า (เทสแถบ MarketStaleBar)
+//   node scripts/fake-pipe.mjs 4010 stalestock  ← ?list=bundles ซิงก์สต็อกค้าง 3 ชม. (เทสแถบแดง "ซิงก์น่าจะหยุด")
+//   node scripts/fake-pipe.mjs 4010 nostocktime ← ?list=bundles ไม่ส่ง stockSyncedAt (เทส "ยังไม่รู้" ห้ามเขียนว่าหยุด)
 //   node scripts/fake-pipe.mjs 4010 zcount ← เส้น ?zortlist= บอก count 350 แต่ส่งแถวมาแค่หน้าแรก
 //                                              (เทสคำเตือน "มีทั้งหมด N แสดง M" ซึ่งของจริงยังไม่มีชุดใหญ่ให้ลอง)
 // แล้วอีกหน้าต่าง:
@@ -875,6 +877,33 @@ const srv = createServer(async (req, res) => {
       unreadable: 2,
     }))
   }
+  /* สินค้าเป็นชุด (?list=bundles) — มีไว้เดิน **สามทาง** ของแถบอายุตัวเลขคงเหลือ/พร้อมขาย
+     🔴 ของจริงซิงก์ตรงเวลาอยู่ ⇒ ทาง "ซิงก์หยุด" กับ "ไม่รู้เวลา" จะไม่มีวันถูกเห็นบน production
+        (บทเรียนที่จดไว้: ตาข่ายที่เห็นแต่ทางที่ถูก พิสูจน์ไม่ได้ว่าทางที่พังจะพูดถูก)
+       · mode=good        ⇒ ซิงก์เมื่อ 5 นาทีก่อน (เขียว)
+       · mode=stalestock  ⇒ ซิงก์เมื่อ 3 ชม.ก่อน  (แดง "ตัวซิงก์น่าจะหยุด")
+       · mode=nostocktime ⇒ ไม่ส่ง stockSyncedAt เลย (เทา "ยังไม่รู้" **ห้ามเขียนว่าหยุด**)
+     ⚠️ พร้อมขาย = 0 ในแถวแรก ⇒ ต้องขึ้นเครื่องหมาย ⚠ "0 อาจหมายถึงติดลบ"
+        และแถวที่สองคงเหลือติดลบจริง ⇒ แดง · แถวที่สามไม่มีตัวเลขเลย ⇒ ขีด */
+  if (/[?&]list=bundles(&|$)/.test(req.url) && ['good', 'stalestock', 'nostocktime'].includes(mode)) {
+    const iso = (minAgo) => new Date(Date.now() - minAgo * 60_000).toISOString().replace('T', ' ').slice(0, 19)
+    const body = {
+      ok: true, total: 3, active: 3, inactive: 0, negative: 1, limit: 50, offset: 0,
+      recipeAt: '2026-09-03 02:12:25',
+      recipeCheckedAt: iso(20),
+      note: 'ท่อปลอม — ห้ามเอาไปสรุปเรื่องของจริง',
+      rows: [
+        { sku: 'FAKE-A', name: 'ชุดทดสอบ พร้อมขายเป็นศูนย์', sellprice: 6700, onhand: 18, available: 0, active: 1, unit: 'SET', itemCount: 4, itemsValue: 6975 },
+        { sku: 'FAKE-B', name: 'ชุดทดสอบ คงเหลือติดลบ', sellprice: 1200, onhand: -4, available: -4, active: 1, unit: 'SET', itemCount: 2, itemsValue: null },
+        { sku: 'FAKE-C', name: 'ชุดทดสอบ ไม่มีตัวเลขเลย', active: 1, unit: 'SET', itemCount: 1 },
+      ],
+    }
+    if (mode === 'good') body.stockSyncedAt = iso(5)
+    if (mode === 'stalestock') body.stockSyncedAt = iso(180)
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify(body))
+  }
+
   /* SKU ที่คลังไม่รู้จัก (?list=missing-sku) — จอต้องใช้เลขจากท่อ ไม่ใช่นับจากแถว
      ⚠️ จงใจให้ **แถวที่ส่งมาน้อยกว่ายอดที่ประกาศ** เพื่อทดสอบว่าจอขึ้นป้ายเตือน
         และเลขบนปุ่มยังถูกต้อง (มาจากท่อ ไม่ได้นับจากแถวที่ขาด) */

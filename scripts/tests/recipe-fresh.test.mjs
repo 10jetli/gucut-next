@@ -23,7 +23,8 @@ try {
     '--lib', 'es2020', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
-  const { recipeFreshness, toThai, thaiMoment, RECIPE_STALE_HOURS } = await import(join(out, 'recipe-fresh.js'))
+  const { recipeFreshness, toThai, thaiMoment, RECIPE_STALE_HOURS,
+    stockSyncFreshness, STOCK_STALE_MINUTES, agoText } = await import(join(out, 'recipe-fresh.js'))
 
   const ok = (name, cond, extra = '') => {
     if (cond) console.log(`  ✅ ${name}`)
@@ -73,6 +74,37 @@ try {
     ok('ใส่ถูกทาง ⇒ ok', right.state === 'ok')
     ok('🔴 สลับทาง ⇒ stale ทันที (เทสนี้คือที่ดักความผิดพลาดนั้น)', swapped.state === 'stale',
       JSON.stringify(swapped))
+  }
+  console.log('⑤ 🔴 ความสดของ "ตัวเลขสต็อกชุด" — คนละนาฬิกากับสูตร (ท่อซิงก์ทุกครึ่งชั่วโมง)')
+  {
+    /* ที่มา: จอโชว์ 00073-11.8-NW คงเหลือ 41 พร้อมขาย 23 · ZORT 18 / -10
+       เพราะตาราง bundles ไม่มีอะไรซิงก์เลย ⇒ ต้องโชว์อายุของตัวเลข ไม่ใช่โชว์เลขเปล่า */
+    const a = stockSyncFreshness('2026-09-14T14:50:00Z', NOW)   // 10 นาที
+    ok('ซิงก์เมื่อ 10 นาทีก่อน ⇒ ok', a.state === 'ok' && a.ageMinutes === 10, JSON.stringify(a))
+    const b = stockSyncFreshness('2026-09-14T13:29:00Z', NOW)   // 91 นาที
+    ok(`เกิน ${STOCK_STALE_MINUTES} นาที ⇒ stale`, b.state === 'stale' && b.ageMinutes === 91, JSON.stringify(b))
+    const edge = stockSyncFreshness('2026-09-14T13:30:00Z', NOW) // 90 นาทีพอดี
+    ok('90 นาทีพอดี ⇒ ยัง ok (เกินเท่านั้นถึงเตือน)', edge.state === 'ok', JSON.stringify(edge))
+    for (const v of [null, undefined, '']) {
+      const r = stockSyncFreshness(v, NOW)
+      ok(`stockSyncedAt = ${JSON.stringify(v)} ⇒ unknown (ไม่ใช่ stale)`, r.state === 'unknown' && r.ageMinutes === null)
+    }
+    ok('🔴 แปลง UTC → ไทยเหมือนกันทั้งสองตัว (ไม่ลืม +7 ที่ตัวใหม่)',
+      thaiMoment(stockSyncFreshness('2026-09-14T15:27:07Z', NOW).syncedThai).startsWith('14 ก.ย. 2569 22:27'),
+      thaiMoment(stockSyncFreshness('2026-09-14T15:27:07Z', NOW).syncedThai))
+
+    /* 🔴 กับดักที่ฝั่งท่อกำชับ: เอาเวลาของ "สูตร" มาใช้กับ "สต็อก"
+       recipeAt ของจริงค้างอยู่ที่ 3 ก.ย. ⇒ ถ้าเอามาใช้ คอลัมน์คงเหลือจะขึ้นแดงตลอดกาล
+       ทั้งที่สต็อกซิงก์ตรงเวลา ⇒ เทสนี้ยืนยันว่าสองค่าให้ผลต่างกันจริง */
+    ok('🔴 ใส่ recipeAt (3 ก.ย.) แทน stockSyncedAt ⇒ stale ทันที — เทสนี้ดักการสลับ',
+      stockSyncFreshness('2026-09-03T02:12:23Z', NOW).state === 'stale')
+    ok('   ขณะที่ stockSyncedAt ของจริงรอบเดียวกัน ⇒ ok',
+      stockSyncFreshness('2026-09-14T15:27:07Z', NOW).state === 'ok')
+
+    ok('คำอ่านอายุ: 8 นาที', agoText(8) === '8 นาทีที่แล้ว', agoText(8))
+    ok('คำอ่านอายุ: 190 นาที ⇒ ชม.+นาที', agoText(190) === '3 ชม. 10 น.ที่แล้ว', agoText(190))
+    ok('คำอ่านอายุ: 120 นาที ⇒ ไม่มีเศษนาที', agoText(120) === '2 ชม.ที่แล้ว', agoText(120))
+    ok('คำอ่านอายุ: null ⇒ "ไม่รู้" (ไม่ใช่ 0 นาที)', agoText(null) === 'ไม่รู้', agoText(null))
   }
 } finally {
   rmSync(out, { recursive: true, force: true })

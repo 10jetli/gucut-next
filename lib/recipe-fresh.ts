@@ -71,3 +71,44 @@ export function thaiMoment(d: Date | null): string {
   const mm = String(d.getUTCMinutes()).padStart(2, '0')
   return `${d.getUTCDate()} ${TH_MONTH_SHORT[d.getUTCMonth()]} ${d.getUTCFullYear() + 543} ${hh}:${mm} น.`
 }
+
+/* ── ความสดของ "ตัวเลขสต็อกชุด" (คงเหลือ / พร้อมขาย) ────────────────────────
+ * 🔴 **คนละเรื่องกับความสดของสูตร ห้ามใช้ปนกัน** (ฝั่งท่อกำชับ 14 ก.ย. 2569)
+ *    · สูตรชุด (มีอะไรอยู่ในชุด)       ⇒ `recipeCheckedAt` · ซิงก์ทุกชั่วโมง
+ *    · ตัวเลขสต็อกชุด (คงเหลือ/พร้อมขาย) ⇒ `stockSyncedAt`  · ซิงก์ทุกครึ่งชั่วโมง
+ *    เอา recipeCheckedAt/recipeAt มาเขียนกำกับคอลัมน์คงเหลือ = โกหกคนอ่าน
+ *
+ * 🔴 **ที่มา**: จอเราโชว์ชุด 00073-11.8-NW คงเหลือ 41 พร้อมขาย 23 · ZORT คงเหลือ 18 พร้อมขาย -10
+ *    ต้นเหตุ = ตาราง bundles ไม่มีอะไรซิงก์ให้เลย ค้างที่ 187/360 ชุด
+ *    ⇒ ฝั่งท่อแก้แล้ว (gucut-web 587eb18) **และจอต้องโชว์อายุของตัวเลข**
+ *       ไม่งั้นรอบหน้าที่ซิงก์หยุด จอจะยืนยันเลขเก่าอย่างมั่นใจเหมือนเดิม
+ * ⚠️ null = "ไม่รู้" ไม่ใช่ "ซิงก์หยุด" (เหตุผลเดียวกับ checkedAt ข้างบน)
+ */
+
+/** เกินกี่นาทีถือว่าซิงก์สต็อกชุดหยุด — ท่อซิงก์ทุก 30 นาที เผื่อพลาดสองรอบ */
+export const STOCK_STALE_MINUTES = 90
+
+export interface StockFreshness {
+  state: RecipeState
+  /** อายุของการซิงก์ล่าสุด (นาที) · null = ไม่รู้ */
+  ageMinutes: number | null
+  /** เวลาซิงก์ล่าสุด แปลงเป็นเวลาไทยแล้ว · null = ไม่รู้ */
+  syncedThai: Date | null
+}
+
+export function stockSyncFreshness(syncedAtUtc?: string | null, now = Date.now()): StockFreshness {
+  const syncedThai = toThai(syncedAtUtc)
+  if (!syncedThai) return { state: 'unknown', ageMinutes: null, syncedThai: null }
+  const ageMinutes = Math.round((now - (syncedThai.getTime() - 7 * 3600_000)) / 60_000)
+  return { state: ageMinutes > STOCK_STALE_MINUTES ? 'stale' : 'ok', ageMinutes, syncedThai }
+}
+
+/** "8 นาทีที่แล้ว" / "3 ชม. 10 น.ที่แล้ว" — อ่านง่ายกว่าเลขนาทีดิบเมื่อค้างนาน */
+export function agoText(minutes: number | null): string {
+  if (minutes === null) return 'ไม่รู้'
+  if (minutes < 1) return 'เมื่อสักครู่'
+  if (minutes < 60) return `${minutes} นาทีที่แล้ว`
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m ? `${h} ชม. ${m} น.ที่แล้ว` : `${h} ชม.ที่แล้ว`
+}

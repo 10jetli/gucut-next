@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
-import { recipeFreshness, thaiMoment } from '@/lib/recipe-fresh'
+import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
@@ -61,6 +61,10 @@ interface Resp {
   recipeAt?: string | null
   /** ไปถาม ZORT ล่าสุดเมื่อไหร่ (UTC) · null = ไม่รู้ ⇒ **ห้ามเขียนว่าซิงก์หยุด** */
   recipeCheckedAt?: string | null
+  /** 🔴 **ซิงก์ตัวเลขสต็อกชุด (คงเหลือ/พร้อมขาย) ครบรอบล่าสุด (UTC)** · null = ไม่รู้
+   *  ⚠️ **คนละนาฬิกากับ recipeCheckedAt** — อันนั้นคือสูตร (ทุกชั่วโมง) อันนี้คือตัวเลข (ทุกครึ่งชั่วโมง)
+   *     เอามาปนกันคือสิ่งที่ฝั่งท่อกำชับห้าม (ดู lib/recipe-fresh.ts) */
+  stockSyncedAt?: string | null
   checkedMarketplaces?: string[]
   /** เจ้าที่ยิงแล้วล่ม + เหตุผล · เจ้าที่ยังไม่ได้เชื่อมร้าน + เหตุผล · เวลาที่ถามล่าสุด (UTC)
    *  ⚠️ "ล่ม" กับ "ยังไม่ได้เชื่อม" คนละเรื่อง — อันหลังเจ้าของร้านกดเองได้เลย */
@@ -82,13 +86,27 @@ interface Resp {
 
 const PAGE = 50
 
-/** จำนวนพร้อมหน่วย เช่น "15 SET" — ติดลบเป็นสีแดงเหมือน ZORT */
-function Qty({ n, unit }: { n?: number; unit?: string }) {
+/** จำนวนพร้อมหน่วย เช่น "15 SET" — ติดลบเป็นสีแดงเหมือน ZORT
+ *
+ *  🔴 `maybeNegative` = คอลัมน์ที่ **ศูนย์อาจไม่ใช่ศูนย์จริง** (ใช้กับ "พร้อมขาย" เท่านั้น)
+ *     ฝั่งท่อยิงค่าดิบเทียบเมื่อ 22:10 (14 ก.ย. 2569): ชุด 00073-11.8-NW
+ *     ZORT API ส่ง `availablestock = '0'` ขณะที่ **จอ ZORT เองโชว์ -10** (ทั้งรายการสรุปและรายละเอียด)
+ *     สาเหตุยังไม่รู้ ⇒ ระหว่างนี้ **ห้ามปล่อยให้ 0 อ่านว่า "ยังมีของพอดี ๆ ไม่ติดลบ"**
+ *     เพราะคนจะรับออเดอร์ต่อทั้งที่ของขาดอยู่ — ตระกูลเดียวกับ "ไม่รู้ถูกแสดงเป็น 0"
+ *     ⚠️ ทำเป็นคำกำกับ **ไม่ใช่เดาค่าเป็น -10** — เราไม่รู้ว่าติดลบเท่าไหร่หรือติดลบจริงไหม */
+function Qty({ n, unit, maybeNegative }: { n?: number; unit?: string; maybeNegative?: boolean }) {
   if (typeof n !== 'number') return <span className="text-gray-300">—</span>
   const u = (unit || 'SET').trim()
+  const suspect = maybeNegative && n === 0
   return (
     <span className={n < 0 ? 'text-red-500 font-semibold' : 'text-gray-800'}>
       {fmtNum(n)}{u ? ` ${u}` : ''}
+      {suspect && (
+        <span className="text-amber-600 font-semibold cursor-help ml-0.5"
+          title="0 อาจหมายถึงติดลบ — ZORT API ไม่ส่งค่าติดลบของพร้อมขาย (ยิงค่าดิบเทียบแล้ว 14 ก.ย. 2569: API ส่ง 0 ขณะที่จอ ZORT โชว์ -10) ⇒ ห้ามอ่านว่าของยังไม่ขาด">
+          ⚠
+        </span>
+      )}
     </span>
   )
 }
@@ -144,6 +162,9 @@ export default function CoreBundlesPage() {
   /* ความสดของการซิงก์สูตรชุด — ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว (มีเทสคุม)
      ⚠️ ส่ง checkedAt ก่อน changedAt **ห้ามสลับ** — สลับแล้วจอจะขึ้นว่าซิงก์หยุดทั้งที่ปกติ */
   const fresh = recipeFreshness(data?.recipeCheckedAt, data?.recipeAt ?? data?.collectedAt)
+  /* 🔴 **นาฬิกาที่สอง** — ความสดของ *ตัวเลข* คงเหลือ/พร้อมขาย (คนละอันกับความสดของ *สูตร*)
+     ⚠️ ห้ามส่ง recipeCheckedAt/recipeAt เข้าตัวนี้ (ฝั่งท่อกำชับ · เทสข้อ ⑤ ดักไว้) */
+  const stock = stockSyncFreshness(data?.stockSyncedAt)
 
   const rows = data?.rows ?? []
   const shown = offset + rows.length
@@ -221,9 +242,15 @@ export default function CoreBundlesPage() {
                 {' '}<span className="opacity-70">(ชุดที่ไม่มีใครแก้ เวลานี้จะไม่ขยับ — คนละอันกับเวลาตรวจ)</span>
               </span>
             )}
+            {/* ⚠️ เลขนี้นับจาก **คงเหลือ** เท่านั้น — ต้องเขียนให้ชัด ไม่งั้นคนอ่านว่าครอบพร้อมขายด้วย
+                   แล้วเชื่อว่า "พร้อมขายไม่ติดลบเลย" ทั้งที่ ZORT API ไม่ส่งค่าติดลบของพร้อมขายมาให้เรานับ */}
             {typeof data.negative === 'number' && data.negative > 0 && (
-              <> · ตอนนี้มีชุดที่คงเหลือ<b>ติดลบ {fmtNum(data.negative)} ชุด</b> —
-                ZORT เองก็มีติดลบเหมือนกัน แปลว่าแม้แต่ต้นทางก็ตามไม่ทัน</>
+              <span className="block mt-1">
+                ตอนนี้มีชุดที่<b>คงเหลือ</b>ติดลบ <b>{fmtNum(data.negative)} ชุด</b> —
+                ZORT เองก็มีติดลบเหมือนกัน แปลว่าแม้แต่ต้นทางก็ตามไม่ทัน
+                {' '}<span className="opacity-70">(นับจากคอลัมน์คงเหลือเท่านั้น —
+                  <b> พร้อมขายติดลบกี่ชุด เรานับไม่ได้</b> เพราะ ZORT API ส่งมาเป็น 0)</span>
+              </span>
             )}
           </div>
 
@@ -235,6 +262,32 @@ export default function CoreBundlesPage() {
 
           {/* 🕰 คอลัมน์ Marketplace มาจากแคชเซิร์ฟเวอร์ที่ "คืนของเก่าก่อน" ได้ — แถบนี้ห้ามถอด */}
           <MarketStaleBar stale={data.marketplacesStale} staleMs={data.marketplacesStaleMs} at={data.marketplacesAt} />
+
+          {/* 🔴 **อายุของตัวเลขคงเหลือ/พร้อมขาย ต้องอยู่ติดหัวคอลัมน์ ไม่ใช่ท้ายตาราง**
+              (เจ้าของร้านสั่งตรง 14 ก.ย. 2569 · ท้ายตารางไม่มีใครเห็น — บทเรียนเดิมของแถบ Marketplace)
+              ที่มา: จอเคยยืนยันคงเหลือ 41 พร้อมขาย 23 ขณะที่ ZORT เป็น 18 / -10
+                     เพราะตาราง bundles ไม่มีอะไรซิงก์ให้เลย (ค้าง 187/360)
+              ⇒ ตัวเลขที่ไม่บอกอายุ = คำยืนยันที่พิสูจน์ไม่ได้ · จัดชิดขวาให้อยู่แนวคอลัมน์สองอันนั้น */}
+          <div className={`flex justify-end text-[12px] leading-relaxed rounded-t-md px-3 py-1.5 border border-b-0 ${
+            stock.state === 'stale' ? 'text-amber-900 bg-amber-50 border-amber-300'
+              : stock.state === 'unknown' ? 'text-gray-600 bg-gray-50 border-gray-300'
+                : 'text-gray-600 bg-white border-gray-200'}`}>
+            <span>
+              {stock.state === 'ok' && (
+                <>🕰 <b>คงเหลือ / พร้อมขาย</b> ซิงก์จาก ZORT ล่าสุด <b>{thaiMoment(stock.syncedThai)}</b>
+                  {' '}({agoText(stock.ageMinutes)}) · ซิงก์ทุกครึ่งชั่วโมง</>
+              )}
+              {stock.state === 'stale' && (
+                <>🔴 <b>ตัวเลขคงเหลือ / พร้อมขาย อาจเก่ากว่าของจริง</b> — ซิงก์ล่าสุด
+                  {' '}<b>{thaiMoment(stock.syncedThai)}</b> ({agoText(stock.ageMinutes)})
+                  {' '}ทั้งที่ควรซิงก์ทุกครึ่งชั่วโมง ⇒ <b>เกิน {STOCK_STALE_MINUTES} นาทีแล้ว ตัวซิงก์น่าจะหยุด</b></>
+              )}
+              {stock.state === 'unknown' && (
+                <>⚠️ <b>ยังไม่รู้ว่าตัวเลขคงเหลือ / พร้อมขาย ซิงก์ล่าสุดเมื่อไหร่</b> (ท่อไม่ได้ส่งเวลามา)
+                  {' '}— ไม่ได้แปลว่าซิงก์หยุด แค่บอกอายุของตัวเลขไม่ได้</>
+              )}
+            </span>
+          </div>
           <TableWrap>
             <table className="w-full min-w-[940px]">
               <thead className="bg-white border-b border-gray-200">
@@ -244,8 +297,14 @@ export default function CoreBundlesPage() {
                   <th className={TH}>สินค้าเป็นชุด</th>
                   <th className={THR}>ราคาสินค้ารวม</th>
                   <th className={THR}>ราคาขาย</th>
-                  <th className={THR}>คงเหลือ</th>
-                  <th className={THR}>พร้อมขาย</th>
+                  {/* 🕰 สองคอลัมน์นี้คือของที่แถบอายุข้างบนกำกับอยู่ — ใส่นาฬิกาให้ชี้ตรงกัน
+                      ไม่งั้นแถบลอยอยู่ข้างบนแล้วคนเดาไม่ออกว่ามันพูดถึงคอลัมน์ไหน */}
+                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT ทุกครึ่งชั่วโมง — ดูอายุที่แถบเหนือตาราง (เกิน ${STOCK_STALE_MINUTES} นาทีถือว่าซิงก์หยุด)`}>
+                    คงเหลือ <span className="opacity-50 font-normal">🕰</span>
+                  </th>
+                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT ทุกครึ่งชั่วโมง — ดูอายุที่แถบเหนือตาราง · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
+                    พร้อมขาย <span className="opacity-50 font-normal">🕰</span>
+                  </th>
                   <th className={TH}>วันหมดอายุรายการ</th>
                   <th className={TH}>สถานะ</th>
                   <th className={TH}>Marketplace</th>
@@ -312,7 +371,7 @@ export default function CoreBundlesPage() {
                     </td>
                     <td className={TDR}>{typeof r.sellprice === 'number' ? fmtMoney(r.sellprice) : <span className="text-gray-300">—</span>}</td>
                     <td className={TDR}><Qty n={r.onhand} unit={r.unit} /></td>
-                    <td className={TDR}><Qty n={r.available} unit={r.unit} /></td>
+                    <td className={TDR}><Qty n={r.available} unit={r.unit} maybeNegative /></td>
                     <td className={`${TD} text-gray-400`}>-</td>
                     <td className={TD}>
                       {/* ZORT เขียนเป็นตัวหนังสือเขียว ไม่ใช่ป้ายกลม */}
