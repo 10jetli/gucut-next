@@ -10,7 +10,7 @@
 //
 // ⚠️ **ก่อนเปิดปุ่มส่งจริง ต้องตอบให้ได้ก่อนว่าร้านตั้งค่านั้นไว้ไหม** — ไม่ใช่แค่ "ยิงผ่านไหม"
 //    (ยิงผ่านแล้วสินค้าโผล่หน้าร้าน = ยิงผ่านแต่เสียหาย)
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
@@ -25,7 +25,17 @@ export default function NewProductPage() {
   const [err, setErr] = useState('')
   const [res, setRes] = useState<WriteResp | null>(null)
   const [okDry, setOkDry] = useState('')
-  const [ref] = useState(() => `PD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+  /* 🔴 **สร้างเลขอ้างอิงฝั่งเบราว์เซอร์เท่านั้น** (แก้ 14 ก.ย. 2569 · เจอตอนกวาดทุกหน้าด้วยเบราว์เซอร์จริง)
+     `useState(() => …Math.random()…)` ทำงาน **ทั้งตอน SSR และตอน hydrate** ⇒ ได้คนละค่า
+     React จึงฟ้อง "Text content did not match" แล้ว **ทิ้ง HTML ฝั่งเซิร์ฟเวอร์ทั้งหน้า**
+     ⇒ ไม่ได้ทำให้เลขซ้ำ (ค่าฝั่งเบราว์เซอร์ชนะเสมอ กลไกกันส่งซ้ำจึงยังดี)
+        แต่เป็น error จริงในคอนโซล ซึ่งกลบ error อื่นที่ควรเห็น และทำให้ทั้งหน้าเรนเดอร์ใหม่
+     ⚠️ **ห้ามเปลี่ยนกลไกกันส่งซ้ำ** — ยังต้องสร้างครั้งเดียวต่อการเปิดหน้าหนึ่งครั้ง
+        (deps ว่าง) ไม่ใช่สร้างใหม่ทุกครั้งที่กด ไม่งั้นกดสองครั้ง = ได้เอกสารสองใบใน ZORT ที่ลบไม่ได้ */
+  const [ref, setRef] = useState('')
+  useEffect(() => {
+    setRef(`PD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+  }, [])
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((v) => ({ ...v, [k]: e.target.value }))
   const sig = useMemo(() => JSON.stringify(f), [f])
@@ -105,11 +115,11 @@ export default function NewProductPage() {
       <WriteResult r={res} />
 
       <div className="flex flex-wrap items-center gap-3 mt-4">
-        <button onClick={() => send(false)} disabled={busy}
+        <button onClick={() => send(false)} disabled={busy || !ref}
           className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !dryOk || !REAL_SEND_ENABLED}
+        <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
           className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
           style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
           ส่งจริงเข้า ZORT

@@ -25,7 +25,7 @@
 //    ⇒ **"ทำใบให้ถูกตั้งแต่แรก" เปลี่ยนจากคำแนะนำชั่วคราว เป็นข้อจำกัดถาวรของจอ**
 //    ⚠️ **ห้ามเหมาว่าใบสั่งซื้อ/ใบคืนก็ยกเลิกไม่ได้** — สองตัวนั้นยังไม่เคยยิง
 //       (เห็นตัวหนึ่งพังแล้วเหมาพี่น้อง = เดา ไม่ใช่ผลตรวจ)
-import { useCallback, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
@@ -65,7 +65,17 @@ export default function NewQuotationPage() {
   /** เนื้อหาที่ "ซ้อมผ่านแล้ว" — เก็บเป็นลายเซ็นข้อความ เพื่อรู้ว่าหลังซ้อมมีการแก้อะไรอีกไหม */
   const [okDry, setOkDry] = useState('')
   /** 🔴 เลขอ้างอิงของใบนี้ — **สร้างครั้งเดียวตอนเปิดหน้า ห้ามสร้างใหม่ตอนกด** */
-  const [ref] = useState(() => `QT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+  /* 🔴 **สร้างเลขอ้างอิงฝั่งเบราว์เซอร์เท่านั้น** (แก้ 14 ก.ย. 2569 · เจอตอนกวาดทุกหน้าด้วยเบราว์เซอร์จริง)
+     `useState(() => …Math.random()…)` ทำงาน **ทั้งตอน SSR และตอน hydrate** ⇒ ได้คนละค่า
+     React จึงฟ้อง "Text content did not match" แล้ว **ทิ้ง HTML ฝั่งเซิร์ฟเวอร์ทั้งหน้า**
+     ⇒ ไม่ได้ทำให้เลขซ้ำ (ค่าฝั่งเบราว์เซอร์ชนะเสมอ กลไกกันส่งซ้ำจึงยังดี)
+        แต่เป็น error จริงในคอนโซล ซึ่งกลบ error อื่นที่ควรเห็น และทำให้ทั้งหน้าเรนเดอร์ใหม่
+     ⚠️ **ห้ามเปลี่ยนกลไกกันส่งซ้ำ** — ยังต้องสร้างครั้งเดียวต่อการเปิดหน้าหนึ่งครั้ง
+        (deps ว่าง) ไม่ใช่สร้างใหม่ทุกครั้งที่กด ไม่งั้นกดสองครั้ง = ได้เอกสารสองใบใน ZORT ที่ลบไม่ได้ */
+  const [ref, setRef] = useState('')
+  useEffect(() => {
+    setRef(`QT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+  }, [])
 
   const clean = useMemo(() => lines
     .map((l) => ({ sku: l.sku.trim(), qty: Number(l.qty), price: l.price.trim() === '' ? null : Number(l.price) }))
@@ -231,11 +241,11 @@ export default function NewQuotationPage() {
 
       {/* 🔴 ปุ่มส่งจริงปิดอยู่จนกว่าจะซ้อม "เนื้อหาชุดเดียวกัน" ผ่าน — ไม่ใช่แค่ "เคยกดซ้อม" */}
       <div className="flex flex-wrap items-center gap-3 mt-4">
-        <button onClick={() => send(false)} disabled={busy}
+        <button onClick={() => send(false)} disabled={busy || !ref}
           className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !dryOk || !REAL_SEND_ENABLED}
+        <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
           className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
           style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
           ส่งจริงเข้า ZORT
