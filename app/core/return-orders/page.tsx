@@ -29,6 +29,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
+import { toThai, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
@@ -49,6 +50,12 @@ interface Row {
 interface Resp {
   ok?: boolean; rows?: Row[]; total?: number | null; live?: boolean
   error?: string
+  /** ค่าที่ท่อใช้จริง — ใช้เป็นด่านเทียบกับคำค้นที่จอส่ง (ท่อส่งมาให้เพื่อการนี้) */
+  applied?: { q?: string | null; source?: 'mirror' | 'zort' }
+  /** มี q ⇒ อ่านจากกระจก ⇒ ต้องบอกว่าซิงก์เมื่อไหร่ · null = ไม่รู้ **ห้ามแปลว่าสด** */
+  syncedAtUtc?: string | null
+  /** false = กระจกยังไม่ครบ ⇒ ผลค้นอาจขาดใบ · null = ไม่รู้ */
+  syncComplete?: boolean | null
 }
 
 const LIMIT = 100
@@ -77,10 +84,17 @@ export default function ReturnOrdersPage() {
   /** ท่อรุ่นใหม่พอจะตัดสินได้ไหม (มีหัว x-core-build) — แยก 'ยังไม่ deploy' ออกจาก 'เส้นหาย' */
   const [known, setKnown] = useState(false)
 
-  const load = useCallback(async () => {
+  /* 🔍 **ค้นที่เซิร์ฟเวอร์แล้ว** (ท่อเปิดให้ 15 ก.ย. 2569 · gucut-web 8d4b031)
+     เดิมจอกรองคำค้นในเบราว์เซอร์จาก 100 แถวแรก ⇒ **ค้นใบที่ 101 ขึ้นไปไม่เจอเลย**
+     ทั้งที่ร้านมี 689 ใบ · และไฟล์ส่งออกก็กรองไม่ได้ตามไปด้วย
+     ⚠️ มี q ⇒ ท่ออ่านจาก **กระจก** (source: mirror · live:false) ไม่ใช่ ZORT สด
+        ⇒ ต้องเขียนบนจอว่าผลมาจากกระจกและซิงก์เมื่อไหร่ ไม่ใช่ปล่อยให้เข้าใจว่าสดเสมอ */
+  const load = useCallback(async (term = q) => {
     setLoading(true); setError(''); setNotDeployed(false)
     try {
-      const got = await coreJson<Resp>(`/api/web/core?list=returnorders&limit=${LIMIT}`, ['rows', 'live'])
+      const qs = new URLSearchParams({ list: 'returnorders', limit: String(LIMIT) })
+      if (term.trim()) qs.set('q', term.trim())
+      const got = await coreJson<Resp>(`/api/web/core?${qs}`, ['rows', 'live'])
       setKnown(got.known)
       /* 🔴 อ่าน error จาก **คำตอบดิบ** ไม่ใช่จากตัวที่กรองรูปแล้ว
          คำตอบที่ล้มเหลวไม่มีคีย์ประจำตัวของเส้นนี้ (มีแต่ error) ⇒ ถ้าดูแต่ตัวกรอง
@@ -97,15 +111,14 @@ export default function ReturnOrdersPage() {
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)
     } finally { setLoading(false) }
-  }, [])
-  useEffect(() => { load() }, [load])
+  }, [q])
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = Array.isArray(d?.rows) ? d!.rows! : []
-  const needle = q.trim().toLowerCase()
-  const shown = needle
-    ? rows.filter((r) => [r.number, r.reference, r.customer].some(
-      (v) => String(v ?? '').toLowerCase().includes(needle)))
-    : rows
+  /* 🔴 **ไม่กรองซ้ำในเบราว์เซอร์แล้ว** — เซิร์ฟเวอร์กรองมาให้ทั้งชุดแล้ว
+     กรองซ้ำที่นี่จะตัดแถวที่เซิร์ฟเวอร์จับคู่ได้แต่ตัวเราจับไม่ได้ (เช่นค้นจากช่องที่จอไม่ได้แสดง)
+     ⇒ ตัวเลขบนจอกับตัวเลขที่เซิร์ฟเวอร์นับจะไม่ตรงกันโดยไม่มีใครรู้ว่าทำไม */
+  const shown = rows
   const sumShown = rows.reduce((s, r) => s + (Number(r.amount) || 0), 0)
   const total = typeof d?.total === 'number' ? d.total : null
   /** ดึงมาไม่ครบทั้งหมดหรือเปล่า — ใช้ตัดสินว่าจะเขียนยอดรวมแบบไหน */
@@ -140,14 +153,20 @@ export default function ReturnOrdersPage() {
                 )}
                 {' | '}
                 <span className="text-gray-400">
-                  ใบคืนของ (CN-) อ่านสดจาก ZORT — <b>คนละฐานกับหน้า &ldquo;สินค้าที่ถูกคืนบ่อย&rdquo;</b>
+                  {/* 🔴 **"อ่านสดจาก ZORT" เป็นจริงเฉพาะตอนไม่ได้ค้น** (15 ก.ย. 2569)
+                      พอค้น ท่ออ่านจากกระจกแทน (source: mirror · live:false)
+                      ⇒ ปล่อยประโยคนี้ไว้ = จอยืนยันว่าสดทั้งที่ไม่ใช่ ⇒ ใบที่เพิ่งออกเมื่อครู่
+                         จะหายไปจากผลค้นโดยไม่มีคำอธิบาย */}
+                  ใบคืนของ (CN-) {d?.applied?.source === 'mirror'
+                    ? <>ตอนค้นหาอ่านจาก<b>กระจกของเรา</b> (ไม่ได้ค้น = อ่านสดจาก ZORT)</>
+                    : 'อ่านสดจาก ZORT'} — <b>คนละฐานกับหน้า &ldquo;สินค้าที่ถูกคืนบ่อย&rdquo;</b>
                 </span>
               </>
             )
         }
         actions={
           <>
-            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            <BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
             {/* 📤 ส่งออกใบคืนจากลูกค้า ครบทุกหน้า
                 🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** — กับดักเดิมที่ CLAUDE.md
                    จดไว้เรื่อง GetOrders และผมเองก็เคยเกือบสรุปผิดว่าดึงได้แค่ 200 ใบจาก 689
@@ -159,15 +178,19 @@ export default function ReturnOrdersPage() {
                 title: 'ใบคืนสินค้าจากลูกค้า',
                 note: 'ใบคืนที่ลูกค้าคืนเรา (CN-) — คนละชุดกับใบคืนที่เราส่งคืนผู้ขาย'
                   + ' · เลขที่ใบคืนซ้ำกันได้จริง (ยิงตรวจ 15 ก.ย. 2569: 689 ใบ เลขที่ไม่ซ้ำ 537) — ใช้คอลัมน์ id แยกใบ ห้ามลบแถวที่ดูซ้ำ',
-                /* 🔴 เช่นเดียวกับจอใบเสนอราคา — คำค้นหาของจอนี้กรองในเบราว์เซอร์
-                   ยิงตรวจแล้ว: ส่ง `q` ไปที่ `list=returnorders` ยอดยังเท่าเดิม 689 = ท่อเมินทิ้ง
-                   ⇒ ไฟล์ได้ทุกแถว ⇒ เขียนให้ตรง ห้ามอ้างว่ากรองแล้ว */
+                /* ✅ **ถอดคำเตือน "ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้" ออกแล้ว** (15 ก.ย. 2569)
+                   ท่อรับ `q` จริงแล้ว (gucut-web 8d4b031) และผม **ยิงดู `applied.q` จากคำตอบจริง
+                   ก่อนถอด** ไม่ได้ถอดตามคำบอกเล่าว่า deploy แล้ว (ฝั่งท่อกำชับข้อนี้เอง)
+                   📏 ยิงจริง: เลขที่ใบเป๊ะ ⇒ applied.q ตรง · source mirror · total 1
+                   ⚠️ มี q ⇒ ผลมาจากกระจก ไม่ใช่ ZORT สด ⇒ เขียนไว้ในหัวไฟล์ด้วย */
                 filters: q.trim()
-                  ? [['คำค้นหาบนจอ', `${q.trim()} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้ (ท่อไม่รองรับ) ได้ทุกแถว`]]
+                  ? [['คำค้นหา', `${q.trim()} — ค้นที่เซิร์ฟเวอร์ ครอบทุกใบ (ผลมาจากกระจกของเรา ไม่ใช่ ZORT สด)`]]
                   : [['คำค้นหา', '(ไม่ได้ค้น)']],
                 fetchPage: async (offsetAt, limit) => {
                   const page = Math.floor(offsetAt / limit) + 1
-                  const r = await fetch(`/api/web/core?list=returnorders&limit=${limit}&page=${page}`)
+                  const qs = new URLSearchParams({ list: 'returnorders', limit: String(limit), page: String(page) })
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
                   const d = await r.json()
                   if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
                   return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
@@ -214,10 +237,31 @@ export default function ReturnOrdersPage() {
           <SearchRow
             value={q}
             onChange={setQ}
-            onSubmit={() => {}}
-            placeholder="พิมพ์คำค้นหา"
-            advanced={<LinkText onClick={() => setQ('')}>ล้างคำค้น</LinkText>}
+            onSubmit={() => load()}
+            placeholder="ค้นเลขที่ใบคืน · เลขใบขายอ้างอิง · ชื่อลูกค้า"
+            advanced={<LinkText onClick={() => { setQ(''); load('') }}>ล้างคำค้น</LinkText>}
           />
+
+          {/* 🔴 **ผลค้นมาจากกระจก ไม่ใช่ ZORT สด — ต้องบอก** (ท่อกำชับ 15 ก.ย. 2569)
+              ไม่บอก = คนอ่านว่าเป็นของสดเสมอ แล้วใบที่เพิ่งออกเมื่อครู่จะหายไปโดยไม่มีคำอธิบาย */}
+          {d?.applied?.source === 'mirror' && (
+            <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mb-3 leading-relaxed">
+              🔍 ผลค้นนี้มาจาก<b>กระจกของเรา</b> ไม่ใช่การถาม ZORT สด
+              {d.syncedAtUtc
+                ? <> — ซิงก์ล่าสุด <b>{thaiMoment(toThai(d.syncedAtUtc))}</b></>
+                : <> — <b>ยังไม่รู้ว่าซิงก์ล่าสุดเมื่อไหร่</b> (ท่อไม่ได้บอกมา)</>}
+              {d.syncComplete === false && (
+                <><br /><span className="text-amber-800">🔴 <b>กระจกยังซิงก์ไม่ครบ</b> — ผลค้นอาจขาดบางใบ</span></>
+              )}
+              {/* ✅ ด่านเทียบคำค้นที่จอส่ง กับที่ท่อใช้จริง */}
+              {q.trim() && d.applied?.q !== q.trim() && (
+                <><br /><span className="text-amber-800">
+                  ⚠️ คำค้นที่จอส่ง (<b>{q.trim()}</b>) ไม่ตรงกับที่ท่อใช้จริง
+                  (<b>{d.applied?.q ?? 'ไม่ได้ใช้คำค้นเลย'}</b>) — ผลที่เห็นอาจไม่ใช่สิ่งที่ค้น
+                </span></>
+              )}
+            </p>
+          )}
 
           <TableWrap>
             <table className="w-full min-w-[860px]">
@@ -280,7 +324,10 @@ export default function ReturnOrdersPage() {
           </TableWrap>
 
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
-            อ่านสดจาก ZORT ทุกครั้งที่เปิดจอ (ไม่ได้ผ่านคลังเงา) ·
+            {/* 🔴 เช่นเดียวกับบรรทัดหัวจอ — "สดทุกครั้ง" จริงเฉพาะตอนไม่ได้ค้น */}
+            {d?.applied?.source === 'mirror'
+              ? <>เปิดจอเฉย ๆ อ่านสดจาก ZORT · <b>ตอนค้นหาอ่านจากกระจกของเรา</b> (ท่อค้นในกระจก ไม่ได้ค้นที่ ZORT) ·{' '}</>
+              : <>อ่านสดจาก ZORT ทุกครั้งที่เปิดจอ (ไม่ได้ผ่านคลังเงา) ·{' '}</>}
             ชื่อลูกค้าแสดงเต็มตามที่ ZORT ส่งมา (เจ้าของร้านตัดสิน 6 ก.ย. 2569) —
             ชื่อที่ขึ้นเป็นดาวคือ<b>มาร์เก็ตเพลสปิดมาเอง</b> ไม่ใช่ระบบเราปิด และแกะคืนไม่ได้ ·
             สถานะแสดง<b>ข้อความดิบจาก ZORT</b> ระบายสีเฉพาะคำที่ตรงเป๊ะ
