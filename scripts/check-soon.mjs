@@ -1,0 +1,66 @@
+// ตรวจว่า "หน้ายังไม่ได้ทำ" ที่ถูกลิงก์จากจอจริง มีคำอธิบายรออยู่จริงไหม
+//
+// 🔴 **ปัญหาที่ตัวตรวจนี้เกิดมาแก้** (เจอ 14 ก.ย. 2569)
+//    มี 6 คีย์ที่จอจริงลิงก์ไป แต่ไม่เคยมีในทะเบียน `lib/zort-menu.ts`
+//      product-edit · product-delete · product-print · quotation · shipping · leadtime
+//    หน้า `/core/soon/[key]` รับคีย์ที่ไม่รู้จักได้โดยไม่พัง — ขึ้นว่า "หน้านี้ยังไม่มีเนื้อหา" เฉย ๆ
+//    ⇒ **ไม่พัง แต่ไม่บอกอะไรเลย** ไม่รู้ว่ามันคืออะไร ไม่รู้ว่าระหว่างนี้ไปทำที่ไหน
+//    ⇒ ขัดกับเหตุผลที่ทะเบียนนั้นเกิดมาตรง ๆ (หัวไฟล์เขียนเองว่า "ห้ามให้กดแล้วเจอหน้าเปล่าเงียบ ๆ")
+//
+// ⚠️ ของแบบนี้ **ไม่มีทางเจอจาก build หรือ tsc** เพราะไม่มีอะไรผิดทางเทคนิคเลย
+//    เจอได้ทางเดียวคือมีคนกดเข้าไปดู หรือมีตัวตรวจแบบนี้
+//
+// ใช้: node scripts/check-soon.mjs   (อยู่ใน prebuild — คีย์ที่ไม่มีทะเบียน = ไม่ให้ build ผ่าน)
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+
+const ROOTS = ['app', 'lib', 'components']
+const files = []
+const walk = (d) => {
+  for (const e of readdirSync(d)) {
+    const p = join(d, e)
+    if (e === 'node_modules' || e.startsWith('.')) continue
+    if (statSync(p).isDirectory()) walk(p)
+    else if (/\.(tsx?|mjs)$/.test(e)) files.push(p)
+  }
+}
+for (const r of ROOTS) { try { walk(r) } catch { /* ไม่มีโฟลเดอร์นี้ก็ข้าม */ } }
+
+/** คีย์ที่ถูกลิงก์จริงจากจอ → ลิงก์มาจากไฟล์ไหนบ้าง (ไว้บอกคนแก้ว่าไปดูที่ไหน) */
+const linked = new Map()
+for (const f of files) {
+  if (f.endsWith('zort-menu.ts') || f.endsWith('check-soon.mjs')) continue
+  for (const m of readFileSync(f, 'utf8').matchAll(/\/core\/soon\/([a-z0-9-]+)/g)) {
+    linked.set(m[1], [...(linked.get(m[1]) ?? []), f])
+  }
+}
+
+const reg = readFileSync('lib/zort-menu.ts', 'utf8')
+const keys = new Set([...reg.matchAll(/^ {2}'?([a-zA-Z0-9-]+)'?:\s*\{/gm)].map((m) => m[1]))
+/** คีย์ที่ทำเสร็จแล้ว (มี builtAt) — ยังลิงก์ไปหน้า soon ได้ เพราะหน้านั้นพาต่อไปหน้าจริงให้ */
+const built = new Set([...reg.matchAll(/^ {2}'?([a-zA-Z0-9-]+)'?:\s*\{\s*\n\s*builtAt:/gm)].map((m) => m[1]))
+
+const missing = [...linked.keys()].filter((k) => !keys.has(k)).sort()
+const unused = [...keys].filter((k) => !linked.has(k) && !built.has(k)).sort()
+
+console.log(`หน้ายังไม่ได้ทำ: ถูกลิงก์จริง ${linked.size} คีย์ · มีทะเบียน ${keys.size} คีย์`)
+
+if (built.size) {
+  console.log(`\n🟢 ทำเสร็จแล้ว ${built.size} คีย์ (หน้า soon จะพาต่อไปหน้าจริง) — ${[...built].join(' · ')}`)
+}
+
+if (unused.length) {
+  /* ไม่ใช่ความผิด — ทะเบียนเตรียมไว้ล่วงหน้าได้ แต่บอกไว้เพื่อไม่ให้ลืมว่ามีของค้าง */
+  console.log(`\nℹ️ มีทะเบียนแต่ยังไม่มีใครลิงก์ ${unused.length} คีย์ (เตรียมไว้ล่วงหน้าได้ ไม่ใช่ปัญหา)`)
+  console.log(`   ${unused.join(' · ')}`)
+}
+
+if (missing.length) {
+  console.log(`\n🔴 ถูกลิงก์จากจอจริง แต่ไม่มีทะเบียน ${missing.length} คีย์ — กดแล้วเจอหน้าเปล่าที่ไม่บอกอะไรเลย`)
+  for (const k of missing) console.log(`   ${k}  ← ${[...new Set(linked.get(k))].join(' · ')}`)
+  console.log('\n   แก้: เพิ่มคีย์นี้ใน lib/zort-menu.ts พร้อม title · what · meanwhile')
+  console.log('   (ถ้าทำเสร็จแล้ว ให้ใส่ builtAt ชี้หน้าจริงแทน)')
+  process.exit(1)
+}
+
+console.log('\n✅ ทุกหน้าที่ถูกลิงก์ มีคำอธิบายรออยู่')
