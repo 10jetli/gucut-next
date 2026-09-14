@@ -29,6 +29,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 
 interface Line { sku: string; qty: string; price: string }
@@ -61,7 +62,9 @@ export default function NewQuotationPage() {
   const [lines, setLines] = useState<Line[]>([{ ...BLANK }])
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [res, setRes] = useState<WriteResp | null>(null)
+  /* ⚠️ ท่อคืน linesTotal มาในโหมดซ้อม (gucut-web 994f84b) — ต้องรับไว้ในชนิดด้วย
+     ไม่งั้นตัวเทียบยอดจะไม่เห็นค่า แล้วขึ้นว่า "ท่อรุ่นก่อน" ทั้งที่ท่อส่งมาให้แล้ว */
+  const [res, setRes] = useState<(WriteResp & { linesTotal?: number | null }) | null>(null)
   /** เนื้อหาที่ "ซ้อมผ่านแล้ว" — เก็บเป็นลายเซ็นข้อความ เพื่อรู้ว่าหลังซ้อมมีการแก้อะไรอีกไหม */
   const [okDry, setOkDry] = useState('')
   /** 🔴 เลขอ้างอิงของใบนี้ — **สร้างครั้งเดียวตอนเปิดหน้า ห้ามสร้างใหม่ตอนกด** */
@@ -252,6 +255,11 @@ export default function NewQuotationPage() {
       {err && (
         <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>
       )}
+
+      {/* 🔴 เทียบยอดที่ท่อคิดกับยอดที่จอคิด — ZORT ไม่คิดเงินให้สักชั้น
+          จอนี้ปล่อยให้บรรทัดไม่มีราคาได้ ⇒ linesTotal:null เป็นเรื่องปกติ **ไม่ใช่ความผิด**
+          จึงไม่ส่ง requiresPrice (ต่างจากจอขาย/จอคืนของที่บังคับราคาทุกบรรทัด) */}
+      <LinesTotalCheck res={res} ourTotal={total} />
 
       <WriteResult r={res} />
 

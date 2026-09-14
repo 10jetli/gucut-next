@@ -445,6 +445,27 @@ const srv = createServer(async (req, res) => {
     return res.end(JSON.stringify({ ok: true, ref: body.ref, message: 'ท่อปลอม: ไม่ได้เขียนอะไรจริง' }))
   }
 
+  /* ── ใบสั่งซื้อ/ใบเสนอราคา: คืน linesTotal ตามกติกาจริงของท่อ (gucut-web 994f84b) ──
+     🔴 **null = มีบรรทัดไม่มีราคา ⇒ ท่อไม่คิดยอด** — ไม่ใช่ 0
+        ท่อปลอมต้องเลียนแบบข้อนี้ ไม่งั้นจะไม่มีวันได้ทดสอบเส้นทาง "เทียบไม่ได้" */
+  if (mode === 'good' && /[?&](addpo|addquotation)=/.test(req.url) && req.method === 'POST') {
+    const body = (await new Promise((ok) => {
+      let b = ''; req.on('data', (c) => (b += c))
+      req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } })
+    })) || {}
+    const items = body.items || []
+    const anyNoPrice = items.some((it) => it.price === undefined || it.price === null || it.price === '')
+    const linesTotal = anyNoPrice ? null : items.reduce((s, it) => s + Number(it.price || 0) * Number(it.qty || 0), 0)
+    res.writeHead(200, { 'content-type': 'application/json' })
+    if (!body.confirm) {
+      return res.end(JSON.stringify({
+        ok: true, dryRun: true, ref: body.ref, linesTotal,
+        willSend: { list: items.map((it) => ({ sku: it.sku, quantity: it.qty, pricepernumber: it.price })) },
+      }))
+    }
+    return res.end(JSON.stringify({ ok: true, ref: body.ref, message: 'ท่อปลอม: ไม่ได้เขียนอะไรจริง' }))
+  }
+
   if (mode === 'good' && /[?&](addbundle|addwarehouse)=/.test(req.url)) {
     const which = /addbundle=/.test(req.url) ? 'addbundle' : 'addwarehouse'
     const body = (await new Promise((ok) => {

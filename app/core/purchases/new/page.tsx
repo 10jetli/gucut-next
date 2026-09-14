@@ -14,6 +14,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 
 interface Line { sku: string; name: string; qty: string; price: string }
@@ -45,7 +46,9 @@ function NewPurchaseOrderInner() {
   })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
-  const [res, setRes] = useState<WriteResp | null>(null)
+  /* ⚠️ ท่อคืน linesTotal มาในโหมดซ้อม (gucut-web 994f84b) — ต้องรับไว้ในชนิดด้วย
+     ไม่งั้นตัวเทียบยอดจะไม่เห็นค่า แล้วขึ้นว่า "ท่อรุ่นก่อน" ทั้งที่ท่อส่งมาให้แล้ว */
+  const [res, setRes] = useState<(WriteResp & { linesTotal?: number | null }) | null>(null)
   const [okDry, setOkDry] = useState('')
   /** เลขอ้างอิงของใบนี้ — ตัวกันยิงซ้ำที่ฝั่งเซิร์ฟเวอร์ใช้ (UNIQUE กับ ref)
    *  ⚠️ **สร้างครั้งเดียวตอนเปิดหน้า** — สร้างใหม่ตอนกด = กดสองครั้งได้ใบสองใบ
@@ -238,6 +241,11 @@ function NewPurchaseOrderInner() {
       )}
 
       {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+      {/* 🔴 เทียบยอดที่ท่อคิดกับยอดที่จอคิด — ZORT ไม่คิดเงินให้สักชั้น
+          จอนี้ปล่อยให้บรรทัดไม่มีราคาได้ ⇒ linesTotal:null เป็นเรื่องปกติ **ไม่ใช่ความผิด**
+          จึงไม่ส่ง requiresPrice (ต่างจากจอขาย/จอคืนของที่บังคับราคาทุกบรรทัด) */}
+      <LinesTotalCheck res={res} ourTotal={total} />
+
       <WriteResult r={res} />
 
       <div className="flex flex-wrap items-center gap-3 mt-4">

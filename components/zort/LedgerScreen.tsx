@@ -16,6 +16,7 @@
 // ⚠️ ปุ่ม "สร้าง…" กับ "นำเข้าไฟล์" พาไปหน้าที่บอกตรง ๆ ว่ายังทำอะไรไม่ได้
 //    ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง
 import Link from 'next/link'
+import { SOON } from '@/lib/zort-menu'
 import { PageHead, TableWrap, TH, THR, thaiDate } from './index'
 
 export interface LedgerCol { label: string; right?: boolean }
@@ -77,13 +78,24 @@ export default function LedgerScreen({
   meanwhile: string
 }) {
   const age = ageOf(CHECKED_AT)
+  /* 🔴 **จอชุดนี้เคยพูดขัดกับทะเบียนหน้า** (เจอตอนกวาดจริง 14 ก.ย. 2569 · ใบ t_mu11ncpo)
+     จอเขียนว่า "ยังไม่ได้ต่อท่อกับ ZORT" และ "ตารางว่างเพราะยังไม่ได้ดึงข้อมูล"
+     ⇒ อ่านได้ว่า **เดี๋ยวก็ต่อ** · แต่ทะเบียนของสองคีย์ (product-variant · leadtime)
+        บอกว่า **ยิงตรวจแล้วไม่พบเส้น 404 ครบ** = ไม่มีวันต่อได้ จนกว่า ZORT จะเปิดเส้นใหม่
+     ⇒ คนที่อ่านจอจะรอของที่ไม่มีวันมา และคนทำงานรอบหน้าจะเสียเวลาไปลองต่อซ้ำ
+     ⇒ ให้จอ **อ่านทะเบียนเอง** แทนที่จะให้แต่ละหน้าจำมาเขียนซ้ำ
+        (ถ้าให้แต่ละหน้าเขียนเอง วันหนึ่งทะเบียนเปลี่ยนแล้วจอจะค้างอยู่กับคำเก่าอีก) */
+  const reg = SOON[soonKey]
+  const impossible = reg?.impossible
   return (
     <div className="p-4 md:p-6">
       <PageHead
         title={title}
         // ⚠️ ZORT เขียน "จำนวน 0 รายการ, …0 บาท" — ของเราเขียนแบบนั้นไม่ได้
         //    เพราะเราไม่ได้นับอะไรเลย ต้องบอกว่ายังไม่ได้ต่อ
-        summary={<span>ยังไม่ได้ต่อกับ ZORT — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</span>}
+        summary={impossible
+          ? <span>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้ — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</span>
+          : <span>ยังไม่ได้ต่อกับ ZORT — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</span>}
         actions={
           <>
             {withImport && (
@@ -146,7 +158,9 @@ export default function LedgerScreen({
             <tr>
               <td colSpan={cols.length + 1} className="py-14 text-center">
                 <span className="text-[34px] block opacity-60">🗂️</span>
-                <p className="text-[14px] text-gray-800 mt-2">ยังไม่ได้ต่อท่อกับ ZORT</p>
+                <p className="text-[14px] text-gray-800 mt-2">
+                  {impossible ? 'ZORT ไม่เปิดเส้นให้ทำเรื่องนี้ — ไม่ใช่ยังไม่ได้ทำ' : 'ยังไม่ได้ต่อท่อกับ ZORT'}
+                </p>
                 <p className="text-[12.5px] text-gray-500 mt-1 max-w-[520px] mx-auto leading-relaxed">
                   {purpose}
                   <br />
@@ -154,11 +168,18 @@ export default function LedgerScreen({
                       ตารางว่างที่ไม่บอกเหตุผล จะถูกอ่านว่า "ร้านไม่มีรายการพวกนี้เลย" */}
                   {/* ⚠️ ประโยคนี้ต้องเปลี่ยนตามหลักฐาน ไม่งั้นจะขัดกับกล่องเขียวข้างล่างที่บอกว่า
                       "ตรวจแล้วว่างจริง" — สองข้อความบนจอเดียวกันห้ามพูดคนละเรื่อง */}
-                  {emptyProof
-                    ? <>ตารางว่างเพราะ<b>เรายังไม่ได้ต่อท่อ</b> — และ<b>ตรวจแล้วว่าใน ZORT ก็ไม่มีรายการจริง</b> · </>
-                    : <>ตารางว่างเพราะ<b>ยังไม่ได้ดึงข้อมูล</b> ไม่ใช่เพราะร้านไม่มีรายการ · </>}
+                  {impossible
+                    ? <>ตารางว่างเพราะ<b>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้</b> — ไม่ใช่เพราะเรายังไม่ได้ทำ
+                      {' '}และไม่ใช่เพราะร้านไม่มีรายการ · </>
+                    : emptyProof
+                      ? <>ตารางว่างเพราะ<b>เรายังไม่ได้ต่อท่อ</b> — และ<b>ตรวจแล้วว่าใน ZORT ก็ไม่มีรายการจริง</b> · </>
+                      : <>ตารางว่างเพราะ<b>ยังไม่ได้ดึงข้อมูล</b> ไม่ใช่เพราะร้านไม่มีรายการ · </>}
+                  {/* 🔴 **อย่าเติมคำว่า "มี" หน้า sumLabel** — ทุกจอที่เรียกใช้ส่งค่ามาว่า
+                      "มี 0 รายการ" อยู่แล้ว ⇒ เดิมจอขึ้นว่า "มี มี 0 รายการ" (เจอตอนกวาดจริง 14 ก.ย. 2569)
+                      บรรทัด summary ข้างบน (ที่ไม่เติม "มี") คือรูปแบบที่ถูก ⇒ ยึดอันนั้น
+                      ⚠️ คำซ้ำแบบนี้ tsc ไม่จับ และอ่านโค้ดเฉย ๆ ก็ไม่เห็น เพราะสองท่อนอยู่คนละไฟล์ */}
                   ตอนไปเปิดดูจอ ZORT ของจริงเมื่อ <b>{thaiDate(CHECKED_AT)}</b>
-                  {age != null && <> ({age === 0 ? 'วันนี้' : `${age} วันที่แล้ว`})</>} มี{' '}
+                  {age != null && <> ({age === 0 ? 'วันนี้' : `${age} วันที่แล้ว`})</>}{' '}
                   <b>{sumLabel}</b> · {meanwhile}
                 </p>
                 {/* ✅ ถ้ามีหลักฐานว่าว่างจริง ให้พูดให้ต่างจาก "ยังไม่ได้ดึง" อย่างชัดเจน
@@ -193,10 +214,14 @@ export default function LedgerScreen({
           ⚠️ ล็อกไว้ทั้งคู่ เพราะยังไม่มีข้อมูลให้แบ่งหน้า · โชว์ตามผังแต่ไม่แกล้งใช้ได้
              และ **ห้ามเขียนจำนวนเป็นเลข** เพราะเรายังไม่ได้นับอะไรเลย ศูนย์ของเรา = "ยังไม่รู้" */}
       <div className="flex flex-wrap items-center justify-end gap-3 mt-3">
-        <span className="text-[12.5px] text-gray-400">ยังไม่ได้ดึงข้อมูล | จำนวนต่อหน้า</span>
+        <span className="text-[12.5px] text-gray-400">
+          {impossible ? 'ไม่มีข้อมูลให้ดึง (ZORT ไม่เปิดเส้น)' : 'ยังไม่ได้ดึงข้อมูล'} | จำนวนต่อหน้า
+        </span>
         <select
           disabled
-          title="ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีข้อมูลให้แบ่งหน้า"
+          title={impossible
+            ? 'ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้ จึงไม่มีข้อมูลให้แบ่งหน้า'
+            : 'ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีข้อมูลให้แบ่งหน้า'}
           className="text-[12.5px] border border-gray-200 rounded px-2 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
         >
           <option>20</option>

@@ -362,7 +362,18 @@ export default function CoreCategoriesPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
               <span>
-                รวม {fmtNum(rows.length)} หมวด · {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtMoney(totalOnhand)}
+                {/* 🔴 **หัวจอกับท้ายจอต้องไม่พูดเรื่องเดียวกันคนละอย่าง** (เจอตอนกวาดจริง 14 ก.ย. 2569)
+                    หัวจอขึ้นว่า "จำนวน ไม่รู้ (ท่อไม่ได้ส่งมา) หมวด" แต่ท้ายจอขึ้น "รวม 1 หมวด"
+                    ⇒ คนอ่านเชื่อเลขท้ายจอว่าเป็นจำนวนทั้งหมด ทั้งที่มันคือ "จำนวนแถวที่ดึงมาได้"
+                    ⇒ กฎของโปรเจกต์: หมวดที่มีของ N แสดง M ต้องเขียนให้ครบ ห้ามวางเลขคู่กันเฉย ๆ */}
+                รวม {fmtNum(rows.length)} หมวด
+                {typeof d.categories !== 'number' && (
+                  <span className="text-amber-700"> (เท่าที่ดึงมาได้ — ท่อไม่ได้บอกว่าทั้งหมดมีกี่หมวด)</span>
+                )}
+                {typeof d.categories === 'number' && d.categories !== rows.length && (
+                  <span className="text-amber-700"> จาก {fmtNum(d.categories)} หมวดที่ท่อบอกว่ามี</span>
+                )}
+                {' '}· {fmtNum(totalSkus)} SKU · มูลค่าคงเหลือรวม {fmtMoney(totalOnhand)}
                 {/* 🔴 **ตาข่ายเดิมที่เคยอยู่ตรงนี้เป็น tautology — ถอดแล้ว 12 ก.ย. 2569**
                     ของเดิมเทียบ "ผลบวก skus ที่จอบวกเอง" กับ `d.total` ของท่อ
                     และเขียนคอมเมนต์ว่า "ตาข่ายข้ามแหล่ง" ⇒ **แต่ `d.total` ของท่อคือผลบวกของ

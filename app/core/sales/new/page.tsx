@@ -21,6 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 
@@ -28,7 +29,7 @@ interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
 
 /** คำตอบของเส้นนี้มีช่องเพิ่มจากของกลาง — ยอดที่ท่อคิดได้เอง (ใช้เทียบกับยอดที่จอคิด) */
-type SaleResp = WriteResp & { linesTotal?: number; willSend?: Record<string, unknown> }
+type SaleResp = WriteResp & { linesTotal?: number | null; willSend?: Record<string, unknown> }
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — **ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติใบขายโดยเฉพาะ**
  *  ใบขายผูกกับเงินที่รับจริงและสต็อกที่ตัดจริง ⇒ ใบผิดกระทบทั้งบัญชีและคลัง */
@@ -80,16 +81,6 @@ export default function NewSalePage() {
   /** ยอดที่ **จอ** คิด — ใช้เทียบกับยอดที่ท่อคิด ไม่ใช่ใช้ส่ง */
   const ourLinesTotal = ready.reduce((s, l) => s + l.price * l.qty, 0)
   /* ท่อคิดยอดเอง ⇒ ต่างกันเมื่อไหร่แปลว่าเราสองฝั่งคิดคนละกติกา ต้องฟ้อง */
-  const pipeTotal = typeof res?.linesTotal === 'number' ? res.linesTotal : null
-  const totalMismatch = pipeTotal !== null && Math.abs(pipeTotal - ourLinesTotal) > 0.009
-  /* 🔴 **ค่าที่ไม่ใช่ตัวเลข มีสองความหมาย ห้ามยุบเป็นอันเดียว** (ฝั่งท่อยืนยัน 14 ก.ย. 2569)
-     · linesTotal: null      = ท่อบอกเองว่ามีบรรทัดไม่มีราคา จึงไม่คิดยอด — **ห้ามอ่านเป็น 0**
-       ⚠️ จอนี้บังคับราคาครบทุกบรรทัดอยู่แล้ว ⇒ ได้ null = ราคาที่ส่งไปไม่ถึงท่อ ต้องแจ้ง
-     · ไม่มีช่องนี้เลย        = ท่อรุ่นก่อน ⇒ เทียบไม่ได้ แต่คนละสาเหตุ
-     ⚠️ เดิมทั้งสองกรณีนี้ **ไม่แสดงอะไรเลย** ⇒ คนอ่านความเงียบว่า "ตรวจแล้วตรงกัน"
-        ซึ่งเป็นโรคประจำของโปรเจกต์: ระบบทำงานถูก แต่สื่อสารผิด */
-  const nullTotal = res?.dryRun === true && res.linesTotal === null
-  const noTotalField = res?.dryRun === true && !('linesTotal' in (res as object))
 
   const send = useCallback(async (confirm: boolean) => {
     setErr(''); setRes(null)
@@ -246,28 +237,15 @@ export default function NewSalePage() {
       )}
 
       {/* 🔴 ยอดที่จอคิด vs ยอดที่ท่อคิด — ต่างกันคือคนละกติกา ห้ามเลือกเชื่อข้างเดียวเงียบ ๆ */}
-      {totalMismatch && (
-        <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
-          🔴 <b>ยอดไม่ตรงกัน</b> — จอคิดได้ <b>{fmtMoney(ourLinesTotal)}</b> แต่ท่อคิดได้ <b>{fmtMoney(pipeTotal!)}</b>
-          {' '}⇒ สองฝั่งคิดคนละกติกา <b>อย่าเพิ่งส่งจริง</b> จนกว่าจะรู้ว่าฝั่งไหนผิด
-        </div>
-      )}
-      {pipeTotal !== null && !totalMismatch && (
-        <p className="text-[12px] text-gray-500 mt-2">✓ ยอดสินค้าที่ท่อคิดตรงกับที่จอคิด ({fmtMoney(pipeTotal)})</p>
-      )}
-      {nullTotal && (
-        <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
-          🔴 <b>ท่อบอกว่ามีบรรทัดที่ไม่มีราคา จึงไม่คิดยอดให้</b> — แต่จอนี้บังคับราคาครบทุกบรรทัดอยู่แล้ว
-          {' '}⇒ แปลว่า <b>ราคาที่ส่งไปไม่ถึงท่อ</b> · <b>อย่าส่งจริง</b> และแจ้งฝั่งท่อ
-          {' '}(ยอดบนจอคือ {fmtMoney(ourLinesTotal)} — <b>ห้ามอ่านค่าว่างเป็น ฿0</b>)
-        </div>
-      )}
-      {noTotalField && (
-        <p className="text-[12px] text-amber-800 mt-2 leading-relaxed">
-          ⚠️ ท่อไม่ได้ส่งยอดรวมกลับมาให้เทียบ (ท่อรุ่นก่อน) — <b>เทียบไม่ได้ ไม่ใช่ตรงกัน</b>
-          {' '}ยอดบนจอคือ {fmtMoney(ourLinesTotal)}
-        </p>
-      )}
+      
+      
+      
+      
+
+      {/* 🔴 เทียบยอดที่ท่อคิดกับยอดที่จอคิด — ย้ายมาใช้ชิ้นส่วนร่วม 14 ก.ย. 2569
+          เดิมจอนี้เขียนตรรกะเอง แล้วจอคืนของก็เขียนซ้ำอีกชุด ⇒ สองสำเนาที่จะเพี้ยนกันวันหนึ่ง
+          จอนี้บังคับราคาครบทุกบรรทัด ⇒ ส่ง requiresPrice (null = ราคาไม่ถึงท่อ ต้องขึ้นแดง) */}
+      <LinesTotalCheck res={res} ourTotal={ourLinesTotal} requiresPrice />
 
       {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
 
