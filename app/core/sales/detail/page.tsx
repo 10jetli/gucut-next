@@ -15,6 +15,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
+import { reconcileOrder } from '@/lib/order-money'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE, thaiDate } from '@/components/zort'
@@ -210,44 +211,22 @@ function DetailInner() {
      📌 ZORT **มีช่องพวกนี้อยู่จริง** ในเอกสารชนิดอื่น (ใบเสนอราคา/ใบคืน ส่ง discountamount กับ
         shippingamount มาครบ) ⇒ ถ้าคลังเงาเก็บสองช่องนี้เพิ่ม ส่วนต่างจะอธิบายได้ทันที
         — แจ้งฝั่งท่อไว้แล้ว 14 ก.ย. 2569 */
-  const linesTotal = items.reduce((s, it) => s + (Number(it.amount) || 0), 0)
-  const gap = Math.round((total - linesTotal) * 100) / 100
+  /* 🔑 **ตรรกะเรื่องเงินอยู่ที่ lib/order-money.ts ที่เดียว** — จอแค่เอามาแสดง
+     ย้ายออกจากไฟล์นี้ 14 ก.ย. 2569 หลังจากเขียนสูตรผิด (ลบส่วนลดรายบรรทัดซ้ำ) แล้วขึ้น production
+     เพราะฟังก์ชันใน .tsx **เรียกจากเทสไม่ได้** ⇒ ไม่มีอะไรคุมสูตรเงินเลย
+     เทส: scripts/tests/order-money.test.mjs (ยึดตัวเลขจากใบจริง · พิสูจน์แล้วว่าจับบั๊กเดิมได้) */
+  const money = reconcileOrder({
+    lines: items,
+    amount: total,
+    billDiscount: order?.bill_discount,
+    shipAmount: order?.ship_amount,
+  })
+  const { linesTotal, gap, lineDiscount, hasDiscountField, lineDiscountUnknown, leftover } = money
   const hasGap = items.length > 0 && Math.abs(gap) > 0.009
-
-  /* ── สามช่องที่ฝั่งท่อกำลังเพิ่ม — จอรับไว้ล่วงหน้าแบบ "สามสถานะ" ──────────
-     เลข → ใช้ได้ · null → ยังไม่รู้ (แถวเก่าที่ซิงก์ก่อนมีคอลัมน์) · ไม่มีช่อง → ท่อรุ่นก่อน
-     ⚠️ **ทั้งสามกรณีต้องเขียนคนละแบบ** ยุบเมื่อไหร่ก็กลับไปเป็น "ไม่รู้ถูกอ่านเป็น 0" อีก
-     ⚠️ items[].discount เป็น **ต่อชิ้น** ⇒ คูณ qty ก่อนรวม (ฝั่งท่อกำชับ 14 ก.ย. 2569) */
-  const numOrNull = (v: unknown): number | null | undefined =>
-    v === undefined ? undefined : (v === null ? null : (Number.isFinite(Number(v)) ? Number(v) : null))
-  const billDiscount = numOrNull(order?.bill_discount)
-  const shipAmount = numOrNull(order?.ship_amount)
-  const hasDiscountField = items.some((it) => 'discount' in it)
-  const lineDiscountUnknown = hasDiscountField && items.some((it) => it.discount === null)
-  const lineDiscount = hasDiscountField && !lineDiscountUnknown
-    ? items.reduce((s, it) => s + (Number(it.discount) || 0) * (Number(it.qty) || 0), 0)
-    : null
-  /* 🔴🔴 **สูตรรุ่นก่อนของผมผิด — ลบส่วนลดรายบรรทัดซ้ำสองรอบ**
-     จับได้ตอนเปิดใบจริงที่มีส่วนลดไม่เป็นศูนย์ (14 ก.ย. 2569 18:06 น. · ใบ 1118734271446942)
-       บรรทัด: qty 3 · discount 3.6 ต่อชิ้น · amount 169.2 · หัวใบ 169.2 · bill_discount 12 · ship 12
-       สูตรฝั่งท่อ  169.2 − 12 + 12 = 169.2 ✅ ตรงยอดใบ
-       สูตรของผม   169.2 − (3.6×3) − 12 + 12 = 158.4 ❌ ⇒ จอจะฟ้อง "เหลือ 10.80" ทั้งที่ใบถูก
-     ⇒ **`items[].amount` หักส่วนลดรายบรรทัดมาแล้ว** ส่วนลดรายบรรทัดจึงไม่เข้าสมการอีก
-     ⚠️ บั๊กนี้มองไม่เห็นเลยในใบที่ส่วนลดเป็น 0 — ซึ่งคือใบเกือบทั้งหมด
-        และ **ท่อปลอมที่ผมเขียนเองก็ตอกย้ำความเข้าใจผิด** เพราะผมแต่งตัวเลขให้เข้ากับสูตรที่ผมเชื่อ
-        ⇒ เทสที่สร้างจากความเข้าใจผิดเดียวกับโค้ด จะเขียวเสมอ (แก้ท่อปลอมให้ตรงสัญญาจริงแล้ว)
-     📌 บทเรียน: สูตรเงินต้องทวนกับ **ใบที่ทุกตัวแปรไม่เป็นศูนย์** อย่างน้อยหนึ่งใบ
-
-     ⇒ การเทียบยอดใช้แค่สองช่อง: bill_discount กับ ship_amount
-        ส่วนลดรายบรรทัดเป็น **ข้อมูลประกอบ** (บอกว่าลดไปเท่าไหร่ ซึ่งรวมในยอดบรรทัดแล้ว)
-        ⇒ ไม่รู้ค่าก็ยังเทียบยอดได้ตามปกติ */
-  const lineDiscountKnown = hasDiscountField && !lineDiscountUnknown
-  const canExplain = typeof billDiscount === 'number' && typeof shipAmount === 'number'
-  const expected = canExplain
-    ? Math.round((linesTotal - billDiscount + shipAmount) * 100) / 100
-    : null
-  const leftover = expected === null ? null : Math.round((total - expected) * 100) / 100
-  const explained = leftover !== null && Math.abs(leftover) <= 0.009
+  const billDiscount = order?.bill_discount
+  const shipAmount = order?.ship_amount
+  const canExplain = money.state === 'ok' || money.state === 'mismatch'
+  const explained = money.state === 'ok'
   // ⚠️ ยอดก่อนภาษีกับภาษีเป็น **ค่าคำนวณ** จากยอดรวม ไม่ใช่ค่าที่เก็บไว้
   //    ใช้กติกา "ราคารวมภาษีแล้ว" ตามที่ ZORT แสดงให้ร้านนี้ · เขียนกำกับใต้บล็อกเสมอ
   const net = total / (1 + VAT_RATE)
