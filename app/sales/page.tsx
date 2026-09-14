@@ -18,6 +18,10 @@ import {
 interface Report {
   range: { from: string; to: string; days: number }
   totals: { sales: number; orders: number; avg: number; prevSales: number; prevOrders: number }
+  /** ใบคืนที่ **ออกในช่วงนี้** · `null` = ดึงไม่สำเร็จ ⇒ "ยังไม่รู้" ห้ามแสดง 0 */
+  returns: { count: number; amount: number } | null
+  /** ดึงใบคืนไม่สำเร็จเพราะอะไร — ต้องบอก ไม่ใช่เงียบแล้วปล่อยให้ยอดดูเหมือนสุทธิ */
+  returnsError?: string
   daily: { date: string; sales: number; orders: number }[]
   channels: { label: string; name: string; store: string; sales: number; orders: number; prevSales: number }[]
   // ยอดเงินรายสินค้ามาจาก /api/core?list=topproducts (รวมจาก order_items จริง)
@@ -49,6 +53,45 @@ async function fetchRange(from: string, to: string) {
     total: Number(d.total ?? 0),
     amount: Number(d.totalAmount ?? 0),
     channels: (Array.isArray(d.byChannel) ? d.byChannel : []) as CoreChan[],
+  }
+}
+
+/* ── ใบคืนสินค้าในช่วง (CN-) ───────────────────────────────────────────────
+   🔴 **ยอดขายข้างบนนับใบที่ลูกค้าคืนของแล้วด้วย** (งานกระดาน t_mu1bkqes · ต่อจาก t_mtzx0wp4)
+      ZORT ไม่พลิกสถานะใบเดิมเป็นยกเลิกเมื่อมีใบคืน ⇒ ใบยังเป็น Success ⇒ ถูกนับเป็นยอดขาย
+   📏 วัดกับ production 14 ก.ย. 2569 21:19 น. (จับคู่ orders.number = returnorders.reference):
+        14 วัน  ยอด 381,657.20 · ถูกคืน 6 ใบ = 11,087.00 (2.9%)
+        90 วัน  ยอด 1,578,283.80 · ถูกคืน 50 ใบ = 34,039.70 (2.2%)
+        1 ปี    ยอด 9,169,074.27 · ถูกคืน 254 ใบ = 292,112.56 (3.2%)
+      วิธีวัดซ้ำ: ดึง list=returnorders ทุกหน้า แล้วจับคู่กับ list=orders ของช่วงนั้น
+
+   ⚠️ **หักตรง ๆ จากจอไม่ได้** — ช่วง 1 ปีมีออเดอร์ 11,491 ใบ ต้องดึงมาจับคู่ทั้งหมด
+      (โรคเดียวกับที่ไฟล์นี้เคยแก้ไปแล้ว: ค่าที่ต้องเห็นข้อมูลทั้งชุด ต้องให้ฐานคิดให้)
+      ⇒ ขอให้ฝั่งท่อคิดมาให้แล้ว 14 ก.ย. 2569 · ระหว่างนี้จอ **บอกขนาดของปัญหาตรง ๆ**
+
+   ⚠️ ที่จอทำได้ตอนนี้คือนับ **ใบคืนที่ออกในช่วงนี้** (ใช้วันที่บนใบคืน)
+      ซึ่งไม่ใช่ตัวเดียวกับ "ยอดขายในช่วงนี้ที่ถูกคืน" เป๊ะ ๆ — ใบคืนที่ออกเดือนนี้
+      อาจเป็นของที่ขายเดือนก่อน ⇒ **ต้องเขียนบนจอให้ตรงตามนั้น ห้ามเรียกว่ายอดขายที่ถูกคืน**
+      (วัดเทียบแล้ว: 90 วันได้เท่ากันเป๊ะ · 1 ปีต่างกัน 2,501 บาท จาก 292,112)
+   🔴 ดึงไม่สำเร็จ = **"ยังไม่รู้" ห้ามแสดง 0** — 0 แปลว่าไม่มีใครคืนของ ซึ่งคนละเรื่องกัน */
+async function fetchReturns(from: string, to: string) {
+  const seen = new Map<string, { amount?: number; date?: string }>()
+  /* ⚠️ เส้นนี้ใช้ `page=` **ไม่ใช่ `offset=`** (ยิงตรวจ 14 ก.ย. 2569: offset=200 คืนหน้าเดิม)
+     กับดักเดียวกับ GetOrders ของ ZORT ที่ CLAUDE.md จดไว้ — คนละเส้นคนละกติกา */
+  for (let page = 1; page <= 10; page++) {
+    const r = await fetch(`/api/web/core?list=returnorders&limit=200&page=${page}`)
+    const d = await r.json()
+    if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+    for (const row of (Array.isArray(d.rows) ? d.rows : [])) {
+      if (row?.number) seen.set(String(row.number), row)
+    }
+    if (page >= Number(d.pages || 1)) break
+  }
+  /* ⚠️ Array.from ไม่ใช่ [...] — โปรเจกต์นี้ tsc ไม่ได้ตั้ง target (เป็น ES5) กระจาย iterator ไม่ได้ */
+  const inRange = Array.from(seen.values()).filter((c) => c.date && c.date >= from && c.date <= to)
+  return {
+    count: inRange.length,
+    amount: inRange.reduce((sum, c) => sum + (Number(c.amount) || 0), 0),
   }
 }
 
@@ -107,6 +150,17 @@ function downloadSummary(report: Report) {
     ['ยอดขายรวม (บาท)', String(report.totals.sales)],
     ['จำนวนใบขาย', String(report.totals.orders)],
     ['เฉลี่ยต่อใบ (บาท)', String(Math.round(report.totals.avg))],
+    /* 🔴 **ไฟล์ที่โหลดออกไปต้องมีคำกำกับเหมือนบนจอ** — ไม่งั้นยอดที่ยังไม่หักใบคืน
+       หลุดออกไปอยู่ในไฟล์ที่คนเอาไปทำบัญชีต่อ โดยไม่มีอะไรบอกว่ามันเกินจริง
+       ⚠️ ดึงไม่สำเร็จก็ต้องเขียนว่า "ยังไม่รู้" ห้ามเว้นว่างหรือใส่ 0 */
+    report.returns === null
+      ? ['ใบคืนที่ออกในช่วงนี้', 'ยังไม่รู้ — ดึงรายการใบคืนไม่สำเร็จ (ยอดขายข้างบนยังไม่ได้หักใบคืน)']
+      : ['ใบคืนที่ออกในช่วงนี้ (ใบ)', String(report.returns.count)],
+    ...(report.returns === null ? [] : [
+      ['มูลค่าใบคืนที่ออกในช่วงนี้ (บาท)', String(report.returns.amount)],
+      ['ยอดขายหลังหักใบคืน โดยประมาณ (บาท)', String(Math.round((report.totals.sales - report.returns.amount) * 100) / 100)],
+      ['หมายเหตุ', 'ยอดขายรวมด้านบนยังไม่ได้หักใบคืน · ใบคืนที่ออกในช่วงนี้บางใบเป็นของที่ขายก่อนช่วงนี้'],
+    ]),
     [],
     ['วันที่', 'ยอดขาย (บาท)', 'จำนวนใบ'],
     ...report.daily.map((d) => [d.date, String(d.sales), String(d.orders)]),
@@ -203,7 +257,7 @@ export default function SalesReportPage() {
       const prevTo = thaiDay(d)
       const prevFrom = thaiDay(d * 2 - 1)
 
-      const [cur, prev, best, daily] = await Promise.all([
+      const [cur, prev, best, daily, retRes] = await Promise.all([
         fetchRange(from, to),
         fetchRange(prevFrom, prevTo),
         // ยอดขายรายสินค้าพร้อม "ยอดเงินจริง" จาก order_items (ไม่ใช่ qty คูณราคาขาย ซึ่งเป็นการเดา)
@@ -211,7 +265,15 @@ export default function SalesReportPage() {
           .then((r) => r.json())
           .catch(() => null),
         fetchDaily(d),
+        /* ใบคืนเป็น "ของประกอบ" — ล้มแล้วต้องไม่ล้มทั้งจอ แต่ **ต้องบอกว่าล้ม**
+           ไม่งั้นยอดขายจะดูเหมือนหักใบคืนแล้ว ทั้งที่ไม่รู้ด้วยซ้ำว่ามีกี่ใบ */
+        fetchReturns(from, to).then(
+          (v) => ({ ok: true as const, v }),
+          (e) => ({ ok: false as const, e: String(e instanceof Error ? e.message : e) }),
+        ),
       ])
+      const ret = retRes.ok ? retRes.v : null
+      const retErr = retRes.ok ? undefined : retRes.e
 
       // ยอดรายวัน — ฐานรวมมาให้แล้ว จอแค่**เติมวันที่ไม่มีออเดอร์ให้เป็นศูนย์**
       // ⚠️ ท่อไม่คืนแถวของวันที่ขายไม่ได้ ถ้าไม่เติมเอง เส้นกราฟจะลากข้ามวันนั้น
@@ -251,6 +313,8 @@ export default function SalesReportPage() {
           prevSales: prevByChan.get(c.channel) ?? 0,
         })),
         topError,
+        returns: ret,
+        returnsError: retErr,
         topProducts: bestRows.map((r) => ({
           name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount,
         })),
@@ -331,6 +395,37 @@ export default function SalesReportPage() {
                     <p className="text-[12.5px] text-gray-500 mt-2">
                       {fmtNum(report.totals.orders)} ใบ · เฉลี่ยใบละ {fmtMoney(report.totals.avg)} บาท
                     </p>
+
+                    {/* 🔴 **ยอดข้างบนยังไม่ได้หักของที่ลูกค้าคืน** — ZORT ไม่พลิกสถานะใบเดิม
+                        เมื่อมีใบคืน ⇒ ใบยังเป็น Success ⇒ ถูกนับเป็นยอดขายต่อไป
+                        (งานกระดาน t_mu1bkqes · วัดกับ production 14 ก.ย. 2569: 2.2–3.2% แล้วแต่ช่วง)
+                        ⚠️ ตัวเลขนี้คือ **ใบคืนที่ออกในช่วงนี้** ไม่ใช่ "ยอดขายในช่วงนี้ที่ถูกคืน"
+                           ใบคืนที่ออกเดือนนี้อาจเป็นของที่ขายเดือนก่อน ⇒ เขียนให้ตรงตามนั้น
+                        ⚠️ ดึงไม่สำเร็จ = "ยังไม่รู้" **ห้ามแสดง 0** เพราะ 0 แปลว่าไม่มีใครคืนของ */}
+                    {report.returns === null ? (
+                      <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mt-3 max-w-[320px] text-center leading-relaxed">
+                        ⚠️ <b>ยังไม่รู้ว่ามีใบคืนเท่าไหร่</b> — ดึงรายการใบคืนไม่สำเร็จ
+                        {report.returnsError ? ` (${report.returnsError})` : ''}
+                        <br />ยอดข้างบน<b>ยังไม่ได้หักของที่ลูกค้าคืน</b> และตอนนี้บอกไม่ได้ว่าเท่าไหร่
+                      </p>
+                    ) : report.returns.count === 0 ? (
+                      <p className="text-[12px] text-gray-400 mt-3 text-center">
+                        ไม่มีใบคืนสินค้าที่ออกในช่วงนี้ · ยอดข้างบนจึงเท่ากับยอดสุทธิ
+                      </p>
+                    ) : (
+                      <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 max-w-[340px] leading-relaxed">
+                        🔴 <b>ยอดข้างบนยังไม่ได้หักของที่ลูกค้าคืน</b>
+                        <br />
+                        ใบคืนที่ออกในช่วงนี้ <b>{fmtNum(report.returns.count)} ใบ</b>
+                        {' '}รวม <b>{fmtMoney(report.returns.amount)}</b> บาท
+                        <br />
+                        ⇒ หักแล้วเหลือราว <b>{fmtMoney(report.totals.sales - report.returns.amount)}</b> บาท
+                        <span className="block text-[11px] text-amber-800 mt-1">
+                          &ldquo;ราว&rdquo; เพราะใบคืนที่ออกในช่วงนี้ บางใบเป็นของที่ขายก่อนหน้าช่วงนี้
+                          {' '}· <Link href="/core/return-orders" className="underline">ดูใบคืนทั้งหมด</Link>
+                        </span>
+                      </div>
+                    )}
                     <button
                       onClick={() => downloadSummary(report)}
                       className="mt-5 text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50"
