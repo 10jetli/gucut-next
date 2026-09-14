@@ -367,7 +367,7 @@ export default function ProductDetailPage() {
             >
               ปรับจำนวน
             </span>
-            <Link href="/core/soon/product-print"
+            <Link href={`/core/stock/print?sku=${encodeURIComponent(sku)}`}
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               พิมพ์เอกสาร
             </Link>
