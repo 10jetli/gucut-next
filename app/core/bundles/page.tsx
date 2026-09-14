@@ -19,6 +19,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
+import { recipeFreshness, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
@@ -55,8 +56,11 @@ interface Resp {
   inactive?: number
   negative?: number
   note?: string
-  /** เก็บรายการในชุดครั้งเดียวเมื่อไหร่ — ต้องโชว์เสมอ เพราะไม่มีการซิงก์อัตโนมัติ */
+  /** 🔴 **สูตรเปลี่ยนล่าสุดเมื่อไหร่** ไม่ใช่ "ตรวจล่าสุด" — สูตรที่ไม่เคยเปลี่ยนจะค้างตลอดไป */
   collectedAt?: string
+  recipeAt?: string | null
+  /** ไปถาม ZORT ล่าสุดเมื่อไหร่ (UTC) · null = ไม่รู้ ⇒ **ห้ามเขียนว่าซิงก์หยุด** */
+  recipeCheckedAt?: string | null
   checkedMarketplaces?: string[]
   /** เจ้าที่ยิงแล้วล่ม + เหตุผล · เจ้าที่ยังไม่ได้เชื่อมร้าน + เหตุผล · เวลาที่ถามล่าสุด (UTC)
    *  ⚠️ "ล่ม" กับ "ยังไม่ได้เชื่อม" คนละเรื่อง — อันหลังเจ้าของร้านกดเองได้เลย */
@@ -137,6 +141,10 @@ export default function CoreBundlesPage() {
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
+  /* ความสดของการซิงก์สูตรชุด — ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว (มีเทสคุม)
+     ⚠️ ส่ง checkedAt ก่อน changedAt **ห้ามสลับ** — สลับแล้วจอจะขึ้นว่าซิงก์หยุดทั้งที่ปกติ */
+  const fresh = recipeFreshness(data?.recipeCheckedAt, data?.recipeAt ?? data?.collectedAt)
+
   const rows = data?.rows ?? []
   const shown = offset + rows.length
 
@@ -185,14 +193,34 @@ export default function CoreBundlesPage() {
 
       {data && !data.skip && (
         <>
-          {/* 🔴 ข้อความนี้ห้ามถอด — ตอนนี้เรารู้ส่วนประกอบแล้ว แต่เป็นภาพนิ่งครั้งเดียว
-              ไม่ได้ซิงก์เอง (เส้นดึงรายละเอียดชุดมีอยู่ แต่ส่งรายการสินค้ามาว่าง — ยิงจริง 6 ก.ย. 2569 ⇒ ต้องกดเข้าไปดูทีละชุด)
-              ⇒ ร้านแก้สูตรชุดเมื่อไหร่ **ไม่มีอะไรเตือน** ⇒ ต้องโชว์วันที่เก็บเสมอ */}
-          <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
-            ⚠️ <b>รายการสินค้าในชุดเป็นภาพนิ่งที่เก็บครั้งเดียว</b>
-            {data.collectedAt ? <> เมื่อ <b>{thaiDate(String(data.collectedAt).slice(0, 10))}</b></> : ''}
-            {' '}— เส้นดึงรายละเอียดชุดของ ZORT ส่งรายการสินค้ามาว่าง (ยิงจริง 6 ก.ย. 2569) ต้องกดเข้าไปดูทีละชุด
-            ⇒ <b>ถ้าร้านแก้สูตรชุดที่ ZORT จะไม่มีอะไรเตือน</b> และตัวเลขที่นี่จะเก่าโดยไม่มีใครรู้
+          {/* 🔴 **ข้อความเดิมกลายเป็นเท็จแล้ว** — เดิมเขียนว่า "ภาพนิ่งเก็บครั้งเดียว ไม่ได้ซิงก์เอง"
+              ฝั่งท่อทำให้ซิงก์สูตรทุกชั่วโมงแล้ว (gucut-web a17692b · ตรวจ 360/360 · แจ้ง 14 ก.ย. 2569)
+              ⇒ ปล่อยไว้ = จอเตือนเรื่องที่ไม่มีอยู่แล้ว และคนจะไม่เชื่อคำเตือนอันอื่นด้วย
+              🔴 **สองเวลาคนละเรื่อง ห้ามสลับ**: สูตรเปลี่ยนล่าสุด (ค้างได้ถ้าไม่มีใครแก้)
+                 กับ ตรวจกับ ZORT ล่าสุด (อันนี้คือความสด) — ดู lib/recipe-fresh.ts */}
+          <div className={`text-[12.5px] rounded-md px-3.5 py-2.5 mb-3 leading-relaxed border ${
+            fresh.state === 'stale' ? 'text-amber-900 bg-amber-50 border-amber-300'
+              : fresh.state === 'unknown' ? 'text-gray-700 bg-gray-50 border-gray-300'
+                : 'text-emerald-900 bg-emerald-50 border-emerald-200'}`}>
+            {fresh.state === 'ok' && (
+              <>✅ <b>สูตรชุดซิงก์จาก ZORT อัตโนมัติทุกชั่วโมง</b> — ตรวจกับ ZORT ล่าสุด
+                {' '}<b>{thaiMoment(fresh.checkedThai)}</b>{fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}</>
+            )}
+            {fresh.state === 'stale' && (
+              <>🔴 <b>สูตรชุดควรซิงก์ทุกชั่วโมง แต่ตรวจล่าสุดเมื่อ {thaiMoment(fresh.checkedThai)}</b>
+                {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}
+                {' '}⇒ <b>ตัวซิงก์น่าจะหยุด</b> · ตัวเลขที่นี่อาจเก่ากว่าของจริงใน ZORT</>
+            )}
+            {fresh.state === 'unknown' && (
+              <>⚠️ <b>ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่</b> (ท่อไม่ได้ส่งเวลามา)
+                {' '}— <b>ไม่ได้แปลว่าซิงก์หยุด</b> แค่บอกความสดไม่ได้</>
+            )}
+            {fresh.changedThai && (
+              <span className="block mt-1">
+                สูตรในชุด<b>เปลี่ยนล่าสุด</b> {thaiMoment(fresh.changedThai)}
+                {' '}<span className="opacity-70">(ชุดที่ไม่มีใครแก้ เวลานี้จะไม่ขยับ — คนละอันกับเวลาตรวจ)</span>
+              </span>
+            )}
             {typeof data.negative === 'number' && data.negative > 0 && (
               <> · ตอนนี้มีชุดที่คงเหลือ<b>ติดลบ {fmtNum(data.negative)} ชุด</b> —
                 ZORT เองก็มีติดลบเหมือนกัน แปลว่าแม้แต่ต้นทางก็ตามไม่ทัน</>

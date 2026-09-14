@@ -8,6 +8,7 @@
 //   · จับคู่รหัสฐานได้  → แค่ Shopee ใช้รหัสตัวเลือกละเอียดกว่า ไม่ใช่ของหาย ต้องทำตารางจับคู่
 //   · ไม่รู้จักเลย      → ต้องตามหาว่ามันคือสินค้าอะไร แล้วเอาเข้าคลัง
 import { useCallback, useEffect, useState } from 'react'
+import { recipeFreshness, thaiMoment } from '@/lib/recipe-fresh'
 import { fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
@@ -34,8 +35,10 @@ interface Resp {
    *  computed = รหัสที่คิดจากสูตรชุดได้ · agreeWithShopee = ในกองนั้นตรงกับเลขบน Shopee กี่รหัส
    *  (ตรวจของจริง 12 ก.ย. 2569: total 276 · computed 265 · agreeWithShopee 156) */
   withRecipe?: number; computed?: number; agreeWithShopee?: number
-  /** สูตรชุดเก็บไว้เมื่อไหร่ — เป็นภาพนิ่ง ไม่ได้ซิงก์เอง ต้องโชว์ */
+  /** 🔴 **สูตรเปลี่ยนล่าสุดเมื่อไหร่** ไม่ใช่ "ตรวจล่าสุด" — ชุดที่ไม่มีใครแก้จะค้างตลอดไป */
   recipeAt?: string
+  /** ไปถาม ZORT ล่าสุดเมื่อไหร่ (UTC) · null = ไม่รู้ ⇒ ห้ามเขียนว่าซิงก์หยุด */
+  recipeCheckedAt?: string | null
   rows?: Row[]
 }
 
@@ -278,7 +281,17 @@ export default function CoreMissingSkuPage() {
                 ⇒ <b>ต่างกันไม่ได้แปลว่าสูตรผิด</b> เช่นของใกล้หมดแล้วร้านตั้ง 0 เองเพื่อไม่รับออเดอร์
                 ⇒ <b>ห้ามดันสต็อกอัตโนมัติจากตัวเลขนี้</b> เพราะจะไปเปิดขายของที่ร้านตั้งใจปิด
                 ซึ่งแย่กว่าไม่ดันเลย — ร้านจะได้ออเดอร์ของที่ส่งไม่ได้
-                {data.recipeAt && <> · สูตรชุดเก็บไว้เมื่อ <b>{thaiDate(String(data.recipeAt).slice(0, 10))}</b> เป็นภาพนิ่ง ไม่ได้ซิงก์เอง</>}
+                {/* 🔴 เดิมเขียนว่า "เป็นภาพนิ่ง ไม่ได้ซิงก์เอง" — เท็จแล้วตั้งแต่ 14 ก.ย. 2569
+                    (ฝั่งท่อซิงก์สูตรทุกชั่วโมง · gucut-web a17692b) */}
+                {data.recipeAt && (
+                  <> · สูตรชุด<b>เปลี่ยนล่าสุด</b> <b>{thaiDate(String(data.recipeAt).slice(0, 10))}</b></>
+                )}
+                {(() => {
+                  const f = recipeFreshness(data.recipeCheckedAt, data.recipeAt ?? null)
+                  if (f.state === 'ok') return <> · ซิงก์จาก ZORT ทุกชั่วโมง (ตรวจล่าสุด {thaiMoment(f.checkedThai)})</>
+                  if (f.state === 'stale') return <> · <b className="text-amber-800">ตรวจล่าสุด {thaiMoment(f.checkedThai)} — ตัวซิงก์น่าจะหยุด</b></>
+                  return <> · <span className="text-gray-500">ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่ (ไม่ได้แปลว่าซิงก์หยุด)</span></>
+                })()}
               </p>
             )}
             <p className="text-[11px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">

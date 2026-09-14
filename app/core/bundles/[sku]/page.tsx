@@ -6,11 +6,15 @@
 // ⚠️ ZORT มี QR + บาร์โค้ดมุมขวาบน และการ์ด "ยอดขาย" กับ "จำนวนสินค้าคงเหลือ รายคลัง"
 //    ⇒ **ยังไม่ทำ** เพราะสองอย่างหลังต้องใช้สต็อกรายคลัง ซึ่ง ยังไม่พบทาง (กวาดชื่อเส้น 30+ ชื่อ 6 ก.ย. 2569 → 404 หมด แต่ยังไม่ได้ลองระดับพารามิเตอร์)
 //      (ยิงมาแล้ว 404 ทุกทาง) · ทำเป็นการ์ดเปล่า = สัญญาของที่ไม่มี
-// ⚠️ รายการในชุดเป็น **ภาพนิ่งเก็บครั้งเดียว ไม่ได้ซิงก์เอง** ⇒ ต้องบอกวันที่เก็บเสมอ
+// ⚠️ **ข้อความเดิมกลายเป็นเท็จ 14 ก.ย. 2569** — เดิมเขียนว่า "ภาพนิ่งเก็บครั้งเดียว ไม่ได้ซิงก์เอง"
+//    ฝั่งท่อทำให้ซิงก์สูตรทุกชั่วโมงแล้ว (gucut-web a17692b) ⇒ ต้องแก้ ไม่งั้นจอเตือนเรื่องที่ไม่มีอยู่
+// 🔴 **สองเวลาคนละเรื่อง**: สูตรเปลี่ยนล่าสุด (ค้างได้) ≠ ตรวจกับ ZORT ล่าสุด (คือความสด)
+//    ⇒ ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว มีเทสคุมการสลับสองค่านี้
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { fmtMoney, fmtNum } from '@/lib/format'
+import { recipeFreshness, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
@@ -36,6 +40,9 @@ export default function BundleDetailPage() {
   const [bundle, setBundle] = useState<BundleRow | null>(null)
   const [items, setItems] = useState<Item[]>([])
   const [collectedAt, setCollectedAt] = useState('')
+  /* ⚠️ ท่อส่ง recipeCheckedAt (ตรวจล่าสุด · UTC · null = ไม่รู้) มาด้วยตั้งแต่ 14 ก.ย. 2569
+     เก็บแยกจาก collectedAt เด็ดขาด — สองค่านี้ตอบคนละคำถาม */
+  const [checkedAt, setCheckedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const imgOf = useSkuImages(640)
@@ -54,6 +61,7 @@ export default function BundleDetailPage() {
       setBundle(rows.find((r) => r.sku === sku) ?? null)
       setItems(Array.isArray(iRes?.rows) ? iRes.rows : [])
       setCollectedAt(typeof iRes?.collectedAt === 'string' ? iRes.collectedAt : '')
+      setCheckedAt(typeof iRes?.recipeCheckedAt === 'string' ? iRes.recipeCheckedAt : null)
     } catch (e) {
       setBundle(null)
       setError(String(e instanceof Error ? e.message : e))
@@ -65,6 +73,9 @@ export default function BundleDetailPage() {
   useEffect(() => { load() }, [load])
 
   const img = imgOf(sku)
+
+  /* ⚠️ ลำดับ argument สำคัญ: checkedAt ก่อน changedAt (เทส recipe-fresh คุมการสลับไว้) */
+  const fresh = recipeFreshness(checkedAt, collectedAt || null)
 
   return (
     <div className="p-4 md:p-6">
@@ -169,10 +180,21 @@ export default function BundleDetailPage() {
           </TableWrap>
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            {collectedAt
-              ? <>รายการในชุดนี้เก็บไว้เมื่อ <b>{thaiDate(collectedAt.slice(0, 10))}</b> — เป็นภาพนิ่งครั้งเดียว
-                <b> ไม่ได้ซิงก์เอง</b> ถ้าร้านแก้สูตรชุดที่ ZORT จะไม่มีอะไรเตือน</>
-              : 'รายการในชุดเป็นภาพนิ่งที่เก็บครั้งเดียว ไม่ได้ซิงก์เอง'}
+            {fresh.state === 'ok' && (
+              <>✅ สูตรชุดนี้<b>ซิงก์จาก ZORT อัตโนมัติทุกชั่วโมง</b> — ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
+                {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}</>
+            )}
+            {fresh.state === 'stale' && (
+              <span className="text-amber-800">🔴 ควรตรวจทุกชั่วโมง แต่ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
+                {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>} ⇒ <b>ตัวซิงก์น่าจะหยุด</b></span>
+            )}
+            {fresh.state === 'unknown' && (
+              <>⚠️ ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่ (ท่อไม่ได้ส่งเวลามา) — <b>ไม่ได้แปลว่าซิงก์หยุด</b></>
+            )}
+            {fresh.changedThai && (
+              <> · สูตร<b>เปลี่ยนล่าสุด</b> {thaiMoment(fresh.changedThai)}
+                <span className="opacity-70"> (ชุดที่ไม่มีใครแก้ เวลานี้จะไม่ขยับ)</span></>
+            )}
             <br />
             ⚠️ ZORT มีการ์ด <b>ยอดขาย</b> กับ <b>จำนวนสินค้าคงเหลือ รายคลัง</b> ในหน้านี้ด้วย —
             ยังไม่ทำเพราะสต็อกรายคลัง ยังไม่พบทาง (กวาดชื่อเส้น 30+ ชื่อ 6 ก.ย. 2569 → 404 หมด แต่ยังไม่ได้ลองระดับพารามิเตอร์)
