@@ -328,7 +328,9 @@ export default function CoreSalesPage() {
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)
             </Link>
-            <Link href="/core/soon/sale-create"
+            {/* ชี้หน้าจริงตั้งแต่ 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิดอยู่ แต่ซ้อมได้เต็มที่
+                ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
+            <Link href="/core/sales/new"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้าง
