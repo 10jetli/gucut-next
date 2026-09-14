@@ -19,11 +19,22 @@ export default function SoonPage({ params }: { params: { key: string } }) {
         <div className="mt-4 bg-white border border-gray-200 rounded-md p-5">
           {/* 🔴 "ทำไม่ได้จริง" กับ "ยังไม่ได้ทำ" ต้องแยกป้ายให้ขาด
               ป้ายเดียวกัน = คนรอของที่ไม่มีวันมา และคนทำงานรอบหน้าไปลองซ้ำที่พิสูจน์แล้วว่าไม่มีทาง */}
+          {/* สามสถานะ ห้ามยุบ: ทำแล้ว (เขียว) · ทำไม่ได้จริง (แดง) · ยังไม่ได้ทำ (เหลือง) */}
           <span className={`inline-block text-[11.5px] font-semibold rounded px-2 py-0.5 ${
-            info?.impossible ? 'text-red-800 bg-red-100' : 'text-amber-800 bg-amber-100'
+            info?.builtAt ? 'text-emerald-800 bg-emerald-100'
+              : info?.impossible ? 'text-red-800 bg-red-100' : 'text-amber-800 bg-amber-100'
           }`}>
-            {info?.impossible ? 'ทำไม่ได้ — ไม่ใช่ยังไม่ได้ทำ' : 'ยังไม่ได้ทำ'}
+            {info?.builtAt ? 'ทำเสร็จแล้ว — หน้านี้เลิกใช้' : info?.impossible ? 'ทำไม่ได้ — ไม่ใช่ยังไม่ได้ทำ' : 'ยังไม่ได้ทำ'}
           </span>
+
+          {/* ทำเสร็จแล้วต้องพาไปให้ถึง ไม่ใช่แค่บอกว่าเสร็จ — คนมาถึงหน้านี้เพราะกดลิงก์เก่า */}
+          {info?.builtAt && (
+            <p className="text-[14px] text-gray-800 mt-3 leading-relaxed">
+              หน้านี้ทำเสร็จแล้ว ย้ายไปอยู่ที่{' '}
+              <Link href={info.builtAt} className="text-blue-600 underline font-semibold">{info.builtAt}</Link>
+              {' '}— ถ้ามาถึงหน้านี้แปลว่ายังมีลิงก์เก่าค้างอยู่ที่ไหนสักแห่ง ช่วยแจ้งด้วย
+            </p>
+          )}
 
           {info ? (
             <>

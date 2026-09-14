@@ -136,7 +136,11 @@ export default function CorePurchasesPage() {
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)
             </Link>
-            <Link href="/core/soon/buy-create"
+            {/* 🔴 เคยชี้ไป /core/soon/buy-create ทั้งที่หน้าจริงมีตั้งแต่ 6 ก.ย. 2569 (แก้ 14 ก.ย.)
+                ⇒ คนกดปุ่ม "สร้าง" แล้วอ่านว่า "ยังไม่ได้ทำ" มา 8 วัน
+                ⚠️ ปุ่มส่งจริงในหน้านั้นยังปิดอยู่โดยตั้งใจ (เจ้าของร้านอนุมัติการเขียนจริงเฉพาะใบเสนอราคา)
+                   แต่ "ซ้อมได้เต็มที่" ต่างจาก "ยังไม่ได้ทำ" คนละเรื่องกันคนละขั้ว */}
+            <Link href="/core/purchases/new"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้าง
