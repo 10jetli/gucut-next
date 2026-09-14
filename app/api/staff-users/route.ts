@@ -1,7 +1,7 @@
 // ── เส้นจัดการผู้ใช้งานที่เพิ่มจากหน้าเว็บ — เฉพาะแอดมิน ──────────────────────────
 //
 // GET    → รายชื่อ (ไม่มี salt/hash และไม่มีเงาของรหัสเลย) + บอกว่าที่เก็บอ่านได้ไหม
-// POST   { name, password }      → เพิ่ม
+// POST   { name, password, role? } → เพิ่ม · role = 'staff' (ค่าเริ่มต้น) | 'account'
 // PATCH  { id, active }          → ปิด/เปิดการใช้งาน
 // DELETE ?id=…                   → ลบบันทึกทิ้ง (มีไว้เก็บบัญชีทดสอบ — คนจริงให้ "ปิด" พอ)
 //
@@ -44,8 +44,11 @@ export async function POST(req: NextRequest) {
   try { body = await req.json() } catch { /* ไม่มี body */ }
   const name = String(body?.name ?? '')
   const password = String(body?.password ?? '')
+  /* 🔴 **ค่าที่ไม่ใช่ 'account' เป๊ะ ๆ ตกเป็นพนักงานทั้งหมด** (เพิ่ม 14 ก.ย. 2569 · t_mu1bkqy4)
+     ห้ามรับค่าจากภายนอกแบบเปิดกว้าง — พิมพ์ผิดหรือยิงมั่วต้องได้สิทธิ์ต่ำสุดเสมอ ไม่ใช่สูงสุด */
+  const role = body?.role === 'account' ? 'account' : 'staff'
   try {
-    const r = await addStaffUser(name, password)
+    const r = await addStaffUser(name, password, new Date(), role)
     if (!r.ok) return NextResponse.json({ error: r.error }, { status: 400 })
     return NextResponse.json({ ok: true, user: r.user })
   } catch (e: any) {

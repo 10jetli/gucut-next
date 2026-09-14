@@ -32,20 +32,28 @@ export const MAX_USERS = 20
 const ITER = 100_000          // PBKDF2 รอบ — ช้าพอให้เดายาก แต่ยังไล่เทียบ 20 คนจบใน ~1 วินาที
 const HASH_BITS = 256
 
+export type StaffRole = 'staff' | 'account'
+
 export interface StaffUser {
   id: string
   name: string
   active: boolean
   createdAt: string
+  /** ชั้นสิทธิ์ · ไม่มีช่องนี้ = พนักงาน (ผู้ใช้ที่สร้างก่อน 14 ก.ย. 2569 ไม่มี) */
+  role?: StaffRole
   /** ค่าที่ย้อนกลับไม่ได้ + ค่าสุ่มประจำคน — 🔴 ห้ามส่งออกจากเซิร์ฟเวอร์ */
   salt: string
   hash: string
   iter: number
 }
 /** สิ่งเดียวที่หน้าจอได้เห็น — ไม่มี salt/hash และไม่มีเงาของรหัสเลย */
-export interface StaffUserPublic { id: string; name: string; active: boolean; createdAt: string }
+export interface StaffUserPublic {
+  id: string; name: string; active: boolean; createdAt: string; role: StaffRole
+}
+/* ⚠️ แปลงค่าที่ไม่มี/ไม่รู้จักเป็น 'staff' ที่นี่ **จุดเดียว** — จอจะได้ไม่ต้องเดาเอง
+   และไม่มีทางที่จอจะแสดงชั้นสิทธิ์ที่สูงกว่าของจริงเพราะข้อมูลเก่าไม่มีช่องนี้ */
 export const publicView = (u: StaffUser): StaffUserPublic =>
-  ({ id: u.id, name: u.name, active: u.active, createdAt: u.createdAt })
+  ({ id: u.id, name: u.name, active: u.active, createdAt: u.createdAt, role: u.role === 'account' ? 'account' : 'staff' })
 
 /* ⚠️ ห้าม spread Uint8Array — TS2802 ของ target โปรเจกต์นี้ */
 const b64 = (b: Uint8Array) => btoa(Array.from(b).map((x) => String.fromCharCode(x)).join('')).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '')
@@ -143,7 +151,9 @@ export async function listStaffUsers(): Promise<StaffUserPublic[]> {
   return all.sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt))).map(publicView)
 }
 
-export async function addStaffUser(name: string, password: string, now = new Date()): Promise<{ ok: true; user: StaffUserPublic } | { ok: false; error: string }> {
+/* ⚠️ `role` เป็นพารามิเตอร์ท้ายสุดและมีค่าเริ่มต้น ⇒ **คนเรียกเดิมไม่ต้องแก้**
+   และค่าที่ไม่รู้จักตกเป็น 'staff' เสมอ — ห้ามให้ค่าจากภายนอกยกระดับสิทธิ์ตัวเองได้ */
+export async function addStaffUser(name: string, password: string, now = new Date(), role: StaffRole = 'staff'): Promise<{ ok: true; user: StaffUserPublic } | { ok: false; error: string }> {
   const n = String(name ?? '').trim()
   const p = String(password ?? '')
   if (n.length < 2 || n.length > 40) return { ok: false, error: 'ชื่อต้องยาว 2–40 ตัวอักษร' }
@@ -156,6 +166,7 @@ export async function addStaffUser(name: string, password: string, now = new Dat
   const id = b64(crypto.getRandomValues(new Uint8Array(8)))
   const user: StaffUser = {
     id, name: n, active: true, createdAt: now.toISOString(),
+    role: role === 'account' ? 'account' : 'staff',
     salt: b64(salt), hash: await derive(p, salt, ITER), iter: ITER,
   }
   await writeOne(user)

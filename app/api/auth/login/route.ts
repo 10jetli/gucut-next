@@ -90,12 +90,14 @@ export async function POST(req: NextRequest) {
         (และหน้าผู้ใช้งานอ่านจาก /api/staff-users เพื่อขึ้นแถบเตือน)
         ไม่งั้นทางถอยจะกลายเป็นทางหลักโดยไม่มีใครรู้ ([[fallbacks-must-announce]])
      ⚠️ ไม่ลองทางนี้ถ้าเป็นแอดมิน — ประหยัดเวลาแฮช และแอดมินไม่เกี่ยวกับรายชื่อนี้ */
-  let webUser: { id: string; name: string } | null = null
+  let webUser: { id: string; name: string; role: 'staff' | 'account' } | null = null
   let storeError: string | null = null
   if (!isAdmin) {
     try {
       const u = await findStaffUserByPassword(password)
-      if (u) webUser = { id: u.id, name: u.name }
+      /* ⚠️ อ่านชั้นสิทธิ์จากฐาน **ไม่ใช่จากสิ่งที่ผู้ใช้ส่งมา** — ผู้ใช้ส่งมาแค่รหัสผ่าน
+         ⇒ ไม่มีทางที่คนล็อกอินจะเลือกชั้นสิทธิ์ให้ตัวเองได้ · ค่าไม่รู้จัก = พนักงาน */
+      if (u) webUser = { id: u.id, name: u.name, role: u.role === 'account' ? 'account' : 'staff' }
     } catch (e: any) {
       storeError = String(e?.message ?? e)
     }
@@ -126,7 +128,12 @@ export async function POST(req: NextRequest) {
        ผู้ใช้จากหน้าเว็บ → โทเคนเซ็นชื่อ — เพราะรหัสถูกเก็บแบบย้อนกลับไม่ได้
          middleware จึงแฮชเทียบไม่ได้ ต้องตรวจด้วยลายเซ็น (ดู lib/staff-token.ts) */
   const cookie = webUser
-    ? await signStaffToken({ u: webUser.id, n: webUser.name }, adminPass)
+    /* ⚠️ ใส่ชั้นสิทธิ์ลงโทเคนเฉพาะตอนเป็น 'account' — พนักงานไม่ใส่ช่องนี้
+       ⇒ โทเคนของพนักงานหน้าตาเหมือนเดิมเป๊ะ (เข้ากันได้ย้อนหลังทั้งสองทาง) */
+    ? await signStaffToken(
+      { u: webUser.id, n: webUser.name, ...(webUser.role === 'account' ? { r: 'account' as const } : {}) },
+      adminPass,
+    )
     : await authToken(password)
   res.cookies.set('gucut_auth', cookie, {
     httpOnly: true,

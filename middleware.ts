@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authToken, sameToken } from '@/lib/auth-token'
-import { isStaffToken, verifyStaffToken } from '@/lib/staff-token'
+import { isStaffToken, roleOf, verifyStaffToken } from '@/lib/staff-token'
 
 // ป้องกันทั้งเว็บด้วยรหัสผ่าน (ตั้งค่าใน env)
 // - SITE_PASSWORD  = แอดมิน เข้าได้ทุกหน้า
@@ -32,9 +32,30 @@ const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/a
    จอรับคืนบนมือถือพนักงาน · ท่อ /api/returns เป็น whitelist เฉพาะเส้นจอนี้ ไม่ใช่ /api/web ทั้งก้อน */
 const STAFF_ALLOWED_PREFIXES = ['/catalog', '/api/transfer', '/api/catalog', '/returns/receive', '/api/returns']
 
-function staffAllowed(pathname: string) {
-  return STAFF_ALLOWED_PREFIXES.some((p) => pathname === p || pathname.startsWith(p))
+/* ── ชั้นที่สาม: "บัญชี" (เพิ่ม 14 ก.ย. 2569 · งานกระดาน t_mu1bkqy4) ─────────────
+   ZORT มีสามชั้น (Admin · พนักงาน · บัญชี) ของเรามีสอง ⇒ เพิ่มชั้นบัญชีที่ **เห็นเฉพาะการเงิน**
+
+   🔴 **บัญชี = อ่านอย่างเดียว ทุกเส้น** — บังคับด้วยเมธอด ไม่ใช่รายชื่อเส้น
+      เหตุผล: จอการเงินเกือบทุกจอยิงผ่าน `/api/web/...` ซึ่งเป็น **ท่อกลางเส้นเดียว**
+      ที่พาไปได้ทุกอย่างรวมทั้งการเขียนเข้า ZORT ⇒ อนุญาตทั้งเส้นเมื่อไหร่
+      = ให้สิทธิ์เขียนทุกอย่างไปด้วยโดยไม่ได้ตั้งใจ
+      ⇒ กันด้วย "ต้องเป็น GET" จึงกันได้ทั้งเส้นที่เรายังไม่ได้คิดถึง
+
+   ⚠️ **ผลข้างเคียงที่ต้องรู้และเขียนบนจอ**: ปุ่มไหนที่ทำงานด้วย POST (เช่นดึงบิลเดือนนี้)
+      บัญชีจะกดไม่ได้ ⇒ ต้องบอกบนจอ ไม่ใช่ปล่อยให้กดแล้วเงียบ
+   ⚠️ ห้ามใส่ `/core/settings-users` หรือ `/core/settings-roles` — คนดูเงินไม่ควรเห็นทะเบียนคน */
+const ACCOUNT_ALLOWED_PREFIXES = [
+  '/core/finance', '/core/other-income', '/core/other-expense', '/core/money-transfers',
+  '/core/wallet', '/core/accounting-docs', '/core/peak', '/bills',
+  '/core/settings-profile',            // ต้องดูได้ว่าตัวเองเป็นใคร/สิทธิ์อะไร
+  '/api/web', '/api/bills',            // เส้นที่จอพวกนั้นใช้ — **GET เท่านั้น** (บังคับข้างล่าง)
+  '/api/auth',                         // ออกจากระบบได้
+]
+
+function allowedBy(list: string[], pathname: string) {
+  return list.some((p) => pathname === p || pathname.startsWith(p))
 }
+const staffAllowed = (pathname: string) => allowedBy(STAFF_ALLOWED_PREFIXES, pathname)
 
 const cleanEnv = (v?: string) => (v ?? '').trim()
 function staffPasswords() {
@@ -59,11 +80,19 @@ export async function middleware(req: NextRequest) {
   // ⚠️ ไม่มีคุกกี้ = จบตรงนี้ ไม่ต้องเสียเวลาแฮชอะไรเลย (บอตยิงหน้าเว็บทั้งวัน)
   const isAdmin = !!auth && sameToken(auth, await authToken(adminPass))
   let isStaff = false
+  /* 🔴 ชั้น "บัญชี" มาจาก **โทเคนที่เซ็นชื่อแล้วเท่านั้น** — ผู้ใช้ env ไม่มีชั้นนี้
+     (env ไม่มีที่เก็บชั้นสิทธิ์ และเราไม่เพิ่ม env ใหม่ตามกติกาเดิมของระบบนี้) */
+  let isAccount = false
   if (!isAdmin && auth) {
     /* ผู้ใช้จากหน้าเว็บมาก่อน — คุกกี้ขึ้นต้น 'gs1.' แยกจากท่าเดิม (เลขฐานสิบหก 64 ตัว) ได้ขาด
        ⇒ ของเดิมไม่ถูกแตะเลย: คุกกี้ท่าเดิมไม่เคยเข้าเงื่อนไขนี้ */
     if (isStaffToken(auth)) {
-      if (await verifyStaffToken(auth, adminPass)) isStaff = true
+      const claims = await verifyStaffToken(auth, adminPass)
+      if (claims) {
+        isStaff = true
+        /* ⚠️ โทเคนเก่าที่ยังไม่หมดอายุไม่มีช่อง r ⇒ roleOf คืน 'staff' ⇒ พฤติกรรมเดิมเป๊ะ */
+        isAccount = roleOf(claims) === 'account'
+      }
     } else if (staffPass && sameToken(auth, await authToken(staffPass))) isStaff = true
     else {
       for (const p of staffPasswords()) {
@@ -80,6 +109,34 @@ export async function middleware(req: NextRequest) {
     url.pathname = '/login'
     url.searchParams.set('next', pathname)
     return NextResponse.redirect(url)
+  }
+
+  /* ── ชั้นบัญชี: เห็นเฉพาะการเงิน และอ่านอย่างเดียว ────────────────────────
+     🔴 **ตรวจก่อนชั้นพนักงาน** เพราะคนกลุ่มนี้ถือ isStaff=true ด้วย (โทเคนชนิดเดียวกัน)
+        ถ้าปล่อยให้ตกไปที่ด่านพนักงาน จะถูกเด้งไปหน้าโอนสินค้าซึ่งไม่ใช่สิทธิ์ของเขา */
+  if (isAccount) {
+    /* 🔴 กันเขียนด้วย **เมธอด** — ท่อกลาง /api/web เส้นเดียวพาไปได้ทุกอย่างรวมทั้งเขียนเข้า ZORT
+       ⇒ อนุญาตทั้งเส้นแล้วกันเฉพาะบางพารามิเตอร์ = ต้องไล่กันทุกตัวที่มีและที่จะมี ⇒ พลาดแน่
+       ⚠️ HEAD ปลอดภัยเท่า GET · นอกนั้นปฏิเสธหมด */
+    const readOnly = req.method === 'GET' || req.method === 'HEAD'
+    if (!readOnly && pathname.startsWith('/api') && !pathname.startsWith('/api/auth')) {
+      return NextResponse.json(
+        { error: 'Forbidden', message: 'สิทธิ์ "บัญชี" ดูได้อย่างเดียว — แก้ไขหรือบันทึกไม่ได้' },
+        { status: 403 },
+      )
+    }
+    if (!allowedBy(ACCOUNT_ALLOWED_PREFIXES, pathname)) {
+      if (pathname.startsWith('/api')) {
+        return NextResponse.json(
+          { error: 'Forbidden', message: 'สิทธิ์ "บัญชี" เห็นเฉพาะหน้าการเงิน' },
+          { status: 403 },
+        )
+      }
+      const url = req.nextUrl.clone()
+      url.pathname = '/core/finance'
+      return NextResponse.redirect(url)
+    }
+    return NextResponse.next()
   }
 
   if (isStaff && !staffAllowed(pathname)) {

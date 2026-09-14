@@ -25,7 +25,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, Pill } from '@/components/zort'
 
-interface Who { role?: 'admin' | 'staff' | null; name?: string; error?: string }
+interface Who { role?: 'admin' | 'staff' | 'account' | null; name?: string; error?: string }
 
 export default function SettingsProfilePage() {
   const [w, setW] = useState<Who | null>(null)
@@ -89,6 +89,22 @@ export default function SettingsProfilePage() {
                 </p>
               </>
             )}
+            {/* ชั้นที่สาม เพิ่ม 14 ก.ย. 2569 (งานกระดาน t_mu1bkqy4)
+                ⚠️ ต้องเขียนให้ชัดว่า **แก้อะไรไม่ได้** ไม่งั้นคนกดปุ่มบันทึกแล้วเจอ 403 โดยไม่รู้ว่าทำไม */}
+            {role === 'account' && (
+              <>
+                <p className="text-[17px] font-semibold text-gray-900 flex items-center gap-2">
+                  🧮 {w?.name || 'ฝ่ายบัญชี'} <Pill tone="green">เฉพาะการเงิน · ดูอย่างเดียว</Pill>
+                </p>
+                <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">
+                  เห็นหน้าการเงิน (ภาพรวมการเงิน · รายได้/รายจ่ายอื่น · โอนเงิน · กระเป๋าเงิน ·
+                  เอกสารบัญชี · รวมบิลทุกเจ้า · สะพาน PEAK) — เปิดหน้าอื่นจะถูกพามาที่หน้าการเงิน
+                  <br />
+                  ⚠️ <b>บันทึกหรือแก้อะไรไม่ได้เลย</b> ปุ่มที่ต้องเขียนข้อมูลจะขึ้นว่าไม่มีสิทธิ์
+                  {' '}— เป็นความตั้งใจของชั้นนี้ ไม่ใช่ระบบพัง
+                </p>
+              </>
+            )}
             {role === null && (
               <p className="text-[15px] text-amber-800">
                 ⚠️ ยังไม่ได้ล็อกอิน หรือรหัสในเครื่องนี้ใช้ไม่ได้แล้ว —{' '}
@@ -101,7 +117,10 @@ export default function SettingsProfilePage() {
           <div className="bg-white border border-gray-200 rounded-md p-4 md:p-5 mb-4">
             <p className="text-[13.5px] font-semibold text-gray-800 mb-3">👤 ข้อมูลส่วนตัว <span className="text-[11px] font-normal text-gray-400">(ผังตาม ZORT)</span></p>
             {([
-              ['ชื่อผู้ใช้งาน', role === 'admin' ? 'แอดมิน (เจ้าของร้าน)' : role === 'staff' ? (w?.name || 'พนักงาน (รหัสรวมรุ่นเก่า — ระบบแยกไม่ออกว่าใคร)') : '—', ''],
+              ['ชื่อผู้ใช้งาน',
+                role === 'admin' ? 'แอดมิน (เจ้าของร้าน)'
+                  : role === 'account' ? (w?.name || 'ฝ่ายบัญชี')
+                    : role === 'staff' ? (w?.name || 'พนักงาน (รหัสรวมรุ่นเก่า — ระบบแยกไม่ออกว่าใคร)') : '—', ''],
               ['อีเมล', '', 'ไม่มีในระบบเรา — บัญชีผูกกับรหัสผ่าน ไม่ใช่อีเมล (ZORT ผูกกับอีเมล)'],
               ['รหัสผ่าน', '******', ''],
               ['รหัสยืนยันสองขั้นตอน', '', 'ไม่มีในระบบเรา — ZORT ของร้านก็ปิดสวิตช์นี้อยู่ (ภาพจอจริง 7 ก.ย. 2569)'],

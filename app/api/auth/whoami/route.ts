@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { authToken, sameToken } from '@/lib/auth-token'
+import { isStaffToken, roleOf, verifyStaffToken } from '@/lib/staff-token'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,11 +23,19 @@ export async function GET(req: NextRequest) {
   const legacyStaffPass = process.env.STAFF_PASSWORD
   const auth = req.cookies.get('gucut_auth')?.value
 
-  let role: 'admin' | 'staff' | null = null
+  /* 🔴 เพิ่มชั้น 'account' 14 ก.ย. 2569 (งานกระดาน t_mu1bkqy4)
+     ⚠️ **และแก้ของเดิมที่ขาดไปด้วย**: เส้นนี้ไม่เคยรู้จักโทเคนแบบเซ็นชื่อเลย
+        ⇒ ผู้ใช้ที่เพิ่มจากหน้าเว็บได้ role = null ⇒ จอข้อมูลส่วนตัวขึ้นว่า "ไม่ทราบผู้ใช้"
+        ทั้งที่ล็อกอินอยู่จริง (ของเดิมรู้จักแต่รหัสใน env) */
+  let role: 'admin' | 'staff' | 'account' | null = null
   let name = ''
   // 🔴 คุกกี้เป็นลายนิ้วมือ ไม่ใช่ตัวรหัส ⇒ ต้องแฮชฝั่งนี้แล้วเทียบ (ห้ามเทียบกับ pass ตรง ๆ)
   if (auth && adminPass && sameToken(auth, await authToken(adminPass))) {
     role = 'admin'
+  } else if (auth && isStaffToken(auth) && adminPass) {
+    /* โทเคนเซ็นชื่อของผู้ใช้ที่เพิ่มจากหน้าเว็บ — ชั้นสิทธิ์อยู่ในโทเคน (ไม่มี = พนักงาน) */
+    const claims = await verifyStaffToken(auth, adminPass)
+    if (claims) { role = roleOf(claims); name = claims.n || '' }
   } else if (auth) {
     for (const s of staffList()) {
       if (sameToken(auth, await authToken(s.pass))) { role = 'staff'; name = s.name; break }

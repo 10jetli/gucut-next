@@ -25,7 +25,7 @@ import { PageHead, BtnGhost } from '@/components/zort'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 
-interface U { id: string; name: string; active: boolean; createdAt: string }
+interface U { id: string; name: string; active: boolean; createdAt: string; role?: 'staff' | 'account' }
 
 export default function AddUserPage() {
   const [users, setUsers] = useState<U[] | null>(null)
@@ -36,6 +36,9 @@ export default function AddUserPage() {
   const [name, setName] = useState('')
   const [pass, setPass] = useState('')
   const [pass2, setPass2] = useState('')
+  /* 🔴 **ค่าเริ่มต้นต้องเป็นสิทธิ์ต่ำสุดเสมอ** — คนกดเพิ่มเร็ว ๆ แล้วไม่ทันดูช่องนี้
+     ต้องได้พนักงาน ไม่ใช่บัญชี (พลาดข้างที่ให้สิทธิ์เกิน แก้ยากกว่าข้างที่ให้น้อยไป) */
+  const [role, setRole] = useState<'staff' | 'account'>('staff')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
   const [formErr, setFormErr] = useState('')
@@ -64,12 +67,12 @@ export default function AddUserPage() {
       const r = await fetch('/api/staff-users', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, password: pass }),
+        body: JSON.stringify({ name, password: pass, role }),
       })
       const d = await r.json().catch(() => null)
       if (!r.ok || !d?.ok) { setFormErr(d?.error || `บันทึกไม่สำเร็จ (HTTP ${r.status})`); return }
       // ⚠️ ไม่เอารหัสไปโชว์ซ้ำ ไม่เก็บไว้ในหน้า — ล้างช่องทันทีที่บันทึกเสร็จ
-      setName(''); setPass(''); setPass2('')
+      setName(''); setPass(''); setPass2(''); setRole('staff')
       setMsg(`เพิ่ม "${d.user?.name}" แล้ว — เข้าใช้งานได้ทันที ไม่ต้องรอ deploy`)
       await load()
     } finally { setBusy(false) }
@@ -141,6 +144,35 @@ export default function AddUserPage() {
               className="mt-1 w-full rounded border border-gray-300 px-2.5 py-1.5 text-[13px]" />
           </label>
         </div>
+
+        {/* 🔴 **ชั้นสิทธิ์ — เลือกผิดแล้วคนเห็นของที่ไม่ควรเห็น** ⇒ เขียนให้ครบว่าแต่ละชั้นเห็นอะไร
+            ไม่ใช่แค่ชื่อชั้น · ค่าเริ่มต้นเป็นพนักงานเสมอ (สิทธิ์ต่ำสุด) */}
+        <fieldset className="mt-4 rounded border border-gray-200 p-3">
+          <legend className="px-1 text-[12.5px] font-semibold text-gray-700">ชั้นสิทธิ์</legend>
+          <label className="flex items-start gap-2 text-[13px] text-gray-800">
+            <input type="radio" checked={role === 'staff'} onChange={() => setRole('staff')} className="mt-0.5" />
+            <span>
+              <b>พนักงาน</b>
+              <span className="block text-[11.5px] text-gray-500">
+                เห็นเฉพาะหน้าโอนสินค้าและจอรับคืนหน้าร้าน · เปิดหน้าอื่นจะถูกพากลับ
+              </span>
+            </span>
+          </label>
+          <label className="flex items-start gap-2 text-[13px] text-gray-800 mt-2.5">
+            <input type="radio" checked={role === 'account'} onChange={() => setRole('account')} className="mt-0.5" />
+            <span>
+              <b>บัญชี</b>
+              <span className="block text-[11.5px] text-gray-500">
+                เห็นเฉพาะหน้าการเงิน (ภาพรวมการเงิน · รายได้/รายจ่ายอื่น · โอนเงิน · กระเป๋าเงิน ·
+                เอกสารบัญชี · รวมบิลทุกเจ้า · สะพาน PEAK) และ <b>แก้หรือบันทึกอะไรไม่ได้เลย</b>
+                <br />
+                ⚠️ ปุ่มที่ต้องบันทึก เช่น &ldquo;ดึงบิลเดือนนี้&rdquo; จะกดไม่ได้ —
+                ชั้นนี้ตั้งใจให้ <b>ดูอย่างเดียว</b>
+              </span>
+            </span>
+          </label>
+        </fieldset>
+
         <div className="mt-3 flex items-center gap-3">
           <button onClick={add} disabled={busy || !name.trim() || pass.length < 6 || full || !!storeError}
             className="rounded bg-[#4669e5] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40">
@@ -160,7 +192,8 @@ export default function AddUserPage() {
       <section className="rounded-md border border-gray-200 bg-white p-4">
         <h2 className="text-[14px] font-semibold text-gray-900 mb-1">คนที่เพิ่มจากหน้านี้</h2>
         <p className="text-[11.5px] text-gray-500 mb-3">
-          สิทธิ์ <b>เท่ากับพนักงานเดิมเป๊ะ</b> — เห็นได้แค่หน้าโอนสินค้าและเส้น API ของหน้านั้น
+          ชั้นสิทธิ์ของแต่ละคนดูที่คอลัมน์ <b>สิทธิ์</b> — พนักงานเห็นแค่หน้าโอนสินค้า ·
+          บัญชีเห็นแค่หน้าการเงินและ<b>แก้อะไรไม่ได้เลย</b>
         </p>
         {loading && !users ? <LoadingState /> : users === null ? null : users.length === 0 ? (
           <p className="text-[13px] text-gray-500">ยังไม่มีใคร — เพิ่มจากกล่องข้างบนได้เลย</p>
@@ -168,12 +201,21 @@ export default function AddUserPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[460px] text-[13px]">
               <thead className="border-b border-gray-200 text-gray-500">
-                <tr><th className="py-1.5 text-left font-medium">ชื่อ</th><th className="py-1.5 text-left font-medium">สถานะ</th><th className="py-1.5 text-left font-medium">เพิ่มเมื่อ</th><th /></tr>
+                <tr><th className="py-1.5 text-left font-medium">ชื่อ</th><th className="py-1.5 text-left font-medium">สิทธิ์</th><th className="py-1.5 text-left font-medium">สถานะ</th><th className="py-1.5 text-left font-medium">เพิ่มเมื่อ</th><th /></tr>
               </thead>
               <tbody>
                 {users.map((u) => (
                   <tr key={u.id} className="border-b border-gray-100 last:border-0">
                     <td className="py-2 pr-2">{u.name}</td>
+                    {/* ⚠️ ผู้ใช้ที่สร้างก่อน 14 ก.ย. 2569 ไม่มีช่องนี้ ⇒ ฝั่งเซิร์ฟเวอร์เติมเป็น 'staff' ให้แล้ว
+                        ถ้ายังไม่มีอีก แปลว่าท่ออ่านมาไม่ครบ ⇒ เขียนว่า "ไม่รู้" ห้ามเดาว่าเป็นพนักงาน */}
+                    <td className="py-2 pr-2">
+                      {u.role === 'account'
+                        ? <span className="rounded bg-emerald-50 text-emerald-800 px-1.5 py-0.5 text-[11.5px]">บัญชี · ดูอย่างเดียว</span>
+                        : u.role === 'staff'
+                          ? <span className="text-gray-600">พนักงาน</span>
+                          : <span className="text-gray-400">ไม่รู้ (ท่อไม่ได้ส่งมา)</span>}
+                    </td>
                     <td className="py-2 pr-2">
                       {u.active
                         ? <span className="rounded-full bg-green-50 px-2 py-0.5 text-[12px] text-green-700">ใช้งานได้</span>
