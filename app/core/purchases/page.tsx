@@ -122,7 +122,9 @@ export default function CorePurchasesPage() {
                   ครั้งแรกอ่านเป็น "รับ" เพราะสมองเติมคำที่คุ้นให้เอง */}
               {summaryLine(data.total, data.amount)}
               {' | '}
-              <Link href="/core/soon/stock-count" className="text-blue-600 hover:underline">ตรวจสอบการนับสินค้าเข้า</Link>
+              {/* ✅ แก้ 14 ก.ย. 2569 (t_mu0tx40g): เดิมชี้ /core/soon/stock-count — ตอนนี้ตรวจนับ/รับของทำได้ในหน้าใบสั่งซื้อรายใบ
+                  (ต้องรู้ id ของใบใน ZORT ก่อน จึงไม่มีหน้ารวมแยก) ⇒ บอกทางตรง ๆ แทนการพาไปหน้า "ยังไม่ได้ทำ" */}
+              <span className="text-gray-600">ตรวจสอบการนับสินค้าเข้า: <b>กดเลขที่ใบ</b> แล้วใช้ช่อง &ldquo;รับของ / ตรวจนับ&rdquo;</span>
             </>
             : 'กำลังโหลด…'
         }
@@ -145,7 +147,9 @@ export default function CorePurchasesPage() {
               style={{ background: '#4669e5' }}>
               สร้าง
             </Link>
-            <Link href="/core/soon/buy-create-quick"
+            {/* ✅ แก้ 14 ก.ย. 2569 (t_mu0tx40g): เดิมชี้ /core/soon/buy-create-quick
+                ZORT ไม่มีเส้นแยกสำหรับแบบง่าย ⇒ ใช้หน้าเดียวกับ "สร้าง" โหมด ?quick=1 (สถานะสำเร็จ + จ่ายเงินในใบเดียว) */}
+            <Link href="/core/purchases/new?quick=1"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้างอย่างง่าย

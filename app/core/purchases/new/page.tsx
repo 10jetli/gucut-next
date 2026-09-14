@@ -28,6 +28,14 @@ function NewPurchaseOrderInner() {
   // รับรหัสสินค้ามาจากเมนู ⋮ ของจอสินค้า/ลูกค้าได้ ("ซื้อสินค้า" → เปิดใบพร้อมบรรทัดแรก)
   // เติมตั้งแต่ตอนสร้าง state ไม่ใช่ใน effect — กติกาเดียวกับจอ moves (กันช่องกระพริบว่าง)
   const sp = useSearchParams()
+  /* ── "สร้างอย่างง่าย" (soon: buy-create-quick · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
+     ZORT **ไม่มีเส้นแยก** สำหรับแบบง่าย (เอกสาร V4) ⇒ ใบเดิม + สถานะ "Success" + จ่ายเงินในคำขอเดียว
+     ขาเข้าจากจอ → ท่อ ?addpo=1 เพิ่ม: status "Pending"|"Success" · paid (ตัวเลข) · paymentMethod (ชื่อวิธีชำระที่มีใน ZORT)
+     🔴 **"Success" น่าจะรับของเข้าคลังทันที** — ยังไม่เคยยิง ⇒ ต้องเขียนเตือนบนจอ
+     ⚠️ จ่ายเงินพร้อมกันได้เฉพาะเมื่อ**ทุกบรรทัดมีราคา** (ท่อตีกลับถ้าไม่ครบ — ตรวจที่จอก่อนให้ชัด) */
+  const quick = sp.get('quick') === '1'
+  const [paid, setPaid] = useState('')
+  const [paymentMethod, setPaymentMethod] = useState('')
   // ?vendor= มาจากเมนู ⋮ "ซื้อเข้า" ของจอผู้ติดต่อ (คนนั้นคือคู่ค้าของใบนี้)
   const [vendor, setVendor] = useState(() => (sp.get('vendor') ?? '').trim())
   const [note, setNote] = useState('')
@@ -56,7 +64,9 @@ function NewPurchaseOrderInner() {
   const clean = useMemo(() => lines
     .map((l) => ({ sku: l.sku.trim(), name: l.name.trim(), qty: Number(l.qty), price: l.price.trim() === '' ? null : Number(l.price) }))
     .filter((l) => l.sku && Number.isFinite(l.qty) && l.qty > 0), [lines])
-  const sig = useMemo(() => JSON.stringify({ vendor: vendor.trim(), note: note.trim(), clean }), [vendor, note, clean])
+  const sig = useMemo(
+    () => JSON.stringify({ vendor: vendor.trim(), note: note.trim(), clean, quick, paid: paid.trim(), paymentMethod: paymentMethod.trim() }),
+    [vendor, note, clean, quick, paid, paymentMethod])
   const dryOk = okDry !== '' && okDry === sig
   const priced = clean.filter((l) => l.price !== null).length
   const total = clean.reduce((s, l) => s + (l.price ?? 0) * l.qty, 0)
@@ -66,6 +76,19 @@ function NewPurchaseOrderInner() {
     if (!clean.length) { setErr('ต้องมีรายการสินค้าอย่างน้อย 1 บรรทัด (จำนวนต้องมากกว่า 0)'); return }
     const dup = clean.map((l) => l.sku).filter((v, i, a) => a.indexOf(v) !== i)
     if (dup.length) { setErr(`รหัสสินค้าซ้ำกันในใบเดียว: ${Array.from(new Set(dup)).join(', ')} — รวมเป็นบรรทัดเดียวก่อน`); return }
+    /* แบบง่าย: ตรวจที่จอก่อนให้ข้อความชัด (ท่อตีกลับอยู่แล้วถ้าผิด) */
+    let quickFields: Record<string, string | number> = {}
+    if (quick) {
+      if (priced < clean.length) { setErr('แบบง่ายต้องใส่ราคาครบทุกบรรทัด — ZORT ไม่คิดราคาให้ และจ่ายเงินพร้อมกันต้องรู้ยอดใบ'); return }
+      quickFields = { status: 'Success' }
+      if (paid.trim() !== '') {
+        const n = Number(paid)
+        if (!Number.isFinite(n) || n <= 0) { setErr('ยอดที่จ่ายต้องเป็นตัวเลขมากกว่า 0'); return }
+        if (n > Math.round(total * 100) / 100) { setErr(`ยอดที่จ่าย ${n} มากกว่ายอดใบ ${Math.round(total * 100) / 100}`); return }
+        if (!paymentMethod.trim()) { setErr('ใส่ยอดจ่ายแล้วต้องระบุวิธีชำระ (ชื่อที่มีใน ZORT)'); return }
+        quickFields = { ...quickFields, paid: n, paymentMethod: paymentMethod.trim() }
+      }
+    }
     setBusy(true)
     try {
       const r: WriteResp = await fetch('/api/web/core?addpo=1', {
@@ -75,6 +98,7 @@ function NewPurchaseOrderInner() {
           vendor: vendor.trim() || undefined,
           note: note.trim() || undefined,
           items: clean.map((l) => ({ sku: l.sku, ...(l.name ? { name: l.name } : {}), qty: l.qty, ...(l.price === null ? {} : { price: l.price }) })),
+          ...quickFields,
           ...(confirm ? { confirm: true } : {}),
         }),
       }).then((x) => x.json())
@@ -82,12 +106,12 @@ function NewPurchaseOrderInner() {
       if (!confirm && r?.dryRun && r?.ok !== false) setOkDry(sig)
       if (confirm && r?.ok) setOkDry('')
     } catch (e) { setErr(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
-  }, [vendor, note, clean, ref, sig])
+  }, [vendor, note, clean, ref, sig, quick, priced, total, paid, paymentMethod])
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
       <PageHead
-        title="สร้างใบสั่งซื้อ"
+        title={quick ? 'สร้างใบสั่งซื้ออย่างง่าย' : 'สร้างใบสั่งซื้อ'}
         summary={<>สร้างใบใน ZORT โดยตรง{' | '}<span className="text-gray-400">เลขอ้างอิงใบนี้: <b>{ref}</b> (กันการส่งซ้ำ)</span></>}
         actions={<Link href="/core/purchases" className="text-[13px] text-blue-600 hover:underline">← กลับรายการซื้อ</Link>}
       />
@@ -103,6 +127,35 @@ function NewPurchaseOrderInner() {
         {' '}<Link href="/core/quotations/new" className="underline">ใบเสนอราคา</Link>{' '}
         ยังไม่รวมใบสั่งซื้อ · <b>ทดลองส่งใช้ได้ตามปกติ</b> (ตรวจข้อมูลได้ครบ ไม่มีอะไรเข้า ZORT)
       </div>
+
+      {quick ? (
+        <div className="bg-amber-50 border border-amber-300 rounded-md p-4 mb-3">
+          <div className="text-[12.5px] text-amber-900 leading-relaxed mb-3">
+            ⚡ <b>แบบง่าย = ใบสำเร็จทันที + จ่ายเงินในใบเดียว</b> (ZORT ไม่มีเส้นแยก ใช้ใบสั่งซื้อเดิมตั้งสถานะ &ldquo;สำเร็จ&rdquo;)
+            <br />
+            🔴 <b>สถานะสำเร็จน่าจะรับของเข้าคลังทันที</b> — ยังไม่เคยยิงจริง ใบแรกต้องดูสต็อกก่อน/หลัง ·
+            ต้องใส่<b>ราคาครบทุกบรรทัด</b> · ไม่อยากให้ของเข้าคลังตอนนี้ ใช้{' '}
+            <Link href="/core/purchases/new" className="underline">สร้างแบบปกติ</Link> แล้วรับของทีหลัง
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-[12.5px] text-gray-600">ยอดที่จ่ายแล้ว</span>
+              <input value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="decimal"
+                className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ไม่ใส่ = ยังไม่บันทึกการจ่าย" />
+            </label>
+            <label className="block">
+              <span className="text-[12.5px] text-gray-600">วิธีชำระ</span>
+              <input value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
+                className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ต้องเป็นชื่อที่มีใน ZORT เช่น โอน" />
+            </label>
+          </div>
+        </div>
+      ) : (
+        <p className="text-[12px] text-gray-500 mb-3">
+          อยากบันทึกว่าได้ของและจ่ายเงินแล้วในใบเดียว ใช้{' '}
+          <Link href="/core/purchases/new?quick=1" className="text-blue-600 hover:underline">สร้างอย่างง่าย</Link>
+        </p>
+      )}
 
       <div className="bg-white border border-gray-200 rounded-md p-4 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="block">

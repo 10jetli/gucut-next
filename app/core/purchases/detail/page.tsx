@@ -13,12 +13,165 @@
 //       ถ้าจอเลือกโชว์ค่าเดียว คนอ่านจะไม่มีวันรู้ว่ามีส่วนต่าง แล้วไล่บัญชีไม่ได้
 //       (คลาสเดียวกับใบเสนอราคาที่ท่อจงใจส่งช่องเงินทุกช่อง)
 // ⚠️ อ่านจาก **กระจก** ไม่ใช่ ZORT สด — ต้องเขียนบอกผู้ใช้ ไม่ปล่อยให้เข้าใจว่าสด
-import { Suspense, useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost } from '@/components/zort'
+import { PageHead, BtnGhost, WriteResult } from '@/components/zort'
+import type { WriteResp } from '@/components/zort'
+
+/* ── รับของ / ตรวจนับสินค้าเข้า (soon: stock-count · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
+   ท่อ (gucut-web): GET ?zortpo=<เลขที่ใบ> → id ของ ZORT (กระจกไม่มี id · เลขที่ใบซ้ำได้ ท่อไม่เดา)
+                    POST ?poreceive=1 ขาเข้าจากจอ: {ref, id, warehouse?, date?, items?:[{sku, qty}]}
+                      มี items = รับบางส่วนตามที่นับได้ · ไม่มี = รับครบทั้งใบ
+   🔴 ยิงจริงแล้วสต็อกขยับทันที ถอยผ่าน API ไม่ได้ · 🔴 ยังไม่รู้ว่าจำนวนเป็น "ยอดรอบนี้" หรือ "ยอดสะสม"
+   🔴 ปุ่มรับจริงปิดอยู่ (REAL_SEND_ENABLED) รอท่านประธานอนุมัติ — แบบเดียวกับจอเขียนอื่น */
+const REAL_SEND_ENABLED = false
+
+interface ZortPo { id: number; number: string; status: string | null; warehousecode: string | null }
+interface ZortPoResp { ok?: boolean; found?: boolean; purchaseOrder?: ZortPo; error?: string; unknown?: boolean; duplicate?: boolean; ids?: number[]; fallthrough?: boolean }
+
+function ReceiveBox({ number, lines }: { number: string; lines: Line[] }) {
+  const [po, setPo] = useState<ZortPo | null>(null)
+  const [poErr, setPoErr] = useState('')
+  const [poLoading, setPoLoading] = useState(true)
+  const [mode, setMode] = useState<'partial' | 'all'>('partial')
+  const [counts, setCounts] = useState<Record<string, string>>(() =>
+    Object.fromEntries(lines.filter((l) => l.sku).map((l) => [String(l.sku), ''])))
+  const [date, setDate] = useState('')
+  const [busy, setBusy] = useState(false)
+  const [err, setErr] = useState('')
+  const [res, setRes] = useState<WriteResp | null>(null)
+  const [okDry, setOkDry] = useState('')
+  const [ref, setRef] = useState('')
+  useEffect(() => { setRef(`RCV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`) }, [])
+
+  const findPo = useCallback(async () => {
+    setPoLoading(true); setPoErr(''); setPo(null)
+    try {
+      const r = await fetch(`/api/web/core?zortpo=${encodeURIComponent(number)}`)
+      const j: ZortPoResp = await r.json().catch(() => ({}))
+      if (j.fallthrough) { setPoErr('ท่อยังไม่มีเส้น zortpo (ท่อรุ่นเก่า) — รอขึ้นระบบ'); return }
+      if (j.duplicate) { setPoErr(`เลขที่ใบนี้ซ้ำกัน ${j.ids?.length ?? '?'} ใบใน ZORT (id ${j.ids?.join(', ')}) — รับของจากจอนี้ไม่ได้ ต้องไปทำใน ZORT`); return }
+      if (!r.ok || j.ok === false) { setPoErr(`ถาม ZORT ไม่สำเร็จ — ยังไม่รู้ว่ามีใบนี้ไหม · ${j.error ?? `HTTP ${r.status}`}`); return }
+      if (!j.found || !j.purchaseOrder) { setPoErr(`ZORT ตอบว่าไม่มีใบสั่งซื้อเลขที่ ${number} ตรงตัว`); return }
+      setPo(j.purchaseOrder)
+    } catch (e) { setPoErr(String(e instanceof Error ? e.message : e)) } finally { setPoLoading(false) }
+  }, [number])
+  useEffect(() => { findPo() }, [findPo])
+
+  const items = useMemo(() => Object.entries(counts)
+    .map(([sku, v]) => ({ sku, qty: Number(v.trim()) }))
+    .filter((x) => x.qty > 0 && Number.isFinite(x.qty)), [counts])
+  const sig = useMemo(() => JSON.stringify({ mode, items, date }), [mode, items, date])
+  const dryOk = okDry !== '' && okDry === sig
+
+  const send = useCallback(async (confirm: boolean) => {
+    setErr(''); setRes(null)
+    if (!po) return
+    if (mode === 'partial' && !items.length) { setErr('ใส่จำนวนที่นับได้อย่างน้อย 1 รหัส (หรือเลือกรับครบทั้งใบ)'); return }
+    const bad = Object.entries(counts).filter(([, v]) => v.trim() !== '' && (!Number.isFinite(Number(v)) || Number(v) < 0))
+    if (bad.length) { setErr(`จำนวนไม่ถูกต้อง: ${bad.map(([s]) => s).join(', ')}`); return }
+    if (date && !/^\d{4}-\d{2}-\d{2}$/.test(date)) { setErr('วันที่รับของต้องเป็นรูป ปปปป-ดด-วว'); return }
+    setBusy(true)
+    try {
+      const r: WriteResp = await fetch('/api/web/core?poreceive=1', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          ref, id: po.id,
+          ...(po.warehousecode ? { warehouse: po.warehousecode } : {}),
+          ...(date ? { date } : {}),
+          ...(mode === 'partial' ? { items } : {}),
+          ...(confirm ? { confirm: true } : {}),
+        }),
+      }).then((x) => x.json())
+      setRes(r)
+      if (!confirm && r?.dryRun && r?.ok !== false) setOkDry(sig)
+      if (confirm && r?.ok) setOkDry('')
+    } catch (e) { setErr(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
+  }, [po, mode, items, counts, date, ref, sig])
+
+  return (
+    <section className="mt-4 rounded border-2 border-amber-200 bg-amber-50/40 p-3">
+      <h2 className="mb-1 text-[14px] font-semibold">📦 รับของ / ตรวจนับสินค้าเข้า (ส่งเข้า ZORT)</h2>
+      <p className="text-[12.5px] text-amber-900 leading-relaxed">
+        🔴 <b>ยิงจริงแล้วสต็อกใน ZORT ขยับทันที ถอยผ่านระบบไม่ได้</b> · 🔴 <b>ยังไม่รู้</b>ว่า ZORT นับจำนวนที่ส่งเป็น
+        &ldquo;ยอดรอบนี้&rdquo; หรือ &ldquo;ยอดสะสม&rdquo; — ใบแรกต้องดูสต็อกก่อน/หลังด้วยตา
+        {!REAL_SEND_ENABLED && <> · <b>ตอนนี้ยังรับจริงไม่ได้</b> รอท่านประธานอนุมัติ (ทดลองใช้ได้)</>}
+      </p>
+
+      {poLoading && <p className="mt-2 text-[13px] text-gray-500">กำลังถาม ZORT ว่าใบนี้คือ id ไหน…</p>}
+      {poErr && (
+        <p className="mt-2 text-[13px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">
+          {poErr} <button onClick={findPo} className="underline">ลองใหม่</button>
+        </p>
+      )}
+      {po && (
+        <>
+          <p className="mt-2 text-[12.5px] text-gray-600">
+            ใบนี้ใน ZORT: id <b>{po.id}</b> · สถานะ <b>{po.status ?? '—'}</b> · คลัง <b>{po.warehousecode ?? 'ค่าเริ่มต้นของร้าน'}</b>
+            {' '}<span className="text-gray-400">(ถามสดจาก ZORT · ไม่ใช่กระจก)</span>
+          </p>
+          <div className="mt-2 flex flex-wrap gap-4 text-[13px]">
+            <label className="flex items-center gap-1.5">
+              <input type="radio" checked={mode === 'partial'} onChange={() => setMode('partial')} /> รับตามจำนวนที่นับได้
+            </label>
+            <label className="flex items-center gap-1.5">
+              <input type="radio" checked={mode === 'all'} onChange={() => setMode('all')} /> รับครบทั้งใบ
+            </label>
+            <label className="flex items-center gap-1.5">
+              วันที่รับ <input value={date} onChange={(e) => setDate(e.target.value)} placeholder="ปปปป-ดด-วว (ไม่ใส่ = วันนี้)"
+                className="border border-gray-300 rounded px-2 py-1 text-[13px] w-[190px]" />
+            </label>
+          </div>
+          {mode === 'partial' && (
+            <div className="mt-2 overflow-x-auto">
+              <table className="w-full text-[13px]">
+                <thead>
+                  <tr className="border-b border-gray-200 text-left text-gray-500">
+                    <th className="py-1 pr-2 font-medium">รหัส</th>
+                    <th className="py-1 pr-2 font-medium">ชื่อสินค้า</th>
+                    <th className="py-1 pr-2 font-medium text-right">สั่งไว้ (กระจก)</th>
+                    <th className="py-1 font-medium text-right" style={{ width: 130 }}>นับได้</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {lines.filter((l) => l.sku).map((l) => (
+                    <tr key={String(l.sku)} className="border-b border-gray-100 last:border-0">
+                      <td className="py-1 pr-2 font-mono text-[12px]">{l.sku}</td>
+                      <td className="py-1 pr-2">{l.name || '—'}</td>
+                      <td className="py-1 pr-2 text-right tabular-nums">{baht(l.qty)}</td>
+                      <td className="py-1 text-right">
+                        <input value={counts[String(l.sku)] ?? ''} inputMode="decimal"
+                          onChange={(e) => setCounts((c) => ({ ...c, [String(l.sku)]: e.target.value }))}
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-[13px] text-right" placeholder="0" />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {err && <p className="mt-2 text-[13px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">{err}</p>}
+          <WriteResult r={res} />
+          <div className="mt-3 flex flex-wrap items-center gap-3">
+            <button onClick={() => send(false)} disabled={busy || !ref}
+              className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50">
+              {busy ? 'กำลังส่ง…' : '🧪 ทดลองรับของ (ยังไม่เข้า ZORT)'}
+            </button>
+            <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
+              className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
+              style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
+              รับของเข้า ZORT จริง
+            </button>
+            {REAL_SEND_ENABLED && !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองให้ผ่านก่อน' : 'จำนวนเปลี่ยนหลังทดลอง — ต้องทดลองใหม่'}</span>}
+          </div>
+        </>
+      )}
+    </section>
+  )
+}
 
 interface Line { line?: number; sku?: string; name?: string; qty?: number; price?: number }
 interface Resp {
@@ -163,6 +316,9 @@ function Inner() {
               </div>
             )}
           </section>
+
+          {/* รับของ/ตรวจนับ — เปิดได้เฉพาะใบที่มีเลขที่ใบ (ท่อหา id ของ ZORT จากเลขนี้) */}
+          {(d.number || no) && <ReceiveBox number={d.number || no} lines={d.lines ?? []} />}
         </>
       )}
     </div>
