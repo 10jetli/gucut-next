@@ -324,6 +324,12 @@ export const SOON: Record<string, SoonPage> = {
   },
   'setting-roles': { title: 'สิทธิ์การใช้งาน', what: 'กำหนดว่าใครเห็นหรือแก้อะไรได้บ้าง' },
   'user-add': {
+    /* 🟢 **ทำเสร็จแล้ว ไม่ใช่ยังไม่ได้ทำ** (เจอ 14 ก.ย. 2569 ตอนรับใบ t_mu0tx4gd)
+       `/core/settings-users/add` มีจริงและ POST เข้า `/api/staff-users` ได้ (ยืนยันแล้ว)
+       จอ settings-users เองก็เลิกพาไปหน้า soon ตั้งแต่ 8 ก.ย. 2569 แต่ทะเบียนไม่ได้ตามมาแก้
+       ⚠️ **คนละเรื่องกับผู้ใช้ใน ZORT** — ยิงแล้ว AddUser · User/Get·AddUser ได้ 404 ครบ
+          ถ้าจะทำจอผู้ใช้ของ ZORT ให้เปิดคีย์ใหม่ อย่าเอามาปนกับคีย์นี้ */
+    builtAt: '/core/settings-users/add',
     title: 'เพิ่มผู้ใช้งาน',
     what: 'เพิ่มพนักงานให้เข้าหลังร้านได้ (มีชื่อ+รหัสของตัวเอง แยกกันรายคน)',
     meanwhile: 'ตอนนี้เพิ่มที่ Netlify → Environment variables (STAFF_NAME_1..8 / STAFF_PASS_1..8) '
