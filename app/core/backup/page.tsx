@@ -198,6 +198,16 @@ export default function BackupPage() {
   const mins = minutesSince(st?.lastRun)
   // สำรองทุกชั่วโมง — เกินสองชั่วโมงแปลว่ารอบอัตโนมัติไม่เดิน ต้องเห็นชัด ไม่ใช่เขียวเงียบ
   const stale = mins !== null && mins > 125
+  /* 🔴 **จอนี้เคยขึ้นเขียวว่า "✅ สำเนาล่าสุด —  · รวม 0 คีย์ · 0 ไบต์ · 0 ถัง"**
+     (เจอด้วยท่อปลอมโหมด partialgood 14 ก.ย. 2569 — ท่อตอบ ready:true แต่ไม่มีอะไรข้างใน)
+     ⇒ ติ๊กถูกเขียวบนจอสำรองข้อมูล คือคำโกหกที่แพงที่สุดในระบบทั้งหมด:
+        คนอ่านแล้ววางใจว่าข้อมูลมีสำเนา จนถึงวันที่ข้อมูลหายแล้วเรียกคืนไม่ได้
+     ⇒ กติกา: **เขียวได้เฉพาะเมื่อมีทั้ง "เวลาที่สำรองล่าสุด" และ "คีย์ที่สำรองไว้จริง"**
+        ขาดข้อใดข้อหนึ่ง = ยืนยันไม่ได้ว่ามีสำเนา ⇒ ห้ามเขียว
+     ⚠️ ต่างจาก `ready:false` (ระบบยังไม่พร้อม) — อันนี้คือระบบบอกว่าพร้อม แต่ยืนยันของไม่ได้ */
+  const noWhen = !st?.lastRun
+  const noCopies = stores.length === 0 || totalKeys === 0
+  const unconfirmed = noWhen || noCopies
   // ผลซ้อมมีอายุ 5 นาที — พอให้อ่านผลและตัดสินใจ แต่ไม่นานพอให้ข้อมูลต้นทางเปลี่ยนไปมาก
   const DRY_TTL = 5 * 60_000
   const dryLeft = dryAt && now ? Math.max(0, DRY_TTL - (now - dryAt)) : DRY_TTL
@@ -242,14 +252,30 @@ export default function BackupPage() {
       {st && st.ready !== false && (
         <>
           <div className={`rounded px-3 py-2.5 mb-3 text-[13px] border leading-relaxed ${
-            stale ? 'bg-amber-50 border-amber-200 text-amber-800' : 'bg-emerald-50 border-emerald-200 text-emerald-800'
+            unconfirmed ? 'bg-red-50 border-red-300 text-red-900'
+              : stale ? 'bg-amber-50 border-amber-200 text-amber-800'
+                : 'bg-emerald-50 border-emerald-200 text-emerald-800'
           }`}>
-            {stale
-              ? <>⚠️ สำเนาล่าสุดทำเมื่อ <b>{thaiTime(st.lastRun)}</b> ({mins} นาทีที่แล้ว) —
-                ปกติทำทุกชั่วโมง ทิ้งช่วงนานกว่านี้แปลว่ารอบอัตโนมัติอาจไม่เดิน กด &quot;สำรองเดี๋ยวนี้&quot; ดูได้</>
-              : <>✅ สำเนาล่าสุด <b>{thaiTime(st.lastRun)}</b>
-                {mins !== null && <> ({mins < 1 ? 'เมื่อครู่' : `${mins} นาทีที่แล้ว`})</>} ·
-                รวม <b>{num(totalKeys)}</b> คีย์ · {fmtBytes(totalBytes)} · {stores.length} ถัง</>}
+            {unconfirmed
+              ? (
+                <>
+                  🔴 <b>ยืนยันไม่ได้ว่ามีสำเนาอยู่จริง</b> — ระบบบอกว่าพร้อมทำงาน แต่
+                  {noWhen && <> <b>ไม่ได้บอกเวลาที่สำรองล่าสุด</b></>}
+                  {noWhen && noCopies && ' และ'}
+                  {noCopies && <> <b>ยังไม่เห็นคีย์ที่สำรองไว้สักคีย์</b> ({num(totalKeys)} คีย์ · {stores.length} ถัง)</>}
+                  <br />
+                  <span className="text-[12.5px]">
+                    ⇒ <b>อย่าเพิ่งวางใจว่าข้อมูลมีสำเนา</b> · กด &ldquo;สำรองเดี๋ยวนี้&rdquo; แล้วดูว่าตัวเลขขยับไหม
+                    {' '}— ถ้าไม่ขยับ แปลว่าตัวสำรองไม่ได้ทำงานจริง ต้องแจ้งทันที
+                  </span>
+                </>
+              )
+              : stale
+                ? <>⚠️ สำเนาล่าสุดทำเมื่อ <b>{thaiTime(st.lastRun)}</b> ({mins} นาทีที่แล้ว) —
+                  ปกติทำทุกชั่วโมง ทิ้งช่วงนานกว่านี้แปลว่ารอบอัตโนมัติอาจไม่เดิน กด &quot;สำรองเดี๋ยวนี้&quot; ดูได้</>
+                : <>✅ สำเนาล่าสุด <b>{thaiTime(st.lastRun)}</b>
+                  {mins !== null && <> ({mins < 1 ? 'เมื่อครู่' : `${mins} นาทีที่แล้ว`})</>} ·
+                  รวม <b>{num(totalKeys)}</b> คีย์ · {fmtBytes(totalBytes)} · {stores.length} ถัง</>}
           </div>
 
           <TableWrap>
