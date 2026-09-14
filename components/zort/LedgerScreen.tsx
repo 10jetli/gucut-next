@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SOON } from '@/lib/zort-menu'
+import { fmtMoney } from '@/lib/format'
 import { PageHead, TableWrap, TH, THR, thaiDate } from './index'
 
 export interface LedgerCol { label: string; right?: boolean }
@@ -74,11 +75,25 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
     pick(r, 'reference', 'description'), pick(r, 'amount'), pick(r, 'status')],
   variations: (r) => [pick(r, 'sku'), pick(r, 'name'),
     Array.isArray(r.variants) ? `${(r.variants as unknown[]).length} ตัวเลือก` : null, null, null, null],
+  /* ⚠️ **คนละตัวกับ "ลูกค้าคืนของ" (ReturnOrder)** — อันนี้คือของที่เราส่งคืน *ผู้ขาย*
+     ชื่อสองอันนี้คล้ายกันมาก ⇒ ทุกข้อความบนจอต้องมีคำว่า "ให้ผู้ขาย" กำกับ
+     สลับสองจอนี้ = ตัดสต็อกผิดทาง แล้วของหายจากคลังโดยไม่มีอะไรฟ้อง
+     ⚠️ `customername` ของเส้นนี้ = **ผู้ขาย** ไม่ใช่ลูกค้า (ZORT ใช้ชื่อช่องเดิม) */
+  returnpurchaseorders: (r) => [
+    pick(r, 'number'),
+    day(pick(r, 'returnpurchaseorderdateString', 'returnpurchaseorderdate', 'createdatetime')),
+    pick(r, 'customername', 'contactname'),
+    pick(r, 'referencenumber'),
+    pick(r, 'warehousecode'),
+    pick(r, 'amount'),
+    pick(r, 'status'),
+    pick(r, 'paymentstatus'),
+  ],
 }
 
 export default function LedgerScreen({
   title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, purpose, meanwhile,
-  emptyProof, zortList,
+  emptyProof, zortList, createHref, totals, hadHandCheck,
 }: {
   title: string
   cols: LedgerCol[]
@@ -106,10 +121,26 @@ export default function LedgerScreen({
   purpose: string
   /** ตอนนี้ร้านทำเรื่องนี้ที่ไหน */
   meanwhile: string
+  /** 🔴 **จอนี้เคยโชว์ตัวเลขที่คัดมาด้วยมือเมื่อ 3 ก.ย. 2569 หรือเปล่า**
+   *  ใส่ `true` เฉพาะสี่จอทะเบียนเดิม (รายได้อื่น · รายจ่ายอื่น · โอนเงิน · หลากคุณสมบัติ)
+   *  ⇒ พอต่อท่อแล้ว จอจะบอกได้ว่า "เลขนี้ ZORT ตอบเอง ไม่ใช่คำบอกเล่าเดิมอีกแล้ว" ซึ่งมีความหมาย
+   *
+   *  🔴 **จอใหม่ห้ามใส่** — ไม่เคยมีคำบอกเล่าเมื่อ 3 ก.ย. ให้เทียบ
+   *     เขียนไปจะกลายเป็นอ้างถึงเหตุการณ์ที่ไม่เคยเกิด (เจอ 14 ก.ย. 2569 ตอนทำจอคืนสินค้าให้ผู้ขาย)
+   *     ⚠️ ตระกูลเดียวกับบั๊ก "ต้อง Export Excel" ที่ผูกตายตัวไว้กับธง impossible:
+   *        **ผลลัพธ์ที่ผูกตายตัวไว้กับตัวประกอบร่วม แล้วจอใหม่ได้รับมรดกไปโดยไม่มีใครสั่ง** */
+  hadHandCheck?: boolean
   /** 🔴 **ต่อท่อจริงแล้ว** — ชื่อชุดข้อมูลของเส้น `?zortlist=` (ขึ้น production 14 ก.ย. 2569)
    *  ไม่ส่ง = จอยังไม่ต่อท่อ พฤติกรรมเดิมทุกอย่าง (จอที่ยังไม่มีเส้นจะไม่ถูกแตะเลย)
    *  ⚠️ `variations` **ห้ามส่ง from/to** (ท่อตอบ 400) */
-  zortList?: 'incomes' | 'expenses' | 'moneytransfers' | 'variations'
+  zortList?: 'incomes' | 'expenses' | 'moneytransfers' | 'variations' | 'returnpurchaseorders'
+  /** ✅ **จอ "สร้าง" ทำเสร็จแล้ว ⇒ ปุ่มพาไปของจริง ไม่ใช่หน้า soon**
+   *  ไม่ส่ง = พาไป `/core/soon/<soonKey>` ตามเดิม (ยังไม่ได้ทำ) */
+  createHref?: string
+  /** 🔴 **ยอดรวมต้องมาจากท่อ ห้ามบวกจากแถวเอง** — เราดึงมาแค่หน้าละไม่กี่แถว
+   *  บวกเองจะได้ยอดของ "หน้านี้" แล้วโชว์เหมือนเป็นยอดทั้งชุด (CLAUDE.md กฎตัวเลขคนละแหล่ง)
+   *  ชื่อช่องใน JSON ที่ให้เอามาโชว์ + ป้ายกำกับ · null จากท่อ = ไม่ส่งมา ⇒ "ยังไม่รู้" */
+  totals?: { key: string; label: string }[]
 }) {
   const age = ageOf(CHECKED_AT)
 
@@ -130,6 +161,8 @@ export default function LedgerScreen({
         (ฝั่งท่อกำชับตรง ๆ · และยังห้ามขึ้น "0 รายการ" เหมือนเดิม) */
   const [zCode, setZCode] = useState('')
   const [zDesc, setZDesc] = useState('')
+  /** ยอดรวมที่ **ท่อคิดให้** · undefined = ท่อไม่ได้ส่งช่องนั้นมา ⇒ จอต้องไม่โชว์เลข */
+  const [zTotals, setZTotals] = useState<Record<string, number | null>>({})
   const [zLoading, setZLoading] = useState(!!zortList)
   const [rowKeys, setRowKeys] = useState<string[]>([])
 
@@ -151,10 +184,17 @@ export default function LedgerScreen({
       setRows(Array.isArray(d.rows) ? d.rows : [])
       setZCount(typeof d.count === 'number' ? d.count : null)
       setRowKeys(Array.isArray(d.rowKeys) ? d.rowKeys.map(String) : [])
+      /* ⚠️ เก็บเฉพาะที่เป็นตัวเลขจริง — ช่องที่ท่อไม่ส่งมาต้องไม่กลายเป็น 0 */
+      const t: Record<string, number | null> = {}
+      for (const spec of totals ?? []) {
+        const v = (d as Record<string, unknown>)[spec.key]
+        t[spec.key] = typeof v === 'number' ? v : null
+      }
+      setZTotals(t)
     } catch (e) {
       setZErr(String(e instanceof Error ? e.message : e))
     } finally { setZLoading(false) }
-  }, [zortList])
+  }, [zortList, totals])
   useEffect(() => { void loadZort() }, [loadZort])
 
   /** ต่อท่อแล้วและตอบมาเรียบร้อย (มีแถวหรือไม่มีก็ตาม) */
@@ -203,7 +243,9 @@ export default function LedgerScreen({
               </Link>
             )}
             {!noCreate && (
-              <Link href={`/core/soon/${soonKey}`}
+              /* ✅ มีจอจริงแล้วต้องพาไปของจริง — ปล่อยให้ชี้หน้า soon ทั้งที่ของเสร็จแล้ว
+                 คือโรคที่เคยเจอกับ /core/purchases/new (คนอ่านว่า "ยังไม่ได้ทำ" ทั้งที่มีมา 8 วัน) */
+              <Link href={createHref ?? `/core/soon/${soonKey}`}
                 className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
                 style={{ background: '#4669e5' }}>
                 {createLabel}
@@ -329,7 +371,7 @@ export default function LedgerScreen({
                       ? <><b>ดึงข้อมูลไม่สำเร็จ</b> ({zErr}) — ยังไม่รู้ว่ามีรายการไหม · </>
                       : zortAnswered
                         ? <>ถาม ZORT สดตอนเปิดหน้านี้ — <b>ZORT ตอบเองว่ามี {zCount ?? rows!.length} รายการ</b>
-                          {' '}(ไม่ใช่คำบอกเล่าจากการเปิดจอดูเมื่อ {thaiDate(CHECKED_AT)} อีกแล้ว) · </>
+                          {hadHandCheck && <>{' '}(ไม่ใช่คำบอกเล่าจากการเปิดจอดูเมื่อ {thaiDate(CHECKED_AT)} อีกแล้ว)</>} · </>
                         : cantRead
                           ? <>ตารางว่างเพราะ<b>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้</b> — ไม่ใช่เพราะเรายังไม่ได้ทำ
                             {' '}และไม่ใช่เพราะร้านไม่มีรายการ · </>
@@ -405,6 +447,16 @@ export default function LedgerScreen({
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
           {/* 🔴 ต่อท่อแล้วต้องบอกจำนวนจริง — ปล่อยเป็น "ยังไม่ได้ดึงข้อมูล" ทั้งที่ดึงมาแล้ว
               คือข้อความที่ขัดกับตารางข้างบนในจอเดียวกัน (14 ก.ย. 2569) */}
+          {/* 🔴 ยอดรวมจากท่อ — วางไว้ข้างจำนวน เพราะคนอ่านสองอันนี้คู่กันเสมอ
+              ⚠️ null = ท่อไม่ได้ส่งช่องนั้นมา ⇒ "ยังไม่รู้" **ห้ามเป็น 0** */}
+          {zortAnswered && (totals ?? []).map((spec) => (
+            <span key={spec.key} className="text-[12.5px] text-gray-500 mr-3">
+              {spec.label}{' '}
+              {zTotals[spec.key] === null || zTotals[spec.key] === undefined
+                ? <span className="text-amber-700" title="ท่อไม่ได้ส่งยอดรวมช่องนี้มา — ไม่ใช่ศูนย์">ยังไม่รู้</span>
+                : <b className="text-gray-700">{fmtMoney(zTotals[spec.key] as number)} บาท</b>}
+            </span>
+          ))}
           {zortAnswered
             ? (zCount !== null && zCount > rows!.length
               ? `จำนวน ${zCount} รายการ (แสดง ${rows!.length})`
@@ -425,8 +477,17 @@ export default function LedgerScreen({
       </div>
 
       <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-        ผังจอลอกจาก ZORT ของจริง{!noCreate && <> · ปุ่ม <b>{createLabel}</b></>}
-        {withImport && <> และ <b>นำเข้าไฟล์ (Excel)</b></>}{!noCreate && ' ยังทำงานไม่ได้ กดแล้วจะบอกว่าติดอะไรอยู่ · '}
+        {/* 🔴 **ประโยค "ปุ่มยังทำงานไม่ได้" กลายเป็นเท็จทันทีที่จอสร้างเสร็จ** (14 ก.ย. 2569)
+            จอคืนสินค้าให้ผู้ขายมีจอสร้างจริงแล้ว แต่ท้ายจอยังบอกว่ากดแล้วจะเจอหน้าบอกว่าติดอะไร
+            ⇒ คนอ่านแล้วไม่กด · โรคเดิม: ของถูก แต่จอบอกผิด แล้วคนเลิกหา
+            ⇒ ผูกกับ createHref (มี = ปุ่มพาไปของจริง) แทนการเขียนตายตัว */}
+        ผังจอลอกจาก ZORT ของจริง
+        {!noCreate && createHref && <> · ปุ่ม <b>{createLabel}</b> ใช้งานได้จริง</>}
+        {!noCreate && !createHref && <> · ปุ่ม <b>{createLabel}</b></>}
+        {withImport && <> และ <b>นำเข้าไฟล์ (Excel)</b></>}
+        {!noCreate && !createHref && ' ยังทำงานไม่ได้ กดแล้วจะบอกว่าติดอะไรอยู่'}
+        {!noCreate && createHref && withImport && <> · ส่วน <b>นำเข้าไฟล์</b> ยังทำงานไม่ได้</>}
+        {!noCreate && ' · '}
         {/* ⚠️ เหตุผล "ไม่มีข้อมูลให้ส่งออก" ใช้ได้เฉพาะตอนไม่มีแถวจริง ๆ
             พอต่อท่อแล้วมีแถว เหตุผลนี้กลายเป็นเท็จทันที ⇒ ต้องเปลี่ยนตามของจริง */}
         {zortAnswered && rows!.length > 0
