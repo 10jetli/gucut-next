@@ -149,7 +149,9 @@ export default function CoreTransfersPage() {
           data
             ? <>
               จำนวน {fmtNum(data.total)} รายการ{' | '}
-              <Link href="/core/soon/stock-count" className="text-blue-600 hover:underline">ตรวจสอบการนับสินค้าเข้า</Link>
+              {/* ✅ แก้ 14 ก.ย. 2569 (t_mu10s2ns): เดิมชี้ /core/soon/stock-count — ตรวจนับ/รับของทำได้แล้วในหน้าใบสั่งซื้อ (t_mu0tx40g)
+                  ต้องรู้ id ของใบใน ZORT ก่อน ⇒ ไม่มีหน้ารวม · ข้อความเดียวกับหน้ารายการซื้อ */}
+              <span className="text-gray-600">ตรวจสอบการนับสินค้าเข้า: <Link href="/core/purchases" className="text-blue-600 hover:underline">รายการซื้อ</Link> → <b>กดเลขที่ใบ</b></span>
             </>
             : 'กำลังโหลด…'
         }

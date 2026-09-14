@@ -243,9 +243,11 @@ function CoreStockInner() {
                 </span>
               )}
               {' | '}
-              <Link href="/core/soon/product-image" className="text-blue-600 hover:underline">จัดการรูปภาพสินค้า</Link>
+              {/* ✅ แก้ 14 ก.ย. 2569 (t_mu10s2ns): เดิมชี้ /core/soon/product-image ทั้งที่อัปรูปทำได้แล้ว (t_mu108yr3)
+                  — อัปรูปทีละตัวในจอแก้สินค้า (ต้องรู้ id ของ ZORT ก่อน จึงไม่มีหน้ารวม) ⇒ บอกทางตรง ๆ ไม่ลิงก์ไปหน้า "ยังไม่ได้ทำ" */}
+              <span className="text-gray-600">จัดการรูปภาพสินค้า: <b>กดรหัสสินค้า</b> แล้วกด &ldquo;แก้ไข&rdquo;</span>
               {' | '}
-              <Link href="/core/soon/product-cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
+              <Link href="/core/stock/cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
             </>
           ) : 'กำลังโหลด…'
         }
