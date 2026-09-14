@@ -55,10 +55,10 @@ interface Resp {
 
 /** ขนาดฉลากที่มีขายจริงเป็นแผ่น — หน่วยมิลลิเมตร (กว้าง × สูง) */
 const SIZES = [
-  { key: 'l50x25', label: '50 × 25 มม. (ม้วน)', w: 50, h: 25 },
-  { key: 'l32x19', label: '32 × 19 มม. (ม้วน เล็ก)', w: 32, h: 19 },
-  { key: 'l38x21', label: '38.1 × 21.2 มม. (A4 แผ่น 65 ดวง)', w: 38.1, h: 21.2 },
-  { key: 'l70x37', label: '70 × 37 มม. (A4 แผ่น 24 ดวง)', w: 70, h: 37 },
+  { key: 'l50x25', label: '50 × 25 มม. (ม้วน)', w: 50, h: 25, perSheet: 0 },
+  { key: 'l32x19', label: '32 × 19 มม. (ม้วน เล็ก)', w: 32, h: 19, perSheet: 0 },
+  { key: 'l38x21', label: '38.1 × 21.2 มม. (A4 แผ่น 65 ดวง)', w: 38.1, h: 21.2, perSheet: 65 },
+  { key: 'l70x37', label: '70 × 37 มม. (A4 แผ่น 24 ดวง)', w: 70, h: 37, perSheet: 24 },
 ] as const
 
 export default function PrintLabelsPage() {
@@ -77,6 +77,12 @@ export default function PrintLabelsPage() {
   const [size, setSize] = useState<string>('l50x25')
   const [copies, setCopies] = useState('1')
   const [showName, setShowName] = useState(true)
+  /* 🔴 **ตำแหน่งเริ่มพิมพ์ในแผ่น** — ZORT มี (`showstartbarcode` · `setbarcodetable`) ของเราไม่มี
+     ปัญหาจริงของร้าน: แผ่นฉลาก A4 ที่ใช้ไปบางส่วนแล้ว ถ้าเริ่มพิมพ์ที่ดวงแรกเสมอ
+     จะทับช่องที่ลอกไปแล้ว ⇒ **ต้องทิ้งทั้งแผ่น** (65 ดวงต่อแผ่น)
+     ⚠️ ฉลากแบบ **ม้วน** ไม่มีเรื่องนี้ (พิมพ์ต่อกันไปเรื่อย ๆ) ⇒ ซ่อนช่องนี้ พร้อมบอกเหตุผล
+        โชว์ช่องที่ตั้งแล้วไม่มีผล = ช่องหลอก (กติกาเดิมของโปรเจกต์) */
+  const [startAt, setStartAt] = useState(1)
   const [showPrice, setShowPrice] = useState(false)
 
   const skus = useMemo(
@@ -177,6 +183,8 @@ export default function PrintLabelsPage() {
           .no-print, header, nav, aside { display: none !important; }
           .sheet { display: block !important; }
           @page { margin: 6mm; }
+          /* 🔴 ช่องข้ามต้องกินที่แต่ไม่พิมพ์อะไร — ถ้าโชว์ขอบประจะมีเส้นทับฉลากที่ลอกไปแล้ว */
+          .skip { border: none !important; background: none !important; }
         }
       `}</style>
 
@@ -217,6 +225,25 @@ export default function PrintLabelsPage() {
               <input className="w-20 rounded border border-gray-200 px-2 py-1.5 text-[13px] text-right"
                 value={copies} inputMode="numeric" onChange={(e) => setCopies(e.target.value)} />
             </label>
+            {/* 🔴 ตำแหน่งเริ่มพิมพ์ — มีเฉพาะฉลากแบบแผ่น A4 · ม้วนไม่มีเรื่องนี้ */}
+            {sz.perSheet > 0 ? (
+              <label className="block">
+                <span className="block text-[11px] font-semibold text-gray-400 mb-1">
+                  เริ่มที่ดวงที่ (1–{sz.perSheet})
+                </span>
+                <input className="w-20 rounded border border-gray-200 px-2 py-1.5 text-[13px] text-right"
+                  value={startAt} inputMode="numeric"
+                  onChange={(e) => {
+                    const n = Number(e.target.value.replace(/[^0-9]/g, '')) || 1
+                    setStartAt(Math.min(Math.max(1, n), sz.perSheet))
+                  }} />
+              </label>
+            ) : (
+              <span className="text-[11.5px] text-gray-400 pb-1.5 max-w-[190px] leading-snug cursor-help"
+                title="ฉลากแบบม้วนพิมพ์ต่อกันไปเรื่อย ๆ ไม่มีแผ่นให้ข้ามช่อง — ตั้งไปก็ไม่มีผล จึงไม่มีช่องให้ตั้ง">
+                ฉลากม้วนไม่มีตำแหน่งเริ่มพิมพ์
+              </span>
+            )}
             <label className="flex items-center gap-1.5 text-[12.5px] text-gray-700 pb-1.5">
               <input type="checkbox" checked={showName} onChange={(e) => setShowName(e.target.checked)} /> ใส่ชื่อสินค้า
             </label>
@@ -327,6 +354,15 @@ export default function PrintLabelsPage() {
       {/* ── แผ่นฉลาก — โชว์บนจอด้วย เพื่อให้เห็นก่อนพิมพ์ว่าจะได้อะไร ── */}
       {labels.length > unprintable.length && (
         <div className="sheet mt-5" style={{ display: 'flex', flexWrap: 'wrap', gap: '2mm' }}>
+          {/* 🔴 ช่องว่างสำหรับดวงที่ลอกไปแล้ว — ทำให้ฉลากดวงแรกไปเริ่มตรงช่องที่ยังว่างจริง
+              ⚠️ ขอบประเห็นเฉพาะบนจอ (คลาส `skip`) ตอนพิมพ์ต้องไม่มีอะไรออกมาเลย
+                 ไม่งั้นได้หมึกทับช่องที่ใช้ไปแล้ว */}
+          {sz.perSheet > 0 && Array.from({ length: startAt - 1 }, (_, i) => (
+            <div key={`skip-${i}`} className="skip" style={{
+              width: `${sz.w}mm`, height: `${sz.h}mm`, boxSizing: 'border-box',
+              border: '1px dashed #e5e7eb', background: '#fafafa',
+            }} />
+          ))}
           {labels.filter((l) => !l.error).map((l, i) => {
             const enc = code128b(l.value)
             return (
