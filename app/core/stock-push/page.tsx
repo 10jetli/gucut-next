@@ -49,6 +49,14 @@ interface PlanSide {
   bucketsAddUp?: boolean
   day?: string
   pushSample?: PlanSample[]
+  /* ── สัญญาท่อ-จอ 14 ก.ย. 2569 (ทาง 1: ขอแผนเต็มรายแพลตฟอร์ม) ──
+     ท่อส่งสี่ช่องนี้มาทุกเจ้าทุกคำตอบ · `full=1` ต้องระบุ platform ไม่งั้นตอบ 400
+     🔴 **แผนที่เป็น skip หรือ error จะไม่มีสี่ช่องนี้ — ห้ามอ่านว่าครบ** (ท่อกำชับเอง)
+        ⇒ จอต้องแยก "ท่อบอกว่าครบ" ออกจาก "ท่อไม่ได้บอก" · ไม่มีค่า = ไม่รู้ ไม่ใช่ครบ */
+  pushScope?: 'sample' | 'full'
+  pushShown?: number
+  pushCapped?: boolean
+  pushComplete?: boolean
   skipNegativeSample?: PlanSample[] | string[]
   skipUnknownSample?: PlanSample[] | string[]
   skipConflictSample?: PlanSample[] | string[]
@@ -101,6 +109,8 @@ const thaiTime = (iso?: string) => {
    ⚠️ **มีเลขแต่ไม่มีรายการ ต้องพูดออกมา** — ไม่ใช่ไม่แสดงอะไรเลย
       ของจริงที่เจอ: lazada บอก skipUnknown 10 แต่ส่งตัวอย่างมา 0 แถว
       ขณะที่ shopee 15→15 และ tiktok 7→7 ส่งครบ ⇒ ถ้าเงียบ คนจะนึกว่ากองนั้นว่าง */
+const rowsOf = (p?: PlanSide) => (Array.isArray(p?.pushSample) ? p!.pushSample : [])
+
 function SkipBucket({ label, count, sample }: { label: string; count?: number; sample?: PlanSample[] | string[] }) {
   const n = N(count)
   if (n === null || n === 0) return null
@@ -171,6 +181,25 @@ export default function StockPushPage() {
         throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีข้อมูลของแพลตฟอร์มไหนเลย) — ยังบอกไม่ได้ว่าต้องดันอะไร')
       setPlan(d)
     } catch (e) { setPlanErr(String(e instanceof Error ? e.message : e)); setPlan(null) } finally { setPlanBusy(false) }
+  }, [])
+
+  /* ขอแผน **เต็ม** ของเจ้าเดียว — ใช้ตอนจะอนุมัติจริง
+     🔴 ตัวอย่าง 25 แถวพอสำหรับ "ดูว่าหน้าตาเป็นยังไง" แต่ **ไม่พอสำหรับอนุมัติ**
+        คนอนุมัติต้องเห็นทุกแถวที่ตัวเองกำลังอนุมัติ (กฎเดิม: เพดานที่ตั้งไว้กันเกินเวลา
+        ห้ามเอาไปใช้ตัดสินใจ — เคสตะไบ 00313 หลุดอันดับเพราะเพดาน 25 ใบ)
+     ⚠️ ถามทีละเจ้าโดยตั้งใจ — ท่อจะได้กวาดเจ้าเดียวแทนที่จะกวาดทั้งสาม (15-25 วิ) */
+  const [fullBusy, setFullBusy] = useState<string>('')
+  const loadFull = useCallback(async (key: 'shopee' | 'lazada' | 'tiktok') => {
+    setFullBusy(key); setPlanErr('')
+    try {
+      const res = await fetch(`/api/web/core?stockpush=1&platform=${key}&full=1`)
+      const d = (await res.json().catch(() => null)) as PlanResp | null
+      if (d === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
+      if (!res.ok || d.error) throw new Error(d.error || `ท่อตอบ ${res.status}`)
+      const side = d[key]
+      if (!side || typeof side !== 'object') throw new Error(`ท่อไม่ได้ส่งข้อมูลของ ${key} มา`)
+      setPlan((cur) => (cur ? { ...cur, [key]: side } : d))
+    } catch (e) { setPlanErr(String(e instanceof Error ? e.message : e)) } finally { setFullBusy('') }
   }, [])
 
   const runVerify = useCallback(async (round: PushRound) => {
@@ -314,6 +343,31 @@ export default function StockPushPage() {
                     ) : (
                       <p className="text-[11px] text-amber-700 mt-2">ท่อรุ่นนี้ยังไม่ได้บอกว่ากองย่อยบวกกันครบไหม</p>
                     )}
+                    {/* 🔴 **ครบหรือยัง ต้องมาจากท่อ ไม่ใช่จอเดาจากจำนวนแถว** (สัญญาท่อ-จอ 14 ก.ย. 2569)
+                        สามสถานะ ห้ามยุบเหลือสอง:
+                          true      = ท่อยืนยันว่าครบทุกแถว ⇒ ใช้ตัดสินใจอนุมัติได้
+                          false     = ท่อบอกเองว่ายังไม่ครบ ⇒ ห้ามใช้อนุมัติ
+                          ไม่มีค่า  = **ท่อไม่ได้บอก** (แผนที่เป็น skip/error จะไม่มีช่องนี้)
+                                      ⇒ "ไม่รู้" ห้ามเขียนเป็น "ครบ" — ท่อกำชับข้อนี้มาเอง */}
+                    {p.pushComplete === true ? (
+                      <p className="text-[11.5px] text-emerald-700 mt-2">
+                        ✅ ท่อยืนยันว่ารายการนี้<b>ครบทุกแถว</b>
+                        {N(p.pushShown) !== null && ` (${numText(p.pushShown)} แถว)`} — ใช้ตัดสินใจอนุมัติได้
+                        {p.pushCapped === true && <span className="text-amber-800"> · แต่ชนเพดานของท่อแล้ว</span>}
+                      </p>
+                    ) : (
+                      <div className="mt-2 text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1.5">
+                        {p.pushComplete === false
+                          ? <>⚠️ <b>รายการยังไม่ครบ</b> — เห็น {numText(p.pushShown ?? rowsOf(p).length)} จาก {numText(p.wouldPush)} แถว</>
+                          : <>⚠️ <b>ท่อยังไม่ได้บอกว่ารายการครบไหม</b> — ถือว่า <b>ยังไม่รู้</b> ห้ามอ่านว่าครบ</>}
+                        {' '}· <b>อย่าเพิ่งใช้หน้านี้ตัดสินใจอนุมัติ</b> จนกว่าจะเห็นครบทุกแถว
+                        <div className="mt-1">
+                          <BtnGhost onClick={() => loadFull(key)} disabled={fullBusy === key || planBusy}>
+                            {fullBusy === key ? 'กำลังขอแผนเต็ม…' : `ขอแผนเต็มของ ${label}`}
+                          </BtnGhost>
+                        </div>
+                      </div>
+                    )}
                     <SkipBucket label="ข้าม — คลังเราติดลบ" count={p.skipNegative} sample={p.skipNegativeSample} />
                     <SkipBucket label="ข้าม — คลังเราไม่รู้จักรหัสนี้" count={p.skipUnknown} sample={p.skipUnknownSample} />
                     <SkipBucket label="ข้าม — ข้อมูลขัดกัน" count={p.skipConflict} sample={p.skipConflictSample} />
@@ -332,9 +386,9 @@ export default function StockPushPage() {
               return (
                 <details key={key} className="mt-3 border border-gray-200 rounded-md">
                   <summary className="text-[12.5px] text-gray-700 px-3 py-2 cursor-pointer">
-                    ตัวอย่างรหัสที่จะดัน — {label}{' '}
+                    {p?.pushScope === 'full' ? 'รหัสที่จะดันทั้งหมด' : 'ตัวอย่างรหัสที่จะดัน'} — {label}{' '}
                     <span className="text-gray-400">
-                      ({rows.length} แถวแรก{would !== null && would > rows.length ? ` จาก ${numText(would)}` : ''})
+                      ({rows.length} แถว{would !== null && would > rows.length ? ` จาก ${numText(would)}` : ''})
                     </span>
                   </summary>
                   <div className="overflow-x-auto">
