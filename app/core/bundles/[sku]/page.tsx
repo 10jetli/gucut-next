@@ -42,8 +42,21 @@ interface BundleRow {
 }
 interface Item { line?: number; sku: string; name: string; qty: number }
 interface Warehouse { code: string; name: string; isPos?: boolean }
-/** ผลถาม ZORT รายคลัง · `stock`/`available` = null คือ **ไม่ส่งมา ไม่ใช่ศูนย์** */
-interface WhStock { code: string; name: string; isPos?: boolean; stock: number | null; available: number | null; error?: string }
+/** ผลถาม ZORT รายคลัง · `stock`/`available` = null คือ **ไม่ส่งมา ไม่ใช่ศูนย์**
+ *  🔴 **สามสถานะ ไม่ใช่สอง** (ท่อเปิดช่องให้แยกได้ 14 ก.ย. 2569 · gucut-web 3f0336c)
+ *    ① มีตัวเลข                      ⇒ แสดงตัวเลข
+ *    ② ไม่มีตัวเลข **แต่ ZORT บอกเหตุผล** ⇒ แสดงเหตุผลนั้นตรง ๆ (ของจริง: 'Access Denied.')
+ *    ③ ไม่มีตัวเลข **และไม่บอกเหตุผล**   ⇒ "ยังไม่รู้" เท่านั้น ห้ามเดาว่าเป็นเรื่องสิทธิ์
+ *  ⚠️ เดิมจอเขียนเหมารวมว่า "น่าจะติดสิทธิ์" โดยอ้างหลักฐานจากเส้น*สินค้า*
+ *     ตอนนี้เส้น*ชุด*บอกเองได้แล้ว ⇒ เลิกเดา ใช้คำตอบของรอบนั้นจริง */
+interface WhStock {
+  code: string; name: string; isPos?: boolean
+  stock: number | null; available: number | null
+  /** รหัส/ข้อความที่ ZORT ตอบสำหรับคลังนี้ · null = ZORT ไม่ได้บอกเหตุผลมา */
+  zortCode?: string | null
+  zortDesc?: string | null
+  error?: string
+}
 /** ยอดขายหนึ่งช่วง · `amount` = null คือ **ท่อไม่มีข้อมูลให้ ไม่ใช่ขายได้ 0 บาท** */
 interface Span { label: string; from: string; to: string; qty: number | null; amount: number | null; error?: string }
 
@@ -176,11 +189,17 @@ export default function BundleDetailPage() {
         const d = await fetch(`/api/web/core?zortbundle=${encodeURIComponent(sku)}&wh=${encodeURIComponent(w.code)}`)
           .then((r) => r.json()).catch(() => null)
         const ds = d?.detailStock
+        const det = d?.detail
         const num = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number(v))
+        const str = (v: unknown) => (typeof v === 'string' && v.trim() ? v.trim() : null)
         out.push({
           code: w.code, name: w.name || w.code, isPos: w.isPos,
           stock: ds ? num(ds.stock) : null,
           available: ds ? num(ds.availablestock) : null,
+          /* ⚠️ เป็นข้อความของ ZORT ล้วน ๆ (อังกฤษ) — แสดงดิบไปเลย ห้ามแปลเอาเอง
+             เพราะถ้าแปลผิด คนจะไล่ผิดทาง และข้อความนี้คือสิ่งที่เอาไปถาม ZORT ได้ */
+          zortCode: det ? str(det.resCode) : null,
+          zortDesc: det ? str(det.resDesc) : null,
           error: d?.error ? String(d.error) : undefined,
         })
       }
@@ -369,36 +388,57 @@ export default function BundleDetailPage() {
                 {wh === null && !whErr && (
                   <tr><td colSpan={3} className="px-3 py-4 text-[12.5px] text-gray-400">กำลังถาม ZORT รายคลัง…</td></tr>
                 )}
-                {wh?.map((w) => (
-                  <tr key={w.code} className="border-b border-[#e8ecf8] last:border-0">
-                    <td className={TD}>
-                      {w.name} <span className="text-gray-400">({w.code})</span>
-                      {w.isPos === false && <span className="text-gray-400"> · โกดัง</span>}
-                    </td>
-                    {/* 🔴 null = ZORT ไม่ส่งมา ⇒ "—" **ห้ามเขียน 0** */}
-                    <td className={TDR}>{w.stock === null ? <span className="text-gray-300" title="ZORT ไม่ส่งตัวเลขของคลังนี้มา — ไม่ใช่ศูนย์">—</span> : `${fmtNum(w.stock)} ${unit}`}</td>
-                    <td className={TDR}>{w.available === null ? <span className="text-gray-300" title="ZORT ไม่ส่งตัวเลขของคลังนี้มา — ไม่ใช่ศูนย์">—</span> : `${fmtNum(w.available)} ${unit}`}</td>
-                  </tr>
-                ))}
+                {wh?.map((w) => {
+                  /* 🔴 **เหตุผลต้องอยู่ติดแถวของคลังนั้น ไม่ใช่รวมไว้ย่อหน้าเดียวใต้ตาราง**
+                     ขีดเปล่า ๆ สามแถวเหมือนกันหมด อ่านไม่ออกว่าคลังไหนถูกปฏิเสธ
+                     คลังไหน ZORT เงียบไปเลย — สองอย่างนี้ต้องไล่ต่อคนละทาง */
+                  const denied = w.stock === null && w.available === null && w.zortDesc
+                  const silent = w.stock === null && w.available === null && !w.zortDesc
+                  return (
+                    <tr key={w.code} className="border-b border-[#e8ecf8] last:border-0 align-top">
+                      <td className={TD}>
+                        {w.name} <span className="text-gray-400">({w.code})</span>
+                        {w.isPos === false && <span className="text-gray-400"> · โกดัง</span>}
+                        {/* ข้อความของ ZORT เองสำหรับคลังนี้ — จากคำตอบรอบนี้ ไม่ใช่คำบอกเล่า */}
+                        {denied && (
+                          <span className="block text-[11.5px] text-amber-800 mt-0.5 leading-relaxed">
+                            🔐 ZORT ไม่ให้สิทธิ์ดูคลังนี้ — ตอบว่า
+                            {' '}<span className="font-mono">&ldquo;{w.zortDesc}&rdquo;</span>
+                            {w.zortCode && <span className="text-gray-400"> (resCode {w.zortCode})</span>}
+                            <br /><span className="text-amber-700">⇒ ไม่ใช่ว่าคลังนี้ไม่มีของ — เรายังดูไม่ได้</span>
+                          </span>
+                        )}
+                        {silent && (
+                          <span className="block text-[11.5px] text-gray-500 mt-0.5 leading-relaxed">
+                            ⚠️ ZORT ไม่ส่งตัวเลขของคลังนี้มา <b>และไม่ได้บอกเหตุผล</b> — ยังไม่รู้ว่าเพราะอะไร
+                          </span>
+                        )}
+                        {w.error && (
+                          <span className="block text-[11.5px] text-red-700 mt-0.5">ถามคลังนี้ไม่สำเร็จ: {w.error}</span>
+                        )}
+                      </td>
+                      {/* 🔴 null = ZORT ไม่ส่งมา ⇒ "—" **ห้ามเขียน 0** */}
+                      <td className={TDR}>{w.stock === null ? <span className="text-gray-300">—</span> : `${fmtNum(w.stock)} ${unit}`}</td>
+                      <td className={TDR}>{w.available === null ? <span className="text-gray-300">—</span> : `${fmtNum(w.available)} ${unit}`}</td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </TableWrap>
-          {/* 🔴 **ย่อหน้านี้เคยเดาสาเหตุไว้สองทาง แล้วฝั่งท่อยิงตรวจให้จริง (14 ก.ย. 2569 22:52)**
-                 เดิมเขียนว่า "ยังไม่รู้ว่าสาขาไม่เก็บชุด หรือ ZORT ไม่คำนวณชุดรายคลัง"
-                 ⇒ ทางที่สองตัดออกได้แล้ว: **ZORT อ่านพารามิเตอร์คลังจริง ไม่ได้เมินทิ้ง**
-                    (ยิง warehousecode=KLD/ANJ ได้ resCode 100 'Access Denied.'
-                     ถ้าเมินพารามิเตอร์ จะได้ข้อมูลชุดเดิมกลับมา ไม่ใช่คำว่าถูกปฏิเสธ)
-                 ⚠️ แต่หลักฐานนั้นยิงกับเส้น *สินค้า* (GetProducts/GetProductDetail)
-                    ไม่ใช่เส้น *ชุด* โดยตรง ⇒ เขียนว่า "น่าจะ" ห้ามเขียนว่ายืนยันแล้ว
-                 ⚠️ และท่อยังไม่ส่งข้อความของ ZORT ออกมาให้จอเห็น (resCode/resDesc ยังเป็น null)
-                    ⇒ ขอฝั่งท่อเปิดช่องนั้นเหมือนที่ทำกับ zortDesc ของ ?zortlist= แล้ว */}
+          {/* 🔴 **ย่อหน้านี้เคยเดาสาเหตุ ตอนนี้เลิกเดาแล้ว** (14 ก.ย. 2569 · gucut-web 3f0336c)
+                 รุ่นแรก: เดาสองทาง "สาขาไม่เก็บชุด / ZORT ไม่คำนวณชุดรายคลัง"
+                 รุ่นสอง: เขียนว่า "น่าจะติดสิทธิ์" โดยอ้างหลักฐานจากเส้น *สินค้า* (คนละเส้นกับที่จอใช้)
+                 รุ่นนี้: ท่อส่ง `detail.resCode` / `detail.resDesc` มาแล้ว
+                         ⇒ **เส้นชุดเองบอกเหตุผลของรอบนั้น** ⇒ เอาข้อความจริงไปติดข้างแถวคลังนั้น
+                 ⚠️ บทเรียน: คำว่า "น่าจะ" ที่เขียนไว้เพราะหลักฐานมาจากเส้นข้างเคียง
+                    **ต้องถอดทิ้งทันทีที่เส้นตรงตอบได้** ไม่งั้นจอจะค้างอยู่กับคำคาดเดาตลอดไป */}
           <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-2 leading-relaxed">
             ⚠️ <b>ขีด (—) = ZORT ไม่ส่งตัวเลขของคลังนั้นมา ไม่ใช่ &ldquo;คลังนั้นมี 0&rdquo;</b>
-            {' '}และ<b>ไม่ใช่ว่า ZORT ไม่คำนวณชุดรายคลัง</b> — ZORT อ่านพารามิเตอร์คลังจริง
-            {' '}(ยิงคลัง KLD/ANJ กับเส้นสินค้าเมื่อ 14 ก.ย. 2569 ได้คำตอบว่า <b>&ldquo;Access Denied.&rdquo;</b>)
-            {' '}⇒ <b>น่าจะติดสิทธิ์ผู้ใช้ API ของเรา</b> ไม่ใช่ตัวเลขไม่มี · กำลังขอสิทธิ์อยู่<br />
+            {' '}เหตุผลของแต่ละคลัง<b>อยู่ข้างชื่อคลังในตาราง</b> — เป็นข้อความที่ ZORT ตอบในรอบนี้เอง<br />
             ⚠️ และคลัง <b>NEW</b> คืนเลข<b>เท่ากับตอนไม่ระบุคลังเป๊ะ</b> ⇒ ยังแยกไม่ได้ว่าเป็นของคลัง NEW
             เท่านั้น หรือเป็น<b>ยอดรวมทั้งร้าน</b> — <b>อย่าเอาไปบวกกันเป็นยอดรวม</b>
+            {' '}(จะแยกได้เมื่อได้สิทธิ์ดู KLD/ANJ)
           </p>
 
           {/* ── (4) กราฟยอดขายรายเดือน ─────────────────────────────────────── */}

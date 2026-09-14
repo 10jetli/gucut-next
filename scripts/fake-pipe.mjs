@@ -21,6 +21,8 @@
 //   node scripts/fake-pipe.mjs 4010 skip    ← สถานะที่สาม "ทำต่อไม่ได้" (ต้องขึ้นเหลือง ไม่ใช่แดง)
 //   node scripts/fake-pipe.mjs 4010 nocounts ← มีงานค้างแต่ไม่มียอดแยกกอง (เทสคำเตือน "ใบผี")
 //   node scripts/fake-pipe.mjs 4010 mkstale ← คอลัมน์ Marketplace เป็นของเก่า (เทสแถบ MarketStaleBar)
+//   โหมด good รู้จัก ?zortbundle=&wh= ด้วย: NEW = มีตัวเลข · KLD/ANJ = 'Access Denied.'
+//                                          · **SILENT = ไม่มีตัวเลขและไม่บอกเหตุผล** (ทางที่ของจริงไม่มี)
 //   node scripts/fake-pipe.mjs 4010 stalestock  ← ?list=bundles ซิงก์สต็อกค้าง 3 ชม. (เทสแถบแดง "ซิงก์น่าจะหยุด")
 //   node scripts/fake-pipe.mjs 4010 nostocktime ← ?list=bundles ไม่ส่ง stockSyncedAt (เทส "ยังไม่รู้" ห้ามเขียนว่าหยุด)
 //   node scripts/fake-pipe.mjs 4010 zcount ← เส้น ?zortlist= บอก count 350 แต่ส่งแถวมาแค่หน้าแรก
@@ -877,6 +879,50 @@ const srv = createServer(async (req, res) => {
       unreadable: 2,
     }))
   }
+  /* รายชื่อคลัง (?list=warehouses) — จอคงเหลือรายคลังไล่ถามทีละคลังจากรายการนี้
+     ⚠️ ใส่คลังปลอมชื่อ SILENT ไว้ด้วย เพื่อให้ทางที่ "ZORT เงียบ" ถูกเดินจริงตอนทดสอบ */
+  if (mode === 'good' && /[?&]list=warehouses/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, count: 4, note: 'ท่อปลอม — ห้ามเอาไปสรุปเรื่องของจริง',
+      warehouses: [
+        { code: 'NEW', name: 'โกดัง', province: '', isPos: false },
+        { code: 'KLD', name: 'KLD', province: '', isPos: true },
+        { code: 'ANJ', name: 'ANJ', province: '', isPos: true },
+        { code: 'SILENT', name: 'คลังที่ ZORT เงียบ', province: '', isPos: true },
+      ],
+    }))
+  }
+
+  /* คงเหลือรายคลังของชุด (?zortbundle=<sku>&wh=<คลัง>) — **สามทางของช่องเหตุผล**
+     🔴 ของจริงเดินได้แค่สองทาง (NEW = มีตัวเลข · KLD/ANJ = 'Access Denied.')
+        ทางที่สาม "ZORT เงียบ ไม่ส่งตัวเลขและไม่บอกเหตุผล" **ไม่มีวันเกิดบน production**
+        ⇒ ถ้าไม่จำลอง เราจะไม่มีทางรู้ว่าจอเขียนถูกไหมตอนนั้น (บทเรียนซ้ำ: ตาข่ายที่เห็น
+           แต่ทางที่ถูก พิสูจน์ไม่ได้ว่าทางที่พังจะพูดถูก)
+       · wh=NEW    ⇒ 18 / 0 · resCode null
+       · wh=KLD    ⇒ null/null + resCode '100' resDesc 'Access Denied.'  (เหมือนของจริง)
+       · wh=SILENT ⇒ null/null + **ไม่มี resCode/resDesc เลย** ⇒ จอต้องขึ้น "ยังไม่รู้ว่าเพราะอะไร"
+                     **ห้ามขึ้นว่าติดสิทธิ์** เพราะไม่มีอะไรบอกแบบนั้น */
+  if (mode === 'good' && /[?&]zortbundle=/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const sku = u.searchParams.get('zortbundle')
+    const w = (u.searchParams.get('wh') || '').toUpperCase()
+    const denied = w === 'KLD' || w === 'ANJ'
+    const silent = w === 'SILENT'
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, found: true, sku, id: 999999, warehousecode: w || null,
+      summaryStock: { stock: '18', availablestock: '0' },
+      detailStock: (denied || silent) ? { stock: null, availablestock: null } : { stock: '18', availablestock: '0' },
+      detail: {
+        http: 200,
+        resCode: denied ? '100' : null,
+        resDesc: denied ? 'Access Denied.' : null,
+        keys: ['resCode', 'resDesc', 'detail'],
+      },
+    }))
+  }
+
   /* สินค้าเป็นชุด (?list=bundles) — มีไว้เดิน **สามทาง** ของแถบอายุตัวเลขคงเหลือ/พร้อมขาย
      🔴 ของจริงซิงก์ตรงเวลาอยู่ ⇒ ทาง "ซิงก์หยุด" กับ "ไม่รู้เวลา" จะไม่มีวันถูกเห็นบน production
         (บทเรียนที่จดไว้: ตาข่ายที่เห็นแต่ทางที่ถูก พิสูจน์ไม่ได้ว่าทางที่พังจะพูดถูก)
