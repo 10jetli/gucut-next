@@ -20,10 +20,12 @@ import type { WriteResp } from '@/components/zort'
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
 
-/** 🔴 สวิตช์ปุ่มส่งจริง — **ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติใบสั่งซื้อโดยเฉพาะ**
- *  เหตุผลที่แยกจากใบเสนอราคา: ใบสั่งซื้อผูกกับคู่ค้าและของที่จะเข้าคลังจริง
- *  ⇒ ใบผิดที่ค้างอยู่ อาจทำให้มีคนสั่งของตามใบนั้น */
-const REAL_SEND_ENABLED = false
+/** 🟢 สวิตช์ปุ่มส่งจริง — **เปิดแล้ว 14 ก.ย. 2569 ท่านประธานสั่งผ่านใบกระดาน t_mu1bh3s7**
+ *  ("เปิดปุ่มส่งจริง: สร้างรายการซื้อ · ทดสอบด้วยใบจริงมูลค่าน้อย แล้วยกเลิกใน ZORT ทันที")
+ *  เหตุผลเดิมที่เคยปิด: ใบสั่งซื้อผูกกับคู่ค้าและของที่จะเข้าคลังจริง ⇒ ใบผิดที่ค้างอยู่ อาจทำให้มีคนสั่งของตามใบนั้น
+ *  ⇒ ท่อมีทางยกเลิกใบแล้ว (gucut-web POST ?voidpo · อ่านกลับยืนยัน Voided) ใบผิดจึงไม่ค้าง
+ *  ⚠️ เปิดเฉพาะใบปกติ (Pending) · โหมดอย่างง่าย ?quick=1 ส่ง Success (รับของเข้าคลังทันที) **ยังปิด** ดูเงื่อนไขที่ปุ่ม */
+const REAL_SEND_ENABLED = true
 
 function NewPurchaseOrderInner() {
   // รับรหัสสินค้ามาจากเมนู ⋮ ของจอสินค้า/ลูกค้าได้ ("ซื้อสินค้า" → เปิดใบพร้อมบรรทัดแรก)
@@ -253,14 +255,18 @@ function NewPurchaseOrderInner() {
           className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !dryOk || !REAL_SEND_ENABLED}
+        {/* 🔴 ส่งจริงได้เฉพาะใบปกติ (Pending) — โหมดอย่างง่าย (?quick=1) ส่ง status Success = รับของเข้าคลังทันที
+            ยังไม่เคยยิงจริงและยกเลิกใบที่รับของแล้วผ่านท่อไม่ได้ ⇒ ปิดไว้แยก (งานกระดาน t_mu1bh3s7 · 14 ก.ย. 2569) */}
+        <button onClick={() => send(true)} disabled={busy || !dryOk || !(REAL_SEND_ENABLED && !quick)}
           className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-          style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
+          style={{ background: dryOk && REAL_SEND_ENABLED && !quick ? '#c0392b' : '#9aa0a6' }}>
           ส่งจริงเข้า ZORT
         </button>
         {!REAL_SEND_ENABLED
           ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ส่งจริง</b> — รอเจ้าของร้านอนุมัติใบสั่งซื้อโดยเฉพาะ</span>
-          : !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองส่งให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลองส่ง — ต้องทดลองใหม่'}</span>}
+          : quick
+            ? <span className="text-[12.5px] text-amber-800"><b>แบบอย่างง่ายยังไม่เปิดส่งจริง</b> — ใบนี้บันทึกเป็น &ldquo;สำเร็จ&rdquo; ซึ่งรับของเข้าคลังทันทีและยกเลิกจากที่นี่ไม่ได้ · ใช้ <a href="/core/purchases/new" className="underline">สร้างใบสั่งซื้อแบบปกติ</a> แทน</span>
+            : !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองส่งให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลองส่ง — ต้องทดลองใหม่'}</span>}
       </div>
 
       <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
