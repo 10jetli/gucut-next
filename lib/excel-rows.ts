@@ -1,15 +1,35 @@
 import JSZip from 'jszip'
 
+/* ตัวแปลงไฟล์ Excel/CSV → rows **ขาเข้าจากจอ** ของท่อ POST /api/core?batch=<kind> (gucut-web)
+ * ต้นแบบ: codex (cdb74f4) · แก้ตามรีวิว CEO 14 ก.ย. 2569 — งานกระดาน t_mu0qjely
+ *
+ * ขาเข้าจากจอ (ต้องตรงคอมเมนต์หัว route ใน gucut-web/netlify/functions/core.mjs):
+ *   sale    → ?addsale=1     {ref, number?, customer?, items:[{sku, name, qty, price}]}
+ *   po      → ?addpo=1       {ref, vendor?, items:[{sku, name, qty, price}]}
+ *   product → ?addproduct=1  {ref, sku, name, price?, cost?, unit?, barcode?, category?}
+ *   contact → ?addcontact=1  {ref, code, name, phone?, email?, taxId?}
+ * ⚠️ ห้ามคิดยอดเงินในตัวแปลง — ส่งแค่ qty/price ต่อบรรทัด ท่อคิด totalprice/amount เอง
+ *
+ * 🔴 สามเรื่องที่รีวิวจับได้ในต้นแบบ — ห้ามถอยกลับ:
+ *  1) **ใบขาย/ซื้อหลายบรรทัด** เดิม 1 แถว = 1 ใบ ⇒ ใบที่มี 3 สินค้ากลายเป็น 3 ใบใน ZORT
+ *     ⇒ รวมแถวที่ "เลขอ้างอิง" หรือ "เลขที่ใบ" เดียวกันเป็นใบเดียว items[] หลายบรรทัด
+ *  2) **ref อัตโนมัติห้ามมีเลขแถวปน** เดิม `IMPORT-kind-<เลขแถว>-hash` ⇒ แทรกแถวแล้วอัปไฟล์เดิมซ้ำ
+ *     ref ของทุกแถวข้างล่างเลื่อนหมด ⇒ ตัวกันซ้ำของท่อไม่จับ = ZORT ได้ใบซ้ำ (ลบใบขาย/ซื้อผ่าน API ไม่ได้)
+ *     ⇒ คิดจากเนื้อหาอย่างเดียว · แถวเนื้อหาเหมือนกันทุกช่องให้ต่อท้ายลำดับที่ซ้ำ (-2, -3)
+ *  3) **xlsx ช่องหายเงียบ** เดิมไม่อ่าน inlineStr และจับ t="s" ไม่ได้ถ้า attribute อยู่ก่อน r=
+ *     ⇒ อ่าน attribute ทุกลำดับ · inlineStr · str (สูตรที่ได้ข้อความ) · มีหลายชีต = เตือน (อ่านเฉพาะชีตแรก) */
+
 export type ImportKind = 'sale' | 'po' | 'product' | 'contact'
 export type RowProblem = { row: number; field: string; error: string }
-export type ParseResult = { rows: Record<string, unknown>[]; errors: RowProblem[] }
+export type ParseResult = { rows: Record<string, unknown>[]; errors: RowProblem[]; warnings: string[] }
 
 const aliases: Record<string, string> = {
   'เลขอ้างอิง': 'ref', ref: 'ref', reference: 'ref',
+  'เลขที่ใบ': 'number', 'เลขที่เอกสาร': 'number', number: 'number',
   'รหัสสินค้า': 'sku', sku: 'sku',
-  'ชื่อสินค้า': 'name', name: 'name',
+  'ชื่อสินค้า': 'name', 'ชื่อ': 'name', name: 'name',
   'จำนวน': 'qty', qty: 'qty', quantity: 'qty',
-  'ราคา': 'price', price: 'price',
+  'ราคา': 'price', 'ราคาต่อหน่วย': 'price', price: 'price',
   'ลูกค้า': 'customer', customer: 'customer',
   'ผู้ขาย': 'vendor', vendor: 'vendor',
   'รหัสผู้ติดต่อ': 'code', code: 'code',
@@ -27,66 +47,155 @@ const number = (v: unknown, row: number, field: string, errors: RowProblem[]) =>
   return Number.isFinite(n) ? n : undefined
 }
 
+/** FNV-1a 32 บิต — ลายนิ้วมือเนื้อหา (ไม่ใช่ความลับ ใช้กันซ้ำเท่านั้น) */
+function fingerprint(s: string): string {
+  let h = 0x811c9dc5
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i)
+    h = Math.imul(h, 0x01000193) >>> 0
+  }
+  return h.toString(36)
+}
+
 /** CSV parser ที่รองรับ quote และ newline ใน quote โดยไม่แยกคอลัมน์ผิด */
 export function parseCsv(textValue: string): string[][] {
+  const src = textValue.charCodeAt(0) === 0xfeff ? textValue.slice(1) : textValue // ตัด BOM ที่ Excel ใส่มาตอนบันทึก CSV
   const rows: string[][] = []; let row: string[] = []; let cell = ''; let quoted = false
-  for (let i = 0; i < textValue.length; i++) {
-    const c = textValue[i]
-    if (c === '"') { if (quoted && textValue[i + 1] === '"') { cell += c; i++ } else quoted = !quoted }
+  for (let i = 0; i < src.length; i++) {
+    const c = src[i]
+    if (c === '"') { if (quoted && src[i + 1] === '"') { cell += c; i++ } else quoted = !quoted }
     else if (c === ',' && !quoted) { row.push(cell); cell = '' }
-    else if ((c === '\n' || c === '\r') && !quoted) { if (c === '\r' && textValue[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = '' }
+    else if ((c === '\n' || c === '\r') && !quoted) { if (c === '\r' && src[i + 1] === '\n') i++; row.push(cell); rows.push(row); row = []; cell = '' }
     else cell += c
   }
   if (cell || row.length) { row.push(cell); rows.push(row) }
   return rows
 }
 
-function decodeXml(s: string) { return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"') }
+function decodeXml(s: string) {
+  return s
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
+    .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&apos;/g, "'")
+    .replace(/&amp;/g, '&') // ต้องทำท้ายสุด ไม่งั้น &amp;lt; จะกลายเป็น < (ถอดสองชั้น)
+}
 function columnNumber(ref: string) { let n = 0; for (const c of ref.replace(/\d/g, '')) n = n * 26 + c.charCodeAt(0) - 64; return n - 1 }
-async function parseXlsx(file: File): Promise<string[][]> {
-  const zip = await JSZip.loadAsync(await file.arrayBuffer())
+const attr = (attrs: string, name: string) => new RegExp(`\\b${name}="([^"]*)"`).exec(attrs)?.[1]
+const joinText = (xml: string) => Array.from(xml.matchAll(/<t(?:\s[^>]*)?>([\s\S]*?)<\/t>/g)).map((x) => decodeXml(x[1])).join('')
+
+/** อ่าน xlsx จากไบต์ — แยกจาก File เพื่อให้ทดสอบบน Node ได้ */
+export async function parseXlsxBuffer(data: ArrayBuffer | Uint8Array): Promise<{ table: string[][]; warnings: string[] }> {
+  const zip = await JSZip.loadAsync(data)
+  const warnings: string[] = []
+  const workbook = await zip.file('xl/workbook.xml')?.async('string') ?? ''
+  const sheetCount = Array.from(workbook.matchAll(/<sheet\b/g)).length
+  if (sheetCount > 1) warnings.push(`ไฟล์นี้มี ${sheetCount} ชีต — อ่านเฉพาะชีตแรกเท่านั้น ชีตอื่นไม่ถูกนำเข้า`)
   const sharedXml = await zip.file('xl/sharedStrings.xml')?.async('string') ?? ''
-  const shared = Array.from(sharedXml.matchAll(/<si>([\s\S]*?)<\/si>/g)).map((m) => decodeXml(Array.from(m[1].matchAll(/<t[^>]*>([\s\S]*?)<\/t>/g)).map((x) => x[1]).join('')))
+  const shared = Array.from(sharedXml.matchAll(/<si>([\s\S]*?)<\/si>/g)).map((m) => joinText(m[1]))
   const sheet = zip.file('xl/worksheets/sheet1.xml')
   if (!sheet) throw new Error('ไม่พบชีตแรกในไฟล์ Excel')
   const xml = await sheet.async('string'); const out: string[][] = []
-  for (const r of Array.from(xml.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g))) {
+  for (const r of Array.from(xml.matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g))) {
     const cells: string[] = []
-    for (const c of Array.from(r[1].matchAll(/<c[^>]*r="([A-Z]+\d+)"([^>]*)>([\s\S]*?)<\/c>/g))) {
-      const i = columnNumber(c[1]); const v = /<v>([\s\S]*?)<\/v>/.exec(c[3])?.[1] ?? ''
-      cells[i] = /t="s"/.test(c[2]) ? (shared[Number(v)] ?? '') : decodeXml(v)
+    // attribute ของ <c> มาได้ทุกลำดับ (t ก่อน r ก็มี) · ช่องแบบปิดตัวเอง <c .../> = ว่าง
+    for (const c of Array.from(r[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g))) {
+      const ref = attr(c[1], 'r'); if (!ref) continue
+      const type = attr(c[1], 't'); const body = c[2] ?? ''
+      const v = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1] ?? ''
+      cells[columnNumber(ref)] = type === 's' ? (shared[Number(v)] ?? '')
+        : type === 'inlineStr' ? joinText(/<is>([\s\S]*?)<\/is>/.exec(body)?.[1] ?? '')
+        : decodeXml(v)
     }
-    out.push(cells)
+    out.push(Array.from(cells, (x) => x ?? ''))
   }
-  return out
+  return { table: out, warnings }
 }
+
+type Line = { sku: string; name: string; qty: number; price: number }
+type DocGroup = { key: string; firstRow: number; party: string; number?: string; items: Line[]; parts: string[] }
 
 export function mapImportRows(kind: ImportKind, table: string[][]): ParseResult {
-  const errors: RowProblem[] = []; const rows: Record<string, unknown>[] = []
-  const headers = (table[0] ?? []).map((h) => aliases[text(h).toLowerCase()] ?? text(h))
+  const errors: RowProblem[] = []; const rows: Record<string, unknown>[] = []; const warnings: string[] = []
+  const headers = (table[0] ?? []).map((h) => aliases[text(h).toLowerCase()] ?? aliases[text(h)] ?? text(h))
+  const seen = new Map<string, number>()
+  /* ref อัตโนมัติจากเนื้อหา — ไม่มีเลขแถว · เนื้อหาซ้ำเป๊ะให้ต่อลำดับ */
+  const autoRef = (content: string) => {
+    const base = `IMPORT-${kind}-${fingerprint(`${kind}${content}`)}`
+    const n = (seen.get(base) ?? 0) + 1; seen.set(base, n)
+    return n === 1 ? base : `${base}-${n}`
+  }
+  const groups = new Map<string, DocGroup>()
+  const order: DocGroup[] = []
+  const partyField = kind === 'sale' ? 'customer' : 'vendor'
+
   for (let index = 1; index < table.length; index++) {
-    const rowNo = index + 1; const values = table[index]; const get = (k: string) => values[headers.indexOf(k)]
+    const rowNo = index + 1; const values = table[index] ?? []
+    const get = (k: string) => { const i = headers.indexOf(k); return i < 0 ? undefined : values[i] }
     if (!values.some((v) => text(v))) continue
     const suppliedRef = text(get('ref')); const sku = text(get('sku')); const name = text(get('name'))
-    const stable = values.join('\u001f').split('').reduce((n, c) => ((n * 31 + c.charCodeAt(0)) >>> 0), 7).toString(36)
-    const ref = suppliedRef || `IMPORT-${kind}-${rowNo}-${stable}`
-    const qty = number(get('qty'), rowNo, 'จำนวน', errors); const price = number(get('price'), rowNo, 'ราคา', errors)
+    const content = values.map(text).join('')
+
     if (kind === 'contact') {
-      const code = text(get('code')); if (!code) errors.push({ row: rowNo, field: 'code', error: 'ผู้ติดต่อต้องมี code' }); if (!name) errors.push({ row: rowNo, field: 'name', error: 'ผู้ติดต่อต้องมี name' })
-      if (code && name) rows.push({ ref, code, name, phone: text(get('phone')) || undefined, email: text(get('email')) || undefined, taxId: text(get('taxId')) || undefined })
-    } else if (kind === 'product') {
-      if (!sku) errors.push({ row: rowNo, field: 'sku', error: 'สินค้าต้องมี sku' }); if (!name) errors.push({ row: rowNo, field: 'name', error: 'สินค้าต้องมี name' })
-      if (sku && name) rows.push({ ref, sku, name, price, cost: number(get('cost'), rowNo, 'ต้นทุน', errors), unit: text(get('unit')) || undefined, barcode: text(get('barcode')) || undefined, category: text(get('category')) || undefined })
-    } else {
-      if (!sku) errors.push({ row: rowNo, field: 'sku', error: 'ต้องมี sku' }); if (!name) errors.push({ row: rowNo, field: 'name', error: 'ต้องมี name' }); if (!qty || qty <= 0) errors.push({ row: rowNo, field: 'qty', error: 'จำนวนต้องมากกว่า 0' }); if (price === undefined || price < 0) errors.push({ row: rowNo, field: 'price', error: 'ต้องมีราคาไม่ติดลบ' })
-      if (sku && name && qty && qty > 0 && price !== undefined && price >= 0) rows.push(kind === 'sale' ? { ref, customer: text(get('customer')) || undefined, items: [{ sku, name, qty, price }] } : { ref, vendor: text(get('vendor')) || undefined, items: [{ sku, name, qty, price }] })
+      const code = text(get('code'))
+      if (!code) errors.push({ row: rowNo, field: 'code', error: 'ผู้ติดต่อต้องมี code' })
+      if (!name) errors.push({ row: rowNo, field: 'name', error: 'ผู้ติดต่อต้องมี name' })
+      if (code && name) rows.push({ ref: suppliedRef || autoRef(content), code, name,
+        phone: text(get('phone')) || undefined, email: text(get('email')) || undefined, taxId: text(get('taxId')) || undefined })
+      continue
     }
+    if (kind === 'product') {
+      if (!sku) errors.push({ row: rowNo, field: 'sku', error: 'สินค้าต้องมี sku' })
+      if (!name) errors.push({ row: rowNo, field: 'name', error: 'สินค้าต้องมี name' })
+      const price = number(get('price'), rowNo, 'ราคา', errors); const cost = number(get('cost'), rowNo, 'ต้นทุน', errors)
+      if (sku && name) rows.push({ ref: suppliedRef || autoRef(content), sku, name, price, cost,
+        unit: text(get('unit')) || undefined, barcode: text(get('barcode')) || undefined, category: text(get('category')) || undefined })
+      continue
+    }
+
+    // ใบขาย/ใบซื้อ — แถวคือ "บรรทัด" รวมเป็นใบด้วยเลขอ้างอิงหรือเลขที่ใบ
+    const qty = number(get('qty'), rowNo, 'จำนวน', errors); const price = number(get('price'), rowNo, 'ราคา', errors)
+    let bad = false
+    if (!sku) { errors.push({ row: rowNo, field: 'sku', error: 'ต้องมี sku' }); bad = true }
+    if (!name) { errors.push({ row: rowNo, field: 'name', error: 'ต้องมี name' }); bad = true }
+    if (!qty || qty <= 0) { errors.push({ row: rowNo, field: 'qty', error: 'จำนวนต้องมากกว่า 0' }); bad = true }
+    if (price === undefined || price < 0) { errors.push({ row: rowNo, field: 'price', error: 'ต้องมีราคาไม่ติดลบ' }); bad = true }
+    const docNumber = text(get('number'))
+    const key = suppliedRef || docNumber
+    const party = text(get(partyField))
+    const line: Line | null = bad ? null : { sku, name, qty: qty as number, price: price as number }
+
+    if (!key) {
+      // ไม่มีเลขอ้างอิง/เลขที่ใบ ⇒ ใบละแถว · ref จากเนื้อหาแถว
+      if (line) order.push({ key: autoRef(content), firstRow: rowNo, party, items: [line], parts: [content] })
+      continue
+    }
+    let g = groups.get(key)
+    if (!g) { g = { key, firstRow: rowNo, party, number: docNumber || undefined, items: [], parts: [] }; groups.set(key, g); order.push(g) }
+    else if (party && g.party && party !== g.party) {
+      errors.push({ row: rowNo, field: partyField,
+        error: `ใบ ${key} มี${kind === 'sale' ? 'ลูกค้า' : 'ผู้ขาย'}ไม่ตรงกัน ("${g.party}" แถว ${g.firstRow} กับ "${party}") — แก้ให้ตรงก่อน` })
+      g.party = ' conflict'
+    } else if (party && !g.party) g.party = party
+    if (line) g.items.push(line)
   }
-  return { rows, errors }
+
+  for (const g of order) {
+    if (!g.items.length) continue
+    if (g.party === ' conflict') continue // ใบที่ลูกค้า/ผู้ขายชนกัน ไม่ส่ง (มี error แล้ว)
+    const party = g.party || undefined
+    rows.push(kind === 'sale'
+      ? { ref: g.key, ...(g.number ? { number: g.number } : {}), customer: party, items: g.items }
+      : { ref: g.key, vendor: party, items: g.items })
+  }
+  return { rows, errors, warnings }
 }
 
-/** อ่าน CSV หรือ xlsx แล้วคืน body ที่ส่งเข้า /api/core?batch= ได้โดยตรง */
+/** อ่าน CSV หรือ xlsx แล้วคืน rows ที่ส่งเข้า POST /api/core?batch=<kind> ได้โดยตรง (แบ่งทีละ ≤20 แถวก่อนส่ง) */
 export async function readImportFile(kind: ImportKind, file: File): Promise<ParseResult> {
-  const table = /\.xlsx$/i.test(file.name) ? await parseXlsx(file) : parseCsv(await file.text())
-  return mapImportRows(kind, table)
+  if (/\.xlsx$/i.test(file.name)) {
+    const { table, warnings } = await parseXlsxBuffer(await file.arrayBuffer())
+    const r = mapImportRows(kind, table)
+    return { ...r, warnings: [...warnings, ...r.warnings] }
+  }
+  return mapImportRows(kind, parseCsv(await file.text()))
 }
