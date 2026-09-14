@@ -32,7 +32,8 @@ import {
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from '@/components/zort'
+import { TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, WriteResult } from '@/components/zort'
+import type { WriteResp } from '@/components/zort'
 import SkuCodes from '@/components/zort/SkuCodes'
 
 interface BundleRow {
@@ -59,6 +60,8 @@ interface WhStock {
 }
 /** ยอดขายหนึ่งช่วง · `amount` = null คือ **ท่อไม่มีข้อมูลให้ ไม่ใช่ขายได้ 0 บาท** */
 interface Span { label: string; from: string; to: string; qty: number | null; amount: number | null; error?: string }
+interface DeleteTarget { id: number; sku: string }
+type DeleteResp = WriteResp & { deleted?: boolean }
 
 const THAI_MONTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -112,6 +115,16 @@ export default function BundleDetailPage() {
   const [whErr, setWhErr] = useState('')
   const imgOf = useSkuImages(640)
   const [menu, setMenu] = useState<'' | 'cmd' | 'print' | 'push'>('')
+  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [deleteError, setDeleteError] = useState('')
+  const [deleteBusy, setDeleteBusy] = useState(false)
+  const [deleteResult, setDeleteResult] = useState<DeleteResp | null>(null)
+  const [deleteConfirmSku, setDeleteConfirmSku] = useState('')
+  const [deleteDrySig, setDeleteDrySig] = useState('')
+  const [deleted, setDeleted] = useState(false)
+  const deleteRef = useRef(`BD-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`).current
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -209,6 +222,60 @@ export default function BundleDetailPage() {
     }
   }, [sku])
 
+  /** หา id สดจาก ZORT ก่อนเปิดขั้นลบ — id ในกระจกไม่มี และห้ามเดาจาก sku */
+  const loadDeleteTarget = useCallback(async () => {
+    setDeleteLoading(true)
+    setDeleteError('')
+    setDeleteTarget(null)
+    setDeleteDrySig('')
+    setDeleteResult(null)
+    try {
+      const response = await fetch(`/api/web/core?zortbundle=${encodeURIComponent(sku)}`)
+      const d = await response.json().catch(() => null)
+      if (!d) throw new Error(`ท่อตอบไม่ใช่ JSON (HTTP ${response.status})`)
+      if (!response.ok || d?.error || d?.unknown) throw new Error(String(d?.error ?? `HTTP ${response.status}`))
+      if (d?.found !== true) throw new Error(`ZORT ตอบว่าไม่พบชุดรหัส ${sku} ตรงตัว`)
+      if (!Number.isInteger(Number(d?.id)) || Number(d.id) <= 0) throw new Error('ZORT พบชุดแต่ไม่ส่ง id — ยังลบไม่ได้')
+      if (String(d?.sku ?? '').trim() !== sku) throw new Error(`ZORT คืนรหัส ${String(d?.sku ?? '(ว่าง)')} ซึ่งไม่ตรงกับ ${sku}`)
+      setDeleteTarget({ id: Number(d.id), sku })
+    } catch (e) {
+      setDeleteError(String(e instanceof Error ? e.message : e))
+    } finally {
+      setDeleteLoading(false)
+    }
+  }, [sku])
+
+  const sendDelete = useCallback(async (confirm: boolean) => {
+    if (!deleteTarget) return
+    setDeleteBusy(true)
+    setDeleteResult(null)
+    const sig = `${deleteTarget.id}:${deleteTarget.sku}:${deleteRef}`
+    try {
+      const q = new URLSearchParams({
+        deletebundle: String(deleteTarget.id), sku: deleteTarget.sku, ref: deleteRef,
+      })
+      if (confirm) q.set('confirm', '1')
+      const response = await fetch(`/api/web/core?${q}`, { method: 'DELETE' })
+      const d = await response.json().catch(() => null) as DeleteResp | null
+      if (!d) {
+        setDeleteResult(confirm
+          ? { ok: false, unknown: true, ref: deleteRef, error: `ท่อตอบไม่ใช่ JSON (HTTP ${response.status})` }
+          : { ok: false, error: `ท่อตอบไม่ใช่ JSON (HTTP ${response.status})` })
+        return
+      }
+      setDeleteResult(d)
+      if (!confirm && d.dryRun && d.ok !== false) setDeleteDrySig(sig)
+      if (confirm && d.deleted) { setDeleted(true); setDeleteDrySig('') }
+    } catch (e) {
+      const error = String(e instanceof Error ? e.message : e)
+      setDeleteResult(confirm
+        ? { ok: false, unknown: true, ref: deleteRef, error }
+        : { ok: false, error })
+    } finally {
+      setDeleteBusy(false)
+    }
+  }, [deleteTarget, deleteRef])
+
   useEffect(() => { load() }, [load])
   /* 🔴 ยิงครั้งเดียวต่อรหัสชุด — ฝั่งท่อกำชับว่าเส้นรายคลังถาม ZORT สดทุกครั้ง "อย่ายิงวน"
      useRef กันไว้เพราะ effect ใน React 18 dev ทำงานสองรอบ */
@@ -251,7 +318,10 @@ export default function BundleDetailPage() {
                  ห้ามมีปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง */}
           <div className="flex flex-wrap items-center gap-2 mt-3">
             <Link href="/core/soon/bundle-edit" className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">แก้ไข</Link>
-            <Link href="/core/soon/bundle-delete" className="text-[13px] font-medium text-red-700 bg-white border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50">ลบ</Link>
+            <button type="button" onClick={() => { setDeleteOpen(true); void loadDeleteTarget() }}
+              className="text-[13px] font-medium text-red-700 bg-white border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50">
+              ลบ
+            </button>
 
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'cmd' ? '' : 'cmd')}
@@ -285,6 +355,66 @@ export default function BundleDetailPage() {
             <Link href="/core/soon/bundle-activity" className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">ดูกิจกรรมของรายการ</Link>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
           </div>
+
+          {deleteOpen && (
+            <div className="mt-3 border-2 border-red-300 bg-red-50/50 rounded-md p-4 max-w-[760px]">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-[15px] font-semibold text-red-900">🗑️ ลบชุดสินค้านี้ออกจาก ZORT</p>
+                  <p className="text-[12.5px] text-red-900 mt-1 leading-relaxed">
+                    🔴 <b>ลบแล้วเอาคืนไม่ได้</b> · ต้องทดลองลบให้ผ่านก่อน แล้วพิมพ์รหัสชุดซ้ำ
+                    {' '}ตอนกดจริงท่อจะถาม ZORT อีกครั้งว่า id ยังเป็นรหัสนี้ก่อนลบ
+                  </p>
+                </div>
+                <button type="button" onClick={() => setDeleteOpen(false)} disabled={deleteBusy}
+                  className="text-[12.5px] text-gray-600 hover:underline disabled:opacity-50">ปิด</button>
+              </div>
+
+              {deleteLoading && <p className="text-[13px] text-gray-600 mt-3">กำลังถาม ZORT หา id ของชุดนี้…</p>}
+              {deleteError && (
+                <div className="text-[13px] text-red-900 bg-white border border-red-300 rounded px-3 py-2 mt-3">
+                  ถาม ZORT ไม่สำเร็จ — <b>ยังไม่ได้ลบอะไร</b> · {deleteError}{' '}
+                  <button type="button" onClick={() => void loadDeleteTarget()} className="underline">ลองใหม่</button>
+                </div>
+              )}
+
+              {deleteTarget && !deleted && (
+                <>
+                  <p className="text-[12.5px] text-gray-700 mt-3">
+                    ZORT ยืนยันชุด <b>{deleteTarget.sku}</b> · id <b>{deleteTarget.id}</b>
+                  </p>
+                  <label className="block mt-3 max-w-[380px]">
+                    <span className="text-[12.5px] text-gray-700">พิมพ์รหัสชุด <b>{deleteTarget.sku}</b> ซ้ำเพื่อยืนยัน</span>
+                    <input value={deleteConfirmSku} onChange={(e) => setDeleteConfirmSku(e.target.value)}
+                      className="w-full border border-red-300 rounded px-3 py-2 text-[14px] mt-1" />
+                  </label>
+                </>
+              )}
+
+              <WriteResult r={deleteResult} />
+              {deleted ? (
+                <p className="text-[12.5px] text-emerald-900 mt-3">
+                  รายการในกระจกอาจยังเห็นจนกว่าจะซิงก์รอบถัดไป ·{' '}
+                  <Link href="/core/bundles" className="underline">กลับหน้าสินค้าเป็นชุด</Link>
+                </p>
+              ) : deleteTarget ? (
+                <div className="flex flex-wrap items-center gap-3 mt-3">
+                  <button type="button" onClick={() => void sendDelete(false)} disabled={deleteBusy}
+                    className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50">
+                    {deleteBusy ? 'กำลังส่ง…' : '🧪 ทดลองลบ (ยังไม่เข้า ZORT)'}
+                  </button>
+                  <button type="button" onClick={() => void sendDelete(true)}
+                    disabled={deleteBusy || deleteDrySig !== `${deleteTarget.id}:${deleteTarget.sku}:${deleteRef}` || deleteConfirmSku.trim() !== deleteTarget.sku}
+                    className="text-[14px] font-semibold text-white bg-red-700 rounded-full px-6 py-2 disabled:opacity-40">
+                    ลบจริงใน ZORT
+                  </button>
+                  {deleteDrySig !== `${deleteTarget.id}:${deleteTarget.sku}:${deleteRef}` && (
+                    <span className="text-[12.5px] text-gray-600">ต้องกดทดลองลบให้ผ่านก่อน</span>
+                  )}
+                </div>
+              ) : null}
+            </div>
+          )}
 
           <div className="bg-white border border-gray-200 rounded-md p-5 mt-3 flex flex-wrap gap-6">
             {img

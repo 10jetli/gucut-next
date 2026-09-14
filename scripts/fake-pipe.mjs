@@ -894,6 +894,18 @@ const srv = createServer(async (req, res) => {
     }))
   }
 
+  /* ลบชุดสินค้า: จำลอง dry-run และผลลบจริงโดยไม่แตะข้อมูลใด ๆ */
+  if (mode === 'good' && /[?&]deletebundle=/.test(req.url) && req.method === 'DELETE') {
+    const u = new URL(req.url, 'http://x')
+    const ref = u.searchParams.get('ref')
+    const sku = u.searchParams.get('sku')
+    const id = Number(u.searchParams.get('deletebundle'))
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify(u.searchParams.get('confirm') === '1'
+      ? { ok: true, deleted: true, ref, id, sku, message: `ท่อปลอม: จำลองว่าลบชุด ${sku} แล้ว` }
+      : { ok: true, dryRun: true, ref, willSend: { query: { id }, body: null }, expectSku: sku }))
+  }
+
   /* คงเหลือรายคลังของชุด (?zortbundle=<sku>&wh=<คลัง>) — **สามทางของช่องเหตุผล**
      🔴 ของจริงเดินได้แค่สองทาง (NEW = มีตัวเลข · KLD/ANJ = 'Access Denied.')
         ทางที่สาม "ZORT เงียบ ไม่ส่งตัวเลขและไม่บอกเหตุผล" **ไม่มีวันเกิดบน production**
