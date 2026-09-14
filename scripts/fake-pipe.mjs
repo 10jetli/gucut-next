@@ -385,16 +385,47 @@ const srv = createServer(async (req, res) => {
     return json({ error: 'เส้นใบคืนที่ไม่รู้จัก' }, 404)
   }
   if (mode === 'good' && /[?&]order=/.test(req.url)) {
-    /* ใบเดียวพร้อมรายการสินค้า (จอ wizard แพ็คสินค้า) — รูปตาม getOrder ของจริง: {order, items} */
+    /* ใบเดียวพร้อมรายการสินค้า (จอ wizard แพ็คสินค้า) — รูปตาม getOrder ของจริง: {order, items}
+       🔴 **สามใบนี้มีไว้ทดสอบสามสถานะของช่องเงินที่ฝั่งท่อกำลังเพิ่ม** (14 ก.ย. 2569)
+          ?order=...FULL  → รู้ครบ ⇒ ยอดต้องลงตัวพอดี จอต้องเงียบ (ไม่มีกล่องเตือน)
+          ?order=...NULL  → ใบซิงก์ก่อนมีคอลัมน์ ⇒ ทุกช่องเป็น null ⇒ ต้องขึ้น "ไม่รู้" ห้ามขึ้น 0
+          ?order=อื่น ๆ   → ท่อรุ่นก่อน (ไม่มีช่องเลย) ⇒ ต้องขึ้น "ส่วนต่างที่อธิบายไม่ได้" แบบเดิม
+       ⚠️ ถ้าไม่มีทั้งสามแบบ จะทดสอบได้แค่ทางเดียวแล้วเข้าใจว่าจอถูกทั้งหมด */
+    const which = /[?&]order=[^&]*FULL/.test(req.url) ? 'full'
+      : /[?&]order=[^&]*NULL/.test(req.url) ? 'null'
+        : /[?&]order=[^&]*ODD/.test(req.url) ? 'odd' : 'old'
+    const base = { id: 'z1-1', source: 'z1', number: 'SO-001', channel: 'Shopee', status: 'Pending',
+      customer: 'ลูกค้าทดสอบ', order_date: '2026-09-05', tracking_no: 'TH000TEST', pay_status: 'paid',
+      ship_channel: 'Flash express', ship_name: 'ผู้รับทดสอบ', ship_date: '2026-09-06' }
+    /* ผลรวมบรรทัด 1,000 − ส่วนลดบรรทัด (10×1 + 5×3 = 25) − ส่วนลดท้ายบิล 50 + ค่าส่ง 70 = 995 */
+    const items = [
+      { line: 1, sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', qty: 1, amount: 500 },
+      { line: 2, sku: 'NW-02', name: 'สินค้าทดสอบสอง (หลายชิ้น)', qty: 3, amount: 500 },
+    ]
     res.writeHead(200, { 'content-type': 'application/json' })
-    return res.end(JSON.stringify({
-      order: { id: 'z1-1', source: 'z1', number: 'SO-001', channel: 'Shopee', status: 'Pending',
-        amount: 1000, customer: 'ลูกค้าทดสอบ', order_date: '2026-09-05', tracking_no: 'TH000TEST', pay_status: 'paid' },
-      items: [
-        { line: 1, sku: 'NW-01', name: 'สินค้าทดสอบหนึ่ง', qty: 1, amount: 500 },
-        { line: 2, sku: 'NW-02', name: 'สินค้าทดสอบสอง (หลายชิ้น)', qty: 3, amount: 500 },
-      ],
-    }))
+    if (which === 'full') {
+      return res.end(JSON.stringify({
+        order: { ...base, amount: 995, bill_discount: 50, ship_amount: 70 },
+        items: [{ ...items[0], discount: 10 }, { ...items[1], discount: 5 }],
+      }))
+    }
+    if (which === 'odd') {
+      /* 🔴 **สถานะที่สี่ที่สำคัญที่สุด: รู้ค่าครบแล้วแต่ยอดยังไม่ลงตัว**
+         แปลว่าสูตรที่จอใช้กับที่ท่อใช้ไม่ตรงกัน (มีช่องที่เรายังไม่รู้จัก)
+         ⇒ จอต้องขึ้นแดงว่า "ยังเหลือที่อธิบายไม่ได้" ไม่ใช่เงียบเพราะคิดว่าอธิบายได้แล้ว
+         ⚠️ ถ้าไม่มีเคสนี้ จอที่คำนวณผิดจะดูเหมือนถูกตลอดกาล */
+      return res.end(JSON.stringify({
+        order: { ...base, amount: 1100, bill_discount: 50, ship_amount: 70 },
+        items: [{ ...items[0], discount: 10 }, { ...items[1], discount: 5 }],
+      }))
+    }
+    if (which === 'null') {
+      return res.end(JSON.stringify({
+        order: { ...base, amount: 1070, bill_discount: null, ship_amount: null },
+        items: [{ ...items[0], discount: null }, { ...items[1], discount: null }],
+      }))
+    }
+    return res.end(JSON.stringify({ order: { ...base, amount: 1070 }, items }))
   }
   /* รายละเอียดใบเสนอราคา/ใบโอน (จอ detail ใหม่ — โครงจากซอร์สท่อจริง) */
   /* ── ฉลาก/บาร์โค้ด (จอ /core/stock/print) ────────────────────────────────

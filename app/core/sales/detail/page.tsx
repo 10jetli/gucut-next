@@ -23,6 +23,16 @@ interface Order {
   id: string; source: string; number: string; channel: string
   status: string; amount: number; customer: string; order_date: string
   updated_at?: string
+  /** ส่วนลดท้ายบิล (บาท) · ค่าส่ง (บาท) — ฝั่งท่อกำลังเพิ่มให้ (แจ้ง 14 ก.ย. 2569)
+   *  📏 ฝั่งท่อยิงของจริง 14 ก.ย. 2569 17:38 น. แล้วพิสูจน์สูตรที่ coredb.mjs ใช้:
+   *       ยอดหัวใบ = ผลรวมบรรทัด − bill_discount + ship_amount
+   *     และพบว่าทั้ง 5 ใบที่มีส่วนต่าง มี bill_discount = 0 ทุกใบ
+   *     ⇒ **ส่วนต่างที่เหลือคือค่าส่ง** (เช่น SO-202609022 ควรได้ ship_amount = 70)
+   *  ⚠️ **จอยังไม่เขียนว่า "ค่าส่ง" จนกว่าตัวเลขจะลงตัวจริง** — ตอนนี้เป็นสมมติฐานที่ฝั่งท่อพิสูจน์
+   *     จากสูตรในโค้ด ยังไม่ได้เห็นค่าจริงวิ่งผ่านจอ ⇒ เขียนจากสิ่งที่จอเห็นเท่านั้น
+   *  🔴 `null` = แถวนั้นซิงก์ก่อนมีคอลัมน์ ⇒ "ไม่รู้" ห้ามตีเป็น 0 */
+  bill_discount?: number | null
+  ship_amount?: number | null
   /** สถานะการชำระเงิน · ขนส่งที่ใช้ · เก็บเงินปลายทางไหม — ท่อ list=orders ส่งมาอยู่แล้ว */
   pay_status?: string | null
   ship_channel?: string | null
@@ -36,7 +46,15 @@ interface Order {
   tracking_no?: string | null
   ship_date?: string | null
 }
-interface Item { line: number; sku: string; name: string; qty: number; amount: number }
+interface Item {
+  line: number; sku: string; name: string; qty: number; amount: number
+  /** ส่วนลด **ต่อชิ้น** (บาท) — ฝั่งท่อกำลังเพิ่มให้ (แจ้ง 14 ก.ย. 2569)
+   *  🔴 **ต่อชิ้น ไม่ใช่ต่อบรรทัด** ⇒ ต้องคูณ qty เองก่อนรวม (ฝั่งท่อกำชับ)
+   *  🔴 `null` = แถวนั้นซิงก์มาก่อนมีคอลัมน์ ⇒ **"ไม่รู้" ห้ามตีเป็น 0**
+   *     (0 คือคำกล่าวอ้างว่าไม่มีส่วนลด — ผิดคนละเรื่องกับยังไม่รู้)
+   *  ⚠️ ไม่มีช่องนี้เลย = ท่อรุ่นก่อน ⇒ คนละเรื่องกับ null อีกที */
+  discount?: number | null
+}
 
 const VAT_RATE = 0.07
 
@@ -195,6 +213,40 @@ function DetailInner() {
   const linesTotal = items.reduce((s, it) => s + (Number(it.amount) || 0), 0)
   const gap = Math.round((total - linesTotal) * 100) / 100
   const hasGap = items.length > 0 && Math.abs(gap) > 0.009
+
+  /* ── สามช่องที่ฝั่งท่อกำลังเพิ่ม — จอรับไว้ล่วงหน้าแบบ "สามสถานะ" ──────────
+     เลข → ใช้ได้ · null → ยังไม่รู้ (แถวเก่าที่ซิงก์ก่อนมีคอลัมน์) · ไม่มีช่อง → ท่อรุ่นก่อน
+     ⚠️ **ทั้งสามกรณีต้องเขียนคนละแบบ** ยุบเมื่อไหร่ก็กลับไปเป็น "ไม่รู้ถูกอ่านเป็น 0" อีก
+     ⚠️ items[].discount เป็น **ต่อชิ้น** ⇒ คูณ qty ก่อนรวม (ฝั่งท่อกำชับ 14 ก.ย. 2569) */
+  const numOrNull = (v: unknown): number | null | undefined =>
+    v === undefined ? undefined : (v === null ? null : (Number.isFinite(Number(v)) ? Number(v) : null))
+  const billDiscount = numOrNull(order?.bill_discount)
+  const shipAmount = numOrNull(order?.ship_amount)
+  const hasDiscountField = items.some((it) => 'discount' in it)
+  const lineDiscountUnknown = hasDiscountField && items.some((it) => it.discount === null)
+  const lineDiscount = hasDiscountField && !lineDiscountUnknown
+    ? items.reduce((s, it) => s + (Number(it.discount) || 0) * (Number(it.qty) || 0), 0)
+    : null
+  /* 🔴 **ผมเกือบทำผิดข้อที่จอนี้เกิดมาแก้** (จับได้ตอนทวนกับใบจริง 14 ก.ย. 2569 17:46 น.)
+     ท่อจริงส่ง items[].discount เป็น **null** (ใบซิงก์ก่อน 5 ก.ย.) แต่โค้ดรุ่นแรกของผมเขียนว่า
+     `lineDiscount ?? 0` ⇒ **เอา "ไม่รู้" ไปคิดเป็น 0** แล้วประกาศว่ายอดลงตัว
+     ใบ SO-202609021 บังเอิญลงตัวพอดี (1,092 − 0 + 152 = 1,244) เพราะส่วนลดจริงเป็น 0
+     ⇒ **บังเอิญถูก ไม่ใช่ถูก** · ใบที่มีส่วนลดรายบรรทัดจริงจะขึ้นว่าลงตัวทั้งที่ไม่ลงตัว
+     ⇒ รู้ครบ = ต้องรู้ **ทั้งสามช่อง** · ขาดช่องไหนก็ยืนยันไม่ได้
+     ⚠️ แต่ถ้ามันลงตัวเมื่อถือว่าส่วนลดรายบรรทัดเป็น 0 ก็ควรบอก — เป็นเบาะแสที่มีประโยชน์
+        แค่ต้องเขียนว่า **"ลงตัวถ้าถือว่าเป็น 0" ไม่ใช่ "ลงตัว"** */
+  const lineDiscountKnown = hasDiscountField && !lineDiscountUnknown
+  const canExplain = typeof billDiscount === 'number' && typeof shipAmount === 'number' && lineDiscountKnown
+  /** ยอดที่คิดได้ถ้ารู้ครบ · ถ้าไม่รู้ส่วนลดรายบรรทัด จะคิดแบบ "สมมติว่า 0" ไว้บอกเป็นเบาะแส */
+  const knownPart = typeof billDiscount === 'number' && typeof shipAmount === 'number'
+    ? Math.round((linesTotal - (lineDiscount ?? 0) - billDiscount + shipAmount) * 100) / 100
+    : null
+  const expected = canExplain ? knownPart : null
+  const leftover = expected === null ? null : Math.round((total - expected) * 100) / 100
+  const explained = leftover !== null && Math.abs(leftover) <= 0.009
+  /** ลงตัวพอดีแต่ต้องสมมติว่าส่วนลดรายบรรทัดเป็น 0 — เบาะแส ไม่ใช่คำยืนยัน */
+  const fitsIfZeroDiscount = !canExplain && knownPart !== null
+    && Math.abs(total - knownPart) <= 0.009
   // ⚠️ ยอดก่อนภาษีกับภาษีเป็น **ค่าคำนวณ** จากยอดรวม ไม่ใช่ค่าที่เก็บไว้
   //    ใช้กติกา "ราคารวมภาษีแล้ว" ตามที่ ZORT แสดงให้ร้านนี้ · เขียนกำกับใต้บล็อกเสมอ
   const net = total / (1 + VAT_RATE)
@@ -321,10 +373,19 @@ function DetailInner() {
                       </td>
                       <td className={TDR}>{Number(it.qty).toLocaleString('th-TH')}</td>
                       <td className={TDR}>{it.qty ? fmtMoney(it.amount / it.qty) : '—'}</td>
-                      {/* ⚠️ ZORT มีคอลัมน์นี้ (โชว์ 0) แต่คลังเงาไม่ได้เก็บส่วนลดรายบรรทัด
-                          ⇒ แสดงขีด **ห้ามเขียน 0** เพราะ 0 คือคำกล่าวอ้างว่าไม่มีส่วนลด
-                             ส่วนขีดคือ "ไม่รู้" — ต่างกันตอนมีใบที่ลดจริง */}
-                      <td className={TDR}><span className="text-gray-300">—</span></td>
+                      {/* ⚠️ **ห้ามเขียน 0** เพราะ 0 คือคำกล่าวอ้างว่าไม่มีส่วนลด ส่วนขีดคือ "ไม่รู้"
+                          — ต่างกันตอนมีใบที่ลดจริง
+                          🔴 สามสถานะ (ฝั่งท่อกำลังเพิ่มช่องนี้ให้ · 14 ก.ย. 2569):
+                             ไม่มีช่อง = ท่อยังไม่ส่ง · null = แถวนี้ซิงก์ก่อนมีช่อง · เลข = ใช้ได้
+                          ⚠️ ค่านี้เป็น **ต่อชิ้น** ⇒ คอลัมน์นี้ชื่อ "ส่วนลดต่อหน่วย" อยู่แล้ว แสดงตรง ๆ ได้
+                             แต่ตอนเอาไปรวมท้ายใบต้องคูณ qty ก่อน */}
+                      <td className={TDR}>
+                        {!('discount' in it)
+                          ? <span className="text-gray-300" title="ท่อยังไม่ส่งช่องนี้มา">—</span>
+                          : it.discount === null
+                            ? <span className="text-gray-400" title="แถวนี้ซิงก์มาก่อนมีช่องนี้">ไม่รู้</span>
+                            : <span className="text-gray-800">{fmtMoney(Number(it.discount))}</span>}
+                      </td>
                       <td className={TDR}>{fmtMoney(it.amount)}</td>
                     </tr>
                   ))}
@@ -348,14 +409,51 @@ function DetailInner() {
                   <span className="text-gray-500">รวมบรรทัดสินค้า</span>
                   <span className="text-gray-800">{fmtMoney(linesTotal)}</span>
                 </div>
+                {/* ── ส่วนลดรายบรรทัด ── */}
+                {hasDiscountField && (
+                  <div className="flex justify-between py-1.5 text-[12.5px]">
+                    <span className="text-gray-500">ส่วนลดรายบรรทัด</span>
+                    {lineDiscountUnknown
+                      ? <span className="text-gray-400">ไม่รู้ (บางบรรทัดซิงก์ก่อนมีช่องนี้)</span>
+                      : <span className="text-gray-800">{(lineDiscount ?? 0) === 0 ? fmtMoney(0) : `−${fmtMoney(lineDiscount ?? 0)}`}</span>}
+                  </div>
+                )}
+                {/* ── ส่วนลดท้ายบิล ── */}
                 <div className="flex justify-between py-1.5 text-[12.5px]">
-                  <span className="text-gray-500">ส่วนลด / ค่าส่ง</span>
-                  <span className="text-gray-300">คลังเงาไม่ได้เก็บช่องนี้</span>
+                  <span className="text-gray-500">ส่วนลดท้ายบิล</span>
+                  {billDiscount === undefined
+                    ? <span className="text-gray-300">คลังเงายังไม่ส่งช่องนี้มา</span>
+                    : billDiscount === null
+                      ? <span className="text-gray-400">ไม่รู้ (ใบนี้ซิงก์ก่อนมีช่องนี้)</span>
+                      : <span className="text-gray-800">{billDiscount === 0 ? fmtMoney(0) : `−${fmtMoney(billDiscount)}`}</span>}
                 </div>
-                {hasGap && (
+                {/* ── ค่าส่ง ── */}
+                <div className="flex justify-between py-1.5 text-[12.5px]">
+                  <span className="text-gray-500">ค่าส่ง</span>
+                  {shipAmount === undefined
+                    ? <span className="text-gray-300">คลังเงายังไม่ส่งช่องนี้มา</span>
+                    : shipAmount === null
+                      ? <span className="text-gray-400">ไม่รู้ (ใบนี้ซิงก์ก่อนมีช่องนี้)</span>
+                      : <span className="text-gray-800">{shipAmount === 0 ? fmtMoney(0) : `+${fmtMoney(shipAmount)}`}</span>}
+                </div>
+                {/* 🔴 ส่วนที่ยัง**อธิบายไม่ได้** — ขึ้นเฉพาะตอนที่รู้ครบแล้วยังไม่ลงตัว
+                    หรือตอนที่ยังไม่มีช่องให้อธิบายเลย · **ลงตัวแล้วต้องเงียบ** ไม่งั้นกลายเป็นเสียงเตือนปลอม */}
+                {!canExplain && !fitsIfZeroDiscount && hasGap && (
                   <div className="flex justify-between py-1.5 text-[12.5px] text-amber-800">
                     <span>ส่วนต่างที่อธิบายไม่ได้</span>
                     <span className="font-semibold">{gap > 0 ? '+' : ''}{fmtMoney(gap)}</span>
+                  </div>
+                )}
+                {canExplain && !explained && (
+                  <div className="flex justify-between py-1.5 text-[12.5px] text-red-700">
+                    <span>ยังเหลือที่อธิบายไม่ได้</span>
+                    <span className="font-semibold">{(leftover ?? 0) > 0 ? '+' : ''}{fmtMoney(leftover ?? 0)}</span>
+                  </div>
+                )}
+                {fitsIfZeroDiscount && (
+                  <div className="flex justify-between py-1.5 text-[12px] text-gray-500">
+                    <span>ยอดลงตัว <b>ถ้า</b>ส่วนลดรายบรรทัดเป็น 0</span>
+                    <span>ยังยืนยันไม่ได้</span>
                   </div>
                 )}
                 <div className="flex justify-between py-1.5 text-[12.5px]">
@@ -370,13 +468,30 @@ function DetailInner() {
                   <span className="text-[13px] font-bold text-gray-800">มูลค่ารวมสุทธิ</span>
                   <span className="text-[13px] font-bold text-gray-900">{fmtMoney(total)}</span>
                 </div>
-                {hasGap && (
+                {fitsIfZeroDiscount && (
+                  <p className="text-[11px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-2.5 py-2 mt-2 leading-relaxed">
+                    ℹ️ ค่าส่งกับส่วนลดท้ายบิลของใบนี้<b>รู้แล้ว</b> และยอด<b>ลงตัวพอดีถ้าถือว่าส่วนลดรายบรรทัดเป็น 0</b>
+                    {' '}— แต่ช่องส่วนลดรายบรรทัดของใบนี้ยัง<b>ไม่รู้ค่า</b> (ซิงก์มาก่อนมีช่องนั้น)
+                    {' '}⇒ <b>ยังยืนยันไม่ได้ว่าถูก</b> · ถือเป็นเบาะแส ไม่ใช่คำยืนยัน
+                  </p>
+                )}
+                {!canExplain && !fitsIfZeroDiscount && hasGap && (
                   <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mt-2 leading-relaxed">
                     ⚠️ <b>บรรทัดสินค้ารวมได้ {fmtMoney(linesTotal)} แต่ยอดใบคือ {fmtMoney(total)}</b>
                     {' '}— ต่างกัน {fmtMoney(Math.abs(gap))}
                     <br />
-                    คลังเงา<b>ไม่ได้เก็บช่องค่าส่งหรือส่วนลดท้ายบิล</b> จึงบอกไม่ได้ว่าส่วนต่างนี้คืออะไร
+                    {billDiscount === undefined || shipAmount === undefined
+                      ? <>คลังเงา<b>ยังไม่ส่งช่องส่วนลดท้ายบิลกับค่าส่งมาให้จอ</b> จึงบอกไม่ได้ว่าส่วนต่างนี้คืออะไร</>
+                      : <><b>ใบนี้ซิงก์มาก่อนมีช่องพวกนั้น</b> ⇒ ยังบอกไม่ได้ว่าส่วนต่างคืออะไร</>}
                     {' '}⇒ <b>อย่าอ่านตารางสินค้าว่าอธิบายยอดใบครบแล้ว</b> · ต้องดูใบจริงที่ ZORT
+                  </p>
+                )}
+                {canExplain && !explained && (
+                  <p className="text-[11px] text-red-900 bg-red-50 border border-red-300 rounded px-2.5 py-2 mt-2 leading-relaxed">
+                    🔴 <b>รู้ค่าส่งกับส่วนลดครบแล้ว แต่ยอดยังไม่ลงตัว</b> — เหลือ {fmtMoney(Math.abs(leftover ?? 0))}
+                    <br />
+                    สูตรที่ฝั่งท่อใช้คือ ผลรวมบรรทัด − ส่วนลด + ค่าส่ง ⇒ <b>ถ้ายังไม่ลงตัวแปลว่ามีช่องที่เรายังไม่รู้จัก</b>
+                    {' '}· แจ้งฝั่งท่อ อย่าเดาเอง
                   </p>
                 )}
                 <p className="text-[10.5px] text-gray-400 mt-2 leading-relaxed">
