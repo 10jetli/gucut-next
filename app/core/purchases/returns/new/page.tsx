@@ -174,9 +174,20 @@ export default function NewPurchaseReturnPage() {
   }, [clean, ref, sig, number, vendor, vendorCode, note, warehouse, day, poId, discount, shipping, status, paid, paymentMethod])
 
   /* 🔴 เทียบยอดที่ท่อคิด กับยอดที่จอคิด — **ต่างกันแปลว่าเข้าใจสัญญาช่องไม่ตรงกัน**
-     ไม่ใช่เรื่องปัดเศษ · เคยจับบั๊กจริงได้ด้วยวิธีนี้มาแล้วในจอสร้างรายการขาย */
-  const mismatch = res?.dryRun && typeof res.linesTotal === 'number'
-    && Math.abs(res.linesTotal - itemsTotal) > 0.01
+     ไม่ใช่เรื่องปัดเศษ · เคยจับบั๊กจริงได้ด้วยวิธีนี้มาแล้วในจอสร้างรายการขาย
+
+     🔴 **สามสถานะ ห้ามยุบเหลือสอง** (ฝั่งท่อยืนยันความหมายของ null 14 ก.ย. 2569)
+       ① ตัวเลข → เทียบได้ · ต่างเกิน 1 สตางค์ = เตือนแดง
+       ② null   → ท่อบอกเองว่า "มีบรรทัดไม่มีราคา จึงไม่คิดยอด" ⇒ **ห้ามตีความเป็น 0
+                  และห้ามขึ้นว่าไม่ตรง** · ต้องขึ้นว่า "เทียบไม่ได้" แทน
+                  ⚠️ แต่จอนี้บังคับราคาทุกบรรทัดอยู่แล้ว ⇒ ถ้ายังได้ null แปลว่า
+                     ราคาที่ส่งไปไม่ถึงท่อ ซึ่งเป็นเรื่องที่ต้องแจ้ง ไม่ใช่เรื่องปกติ
+       ③ ไม่มีช่องนี้เลย → ท่อรุ่นก่อน ⇒ เทียบไม่ได้เหมือนกัน แต่คนละสาเหตุ ห้ามเขียนรวมกัน
+     ⚠️ **เงียบ = คนอ่านว่า "ตรงกันแล้ว"** ⇒ สองกรณีหลังต้องพูดออกมา ไม่ใช่ไม่แสดงอะไร */
+  const hasTotal = typeof res?.linesTotal === 'number'
+  const nullTotal = res?.dryRun === true && res.linesTotal === null
+  const noTotalField = res?.dryRun === true && !('linesTotal' in (res as object))
+  const mismatch = res?.dryRun && hasTotal && Math.abs((res.linesTotal as number) - itemsTotal) > 0.01
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
@@ -313,6 +324,22 @@ export default function NewPurchaseReturnPage() {
         </p>
       ) : !dryOk && (
         <p className="text-[12.5px] text-gray-500 mt-2">ต้องทดลองส่งให้ผ่านก่อน · แก้อะไรหลังซ้อม ปุ่มส่งจริงจะปิดเองอีกครั้ง</p>
+      )}
+
+      {nullTotal && (
+        <div className="text-[13px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+          🔴 <b>ท่อบอกว่ามีบรรทัดที่ไม่มีราคา จึงไม่คิดยอดให้</b> — แต่จอนี้บังคับราคาทุกบรรทัดอยู่แล้ว
+          <br />
+          ⇒ แปลว่า <b>ราคาที่ส่งไปไม่ถึงท่อ</b> ไม่ใช่เรื่องปกติ · <b>อย่าส่งจริง</b> และแจ้งฝั่งท่อ
+          {' '}(ยอดบนจอคือ {fmtMoney(itemsTotal)} — <b>ห้ามอ่านค่าว่างเป็น ฿0</b>)
+        </div>
+      )}
+
+      {noTotalField && (
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+          ⚠️ <b>ท่อไม่ได้ส่งยอดรวมกลับมาให้เทียบ</b> (ท่อรุ่นก่อน) — <b>เทียบไม่ได้ ไม่ใช่ตรงกัน</b>
+          {' '}ยอดบนจอคือ {fmtMoney(itemsTotal)} · ใบแรกที่ส่งจริงต้องเปิดดูใน ZORT ว่ายอดเข้าถูกช่อง
+        </div>
       )}
 
       {mismatch && (
