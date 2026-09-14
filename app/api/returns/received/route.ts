@@ -58,7 +58,25 @@ export async function POST(request: Request) {
   }
   const store = getStore('returns')
   const key = PREFIX + number
-  const cur = ((await store.get(key, { type: 'json' }).catch(() => null)) as RecvState | null) || {}
+
+  /* 🔴 **อ่านไม่ได้ ≠ ยังไม่มีของ** (แก้ 14 ก.ย. 2569 · ตรวจพบตอนไล่บั๊กชุดเดียวกันในฝั่งท่อ)
+     ของเดิม `.catch(() => null) || {}` ⇒ ที่เก็บสะดุดชั่วคราว = ได้ก้อนว่าง
+     แล้วเขียนทับทันที ⇒ **ชื่อคนรับของ (`by`) กับเวลาที่รับหายถาวร**
+     ⚠️ ช่อง `by` มีไว้ตอบคำถามว่า "ใครเป็นคนแกะกล่อง" เผื่อของขาดหรือสภาพมีปัญหา
+        ⇒ หายเมื่อไหร่ก็ตอบคำถามนั้นไม่ได้อีกเลย และไม่มีอะไรฟ้องว่ามันเคยมี
+     ⚠️ ฝั่ง stage 'received' หนักกว่า: `cur.delivered || Date.now()` ⇒ เวลาที่ของมาถึงเดิม
+        ถูกแทนด้วยเวลาปัจจุบัน ⇒ ประวัติเพี้ยนโดยดูเหมือนข้อมูลครบ
+     ⇒ ท่าที่ถูก (ท่าเดียวกับ office.mjs ฝั่งท่อ): อ่านไม่ได้ = **ไม่เขียนอะไรเลย** แล้วบอกให้ลองใหม่
+        ส่วน "ไม่มีคีย์" (get คืน null) = ใบใหม่จริง ใช้ก้อนว่างได้ตามปกติ */
+  let cur: RecvState
+  try {
+    cur = ((await store.get(key, { type: 'json' })) as RecvState | null) ?? {}
+  } catch {
+    return NextResponse.json(
+      { error: 'อ่านสถานะใบคืนไม่ได้ชั่วคราว — ยังไม่ได้บันทึกอะไร ลองใหม่อีกครั้ง' },
+      { status: 503 },
+    )
+  }
 
   if (body.stage === 'delivered') {
     await store.setJSON(key, { ...cur, delivered: Date.now() })
