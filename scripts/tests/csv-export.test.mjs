@@ -68,7 +68,12 @@ try {
     const b = await fetchAllPages(make(10000), { limit: 200, maxRequests: 3 })
     ok('🔴 ชนเพดานกันวน ⇒ ได้ไม่ครบ', b.rows.length === 600 && !!b.coverage.stoppedBecause, JSON.stringify(b.coverage))
     ok('   และไฟล์ต้องประกาศว่าไม่ครบ พร้อมเลขทั้งสองฝั่ง',
-      coverageText(b.coverage).includes('ไม่ครบ') && coverageText(b.coverage).includes('10,000'), coverageText(b.coverage))
+      coverageText(b.coverage).includes('ยังไม่ครบ') && coverageText(b.coverage).includes('10,000'), coverageText(b.coverage))
+    ok('🔴 ไม่มี ** มาร์กดาวน์ในข้อความที่ลงไฟล์', !coverageText(b.coverage).includes('**'), coverageText(b.coverage))
+    /* 📏 ของจริง 15 ก.ย. 2569: จอโอนสินค้า 12,003 แถว — เพดานเดิม 60 รอบทำให้ขาด 3 แถว */
+    const real = await fetchAllPages(make(12003), { limit: 200 })
+    ok('🔴 ชุดจริงขนาด 12,003 แถว ⇒ ต้องได้ครบด้วยเพดานเริ่มต้น',
+      real.rows.length === 12003 && !real.coverage.stoppedBecause, JSON.stringify(real.coverage))
 
     /* ล่มกลางคัน: ของที่ได้มาแล้วต้องไม่หาย แต่ต้องติดป้ายว่าไม่ครบ */
     let n = 0
@@ -86,10 +91,41 @@ try {
       rows: offset === 0 ? Array.from({ length: limit }, (_, i) => i) : [], total: null,
     }), { limit: 50 })
     ok('🔴 ท่อไม่บอกยอดรวม ⇒ ไม่ประกาศว่าครบ', !coverageText(d.coverage).startsWith('ครบ'), coverageText(d.coverage))
-    ok('   แต่ก็ไม่ประกาศว่าไม่ครบเช่นกัน (ยังไม่รู้)', !coverageText(d.coverage).includes('ไม่ครบ'), coverageText(d.coverage))
+    ok('   แต่ก็ไม่ประกาศว่าไม่ครบเช่นกัน (ยังไม่รู้)', !coverageText(d.coverage).includes("ยังไม่ครบ"), coverageText(d.coverage))
   }
 
-  console.log('④ รูปแบบไฟล์')
+  console.log('④ 🔴 ท่อบอกเองว่าหมด (hasMore) และเรื่องที่ทำให้ไม่สมบูรณ์ (failed)')
+  {
+    /* บัตรสต็อก: เชื่อ hasMore ก่อนการเทียบ total — และ **ห้ามตัดแถวซ้ำ**
+       ของจริง 15 ก.ย. 2569: รหัส 00313 มีแถวหน้าตาเหมือนกันเป๊ะ 106 แถว เป็นข้อมูลจริง */
+    const pages = [
+      { rows: [{ ref: 'A', qty: -1 }, { ref: 'A', qty: -1 }], total: 4, done: false },
+      { rows: [{ ref: 'A', qty: -1 }, { ref: 'B', qty: 2 }], total: 4, done: true },
+    ]
+    let i = 0
+    const r = await fetchAllPages(async () => pages[i++], { limit: 2 })
+    ok('หยุดเมื่อท่อบอก done', r.rows.length === 4, String(r.rows.length))
+    ok('🔴 แถวที่เหมือนกันเป๊ะต้องอยู่ครบ ห้าม dedupe',
+      r.rows.filter((x) => x.ref === 'A').length === 3, JSON.stringify(r.rows))
+    ok('   และประกาศว่าครบได้', coverageText(r.coverage).startsWith('ครบ'), coverageText(r.coverage))
+
+    /* ⚠️ แหล่งข้อมูลบางแหล่งล่ม ⇒ ถึงจะได้ครบตาม total ก็ห้ามเขียนว่าครบ
+       (total เองก็นับจากแหล่งที่ล่ม) */
+    let j = 0
+    const withFail = await fetchAllPages(async () => {
+      j++
+      return { rows: [{ n: j }], total: 2, done: j >= 2, problem: 'ดึงจากแหล่ง ขาย ไม่สำเร็จ' }
+    }, { limit: 1 })
+    ok('🔴 มีแหล่งล่ม ⇒ ได้ครบตาม total แต่ห้ามบอกว่าครบ',
+      withFail.rows.length === 2 && !coverageText(withFail.coverage).startsWith('ครบ'),
+      coverageText(withFail.coverage))
+    ok('   และต้องบอกด้วยว่าติดอะไร',
+      coverageText(withFail.coverage).includes('ดึงจากแหล่ง ขาย ไม่สำเร็จ'), coverageText(withFail.coverage))
+    ok('   เรื่องเดิมซ้ำหลายหน้า เขียนครั้งเดียว',
+      (coverageText(withFail.coverage).match(/ดึงจากแหล่ง ขาย/g) ?? []).length === 1)
+  }
+
+  console.log('⑤ รูปแบบไฟล์')
   {
     const csv = buildCsv({
       filename: 'x',

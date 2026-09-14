@@ -20,6 +20,8 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import { productMenuItems } from '@/lib/product-menu'
+import SkuCodes from '@/components/zort/SkuCodes'
+import StockCard from '@/components/zort/StockCard'
 import { findOrderId } from '@/lib/open-order'
 import {
   PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu,
@@ -794,10 +796,21 @@ export default function ProductDetailPage() {
             </p>
           </Card>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
-            ⚠️ ZORT มี <b>QR code กับบาร์โค้ด</b> มุมขวาของกล่องข้อมูล (ใช้คู่กับปุ่มพิมพ์เอกสาร) —
-            ยังไม่ทำเพราะปุ่มพิมพ์เอกสารเองก็ยังทำไม่ได้ · ทำบาร์โค้ดไว้เฉย ๆ โดยพิมพ์ไม่ได้
-            ก็ไม่ได้ช่วยอะไร
+          {/* 🔴 **ข้อความเดิมกลายเป็นเท็จแล้ว** (แก้ 15 ก.ย. 2569)
+              เดิมเขียนว่า "ZORT มี QR code กับบาร์โค้ด — ยังไม่ทำเพราะปุ่มพิมพ์เอกสารเองก็ยังทำไม่ได้"
+              ⇒ ทั้งสองอย่างทำไปแล้ว: QR + บาร์โค้ดอยู่ที่ components/zort/SkuCodes.tsx (ใบ t_mu1dfe94)
+                 และจอพิมพ์ฉลากอยู่ที่ /core/stock/print?sku= ⇒ ปล่อยไว้คือจอบอกว่าไม่มีของที่มีอยู่
+              📌 ตรงกับคำเตือนที่เขียนไว้ในย่อหน้าเดียวกันนี้เองเมื่อ 3 ก.ย. ว่า
+                 "ข้อความทำไม่ได้ที่ค้าง อันตรายกว่าตัวตรวจที่เขียวทั้งที่พัง" — แล้วก็ค้างจนได้ */}
+          <div className="mt-5">
+            <p className="text-[15px] font-semibold text-gray-900 mb-2">QR code และบาร์โค้ด</p>
+            <SkuCodes sku={sku} />
+          </div>
+
+          {/* 📇 บัตรสต็อก — ZORT มี ExportStockCard() ในจอรายการสินค้า ของเราไม่เคยมี (ใบ t_mu1i74cu) */}
+          <StockCard sku={sku} />
+
+          <p className="text-[12px] text-gray-500 mt-4 leading-relaxed">
             {/* 🔴 บรรทัดนี้เคยเขียนว่า "น้ำหนักคลังเงายังไม่ได้เก็บช่องนี้มา" แล้วค้างอยู่
                 หลังท่อเก็บน้ำหนักเสร็จ (3 ก.ย. 2569) — ช่องน้ำหนักโชว์อยู่ข้างบนนี้แล้ว
                 ⇒ ข้อความ "ทำไม่ได้" ที่ค้าง อันตรายกว่าตัวตรวจที่เขียวทั้งที่พัง

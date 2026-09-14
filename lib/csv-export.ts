@@ -53,16 +53,30 @@ export interface Coverage {
   total: number | null
   /** หยุดกลางคันเพราะอะไร · ว่าง = ครบ */
   stoppedBecause?: string
+  /** 🔴 **เรื่องที่ท่อแจ้งว่าข้อมูลรอบนี้ไม่สมบูรณ์** เช่น `failed` ของบัตรสต็อกไม่ว่าง
+   *  ⇒ ถึงจะได้แถวครบตาม total ก็ **ห้ามเขียนว่า "ครบ"** เพราะ total เองก็นับจากแหล่งที่ล่ม
+   *  (ฝั่งท่อกำชับตรง ๆ 15 ก.ย. 2569: "ถ้า failed ไม่ว่างในหน้าไหน ห้ามเขียนหัวไฟล์ว่าครบ") */
+  problems?: string[]
 }
 
 /** สรุปความครบถ้วนเป็นภาษาคน — ขึ้นทั้งบนจอและบรรทัดแรกของไฟล์ */
 export function coverageText(c: Coverage): string {
+  const extra = c.problems?.length ? ` · ${c.problems.join(' · ')}` : ''
+  /* 🔴 มีเรื่องที่ท่อแจ้งว่าไม่สมบูรณ์ ⇒ ตัดสินก่อนทุกกรณี ห้ามตกไปที่สาขา "ครบ" */
+  if (c.problems?.length) {
+    return `⚠️ ได้ ${c.got.toLocaleString('th-TH')} แถว`
+      + (c.total === null ? '' : ` จากที่ท่อนับได้ ${c.total.toLocaleString('th-TH')} แถว`)
+      + ` — ยังไม่ครบ${extra}`
+      + (c.stoppedBecause ? ` · หยุดเพราะ ${c.stoppedBecause}` : '')
+  }
   if (c.total === null) {
     return `ได้ ${c.got.toLocaleString('th-TH')} แถว — ท่อไม่ได้บอกว่าทั้งหมดมีกี่แถว จึงยังไม่รู้ว่าครบหรือไม่`
       + (c.stoppedBecause ? ` · หยุดเพราะ ${c.stoppedBecause}` : '')
   }
   if (c.got >= c.total && !c.stoppedBecause) return `ครบทุกแถวตามตัวกรอง (${c.got.toLocaleString('th-TH')} แถว)`
-  return `⚠️ ได้ ${c.got.toLocaleString('th-TH')} แถว จากทั้งหมด ${c.total.toLocaleString('th-TH')} แถว — **ไม่ครบ**`
+  /* ⚠️ ห้ามใส่ ** แบบมาร์กดาวน์ — ข้อความนี้ลงไปในไฟล์ CSV และขึ้นบนจอแบบข้อความล้วน
+     เคยใส่แล้วไฟล์จริงออกมาเป็น "— **ไม่ครบ**" อ่านแล้วสะดุด (เจอตอนยิงจริง 15 ก.ย. 2569) */
+  return `⚠️ ได้ ${c.got.toLocaleString('th-TH')} แถว จากทั้งหมด ${c.total.toLocaleString('th-TH')} แถว — ยังไม่ครบ`
     + (c.stoppedBecause ? ` · หยุดเพราะ ${c.stoppedBecause}` : '')
 }
 
@@ -74,14 +88,27 @@ export function coverageText(c: Coverage): string {
  *    ⇒ หยุดเมื่อครบ total · ได้ 0 แถว · หรือชนเพดานรอบ แล้ว **รายงานว่าหยุดเพราะอะไร**
  */
 export async function fetchAllPages<T>(
-  page: (offset: number, limit: number) => Promise<{ rows: T[]; total: number | null }>,
+  page: (offset: number, limit: number) => Promise<{
+    rows: T[]
+    total: number | null
+    /** ท่อบอกเองว่าหมดแล้ว (เช่น `hasMore === false`) — เชื่อช่องนี้ก่อนการเทียบ total */
+    done?: boolean
+    /** เรื่องที่ทำให้รอบนี้ไม่สมบูรณ์ เช่น แหล่งข้อมูลบางแหล่งล่ม หรือชนเพดานความลึก */
+    problem?: string
+  }>,
   opts: { limit?: number; maxRequests?: number; onProgress?: (got: number, total: number | null) => void } = {},
 ): Promise<{ rows: T[]; coverage: Coverage }> {
   const limit = opts.limit ?? 200
-  const maxRequests = opts.maxRequests ?? 60
+  /* 🔴 **เพดานรอบต้องสูงพอให้ชุดจริงจบ** — ยิงจริง 15 ก.ย. 2569 จอโอนสินค้ามี 12,003 แถว
+     เพดานเดิม 60 รอบ × 200 = 12,000 ⇒ **ขาดไป 3 แถว** แล้วไฟล์ประกาศว่าไม่ครบ
+     ⇒ เพดานที่พอดีเป๊ะกับของจริงวันนี้ จะกลายเป็นน้อยไปพรุ่งนี้เสมอ ⇒ เผื่อให้เยอะ
+     ⚠️ แต่ **ยังต้องมีเพดาน** — ถ้าท่อคืนแถวซ้ำหรือ offset ไม่ขยับ จะวนตลอดกาล
+        และผู้ใช้จะเห็นแค่ปุ่มค้างอยู่โดยไม่รู้ว่าเกิดอะไรขึ้น */
+  const maxRequests = opts.maxRequests ?? 250
   const rows: T[] = []
   let total: number | null = null
   let stoppedBecause = ''
+  const problems: string[] = []
   for (let i = 0; i < maxRequests; i++) {
     let got
     try {
@@ -95,12 +122,26 @@ export async function fetchAllPages<T>(
     }
     if (got.total !== null) total = got.total
     rows.push(...got.rows)
+    if (got.problem && !problems.includes(got.problem)) problems.push(got.problem)
     opts.onProgress?.(rows.length, total)
+    /* 🔴 **ห้าม dedupe แถวที่หน้าตาเหมือนกัน** — ฝั่งท่อยืนยัน 15 ก.ย. 2569 ว่าบัตรสต็อก
+       รหัส 00313 มีแถวเหมือนกันเป๊ะ 106 แถว และ **เป็นข้อมูลจริง** (ใบเดียวมีหลายบรรทัด
+       ที่เป็นรหัสเดียวกัน เช่นใบ 1011785606261766 มี 00313 ×1 อยู่ 5 บรรทัด)
+       ⇒ ตัดซ้ำเมื่อไหร่ = ยอดในไฟล์หายไปเงียบ ๆ โดยดูเหมือนสะอาดขึ้น */
+    if (got.done === true) break
     if (got.rows.length === 0) break
-    if (total !== null && rows.length >= total) break
+    /* เทียบ total เป็นตัวสำรองเมื่อท่อไม่ได้บอก done มา */
+    if (got.done === undefined && total !== null && rows.length >= total) break
     if (i === maxRequests - 1) stoppedBecause = `ขอข้อมูลครบ ${maxRequests} รอบแล้วยังไม่หมด (กันวนไม่รู้จบ)`
   }
-  return { rows, coverage: { got: rows.length, total, stoppedBecause: stoppedBecause || undefined } }
+  return {
+    rows,
+    coverage: {
+      got: rows.length, total,
+      stoppedBecause: stoppedBecause || undefined,
+      problems: problems.length ? problems : undefined,
+    },
+  }
 }
 
 export interface CsvFile {

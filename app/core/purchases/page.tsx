@@ -22,6 +22,7 @@ import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine,
 } from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
   number: string
@@ -133,6 +134,35 @@ export default function CorePurchasesPage() {
             <BtnGhost onClick={() => load(offset)} disabled={loading}>
               {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
             </BtnGhost>
+            {/* 📤 ZORT มีปุ่มนี้ทุกหน้ารายการ — ส่งออก **ตามตัวกรองที่เลือกอยู่ ครบทุกหน้า** */}
+            <ExportButton
+              disabled={loading}
+              spec={{
+                filename: `รายการซื้อ-${new Date().toISOString().slice(0, 10)}`,
+                title: 'รายการซื้อ',
+                filters: [
+                  ['แท็บสถานะ', tab === 'all' ? 'ทั้งหมด' : tab],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'purchases', limit: String(limit), offset: String(offsetAt) })
+                  if (tab !== 'all') qs.set('status', tab)
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['เลขที่ใบซื้อ', 'วันที่', 'ผู้ขาย', 'คลัง', 'ยอดซื้อ (บาท)', 'สถานะ', 'การชำระเงิน', 'หมายเหตุ'],
+                /* 🔴 ช่องที่ท่อไม่ส่ง คืน null ให้เว้นว่าง **ห้ามแทนด้วย 0 หรือ "-"**
+                   ในไฟล์ Excel ขีดกลางจะกลายเป็นข้อความ ทำให้คอลัมน์ตัวเลขคำนวณไม่ได้ทั้งคอลัมน์ */
+                toRow: (r: Row) => [
+                  r.number, r.po_date ?? null, r.vendor ?? null, r.warehouse ?? null,
+                  typeof r.amount === 'number' ? r.amount : null,
+                  r.status ?? null, r.payment_status ?? null, r.note ?? null,
+                ],
+              }}
+            />
             {/* ปุ่มตามภาพ ZORT — พาไปหน้าที่บอกว่ายังไม่ได้ทำ ไม่ทำปุ่มหลอก */}
             <Link href="/core/import?kind=po"
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">

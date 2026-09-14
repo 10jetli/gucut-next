@@ -17,6 +17,7 @@ import {
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar,
 } from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
@@ -321,6 +322,49 @@ export default function CoreSalesPage() {
             <BtnGhost onClick={() => load(offset)} disabled={loading}>
               {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
             </BtnGhost>
+            {/* 📤 ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า (ใบ t_mu1i74cu)
+                🔴 **ต้องส่ง cancelled=1 เหมือนที่จอส่ง** ไม่งั้นไฟล์จะไม่มีใบยกเลิก
+                   แล้วยอดรวมในไฟล์กับยอดบนจอจะต่างกัน โดยคนอ่านไฟล์ไม่มีทางรู้ว่าทำไม
+                   (CLAUDE.md กฎแท็บข้อ 4 — ตัวเลขคนละกติกาห้ามวางคู่กันเฉย ๆ)
+                ⚠️ ไฟล์มีคอลัมน์ "ยกเลิกหรือไม่" เพื่อให้คนกรองออกเองได้ในภายหลัง */}
+            <ExportButton
+              disabled={loading}
+              spec={{
+                filename: `รายการขาย-${thaiDay(days - 1)}-ถึง-${thaiDay(0)}`,
+                title: 'รายการขาย',
+                note: 'ไฟล์นี้รวมใบยกเลิกไว้ด้วย (เหมือนที่จอแสดง) — ดูคอลัมน์ "สถานะ" เพื่อคัดออกเอง',
+                filters: [
+                  ['ช่วงวันที่', `${thaiDay(days - 1)} ถึง ${thaiDay(0)} (${days} วัน)`],
+                  ['ร้าน', store || '(ทุกร้าน)'],
+                  ['ช่องทาง', channel || '(ทุกช่องทาง)'],
+                  ['สถานะ', status || '(ทุกสถานะ)'],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({
+                    list: 'orders', from: thaiDay(days - 1), to: thaiDay(0),
+                    limit: String(limit), offset: String(offsetAt), cancelled: '1',
+                  })
+                  if (channel) qs.set('channel', channel)
+                  if (status) qs.set('status', status)
+                  if (store) qs.set('store', store)
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['เลขที่', 'วันที่', 'ลูกค้า', 'ช่องทาง', 'ที่มา', 'ยอด (บาท)', 'สถานะ', 'การชำระเงิน', 'ขนส่ง', 'เลขพัสดุ', 'วันที่ส่ง', 'เก็บปลายทาง'],
+                toRow: (r: Row) => [
+                  r.number, r.order_date ?? null, r.customer ?? null, r.channel ?? null, r.source ?? null,
+                  typeof r.amount === 'number' ? r.amount : null,
+                  r.status ?? null, r.pay_status ?? null,
+                  r.ship_channel ?? r.ship_name ?? null, r.tracking_no ?? null, r.ship_date ?? null,
+                  /* 🔴 is_cod เป็น 0/1 หรือ boolean · **ไม่ส่งมา = ไม่รู้ ⇒ เว้นว่าง ห้ามเขียน "ไม่ใช่"** */
+                  r.is_cod === undefined || r.is_cod === null ? null : (r.is_cod ? 'ใช่' : 'ไม่ใช่'),
+                ],
+              }}
+            />
             {/* ⚠️ สามปุ่มนี้ลอกจาก ZORT — "สร้างอย่างง่าย" ของเขาคือเปิดบิลเร็ว
                 ซึ่งตรงกับจอขายหน้าร้านของเราพอดี จึงพาไปที่นั่นจริง ๆ
                 ส่วนอีกสองปุ่มพาไปหน้าที่บอกว่ายังไม่ได้ทำ — เหมือนในผัง แต่กดแล้วไม่โกหก */}

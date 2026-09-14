@@ -21,6 +21,7 @@ import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, TD,
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 
 /* 🔴 **ชื่อฟิลด์เคยผิดทั้งชุด — คอลัมน์ขึ้นขีดกลางทุกแถวโดยไม่มีอะไรฟ้อง** (แก้ 5 ก.ย. 2569)
    จอเดาชื่อไว้ว่า transferdate · transferType · fromwarehousecode · towarehousecode
@@ -160,6 +161,38 @@ export default function CoreTransfersPage() {
             <BtnGhost onClick={() => load(offset)} disabled={loading}>
               {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
             </BtnGhost>
+            {/* 📤 ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า
+                ⚠️ ไฟล์ใส่ **ทั้งรหัสคลังและชื่อคลัง** — ท่อส่งรหัส (NEW · KLD · ANJ)
+                   ถ้าใส่แต่ชื่อ แล้ววันไหนดึงชื่อไม่ได้ ไฟล์จะมีแต่รหัสดิบโดยไม่มีใครรู้
+                   ถ้าใส่แต่รหัส คนอ่านไฟล์นอกทีมก็ไม่รู้ว่าคืออะไร ⇒ ใส่ทั้งคู่ */}
+            <ExportButton
+              disabled={loading}
+              spec={{
+                filename: `รายการโอนสินค้า-${new Date().toISOString().slice(0, 10)}`,
+                title: 'รายการโอนสินค้า',
+                note: wErr ? 'รอบนี้ดึงชื่อคลังไม่ได้ — คอลัมน์ชื่อคลังจึงเว้นว่าง (รหัสคลังยังอยู่ครบ)' : undefined,
+                filters: [
+                  ['แท็บสถานะ', tab === 'all' ? 'ทั้งหมด' : tab],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'transfers', limit: String(limit), offset: String(offsetAt) })
+                  if (tab !== 'all') qs.set('status', tab)
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['เลขที่ใบโอน', 'วันที่', 'ประเภท', 'รหัสคลังต้นทาง', 'ชื่อคลังต้นทาง', 'รหัสคลังปลายทาง', 'ชื่อคลังปลายทาง', 'สถานะ', 'อ้างอิง', 'หมายเหตุ'],
+                toRow: (r: Row) => [
+                  r.number, r.transfer_date ?? null, r.kind ?? null,
+                  r.from_wh ?? null, r.from_wh ? (names[String(r.from_wh)] ?? null) : null,
+                  r.to_wh ?? null, r.to_wh ? (names[String(r.to_wh)] ?? null) : null,
+                  r.status ?? null, r.reference ?? null, r.note ?? null,
+                ],
+              }}
+            />
             <Link href="/core/import?kind=product"
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)
