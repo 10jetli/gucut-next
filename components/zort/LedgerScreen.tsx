@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SOON } from '@/lib/zort-menu'
+import AdvancedSearch from './AdvancedSearch'
 import { fmtMoney } from '@/lib/format'
 import { PageHead, TableWrap, TH, THR, thaiDate } from './index'
 
@@ -326,33 +327,20 @@ export default function LedgerScreen({
           )}
       </div>
 
-      {/* 🔍 แผงค้นหาขั้นสูง — มีเฉพาะช่องที่ท่อกรองให้จริง (คำค้น + ช่วงวันที่) */}
-      {advOpen && canDateFilter && (
-        <div className="bg-white border border-gray-200 rounded-md p-3.5 mb-3 flex flex-wrap items-end gap-3">
-          <label className="text-[12.5px] text-gray-600">
-            <span className="block mb-1">ตั้งแต่วันที่</span>
-            <input type="date" value={advFrom} onChange={(e) => setAdvFrom(e.target.value)}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
-          </label>
-          <label className="text-[12.5px] text-gray-600">
-            <span className="block mb-1">ถึงวันที่</span>
-            <input type="date" value={advTo} onChange={(e) => setAdvTo(e.target.value)}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
-          </label>
-          <button type="button" onClick={() => void loadZort()}
-            className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-            ค้นหาตามช่วงนี้
-          </button>
-          <button type="button"
-            onClick={() => { setAdvFrom(''); setAdvTo('') }}
-            className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-            ล้างช่วงวันที่
-          </button>
-          <span className="text-[11.5px] text-gray-500 max-w-[420px] leading-snug">
-            ใส่ช่องเดียวก็ได้ · คำค้นและช่วงวันที่ <b>กรองที่เซิร์ฟเวอร์</b> (ครอบทุกรายการ ไม่ใช่แค่หน้าที่เห็น)
-          </span>
-        </div>
-      )}
+      {/* 🔍 แผงค้นหาขั้นสูง — ใช้ตัวประกอบร่วม · มีเฉพาะช่องที่ท่อกรองให้จริง */}
+      <AdvancedSearch
+        open={advOpen && canDateFilter}
+        fields={[
+          { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
+          { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
+        ]}
+        onApply={() => void loadZort()}
+        onClear={() => { setAdvFrom(''); setAdvTo('') }}
+        canClear={!!advFrom || !!advTo}
+        applyLabel="ค้นหาตามช่วงนี้"
+        serverFiltered="คำค้นหา · ช่วงวันที่"
+        extraNote="ใส่ช่องเดียวก็ได้"
+      />
 
       {dateLine && <p className="text-[12.5px] text-gray-600 mb-2">{dateLine}</p>}
 

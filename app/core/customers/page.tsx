@@ -32,6 +32,7 @@ import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, BtnGhost, LinkText, EmptyState, RowMenu,
 } from '@/components/zort'
+import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 
 interface Contact {
   id: string; type?: string; name?: string; code?: string
@@ -176,43 +177,29 @@ export default function CoreContactsPage() {
         /* 🔴 ลิงก์นี้เคยเป็นของประดับ (กดแล้วแค่ `load(0)` = ค้นซ้ำเงื่อนไขเดิม)
            ⇒ 15 ก.ย. เช้า: ยิงตรวจแล้วท่อรับแต่ `q` จึงเขียนว่า "ยังไม่มี" พร้อมเหตุผล
            ⇒ 15 ก.ย. บ่าย: **ฝั่งท่อเปิด withphone/withemail ให้** ⇒ เปลี่ยนเป็นแผงจริงตามที่จดไว้ */
-        advanced={
-          <LinkText onClick={() => setAdvOpen((v) => !v)}>
-            {advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}
-          </LinkText>
-        }
+        advanced={<AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} />}
       />
 
-      {/* 🔍 แผงค้นหาขั้นสูง — มีเฉพาะตัวกรองที่ท่อกรองให้จริง (ยิงตรวจ 15 ก.ย. 2569)
-          📏 ทั้งหมด 28,250 · มีเบอร์ 28,126 · มีอีเมล 3,018 · มีทั้งสอง 3,017 */}
-      {advOpen && (
-        <div className="bg-white border border-gray-200 rounded-md p-3.5 mb-3 flex flex-wrap items-center gap-4">
-          <label className="text-[13px] text-gray-700 flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={withPhone}
-              onChange={(e) => { setWithPhone(e.target.checked); load(0, q, { withPhone: e.target.checked }) }} />
-            เฉพาะที่มีเบอร์โทร
-          </label>
-          <label className="text-[13px] text-gray-700 flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={withEmail}
-              onChange={(e) => { setWithEmail(e.target.checked); load(0, q, { withEmail: e.target.checked }) }} />
-            เฉพาะที่มีอีเมล
-          </label>
-          {(withPhone || withEmail) && (
-            <BtnGhost onClick={() => { setWithPhone(false); setWithEmail(false); load(0, q, { withPhone: false, withEmail: false }) }}>ล้างตัวกรอง</BtnGhost>
-          )}
-          <span className="text-[11.5px] text-gray-500 max-w-[430px] leading-snug">
-            กรองที่เซิร์ฟเวอร์ (ครอบทั้งฐาน ไม่ใช่แค่หน้าที่เห็น)
-            <br />
-            {/* 🔴 บอกด้วยว่า **ไม่มี**อะไรให้กรอง ไม่ใช่ปล่อยให้คนหาช่องที่ไม่มีอยู่
-                ท่อไม่มีตัวกรองชนิดผู้ติดต่อ และของจริงเกือบทั้งฐานเป็นชนิดเดียวกันอยู่แล้ว */}
-            ⚠️ ไม่มีตัวกรอง &ldquo;ชนิดผู้ติดต่อ&rdquo; — ท่อไม่เปิดให้กรอง และทั้งฐานเป็นชนิดเดียวกันเกือบหมด
-            {' '}(Undefined 28,249 · Individual 1) ⇒ ใส่ช่องไปก็กรองแล้วไม่ต่าง
-            <br />
-            {/* 🔒 ด่านกันไล่ดึงทั้งฐานยังบังคับ — ตัวกรองไม่นับเป็นคำค้น */}
-            🔒 ตัวกรองพวกนี้<b>ไม่นับเป็นคำค้น</b> — เดินลึกเกิน 500 แถวยังต้องพิมพ์คำค้นหาเหมือนเดิม
-          </span>
-        </div>
-      )}
+      {/* 🔍 แผงค้นหาขั้นสูง — ใช้ตัวประกอบร่วม · มีเฉพาะตัวกรองที่ท่อกรองให้จริง
+          📏 ยิงตรวจ 15 ก.ย. 2569: ทั้งหมด 28,250 · มีเบอร์ 28,126 · มีอีเมล 3,018 · ทั้งสอง 3,017 */}
+      <AdvancedSearch
+        open={advOpen}
+        fields={[
+          { label: 'เฉพาะที่มีเบอร์โทร', kind: 'check', value: withPhone,
+            onChange: (v) => { setWithPhone(!!v); load(0, q, { withPhone: !!v }) } },
+          { label: 'เฉพาะที่มีอีเมล', kind: 'check', value: withEmail,
+            onChange: (v) => { setWithEmail(!!v); load(0, q, { withEmail: !!v }) } },
+        ]}
+        onApply={() => load(0)}
+        onClear={() => { setWithPhone(false); setWithEmail(false); load(0, q, { withPhone: false, withEmail: false }) }}
+        canClear={withPhone || withEmail}
+        serverFiltered="มีเบอร์โทร · มีอีเมล · คำค้นหา"
+        notAvailable={[{
+          what: 'ชนิดผู้ติดต่อ',
+          why: 'ท่อไม่เปิดให้กรอง และทั้งฐานเป็นชนิดเดียวกันเกือบหมด (Undefined 28,249 · Individual 1) ⇒ ใส่ช่องไปก็กรองแล้วไม่ต่าง',
+        }]}
+        extraNote={<>🔒 ตัวกรองพวกนี้<b>ไม่นับเป็นคำค้น</b> — เดินลึกเกิน 500 แถวยังต้องพิมพ์คำค้นหาเหมือนเดิม</>}
+      />
 
       {/* ✅ ด่านสะท้อนค่าที่ท่อใช้จริง — ถ้าสิ่งที่จอส่งกับสิ่งที่ท่อใช้ไม่ตรงกัน ต้องเห็น
           (ท่อส่ง `applied` มาให้ใช้เป็นด่านโดยเฉพาะ) */}

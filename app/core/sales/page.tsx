@@ -17,6 +17,7 @@ import {
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar,
 } from '@/components/zort'
+import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import ExportButton from '@/components/zort/ExportButton'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
@@ -409,11 +410,7 @@ export default function CoreSalesPage() {
         placeholder="เลขรายการขาย ชื่อลูกค้า ช่องทางการขาย และอื่นๆ"
         /* 🔴 เดิมลิงก์ตรงนี้เขียนว่า "ค้นหา" และกดแล้วแค่โหลดซ้ำ — ผัง ZORT ตรงนี้คือ "ค้นหาขั้นสูง"
            ⇒ ตอนนี้กดแล้วกางแผงช่วงวันที่จริง (ท่อรับ from/to) ไม่ใช่ลิงก์ประดับ */
-        advanced={
-          <LinkText onClick={() => setAdvOpen((v) => !v)}>
-            {advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}
-          </LinkText>
-        }
+        advanced={<AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} />}
         right={
           <>
             {/* ⚠️ ชื่อร้านมาจากบัญชี ZORT สองบัญชีของร้าน — z1 คือบริษัทที่ขายบนเว็บ
@@ -456,32 +453,21 @@ export default function CoreSalesPage() {
         }
       />
 
-      {/* 🔍 แผงค้นหาขั้นสูง — มีเฉพาะช่องที่ท่อกรองให้จริง
-          ⚠️ **ห้ามเติมช่องที่ท่อไม่รองรับ** ช่องที่กรอกแล้วไม่มีผลแย่กว่าไม่มีช่อง */}
-      {advOpen && (
-        <div className="bg-white border border-gray-200 rounded-md p-3.5 mb-3 flex flex-wrap items-end gap-3">
-          <label className="text-[12.5px] text-gray-600">
-            <span className="block mb-1">ตั้งแต่วันที่</span>
-            <input type="date" value={advFrom} onChange={(e) => setAdvFrom(e.target.value)}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
-          </label>
-          <label className="text-[12.5px] text-gray-600">
-            <span className="block mb-1">ถึงวันที่</span>
-            <input type="date" value={advTo} onChange={(e) => setAdvTo(e.target.value)}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
-          </label>
-          <BtnGhost onClick={() => load(0)} disabled={loading || (!advFrom && !advTo)}>ค้นหาตามช่วงนี้</BtnGhost>
-          <BtnGhost onClick={() => { setAdvFrom(''); setAdvTo(''); load(0, { from: '', to: '' }) }}
-            disabled={loading || (!advFrom && !advTo)}>ล้างช่วงวันที่</BtnGhost>
-          <span className="text-[11.5px] text-gray-500 max-w-[430px] leading-snug">
-            ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;
-            <br />
-            {/* 🔴 บอกตรง ๆ ว่าอะไรกรองที่เซิร์ฟเวอร์ อะไรไม่ได้ — ไม่งั้นคนเดาเอง */}
-            ⚠️ ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา <b>กรองที่เซิร์ฟเวอร์ทั้งหมด</b>
-            {' '}(ครอบทุกใบในช่วง ไม่ใช่แค่หน้าที่เห็น) · ยังไม่มีตัวกรองอื่นเพราะท่อยังไม่รับ
-          </span>
-        </div>
-      )}
+      {/* 🔍 แผงค้นหาขั้นสูง — ใช้ตัวประกอบร่วม
+          ⚠️ ท่อ list=orders รับ from/to จริง ⇒ ช่วงวันที่กำหนดเองกรองที่เซิร์ฟเวอร์ */}
+      <AdvancedSearch
+        open={advOpen}
+        fields={[
+          { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
+          { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
+        ]}
+        onApply={() => load(0)}
+        onClear={() => { setAdvFrom(''); setAdvTo(''); load(0, { from: '', to: '' }) }}
+        canClear={!!advFrom || !!advTo}
+        applyLabel="ค้นหาตามช่วงนี้"
+        serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา"
+        extraNote={<>ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;</>}
+      />
 
       {data && (
         <div className="text-[12.5px] text-gray-500 mb-3">
