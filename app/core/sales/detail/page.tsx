@@ -17,7 +17,7 @@ import { useSearchParams } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE } from '@/components/zort'
+import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE, thaiDate } from '@/components/zort'
 
 interface Order {
   id: string; source: string; number: string; channel: string
@@ -28,6 +28,13 @@ interface Order {
   ship_channel?: string | null
   ship_name?: string | null
   is_cod?: number | boolean | null
+  /** 🔴 **สามช่องนี้ท่อส่งมาตลอด แต่จอเขียนว่า "คลังเงาไม่ได้เก็บไว้"** (เจอตอนกวาดของจริง 14 ก.ย. 2569)
+   *  วัดจาก GET list=orders&limit=200&cancelled=1 เมื่อ 14 ก.ย. 2569 17:22 น. (เวลาไทย):
+   *    tracking_no มีค่า 139/200 แถว · ship_name 151/200 · ship_date 146/200
+   *  ⇒ จอบอกว่าไม่มีของที่มีอยู่จริง — คนตามพัสดุจะเชื่อว่าต้องไปหาที่ ZORT ทั้งที่อยู่ตรงหน้า
+   *  ⚠️ วัดซ้ำได้ด้วยคำสั่งเดิม · เลขจะเปลี่ยนตามใบใหม่ที่ไหลเข้ามา ดูสัดส่วนไม่ใช่ตัวเลขเป๊ะ */
+  tracking_no?: string | null
+  ship_date?: string | null
 }
 interface Item { line: number; sku: string; name: string; qty: number; amount: number }
 
@@ -162,6 +169,22 @@ function DetailInner() {
 
   const qty = items.reduce((s, it) => s + (Number(it.qty) || 0), 0)
   const total = Number(order?.amount) || 0
+  /* 🔴 **ยอดบรรทัดสินค้ากับยอดใบมาคนละช่อง และไม่เท่ากันแทบทุกใบ** (เจอกับของจริง 14 ก.ย. 2569)
+     ตัวอย่างที่วัดเมื่อ 17:20 น. (เวลาไทย) — เปิดจอ /core/sales แล้วกดเข้าใบ:
+       SO-202609021 บรรทัด 1,092 · ยอดใบ 1,244 (ต่าง 152)
+       SO-202609020 บรรทัด 30 · ยอดใบ 107 (ต่าง 77)
+       SO-202609019 บรรทัด 120 · ยอดใบ 332 (ต่าง 212)
+       SO-202609022 บรรทัด 80 · ยอดใบ 150 (ต่าง 70)
+     ⚠️ **ก้อนที่ท่อส่งมาไม่มีช่องค่าส่งหรือส่วนลดท้ายบิลเลย** (ยิง GET ?order=z1/SO-202609021
+        ดูช่องทั้งหมดแล้ว: id source number channel status amount customer order_date
+        tracking_no ship_channel ship_name ship_date is_cod pay_status updated_at)
+     ⇒ เราจึง **บอกไม่ได้ว่าส่วนต่างคืออะไร** — แต่ต้องบอกว่ามีส่วนต่างอยู่
+        เดิมจอวางตารางสินค้าที่รวมได้ 1,092 ไว้เหนือยอดใบ 1,244 เฉย ๆ พร้อมแถว "ส่วนลด —"
+        ⇒ คนอ่านเชื่อว่าตารางอธิบายยอดใบครบแล้ว ซึ่งเป็นกฎข้อ 4 ของโปรเจกต์ที่ห้ามทำ
+     ⚠️ เดาว่าเป็น "ค่าส่ง" ไม่ได้ — ใบ COD กับใบส่งฟรีก็มีส่วนต่างเหมือนกัน และเรายังไม่ได้พิสูจน์ */
+  const linesTotal = items.reduce((s, it) => s + (Number(it.amount) || 0), 0)
+  const gap = Math.round((total - linesTotal) * 100) / 100
+  const hasGap = items.length > 0 && Math.abs(gap) > 0.009
   // ⚠️ ยอดก่อนภาษีกับภาษีเป็น **ค่าคำนวณ** จากยอดรวม ไม่ใช่ค่าที่เก็บไว้
   //    ใช้กติกา "ราคารวมภาษีแล้ว" ตามที่ ZORT แสดงให้ร้านนี้ · เขียนกำกับใต้บล็อกเสมอ
   const net = total / (1 + VAT_RATE)
@@ -310,10 +333,21 @@ function DetailInner() {
                   <span className="text-gray-500">จำนวนทั้งหมด</span>
                   <span className="text-gray-800">{qty.toLocaleString('th-TH')}</span>
                 </div>
+                {/* 🔴 เดิมเป็นขีดกลางตายตัว ⇒ อ่านว่า "ไม่มีส่วนลด" ทั้งที่แปลว่า "ไม่ได้เก็บช่องนี้" */}
                 <div className="flex justify-between py-1.5 text-[12.5px]">
-                  <span className="text-gray-500">ส่วนลด</span>
-                  <span className="text-gray-300">—</span>
+                  <span className="text-gray-500">รวมบรรทัดสินค้า</span>
+                  <span className="text-gray-800">{fmtMoney(linesTotal)}</span>
                 </div>
+                <div className="flex justify-between py-1.5 text-[12.5px]">
+                  <span className="text-gray-500">ส่วนลด / ค่าส่ง</span>
+                  <span className="text-gray-300">คลังเงาไม่ได้เก็บช่องนี้</span>
+                </div>
+                {hasGap && (
+                  <div className="flex justify-between py-1.5 text-[12.5px] text-amber-800">
+                    <span>ส่วนต่างที่อธิบายไม่ได้</span>
+                    <span className="font-semibold">{gap > 0 ? '+' : ''}{fmtMoney(gap)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between py-1.5 text-[12.5px]">
                   <span className="text-gray-500">มูลค่าสุทธิก่อนภาษี</span>
                   <span className="text-gray-800">{fmtMoney(net)}</span>
@@ -326,6 +360,15 @@ function DetailInner() {
                   <span className="text-[13px] font-bold text-gray-800">มูลค่ารวมสุทธิ</span>
                   <span className="text-[13px] font-bold text-gray-900">{fmtMoney(total)}</span>
                 </div>
+                {hasGap && (
+                  <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mt-2 leading-relaxed">
+                    ⚠️ <b>บรรทัดสินค้ารวมได้ {fmtMoney(linesTotal)} แต่ยอดใบคือ {fmtMoney(total)}</b>
+                    {' '}— ต่างกัน {fmtMoney(Math.abs(gap))}
+                    <br />
+                    คลังเงา<b>ไม่ได้เก็บช่องค่าส่งหรือส่วนลดท้ายบิล</b> จึงบอกไม่ได้ว่าส่วนต่างนี้คืออะไร
+                    {' '}⇒ <b>อย่าอ่านตารางสินค้าว่าอธิบายยอดใบครบแล้ว</b> · ต้องดูใบจริงที่ ZORT
+                  </p>
+                )}
                 <p className="text-[10.5px] text-gray-400 mt-2 leading-relaxed">
                   ⚠️ ยอดก่อนภาษีกับภาษีเป็น<b>ค่าที่คำนวณจากยอดรวม</b> โดยถือว่าราคารวมภาษีแล้ว
                   ไม่ใช่ตัวเลขที่เก็บไว้ในระบบ — ใบกำกับภาษีตัวจริงออกจาก PEAK
@@ -338,16 +381,34 @@ function DetailInner() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card title="ข้อมูลที่อยู่ผู้รับ" icon="📍">
               <div className="px-4 py-3">
-                <p className="text-[12.5px] text-gray-400 italic">
-                  คลังเงาไม่ได้เก็บชื่อ ที่อยู่ และเบอร์ผู้รับไว้โดยตั้งใจ —
-                  เก็บเท่าที่จำเป็นต่อการเทียบยอดเท่านั้น ดูข้อมูลผู้รับได้ที่ระบบต้นทาง
+                {/* 🔴 เดิมเขียนว่า "ไม่ได้เก็บชื่อ ที่อยู่ และเบอร์ผู้รับ" — **ชื่อผู้รับเก็บไว้จริง**
+                    (ท่อส่ง ship_name มา 151/200 แถว · วัด 14 ก.ย. 2569 17:22 น.)
+                    ⇒ พูดเกินไปหนึ่งช่อง แล้วช่องที่มีอยู่จริงก็เลยไม่ถูกแสดง */}
+                {order.ship_name
+                  ? <Field label="ชื่อผู้รับ" value={order.ship_name} />
+                  : <Field label="ชื่อผู้รับ" value="ใบนี้ไม่มีชื่อผู้รับในคลังเงา" muted />}
+                <p className="text-[12.5px] text-gray-400 italic mt-2">
+                  ⚠️ <b>ที่อยู่และเบอร์ผู้รับ</b> คลังเงาไม่ได้เก็บไว้โดยตั้งใจ —
+                  เก็บเท่าที่จำเป็นต่อการเทียบยอดเท่านั้น ดูที่อยู่เต็มได้ที่ระบบต้นทาง
                 </p>
               </div>
             </Card>
             <Card title="ข้อมูลการจัดส่งสินค้า" icon="🚚">
               <div className="px-4 py-3">
                 <Field label="ช่องทางการขาย" value={order.channel || '—'} />
-                <Field label="ขนส่ง / เลขพัสดุ" value="คลังเงาไม่ได้เก็บไว้" muted />
+                {/* 🔴 เดิมเขียนตายตัวว่า "คลังเงาไม่ได้เก็บไว้" ทั้งที่ท่อส่ง tracking_no มา 139/200 แถว
+                    ⇒ คนตามพัสดุจะเชื่อว่าต้องไปหาที่ ZORT ทั้งที่เลขอยู่ตรงหน้า
+                    ⚠️ **ใบที่ไม่มีเลขจริง ๆ ก็มี** ⇒ ต้องแยก "ใบนี้ยังไม่มีเลข" ออกจาก
+                       "ระบบไม่เก็บเลข" — สองอันนี้พาไปคนละการกระทำ */}
+                <Field label="ขนส่ง" value={order.ship_channel || 'ยังไม่ได้เก็บช่องนี้'} muted={!order.ship_channel} />
+                <Field
+                  label="เลขพัสดุ"
+                  value={order.tracking_no || 'ใบนี้ยังไม่มีเลขพัสดุ (ไม่ใช่ว่าระบบไม่เก็บ)'}
+                  muted={!order.tracking_no}
+                />
+                <Field label="วันส่งสินค้า"
+                  value={order.ship_date ? thaiDate(order.ship_date) : 'ใบนี้ยังไม่มีวันส่ง'}
+                  muted={!order.ship_date} />
               </div>
             </Card>
           </div>
