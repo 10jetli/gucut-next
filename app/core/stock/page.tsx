@@ -258,7 +258,7 @@ function CoreStockInner() {
                 จึงพาไปหน้าที่บอกตรง ๆ ว่ายังไม่ได้ทำ และตอนนี้ให้ไปทำที่ไหน
                 ✅ แก้ 14 ก.ย. 2569 (t_mu0tx2wj): "เพิ่มสินค้าใหม่" เดิมพาไปหน้า "ยังไม่ได้ทำ" ทั้งที่จอจริง /core/stock/new มีแล้ว
                    (บั๊กคลาสเดียวกับปุ่มสร้างรายการซื้อที่ลิงก์ผิดมา 8 วัน) · นำเข้า Excel ยังพาไปหน้า soon เพราะจอยังไม่มี */}
-            <Link href="/core/soon/product-import"
+            <Link href="/core/import?kind=product"
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)
             </Link>
