@@ -58,8 +58,27 @@ import { join } from 'node:path'
 
 const SNAP = 'scripts/.inherited-claims.json'
 
-/** ตัวประกอบร่วมที่เฝ้าอยู่ — **ขอบเขตที่ CEO อนุมัติ: สองที่นี้เท่านั้น ห้ามขยายทั้งรีโป** */
-const WATCHED = ['components/zort/LedgerScreen.tsx', 'app/core/soon/[key]/page.tsx']
+/** ตัวประกอบร่วมที่เฝ้าอยู่ — **ขอบเขตที่ CEO อนุมัติ ห้ามขยายทั้งรีโป**
+ *
+ *  🔴 **เกณฑ์เดียวในการเพิ่ม: ตัวประกอบร่วมนั้นพิมพ์ "ข้อความที่คนอ่าน" ออกจอหรือไม่**
+ *     มี ⇒ จอใหม่ที่เอาไปใช้จะได้ข้อความนั้นติดมาโดยไม่มีใครตัดสินใจ = รูปร่างของบั๊ก
+ *     ไม่มี (เช่น ตัวช่วยคำนวณล้วน ๆ) ⇒ **ห้ามใส่** · CEO กำชับ 15 ก.ย. 2569:
+ *     "อย่าให้ตาข่ายบวมจนคนเมิน" — ตาข่ายที่ฟ้องเรื่องไม่สำคัญ จะถูกเมินตอนฟ้องเรื่องสำคัญ
+ *
+ *  `companions` = ไฟล์ที่ **ข้อความของมันไปโผล่ผ่านตัวประกอบร่วมตัวนี้**
+ *     🔴 มีไว้อุดจุดบอด: `coverageText()` ใน lib/csv-export.ts เขียนประโยคที่ลงไปใน
+ *        ไฟล์ Excel และขึ้นบนจอ แต่มันเป็น lib ไม่ใช่ component ⇒ ไม่มีใครเป็น "ผู้ใช้" ของมัน
+ *        ⇒ ถ้าไม่นับรวม แก้ประโยคตรงนั้นแล้วตาข่ายเงียบสนิท ทั้งที่ 8 จอเปลี่ยนคำพูดพร้อมกัน */
+const WATCHED = [
+  { file: 'components/zort/LedgerScreen.tsx' },
+  { file: 'app/core/soon/[key]/page.tsx' },
+  /* ข้อความหัวไฟล์ Excel + ป้าย "ครบ/ไม่ครบ" ไปโผล่ทุกจอที่มีปุ่มส่งออก (CEO อนุมัติ 15 ก.ย. 2569) */
+  { file: 'components/zort/ExportButton.tsx', companions: ['lib/csv-export.ts'] },
+  /* คำกำกับบาร์โค้ดสามสถานะ (ZORT มี / ไม่มี / ยังไม่รู้) — ผิดจอไหนคือฉลากที่สแกนได้ค่าผิด */
+  { file: 'components/zort/SkuCodes.tsx' },
+  /* คำเตือน "บัตรนี้ยังไม่ใช่ประวัติทั้งหมด" + ของที่ตั้งใจไม่มี (คลัง · คงเหลือสะสม) */
+  { file: 'components/zort/StockCard.tsx' },
+]
 
 /* ── ข้อความไทยที่ขึ้นจอ (ตัดคอมเมนต์ออกก่อน) ───────────────────────────────
    ไม่ได้พยายามแยก "ประโยค" ให้สวย — เป็นตัวจับความเปลี่ยนแปลง ไม่ใช่ตัวอ่านความหมาย
@@ -124,6 +143,10 @@ const walk = (d) => {
   }
 }
 walk('app')
+/* 🔴 **ตัวประกอบร่วมเอาตัวประกอบร่วมด้วยกันไปใช้ได้** — `StockCard` ใช้ `<ExportButton>`
+   ถ้ากวาดแต่ใน app/ จะมองไม่เห็นคู่นั้น แล้วข้อความจะไหลเข้าจอผ่านสองชั้นโดยไม่มีใครตรวจ
+   (จุดบอดแบบเดียวกับที่ check-soon เคยมองไม่เห็นเมนูเพราะกวาดผิดที่) */
+walk('components')
 
 /** รูปทรง → รายชื่อคีย์ที่อยู่ในรูปทรงนั้น (ไว้พิมพ์ตัวอย่างตอนฟ้อง ไม่ใช่ส่วนหนึ่งของชื่อคู่) */
 let shapeExamples = new Map()
@@ -131,6 +154,9 @@ const exampleOf = (consumer) => {
   const keys = shapeExamples.get(consumer)
   return keys ? ` (เช่น ${keys.slice(0, 3).join(' · ')}${keys.length > 3 ? ` … รวม ${keys.length} คีย์` : ''})` : ''
 }
+
+/** ชื่อแท็กที่ใช้ใน JSX ของตัวประกอบร่วมตัวนั้น (ไฟล์ชื่อเดียวกับแท็กเสมอในรีโปนี้) */
+const tagOf = (file) => file.split('/').pop().replace(/\.tsx?$/, '')
 
 function consumersOf(component) {
   if (component.endsWith('LedgerScreen.tsx')) {
@@ -141,6 +167,15 @@ function consumersOf(component) {
           setting-notify) เขียนไว้ว่า "จอนี้ไม่ได้ใช้ LedgerScreen" ⇒ จับด้วยชื่อลอย ๆ จะนับผิด */
     return appFiles.filter((f) => /<LedgerScreen[\s/>]/.test(readFileSync(f, 'utf8'))).sort()
   }
+  /* ตัวประกอบร่วมทั่วไป: ผู้ใช้ = ไฟล์ที่ **ใช้แท็กนั้นจริงใน JSX**
+     (เหตุผลเดียวกับ LedgerScreen: import เขียนได้หลายรูป แต่จะใช้จริงต้องมีแท็ก
+      และห้ามนับไฟล์ที่พูดถึงชื่อนี้ในคอมเมนต์เฉย ๆ) */
+  if (!component.endsWith('soon/[key]/page.tsx')) {
+    const tag = tagOf(component)
+    const re = new RegExp(`<${tag}[\\s/>]`)
+    return appFiles.filter((f) => f !== component && re.test(readFileSync(f, 'utf8'))).sort()
+  }
+
   /* หน้า soon: "ผู้ใช้" คือรูปทรงของคีย์ในทะเบียน — ดูคำอธิบายหัวไฟล์ */
   const reg = readFileSync('lib/zort-menu.ts', 'utf8')
   const FIELDS = ['impossible', 'impossibleScope', 'exportByHand', 'awaitingDecision', 'builtAt', 'meanwhile']
@@ -169,8 +204,11 @@ snap.pairs ??= {}
 
 const now = new Map()       // คู่ → { component, consumer, hash }
 const current = new Map()   // component → { hash, lines }
-for (const comp of WATCHED) {
-  const lines = screenText(readFileSync(comp, 'utf8'))
+for (const w of WATCHED) {
+  const comp = w.file
+  /* ข้อความของ companions นับรวมเป็นของตัวประกอบร่วมตัวนี้ (ดูเหตุผลหัว WATCHED) */
+  const lines = [comp, ...(w.companions ?? [])]
+    .flatMap((f) => screenText(readFileSync(f, 'utf8')).map((t) => (f === comp ? t : `[${f}] ${t}`)))
   const h = hashOf(lines)
   current.set(comp, { hash: h, lines })
   const users = consumersOf(comp)

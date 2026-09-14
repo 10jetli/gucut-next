@@ -12,7 +12,8 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
-import { fetchAllPages, downloadCsv, coverageText, thaiTimeCell } from '@/lib/csv-export'
+import { coverageText } from '@/lib/csv-export'
+import ExportButton from '@/components/zort/ExportButton'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
@@ -169,74 +170,14 @@ function CoreStockInner() {
 
   useEffect(() => { load(0) }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  /* ── 📤 ส่งออก Excel ตามตัวกรองที่เลือกอยู่ (ใบ t_mu1i74cu) ────────────────
-     🔴 **ตัวกรองต้องเป็นชุดเดียวกับที่จอใช้เป๊ะ** — ถ้าไฟล์กรองไม่เหมือนจอ
-        คนจะเทียบเลขในไฟล์กับเลขบนจอแล้วไม่ตรง โดยไม่มีใครรู้ว่าทำไม
-        (CLAUDE.md กฎข้อ 4: ตัวเลขจากคนละแหล่งห้ามวางคู่กันเฉย ๆ)
-     ⚠️ ไม่ส่ง `marketplaces=1` ตอนส่งออก — คอลัมน์ช่องทางต้องยิงรายตัวและช้ามาก
-        ⇒ ไฟล์จึงไม่มีคอลัมน์นั้น และ **เขียนบอกไว้ในหัวไฟล์** ไม่ใช่เว้นเงียบ ๆ */
-  const [exporting, setExporting] = useState(false)
-  const [exported, setExported] = useState(0)
-
-  async function exportAll() {
-    setExporting(true)
-    setExported(0)
-    try {
-      const filters: string[][] = []
-      const { rows: all, coverage } = await fetchAllPages<Row>(async (offset, limit) => {
-        const qs = new URLSearchParams({ list: 'stock', sort, limit: String(limit), offset: String(offset) })
-        if (tab !== 'all') qs.set('only', tab)
-        if (kind === 'goods') qs.set('kind', 'goods')
-        if (q.trim()) qs.set('q', q.trim())
-        if (category) qs.set('category', category)
-        const r = await fetch(`/api/web/core?${qs}`)
-        const d = await r.json()
-        if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-        return {
-          rows: Array.isArray(d.rows) ? (d.rows as Row[]) : [],
-          /* `rowsMatched` = จำนวนที่ตรงตัวกรองทั้งชุด (ไม่ใช่ total ทั้งคลัง) */
-          total: typeof d.rowsMatched === 'number' ? d.rowsMatched
-            : typeof d.total === 'number' ? d.total : null,
-        }
-      }, { limit: 200, onProgress: (got) => setExported(got) })
-
-      filters.push(['ตัวกรองที่ใช้ตอนส่งออก', ''])
-      filters.push(['  แท็บ', tab === 'all' ? 'ทั้งหมด' : tab])
-      filters.push(['  ชนิด', kind === 'goods' ? 'เฉพาะสินค้า (ไม่รวมบริการ)' : 'ทั้งหมด'])
-      filters.push(['  คำค้นหา', q.trim() || '(ไม่ได้ค้น)'])
-      filters.push(['  หมวดหมู่', category || '(ทุกหมวด)'])
-
-      downloadCsv({
-        filename: `คลังสินค้า-${data?.day ?? ''}`,
-        preamble: [
-          ['คลังสินค้า (ส่งออกจาก admin.gucut.com)'],
-          ['เวลาที่ส่งออก', thaiTimeCell(new Date().toISOString())],
-          ['วันที่ของภาพถ่ายสต็อก', data?.day ?? ''],
-          /* 🔴 ความครบถ้วนต้องอยู่ **ในไฟล์** ไม่ใช่แค่บนจอ — ไฟล์ออกนอกระบบไปแล้ว
-             คนที่เปิดมันทีหลังไม่มีทางย้อนมาดูว่าจอเคยเตือนอะไรไว้ */
-          ['ความครบถ้วน', coverageText(coverage)],
-          ['หมายเหตุ', 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ'],
-          ...filters,
-          [''],
-        ],
-        header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ', 'พร้อมขาย', 'หน่วย', 'ราคาขาย', 'ราคาทุน', `ขายได้ ${data?.soldDays ?? ''} วัน`, 'สถานะ'],
-        /* 🔴 ราคาทุน/พร้อมขาย เป็น null ได้ ⇒ ปล่อยให้ cellText เว้นว่าง **ห้ามใส่ 0**
-           (281 ตัวยังไม่กรอกราคาทุน · 155 ตัวไม่มีพร้อมขายในทะเบียน) */
-        rows: all.map((r) => [
-          r.sku, r.name, r.qty, r.available ?? null, r.unit ?? null,
-          r.price, r.buy ?? null, r.sold,
-          r.service ? 'บริการ' : r.active === false ? 'ปิดใช้งาน' : 'ใช้งาน',
-        ]),
-      })
-      if (coverage.stoppedBecause) {
-        setError(`ส่งออกแล้วแต่ได้ไม่ครบ — ${coverageText(coverage)} (เขียนไว้ในไฟล์แล้ว)`)
-      }
-    } catch (e) {
-      setError(`ส่งออกไม่สำเร็จ: ${e instanceof Error ? e.message : String(e)}`)
-    } finally {
-      setExporting(false)
-    }
-  }
+  /* ── 📤 ส่งออก Excel ตามตัวกรองที่เลือกอยู่ ───────────────────────────────
+     🔴 **ย้ายมาใช้ปุ่มร่วม `<ExportButton>` แล้ว** (15 ก.ย. 2569)
+        เดิมจอนี้เขียนตัวส่งออกของตัวเองไว้ในไฟล์ ⇒ เป็นสำเนาที่สองของกฎชุดเดียวกัน
+        (ครบทุกหน้า · ช่องว่างห้ามเป็น 0 · เวลาไทย · บอกความครบถ้วนในไฟล์)
+        ⇒ สำเนาที่สองคือที่ที่กฎจะเพี้ยนก่อนเพื่อน และเป็นจอเดียวที่หลุดจากสายตา
+           ของ `scripts/check-inherited.mjs` ด้วย
+     ⚠️ ตัวกรองต้องเป็นชุดเดียวกับที่จอใช้เป๊ะ — ไฟล์กรองไม่เหมือนจอ คนเทียบเลขแล้วไม่ตรง
+        โดยไม่มีใครรู้ว่าทำไม (CLAUDE.md กฎข้อ 4) */
 
   // เซิร์ฟเวอร์กรองให้แล้ว (only=out/low) — แถวที่ได้คือของทั้งคลังในแท็บนั้น
   // ⚠️ เลขหน้าต้องใช้ shown (จำนวนแถวของแท็บที่เลือก) ไม่ใช่ total
@@ -329,9 +270,46 @@ function CoreStockInner() {
             {/* 📤 Export to Excel — ZORT มีทุกหน้ารายการ ของเราเพิ่งมี (ใบ t_mu1i74cu · 15 ก.ย. 2569)
                 🔴 **ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า ไม่ใช่แค่ 200 แถวที่เห็น**
                    ท่อให้ครั้งละ 200 ⇒ ตัวช่วยวนหน้าให้เอง แล้วเขียนลงไฟล์ว่าได้กี่แถวจากกี่แถว */}
-            <BtnGhost onClick={exportAll} disabled={exporting || loading}>
-              {exporting ? `กำลังรวบรวม… ${exported.toLocaleString('th-TH')} แถว` : '📤 ส่งออก Excel'}
-            </BtnGhost>
+            <ExportButton
+              disabled={loading}
+              onDone={(c) => { if (c.stoppedBecause) setError(`ส่งออกแล้วแต่ได้ไม่ครบ — ${coverageText(c)} (เขียนไว้ในไฟล์แล้ว)`) }}
+              spec={{
+                filename: `คลังสินค้า-${data?.day ?? ''}`,
+                title: 'คลังสินค้า',
+                note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ',
+                filters: [
+                  ['วันที่ของภาพถ่ายสต็อก', data?.day ?? '(ไม่รู้)'],
+                  ['แท็บ', tab === 'all' ? 'ทั้งหมด' : tab],
+                  ['ชนิด', kind === 'goods' ? 'เฉพาะสินค้า (ไม่รวมบริการ)' : 'ทั้งหมด'],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                  ['หมวดหมู่', category || '(ทุกหมวด)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'stock', sort, limit: String(limit), offset: String(offsetAt) })
+                  if (tab !== 'all') qs.set('only', tab)
+                  if (kind === 'goods') qs.set('kind', 'goods')
+                  if (q.trim()) qs.set('q', q.trim())
+                  if (category) qs.set('category', category)
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return {
+                    rows: (Array.isArray(d.rows) ? d.rows : []) as Row[],
+                    /* `rowsMatched` = จำนวนที่ตรงตัวกรองทั้งชุด (ไม่ใช่ total ทั้งคลัง) */
+                    total: typeof d.rowsMatched === 'number' ? d.rowsMatched
+                      : typeof d.total === 'number' ? d.total : null,
+                  }
+                },
+                header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ', 'พร้อมขาย', 'หน่วย', 'ราคาขาย', 'ราคาทุน', `ขายได้ ${data?.soldDays ?? ''} วัน`, 'สถานะ'],
+                /* 🔴 ราคาทุน/พร้อมขาย เป็น null ได้ ⇒ เว้นว่าง **ห้ามใส่ 0**
+                   (281 ตัวยังไม่กรอกราคาทุน · 155 ตัวไม่มีพร้อมขายในทะเบียน) */
+                toRow: (r: Row) => [
+                  r.sku, r.name, r.qty, r.available ?? null, r.unit ?? null,
+                  r.price, r.buy ?? null, r.sold,
+                  r.service ? 'บริการ' : r.active === false ? 'ปิดใช้งาน' : 'ใช้งาน',
+                ],
+              }}
+            />
             {/* ⚠️ ปุ่มสองอันนี้มีใน ZORT — ทำให้ผังเหมือน แต่ **กดแล้วต้องไม่โกหก**
                 จึงพาไปหน้าที่บอกตรง ๆ ว่ายังไม่ได้ทำ และตอนนี้ให้ไปทำที่ไหน
                 ✅ แก้ 14 ก.ย. 2569 (t_mu0tx2wj): "เพิ่มสินค้าใหม่" เดิมพาไปหน้า "ยังไม่ได้ทำ" ทั้งที่จอจริง /core/stock/new มีแล้ว

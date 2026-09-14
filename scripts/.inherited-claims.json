@@ -233,6 +233,83 @@
           "ปุ่มที่กดแล้วได้ไฟล์เปล่าแย่กว่าไม่มีปุ่ม /"
         ]
       }
+    },
+    "components/zort/ExportButton.tsx": {
+      "88ee75764993": {
+        "lines": [
+          "📤 ส่งออก Excel",
+          "`$ ส่งออกจาก admin.gucut.com `",
+          "เวลาที่ส่งออก",
+          "ความครบถ้วน",
+          "หมายเหตุ",
+          "ตัวกรองที่ใช้ตอนส่งออก",
+          "setErr `ส่งออกไม่สำเร็จ $ `",
+          "busy `กำลังรวบรวม… $ แถว` label",
+          "[lib/csv-export.ts] return `⚠️ ได้ $ แถว`",
+          "[lib/csv-export.ts] + c.total null ` จากที่ท่อนับได้ $ แถว`",
+          "[lib/csv-export.ts] + ` — ยังไม่ครบ$ `",
+          "[lib/csv-export.ts] + c.stoppedBecause ` · หยุดเพราะ $ `",
+          "[lib/csv-export.ts] return `ได้ $ แถว — ท่อไม่ได้บอกว่าทั้งหมดมีกี่แถว จึงยังไม่รู้ว่าครบหรือไม่`",
+          "[lib/csv-export.ts] if c.got c.total !c.stoppedBecause return `ครบทุกแถวตามตัวกรอง $ แถว `",
+          "[lib/csv-export.ts] return `⚠️ ได้ $ แถว จากทั้งหมด $ แถว — ยังไม่ครบ`",
+          "[lib/csv-export.ts] stoppedBecause `ดึงข้อมูลไม่สำเร็จกลางคัน $ `",
+          "[lib/csv-export.ts] if i maxRequests - 1 stoppedBecause `ขอข้อมูลครบ $ รอบแล้วยังไม่หมด กันวนไม่รู้จบ `"
+        ]
+      }
+    },
+    "components/zort/SkuCodes.tsx": {
+      "406f1c978cfd": {
+        "lines": [
+          "QR ของรหัสสินค้า",
+          "รหัสนี้ยาวเกินกว่าจะทำ QR ได้ เกิน 62 ไบต์ — ไม่วาดรูปหลอก",
+          "บาร์โค้ด Code 128",
+          "วาดบาร์โค้ดไม่ได้ — ห้ามพิมพ์ฉลากใบนี้",
+          "⚠️ ZORT ไม่มีบาร์โค้ดของรายการนี้ — รูปข้างบนวาดจาก รหัสสินค้า",
+          "สแกนแล้วจะได้ ไม่ใช่เลขบาร์โค้ด",
+          "⚠️ ยังไม่รู้ว่า ZORT มีบาร์โค้ดของรายการนี้หรือไม่ ท่อไม่พบรายการนี้ในชุดฉลาก",
+          "— ไม่ได้แปลว่าไม่มี · รูปข้างบนวาดจากรหัสสินค้า",
+          "state ถามเรื่องบาร์โค้ดไม่สำเร็จ"
+        ]
+      }
+    },
+    "components/zort/StockCard.tsx": {
+      "39665dfe5a86": {
+        "lines": [
+          "การเคลื่อนไหว",
+          "บัตรสต็อก ประวัติเข้า-ออก",
+          "ตั้งแต่วันที่",
+          "ถึงวันที่",
+          "กำลังโหลด…",
+          "ดูใหม่",
+          "📤 ส่งออกบัตรสต็อก",
+          "เริ่มแรก",
+          "ล่าสุด",
+          "filename `บัตรสต็อก-$ $ from to `-$ -ถึง-$",
+          "title `บัตรสต็อก $ `",
+          "จำนวนติดลบ = ของออก · ไม่มีคอลัมน์คลังและคอลัมน์คงเหลือสะสม (ท่อคำนวณย้อนหลังไม่ครบ)",
+          "ชนิดรายการ",
+          "(ไม่จำกัด)",
+          "if d.failed .length problems.push `ดึงข้อมูลบางแหล่งไม่สำเร็จ $ `",
+          "ชนเพดานความลึกของท่อ (5,000 แถว) — ลองแคบช่วงวันแล้วส่งออกทีละช่วง",
+          "วันที่",
+          "เลขที่เอกสาร",
+          "คู่ค้า/ลูกค้า",
+          "จำนวน (ติดลบ = ออก)",
+          "มูลค่า (บาท)",
+          "err ดึงบัตรสต็อกไม่ได้",
+          "⚠️ บัตรนี้ยังไม่ใช่ประวัติทั้งหมดของสินค้า",
+          "ไม่มีคอลัมน์ คลัง ท่อไม่ส่งมา และไม่มี คงเหลือสะสม —",
+          "เพราะใบปรับ/ยกมา/โอนของ ZORT ยังไม่อยู่ในกระจกรายสินค้า คำนวณย้อนหลังแล้วจะได้เลขที่ดูน่าเชื่อแต่ผิด",
+          "🔴 รอบนี้ดึงบางแหล่งไม่สำเร็จ — ตัวเลขข้างล่างยังไม่ครบ /",
+          "คู่ค้า / ลูกค้า",
+          "มูลค่า",
+          "กำลังโหลดบัตรสต็อก…",
+          "ไม่มีการเคลื่อนไหวในเงื่อนไขนี้",
+          "ลองเปลี่ยนชนิดรายการหรือขยายช่วงวัน — และดูคำเตือนข้างบนว่าบัตรนี้ยังไม่รวมอะไร",
+          "มีทั้งหมด รายการ shown total — จอนี้แสดง รายการแรก · กด ldquo ส่งออกบัตรสต็อก rdquo เพื่อได้ครบทุกแถว / /",
+          "ท่อไม่ได้บอกจำนวนทั้งหมด — ยังไม่รู้ว่าที่เห็นครบหรือไม่"
+        ]
+      }
     }
   },
   "pairs": {
@@ -313,6 +390,61 @@
     },
     "app/core/soon/[key]/page.tsx :: รูปทรง:(ไม่มีธงเลย)": {
       "hash": "8a2b970e2ed8",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: app/core/bundles/page.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: app/core/purchases/page.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: app/core/quotations/page.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: app/core/return-orders/page.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: app/core/sales/page.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: app/core/stock/page.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: app/core/transfers/page.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/ExportButton.tsx :: components/zort/StockCard.tsx": {
+      "hash": "88ee75764993",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/SkuCodes.tsx :: app/core/bundles/[sku]/page.tsx": {
+      "hash": "406f1c978cfd",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/SkuCodes.tsx :: app/core/stock/[sku]/page.tsx": {
+      "hash": "406f1c978cfd",
+      "by": "คุณส้ม (gucut2)",
+      "at": "2026-09-14"
+    },
+    "components/zort/StockCard.tsx :: app/core/stock/[sku]/page.tsx": {
+      "hash": "39665dfe5a86",
       "by": "คุณส้ม (gucut2)",
       "at": "2026-09-14"
     }

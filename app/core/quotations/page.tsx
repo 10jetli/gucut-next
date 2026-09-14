@@ -127,7 +127,13 @@ export default function QuotationsPage() {
               spec={{
                 filename: `ใบเสนอราคา-${new Date().toISOString().slice(0, 10)}`,
                 title: 'ใบเสนอราคา',
-                filters: [['คำค้นหา', q.trim() || '(ไม่ได้ค้น)']],
+                /* 🔴 **จอนี้กรองคำค้นหาในเบราว์เซอร์ ไม่ใช่ที่เซิร์ฟเวอร์** (ท่อไม่รับ `q`)
+                   ⇒ ไฟล์ที่ส่งออกได้ **ทุกแถว ไม่ได้กรองตามคำค้น** ⇒ ต้องเขียนให้ตรง
+                   เดิมผมเขียนว่า "คำค้นหา: xyz" ทั้งที่ไม่ได้ส่งไปกรองเลย = ไฟล์โกหกขอบเขตตัวเอง
+                   (เจอตอนไล่ตรวจคู่ของ check-inherited 15 ก.ย. 2569) */
+                filters: q.trim()
+                  ? [['คำค้นหาบนจอ', `${q.trim()} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้ (ท่อไม่รองรับ) ได้ทุกแถว`]]
+                  : [['คำค้นหา', '(ไม่ได้ค้น)']],
                 fetchPage: async (offsetAt, limit) => {
                   const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&offset=${offsetAt}`)
                   const d = await r.json()
