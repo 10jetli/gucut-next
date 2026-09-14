@@ -37,8 +37,16 @@ for (const f of files) {
 
 const reg = readFileSync('lib/zort-menu.ts', 'utf8')
 const keys = new Set([...reg.matchAll(/^ {2}'?([a-zA-Z0-9-]+)'?:\s*\{/gm)].map((m) => m[1]))
-/** คีย์ที่ทำเสร็จแล้ว (มี builtAt) — ยังลิงก์ไปหน้า soon ได้ เพราะหน้านั้นพาต่อไปหน้าจริงให้ */
-const built = new Set([...reg.matchAll(/^ {2}'?([a-zA-Z0-9-]+)'?:\s*\{\s*\n\s*builtAt:/gm)].map((m) => m[1]))
+/** คีย์ที่ทำเสร็จแล้ว (มี builtAt ที่ไหนก็ได้ในก้อน) — ยังลิงก์ไปหน้า soon ได้ เพราะหน้านั้นพาต่อไปหน้าจริง
+ *  🔴 **รุ่นก่อนบังคับให้ builtAt อยู่บรรทัดแรกหลังปีกกา** ⇒ พอมีคอมเมนต์คั่น ก็นับไม่เจอ
+ *     (เจอ 14 ก.ย. 2569 — เป็นความแข็งของ regex ครั้งที่สามในตัวตรวจตัวนี้
+ *      ครั้งก่อน ๆ คือ คีย์ที่ไม่มีเครื่องหมายคำพูด และคีย์ที่เขียนต่างรูปแบบในไฟล์เดียวกัน)
+ *  ⇒ อ่าน **ทั้งก้อน** แล้วถามว่ามี builtAt ไหม ไม่ยึดตำแหน่ง */
+const built = new Set(
+  [...reg.matchAll(/^ {2}'?([a-zA-Z0-9-]+)'?:\s*\{([\s\S]*?)\n {2}\},/gm)]
+    .filter((m) => /\bbuiltAt:/.test(m[2]))
+    .map((m) => m[1]),
+)
 
 const missing = [...linked.keys()].filter((k) => !keys.has(k)).sort()
 const unused = [...keys].filter((k) => !linked.has(k) && !built.has(k)).sort()
