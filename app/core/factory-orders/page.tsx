@@ -17,7 +17,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText,
-  type PillTone, EmptyState,
+  type PillTone, EmptyState, thaiDate,
 } from '@/components/zort'
 
 const STATUS_LABEL: Record<TrackerStatus, string> = {
@@ -189,7 +189,9 @@ export default function CorePurchasesPage() {
                     <td className={TD}>
                       <Pill tone={STATUS_TONE[o.status] ?? 'gray'}>{STATUS_LABEL[o.status] ?? o.status}</Pill>
                     </td>
-                    <td className={`${TD} text-gray-500 whitespace-nowrap`}>{o.due || '—'}</td>
+                    {/* 🔴 เดิมโชว์ค่าดิบ ⇒ คนเห็น "2026-03-19T17:00:00.000Z" บนจอหลังร้าน
+                        อ่านไม่ออก และถ้าใครอ่านเอาเองจะได้วันที่ผิดไปหนึ่งวัน (ค่านั้นคือ 20 มี.ค. เวลาไทย) */}
+                    <td className={`${TD} text-gray-500 whitespace-nowrap`}>{thaiDate(o.due)}</td>
                   </tr>
                 ))}
               </tbody>

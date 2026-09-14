@@ -11,6 +11,7 @@
 //   → ตารางหัวเทาตัวเล็ก คอลัมน์แรกเป็นเลขลำดับ ลิงก์สีน้ำเงิน สถานะเป็นป้ายกลม เลขลบสีแดง
 import { useState, type ReactNode } from 'react'
 import Link from 'next/link'
+import { thaiDate } from '@/lib/format'
 
 /* ── จานสี ZORT — **วัดจากพิกเซลของภาพจอจริง ไม่ใช่เดาด้วยตา** ────────────
    ที่มา: `zort-ui/` ภาพความละเอียด 3108×1482 (เจ้าของร้านส่งมา 4 ก.ย. 2569)
@@ -269,8 +270,6 @@ export function relDay(day: string): string {
   return thaiDate(day)
 }
 
-const TH_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
-  'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
 /** "2026-03-10" → "10 มี.ค. 2569" — รูปแบบเดียวกับที่ ZORT ใช้ทั้งระบบ
  *
@@ -289,15 +288,9 @@ export function thaiShort(iso?: string | null): string {
   return `${Number(m[3])}/${Number(m[2])}/${Number(m[1]) + 543}`
 }
 
-export function thaiDate(raw?: string | null): string {
-  const s = String(raw ?? '').trim()
-  if (!s) return '—'
-  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s)
-  if (!m) return s
-  const year = Number(m[1]), mon = Number(m[2]), day = Number(m[3])
-  if (!year || mon < 1 || mon > 12 || !day) return s
-  return `${day} ${TH_MONTH_SHORT[mon - 1]} ${year + 543}`
-}
+/** วันที่แบบไทยสั้น — **ตรรกะจริงอยู่ที่ lib/format.ts** (ย้ายไป 14 ก.ย. 2569 เพื่อให้เทสเรียกตัวจริงได้)
+ *  ส่งต่อจากที่นี่เพื่อไม่ต้องแก้ import ของจอสิบกว่าจอ */
+export { thaiDate }
 
 /* ── สถานะการชำระเงิน ─────────────────────────────────────────────────
    ⚠️ ค่าที่เซิร์ฟเวอร์ส่งมาเป็นค่าดิบจาก ZORT (Paid/Unpaid/PartialPaid)
