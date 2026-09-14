@@ -158,10 +158,21 @@ export default function CoreFinancePage() {
       {error && <ErrorBox title="ดึงข้อมูลการเงินไม่ได้">{error}</ErrorBox>}
       {loading && months.length === 0 && <LoadingState />}
 
-      <p className="text-[12px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
-        ℹ️ <b>บัญชี ภาษี และใบกำกับตัวจริงอยู่ที่ PEAK</b> — จอนี้ไม่ได้ทำแทน
-        แสดงเฉพาะเงินเข้าจากการขายกับมูลค่าของในคลังที่ระบบเรารู้จริง
-      </p>
+      {/* 🔴 ตัดสินแล้ว (CEO · งานกระดาน t_mu1bkt53 · 14 ก.ย. 2569): **คนละชุดกับ "ภาพรวมการเงิน" ของ ZORT โดยตั้งใจ**
+          เหตุผล: ZORT ไม่เปิดเส้นรายงาน/ยอดสรุปการเงิน — เอกสาร V4 โมดูล Finance มีแค่ Incomes · Expenses · MoneyTransfers
+          และกวาด GET ไม่ใส่รหัส 10 โมดูล × 15 ชื่อ (GetReport · GetSummary · GetOverview · GetBalance · GetWallets · GetProfitLoss ฯลฯ)
+          = 404 ครบ 150 คู่ · คุมบวก Finance/GetIncomes 200 · คุมลบ 404
+          ⇒ เราไม่รู้ว่าจอ ZORT รวมตัวเลขจากอะไร (ไม่มีภาพจอ /Fin/Report เก็บไว้) ⇒ **ห้ามเขียนว่าตัวเลขนี้เท่ากับของ ZORT**
+          ⇒ บอกที่มาของทุกตัวเลขบนจอแทน · ห้ามถอดกล่องนี้ */}
+      <div className="text-[12px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
+        ℹ️ <b>ตัวเลขชุดนี้คนละชุดกับหน้า &quot;ภาพรวมการเงิน&quot; ของ ZORT โดยตั้งใจ</b> — เทียบกันตรง ๆ ไม่ได้
+        <br />
+        ที่มาของตัวเลขที่นี่: รายรับ = ยอดขายในคลังเงาของเรา (ออเดอร์ที่ซิงก์จาก ZORT + Shopee + TikTok) ·
+        มูลค่าสต็อก = ภาพถ่ายสต็อก × ราคาขาย (ไม่ใช่ราคาทุน) · บิลค่าใช้จ่าย = นับใบจากอีเมล ไม่รวมเป็นยอดเงิน
+        <br />
+        ทำไมไม่ดึงจาก ZORT: ZORT ไม่เปิดเส้นรายงานหรือยอดสรุปการเงิน — ยิงตรวจชื่อเส้น 150 คู่ได้ 404 ครบ (14 ก.ย. 2569)
+        · รายได้อื่น/รายจ่ายอื่นดึงได้ แต่ร้านมี 0 รายการ · <b>บัญชี ภาษี และใบกำกับตัวจริงอยู่ที่ PEAK</b> จอนี้ไม่ทำแทน
+      </div>
 
       {!loading && !error && (
         <>
