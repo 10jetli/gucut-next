@@ -42,12 +42,16 @@ interface PlanSide {
   platformSkus?: number; same?: number; wouldPush?: number
   reopen?: number; close?: number; up?: number; down?: number
   skipNegative?: number; skipUnknown?: number
+  /** 🔴 ท่อส่งมาจริงตั้งแต่แรก แต่จอไม่มีช่องนี้และไม่เคยแสดงเลย (เจอ 14 ก.ย. 2569)
+   *  ⇒ มีกองที่ถูกข้ามทั้งกองที่คนอ่านจอมองไม่เห็น · วันที่เจอ shopee มี 1 รหัส */
+  skipConflict?: number
   /** ท่อคิดให้แล้วว่ากองย่อยบวกกันได้ยอดรวมไหม — **false = ห้ามเชื่อตัวเลขรอบนั้น** */
   bucketsAddUp?: boolean
   day?: string
   pushSample?: PlanSample[]
   skipNegativeSample?: PlanSample[] | string[]
   skipUnknownSample?: PlanSample[] | string[]
+  skipConflictSample?: PlanSample[] | string[]
   /** เฉพาะ Lazada — กองที่ถูกตัดออกก่อนคิดแผน (ต้องโชว์ ห้ามซ่อน) */
   excludedGuess?: number; excludedOneToMany?: number; excludedOneToManyKeys?: number
   sameOnRecheck?: number
@@ -86,6 +90,42 @@ const thaiTime = (iso?: string) => {
   const t = new Date(ms + 7 * 3600e3)
   const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
   return `${t.getUTCDate()} ${M[t.getUTCMonth()]} ${t.getUTCFullYear() + 543} ${String(t.getUTCHours()).padStart(2, '0')}:${String(t.getUTCMinutes()).padStart(2, '0')}`
+}
+
+
+/* รายการรหัสในกองที่ถูกข้าม — เลขอย่างเดียวตรวจอะไรไม่ได้
+   🔴 **ปัญหาที่ตัวนี้เกิดมาแก้** (14 ก.ย. 2569 · งานกระดาน t_mtxxib66)
+      จอโชว์ "ข้าม — คลังเราไม่รู้จักรหัสนี้ 10" แต่ **ไม่เคยแสดงว่าเป็นรหัสไหน**
+      (ชนิดข้อมูล skipUnknownSample ประกาศไว้ตั้งแต่แรก แต่ไม่มีใครเอามาใช้)
+      ⇒ คนที่สงสัยว่า "กองไม่รู้จักหลุดเข้าแผนหรือเปล่า" ตรวจเองไม่ได้เลย ต้องไปถามฝั่งท่อทุกครั้ง
+   ⚠️ **มีเลขแต่ไม่มีรายการ ต้องพูดออกมา** — ไม่ใช่ไม่แสดงอะไรเลย
+      ของจริงที่เจอ: lazada บอก skipUnknown 10 แต่ส่งตัวอย่างมา 0 แถว
+      ขณะที่ shopee 15→15 และ tiktok 7→7 ส่งครบ ⇒ ถ้าเงียบ คนจะนึกว่ากองนั้นว่าง */
+function SkipBucket({ label, count, sample }: { label: string; count?: number; sample?: PlanSample[] | string[] }) {
+  const n = N(count)
+  if (n === null || n === 0) return null
+  const rows = Array.isArray(sample) ? sample : []
+  const skus = rows.map((r) => (typeof r === 'string' ? r : r?.sku)).filter(Boolean) as string[]
+  return (
+    <details className="mt-1.5 border border-gray-200 rounded">
+      <summary className="text-[11.5px] text-gray-600 px-2 py-1 cursor-pointer">
+        {label} — {numText(count)} รหัส{' '}
+        <span className="text-gray-400">
+          {skus.length ? `(ดูตัวอย่าง ${skus.length}${skus.length < n ? ` จาก ${numText(count)}` : ''})` : '(ท่อไม่ได้ส่งรายการมา)'}
+        </span>
+      </summary>
+      <div className="px-2 py-1.5">
+        {skus.length ? (
+          <p className="text-[11px] font-mono text-gray-600 break-all leading-relaxed">{skus.join(' · ')}</p>
+        ) : (
+          <p className="text-[11.5px] text-amber-800">
+            ⚠️ ท่อบอกว่ามี <b>{numText(count)}</b> รหัสในกองนี้ แต่<b>ไม่ได้ส่งรายการมาด้วย</b>
+            {' '}⇒ ตรวจเองไม่ได้ว่าเป็นรหัสไหน · <b>ไม่ได้แปลว่ากองนี้ว่าง</b>
+          </p>
+        )}
+      </div>
+    </details>
+  )
 }
 
 export default function StockPushPage() {
@@ -249,6 +289,10 @@ export default function StockPushPage() {
                       {/* ⚠️ กองที่ "ข้าม" ต้องโชว์เสมอ — ไม่โชว์ = คนอ่านเข้าใจว่าแผนครอบคลุมทุกรหัส */}
                       <div className="flex justify-between gap-2"><dt>ข้าม — คลังเราติดลบ</dt><dd className="tabular-nums">{numText(p.skipNegative)}</dd></div>
                       <div className="flex justify-between gap-2"><dt>ข้าม — คลังเราไม่รู้จักรหัสนี้</dt><dd className="tabular-nums">{numText(p.skipUnknown)}</dd></div>
+                      {/* กองที่สาม — ท่อส่งมาตลอดแต่จอไม่เคยแสดง ⇒ ยอดที่คนเห็นไม่ครบกองที่ถูกข้าม */}
+                      {N(p.skipConflict) !== null && (
+                        <div className="flex justify-between gap-2"><dt>ข้าม — ข้อมูลขัดกัน</dt><dd className="tabular-nums">{numText(p.skipConflict)}</dd></div>
+                      )}
                       {N(p.excludedOneToMany) !== null && (
                         <div className="flex justify-between gap-2 text-gray-500">
                           <dt>ตัดก่อนคิดแผน — หนึ่งรหัสผูกหลายรายการ</dt>
@@ -270,6 +314,9 @@ export default function StockPushPage() {
                     ) : (
                       <p className="text-[11px] text-amber-700 mt-2">ท่อรุ่นนี้ยังไม่ได้บอกว่ากองย่อยบวกกันครบไหม</p>
                     )}
+                    <SkipBucket label="ข้าม — คลังเราติดลบ" count={p.skipNegative} sample={p.skipNegativeSample} />
+                    <SkipBucket label="ข้าม — คลังเราไม่รู้จักรหัสนี้" count={p.skipUnknown} sample={p.skipUnknownSample} />
+                    <SkipBucket label="ข้าม — ข้อมูลขัดกัน" count={p.skipConflict} sample={p.skipConflictSample} />
                     {would === 0 && <p className="text-[12px] text-emerald-700 mt-1.5">ไม่มีอะไรต้องดันสำหรับเจ้านี้</p>}
                   </div>
                 )
