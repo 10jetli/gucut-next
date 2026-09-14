@@ -423,6 +423,28 @@ const srv = createServer(async (req, res) => {
 
   /* ── เพิ่มสินค้าชุด / เพิ่มคลัง (ฟอร์มสั้นผ่าน ShortAddForm) ─────────────
      ไม่มี confirm = ซ้อม · มี confirm = ตอบว่าสำเร็จ (ท่อปลอม ไม่ได้เขียนอะไรจริง) */
+  /* ── คืนสินค้าให้ผู้ขาย (จอ /core/purchases/returns/new) ──────────────────
+     🔴 ส่ง linesTotal ที่ **ตั้งใจให้ต่างจากจอ** เมื่อใบมีบรรทัดที่ sku ขึ้นต้นว่า MISMATCH
+        เพื่อพิสูจน์ว่าจอจับได้จริงว่า "สองฝั่งเข้าใจช่องไม่ตรงกัน" ไม่ใช่แค่เขียนกล่องไว้เฉย ๆ */
+  if (mode === 'good' && /[?&]addpurchasereturn=/.test(req.url)) {
+    const body = (await new Promise((ok) => {
+      let b = ''; req.on('data', (c) => (b += c))
+      req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } })
+    })) || {}
+    const items = body.items || []
+    let linesTotal = items.reduce((s, it) => s + Number(it.price || 0) * Number(it.qty || 0), 0)
+    if (items.some((it) => /^MISMATCH/i.test(String(it.sku || '')))) linesTotal += 111
+    res.writeHead(200, { 'content-type': 'application/json' })
+    if (!body.confirm) {
+      return res.end(JSON.stringify({
+        ok: true, dryRun: true, ref: body.ref, linesTotal,
+        willSend: { number: body.number || body.ref, status: body.status, day: body.day,
+          vendor: body.vendor, list: items.map((it) => ({ sku: it.sku, name: it.name, quantity: it.qty, pricepernumber: it.price })) },
+      }))
+    }
+    return res.end(JSON.stringify({ ok: true, ref: body.ref, message: 'ท่อปลอม: ไม่ได้เขียนอะไรจริง' }))
+  }
+
   if (mode === 'good' && /[?&](addbundle|addwarehouse)=/.test(req.url)) {
     const which = /addbundle=/.test(req.url) ? 'addbundle' : 'addwarehouse'
     const body = (await new Promise((ok) => {
