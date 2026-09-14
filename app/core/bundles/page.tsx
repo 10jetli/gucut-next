@@ -156,7 +156,7 @@ export default function CoreBundlesPage() {
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)
             </Link>
-            <Link href="/core/soon/bundle-add"
+            <Link href="/core/bundles/new"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เพิ่มสินค้าเป็นชุดใหม่
