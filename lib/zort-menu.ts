@@ -224,7 +224,13 @@ export const SOON: Record<string, SoonPage> = {
   'customer-group': {
     title: 'กลุ่มลูกค้า',
     what: 'จัดกลุ่มลูกค้าเพื่อตั้งราคาหรือส่วนลดต่างกัน เช่น ราคาช่าง ราคาร้านค้าส่ง',
-    meanwhile: 'ตอนนี้ยังตั้งที่ ZORT',
+    /* ยิงจริงบน production 14 ก.ย. 2569 ได้ 404 ครบทั้ง 6 ชื่อที่ลอง
+       ⚠️ ข้อความเดิมเขียนว่า "ตอนนี้ยังตั้งที่ ZORT" ซึ่งอ่านแล้วเหมือนเดี๋ยวเราจะทำเอง
+          ความจริงคือ **ไม่มีเส้นให้ทำ** ⇒ ตั้งที่ ZORT คือทางเดียว ไม่ใช่ทางชั่วคราว */
+    impossible: 'ยิงตรวจแล้วไม่พบเส้นกลุ่มลูกค้า — ลอง ContactGroup/GetContactGroups · '
+      + 'Contact/GetContactGroups · Contact/GetGroups · Contact/GetContactGroupList · '
+      + 'Contact/GetGroupList · ContactGroup/GetList ได้ 404 ครบ (ยิงจริงบน production 14 ก.ย. 2569)',
+    meanwhile: 'ต้องตั้งที่ ZORT — ไม่ใช่ทางชั่วคราว แต่เป็นทางเดียวที่มี',
   },
   dealer: {
     title: 'ตัวแทนจำหน่าย',
