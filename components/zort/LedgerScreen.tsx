@@ -124,12 +124,18 @@ export default function LedgerScreen({
   const [zCount, setZCount] = useState<number | null>(null)
   const [zErr, setZErr] = useState('')
   const [zUnknown, setZUnknown] = useState(false)
+  /* 🔴 **สาเหตุฝั่ง ZORT แยกจาก "ยังไม่รู้"** (ฝั่งท่อส่งมาให้ 14 ก.ย. 2569 · gucut-web 3b2b147)
+     `zortCode === '500'` + `zortDesc` = ZORT ขัดข้องภายในตัวเอง ไม่ใช่พารามิเตอร์เราผิด
+     ⚠️ **ห้ามเขียนสาเหตุเกินกว่านี้** — ยังไม่รู้ว่าพังเพราะร้านไม่มีรายการ หรือพังทุกร้าน
+        (ฝั่งท่อกำชับตรง ๆ · และยังห้ามขึ้น "0 รายการ" เหมือนเดิม) */
+  const [zCode, setZCode] = useState('')
+  const [zDesc, setZDesc] = useState('')
   const [zLoading, setZLoading] = useState(!!zortList)
   const [rowKeys, setRowKeys] = useState<string[]>([])
 
   const loadZort = useCallback(async () => {
     if (!zortList) return
-    setZLoading(true); setZErr(''); setZUnknown(false)
+    setZLoading(true); setZErr(''); setZUnknown(false); setZCode(''); setZDesc('')
     try {
       /* ⚠️ variations ห้ามส่ง from/to (ท่อตอบ 400) · เส้นอื่นไม่ส่งก็ได้ = เอาทั้งหมด */
       const r = await fetch(`/api/web/core?zortlist=${zortList}&limit=200`)
@@ -137,6 +143,8 @@ export default function LedgerScreen({
       if (d?.unknown || r.status === 502) {
         setZUnknown(true)
         setZErr(String(d?.error ?? 'ถาม ZORT ไม่สำเร็จ'))
+        setZCode(typeof d?.zortCode === 'string' ? d.zortCode : '')
+        setZDesc(typeof d?.zortDesc === 'string' ? d.zortDesc : '')
         return
       }
       if (!r.ok || d?.error) throw new Error(String(d?.error ?? `HTTP ${r.status}`))
@@ -283,11 +291,15 @@ export default function LedgerScreen({
                 <p className="text-[14px] text-gray-800 mt-2">
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
                   {zLoading ? 'กำลังถาม ZORT…'
-                    : zUnknown ? 'ถาม ZORT ไม่สำเร็จ — ยังไม่รู้ว่ามีกี่รายการ'
-                      : zortAnswered ? 'ZORT ตอบแล้วว่าไม่มีรายการ'
-                        : cantRead ? 'ZORT ไม่เปิดเส้นให้ทำเรื่องนี้ — ไม่ใช่ยังไม่ได้ทำ'
-                    : impossible ? 'ยังไม่ได้ต่อท่อกับ ZORT (และสร้าง/แก้ผ่าน ZORT ไม่ได้ — ดูหลักฐานข้างล่าง)'
-                      : 'ยังไม่ได้ต่อท่อกับ ZORT'}
+                    /* 🔴 resCode 500 = **ขัดข้องฝั่ง ZORT เอง** (ฝั่งท่อยิงตรวจ 23:00 14 ก.ย. 2569
+                       ใส่ช่วงวันสองช่วงและใส่คำค้นก็ได้ 500 เหมือนกันหมด ⇒ ไม่ใช่พารามิเตอร์เราผิด)
+                       ⚠️ ห้ามเขียนสาเหตุเกินนี้ — ยังไม่รู้ว่าพังเพราะร้านไม่มีรายการ หรือพังทุกร้าน */
+                    : zUnknown && zCode === '500' ? 'ZORT ขัดข้องฝั่งเขา (ข้อผิดพลาดภายในของ ZORT) — ยังไม่รู้ว่ามีรายการโอนเงินไหม'
+                      : zUnknown ? 'ถาม ZORT ไม่สำเร็จ — ยังไม่รู้ว่ามีกี่รายการ'
+                        : zortAnswered ? 'ZORT ตอบแล้วว่าไม่มีรายการ'
+                          : cantRead ? 'ZORT ไม่เปิดเส้นให้ทำเรื่องนี้ — ไม่ใช่ยังไม่ได้ทำ'
+                            : impossible ? 'ยังไม่ได้ต่อท่อกับ ZORT (และสร้าง/แก้ผ่าน ZORT ไม่ได้ — ดูหลักฐานข้างล่าง)'
+                              : 'ยังไม่ได้ต่อท่อกับ ZORT'}
                 </p>
                 <p className="text-[12.5px] text-gray-500 mt-1 max-w-[520px] mx-auto leading-relaxed">
                   {purpose}
@@ -305,7 +317,14 @@ export default function LedgerScreen({
                   {zUnknown
                     ? <><b>ถาม ZORT ไม่สำเร็จ</b> ({zErr}) — <b>ยังไม่รู้ว่ามีรายการไหม</b>
                       {' '}⚠️ <b>ไม่ได้แปลว่าไม่มีรายการ</b> และ<b>ไม่ได้แปลว่า ZORT ไม่มีเส้นนี้</b> —
-                      {' '}เส้นมีจริงแต่ ZORT ตอบผิดพลาดกลับมา ⇒ ลองรีเฟรชอีกครั้ง · </>
+                      {' '}เส้นมีจริงแต่ ZORT ตอบผิดพลาดกลับมา ⇒ ลองรีเฟรชอีกครั้ง
+                      {/* 🔴 ข้อความดิบของ ZORT — โชว์ตัวเล็กไว้ให้คนไล่ต่อได้ ไม่ต้องเปิด DevTools
+                          (ฝั่งท่อส่งช่อง zortDesc มาให้ใช้ได้กับทุก kind ของ ?zortlist=) */}
+                      {zDesc && (
+                        <><br /><span className="text-[11.5px] text-gray-400">
+                          ข้อความจาก ZORT{zCode ? ` (resCode ${zCode})` : ''}: <span className="font-mono">{zDesc}</span>
+                        </span></>
+                      )} · </>
                     : zErr
                       ? <><b>ดึงข้อมูลไม่สำเร็จ</b> ({zErr}) — ยังไม่รู้ว่ามีรายการไหม · </>
                       : zortAnswered
@@ -323,8 +342,12 @@ export default function LedgerScreen({
                       ⚠️ คำซ้ำแบบนี้ tsc ไม่จับ และอ่านโค้ดเฉย ๆ ก็ไม่เห็น เพราะสองท่อนอยู่คนละไฟล์ */}
                   {/* 🔴 **ถามสดได้แล้ว ⇒ เลิกอ้างคำบอกเล่าเมื่อ 3 ก.ย.** (14 ก.ย. 2569)
                       ปล่อยไว้คู่กันจะอ่านเหมือนมีสองตัวเลขจากสองแหล่ง ซึ่งเป็นสิ่งที่กฎข้อ 4 ห้าม
-                      ⇒ จอที่ยังไม่ต่อท่อเท่านั้นที่ยังต้องใช้คำบอกเล่า */}
-                  {!zortAnswered && (
+                      ⇒ จอที่ยังไม่ต่อท่อเท่านั้นที่ยังต้องใช้คำบอกเล่า
+                      🔴 **และตอนถาม ZORT ไม่สำเร็จก็ห้ามอ้างเลขเก่า** (แก้ 14 ก.ย. 2569 23:xx)
+                         จอโอนเงินเคยขึ้นสองประโยคติดกัน: "ยังไม่รู้ว่ามีรายการไหม" แล้วต่อด้วย
+                         "เมื่อ 3 ก.ย. มี 0 รายการ จำนวนเงินรวม 0 บาท" ⇒ คนอ่านเก็บเลข 0 ไปใช้
+                         ซึ่งเป็นสิ่งที่ประโยคแรกเพิ่งบอกว่ายังไม่รู้ ⇒ กั้นด้วย !zortList */}
+                  {!zortList && !zortAnswered && (
                     <>ตอนไปเปิดดูจอ ZORT ของจริงเมื่อ <b>{thaiDate(CHECKED_AT)}</b>
                       {age != null && <> ({age === 0 ? 'วันนี้' : `${age} วันที่แล้ว`})</>}{' '}
                       <b>{sumLabel}</b> · </>
