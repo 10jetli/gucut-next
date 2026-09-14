@@ -5,7 +5,6 @@ export default function OtherIncomePage() {
   return (
     <LedgerScreen
       title="รายได้อื่น"
-      sumLabel="มี 0 รายการ มูลค่ารวม 0 บาท"
       cols={[
         { label: 'วันที่' },
         { label: 'ชื่อลูกค้า' },

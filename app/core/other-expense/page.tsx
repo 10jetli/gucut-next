@@ -5,7 +5,6 @@ export default function OtherExpensePage() {
   return (
     <LedgerScreen
       title="รายจ่ายอื่น"
-      sumLabel="มี 0 รายการ มูลค่ารวม 0 บาท"
       cols={[
         { label: 'วันที่' },
         { label: 'ชื่อผู้ติดต่อ' },

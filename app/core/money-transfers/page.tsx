@@ -6,7 +6,6 @@ export default function MoneyTransfersPage() {
   return (
     <LedgerScreen
       title="รายการโอนเงิน"
-      sumLabel="มี 0 รายการ จำนวนเงินรวม 0 บาท"
       cols={[
         { label: 'วันที่' },
         { label: 'รายการ' },

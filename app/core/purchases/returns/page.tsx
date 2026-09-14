@@ -36,7 +36,6 @@ export default function PurchaseReturnsPage() {
         { key: 'totalAmount', label: 'มูลค่ารวม' },
         { key: 'totalPaymentAmount', label: 'จ่ายคืนแล้ว' },
       ]}
-      sumLabel="มี 0 รายการ มูลค่ารวม 0 บาท"
       purpose="ใบคืนของที่เราส่งกลับไปให้ผู้ขาย แล้วตัดออกจากคลัง — ไม่ใช่ของที่ลูกค้าคืนเรา"
       meanwhile="ของที่ลูกค้าคืนเราอยู่คนละจอ: ขาย → รับคืนสินค้า"
     />

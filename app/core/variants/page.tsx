@@ -6,7 +6,6 @@ export default function VariantsPage() {
   return (
     <LedgerScreen
       title="สินค้าหลากคุณสมบัติ"
-      sumLabel="มี 0 รายการ"
       cols={[
         { label: 'รหัส' },
         { label: 'ชื่อ' },
