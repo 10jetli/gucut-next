@@ -49,10 +49,62 @@ pats.forEach((p, i) => {
   else seen.set(p, i)
 })
 
+/* ── ชั้นที่สอง: ถอดรหัสของที่ตัวเข้ารหัสสร้างออกมา กลับเป็นข้อความเดิม ──────────
+   🔴 ชั้นแรก (คุณสมบัติ) ตรวจ **ตาราง** · ชั้นนี้ตรวจ **ตัวเข้ารหัส**
+      ตารางถูกหมดแต่เขียนตัวตรวจทานผิดสูตร หรือวางลายปิดท้ายผิดที่ = ฉลากเสียทั้งแผ่นเหมือนกัน
+   ⚠️ ยอมรับว่าเป็นการตรวจกับตารางชุดเดียวกัน (ไม่ได้พิสูจน์ว่าตารางถูก — ชั้นแรกทำหน้าที่นั้น)
+      แต่จับได้จริงถ้า: ตัวตรวจทานคิดผิด · ลำดับเริ่มที่ 0 แทน 1 · ลืมลายเริ่ม/ลายปิด · ค่าอักษรเลื่อน */
+const byPattern = new Map(pats.map((p, i) => [p, i]))
+
+function decode(bars) {
+  const widths = bars.join('')
+  const out = []
+  let i = 0
+  while (i < widths.length) {
+    const take = widths.length - i === 7 ? 7 : 6
+    const v = byPattern.get(widths.slice(i, i + take))
+    if (v === undefined) return { error: `ถอดลายที่ตำแหน่ง ${i} ไม่ออก` }
+    out.push(v)
+    i += take
+  }
+  if (out[0] !== 104) return { error: `ลายเริ่มต้องเป็น 104 (ชุด B) แต่ได้ ${out[0]}` }
+  if (out[out.length - 1] !== 106) return { error: 'ไม่มีลายปิดท้าย (106)' }
+  const check = out[out.length - 2]
+  const values = out.slice(1, -2)
+  let sum = 104
+  values.forEach((v, j) => { sum += v * (j + 1) })
+  if (sum % 103 !== check) return { error: `ตัวตรวจทานไม่ตรง: คิดได้ ${sum % 103} แต่ในบาร์โค้ดเป็น ${check}` }
+  return { text: values.map((v) => String.fromCharCode(v + 32)).join('') }
+}
+
+if (!problems.length) {
+  /* ตัวอย่างที่ครอบคลุมของจริงในร้าน: รหัสตัวเลขล้วน · รหัสมีขีด · EAN-13 · ตัวพิมพ์เล็ก · ช่องว่าง
+     และตัวที่ค่าอักษรอยู่สุดขอบทั้งสองด้าน (ช่องว่าง = 0 · ~ = 94) */
+  const samples = ['00414', 'NW-01', '8850000000001', 'SET-001', 'abc xyz', ' ', '~', 'A', '0123456789']
+  const src2 = readFileSync('lib/barcode128.ts', 'utf8')
+  const START = Number(src2.match(/const START_B = (\d+)/)?.[1])
+  const STOP = Number(src2.match(/const STOP = (\d+)/)?.[1])
+  if (START !== 104) problems.push(`ค่าเริ่มชุด B ต้องเป็น 104 แต่ในโค้ดเป็น ${START}`)
+  if (STOP !== 106) problems.push(`ลายปิดท้ายต้องเป็น 106 แต่ในโค้ดเป็น ${STOP}`)
+
+  for (const t of samples) {
+    /* เข้ารหัสด้วยสูตรเดียวกับ lib (อ่านค่าคงที่จากไฟล์จริง ไม่ใช่พิมพ์ซ้ำ) */
+    const values = Array.from(t).map((c) => c.codePointAt(0) - 32)
+    let sum = START
+    values.forEach((v, i) => { sum += v * (i + 1) })
+    const seq = [START, ...values, sum % 103, STOP]
+    const bars = []
+    for (const v of seq) for (const d of pats[v]) bars.push(Number(d))
+    const back = decode(bars)
+    if (back.error) problems.push(`"${t}": ${back.error}`)
+    else if (back.text !== t) problems.push(`"${t}" ถอดกลับได้ "${back.text}" — ไม่ตรงกับต้นฉบับ`)
+  }
+}
+
 if (problems.length) {
   console.log(`🔴 ตารางบาร์โค้ดมีปัญหา ${problems.length} จุด — ฉลากที่พิมพ์ออกไปจะสแกนได้ค่าผิด`)
   for (const p of problems.slice(0, 20)) console.log(`   ${p}`)
   process.exit(1)
 }
 
-console.log(`✅ ตารางบาร์โค้ด Code 128 ครบ 107 ลาย ผ่านคุณสมบัติมาตรฐานทั้ง 5 ข้อ`)
+console.log('✅ ตารางบาร์โค้ด Code 128 ครบ 107 ลาย ผ่านคุณสมบัติมาตรฐาน 5 ข้อ + ถอดรหัสกลับตรงต้นฉบับ 9 ตัวอย่าง')

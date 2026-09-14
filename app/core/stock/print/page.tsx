@@ -158,7 +158,15 @@ export default function PrintLabelsPage() {
   }, [rows, nCopies])
 
   const unprintable = labels.filter((l) => l.error)
-  const noBarcodeCount = rows.filter((r) => (r.barcode ?? '').trim() === '').length
+  /* 🔴 **ตัวนับต้องนับจากของที่พิมพ์ได้จริง ไม่ใช่จากจำนวนแถวที่ได้มา** (เจอกับตาเอง 14 ก.ย. 2569)
+     รุ่นแรกนับ "พร้อมพิมพ์ 2 รหัส" โดยรวมรหัสที่มีบาร์โค้ดเป็นภาษาไทยซึ่งเข้ารหัสไม่ได้
+     ⇒ ตัวเลขข้างบนสัญญามากกว่าฉลากที่ออกมาข้างล่าง — โรคเดียวกับแท็บ "ยกเลิก (44)" กดแล้วได้ 0 แถว
+     (กฎของโปรเจกต์: ตัวนับกับรายการต้องมาจากกติกาเดียวกัน) */
+  const badValue = (r: LabelRow) => Boolean(code128b(((r.barcode ?? '').trim() || r.sku)).error)
+  const withBarcode = rows.filter((r) => (r.barcode ?? '').trim() !== '')
+  const noBarcodeCount = rows.length - withBarcode.length
+  const readyCount = withBarcode.filter((r) => !badValue(r)).length
+  const noBarcodeReady = rows.filter((r) => (r.barcode ?? '').trim() === '' && !badValue(r)).length
 
   return (
     <div className="p-4 md:p-6">
@@ -249,8 +257,11 @@ export default function PrintLabelsPage() {
             )}
 
             <div className="text-[12.5px] text-gray-700 bg-white border border-gray-200 rounded-md px-3.5 py-2.5 leading-relaxed">
-              พร้อมพิมพ์ <b>{rows.length - noBarcodeCount}</b> รหัส (มีบาร์โค้ดใน ZORT)
-              {' '}· <b>{noBarcodeCount}</b> รหัสยังไม่ได้ตั้งบาร์โค้ด (จะพิมพ์เป็นรหัสสินค้าแทน)
+              พร้อมพิมพ์ <b>{readyCount}</b> รหัส (มีบาร์โค้ดใน ZORT)
+              {withBarcode.length !== readyCount
+                && <> (อีก {withBarcode.length - readyCount} รหัสมีบาร์โค้ดแต่เข้ารหัสไม่ได้ — ดูข้างล่าง)</>}
+              {' '}· <b>{noBarcodeReady}</b> รหัสยังไม่ได้ตั้งบาร์โค้ด (จะพิมพ์เป็นรหัสสินค้าแทน)
+              {noBarcodeCount !== noBarcodeReady && <> (อีก {noBarcodeCount - noBarcodeReady} รหัสเข้ารหัสไม่ได้)</>}
               {' '}· <b>{missing.length}</b> รหัสไม่มีใน ZORT
               {' '}· <b>{failed.length}</b> รหัสยังไม่รู้
               {' '}⇒ ได้ฉลากทั้งหมด <b>{labels.length - unprintable.length}</b> ดวง

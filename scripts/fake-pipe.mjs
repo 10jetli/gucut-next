@@ -397,6 +397,50 @@ const srv = createServer(async (req, res) => {
     }))
   }
   /* รายละเอียดใบเสนอราคา/ใบโอน (จอ detail ใหม่ — โครงจากซอร์สท่อจริง) */
+  /* ── ฉลาก/บาร์โค้ด (จอ /core/stock/print) ────────────────────────────────
+     🔴 **สี่กองที่จอต้องแยกให้ออก** — ท่อปลอมนี้จงใจส่งมาครบทั้งสี่ในครั้งเดียว
+        เพราะกองที่ทำให้ของพังคือกองที่ "หน้าตาเหมือนไม่มีบาร์โค้ด" แต่ความจริงคือ "ไม่รู้"
+     ⚠️ ส่ง ok:true พร้อม complete:false + failed ไม่ว่าง **โดยตั้งใจ**
+        ถ้าจอตัดสินจาก ok อย่างเดียว มันจะบอกว่า "ครบ" ทั้งที่ขาด */
+  if (mode === 'good' && /[?&]productlabels=/.test(req.url)) {
+    const ask = decodeURIComponent(new URL(req.url, 'http://x').searchParams.get('productlabels') || '')
+      .split(',').map((x) => x.trim()).filter(Boolean)
+    const rows = []; const missing = []; const failed = []
+    for (const sku of ask) {
+      if (/^MISS/i.test(sku)) missing.push(sku)
+      else if (/^FAIL/i.test(sku)) failed.push({ sku, error: 'ZORT ตอบ 502' })
+      else if (/^QUIET/i.test(sku)) { /* จงใจไม่พูดถึงรหัสนี้เลย — จอต้องนับเป็น "ไม่รู้" ไม่ใช่ทำหาย */ }
+      else if (/^NOBC/i.test(sku)) rows.push({ sku, name: `สินค้าไม่มีบาร์โค้ด ${sku}`, barcode: null, noBarcode: true, sellprice: 250, unittext: 'ชิ้น' })
+      else if (/^THAI/i.test(sku)) rows.push({ sku, name: 'สินค้ารหัสไทย', barcode: 'บาร์โค้ดไทย', noBarcode: false, sellprice: 99, unittext: 'ชิ้น' })
+      else rows.push({ sku, name: `สินค้าทดสอบ ${sku}`, barcode: `885${String(sku).replace(/\D/g, '').padStart(10, '0')}`, noBarcode: false, sellprice: 1250.5, unittext: 'ชิ้น' })
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, complete: failed.length === 0, rows, missing, failed,
+      note: 'ท่อปลอม — ไม่ใช่ข้อมูลจริง',
+    }))
+  }
+
+  /* ── เพิ่มสินค้าชุด / เพิ่มคลัง (ฟอร์มสั้นผ่าน ShortAddForm) ─────────────
+     ไม่มี confirm = ซ้อม · มี confirm = ตอบว่าสำเร็จ (ท่อปลอม ไม่ได้เขียนอะไรจริง) */
+  if (mode === 'good' && /[?&](addbundle|addwarehouse)=/.test(req.url)) {
+    const which = /addbundle=/.test(req.url) ? 'addbundle' : 'addwarehouse'
+    const body = (await new Promise((ok) => {
+      let b = ''; req.on('data', (c) => (b += c))
+      req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } })
+    })) || {}
+    res.writeHead(200, { 'content-type': 'application/json' })
+    if (!body.confirm) {
+      return res.end(JSON.stringify({
+        ok: true, dryRun: true, ref: body.ref,
+        willSend: which === 'addbundle'
+          ? { name: body.name, sku: body.sku, sellprice: String(body.price ?? ''), sell_vat_status: body.vat, list: (body.items || []).map((it) => ({ sku: it.sku, quantity: it.qty })) }
+          : { code: body.code, name: body.name, address: body.address },
+      }))
+    }
+    return res.end(JSON.stringify({ ok: true, ref: body.ref, message: 'ท่อปลอม: ไม่ได้เขียนอะไรจริง' }))
+  }
+
   if (mode === 'good' && /[?&]quotation=/.test(req.url)) {
     /* id ที่ขึ้นต้นด้วย bad = จำลอง **บั๊กของจริง 9 ก.ย. 2569**: ท่อหยิบบรรทัดสินค้ามาเป็นหัวใบ
        ⇒ number กลายเป็นจำนวนสินค้า · fields เป็นช่องของบรรทัด · lines เป็น null
