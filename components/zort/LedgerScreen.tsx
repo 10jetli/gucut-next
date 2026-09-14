@@ -171,6 +171,16 @@ export default function LedgerScreen({
   const [zDesc, setZDesc] = useState('')
   /** ยอดรวมที่ **ท่อคิดให้** · undefined = ท่อไม่ได้ส่งช่องนั้นมา ⇒ จอต้องไม่โชว์เลข */
   const [zTotals, setZTotals] = useState<Record<string, number | null>>({})
+  /* 🔍 **ค้นหา + ค้นหาขั้นสูง — เฉพาะจอที่ต่อท่อแล้ว** (ใบ t_mu1i74cu · 15 ก.ย. 2569)
+     เส้น `?zortlist=` รับ `keyword` · `from` · `to` อยู่แล้ว แต่จอไม่เคยเปิดให้ใช้
+     ⇒ ช่องค้นหาเป็นช่องเทาที่พิมพ์ไม่ได้ และลิงก์ "ค้นหาขั้นสูง" เป็นตัวหนังสือเฉย ๆ
+     ⚠️ **`variations` ห้ามส่ง from/to** (ท่อตอบ 400) ⇒ จอนั้นไม่มีช่องวันที่ให้กรอก
+        ห้ามโชว์ช่องแล้วเงียบ ๆ ไม่ส่ง — คนกรอกแล้วจะเชื่อว่ากรองแล้ว */
+  const [kw, setKw] = useState('')
+  const [advOpen, setAdvOpen] = useState(false)
+  const [advFrom, setAdvFrom] = useState('')
+  const [advTo, setAdvTo] = useState('')
+  const canDateFilter = !!zortList && zortList !== 'variations'
   const [zLoading, setZLoading] = useState(!!zortList)
   const [rowKeys, setRowKeys] = useState<string[]>([])
 
@@ -179,7 +189,14 @@ export default function LedgerScreen({
     setZLoading(true); setZErr(''); setZUnknown(false); setZCode(''); setZDesc('')
     try {
       /* ⚠️ variations ห้ามส่ง from/to (ท่อตอบ 400) · เส้นอื่นไม่ส่งก็ได้ = เอาทั้งหมด */
-      const r = await fetch(`/api/web/core?zortlist=${zortList}&limit=200`)
+      const qs = new URLSearchParams({ zortlist: zortList, limit: '200' })
+      if (kw.trim()) qs.set('keyword', kw.trim())
+      /* ⚠️ variations ห้ามส่ง from/to — ท่อตอบ 400 (ดูคำเตือนข้างบน) */
+      if (zortList !== 'variations') {
+        if (advFrom) qs.set('from', advFrom)
+        if (advTo) qs.set('to', advTo)
+      }
+      const r = await fetch(`/api/web/core?${qs}`)
       const d = await r.json().catch(() => null)
       if (d?.unknown || r.status === 502) {
         setZUnknown(true)
@@ -202,7 +219,7 @@ export default function LedgerScreen({
     } catch (e) {
       setZErr(String(e instanceof Error ? e.message : e))
     } finally { setZLoading(false) }
-  }, [zortList, totals])
+  }, [zortList, totals, kw, advFrom, advTo])
   useEffect(() => { void loadZort() }, [loadZort])
 
   /** ต่อท่อแล้วและตอบมาเรียบร้อย (มีแถวหรือไม่มีก็ตาม) */
@@ -265,10 +282,77 @@ export default function LedgerScreen({
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-3">
-        <input placeholder="พิมพ์คำค้นหา" disabled
-          className="w-full max-w-[400px] text-[13px] border border-gray-300 rounded-full px-4 py-2 bg-gray-50 text-gray-400" />
-        <span className="text-[13px] text-gray-300">ค้นหาขั้นสูง</span>
+        {/* 🔴 ช่องค้นหาเคยเป็นช่องเทาที่พิมพ์ไม่ได้ทุกจอ — ตอนนี้จอที่ต่อท่อแล้วใช้ได้จริง
+            (เส้น ?zortlist= รับ keyword มาตั้งแต่แรก แค่จอไม่เคยเปิดให้ใช้)
+            ⚠️ จอที่ยังไม่ต่อท่อยังเทาเหมือนเดิม และบอกเหตุผลตอนชี้ค้าง — ไม่ใช่เทาเฉย ๆ */}
+        <input
+          placeholder="พิมพ์คำค้นหา"
+          disabled={!zortList}
+          value={zortList ? kw : ''}
+          onChange={(e) => setKw(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') void loadZort() }}
+          title={zortList ? 'พิมพ์แล้วกด Enter — ค้นที่เซิร์ฟเวอร์ ครอบทุกรายการ ไม่ใช่แค่หน้าที่เห็น'
+            : 'จอนี้ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีอะไรให้ค้น'}
+          className={`w-full max-w-[400px] text-[13px] border border-gray-300 rounded-full px-4 py-2 ${
+            zortList ? 'bg-white text-gray-800' : 'bg-gray-50 text-gray-400'}`}
+        />
+        {zortList
+          ? (
+            <>
+              <button type="button" onClick={() => void loadZort()}
+                className="text-[13px] text-blue-600 hover:underline">ค้นหา</button>
+              {canDateFilter && (
+                <button type="button" onClick={() => setAdvOpen((v) => !v)}
+                  className="text-[13px] text-blue-600 hover:underline">
+                  {advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}
+                </button>
+              )}
+              {/* 🔴 `variations` ท่อไม่รับช่วงวันที่ ⇒ **ไม่โชว์ปุ่มเลย ดีกว่าโชว์แล้วเงียบ ๆ ไม่ส่ง**
+                  และบอกด้วยว่าทำไมไม่มี ไม่ใช่หายไปเฉย ๆ */}
+              {!canDateFilter && (
+                <span className="text-[13px] text-gray-300 cursor-help"
+                  title="ชุดข้อมูลนี้ของ ZORT ไม่มีวันที่ให้กรอง (ท่อตอบ 400 ถ้าส่งช่วงวันไป) — ค้นด้วยคำค้นได้อย่างเดียว">
+                  ค้นหาขั้นสูง (ไม่มีวันที่ให้กรอง)
+                </span>
+              )}
+            </>
+          )
+          : (
+            /* ⚠️ เทาอ่อน = กดไม่ได้ แต่ **เทาเฉย ๆ ไม่ได้บอกว่าทำไม** ⇒ ใส่คำอธิบายตอนชี้ค้าง */
+            <span className="text-[13px] text-gray-300 cursor-help"
+              title="จอนี้ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีข้อมูลให้ค้นหา">
+              ค้นหาขั้นสูง
+            </span>
+          )}
       </div>
+
+      {/* 🔍 แผงค้นหาขั้นสูง — มีเฉพาะช่องที่ท่อกรองให้จริง (คำค้น + ช่วงวันที่) */}
+      {advOpen && canDateFilter && (
+        <div className="bg-white border border-gray-200 rounded-md p-3.5 mb-3 flex flex-wrap items-end gap-3">
+          <label className="text-[12.5px] text-gray-600">
+            <span className="block mb-1">ตั้งแต่วันที่</span>
+            <input type="date" value={advFrom} onChange={(e) => setAdvFrom(e.target.value)}
+              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
+          </label>
+          <label className="text-[12.5px] text-gray-600">
+            <span className="block mb-1">ถึงวันที่</span>
+            <input type="date" value={advTo} onChange={(e) => setAdvTo(e.target.value)}
+              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
+          </label>
+          <button type="button" onClick={() => void loadZort()}
+            className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+            ค้นหาตามช่วงนี้
+          </button>
+          <button type="button"
+            onClick={() => { setAdvFrom(''); setAdvTo('') }}
+            className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+            ล้างช่วงวันที่
+          </button>
+          <span className="text-[11.5px] text-gray-500 max-w-[420px] leading-snug">
+            ใส่ช่องเดียวก็ได้ · คำค้นและช่วงวันที่ <b>กรองที่เซิร์ฟเวอร์</b> (ครอบทุกรายการ ไม่ใช่แค่หน้าที่เห็น)
+          </span>
+        </div>
+      )}
 
       {dateLine && <p className="text-[12.5px] text-gray-600 mb-2">{dateLine}</p>}
 

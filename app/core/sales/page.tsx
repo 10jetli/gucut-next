@@ -167,6 +167,14 @@ export default function CoreSalesPage() {
   //    ช่องทางของ ZORT อยู่เป็นคอลัมน์ + ตัวกรอง เราจึงย้ายมาเป็น dropdown ให้ตรงกัน
   const [status, setStatus] = useState('')
   const [q, setQ] = useState('')
+  /* 🔍 **ค้นหาขั้นสูง** — ZORT มี advanceSearch() ทุกจอรายการ ของเรามีแต่ลิงก์ที่ไม่ทำอะไร
+     ⇒ ทำของจริงเท่าที่ **ท่อรองรับจริง**: ช่วงวันที่กำหนดเอง (เส้น list=orders รับ from/to)
+     ⚠️ ตัวเลือก "แสดง N วัน" เดิมทำได้แค่ค่าสำเร็จรูป ⇒ ย้อนดูเดือนใดเดือนหนึ่งไม่ได้เลย
+     ⚠️ **ห้ามใส่ช่องกรองที่ท่อไม่รองรับ** ลงในแผงนี้ — ช่องที่กรอกแล้วไม่มีผล
+        แย่กว่าไม่มีช่อง เพราะคนกรอกแล้วเชื่อว่ากรองแล้ว */
+  const [advOpen, setAdvOpen] = useState(false)
+  const [advFrom, setAdvFrom] = useState('')
+  const [advTo, setAdvTo] = useState('')
   const [offset, setOffset] = useState(0)
 
   const [data, setData] = useState<ListResp | null>(null)
@@ -180,7 +188,7 @@ export default function CoreSalesPage() {
 
   const load = useCallback(async (
     off = 0,
-    opt?: { days?: number; channel?: string; status?: string; store?: string },
+    opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string },
   ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
@@ -189,8 +197,11 @@ export default function CoreSalesPage() {
     setLoading(true)
     setError('')
     try {
+      /* ช่วงวันที่กำหนดเองชนะค่าสำเร็จรูปเสมอ — และ `url` ที่ใช้เป็นคีย์แคชรวม from/to อยู่แล้ว */
+      const fromDay = (opt?.from ?? advFrom) || thaiDay(d - 1)
+      const toDay = (opt?.to ?? advTo) || thaiDay(0)
       const qs = new URLSearchParams({
-        list: 'orders', from: thaiDay(d - 1), to: thaiDay(0),
+        list: 'orders', from: fromDay, to: toDay,
         limit: String(PAGE), offset: String(off),
       })
       if (ch) qs.set('channel', ch)
@@ -229,7 +240,7 @@ export default function CoreSalesPage() {
     } finally {
       setLoading(false)
     }
-  }, [days, channel, status, q, store])
+  }, [days, channel, status, q, store, advFrom, advTo])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -330,11 +341,14 @@ export default function CoreSalesPage() {
             <ExportButton
               disabled={loading}
               spec={{
-                filename: `รายการขาย-${thaiDay(days - 1)}-ถึง-${thaiDay(0)}`,
+                filename: `รายการขาย-${advFrom || thaiDay(days - 1)}-ถึง-${advTo || thaiDay(0)}`,
                 title: 'รายการขาย',
                 note: 'ไฟล์นี้รวมใบยกเลิกไว้ด้วย (เหมือนที่จอแสดง) — ดูคอลัมน์ "สถานะ" เพื่อคัดออกเอง',
                 filters: [
-                  ['ช่วงวันที่', `${thaiDay(days - 1)} ถึง ${thaiDay(0)} (${days} วัน)`],
+                  /* 🔴 ต้องเป็นช่วงเดียวกับที่จอกำลังกรองอยู่ — รวมช่วงที่ตั้งเองในค้นหาขั้นสูง
+                     ไม่งั้นไฟล์กับจอคนละช่วง แล้วคนเทียบยอดไม่ตรงโดยไม่รู้ว่าทำไม */
+                  ['ช่วงวันที่', `${advFrom || thaiDay(days - 1)} ถึง ${advTo || thaiDay(0)}`
+                    + (advFrom || advTo ? ' (ตั้งเองในค้นหาขั้นสูง)' : ` (${days} วัน)`)],
                   ['ร้าน', store || '(ทุกร้าน)'],
                   ['ช่องทาง', channel || '(ทุกช่องทาง)'],
                   ['สถานะ', status || '(ทุกสถานะ)'],
@@ -342,7 +356,7 @@ export default function CoreSalesPage() {
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({
-                    list: 'orders', from: thaiDay(days - 1), to: thaiDay(0),
+                    list: 'orders', from: advFrom || thaiDay(days - 1), to: advTo || thaiDay(0),
                     limit: String(limit), offset: String(offsetAt), cancelled: '1',
                   })
                   if (channel) qs.set('channel', channel)
@@ -393,7 +407,13 @@ export default function CoreSalesPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขรายการขาย ชื่อลูกค้า ช่องทางการขาย และอื่นๆ"
-        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
+        /* 🔴 เดิมลิงก์ตรงนี้เขียนว่า "ค้นหา" และกดแล้วแค่โหลดซ้ำ — ผัง ZORT ตรงนี้คือ "ค้นหาขั้นสูง"
+           ⇒ ตอนนี้กดแล้วกางแผงช่วงวันที่จริง (ท่อรับ from/to) ไม่ใช่ลิงก์ประดับ */
+        advanced={
+          <LinkText onClick={() => setAdvOpen((v) => !v)}>
+            {advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}
+          </LinkText>
+        }
         right={
           <>
             {/* ⚠️ ชื่อร้านมาจากบัญชี ZORT สองบัญชีของร้าน — z1 คือบริษัทที่ขายบนเว็บ
@@ -435,6 +455,33 @@ export default function CoreSalesPage() {
           </>
         }
       />
+
+      {/* 🔍 แผงค้นหาขั้นสูง — มีเฉพาะช่องที่ท่อกรองให้จริง
+          ⚠️ **ห้ามเติมช่องที่ท่อไม่รองรับ** ช่องที่กรอกแล้วไม่มีผลแย่กว่าไม่มีช่อง */}
+      {advOpen && (
+        <div className="bg-white border border-gray-200 rounded-md p-3.5 mb-3 flex flex-wrap items-end gap-3">
+          <label className="text-[12.5px] text-gray-600">
+            <span className="block mb-1">ตั้งแต่วันที่</span>
+            <input type="date" value={advFrom} onChange={(e) => setAdvFrom(e.target.value)}
+              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
+          </label>
+          <label className="text-[12.5px] text-gray-600">
+            <span className="block mb-1">ถึงวันที่</span>
+            <input type="date" value={advTo} onChange={(e) => setAdvTo(e.target.value)}
+              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
+          </label>
+          <BtnGhost onClick={() => load(0)} disabled={loading || (!advFrom && !advTo)}>ค้นหาตามช่วงนี้</BtnGhost>
+          <BtnGhost onClick={() => { setAdvFrom(''); setAdvTo(''); load(0, { from: '', to: '' }) }}
+            disabled={loading || (!advFrom && !advTo)}>ล้างช่วงวันที่</BtnGhost>
+          <span className="text-[11.5px] text-gray-500 max-w-[430px] leading-snug">
+            ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;
+            <br />
+            {/* 🔴 บอกตรง ๆ ว่าอะไรกรองที่เซิร์ฟเวอร์ อะไรไม่ได้ — ไม่งั้นคนเดาเอง */}
+            ⚠️ ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา <b>กรองที่เซิร์ฟเวอร์ทั้งหมด</b>
+            {' '}(ครอบทุกใบในช่วง ไม่ใช่แค่หน้าที่เห็น) · ยังไม่มีตัวกรองอื่นเพราะท่อยังไม่รับ
+          </span>
+        </div>
+      )}
 
       {data && (
         <div className="text-[12.5px] text-gray-500 mb-3">
