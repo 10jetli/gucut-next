@@ -393,7 +393,8 @@ const srv = createServer(async (req, res) => {
        ⚠️ ถ้าไม่มีทั้งสามแบบ จะทดสอบได้แค่ทางเดียวแล้วเข้าใจว่าจอถูกทั้งหมด */
     const which = /[?&]order=[^&]*FULL/.test(req.url) ? 'full'
       : /[?&]order=[^&]*NULL/.test(req.url) ? 'null'
-        : /[?&]order=[^&]*ODD/.test(req.url) ? 'odd' : 'old'
+        : /[?&]order=[^&]*ODD/.test(req.url) ? 'odd'
+          : /[?&]order=[^&]*ZERO/.test(req.url) ? 'zero' : 'old'
     const base = { id: 'z1-1', source: 'z1', number: 'SO-001', channel: 'Shopee', status: 'Pending',
       customer: 'ลูกค้าทดสอบ', order_date: '2026-09-05', tracking_no: 'TH000TEST', pay_status: 'paid',
       ship_channel: 'Flash express', ship_name: 'ผู้รับทดสอบ', ship_date: '2026-09-06' }
@@ -407,6 +408,16 @@ const srv = createServer(async (req, res) => {
       return res.end(JSON.stringify({
         order: { ...base, amount: 995, bill_discount: 50, ship_amount: 70 },
         items: [{ ...items[0], discount: 10 }, { ...items[1], discount: 5 }],
+      }))
+    }
+    if (which === 'zero') {
+      /* 🔴 **สภาพหลังฝั่งท่อกวาดย้อนหลัง** (ฝั่งท่อแจ้ง 14 ก.ย. 2569 · gucut-web 44fbecc)
+         ใบที่ ZORT ไม่ได้ส่งส่วนลดมาจริงจะได้ **0 ไม่ใช่ null** เพราะตัวซิงก์เขียนค่าทุกบรรทัด
+         ⇒ จอต้องเปลี่ยนจาก "ยังยืนยันไม่ได้" เป็น **"ลงตัว" แล้วเงียบ** เอง โดยไม่ต้องแก้โค้ดจอ
+         ⚠️ อันนี้คือคำที่ผมพูดไว้กับฝั่งท่อ ⇒ **ต้องพิสูจน์ ไม่ใช่เชื่อเอา** */
+      return res.end(JSON.stringify({
+        order: { ...base, amount: 1070, bill_discount: 0, ship_amount: 70 },
+        items: [{ ...items[0], discount: 0 }, { ...items[1], discount: 0 }],
       }))
     }
     if (which === 'odd') {
