@@ -16,6 +16,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
+import ProductImageBox from './ProductImageBox'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ (แก้/ลบของจริงใน ZORT) */
 const REAL_SEND_ENABLED = false
@@ -221,6 +222,9 @@ export default function EditProductPage() {
               ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้แก้จริง</b> — รอท่านประธานอนุมัติจอนี้</span>
               : !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองแก้ให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลอง — ต้องทดลองใหม่'}</span>}
           </div>
+
+          {/* ── รูปสินค้า (t_mu108yr3) ── */}
+          <ProductImageBox id={product.id} sku={product.sku} imagepath={product.imagepath} realSendEnabled={REAL_SEND_ENABLED} />
 
           {/* ── ลบสินค้า ── */}
           <div className="mt-8 border-2 border-red-200 rounded-md p-4 bg-red-50/40">
