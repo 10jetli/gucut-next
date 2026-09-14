@@ -28,6 +28,7 @@ import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner,
 } from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
   sku: string
@@ -181,6 +182,41 @@ export default function CoreBundlesPage() {
             <BtnGhost onClick={() => load(offset)} disabled={loading}>
               {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
             </BtnGhost>
+            {/* 📤 ส่งออกสินค้าเป็นชุด ครบทุกหน้า
+                ⚠️ **ไม่ส่ง marketplaces=1 ตอนส่งออก** — คอลัมน์ช่องทางต้องยิงถามรายตัวและช้ามาก
+                   ⇒ ไฟล์ไม่มีคอลัมน์นั้น และ **เขียนบอกไว้ในหัวไฟล์** ไม่ใช่หายไปเงียบ ๆ
+                ⚠️ ราคาสินค้ารวม (itemsValue) เป็น null ได้ = มีชิ้นส่วนที่ยังไม่ได้ตั้งราคา
+                   ⇒ ปล่อยให้เว้นว่าง **ห้ามคิดเป็น 0** ไม่งั้นราคารวมต่ำกว่าจริงแบบดูสมเหตุสมผล */}
+            <ExportButton
+              disabled={loading}
+              spec={{
+                filename: `สินค้าเป็นชุด-${new Date().toISOString().slice(0, 10)}`,
+                title: 'สินค้าเป็นชุด',
+                note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ'
+                  + ' · คงเหลือ/พร้อมขาย ซิงก์จาก ZORT ทุกครึ่งชั่วโมง · พร้อมขายที่เป็น 0 อาจหมายถึงติดลบ'
+                  + ' (ZORT API ไม่ส่งค่าติดลบของช่องนี้)',
+                filters: [['คำค้นหา', q.trim() || '(ไม่ได้ค้น)']],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'bundles', limit: String(limit), offset: String(offsetAt) })
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['รหัสชุด', 'ชื่อชุด', 'ราคาสินค้ารวม (บาท)', 'ราคาขาย (บาท)', 'คงเหลือ', 'พร้อมขาย', 'หน่วย', 'จำนวนชิ้นส่วน', 'สถานะ'],
+                toRow: (r: Row) => [
+                  r.sku, r.name ?? null,
+                  typeof r.itemsValue === 'number' ? r.itemsValue : null,
+                  typeof r.sellprice === 'number' ? r.sellprice : null,
+                  typeof r.onhand === 'number' ? r.onhand : null,
+                  typeof r.available === 'number' ? r.available : null,
+                  r.unit || null,
+                  typeof r.itemCount === 'number' ? r.itemCount : null,
+                  r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน',
+                ],
+              }}
+            />
             <Link href="/core/import?kind=product"
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)

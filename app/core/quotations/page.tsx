@@ -16,6 +16,7 @@ import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate,
 } from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
   /** id ในระบบ ZORT — เส้นรายใบรับ id เท่านั้น (ส่งเลขที่ใบ = ค่าว่างเงียบ ๆ · ท่อเตือนไว้เอง) */
@@ -119,6 +120,27 @@ export default function QuotationsPage() {
         actions={
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 📤 ชุดเล็ก (ท่อบอก total 6) แต่ยังวนหน้าให้ครบเหมือนจอใหญ่
+                เพราะวันหนึ่งใบเยอะขึ้น แล้วจะไม่มีใครกลับมาแก้ปุ่มนี้ */}
+            <ExportButton
+              disabled={loading}
+              spec={{
+                filename: `ใบเสนอราคา-${new Date().toISOString().slice(0, 10)}`,
+                title: 'ใบเสนอราคา',
+                filters: [['คำค้นหา', q.trim() || '(ไม่ได้ค้น)']],
+                fetchPage: async (offsetAt, limit) => {
+                  const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&offset=${offsetAt}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['เลขที่ใบเสนอราคา', 'วันที่', 'ลูกค้า', 'เบอร์โทร', 'ยอด (บาท)', 'สถานะ', 'อ้างอิง'],
+                toRow: (r: Row) => [
+                  r.number, r.date ?? null, r.customer ?? null, r.phone || null,
+                  typeof r.amount === 'number' ? r.amount : null, r.status ?? null, r.reference || null,
+                ],
+              }}
+            />
             <Link href="/core/import?kind=quotation"
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)

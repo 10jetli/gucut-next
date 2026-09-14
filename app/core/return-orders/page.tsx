@@ -35,6 +35,7 @@ import {
   PageHead, BtnGhost, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
   EmptyState, Pill, relDay, thaiDate, EndpointMissing,
 } from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 import { coreJson } from '@/lib/api-shape'
 
 interface Row {
@@ -144,7 +145,45 @@ export default function ReturnOrdersPage() {
               </>
             )
         }
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        actions={
+          <>
+            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 📤 ส่งออกใบคืนจากลูกค้า ครบทุกหน้า
+                🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** — กับดักเดิมที่ CLAUDE.md
+                   จดไว้เรื่อง GetOrders และผมเองก็เคยเกือบสรุปผิดว่าดึงได้แค่ 200 ใบจาก 689
+                   ⇒ แปลง offset ที่ตัวช่วยส่งมา เป็นเลขหน้าตรงนี้ */}
+            <ExportButton
+              disabled={loading}
+              spec={{
+                filename: `ใบคืนจากลูกค้า-${new Date().toISOString().slice(0, 10)}`,
+                title: 'ใบคืนสินค้าจากลูกค้า',
+                note: 'ใบคืนที่ลูกค้าคืนเรา (CN-) — คนละชุดกับใบคืนที่เราส่งคืนผู้ขาย'
+                  + ' · เลขที่ใบคืนซ้ำกันได้จริง (ยิงตรวจ 15 ก.ย. 2569: 689 ใบ เลขที่ไม่ซ้ำ 537) — ใช้คอลัมน์ id แยกใบ ห้ามลบแถวที่ดูซ้ำ',
+                filters: [['คำค้นหา', q.trim() || '(ไม่ได้ค้น)']],
+                fetchPage: async (offsetAt, limit) => {
+                  const page = Math.floor(offsetAt / limit) + 1
+                  const r = await fetch(`/api/web/core?list=returnorders&limit=${limit}&page=${page}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                /* 🔴 **ต้องมีคอลัมน์ id** — ยิงจริง 15 ก.ย. 2569: 689 ใบมี **เลขที่ซ้ำกัน 152 แถว**
+                   แต่ `id` ไม่ซ้ำเลยสักใบ (กวาดทั้ง 4 หน้า คีย์ข้ามหน้าซ้ำ 0)
+                   ⇒ ถ้าไฟล์ไม่มี id จะมีแถวหน้าตาเหมือนกันเป๊ะ 133 แถว แล้วคนเปิดไฟล์
+                      จะนึกว่าส่งออกซ้ำ แล้วลบทิ้งเอง ⇒ ยอดหายโดยที่ข้อมูลไม่เคยผิด
+                   (บทเรียนเดียวกับบัตรสต็อกที่มีแถวซ้ำจริง 106 แถว — ของซ้ำที่เป็นของจริง
+                    ต้องมีอะไรให้แยกแยะ ไม่งั้นคนจะแก้ "ปัญหา" ที่ไม่มีอยู่) */
+                header: ['id', 'เลขที่ใบคืน', 'วันที่', 'ลูกค้า', 'ใบขายอ้างอิง', 'คลัง', 'ยอด (บาท)', 'สถานะ', 'การชำระเงิน'],
+                toRow: (r: Row) => [
+                  r.id === undefined || r.id === null ? null : String(r.id),
+                  r.number ?? null, r.date ?? null, r.customer ?? null, r.reference || null,
+                  r.warehouse || null, typeof r.amount === 'number' ? r.amount : null,
+                  r.status ?? null, r.paid ?? null,
+                ],
+              }}
+            />
+          </>
+        }
       />
 
       {error && <ErrorBox title="ดึงใบคืนของไม่ได้">{error}</ErrorBox>}
