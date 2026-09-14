@@ -341,13 +341,15 @@ export default function ProductDetailPage() {
           />
 
           {/* ⚠️ ZORT มีปุ่ม 7 ปุ่มแถวนี้ — ของเราทำได้จริงเฉพาะที่มีท่อรองรับ
-              ปุ่มที่กดแล้วไม่เกิดอะไรคือปุ่มหลอก ⇒ ที่ยังไม่ได้ทำพาไปหน้าที่บอกตรง ๆ */}
+              ปุ่มที่กดแล้วไม่เกิดอะไรคือปุ่มหลอก ⇒ ที่ยังไม่ได้ทำพาไปหน้าที่บอกตรง ๆ
+              ✅ แก้ไข/ลบ มีจอจริงแล้ว (14 ก.ย. 2569 · งานกระดาน t_mu0tx2wj) — ปุ่มส่งจริงยังปิดรอท่านประธานอนุมัติ
+                 ลบกับแก้อยู่หน้าเดียวกัน เพราะต้องถาม id ของ ZORT ก่อนเหมือนกัน */}
           <div className="flex flex-wrap items-center gap-2 -mt-1 mb-4">
-            <Link href="/core/soon/product-edit"
+            <Link href={`/core/stock/${encodeURIComponent(sku)}/edit`}
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               แก้ไข
             </Link>
-            <Link href="/core/soon/product-delete"
+            <Link href={`/core/stock/${encodeURIComponent(sku)}/edit#delete`}
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               ลบ
             </Link>
