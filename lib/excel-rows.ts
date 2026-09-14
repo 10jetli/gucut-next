@@ -8,6 +8,12 @@ import JSZip from 'jszip'
  *   po      → ?addpo=1       {ref, vendor?, items:[{sku, name, qty, price}]}
  *   product → ?addproduct=1  {ref, sku, name, price?, cost?, unit?, barcode?, category?}
  *   contact → ?addcontact=1  {ref, code, name, phone?, email?, taxId?}
+ *   quotation → ?addquotation=1 {ref, customer, items:[{sku, name, qty, price}], phone?, note?, reference?}
+ *     🔴 **quotation บังคับ customer และบังคับ price ทุกบรรทัด**
+ *        ไม่ส่ง price ⇒ ท่อไม่ส่ง totalprice ⇒ **ZORT สร้างใบเสนอราคา ฿0 จริง** (พิสูจน์แล้ว QT-202609001)
+ *        และใบเสนอราคาลบผ่าน API ไม่ได้ ⇒ แถวที่ไม่มีราคาต้องตีกลับเป็น error ห้ามปล่อยผ่าน
+ *     ⚠️ เส้นของ ZORT **ไม่มีช่องเลขที่เอกสาร** ⇒ คอลัมน์ "เลขที่ใบ" ใช้รวมบรรทัดเท่านั้น ไม่ถูกส่ง
+ *        (เตือนบนจอ ไม่ทิ้งเงียบ — คนใส่มาแล้วต้องรู้ว่ามันไม่ไปถึง ZORT)
  * ⚠️ ห้ามคิดยอดเงินในตัวแปลง — ส่งแค่ qty/price ต่อบรรทัด ท่อคิด totalprice/amount เอง
  *
  * 🔴 สามเรื่องที่รีวิวจับได้ในต้นแบบ — ห้ามถอยกลับ:
@@ -19,7 +25,7 @@ import JSZip from 'jszip'
  *  3) **xlsx ช่องหายเงียบ** เดิมไม่อ่าน inlineStr และจับ t="s" ไม่ได้ถ้า attribute อยู่ก่อน r=
  *     ⇒ อ่าน attribute ทุกลำดับ · inlineStr · str (สูตรที่ได้ข้อความ) · มีหลายชีต = เตือน (อ่านเฉพาะชีตแรก) */
 
-export type ImportKind = 'sale' | 'po' | 'product' | 'contact'
+export type ImportKind = 'sale' | 'po' | 'product' | 'contact' | 'quotation'
 export type RowProblem = { row: number; field: string; error: string }
 export type ParseResult = { rows: Record<string, unknown>[]; errors: RowProblem[]; warnings: string[] }
 
@@ -37,6 +43,11 @@ const aliases: Record<string, string> = {
   'เลขผู้เสียภาษี': 'taxId', taxid: 'taxId',
   'ต้นทุน': 'cost', cost: 'cost', 'หน่วย': 'unit', unit: 'unit',
   'บาร์โค้ด': 'barcode', barcode: 'barcode', 'หมวดหมู่': 'category', category: 'category',
+  /* ใบเสนอราคา — ⚠️ 'เลขอ้างอิง' และคำอังกฤษ `reference` ถูกจองเป็น ref (ตัวกันซ้ำ) ไปแล้ว
+     ⇒ ช่อง reference ของ ZORT ต้องใช้ชื่อหัวคอลัมน์อื่น ห้ามแย่งของเดิม
+        (แย่งเมื่อไหร่ ตัวกันซ้ำของไฟล์เก่าจะเปลี่ยนความหมายเงียบ ๆ = เสี่ยงใบซ้ำที่ลบไม่ได้) */
+  'เอกสารอ้างอิง': 'reference', docref: 'reference',
+  'หมายเหตุ': 'note', note: 'note', 'รายละเอียด': 'note',
 }
 const text = (v: unknown) => String(v ?? '').trim()
 const number = (v: unknown, row: number, field: string, errors: RowProblem[]) => {
@@ -112,7 +123,11 @@ export async function parseXlsxBuffer(data: ArrayBuffer | Uint8Array): Promise<{
 }
 
 type Line = { sku: string; name: string; qty: number; price: number }
-type DocGroup = { key: string; firstRow: number; party: string; number?: string; items: Line[]; parts: string[] }
+type DocGroup = {
+  key: string; firstRow: number; party: string; number?: string; items: Line[]; parts: string[]
+  /** เฉพาะใบเสนอราคา — เก็บค่าจากแถวแรกที่มีค่า (แถวต่อ ๆ มาของใบเดียวกันไม่ต้องกรอกซ้ำ) */
+  phone?: string; reference?: string; note?: string
+}
 
 export function mapImportRows(kind: ImportKind, table: string[][]): ParseResult {
   const errors: RowProblem[] = []; const rows: Record<string, unknown>[] = []; const warnings: string[] = []
@@ -126,7 +141,9 @@ export function mapImportRows(kind: ImportKind, table: string[][]): ParseResult 
   }
   const groups = new Map<string, DocGroup>()
   const order: DocGroup[] = []
-  const partyField = kind === 'sale' ? 'customer' : 'vendor'
+  const partyField = kind === 'po' ? 'vendor' : 'customer'
+  /* เลขที่ใบของ quotation ใช้รวมบรรทัดได้ แต่ส่งไป ZORT ไม่ได้ (ไม่มีช่อง) ⇒ เตือนครั้งเดียว */
+  let warnedNumber = false
 
   for (let index = 1; index < table.length; index++) {
     const rowNo = index + 1; const values = table[index] ?? []
@@ -160,22 +177,39 @@ export function mapImportRows(kind: ImportKind, table: string[][]): ParseResult 
     if (!qty || qty <= 0) { errors.push({ row: rowNo, field: 'qty', error: 'จำนวนต้องมากกว่า 0' }); bad = true }
     if (price === undefined || price < 0) { errors.push({ row: rowNo, field: 'price', error: 'ต้องมีราคาไม่ติดลบ' }); bad = true }
     const docNumber = text(get('number'))
+    if (kind === 'quotation' && docNumber && !warnedNumber) {
+      warnedNumber = true
+      warnings.push('คอลัมน์ "เลขที่ใบ" ใช้รวมบรรทัดที่เป็นใบเดียวกันเท่านั้น — '
+        + 'เส้นใบเสนอราคาของ ZORT ไม่มีช่องเลขที่เอกสาร เลขนี้จะไม่ถูกส่งไป '
+        + '(ถ้าอยากให้มีเลขอ้างอิงติดใบ ใส่คอลัมน์ "เอกสารอ้างอิง")')
+    }
     const key = suppliedRef || docNumber
     const party = text(get(partyField))
     const line: Line | null = bad ? null : { sku, name, qty: qty as number, price: price as number }
 
+    const extra = kind === 'quotation'
+      ? { phone: text(get('phone')) || undefined, reference: text(get('reference')) || undefined, note: text(get('note')) || undefined }
+      : {}
+
     if (!key) {
       // ไม่มีเลขอ้างอิง/เลขที่ใบ ⇒ ใบละแถว · ref จากเนื้อหาแถว
-      if (line) order.push({ key: autoRef(content), firstRow: rowNo, party, items: [line], parts: [content] })
+      if (line) order.push({ key: autoRef(content), firstRow: rowNo, party, items: [line], parts: [content], ...extra })
       continue
     }
     let g = groups.get(key)
-    if (!g) { g = { key, firstRow: rowNo, party, number: docNumber || undefined, items: [], parts: [] }; groups.set(key, g); order.push(g) }
+    if (!g) { g = { key, firstRow: rowNo, party, number: docNumber || undefined, items: [], parts: [], ...extra }; groups.set(key, g); order.push(g) }
     else if (party && g.party && party !== g.party) {
       errors.push({ row: rowNo, field: partyField,
         error: `ใบ ${key} มี${kind === 'sale' ? 'ลูกค้า' : 'ผู้ขาย'}ไม่ตรงกัน ("${g.party}" แถว ${g.firstRow} กับ "${party}") — แก้ให้ตรงก่อน` })
       g.party = ' conflict'
     } else if (party && !g.party) g.party = party
+    /* ช่องเสริมของใบเสนอราคา: แถวแรกที่มีค่าเป็นเจ้าของ — ไม่บังคับให้กรอกซ้ำทุกบรรทัด */
+    if (kind === 'quotation') {
+      const e = extra as { phone?: string; reference?: string; note?: string }
+      if (!g.phone && e.phone) g.phone = e.phone
+      if (!g.reference && e.reference) g.reference = e.reference
+      if (!g.note && e.note) g.note = e.note
+    }
     if (line) g.items.push(line)
   }
 
@@ -183,6 +217,34 @@ export function mapImportRows(kind: ImportKind, table: string[][]): ParseResult 
     if (!g.items.length) continue
     if (g.party === ' conflict') continue // ใบที่ลูกค้า/ผู้ขายชนกัน ไม่ส่ง (มี error แล้ว)
     const party = g.party || undefined
+    if (kind === 'quotation') {
+      /* 🔴 customer บังคับ — ท่อจะปฏิเสธอยู่แล้ว แต่ตีกลับที่นี่ได้บอก "แถวไหน" ซึ่งท่อบอกไม่ได้ */
+      if (!party) {
+        errors.push({ row: g.firstRow, field: 'customer', error: 'ใบเสนอราคาต้องมีชื่อลูกค้า' })
+        continue
+      }
+      if (party.length > 160) {
+        errors.push({ row: g.firstRow, field: 'customer', error: `ชื่อลูกค้ายาวเกิน 160 ตัวอักษร (${party.length})` })
+        continue
+      }
+      const ref80 = g.reference ?? ''
+      if (ref80.length > 80) {
+        errors.push({ row: g.firstRow, field: 'reference', error: `เอกสารอ้างอิงยาวเกิน 80 ตัวอักษร (${ref80.length})` })
+        continue
+      }
+      const ph = g.phone ?? ''
+      if (ph.length > 40) {
+        errors.push({ row: g.firstRow, field: 'phone', error: `เบอร์โทรยาวเกิน 40 ตัวอักษร (${ph.length})` })
+        continue
+      }
+      rows.push({
+        ref: g.key, customer: party, items: g.items,
+        ...(ph ? { phone: ph } : {}),
+        ...(ref80 ? { reference: ref80 } : {}),
+        ...(g.note ? { note: g.note } : {}),
+      })
+      continue
+    }
     rows.push(kind === 'sale'
       ? { ref: g.key, ...(g.number ? { number: g.number } : {}), customer: party, items: g.items }
       : { ref: g.key, vendor: party, items: g.items })

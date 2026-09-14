@@ -77,7 +77,35 @@ try {
     ok('เนื้อหาเดียวกันคนละชนิดได้ ref ต่างกัน', kinds)
   }
 
-  console.log('⑤ xlsx จริง (สร้างด้วย jszip): ลำดับ attribute · inlineStr · entity · หลายชีตต้องเตือน')
+  console.log('⑤ 🔴 ใบเสนอราคา: ราคาบังคับ · ลูกค้าบังคับ · เลขที่ใบไม่ถูกส่ง')
+  {
+    const csv = 'เลขที่ใบ,ลูกค้า,sku,name,qty,price,โทรศัพท์,เอกสารอ้างอิง,หมายเหตุ\n'
+      + 'Q-1,ร้านเอ,A,หนึ่ง,1,10,0812345678,PO-99,ส่งด่วน\n'
+      + 'Q-1,,B,สอง,2,20,,,\n'
+    const r = mapImportRows('quotation', parseCsv(csv))
+    ok('รวมเป็นใบเดียว 2 บรรทัด', r.rows.length === 1 && r.rows[0].items.length === 2, J(r.rows))
+    ok('ได้รูปตามท่อ ?addquotation (customer + items)', r.rows[0].customer === 'ร้านเอ', J(r.rows[0]))
+    ok('ช่องเสริมมาจากแถวแรกที่มีค่า ไม่ต้องกรอกซ้ำทุกบรรทัด',
+      r.rows[0].phone === '0812345678' && r.rows[0].reference === 'PO-99' && r.rows[0].note === 'ส่งด่วน', J(r.rows[0]))
+    ok('🔴 ไม่ส่ง number ไป ZORT (เส้นใบเสนอราคาไม่มีช่องนี้)', !('number' in r.rows[0]), J(r.rows[0]))
+    ok('มีคำเตือนว่าเลขที่ใบไม่ถูกส่ง (ไม่ทิ้งเงียบ)', r.warnings.some((w) => /เลขที่ใบ/.test(w)), J(r.warnings))
+
+    /* 🔴 เคสที่ใบนี้เกิดมาเพื่อกัน: ราคาหาย ⇒ ZORT สร้างใบ ฿0 ที่ลบไม่ได้ */
+    const noPrice = mapImportRows('quotation', parseCsv('ลูกค้า,sku,name,qty,price\nร้านบี,A,หนึ่ง,1,\n'))
+    ok('🔴 ไม่มีราคา ⇒ error และไม่ส่งแถวนั้น (กันใบ ฿0)',
+      noPrice.rows.length === 0 && noPrice.errors.some((e) => e.field === 'price'), J(noPrice))
+    const zero = mapImportRows('quotation', parseCsv('ลูกค้า,sku,name,qty,price\nร้านบี,A,หนึ่ง,1,0\n'))
+    ok('ราคา 0 ที่ "ตั้งใจใส่" ยังส่งได้ (ต่างจากราคาหาย)', zero.rows.length === 1 && zero.rows[0].items[0].price === 0, J(zero))
+
+    const noCust = mapImportRows('quotation', parseCsv('เลขอ้างอิง,sku,name,qty,price\nQ-2,A,หนึ่ง,1,10\n'))
+    ok('ไม่มีลูกค้า ⇒ error บอกเลขแถว และไม่ส่งใบนั้น',
+      noCust.rows.length === 0 && noCust.errors.some((e) => e.field === 'customer'), J(noCust))
+    const longC = mapImportRows('quotation', parseCsv(`ลูกค้า,sku,name,qty,price\n${'ก'.repeat(161)},A,หนึ่ง,1,10\n`))
+    ok('ชื่อลูกค้ายาวเกิน 160 ⇒ ตีกลับที่จอ ไม่ปล่อยให้ท่อปฏิเสธแล้วคนงง',
+      longC.rows.length === 0 && longC.errors.some((e) => e.field === 'customer'), J(longC.errors))
+  }
+
+  console.log('⑥ xlsx จริง (สร้างด้วย jszip): ลำดับ attribute · inlineStr · entity · หลายชีตต้องเตือน')
   {
     const zip = new JSZip()
     zip.file('xl/workbook.xml', '<workbook><sheets><sheet name="ขาย" sheetId="1"/><sheet name="อื่น" sheetId="2"/></sheets></workbook>')

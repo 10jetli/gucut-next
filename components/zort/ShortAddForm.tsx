@@ -41,6 +41,10 @@ export interface FieldSpec {
   /** รูปแบบที่ยอมรับ + คำอธิบายเวลาผิด (ต้องมาคู่กัน ไม่งั้นคนไม่รู้ว่าต้องพิมพ์ยังไง) */
   pattern?: RegExp
   patternHint?: string
+  /** ตัวเลือกแทนช่องพิมพ์ — ตัวแรกควรเป็น "ไม่ระบุ" ที่ค่าว่าง (จะไม่ถูกส่ง)
+   *  ⚠️ ค่าเริ่มต้นของช่องที่ไม่แน่ใจ **ต้องเป็น "ไม่ส่ง" เสมอ ไม่ใช่ 0**
+   *     ส่ง 0 = สั่งให้ ZORT ตั้งเป็น "Undefined" · ไม่ส่ง = ไม่ยุ่งกับค่าเดิมเลย คนละเรื่องกัน */
+  options?: { v: string; label: string }[]
   /** กินความกว้างทั้งแถว */
   wide?: boolean
   help?: ReactNode
@@ -166,13 +170,20 @@ export function ShortAddForm({
               <span className="block text-[11px] font-semibold text-gray-400 mb-1">
                 {f.label}{f.required && <span className="text-red-500"> *</span>}
               </span>
-              <input
-                className={inp}
-                value={v[f.k] ?? ''}
-                placeholder={f.ph}
-                inputMode={f.kind ? 'decimal' : undefined}
-                onChange={(e) => setV((o) => ({ ...o, [f.k]: e.target.value }))}
-              />
+              {f.options ? (
+                <select className={inp} value={v[f.k] ?? ''}
+                  onChange={(e) => setV((o) => ({ ...o, [f.k]: e.target.value }))}>
+                  {f.options.map((o) => <option key={o.v} value={o.v}>{o.label}</option>)}
+                </select>
+              ) : (
+                <input
+                  className={inp}
+                  value={v[f.k] ?? ''}
+                  placeholder={f.ph}
+                  inputMode={f.kind ? 'decimal' : undefined}
+                  onChange={(e) => setV((o) => ({ ...o, [f.k]: e.target.value }))}
+                />
+              )}
             </label>
             {f.help && <p className="text-[11.5px] text-gray-500 mt-1 leading-snug">{f.help}</p>}
           </div>

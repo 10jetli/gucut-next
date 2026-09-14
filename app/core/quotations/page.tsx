@@ -119,7 +119,7 @@ export default function QuotationsPage() {
         actions={
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
-            <Link href="/core/soon/quotation"
+            <Link href="/core/import?kind=quotation"
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้าไฟล์ (Excel)
             </Link>
