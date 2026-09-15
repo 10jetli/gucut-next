@@ -1,0 +1,100 @@
+// ตรวจ "จอขัดกับทะเบียน" — ใบกระดาน t_mu1yv5a2 (15 ก.ย. 2569)
+//
+// 🔴 **คลาสบั๊กที่ตัวนี้เกิดมาจับ** (เจอ 4 จุดในวันเดียว ใบ t_mu1wvgcw)
+//    ทะเบียนหน้า `lib/zort-menu.ts` ติด `builtAt` ให้ `product-edit` · `product-delete`
+//    ตั้งแต่ 14 ก.ย. = "ทำเสร็จแล้ว อยู่ที่นี่"
+//    แต่เมนู ⋮ ของสินค้ายังเขียนว่า "ยังไม่มีท่อเขียนกลับ ZORT" และปิดปุ่มไว้
+//    ⇒ **ระบบเดียวกันพูดคนละเรื่องอยู่ 1 วัน โดยไม่มีอะไรฟ้อง**
+//
+// 🔴 **ทำไม check-inherited จับคลาสนี้ไม่ได้**
+//    ตัวนั้นถามว่า "จอที่ใช้ตัวประกอบร่วมเดียวกัน พูดตรงกันไหม"
+//    ส่วนคลาสนี้คือ "จอพูดตรงกับ **ทะเบียน** ไหม" — คนละคำถาม คนละแหล่ง
+//
+// ════════════════════════════════════════════════════════════════════════
+// ⚠️ **ข้อจำกัด — อ่านก่อนเชื่อผลเขียว**
+//  ① ตัวนี้จับได้เฉพาะ **ความขัดแย้งที่เขียนเป็นโครงสร้าง** (ธงในทะเบียน vs รูปของเมนู)
+//     ❌ จับ "เหตุผลผิดแต่ข้อสรุปถูก" ไม่ได้ — เช่นกรณี wallet ที่จอเขียนเหตุผลถูก
+//        ส่วนทะเบียนเขียนเหตุผลผิดอยู่ 9 วัน · ทั้งคู่เป็นร้อยแก้ว เครื่องเทียบไม่ได้
+//     ❌ จับ "ฟอร์มกับตารางอ่านคนละที่เก็บ" (ใบ t_mu1ybgb1) ไม่ได้เช่นกัน
+//  ② `MENU_KEYS` เป็นรายชื่อที่คนต้องดูแล ⇒ **ตัวตรวจเช็คตัวเองว่ารายชื่อยังตรงกับไฟล์จริง**
+//     ป้ายที่ระบุไว้แต่หาไม่เจอในเมนู = ตกทันที (กันรายชื่อตกยุคเงียบ ๆ)
+// ════════════════════════════════════════════════════════════════════════
+//
+// รัน: node scripts/check-screen-vs-registry.mjs   (อยู่ใน prebuild · ตกได้)
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+
+const reg = readFileSync('lib/zort-menu.ts', 'utf8')
+const menu = readFileSync('lib/product-menu.ts', 'utf8')
+
+/* ── ทะเบียน: คีย์ → ธงที่ติดอยู่ ─────────────────────────────────────────
+   ตัดก้อนด้วย **ตำแหน่งคีย์ถัดไป** ไม่ใช่รูปวงเล็บ (บทเรียนซ้ำ 5 ครั้งของ check-soon) */
+const keyHits = [...reg.matchAll(/^ {2}'?([a-zA-Z0-9-]+)'?:\s*\{/gm)]
+const KEYS = new Map()
+keyHits.forEach((m, i) => {
+  const body = reg.slice(m.index, i + 1 < keyHits.length ? keyHits[i + 1].index : reg.length)
+  KEYS.set(m[1], {
+    builtAt: (body.match(/builtAt: '([^']+)'/) ?? [])[1] ?? null,
+    awaiting: /\bawaitingDecision:/.test(body),
+    impossible: /\bimpossible:/.test(body),
+  })
+})
+
+/* ── เส้นทางที่มีจอจริง ─────────────────────────────────────────────────── */
+const routes = new Set()
+const walk = (d, base) => {
+  for (const e of readdirSync(d)) {
+    if (e.startsWith('.') || e === 'node_modules') continue
+    const p = join(d, e)
+    if (statSync(p).isDirectory()) walk(p, `${base}/${e}`)
+    else if (e === 'page.tsx') routes.add(base || '/')
+  }
+}
+walk('app', '')
+
+/* ── สะพานระหว่าง "ป้ายบนเมนู" กับ "คีย์ในทะเบียน" ────────────────────────
+   🔴 เป็นรายชื่อที่คนดูแล **แต่ตัวตรวจไม่เชื่อมันลอย ๆ** — ป้ายไหนหาไม่เจอในไฟล์เมนู = ตก
+      (ถ้าไม่มีด่านนี้ วันหนึ่งมีคนแก้ชื่อป้าย แล้วตัวตรวจจะเขียวเพราะ "มองไม่เห็น") */
+const MENU_KEYS = [
+  { label: 'แก้ไข', key: 'product-edit' },
+  { label: 'ลบ', key: 'product-delete' },
+  { label: 'พิมพ์เอกสาร (ฉลาก/บาร์โค้ด)', key: 'product-print' },
+]
+
+let fail = 0
+const bad = (msg) => { fail++; console.log(`🔴 ${msg}`) }
+
+console.log('① ทะเบียนบอกว่าทำเสร็จแล้ว ⇒ เส้นทางนั้นต้องมีจอจริง')
+for (const [k, v] of KEYS) {
+  if (!v.builtAt) continue
+  const path = v.builtAt.split('?')[0].split('#')[0]
+  if (!routes.has(path)) bad(`คีย์ '${k}' ติด builtAt: '${v.builtAt}' แต่ไม่มีจอที่เส้นทางนั้น`)
+}
+console.log(`   ตรวจ ${[...KEYS.values()].filter((v) => v.builtAt).length} คีย์`)
+
+console.log('② เมนูกับทะเบียนต้องไม่พูดคนละเรื่อง')
+for (const { label, key } of MENU_KEYS) {
+  /* ด่านกันรายชื่อตกยุค: ป้ายต้องยังอยู่ในไฟล์เมนูจริง */
+  const at = menu.indexOf(`label: '${label}'`)
+  if (at === -1) {
+    bad(`รายชื่อในตัวตรวจอ้างป้าย '${label}' แต่หาไม่เจอใน lib/product-menu.ts — ป้ายถูกแก้ชื่อ?`)
+    continue
+  }
+  const info = KEYS.get(key)
+  if (!info) { bad(`รายชื่อในตัวตรวจอ้างคีย์ '${key}' แต่ไม่มีในทะเบียน`); continue }
+  /* ดูว่ารายการเมนูนั้นถูกปิดไว้ไหม — อ่านจากก้อนเดียวกับป้าย */
+  const chunk = menu.slice(at, at + 400)
+  const disabled = /disabled:/.test(chunk.split('},')[0])
+  if (disabled && info.builtAt) {
+    bad(`เมนู '${label}' ปิดไว้ (disabled) แต่ทะเบียนคีย์ '${key}' ติด builtAt: '${info.builtAt}'`
+      + '\n      ⇒ ทะเบียนบอกว่าทำเสร็จแล้ว เมนูบอกว่ายังทำไม่ได้ — ระบบเดียวกันพูดคนละเรื่อง')
+  }
+  if (disabled && info.awaiting) {
+    bad(`เมนู '${label}' ปิดไว้แบบไม่มีทางไป แต่ทะเบียนคีย์ '${key}' บอกว่า "ทำได้ แต่รอตัดสิน"`
+      + '\n      ⇒ ควรพาไปหน้าที่อธิบายว่ารออะไร ไม่ใช่ปิดตายเหมือนทำไม่ได้')
+  }
+}
+console.log(`   ตรวจ ${MENU_KEYS.length} คู่ป้าย↔คีย์`)
+
+console.log(fail ? `\n❌ พบความขัดแย้ง ${fail} จุด` : '\n✅ จอกับทะเบียนพูดตรงกัน')
+process.exit(fail ? 1 : 0)
