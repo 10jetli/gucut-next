@@ -17,7 +17,7 @@ import ExportButton from '@/components/zort/ExportButton'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
-import { useSkuImages } from '@/lib/sku-images'
+import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import {
@@ -28,6 +28,11 @@ import BlockedStock from '@/components/zort/BlockedStock'
 
 interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
+  /** 🖼️ รูปจาก ZORT (ท่อ fc52832 + e2e9634) — `imageFile` คือรูป**ย่อในถังเรา** ใช้กับตารางยาวได้
+   *  `imagePath` เป็นไฟล์ดิบ **ห้ามใช้ในตารางนี้** · `''` = ZORT ไม่มีรูป · `null` = ยังไม่รู้
+   *  ลำดับทั้งหมดอยู่ที่ `lib/sku-images.ts` ที่เดียว (มีเทสคุม) */
+  imageFile?: string | null
+  imagePath?: string | null
   /** ราคาซื้อ — **null = ยังไม่ได้กรอก ไม่ใช่ 0** ต้องแสดง "—" ห้ามแสดง ฿0 (281 ตัวเป็นแบบนี้) */
   buy?: number | null
   /** พร้อมขาย — **null = ยังไม่มีในทะเบียน ห้ามเดาว่าเท่ากับคงเหลือ** (ต่างจากคงเหลือจริง 155 ตัว) */
@@ -491,17 +496,28 @@ function CoreStockInner() {
                         ไม่มีรูป = กล่องเทา ห้ามปล่อยช่องว่าง แถวจะเบี้ยวและดูเหมือนโหลดไม่เสร็จ */}
                     <td className={TD}>
                       <span className="flex items-start gap-2.5">
-                        {imgOf(r.sku)
+                        {/* 🖼️ ลำดับ: แผนที่เรา → รูปย่อของ ZORT ในถังเรา → (ไฟล์ดิบ **ห้าม** ในตารางนี้)
+                               ⇒ ส่ง allowRaw = false ตรง ๆ กันไฟล์ 2 MB หลุดเข้ามาหลายสิบแถว */}
+                        {pickImage(imgOf(r.sku), r, 128, false)
                           ? (
                             // eslint-disable-next-line @next/next/no-img-element
                             <img
-                              src={imgOf(r.sku) as string}
+                              src={pickImage(imgOf(r.sku), r, 128, false) as string}
                               alt=""
                               loading="lazy"
                               className="w-10 h-10 rounded border border-gray-200 object-cover bg-white shrink-0"
                             />
                           )
-                          : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0" />}
+                          : (
+                            /* ไม่มีรูป — กล่องเทาเหมือนเดิม แต่ **บอกเหตุผลผ่าน title** ให้ต่างกันสองแบบ
+                               (ใส่ข้อความในตารางทุกแถวจะรก ⇒ ใช้ tooltip · หน้ารายละเอียดเขียนเต็ม) */
+                            <span
+                              className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0"
+                              title={noImageReason(r) === 'zort-none'
+                                ? 'ZORT ไม่มีรูปของรหัสนี้ — ต้องถ่ายรูปเพิ่ม'
+                                : 'ยังไม่รู้ว่ามีรูปไหม (ยังไม่ซิงก์ หรือไม่อยู่ในทะเบียนสินค้า)'}
+                            />
+                          )}
                         <span className="min-w-0">
                       {/* 🔴 เคยเป็น span สีฟ้าที่กดไม่ได้ — เจ้าของร้านกดจากมือถือ 5 จุดแล้วแจ้งว่า
                           "กดเข้าสินค้าไม่ได้เลย" · **สีฟ้าในตาราง = สัญญาว่ากดได้**

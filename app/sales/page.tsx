@@ -343,6 +343,14 @@ export default function SalesReportPage() {
   const [advOpen, setAdvOpen] = useState(false)
   /** ⑥ ช่องค้นหาเหนือตาราง — กรอง **เฉพาะแถวที่โหลดมาแล้ว** ⇒ ต้องเขียนขอบเขตไว้ข้าง ๆ */
   const [tableQ, setTableQ] = useState('')
+  /* 🏬 **ยอดขายตามคลัง/สาขา** — แท็บนี้เดิมกรอง "ช่องทางที่ชื่อมีคำว่า POS/หน้าร้าน"
+     ซึ่งเป็น **คนละแกนกับ ZORT** (ZORT แบ่งตาม *คลัง* โกดัง/KLD/ANJ ไม่ใช่ช่องทางขาย)
+     ตอนนี้ท่อมี `warehouse_code` แล้ว (gucut-web 270f04e) ⇒ แบ่งตามคลังจริงได้
+     🔴 **ข้อมูลคลังเต็มเฉพาะใบ 1–15 ก.ย. 2569** ใบก่อนหน้าเป็น null จนกว่าจะกวาดย้อนหลังเสร็จ
+        ⇒ ใบที่ยังไม่รู้คลัง **ต้องเป็นกองของตัวเอง** ห้ามยัดเข้าคลังไหน ห้ามตัดทิ้ง (ฝั่งท่อกำชับ) */
+  const [whSales, setWhSales] = useState<{ code: string; name: string; orders: number; sales: number }[] | null>(null)
+  const [whSalesErr, setWhSalesErr] = useState('')
+  const [whLoading, setWhLoading] = useState(false)
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -440,16 +448,47 @@ export default function SalesReportPage() {
 
   useEffect(() => { load(days) }, [load, days])
 
+  /* 🏬 ยอดตามคลัง — ยิง **เฉพาะตอนเปิดแท็บนี้** (ทีละคลัง + ยอดรวม) ไม่ยิงทิ้งไว้ตอนเปิดหน้า
+     ⚠️ ตั้งใจยิงทีละคลังแทนที่จะดึงใบทั้งหมดมานับเอง เพราะ 3 เดือนมีหลายพันใบ
+        (ยิง 4 ครั้งเบากว่าดึงหลายพันแถวมาก และได้ยอดที่เซิร์ฟเวอร์รวมให้ ไม่ใช่เรานับเอง) */
+  useEffect(() => {
+    if (tab !== 'branch' || !report) return
+    let dead = false
+    setWhLoading(true); setWhSalesErr('')
+    const { from, to } = report.range
+    const qs = (extra = '') => `/api/web/core?list=orders&from=${from}&to=${to}&limit=1&cancelled=1${extra}`
+    fetch('/api/web/core?list=warehouses')
+      .then((r) => r.json())
+      .then(async (w) => {
+        const list: { code: string; name: string }[] = Array.isArray(w?.warehouses) ? w.warehouses : []
+        if (!list.length) throw new Error('ท่อไม่ได้ส่งรายชื่อคลังมา')
+        const rows: { code: string; name: string; orders: number; sales: number }[] = []
+        for (const wh of list) {
+          // eslint-disable-next-line no-await-in-loop
+          const d = await fetch(qs(`&warehouse=${encodeURIComponent(wh.code)}`)).then((x) => x.json())
+          if (d?.error) throw new Error(String(d.error))
+          rows.push({
+            code: wh.code, name: wh.name || wh.code,
+            orders: Number(d?.total) || 0,
+            sales: Number(d?.totalAmount) || 0,
+          })
+        }
+        if (!dead) { setWhSales(rows); setWhSalesErr('') }
+      })
+      .catch((e) => { if (!dead) { setWhSales(null); setWhSalesErr(String(e instanceof Error ? e.message : e)) } })
+      .finally(() => { if (!dead) setWhLoading(false) })
+    return () => { dead = true }
+  }, [tab, report])
+
 
   const grouped = report ? groupDaily(report.daily, bucket) : []
   // ⚠️ แยก "ช่องทางมาร์เก็ตเพลส" กับ "คลัง/สาขา" ด้วยชื่อช่องทางจริง ไม่ใช่เดาจากลำดับ
   const MKT = /shopee|lazada|tiktok/i
-  const POSCH = /pos|หน้าร้าน/i
   const chans = report?.channels ?? []
   const shown =
-    tab === 'mkt' ? chans.filter((c) => MKT.test(c.name))
-      : tab === 'branch' ? chans.filter((c) => POSCH.test(c.name))
-        : chans
+    /* 🔄 **แท็บ branch ไม่ได้ใช้ตัวนี้แล้ว** (15 ก.ย. 2569) — เดิมกรองช่องทางที่ชื่อมีคำว่า POS/หน้าร้าน
+       ซึ่งเป็นคนละแกนกับ ZORT (ZORT แบ่งตาม *คลัง*) ⇒ แท็บนั้นมีตารางของตัวเองแล้ว */
+    tab === 'mkt' ? chans.filter((c) => MKT.test(c.name)) : chans
   const maxShown = Math.max(...shown.map((c) => c.sales), 1)
 
   return (
@@ -743,10 +782,94 @@ export default function SalesReportPage() {
             </>
           )}
 
-          {tab !== 'all' && (
+          {/* 🏬 **แท็บตามคลัง/สาขา — แบ่งตามคลังจริงแบบ ZORT**
+                 ผัง ZORT ที่กดดูเอง 15 ก.ย. 2569 (`/Dashboard/SalesReport` → แท็บนี้):
+                 คอลัมน์ คลัง/สาขา · จำนวนรายการ · จำนวนรายการขาย · จำนวนรายการรายรับคืน · ยอดขาย(บาท)
+                 ⇒ ของเราทำได้ 3 คอลัมน์ (คลัง · จำนวนใบขาย · ยอดขาย) · ใบรับคืนรายคลัง **ท่อยังไม่มี** ⇒ ขีด ไม่เดา */}
+          {tab === 'branch' && (
+            <Card padded={false}>
+              <p className="text-[15px] font-semibold text-gray-900 px-4 md:px-5 pt-4">ยอดขายตามคลัง/สาขา</p>
+              <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded mx-4 md:mx-5 mt-2 px-3 py-2 leading-relaxed">
+                ⚠️ <b>คลังของใบเพิ่งเริ่มเก็บ</b> — ตอนนี้มีครบเฉพาะใบตั้งแต่ <b>1 ก.ย. 2569</b> เป็นต้นมา
+                {' '}ใบเก่ากว่านั้นยัง<b>ไม่รู้ว่าอยู่คลังไหน</b> (กำลังทยอยกวาดย้อนหลัง)
+                <br />⇒ กอง &ldquo;ยังไม่รู้คลัง&rdquo; ข้างล่างคือใบพวกนั้น — <b>ไม่ได้แปลว่าไม่มีคลัง</b>
+                {' '}และ<b>ไม่ได้ถูกยัดเข้าคลังไหน</b> · ตัวเลขรายคลังจะนิ่งหลังกวาดย้อนหลังเสร็จ
+              </p>
+              <TableWrap>
+                <table className="w-full min-w-[620px]">
+                  <thead className="bg-white border-b border-gray-200">
+                    <tr>
+                      <th className={TH}>คลัง / สาขา</th>
+                      <th className={THR}>จำนวนใบขาย</th>
+                      <th className={THR}>ยอดขาย(บาท)</th>
+                      <th className={THR}>ใบรับคืน</th>
+                      <th className={TH} style={{ width: 160 }}>สัดส่วน</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {whLoading && !whSales && (
+                      <tr><td colSpan={5} className="px-3 py-4 text-[12.5px] text-gray-400">กำลังถามยอดทีละคลัง…</td></tr>
+                    )}
+                    {whSalesErr && (
+                      <tr><td colSpan={5} className="px-3 py-4 text-[12.5px] text-red-700">
+                        ⚠️ ดึงยอดตามคลังไม่สำเร็จ: {whSalesErr} — <b>ไม่ได้แปลว่าไม่มียอด</b>
+                      </td></tr>
+                    )}
+                    {whSales?.map((w) => (
+                      <tr key={w.code} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                        <td className={TD}>{w.name} <span className="text-gray-400">({w.code})</span></td>
+                        <td className={TDR}>{fmtNum(w.orders)}</td>
+                        <td className={TDR}>{fmtMoney(w.sales)}</td>
+                        {/* 🔴 ท่อยังไม่มีใบรับคืนรายคลัง ⇒ ขีด + บอกเหตุผล ห้ามใส่ 0 (0 แปลว่าไม่มีใครคืนของ) */}
+                        <td className={`${TDR} text-gray-300`} title="ท่อยังไม่แยกใบรับคืนตามคลัง">—</td>
+                        <td className={TD}>
+                          <span className="block h-2 rounded-full bg-gray-100 overflow-hidden">
+                            <span className="block h-full rounded-full bg-violet-400"
+                              style={{ width: `${Math.max(2, (w.sales / Math.max(1, report.totals.sales)) * 100)}%` }} />
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                    {/* 🔴 กอง "ยังไม่รู้คลัง" = ยอดรวมทั้งช่วง ลบผลรวมของคลังที่รู้
+                           ต้องโชว์เสมอเมื่อมากกว่า 0 · ห้ามซ่อน เพราะมันคือส่วนที่ยังตอบไม่ได้ */}
+                    {whSales && (() => {
+                      const knownOrders = whSales.reduce((a, w) => a + w.orders, 0)
+                      const knownSales = whSales.reduce((a, w) => a + w.sales, 0)
+                      const restOrders = Math.max(0, (report.totals.orders || 0) - knownOrders)
+                      const restSales = Math.max(0, (report.totals.sales || 0) - knownSales)
+                      if (restOrders === 0 && restSales === 0) return null
+                      return (
+                        <tr className="border-b border-gray-100 last:border-0 bg-amber-50/40">
+                          <td className={TD}>
+                            <b>ยังไม่รู้คลัง</b>
+                            <span className="block text-[11px] text-gray-500">ใบก่อนช่วงที่เริ่มเก็บคลัง — ยังกวาดย้อนหลังไม่ถึง</span>
+                          </td>
+                          <td className={TDR}>{fmtNum(restOrders)}</td>
+                          <td className={TDR}>{fmtMoney(restSales)}</td>
+                          <td className={`${TDR} text-gray-300`}>—</td>
+                          <td className={TD}>
+                            <span className="block h-2 rounded-full bg-gray-100 overflow-hidden">
+                              <span className="block h-full rounded-full bg-[repeating-linear-gradient(45deg,#d1d5db,#d1d5db_4px,#f3f4f6_4px,#f3f4f6_8px)]"
+                                style={{ width: `${Math.max(2, (restSales / Math.max(1, report.totals.sales)) * 100)}%` }} />
+                            </span>
+                          </td>
+                        </tr>
+                      )
+                    })()}
+                  </tbody>
+                </table>
+              </TableWrap>
+              <p className="text-[11.5px] text-gray-400 px-4 md:px-5 py-3 leading-relaxed">
+                ยอดรายคลังมาจากการถามเซิร์ฟเวอร์ทีละคลัง (กรองด้วยคลังของใบ) — ไม่ได้นับเองจากแถวที่โหลดมา
+                <br />⚠️ ZORT มีคอลัมน์ <b>จำนวนรายการรายรับคืน</b> ด้วย — ของเรายังไม่มี เพราะท่อยังไม่แยกใบรับคืนตามคลัง
+              </p>
+            </Card>
+          )}
+
+          {tab !== 'all' && tab !== 'branch' && (
             <Card padded={false}>
               <p className="text-[15px] font-semibold text-gray-900 px-4 md:px-5 pt-4">
-                {tab === 'branch' ? 'ยอดขายตามคลัง/สาขา' : tab === 'mkt' ? 'ยอดขายตาม Marketplace' : 'ยอดขายตามช่องทางการขาย'}
+                {tab === 'mkt' ? 'ยอดขายตาม Marketplace' : 'ยอดขายตามช่องทางการขาย'}
               </p>
               <TableWrap>
                 <table className="w-full min-w-[620px]">
@@ -762,9 +885,9 @@ export default function SalesReportPage() {
                   <tbody>
                     {shown.length === 0 && (
                       <EmptyState cols={5} icon="🏪" title="ยังไม่มียอดขายในกลุ่มนี้"
-                        detail={tab === 'branch'
-                          ? 'ยอดขายหน้าร้านจะขึ้นเมื่อเปิดบิลผ่านจอขายหน้าร้าน'
-                          : 'ออเดอร์จากมาร์เก็ตเพลสจะเข้ามาในรอบซิงก์ถัดไป'} />
+                        detail={tab === 'mkt'
+                          ? 'ออเดอร์จากมาร์เก็ตเพลสจะเข้ามาในรอบซิงก์ถัดไป'
+                          : 'ยังไม่มีใบขายของช่องทางไหนในช่วงนี้'} />
                     )}
                     {shown.map((c) => (
                       <tr key={c.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">

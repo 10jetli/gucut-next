@@ -18,7 +18,7 @@ import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { useSkuImages } from '@/lib/sku-images'
+import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { productMenuItems } from '@/lib/product-menu'
 import SkuCodes from '@/components/zort/SkuCodes'
 import StockCard from '@/components/zort/StockCard'
@@ -44,6 +44,8 @@ interface Row {
    *  🔴 ลำดับที่ฝั่งท่อกำหนด: ใช้ **แผนที่รูปย่อของเราก่อนเสมอ** ไม่มีค่อยตกมาที่ช่องนี้
    *     และใช้ได้เฉพาะ **หน้ารายละเอียด/แถวน้อย ๆ** เท่านั้น (จอที่มีเป็นร้อยแถวห้ามใช้) */
   imagePath?: string | null
+  /** ชื่อไฟล์รูปย่อในถังเรา (ย่อจากรูป ZORT แล้ว) — มาก่อนไฟล์ดิบเสมอ */
+  imageFile?: string | null
 }
 /** หนึ่งแถวในสต็อกการ์ด — มาจาก `list=stockcard` (ขาย · ซื้อ · ปรับด้วยมือของเรา)
  *  ⚠️ ไม่มี `จาก` / `ไป` / `คงเหลือ` เพราะกระจกใบโอนเก็บแค่หัวใบ ดูรายละเอียดที่ท้ายการ์ด */
@@ -449,11 +451,11 @@ export default function ProductDetailPage() {
                    ③ ไม่มีทั้งคู่ ⇒ **แยกให้ออกว่า "ZORT ไม่มีรูป" กับ "ยังไม่รู้"**
                       กล่องเทาเฉย ๆ บอกไม่ได้ว่าต้องไปถ่ายรูปเพิ่ม หรือรอระบบซิงก์
                 ⚠️ ไฟล์ดิบใหญ่ ⇒ ใส่ `loading="lazy"` + กรอบขนาดตายตัวกันจอกระตุก */}
-            {img || row.imagePath
+            {pickImage(img, row, 640, true)
               ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={img || (row.imagePath as string)}
+                  src={pickImage(img, row, 640, true) as string}
                   alt=""
                   loading="lazy"
                   className="w-[220px] h-[160px] rounded border border-gray-200 object-cover bg-white"
@@ -463,7 +465,7 @@ export default function ProductDetailPage() {
                 <span className="w-[220px] h-[160px] rounded border border-gray-200 bg-gray-100 flex flex-col items-center justify-center gap-1 text-center px-3">
                   <span className="text-[28px] text-gray-300">🖼️</span>
                   <span className="text-[11.5px] text-gray-500">
-                    {row.imagePath === ''
+                    {noImageReason(row) === 'zort-none'
                       ? 'ZORT ไม่มีรูปของรหัสนี้ — ต้องถ่ายรูปเพิ่ม'
                       : 'ยังไม่รู้ว่ามีรูปไหม (รหัสนี้ไม่อยู่ในทะเบียนสินค้า หรือยังไม่ซิงก์)'}
                   </span>

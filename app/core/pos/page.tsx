@@ -31,12 +31,16 @@ import { useSearchParams } from 'next/navigation'
 import { fmtBaht } from '@/lib/format'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, Pill } from '@/components/zort'
-import { useSkuImages } from '@/lib/sku-images'
+import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 
 interface Branch { code: string; name: string }
 interface Found {
   sku: string; name: string; price: number; qty: number
   permit?: Permit; permitModel?: string; permitWhy?: string
+  /** 🖼️ รูปย่อของ ZORT ในถังเรา (ท่อ e2e9634) — จอ POS ใช้ได้เพราะเป็นขั้นย่อ
+   *  ⚠️ **ไม่ใช้ไฟล์ดิบที่นี่** — แท็บเล็ตหน้าร้านโหลดรูปละ 2 MB ไม่ไหว (ลำดับอยู่ที่ lib/sku-images.ts) */
+  imageFile?: string | null
+  imagePath?: string | null
 }
 /** ⚠️ `zort: false` = หมวดนี้ **จัดจากชื่อสินค้าให้** ไม่ได้มาจากทะเบียนสินค้า ZORT
  *  ของจริงตอนนี้ 15 จาก 57 หมวดเป็นแบบนี้ (ครอบ 139 รายการที่ยังไม่มีหมวดใน ZORT)
@@ -953,13 +957,19 @@ function CorePosInner() {
               onClick={() => addToCart(f)}
               className="w-full flex items-center gap-3 px-3 py-3 border-t border-gray-100 text-left hover:bg-blue-50 transition-colors"
             >
-              {imgOf(f.sku)
+              {/* 🖼️ แผนที่เรา → รูปย่อของ ZORT ในถังเรา · **ไม่ตกถึงไฟล์ดิบ** (allowRaw=false) */}
+              {pickImage(imgOf(f.sku), f, 128, false)
                 ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={imgOf(f.sku) as string} alt="" loading="lazy"
+                  <img src={pickImage(imgOf(f.sku), f, 128, false) as string} alt="" loading="lazy"
                     className="w-11 h-11 rounded border border-gray-200 object-cover bg-white shrink-0" />
                 )
-                : <span className="w-11 h-11 rounded border border-gray-200 bg-gray-100 shrink-0" />}
+                : (
+                  <span className="w-11 h-11 rounded border border-gray-200 bg-gray-100 shrink-0"
+                    title={noImageReason(f) === 'zort-none'
+                      ? 'ZORT ไม่มีรูปของรหัสนี้ — ต้องถ่ายรูปเพิ่ม'
+                      : 'ยังไม่รู้ว่ามีรูปไหม (ยังไม่ซิงก์ หรือไม่อยู่ในทะเบียนสินค้า)'} />
+                )}
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium text-gray-800 truncate">
                   {f.name || f.sku}

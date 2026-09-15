@@ -62,3 +62,43 @@ export function useSkuImages(step: ImgStep = 128) {
     return f ? `${IMG_BASE}/${step}/${f}` : null
   }
 }
+
+/* ── รูปสินค้า: ลำดับที่ใช้ทั้งระบบ ──────────────────────────────────────────
+   🔴 **ลำดับนี้ฝั่งท่อเป็นคนกำหนด** (gucut-web fc52832 + e2e9634 · 15 ก.ย. 2569)
+     ① `sku-images.json` ของเรา — รูปย่อเดิม มีครบ 2,337 รหัส เร็วที่สุด
+     ② `imageFile` — รูปของ ZORT ที่ **ย่อเข้าถังเราแล้ว** (webp · มี 4 ขั้นเหมือนกัน)
+        ⇒ ใช้กับ **ตารางร้อยแถวได้** เพราะเป็นขั้นย่อ ไม่ใช่ไฟล์ดิบ
+     ③ `imagePath` — ลิงก์ไฟล์ดิบของ ZORT/มาร์เก็ตเพลส (บางใบเกือบ 2 MB · ลิงก์มาร์เก็ตเพลสตายได้)
+        ⇒ **หน้ารายละเอียดเท่านั้น** (ส่ง `allowRaw` มาเอง) ห้ามใช้ในตารางยาว
+     ④ ไม่มีเลย ⇒ คืน null แล้วให้จอเขียนว่าเป็นกรณีไหน:
+        `imagePath === ''` = ZORT ไม่มีรูป (ต้องถ่ายเพิ่ม) · `null/undefined` = ยังไม่รู้
+   ⚠️ `imageFile` เป็น null ได้ทั้งที่ ZORT มีรูป — แปลว่า "ยังย่อไม่เสร็จ/ZORT เพิ่งเปลี่ยนรูป"
+      ⇒ ตกไปข้อ ③ เองตามลำดับ ไม่ต้องมีใครจำ */
+
+export interface SkuImageFields {
+  /** ชื่อไฟล์ในถังเรา (ย่อแล้ว) — ใช้กับทุกจอ */
+  imageFile?: string | null
+  /** ลิงก์ไฟล์ดิบจาก ZORT — หน้ารายละเอียดเท่านั้น · `''` = ZORT ไม่มีรูป */
+  imagePath?: string | null
+}
+
+/** ป้ายบอกว่า "ทำไมไม่มีรูป" — สองกรณีนี้พาไปคนละการกระทำ ห้ามรวบเป็นอันเดียว */
+export function noImageReason(row: SkuImageFields | null | undefined): 'zort-none' | 'unknown' {
+  return row?.imagePath === '' ? 'zort-none' : 'unknown'
+}
+
+/** URL รูปตามลำดับข้างบน · คืน null เมื่อไม่มีรูปที่ใช้ได้
+ *  @param fromMap ผลของ `useSkuImages(step)` สำหรับ sku นั้น (ข้อ ①)
+ *  @param allowRaw อนุญาตให้ตกถึงไฟล์ดิบไหม — **จอที่มีหลายสิบแถวต้องเป็น false** */
+export function pickImage(
+  fromMap: string | null,
+  row: SkuImageFields | null | undefined,
+  step: ImgStep = 128,
+  allowRaw = false,
+): string | null {
+  if (fromMap) return fromMap
+  const file = typeof row?.imageFile === 'string' ? row.imageFile.trim() : ''
+  if (file) return `${IMG_BASE}/${step}/${file}`
+  if (allowRaw && typeof row?.imagePath === 'string' && row.imagePath.trim()) return row.imagePath
+  return null
+}

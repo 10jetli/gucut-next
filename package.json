@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev -p 3001",
-    "prebuild": "node scripts/gen-arch.mjs && node scripts/check-nav.mjs && node scripts/check-soon.mjs && node scripts/check-inherited.mjs && node scripts/check-screen-vs-registry.mjs && node scripts/check-barcode.mjs && node scripts/tests/qr.test.mjs && node scripts/tests/csv-export.test.mjs && node scripts/tests/order-money.test.mjs && node scripts/tests/roles.test.mjs && node scripts/tests/recipe-fresh.test.mjs && node scripts/tests/bundle-sales.test.mjs && node scripts/tests/doc-error.test.mjs && node scripts/tests/remembered-filter.test.mjs && node scripts/check-claims.mjs && node scripts/check-honesty.mjs",
+    "prebuild": "node scripts/gen-arch.mjs && node scripts/check-nav.mjs && node scripts/check-soon.mjs && node scripts/check-inherited.mjs && node scripts/check-screen-vs-registry.mjs && node scripts/check-barcode.mjs && node scripts/tests/qr.test.mjs && node scripts/tests/csv-export.test.mjs && node scripts/tests/order-money.test.mjs && node scripts/tests/roles.test.mjs && node scripts/tests/recipe-fresh.test.mjs && node scripts/tests/bundle-sales.test.mjs && node scripts/tests/doc-error.test.mjs && node scripts/tests/remembered-filter.test.mjs && node scripts/tests/sku-images.test.mjs && node scripts/check-claims.mjs && node scripts/check-honesty.mjs",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "next lint",
