@@ -580,6 +580,19 @@ export default function CoreSalesPage() {
                           ที่กดไม่ได้ = ผิดสัญญาสีฟ้าที่จอหมวดหมู่จดไว้เอง · กวาดคลาส 8 ก.ย. 2569) */}
                       <button onClick={() => openDetail(r.id, i)}
                         className="text-blue-600 font-medium hover:underline">{r.number}</button>
+                      {/* 🔴 **เลขที่ใบซ้ำกันข้ามร้านจริง** (ฝั่งท่อจับได้ 15 ก.ย. 2569)
+                          z1 และ z2 เดินเลขคนละชุด ⇒ `SO-202503029` มีทั้งสองร้าน **คนละใบ คนละยอด**
+                          (z1 ฿7,757 ค้างชำระ · z2 ฿450 จ่ายแล้ว) · ตัวกรองร้านตั้งต้นคือ "ทุกร้าน"
+                          ⇒ ตารางนี้วางใบจากสองร้านปนกันโดยโชว์แต่เลข = คนอ่านเชื่อว่าเป็นชุดเดียวกัน
+                             (โรคเดียวกับกฎข้อ 4 ใน CLAUDE.md: ของจากสองแหล่งห้ามวางคู่กันเฉย ๆ)
+                          ⇒ ติดป้ายสาขาเมื่อ **ยังไม่ได้เลือกร้าน** เท่านั้น — เลือกแล้วป้ายจะซ้ำกับตัวกรอง
+                          ⚠️ สามสถานะ: ไม่ใช่ z1/z2 ⇒ **ไม่ติดป้าย** ห้ามเดาว่าเป็นสาขา 1 */}
+                      {!store && (r.source === 'z1' || r.source === 'z2') && (
+                        <span className="ml-1.5 align-middle text-[10.5px] text-gray-500
+                          border border-gray-200 bg-gray-50 rounded px-1 py-[1px]">
+                          {r.source === 'z1' ? 'สาขา 1' : 'สาขา 2'}
+                        </span>
+                      )}
                     </td>
                     <td className={`${TD} max-w-[190px] truncate`}>{r.customer || '—'}</td>
                     <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>
@@ -646,8 +659,15 @@ export default function CoreSalesPage() {
                         items={[
                           { label: 'เปิดรายละเอียด', onClick: () => openDetail(r.id, i) },
                           {
+                            /* คัดลอกพร้อมร้าน — เลขที่ใบเปล่า ๆ ออกจากจอนี้ไปแล้ว **ไม่มีใครรู้ว่าร้านไหน**
+                               (z1/z2 เดินเลขซ้ำกันได้) · รูป `z1/SO-…` เป็นรูปเดียวกับที่ไฟล์ทีมใช้
+                               ⚠️ ไม่รู้ร้าน ⇒ คัดลอกเลขเปล่า ไม่เติมคำเดา */
                             label: 'คัดลอกเลขที่ใบ',
-                            onClick: () => { navigator.clipboard?.writeText(r.number).catch(() => {}) },
+                            onClick: () => {
+                              const withStore = r.source === 'z1' || r.source === 'z2'
+                                ? `${r.source}/${r.number}` : r.number
+                              navigator.clipboard?.writeText(withStore).catch(() => {})
+                            },
                           },
                           {
                             label: `ดูเฉพาะ ${r.channel || 'ช่องทางนี้'}`,
