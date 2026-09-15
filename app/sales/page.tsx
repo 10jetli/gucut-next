@@ -115,11 +115,16 @@ async function fetchDaily(days: number) {
 }
 
 // ⚠️ ZORT ตั้งต้นที่ "ย้อนหลัง 3 เดือน" — เราจึงต้องมีช่วงนั้นให้เลือกด้วย
+/* ช่วงเวลา — ไล่ให้ครบตามที่ ZORT มี (กดดูเอง 15 ก.ย. 2569: 1/3/6 เดือน · 1 ปี · วันนี้ · เมื่อวาน · เดือนนี้ · เดือนที่แล้ว)
+   ⚠️ **ของเรายังไม่มี "เมื่อวาน · เดือนนี้ · เดือนที่แล้ว"** เพราะจอนี้คิดช่วงจาก "ย้อนหลัง N วัน" อย่างเดียว
+      ⇒ สามอันนั้นต้องเลือกช่วงวันเองได้ก่อน (งานคนละชิ้น) · เขียนไว้ในรายงานแล้ว ไม่แกล้งใส่ตัวเลือกที่ให้ช่วงผิด */
 const PERIODS = [
   { days: 1, label: 'วันนี้' },
   { days: 7, label: 'ย้อนหลัง 7 วัน' },
   { days: 30, label: 'ย้อนหลัง 1 เดือน' },
   { days: 90, label: 'ย้อนหลัง 3 เดือน' },
+  { days: 180, label: 'ย้อนหลัง 6 เดือน' },
+  { days: 365, label: 'ย้อนหลัง 1 ปี' },
 ]
 
 /** รวมยอดรายวันเป็นถัง วัน/เดือน/ไตรมาส/ปี — ZORT มีปุ่มสี่อันนี้ที่มุมขวาล่างของกราฟ */
@@ -195,6 +200,41 @@ function downloadSummary(report: Report) {
   a.download = `สรุปยอดขาย-${report.range.from}-ถึง-${report.range.to}.csv`
   a.click()
   URL.revokeObjectURL(url)
+}
+
+/* 📤 ปุ่ม Excel เพิ่มตามที่ ZORT มี (ZORT มี 7 ปุ่มในหน้านี้ · ของเราเดิมมี 1)
+   🔴 **ทำเฉพาะที่ข้อมูลอยู่บนจอแล้ว** — ตามสินค้า กับ รายวัน
+      ที่ยังไม่ทำ: กำไรจากการขาย/กำไรรวม (ยังไม่มีนิยามต้นทุน · CEO รับไล่) · รายเดือน (จอนี้ไม่ได้ดึงรายเดือน)
+   ⚠️ ทุกไฟล์ต้องมีบรรทัดช่วงวันที่กำกับ ไม่งั้นเปิดทีหลังไม่รู้ว่าเป็นของช่วงไหน */
+function saveCsv(name: string, lines: (string[] | null)[]) {
+  const csv = lines.map((r) => (r ?? []).map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+  const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }))
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${name}.csv`
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function downloadByProduct(report: Report) {
+  saveCsv(`ยอดขายตามสินค้า-${report.range.from}-ถึง-${report.range.to}`, [
+    ['ช่วงวันที่', `${report.range.from} ถึง ${report.range.to}`],
+    /* 🔴 ต้องบอกว่ายอดนี้คิดจากบรรทัดสินค้า ไม่ใช่หัวใบ — คนเอาไปเทียบกับยอดรวมแล้วจะงง */
+    ['ที่มา', 'คิดจากบรรทัดสินค้าในใบขาย (ไม่รวมส่วนลดท้ายบิล/ค่าส่ง) ⇒ ผลรวมไม่เท่ากับยอดขายรวมของช่วง'],
+    null,
+    ['รหัสสินค้า', 'สินค้า', 'จำนวน', 'ยอดขาย (บาท)'],
+    ...(report.topProducts ?? []).map((p) => [p.sku, p.name, String(p.qty), p.amount == null ? '' : String(p.amount)]),
+  ])
+}
+
+function downloadDaily(report: Report) {
+  saveCsv(`ยอดขายรายวัน-${report.range.from}-ถึง-${report.range.to}`, [
+    ['ช่วงวันที่', `${report.range.from} ถึง ${report.range.to}`],
+    ['หมายเหตุ', 'ยอดรายวันยังไม่ได้หักใบคืน — ดูยอดสุทธิที่ไฟล์สรุปยอดขาย'],
+    null,
+    ['วันที่', 'ยอดขาย (บาท)', 'จำนวนใบ'],
+    ...report.daily.map((d) => [d.date, String(d.sales), String(d.orders)]),
+  ])
 }
 
 // สีประจำช่องทาง — เทียบจากชื่อจริงใน ZORT ไม่ตรงกับใครใช้สีเทา
@@ -308,6 +348,10 @@ function ReportKindSelect() {
     >
       <option value="total">ยอดขายรวม</option>
       <option value="cat" disabled>ยอดขายตามหมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
+      {/* 🔴 ZORT มีสองตัวนี้ในจอเดียวกัน — ของเรา **ยังคำนวณไม่ได้** เพราะยังไม่รู้ว่า ZORT คิดต้นทุนจากอะไร
+             (ราคาทุน ณ วันขาย / ปัจจุบัน / เฉลี่ยจากใบซื้อ) ⇒ คงช่องไว้ให้ผังตรง **แต่ห้ามโชว์ 0** */}
+      <option value="profit-sale" disabled>กำไรจากการขาย (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
+      <option value="profit-all" disabled>กำไรรวม (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
     </select>
   )
 }
@@ -358,6 +402,10 @@ export default function SalesReportPage() {
   const [whLoading, setWhLoading] = useState(false)
   /** ข้อความขอบเขตของยอดรายคลัง — **มาจากท่อ ไม่ใช่จอเขียนเอง** (วันที่เริ่มเก็บคลังจะได้ไม่ค้าง) */
   const [whScope, setWhScope] = useState('')
+  /** 🏬 คลังที่เลือกในแท็บคลัง (ว่าง = ทั้งหมด) — ZORT มี dropdown ตัวนี้กรองตารางสินค้าข้างล่าง */
+  const [whPick, setWhPick] = useState('')
+  const [whItems, setWhItems] = useState<{ sku: string; name: string; qty: number; amount: number }[] | null>(null)
+  const [whItemsErr, setWhItemsErr] = useState('')
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -501,6 +549,27 @@ export default function SalesReportPage() {
       .finally(() => { if (!dead) setWhLoading(false) })
     return () => { dead = true }
   }, [tab, report])
+
+  /* 🏬 ตารางสินค้าในแท็บคลัง — ZORT มี และกรองตามคลังที่เลือก (ท่อเปิด `topproducts&warehouse=` ให้แล้ว 01fbeb1)
+     ⚠️ **ยอดตรงนี้คิดจากบรรทัดสินค้า** ส่วนยอดในตารางคลังคิดจากหัวใบ (รวมส่วนลดท้ายบิล/ค่าส่ง)
+        ⇒ สองตัวไม่เท่ากันเป็นเรื่องปกติ **ห้ามเอามาเทียบกันเป็นด่าน** (ฝั่งท่อกำชับ) */
+  useEffect(() => {
+    if (tab !== 'branch' || !report) return
+    let dead = false
+    setWhItemsErr('')
+    const { from, to } = report.range
+    const q = `/api/web/core?list=topproducts&from=${from}&to=${to}&limit=20${whPick ? `&warehouse=${encodeURIComponent(whPick)}` : ''}`
+    fetch(q).then((r) => r.json()).then((d) => {
+      if (dead) return
+      if (d?.error) throw new Error(String(d.error))
+      /* ด่าน: ถ้าเลือกคลังแล้วท่อไม่ได้ใช้ ต้องไม่โชว์เป็นของคลังนั้น */
+      if (whPick && d?.applied?.warehouse !== whPick) {
+        throw new Error('ท่อไม่ได้กรองตามคลังที่เลือก (applied.warehouse ไม่ตรง)')
+      }
+      setWhItems(Array.isArray(d?.items) ? d.items : [])
+    }).catch((e) => { if (!dead) { setWhItems(null); setWhItemsErr(String(e instanceof Error ? e.message : e)) } })
+    return () => { dead = true }
+  }, [tab, report, whPick])
 
 
   const grouped = report ? groupDaily(report.daily, bucket) : []
@@ -646,12 +715,29 @@ export default function SalesReportPage() {
                     {report.returns !== null && (
                       <ReturnsFreshness utc={report.returnsSyncedAtUtc ?? null} />
                     )}
-                    <button
-                      onClick={() => downloadSummary(report)}
-                      className="mt-5 text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50"
-                    >
-                      Download Excel – สรุปยอดขาย
-                    </button>
+                    <div className="mt-5 flex flex-wrap gap-2 justify-center">
+                      <button
+                        onClick={() => downloadSummary(report)}
+                        className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50"
+                      >
+                        Download Excel – สรุปยอดขาย
+                      </button>
+                      {/* 📤 สองปุ่มนี้ทำจากข้อมูลที่อยู่บนจอแล้ว ⇒ กดได้จริงทันที ไม่ใช่ปุ่มหลอก */}
+                      <button
+                        onClick={() => downloadByProduct(report)}
+                        disabled={!report.topProducts || report.topProducts.length === 0}
+                        className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50 disabled:opacity-40"
+                      >
+                        Export ยอดขายตามสินค้า
+                      </button>
+                      <button
+                        onClick={() => downloadDaily(report)}
+                        disabled={report.daily.length === 0}
+                        className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50 disabled:opacity-40"
+                      >
+                        Export ยอดขายรายวัน
+                      </button>
+                    </div>
                   </div>
                 </Card>
 
@@ -884,6 +970,60 @@ export default function SalesReportPage() {
                   </tbody>
                 </table>
               </TableWrap>
+              {/* 🏬 dropdown เลือกคลัง + ตารางสินค้า — ผังเดียวกับ ZORT (tableoption: ทั้งหมด/โกดัง/KLD/ANJ) */}
+              <div className="flex flex-wrap items-center gap-2 px-4 md:px-5 pt-4">
+                <p className="text-[14px] font-semibold text-gray-900 mr-auto">ยอดขายรายสินค้าของคลังที่เลือก</p>
+                <select
+                  value={whPick}
+                  onChange={(e) => setWhPick(e.target.value)}
+                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
+                >
+                  <option value="">ทั้งหมด</option>
+                  {/* รายชื่อคลังมาจากที่ท่อส่ง ไม่ใช่รายชื่อตายตัว · แถว "ยังไม่รู้คลัง" (code ว่าง) เลือกไม่ได้ */}
+                  {whSales?.filter((w) => w.code).map((w) => (
+                    <option key={w.code} value={w.code}>{w.name} ({w.code})</option>
+                  ))}
+                </select>
+              </div>
+              {whItemsErr && (
+                <p className="text-[12px] text-red-700 px-4 md:px-5 pt-2">⚠️ ดึงยอดรายสินค้าไม่สำเร็จ: {whItemsErr}</p>
+              )}
+              {whItems && whItems.length === 0 && !whItemsErr && (
+                <p className="text-[12.5px] text-gray-500 px-4 md:px-5 pt-2">
+                  ช่วงนี้ยังไม่มียอดขายรายสินค้า{whPick ? ' ของคลังที่เลือก' : ''}
+                </p>
+              )}
+              {whItems && whItems.length > 0 && (
+                <TableWrap>
+                  <table className="w-full min-w-[620px]">
+                    <thead className="bg-white border-b border-gray-200">
+                      <tr>
+                        <th className={TH}>รหัสสินค้า</th>
+                        <th className={TH}>สินค้า</th>
+                        <th className={THR}>จำนวน</th>
+                        <th className={THR}>ยอดขาย(บาท)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {whItems.map((it) => (
+                        <tr key={it.sku} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                          <td className={`${TD} text-blue-600 whitespace-nowrap`}>{it.sku}</td>
+                          <td className={TD}>{it.name}</td>
+                          <td className={TDR}>{fmtNum(it.qty)}</td>
+                          <td className={TDR}>{fmtMoney(it.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+              )}
+              {/* 🔴 สองยอดในแท็บนี้คิดจากคนละชั้น ⇒ ต้องเขียน ไม่ใช่วางคู่กันเฉย ๆ (กติกาข้อ 4 ใน CLAUDE.md) */}
+              <p className="text-[11.5px] text-amber-800 px-4 md:px-5 pt-2 leading-relaxed">
+                ⚠️ ยอดใน<b>ตารางสินค้า</b>คิดจาก<b>บรรทัดสินค้า</b> ส่วนยอดใน<b>ตารางคลัง</b>คิดจาก<b>หัวใบ</b>
+                {' '}(หัวใบรวมส่วนลดท้ายบิลกับค่าส่ง) ⇒ <b>สองตัวไม่เท่ากันเป็นเรื่องปกติ</b> ไม่ใช่เลขผิด
+                <br />⚠️ ใบที่ยังไม่รู้คลัง<b>ไม่เข้าคลังไหนเลย</b> ⇒ เลือกคลังแล้วยอดจะน้อยกว่ายอดรวมของช่วงนั้น
+              </p>
+
               <p className="text-[11.5px] text-gray-400 px-4 md:px-5 py-3 leading-relaxed">
                 ยอดรายคลังมาจาก<b>คำขอเดียว</b>ที่เซิร์ฟเวอร์รวมมาให้ (`orderfacets&warehouses=1`)
                 {' '}— ผลรวมทุกแถวเท่ากับยอดของทั้งสองร้านในคำขอเดียวกัน ⇒ <b>ไม่มีใบไหนตกหล่นหรือถูกนับซ้ำ</b>
@@ -899,6 +1039,19 @@ export default function SalesReportPage() {
               <p className="text-[15px] font-semibold text-gray-900 px-4 md:px-5 pt-4">
                 {tab === 'mkt' ? 'ยอดขายตาม Marketplace' : 'ยอดขายตามช่องทางการขาย'}
               </p>
+              {/* 🔴 **แท็บ Marketplace ของ ZORT เป็นคนละเรื่องกับของเรา** (กดดูเอง 15 ก.ย. 2569)
+                     ZORT ทำเป็นการ **กระทบยอดเงินที่มาร์เก็ตเพลสโอนเข้า**: รอบบัญชี · หมายเลขธุรกรรม ·
+                     ค่าส่งเก็บจากลูกค้า vs ค่าส่งออกโดย Marketplace vs ค่าจัดส่งตามจริง · ส่วนต่าง ·
+                     คอมมิชชั่น · ค่าธรรมเนียมการชำระเงิน
+                     ⇒ **ต้องเขียนไว้** ไม่งั้นคนเห็นชื่อแท็บเหมือนกันแล้วคิดว่าทำเหมือนแล้ว */}
+              {tab === 'mkt' && (
+                <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded mx-4 md:mx-5 mt-2 px-3 py-2 leading-relaxed">
+                  ⚠️ แท็บนี้คือ <b>ยอดขายแยกตามช่องทางมาร์เก็ตเพลส</b> —
+                  {' '}<b>ยังไม่ใช่การกระทบยอดเงินโอนแบบ ZORT</b>
+                  <br />ของ ZORT แท็บนี้เทียบ <b>เงินที่มาร์เก็ตเพลสโอนเข้าจริง</b> กับค่าส่ง/คอมมิชชั่น/ค่าธรรมเนียม
+                  {' '}เป็นรอบบัญชี ⇒ ข้อมูลนั้นอยู่ที่ฝั่ง Shopee/Lazada/TikTok <b>ไม่ใช่ใน ZORT</b> (กำลังไล่แหล่งข้อมูลอยู่)
+                </p>
+              )}
               <TableWrap>
                 <table className="w-full min-w-[620px]">
                   <thead className="bg-white border-b border-gray-200">
