@@ -107,7 +107,11 @@ export default function CoreTransfersPage() {
     setError('')
     try {
       const qs = new URLSearchParams({ list: 'transfers', limit: String(PAGE), offset: String(off) })
-      if (tabId !== 'all') qs.set('status', tabId)
+      /* 🔴 **เลิกส่ง `status` — ท่อเมินพารามิเตอร์นี้** (ยิงพิสูจน์ 16 ก.ย. 2569)
+         ยิง status=Success/Pending/Voided ⇒ total 12,005 เท่ากันทุกครั้ง · แถวเป็น Success ล้วนทุกครั้ง
+         และคำตอบ **ไม่มีช่อง `applied` เลย** ⇒ ไม่มีทางรู้จากคำตอบว่าท่อกรองให้หรือไม่
+         ⇒ เดิมกดแท็บ "รอโอน (2)" แล้วได้ 50 แถวที่เป็น "สำเร็จ" ทั้งหมด = แท็บสัญญา 2 ใบ แต่โชว์ของคนละกอง
+         ⇒ กรองในเครื่อง + เขียนบนจอว่ากรองเฉพาะหน้านี้ (ใบโอนมี 12,005 ใบ · หน้าละ 50 ⇒ ไม่ครบชุดแน่นอน) */
       /* ว่าง = ไม่ส่ง `store` เลย ⇒ ท่อคืน z1 ให้ (และบอกกลับมาว่า storeDefaulted) */
       if (storeId) qs.set('store', storeId)
       if (q.trim()) qs.set('q', q.trim())
@@ -141,7 +145,11 @@ export default function CoreTransfersPage() {
     return <span className="text-gray-700">{names[c] ?? c}</span>
   }
 
-  const rows = data?.rows ?? []
+  const allRows = data?.rows ?? []
+  /* กรองตามแท็บในเครื่อง (ท่อไม่รับ status) — ค่าดิบตรงกับที่ท่อส่ง */
+  const rows = tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)
+  /** โหลดครบทั้งชุดไหม — ใบโอนเยอะ (หมื่นกว่าใบ) แทบไม่มีทางครบ ⇒ ต้องเตือนตรง ๆ */
+  const loadedAll = typeof data?.total === 'number' ? offset + allRows.length >= data.total : false
   /* 🔴 **ตาข่ายกันบั๊กที่เพิ่งเจอไม่ให้กลับมาเงียบ ๆ อีก**
      ถ้ามีแถวแต่ทุกแถวไม่มีช่องที่จอต้องใช้เลย = ท่อเปลี่ยนชื่อฟิลด์ (หรือจอเดาผิดอีกรอบ)
      เดิมอาการคือคอลัมน์ขึ้นขีดกลางทุกแถว **ซึ่งอ่านได้ว่า "ไม่มีข้อมูล" ทั้งที่ข้อมูลอยู่ครบ**
@@ -192,12 +200,14 @@ export default function CoreTransfersPage() {
                    ⇒ ผิดแบบที่ไม่มีอะไรฟ้อง เพราะไฟล์ก็ดูปกติทุกประการ */
                 filters: [
                   ['ร้าน', storeLabel(store)],
-                  ['แท็บสถานะ', tab === 'all' ? 'ทั้งหมด' : tab],
+                  /* 🔴 ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ⇒ เขียนให้ตรง ไม่ใช่ใส่ชื่อแท็บเฉย ๆ */
+                  ['แท็บสถานะบนจอ', tab === 'all' ? 'ทั้งหมด'
+                    : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ได้ทุกสถานะ`],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({ list: 'transfers', limit: String(limit), offset: String(offsetAt) })
-                  if (tab !== 'all') qs.set('status', tab)
+                  /* 🔴 ท่อเมิน `status` ⇒ ไม่ส่งไป และต้องเขียนในไฟล์ว่าไฟล์นี้ได้ทุกสถานะ */
                   if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
                   const r = await fetch(`/api/web/core?${qs}`)
@@ -274,6 +284,19 @@ export default function CoreTransfersPage() {
               {loading ? '⏳' : '⟳'}
             </button>
           </div>
+
+          {/* 🔴 **แท็บนี้กรองเฉพาะหน้าที่เห็น** — ท่อไม่รับตัวกรองสถานะ (กฎแท็บข้อ 3 ใน CLAUDE.md)
+                 ตัวเลขบนแท็บมาจาก `byStatus` = ทั้งชุด (Success 11,975 · Voided 28 · Pending 2)
+                 แต่แถวมาจากหน้าที่โหลดมา 50 ใบ ⇒ **ต้องเขียนว่าต่างกันตรงไหน ห้ามปล่อยเงียบ** */}
+          {tab !== 'all' && !loadedAll && (
+            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-1 leading-relaxed">
+              ⚠️ <b>ตัวเลขบนแท็บเป็นของทั้งชุด แต่แถวที่กรองได้มาจากหน้านี้เท่านั้น</b> —
+              ท่อยังไม่รับตัวกรองสถานะ (ยิงตรวจแล้ว 16 ก.ย. 2569 · ขอไว้แล้ว) ⇒
+              {' '}กรองได้ <b>{rows.length}</b> จาก {allRows.length} แถวในหน้านี้
+              {typeof data?.total === 'number' && <> (ทั้งชุด {data.total.toLocaleString('th-TH')} ใบ)</>}
+              {' '}· ใบที่หาไม่เจออาจอยู่หน้าอื่น — <b>ค้นด้วยเลขที่ใบจะตรงกว่า</b>
+            </p>
+          )}
 
           {/* 🏬 เลือกร้าน — ปุ่มชุดเดียวกับจอเอกสารอื่น (components/zort/StorePicker) */}
           <StorePicker value={store} disabled={loading}
