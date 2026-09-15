@@ -40,7 +40,7 @@ export function AdvancedSearchLink({ open, onToggle }: { open: boolean; onToggle
 }
 
 export default function AdvancedSearch({
-  open, fields, onApply, onClear, canClear, serverFiltered, notAvailable, extraNote, applyLabel = 'ค้นหาตามเงื่อนไขนี้',
+  open, fields, onApply, onClear, canClear, serverFiltered, clientFiltered, notAvailable, extraNote, applyLabel = 'ค้นหาตามเงื่อนไขนี้',
 }: {
   open: boolean
   fields: AdvField[]
@@ -48,8 +48,14 @@ export default function AdvancedSearch({
   onClear: () => void
   /** ปุ่มล้างควรกดได้เมื่อมีอะไรให้ล้างเท่านั้น */
   canClear: boolean
-  /** 🔴 ตัวกรองที่ **กรองที่เซิร์ฟเวอร์** ของจอนี้ — เขียนให้ครบ คนอ่านจะได้รู้ว่าครอบทั้งชุด */
-  serverFiltered: string
+  /** 🔴 ตัวกรองที่ **กรองที่เซิร์ฟเวอร์** ของจอนี้ — เขียนให้ครบ คนอ่านจะได้รู้ว่าครอบทั้งชุด
+   *  ⚠️ **ไม่มีก็ได้** สำหรับจอที่ท่อยังไม่รับตัวกรองเลย — แต่ต้องใส่ `clientFiltered` แทน
+   *     (เดิมช่องนี้บังคับ ⇒ จอที่กรองในเบราว์เซอร์ล้วนจะพูดประโยค "กรองที่เซิร์ฟเวอร์" ที่เป็นเท็จ
+   *      เจอตอนต่อจอใบเสนอราคา 16 ก.ย. 2569 — ตาข่าย check-inherited จับได้ก่อนขึ้นจอ) */
+  serverFiltered?: string
+  /** 🔴 จอที่กรอง **ในเบราว์เซอร์** ต้องบอกให้ชัดว่ากรองจากอะไร (ทั้งชุด หรือเฉพาะที่โหลดมา)
+   *  ข้อความนี้แทนบรรทัด "กรองที่เซิร์ฟเวอร์" ไม่ใช่มาเพิ่มข้าง ๆ กัน */
+  clientFiltered?: string
   /** 🔴 สิ่งที่ **ไม่มีให้กรอง พร้อมเหตุผล** — ห้ามเว้นว่างเพราะขี้เกียจเขียน
    *  เว้นว่างได้เฉพาะจอที่ท่อรองรับครบทุกช่องที่ ZORT มีจริง ๆ */
   notAvailable?: { what: string; why: string }[]
@@ -101,7 +107,12 @@ export default function AdvancedSearch({
 
       <span className="text-[11.5px] text-gray-500 max-w-[440px] leading-snug">
         {/* ② อะไรกรองที่เซิร์ฟเวอร์ — "ครอบทั้งชุด" กับ "เฉพาะหน้าที่เห็น" คนละเรื่องกันมาก */}
-        ✅ <b>{serverFiltered}</b> กรองที่เซิร์ฟเวอร์ — ครอบทุกรายการตามเงื่อนไข ไม่ใช่แค่หน้าที่เห็น
+        {serverFiltered && (
+          <>✅ <b>{serverFiltered}</b> กรองที่เซิร์ฟเวอร์ — ครอบทุกรายการตามเงื่อนไข ไม่ใช่แค่หน้าที่เห็น</>
+        )}
+        {clientFiltered && (
+          <span className="block">🖥️ <b>{clientFiltered}</b></span>
+        )}
         {/* ③ อะไรไม่มีให้กรอง และเพราะอะไร */}
         {notAvailable?.map((n) => (
           <span key={n.what} className="block mt-1">

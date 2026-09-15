@@ -444,6 +444,16 @@
           "✅ กรองที่เซิร์ฟเวอร์ — ครอบทุกรายการตามเงื่อนไข ไม่ใช่แค่หน้าที่เห็น",
           "⚠️ ไม่มีตัวกรอง —"
         ]
+      },
+      "a07aa1eb2b42": {
+        "lines": [
+          "ปิดค้นหาขั้นสูง",
+          "ค้นหาขั้นสูง",
+          "ค้นหาตามเงื่อนไขนี้",
+          "ล้างเงื่อนไข",
+          "✅ กรองที่เซิร์ฟเวอร์ — ครอบทุกรายการตามเงื่อนไข ไม่ใช่แค่หน้าที่เห็น /",
+          "⚠️ ไม่มีตัวกรอง —"
+        ]
       }
     },
     "components/zort/StorePicker.tsx": {
@@ -589,19 +599,19 @@
       "at": "2026-09-14"
     },
     "components/zort/AdvancedSearch.tsx :: app/core/customers/page.tsx": {
-      "hash": "66df2216eb78",
+      "hash": "a07aa1eb2b42",
       "by": "คุณส้ม (gucut2)",
-      "at": "2026-09-14"
+      "at": "2026-09-15"
     },
     "components/zort/AdvancedSearch.tsx :: app/core/sales/page.tsx": {
-      "hash": "66df2216eb78",
+      "hash": "a07aa1eb2b42",
       "by": "คุณส้ม (gucut2)",
-      "at": "2026-09-14"
+      "at": "2026-09-15"
     },
     "components/zort/AdvancedSearch.tsx :: components/zort/LedgerScreen.tsx": {
-      "hash": "66df2216eb78",
+      "hash": "a07aa1eb2b42",
       "by": "คุณส้ม (gucut2)",
-      "at": "2026-09-14"
+      "at": "2026-09-15"
     },
     "app/core/soon/[key]/page.tsx :: รูปทรง:exportByHand+meanwhile": {
       "hash": "2282f5d72341",
@@ -641,6 +651,11 @@
     "components/zort/StorePicker.tsx :: app/core/buy-report/page.tsx": {
       "hash": "1e7b0263732c",
       "by": "คุณส้ม (gucut2) — ยิงเส้นของจอนี้เองแล้วว่าตอบทีละร้านจริง (all ⇒ 400)",
+      "at": "2026-09-15"
+    },
+    "components/zort/AdvancedSearch.tsx :: app/core/quotations/page.tsx": {
+      "hash": "a07aa1eb2b42",
+      "by": "คุณส้ม (gucut2)",
       "at": "2026-09-15"
     }
   }

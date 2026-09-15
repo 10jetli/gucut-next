@@ -19,6 +19,7 @@ import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate,
 } from '@/components/zort'
+import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/zort/AdvancedSearch'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 
@@ -50,10 +51,21 @@ const statusTh = (s?: string) => {
 export default function QuotationsPage() {
   const [data, setData] = useState<Resp | null>(null)
   const [tab, setTab] = useState('')
-  /* ค้นหาขั้นสูง — กรองช่วงวันที่ (ของจริง ไม่ใช่ลิงก์หลอก) */
+  /* ค้นหาขั้นสูง — ลอกช่องจากแผงจริงของ ZORT (กดเปิดอ่านเอง 16 ก.ย. 2569)
+     ZORT มี 13 ช่อง: หมายเลขรายการ · มูลค่าเริ่มต้น/จนถึง · อ้างอิง · ช่องทางการขาย · Tag ·
+     สินค้า · ชื่อลูกค้า · เบอร์โทรศัพท์ · อีเมลลูกค้า · ผู้ใช้งาน · สถานะ (ติ๊ก 3 ค่า) ·
+     แสดงรายการที่ถูกซ่อน · ช่วงวันที่
+     ⇒ ใส่ได้ 7 ช่องที่ **มีข้อมูลจริงในคำตอบของท่อ** ที่เหลือบอกไว้ว่าไม่มีและเพราะอะไร
+     ⚠️ ทั้งหมดกรอง **ในเบราว์เซอร์** (ท่อรับแต่ `store`/`page`/`limit`)
+        ตอนนี้จอดึงมาทั้งชุด (ท่อบอก total 6) ⇒ กรองในเครื่องคือกรองของจริงทั้งหมด
+        แต่วันที่ใบเกิน 200 จะกลายเป็น "กรองเฉพาะที่โหลดมา" ⇒ ข้อความใต้แผงเปลี่ยนตาม `cut` เอง */
   const [adv, setAdv] = useState(false)
-  const [dFrom, setDFrom] = useState('')
-  const [dTo, setDTo] = useState('')
+  const EMPTY_F = { number: '', amtFrom: '', amtTo: '', ref: '', cust: '', phone: '', status: '', from: '', to: '' }
+  type Filt = typeof EMPTY_F
+  /** ค่าที่กำลังกรอก (ยังไม่กรอง) — ZORT ก็ต้องกดปุ่มค้นหาก่อนเหมือนกัน */
+  const [draft, setDraft] = useState<Filt>(EMPTY_F)
+  /** ค่าที่กดค้นหาแล้ว = ค่าที่ตารางใช้จริง */
+  const [filt, setFilt] = useState<Filt>(EMPTY_F)
   const [q, setQ] = useState('')
   /* 🏬 ร้านที่กำลังดู (ท่อ gucut-web 0932fac · 15 ก.ย. 2569) — ยิงจริง: z1 6 ใบ · z2 4 ใบ = ZORT */
   const [store, setStore] = useState<StoreId>('')
@@ -81,13 +93,31 @@ export default function QuotationsPage() {
   const all = Array.isArray(data?.rows) ? data!.rows! : []
   const rows = all.filter((r) => {
     if (tab === 'approved' && r.status !== 'Success') return false
-    /* ค้นหาขั้นสูง: กรองช่วงวันที่จากแถวที่โหลดมา — จอนี้ดึงสดทั้งชุด (ตอนนี้ 3 ใบ)
+    /* ค้นหาขั้นสูง: กรองจากแถวที่โหลดมา — จอนี้ดึงสดทั้งชุด (ท่อบอก total 6)
        ⇒ กรองฝั่งจอคือกรองของจริงทั้งหมด · วันไหนโดนตัด 200 แถว ตาข่าย `cut` ข้างล่างฟ้องเอง */
-    if (dFrom && (!r.date || r.date.slice(0, 10) < dFrom)) return false
-    if (dTo && (!r.date || r.date.slice(0, 10) > dTo)) return false
+    if (filt.from && (!r.date || r.date.slice(0, 10) < filt.from)) return false
+    if (filt.to && (!r.date || r.date.slice(0, 10) > filt.to)) return false
+    const has = (hay: string | undefined, needle: string) =>
+      !needle.trim() || (hay ?? '').toLowerCase().includes(needle.trim().toLowerCase())
+    if (!has(String(r.number ?? ''), filt.number)) return false
+    if (!has(r.reference, filt.ref)) return false
+    if (!has(r.customer, filt.cust)) return false
+    /* เบอร์โทร: เทียบแบบตัดอักขระที่ไม่ใช่เลขออก — คนพิมพ์ 081-234 กับ 081234 ต้องเจอใบเดียวกัน */
+    if (filt.phone.trim()) {
+      const digits = (x: string) => x.replace(/\D/g, '')
+      if (!digits(r.phone ?? '').includes(digits(filt.phone))) return false
+    }
+    /* 🔴 มูลค่า: ช่องว่าง = ไม่กรอง · ตัวเลขพิมพ์ผิด (NaN) ก็ต้อง **ไม่กรอง** ไม่ใช่กรองจนเหลือ 0 แถว */
+    const amt = Number(r.amount) || 0
+    const lo = Number(filt.amtFrom)
+    const hi = Number(filt.amtTo)
+    if (filt.amtFrom.trim() && Number.isFinite(lo) && amt < lo) return false
+    if (filt.amtTo.trim() && Number.isFinite(hi) && amt > hi) return false
+    if (filt.status && (r.status ?? '') !== filt.status) return false
     const s = q.trim().toLowerCase()
     return !s || String(r.number ?? '').toLowerCase().includes(s) || (r.customer ?? '').toLowerCase().includes(s)
   })
+  const advOn = Object.values(filt).some((v) => String(v).trim() !== '')
   const sum = all.reduce((a, r) => a + (Number(r.amount) || 0), 0)
   /** ⚠️ **ตาข่ายกันวันข้างหน้า ไม่ใช่กันวันนี้** — ตอนนี้ร้านมีใบเสนอราคา 3 ใบ ยังไม่ชนอะไร
    *  แต่ท่อ `list` ทุกตัวตัดที่ 200 แถว และจอนี้ดึงครั้งเดียวไม่มีการแบ่งหน้า
@@ -190,27 +220,55 @@ export default function QuotationsPage() {
         placeholder="เลขรายการขาย ชื่อลูกค้า ช่องทางการขาย และอื่นๆ"
         /* ผัง ZORT มีลิงก์ "ค้นหาขั้นสูง" ตรงนี้ (ภาพ 51) — เดิมของเราเป็น "ล้างคำค้น"
            ตอนนี้เป็นของจริง: เปิดแผงกรองช่วงวันที่ (ปิดแถวที่ค้างในเช็คลิสต์ 7 ก.ย. 2569) */
-        advanced={<LinkText onClick={() => setAdv((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
+        advanced={<AdvancedSearchLink open={adv} onToggle={() => setAdv((v) => !v)} />}
       />
 
-      {adv && (
-        <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-3 flex flex-wrap items-end gap-4">
-          <label className="text-[12px] text-gray-600">
-            วันที่ตั้งแต่
-            <input type="date" value={dFrom} onChange={(e) => setDFrom(e.target.value)}
-              className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
-          </label>
-          <label className="text-[12px] text-gray-600">
-            ถึง
-            <input type="date" value={dTo} onChange={(e) => setDTo(e.target.value)}
-              className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
-          </label>
-          <BtnGhost onClick={() => { setDFrom(''); setDTo(''); setQ('') }}>ล้างตัวกรองทั้งหมด</BtnGhost>
-          {(dFrom || dTo) && (
-            <span className="text-[12px] text-gray-500">กรองแล้วเหลือ {rows.length} จาก {all.length} ใบ</span>
-          )}
-        </div>
-      )}
+      {/* ⚠️ ป้ายสถานะในแผงค้นหาของ ZORT เขียน **"สำเร็จ"** แต่ตารางเขียน **"อนุมัติแล้ว"**
+          (ค่าดิบตัวเดียวกัน — ZORT เองใช้คำไม่ตรงกันระหว่างแผงกับตาราง)
+          ⇒ ลอกคำจาก "ที่ที่มันอยู่" ทั้งสองที่ **ห้ามจัดให้ตรงกันเอง** เพราะลูกน้องจำคำจากจอที่เห็น */}
+      <AdvancedSearch
+        open={adv}
+        fields={[
+          { label: 'หมายเลขรายการ', kind: 'text', value: draft.number, onChange: (v) => setDraft({ ...draft, number: v }), placeholder: 'หมายเลขรายการ', width: 170 },
+          { label: 'มูลค่าเริ่มต้น', kind: 'number', value: draft.amtFrom, onChange: (v) => setDraft({ ...draft, amtFrom: v }), placeholder: '0', width: 130 },
+          { label: 'จนถึงมูลค่า', kind: 'number', value: draft.amtTo, onChange: (v) => setDraft({ ...draft, amtTo: v }), placeholder: '999,999', width: 130 },
+          { label: 'อ้างอิง', kind: 'text', value: draft.ref, onChange: (v) => setDraft({ ...draft, ref: v }), placeholder: 'อ้างอิง', width: 150 },
+          { label: 'ชื่อลูกค้า', kind: 'text', value: draft.cust, onChange: (v) => setDraft({ ...draft, cust: v }), placeholder: 'ชื่อลูกค้า', width: 170 },
+          { label: 'เบอร์โทรศัพท์', kind: 'text', value: draft.phone, onChange: (v) => setDraft({ ...draft, phone: v }), placeholder: 'เบอร์โทรศัพท์', width: 150 },
+          {
+            label: 'สถานะ',
+            kind: 'select',
+            value: draft.status,
+            onChange: (v) => setDraft({ ...draft, status: v }),
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: 'Pending', label: 'รออนุมัติ' },
+              { value: 'Success', label: 'สำเร็จ' },
+              { value: 'Voided', label: 'ยกเลิก' },
+            ],
+            width: 140,
+          },
+          { label: 'วันที่ ตั้งแต่', kind: 'date', value: draft.from, onChange: (v) => setDraft({ ...draft, from: v }) },
+          { label: 'ถึง', kind: 'date', value: draft.to, onChange: (v) => setDraft({ ...draft, to: v }) },
+        ] as AdvField[]}
+        onApply={() => setFilt(draft)}
+        onClear={() => { setDraft(EMPTY_F); setFilt(EMPTY_F); setQ('') }}
+        canClear={advOn || Object.values(draft).some((v) => String(v).trim() !== '') || q.trim() !== ''}
+        /* 🔴 **จอนี้ไม่มีตัวกรองฝั่งเซิร์ฟเวอร์เลย** (ท่อรับแต่ `store`/`page`/`limit`)
+           ⇒ ห้ามใช้ช่อง serverFiltered เพราะประโยคของมันคือ "กรองที่เซิร์ฟเวอร์ ครอบทั้งชุด" = เท็จกับจอนี้ */
+        clientFiltered={cut > 0
+          ? `กรองในเบราว์เซอร์จาก ${fmtNum(all.length)} ใบที่โหลดมา (ยังขาดอีก ${fmtNum(cut)} ใบ) · ท่อกรองให้เฉพาะร้าน (${storeLabel(store)})`
+          : `กรองในเบราว์เซอร์ — โหลดมาครบทั้ง ${fmtNum(all.length)} ใบแล้ว จึงเท่ากับกรองทั้งชุด · ท่อกรองให้เฉพาะร้าน (${storeLabel(store)})`}
+        notAvailable={[
+          { what: 'Tag', why: 'ท่อยังไม่ส่งช่อง tag ของใบเสนอราคามา' },
+          { what: 'สินค้า (รหัส/ชื่อ)', why: 'ท่อส่งแต่หัวใบ ยังไม่มีบรรทัดสินค้าในรายการนี้' },
+          { what: 'ช่องทางการขาย', why: 'ท่อยังไม่ส่งช่องทางของใบเสนอราคามา (คอลัมน์บนตารางจึงเป็นขีด)' },
+          { what: 'อีเมลลูกค้า', why: 'ท่อส่งแต่เบอร์โทร ไม่ส่งอีเมล' },
+          { what: 'ผู้ใช้งาน (คนสร้างใบ)', why: 'ท่อยังไม่ส่งชื่อผู้สร้างของใบเสนอราคา' },
+          { what: 'แสดงรายการที่ถูกซ่อน', why: 'ยังไม่รู้ว่า ZORT ซ่อนใบด้วยเงื่อนไขอะไร — ไม่เดา' },
+        ]}
+        extraNote={advOn ? <>กรองแล้วเหลือ <b>{fmtNum(rows.length)}</b> ใบ จาก {fmtNum(all.length)} ใบที่โหลดมา</> : null}
+      />
 
       {error && <ErrorBox title="ดึงใบเสนอราคาไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
