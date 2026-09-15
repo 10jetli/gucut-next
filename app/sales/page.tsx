@@ -206,8 +206,17 @@ function downloadSummary(report: Report) {
    🔴 **ทำเฉพาะที่ข้อมูลอยู่บนจอแล้ว** — ตามสินค้า กับ รายวัน
       ที่ยังไม่ทำ: กำไรจากการขาย/กำไรรวม (ยังไม่มีนิยามต้นทุน · CEO รับไล่) · รายเดือน (จอนี้ไม่ได้ดึงรายเดือน)
    ⚠️ ทุกไฟล์ต้องมีบรรทัดช่วงวันที่กำกับ ไม่งั้นเปิดทีหลังไม่รู้ว่าเป็นของช่วงไหน */
+/* 🔴 **กันช่องที่ขึ้นต้นด้วย `=` `+` `-` `@` ถูก Excel อ่านเป็นสูตร** (ฝั่งท่อเตือน 16 ก.ย. 2569)
+   ชื่อสินค้าของร้านขึ้นต้นด้วย `-` ได้จริง ⇒ เปิดไฟล์แล้ว Excel จะพยายามคำนวณ
+   ⇒ เติม `'` ข้างหน้า (Excel แสดงเป็นข้อความ ไม่ติดเครื่องหมายในเซลล์) */
+function csvCell(v: unknown): string {
+  const t = String(v ?? '')
+  const safe = /^[=+\-@]/.test(t) ? `'${t}` : t
+  return `"${safe.replace(/"/g, '""')}"`
+}
+
 function saveCsv(name: string, lines: (string[] | null)[]) {
-  const csv = lines.map((r) => (r ?? []).map((v) => `"${String(v ?? '').replace(/"/g, '""')}"`).join(',')).join('\n')
+  const csv = lines.map((r) => (r ?? []).map(csvCell).join(',')).join('\n')
   const url = URL.createObjectURL(new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' }))
   const a = document.createElement('a')
   a.href = url
@@ -216,15 +225,44 @@ function saveCsv(name: string, lines: (string[] | null)[]) {
   URL.revokeObjectURL(url)
 }
 
-function downloadByProduct(report: Report) {
-  saveCsv(`ยอดขายตามสินค้า-${report.range.from}-ถึง-${report.range.to}`, [
-    ['ช่วงวันที่', `${report.range.from} ถึง ${report.range.to}`],
+/* 📤 ไฟล์ "ยอดขายตามสินค้า"
+   🔴 **ยิงคำขอของตัวเองตอนกด ห้ามใช้รายการที่แสดงบนจอ** (ฝั่งท่อจับได้ 16 ก.ย. 2569)
+      บนจอขอมาแค่ `limit=10` เพื่อแสดง 10 อันดับ ⇒ ถ้าเอาไปทำไฟล์ คนเปิดไฟล์จะนึกว่า
+      ร้านขายแค่ 10 อย่าง **โดยไม่มีอะไรบอกว่าไม่ครบ** (คลาสเดียวกับ "เลขเพื่อแสดงผล ห้ามใช้ตัดสินใจ")
+   🔴 **ไม่ครบต้องเขียนบนหัวไฟล์** — ท่อรุ่นเก่ายังตัดที่ 100 รหัส (ยิงดูแล้ว 16 ก.ย.: limitApplied 100 · clamped)
+      ⇒ เช็ค `complete === true` + `totalSkus` ก่อน ถ้าไม่ครบให้ขึ้นบรรทัดเตือนเป็นบรรทัดแรกของไฟล์ */
+async function downloadByProduct(report: Report): Promise<string> {
+  const { from, to } = report.range
+  const r = await fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=5000`)
+  const d = await r.json().catch(() => null)
+  if (!r.ok || !d || d.error || !Array.isArray(d.items)) {
+    return `ดึงยอดขายรายสินค้าไม่สำเร็จ — ไม่ได้สร้างไฟล์ (${d?.error ?? `HTTP ${r.status}`})`
+  }
+  const items = d.items as { sku: string; name: string; qty: number; amount?: number | null }[]
+  const complete = d.complete === true
+  const totalSkus = typeof d.totalSkus === 'number' ? d.totalSkus : null
+  const warn = complete
+    ? null
+    : ['⚠️ ไฟล์นี้ไม่ครบ',
+      totalSkus !== null
+        ? `ได้ ${items.length} จาก ${totalSkus} รหัส — เซิร์ฟเวอร์ตัดจำนวนรายการที่ส่งได้`
+        : `ได้ ${items.length} รหัส · เซิร์ฟเวอร์ยังไม่บอกจำนวนรหัสทั้งหมด ⇒ **ยังไม่รู้ว่าครบหรือไม่**`]
+  saveCsv(`ยอดขายตามสินค้า-${from}-ถึง-${to}`, [
+    ...(warn ? [warn, null] : []),
+    ['ช่วงวันที่', `${from} ถึง ${to}`],
     /* 🔴 ต้องบอกว่ายอดนี้คิดจากบรรทัดสินค้า ไม่ใช่หัวใบ — คนเอาไปเทียบกับยอดรวมแล้วจะงง */
     ['ที่มา', 'คิดจากบรรทัดสินค้าในใบขาย (ไม่รวมส่วนลดท้ายบิล/ค่าส่ง) ⇒ ผลรวมไม่เท่ากับยอดขายรวมของช่วง'],
+    ['จำนวนรหัสในไฟล์', String(items.length)],
+    ['จำนวนรหัสทั้งหมดในเงื่อนไขนี้', totalSkus !== null ? String(totalSkus) : 'ยังไม่รู้ (เซิร์ฟเวอร์ไม่ได้บอก)'],
     null,
     ['รหัสสินค้า', 'สินค้า', 'จำนวน', 'ยอดขาย (บาท)'],
-    ...(report.topProducts ?? []).map((p) => [p.sku, p.name, String(p.qty), p.amount == null ? '' : String(p.amount)]),
+    ...items.map((p) => [p.sku, p.name, String(p.qty), p.amount == null ? '' : String(p.amount)]),
   ])
+  return complete
+    ? ''
+    : (totalSkus !== null
+      ? `ไฟล์ไม่ครบ — ได้ ${items.length} จาก ${totalSkus} รหัส (เขียนเตือนไว้บรรทัดแรกของไฟล์แล้ว)`
+      : `ยังไม่รู้ว่าไฟล์ครบหรือไม่ — ได้ ${items.length} รหัส (เขียนเตือนไว้ในไฟล์แล้ว)`)
 }
 
 function downloadDaily(report: Report) {
@@ -387,6 +425,8 @@ export default function SalesReportPage() {
   const [advOpen, setAdvOpen] = useState(false)
   /** ⑥ ช่องค้นหาเหนือตาราง — กรอง **เฉพาะแถวที่โหลดมาแล้ว** ⇒ ต้องเขียนขอบเขตไว้ข้าง ๆ */
   const [tableQ, setTableQ] = useState('')
+  /** ผลการส่งออกไฟล์ล่าสุด — ไม่ครบ/ล้มเหลวต้อง **ขึ้นบนจอด้วย** ไม่ใช่ซ่อนไว้ในไฟล์อย่างเดียว */
+  const [exportNote, setExportNote] = useState('')
   /* 🏬 **ยอดขายตามคลัง/สาขา** — แท็บนี้เดิมกรอง "ช่องทางที่ชื่อมีคำว่า POS/หน้าร้าน"
      ซึ่งเป็น **คนละแกนกับ ZORT** (ZORT แบ่งตาม *คลัง* โกดัง/KLD/ANJ ไม่ใช่ช่องทางขาย)
      ตอนนี้ท่อมี `warehouse_code` แล้ว (gucut-web 270f04e) ⇒ แบ่งตามคลังจริงได้
@@ -724,8 +764,10 @@ export default function SalesReportPage() {
                       </button>
                       {/* 📤 สองปุ่มนี้ทำจากข้อมูลที่อยู่บนจอแล้ว ⇒ กดได้จริงทันที ไม่ใช่ปุ่มหลอก */}
                       <button
-                        onClick={() => downloadByProduct(report)}
-                        disabled={!report.topProducts || report.topProducts.length === 0}
+                        onClick={async () => {
+                          setExportNote('กำลังขอข้อมูลครบทุกรหัส…')
+                          setExportNote(await downloadByProduct(report))
+                        }}
                         className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50 disabled:opacity-40"
                       >
                         Export ยอดขายตามสินค้า
@@ -738,6 +780,11 @@ export default function SalesReportPage() {
                         Export ยอดขายรายวัน
                       </button>
                     </div>
+                    {exportNote && (
+                      <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2 leading-relaxed max-w-[360px] text-center">
+                        ⚠️ {exportNote}
+                      </p>
+                    )}
                   </div>
                 </Card>
 
@@ -991,6 +1038,14 @@ export default function SalesReportPage() {
               {whItems && whItems.length === 0 && !whItemsErr && (
                 <p className="text-[12.5px] text-gray-500 px-4 md:px-5 pt-2">
                   ช่วงนี้ยังไม่มียอดขายรายสินค้า{whPick ? ' ของคลังที่เลือก' : ''}
+                </p>
+              )}
+              {/* 🔴 ตารางนี้ขอมา `limit=20` เพื่อแสดงอันดับ ⇒ **ต้องเขียนว่าไม่ใช่ทั้งหมด**
+                     ไม่งั้นคนอ่านนึกว่าคลังนี้ขายแค่ 20 รหัส (เหตุผลเดียวกับที่ห้ามเอารายการบนจอไปทำไฟล์) */}
+              {whItems && whItems.length > 0 && (
+                <p className="text-[11.5px] text-gray-400 px-4 md:px-5 pt-2">
+                  แสดง <b>{fmtNum(whItems.length)} อันดับแรก</b> เรียงตามยอดขาย — <b>ไม่ใช่ทุกรหัสของคลังนี้</b>
+                  {whPick ? '' : ' (ยังไม่ได้เลือกคลัง = รวมทุกคลังและใบที่ยังไม่รู้คลัง)'}
                 </p>
               )}
               {whItems && whItems.length > 0 && (
