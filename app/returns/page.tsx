@@ -11,6 +11,7 @@ import { PAY_STATUS, zortWord } from '@/lib/zort-words'
 import type { ReturnsResult } from '@/lib/returns'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import { thaiDate } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 
@@ -396,7 +397,10 @@ export default function ReturnsPage() {
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CH_COLOR[o.channel] || 'bg-gray-100 text-gray-700'}`}>
                       {o.channel}
                     </span>
-                    <span className="text-xs text-gray-500">{o.date}</span>
+                    {/* 🔴 เดิมโชว์ค่าดิบ `2026-09-14` — ปี ค.ศ. บนจอที่ทั้งร้านอ่าน พ.ศ.
+                        (คลาสเดียวกับที่กวาดเจอในจอหมวดหมู่/รายงานสินค้า 16 ก.ย. 2569)
+                        ⚠️ ค่านี้เป็น "วันที่เปล่า" (yyyy-MM-dd) ⇒ `thaiDate` จะอ่านตรง ๆ ไม่คิดโซนเวลา (ถูกแล้ว) */}
+                    <span className="text-xs text-gray-500" title={o.date}>{thaiDate(o.date)}</span>
                   </div>
                   {o.ref && <p className="mt-0.5 text-xs text-gray-400">ออเดอร์เดิม #{o.ref}</p>}
 
@@ -455,7 +459,7 @@ export default function ReturnsPage() {
                         <span className="text-gray-400">พัสดุ </span>
                         <span className="font-medium tabular-nums text-gray-800">{boxes} กล่อง</span>
                         {o.carrier && <span className="text-gray-700"> · {o.carrier}</span>}
-                        {o.shipDate && <span className="text-gray-500"> · ขนส่งรับ {o.shipDate}</span>}
+                        {o.shipDate && <span className="text-gray-500"> · ขนส่งรับ {thaiDate(o.shipDate)}</span>}
                       </p>
                     )}
                     {(o.trackings?.length ? o.trackings : o.tracking ? [{ no: o.tracking, carrier: o.carrier, date: '' }] : []).map((t) => {

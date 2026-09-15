@@ -192,8 +192,13 @@ export default function CoreProductReportPage() {
                       + สินค้าที่ยังไม่ได้จัดหมวด {fmtMoney(ZORT_STOCK_VALUE - cat.zortTotalValue)} บาท
                       {' '}= <b>{fmtMoney(ZORT_STOCK_VALUE)}</b> เท่ากับที่ ZORT แสดงทั้งร้าน
                     </p>
+                    {/* 🔴 เดิมโชว์ค่าดิบปี ค.ศ. + เวลา ⇒ แสดงวันที่แบบ พ.ศ. · ไม่แปลงเวลาเพราะไม่รู้โซน
+                        (ชื่อฟิลด์ไม่ลงท้าย `Utc` — ขอฝั่งท่อแก้ชื่อไว้แล้ว) ค่าดิบอยู่ใน tooltip */}
                     {cat.zortCollectedAt && (
-                      <p className="text-[11px] text-gray-400 mt-0.5">คัดมาเมื่อ {cat.zortCollectedAt}</p>
+                      <p className="text-[11px] text-gray-400 mt-0.5"
+                        title={`ค่าที่ท่อส่งมา: ${cat.zortCollectedAt} (ยังไม่ระบุโซนเวลา)`}>
+                        คัดมาเมื่อ {thaiDate(cat.zortCollectedAt)}
+                      </p>
                     )}
                   </div>
                 )}

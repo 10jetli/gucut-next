@@ -21,7 +21,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import ExportButton from '@/components/zort/ExportButton'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { fmtMoney, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum, thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import { categoryCoverage } from '@/lib/category-net'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
@@ -258,8 +258,15 @@ export default function CoreCategoriesPage() {
               </b>
               {/* ⚠️ ค่าที่คัดมาต้องโชว์วันที่คัดเสมอ — ไม่งั้นคนอ่านนึกว่าเป็นค่าสด
                   ซื้อของเข้าใหม่แล้วเลขนี้จะเก่าทันทีโดยไม่มีอะไรฟ้อง */}
+              {/* 🔴 **เดิมโชว์ค่าดิบ `2026-09-15 18:09:12`** — ปี ค.ศ. บนจอที่ทั้งร้านอ่าน พ.ศ.
+                  (โรคเดียวกับที่แก้ไปแล้วในจอใบสั่งซื้อ 14 ก.ย. 2569 · คลาส "ค่าดิบจากท่อขึ้นจอ")
+                  ⚠️ **ไม่แปลงเวลา** เพราะชื่อฟิลด์ไม่ได้บอกโซนเวลา (`zortCollectedAt` ไม่ลงท้าย `Utc`)
+                     แปลงมั่วจะเลื่อนไป 7 ชั่วโมง ⇒ โชว์แค่วันที่ (ปลอดภัยกับทุกโซน)
+                     และเก็บค่าดิบไว้ใน tooltip ให้ตรวจย้อนได้ · ขอฝั่งท่อเปลี่ยนชื่อเป็น `…AtUtc` แล้ว */}
               {basis === 'zort' && d.zortCollectedAt && (
-                <span className="text-gray-500"> · คัดมาเมื่อ {d.zortCollectedAt}</span>
+                <span className="text-gray-500" title={`ค่าที่ท่อส่งมา: ${d.zortCollectedAt} (ยังไม่ระบุโซนเวลา)`}>
+                  {' '}· คัดมาเมื่อ {thaiDate(d.zortCollectedAt)}
+                </span>
               )}
               {/* ⚠️ ZORT เขียน "วันที่อัพเดทล่าสุด: 2 ก.ย. 2026 08:33" ตรงนี้ + ปุ่มอัพเดท
                   ของเราไม่มีเวลานั้นให้แสดง เพราะเลขคิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ
@@ -308,7 +315,11 @@ export default function CoreCategoriesPage() {
             <div className="text-[12.5px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
               ✅ <b>ตัวเลขชุดนี้ตรงกับ ZORT</b> — เป็นต้นทุนเฉลี่ยถ่วงน้ำหนักที่<b>คัดมาจากจอ ZORT</b>
               {typeof d.zortTotalValue === 'number' && <> · รวมทุกหมวด <b>{fmtMoney(d.zortTotalValue)}</b> บาท</>}
-              {d.zortCollectedAt && <> · คัดเมื่อ {d.zortCollectedAt}</>}
+              {d.zortCollectedAt && (
+                <span title={`ค่าที่ท่อส่งมา: ${d.zortCollectedAt} (ยังไม่ระบุโซนเวลา)`}>
+                  {' '}· คัดเมื่อ {thaiDate(d.zortCollectedAt)}
+                </span>
+              )}
               <br />
               ⚠️ <b>เป็นค่าที่คัดมา ไม่ใช่คิดเอง</b> — ซื้อของเข้าใหม่แล้วเลขนี้จะเก่าจนกว่าจะคัดใหม่
               {' '}(ปีนี้มีใบซื้อใบเดียว 10 มี.ค. จึงแทบไม่ขยับ) · หมวด
