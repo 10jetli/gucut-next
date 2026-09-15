@@ -118,6 +118,7 @@ export default function BundleDetailPage() {
      พิสูจน์แล้วว่า **ZORT บันทึกการขายชุดไว้ที่รหัสชุด ไม่ใช่รหัสลูก**:
      · กวาดบัตรสต็อกของชุดทั้ง 360 ตัว ⇒ **14 ตัวมีแถวขาย รวม 23 แถว** ที่เหลือ 346 ตัวไม่มีเลย
      · และของชุดกับของลูก **ไม่ซ้ำใบกันเลย** (03409-3 · 03413-3 · 03496-3 ⇒ ใบซ้ำ 0/6 · 0/4 · 0/2)
+     📌 **หลักฐานข้อนี้มาจากบัตรสต็อกของกระจกเรา ไม่ใช่จากจอ ZORT** — แน่นพอให้ตัดสินใจ แต่ต้องรู้ที่มา
        ⇒ ขายชุดตัดที่รหัสชุดเท่านั้น **ไม่นับซ้ำกับลูก**
      · ที่ตัวอย่าง 5 ชุดแรกได้ 0 เพราะ **ชุดพวกนั้นยังไม่เคยขาย** ไม่ใช่เพราะเก็บเป็นรหัสลูก
      ⚠️ ว่างจึงแปลว่า "ชุดนี้ยังไม่เคยขาย" ได้จริง — แต่ **เฉพาะกับการขาย**
@@ -125,6 +126,10 @@ export default function BundleDetailPage() {
         ⇒ ห้ามอ่านตารางว่างว่า "ชุดนี้ไม่มีของ/ไม่มีความเคลื่อนไหว" */
   const [sales, setSales] = useState<SaleRow[] | null>(null)
   const [salesErr, setSalesErr] = useState('')
+  /** ช่องความครบที่ท่อส่งมาด้วย — **จอต้องอ่าน ไม่ใช่ดูแค่ rows**
+   *  (ฝั่งท่อชี้ 15 ก.ย. 2569: ถ้าไม่อ่าน ชุดที่ขายเกิน 200 แถวจะถูกตัดเงียบ
+   *   และถ้าท่อล้มบางส่วน `failed` ไม่ว่าง ตารางจะดู "ครบ" ทั้งที่ไม่ครบ) */
+  const [salesMeta, setSalesMeta] = useState<{ total: number | null; shown: number; hasMore: boolean; truncated: boolean; failed: string[] } | null>(null)
   const imgOf = useSkuImages(640)
   const [menu, setMenu] = useState<'' | 'cmd' | 'print' | 'push'>('')
 
@@ -153,6 +158,14 @@ export default function BundleDetailPage() {
           if (sc?.error) { setSales(null); setSalesErr(String(sc.error)); return }
           if (!Array.isArray(sc?.rows)) { setSales(null); setSalesErr('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)'); return }
           setSales(sc.rows as SaleRow[]); setSalesErr('')
+          setSalesMeta({
+            total: typeof sc.total === 'number' ? sc.total : null,
+            shown: Array.isArray(sc.rows) ? sc.rows.length : 0,
+            hasMore: sc.hasMore === true,
+            truncated: sc.truncated === true,
+            /* ⚠️ `failed` เป็น array ของแหล่งที่อ่านไม่สำเร็จ (ยิงดูแล้ว = []) */
+            failed: Array.isArray(sc.failed) ? sc.failed.map(String) : [],
+          })
         })
         .catch((e) => { setSales(null); setSalesErr(String(e instanceof Error ? e.message : e)) })
     } catch (e) {
@@ -581,10 +594,16 @@ export default function BundleDetailPage() {
                   <EmptyState cols={9} icon="⏳" title="กำลังอ่านรายการขายของชุดนี้" detail="" />
                 )}
                 {!salesErr && sales !== null && sales.length === 0 && (
-                  /* ✅ ว่างแบบนี้ **ตรวจแล้วจริง** — พูดได้ว่ายังไม่เคยขาย (ต่างจากเดิมที่ยังไม่ได้ตรวจ)
-                     ⚠️ แต่บอกขอบเขตด้วยว่าเป็นเรื่อง "การขาย" เท่านั้น */
-                  <EmptyState cols={9} icon="🧾" title="ชุดนี้ยังไม่เคยขาย"
-                    detail="อ่านบัตรสต็อกของรหัสชุดแล้วไม่มีรายการขายเลย — ทั้งร้านมีเพียง 14 ชุดจาก 360 ที่เคยขาย (รวม 23 ใบ) ⇒ ว่างเป็นเรื่องปกติ · หมายเหตุ: บัตรสต็อกของชุดไม่มีการเคลื่อนไหวชนิดอื่น ⇒ ว่างที่นี่ไม่ได้แปลว่าชุดนี้ไม่มีของในคลัง" />
+                  (salesMeta?.failed.length ?? 0) > 0
+                    /* 🔴 **ท่ออ่านบางแหล่งไม่สำเร็จ ⇒ ห้ามพูดว่ายังไม่เคยขาย** (ฝั่งท่อกำชับ)
+                       ว่างเพราะอ่านไม่ได้ กับ ว่างเพราะไม่มี เป็นคนละเรื่อง */
+                    ? <EmptyState cols={9} icon="⚠️" title="ยังสรุปไม่ได้ว่าชุดนี้เคยขายหรือไม่ — ท่ออ่านข้อมูลบางส่วนไม่สำเร็จ"
+                        detail={`อ่านไม่สำเร็จ: ${salesMeta?.failed.join(' · ')} ⇒ ตารางว่างเพราะอ่านไม่ได้ ไม่ใช่เพราะไม่มีการขาย`} />
+                    /* ✅ ว่างแบบนี้ **ตรวจแล้วจริง** — พูดได้ว่ายังไม่เคยขาย
+                       ⚠️ ไม่ฝังตัวเลข "กี่ชุดจากกี่ชุด" ลงจอ เพราะจะเก่าเงียบทันทีที่ชุดขายเพิ่ม
+                          (ฝั่งท่อชี้ 15 ก.ย. 2569) ⇒ เขียนเป็นเหตุการณ์+วันที่แทน */
+                    : <EmptyState cols={9} icon="🧾" title="ชุดนี้ยังไม่เคยขาย"
+                        detail="อ่านบัตรสต็อกของรหัสชุดแล้วไม่มีรายการขายเลย · ชุดส่วนใหญ่ของร้านยังไม่เคยขาย (สำรวจทั้ง 360 ชุด 15 ก.ย. 2569) ⇒ ว่างเป็นเรื่องปกติ · หมายเหตุ: บัตรสต็อกของชุดไม่มีการเคลื่อนไหวชนิดอื่น ⇒ ว่างที่นี่ไม่ได้แปลว่าชุดนี้ไม่มีของในคลัง" />
                 )}
                 {!salesErr && (sales ?? []).map((r, i) => (
                   <tr key={`${r.ref ?? i}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
@@ -609,6 +628,24 @@ export default function BundleDetailPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {/* 🔢 **ป้ายความครบของตารางขาย — อ่านจากช่องที่ท่อส่งมา ไม่ใช่เดาจากจำนวนแถว**
+              ฝั่งท่อชี้ 15 ก.ย. 2569: ถ้าจอดูแค่ `rows` ชุดที่ขายเกินเพดานจะถูกตัดเงียบ
+              และถ้าท่อล้มบางแหล่ง (`failed` ไม่ว่าง) ตารางจะดูครบทั้งที่ไม่ครบ
+              ⚠️ วันนี้ยังไม่ออกอาการ (มากสุด 6 แถว) — ใส่ไว้ก่อนที่จะออกอาการ */}
+          {salesMeta && (salesMeta.hasMore || salesMeta.truncated) && (
+            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mt-2">
+              ⚠️ <b>ตารางนี้ยังไม่ครบ</b> — แสดง <b>{fmtNum(salesMeta.shown)}</b>
+              {salesMeta.total !== null ? <> จากทั้งหมด <b>{fmtNum(salesMeta.total)}</b> รายการ</> : <> รายการ (ท่อไม่ได้บอกยอดรวม)</>}
+              {' '}· ท่อตัดมาให้เพราะชนเพดานต่อคำขอ
+            </p>
+          )}
+          {salesMeta && salesMeta.failed.length > 0 && (
+            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mt-2">
+              ⚠️ <b>ท่ออ่านข้อมูลบางแหล่งไม่สำเร็จ</b> ({salesMeta.failed.join(' · ')})
+              {' '}⇒ รายการที่เห็น <b>อาจไม่ใช่ทั้งหมด</b> — ไม่ใช่ว่าไม่มีรายการอื่น
+            </p>
+          )}
 
           {/* ── ความสดของข้อมูลสองชุด (สูตร vs ตัวเลขสต็อก) ───────────────── */}
           <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
