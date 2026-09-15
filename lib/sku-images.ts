@@ -83,8 +83,19 @@ export interface SkuImageFields {
 }
 
 /** ป้ายบอกว่า "ทำไมไม่มีรูป" — สองกรณีนี้พาไปคนละการกระทำ ห้ามรวบเป็นอันเดียว */
-export function noImageReason(row: SkuImageFields | null | undefined): 'zort-none' | 'unknown' {
-  return row?.imagePath === '' ? 'zort-none' : 'unknown'
+export function noImageReason(
+  row: SkuImageFields | null | undefined,
+): 'zort-none' | 'not-thumbed' | 'unknown' {
+  /* 🔴 **เพิ่มสถานะที่สามเมื่อ 16 ก.ย. 2569 — ของเดิมบอกคนใช้ผิดกับรหัสส่วนใหญ่**
+     วัดของจริงทั้งคลัง 2,672 รหัส (ไล่ทุกหน้า · ไม่ซ้ำ · ตรง total):
+       · ZORT มีรูป **2,102** รหัส · เรามีรูปย่อในถังแค่ **172** ⇒ **1,930 รหัสคือ "ZORT มีรูป แต่ยังไม่ย่อ"**
+     เดิมฟังก์ชันนี้คืน `unknown` ให้ 1,930 รหัสนั้น ⇒ tooltip ในตารางเขียนว่า **"ยังไม่รู้ว่ามีรูปไหม"**
+     ซึ่ง **เรารู้** — ZORT มีรูปแล้ว แค่เรายังไม่ได้ย่อลงถัง และกดเข้าไปในรหัสก็เห็นรูปได้เลย
+     ⇒ คนอ่านเดิมจะนึกว่าต้องไปถ่ายรูป/รอซิงก์ ทั้งที่ของมีอยู่แล้ว (โรค "ระบบถูก แต่สื่อสารผิด")
+     ⚠️ สามสถานะนี้พาไปทำคนละอย่าง: ถ่ายรูปเพิ่ม · รอย่อรูป (หรือกดเข้าไปดู) · ยังไม่รู้จริง ๆ */
+  if (row?.imagePath === '') return 'zort-none'
+  if (typeof row?.imagePath === 'string' && row.imagePath.trim()) return 'not-thumbed'
+  return 'unknown'
 }
 
 /** URL รูปตามลำดับข้างบน · คืน null เมื่อไม่มีรูปที่ใช้ได้

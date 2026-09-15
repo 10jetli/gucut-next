@@ -968,7 +968,9 @@ function CorePosInner() {
                   <span className="w-11 h-11 rounded border border-gray-200 bg-gray-100 shrink-0"
                     title={noImageReason(f) === 'zort-none'
                       ? 'ZORT ไม่มีรูปของรหัสนี้ — ต้องถ่ายรูปเพิ่ม'
-                      : 'ยังไม่รู้ว่ามีรูปไหม (ยังไม่ซิงก์ หรือไม่อยู่ในทะเบียนสินค้า)'} />
+                      : noImageReason(f) === 'not-thumbed'
+                        ? 'ZORT มีรูปของรหัสนี้แล้ว แต่ยังไม่ได้ย่อลงถังเรา (จอขายไม่โหลดไฟล์ดิบ เพราะจะหนักหน้าร้าน)'
+                        : 'ยังไม่รู้ว่ามีรูปไหม (ยังไม่ซิงก์ หรือไม่อยู่ในทะเบียนสินค้า)'} />
                 )}
               <div className="min-w-0 flex-1">
                 <p className="text-[14px] font-medium text-gray-800 truncate">

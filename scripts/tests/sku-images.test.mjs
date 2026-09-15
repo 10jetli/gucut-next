@@ -60,6 +60,21 @@ try {
   ok('imagePath = null ⇒ ยังไม่รู้', noImageReason({ imagePath: null }) === 'unknown')
   ok('ไม่มีคีย์เลย (ท่อรุ่นเก่า) ⇒ ยังไม่รู้', noImageReason({}) === 'unknown')
   ok('row เป็น null ⇒ ยังไม่รู้', noImageReason(null) === 'unknown')
+
+  /* 🔴 สถานะที่สาม (เพิ่ม 16 ก.ย. 2569) — **เคสของรหัสส่วนใหญ่ในคลัง**
+     วัดจริงทั้ง 2,672 รหัส: ZORT มีรูป 2,102 · เรามีรูปย่อ 172 ⇒ **1,930 รหัสอยู่ในเคสนี้**
+     เดิมฟังก์ชันคืน 'unknown' ⇒ tooltip บนจอเขียน "ยังไม่รู้ว่ามีรูปไหม" ทั้งที่**รู้แล้วว่ามี**
+     ⇒ คนอ่านจะไปถ่ายรูปซ้ำ/รอซิงก์ ทั้งที่กดเข้าไปในรหัสก็เห็นรูปได้เลย */
+  ok('ZORT มีรูป แต่ยังไม่ย่อลงถัง ⇒ not-thumbed',
+    noImageReason({ imagePath: 'https://image.zort.co.th/x.png' }) === 'not-thumbed',
+    String(noImageReason({ imagePath: 'https://image.zort.co.th/x.png' })))
+  ok('มี imagePath แต่เป็นช่องว่างล้วน ⇒ ยังไม่รู้ ไม่ใช่ not-thumbed',
+    noImageReason({ imagePath: '   ' }) === 'unknown',
+    String(noImageReason({ imagePath: '   ' })))
+  /* ⚠️ สามสถานะต้องแยกกันได้จริง — ถ้ารวมกันคนจะไปทำผิดเรื่อง */
+  ok('สามสถานะไม่ทับกัน',
+    new Set([noImageReason({ imagePath: '' }), noImageReason({ imagePath: 'https://x/y.png' }),
+      noImageReason({ imagePath: null })]).size === 3)
 } finally {
   rmSync(out, { recursive: true, force: true })
 }
