@@ -11,6 +11,13 @@ export interface BillVendorInfo {
   query: string       // Gmail search query (ไม่รวมช่วงวันที่)
   accountId?: string  // (ถ้ามี) เลขบัญชีที่ต้องเจอในเนื้อหา PDF ถึงจะนับเป็นบิลของเจ้านี้
 
+  /** ลิงก์ไปหน้าบิลของต้นทาง — ท่านประธานสั่ง 15 ก.ย. 2569 "ใส่ลิงก์ไว้ด้วย"
+   *  ใช้เปิดไปเทียบ/โหลดใบจริงเองเมื่อคลังเราไม่ครบ
+   *  ⚠️ **ใส่เฉพาะลิงก์ที่เปิดดูแล้วว่าใช่จริง ห้ามเดา** ลิงก์ผิดพาไปผิดบัญชี
+   *     แล้วคนจะสรุปว่า "ไม่มีบิล" ทั้งที่ดูผิดที่
+   *  ⚠️ ตัดพารามิเตอร์ช่วงวันที่ออกเสมอ — ไม่งั้นลิงก์ค้างอยู่เดือนเดียวตลอดกาล */
+  portal?: string
+
   /** เจ้านี้ต้องมีบิล **ทุกเดือน** แน่นอน (ค่าบริการรายเดือนตายตัว)
    *  ⇒ ตัวเฝ้า `bills-watch.mjs` จะเตือนเมื่อเดือนที่แล้วไม่มีบิลของเจ้านี้
    *
@@ -24,8 +31,8 @@ export interface BillVendorInfo {
 
 // เงื่อนไข query รองรับทั้งอีเมลที่ส่งตรงจากผู้ให้บริการ และอีเมลที่ถูก forward มา (ผู้ส่งเปลี่ยน)
 export const BILL_VENDORS: BillVendorInfo[] = [
-  { id: 'tiktok',  name: 'TikTok Ads',        emoji: '🎵', gridName: 'TikTok Ads',    gridOrder: 2, logo: '/logos/tiktok.png', query: '(from:tiktok.com (invoice OR "tax invoice" OR ใบแจ้งหนี้ OR receipt OR ใบเสร็จ) -from:notification@service.tiktok.com -from:sellersupport@shop.tiktok.com) OR (from:gucut@icloud.com tiktok has:attachment)' },
-  { id: 'meta',    name: 'Facebook/Meta Ads', emoji: '📘', gridName: 'Facebook Ads',  gridOrder: 1, logo: '/logos/facebook.webp', note: 'เฉพาะบัญชี GUCUTใหม่ (263190084598096)', query: 'from:facebookmail.com (subject:"Meta Invoice" OR subject:"Payments Remittance" OR "self accounted document" OR "remittance advice")', accountId: '263190084598096' },
+  { id: 'tiktok', portal: 'https://ads.tiktok.com/i18n/account/payment_invoice?aadvid=7129346796412846082',  name: 'TikTok Ads',        emoji: '🎵', gridName: 'TikTok Ads',    gridOrder: 2, logo: '/logos/tiktok.png', query: '(from:tiktok.com (invoice OR "tax invoice" OR ใบแจ้งหนี้ OR receipt OR ใบเสร็จ) -from:notification@service.tiktok.com -from:sellersupport@shop.tiktok.com) OR (from:gucut@icloud.com tiktok has:attachment)' },
+  { id: 'meta', portal: 'https://adsmanager.facebook.com/adsmanager/billing_hub/payment_activity/?asset_id=263190084598096&business_id=1319241864803694&payment_account_id=263190084598096&placement=BILLING_HUB',    name: 'Facebook/Meta Ads', emoji: '📘', gridName: 'Facebook Ads',  gridOrder: 1, logo: '/logos/facebook.webp', note: 'เฉพาะบัญชี GUCUTใหม่ (263190084598096)', query: 'from:facebookmail.com (subject:"Meta Invoice" OR subject:"Payments Remittance" OR "self accounted document" OR "remittance advice")', accountId: '263190084598096' },
   { id: 'google',  name: 'Google Ads',        emoji: '🔍', gridName: 'Google Ads',    gridOrder: 3, logo: '/logos/google.webp', query: 'from:payments-noreply@google.com OR (from:google.com subject:("payment receipt" OR ใบเสร็จ))' },
   { id: 'shopify', name: 'www (Shopify)',     emoji: '🛒', gridName: 'www (Shopify)', gridOrder: 0, logo: 'https://www.gucut.com/cdn/shop/files/7c6eb86bd569d120fbcb7ab8372b6803_8e3d89af-4a8d-419a-98c6-14b009abbfc3.svg', note: 'ปกติเดือนละ 2 ใบ (ค่าแพ็คเกจ + ค่าแอป)', query: '(from:shopify.com OR "Shopify Billing") (invoice OR billing OR bill OR ใบเรียกเก็บเงิน OR receipt OR ลดหนี้)' },
   { id: 'line',    name: 'LINE',              emoji: '💚', gridName: 'LINE',       gridOrder: 4, logo: '/logos/line.png', everyMonth: true, /* ฿1,369.60/เดือน แพ็กเกจเบสิค — คงที่ · มี 07/08/09 ไม่ขาด */ query: '((from:line.me OR from:linecorp.com OR from:linebiz.com) (invoice OR receipt OR ใบเสร็จ OR "tax invoice")) OR (from:10jetli@gmail.com subject:"ใบกำกับภาษี LINE OA")' },  { id: 'adobe',   name: 'Adobe',             emoji: '🅰️', gridName: 'Adobe',         gridOrder: 5, logo: '/logos/adobe.png', everyMonth: true, /* สมาชิกรายเดือน — มี 07/08/09 ไม่ขาด */ query: 'from:adobe.com (invoice OR receipt)' },
@@ -44,7 +51,7 @@ export const BILL_VENDORS: BillVendorInfo[] = [
         (subject ของเมลเตือนไม่มีคำพวกนี้สักฉบับ) ⇒ ตอนนี้จับได้ 0 ใบ **โดยตั้งใจ**
         วันไหน Netlify เริ่มส่งใบเสร็จเข้าเมล มันจะเข้าเองโดยไม่ต้องแก้อะไร
         ระหว่างนี้เอาใบจริงเข้าระบบด้วยการอัปโหลด (ไฟล์ `YYYY-MM_REAL_*.pdf`) */
-  { id: 'netlify', name: 'Netlify',           emoji: '🌐', gridName: 'Netlify',      gridOrder: 8, logo: '/logos/netlify.webp', note: 'ค่าโฮสต์เว็บ — Netlify ไม่ส่งใบเสร็จเข้าเมล ต้องโหลดจากแดชบอร์ดแล้วอัปเอง', everyMonth: true, /* Pro plan รายเดือน (เริ่ม ส.ค. 2569) */ query: 'from:netlify.com subject:(receipt OR invoice OR "payment received" OR ใบเสร็จ)' },
+  { id: 'netlify', portal: 'https://app.netlify.com/teams/10jetli/billing/general', name: 'Netlify',           emoji: '🌐', gridName: 'Netlify',      gridOrder: 8, logo: '/logos/netlify.webp', note: 'ค่าโฮสต์เว็บ — Netlify ไม่ส่งใบเสร็จเข้าเมล ต้องโหลดจากแดชบอร์ดแล้วอัปเอง', everyMonth: true, /* Pro plan รายเดือน (เริ่ม ส.ค. 2569) */ query: 'from:netlify.com subject:(receipt OR invoice OR "payment received" OR ใบเสร็จ)' },
   /* Cloudflare — เจ้าของร้านสั่งเพิ่ม 8 ก.ย. 2569 (โดเมน gucut.com + R2 ที่เก็บคลิป/รูปทั้งเว็บ + D1)
      บิลอยู่ที่ dash.cloudflare.com/<account>/billing/invoices
      ✅ **ส่งเข้าเมลจริง** (ต่างจาก Netlify) — ยิงตรวจแล้ว 8 ก.ย. 2569 เจอ 2 ใบ:
@@ -58,7 +65,7 @@ export const BILL_VENDORS: BillVendorInfo[] = [
         เดือนที่ใช้น้อยอาจไม่มีใบเลย ⇒ ตั้งไปจะเตือนผิดจนคนเลิกอ่าน (บทเรียนเวทีถก #5)
      ⚠️ เมลไม่มีไฟล์แนบ — ระบบจะสร้างใบจากเนื้อเมล (มีเลขที่ใบ + ยอด ครบ)
         อยากได้ PDF ตัวจริงต้องโหลดจากแดชบอร์ดแล้วอัปเอง */
-  { id: 'cloudflare', name: 'Cloudflare',   emoji: '☁️', gridName: 'Cloudflare',  gridOrder: 9, logo: '/logos/cloudflare.webp', note: 'โดเมน gucut.com + R2 (คลิป/รูปทั้งเว็บ) + D1', query: 'from:notify.cloudflare.com subject:"Your invoice is available"' },
+  { id: 'cloudflare', portal: 'https://dash.cloudflare.com/f496328a3fb6eac88b6ff64eb4b52fd3/billing/invoices', name: 'Cloudflare',   emoji: '☁️', gridName: 'Cloudflare',  gridOrder: 9, logo: '/logos/cloudflare.webp', note: 'โดเมน gucut.com + R2 (คลิป/รูปทั้งเว็บ) + D1', query: 'from:notify.cloudflare.com subject:"Your invoice is available"' },
   /* ── สามเจ้าที่เพิ่ม 8 ก.ย. 2569 (เจ้าของร้านสั่ง "ดึงบิลทุกอัน") ──
      ทุกตัวตั้ง query จาก **ผู้ส่ง+subject ของเมลจริงที่เปิดดูแล้ว** ไม่ได้เดา */
 

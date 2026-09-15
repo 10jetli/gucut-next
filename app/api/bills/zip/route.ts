@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     const idx = await loadBillIndexBlobs(vendor.id)
     // คัดซ้ำเลขที่ใบ — บิลใบเดียวกันเข้าสองทาง (ตัวเก็บอัตโนมัติ + ไฟล์แนบอีเมล)
     // ⚠️ ไม่มีเลขที่ใบในชื่อ ⇒ เก็บไว้ทั้งหมด ห้ามเดาว่าซ้ำ (บิลหาย = เอกสารภาษีขาด)
-    const เลขที่ใบ = (n: string) => (n.match(/(THTT\d{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)?.[1] ?? '').toUpperCase()
+    const เลขที่ใบ = (n: string) => (n.match(/(THTT\d{6,}|FBADS-[\d-]{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)?.[1] ?? '').toUpperCase()
     const เห็นแล้ว = new Set(รายชื่อใบจริง.map(เลขที่ใบ).filter(Boolean))
     const entries = (idx?.entries ?? []).filter(e => {
       if (e.month !== month) return false

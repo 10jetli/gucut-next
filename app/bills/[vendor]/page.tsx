@@ -7,8 +7,8 @@ import { TH_MONTHS, EN_MONTHS } from '@/lib/format'
 import Card from '@/components/ui/Card'
 
 // ข้อมูล vendor รวมอยู่ที่ lib/vendors.ts
-const VENDOR_INFO: Record<string, { name: string; emoji: string; note?: string }> =
-  Object.fromEntries(BILL_VENDORS.map(v => [v.id, { name: v.name, emoji: v.emoji, note: v.note }]))
+const VENDOR_INFO: Record<string, { name: string; emoji: string; note?: string; portal?: string }> =
+  Object.fromEntries(BILL_VENDORS.map(v => [v.id, { name: v.name, emoji: v.emoji, note: v.note, portal: v.portal }]))
 
 interface BillFile {
   filename: string
@@ -64,7 +64,18 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
     <div className="max-w-[430px] mx-auto px-4 py-4">
       <Link href="/bills" className="text-[13px] text-blue-600 font-medium hover:text-blue-700">← กลับหน้าบิล</Link>
       <div className="text-[17px] font-bold text-gray-800 mt-2 mb-1">{info.emoji} {info.name}</div>
-      {info.note && <div className="text-[11px] text-gray-400 mb-3">{info.note}</div>}
+      {info.note && <div className="text-[11px] text-gray-400 mb-1">{info.note}</div>}
+
+      {/* 🔗 ลิงก์ไปหน้าบิลของต้นทาง — ท่านประธานสั่ง 15 ก.ย. 2569 "ใส่ลิงก์ไว้ด้วย"
+          มีไว้ให้เปิดไปเทียบ/โหลดใบจริงเองตอนคลังเราไม่ครบ
+          ⚠️ แสดงเฉพาะเจ้าที่มีลิงก์ยืนยันแล้ว — เจ้าที่ยังไม่รู้ไม่ต้องโชว์อะไร
+             ดีกว่าโชว์ลิงก์มั่วแล้วพาไปผิดบัญชี */}
+      {info.portal && (
+        <a href={info.portal} target="_blank" rel="noreferrer"
+           className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 hover:underline mb-3">
+          🔗 เปิดหน้าบิลของ {info.name} (ต้นทาง) ↗
+        </a>
+      )}
 
       {!data && !err && (
         <Card className="p-6 text-center text-gray-400 text-[13px]">

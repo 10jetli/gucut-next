@@ -65,7 +65,7 @@ async function attachRealFiles(months: Record<string, any[]>, vendorId: string, 
    ⚠️ ไม่มีเลขที่ใบในชื่อ ⇒ **เก็บไว้ทั้งหมด** ห้ามเดาว่าซ้ำ
       บิลหายหนึ่งใบ = เอกสารภาษีขาดหนึ่งใบ แย่กว่าเห็นซ้ำ */
 function เลขที่ใบ(filename: string): string | null {
-  const m = filename.match(/(THTT\d{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)
+  const m = filename.match(/(THTT\d{6,}|FBADS-[\d-]{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)
   return m ? m[1].toUpperCase() : null
 }
 
