@@ -79,12 +79,12 @@ export default function BillsPage() {
   }, [])
 
   return (
-    <div className="max-w-[430px] mx-auto px-4 py-4">
+    <div className="max-w-[430px] lg:max-w-[1200px] mx-auto px-4 py-4">
 
       <div className="text-[15px] font-bold text-gray-800 mb-3">🧾 บิลค่าโฆษณา / บริการ (ส่งบัญชีทำภาษี)</div>
 
       {/* ช่องรายเจ้า — กดเข้าไปดูบิลเรียงเป็นเดือนๆ ของเจ้านั้น */}
-      <div className="grid grid-cols-2 gap-3 mb-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
         {VENDOR_LIST.map(v => (
           <Link
             key={v.id}
@@ -97,7 +97,7 @@ export default function BillsPage() {
             ) : (
               <div className="text-[30px] leading-none mb-1">{v.emoji}</div>
             )}
-            <div className="text-[13px] font-bold text-gray-800">{v.name}</div>
+            <div className="text-[13px] lg:text-[15px] font-bold text-gray-800">{v.name}</div>
 
             {/* สถานะการเก็บ — ใครเก็บ เก็บยังไง ล่าสุดเมื่อไหร่ */}
             {!st && !stErr && <div className="text-[9px] text-gray-300 mt-1">กำลังอ่านสถานะ…</div>}
@@ -111,24 +111,24 @@ export default function BillsPage() {
                 {/* ⚠️ เหตุผลต้องอ่านออกครบ ห้ามบีบลงป้ายเล็กจนตัดหาย
                     คนอ่านต้องรู้ว่าติดเพราะอะไร ไม่ใช่แค่ว่า "ไม่ได้" */}
                 {st[v.id].เหตุ && (
-                  <div className="text-[9px] text-amber-800 bg-amber-50 rounded px-1.5 py-1 mt-1 leading-snug text-left">
+                  <div className="text-[9px] lg:text-[11px] text-amber-800 bg-amber-50 rounded px-1.5 py-1 mt-1 leading-snug text-left">
                     {st[v.id].เหตุ}
                   </div>
                 )}
                 {st[v.id].เก็บโดย && (
-                  <div className="text-[9px] text-gray-500 mt-1 leading-snug" title={st[v.id].เก็บโดย!.รายละเอียด}>
+                  <div className="text-[9px] lg:text-[11px] text-gray-500 mt-1 leading-snug" title={st[v.id].เก็บโดย!.รายละเอียด}>
                     {ไอคอนวิธี[st[v.id].เก็บโดย!.วิธี] ?? '•'} {st[v.id].เก็บโดย!.วิธี}
-                    <div className="text-[8px] text-gray-400">{st[v.id].เก็บโดย!.รอบ}</div>
+                    <div className="text-[8px] lg:text-[10px] text-gray-400">{st[v.id].เก็บโดย!.รอบ}</div>
                   </div>
                 )}
-                <div className="text-[9px] text-gray-400 leading-snug">
+                <div className="text-[9px] lg:text-[11px] text-gray-400 leading-snug">
                   สแกนล่าสุด {เวลาไทย(st[v.id].สแกนล่าสุด)}
                 </div>
                 {/* ⚠️ "เจอบิลใหม่" คนละเรื่องกับ "สแกน" — เจ้าที่ไม่มีบิลใหม่ไม่ได้แปลว่าระบบพัง */}
-                <div className="text-[9px] text-gray-400 leading-snug">
+                <div className="text-[9px] lg:text-[11px] text-gray-400 leading-snug">
                   เจอบิลใหม่ {เวลาไทย(st[v.id].เจอบิลใหม่ล่าสุด)}
                 </div>
-                <div className="text-[9px] text-gray-400 leading-snug">
+                <div className="text-[9px] lg:text-[11px] text-gray-400 leading-snug">
                   มีทั้งหมด {st[v.id].รวมทุกเดือน} ใบ
                 </div>
               </div>

@@ -61,7 +61,7 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
   const months = data ? Object.keys(data.months).sort().reverse() : []
 
   return (
-    <div className="max-w-[430px] mx-auto px-4 py-4">
+    <div className="max-w-[430px] lg:max-w-[1000px] mx-auto px-4 py-4">
       <Link href="/bills" className="text-[13px] text-blue-600 font-medium hover:text-blue-700">← กลับหน้าบิล</Link>
       {/* 🔗 ลิงก์ต้นทาง — ท่านประธานสั่ง 15 ก.ย. 2569 "ใส่ลิงก์ไว้ด้วย"
           🔴 รอบแรกทำเป็นตัวหนังสือเล็กสีจาง ⇒ ท่านเปิดหน้าแล้วบอก "ยังไม่เจอลิ้งค์เลย"
@@ -151,7 +151,7 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
             )}
             {data!.months[m].map((f, i) => (
               <div key={i} className="flex items-center justify-between border-t border-gray-100 py-2 gap-2">
-                <div className="text-[12px] text-gray-700 break-all flex-1">
+                <div className="text-[12px] lg:text-[13px] text-gray-700 break-all flex-1">
                   📎 {f.filename}
                   {f.size > 0 && <span className="text-[10px] text-gray-400 ml-1">({Math.max(1, Math.round(f.size / 1024))} KB)</span>}
                 </div>
