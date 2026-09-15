@@ -89,6 +89,19 @@ export async function listVendorBlobFiles(vendorId: string): Promise<BlobBillFil
   return out
 }
 
+/** รายชื่อไฟล์อย่างเดียว — **ไม่ขอ metadata ทีละไฟล์**
+ *  🔴 15 ก.ย. 2569: หน้า /bills ใช้เวลา 8.9 วินาทีกว่าจะขึ้นสถานะ
+ *     เพราะ listVendorBlobFiles ยิง getMetadata ทีละไฟล์เพื่อเอา "ขนาด"
+ *     TikTok มี 118 ไฟล์ × 12 เจ้า = คำขอเป็นร้อย ไปที่ Blobs ซึ่งอยู่ us-east-1
+ *     ⇒ จอที่ไม่ได้ใช้ขนาดไฟล์ ไม่ควรจ่ายค่านั้น
+ *  ⚠️ ต้องการขนาดไฟล์ด้วย ให้ใช้ listVendorBlobFiles ตามเดิม */
+export async function listVendorBlobNames(vendorId: string): Promise<string[]> {
+  const store = getStore(STORE)
+  const prefix = `f/${vendorId}/`
+  const { blobs } = await store.list({ prefix }).catch(() => ({ blobs: [] as { key: string }[] }))
+  return (blobs || []).map(b => b.key.slice(prefix.length))
+}
+
 export async function downloadBlobFile(key: string): Promise<Buffer | null> {
   const store = getStore(STORE)
   const ab = (await store.get(key, { type: 'arrayBuffer' }).catch(() => null)) as ArrayBuffer | null

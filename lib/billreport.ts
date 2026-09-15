@@ -1,5 +1,5 @@
 import { BILL_VENDORS, type BillVendorInfo } from '@/lib/vendors'
-import { loadBillIndexBlobs, listVendorBlobFiles } from '@/lib/billblobs'
+import { loadBillIndexBlobs, listVendorBlobNames } from '@/lib/billblobs'
 
 // สรุปสถานะบิลรายเจ้า — **ที่เดียว** ใช้ทั้ง /api/bills/report (ทีม AI ใช้รหัส)
 // และ /api/bills/status (หน้าเว็บใช้เซสชัน)
@@ -32,8 +32,10 @@ export async function สรุปบิลรายเจ้า(vendor: BillVen
   }
   try {
     const idx = await loadBillIndexBlobs(vendor.id)
-    const real = (await listVendorBlobFiles(vendor.id).catch(() => []))
-      .map(f => f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/))
+    // ⚠️ ใช้ตัวอ่านแบบเบา — หน้านี้ไม่ต้องใช้ขนาดไฟล์
+    //    ของเดิมขอ metadata ทีละไฟล์ ทำให้หน้า /bills รอ 8.9 วินาที
+    const real = (await listVendorBlobNames(vendor.id).catch(() => []))
+      .map(n => n.match(/^(\d{4}-\d{2})_REAL_(.+)$/))
       .filter(Boolean) as RegExpMatchArray[]
 
     const เดือน: VendorBillStatus['เดือน'] = {}
