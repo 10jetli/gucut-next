@@ -348,7 +348,12 @@ export default function SalesReportPage() {
      ตอนนี้ท่อมี `warehouse_code` แล้ว (gucut-web 270f04e) ⇒ แบ่งตามคลังจริงได้
      🔴 **ข้อมูลคลังเต็มเฉพาะใบ 1–15 ก.ย. 2569** ใบก่อนหน้าเป็น null จนกว่าจะกวาดย้อนหลังเสร็จ
         ⇒ ใบที่ยังไม่รู้คลัง **ต้องเป็นกองของตัวเอง** ห้ามยัดเข้าคลังไหน ห้ามตัดทิ้ง (ฝั่งท่อกำชับ) */
-  const [whSales, setWhSales] = useState<{ code: string; name: string; orders: number; sales: number }[] | null>(null)
+  const [whSales, setWhSales] = useState<{
+    code: string; name: string; orders: number; sales: number
+    /** 🔴 ใบคืนรายคลัง (ท่อ gucut-web 26cbd2e) — `null` = **อ่านใบคืนไม่ได้ ⇒ ยังไม่รู้** · `0` = อ่านได้และไม่มีใบคืนจริง
+     *  ไม่มีคีย์เลย = ท่อรุ่นเก่า ⇒ คงขีดไว้เหมือนเดิม (สามอย่างนี้คนละความหมาย) */
+    returns?: number | null; returnsAmount?: number | null
+  }[] | null>(null)
   const [whSalesErr, setWhSalesErr] = useState('')
   const [whLoading, setWhLoading] = useState(false)
   /** ข้อความขอบเขตของยอดรายคลัง — **มาจากท่อ ไม่ใช่จอเขียนเอง** (วันที่เริ่มเก็บคลังจะได้ไม่ค้าง) */
@@ -480,9 +485,14 @@ export default function SalesReportPage() {
           (Array.isArray(w?.warehouses) ? w.warehouses : [])
             .map((x: { code?: string; name?: string }) => [String(x.code ?? ''), String(x.name ?? '')]),
         )
-        setWhSales((d.byWarehouse as { code: string; orders: number; amount: number }[]).map((x) => ({
+        setWhSales((d.byWarehouse as {
+          code: string; orders: number; amount: number; returns?: number | null; returnsAmount?: number | null
+        }[]).map((x) => ({
           code: x.code, name: x.code ? (nameOf.get(x.code) || x.code) : 'ยังไม่รู้คลัง',
           orders: Number(x.orders) || 0, sales: Number(x.amount) || 0,
+          /* ⚠️ แปลงเลขแบบไม่กลืน null — `Number(null)` เป็น 0 ซึ่งจะกลายเป็นคำโกหกว่า "ไม่มีใบคืน" */
+          returns: 'returns' in x ? (typeof x.returns === 'number' ? x.returns : null) : undefined,
+          returnsAmount: 'returnsAmount' in x ? (typeof x.returnsAmount === 'number' ? x.returnsAmount : null) : undefined,
         })))
         setWhScope(typeof d.warehouseScope === 'string' ? d.warehouseScope : '')
         setWhSalesErr('')
@@ -846,8 +856,20 @@ export default function SalesReportPage() {
                           </td>
                           <td className={TDR}>{fmtNum(w.orders)}</td>
                           <td className={TDR}>{fmtMoney(w.sales)}</td>
-                          {/* 🔴 ท่อยังไม่มีใบรับคืนรายคลัง ⇒ ขีด ห้ามใส่ 0 (0 แปลว่าไม่มีใครคืนของ) */}
-                          <td className={`${TDR} text-gray-300`} title="ท่อยังไม่แยกใบรับคืนตามคลัง">—</td>
+                          {/* 🔴 สามสถานะของใบคืน: มีเลข · `null` = อ่านใบคืนไม่ได้ (ยังไม่รู้) · ไม่มีคีย์ = ท่อรุ่นเก่า
+                                 **0 ใส่ได้เฉพาะตอนท่อบอกว่า 0 จริง** — เดาเองไม่ได้ เพราะ 0 แปลว่าไม่มีใครคืนของ */}
+                          {w.returns === undefined ? (
+                            <td className={`${TDR} text-gray-300`} title="ท่อรุ่นนี้ยังไม่ส่งใบคืนรายคลังมา">—</td>
+                          ) : w.returns === null ? (
+                            <td className={`${TDR} text-amber-700`} title="อ่านตารางใบคืนไม่สำเร็จรอบนี้">ยังไม่รู้</td>
+                          ) : (
+                            <td className={TDR}>
+                              {fmtNum(w.returns)}
+                              {typeof w.returnsAmount === 'number' && w.returns > 0 && (
+                                <span className="block text-[11px] text-gray-400">{fmtMoney(w.returnsAmount)}</span>
+                              )}
+                            </td>
+                          )}
                           <td className={TD}>
                             <span className="block h-2 rounded-full bg-gray-100 overflow-hidden">
                               <span className={`block h-full rounded-full ${unknown
@@ -865,8 +887,9 @@ export default function SalesReportPage() {
               <p className="text-[11.5px] text-gray-400 px-4 md:px-5 py-3 leading-relaxed">
                 ยอดรายคลังมาจาก<b>คำขอเดียว</b>ที่เซิร์ฟเวอร์รวมมาให้ (`orderfacets&warehouses=1`)
                 {' '}— ผลรวมทุกแถวเท่ากับยอดของทั้งสองร้านในคำขอเดียวกัน ⇒ <b>ไม่มีใบไหนตกหล่นหรือถูกนับซ้ำ</b>
-                <br />⚠️ ZORT มีคอลัมน์ <b>จำนวนรายการ</b> กับ <b>จำนวนรายการรายรับคืน</b> เพิ่มอีกสอง —
-                {' '}ของเรายังไม่มี เพราะท่อยังไม่แยกใบรับคืนตามคลัง (ขึ้นขีดไว้ ไม่ใส่ 0)
+                <br />🧾 <b>ใบรับคืน</b> = ใบคืนของใบขายในช่วงนี้ จัดกองตาม<b>คลังของใบขาย</b> (ไม่นับใบคืนที่ถูกยกเลิก)
+                {' '}· ใบคืนที่หาใบขายไม่เจอหรืออยู่นอกช่วง <b>ไม่ถูกนับในคอลัมน์นี้</b>
+                <br />⚠️ ZORT ยังมีคอลัมน์ <b>จำนวนรายการ</b> (นับรวมทุกชนิดเอกสาร) ที่ของเรายังไม่มี
               </p>
             </Card>
           )}
