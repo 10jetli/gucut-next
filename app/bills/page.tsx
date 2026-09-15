@@ -32,6 +32,7 @@ interface VendorStatus {
   เหตุ: string
   เก็บโดย: { วิธี: string; รายละเอียด: string; รอบ: string } | null
   สแกนล่าสุด: string | null
+  เจอบิลใหม่ล่าสุด: string | null
   ชั่วโมงที่แล้ว: number | null
   รวมทุกเดือน: number
   เดือนล่าสุดที่มีบิล: string | null
@@ -113,7 +114,11 @@ export default function BillsPage() {
                   </div>
                 )}
                 <div className="text-[9px] text-gray-400 leading-snug">
-                  ดึงล่าสุด {เวลาไทย(st[v.id].สแกนล่าสุด)}
+                  สแกนล่าสุด {เวลาไทย(st[v.id].สแกนล่าสุด)}
+                </div>
+                {/* ⚠️ "เจอบิลใหม่" คนละเรื่องกับ "สแกน" — เจ้าที่ไม่มีบิลใหม่ไม่ได้แปลว่าระบบพัง */}
+                <div className="text-[9px] text-gray-400 leading-snug">
+                  เจอบิลใหม่ {เวลาไทย(st[v.id].เจอบิลใหม่ล่าสุด)}
                 </div>
                 <div className="text-[9px] text-gray-400 leading-snug">
                   มีทั้งหมด {st[v.id].รวมทุกเดือน} ใบ

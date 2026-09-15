@@ -17,7 +17,10 @@ export interface BillEntry {
   subject: string
 }
 export interface BillIndex {
-  lastScan: string
+  lastScan: string          // สแกน Gmail ครั้งล่าสุด (เขียนทุกรอบ แม้ไม่เจอของใหม่)
+  /** เจอบิลใหม่ครั้งล่าสุด — คนละความหมายกับ lastScan **ห้ามเอามาใช้แทนกัน**
+   *  (15 ก.ย. 2569: เคยใช้ lastScan สื่อสองความหมาย แล้วจอขึ้นว่า "เงียบมา 44 วัน" ผิด) */
+  lastNew?: string | null
   done: string[]
   entries: BillEntry[]
 }

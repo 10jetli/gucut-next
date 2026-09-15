@@ -15,6 +15,7 @@ export interface VendorBillStatus {
   รวมทุกเดือน: number
   เดือน: Record<string, { จำนวน: number; ใบจริงที่อัปไว้: number; ไฟล์: string[] }>
   สแกนล่าสุด: string | null
+  เจอบิลใหม่ล่าสุด: string | null
   อ่านไม่ได้?: string
 }
 
@@ -61,10 +62,11 @@ export async function สรุปบิลรายเจ้า(vendor: BillVen
       รวมทุกเดือน: Object.values(เดือน).reduce((a, b) => a + b.จำนวน, 0),
       เดือน: Object.fromEntries(Object.entries(เดือน).sort(([a], [b]) => b.localeCompare(a))),
       สแกนล่าสุด: idx?.lastScan ?? null,
+      เจอบิลใหม่ล่าสุด: (idx as any)?.lastNew ?? null,
     }
   } catch (e: any) {
     // 🔑 แยก "อ่านไม่ได้" ออกจาก "ไม่มีบิล" — ห้ามยุบเป็น 0
-    return { ...ฐาน, รวมทุกเดือน: 0, เดือน: {}, สแกนล่าสุด: null,
+    return { ...ฐาน, รวมทุกเดือน: 0, เดือน: {}, สแกนล่าสุด: null, เจอบิลใหม่ล่าสุด: null,
              อ่านไม่ได้: String(e?.message ?? e).slice(0, 120) }
   }
 }

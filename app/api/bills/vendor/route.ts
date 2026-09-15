@@ -175,10 +175,21 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // บันทึก cache เมื่อมีของใหม่ (หรือยังไม่เคยมี cache) — ถ้าบันทึกพลาดก็ไม่เป็นไร รอบหน้าสแกนใหม่
-    if (changed || !idx) {
-      try { await saveBillIndexBlobs(vendor.id, { lastScan: now.toISOString(), done: Array.from(done), entries }) } catch {}
-    }
+    /* 🔴 แก้ 15 ก.ย. 2569 — เดิมบันทึก `lastScan` **เฉพาะตอนเจอของใหม่**
+       ⇒ ค่านั้นความหมายจริงคือ "เจอบิลใหม่ล่าสุดเมื่อไหร่" ไม่ใช่ "สแกนล่าสุดเมื่อไหร่"
+       พอเอาไปขึ้นจอเป็น "ดึงล่าสุด" มันโกหกทันที:
+       TikTok ขึ้นว่า "ดึงล่าสุด 1 ส.ค. · เงียบมา 44 วัน" ทั้งที่ตัวเก็บทำงานทุกวัน
+       และเพิ่งเก็บไป 98 ใบในวันเดียวกัน — เจ้าที่ไม่มีบิลใหม่มานานจะดูเหมือนระบบพัง
+       ⇒ แยกสองความหมายออกจากกัน: `lastScan` = สแกนครั้งล่าสุด · `lastNew` = เจอของใหม่ครั้งล่าสุด
+       🔑 กฎทั่วไป: ฟิลด์ที่เอาไปขึ้นจอ ต้องมีความหมายเดียว และตรงกับคำที่เขียนบนจอ */
+    try {
+      await saveBillIndexBlobs(vendor.id, {
+        lastScan: now.toISOString(),
+        lastNew: changed ? now.toISOString() : (idx?.lastNew ?? idx?.lastScan ?? null),
+        done: Array.from(done),
+        entries,
+      } as any)
+    } catch { /* บันทึกพลาดไม่เป็นไร รอบหน้าสแกนใหม่ */ }
 
     // ── จัดกลุ่มเป็นรายเดือน (ตัดเดือนที่เก่ากว่า ~13 เดือนทิ้ง) ──
     const cutoff = `${now.getFullYear() - 1}-${pad(now.getMonth() + 1)}`

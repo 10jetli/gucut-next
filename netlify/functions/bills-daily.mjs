@@ -91,4 +91,6 @@ export default async function handler() {
 }
 
 // ตี 5 ไทยทุกวัน (22:00 UTC) — ก่อนร้านเปิด บิลเมื่อวานเข้าครบพอดี
-export const config = { schedule: "0 22 * * *" };
+// ⏰ ตี 1 เวลาไทย = 18:00 UTC — ท่านประธานสั่ง 15 ก.ย. 2569 "บอทต้องเข้าไปอับเดต 01.00 น ทุกวัน"
+//    เดิมตี 5 (22:00 UTC) · Netlify นับเป็น UTC เสมอ **อย่าเผลอใส่เวลาไทยตรง ๆ**
+export const config = { schedule: "0 18 * * *" };
