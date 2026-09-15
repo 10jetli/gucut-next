@@ -63,19 +63,24 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
   return (
     <div className="max-w-[430px] mx-auto px-4 py-4">
       <Link href="/bills" className="text-[13px] text-blue-600 font-medium hover:text-blue-700">← กลับหน้าบิล</Link>
-      <div className="text-[17px] font-bold text-gray-800 mt-2 mb-1">{info.emoji} {info.name}</div>
-      {info.note && <div className="text-[11px] text-gray-400 mb-1">{info.note}</div>}
-
-      {/* 🔗 ลิงก์ไปหน้าบิลของต้นทาง — ท่านประธานสั่ง 15 ก.ย. 2569 "ใส่ลิงก์ไว้ด้วย"
-          มีไว้ให้เปิดไปเทียบ/โหลดใบจริงเองตอนคลังเราไม่ครบ
-          ⚠️ แสดงเฉพาะเจ้าที่มีลิงก์ยืนยันแล้ว — เจ้าที่ยังไม่รู้ไม่ต้องโชว์อะไร
-             ดีกว่าโชว์ลิงก์มั่วแล้วพาไปผิดบัญชี */}
-      {info.portal && (
-        <a href={info.portal} target="_blank" rel="noreferrer"
-           className="inline-flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-700 hover:underline mb-3">
-          🔗 เปิดหน้าบิลของ {info.name} (ต้นทาง) ↗
-        </a>
-      )}
+      {/* 🔗 ลิงก์ต้นทาง — ท่านประธานสั่ง 15 ก.ย. 2569 "ใส่ลิงก์ไว้ด้วย"
+          🔴 รอบแรกทำเป็นตัวหนังสือเล็กสีจาง ⇒ ท่านเปิดหน้าแล้วบอก "ยังไม่เจอลิ้งค์เลย"
+             ทั้งที่มันอยู่บนจอจริง ⇒ **ของที่มองไม่เห็น เท่ากับไม่มี**
+             ⇒ ทำเป็นปุ่มสีชัด อยู่แถวเดียวกับชื่อเจ้า มุมที่ตามองก่อน
+          ⚠️ แสดงเฉพาะเจ้าที่มีลิงก์ยืนยันแล้ว — ลิงก์มั่วพาไปผิดบัญชี
+             แล้วคนจะสรุปว่า "ไม่มีบิล" ทั้งที่ดูผิดที่ */}
+      <div className="flex items-center justify-between gap-2 mt-2 mb-1">
+        <div className="text-[17px] font-bold text-gray-800">{info.emoji} {info.name}</div>
+        {info.portal && (
+          <a href={info.portal} target="_blank" rel="noreferrer"
+             title={`เปิดหน้าบิลของ ${info.name} ที่ต้นทาง — ใช้เทียบว่าคลังเราครบไหม`}
+             className="shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium
+                        bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
+            🔗 เปิดหน้าบิลต้นทาง ↗
+          </a>
+        )}
+      </div>
+      {info.note && <div className="text-[11px] text-gray-400 mb-3">{info.note}</div>}
 
       {!data && !err && (
         <Card className="p-6 text-center text-gray-400 text-[13px]">
