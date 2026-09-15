@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import { useEffect, useState } from 'react'
 import { BILL_VENDORS } from '@/lib/vendors'
 import { TH_MONTHS } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -25,7 +26,57 @@ function lastMonths(n: number): { value: string; label: string }[] {
   return out
 }
 
+interface VendorStatus {
+  id: string
+  สถานะ: 'ปกติ' | 'ควรมาดู' | 'อัปมือ' | 'ไม่รู้'
+  เหตุ: string
+  เก็บโดย: { วิธี: string; รายละเอียด: string; รอบ: string } | null
+  สแกนล่าสุด: string | null
+  ชั่วโมงที่แล้ว: number | null
+  รวมทุกเดือน: number
+  เดือนล่าสุดที่มีบิล: string | null
+  จำนวนเดือนล่าสุด: number
+}
+
+/* 🔴 15 ก.ย. 2569 — ท่านประธานสั่ง: "ไปดึงบิลวันไหนล่าสุด อับเดตด้วย บอกสเตตัส"
+   และ "ไปเก็บด้วยบอทตัวไหน เช่น g1 ด้วยการเขียนสคริปต์หรือ api หรือดึงเมล ต้องบอกด้วย"
+   🔑 ทำให้ของที่ทำงานเงียบ ๆ อยู่เบื้องหลังมองเห็นได้ — ไม่งั้นไม่มีใครรู้ว่า
+      เจ้าไหนเก็บเอง เจ้าไหนต้องคนทำ จนกว่าจะขาดแล้วรู้ตอนยื่นภาษี
+   ⚠️ แยกสามสถานะเสมอ: ยังไม่โหลด / โหลดไม่สำเร็จ / ไม่มีข้อมูลจริง — ห้ามยุบเป็นเดียวกัน */
+function เวลาไทย(iso: string | null) {
+  if (!iso) return '—'
+  try {
+    return new Date(iso).toLocaleString('th-TH', {
+      timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short',
+      hour: '2-digit', minute: '2-digit',
+    }) + ' น.'
+  } catch { return '—' }
+}
+
+const สีสถานะ: Record<string, string> = {
+  'ปกติ': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'ควรมาดู': 'bg-amber-50 text-amber-800 border-amber-200',
+  'อัปมือ': 'bg-orange-50 text-orange-700 border-orange-200',
+  'ไม่รู้': 'bg-gray-100 text-gray-500 border-gray-200',
+}
+const ไอคอนวิธี: Record<string, string> = {
+  'เมล': '📧', 'สคริปต์บน g1': '🤖', 'อัปมือ': '✋',
+}
+
 export default function BillsPage() {
+  const [st, setSt] = useState<Record<string, VendorStatus> | null>(null)
+  const [stErr, setStErr] = useState<string | null>(null)
+
+  useEffect(() => {
+    fetch('/api/bills/status')
+      .then(r => r.json())
+      .then(j => {
+        if (j.error) { setStErr(String(j.error)); return }
+        setSt(Object.fromEntries((j.เจ้า ?? []).map((v: VendorStatus) => [v.id, v])))
+      })
+      .catch(e => setStErr(String(e)))
+  }, [])
+
   return (
     <div className="max-w-[430px] mx-auto px-4 py-4">
 
@@ -46,7 +97,31 @@ export default function BillsPage() {
               <div className="text-[30px] leading-none mb-1">{v.emoji}</div>
             )}
             <div className="text-[13px] font-bold text-gray-800">{v.name}</div>
-            <div className="text-[10px] text-blue-500 mt-0.5">ดูบิลรายเดือน →</div>
+
+            {/* สถานะการเก็บ — ใครเก็บ เก็บยังไง ล่าสุดเมื่อไหร่ */}
+            {!st && !stErr && <div className="text-[9px] text-gray-300 mt-1">กำลังอ่านสถานะ…</div>}
+            {stErr && <div className="text-[9px] text-gray-400 mt-1">อ่านสถานะไม่ได้</div>}
+            {st && !st[v.id] && <div className="text-[9px] text-gray-400 mt-1">ไม่มีข้อมูลสถานะ</div>}
+            {st?.[v.id] && (
+              <div className="mt-1.5 w-full">
+                <div className={`inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-medium ${สีสถานะ[st[v.id].สถานะ] ?? ''}`}>
+                  {st[v.id].สถานะ}{st[v.id].เหตุ ? ` · ${st[v.id].เหตุ}` : ''}
+                </div>
+                {st[v.id].เก็บโดย && (
+                  <div className="text-[9px] text-gray-500 mt-1 leading-snug">
+                    {ไอคอนวิธี[st[v.id].เก็บโดย!.วิธี] ?? '•'} {st[v.id].เก็บโดย!.วิธี}
+                  </div>
+                )}
+                <div className="text-[9px] text-gray-400 leading-snug">
+                  ดึงล่าสุด {เวลาไทย(st[v.id].สแกนล่าสุด)}
+                </div>
+                <div className="text-[9px] text-gray-400 leading-snug">
+                  มีทั้งหมด {st[v.id].รวมทุกเดือน} ใบ
+                </div>
+              </div>
+            )}
+
+            <div className="text-[10px] text-blue-500 mt-1">ดูบิลรายเดือน →</div>
           </Link>
         ))}
       </div>

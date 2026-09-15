@@ -1,0 +1,75 @@
+import { BILL_VENDORS, type BillVendorInfo } from '@/lib/vendors'
+import { loadBillIndexBlobs, listVendorBlobFiles } from '@/lib/billblobs'
+
+// สรุปสถานะบิลรายเจ้า — **ที่เดียว** ใช้ทั้ง /api/bills/report (ทีม AI ใช้รหัส)
+// และ /api/bills/status (หน้าเว็บใช้เซสชัน)
+//
+// 🔑 เขียนไว้ที่เดียวโดยตั้งใจ — รอบแรกเขียนตรรกะคัดซ้ำซ้ำกันสองที่
+//    แล้วตัวเลขไม่ตรงกับที่จอโชว์ทันที (TikTok ส.ค. ได้ 9 ทั้งที่จอโชว์ 4)
+
+export interface VendorBillStatus {
+  id: string
+  ชื่อ: string
+  ลิงก์ต้นทาง: string | null
+  ต้องมีทุกเดือน: boolean
+  รวมทุกเดือน: number
+  เดือน: Record<string, { จำนวน: number; ใบจริงที่อัปไว้: number; ไฟล์: string[] }>
+  สแกนล่าสุด: string | null
+  อ่านไม่ได้?: string
+}
+
+/** หาเลขที่ใบจากชื่อไฟล์ — ใช้ตัดสินว่าสองไฟล์คือใบเดียวกัน */
+const เลขที่ใบ = (n: string) =>
+  (n.match(/(THTT\d{6,}|FBADS-[\d-]{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)?.[1] ?? '').toUpperCase()
+
+export async function สรุปบิลรายเจ้า(vendor: BillVendorInfo): Promise<VendorBillStatus> {
+  const ฐาน = {
+    id: vendor.id,
+    ชื่อ: vendor.name,
+    ลิงก์ต้นทาง: vendor.portal ?? null,
+    ต้องมีทุกเดือน: !!vendor.everyMonth,
+  }
+  try {
+    const idx = await loadBillIndexBlobs(vendor.id)
+    const real = (await listVendorBlobFiles(vendor.id).catch(() => []))
+      .map(f => f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/))
+      .filter(Boolean) as RegExpMatchArray[]
+
+    const เดือน: VendorBillStatus['เดือน'] = {}
+    const เห็นแล้ว = new Set<string>()
+
+    for (const m of real) {
+      const b = (เดือน[m[1]] ??= { จำนวน: 0, ใบจริงที่อัปไว้: 0, ไฟล์: [] })
+      b.ไฟล์.push(m[2]); b.จำนวน++; b.ใบจริงที่อัปไว้++
+      const no = เลขที่ใบ(m[2]); if (no) เห็นแล้ว.add(no)
+    }
+
+    // ⚠️ ใบที่ระบบสร้างเอง (GEN) ไม่มีเลขที่ใบในชื่อ ⇒ ตัวคัดซ้ำจับไม่ได้
+    //    ต้องใช้กติกาเดียวกับจอ: เดือนไหนมีใบจริง ให้ตัด GEN ในเดือนนั้นทิ้งทั้งหมด
+    const เดือนที่มีใบจริง = new Set(real.map(m => m[1]))
+    for (const e of idx?.entries ?? []) {
+      if (e.attachmentId === 'GEN' && เดือนที่มีใบจริง.has(e.month)) continue
+      const no = เลขที่ใบ(e.filename)
+      if (no && เห็นแล้ว.has(no)) continue
+      if (no) เห็นแล้ว.add(no)
+      const b = (เดือน[e.month] ??= { จำนวน: 0, ใบจริงที่อัปไว้: 0, ไฟล์: [] })
+      b.ไฟล์.push(e.filename); b.จำนวน++
+    }
+
+    return {
+      ...ฐาน,
+      รวมทุกเดือน: Object.values(เดือน).reduce((a, b) => a + b.จำนวน, 0),
+      เดือน: Object.fromEntries(Object.entries(เดือน).sort(([a], [b]) => b.localeCompare(a))),
+      สแกนล่าสุด: idx?.lastScan ?? null,
+    }
+  } catch (e: any) {
+    // 🔑 แยก "อ่านไม่ได้" ออกจาก "ไม่มีบิล" — ห้ามยุบเป็น 0
+    return { ...ฐาน, รวมทุกเดือน: 0, เดือน: {}, สแกนล่าสุด: null,
+             อ่านไม่ได้: String(e?.message ?? e).slice(0, 120) }
+  }
+}
+
+export async function สรุปทุกเจ้า(only?: string | null): Promise<VendorBillStatus[]> {
+  const list = only ? BILL_VENDORS.filter(v => v.id === only) : BILL_VENDORS
+  return Promise.all(list.map(สรุปบิลรายเจ้า))
+}
