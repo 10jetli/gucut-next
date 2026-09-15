@@ -7,11 +7,16 @@
 //    ⇒ ทำครบทั้งหก **แต่บางอันของจริงยังไม่มีข้อมูลให้แสดง** ⇒ ตรงนั้นต้องเขียนว่า
 //       "ยังไม่รู้" ไม่ใช่ "0" — ฝั่งท่อกำชับเรื่องนี้ตรง ๆ (ดูหัวข้อยอดขายข้างล่าง)
 //
-// 🔴 **ยอดขายรายชุด: 0 ที่ได้มา ยังแปลไม่ได้ว่า "ไม่ได้ขาย"** (ฝั่งท่อยิงจริงให้ 22:3x)
-//    · `?list=topproducts&sku=<ชุด>` กวาดครบ 360/360 ชุด ⇒ **มียอดแค่ชุดเดียว** (03409-3)
-//    · `?list=orders&q=<รหัสชุด>` = 0 ใบ (q ไม่ได้ค้นรหัสสินค้าในบรรทัด)
-//    ⇒ ยังแยกไม่ได้ว่า "ชุดไม่ได้ขาย" หรือ "ใบขายเก็บเป็นรหัสชิ้นส่วน"
-//    ⇒ **ห้ามขึ้น "0 บาท" หรือ "ไม่มียอดขาย"** — ต้องขึ้นว่ายังไม่รู้ พร้อมเหตุผล
+// ✅ **ยอดขายรายชุด — ปลดล็อกแล้ว 15 ก.ย. 2569 (ใบ t_mu2p83ql)**
+//    เดิมถามจาก `?list=topproducts` **เดือนละหนึ่งครั้ง** (การ์ด 1 + กราฟ 6 = 7 ครั้งต่อการเปิดหนึ่งหน้า)
+//    และเกือบทุกชุดได้ค่าว่าง ⇒ จอขึ้น "ยังไม่รู้" ตลอด
+//    ตอนนี้คิดจาก **บัตรสต็อกของชุดเอง** (`?list=stockcard&kind=sale`) ที่หน้านี้ยิงอยู่แล้ว
+//    ⇒ ได้ทั้งการ์ดและกราฟจากการยิง **ครั้งเดียว** และได้ประวัติทั้งหมด ไม่ใช่แค่ 6 เดือน
+//    📏 **พิสูจน์ว่าสองแหล่งให้เลขเดียวกันก่อนเปลี่ยน** (ยิงจริง 15 ก.ย.): 03409-3 ก.ย. 2569
+//       บัตรสต็อก 2 ชิ้น/338.40 = topproducts 2/338.4 · ไล่ครบ 14 ชุดที่เคยขาย ตรงกันทุกตัวที่อยู่ในช่วงเดียวกัน
+//       (ตรรกะ + หลักฐานอยู่ที่ `lib/bundle-sales.ts` · เทส `scripts/tests/bundle-sales.test.mjs`)
+//    ⚠️ **ยังห้ามขึ้น 0 เมื่อข้อมูลไม่ครบ** — `truncated`/`hasMore`/`failed` ⇒ ต้องเป็น "ยังไม่รู้"
+//       เพราะแถวที่หายไปคือยอดที่หายไป (เทสข้อ ③ ดักไว้)
 //
 // ⚠️ คงเหลือรายคลัง: `?zortbundle=<sku>&wh=<NEW|KLD|ANJ>` ถาม ZORT สดทุกครั้ง
 //    ⇒ ยิง **ครั้งเดียวตอนเปิดหน้า** (มีปุ่มรีเฟรชให้กดเอง) ห้ามยิงวน
@@ -24,9 +29,10 @@
 //    ⇒ ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว มีเทสคุมการสลับสามค่านี้
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
+import { monthlySeries, sumMonth, salesComplete, monthLabel, lastSaleDate } from '@/lib/bundle-sales'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
-import { fmtMoney, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum, thaiDate } from '@/lib/format'
 import {
   recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES,
 } from '@/lib/recipe-fresh'
@@ -58,14 +64,10 @@ interface WhStock {
   zortDesc?: string | null
   error?: string
 }
-/** ยอดขายหนึ่งช่วง · `amount` = null คือ **ท่อไม่มีข้อมูลให้ ไม่ใช่ขายได้ 0 บาท** */
-interface Span { label: string; from: string; to: string; qty: number | null; amount: number | null; error?: string }
 /** แถวขายของชุด — ช่องตามที่ `list=stockcard` ส่งมาจริง (ยิงดูแล้ว ไม่ได้เดา)
  *  🚫 **ไม่มีช่องคลัง/สาขา และช่องการชำระเงิน** ⇒ สองคอลัมน์นั้นต้องขึ้น "—" ห้ามเดา */
 interface SaleRow { date?: string; kind?: string; status?: string; ref?: string; party?: string; qty?: number; amount?: number }
 
-const THAI_MONTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 
 /** การ์ดบนสุดแบบ ZORT — 3 ใบ · รับ `unknown` ได้เพื่อไม่ต้องโชว์ 0 เมื่อยังไม่รู้ */
 function Card({ label, value, unknown, note, tone }: {
@@ -106,12 +108,8 @@ export default function BundleDetailPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  /** ยอดขายเดือนนี้ · null ที่ตัวแปรนี้ = ยังไม่ได้ถาม */
-  const [month, setMonth] = useState<Span | null>(null)
-  const [amountScope, setAmountScope] = useState('')
-  /** กราฟย้อนหลัง — โหลดตามสั่ง เพราะต้องยิงเดือนละครั้ง (ไม่ยิงเองตอนเปิดหน้า) */
-  const [chart, setChart] = useState<Span[] | null>(null)
-  const [chartLoading, setChartLoading] = useState(false)
+  /* 🔴 ยอดขายเดือนนี้ + กราฟ **ไม่ใช่ state แล้ว** — คิดจากแถวขายที่หน้านี้โหลดอยู่แล้ว
+     (เดิมเป็น state เพราะต้องยิง topproducts เดือนละครั้ง · ดูหัวไฟล์) */
   const [wh, setWh] = useState<WhStock[] | null>(null)
   const [whErr, setWhErr] = useState('')
   /* 🔓 **ปลดล็อกตารางรายการขายของชุด** (ใบ t_mu2ndt8a · 15 ก.ย. 2569)
@@ -176,45 +174,6 @@ export default function BundleDetailPage() {
     }
   }, [sku])
 
-  /** ถามยอดขายหนึ่งช่วงจากเส้น topproducts — คืน null ทั้งคู่เมื่อท่อไม่มีบรรทัดของชุดนี้ */
-  const askSpan = useCallback(async (label: string, from: string, to: string): Promise<Span> => {
-    try {
-      const r = await fetch(`/api/web/core?list=topproducts&sku=${encodeURIComponent(sku)}&from=${from}&to=${to}`)
-      const d = await r.json()
-      if (!r.ok || d?.error) return { label, from, to, qty: null, amount: null, error: String(d?.error ?? `HTTP ${r.status}`) }
-      if (typeof d?.amountScope === 'string') setAmountScope(d.amountScope)
-      const hit = Array.isArray(d?.items) ? d.items.find((x: { sku?: string }) => x?.sku === sku) : null
-      /* 🔴 ไม่มีบรรทัด ≠ ขายได้ 0 บาท ⇒ คืน null ให้จอเขียนว่า "ยังไม่รู้" */
-      if (!hit) return { label, from, to, qty: null, amount: null }
-      return { label, from, to, qty: Number(hit.qty) || 0, amount: Number(hit.amount) || 0 }
-    } catch (e) {
-      return { label, from, to, qty: null, amount: null, error: String(e instanceof Error ? e.message : e) }
-    }
-  }, [sku])
-
-  const loadMonth = useCallback(async () => {
-    const now = new Date()
-    const from = iso(new Date(now.getFullYear(), now.getMonth(), 1))
-    setMonth(await askSpan(`${THAI_MONTH[now.getMonth()]} ${now.getFullYear() + 543}`, from, iso(now)))
-  }, [askSpan])
-
-  const loadChart = useCallback(async () => {
-    setChartLoading(true)
-    try {
-      const now = new Date()
-      const spans: Span[] = []
-      /* ⚠️ ท่อไม่มีเส้นแยกยอดรายเดือน ⇒ ต้องยิงเดือนละครั้ง · 6 ครั้งต่อการกดหนึ่งที
-         (เหตุผลที่ทำเป็น "กดแล้วโหลด" ไม่ใช่โหลดเองตอนเปิดหน้า) */
-      for (let back = 5; back >= 0; back--) {
-        const first = new Date(now.getFullYear(), now.getMonth() - back, 1)
-        const last = new Date(now.getFullYear(), now.getMonth() - back + 1, 0)
-        const to = back === 0 ? iso(now) : iso(last)
-        // eslint-disable-next-line no-await-in-loop
-        spans.push(await askSpan(`${THAI_MONTH[first.getMonth()]} ${String(first.getFullYear() + 543).slice(2)}`, iso(first), to))
-      }
-      setChart(spans)
-    } finally { setChartLoading(false) }
-  }, [askSpan])
 
   const loadWarehouses = useCallback(async () => {
     setWhErr('')
@@ -255,10 +214,9 @@ export default function BundleDetailPage() {
   useEffect(() => {
     if (askedFor.current === sku) return
     askedFor.current = sku
-    setWh(null); setMonth(null); setChart(null)
-    void loadMonth()
+    setWh(null)
     void loadWarehouses()
-  }, [sku, loadMonth, loadWarehouses])
+  }, [sku, loadWarehouses])
 
   const img = imgOf(sku)
   /* ⚠️ ลำดับ argument สำคัญ: checkedAt ก่อน changedAt (เทส recipe-fresh คุมการสลับไว้) */
@@ -266,9 +224,25 @@ export default function BundleDetailPage() {
   const stock = stockSyncFreshness(stockSyncedAt)
   const unit = bundle?.unit || 'SET'
 
+  /* 📊 ยอดขายเดือนนี้ + กราฟ 6 เดือน — **คิดจากแถวขายที่โหลดมาแล้ว ไม่ยิงเพิ่มสักครั้ง**
+     ตรรกะอยู่ที่ lib/bundle-sales.ts ที่เดียว (มีเทสคุมเรื่อง "0 กับ ยังไม่รู้") */
+  const now = new Date()
+  const thisKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  const monthSum = sumMonth(sales, salesMeta, thisKey)
+  const chart = monthlySeries(sales, salesMeta, now, 6)
   /* ค่าสูงสุดของกราฟ — คิดจากเดือนที่ **มีตัวเลขจริง** เท่านั้น (null ไม่ใช่ 0) */
-  const chartMax = chart ? Math.max(1, ...chart.map((s) => s.amount ?? 0)) : 1
-  const chartKnown = chart ? chart.filter((s) => s.amount !== null).length : 0
+  const chartMax = Math.max(1, ...chart.map((s) => s.amount ?? 0))
+  const chartKnown = chart.filter((s) => s.amount !== null).length
+  const salesReady = salesComplete(salesMeta)
+  const lastSold = lastSaleDate(sales)
+  /* เหตุผลที่ยังบอกยอดไม่ได้ — **ต้องแยกให้ออกว่าอ่านไม่ได้ กับ อ่านได้แต่ไม่ครบ** */
+  const salesUnknownWhy = salesErr
+    ? `อ่านรายการขายของชุดนี้ไม่ได้: ${salesErr}`
+    : !sales
+      ? 'กำลังอ่านรายการขายของชุดนี้…'
+      : !salesReady
+        ? 'รายการขายที่ได้มายังไม่ครบ (ท่อตัดแถวหรืออ่านบางแหล่งไม่สำเร็จ) ⇒ ยังรวมยอดไม่ได้'
+        : ''
 
   return (
     <div className="p-4 md:p-6">
@@ -377,35 +351,41 @@ export default function BundleDetailPage() {
               label="สินค้าพร้อมขาย"
               value={typeof bundle.available === 'number' ? `${fmtNum(bundle.available)} ${unit}` : '—'}
               tone={Number(bundle.available) < 0 ? 'red' : bundle.available === 0 ? 'amber' : undefined}
-              /* 🔴 0 ของพร้อมขายอาจติดลบจริง — ZORT API ไม่ส่งค่าติดลบของช่องนี้ (ยิงค่าดิบเทียบแล้ว) */
+              /* 🔴 **แก้ข้อความเดิม 15 ก.ย. 2569 (ใบ t_mu2p83ql)** — เดิมเขียนว่า
+                     "ZORT API ไม่ส่งค่าติดลบของช่องนี้" ⇒ **ไม่จริงทั้งหมด**
+                     เทียบทั้ง 360 ชุดกับจอ ZORT แล้วพบว่า API ส่งค่าติดลบมาก็มี
+                     และค่าที่ส่งมาก็ **ไม่ตรงกับจอ ZORT** ในหลายชุด (จอต่ำกว่าเสมอเมื่อต่าง)
+                  ⚠️ ห้ามฝังจำนวนชุดลงข้อความ — เลขจะเก่าเงียบ ๆ (เคยโดนทักมาแล้ว) ⇒ อ้างเหตุการณ์ + วันที่ */
               note={bundle.available === 0
-                ? '⚠️ 0 อาจหมายถึงติดลบ — ZORT API ไม่ส่งค่าติดลบของพร้อมขาย (จอ ZORT เองเคยโชว์ -10 ขณะที่ API ส่ง 0)'
-                : undefined}
+                ? '⚠️ 0 อาจหมายถึงติดลบ — เทียบทั้ง 360 ชุดกับจอ ZORT แล้ว (15 ก.ย. 2569) ส่วนใหญ่ของชุดที่ขึ้น 0 ตรงนี้ จอ ZORT แสดงค่าติดลบ'
+                : '⚠️ ตัวเลขนี้มาจาก ZORT API — เทียบกับจอ ZORT แล้ว (15 ก.ย. 2569) บางชุดจอ ZORT ต่ำกว่านี้'}
             />
-            {/* 🔴 ยอดขายเดือนนี้: ไม่มีข้อมูล ⇒ "ยังไม่รู้" **ห้ามเขียน 0 บาท** */}
+            {/* 🔴 ยอดขายเดือนนี้ — จากบัตรสต็อกของชุด · **ข้อมูลไม่ครบ ⇒ "ยังไม่รู้" ห้ามเขียน 0 บาท** */}
             <Card
-              label={`ยอดขายเดือนนี้ (บาท)${month ? ` · ${month.label}` : ''}`}
-              value={month && month.amount !== null ? fmtMoney(month.amount) : undefined}
-              unknown={!month
-                ? 'กำลังถาม…'
-                : month.error
-                  ? `ถามยอดขายไม่สำเร็จ: ${month.error}`
-                  : month.amount === null
-                    ? 'ยังไม่รู้ยอดขายของชุดนี้ — ท่อยังแยกยอดรายชุดไม่ได้ (ดูคำอธิบายข้างล่าง)'
-                    : undefined}
-              note={month && month.amount !== null && month.qty !== null ? `ขายได้ ${fmtNum(month.qty)} ${unit}` : undefined}
+              label={`ยอดขายเดือนนี้ (บาท) · ${monthLabel(now.getFullYear(), now.getMonth(), false)}`}
+              value={monthSum.amount !== null ? fmtMoney(monthSum.amount) : undefined}
+              unknown={salesUnknownWhy || undefined}
+              note={monthSum.amount !== null
+                ? `${monthSum.qty ? `ขายได้ ${fmtNum(monthSum.qty)} ${unit} · ` : ''}จากบัตรสต็อกของรหัสชุด`
+                  + (monthSum.voided ? ` · ไม่นับใบยกเลิก ${fmtNum(monthSum.voided)} ใบ` : '')
+                : undefined}
             />
           </div>
 
-          {/* 🔴 คำอธิบายว่าทำไมยอดขายอาจว่าง — อยู่ใกล้การ์ด ไม่ใช่ท้ายหน้า */}
-          {month && month.amount === null && !month.error && (
-            <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
-              ⚠️ <b>ยังไม่รู้ว่าชุดนี้ขายได้เท่าไหร่ — ไม่ได้แปลว่าขายไม่ได้</b><br />
-              ฝั่งท่อกวาดครบ 360/360 ชุดแล้ว (14 ก.ย. 2569) พบยอดแค่ชุดเดียวทั้งร้าน
-              และค้นใบขายด้วยรหัสชุดก็ได้ 0 ใบ ⇒ <b>ยังแยกไม่ได้</b>ว่าชุดไม่ได้ขายจริง
-              หรือใบขายเก็บเป็น<b>รหัสชิ้นส่วน</b> (ขายชุดแล้วบันทึกเป็นของแต่ละชิ้น)
-              ⇒ จอนี้จึงไม่เขียน &ldquo;0 บาท&rdquo; เพราะจะทำให้เข้าใจผิดว่าตรวจแล้วไม่มียอด
+          {/* 🔴 ยอดขายเดือนนี้เป็น 0 แล้วชุดนี้ไม่เคยขายเลย — ต้องบอกว่า "ตรวจแล้ว" ไม่ใช่ปล่อยให้เดา
+                 (ต่างจากกรณีอ่านไม่ได้ ซึ่งการ์ดจะขึ้นเหตุผลแทนตัวเลขอยู่แล้ว) */}
+          {monthSum.amount === 0 && sales && sales.length === 0 && (
+            <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+              ℹ️ <b>ชุดนี้ยังไม่เคยขายเลยสักใบ</b> — ไม่ใช่ &ldquo;อ่านข้อมูลไม่ได้&rdquo;
+              {' '}บัตรสต็อกของรหัสชุดนี้ไม่มีแถวขายเลย ({unit}ที่มีในคลังยังอยู่ครบ)<br />
+              ⚠️ อ่านได้แค่เรื่อง<b>การขาย</b>เท่านั้น — บัตรสต็อกของชุดไม่มีการเคลื่อนไหวชนิดอื่นเลย
+              {' '}⇒ <b>ห้ามอ่านว่า &ldquo;ชุดนี้ไม่มีของ&rdquo;</b>
             </div>
+          )}
+          {monthSum.amount === 0 && sales && sales.length > 0 && lastSold && (
+            <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+              เดือนนี้ยังไม่มีการขาย — ขายล่าสุดเมื่อ <b>{thaiDate(lastSold)}</b> (มีประวัติขายรวม {fmtNum(sales.length)} แถว)
+            </p>
           )}
 
           {/* ── (5) คงเหลือรายคลัง ─────────────────────────────────────────── */}
@@ -439,12 +419,21 @@ export default function BundleDetailPage() {
                         {w.name} <span className="text-gray-400">({w.code})</span>
                         {w.isPos === false && <span className="text-gray-400"> · โกดัง</span>}
                         {/* ข้อความของ ZORT เองสำหรับคลังนี้ — จากคำตอบรอบนี้ ไม่ใช่คำบอกเล่า */}
+                        {/* 🔴 **แก้ถ้อยคำ 15 ก.ย. 2569 (ใบ t_mu2p83ql)** — เดิมเขียนว่า "ZORT ไม่ให้สิทธิ์ดูคลังนี้"
+                               ทดสอบแล้วพบว่า **ZORT ตอบ 'Access Denied.' เหมือนกันเป๊ะให้กับรหัสคลังที่ไม่มีอยู่จริง**
+                               (ยิง `?zortbundle=<sku>&wh=ZZZ` 15 ก.ย. ได้ resCode 100 · 'Access Denied.' เท่ากัน)
+                               ⇒ ข้อความนี้ **แยกไม่ได้** ว่า "ไม่มีสิทธิ์" หรือ "ไม่มีคลังนี้"
+                               ที่ยังพูดได้คือ: รหัสคลังนี้มาจาก `?list=warehouses` ของร้านเอง และเราดูตัวเลขของมันไม่ได้ */}
                         {denied && (
                           <span className="block text-[11.5px] text-amber-800 mt-0.5 leading-relaxed">
-                            🔐 ZORT ไม่ให้สิทธิ์ดูคลังนี้ — ตอบว่า
+                            🔐 ดูตัวเลขของคลังนี้ไม่ได้ — ZORT ตอบว่า
                             {' '}<span className="font-mono">&ldquo;{w.zortDesc}&rdquo;</span>
                             {w.zortCode && <span className="text-gray-400"> (resCode {w.zortCode})</span>}
                             <br /><span className="text-amber-700">⇒ ไม่ใช่ว่าคลังนี้ไม่มีของ — เรายังดูไม่ได้</span>
+                            <br /><span className="text-gray-500">
+                              ⚠️ ข้อความเดียวกันนี้ ZORT ตอบให้กับ<b>รหัสคลังที่ไม่มีอยู่จริง</b>ด้วย (ทดสอบ 15 ก.ย. 2569)
+                              {' '}⇒ อ่านได้แค่ว่า <b>ผู้ใช้ API รายนี้เข้าถึงคลังนี้ไม่ได้</b> ห้ามอ่านเลยไปกว่านี้
+                            </span>
                           </span>
                         )}
                         {silent && (
@@ -477,31 +466,27 @@ export default function BundleDetailPage() {
             {' '}เหตุผลของแต่ละคลัง<b>อยู่ข้างชื่อคลังในตาราง</b> — เป็นข้อความที่ ZORT ตอบในรอบนี้เอง<br />
             ⚠️ และคลัง <b>NEW</b> คืนเลข<b>เท่ากับตอนไม่ระบุคลังเป๊ะ</b> ⇒ ยังแยกไม่ได้ว่าเป็นของคลัง NEW
             เท่านั้น หรือเป็น<b>ยอดรวมทั้งร้าน</b> — <b>อย่าเอาไปบวกกันเป็นยอดรวม</b>
-            {' '}(จะแยกได้เมื่อได้สิทธิ์ดู KLD/ANJ)
+            {' '}(จะแยกได้เมื่อได้สิทธิ์ดู KLD/ANJ)<br />
+            📏 <b>ตรวจซ้ำ 15 ก.ย. 2569</b>: ยิงชุดที่มีของในคลังหลายสิบตัว — NEW เท่ากับยอดไม่ระบุคลัง<b>ทุกตัว</b>
+            {' '}⇒ <b>ยังไม่มีตัวอย่างไหนที่แยกสองอย่างนี้ออกจากกันได้</b> จึงยังสรุปไม่ได้ (ไม่ใช่ว่าเลิกตรวจ)
           </p>
 
           {/* ── (4) กราฟยอดขายรายเดือน ─────────────────────────────────────── */}
           <div className="flex flex-wrap items-center justify-between gap-2 mt-5 mb-2">
             <p className="text-[15px] font-semibold text-gray-900">ยอดขายรายเดือน (ย้อนหลัง 6 เดือน)</p>
-            <BtnGhost onClick={loadChart} disabled={chartLoading}>
-              {chartLoading ? 'กำลังถาม…' : chart ? 'ถามอีกครั้ง' : 'ดูกราฟ'}
-            </BtnGhost>
+            {/* 🔴 **ไม่มีปุ่ม "ดูกราฟ" อีกแล้ว** — เดิมต้องกดเพราะยิงเดือนละครั้ง 6 ครั้ง
+                   ตอนนี้คิดจากแถวขายที่หน้านี้โหลดมาอยู่แล้ว ⇒ ขึ้นเองทันที ไม่มีการยิงเพิ่ม */}
+            <span className="text-[11.5px] text-gray-400">จากบัตรสต็อกของรหัสชุด — ไม่ต้องกดโหลด</span>
           </div>
           <div className="bg-white border border-gray-200 rounded-md p-4">
-            {!chart && !chartLoading && (
-              <p className="text-[12.5px] text-gray-500 leading-relaxed">
-                ท่อยังไม่มีเส้นแยกยอดขายรายเดือน ⇒ ต้องถามเดือนละครั้ง (6 ครั้ง)
-                {' '}จึง<b>ไม่ยิงเองตอนเปิดหน้า</b> — กด &ldquo;ดูกราฟ&rdquo; เมื่อต้องการ
-              </p>
-            )}
-            {chartLoading && <p className="text-[12.5px] text-gray-400">กำลังถามยอดเดือนละครั้ง…</p>}
-            {chart && (
+            {!sales && !salesErr && <p className="text-[12.5px] text-gray-400">กำลังอ่านรายการขายของชุดนี้…</p>}
+            {(sales || salesErr) && (
               <>
                 {/* 🔴 เดือนที่ไม่รู้ **ห้ามวาดเป็นแท่งศูนย์** — แท่งเตี้ยอ่านได้ว่า "ขายได้น้อย"
                        ⇒ ใช้แถบลายเทา + ขีด แทน เพื่อให้ต่างจาก "ขายได้ 0 จริง" ชัดเจน */}
                 <div className="flex items-end gap-3 h-[150px]">
                   {chart.map((s) => (
-                    <div key={s.from} className="flex-1 flex flex-col items-center justify-end h-full">
+                    <div key={s.key} className="flex-1 flex flex-col items-center justify-end h-full">
                       {s.amount === null
                         ? (
                           <span className="w-full rounded-t bg-[repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb_4px,#f3f4f6_4px,#f3f4f6_8px)] border border-gray-300"
@@ -521,9 +506,12 @@ export default function BundleDetailPage() {
                 </div>
                 <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
                   {chartKnown === 0
-                    ? <>⚠️ <b>ทั้ง 6 เดือนยังไม่รู้ยอด</b> — แถบลายเทาคือ &ldquo;ยังไม่รู้&rdquo; <b>ไม่ใช่ 0 บาท</b> (ดูเหตุผลที่กล่องเหลืองข้างบน)</>
-                    : <>แถบลายเทา = <b>ยังไม่รู้ยอดของเดือนนั้น ไม่ใช่ 0 บาท</b></>}
-                  {amountScope && <><br />{amountScope}</>}
+                    ? <>⚠️ <b>ทั้ง 6 เดือนยังไม่รู้ยอด</b> — แถบลายเทาคือ &ldquo;ยังไม่รู้&rdquo; <b>ไม่ใช่ 0 บาท</b>{salesUnknownWhy ? ` (${salesUnknownWhy})` : ''}</>
+                    : <>แท่งเตี้ยสุด = เดือนนั้น<b>ไม่มีการขายจริง</b> · แถบลายเทา = <b>ยังไม่รู้ยอด ไม่ใช่ 0 บาท</b></>}
+                  <br />
+                  {/* 🔑 ที่มาของตัวเลข — คนอ่านต้องรู้ว่านับจากอะไร ไม่ใช่เชื่อแท่งกราฟลอย ๆ */}
+                  นับจาก<b>แถวขายในบัตรสต็อกของรหัสชุด</b> (ZORT บันทึกการขายชุดไว้ที่รหัสชุด ไม่ใช่รหัสลูก)
+                  {' '}⇒ <b>ไม่นับซ้ำกับชิ้นส่วน</b> · ตรวจแล้วให้เลขเดียวกับรายงานของ ZORT เอง (15 ก.ย. 2569)
                 </p>
               </>
             )}
