@@ -17,6 +17,7 @@ import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
 import { reconcileOrder } from '@/lib/order-money'
+import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE, thaiDate } from '@/components/zort'
@@ -517,6 +518,17 @@ function DetailInner() {
               </div>
             </Card>
           </div>
+
+          {/* ── การชำระเงิน · สลิป ────────────────────────────────────────────
+              📍 **ตำแหน่งลอกจากจอจริงของ ZORT** — ใน `/Sell/Details` ลิงก์ "ดูสลิป" อยู่ใน
+                 ตารางใต้หัวข้อ **การชำระเงิน** ซึ่งอยู่**ถัดจากที่อยู่ผู้รับ/การจัดส่ง**
+                 ⇒ วางไว้ที่เดียวกัน คนที่ใช้ ZORT อยู่จะหาเจอโดยไม่ต้องเรียนใหม่
+              ⚠️ จอนี้แสดง**เฉพาะสลิปที่เราเก็บไว้แล้ว** ไม่อัปโหลดและไม่แก้ของใน ZORT */}
+          {/* ⚠️ การ์ดนี้มี **เฉพาะสลิป** — สถานะการชำระเงินอยู่ที่การ์ดสถานะด้านบนแล้ว
+                 ห้ามเอามาแสดงซ้ำสองที่ (เลขเดียวกันสองทางคือที่มาของความสับสนในจอนี้มาก่อน) */}
+          <Card title="การชำระเงิน — สลิปที่เก็บไว้" icon="🧾">
+            <SlipBox docno={order.number} />
+          </Card>
 
           <div className="pt-1">
             <Link

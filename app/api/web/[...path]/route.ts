@@ -83,6 +83,16 @@ async function forward(req: NextRequest, path: string[]) {
     const key = k.toLowerCase()
     if (key.startsWith('x-') && !MINE.has(key)) out.set(key, v)
   })
+  /* 🔴 **cache-control ต้องส่งต่อด้วย — และเป็นรายชื่อตายตัว ไม่ใช่เหมารวม** (ฝั่งท่อชี้ 15 ก.ย. 2569)
+     ของจริง: เส้นสลิป (`?slip=&fileid=`) ตอบ `cache-control: private,no-store` เพราะเป็น**ภาพสลิปของลูกค้า**
+     ถ้าท่อกลางกลืนหัวนี้ทิ้ง เบราว์เซอร์จะเก็บภาพสลิปไว้ในแคชของเครื่องที่เปิดจอ
+     ⇒ ของที่ปลายทางตั้งใจไม่ให้เก็บ กลับถูกเก็บโดยไม่มีใครรู้
+     ⚠️ ที่ไม่ทำเป็น "ส่งต่อทุกหัว" เพราะ `set-cookie`/`authorization` ของปลายทาง
+        ต้องไม่ไหลมาถึงเบราว์เซอร์ ⇒ เพิ่มทีละหัวที่รู้ว่าปลอดภัยเท่านั้น */
+  for (const safe of ['cache-control', 'content-disposition']) {
+    const v = r.headers.get(safe)
+    if (v) out.set(safe, v)
+  }
 
   return new NextResponse(body, { status: r.status, headers: out })
 }
