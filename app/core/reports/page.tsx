@@ -76,6 +76,12 @@ export default function CoreProductReportPage() {
   const [whErr, setWhErr] = useState('')
   /** มุมมองการ์ดมูลค่าคงเหลือ — ผังเดียวกับ dropdown `typeoption` ของ ZORT */
   const [valueBy, setValueBy] = useState<'warehouse' | 'category'>('warehouse')
+  /** 📉 ตัวนับสต็อกจากท่อ (`list=stock`) — ท่อส่งมาในคำตอบเดียว ไม่ต้องยิงแยก
+   *  🔴 `outOfStock` ของท่อ = **คงเหลือ ≤ 0 (รวมติดลบ)** ส่วน "สินค้าหมด" ของ ZORT = 0 พอดี
+   *     ⇒ จอต้องเขียนให้ตรงว่านับอะไร ห้ามตั้งชื่อว่า "สินค้าหมดแบบ ZORT"
+   *  🔴 `low` = **เกณฑ์ของระบบเราเอง (คงเหลือ 1–3 ชิ้น)** ไม่ใช่จุดสั่งซื้อรายสินค้าแบบ ZORT
+   *     ⇒ ต้องเขียนเกณฑ์ไว้ข้าง ๆ ทุกครั้ง (ฝั่งท่อกำชับ) */
+  const [stockCounts, setStockCounts] = useState<{ outOfStock?: number; low?: number; negative?: number; total?: number } | null>(null)
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -102,6 +108,9 @@ export default function CoreProductReportPage() {
          คนอ่านจะนึกว่าจอไม่มีข้อมูลนั้น ทั้งที่แค่ยิงไม่ผ่านรอบนี้ (โรคเดียวกับ deadstock ที่ข้าง ๆ กันมีตัวบอกแล้ว) */
       setCat(cRes && !cRes.error ? cRes : null)
       setCatErr(!cRes ? 'ยิงไปที่ท่อหมวดหมู่ไม่สำเร็จ' : (typeof cRes.error === 'string' ? cRes.error : ''))
+      setStockCounts(sRes && typeof sRes.outOfStock === 'number'
+        ? { outOfStock: sRes.outOfStock, low: sRes.low, negative: sRes.negative, total: sRes.total }
+        : null)
       setWhs(wRes && Array.isArray(wRes.warehouses) ? wRes.warehouses : null)
       setWhErr(!wRes ? 'ยิงไปที่ท่อรายชื่อคลังไม่สำเร็จ'
         : (typeof wRes.error === 'string' ? wRes.error
@@ -319,8 +328,15 @@ export default function CoreProductReportPage() {
                         {(cat?.rows ?? []).slice(0, 12).map((r) => (
                           <tr key={r.cat_name} className="border-b border-gray-100 last:border-0">
                             <td className="py-1.5 text-gray-700">{r.cat_name}</td>
-                            <td className="text-right text-gray-500">{fmtNum(r.skus ?? 0)}</td>
-                            <td className="text-right text-gray-700">{fmtMoney(r.onhand_value ?? 0)}</td>
+                            {/* 🔴 `null` = ยังไม่รู้ **ห้ามกลายเป็น 0** (ฝั่งท่อทัก 16 ก.ย. 2569) — เหมือนกับตารางรายคลัง */}
+                            <td className="text-right text-gray-500">
+                              {typeof r.skus === 'number' ? fmtNum(r.skus) : <span className="text-gray-300">—</span>}
+                            </td>
+                            <td className="text-right text-gray-700">
+                              {typeof r.onhand_value === 'number'
+                                ? fmtMoney(r.onhand_value)
+                                : <span className="text-amber-700">ยังไม่รู้</span>}
+                            </td>
                           </tr>
                         ))}
                         {(cat?.rows ?? []).length > 12 && (
@@ -339,6 +355,46 @@ export default function CoreProductReportPage() {
               </p>
             </Card>
           </div>
+
+          {/* 📉 การ์ด "สินค้าหมด / คงเหลือน้อย" — ZORT มีสองการ์ดนี้ในจอเดียวกัน
+                 🔴 **ไม่ลอกชื่อ ZORT มาทั้งดุ้น** เพราะนับคนละอย่าง:
+                    · ของเรา `out` = คงเหลือ **≤ 0 (รวมติดลบ)** · ของ ZORT "สินค้าหมด" = 0 พอดี
+                    · ของเรา `low` = **คงเหลือ 1–3 ชิ้น (เกณฑ์ของระบบเราเอง)**
+                      ZORT คิด "ใกล้หมด" จาก **กลุ่ม Lead Time** (`/LeadTimeGroup`) ซึ่ง **ร้านยังไม่ได้ตั้งสักกลุ่ม**
+                      ⇒ ตารางฝั่ง ZORT ว่างเพราะคำนวณไม่ได้ ไม่ใช่เพราะไม่มีของใกล้หมด (ฝั่งท่อไล่สเปกมาให้ 16 ก.ย. 2569)
+                 ⇒ เขียนเกณฑ์ไว้ข้างตัวเลขทุกตัว ไม่ให้ใครอ่านว่าเท่ากับของ ZORT */}
+          {stockCounts && (
+            <Card className="mt-4">
+              <p className="text-[15px] font-semibold text-gray-900 mb-2">สต็อกที่ต้องดู</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="border border-gray-200 rounded-md px-3 py-2.5">
+                  <p className="text-[12px] text-gray-500">คงเหลือ 0 หรือติดลบ</p>
+                  <p className="text-[22px] font-semibold text-red-500 leading-tight">{fmtNum(stockCounts.outOfStock ?? 0)}</p>
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    รวมของที่<b>ติดลบ {fmtNum(stockCounts.negative ?? 0)} รหัส</b>ไว้ด้วย
+                    {' '}· ZORT นับ &ldquo;สินค้าหมด&rdquo; เฉพาะ 0 พอดี ⇒ เลขนี้จะมากกว่าของ ZORT
+                  </p>
+                </div>
+                <div className="border border-gray-200 rounded-md px-3 py-2.5">
+                  <p className="text-[12px] text-gray-500">คงเหลือ 1–3 ชิ้น</p>
+                  <p className="text-[22px] font-semibold text-amber-600 leading-tight">{fmtNum(stockCounts.low ?? 0)}</p>
+                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                    <b>เกณฑ์ของระบบเราเอง</b> — ไม่ใช่ &ldquo;ใกล้หมด&rdquo; แบบ ZORT
+                  </p>
+                </div>
+                <div className="border border-gray-200 rounded-md px-3 py-2.5">
+                  <p className="text-[12px] text-gray-500">สินค้าทั้งหมดในทะเบียน</p>
+                  <p className="text-[22px] font-semibold text-gray-900 leading-tight">{fmtNum(stockCounts.total ?? 0)}</p>
+                  <p className="text-[11px] text-gray-400">ใช้เป็นตัวส่วนของสองช่องซ้าย</p>
+                </div>
+              </div>
+              <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 leading-relaxed">
+                ⚠️ ZORT มีการ์ด &ldquo;สินค้าใกล้หมด&rdquo; ที่คิดจาก <b>กลุ่ม Lead Time</b> (ตั้งที่หน้า /LeadTimeGroup ของ ZORT)
+                {' '}ซึ่ง<b>ร้านยังไม่ได้ตั้งสักกลุ่ม</b> ⇒ ตารางฝั่ง ZORT ว่างเพราะคำนวณไม่ได้
+                {' '}· ของเรา<b>ยังไม่ทำแบบนั้น</b> และ<b>ไม่เดาเกณฑ์เอง</b>
+              </p>
+            </Card>
+          )}
 
           <Card padded={false} className="mt-4">
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
