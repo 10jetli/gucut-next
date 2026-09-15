@@ -488,11 +488,6 @@
       "by": "คุณส้ม (gucut2)",
       "at": "2026-09-15"
     },
-    "components/zort/LedgerScreen.tsx :: app/core/accounting-docs/page.tsx": {
-      "hash": "a9cd0ac1b0fe",
-      "by": "คุณส้ม (gucut2)",
-      "at": "2026-09-14"
-    },
     "components/zort/LedgerScreen.tsx :: app/core/money-transfers/page.tsx": {
       "hash": "a9cd0ac1b0fe",
       "by": "คุณส้ม (gucut2)",
