@@ -18,6 +18,7 @@
 //       ได้จอที่หน้าตาเหมือนแต่ตัวเลขคนละเรื่อง แล้วคนที่เอาไปเทียบจะเชื่อว่าตรงกัน
 //       **ใกล้ไม่ใช่เหมือน**
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import ExportButton from '@/components/zort/ExportButton'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -172,6 +173,52 @@ export default function CoreCategoriesPage() {
         actions={
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 📤 ZORT มี "Export to Excel" ที่จอนี้ (อ่านจากจอจริง 15 ก.ย. 2569: `exportfile()`)
+                ⇒ ใช้ปุ่มกลางตัวเดิม ไม่เขียนตัวส่งออกใหม่
+                🔴 **ไฟล์ต้องบอกว่าคิดมูลค่าจากฐานไหน และคัดมาเมื่อไหร่**
+                   เพราะจอนี้สลับฐานได้ 3 แบบ (ต้นทุนเฉลี่ยจาก ZORT · ราคาซื้อ · ราคาขาย)
+                   และต่างกันหลักสิบล้าน ⇒ ไฟล์ที่ไม่บอกฐาน = เลขที่เทียบกับใครไม่ได้
+                   (วัดเอง 15 ก.ย.: ราคาซื้อ 10.69 ล้าน · ต้นทุนเฉลี่ยของ ZORT 16.06 ล้าน · ราคาขาย 26.48 ล้าน)
+                ⚠️ จอนี้ท่อส่งหมวดมาครบในคำขอเดียว (ไม่แบ่งหน้า) ⇒ fetchPage คืนทั้งชุดที่ offset 0
+                   และ **ส่งออกตามคำค้นที่กรองอยู่บนจอ** ไม่ใช่ทั้งชุดเสมอ */}
+            <ExportButton
+              disabled={loading || !d}
+              spec={{
+                filename: `หมวดหมู่สินค้า-${basis === 'zort' ? 'ต้นทุนเฉลี่ยZORT' : basis === 'cost' ? 'ราคาซื้อ' : 'ราคาขาย'}`,
+                title: 'หมวดหมู่สินค้า — มูลค่าคงเหลือและพร้อมขาย',
+                filters: [
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น — ทุกหมวด)'],
+                  ['ฐานที่ใช้คิดมูลค่า', basis === 'zort'
+                    ? `ต้นทุนเฉลี่ยถ่วงน้ำหนัก คัดมาจากจอ ZORT${d?.zortCollectedAt ? ` (คัดเมื่อ ${d.zortCollectedAt})` : ''}`
+                    : basis === 'cost' ? 'ราคาซื้อในทะเบียนสินค้า' : 'ราคาขาย'],
+                ],
+                note: [
+                  basis === 'zort'
+                    ? 'ฐานนี้เป็นค่าที่คัดมาจากจอ ZORT ไม่ใช่คิดสดจากคลังเงา ⇒ ซื้อของเข้าใหม่แล้วเลขจะเก่าจนกว่าจะคัดใหม่'
+                    : 'ฐานนี้คิดสดจากทะเบียนสินค้าในคลังเงา — **ไม่ตรงกับเลขบนจอ ZORT** เพราะ ZORT คิดด้วยต้นทุนเฉลี่ย',
+                  typeof d?.noCost === 'number' && d.noCost > 0
+                    ? `สินค้า ${d.noCost} ตัวยังไม่รู้ต้นทุน — ไม่ได้นับเป็น 0 ⇒ มูลค่าจริงสูงกว่าในไฟล์นี้`
+                    : '',
+                  typeof d?.uncategorised === 'number' && d.uncategorised > 0
+                    ? `สินค้า ${d.uncategorised} ตัวยังไม่ได้จัดหมวด — อยู่ในแถว "ยังไม่จัดหมวด" ไม่ได้หายไป`
+                    : '',
+                ].filter(Boolean).join(' · '),
+                header: ['ชื่อหมวดหมู่', 'จำนวน SKU', 'จำนวน SKU ที่ ZORT นับ', 'มูลค่าสินค้าคงเหลือ', 'มูลค่าสินค้าพร้อมขาย', 'สินค้าที่ยังไม่รู้ต้นทุน', 'เป็นหมวดในทะเบียน ZORT'],
+                /* 🔴 ช่องที่ไม่รู้คืน null ห้ามคืน 0 — ฐาน zort มีหมวดที่ ZORT ไม่ได้ให้เลขมา */
+                toRow: (r: Row) => [
+                  r.name ?? null,
+                  typeof r.skus === 'number' ? r.skus : null,
+                  typeof r.zortSkus === 'number' ? r.zortSkus : null,
+                  onhandOf(r) ?? null,
+                  availOf(r) ?? null,
+                  typeof r.no_cost === 'number' ? r.no_cost : null,
+                  r.zort === false ? 'ไม่ใช่' : r.zort === true ? 'ใช่' : null,
+                ],
+                fetchPage: async (offset) => (
+                  offset === 0 ? { rows, total: rows.length } : { rows: [], total: rows.length }
+                ),
+              }}
+            />
             {/* ZORT มีสองปุ่มนี้ — พาไปหน้าที่บอกว่ายังไม่ได้ทำ ไม่ทำปุ่มหลอก */}
             {/* 🔴 **ถอดปุ่ม "นำเข้าไฟล์ (Excel)" ออก** (15 ก.ย. 2569)
                 เดิมชี้ไป `?kind=product` ทั้งที่จอนี้แสดงหมวดหมู่ ไม่ใช่สินค้า
