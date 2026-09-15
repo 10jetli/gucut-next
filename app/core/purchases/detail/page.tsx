@@ -41,8 +41,14 @@ interface ZortPoResp { ok?: boolean; found?: boolean; purchaseOrder?: ZortPo; er
      ⇒ วันที่เปิดปุ่มส่งจริง = **รับของเข้าผิดร้าน** โดยจอดูปกติทุกประการ
    ⚠️ ตอนนี้ยังไม่เกิดความเสียหายเพราะปุ่มส่งจริงปิดอยู่ — แก้ก่อนเปิดปุ่ม */
 function ReceiveBox({ number, store, lines }: { number: string; store?: string | null; lines: Line[] }) {
-  /* z1 เท่านั้นที่เขียนเข้า ZORT ได้ตอนนี้ · ไม่รู้ร้าน = ท่อคืน z1 ให้ ⇒ ถือว่า z1 */
-  const writable = !store || store === 'z1'
+  /* 🔴 **ปิดไว้ก่อนเมื่อไม่รู้ร้าน (fail-closed)** — แก้ 15 ก.ย. 2569 ตามที่ฝั่งท่อทัก
+     รุ่นแรกเขียนว่า `!store || store === 'z1'` = ไม่รู้ร้านก็เปิดกล่องให้ (fail-open)
+     วันนี้ยังไม่มีรู เพราะ `?purchase=` ส่ง `store` มาทุกครั้งที่สำเร็จ (ตั้งแต่ท่อ 0932fac)
+     แต่ถ้าวันไหนคำตอบไม่มี `store` กล่องจะโผล่ และ**ด่านของท่อจับไม่ได้**
+     เพราะ "ไม่ส่ง store" ฝั่งท่อแปลว่า z1 ⇒ มันจะยอมให้เขียน
+     ⇒ ของที่เดิมพันเป็น "ของเข้าผิดร้าน" ต้องปิดไว้ก่อนเมื่อยังไม่รู้ ไม่ใช่เปิดไว้ก่อน */
+  const writable = store === 'z1'
+  const storeUnknown = !store
   const [po, setPo] = useState<ZortPo | null>(null)
   const [poErr, setPoErr] = useState('')
   const [poLoading, setPoLoading] = useState(true)
@@ -114,11 +120,22 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
       <section className="mt-4 rounded border-2 border-gray-200 bg-gray-50 p-3">
         <h2 className="mb-1 text-[14px] font-semibold">📦 รับของ / ตรวจนับสินค้าเข้า</h2>
         <p className="text-[12.5px] text-gray-700 leading-relaxed">
+          {storeUnknown ? (
+            <>
+              ⛔ <b>ยังไม่รู้ว่าใบนี้เป็นของร้านไหน — จึงยังไม่เปิดให้รับของจากจอนี้</b>
+              <br />คำตอบของท่อรอบนี้ไม่มีช่องบอกร้านมาด้วย ⇒ ถ้าปล่อยให้กด ระบบจะถือว่าเป็น
+              {' '}{storeLabel('z1')} โดยอัตโนมัติ ซึ่ง<b>อาจเป็นคนละร้านกับใบจริง</b>
+              <br />⇒ กดรีเฟรชอีกครั้ง · ถ้ายังไม่มีร้านมาให้แจ้งทีม · ระหว่างนี้รับของใน ZORT โดยตรง
+            </>
+          ) : (
+            <>
           ⛔ <b>ใบนี้เป็นของ{storeLabel(store === 'z2' ? 'z2' : 'z1')} — รับของผ่านระบบเรายังไม่รองรับ</b>
           <br />ท่อฝั่งเขียนต่อกับ ZORT ได้<b>เฉพาะ{storeLabel('z1')}</b>เท่านั้น
           {' '}⇒ ถ้าปล่อยให้กดจากใบนี้ ระบบจะไปหา<b>เลขที่ใบเดียวกันในอีกร้าน</b>
           {' '}ซึ่งเป็นคนละใบได้ (เลขที่ใบซ้ำข้ามร้านได้จริง) ⇒ <b>ของจะเข้าผิดร้าน</b>
           <br />⇒ ระหว่างนี้ให้รับของใบนี้<b>ใน ZORT โดยตรง</b>
+            </>
+          )}
         </p>
       </section>
     )
