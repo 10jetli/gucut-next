@@ -85,8 +85,24 @@ const typeTh = (t?: string | number) => {
   return TYPE_TH[k] ?? (k || '—')
 }
 
+/* 🏬 ป้ายชื่อร้าน — **ลอกคำจากจอรายการขาย** (`/core/sales`) ที่คนใช้เลือกร้านอยู่ทุกวัน
+   ⚠️ ห้ามพิมพ์ชื่อนิติบุคคลลงไฟล์จอ — มันถูกอบเข้า chunk สาธารณะ `/_next/static`
+      (เจ้าของร้านจับได้เอง 8 ก.ย. 2569) ⇒ เรียกตาม "หน้าที่ของร้าน" เท่านั้น
+   📌 **ตอนนี้ทั้งระบบยังเรียกไม่ตรงกัน**: จอรายการขายว่า "ร้านออนไลน์/หน้าร้าน" ·
+      จอความครอบคลุมว่า "ร้านที่ 1/2" · จอรายละเอียดใบขายว่า "สาขา 1/2"
+      ⇒ ตรงนี้เลือกตามจอรายการขายไว้ก่อน **และแจ้ง CEO ให้ตัดสินว่าจะยึดคำไหนทั้งระบบ**
+         (เปลี่ยนคำที่คนเห็นทุกวันต้องได้ไฟเขียวก่อน — กติกาเดียวกับ zort-words) */
+const storeLabel = (s: '' | 'z1' | 'z2') =>
+  s === 'z2' ? 'หน้าร้าน (z2)' : s === 'z1' ? 'ร้านออนไลน์ (z1)' : 'ไม่ได้เลือก (ท่อคืนร้านออนไลน์ z1)'
+
 export default function CoreTransfersPage() {
   const [q, setQ] = useState('')
+  /* 🏬 **ร้านที่กำลังดู** (ท่อ gucut-web 7351c3c · 15 ก.ย. 2569)
+     ⚠️ เส้นนี้ **ตอบทีละร้านเท่านั้น** — ยิงจริงยืนยัน 15 ก.ย.: ไม่ระบุ ⇒ z1 12,003 · z2 15,514
+        · `store=all` ⇒ **400** · ส่ง `source=` แทน `store=` ⇒ **400**
+     ⇒ **ห้ามมีตัวเลือก "ทุกร้าน" ในจอนี้** (ต่างจากจอรายการขายที่เส้นของมันรวมสองร้านได้)
+        ถ้าใส่ไว้ คนกดแล้วจะได้จอแดงโดยไม่รู้ว่าทำอะไรผิด */
+  const [store, setStore] = useState<'' | 'z1' | 'z2'>('')
   const [tab, setTab] = useState('all')
   const [offset, setOffset] = useState(0)
   const [data, setData] = useState<Resp | null>(null)
@@ -95,12 +111,14 @@ export default function CoreTransfersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (off = 0, tabId = tab) => {
+  const load = useCallback(async (off = 0, tabId = tab, storeId = store) => {
     setLoading(true)
     setError('')
     try {
       const qs = new URLSearchParams({ list: 'transfers', limit: String(PAGE), offset: String(off) })
       if (tabId !== 'all') qs.set('status', tabId)
+      /* ว่าง = ไม่ส่ง `store` เลย ⇒ ท่อคืน z1 ให้ (และบอกกลับมาว่า storeDefaulted) */
+      if (storeId) qs.set('store', storeId)
       if (q.trim()) qs.set('q', q.trim())
       const [tRes, wRes] = await Promise.all([
         fetch(`/api/web/core?${qs}`).then((r) => r.json()),
@@ -121,7 +139,7 @@ export default function CoreTransfersPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, tab])
+  }, [q, tab, store])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -178,13 +196,18 @@ export default function CoreTransfersPage() {
                 filename: `รายการโอนสินค้า-${new Date().toISOString().slice(0, 10)}`,
                 title: 'รายการโอนสินค้า',
                 note: wErr ? 'รอบนี้ดึงชื่อคลังไม่ได้ — คอลัมน์ชื่อคลังจึงเว้นว่าง (รหัสคลังยังอยู่ครบ)' : undefined,
+                /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอกำลังโชว์** — ฝั่งท่อกำชับตรง ๆ
+                   ถ้าลืมส่ง `store` ไฟล์จะกลายเป็นของ z1 ทั้งที่จอโชว์ z2 อยู่
+                   ⇒ ผิดแบบที่ไม่มีอะไรฟ้อง เพราะไฟล์ก็ดูปกติทุกประการ */
                 filters: [
+                  ['ร้าน', storeLabel(store)],
                   ['แท็บสถานะ', tab === 'all' ? 'ทั้งหมด' : tab],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({ list: 'transfers', limit: String(limit), offset: String(offsetAt) })
                   if (tab !== 'all') qs.set('status', tab)
+                  if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
                   const r = await fetch(`/api/web/core?${qs}`)
                   const d = await r.json()
@@ -259,6 +282,32 @@ export default function CoreTransfersPage() {
                 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
               {loading ? '⏳' : '⟳'}
             </button>
+          </div>
+
+          {/* 🏬 เลือกร้าน — เส้นนี้ตอบทีละร้าน ⇒ **ไม่มีตัวเลือก "ทุกร้าน"** (store=all ⇒ 400) */}
+          <div className="flex flex-wrap items-center gap-2 mt-2">
+            <span className="text-[12.5px] text-gray-500">ร้าน:</span>
+            {([['z1', 'ร้านออนไลน์ (z1)'], ['z2', 'หน้าร้าน (z2)']] as const).map(([v, label]) => {
+              /* ค่าว่าง = ท่อคืน z1 ⇒ ปุ่ม z1 ต้องดูเป็น "ที่เลือกอยู่" ตั้งแต่เปิดหน้า
+                 ไม่งั้นคนเห็นตารางของ z1 แต่ไม่มีปุ่มไหนถูกเลือก แล้วเดาว่ากำลังดูทั้งสองร้าน */
+              const on = store === v || (store === '' && v === 'z1')
+              return (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => { if (store === v) return; setStore(v); load(0, tab, v) }}
+                  disabled={loading}
+                  className={`text-[12.5px] rounded-full px-3 py-1 border disabled:opacity-50 ${
+                    on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+            <span className="text-[11.5px] text-gray-400">
+              เส้นนี้ตอบทีละร้าน — ดูสองร้านพร้อมกันไม่ได้ (ยอดในแท็บและตัวนับเป็นของร้านที่เลือกเท่านั้น)
+            </span>
           </div>
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}

@@ -86,6 +86,8 @@ export default function ReceivePage() {
   const [detail, setDetail] = useState<Detail | null>(null)
   /** ข้อมูลใบมาจากไหน — **ต้องบอกคนใช้** ของสดกับกระจกให้รายละเอียดไม่เท่ากัน */
   const [src, setSrc] = useState<'live' | 'mirror' | null>(null)
+  /** ใบที่เจอในกระจกเป็นของร้านไหน · null = ยังไม่ได้ค้น หรือไม่เจอ */
+  const [mirrorStore, setMirrorStore] = useState<'z1' | 'z2' | null>(null)
   const [lines, setLines] = useState<Line[]>([{ sku: '', qty: '' }])
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -96,7 +98,7 @@ export default function ReceivePage() {
   const find = useCallback(async () => {
     const term = q.trim()
     if (!term) return
-    setBusy(true); setErr(''); setNotFound(false); setDetail(null); setSrc(null)
+    setBusy(true); setErr(''); setNotFound(false); setDetail(null); setSrc(null); setMirrorStore(null)
     try {
       /* ① ลองดึงสดจาก ZORT ก่อน — ได้บรรทัดสินค้ากับเลขพัสดุมาด้วย
          ⚠️ ดึงสดสำคัญตรงนี้จริง ๆ เพราะคนกำลังยืนอยู่หน้าคลังกับของตรงหน้า
@@ -118,11 +120,24 @@ export default function ReceivePage() {
       }
       /* ② ดึงสดไม่ได้ ⇒ ถอยไปหาในกระจก — **ต้องบอกว่านี่คือของจากกระจก**
          ไม่งั้นคนจะงงว่าทำไมบางใบมีรายการสินค้ามาให้ บางใบไม่มี */
-      const r = await fetch(`/api/web/core?list=transfers&limit=5&q=${encodeURIComponent(term)}`)
-        .then((x) => x.json())
-      if (r?.error) throw new Error(r.error)
-      const rows: Doc[] = Array.isArray(r?.rows) ? r.rows : []
-      if (!rows.length) { setNotFound(true); setDoc(null); return }
+      /* 🏬 **ต้องค้นทั้งสองร้าน** (ท่อ gucut-web 7351c3c · 15 ก.ย. 2569)
+         เส้น `list=transfers` **ตอบทีละร้าน** และถ้าไม่ส่ง `store` มันคืนเฉพาะ z1
+         ⇒ เดิมจอนี้ค้นโดยไม่ส่ง `store` ⇒ ใบโอนของ **หน้าร้าน (z2) จะขึ้นว่า "ไม่พบ"**
+            ทั้งที่ใบมีอยู่จริง — คนยืนอยู่หน้าคลังกับของตรงหน้าแล้วระบบบอกว่าไม่มีใบ
+         ⚠️ `store=all` ท่อตอบ 400 ⇒ ค้นทีละร้าน: z1 ก่อน (ใบส่วนใหญ่อยู่นั่น) แล้วค่อย z2
+            และ **ต้องบอกบนจอว่าใบที่เจอเป็นของร้านไหน** ไม่ใช่เจอแล้วเงียบ */
+      let rows: Doc[] = []
+      let foundStore: 'z1' | 'z2' | null = null
+      for (const st of ['z1', 'z2'] as const) {
+        // eslint-disable-next-line no-await-in-loop
+        const r = await fetch(`/api/web/core?list=transfers&store=${st}&limit=5&q=${encodeURIComponent(term)}`)
+          .then((x) => x.json())
+        if (r?.error) throw new Error(r.error)
+        const got: Doc[] = Array.isArray(r?.rows) ? r.rows : []
+        if (got.length) { rows = got; foundStore = st; break }
+      }
+      if (!rows.length) { setNotFound(true); setDoc(null); setMirrorStore(null); return }
+      setMirrorStore(foundStore)
       /* ⚠️ เลขที่ใบใน ZORT **ซ้ำกันได้จริง** (ฝั่งท่อเจอ 546 เลขซ้ำ) ⇒ ค้นแล้วอาจได้หลายใบ
          เลือกใบล่าสุดให้ก่อน แต่ต้องโชว์ให้เห็นว่ามีหลายใบ ไม่ใช่เลือกเงียบ ๆ */
       setDoc(rows[0]); setSrc('mirror'); setLines([{ sku: '', qty: '' }])
@@ -316,6 +331,11 @@ export default function ReceivePage() {
               <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-3 leading-relaxed">
                 ⚠️ <b>เติมรายการให้ล่วงหน้าไม่ได้</b> — ใบนี้อ่านจากคลังเงาซึ่งเก็บแต่หัวใบ
                 {' '}⇒ ต้องพิมพ์รหัสสินค้าเอง · <b>กรอกเท่าที่รับได้จริง</b>
+                {/* 🏬 เจอที่ร้านไหน — ต้องบอก เพราะเลขที่ใบของสองร้านซ้ำกันได้ */}
+                {mirrorStore && (
+                  <><br />🏬 ใบนี้เจอในคลังเงาของ <b>{mirrorStore === 'z2' ? 'หน้าร้าน (z2)' : 'ร้านออนไลน์ (z1)'}</b>
+                    {' '}— ค้นทีละร้าน (z1 ก่อน แล้ว z2) เพราะท่อตอบทีละร้าน</>
+                )}
               </p>
             )}
 

@@ -81,6 +81,10 @@ function tone(s?: string): 'green' | 'orange' | 'red' | 'gray' {
 export default function ReturnOrdersPage() {
   const [d, setD] = useState<Resp | null>(null)
   const [q, setQ] = useState('')
+  /* 🏬 **ร้านที่กำลังดู** (ท่อ gucut-web e546240 · 15 ก.ย. 2569)
+     ยิงจริง 15 ก.ย.: ไม่ระบุ ⇒ z1 689 ใบ · z2 239 ใบ · `store=all` ⇒ **400**
+     ⇒ เส้นนี้ตอบทีละร้าน ⇒ **ไม่มีตัวเลือก "ทุกร้าน"** */
+  const [store, setStore] = useState<'' | 'z1' | 'z2'>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   /** ⚠️ เส้นยังไม่ขึ้นเว็บ ≠ ดึงไม่สำเร็จ ≠ ไม่มีใบสักใบ — สามอย่างนี้ต้องเขียนคนละคำ
@@ -94,10 +98,11 @@ export default function ReturnOrdersPage() {
      ทั้งที่ร้านมี 689 ใบ · และไฟล์ส่งออกก็กรองไม่ได้ตามไปด้วย
      ⚠️ มี q ⇒ ท่ออ่านจาก **กระจก** (source: mirror · live:false) ไม่ใช่ ZORT สด
         ⇒ ต้องเขียนบนจอว่าผลมาจากกระจกและซิงก์เมื่อไหร่ ไม่ใช่ปล่อยให้เข้าใจว่าสดเสมอ */
-  const load = useCallback(async (term = q) => {
+  const load = useCallback(async (term = q, storeId = store) => {
     setLoading(true); setError(''); setNotDeployed(false)
     try {
       const qs = new URLSearchParams({ list: 'returnorders', limit: String(LIMIT) })
+      if (storeId) qs.set('store', storeId)
       if (term.trim()) qs.set('q', term.trim())
       const got = await coreJson<Resp>(`/api/web/core?${qs}`, ['rows', 'live'])
       setKnown(got.known)
@@ -116,7 +121,7 @@ export default function ReturnOrdersPage() {
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)
     } finally { setLoading(false) }
-  }, [q])
+  }, [q, store])
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = Array.isArray(d?.rows) ? d!.rows! : []
@@ -188,12 +193,18 @@ export default function ReturnOrdersPage() {
                    ก่อนถอด** ไม่ได้ถอดตามคำบอกเล่าว่า deploy แล้ว (ฝั่งท่อกำชับข้อนี้เอง)
                    📏 ยิงจริง: เลขที่ใบเป๊ะ ⇒ applied.q ตรง · source mirror · total 1
                    ⚠️ มี q ⇒ ผลมาจากกระจก ไม่ใช่ ZORT สด ⇒ เขียนไว้ในหัวไฟล์ด้วย */
-                filters: q.trim()
-                  ? [['คำค้นหา', `${q.trim()} — ค้นที่เซิร์ฟเวอร์ ครอบทุกใบ (ผลมาจากกระจกของเรา ไม่ใช่ ZORT สด)`]]
-                  : [['คำค้นหา', '(ไม่ได้ค้น)']],
+                /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์** — ลืมส่ง `store` แล้วไฟล์จะกลายเป็นของ z1
+                   ทั้งที่จอโชว์ z2 อยู่ · ผิดแบบไม่มีอะไรฟ้อง เพราะไฟล์หน้าตาปกติ */
+                filters: [
+                  ['ร้าน', store === 'z2' ? 'หน้าร้าน (z2)' : store === 'z1' ? 'ร้านออนไลน์ (z1)' : 'ไม่ได้เลือก (ท่อคืนร้านออนไลน์ z1)'],
+                  q.trim()
+                    ? ['คำค้นหา', `${q.trim()} — ค้นที่เซิร์ฟเวอร์ ครอบทุกใบ (ผลมาจากกระจกของเรา ไม่ใช่ ZORT สด)`]
+                    : ['คำค้นหา', '(ไม่ได้ค้น)'],
+                ],
                 fetchPage: async (offsetAt, limit) => {
                   const page = Math.floor(offsetAt / limit) + 1
                   const qs = new URLSearchParams({ list: 'returnorders', limit: String(limit), page: String(page) })
+                  if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
                   const r = await fetch(`/api/web/core?${qs}`)
                   const d = await r.json()
@@ -269,6 +280,25 @@ export default function ReturnOrdersPage() {
           )}
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
+          {/* 🏬 เลือกร้าน — เส้นนี้ตอบทีละร้าน (store=all ⇒ 400) ⇒ ไม่มีตัวเลือก "ทุกร้าน" */}
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-[12.5px] text-gray-500">ร้าน:</span>
+            {([['z1', 'ร้านออนไลน์ (z1)'], ['z2', 'หน้าร้าน (z2)']] as const).map(([v, label]) => {
+              /* ค่าว่าง = ท่อคืน z1 ⇒ ปุ่ม z1 ต้องดูเป็นตัวที่เลือกอยู่ตั้งแต่เปิดหน้า */
+              const on = store === v || (store === '' && v === 'z1')
+              return (
+                <button key={v} type="button" disabled={loading}
+                  onClick={() => { if (store === v) return; setStore(v); load(q, v) }}
+                  className={`text-[12.5px] rounded-full px-3 py-1 border disabled:opacity-50 ${
+                    on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                  {label}
+                </button>
+              )
+            })}
+            <span className="text-[11.5px] text-gray-400">ยอดและตัวนับทั้งหมดเป็นของร้านที่เลือกเท่านั้น</span>
+          </div>
+
           <StoreScopeLine scope={d?.storeScope} />
 
           <TableWrap>
