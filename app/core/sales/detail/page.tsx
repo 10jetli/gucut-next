@@ -12,6 +12,7 @@
 // ⚠️ **ช่องที่คลังเงาไม่ได้เก็บ ต้องเขียนว่า "ไม่ได้เก็บไว้" ห้ามเว้นว่างเฉย ๆ**
 //    เว้นว่าง = คนอ่านนึกว่าลูกค้าไม่ได้กรอก ซึ่งคนละเรื่องกับเราไม่ได้เก็บ (เจตนาเรื่องความเป็นส่วนตัว)
 import { Suspense, useCallback, useEffect, useState } from 'react'
+import { PAY_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
@@ -59,10 +60,16 @@ interface Item {
 
 const VAT_RATE = 0.07
 
-/** แปลสถานะการชำระเงินตามคำที่ ZORT ใช้บนจอ (ภาพ 04) — **ไม่รู้จัก = บอกว่าไม่รู้จัก ห้ามเดาเป็นเขียว** */
-const PAY_TH: Record<string, string> = { Paid: 'ชำระครบ', Partial: 'ชำระบางส่วน', Unpaid: 'ยังไม่ชำระ' }
+/** สถานะการชำระเงิน — คำมาจาก `lib/zort-words.ts` ที่เดียว
+ *  🔴 **แผนที่เดิมของไฟล์นี้หลุดรอบกวาดแรก** (ฝั่งท่อจับได้ 15 ก.ย. 2569 · ใบ t_mu23dljn)
+ *     เดิมเขียนเอง `{ Paid, Partial, Unpaid }` + `?? s` ⇒ ค่าที่ท่อส่งจริง
+ *     **`Pending` · `Voided` · `Partial Payment` โชว์อังกฤษดิบในหน้ารายละเอียด**
+ *     (รวมใบเงินค้าง z1/SO-202503029 ที่กำลังส่งถึงท่านประธาน — จอที่คนจะเปิดดูใบนั้นพอดี)
+ *     และคำที่มีก็ผิดฝา: `Partial`/`Unpaid` ไม่ใช่ค่าที่ท่อส่งเลย · `ยังไม่ชำระ` ไม่ใช่คำของ ZORT
+ *  📌 บทเรียน: กวาดรอบแรกผมหาจาก `STATUS_TH` (ชื่อที่ใช้ซ้ำ 5 ไฟล์) จึงไม่เจอไฟล์ที่ตั้งชื่อ `PAY_TH`
+ *     ⇒ **กวาดคลาสนี้ต้องหาที่ "รูปแบบ" (`MAP[x] ?? x`) ไม่ใช่ที่ "ชื่อตัวแปร"** */
 const payTh = (s?: string | null) =>
-  !s ? 'ยังไม่ได้เก็บช่องนี้' : (PAY_TH[s] ?? s)
+  !s ? 'ยังไม่ได้เก็บช่องนี้' : zortWord(PAY_STATUS, s).text
 
 function Card({ title, icon, children, className = '' }: {
   title?: string; icon?: string; children: React.ReactNode; className?: string
