@@ -325,7 +325,10 @@ export default function CoreContactsPage() {
                               label: 'ซื้อเข้า',
                               onClick: () => router.push(`/core/purchases/new?vendor=${encodeURIComponent(r.name ?? '')}`),
                             },
-                            { label: 'แก้ไข', disabled: 'ผู้ติดต่อเป็นกระจกจาก ZORT — แก้ที่ ZORT เท่านั้น' },
+                            /* ⚠️ **แก้ไม่ได้ แต่ *เพิ่ม* ได้** — ท่อมี `?addcontact=1` (จอ /core/customers/new ใช้อยู่)
+                               แต่ไม่มีเส้น updatecontact (ยิงตรวจ 15 ก.ย. 2569 ⇒ ตกลงบรรทัดท้ายสุด = ไม่รู้จัก)
+                               ⇒ เขียนว่า "แก้ที่ ZORT เท่านั้น" ลอย ๆ อ่านได้ว่าเขียนอะไรไม่ได้เลย ซึ่งไม่จริง */
+                            { label: 'แก้ไข', disabled: 'ยังไม่มีเส้นแก้ผู้ติดต่อในท่อ — แก้ที่ ZORT (เพิ่มผู้ติดต่อใหม่ทำที่จอเราได้)' },
                             { label: 'เพิ่ม Tag', disabled: 'คลังเงายังไม่ได้เก็บ Tag ของผู้ติดต่อ' },
                             {
                               label: 'คัดลอกเบอร์โทร',
