@@ -32,6 +32,9 @@ interface Resp { total?: number; amount?: number; rows?: Po[]
 interface ItemRow { sku: string; name?: string; qty?: number; amount?: number; orders?: number; lastDate?: string }
 interface ItemsResp {
   skus?: number; lines?: number; amount?: number; rows?: ItemRow[]
+  /** ขอบเขตร้านของ **เส้นนี้เอง** — ท่อเพิ่มให้ 15 ก.ย. 2569 (gucut-web ab69ec5)
+   *  🚫 ห้ามยืมค่าจาก `list=purchases` มาใช้แทน แม้จะเป็นเรื่องซื้อเหมือนกัน (คนละคำตอบ) */
+  storeScope?: string
   /** ⚠️ ท่อส่งธงบอกการตัดมาเองแล้ว (5 ก.ย. 2569) — จอไม่ต้องเดาจากการเทียบตัวเลขอีก
    *  `truncated` = ยังมีของเหลืออีกนอกเหนือจากที่ส่งมา (คนละเรื่องกับ `limitClamped`
    *  ซึ่งแปลว่า "ให้น้อยกว่าที่ขอเพราะชนเพดาน") */
@@ -365,10 +368,16 @@ export default function BuyReportPage() {
               </p>
             )}
 
-            {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบ list=purchases (`all`) เท่านั้น
-                ⚠️ ตารางรายสินค้าข้างล่างมาจาก list=purchaseitems ซึ่ง **ไม่ส่งช่องนี้** ⇒ ไม่ติดป้ายให้ตารางนั้น
-                   (ไม่มีช่อง = ไม่แสดง · ห้ามเดาว่าเป็นขอบเขตเดียวกันเพราะเป็นเรื่องซื้อเหมือนกัน) */}
-            <StoreScopeLine scope={all?.storeScope} />
+            {/* 🏬 ขอบเขตร้านของ **ตารางรายสินค้า** — อ่านจากคำตอบ `list=purchaseitems` (`items`) เท่านั้น
+                🔴 **แก้ความผิดพลาดของผมเอง 15 ก.ย. 2569 (ใบ t_mu2lhpff)**
+                   รอบก่อน (c092304) ผมวาง `all?.storeScope` (มาจาก `list=purchases`) ไว้ตรงนี้
+                   ทั้งที่ตารางข้างล่างนี้เป็น **ตารางรายสินค้า** ที่มาจากอีกเส้นหนึ่ง
+                   ⇒ เป็นการ **ยืมป้ายข้ามคำตอบ** ซึ่งเป็นสิ่งที่ตัวเองเขียนห้ามไว้ในคอมเมนต์เดียวกัน
+                   ⇒ ตอนนั้น `purchaseitems` ยังไม่ส่งช่องนี้ ป้ายจึง "ดูถูก" เพราะสองเส้นเป็น z1 พอดี
+                      **นั่นคืออาการที่อันตรายที่สุด — ถูกด้วยความบังเอิญ**
+                   ⇒ ตอนนี้ท่อส่งแล้ว (gucut-web ab69ec5) จึงอ่านของตัวเองได้ตรง ๆ
+                ⚠️ ไม่มีช่อง = ไม่แสดง · ห้ามยืมจากเส้นอื่นแม้จะเป็นเรื่องซื้อเหมือนกัน */}
+            <StoreScopeLine scope={items?.storeScope} />
 
             <TableWrap>
               <table className="w-full min-w-[760px]">
@@ -442,6 +451,10 @@ export default function BuyReportPage() {
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="พิมพ์คำค้นหา"
                 className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]" />
             </div>
+
+            {/* 🏬 ขอบเขตร้านของ **ตารางรายใบซื้อ** — อ่านจากคำตอบ `list=purchases` (`all`)
+                คนละคำตอบกับตารางรายสินค้าข้างบน ⇒ แต่ละตารางถือป้ายของตัวเอง */}
+            <StoreScopeLine scope={all?.storeScope} />
 
             <TableWrap>
               <table className="w-full min-w-[720px]">
