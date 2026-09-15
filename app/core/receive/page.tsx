@@ -27,6 +27,7 @@ import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, thaiDate } from '@/components/zort'
+import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Doc {
   id?: string; number?: string; kind?: string; status?: string
@@ -274,8 +275,14 @@ export default function ReceivePage() {
                   {doc.reference && <> · อ้างอิง {doc.reference}</>}
                 </p>
               </div>
-              {/* ⚠️ โชว์สถานะดิบ ไม่แปล ไม่ระบายสีตามใจ — คำสถานะของใบโอนเป็นคนละชุดกับออเดอร์ */}
-              {doc.status && <Pill tone="gray">{doc.status}</Pill>}
+              {/* 🔤 เดิมตั้งใจโชว์ค่าดิบเพราะยังไม่มีชุดคำของใบโอน — ตอนนี้มีแล้ว (`TRANSFER_STATUS`
+                  อ่านจากตาราง ZORT เอง) ⇒ แปลด้วยชุดของใบโอน **ห้ามใช้ชุดของออเดอร์**
+                  ค่าที่ยังไม่รู้คำ zortWord จะคืนค่าดิบให้เอง + เราติด title บอกว่าเป็นค่าที่ท่อส่งมา */}
+              {doc.status && (
+                <Pill tone="gray">
+                  <span title={`ค่าที่ท่อส่งมา: ${doc.status}`}>{zortWord(TRANSFER_STATUS, doc.status).text}</span>
+                </Pill>
+              )}
             </div>
             {doc.note && <p className="text-[12px] text-gray-500 mt-2">{doc.note}</p>}
             {/* 🔴 บอกแหล่งข้อมูลเสมอ — ของสดกับกระจกให้รายละเอียดไม่เท่ากัน

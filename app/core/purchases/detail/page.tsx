@@ -167,7 +167,7 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
       {po && (
         <>
           <p className="mt-2 text-[12.5px] text-gray-600">
-            ใบนี้ใน ZORT: id <b>{po.id}</b> · สถานะ <b>{po.status ?? '—'}</b> · คลัง <b>{po.warehousecode ?? 'ค่าเริ่มต้นของร้าน'}</b>
+            ใบนี้ใน ZORT: id <b>{po.id}</b> · สถานะการโอนสินค้า <b>{po.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, po.status).text : '—'}</b> · คลัง <b>{po.warehousecode ?? 'ค่าเริ่มต้นของร้าน'}</b>
             {' '}<span className="text-gray-400">(ถามสดจาก ZORT · ไม่ใช่กระจก)</span>
           </p>
           <div className="mt-2 flex flex-wrap gap-4 text-[13px]">

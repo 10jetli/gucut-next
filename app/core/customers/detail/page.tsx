@@ -18,6 +18,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
@@ -138,6 +139,21 @@ function Inner() {
               {o?.lastDay && <div><span className="text-gray-500">ล่าสุด </span>{o.lastDay}</div>}
             </div>
 
+            {/* 🔬 **เทียบกับจอ ZORT ตัวจริง** — `/Contact/ContactDetail` (อ่านอย่างเดียว 16 ก.ย. 2569)
+                ZORT มีการ์ดเงิน 3 ใบ (ยอดขายเดือนนี้ · ยอดขายปีนี้ · **ยอดค้างชำระ**) + กล่อง "ยอดขาย รายสินค้า"
+                + ตารางที่มีคอลัมน์ **ประเภท** (รวมเอกสารหลายชนิด ไม่ใช่แค่ใบขาย) + Export ตามช่วงวันที่
+                🔴 **ทำเองจากข้อมูลที่มีไม่ได้** — ยิงวัดของจริง 16 ก.ย. 2569: ท่อคืน `recent` **สูงสุด 20 แถว**
+                   (เจอลูกค้าที่มี 54 ใบ แต่ได้มา 20) ⇒ ถ้าคำนวณยอดเดือนนี้/ปีนี้/ค้างชำระจากตารางนี้
+                   จะได้เลขที่ **ดูสมเหตุสมผลแต่ผิด** สำหรับคนที่ซื้อเกิน 20 ใบ ⇒ ขอท่อเพิ่มช่อง ไม่คำนวณเอง
+                   (คลาสเดียวกับบทเรียน "เลขจากลิสต์ที่ถูก cap ห้ามเอาไปใช้") */}
+            <div className="mb-3 text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 leading-relaxed">
+              <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — ยอดขายเดือนนี้ · ยอดขายปีนี้ · <b>ยอดค้างชำระ</b> · ยอดขายรายสินค้า
+              {' '}· ตารางของ ZORT มีคอลัมน์ <b>ประเภท</b> (รวมเอกสารหลายชนิด) ส่วนตารางนี้เป็นใบขายอย่างเดียว
+              <br />
+              เหตุผล: ท่อส่งมาแค่ <b>สรุปรวม + รายการล่าสุดไม่เกิน 20 ใบ</b> (วัดเมื่อ 16 ก.ย. 2569) ⇒
+              {' '}<b>คำนวณยอดรายเดือน/ค้างชำระจากตารางนี้จะผิด</b>สำหรับลูกค้าที่ซื้อเกิน 20 ใบ — ขอท่อเพิ่มช่องแล้ว ยังไม่เดาเอง
+            </div>
+
             {!o?.recent?.length ? (
               <p className="text-[13px] text-gray-500">
                 {masked ? 'ดูประวัติไม่ได้เพราะชื่อถูกปิดบัง' : 'ยังไม่มีออเดอร์ที่จับคู่กับชื่อนี้'}
@@ -167,8 +183,11 @@ function Inner() {
                         </td>
                         <td className="py-1 pr-2">{r.channel ?? '—'}</td>
                         <td className="py-1 pr-2 text-right tabular-nums">{baht(r.amount)}</td>
-                        <td className="py-1 pr-2">{r.status ?? '—'}</td>
-                        <td className="py-1">{r.pay_status ?? '—'}</td>
+                        {/* 🔤 เดิมโชว์ค่าดิบ ("Success"/"Paid") — กวาดรอบก่อนไม่เจอเพราะเขียนเป็น `{r.status ?? '—'}`
+                            (แพตเทิร์นค้นหาเดิมบังคับให้ปิดปีกกาติดชื่อช่อง) ⇒ รอบนี้ค้นแบบเผื่อ `??` ด้วย
+                            ตารางนี้เป็นแถวใบขาย ⇒ ใช้ชุดคำของ "ตาราง" ไม่ใช่ของแผงตัวกรอง */}
+                        <td className="py-1 pr-2">{r.status ? zortWord(SALE_STATUS, r.status).text : '—'}</td>
+                        <td className="py-1">{r.pay_status ? zortWord(PAY_STATUS, r.pay_status).text : '—'}</td>
                       </tr>
                     ))}
                   </tbody>

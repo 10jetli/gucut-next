@@ -22,6 +22,27 @@ import { useCallback, useEffect, useState } from 'react'
 import { fmtNum, fmtMoney } from '@/lib/format'
 import { TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from './index'
 import ExportButton from './ExportButton'
+import { SALE_STATUS, PURCHASE_STATUS, TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
+import type { ZortWord } from '@/lib/zort-words'
+
+/* 🔤 **สถานะในบัตรสต็อกต้องแปลตามชนิดรายการ ไม่ใช่ชุดเดียวทั้งตาราง**
+   ยิงของจริง 16 ก.ย. 2569 (740 แถวจาก 3 รหัส): ท่อส่ง `kind` เป็นไทยอยู่แล้ว ("ขาย" · "ซื้อ")
+   แต่ `status` เป็นค่าดิบอังกฤษ — เจอ Success 736 · Pending 4 ⇒ เดิมจอขึ้นคำอังกฤษให้คนอ่าน
+   🔴 ห้ามใช้ชุดคำเดียวทั้งตาราง เพราะ `Pending` **คนละคำกันตามชนิดใบ**
+      (ใบขาย = "รอโอน" · ใบซื้อ = "รอโอนสินค้า" ตามที่ ZORT ใช้จริงในแต่ละจอ)
+   ค่าที่ยังไม่รู้คำ zortWord จะคืนค่าดิบมาเอง ⇒ ติด title บอกว่าเป็นค่าที่ท่อส่งมา ไม่เดาคำแทน ZORT */
+const KIND_WORDS: Record<string, Record<string, ZortWord>> = {
+  'ขาย': SALE_STATUS,
+  'ซื้อ': PURCHASE_STATUS,
+  'โอน': TRANSFER_STATUS,
+}
+function statusText(kind?: string, status?: string): { text: string; known: boolean } {
+  if (!status) return { text: '—', known: true }
+  const map = KIND_WORDS[String(kind ?? '').trim()]
+  if (!map) return { text: status, known: false }
+  const w = zortWord(map, status)
+  return { text: w.text, known: w.known }
+}
 
 interface CardRow {
   date?: string; kind?: string; status?: string
@@ -186,7 +207,14 @@ export default function StockCard({ sku }: { sku: string }) {
               <tr key={i} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                 <td className={`${TD} whitespace-nowrap`}>{r.date ?? '—'}</td>
                 <td className={TD}>{r.kind ?? '—'}</td>
-                <td className={TD}>{r.status ?? '—'}</td>
+                <td className={TD}>
+                  {(() => {
+                    const w = statusText(r.kind, r.status)
+                    return w.known
+                      ? w.text
+                      : <span className="text-gray-500" title={`ค่าที่ท่อส่งมา: ${r.status} (ยังไม่รู้คำที่ ZORT ใช้กับชนิดรายการนี้)`}>{w.text}</span>
+                  })()}
+                </td>
                 <td className={`${TD} whitespace-nowrap`}>{r.ref ?? '—'}</td>
                 <td className={TD}>{r.party ?? <span className="text-gray-300">—</span>}</td>
                 <td className={`${TDR} ${Number(r.qty) < 0 ? 'text-red-500 font-semibold' : 'text-emerald-700'}`}>
