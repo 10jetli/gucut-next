@@ -87,6 +87,22 @@ export function coverageText(c: Coverage): string {
  * ⚠️ **เพดานกันวนไม่รู้จบ** — ถ้าท่อคืนแถวซ้ำหรือไม่ลด offset จะวนตลอดกาล
  *    ⇒ หยุดเมื่อครบ total · ได้ 0 แถว · หรือชนเพดานรอบ แล้ว **รายงานว่าหยุดเพราะอะไร**
  */
+/* 📚 **เส้นไหนแบ่งหน้าด้วยอะไร — ตารางสรุป 15 ก.ย. 2569 (ใบ t_mu2mc4jj)**
+   จดไว้ตรงนี้เพราะคนที่มาทำ paging ครั้งหน้าจะเปิดไฟล์นี้ก่อน ไม่ใช่ไปหาในกระดาน
+   ⚠️ **แยกระดับหลักฐานให้ชัด** — "ยิงจริง" กับ "อ่านจากโค้ด" ไม่เท่ากัน
+
+   ✅ รับ `offset` จริง (ยิงเทียบ offset=0 กับ offset=5 แล้วแถวแรกเปลี่ยน):
+      `list=orders` · `list=contacts` · `list=stock` · `list=transfers` · `list=purchases` · `list=logistics`
+   🔴 **เมิน `offset` — ต้องใช้ `page=`** (ยิงจริง · เทียบชุด id ทั้งชุดด้วย limit=200):
+      `list=returnorders` (689 ใบ · ยืนยัน page ได้) · `list=quotations` (ยืนยัน page ได้ · ท่อ 4951ad3)
+      · `?zortdocrows` (694 ใบ · `applied.page` บอกตรง ๆ ว่าอยู่หน้า 1 เสมอเมื่อส่ง offset)
+   ⬜ ไม่มีพารามิเตอร์แบ่งหน้า — คืนทั้งชุด: `list=categories` (43 แถว · ยิงจริง)
+   📖 **อ่านจากโค้ดท่อ ยังไม่ได้ยิงพิสูจน์** (ฝั่งท่อแจ้ง 15 ก.ย. 2569):
+      `list=stockcard` ใช้ offset จริงใน SQL · `list=bundleitems` คืนทั้งชุดต่อ sku
+      · `list=poscats` คืนทั้งชุด · `list=sales` ไม่มี offset/page เพดาน 200/วัน แต่คืน `total`
+      ⇒ ทั้งสี่เส้น "ไม่เจอช่องที่ขาดเงียบ" — แต่ **ยังไม่ใช่การพิสูจน์ด้วยของจริง**
+
+   🔑 ไม่ต้องจำตารางนี้ให้ครบ — **ด่านหน้าไม่ขยับข้างล่างจับให้เองถ้าเดาผิด** */
 export async function fetchAllPages<T>(
   page: (offset: number, limit: number) => Promise<{
     rows: T[]
