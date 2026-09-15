@@ -219,8 +219,12 @@ function PctBadge({ cur, prev }: { cur: number; prev: number }) {
   return <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${cls}`}>{text}</span>
 }
 
-// กราฟแท่งยอดขายรายวัน + เส้นจำนวนออเดอร์ — SVG ล้วน ไม่พึ่งไลบรารี
-function TrendChart({ daily }: { daily: Report['daily'] }) {
+/* กราฟยอดขาย — SVG ล้วน ไม่พึ่งไลบรารี
+   🔴 **ค่าเริ่มต้นเป็น "เส้นล้วน" ให้เหมือน ZORT** (สเปกเมนู 2 ข้อ 9 · ท่านประธานสั่ง 15 ก.ย. 2569)
+      ของเดิม (แท่งยอดขาย + เส้นจำนวนใบทับ) **ไม่ได้ทิ้ง** — ย้ายไปอยู่ในปุ่มสลับชนิดกราฟ (ข้อ 5)
+   ⚠️ สองชนิดนี้ตอบคนละคำถาม: เส้น = ยอดขายอย่างเดียว · แท่ง = ยอดขาย + จำนวนใบ
+      ⇒ ปุ่มสลับต้องบอกด้วยว่าอันไหนกำลังดูอยู่ ไม่ใช่สลับแล้วเงียบ */
+function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'bar' }) {
   const W = 720, H = 200, PAD = 8
   const maxSales = Math.max(...daily.map((d) => d.sales), 1)
   const maxOrders = Math.max(...daily.map((d) => d.orders), 1)
@@ -231,8 +235,28 @@ function TrendChart({ daily }: { daily: Report['daily'] }) {
     .map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${(H - 24 - (d.orders / maxOrders) * (H - 48)).toFixed(1)}`)
     .join(' ')
   return (
-    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="กราฟยอดขายรายวัน">
-      {daily.map((d, i) => {
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img"
+      aria-label={kind === 'line' ? 'กราฟเส้นยอดขายรายวัน' : 'กราฟแท่งยอดขายรายวัน พร้อมเส้นจำนวนใบ'}>
+      {/* ── ชนิด "เส้นล้วน" (ค่าเริ่มต้น · เหมือน ZORT) — เส้นเดียวคือ **ยอดขาย** ไม่ใช่จำนวนใบ ── */}
+      {kind === 'line' && (
+        <>
+          <path
+            d={daily
+              .map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${(H - 24 - (d.sales / maxSales) * (H - 48)).toFixed(1)}`)
+              .join(' ')}
+            fill="none" strokeWidth={2} className="stroke-violet-500" strokeLinejoin="round" strokeLinecap="round"
+          />
+          {daily.map((d, i) => (
+            <g key={d.date}>
+              <circle cx={x(i)} cy={H - 24 - (d.sales / maxSales) * (H - 48)} r={2.5} className="fill-violet-500" />
+              <text x={x(i)} y={H - 8} textAnchor="middle" className="fill-gray-400 text-[10px]">
+                {parseInt(String(d.date ?? '').slice(8), 10) || ''}
+              </text>
+            </g>
+          ))}
+        </>
+      )}
+      {kind === 'bar' && daily.map((d, i) => {
         const h = (d.sales / maxSales) * (H - 48)
         return (
           <g key={d.date}>
@@ -248,11 +272,36 @@ function TrendChart({ daily }: { daily: Report['daily'] }) {
           </g>
         )
       })}
-      <path d={line} fill="none" strokeWidth={2} className="stroke-emerald-500" strokeLinejoin="round" strokeLinecap="round" />
-      {daily.map((d, i) => (
-        <circle key={d.date} cx={x(i)} cy={H - 24 - (d.orders / maxOrders) * (H - 48)} r={3} className="fill-emerald-500" />
-      ))}
+      {kind === 'bar' && (
+        <>
+          <path d={line} fill="none" strokeWidth={2} className="stroke-emerald-500" strokeLinejoin="round" strokeLinecap="round" />
+          {daily.map((d, i) => (
+            <circle key={d.date} cx={x(i)} cy={H - 24 - (d.orders / maxOrders) * (H - 48)} r={3} className="fill-emerald-500" />
+          ))}
+        </>
+      )}
+      {/* ⑩ ป้ายแกน x — ZORT มี ของเราไม่มี (สเปกข้อ 10) */}
+      <text x={W / 2} y={H - 1} textAnchor="middle" className="fill-gray-400 text-[9px]">ช่วงเวลา</text>
     </svg>
+  )
+}
+
+/* ③④ dropdown "ยอดขายรวม ▾" มุมขวาบนของกล่อง — ZORT มีทั้งสองกล่อง (สเปกข้อ 3–4)
+   🔴 **ของเรามีชนิดเดียวจริง ๆ** ⇒ ตัวเลือกอื่นต้องปิดไว้และบอกว่ายังไม่มี
+      ห้ามใส่ตัวเลือกที่เลือกแล้วไม่มีอะไรเกิดขึ้น (กติกาในใบ: ห้ามปุ่มหลอก)
+   📌 ตัวเลือกของ ZORT ที่เห็นในจอเดียวกัน: ยอดขายรวม · ยอดขายตามหมวดหมู่
+      (ตามหมวดหมู่ยังทำไม่ได้ เพราะยอดขายรายสินค้าที่ท่อส่งมา **ไม่มีหมวดหมู่ติดมาด้วย**) */
+function ReportKindSelect() {
+  return (
+    <select
+      value="total"
+      onChange={() => { /* มีค่าเดียวที่เลือกได้จริง */ }}
+      className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
+      title="ตอนนี้มีชนิดเดียว — ยอดขายตามหมวดหมู่ยังทำไม่ได้ เพราะท่อยังไม่ส่งหมวดหมู่มากับยอดขายรายสินค้า"
+    >
+      <option value="total">ยอดขายรวม</option>
+      <option value="cat" disabled>ยอดขายตามหมวดหมู่ (ยังไม่มี)</option>
+    </select>
   )
 }
 
@@ -278,7 +327,15 @@ function ReturnsFreshness({ utc }: { utc: string | null }) {
 }
 
 export default function SalesReportPage() {
-  const [days, setDays] = useState(7)
+  /* ① ค่าเริ่มต้นเป็น "ย้อนหลัง 3 เดือน" ให้เหมือน ZORT (สเปกเมนู 2 ข้อ 1)
+     ⚠️ เปลี่ยนค่านี้แล้วตัวเลขบนจอจะกระโดดขึ้นทันที **ไม่ใช่บั๊ก** — คนละช่วงเวลากับของเดิม */
+  const [days, setDays] = useState(90)
+  /* ⑤ ชนิดกราฟ — เริ่มที่เส้นล้วนเหมือน ZORT · ของเดิม (แท่ง+เส้นจำนวนใบ) ยังเลือกได้ */
+  const [chartKind, setChartKind] = useState<'line' | 'bar'>('line')
+  /* ②–④/⑥ ตัวเลือกที่ ZORT มีแต่ของเรายังทำไม่ได้จริง — **ต้องบอกตรง ๆ ห้ามเป็นปุ่มหลอก** */
+  const [advOpen, setAdvOpen] = useState(false)
+  /** ⑥ ช่องค้นหาเหนือตาราง — กรอง **เฉพาะแถวที่โหลดมาแล้ว** ⇒ ต้องเขียนขอบเขตไว้ข้าง ๆ */
+  const [tableQ, setTableQ] = useState('')
   const [report, setReport] = useState<Report | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -410,7 +467,26 @@ export default function SalesReportPage() {
         <span className="text-[12.5px] text-gray-400" suppressHydrationWarning>
           {report ? `${report.range.from} – ${report.range.to}` : ''} · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
         </span>
+        {/* ② ลิงก์ "ค้นหาขั้นสูง" — ZORT มีตรงนี้ (สเปกข้อ 2)
+            🔴 **ห้ามเป็นลิงก์หลอก** ⇒ กดแล้วต้องได้คำตอบว่าตอนนี้กรองอะไรได้จริงบ้าง */}
+        <button
+          type="button"
+          onClick={() => setAdvOpen((v) => !v)}
+          className="text-[12.5px] text-blue-600 hover:underline"
+        >
+          ค้นหาขั้นสูง
+        </button>
       </div>
+
+      {advOpen && (
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+          ⚠️ <b>ค้นหาขั้นสูงของจอนี้ยังทำไม่ได้</b> — จอนี้กรองได้แค่ <b>ช่วงเวลา</b> ที่เลือกข้างบน
+          <br />เพราะเส้นที่จอนี้ใช้ (ยอดรายวัน · ยอดขายรายสินค้า) <b>รับแค่ช่วงวันที่</b> ยังไม่มีตัวกรองอื่น
+          <br />⇒ ถ้าต้องกรองตามร้าน/ช่องทาง/สถานะ ให้ใช้จอ{' '}
+          <Link href="/core/sales" className="text-blue-600 hover:underline">รายการขาย</Link>{' '}ซึ่งกรองได้จริงที่เซิร์ฟเวอร์
+          <br /><span className="text-gray-500">(เขียนไว้ตรง ๆ ดีกว่าใส่ช่องที่กรอกแล้วไม่มีผล — ช่องหลอกทำให้คนเชื่อว่ากรองแล้ว)</span>
+        </div>
+      )}
 
       <Tabs
         tabs={[
@@ -433,7 +509,14 @@ export default function SalesReportPage() {
               {/* สองการ์ดคู่กันแบบ ZORT: สรุปยอดขายรวม | รายงาน (กราฟ) */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                 <Card>
-                  <p className="text-[15px] font-semibold text-gray-900 mb-2">สรุปยอดขายรวม</p>
+                  {/* ⑧ ไอคอนวงกลมหน้าหัวข้อ + ③ dropdown มุมขวาบนของกล่อง (สเปกข้อ 3 กับ 8) */}
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">💰</span>
+                      สรุปยอดขายรวม
+                    </p>
+                    <ReportKindSelect />
+                  </div>
                   <div className="flex flex-col items-center justify-center py-8">
                     <p className="text-[34px] font-semibold text-blue-600 leading-none">
                       {fmtMoney(report.totals.sales)}
@@ -504,10 +587,37 @@ export default function SalesReportPage() {
                 </Card>
 
                 <Card>
-                  <p className="text-[15px] font-semibold text-gray-900 mb-2">รายงาน</p>
-                  <TrendChart daily={grouped} />
-                  {/* ปุ่มสลับช่วงมุมขวาล่างของการ์ด — ตำแหน่งเดียวกับ ZORT */}
-                  <div className="flex justify-end gap-1 mt-2">
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
+                      <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📈</span>
+                      รายงาน
+                    </p>
+                    <ReportKindSelect />
+                  </div>
+                  <TrendChart daily={grouped} kind={chartKind} />
+                  {/* ⑤ ปุ่มสลับชนิดกราฟ (ซ้ายล่าง) + ปุ่มช่วงเวลา (ขวาล่าง) — ตำแหน่งเดียวกับ ZORT */}
+                  <div className="flex items-center justify-between gap-2 mt-2">
+                    <div className="flex items-center gap-1">
+                      {([['line', '📈', 'กราฟเส้น (ยอดขายอย่างเดียว)'], ['bar', '📊', 'กราฟแท่ง (ยอดขาย + เส้นจำนวนใบ)']] as const)
+                        .map(([k, icon, title]) => (
+                          <button
+                            key={k}
+                            type="button"
+                            onClick={() => setChartKind(k)}
+                            title={title}
+                            aria-pressed={chartKind === k}
+                            className={`text-[13px] w-7 h-7 rounded border ${
+                              chartKind === k ? 'bg-violet-50 border-violet-400' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
+                          >
+                            {icon}
+                          </button>
+                        ))}
+                      {/* 🔴 สลับแล้วต้องรู้ว่ากำลังดูอะไร — สองชนิดนี้ตอบคนละคำถาม */}
+                      <span className="text-[11.5px] text-gray-400 ml-1">
+                        {chartKind === 'line' ? 'เส้น = ยอดขาย' : 'แท่ง = ยอดขาย · เส้นเขียว = จำนวนใบ'}
+                      </span>
+                    </div>
+                    <div className="flex justify-end gap-1">
                     {BUCKETS.map((b) => (
                       <button
                         key={b.id}
@@ -519,13 +629,51 @@ export default function SalesReportPage() {
                         {b.label}
                       </button>
                     ))}
+                    </div>
                   </div>
                 </Card>
               </div>
 
               {/* การ์ดยอดขายรายสินค้า — คอลัมน์ตามภาพ ZORT */}
               <Card padded={false}>
-                <p className="text-[15px] font-semibold text-gray-900 px-4 md:px-5 pt-4">ยอดขาย</p>
+                {/* ⑧ ไอคอนวงกลม + ⑥ แถบเครื่องมือเหนือตาราง ([สินค้า ▾] + ช่องค้นหา) — สเปกข้อ 6 กับ 8 */}
+                <div className="flex flex-wrap items-center gap-2 px-4 md:px-5 pt-4">
+                  <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2 mr-auto">
+                    <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">🧾</span>
+                    ยอดขาย
+                  </p>
+                  {/* 🔴 ZORT มีตัวเลือกจัดกลุ่ม 5 แบบ (สินค้า · หมวดหมู่ · ผู้ติดต่อ · ผู้ใช้งาน · คลัง/สาขา)
+                         ของเรามีจริงแบบเดียว ⇒ ที่เหลือ **ปิดไว้และเขียนว่ายังไม่มี** ห้ามเลือกได้แล้วเงียบ */}
+                  <select
+                    value="sku"
+                    onChange={() => { /* มีแบบเดียวที่ทำได้จริง */ }}
+                    className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
+                    title="ZORT จัดกลุ่มได้ 5 แบบ ของเรายังทำได้แบบเดียว (รายสินค้า)"
+                  >
+                    <option value="sku">สินค้า</option>
+                    <option value="cat" disabled>หมวดหมู่ (ยังไม่มี)</option>
+                    <option value="contact" disabled>ผู้ติดต่อ (ยังไม่มี)</option>
+                    <option value="user" disabled>ผู้ใช้งาน (ยังไม่มี)</option>
+                    <option value="wh" disabled>คลัง/สาขา (ยังไม่มี)</option>
+                  </select>
+                  <input
+                    value={tableQ}
+                    onChange={(e) => setTableQ(e.target.value)}
+                    placeholder="พิมพ์คำค้นหา"
+                    className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]"
+                  />
+                </div>
+                {/* 🔴 **ขอบเขตของช่องค้นหานี้ต้องเขียนไว้** — มันกรองเฉพาะแถวที่โหลดมาแล้ว
+                       ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์ ⇒ ไม่เขียน คนจะเชื่อว่าค้นครบทุกใบ
+                       (คลาสเดียวกับ "ตัวนับกับตัวแถวมาคนละกติกา" ใน CLAUDE.md) */}
+                <p className="text-[11.5px] text-gray-400 px-4 md:px-5 pt-1">
+                  ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum((report.topProducts ?? []).length)} รายการ)
+                  {' '}ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์
+                  {/* ⑦ หมวดหมู่ใต้ชื่อสินค้า — ZORT มี เรายังไม่มีข้อมูล ⇒ บอกตรง ๆ ว่ารออะไร */}
+                  <br />⚠️ ZORT มีบรรทัด &ldquo;หมวดหมู่&rdquo; ใต้ชื่อสินค้า — ของเรายังไม่มี
+                  {' '}เพราะยอดขายรายสินค้าที่ท่อส่งมามีแค่ <b>รหัส · ชื่อ · จำนวน · ยอด</b> (ยิงตรวจแล้ว 15 ก.ย. 2569)
+                  {' '}⇒ ขอให้ฝั่งท่อส่งหมวดหมู่มาด้วยแล้วจอจะขึ้นเองทันที
+                </p>
                 <TableWrap>
                   <table className="w-full min-w-[720px]">
                     <thead className="bg-white border-b border-gray-200">
@@ -547,7 +695,13 @@ export default function SalesReportPage() {
                             ? `ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะขายไม่ได้ — ${report.topError}`
                             : 'ลองขยายช่วงเวลาด้านบน · ตัวเลขนับจากรายการสินค้าในใบขายจริง'} />
                       )}
-                      {(report.topProducts ?? []).map((p) => {
+                      {(report.topProducts ?? [])
+                        .filter((p) => {
+                          const t = tableQ.trim().toLowerCase()
+                          return !t || String(p.sku ?? '').toLowerCase().includes(t)
+                            || String(p.name ?? '').toLowerCase().includes(t)
+                        })
+                        .map((p) => {
                         const amount = typeof p.amount === 'number' ? p.amount : null
                         const share = amount !== null && report.totals.sales
                           ? (amount / report.totals.sales) * 100 : null
