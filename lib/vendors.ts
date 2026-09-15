@@ -21,6 +21,13 @@ export interface BillVendorInfo {
    *     ⇒ ข้อ "ตัดพารามิเตอร์วันที่ออก" ใช้กับ Meta · ไม่ใช่กฎเดียวกันทุกเจ้า */
   portal?: string
 
+  /** ไม่ต้องโชว์ช่องนี้ในหน้ารวมบิล — ท่านประธานกากบาทออก 15 ก.ย. 2569
+   *  🔑 **ซ่อนจากหน้ารวมเท่านั้น ไม่ได้ลบอะไรทั้งสิ้น**
+   *     บิลเก่าที่เก็บไว้ยังอยู่ครบในถัง · หน้า /bills/<id> ยังเปิดได้ตามเดิม
+   *     · ยังอยู่ใน ZIP รวมทุกเจ้ารายเดือน
+   *  ⇒ ของภาษีที่เก็บมาแล้ว **ห้ามหายเพราะการจัดหน้าจอ** — ต้องการตัดออกจากซองด้วย ให้สั่งแยก */
+  hiddenInGrid?: boolean
+
   /** เจ้านี้ต้องมีบิล **ทุกเดือน** แน่นอน (ค่าบริการรายเดือนตายตัว)
    *  ⇒ ตัวเฝ้า `bills-watch.mjs` จะเตือนเมื่อเดือนที่แล้วไม่มีบิลของเจ้านี้
    *
@@ -37,7 +44,7 @@ export const BILL_VENDORS: BillVendorInfo[] = [
   { id: 'tiktok', portal: 'https://ads.tiktok.com/i18n/account/payment_invoice?aadvid=7129346796412846082',  name: 'TikTok Ads',        emoji: '🎵', gridName: 'TikTok Ads',    gridOrder: 2, logo: '/logos/tiktok.png', query: '(from:tiktok.com (invoice OR "tax invoice" OR ใบแจ้งหนี้ OR receipt OR ใบเสร็จ) -from:notification@service.tiktok.com -from:sellersupport@shop.tiktok.com) OR (from:gucut@icloud.com tiktok has:attachment)' },
   { id: 'meta', portal: 'https://adsmanager.facebook.com/adsmanager/billing_hub/payment_activity/?asset_id=263190084598096&business_id=1319241864803694&payment_account_id=263190084598096&placement=BILLING_HUB',    name: 'Facebook/Meta Ads', emoji: '📘', gridName: 'Facebook Ads',  gridOrder: 1, logo: '/logos/facebook.webp', note: 'เฉพาะบัญชี GUCUTใหม่ (263190084598096)', query: 'from:facebookmail.com (subject:"Meta Invoice" OR subject:"Payments Remittance" OR "self accounted document" OR "remittance advice")', accountId: '263190084598096' },
   { id: 'google', portal: 'https://ads.google.com/aw/billing/billingactivity?ocid=113607268&euid=109005064&__u=9057819336&uscid=113607268&__c=4285310532&authuser=0',  name: 'Google Ads',        emoji: '🔍', gridName: 'Google Ads',    gridOrder: 3, logo: '/logos/google.webp', query: 'from:payments-noreply@google.com OR (from:google.com subject:("payment receipt" OR ใบเสร็จ))' },
-  { id: 'shopify', name: 'www (Shopify)',     emoji: '🛒', gridName: 'www (Shopify)', gridOrder: 0, logo: 'https://www.gucut.com/cdn/shop/files/7c6eb86bd569d120fbcb7ab8372b6803_8e3d89af-4a8d-419a-98c6-14b009abbfc3.svg', note: 'ปกติเดือนละ 2 ใบ (ค่าแพ็คเกจ + ค่าแอป)', query: '(from:shopify.com OR "Shopify Billing") (invoice OR billing OR bill OR ใบเรียกเก็บเงิน OR receipt OR ลดหนี้)' },
+  { id: 'shopify', hiddenInGrid: true, /* ปิดร้าน Shopify ถาวรแล้ว 28 ส.ค. 2569 — ไม่มีบิลใหม่อีก */ name: 'www (Shopify)',     emoji: '🛒', gridName: 'www (Shopify)', gridOrder: 0, logo: 'https://www.gucut.com/cdn/shop/files/7c6eb86bd569d120fbcb7ab8372b6803_8e3d89af-4a8d-419a-98c6-14b009abbfc3.svg', note: 'ปกติเดือนละ 2 ใบ (ค่าแพ็คเกจ + ค่าแอป)', query: '(from:shopify.com OR "Shopify Billing") (invoice OR billing OR bill OR ใบเรียกเก็บเงิน OR receipt OR ลดหนี้)' },
   { id: 'line', portal: 'https://manager.line.biz/account/@yab4021t/purchase/history',    name: 'LINE',              emoji: '💚', gridName: 'LINE',       gridOrder: 4, logo: '/logos/line.png', everyMonth: true, /* ฿1,369.60/เดือน แพ็กเกจเบสิค — คงที่ · มี 07/08/09 ไม่ขาด */ query: '((from:line.me OR from:linecorp.com OR from:linebiz.com) (invoice OR receipt OR ใบเสร็จ OR "tax invoice")) OR (from:10jetli@gmail.com subject:"ใบกำกับภาษี LINE OA")' },  { id: 'adobe', portal: 'https://account.adobe.com/orders/billing-history',   name: 'Adobe',             emoji: '🅰️', gridName: 'Adobe',         gridOrder: 5, logo: '/logos/adobe.png', everyMonth: true, /* สมาชิกรายเดือน — มี 07/08/09 ไม่ขาด */ query: 'from:adobe.com (invoice OR receipt)' },
   { id: 'apple',   name: 'Apple / iCloud',    emoji: '🍎', gridName: 'Apple / iCloud', gridOrder: 6, logo: '/logos/apple.webp', everyMonth: true, /* iCloud + LINE Premium ID — มีครบ 14/14 เดือนไม่ขาดเลย */ query: '(from:apple.com OR "ใบเสร็จรับเงินจาก Apple" OR "Your receipt from Apple") (ใบเสร็จ OR receipt OR invoice)', accountId: 'gucut@icloud.com' },
   /* Netlify — เจ้าของร้านสั่งเพิ่ม 8 ก.ย. 2569 (ค่าโฮสต์เว็บ gucut.com + admin)
@@ -81,7 +88,7 @@ export const BILL_VENDORS: BillVendorInfo[] = [
   /* Lazada — ใบกำกับภาษีค่าธรรมเนียมผู้ขาย (e-Tax ใช้ยื่น VAT ได้)
      ⚠️ **มาทุกสัปดาห์ ไม่ใช่รายเดือน** ⇒ เดือนหนึ่งจะมี 4-5 ใบเป็นเรื่องปกติ ไม่ใช่ของซ้ำ
      ⚠️ ส่งเข้ากล่อง gucut1@gmail.com (คนละกล่องกับเจ้าอื่น) — ถ้าวันไหนหาไม่เจอ ให้เช็คตรงนี้ก่อน */
-  { id: 'lazada', name: 'Lazada (ค่าธรรมเนียม)', emoji: '🛍️', gridName: 'Lazada', gridOrder: 12, note: 'ใบกำกับภาษีค่าธรรมเนียมผู้ขาย — มาทุกสัปดาห์', query: 'from:support.lazada.co.th subject:"Tax invoice for the period"' },
+  { id: 'lazada', hiddenInGrid: true, /* ท่านประธานสั่งเอาออกจากหน้ารวม 15 ก.ย. 2569 */ name: 'Lazada (ค่าธรรมเนียม)', emoji: '🛍️', gridName: 'Lazada', gridOrder: 12, note: 'ใบกำกับภาษีค่าธรรมเนียมผู้ขาย — มาทุกสัปดาห์', query: 'from:support.lazada.co.th subject:"Tax invoice for the period"' },
 
   { id: 'omise',   name: 'Omise',             emoji: '💳', gridName: 'Omise',         gridOrder: 7, query: 'from:omise.co ใบเสร็จ' },
 ]

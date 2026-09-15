@@ -6,7 +6,10 @@ import { TH_MONTHS } from '@/lib/format'
 import Card from '@/components/ui/Card'
 
 // 7 เจ้าหลัก + Omise — กดช่องไหนเข้าไปดูบิลของเจ้านั้นเรียงเป็นเดือนๆ (ข้อมูลรวมอยู่ที่ lib/vendors.ts)
+// 🔴 15 ก.ย. 2569 — ท่านประธานกากบาท www (Shopify) กับ Lazada ออกจากหน้ารวม
+//    ซ่อนจากหน้านี้เท่านั้น **บิลเก่าไม่ได้ถูกลบ** และ /bills/<id> ยังเปิดได้
 const VENDOR_LIST = [...BILL_VENDORS]
+  .filter(v => !v.hiddenInGrid)
   .sort((a, b) => a.gridOrder - b.gridOrder)
   .map(v => ({ id: v.id, name: v.gridName, emoji: v.emoji, logo: v.logo }))
 
