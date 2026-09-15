@@ -18,6 +18,19 @@ const pauseMs = Number(process.env.BILLS_PAUSE_MS || 5000)
 const quotaPauseMs = Number(process.env.BILLS_QUOTA_PAUSE_MS || 75000)
 const requestTimeoutMs = Number(process.env.BILLS_TIMEOUT_MS || 70000)
 const quotaRe = /quota|rate.?limit|429|403/i
+const knownMonthCounts = new Map([
+  ['tiktok/2026-08', 4],
+  ['meta/2026-08', 1],
+])
+const knownTotals = new Map([
+  ['tiktok', 108],
+  ['cloudflare', 2],
+])
+const knownDocuments = [
+  { vendor: 'meta', month: '2026-08', id: 'FBADS-497-106431740', amount: '16625.98' },
+  { vendor: 'cloudflare', month: '2026-08', id: 'IN-75520671', amount: '10.46' },
+  { vendor: 'cloudflare', month: '2026-09', id: 'IN-77550881', amount: '2.10' },
+]
 
 if (!auth) {
   console.error('ต้องส่ง GUCUT_AUTH เป็นค่า cookie gucut_auth จาก session ที่ล็อกอิน admin.gucut.com อยู่')
@@ -106,9 +119,9 @@ function parseSummary(csv) {
   return { added: Number(values[2]), missing: Number(values[3]), reasons }
 }
 
-async function inspectMetaAugust(zip) {
-  const needleId = 'FBADS-497-106431740'
-  const needleAmount = '16625.98'
+async function inspectKnownDocuments(zip, vendor, month) {
+  const expected = knownDocuments.filter(doc => doc.vendor === vendor && doc.month === month)
+  if (!expected.length) return []
   let combined = ''
   for (const entry of Object.values(zip.files)) {
     if (entry.dir || !/\.pdf$/i.test(entry.name)) continue
@@ -119,10 +132,11 @@ async function inspectMetaAugust(zip) {
     } catch { /* ชื่อไฟล์ยังอาจยืนยันเลขที่ใบได้ */ }
   }
   const compact = combined.replace(/\s+/g, '').replace(/,/g, '').toUpperCase()
-  return {
-    invoice: compact.includes(needleId),
-    amount: compact.includes(needleAmount),
-  }
+  return expected.map(doc => ({
+    ...doc,
+    invoice: compact.includes(doc.id),
+    amountFound: compact.includes(doc.amount),
+  }))
 }
 
 async function loadZip(vendor, month, expected) {
@@ -160,10 +174,8 @@ async function loadZip(vendor, month, expected) {
     if (expected !== summary.added + summary.missing) {
       reasons.push(`ต้นทาง ${expected} ใบ แต่ซองอธิบายได้ ${summary.added + summary.missing} ใบ`)
     }
-    const meta = vendor === 'meta' && month === '2026-08'
-      ? await inspectMetaAugust(zip)
-      : null
-    last = { ...summary, reasons, meta }
+    const documents = await inspectKnownDocuments(zip, vendor, month)
+    last = { ...summary, reasons, documents }
     if (attempt === 0 && reasons.some(reason => quotaRe.test(reason))) {
       console.error(`  Gmail quota ในซอง: พัก ${Math.ceil(quotaPauseMs / 1000)} วินาทีก่อนลองใหม่`)
       await sleep(quotaPauseMs)
@@ -175,12 +187,17 @@ async function loadZip(vendor, month, expected) {
 }
 
 const rows = []
-let metaProof = null
+const totals = new Map()
+const documentProof = []
 for (const vendor of await vendorIds()) {
   console.error(`อ่านดัชนี ${vendor}`)
   try {
     const data = await loadVendor(vendor)
     const months = Object.keys(data.months || {}).sort()
+    const indexedTotal = months.reduce((sum, month) => (
+      sum + (Array.isArray(data.months[month]) ? data.months[month].length : 0)
+    ), 0)
+    totals.set(vendor, { name: data.name || vendor, indexed: indexedTotal, staleReason: data.staleReason || '' })
     if (!months.length) {
       rows.push({ vendor, month: '—', added: 0, missing: 0, reason: data.staleReason || 'ต้นทางไม่มีเดือนที่มีข้อมูล' })
     }
@@ -191,14 +208,18 @@ for (const vendor of await vendorIds()) {
         const result = await loadZip(vendor, month, expected)
         const reasons = [...result.reasons]
         if (data.staleReason) reasons.unshift(`ดัชนีค้าง: ${data.staleReason}`)
+        const knownMonth = knownMonthCounts.get(`${vendor}/${month}`)
+        if (knownMonth !== undefined && expected !== knownMonth) {
+          reasons.unshift(`ต้นทางยืนยัน ${knownMonth} ใบ แต่ดัชนีมี ${expected} ใบ`)
+        }
         rows.push({
           vendor: data.name || vendor,
           month,
           added: result.added,
           missing: result.missing,
-          reason: reasons.length ? reasons.join('; ') : 'ครบตามต้นทาง',
+          reason: reasons.length ? reasons.join('; ') : 'ZIP ครบตามดัชนี',
         })
-        if (result.meta) metaProof = { month, expected, ...result.meta }
+        documentProof.push(...result.documents)
       } catch (error) {
         rows.push({ vendor: data.name || vendor, month, added: 0, missing: expected, reason: clean(error) })
       }
@@ -216,8 +237,13 @@ for (const row of rows) {
   console.log(`| ${clean(row.vendor)} | ${clean(row.month)} | ${row.added} | ${row.missing} | ${clean(row.reason) || '—'} |`)
 }
 console.log('')
-if (metaProof) {
-  console.log(`Meta ส.ค. 2026: ต้นทาง ${metaProof.expected} ใบ · พบเลข FBADS-497-106431740=${metaProof.invoice ? 'ใช่' : 'ไม่พบ'} · พบยอด ฿16,625.98=${metaProof.amount ? 'ใช่' : 'ไม่พบ'}`)
-} else {
-  console.log('Meta ส.ค. 2026: ตรวจไฟล์ไม่ได้ เพราะไม่มีซองเดือนนี้ในผล')
+console.log('ตรวจเทียบต้นทางภายนอกที่ท่านประธานยืนยัน:')
+for (const [vendor, source] of knownTotals) {
+  const got = totals.get(vendor)
+  const note = got?.staleReason ? ` · ดัชนีค้าง: ${clean(got.staleReason)}` : ''
+  console.log(`- ${got?.name || vendor}: ต้นทาง ${source} ใบ · ดัชนี ${got?.indexed ?? 'อ่านไม่ได้'} ใบ${note}`)
+}
+for (const doc of knownDocuments) {
+  const proof = documentProof.find(item => item.vendor === doc.vendor && item.month === doc.month && item.id === doc.id)
+  console.log(`- ${doc.vendor} ${doc.month} ${doc.id}: พบเลข=${proof?.invoice ? 'ใช่' : 'ไม่พบ'} · พบยอด=${proof?.amountFound ? 'ใช่' : 'ไม่พบ'}`)
 }
