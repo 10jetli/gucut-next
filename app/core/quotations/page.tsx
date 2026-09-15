@@ -142,8 +142,17 @@ export default function QuotationsPage() {
                 filters: q.trim()
                   ? [['คำค้นหาบนจอ', `${q.trim()} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้ (ท่อไม่รองรับ) ได้ทุกแถว`]]
                   : [['คำค้นหา', '(ไม่ได้ค้น)']],
+                /* 🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** (แก้ 15 ก.ย. 2569 · ใบ t_mu2mc4jj)
+                   เดิมส่ง `offset` ซึ่งท่อ **เมินเงียบ ๆ** ⇒ ขอหน้าถัดไปได้ก้อนเดิม
+                   วันนั้นยังไม่ออกอาการเพราะใบเสนอราคามีแค่ 6 ใบ (จบในหน้าเดียว)
+                   ⚠️ **ยิงยืนยันเองก่อนเปลี่ยน ไม่ได้เปลี่ยนตามคำบอกเล่าว่า deploy แล้ว**
+                      (ฝั่งท่อกำชับข้อนี้เอง · ท่อ gucut-web 4951ad3)
+                      ผล 15 ก.ย. 2569: `limit=2` หน้า 1/2/3 ได้ id คนละชุด รวม 6 ไม่ซ้ำ = `total` เป๊ะ
+                      · หน้า 4 ว่าง · และ `offset` **ยังถูกเมินอยู่** (ยิงเทียบแล้วได้ก้อนเดิม)
+                   📌 เพดานของท่อ: page 1–50 · limit สูงสุด 200 */
                 fetchPage: async (offsetAt, limit) => {
-                  const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&offset=${offsetAt}`)
+                  const page = Math.floor(offsetAt / limit) + 1
+                  const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&page=${page}`)
                   const d = await r.json()
                   if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
                   return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
