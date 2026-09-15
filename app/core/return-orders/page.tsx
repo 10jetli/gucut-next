@@ -31,6 +31,7 @@ import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
+import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import { toThai, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
@@ -335,7 +336,10 @@ export default function ReturnOrdersPage() {
                         ⇒ สองจอต้องพูดให้เข้ากัน ไม่งั้นคนอ่านไม่รู้ว่าตกลงระบบรู้หรือไม่รู้ (14 ก.ย. 2569) */}
                     <td className={TDR}>{typeof r.amount === 'number' ? fmtMoney(r.amount) : DASH}</td>
                     <td className={TD}>
-                      {r.status ? <Pill tone={tone(r.status)}>{r.status}</Pill> : DASH}
+                      {/* 🔴 เดิมโชว์ค่าดิบ ("Success") — คำอังกฤษบนจอคือเรื่องที่ท่านประธานทักไว้
+                          ⚠️ คำนี้ **ยืมจากใบ PO บนจอ `/Buy/list` ของ ZORT** เพราะยังไม่เคยเห็นแถว CN- บนจอเขา
+                             (ดูที่มาใน lib/zort-words.ts — เจอแถว CN เมื่อไหร่ต้องกลับมาแก้) */}
+                      {r.status ? <Pill tone={tone(r.status)}>{zortWord(RETURN_ORDER_STATUS, r.status).text}</Pill> : DASH}
                       {/* ZORT โชว์ชื่อโกดังเป็นบรรทัดย่อยใต้สถานะ */}
                       {r.warehouse && <div className="text-[11.5px] text-gray-400 mt-0.5">{r.warehouse}</div>}
                     </td>

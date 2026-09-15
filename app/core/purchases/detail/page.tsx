@@ -16,6 +16,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { PURCHASE_DETAIL_PAY_STATUS, PURCHASE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
@@ -344,8 +345,16 @@ function Inner() {
                     จอเดียวที่ไม่แปลง = คนเทียบข้ามจอแล้วสะดุด และเสี่ยงอ่านปีผิดไป 543 ปี
                     (เจอกับของจริงตอนเปิดใบ PO-202603001 · 14 ก.ย. 2569) */}
                 <Field k="วันที่" v={d.poDate ? thaiDate(d.poDate) : d.poDate} />
-                <Field k="สถานะ" v={d.status} />
-                <Field k="การชำระเงิน" v={d.paymentStatus} />
+                {/* 🔴 **เดิมโชว์ค่าดิบภาษาอังกฤษ** — ยิงของจริง 16 ก.ย. 2569 ได้ `status: "Voided"`
+                    และ `paymentStatus: "Voided"` ⇒ จอนี้ขึ้นคำว่า **Voided** ให้คนอ่าน
+                    นี่คือโรคเดียวกับที่ท่านประธานทักเรื่อง "Pending" บนจอขาย (ใบ t_mu23dljn)
+                    รอบกวาดครั้งนั้นไม่เจอไฟล์นี้เพราะที่นี่ **ไม่มีแผนที่คำเลย** (ส่งค่าดิบตรง ๆ)
+                    ⇒ กวาดคลาสนี้ต้องหา "ค่าที่ไหลจากท่อไปหน้าจอโดยไม่ผ่านตัวแปล" ไม่ใช่หาชื่อตัวแปร
+                 📖 ป้ายและคำ **ลอกจากจอ `/Buy/Details` ของ ZORT จริง** (กดดูเอง 16 ก.ย. 2569):
+                    ป้ายคือ "สถานะการโอนสินค้า" · "สถานะการชำระเงิน"
+                    และค่า Voided ของใบซื้อคือ "ถูกยกเลิก" / "ยกเลิก" — **ไม่เหมือนจอใบขาย** */}
+                <Field k="สถานะการโอนสินค้า" v={d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : d.status} />
+                <Field k="สถานะการชำระเงิน" v={d.paymentStatus ? zortWord(PURCHASE_DETAIL_PAY_STATUS, d.paymentStatus).text : d.paymentStatus} />
                 <Field k="คลังปลายทาง" v={d.warehouse} />
                 <Field k="โน้ต" v={d.note} />
                 {/* ⚠️ ค่านี้เป็น "เวลา" ไม่ใช่ "วันที่" ⇒ แปลงเฉพาะส่วนวัน แล้วคงเวลาไว้

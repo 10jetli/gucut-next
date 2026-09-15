@@ -10,6 +10,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
+import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
 import { PageHead, BtnGhost, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus } from '@/components/zort'
@@ -112,7 +113,7 @@ function Inner() {
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
             <div><p className="text-gray-400 text-[11px]">สถานะ</p>
-              {d.status ? <Pill tone={toneOfStatus(d.status)}>{d.status}</Pill> : <span className="text-gray-300">—</span>}</div>
+              {d.status ? <Pill tone={toneOfStatus(d.status)}>{zortWord(RETURN_ORDER_STATUS, d.status).text}</Pill> : <span className="text-gray-300">—</span>}</div>
             <div><p className="text-gray-400 text-[11px]">วันที่คืน</p>
               {d.date ? thaiDate(d.date) : <span className="text-gray-300">—</span>}</div>
             <div><p className="text-gray-400 text-[11px]">ลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>

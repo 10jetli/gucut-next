@@ -20,6 +20,7 @@
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
+import { SALE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { ChannelTag, Pill, thaiDate } from '@/components/zort'
 
@@ -193,7 +194,12 @@ export default function PackWizardPage() {
               </span>
             )}
             <ChannelTag name={order.channel || ''} />
-            {typeof order.status === 'string' && <Pill tone="gray">{order.status}</Pill>}
+            {/* 🔴 เดิมโชว์ค่าดิบ ("Pending"/"Success") — คำอังกฤษบนจอที่คนแพ็กของต้องอ่าน
+                ⇒ ใช้ชุดคำของ **จอรายละเอียดใบขาย** (จอนี้ดูใบทีละใบ ไม่ใช่ตาราง)
+                   ZORT เรียกสถานะนี้ว่า "สถานะการโอนสินค้า" · Pending = "รอโอนสินค้า" */}
+            {typeof order.status === 'string' && (
+              <Pill tone="gray">{zortWord(SALE_DETAIL_TRANSFER_STATUS, order.status).text}</Pill>
+            )}
           </div>
           <p className="text-[12.5px] text-gray-500 mb-3">
             {order.customer || '(ไม่มีชื่อลูกค้า)'} · {thaiDate(order.order_date)}
