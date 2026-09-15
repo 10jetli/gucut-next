@@ -10,6 +10,7 @@
 //    ⇒ อ่านธง `isPos` จากเซิร์ฟเวอร์ **ห้ามเดาจากรหัส** วันหนึ่งร้านเพิ่มคลัง
 //      รหัสจะไม่ใช่ KLD/ANJ อีก แล้วการเดาจะพังเงียบ ๆ
 import { useCallback, useEffect, useState } from 'react'
+import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -20,11 +21,16 @@ import {
 
 interface Warehouse {
   code: string; name: string; province?: string; isPos?: boolean
-  /** มูลค่าสินค้าคงเหลือของคลังนั้น — ท่อยังไม่ส่งมา (ZORT ไม่เปิดให้ดึงสต็อกแยกคลัง)
-   *  รับไว้ก่อนเพื่อไม่ต้องกลับมาแก้จอ วันที่มีข้อมูล */
-  stockValue?: number
-  /** วันที่คลังนั้นเคลื่อนไหวล่าสุด — ท่อยังไม่ส่งมา รับไว้ก่อน */
+  /** มูลค่าสินค้าคงเหลือของคลังนั้น — ✅ ท่อส่งมาแล้ว 15 ก.ย. 2569 (gucut-web · ตัวคัดบน g1 ทุกชั่วโมง)
+   *  🔴 `null`/ไม่ส่งมา = **ยังไม่เคยคัด** ⇒ ห้ามแสดง 0 (0 เป็นค่าจริงของคลังที่ไม่มีของ — ANJ เป็น 0 จริง) */
+  stockValue?: number | null
+  /** วันที่คลังนั้นเคลื่อนไหวล่าสุด — ISO พร้อมเขต +07:00 (เช่น 2026-09-15T11:48:00+07:00)
+   *  ⇒ `slice(0,10)` ได้วันไทยถูกต้อง ไม่เพี้ยนตอนเช้ามืด (ฝั่งท่อยืนยันสัญญานี้ไว้) */
   movedAt?: string
+  /** เวลาที่ตัวคัดไปอ่านจอ ZORT มาล่าสุด — **UTC ดิบ** 'YYYY-MM-DD HH:MM:SS'
+   *  ⇒ ต้อง +7 แล้วเขียนกำกับว่าเป็นเวลาไทย และ **แสดงคู่กับตัวเลขเสมอ**
+   *     เพราะมูลค่าขยับได้ทั้งวัน — เลขที่ไม่มีเวลากำกับจะถูกอ่านว่าเป็นของสด */
+  valueCollectedAt?: string
 }
 interface ChannelRow { channel: string; orders: number; amount: number }
 
@@ -47,6 +53,18 @@ export default function CoreBranchesPage() {
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  /** ท่อบอกว่ารอบคัดมูลค่าล่าสุดพลาด — **ต้องขึ้นจอ ไม่ใช่เงียบ**
+   *  (อ่านมูลค่าไม่ได้ ≠ คลังไม่มีของ — ถ้าเงียบ คนจะอ่านตัวเลขเก่าว่าเป็นของวันนี้) */
+  const [valuesError, setValuesError] = useState('')
+
+  /** เวลาที่คัดมูลค่าล่าสุด → ข้อความเวลาไทย · ท่อส่งมาเป็น **UTC ดิบ** จึงต้อง +7 เอง
+   *  ⚠️ ทุกคลังคัดรอบเดียวกัน ⇒ เอาค่าแรกที่มีก็พอ · ไม่มีเลย = ไม่รู้ (คืน '' แล้วจอเขียนว่าไม่รู้)
+   *  🔴 ใช้ `parseUtc`/`thaiDayTime` ตัวกลาง ไม่เขียนสูตร +7 ใหม่ (Intl บางรุ่น throw — เคยทำหน้าคนเข้าเว็บพังมาแล้ว) */
+  const valueCollectedAt = (() => {
+    const raw = rows.find((w) => w.valueCollectedAt)?.valueCollectedAt
+    const d = parseUtc(raw)
+    return d ? thaiDayTime(d) : ''
+  })()
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -75,6 +93,8 @@ export default function CoreBranchesPage() {
       if (!wRes || !('warehouses' in wRes)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายชื่อคลัง)')
       setRows(Array.isArray(wRes?.warehouses) ? wRes.warehouses : [])
       setNote(typeof wRes?.note === 'string' ? wRes.note : '')
+      /* ⚠️ เช็คด้วย "มีค่าไหม" ไม่ใช่ "มีคีย์ไหม" — ท่อส่ง `valuesError: null` มาตอนปกติ */
+      setValuesError(wRes?.valuesError ? String(wRes.valuesError) : '')
       setLoading(false) // ← ตารางขึ้นได้แล้ว ไม่ต้องรอยอดขาย
       // ⚠️ ต้อง await ไว้ท้ายสุด ไม่งั้นเป็น promise ลอย (กติกาเหล็กของโปรเจกต์)
       await salesSoon
@@ -149,13 +169,24 @@ export default function CoreBranchesPage() {
       {!loading && !error && (
         <>
           <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 text-[12.5px] text-gray-700">
-            {/* ⚠️ ZORT มีคอลัมน์มูลค่าสินค้าคงเหลือกับเคลื่อนไหวล่าสุด — เรายังไม่มีข้อมูลสองอย่างนี้
-                เขียนบอกตรงนี้ ดีกว่าปล่อยคอลัมน์ "—" ให้เดาเอาเองว่าคือไม่มีของหรือดึงไม่ได้ */}
-            มูลค่าสินค้าคงเหลือรายคลัง กับ เคลื่อนไหวล่าสุด <b>ยังไม่ได้ดึงมา</b> —
-            คลังเงาเก็บสต็อกรวมทั้งร้าน ยังไม่ได้แยกตามคลัง
-            {' '}<b>จอ ZORT มีตัวเลขสองช่องนี้อยู่</b> (ตรวจจากภาพจอจริง 4 ก.ย. 2569)
-            ⇒ เป็นของที่<b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b> · ขอจากฝั่งเซิร์ฟเวอร์ไว้แล้ว
-            ถ้า API ไม่ส่งมาก็คัดมาด้วยมือได้ (มีแค่ 3 คลัง)
+            {/* 🕰 **คำเดิมตรงนี้กลายเป็นเท็จแล้ว — แก้ 15 ก.ย. 2569**
+                เคยเขียนว่า "ยังไม่ได้ดึงมา · คลังเงายังไม่ได้แยกตามคลัง"
+                ตอนนี้ท่อส่ง `stockValue` · `movedAt` · `valueCollectedAt` ครบทั้ง 3 คลังแล้ว
+                (ตัวคัดบน g1 อ่านจากจอ ZORT ทุกชั่วโมง — ไม่ใช่คิดจากคลังเงา)
+                ⚠️ คำเตือนที่หมดอายุอันตรายกว่าไม่มีคำเตือน: คนอ่านจะเลี่ยงตัวเลขที่ใช้ได้จริง
+                ⚠️ และเลขนี้ **ห้ามแสดงลอย ๆ ไม่มีเวลา** — มูลค่าขยับทั้งวัน
+                   (วัดเอง 15 ก.ย.: 11:0x อ่านได้ 16,306,984.11 · 12:4x ท่อคัดได้ 16,305,522.84) */}
+            มูลค่าสินค้าคงเหลือรายคลัง <b>คัดมาจากจอ ZORT</b> ไม่ใช่คิดจากคลังเงา
+            {valueCollectedAt
+              ? <> · <b>คัดล่าสุด {valueCollectedAt} (เวลาไทย)</b></>
+              : <> · <b className="text-amber-700">ยังไม่รู้ว่าคัดเมื่อไหร่</b> — ท่อไม่ได้บอกเวลา</>}
+            {' '}· ตัวคัดวิ่งทุกชั่วโมง ⇒ ซื้อของเข้าหรือโอนของระหว่างรอบ เลขจะเก่ากว่าจอ ZORT เล็กน้อยเสมอ
+            {valuesError && (
+              <span className="block mt-1 text-amber-900">
+                ⚠️ <b>รอบคัดล่าสุดอ่านมูลค่าไม่สำเร็จ</b> ({String(valuesError)})
+                {' '}⇒ ตัวเลขที่เห็นอาจเป็นของรอบก่อน หรือไม่มีเลย — <b>ไม่ใช่ว่าคลังไม่มีของ</b>
+              </span>
+            )}
           </div>
 
           <TableWrap>
@@ -219,15 +250,21 @@ export default function CoreBranchesPage() {
                           ⇒ ของจริงคือ **API ไม่ส่งมา** ไม่ใช่ **ZORT ไม่มี** — คนละเรื่องกัน
                              และแปลว่าคัดตัวเลขมาด้วยมือได้ (ท่าเดียวกับต้นทุนเฉลี่ย 42 หมวด)
                           ⇒ **นี่คือ ⏳ ยังไม่ได้ทำ ไม่ใช่ ❌ ทำไม่ได้** ห้ามเขียนสลับกันอีก */}
+                      {/* 🎨 **สีอ่านมาจาก DOM ของ ZORT จริง 15 ก.ย. 2569 ไม่ได้เลือกเอง**
+                          มูลค่า > 0 ⇒ เขียว rgb(19,175,130) · **มูลค่า = 0 ⇒ แดง rgb(242,87,87)**
+                          (NEW 16.3 ล้าน เขียว · KLD 1,562.32 เขียว · ANJ 0 แดง)
+                          ⇒ สีบอกว่า "คลังนี้ไม่มีของ" ไม่ใช่ของตกแต่ง
+                          🔴 และ 0 ที่นี่ **เป็นค่าจริง** ไม่ใช่ "ไม่รู้" — ANJ ว่างจริง
+                             ของที่ไม่รู้คือ `null` ซึ่งขึ้น "—" ต่างหาก (สามสถานะ) */}
                       <td className={TDR}>
                         {typeof w.stockValue === 'number'
-                          ? fmtMoney(w.stockValue)
-                          : <span className="text-gray-300" title="ยังไม่ได้ดึงมา — จอ ZORT มีตัวเลขนี้อยู่ แต่ API ไม่ส่งค่าแยกรายคลังมา ยังคัดมาด้วยมือได้">—</span>}
+                          ? <span style={{ color: w.stockValue === 0 ? '#f25757' : '#13af82' }}>{fmtMoney(w.stockValue)}</span>
+                          : <span className="text-gray-300" title="ท่อยังไม่เคยคัดมูลค่าของคลังนี้ — ไม่ใช่ว่าคลังไม่มีของ (คลังที่ไม่มีของจะขึ้นเลข 0 สีแดง)">—</span>}
                       </td>
                       <td className={TD}>
                         {w.movedAt
                           ? thaiDate(String(w.movedAt).slice(0, 10))
-                          : <span className="text-gray-300" title="ยังไม่ได้ดึงมา — จอ ZORT มีช่องนี้ แต่ API ไม่ส่งมา">—</span>}
+                          : <span className="text-gray-300" title="ท่อยังไม่ได้ส่งวันเคลื่อนไหวของคลังนี้มา">—</span>}
                       </td>
                       {/* ⚠️ ระหว่างรอ ห้ามโชว์ 0 — 0 แปลว่า "ขายไม่ได้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
                       <td className={TDR}>{!w.isPos ? <span className="text-gray-300">—</span>
