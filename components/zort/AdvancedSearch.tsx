@@ -21,10 +21,17 @@ import { BtnGhost, LinkText } from './index'
 
 export interface AdvField {
   label: string
-  /** `date` = ช่องวันที่ · `check` = ติ๊กถูก */
-  kind: 'date' | 'check'
+  /** `date` = ช่องวันที่ · `check` = ติ๊กถูก · `text`/`number` = ช่องกรอก · `select` = ตัวเลือก
+   *  ⚠️ **เพิ่มชนิดใหม่ได้ แต่ห้ามเพิ่มช่องที่ท่อไม่ได้กรองจริง** (กฎข้อ ① ของแผงนี้) */
+  kind: 'date' | 'check' | 'text' | 'number' | 'select'
   value: string | boolean
   onChange: (v: string & boolean) => void
+  /** สำหรับ `text`/`number` — ข้อความจาง ๆ ในช่อง */
+  placeholder?: string
+  /** สำหรับ `select` — ค่ากับป้ายที่คนอ่าน (ป้ายต้องเป็นคำที่ร้านใช้ ไม่ใช่ค่าดิบของ API) */
+  options?: { value: string; label: string }[]
+  /** ความกว้างช่อง (px) — ช่องยาวอย่างชื่อสินค้าต้องกว้างกว่าช่องตัวเลข */
+  width?: number
 }
 
 /** ลิงก์เปิด/ปิดแผง — วางไว้ข้างช่องค้นหา (ตำแหน่งเดียวกับ ZORT) */
@@ -52,7 +59,29 @@ export default function AdvancedSearch({
   if (!open) return null
   return (
     <div className="bg-white border border-gray-200 rounded-md p-3.5 mb-3 flex flex-wrap items-end gap-3">
-      {fields.map((f) => (f.kind === 'date' ? (
+      {fields.map((f) => (f.kind === 'select' ? (
+        <label key={f.label} className="text-[12.5px] text-gray-600">
+          <span className="block mb-1">{f.label}</span>
+          <select value={String(f.value)}
+            onChange={(e) => f.onChange(e.target.value as string & boolean)}
+            className="text-[13px] border border-gray-300 rounded px-2 py-1.5 bg-white"
+            style={f.width ? { width: f.width } : undefined}>
+            {(f.options ?? []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+          </select>
+        </label>
+      ) : f.kind === 'text' || f.kind === 'number' ? (
+        <label key={f.label} className="text-[12.5px] text-gray-600">
+          <span className="block mb-1">{f.label}</span>
+          <input
+            type={f.kind === 'number' ? 'number' : 'text'}
+            value={String(f.value)}
+            placeholder={f.placeholder}
+            onChange={(e) => f.onChange(e.target.value as string & boolean)}
+            className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+            style={{ width: f.width ?? 150 }}
+          />
+        </label>
+      ) : f.kind === 'date' ? (
         <label key={f.label} className="text-[12.5px] text-gray-600">
           <span className="block mb-1">{f.label}</span>
           <input type="date" value={String(f.value)}

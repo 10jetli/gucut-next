@@ -7,7 +7,7 @@
 //              → แถวค้นหา + ตัวเลือกช่วงเวลา → แท็บสถานะมีจำนวนในวงเล็บ
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
 import { useCallback, useEffect, useState } from 'react'
-import { SALE_STATUS, zortWord } from '@/lib/zort-words'
+import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
@@ -72,6 +72,10 @@ interface ListResp {
      ⚠️ ไม่มีคีย์พวกนี้ = ท่อรุ่นเก่า ⇒ ต้องยังอ่านรู้เรื่อง ห้ามพังและห้ามเงียบ */
   totalPaidAmount?: number
   totalUnpaidAmount?: number
+  /** 🔍 ตัวกรองขั้นสูงที่ **ท่อใช้กรองจริง** (null = ไม่ได้กรองช่องนั้น · ท่อรุ่นเก่าจะไม่มีคีย์นี้เลย)
+   *  🔴 จอต้องอ่านตัวนี้ก่อนจะเขียนว่า "กรองแล้ว" — ไม่ใช่เชื่อว่าส่งไปแล้วต้องถูกใช้
+   *     (ฝั่งท่อออกแบบช่องนี้มาเพื่อการนี้โดยตรง · สัญญา eb79ccc) */
+  advancedFilters?: Record<string, string | null>
   totalScope?: string
   /** ข้อความบอกว่าตัวเลขสถานะเชื่อไม่ได้ตอนนี้ + เหตุผล — null/ว่าง = เชื่อได้
    *  ⚠️ จอไม่ตัดสินเอง อ่านจากท่อล้วน ๆ (กลไกเดียวกับ marketplacesUnreliable) */
@@ -151,6 +155,18 @@ function ageDays(day?: string): number | null {
 
 const PAGE = 50
 /** 💾 กุญแจของที่จำไว้ในเครื่องผู้ใช้ · ขึ้นต้นด้วยชื่อจอเสมอ กันชนกับจออื่น */
+/** ป้ายไทยของตัวกรองขั้นสูง (ใช้ตอนเขียนว่าท่อกรองอะไรให้จริง) */
+const ADV_TH: Record<string, string> = {
+  payStatus: 'สถานะชำระเงิน', cod: 'เก็บเงินปลายทาง', product: 'สินค้า', shipChannel: 'ช่องทางจัดส่ง',
+  shipFrom: 'ส่งตั้งแต่', shipTo: 'ส่งถึง', amountMin: 'มูลค่าตั้งแต่', amountMax: 'มูลค่าถึง',
+  number: 'หมายเลขรายการ', customer: 'ชื่อลูกค้า',
+}
+/** ชื่อพารามิเตอร์ที่จอส่ง → ชื่อคีย์ที่ท่อสะท้อนกลับ (คนละสะกด ⇒ ต้องมีตารางแปลง ไม่ใช่เดา) */
+const ADV_KEY: Record<string, string> = {
+  paystatus: 'payStatus', cod: 'cod', product: 'product', shipchannel: 'shipChannel',
+  shipfrom: 'shipFrom', shipto: 'shipTo', amountmin: 'amountMin', amountmax: 'amountMax', number: 'number',
+}
+
 const MEMO_KEY = 'gucut:core-sales:filter'
 const DEFAULT_DAYS = 90
 
@@ -184,6 +200,23 @@ export default function CoreSalesPage() {
   const [advOpen, setAdvOpen] = useState(false)
   const [advFrom, setAdvFrom] = useState('')
   const [advTo, setAdvTo] = useState('')
+  /* 🔍 **ตัวกรองขั้นสูงชุดใหม่** (ท่อ gucut-web eb79ccc · 15 ก.ย. 2569)
+     ยิงยืนยันเองแล้วทุกตัวก่อนต่อจอ (z1 1–14 ก.ย. ฐาน 319 ใบ):
+       cod=1 ⇒ 240 · cod=0 ⇒ 79 (รวม 319 พอดี) · paystatus=Paid ⇒ 300 · Pending ⇒ 2
+       product=00313 ⇒ 44 · ช่วงวันส่ง 5–8 ก.ย. ⇒ 75 · amountmin=1000 ⇒ 59 · number=SO ⇒ 22
+       shipchannel=Flash ⇒ 315 · ค่าพัง (cod=2 · amountmin=abc · min>max · วันส่งกลับด้าน) ⇒ 400 ทุกตัว
+     🔴 **ช่อง "ชื่อลูกค้า" ยังไม่ทำ** — ยิงแล้วพบว่า `?customer=` ชนกับเส้น "ลูกค้ารายคน"
+        ของท่อ (router จับ `customer` ก่อนถึง `list=orders`) ⇒ ได้ก้อนคนละรูป ไม่มี `total`
+        ⇒ ถ้าต่อไปจะได้จอที่ขึ้น "ไม่มีข้อมูล" เงียบ ๆ ทั้งที่มีของ · แจ้งฝั่งท่อแล้ว */
+  const [fPay, setFPay] = useState('')
+  const [fCod, setFCod] = useState('')
+  const [fProduct, setFProduct] = useState('')
+  const [fShipCh, setFShipCh] = useState('')
+  const [fShipFrom, setFShipFrom] = useState('')
+  const [fShipTo, setFShipTo] = useState('')
+  const [fMin, setFMin] = useState('')
+  const [fMax, setFMax] = useState('')
+  const [fNumber, setFNumber] = useState('')
   /* 💾 **จำตัวกรองไว้** — ลอกติ๊ก `remember_filter` ของ ZORT (แผง "ตัวกรอง" ใน /Sell/list)
      🔴 ของที่จำไว้ถูกใส่กลับให้เอง ⇒ **ต้องประกาศทุกครั้งที่ใช้** ไม่งั้นคนเห็นรายการน้อยกว่าจริง
         แล้วสรุปยอดผิดทั้งวันโดยไม่มีอะไรบอกว่ากำลังกรองอยู่
@@ -201,6 +234,22 @@ export default function CoreSalesPage() {
    *  เอาแถบออก = จอโชว์ตัวเลขอายุ 60 วิ โดยไม่มีอะไรบอกว่ามันเก่า */
   const [staleFailed, setStaleFailed] = useState(false)
   const [error, setError] = useState('')
+
+  /** คู่ค่าของตัวกรองขั้นสูงที่ "กรอกแล้วจริง ๆ" — ที่เดียว ใช้ทั้งตอนโหลดและตอนส่งออก
+   *  🔴 **ถ้าลืมส่งชุดนี้ไปกับปุ่มส่งออก ไฟล์จะไม่ตรงกับตารางบนจอ** (ฝั่งท่อกำชับ) */
+  const advParams = useCallback((): [string, string][] => {
+    const out: [string, string][] = []
+    if (fPay) out.push(['paystatus', fPay])
+    if (fCod) out.push(['cod', fCod])
+    if (fProduct.trim()) out.push(['product', fProduct.trim()])
+    if (fShipCh.trim()) out.push(['shipchannel', fShipCh.trim()])
+    if (fShipFrom) out.push(['shipfrom', fShipFrom])
+    if (fShipTo) out.push(['shipto', fShipTo])
+    if (fMin.trim()) out.push(['amountmin', fMin.trim()])
+    if (fMax.trim()) out.push(['amountmax', fMax.trim()])
+    if (fNumber.trim()) out.push(['number', fNumber.trim()])
+    return out
+  }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber])
 
   const load = useCallback(async (
     off = 0,
@@ -224,6 +273,8 @@ export default function CoreSalesPage() {
       if (st) qs.set('status', st)
       if (sr) qs.set('store', sr)
       if (q.trim()) qs.set('q', q.trim())
+      /* 🔍 ตัวกรองขั้นสูง — ส่งเฉพาะช่องที่กรอก · ว่าง = ไม่ส่ง (ท่อถือว่าไม่กรอง) */
+      for (const [k, v] of advParams()) qs.set(k, v)
       // ⚠️ **ส่ง cancelled=1 เสมอ** — ค่าเริ่มต้นของ API ตัดใบยกเลิกทิ้ง
       //    ถ้าไม่ส่ง byStatus จะไม่มี "Voided" เลย ⇒ ไม่มีแท็บยกเลิกให้กด
       //    และถ้าเผลอมีแท็บ กดแล้วจะได้ 0 ใบทั้งที่มี 44 ใบ (ฝั่งท่อหลังบ้านเตือนไว้)
@@ -256,7 +307,7 @@ export default function CoreSalesPage() {
     } finally {
       setLoading(false)
     }
-  }, [days, channel, status, q, store, advFrom, advTo])
+  }, [days, channel, status, q, store, advFrom, advTo, advParams])
 
   /* 💾 เปิดจอมา: ถ้ามีของที่จำไว้ ให้ใส่กลับ **แล้วประกาศ** · ไม่มีก็โหลดตามปกติ
      ⚠️ อ่าน localStorage ใน effect เท่านั้น (อ่านตอนวาดครั้งแรก = จอฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน) */
@@ -397,6 +448,10 @@ export default function CoreSalesPage() {
                   ['ช่องทาง', channel || '(ทุกช่องทาง)'],
                   ['สถานะ', status || '(ทุกสถานะ)'],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                  /* 🔴 หัวไฟล์ต้องบอกด้วยว่ากรองขั้นสูงอะไรไว้ ไม่งั้นคนเปิดไฟล์ทีหลังไม่รู้ว่าทำไมแถวน้อย */
+                  ...(advParams().length
+                    ? [['ค้นหาขั้นสูง', advParams().map(([k, v]) => `${k}=${v}`).join(' · ')] as [string, string]]
+                    : [['ค้นหาขั้นสูง', '(ไม่ได้ใช้)'] as [string, string]]),
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({
@@ -407,6 +462,9 @@ export default function CoreSalesPage() {
                   if (status) qs.set('status', status)
                   if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
+                  /* 🔴 **ตัวกรองขั้นสูงต้องไปกับไฟล์ด้วย** — ลืมส่งแล้วไฟล์จะเป็นของทั้งช่วง
+                     ทั้งที่ตารางบนจอกรองอยู่ ⇒ ผิดแบบไม่มีอะไรฟ้อง (ฝั่งท่อกำชับข้อนี้) */
+                  for (const [k, v] of advParams()) qs.set(k, v)
                   const r = await fetch(`/api/web/core?${qs}`)
                   const d = await r.json()
                   if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
@@ -497,15 +555,76 @@ export default function CoreSalesPage() {
           ⚠️ ท่อ list=orders รับ from/to จริง ⇒ ช่วงวันที่กำหนดเองกรองที่เซิร์ฟเวอร์ */}
       <AdvancedSearch
         open={advOpen}
+        /* 🔍 ช่องทั้งหมดนี้ **ท่อกรองที่เซิร์ฟเวอร์จริง** — ยิงยืนยันเองแล้วทุกช่องก่อนใส่
+           (กฎข้อ ① ของแผงนี้: ห้ามใส่ช่องที่กรอกแล้วไม่มีผล) */
         fields={[
           { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
           { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
+          {
+            label: 'สถานะชำระเงิน',
+            kind: 'select',
+            value: fPay,
+            onChange: (v) => setFPay(String(v)),
+            width: 150,
+            /* 🔑 ค่าที่ส่งเป็นค่าดิบของกระจก (Paid/Pending/Voided) แต่ **คำบนจอมาจาก lib/zort-words**
+               ⇒ คนใช้เห็นคำเดียวกับ ZORT · ห้ามพิมพ์คำไทยตายตัวที่นี่ */
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: 'Paid', label: zortWord(PAY_STATUS, 'Paid').text },
+              { value: 'Pending', label: zortWord(PAY_STATUS, 'Pending').text },
+              { value: 'Voided', label: zortWord(PAY_STATUS, 'Voided').text },
+            ],
+          },
+          {
+            label: 'เก็บเงินปลายทาง',
+            kind: 'select',
+            value: fCod,
+            onChange: (v) => setFCod(String(v)),
+            width: 130,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: '1', label: 'เฉพาะ COD' },
+              { value: '0', label: 'ไม่ใช่ COD' },
+            ],
+          },
+          { label: 'สินค้า (รหัส/ชื่อ)', kind: 'text', value: fProduct, onChange: (v) => setFProduct(String(v)), placeholder: 'เช่น 00313', width: 170 },
+          { label: 'ช่องทางจัดส่ง', kind: 'text', value: fShipCh, onChange: (v) => setFShipCh(String(v)), placeholder: 'เช่น Flash', width: 150 },
+          { label: 'วันส่งสินค้า ตั้งแต่', kind: 'date', value: fShipFrom, onChange: (v) => setFShipFrom(String(v)) },
+          { label: 'ถึง', kind: 'date', value: fShipTo, onChange: (v) => setFShipTo(String(v)) },
+          { label: 'มูลค่าตั้งแต่', kind: 'number', value: fMin, onChange: (v) => setFMin(String(v)), placeholder: '0', width: 110 },
+          { label: 'จนถึงมูลค่า', kind: 'number', value: fMax, onChange: (v) => setFMax(String(v)), placeholder: '999999', width: 110 },
+          { label: 'หมายเลขรายการ', kind: 'text', value: fNumber, onChange: (v) => setFNumber(String(v)), placeholder: 'เช่น SO-2026', width: 150 },
+        ]}
+        notAvailable={[
+          {
+            what: 'ชื่อลูกค้า (ช่องแยก)',
+            why: 'ท่อมีให้แล้ว แต่ชื่อพารามิเตอร์ชนกับเส้น "ลูกค้ารายคน" ⇒ ส่งไปแล้วได้คำตอบคนละรูป (แจ้งฝั่งท่อแล้ว) · ระหว่างนี้ใช้ช่องค้นหาด้านบนซึ่งค้นชื่อลูกค้าให้อยู่แล้ว',
+          },
+          {
+            what: 'Tag · ผู้สร้าง · คลังของใบ',
+            why: 'ฝั่งท่อกำลังเก็บเข้ากระจก (ยิง ZORT จริง 15 ก.ย. พบ Tag 65 ใบ · ผู้สร้าง 41 ใบ · คลัง 640/640) — รอสัญญาเส้นก่อนถึงจะต่อได้',
+          },
+          {
+            what: 'Serial no · ชื่อตัวแทน',
+            why: 'ZORT มีช่องให้ แต่ร้านไม่ได้ใช้เลย (ยิง ZORT จริง z1 30 วัน: serial ว่างทั้ง 940 บรรทัด · ตัวแทน 0 ใบ) ⇒ ทำช่องไปก็ไม่มีวันเจอของ',
+          },
+          {
+            what: 'สถานะรายการ 10 ค่าแบบ ZORT',
+            why: 'กระจกมีสถานะจริงแค่ 5 ค่า และยังไม่มีใครพิสูจน์การจับคู่กับ 10 ค่าของ ZORT ⇒ ทำเป็น 10 ตัวเลือกจะได้ตัวเลือกที่กดแล้วไม่มีวันเจอของ',
+          },
         ]}
         onApply={() => load(0)}
-        onClear={() => { setAdvFrom(''); setAdvTo(''); load(0, { from: '', to: '' }) }}
-        canClear={!!advFrom || !!advTo}
+        onClear={() => {
+          setAdvFrom(''); setAdvTo('')
+          setFPay(''); setFCod(''); setFProduct(''); setFShipCh('')
+          setFShipFrom(''); setFShipTo(''); setFMin(''); setFMax(''); setFNumber('')
+          /* ⚠️ ล้างแล้วต้องยิงใหม่ทันที ไม่งั้นตารางยังเป็นผลของเงื่อนไขเดิมทั้งที่ช่องว่างหมดแล้ว
+             (setState ยังไม่ทันมีผลในรอบนี้ ⇒ ส่ง from/to ว่างตรง ๆ และ advParams รอบถัดไปจะว่างเอง) */
+          setTimeout(() => load(0, { from: '', to: '' }), 0)
+        }}
+        canClear={!!advFrom || !!advTo || advParams().length > 0}
         applyLabel="ค้นหาตามช่วงนี้"
-        serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา"
+        serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา · สถานะชำระเงิน · COD · สินค้า · ช่องทางจัดส่ง · วันส่งสินค้า · ช่วงมูลค่า · หมายเลขรายการ"
         extraNote={<>
           ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;
           {/* 💾 ติ๊กจำตัวกรอง — ลอกจาก ZORT (remember_filter) · ไฟเขียวจาก CEO 15 ก.ย. 2569 */}
@@ -555,6 +674,23 @@ export default function CoreSalesPage() {
         <div className="text-[12.5px] text-gray-500 mb-3">
           {/* ZORT เขียนวันแบบ 1/6/2569–2/9/2569 ไม่ใช่ ISO — ตรงนี้คือบรรทัดเดียวกันของเขา */}
           🔍 ค้นหา: วันที่ {thaiShort(data.from)} – {thaiShort(data.to)}
+          {/* 🔴 **เขียนจากสิ่งที่ท่อบอกว่าใช้จริง ไม่ใช่จากสิ่งที่จอส่งไป**
+                 ถ้าวันหนึ่งท่อเลิกรองรับช่องไหน จอจะเงียบทันทีแทนที่จะโกหกว่ากรองให้แล้ว */}
+          {data.advancedFilters && Object.entries(data.advancedFilters).some(([, v]) => v) && (
+            <span className="text-violet-700">
+              {' · '}🔍 ขั้นสูงที่ใช้จริง:{' '}
+              {Object.entries(data.advancedFilters)
+                .filter(([, v]) => v)
+                .map(([k, v]) => `${ADV_TH[k] ?? k} ${v}`)
+                .join(' · ')}
+            </span>
+          )}
+          {/* ส่งไปแล้วแต่ท่อไม่ได้ใช้ = ต้องฟ้อง ไม่ใช่ปล่อยให้คนเชื่อว่ากรองแล้ว */}
+          {data.advancedFilters && advParams().some(([k]) => !data.advancedFilters?.[ADV_KEY[k] ?? k]) && (
+            <span className="block text-amber-800 mt-0.5">
+              ⚠️ มีเงื่อนไขขั้นสูงที่ส่งไปแล้ว <b>ท่อไม่ได้ใช้กรอง</b> — ตัวเลขที่เห็นจึงกว้างกว่าที่ตั้งไว้
+            </span>
+          )}
           {/* ⚠️ เลขทุกตัวบนจอนี้ต้องบอกว่ามาจากกี่ร้าน — ชื่อช่องทางซ้ำกันข้ามร้านได้ */}
           {' '}· ร้าน {store === 'z1' ? 'ร้านออนไลน์ (z1)' : store === 'z2' ? 'หน้าร้าน (z2)' : <b>รวมทั้ง 2 ร้าน</b>}
           {channel && ` · ช่องทาง ${channel}`}
