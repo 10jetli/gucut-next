@@ -15,6 +15,7 @@
 //    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
 import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import { PURCHASE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -69,18 +70,21 @@ const statusTone = (s: string) =>
 
 export default function CorePurchasesPage() {
   const [q, setQ] = useState('')
+  /* 🏬 ร้านที่กำลังดู (ท่อ gucut-web 0932fac · 15 ก.ย. 2569) — ยิงจริง: z1 33 ใบ · z2 64 ใบ = ZORT ทั้งคู่ */
+  const [store, setStore] = useState<StoreId>('')
   const [tab, setTab] = useState('all')
   const [offset, setOffset] = useState(0)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (off = 0, tabId = tab) => {
+  const load = useCallback(async (off = 0, tabId = tab, storeId = store) => {
     setLoading(true)
     setError('')
     try {
       const qs = new URLSearchParams({ list: 'purchases', limit: String(PAGE), offset: String(off) })
       if (tabId !== 'all') qs.set('status', tabId)
+      if (storeId) qs.set('store', storeId)
       if (q.trim()) qs.set('q', q.trim())
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
@@ -92,7 +96,7 @@ export default function CorePurchasesPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, tab])
+  }, [q, tab, store])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -146,13 +150,16 @@ export default function CorePurchasesPage() {
               spec={{
                 filename: `รายการซื้อ-${new Date().toISOString().slice(0, 10)}`,
                 title: 'รายการซื้อ',
+                /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ — ลืมส่ง store แล้วไฟล์กลายเป็นของ z1 เงียบ ๆ */
                 filters: [
+                  ['ร้าน', storeLabel(store)],
                   ['แท็บสถานะ', tab === 'all' ? 'ทั้งหมด' : tab],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({ list: 'purchases', limit: String(limit), offset: String(offsetAt) })
                   if (tab !== 'all') qs.set('status', tab)
+                  if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
                   const r = await fetch(`/api/web/core?${qs}`)
                   const d = await r.json()
@@ -222,6 +229,8 @@ export default function CorePurchasesPage() {
           </div>
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
+          <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(0, tab, v) }} />
           <StoreScopeLine scope={data?.storeScope} />
 
           <TableWrap>
@@ -253,7 +262,8 @@ export default function CorePurchasesPage() {
                     <td className={TD}>
                       {/* เลขที่ใบ → รายละเอียดรายใบ (แบบแผนข้อ 1 ของ ZORT: เลขเอกสารกดได้เสมอ)
                           เส้น ?purchase= เปิดให้แล้ว 8 ก.ย. 2569 */}
-                      <Link href={`/core/purchases/detail?no=${encodeURIComponent(r.number)}`}
+                      {/* 🏬 พก store ไปด้วย — เลขที่ใบของสองร้านซ้ำกันได้ ⇒ ถ้าไม่บอกร้าน หน้ารายใบจะไปเปิดของ z1 เสมอ */}
+                      <Link href={`/core/purchases/detail?no=${encodeURIComponent(r.number)}${store ? `&store=${store}` : ''}`}
                         className="text-blue-600 hover:underline font-medium">{r.number}</Link>
                     </td>
                     <td className={TD}><span className="text-gray-800">{r.vendor || '—'}</span></td>

@@ -28,6 +28,7 @@
 //    (คลาสเดียวกับ "หน้าแรกไม่ใช่ตัวแทน" ที่เจอมาแล้วสามครั้ง) ⇒ เขียนกำกับว่าเป็นยอดของกี่ใบ
 import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import { toThai, thaiMoment } from '@/lib/recipe-fresh'
@@ -84,7 +85,7 @@ export default function ReturnOrdersPage() {
   /* 🏬 **ร้านที่กำลังดู** (ท่อ gucut-web e546240 · 15 ก.ย. 2569)
      ยิงจริง 15 ก.ย.: ไม่ระบุ ⇒ z1 689 ใบ · z2 239 ใบ · `store=all` ⇒ **400**
      ⇒ เส้นนี้ตอบทีละร้าน ⇒ **ไม่มีตัวเลือก "ทุกร้าน"** */
-  const [store, setStore] = useState<'' | 'z1' | 'z2'>('')
+  const [store, setStore] = useState<StoreId>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   /** ⚠️ เส้นยังไม่ขึ้นเว็บ ≠ ดึงไม่สำเร็จ ≠ ไม่มีใบสักใบ — สามอย่างนี้ต้องเขียนคนละคำ
@@ -196,7 +197,7 @@ export default function ReturnOrdersPage() {
                 /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์** — ลืมส่ง `store` แล้วไฟล์จะกลายเป็นของ z1
                    ทั้งที่จอโชว์ z2 อยู่ · ผิดแบบไม่มีอะไรฟ้อง เพราะไฟล์หน้าตาปกติ */
                 filters: [
-                  ['ร้าน', store === 'z2' ? 'หน้าร้าน (z2)' : store === 'z1' ? 'ร้านออนไลน์ (z1)' : 'ไม่ได้เลือก (ท่อคืนร้านออนไลน์ z1)'],
+                  ['ร้าน', storeLabel(store)],
                   q.trim()
                     ? ['คำค้นหา', `${q.trim()} — ค้นที่เซิร์ฟเวอร์ ครอบทุกใบ (ผลมาจากกระจกของเรา ไม่ใช่ ZORT สด)`]
                     : ['คำค้นหา', '(ไม่ได้ค้น)'],
@@ -280,24 +281,8 @@ export default function ReturnOrdersPage() {
           )}
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
-          {/* 🏬 เลือกร้าน — เส้นนี้ตอบทีละร้าน (store=all ⇒ 400) ⇒ ไม่มีตัวเลือก "ทุกร้าน" */}
-          <div className="flex flex-wrap items-center gap-2 mb-2">
-            <span className="text-[12.5px] text-gray-500">ร้าน:</span>
-            {([['z1', 'ร้านออนไลน์ (z1)'], ['z2', 'หน้าร้าน (z2)']] as const).map(([v, label]) => {
-              /* ค่าว่าง = ท่อคืน z1 ⇒ ปุ่ม z1 ต้องดูเป็นตัวที่เลือกอยู่ตั้งแต่เปิดหน้า */
-              const on = store === v || (store === '' && v === 'z1')
-              return (
-                <button key={v} type="button" disabled={loading}
-                  onClick={() => { if (store === v) return; setStore(v); load(q, v) }}
-                  className={`text-[12.5px] rounded-full px-3 py-1 border disabled:opacity-50 ${
-                    on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
-                  {label}
-                </button>
-              )
-            })}
-            <span className="text-[11.5px] text-gray-400">ยอดและตัวนับทั้งหมดเป็นของร้านที่เลือกเท่านั้น</span>
-          </div>
+          <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(q, v) }} />
 
           <StoreScopeLine scope={d?.storeScope} />
 

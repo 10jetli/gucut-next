@@ -14,6 +14,7 @@
 //    ส่วนจอนี้คือกระจกของ ZORT · รวมกันเมื่อไหร่ = ตัดสต็อกสองรอบ
 import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
@@ -85,16 +86,6 @@ const typeTh = (t?: string | number) => {
   return TYPE_TH[k] ?? (k || '—')
 }
 
-/* 🏬 ป้ายชื่อร้าน — **ลอกคำจากจอรายการขาย** (`/core/sales`) ที่คนใช้เลือกร้านอยู่ทุกวัน
-   ⚠️ ห้ามพิมพ์ชื่อนิติบุคคลลงไฟล์จอ — มันถูกอบเข้า chunk สาธารณะ `/_next/static`
-      (เจ้าของร้านจับได้เอง 8 ก.ย. 2569) ⇒ เรียกตาม "หน้าที่ของร้าน" เท่านั้น
-   📌 **ตอนนี้ทั้งระบบยังเรียกไม่ตรงกัน**: จอรายการขายว่า "ร้านออนไลน์/หน้าร้าน" ·
-      จอความครอบคลุมว่า "ร้านที่ 1/2" · จอรายละเอียดใบขายว่า "สาขา 1/2"
-      ⇒ ตรงนี้เลือกตามจอรายการขายไว้ก่อน **และแจ้ง CEO ให้ตัดสินว่าจะยึดคำไหนทั้งระบบ**
-         (เปลี่ยนคำที่คนเห็นทุกวันต้องได้ไฟเขียวก่อน — กติกาเดียวกับ zort-words) */
-const storeLabel = (s: '' | 'z1' | 'z2') =>
-  s === 'z2' ? 'หน้าร้าน (z2)' : s === 'z1' ? 'ร้านออนไลน์ (z1)' : 'ไม่ได้เลือก (ท่อคืนร้านออนไลน์ z1)'
-
 export default function CoreTransfersPage() {
   const [q, setQ] = useState('')
   /* 🏬 **ร้านที่กำลังดู** (ท่อ gucut-web 7351c3c · 15 ก.ย. 2569)
@@ -102,7 +93,7 @@ export default function CoreTransfersPage() {
         · `store=all` ⇒ **400** · ส่ง `source=` แทน `store=` ⇒ **400**
      ⇒ **ห้ามมีตัวเลือก "ทุกร้าน" ในจอนี้** (ต่างจากจอรายการขายที่เส้นของมันรวมสองร้านได้)
         ถ้าใส่ไว้ คนกดแล้วจะได้จอแดงโดยไม่รู้ว่าทำอะไรผิด */
-  const [store, setStore] = useState<'' | 'z1' | 'z2'>('')
+  const [store, setStore] = useState<StoreId>('')
   const [tab, setTab] = useState('all')
   const [offset, setOffset] = useState(0)
   const [data, setData] = useState<Resp | null>(null)
@@ -284,31 +275,9 @@ export default function CoreTransfersPage() {
             </button>
           </div>
 
-          {/* 🏬 เลือกร้าน — เส้นนี้ตอบทีละร้าน ⇒ **ไม่มีตัวเลือก "ทุกร้าน"** (store=all ⇒ 400) */}
-          <div className="flex flex-wrap items-center gap-2 mt-2">
-            <span className="text-[12.5px] text-gray-500">ร้าน:</span>
-            {([['z1', 'ร้านออนไลน์ (z1)'], ['z2', 'หน้าร้าน (z2)']] as const).map(([v, label]) => {
-              /* ค่าว่าง = ท่อคืน z1 ⇒ ปุ่ม z1 ต้องดูเป็น "ที่เลือกอยู่" ตั้งแต่เปิดหน้า
-                 ไม่งั้นคนเห็นตารางของ z1 แต่ไม่มีปุ่มไหนถูกเลือก แล้วเดาว่ากำลังดูทั้งสองร้าน */
-              const on = store === v || (store === '' && v === 'z1')
-              return (
-                <button
-                  key={v}
-                  type="button"
-                  onClick={() => { if (store === v) return; setStore(v); load(0, tab, v) }}
-                  disabled={loading}
-                  className={`text-[12.5px] rounded-full px-3 py-1 border disabled:opacity-50 ${
-                    on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
-                >
-                  {label}
-                </button>
-              )
-            })}
-            <span className="text-[11.5px] text-gray-400">
-              เส้นนี้ตอบทีละร้าน — ดูสองร้านพร้อมกันไม่ได้ (ยอดในแท็บและตัวนับเป็นของร้านที่เลือกเท่านั้น)
-            </span>
-          </div>
+          {/* 🏬 เลือกร้าน — ปุ่มชุดเดียวกับจอเอกสารอื่น (components/zort/StorePicker) */}
+          <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(0, tab, v) }} />
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
           <StoreScopeLine scope={data?.storeScope} />

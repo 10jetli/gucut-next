@@ -18,6 +18,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import { storeLabel } from '@/components/zort/StorePicker'
 import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 
@@ -196,13 +197,24 @@ interface Resp {
   note?: string | null; amount?: number; lineTotal?: number
   lines?: Line[]; updatedAt?: string | null; source?: string
   error?: string; skip?: string
+  /** 🏬 ร้านของใบนี้ตามที่ท่อตอบ (ไม่ใช่ที่จอเดา) + id ของใบ (กุญแจจริง เลขที่ใบซ้ำได้) */
+  store?: string | null; id?: number | string | null
+  /** เลขที่ใบซ้ำกันในร้านเดียวกัน ⇒ ท่อไม่เลือกให้ ส่งรายการ id มาให้จอบอกคน */
+  duplicate?: boolean; ids?: Array<number | string>
 }
 
 const baht = (n?: number) =>
   typeof n === 'number' ? n.toLocaleString('th-TH', { maximumFractionDigits: 2 }) : '—'
 
 function Inner() {
-  const no = useSearchParams().get('no') ?? ''
+  const sp = useSearchParams()
+  const no = sp.get('no') ?? ''
+  /* 🏬 **ร้านต้องพกมากับลิงก์** (ท่อ gucut-web 0932fac · 15 ก.ย. 2569)
+     🔴 พิสูจน์ของจริงแล้วว่าจำเป็น: ยิง `?purchase=<เลขที่ใบของ z2>` **โดยไม่ส่ง store**
+        ได้ใบของ **z1 คนละ id** กลับมา (id ต่างกันจริง) และคำตอบก็ดู "ปกติทุกประการ"
+        ⇒ คนกดใบของหน้าร้าน แล้วอ่านใบของร้านออนไลน์แทน **โดยไม่มีอะไรฟ้อง**
+     ⇒ จอรายการซื้อแนบ `&store=` มาให้ · ถ้าไม่มีก็ไม่ส่ง (ท่อคืน z1 และบอกว่า storeDefaulted) */
+  const store = (() => { const v = sp.get('store') ?? ''; return v === 'z1' || v === 'z2' ? v : '' })()
   const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -211,14 +223,14 @@ function Inner() {
     if (!no) { setError('ไม่ได้ระบุใบ (ต้องเปิดจากจอรายการซื้อ)'); setLoading(false); return }
     setLoading(true); setError('')
     try {
-      const res = await fetch(`/api/web/core?purchase=${encodeURIComponent(no)}`)
+      const res = await fetch(`/api/web/core?purchase=${encodeURIComponent(no)}${store ? `&store=${store}` : ''}`)
       const j = (await res.json().catch(() => null)) as Resp | null
       if (j === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
       if (typeof j.skip === 'string') throw new Error(j.skip)
       if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
       setD(j)
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }
-  }, [no])
+  }, [no, store])
   useEffect(() => { load() }, [load])
 
   // ส่วนต่างหัวใบ vs บรรทัด — คำนวณเพื่อ "ชี้ให้ดู" ไม่ใช่เพื่อตัดสินว่าใครผิด
@@ -241,10 +253,36 @@ function Inner() {
         <Link href="/core/purchases" className="text-blue-600 hover:underline">‹ รายการซื้อ</Link>
       </p>
       <PageHead title={`ใบสั่งซื้อ ${d?.number || no}`}
-        summary={<span className="text-gray-400">{d?.source || 'อ่านจากคลังเงา'}</span>}
+        summary={<>
+          <span className="text-gray-400">{d?.source || 'อ่านจากคลังเงา'}</span>
+          {/* 🏬 ร้านของใบนี้ — **ค่ามาจากช่อง `store` ที่ท่อตอบ ไม่ใช่ที่จอเดาจาก URL**
+                 (ยิงดูแล้ว เส้น `?purchase=` ส่ง `store` มาจริง แต่ **ไม่ส่ง `storeScope`**
+                  ⇒ ตรงนี้ประกอบประโยคเอง ต่างจากจอรายการที่ใช้ข้อความของท่อ)
+                 ⚠️ ถ้าลิงก์ไม่ได้บอกร้านมา ท่อจะเลือก z1 ให้ ⇒ **ต้องเขียนออกมา ไม่ใช่เงียบ**
+                    เพราะเลขที่ใบของสองร้านซ้ำกันได้ คนจะไม่รู้ว่ากำลังอ่านใบของร้านไหน */}
+          {d?.store && (
+            <span className="text-amber-800">
+              {' · 🏬 '}{storeLabel(d.store === 'z2' ? 'z2' : 'z1')}
+              {!store && <span className="text-amber-700">{' (ลิงก์ไม่ได้บอกร้าน — ท่อเลือกให้)'}</span>}
+            </span>
+          )}
+          {d?.id != null && <span className="text-gray-300"> · id {String(d.id)}</span>}
+        </>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
 
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดึงใบสั่งซื้อไม่ได้'}>{error}</ErrorBox>}
+      {/* 🔴 **เลขที่ใบซ้ำกันในร้านเดียวกันได้จริง** — ท่อจะไม่เลือกใบให้ (ตั้งใจ) แต่ส่ง id มาให้
+             ⇒ จอต้องบอกว่าซ้ำและมีกี่ใบ **ห้ามหยิบใบแรกมาโชว์เงียบ ๆ**
+                (คนจะอ่านใบผิดแล้วจ่ายเงินตามใบผิด โดยจอดูปกติทุกประการ) */}
+      {!loading && d?.duplicate && (
+        <ErrorBox title="เลขที่ใบนี้ซ้ำกันในร้านเดียวกัน">
+          ระบบไม่เลือกใบให้ เพราะเลือกผิดแปลว่าอ่านใบผิด
+          {Array.isArray(d.ids) && d.ids.length > 0 && (
+            <> — มีทั้งหมด <b>{d.ids.length}</b> ใบ (id: {d.ids.map(String).join(' · ')})</>
+          )}
+          <br />⇒ เปิดจากจอรายการซื้อโดยกดที่แถวของใบที่ต้องการ หรือแจ้งทีมให้เปิดด้วย id
+        </ErrorBox>
+      )}
       {loading && <LoadingState />}
 
       {!loading && !error && d && (

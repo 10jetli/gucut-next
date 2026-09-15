@@ -9,6 +9,7 @@
 //      คนใช้ต้องรู้ว่าจอไหนยิง ZORT จริง เวลา ZORT ล่มจะได้เข้าใจว่าทำไมจอนี้จอเดียวที่ว่าง
 import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import { QUOTATION_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -54,14 +55,16 @@ export default function QuotationsPage() {
   const [dFrom, setDFrom] = useState('')
   const [dTo, setDTo] = useState('')
   const [q, setQ] = useState('')
+  /* 🏬 ร้านที่กำลังดู (ท่อ gucut-web 0932fac · 15 ก.ย. 2569) — ยิงจริง: z1 6 ใบ · z2 4 ใบ = ZORT */
+  const [store, setStore] = useState<StoreId>('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (storeId = store) => {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch('/api/web/core?list=quotations')
+      const res = await fetch(`/api/web/core?list=quotations${storeId ? `&store=${storeId}` : ''}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
       setData(j)
@@ -71,9 +74,9 @@ export default function QuotationsPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [store])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const all = Array.isArray(data?.rows) ? data!.rows! : []
   const rows = all.filter((r) => {
@@ -127,7 +130,7 @@ export default function QuotationsPage() {
         }
         actions={
           <>
-            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            <BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
             {/* 📤 ชุดเล็ก (ท่อบอก total 6) แต่ยังวนหน้าให้ครบเหมือนจอใหญ่
                 เพราะวันหนึ่งใบเยอะขึ้น แล้วจะไม่มีใครกลับมาแก้ปุ่มนี้ */}
             <ExportButton
@@ -139,9 +142,12 @@ export default function QuotationsPage() {
                    ⇒ ไฟล์ที่ส่งออกได้ **ทุกแถว ไม่ได้กรองตามคำค้น** ⇒ ต้องเขียนให้ตรง
                    เดิมผมเขียนว่า "คำค้นหา: xyz" ทั้งที่ไม่ได้ส่งไปกรองเลย = ไฟล์โกหกขอบเขตตัวเอง
                    (เจอตอนไล่ตรวจคู่ของ check-inherited 15 ก.ย. 2569) */
-                filters: q.trim()
-                  ? [['คำค้นหาบนจอ', `${q.trim()} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้ (ท่อไม่รองรับ) ได้ทุกแถว`]]
-                  : [['คำค้นหา', '(ไม่ได้ค้น)']],
+                filters: [
+                  ['ร้าน', storeLabel(store)],
+                  q.trim()
+                    ? ['คำค้นหาบนจอ', `${q.trim()} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้ (ท่อไม่รองรับ) ได้ทุกแถว`]
+                    : ['คำค้นหา', '(ไม่ได้ค้น)'],
+                ],
                 /* 🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** (แก้ 15 ก.ย. 2569 · ใบ t_mu2mc4jj)
                    เดิมส่ง `offset` ซึ่งท่อ **เมินเงียบ ๆ** ⇒ ขอหน้าถัดไปได้ก้อนเดิม
                    วันนั้นยังไม่ออกอาการเพราะใบเสนอราคามีแค่ 6 ใบ (จบในหน้าเดียว)
@@ -152,7 +158,8 @@ export default function QuotationsPage() {
                    📌 เพดานของท่อ: page 1–50 · limit สูงสุด 200 */
                 fetchPage: async (offsetAt, limit) => {
                   const page = Math.floor(offsetAt / limit) + 1
-                  const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&page=${page}`)
+                  /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ (ลืมส่ง store ⇒ ได้ไฟล์ของ z1 เงียบ ๆ) */
+                  const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&page=${page}${store ? `&store=${store}` : ''}`)
                   const d = await r.json()
                   if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
                   return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
@@ -225,7 +232,7 @@ export default function QuotationsPage() {
               onChange={setTab}
             />
             <button
-              onClick={load}
+              onClick={() => load()}
               disabled={loading}
               aria-label="โหลดใหม่"
               title="โหลดใหม่ — จอนี้ดึงสดจาก ZORT ทุกครั้ง"
@@ -237,6 +244,8 @@ export default function QuotationsPage() {
           </div>
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
+          <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(v) }} />
           <StoreScopeLine scope={data?.storeScope} />
 
           <TableWrap>

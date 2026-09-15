@@ -13,6 +13,7 @@
 //    ถ้าจอเงียบ ๆ ว่าง คนอ่านจะสรุปผิดทันที ⇒ ต้องบอกว่ามีกี่ใบและใบล่าสุดเมื่อไหร่
 import Link from 'next/link'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -119,21 +120,26 @@ export default function BuyReportPage() {
   const [adv, setAdv] = useState(false)
   const [grain, setGrain] = useState<Grain>('month')
   const [q, setQ] = useState('')
+  /* 🏬 ร้านที่กำลังดู — **ส่งให้ทั้งสองเส้น** (`list=purchases` และ `list=purchaseitems`)
+     ไม่งั้นตารางรายใบกับตารางรายสินค้าจะเป็นคนละร้านโดยที่จอดูปกติทุกประการ
+     (คลาสเดียวกับ "อย่าเอาตัวเลขจากแหล่งหนึ่งไปโชว์คู่กับของจากอีกแหล่ง" ใน CLAUDE.md) */
+  const [store, setStore] = useState<StoreId>('')
   const [items, setItems] = useState<ItemsResp | null>(null)
   const [itemsErr, setItemsErr] = useState('')
   const [itemQ, setItemQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (storeId = store) => {
     setLoading(true)
     setError('')
     try {
+      const st = storeId ? `&store=${storeId}` : ''
       // ใบซื้อมีหลักสิบใบ ดึงมาทั้งหมดครั้งเดียวแล้วกรองช่วงเวลาในเครื่อง
       const [res, iRes] = await Promise.all([
-        fetch('/api/web/core?list=purchases&limit=200'),
+        fetch(`/api/web/core?list=purchases&limit=200${st}`),
         // ⚠️ ล้มก็ไม่ทำให้ทั้งจอพัง แต่ต้องจำไว้ว่าล้มเพราะอะไร (ท่อพัง ≠ ไม่มีของ)
-        fetch('/api/web/core?list=purchaseitems&limit=200').then((r) => r.json()).catch(() => null),
+        fetch(`/api/web/core?list=purchaseitems&limit=200${st}`).then((r) => r.json()).catch(() => null),
       ])
       setItems(iRes && !iRes.error ? iRes : null)
       setItemsErr(!iRes ? 'ยิงไปที่ท่อรายการสินค้าในใบซื้อไม่สำเร็จ' : (typeof iRes.error === 'string' ? iRes.error : ''))
@@ -155,15 +161,24 @@ export default function BuyReportPage() {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [store])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const inRange = useMemo(
     () => (rows ?? []).filter((r) => r.po_date && r.po_date >= from && r.po_date <= to),
     [rows, from, to],
   )
   const sum = inRange.reduce((a, r) => a + (Number(r.amount) || 0), 0)
+  /* 🔴 **ใบซื้อที่ยกเลิกถูกนับรวมอยู่ในยอดนี้** — และ **ZORT ไม่นับ**
+     📏 อ่านจอ ZORT เอง 15 ก.ย. 2569 (`/Dashboard/BuyReport` ช่วงตั้งต้น "ย้อนหลัง 3 เดือน"):
+        จอขึ้นว่า **"ไม่มียอดซื้อ"** ทั้งที่ช่วงนั้นมีใบซื้ออยู่ 1 ใบในกระจกของเรา
+        คือ PO ทดสอบสถานะ Voided ยอด ฿1 ⇒ ถ้า ZORT นับใบยกเลิก จอต้องขึ้น ฿1 ไม่ใช่ "ไม่มียอดซื้อ"
+     ⚠️ ที่ยังไม่ได้พิสูจน์: ช่วงที่มีทั้งใบยกเลิกและใบสำเร็จปนกัน (เปลี่ยนช่วงบนจอ ZORT ต้องกด ซึ่งห้ามกด)
+     ⇒ จอเราจึง **ไม่แอบหักออกเอง** แต่ต้องเขียนกำกับว่ารวมไว้เท่าไหร่
+        (กติกาเดียวกับใบยกเลิกในจอยอดขาย — ดู CLAUDE.md ข้อแท็บ) */
+  const voided = inRange.filter((r) => String(r.status ?? '') === 'Voided')
+  const voidedSum = voided.reduce((a, r) => a + (Number(r.amount) || 0), 0)
   /* 🔴 **ยอดนี้บวกจากแถวที่ดึงมาได้เท่านั้น** — จอขอ limit=200
      วันนี้ใบซื้อทั้งหมด 32 ใบ จึงยังครบ แต่วันที่เกิน 200 ยอดจะน้อยกว่าจริงแบบเงียบ ๆ
      ⇒ เทียบจำนวนแถวกับตัวนับของท่อ แล้วเตือนทันทีที่ชนเพดาน ไม่ต้องรอให้มีคนสังเกต */
@@ -235,8 +250,13 @@ export default function BuyReportPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="ยอดซื้อ"
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        actions={<BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
       />
+
+      {/* 🏬 เลือกร้าน — ส่งให้ทั้งตารางรายใบและตารางรายสินค้า (ยิงทั้งสองเส้นด้วย store เดียวกัน) */}
+      <StorePicker value={store} disabled={loading}
+        onChange={(v) => { setStore(v); load(v) }}
+        note="ยอดซื้อทั้งหน้านี้เป็นของร้านที่เลือกเท่านั้น — เส้นใบซื้อตอบทีละร้าน" />
 
       <div className="flex flex-wrap items-center gap-3 -mt-1 mb-4">
         <p className="text-[17px] font-semibold text-gray-800">
@@ -455,6 +475,17 @@ export default function BuyReportPage() {
             {/* 🏬 ขอบเขตร้านของ **ตารางรายใบซื้อ** — อ่านจากคำตอบ `list=purchases` (`all`)
                 คนละคำตอบกับตารางรายสินค้าข้างบน ⇒ แต่ละตารางถือป้ายของตัวเอง */}
             <StoreScopeLine scope={all?.storeScope} />
+
+            {/* 🔴 รวมใบยกเลิกไว้เท่าไหร่ ต้องเขียน ไม่ใช่ปล่อยให้ยอดสูงกว่าจอ ZORT เงียบ ๆ */}
+            {voided.length > 0 && (
+              <p className="mx-4 md:mx-5 mb-2 text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 leading-relaxed">
+                ⚠️ ยอดในหน้านี้ <b>รวมใบซื้อที่ยกเลิกไว้ {fmtNum(voided.length)} ใบ</b>
+                {' '}(รวม {fmtMoney(voidedSum)} บาท) — <b>จอ &ldquo;รายงานยอดซื้อ&rdquo; ของ ZORT ไม่นับใบยกเลิก</b>
+                {' '}(อ่านจอ ZORT เทียบเองแล้ว 15 ก.ย. 2569)
+                <br />⇒ ยอดของเราจะ<b>สูงกว่าของ ZORT</b>อยู่เท่านี้ · จอนี้ยังไม่หักออกให้เอง
+                {' '}เพราะต้องแก้ที่ต้นทางให้ตรงกันก่อน (แจ้งฝั่งท่อแล้ว)
+              </p>
+            )}
 
             <TableWrap>
               <table className="w-full min-w-[720px]">
