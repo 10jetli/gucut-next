@@ -39,9 +39,26 @@ export async function สร้างซองบิล(vendorId: string | null,
   let มีใบจริง = false
   const รายชื่อใบจริง: string[] = []
   try {
-    for (const f of await listVendorBlobFiles(vendor.id)) {
-      const m = f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/)
-      if (!m || m[1] !== month) continue
+    /* 🔴 15 ก.ย. 2569 — ตัวคัดซ้ำรอบแรกเทียบแค่ "ใบจริง vs บิลจากเมล"
+       **ไม่เคยเทียบใบจริงด้วยกันเอง** ⇒ TikTok ส.ค. ยังได้ 8 ใบทั้งที่มี 4
+       เหตุ: ใบเดียวกันถูกอัปเป็น "ใบจริง" สองครั้งคนละชื่อ
+             THTT202606634060-บริษัท ศีตกาล เทรดดิ้ง จำกัด-Invoice.pdf   (ตัวเก็บบน g1)
+             TikTok-Invoice-THTT202606634060.pdf                        (ไฟล์แนบในเมล)
+       🔑 จับได้เพราะยิงของจริงแล้วเลขไม่ตรงกับที่ควรเป็น — ไม่ใช่จากการอ่านโค้ด
+       ⚠️ เก็บไฟล์ในถังไว้ทั้งคู่ **ไม่ลบ** (ของภาษี) — คัดที่ชั้นแสดงผลเท่านั้น */
+    const ทั้งหมด = (await listVendorBlobFiles(vendor.id))
+      .map(f => ({ f, m: f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/) }))
+      .filter(x => x.m && x.m[1] === month)
+      .sort((a, b) => a.m![2].localeCompare(b.m![2]))
+    const ใบจริงคัดแล้ว = new Map<string, typeof ทั้งหมด[number]>()
+    const ใบจริงไม่มีเลข: typeof ทั้งหมด = []
+    for (const x of ทั้งหมด) {
+      const no = เลขที่ใบ(x.m![2])
+      if (!no) { ใบจริงไม่มีเลข.push(x); continue }
+      if (!ใบจริงคัดแล้ว.has(no)) ใบจริงคัดแล้ว.set(no, x)
+    }
+    for (const { f, m } of [...Array.from(ใบจริงคัดแล้ว.values()), ...ใบจริงไม่มีเลข]) {
+      if (!m) continue
       // ⚠️ id ที่ list คืนมาเป็นรูป `BLOB:<key>` — ต้องถอดคำนำหน้าก่อน ไม่งั้นอ่านไม่ได้ทุกใบ
       const buf = await downloadBlobFile(f.id.replace(/^BLOB:/, ''))
       if (!buf) { missing.push(`ไฟล์ตัวจริง ${m[2]} (อ่านไม่ได้)`); continue }
