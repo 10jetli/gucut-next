@@ -106,11 +106,19 @@ export default function BillsPage() {
             {st?.[v.id] && (
               <div className="mt-1.5 w-full">
                 <div className={`inline-block rounded-md border px-1.5 py-0.5 text-[9px] font-medium ${สีสถานะ[st[v.id].สถานะ] ?? ''}`}>
-                  {st[v.id].สถานะ}{st[v.id].เหตุ ? ` · ${st[v.id].เหตุ}` : ''}
+                  {st[v.id].สถานะ}
                 </div>
+                {/* ⚠️ เหตุผลต้องอ่านออกครบ ห้ามบีบลงป้ายเล็กจนตัดหาย
+                    คนอ่านต้องรู้ว่าติดเพราะอะไร ไม่ใช่แค่ว่า "ไม่ได้" */}
+                {st[v.id].เหตุ && (
+                  <div className="text-[9px] text-amber-800 bg-amber-50 rounded px-1.5 py-1 mt-1 leading-snug text-left">
+                    {st[v.id].เหตุ}
+                  </div>
+                )}
                 {st[v.id].เก็บโดย && (
-                  <div className="text-[9px] text-gray-500 mt-1 leading-snug">
+                  <div className="text-[9px] text-gray-500 mt-1 leading-snug" title={st[v.id].เก็บโดย!.รายละเอียด}>
                     {ไอคอนวิธี[st[v.id].เก็บโดย!.วิธี] ?? '•'} {st[v.id].เก็บโดย!.วิธี}
+                    <div className="text-[8px] text-gray-400">{st[v.id].เก็บโดย!.รอบ}</div>
                   </div>
                 )}
                 <div className="text-[9px] text-gray-400 leading-snug">

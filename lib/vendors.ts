@@ -36,7 +36,13 @@ export interface BillVendorInfo {
   collect?: {
     วิธี: 'เมล' | 'สคริปต์บน g1' | 'อัปมือ'
     รายละเอียด: string      // เช่น "cloudflare-bills.py · ดึงผ่าน API ของ Cloudflare"
-    รอบ: string             // เช่น "ทุกวันตี 5 + วันที่ 8,20"
+    รอบ: string             // เช่น "ทุกวันตี 1"
+
+    /** ทำไมเก็บอัตโนมัติไม่ได้ — ท่านประธานสั่ง 15 ก.ย. 2569
+     *  "เขียนบอกปัญหาด้วยว่าโหลดไม่ได้เพราะอะไร ตัวไหนโหลดได้เขียนว่า ปกติ"
+     *  🔑 เว้นว่าง = เก็บได้ปกติ · มีข้อความ = ติดอะไรอยู่ **ต้องบอกว่าติดเพราะอะไร**
+     *     ไม่ใช่แค่ว่า "ไม่ได้" — คนอ่านต้องรู้ว่าจะแก้ยังไงหรือต้องทำอะไรแทน */
+    ปัญหา?: string
   }
 
   /** เจ้านี้ต้องมีบิล **ทุกเดือน** แน่นอน (ค่าบริการรายเดือนตายตัว)
@@ -72,7 +78,7 @@ export const BILL_VENDORS: BillVendorInfo[] = [
         (subject ของเมลเตือนไม่มีคำพวกนี้สักฉบับ) ⇒ ตอนนี้จับได้ 0 ใบ **โดยตั้งใจ**
         วันไหน Netlify เริ่มส่งใบเสร็จเข้าเมล มันจะเข้าเองโดยไม่ต้องแก้อะไร
         ระหว่างนี้เอาใบจริงเข้าระบบด้วยการอัปโหลด (ไฟล์ `YYYY-MM_REAL_*.pdf`) */
-  { id: 'netlify', collect: { วิธี: 'อัปมือ', รายละเอียด: '🔴 Netlify ไม่ส่งใบเข้าเมลเลย — ต้องโหลดจากแดชบอร์ดแล้วอัปเอง', รอบ: 'ไม่มีตัวเก็บอัตโนมัติ' }, portal: 'https://app.netlify.com/teams/10jetli/billing/general', name: 'Netlify',           emoji: '🌐', gridName: 'Netlify',      gridOrder: 8, logo: '/logos/netlify.webp', note: 'ค่าโฮสต์เว็บ — Netlify ไม่ส่งใบเสร็จเข้าเมล ต้องโหลดจากแดชบอร์ดแล้วอัปเอง', everyMonth: true, /* Pro plan รายเดือน (เริ่ม ส.ค. 2569) */ query: 'from:netlify.com subject:(receipt OR invoice OR "payment received" OR ใบเสร็จ)' },
+  { id: 'netlify', collect: { วิธี: 'อัปมือ', รายละเอียด: '🔴 Netlify ไม่ส่งใบเข้าเมลเลย — ต้องโหลดจากแดชบอร์ดแล้วอัปเอง', รอบ: 'ไม่มีตัวเก็บอัตโนมัติ' , ปัญหา: 'Netlify ไม่ส่งใบเข้าอีเมลเลย (ค้น Gmail ทั้งกล่องได้ 0 ฉบับ) และยังไม่มีสคริปต์ดึงจากแดชบอร์ด ⇒ ต้องโหลดมาอัปเอง'}, portal: 'https://app.netlify.com/teams/10jetli/billing/general', name: 'Netlify',           emoji: '🌐', gridName: 'Netlify',      gridOrder: 8, logo: '/logos/netlify.webp', note: 'ค่าโฮสต์เว็บ — Netlify ไม่ส่งใบเสร็จเข้าเมล ต้องโหลดจากแดชบอร์ดแล้วอัปเอง', everyMonth: true, /* Pro plan รายเดือน (เริ่ม ส.ค. 2569) */ query: 'from:netlify.com subject:(receipt OR invoice OR "payment received" OR ใบเสร็จ)' },
   /* Cloudflare — เจ้าของร้านสั่งเพิ่ม 8 ก.ย. 2569 (โดเมน gucut.com + R2 ที่เก็บคลิป/รูปทั้งเว็บ + D1)
      บิลอยู่ที่ dash.cloudflare.com/<account>/billing/invoices
      ✅ **ส่งเข้าเมลจริง** (ต่างจาก Netlify) — ยิงตรวจแล้ว 8 ก.ย. 2569 เจอ 2 ใบ:
