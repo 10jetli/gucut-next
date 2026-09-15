@@ -485,7 +485,8 @@ export interface EmailPdfInfo {
   body: string
 }
 
-async function drawGenericPdf(info: EmailPdfInfo): Promise<Buffer> {
+// รับ html ด้วย เพื่อถอดข้อความมาใช้เมื่อเมลไม่มีส่วนข้อความล้วน (เพิ่ม 15 ก.ย. 2569)
+async function drawGenericPdf(info: EmailPdfInfo & { html?: string }): Promise<Buffer> {
   const fonts = await loadFonts()
   const doc = await PDFDocument.create()
   doc.registerFontkit(fontkit as any)
@@ -538,8 +539,20 @@ async function drawGenericPdf(info: EmailPdfInfo): Promise<Buffer> {
   page.drawLine({ start: { x: MARGIN, y }, end: { x: PAGE_W - MARGIN, y }, thickness: 0.75, color: BORDER_GRAY })
   y -= 25
 
+  /* 🔴 15 ก.ย. 2569 — เมลบางเจ้าไม่มีส่วนข้อความล้วน มีแต่ HTML
+     เดิมใบจะว่างเปล่าทั้งหน้า (เหลือแค่หัวข้อ/จาก/วันที่) โดยไม่มีอะไรฟ้อง
+     ⇒ ถอดข้อความจาก HTML มาใช้แทนเมื่อ body ว่าง */
+  let bodyForRender = info.body ?? ''
+  if (!bodyForRender.trim() && info.html) {
+    try {
+      const root = parse(info.html)
+      root.querySelectorAll('script,style').forEach(n => n.remove())
+      bodyForRender = root.text.replace(/\n{3,}/g, '\n\n').trim()
+    } catch { /* ถอดไม่ได้ ⇒ ปล่อยว่างตามเดิม ดีกว่าโยน error ทิ้งทั้งใบ */ }
+  }
+
   const bodyLines: string[] = []
-  for (const raw of info.body.split('\n')) {
+  for (const raw of bodyForRender.split('\n')) {
     const trimmed = raw.trim()
     if (!trimmed) { bodyLines.push(''); continue }
     for (const l of wrapLine(trimmed, font, 10, contentW - 32)) bodyLines.push(l)

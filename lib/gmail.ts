@@ -93,7 +93,7 @@ function decodeBody(data?: string): string {
 }
 
 // ดึงยอดเงินจากข้อความ (THB / ฿ / USD / $) แบบ best-effort
-function extractAmounts(text: string): string[] {
+export function extractAmounts(text: string): string[] {
   const found = new Set<string>()
   const patterns = [
     /(?:THB|฿)\s?([\d,]+(?:\.\d{2})?)/g,

@@ -11,6 +11,47 @@ const pad = (n: number) => String(n).padStart(2, '0')
 // รับเฉพาะไฟล์บิลจริง: PDF (และ .zip ใบเสร็จของ Omise) — ตัด csv/อื่นๆ ทิ้ง
 const isBillFile = (name: string) => /\.pdf$/i.test(name) || /\.zip$/i.test(name)
 
+
+/* 🔴 เพิ่ม 15 ก.ย. 2569 — ท่านประธานเจอ "Gmail API error 403 quota exceeded" เต็มจอที่ /bills/shopify
+   เหตุ: เปิดหน้าบิลทีไร **ยิง Gmail ทุกครั้ง** (แคชแค่ย่นช่วงวันที่ ไม่ได้ข้ามการยิง)
+        เปิดหลายเจ้าติด ๆ กัน = ชนเพดาน "units per minute per user"
+   🔑 ที่แย่กว่าคือ catch เดิมคืน 500 ทิ้งแคชทั้งก้อน ⇒ **ข้อมูลอยู่ในมือแต่จอไม่โชว์อะไรเลย**
+      = เอา "ดึงไม่สำเร็จ" ไปแสดงเป็น "ไม่มีข้อมูล" (three-states-not-two)
+   ⇒ ตอนนี้: Gmail ล้ม + มีแคช ⇒ โชว์ของเก่าพร้อมบอกตรง ๆ ว่ายังไม่ได้สแกนใหม่เพราะอะไร
+   ⚠️ ไม่มีแคชเลย ⇒ ยังต้องคืน error เหมือนเดิม ห้ามแกล้งขึ้นเขียวว่า "ไม่มีบิล" */
+function monthsFromEntries(entries: BillEntry[]) {
+  const months: Record<string, any[]> = {}
+  for (const e of entries) {
+    ;(months[e.month] ??= []).push({
+      filename: e.filename, messageId: e.messageId, attachmentId: e.attachmentId,
+      size: e.size, subject: e.subject,
+    })
+  }
+  return months
+}
+
+/* ไฟล์ตัวจริงที่อัปโหลดไว้ (…_REAL_…) — **แทนที่** ใบที่ระบบสร้างจากอีเมล (GEN) ของเดือนนั้น
+   จึงไม่มีทางเห็นสองใบซ้อนกันในเดือนเดียว */
+async function attachRealFiles(months: Record<string, any[]>, vendorId: string, vendorName: string) {
+  try {
+    const blobFiles = await listVendorBlobFiles(vendorId)
+    const realByMonth: Record<string, any[]> = {}
+    for (const f of blobFiles) {
+      const m = f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/)
+      if (!m) continue
+      ;(realByMonth[m[1]] ??= []).push({
+        filename: m[2], messageId: '', attachmentId: f.id, size: f.size,
+        subject: `ไฟล์ตัวจริงจาก ${vendorName}`,
+      })
+    }
+    for (const [m, files] of Object.entries(realByMonth)) {
+      const existing = (months[m] ?? []).filter(x => x.attachmentId !== 'GEN')
+      months[m] = files.concat(existing)
+    }
+  } catch { /* อ่านที่เก็บไฟล์ไม่ได้ ⇒ แสดงเฉพาะบิลจากอีเมลตามปกติ */ }
+  return months
+}
+
 // GET /api/bills/vendor?vendor=shopify
 // ใช้ cache ผลสแกน (เก็บใน Drive) — สแกน Gmail + อ่าน PDF เฉพาะอีเมลใหม่เท่านั้น
 // เติม &rescan=1 เพื่อบังคับสแกนใหม่ทั้งหมด, &debug=1 เพื่อดูรายละเอียดการอ่าน PDF
@@ -151,6 +192,21 @@ export async function GET(req: NextRequest) {
       ...(debug ? { debugInfo } : {}),
     })
   } catch (e: any) {
-    return NextResponse.json({ error: e.message }, { status: 500 })
+    const เหตุ = String(e?.message ?? e)
+    // ถอยไปใช้ของที่เคยเก็บไว้ — ดีกว่าจอว่างเปล่าพร้อม error ที่คนอ่านไม่รู้จะทำอะไรต่อ
+    try {
+      const idx = await loadBillIndexBlobs(vendor.id)
+      if (idx?.entries?.length) {
+        const months = await attachRealFiles(monthsFromEntries(idx.entries), vendor.id, vendor.name)
+        return NextResponse.json({
+          vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months,
+          cached: true, newMessages: false,
+          // 🔑 ฟิลด์นี้มีความหมายเดียว: "ยังไม่ได้สแกนใหม่ เพราะ…" — ห้ามเอาไปตัดสินใจอย่างอื่น
+          staleReason: เหตุ,
+          lastScan: idx.lastScan,
+        })
+      }
+    } catch { /* อ่านแคชไม่ได้อีก ⇒ ตกไปที่ error ข้างล่างตามเดิม */ }
+    return NextResponse.json({ error: เหตุ }, { status: 500 })
   }
 }

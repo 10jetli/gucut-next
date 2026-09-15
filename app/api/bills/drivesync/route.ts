@@ -85,7 +85,7 @@ async function syncVendor(vendor: (typeof VENDORS)[number], days: number) {
         const detail = await fetchMessageDetail(token, b.messageId)
         const buf = await emailToPdf({
           vendorName: vendor.name, subject: detail.subject, from: detail.from,
-          date: detail.date, amounts: [], body: detail.text, html: detail.html,
+          date: detail.date, amounts: b.amounts ?? [], body: detail.text, html: detail.html,
         })
         const didUpload = await syncBillToBlobs(vendor.id, filenameNow, 'application/pdf', buf)
         didUpload ? t.uploaded++ : countNoWrite(t)

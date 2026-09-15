@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getAccessToken, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
+import { getAccessToken, fetchAttachment, fetchMessageDetail, extractAmounts } from '@/lib/gmail'
 import { emailToPdf } from '@/lib/emailPdf'
 import { downloadBlobFile } from '@/lib/billblobs'
 
@@ -33,12 +33,17 @@ export async function GET(req: NextRequest) {
 
     if (attachmentId === 'GEN') {
       const detail = await fetchMessageDetail(token, messageId!)
+      /* 🔴 15 ก.ย. 2569 — เดิมส่ง amounts: [] ทิ้งไว้เฉย ๆ ทั้งที่ยอดเงินอยู่ในเนื้อเมล
+         ผลคือใบที่ระบบสร้างมีแค่ "หัวข้อ / จาก / วันที่" **ไม่มีเลขที่ใบ ไม่มียอด**
+         ⇒ เอาไปยื่นภาษีไม่ได้ (ท่านประธานเปิดดูแล้วทักว่า "บิลไม่สมบูรณ์")
+         ⚠️ นี่เป็นทางสำรองเท่านั้น — เอกสารตัวจริงต้องมาจากผู้ให้บริการ
+            Cloudflare เปิดให้แนบ PDF มากับเมลได้ (ตั้งค่า "email invoices") ควรเปิดอันนั้นแทน */
       const buf = await emailToPdf({
         vendorName: 'ใบเสร็จจากอีเมล',
         subject: detail.subject,
         from: detail.from,
         date: detail.date,
-        amounts: [],
+        amounts: extractAmounts(`${detail.subject} ${detail.text ?? ''}`),
         body: detail.text,
         html: detail.html,
       })

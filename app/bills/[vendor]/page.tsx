@@ -20,7 +20,7 @@ interface BillFile {
 
 export default function VendorPage({ params }: { params: { vendor: string } }) {
   const info = VENDOR_INFO[params.vendor] ?? { name: params.vendor, emoji: '🧾' }
-  const [data, setData] = useState<{ months: Record<string, BillFile[]> } | null>(null)
+  const [data, setData] = useState<{ months: Record<string, BillFile[]>; staleReason?: string; lastScan?: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
 
   useEffect(() => {
@@ -46,6 +46,26 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
 
       {err && (
         <div className="rounded-2xl p-4 border border-red-200 bg-red-50 text-red-600 text-[13px]">⚠️ {err}</div>
+      )}
+
+      {/* 🔴 15 ก.ย. 2569 — ก่อนหน้านี้ Gmail โควตาเต็มแล้วจอขึ้น error แดงเต็มหน้า ไม่โชว์บิลเลย
+          ทั้งที่ของเก่าเก็บไว้ครบ ⇒ เอา "ดึงไม่สำเร็จ" ไปแสดงเป็น "ไม่มีข้อมูล"
+          ตอนนี้โชว์บิลเก่าตามปกติ + ป้ายเหลืองบอกตรง ๆ ว่ายังไม่ได้สแกนใหม่เพราะอะไร
+          ⚠️ ป้ายต้องอยู่ **เหนือรายการ** — ถ้าต้องเลื่อนจอถึงเห็น เท่ากับไม่มี */}
+      {data?.staleReason && (
+        <div className="rounded-2xl p-3 border border-amber-200 bg-amber-50 text-amber-800 text-[12px] mb-3">
+          <div className="font-medium">⚠️ กำลังแสดงรายการที่เก็บไว้ล่าสุด — ยังไม่ได้สแกนอีเมลรอบใหม่</div>
+          {data.lastScan && (
+            <div className="mt-1 opacity-80">
+              สแกนล่าสุด {new Date(data.lastScan).toLocaleString('th-TH', { timeZone: 'Asia/Bangkok' })} น. (เวลาไทย)
+            </div>
+          )}
+          <div className="mt-1 opacity-70">
+            {/^.*(quota|429|403).*$/i.test(data.staleReason)
+              ? 'สาเหตุ: โควตา Gmail ต่อนาทีเต็ม (เปิดหน้าบิลหลายเจ้าติดกัน) — รอสักครู่แล้วรีเฟรช บิลไม่ได้หายไปไหน'
+              : `สาเหตุ: ${data.staleReason.slice(0, 160)}`}
+          </div>
+        </div>
       )}
 
       {data && !months.length && (
