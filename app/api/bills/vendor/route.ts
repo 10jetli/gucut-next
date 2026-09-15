@@ -52,6 +52,38 @@ async function attachRealFiles(months: Record<string, any[]>, vendorId: string, 
   return months
 }
 
+
+/* หาเลขที่ใบจากชื่อไฟล์ — ใช้ตัดสินว่าสองไฟล์คือ "ใบเดียวกัน" หรือไม่
+   🔴 15 ก.ย. 2569 ท่านประธานทัก: เดือน 8 จอโชว์ 8 ใบ แต่ของจริงมี **4 ใบ**
+      เพราะบิลใบเดียวกันเข้าระบบสองทาง แล้วได้ชื่อไฟล์คนละแบบ:
+        · THTT202606634060-บริษัท ศีตกาล เทรดดิ้ง จำกัด-Invoice.pdf   (ตัวเก็บอัตโนมัติ)
+        · TikTok-Invoice-THTT202606634060.pdf                        (ไฟล์แนบในอีเมล)
+      ⇒ นับซ้ำทุกใบ · บัญชีเห็นแล้วนึกว่ามีบิลสองเท่าของจริง
+
+   ⚠️ จับคู่ด้วย **เลขที่ใบเท่านั้น** ห้ามเดาจากขนาดไฟล์หรือวันที่
+      ไฟล์คนละใบอาจขนาดเท่ากันเป๊ะได้ (ใบจากระบบเดียวกันมักเท่ากัน)
+   ⚠️ ไม่มีเลขที่ใบในชื่อ ⇒ **เก็บไว้ทั้งหมด** ห้ามเดาว่าซ้ำ
+      บิลหายหนึ่งใบ = เอกสารภาษีขาดหนึ่งใบ แย่กว่าเห็นซ้ำ */
+function เลขที่ใบ(filename: string): string | null {
+  const m = filename.match(/(THTT\d{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)
+  return m ? m[1].toUpperCase() : null
+}
+
+/* คัดซ้ำออก — ใบเดียวกันเก็บไว้ใบเดียว
+   ลำดับความน่าเชื่อถือ: ไฟล์ตัวจริงที่อัปไว้ (_REAL_) > ไฟล์แนบอีเมล > ใบที่ระบบสร้างเอง (GEN) */
+function คัดซ้ำ<T extends { filename: string; attachmentId: string }>(files: T[]): T[] {
+  const คะแนน = (f: T) => (f.attachmentId?.startsWith('BLOB:') ? 3 : f.attachmentId === 'GEN' ? 1 : 2)
+  const เก็บ = new Map<string, T>()
+  const ไม่มีเลข: T[] = []
+  for (const f of files) {
+    const no = เลขที่ใบ(f.filename)
+    if (!no) { ไม่มีเลข.push(f); continue }
+    const เดิม = เก็บ.get(no)
+    if (!เดิม || คะแนน(f) > คะแนน(เดิม)) เก็บ.set(no, f)
+  }
+  return Array.from(เก็บ.values()).concat(ไม่มีเลข)
+}
+
 // GET /api/bills/vendor?vendor=shopify
 // ใช้ cache ผลสแกน (เก็บใน Drive) — สแกน Gmail + อ่าน PDF เฉพาะอีเมลใหม่เท่านั้น
 // เติม &rescan=1 เพื่อบังคับสแกนใหม่ทั้งหมด, &debug=1 เพื่อดูรายละเอียดการอ่าน PDF
@@ -186,6 +218,7 @@ export async function GET(req: NextRequest) {
       }
     } catch { /* ถ้าอ่าน Drive ไม่ได้ ให้แสดงเฉพาะบิลจากอีเมลตามปกติ */ }
 
+    for (const k of Object.keys(months)) months[k] = คัดซ้ำ(months[k])
     return NextResponse.json({
       vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months,
       cached: !!idx, newMessages: changed,
@@ -198,6 +231,7 @@ export async function GET(req: NextRequest) {
       const idx = await loadBillIndexBlobs(vendor.id)
       if (idx?.entries?.length) {
         const months = await attachRealFiles(monthsFromEntries(idx.entries), vendor.id, vendor.name)
+        for (const k of Object.keys(months)) months[k] = คัดซ้ำ(months[k])
         return NextResponse.json({
           vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months,
           cached: true, newMessages: false,

@@ -43,13 +43,17 @@ export async function GET(req: NextRequest) {
     // ── ① ไฟล์ตัวจริงที่อัปโหลดไว้ (…_REAL_…) — มีก่อนใครเสมอ ──
     //    เดือนไหนมีใบจริง จอจะตัดใบที่ระบบสร้างเองออก ⇒ ซองต้องทำแบบเดียวกัน ไม่งั้นได้สองใบซ้อน
     let มีใบจริง = false
+    const รายชื่อใบจริง: string[] = []
     try {
       for (const f of await listVendorBlobFiles(vendor.id)) {
         const m = f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/)
         if (!m || m[1] !== month) continue
-        const buf = await downloadBlobFile(f.id)
+        // ⚠️ id ที่ list คืนมาเป็นรูป `BLOB:<key>` — ต้องถอดคำนำหน้าก่อน
+        //    ไม่ถอด = อ่านไม่ได้ทุกใบ แล้วซองจะขาดไฟล์ตัวจริงทั้งหมด (เจอ 15 ก.ย. 2569)
+        const buf = await downloadBlobFile(f.id.replace(/^BLOB:/, ''))
         if (!buf) { missing.push(`ไฟล์ตัวจริง ${m[2]} (อ่านไม่ได้)`); continue }
         zip.file(sanitize(m[2]), buf)
+        รายชื่อใบจริง.push(m[2])
         added++; มีใบจริง = true
       }
     } catch (e: any) {
@@ -58,7 +62,18 @@ export async function GET(req: NextRequest) {
 
     // ── ② บิลจากอีเมล ตามดัชนีเดียวกับที่จอใช้ ──
     const idx = await loadBillIndexBlobs(vendor.id)
-    const entries = (idx?.entries ?? []).filter(e => e.month === month)
+    // คัดซ้ำเลขที่ใบ — บิลใบเดียวกันเข้าสองทาง (ตัวเก็บอัตโนมัติ + ไฟล์แนบอีเมล)
+    // ⚠️ ไม่มีเลขที่ใบในชื่อ ⇒ เก็บไว้ทั้งหมด ห้ามเดาว่าซ้ำ (บิลหาย = เอกสารภาษีขาด)
+    const เลขที่ใบ = (n: string) => (n.match(/(THTT\d{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)?.[1] ?? '').toUpperCase()
+    const เห็นแล้ว = new Set(รายชื่อใบจริง.map(เลขที่ใบ).filter(Boolean))
+    const entries = (idx?.entries ?? []).filter(e => {
+      if (e.month !== month) return false
+      const no = เลขที่ใบ(e.filename)
+      if (!no) return true
+      if (เห็นแล้ว.has(no)) return false
+      เห็นแล้ว.add(no)
+      return true
+    })
 
     if (!entries.length && !added) {
       zip.file('ไม่พบบิล.txt',
