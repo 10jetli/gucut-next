@@ -108,6 +108,8 @@ export async function fetchAllPages<T>(
   const rows: T[] = []
   let total: number | null = null
   let stoppedBecause = ''
+  /** ก้อนของหน้าก่อน — ใช้จับว่าท่อเลื่อนหน้าให้จริงไหม (ดูด่านข้างล่าง) */
+  let prevPageKey = ''
   const problems: string[] = []
   for (let i = 0; i < maxRequests; i++) {
     let got
@@ -121,6 +123,21 @@ export async function fetchAllPages<T>(
       break
     }
     if (got.total !== null) total = got.total
+    /* 🔴 **ด่านจับ "หน้าไม่ขยับ"** (เพิ่ม 15 ก.ย. 2569 · ใบ t_mu2mc4jj)
+       ทำไม: เส้น `?zortdocrows` และ `list=returnorders` · `list=quotations` **เมิน `offset` เงียบ ๆ**
+       ⇒ ขอหน้าถัดไปแล้วได้ **ก้อนเดิมเป๊ะ** ⇒ วนไปจนชนเพดาน แล้วไฟล์เต็มไปด้วยของซ้ำ
+       ⚠️ ที่แย่ที่สุด: ถ้าจำนวนที่ได้ไปตรงกับ `total` พอดี ไฟล์จะ **ประกาศว่าครบ** ทั้งที่ผิดทั้งไฟล์
+       🔑 **แยกให้ออกจากกรณี "แถวเหมือนกันจริง"** (บัตรสต็อกมีแถวซ้ำกันเป๊ะ 106 แถว = ข้อมูลจริง):
+          ด่านนี้เทียบ **ก้อนทั้งหน้ากับหน้าก่อน** และต้อง **เต็มหน้าพอดี** ด้วย
+          ⇒ ของซ้ำภายในหน้าเดียวไม่โดน · ต้องซ้ำ "ทั้งหน้า" ถึงจะนับว่าไม่ขยับ
+       ⇒ เจอแล้ว **ไม่เก็บก้อนซ้ำ** แล้วหยุดพร้อมบอกเหตุ — ดีกว่าเขียนไฟล์ที่ดูครบแต่ผิด */
+    const pageKey = JSON.stringify(got.rows)
+    if (i > 0 && pageKey === prevPageKey && got.rows.length === limit) {
+      stoppedBecause = 'ท่อคืนก้อนเดิมซ้ำเมื่อขอหน้าถัดไป (หน้าไม่ขยับ) — หยุดไว้ก่อนเพื่อไม่ให้ไฟล์มีของซ้ำ'
+        + ' · เส้นนี้อาจแบ่งหน้าด้วย page= ไม่ใช่ offset='
+      break
+    }
+    prevPageKey = pageKey
     rows.push(...got.rows)
     if (got.problem && !problems.includes(got.problem)) problems.push(got.problem)
     opts.onProgress?.(rows.length, total)
