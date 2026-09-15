@@ -83,7 +83,12 @@ export default function CorePurchasesPage() {
     setError('')
     try {
       const qs = new URLSearchParams({ list: 'purchases', limit: String(PAGE), offset: String(off) })
-      if (tabId !== 'all') qs.set('status', tabId)
+      /* 🔴 **เลิกส่ง `status` ไปท่อ — ท่อเมินพารามิเตอร์นี้** (ยิงพิสูจน์ 16 ก.ย. 2569)
+         ยิง `status=Voided` · `Success` · `Pending` ⇒ ได้ **33 แถวเท่ากันทุกครั้ง** และแถวมีสถานะปนกัน
+         (`applied` ของท่อไม่มีช่อง status ด้วย) ⇒ เดิมกดแท็บ "สำเร็จ" แล้วยังเห็นใบยกเลิกปนอยู่
+         และกดแท็บ "รอโอน (0)" ก็ยังเห็น 33 แถว ⇒ **ตัวนับกับตัวแถวคนละกติกา** (กฎแท็บใน CLAUDE.md)
+         ⇒ กรองในเครื่องแทน (ใบซื้อทั้งร้าน 33 ใบ · หน้าละ 50 ⇒ โหลดครบในหน้าเดียว = กรองครบทั้งชุด)
+            และถ้าวันไหนใบเกินหนึ่งหน้า จะมีข้อความบอกว่ากรองเฉพาะที่โหลดมา */
       if (storeId) qs.set('store', storeId)
       if (q.trim()) qs.set('q', q.trim())
       const res = await fetch(`/api/web/core?${qs}`)
@@ -100,7 +105,11 @@ export default function CorePurchasesPage() {
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const rows = data?.rows ?? []
+  const allRows = data?.rows ?? []
+  /* กรองตามแท็บในเครื่อง — ค่าดิบตรงกับที่ท่อส่งมา (Success · Voided · Waiting · WaitingPayment) */
+  const rows = tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)
+  /** โหลดมาครบทั้งชุดหรือยัง — ใช้ตัดสินว่าการกรองในเครื่องครอบทั้งชุดไหม */
+  const loadedAll = typeof data?.total === 'number' ? offset + allRows.length >= data.total : false
   const shown = offset + rows.length
   const byStatus = Array.isArray(data?.byStatus) ? data!.byStatus! : []
   const countOf = (s: string) => byStatus.find((x) => x.status === s)?.c ?? 0
@@ -153,12 +162,15 @@ export default function CorePurchasesPage() {
                 /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ — ลืมส่ง store แล้วไฟล์กลายเป็นของ z1 เงียบ ๆ */
                 filters: [
                   ['ร้าน', storeLabel(store)],
-                  ['แท็บสถานะ', tab === 'all' ? 'ทั้งหมด' : tab],
+                  /* 🔴 **ไฟล์นี้ไม่ได้กรองตามแท็บ** — ท่อไม่รับตัวกรองสถานะ ⇒ เขียนให้ตรง
+                     เดิมเขียนชื่อแท็บลงไฟล์เฉย ๆ ⇒ คนเปิดไฟล์จะเชื่อว่ากรองแล้ว (ไฟล์โกหกขอบเขตตัวเอง) */
+                  ['แท็บสถานะบนจอ', tab === 'all' ? 'ทั้งหมด'
+                    : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ได้ทุกสถานะ`],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({ list: 'purchases', limit: String(limit), offset: String(offsetAt) })
-                  if (tab !== 'all') qs.set('status', tab)
+                  /* 🔴 ท่อเมิน `status` (ยิงพิสูจน์ 16 ก.ย. 2569) ⇒ ไม่ส่งไป และเขียนในไฟล์ว่าไฟล์นี้ได้ทุกสถานะ */
                   if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
                   const r = await fetch(`/api/web/core?${qs}`)
@@ -227,6 +239,22 @@ export default function CorePurchasesPage() {
               {loading ? '⏳' : '⟳'}
             </button>
           </div>
+
+          {/* 🔴 **แท็บนี้กรองในเครื่อง ไม่ใช่ที่เซิร์ฟเวอร์** — ต้องเขียนไว้ตามกฎแท็บใน CLAUDE.md
+                 ท่อเมินพารามิเตอร์ `status` (ยิงพิสูจน์ 16 ก.ย. 2569: ส่ง Voided/Success/Pending
+                 ได้ 33 แถวเท่ากันทุกครั้ง สถานะปนกัน) ⇒ เดิมกดแท็บแล้วแถวไม่เปลี่ยน
+              ⚠️ ตัวเลขบนแท็บมาจาก `byStatus` ของท่อ = **ทั้งชุด** ส่วนแถวมาจากที่โหลดมา
+                 ⇒ ถ้าวันไหนโหลดไม่ครบ ต้องบอกตรง ๆ ว่ากรองเฉพาะที่โหลดมา */}
+          {tab !== 'all' && (
+            <p className="text-[11.5px] text-gray-500 mb-1">
+              {loadedAll
+                ? <>กรองในเบราว์เซอร์ — โหลดใบซื้อมาครบทั้ง {fmtNum(Number(data?.total ?? 0))} ใบแล้ว จึงเท่ากับกรองทั้งชุด
+                  {' '}· เหลือ <b>{fmtNum(rows.length)}</b> ใบในแท็บนี้</>
+                : <>⚠️ กรองในเบราว์เซอร์ <b>เฉพาะ {fmtNum(allRows.length)} ใบที่โหลดมา</b>
+                  {' '}(ทั้งหมด {fmtNum(Number(data?.total ?? 0))} ใบ) — ตัวเลขบนแท็บเป็นของทั้งชุด</>}
+              {' '}· <span className="text-gray-400">ท่อยังไม่รับตัวกรองสถานะ — ขอไว้แล้ว</span>
+            </p>
+          )}
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
           <StorePicker value={store} disabled={loading}
