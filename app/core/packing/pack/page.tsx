@@ -120,9 +120,19 @@ export default function PackWizardPage() {
         <div className="bg-white border border-gray-200 rounded-md p-6 md:p-10 text-center">
           <h1 className="text-[19px] font-bold text-gray-900 mb-2">เริ่มต้นการแพ็คสินค้า</h1>
           <p className="text-[12.5px] text-gray-500 mb-1">กรอกหมายเลขรายการ หรือ Tracking No. แล้วกด &ldquo;แพ็คสินค้า&rdquo;</p>
-          <p className="text-[11.5px] text-gray-400 mb-4">
+          <p className="text-[11.5px] text-gray-400 mb-2">
             ยิงเลขพัสดุจากใบปะหน้าได้เลย — ใบขายออนไลน์มีเลขพัสดุในคลังเงาครบ
             (ใบ POS ไม่มีเลขพัสดุ ให้ค้นด้วยเลขที่ใบแทน)
+          </p>
+          {/* 🔴 หมายเหตุนี้อยู่ใต้ช่องกรอกของ ZORT จริง — **ลอกคำมาตรง ๆ** (กดอ่านจอ 16 ก.ย. 2569
+              `/Pickandpack/Main?&mc=…&type=2` · จอ "รับสินค้า" คือ type=1 ใช้คำเดียวกัน)
+              ⚠️ เตือน **ไม่บล็อก** — จอเราไม่ได้เขียนสถานะกลับ และยังไม่รู้ชุดคำสถานะทั้งหมดของใบโอน
+                 (ท่าเดียวกับจอรับสินค้าที่ทำไว้ก่อนแล้ว) ⇒ ใบที่โอนครบแล้วยังค้นเจอที่นี่ได้
+                 แต่เอาไปแพ็คใน ZORT ไม่ได้ ⇒ ต้องบอกก่อนที่คนจะเดินไปที่ ZORT แล้วกดไม่ได้ */}
+          <p className="text-[11.5px] text-gray-500 mb-4 leading-relaxed max-w-[420px] mx-auto">
+            ⚠️ หมายเหตุของ ZORT: <b>การโอนสินค้าของรายการต้องเป็นสถานะรอโอน, รอบางส่วน</b> —
+            จอนี้<b>ไม่บล็อกตามสถานะ</b> (เราไม่ได้เขียนสถานะกลับ และยังไม่รู้ชุดคำสถานะทั้งหมด)
+            ⇒ ใบที่โอนครบแล้ว<b>ยังค้นเจอที่นี่</b> แต่ไปแพ็คใน ZORT ไม่ได้
           </p>
           <form onSubmit={(e) => { e.preventDefault(); search() }} className="flex flex-col items-center gap-3">
             <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus
