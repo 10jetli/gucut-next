@@ -32,7 +32,7 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
     if (zipping) return                       // กันกดซ้อน
     setZipping(m)
     try {
-      const r = await fetch(`/api/bills/download?month=${m}&vendor=${params.vendor}`)
+      const r = await fetch(`/api/bills/zip?month=${m}&vendor=${params.vendor}`)
       if (!r.ok) {
         const j = await r.json().catch(() => ({}))
         throw new Error(j.error || `ดึงไม่สำเร็จ (${r.status})`)
