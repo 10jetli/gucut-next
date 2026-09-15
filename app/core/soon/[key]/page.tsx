@@ -62,13 +62,19 @@ export default function SoonPage({ params }: { params: { key: string } }) {
               {info.impossible && (
                 <p className="text-[13px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
                   <b>{info.impossibleScope === 'write' ? 'สร้าง/แก้ไม่ได้เพราะ:' : 'ทำไม่ได้เพราะ:'}</b> {info.impossible}
-                  {info.exportByHand && (
-                    <>
-                      <br />
-                      ⇒ และ<b>มีของค้างอยู่ใน ZORT: {info.exportByHand}</b> ⇒ ต้อง
-                      {' '}<b>กด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> ทำหลังปิดไม่ได้อีก
-                    </>
-                  )}
+                </p>
+              )}
+
+              {/* 🔴 **คำเตือนของค้างต้องไม่ผูกกับธง `impossible`** (แก้ 15 ก.ย. 2569)
+                  เดิมวางไว้ในกล่องแดง ⇒ พอถอด `impossible` ของคีย์ `files` ออก
+                  (เพราะ ZORT มีเส้นอ่านไฟล์แนบจริง) **คำเตือนเรื่องสลิป 376 ใบหายไปด้วยเงียบ ๆ**
+                  ⇒ "ทำได้แล้ว" กับ "ยังต้องเซฟด้วยมือ" เป็นคนละคำถาม ห้ามผูกกัน
+                     ของที่ยังต่อท่อไม่เสร็จก็ยังต้องเซฟมือก่อนปิดบัญชีอยู่ดี
+                  ⚠️ นี่คือบั๊กตระกูลเดียวกับที่ใบนี้เกิดมาแก้ — และผมเพิ่งสร้างมันเองเมื่อกี้ */}
+              {info.exportByHand && (
+                <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
+                  📤 <b>มีของค้างอยู่ใน ZORT: {info.exportByHand}</b>
+                  {' '}⇒ ต้อง <b>กด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> ทำหลังปิดไม่ได้อีก
                 </p>
               )}
               {info.awaitingDecision && (
