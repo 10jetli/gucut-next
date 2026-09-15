@@ -56,6 +56,24 @@ const GRAINS: { id: Grain; label: string }[] = [
   { id: 'year', label: 'ปี' },
 ]
 
+/* 🗓️ วันของร้าน (UTC+7) — ตัวช่วยชุดเดียวกับ isoAgo/todayIso
+   ⚠️ ทั้งสามตัวต้องบวก 7 เหมือนกันหมด ไม่งั้นต้นช่วงกับปลายช่วงคิดคนละเขตเวลา (เคยพลาดมาแล้ว) */
+function dayAgoIso(days: number) {
+  const t = new Date(Date.now() + 7 * 3600e3)
+  t.setDate(t.getDate() - days)
+  return t.toISOString().slice(0, 10)
+}
+/** วันที่ 1 ของเดือนย้อนหลัง N เดือน (0 = เดือนนี้) */
+function monthStartIso(backMonths: number) {
+  const t = new Date(Date.now() + 7 * 3600e3)
+  return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - backMonths, 1)).toISOString().slice(0, 10)
+}
+/** วันสุดท้ายของเดือนย้อนหลัง N เดือน */
+function monthEndIso(backMonths: number) {
+  const t = new Date(Date.now() + 7 * 3600e3)
+  return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - backMonths + 1, 0)).toISOString().slice(0, 10)
+}
+
 function isoAgo(months: number) {
   // ⚠️ ต้องบวก 7 เหมือน todayIso ไม่งั้นต้นช่วงกับปลายช่วงคิดคนละเขตเวลา
   const t = new Date(Date.now() + 7 * 3600e3)
@@ -284,7 +302,36 @@ export default function BuyReportPage() {
             <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
               className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
-          <BtnGhost onClick={() => { setFrom(isoAgo(3)); setTo(todayIso()) }}>ย้อนหลัง 3 เดือน</BtnGhost>
+          {/* 🗓️ ช่วงสำเร็จรูปให้ครบตามที่ ZORT มี (กดดูจอ ZORT เอง 16 ก.ย. 2569:
+                 1/3/6 เดือน · 1 ปี · วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว)
+                 ⚠️ ทุกปุ่มตั้งทั้ง `from` และ `to` เอง ⇒ ไม่มีปุ่มไหนที่กดแล้วได้ช่วงครึ่ง ๆ */}
+          <div className="flex flex-wrap items-center gap-1.5">
+            {([
+              ['วันนี้', () => [todayIso(), todayIso()]],
+              ['เมื่อวานนี้', () => [dayAgoIso(1), dayAgoIso(1)]],
+              ['เดือนนี้', () => [monthStartIso(0), todayIso()]],
+              ['เดือนที่แล้ว', () => [monthStartIso(1), monthEndIso(1)]],
+              ['ย้อนหลัง 1 เดือน', () => [isoAgo(1), todayIso()]],
+              ['ย้อนหลัง 3 เดือน', () => [isoAgo(3), todayIso()]],
+              ['ย้อนหลัง 6 เดือน', () => [isoAgo(6), todayIso()]],
+              ['ย้อนหลัง 1 ปี', () => [isoAgo(12), todayIso()]],
+            ] as [string, () => [string, string]][]).map(([label, range]) => {
+              const [f, t] = range()
+              const on = from === f && to === t
+              return (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => { setFrom(f); setTo(t) }}
+                  className={`text-[12px] rounded-full px-2.5 py-1 border ${
+                    on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                >
+                  {label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       )}
 
