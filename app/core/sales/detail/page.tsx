@@ -12,7 +12,7 @@
 // ⚠️ **ช่องที่คลังเงาไม่ได้เก็บ ต้องเขียนว่า "ไม่ได้เก็บไว้" ห้ามเว้นว่างเฉย ๆ**
 //    เว้นว่าง = คนอ่านนึกว่าลูกค้าไม่ได้กรอก ซึ่งคนละเรื่องกับเราไม่ได้เก็บ (เจตนาเรื่องความเป็นส่วนตัว)
 import { Suspense, useCallback, useEffect, useState } from 'react'
-import { PAY_STATUS, zortWord } from '@/lib/zort-words'
+import { SALE_DETAIL_PAY_STATUS, SALE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
@@ -69,8 +69,14 @@ const VAT_RATE = 0.07
  *     และคำที่มีก็ผิดฝา: `Partial`/`Unpaid` ไม่ใช่ค่าที่ท่อส่งเลย · `ยังไม่ชำระ` ไม่ใช่คำของ ZORT
  *  📌 บทเรียน: กวาดรอบแรกผมหาจาก `STATUS_TH` (ชื่อที่ใช้ซ้ำ 5 ไฟล์) จึงไม่เจอไฟล์ที่ตั้งชื่อ `PAY_TH`
  *     ⇒ **กวาดคลาสนี้ต้องหาที่ "รูปแบบ" (`MAP[x] ?? x`) ไม่ใช่ที่ "ชื่อตัวแปร"** */
+/* 🔴 **จอนี้ต้องใช้ชุดคำของ "จอรายละเอียด" ไม่ใช่ของตาราง** (อ่านจอ ZORT จริง 16 ก.ย. 2569)
+   ตาราง `/Sell/list` เขียน "ยกเลิก" · จอรายละเอียด `/Sell/Details` เขียน **"ยกเลิกการชำระเงิน"**
+   (กติกาของ ZORT: จอรายละเอียด/ตัวกรองใช้คำเต็ม · ตารางใช้คำย่อ) */
 const payTh = (s?: string | null) =>
-  !s ? 'ยังไม่ได้เก็บช่องนี้' : zortWord(PAY_STATUS, s).text
+  !s ? 'ยังไม่ได้เก็บช่องนี้' : zortWord(SALE_DETAIL_PAY_STATUS, s).text
+/** สถานะการโอนสินค้าของใบ — ช่อง `status` ของท่อ (คนละเรื่องกับสถานะการจัดส่งของขนส่ง) */
+const transferTh = (s?: string | null) =>
+  !s ? 'ยังไม่ได้เก็บช่องนี้' : zortWord(SALE_DETAIL_TRANSFER_STATUS, s).text
 
 function Card({ title, icon, children, className = '' }: {
   title?: string; icon?: string; children: React.ReactNode; className?: string
@@ -285,18 +291,30 @@ function DetailInner() {
               value={payTh(order.pay_status)}
               tone={order.pay_status === 'Paid' ? 'green' : order.pay_status ? 'orange' : 'gray'}
             />
-            {/* ⚠️ ZORT โชว์ "รอโอนสินค้า / จัดส่งแล้ว" จากช่อง integrationStatus (ค่าดิบเช่น AWAITING_SHIPMENT)
-                **กระจกยังไม่เก็บช่องนี้** (ขอฝั่งท่อไว้แล้ว 4 ก.ย. 2569)
-                ⇒ เขียนบอกตรง ๆ ว่ายังไม่ได้เก็บ **ห้ามเอา status ของใบมาแทน** — คนละเรื่องกัน
-                   ใบที่ status=Success อาจยังไม่ได้ส่งของก็ได้ */}
+            {/* 🔴 **แก้ทั้งป้ายและค่า 16 ก.ย. 2569 — เดิมทั้งสองอย่างไม่ตรงกับ ZORT**
+                ① ป้าย: ไปกดอ่านจอ ZORT จริงแล้ว การ์ดใบกลางของเขาชื่อ **"สถานะการโอนสินค้า"**
+                   (ไม่ใช่ "สถานะการจัดส่ง") และค่าที่เห็นจริงคือ **"รอโอนสินค้า" · "ถูกยกเลิก"**
+                   ⇒ นี่คือช่อง `status` ของใบ **ซึ่งท่อส่งมาให้อยู่แล้ว** ⇒ โชว์ได้เลย
+                ② เดิมการ์ดนี้เขียน "ยังไม่ได้เก็บช่องนี้" ตายตัว ทั้งที่
+                   · ของที่ ZORT โชว์ตรงนี้ = สถานะการโอน ซึ่งเรามี
+                   · และสถานะการจัดส่งของขนส่ง (`shipStatus`) **กระจกเก็บแล้ว** — เห็นในเส้น `list=orders`
+                     (ยิงตรวจ 16 ก.ย. 2569: `shipStatus: "รอยืนยัน"` · `shipStatusGroup` · `shipStatusKnown`)
+                     แต่ **เส้นรายใบ `?order=` ยังไม่ส่งมา** ⇒ ขอฝั่งท่อไว้แล้ว
+                ⇒ คำเดิม "ยังไม่ได้เก็บช่องนี้" เป็นเท็จสองชั้น (ทั้งของที่ ZORT โชว์ และของที่เรามี) */}
             <StatusCard
-              icon="📦" label="สถานะการจัดส่ง"
-              value="ยังไม่ได้เก็บช่องนี้"
-              tone="gray"
+              icon="📦" label="สถานะการโอนสินค้า"
+              value={transferTh(order.status)}
+              tone={order.status === 'Success' ? 'green' : order.status ? 'orange' : 'gray'}
             />
             <StatusCard
               icon="🚚" label="การจัดส่งสินค้า"
-              value={[order.ship_channel || order.ship_name || 'ไม่ระบุขนส่ง',
+              /* 🔴 **ห้าม fallback ไป `ship_name`** — ช่องนั้นคือ **ชื่อผู้รับ** ไม่ใช่ชื่อขนส่ง
+                 (พิสูจน์ 16 ก.ย. 2569: ยิง `list=orders` 8 ใบ — `ship_channel` ว่างทั้ง 8
+                  และ `ship_name` ตรงกับชื่อลูกค้า · จอนี้บรรทัดล่างก็ใช้ ship_name เป็น "ชื่อผู้รับ")
+                 ⇒ เดิมการ์ด "การจัดส่งสินค้า" โชว์ **ชื่อคน** ในช่องที่ควรเป็นชื่อขนส่ง
+                    ZORT โชว์ "Flash Express(COD)" ⇒ ของเราต้องขึ้นชื่อขนส่งหรือบอกว่ายังไม่ระบุ
+                 ⚠️ และเอาชื่อลูกค้าไปวางในช่องขนส่ง = ข้อมูลส่วนตัวไปโผล่ผิดที่ด้วย */
+              value={[order.ship_channel || 'ยังไม่ระบุขนส่ง',
                 (order.is_cod === 1 || order.is_cod === true) ? '(COD)' : ''].filter(Boolean).join(' ')}
             />
           </div>

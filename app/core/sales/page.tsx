@@ -475,7 +475,9 @@ export default function CoreSalesPage() {
                   r.number, r.order_date ?? null, r.customer ?? null, r.channel ?? null, r.source ?? null,
                   typeof r.amount === 'number' ? r.amount : null,
                   r.status ?? null, r.pay_status ?? null,
-                  r.ship_channel ?? r.ship_name ?? null, r.tracking_no ?? null, r.ship_date ?? null,
+                  /* 🔴 **ห้ามใส่ `ship_name` ลงคอลัมน์ "ขนส่ง"** — ช่องนั้นคือชื่อผู้รับ (พิสูจน์ 16 ก.ย. 2569)
+                     ไฟล์ที่ส่งออกไปจะมีชื่อลูกค้าอยู่ในคอลัมน์ขนส่ง ⇒ ทั้งผิดความหมายและเป็นข้อมูลส่วนตัวผิดที่ */
+                  r.ship_channel ?? null, r.tracking_no ?? null, r.ship_date ?? null,
                   /* 🔴 is_cod เป็น 0/1 หรือ boolean · **ไม่ส่งมา = ไม่รู้ ⇒ เว้นว่าง ห้ามเขียน "ไม่ใช่"** */
                   r.is_cod === undefined || r.is_cod === null ? null : (r.is_cod ? 'ใช่' : 'ไม่ใช่'),
                 ],
@@ -818,7 +820,8 @@ export default function CoreSalesPage() {
                     <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>
                     {/* ⚠️ ไม่มีข้อมูลให้ขีด ห้ามเว้นว่าง — ช่องว่างอ่านได้ว่า "ไม่มีขนส่ง" */}
                     <td className={`${TD} max-w-[150px] truncate`} title={r.tracking_no || ''}>
-                      {r.ship_channel || r.ship_name || <span className="text-gray-300">—</span>}
+                      {/* 🔴 ไม่ fallback ไป ship_name (ชื่อผู้รับ) — ดูเหตุผลในไฟล์ส่งออกข้างบน */}
+                      {r.ship_channel || <span className="text-gray-300">—</span>}
                     </td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>
                       {r.ship_date ? thaiDate(r.ship_date) : <span className="text-gray-300">—</span>}
