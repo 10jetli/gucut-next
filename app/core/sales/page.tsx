@@ -20,6 +20,8 @@ import {
 } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
+import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
+import { storeLabel } from '@/components/zort/StorePicker'
 import ExportButton from '@/components/zort/ExportButton'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
@@ -148,6 +150,10 @@ function ageDays(day?: string): number | null {
 }
 
 const PAGE = 50
+/** 💾 กุญแจของที่จำไว้ในเครื่องผู้ใช้ · ขึ้นต้นด้วยชื่อจอเสมอ กันชนกับจออื่น */
+const MEMO_KEY = 'gucut:core-sales:filter'
+const DEFAULT_DAYS = 90
+
 const RANGES = [
   { days: 7, label: 'ย้อนหลัง 7 วัน' },
   { days: 30, label: 'ย้อนหลัง 1 เดือน' },
@@ -157,7 +163,7 @@ const RANGES = [
 
 export default function CoreSalesPage() {
   const router = useRouter()
-  const [days, setDays] = useState(90)
+  const [days, setDays] = useState(DEFAULT_DAYS)
   /* 🔴 **ตัวกรองร้าน — ต้องมีคู่กับตัวกรองช่องทางเสมอ** (เพิ่ม 4 ก.ย. 2569)
      ชื่อช่องทางซ้ำกันข้ามร้านจริง: TIKTOK มีทั้งใน z1 (753 ใบ ยังขายอยู่)
      และ z2 (58 ใบ เลิกขาย 22 ก.พ. 69) ⇒ กรองแค่ช่องทางแล้วอ่านวันล่าสุด
@@ -178,6 +184,13 @@ export default function CoreSalesPage() {
   const [advOpen, setAdvOpen] = useState(false)
   const [advFrom, setAdvFrom] = useState('')
   const [advTo, setAdvTo] = useState('')
+  /* 💾 **จำตัวกรองไว้** — ลอกติ๊ก `remember_filter` ของ ZORT (แผง "ตัวกรอง" ใน /Sell/list)
+     🔴 ของที่จำไว้ถูกใส่กลับให้เอง ⇒ **ต้องประกาศทุกครั้งที่ใช้** ไม่งั้นคนเห็นรายการน้อยกว่าจริง
+        แล้วสรุปยอดผิดทั้งวันโดยไม่มีอะไรบอกว่ากำลังกรองอยู่
+     🔑 **ไม่จำคำค้นหา** — คำที่ค้างจากเมื่อวานคือของที่หลอกที่สุด (ตรรกะ+เทสอยู่ที่ lib/remembered-filter.ts) */
+  const [remember, setRemember] = useState(false)
+  /** รายการที่ถูกใส่กลับให้รอบนี้ · ว่าง = ไม่ได้ใช้ของที่จำไว้ */
+  const [restored, setRestored] = useState<string[]>([])
   const [offset, setOffset] = useState(0)
 
   const [data, setData] = useState<ListResp | null>(null)
@@ -245,7 +258,35 @@ export default function CoreSalesPage() {
     }
   }, [days, channel, status, q, store, advFrom, advTo])
 
-  useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  /* 💾 เปิดจอมา: ถ้ามีของที่จำไว้ ให้ใส่กลับ **แล้วประกาศ** · ไม่มีก็โหลดตามปกติ
+     ⚠️ อ่าน localStorage ใน effect เท่านั้น (อ่านตอนวาดครั้งแรก = จอฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน) */
+  useEffect(() => {
+    const memo = loadFilter(MEMO_KEY)
+    if (!memo) { load(0); return }
+    setRemember(true)
+    setRestored(describeFilter(memo, { days: DEFAULT_DAYS }, {
+      /* ใช้คำจากเจ้าของคำ ไม่เขียนใหม่ที่นี่ */
+      store: (v) => storeLabel(v === 'z2' ? 'z2' : 'z1'),
+      status: (v) => statusTh(v),
+    }))
+    if (typeof memo.days === 'number') setDays(memo.days)
+    if (memo.store !== undefined) setStore(memo.store)
+    if (memo.channel !== undefined) setChannel(memo.channel)
+    if (memo.status !== undefined) setStatus(memo.status)
+    if (memo.from !== undefined) setAdvFrom(memo.from)
+    if (memo.to !== undefined) setAdvTo(memo.to)
+    if (memo.from || memo.to) setAdvOpen(true)
+    load(0, {
+      days: memo.days, store: memo.store, channel: memo.channel,
+      status: memo.status, from: memo.from, to: memo.to,
+    })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+  /* จำทุกครั้งที่ตัวกรองเปลี่ยน — เฉพาะตอนติ๊กไว้เท่านั้น */
+  useEffect(() => {
+    if (!remember) return
+    saveFilter(MEMO_KEY, { days, store, channel, status, from: advFrom, to: advTo })
+  }, [remember, days, store, channel, status, advFrom, advTo])
 
   // ZORT กดแถวแล้วไป "หน้ารายละเอียดรายการขาย" เต็มหน้า ไม่ใช่กางในตาราง
   // ส่งลำดับใบ (i) กับตัวกรองเดิมไปด้วย เพื่อให้หน้านั้นมีลูกศรเลื่อนใบก่อน/ถัดไปได้
@@ -465,8 +506,50 @@ export default function CoreSalesPage() {
         canClear={!!advFrom || !!advTo}
         applyLabel="ค้นหาตามช่วงนี้"
         serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา"
-        extraNote={<>ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;</>}
+        extraNote={<>
+          ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;
+          {/* 💾 ติ๊กจำตัวกรอง — ลอกจาก ZORT (remember_filter) · ไฟเขียวจาก CEO 15 ก.ย. 2569 */}
+          <br />
+          <label className="inline-flex items-center gap-1.5 mt-1.5 cursor-pointer">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => {
+                const on = e.target.checked
+                setRemember(on)
+                if (on) saveFilter(MEMO_KEY, { days, store, channel, status, from: advFrom, to: advTo })
+                else { clearFilter(MEMO_KEY); setRestored([]) }
+              }}
+            />
+            <span>จำตัวกรองไว้ในเครื่องนี้</span>
+          </label>
+          {' '}<span className="text-gray-400">
+            — จำเฉพาะ<b>ตัวเลือก</b> (ช่วงวัน · ร้าน · ช่องทาง · สถานะ)
+            {' '}<b>ไม่จำคำค้นหา</b> เพราะคำที่ค้างจากคราวก่อนจะทำให้เห็นรายการน้อยกว่าจริง
+            {' '}· เก็บไว้ในเครื่องนี้เท่านั้น ไม่ได้ส่งขึ้นเซิร์ฟเวอร์
+          </span>
+        </>}
       />
+
+      {/* 🔴 **ใช้ของที่จำไว้ต้องประกาศ** — ไม่งั้นคนเปิดจอมาเห็นรายการน้อยกว่าจริงแล้วไม่รู้ว่าทำไม */}
+      {restored.length > 0 && (
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2 mb-3 leading-relaxed">
+          💾 <b>กำลังใช้ตัวกรองที่จำไว้จากครั้งก่อน</b> — {restored.join(' · ')}
+          {' · '}
+          <button
+            type="button"
+            onClick={() => {
+              clearFilter(MEMO_KEY); setRemember(false); setRestored([])
+              setDays(DEFAULT_DAYS); setStore(''); setChannel(''); setStatus('')
+              setAdvFrom(''); setAdvTo('')
+              load(0, { days: DEFAULT_DAYS, store: '', channel: '', status: '', from: '', to: '' })
+            }}
+            className="ml-2 underline text-amber-900 hover:text-amber-700"
+          >
+            ล้างตัวกรองที่จำไว้
+          </button>
+        </div>
+      )}
 
       {data && (
         <div className="text-[12.5px] text-gray-500 mb-3">
