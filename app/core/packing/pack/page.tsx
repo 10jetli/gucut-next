@@ -148,6 +148,18 @@ export default function PackWizardPage() {
                     title={r.id ? undefined : 'ใบนี้ท่อไม่ส่ง id มา — เปิดรายละเอียดไม่ได้'}
                     className="w-full text-left px-3 py-2.5 hover:bg-blue-50/50 flex items-center gap-3 disabled:opacity-40 disabled:cursor-not-allowed">
                     <span className="font-mono text-[12.5px] text-gray-900">{r.number || '—'}</span>
+                    {/* 🔴 **เลขที่ใบซ้ำกันข้ามร้านจริง — และจอนี้คือที่ที่แพงที่สุดถ้าเลือกผิด**
+                        พิสูจน์แล้ว 15 ก.ย. 2569 (ใบ t_mu233vh6): ค้น `SO-202505001` ด้วยเส้นเดียวกับจอนี้
+                        (`list=orders&q=`) ได้ **2 แถว เลขเดียวกันเป๊ะ** — z1 ยอด 236 (1 พ.ค.) · z2 ยอด 9,000 (26 พ.ค.)
+                        ⇒ สองแถวนั้นต่างกันแค่ยอดกับวันที่ ซึ่งคนงานไม่ได้จำ · จอเขียนเองว่า "เดาผิด = แพ็คผิดกล่อง"
+                        ⇒ ป้ายสาขาคือตัวชี้ขาด ไม่ใช่ของประดับ
+                        ⚠️ สามสถานะ: ท่อไม่ส่ง source (หรือค่าอื่น) ⇒ **ไม่ติดป้าย** ห้ามเดาว่าเป็นสาขา 1 */}
+                    {(r.source === 'z1' || r.source === 'z2') && (
+                      <span className="shrink-0 text-[10.5px] text-gray-600 border border-gray-300
+                        bg-gray-50 rounded px-1 py-[1px]">
+                        {r.source === 'z1' ? 'สาขา 1' : 'สาขา 2'}
+                      </span>
+                    )}
                     <ChannelTag name={r.channel || ''} />
                     <span className="text-[12px] text-gray-600 flex-1 truncate">{r.customer || ''}</span>
                     <span className="text-[11.5px] text-gray-400">{thaiDate(r.order_date)}</span>
@@ -163,6 +175,13 @@ export default function PackWizardPage() {
         <div className="bg-white border border-gray-200 rounded-md p-5">
           <div className="flex items-center gap-3 flex-wrap mb-1">
             <span className="font-mono text-[15px] font-semibold text-gray-900">{order.number || '—'}</span>
+            {/* ใบที่เลือกมาแพ็คแล้ว — ต้องบอกสาขาด้วย เพราะเลขเดียวกันมีได้สองร้าน
+                (ถ้าเลือกผิดจากหน้าค้น หน้านี้เป็นที่สุดท้ายที่ยังทันเห็น) */}
+            {(order.source === 'z1' || order.source === 'z2') && (
+              <span className="text-[11px] text-gray-600 border border-gray-300 bg-gray-50 rounded px-1.5 py-[1px]">
+                {order.source === 'z1' ? 'สาขา 1' : 'สาขา 2'}
+              </span>
+            )}
             <ChannelTag name={order.channel || ''} />
             {typeof order.status === 'string' && <Pill tone="gray">{order.status}</Pill>}
           </div>
