@@ -16,6 +16,7 @@ import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate,
 } from '@/components/zort'
+import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
@@ -147,10 +148,7 @@ export default function QuotationsPage() {
                 ],
               }}
             />
-            <Link href="/core/import?kind=quotation"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              นำเข้าไฟล์ (Excel)
-            </Link>
+            <ImportButton kind="quotation" />
             {/* ✅ ต่อของจริงแล้ว 6 ก.ย. 2569 — เจ้าของร้านอนุมัติ **เฉพาะใบเสนอราคา**
                 (ไม่รวมเพิ่มสินค้า/ใบสั่งซื้อ) · จอปลายทางบังคับซ้อมก่อนส่งจริง */}
             <Link href="/core/quotations/new"

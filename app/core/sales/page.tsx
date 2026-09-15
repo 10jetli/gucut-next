@@ -17,6 +17,7 @@ import {
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar,
 } from '@/components/zort'
+import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import ExportButton from '@/components/zort/ExportButton'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
@@ -383,10 +384,7 @@ export default function CoreSalesPage() {
             {/* ⚠️ สามปุ่มนี้ลอกจาก ZORT — "สร้างอย่างง่าย" ของเขาคือเปิดบิลเร็ว
                 ซึ่งตรงกับจอขายหน้าร้านของเราพอดี จึงพาไปที่นั่นจริง ๆ
                 ส่วนอีกสองปุ่มพาไปหน้าที่บอกว่ายังไม่ได้ทำ — เหมือนในผัง แต่กดแล้วไม่โกหก */}
-            <Link href="/core/import?kind=sale"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              นำเข้าไฟล์ (Excel)
-            </Link>
+            <ImportButton kind="sale" />
             {/* ชี้หน้าจริงตั้งแต่ 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิดอยู่ แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/sales/new"

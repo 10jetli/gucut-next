@@ -193,10 +193,11 @@ export default function CoreTransfersPage() {
                 ],
               }}
             />
-            <Link href="/core/import?kind=product"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              นำเข้าไฟล์ (Excel)
-            </Link>
+            {/* 🔴 **ถอดปุ่ม "นำเข้าไฟล์ (Excel)" ออก** (15 ก.ย. 2569)
+                เดิมชี้ไป `?kind=product` ทั้งที่จอนี้แสดงใบโอนสินค้า ไม่ใช่สินค้า
+                ⇒ คนกดเพราะอยากนำเข้าใบโอนสินค้า แต่ไปโผล่หน้านำเข้า**สินค้า** ซึ่งคอลัมน์คนละชุด
+                ⇒ ปุ่มที่กดแล้วเกิดอะไรขึ้นจริงแต่ไม่ใช่สิ่งที่คนตั้งใจ **หลอกกว่าปุ่มที่กดแล้วเงียบ**
+                ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             {/* โอนสินค้าจริงร้านทำที่เครื่องมือเดิมอยู่แล้ว ⇒ ปุ่มนี้พาไปของจริง ไม่ใช่หน้า soon */}
             <Link href="/catalog/index.html#trf"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"

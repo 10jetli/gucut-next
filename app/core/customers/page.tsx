@@ -32,6 +32,7 @@ import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, BtnGhost, LinkText, EmptyState, RowMenu,
 } from '@/components/zort'
+import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 
 interface Contact {
@@ -147,10 +148,7 @@ export default function CoreContactsPage() {
             <BtnGhost onClick={() => load(offset)} disabled={loading}>
               {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
             </BtnGhost>
-            <Link href="/core/import?kind=contact"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              นำเข้าไฟล์ (Excel)
-            </Link>
+            <ImportButton kind="contact" />
             {/* ชี้หน้าจริง 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิด แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/customers/new"

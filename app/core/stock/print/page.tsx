@@ -85,8 +85,15 @@ export default function PrintLabelsPage() {
   const [startAt, setStartAt] = useState(1)
   const [showPrice, setShowPrice] = useState(false)
 
+  /* 🔴 **แยกด้วยบรรทัดใหม่หรือคอมมาเท่านั้น ห้ามแยกด้วยช่องว่าง** (แก้ 15 ก.ย. 2569)
+     📏 ของจริงในคลังมี **34 รหัสที่มีช่องว่างอยู่ในตัวเอง** เช่น `Bar NW 24-7800` · `00169 set ลูกสูบ`
+        (ยิงตรวจครบ 2,672 รหัส · ไม่มีรหัสไหนมีคอมมาเลย ⇒ คอมมาปลอดภัย)
+     ⇒ แยกด้วยช่องว่าง = รหัสพวกนี้ถูกหั่นเป็นเสี่ยง แล้ว **พิมพ์ฉลากของรหัสที่ไม่มีอยู่จริง**
+        ("Bar" · "NW" · "24-7800") ⇒ ฉลากผิดไปติดของบนชั้น ซึ่งแก้ทีหลังแทบไม่ได้
+     ⚠️ เดิมพลาดสองที่คนละเวลา: ตอนอ่าน `?sku=` และตอนนับจากช่องพิมพ์เอง
+        ⇒ **ใช้กติกาเดียวกันทั้งสองทางเข้า** ไม่งั้นแก้ที่หนึ่งแล้วอีกที่ยังพัง (เจอแบบนี้มาทั้งสัปดาห์) */
   const skus = useMemo(
-    () => Array.from(new Set(raw.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean))),
+    () => Array.from(new Set(raw.split(/[\n,]+/).map((s) => s.trim()).filter(Boolean))),
     [raw],
   )
 
@@ -141,10 +148,23 @@ export default function PrintLabelsPage() {
     } finally { setLoading(false) }
   }, [])
 
-  /* มาจากปุ่ม "พิมพ์เอกสาร" ในจอรายละเอียดสินค้า ⇒ ?sku=<รหัส> แล้วโหลดให้เลย */
+  /* มาจากปุ่ม "พิมพ์เอกสาร" ⇒ ?sku=<รหัส,รหัส,…> แล้วโหลดให้เลย
+     🔴 **แยกด้วยคอมมาเท่านั้น ห้ามแยกด้วยช่องว่าง** (แก้ 15 ก.ย. 2569)
+        เดิมใช้ `/[\s,]+/` เหมือนช่องพิมพ์เอง ⇒ รหัสที่**มีช่องว่างอยู่ในตัวเอง**ถูกหั่นเป็นเสี่ยง
+        📏 ของจริงในคลังมี **34 รหัส** ที่มีช่องว่าง เช่น `Bar NW 24-7800` · `00169 set ลูกสูบ`
+           ⇒ ส่งไป 50 รหัส กลายเป็น 53 ชิ้น แล้ว **พิมพ์ฉลากของ "Bar" · "NW" · "24-7800"**
+              ซึ่งเป็นรหัสที่ไม่มีอยู่จริง ⇒ ฉลากผิดไปติดของจริงบนชั้น
+        ⚠️ ไม่มีรหัสไหนในคลังมีคอมมาเลยสักตัว (ยิงตรวจครบ 2,672 รหัส) ⇒ คอมมาปลอดภัย
+        ⚠️ ช่องพิมพ์เองยังแยกด้วยช่องว่างได้ตามเดิม เพราะคนวางรายการมาทีละบรรทัด
+           — คนละทางเข้ากัน คนละกติกาได้ */
   useEffect(() => {
     const s = qs.get('sku')
-    if (s) { setRaw(s); void load(s.split(/[\s,]+/).filter(Boolean)) }
+    if (s) {
+      const list = s.split(',').map((x) => x.trim()).filter(Boolean)
+      /* เก็บเป็นบรรทัดละรหัส — ตรงกับกติกาแยกของช่องพิมพ์เอง และคนอ่านออกว่ามีกี่รหัส */
+      setRaw(list.join('\n'))
+      void load(list)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -206,11 +226,11 @@ export default function PrintLabelsPage() {
 
         <div className="mt-4 bg-white border border-gray-200 rounded-md p-4">
           <label className="block">
-            <span className="block text-[11px] font-semibold text-gray-400 mb-1">รหัสสินค้า (คั่นด้วยเว้นวรรคหรือลูกน้ำ)</span>
+            <span className="block text-[11px] font-semibold text-gray-400 mb-1">รหัสสินค้า (บรรทัดละรหัส หรือคั่นด้วยลูกน้ำ)</span>
             <textarea
               className="w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400 h-20"
               value={raw} onChange={(e) => setRaw(e.target.value)}
-              placeholder="เช่น 00414 00747 NW-01"
+              placeholder={'ใส่บรรทัดละรหัส เช่น\n00414\n00747\nBar NW 24-7800'}
             />
           </label>
           <div className="flex flex-wrap items-end gap-3 mt-3">

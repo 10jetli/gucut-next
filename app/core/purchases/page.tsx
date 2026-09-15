@@ -22,6 +22,7 @@ import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine,
 } from '@/components/zort'
+import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
@@ -164,10 +165,7 @@ export default function CorePurchasesPage() {
               }}
             />
             {/* ปุ่มตามภาพ ZORT — พาไปหน้าที่บอกว่ายังไม่ได้ทำ ไม่ทำปุ่มหลอก */}
-            <Link href="/core/import?kind=po"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              นำเข้าไฟล์ (Excel)
-            </Link>
+            <ImportButton kind="po" />
             {/* 🔴 เคยชี้ไป /core/soon/buy-create ทั้งที่หน้าจริงมีตั้งแต่ 6 ก.ย. 2569 (แก้ 14 ก.ย.)
                 ⇒ คนกดปุ่ม "สร้าง" แล้วอ่านว่า "ยังไม่ได้ทำ" มา 8 วัน
                 ⚠️ ปุ่มส่งจริงในหน้านั้นยังปิดอยู่โดยตั้งใจ (เจ้าของร้านอนุมัติการเขียนจริงเฉพาะใบเสนอราคา)

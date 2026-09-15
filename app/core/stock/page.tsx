@@ -23,6 +23,7 @@ import { productMenuItems } from '@/lib/product-menu'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar,
 } from '@/components/zort'
+import ImportButton from '@/components/zort/ImportButton'
 import BlockedStock from '@/components/zort/BlockedStock'
 
 interface Row {
@@ -314,10 +315,18 @@ function CoreStockInner() {
                 จึงพาไปหน้าที่บอกตรง ๆ ว่ายังไม่ได้ทำ และตอนนี้ให้ไปทำที่ไหน
                 ✅ แก้ 14 ก.ย. 2569 (t_mu0tx2wj): "เพิ่มสินค้าใหม่" เดิมพาไปหน้า "ยังไม่ได้ทำ" ทั้งที่จอจริง /core/stock/new มีแล้ว
                    (บั๊กคลาสเดียวกับปุ่มสร้างรายการซื้อที่ลิงก์ผิดมา 8 วัน) · นำเข้า Excel ยังพาไปหน้า soon เพราะจอยังไม่มี */}
-            <Link href="/core/import?kind=product"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              นำเข้าไฟล์ (Excel)
-            </Link>
+            <ImportButton kind="product" />
+            {/* 🖨 พิมพ์ฉลากของ **รหัสที่แสดงอยู่บนหน้านี้** — ZORT มีปุ่มพิมพ์เอกสารในจอรายการ
+                🔴 **ต้องติดรหัสไปด้วย** (ฝั่งท่อกำชับ) ไม่งั้นไปถึงจอพิมพ์แล้วต้องพิมพ์รหัสใหม่เอง
+                   = ปุ่มที่กดแล้วเหมือนไม่เกิดอะไร
+                ⚠️ ส่งเฉพาะ **หน้านี้** ไม่ใช่ทั้งคลัง — ป้ายบนปุ่มจึงบอกจำนวนตรง ๆ
+                   ถ้าเขียนแค่ "พิมพ์ฉลาก" คนจะนึกว่าได้ทั้งคลัง 2,672 รหัส */}
+            {rows.length > 0 && (
+              <Link href={`/core/stock/print?sku=${encodeURIComponent(rows.map((r) => r.sku).join(','))}`}
+                className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                🖨 พิมพ์ฉลาก {rows.length} รหัสในหน้านี้
+              </Link>
+            )}
             <Link href="/core/stock/new"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
