@@ -50,11 +50,17 @@ export function thaiDayTime(d: Date): string {
 }
 
 export default function DataFreshness(
-  { freshness, everyMinutes = 30 }: {
+  { freshness, everyMinutes = 30, scheduleNote = 'นาทีที่ 13 และ 43' }: {
     freshness?: Freshness | null
     /** ตัวซิงก์วิ่งทุกกี่นาที — **เกณฑ์เตือนผูกกับค่านี้ ไม่ใช่ตัวเลขลอย ๆ**
      *  เปลี่ยนรอบซิงก์เมื่อไหร่ ต้องแก้ที่นี่ด้วย ไม่งั้นจอจะเตือนผิดจังหวะแบบเงียบ ๆ */
     everyMinutes?: number
+    /* 🔴 **ทำไมต้องมีช่องนี้** (15 ก.ย. 2569) — ข้อความ "นาทีที่ 13 และ 43" เป็นตารางของ
+       **ตัวซิงก์คลัง** (`netlify/functions/core-sync.mjs`) เท่านั้น
+       พอจอผู้ติดต่อมาใช้ตัวประกอบร่วมตัวนี้ (ซิงก์ทุกชั่วโมง คนละตัว คนละตาราง)
+       มันจะ **รับมรดกคำที่เป็นเท็จไปทันทีโดยไม่มีใครแก้** — โรคเดิมที่ `check-inherited` มีไว้จับ
+       ⇒ ใครใช้ตัวนี้กับตัวซิงก์อื่น ต้องส่งตารางของตัวเองมา · ค่าตั้งต้นคงของเดิมไว้ ผู้ใช้เก่าไม่กระทบ */
+    scheduleNote?: string
   },
 ) {
   const synced = parseUtc(freshness?.syncedAtUtc)
@@ -83,7 +89,7 @@ export default function DataFreshness(
     `ซิงก์ล่าสุด ${thaiDayTime(synced)} (เวลาไทย)`,
     changed ? `ข้อมูลเปลี่ยนล่าสุด ${thaiDayTime(changed)}` : '',
     rangeChanged ? `ในช่วงที่กรองอยู่ เปลี่ยนล่าสุด ${thaiDayTime(rangeChanged)}` : '',
-    `ตัวซิงก์วิ่งทุก ${everyMinutes} นาที (นาทีที่ 13 และ 43) · เตือนเมื่อเงียบเกิน ${graceMins} นาที`,
+    `ตัวซิงก์วิ่งทุก ${everyMinutes} นาที${scheduleNote ? ` (${scheduleNote})` : ''} · เตือนเมื่อเงียบเกิน ${graceMins} นาที`,
     'นับจากครั้งที่ไปดู ZORT ไม่ใช่ครั้งที่ข้อมูลเปลี่ยน — คืนที่ร้านเงียบ ข้อมูลไม่เปลี่ยนก็ไม่ได้แปลว่าซิงก์ตาย',
   ].filter(Boolean).join('\n')
 
