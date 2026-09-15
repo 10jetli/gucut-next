@@ -525,8 +525,16 @@ function CoreStockInner() {
                           "กดเข้าสินค้าไม่ได้เลย" · **สีฟ้าในตาราง = สัญญาว่ากดได้**
                           แก้โดยทำหน้าจริงขึ้นมา ไม่ใช่ถอดสีฟ้าออก (3 ก.ย. 2569) */}
                       <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
-                        {r.name || '—'}
+                        {r.name || <span className="text-gray-400">— ท่อไม่ส่งชื่อมา</span>}
                       </Link>
+                      {รหัสผิดรูป(r.sku) && (
+                        <span
+                          className="ml-1.5 text-[10.5px] font-semibold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1 py-0.5"
+                          title="รหัสนี้ไม่ใช่รหัสสินค้า — หน้าตาเป็นสตริงตัวเลือกของมาร์เก็ตเพลสต่อกัน (วัดเจอ 1 แถวจาก 2,672 เมื่อ 16 ก.ย. 2569) · จำนวนของแถวนี้ยังไม่ควรนับรวมคลัง และกดเข้าไปจะไม่มีข้อมูลสินค้า · แจ้งฝั่งท่อแล้ว"
+                        >
+                          รหัสผิดรูป
+                        </span>
+                      )}
                       {r.service && (
                         // ติดป้ายเฉพาะตอนแสดงบริการด้วย จะได้รู้ทันทีว่าทำไมแถวนี้ติดลบ
                         <span className="ml-1.5 text-[10.5px] font-semibold text-gray-600 bg-gray-100 rounded px-1 py-0.5">
@@ -622,6 +630,16 @@ function CoreStockInner() {
       )}
     </div>
   )
+}
+
+/* 🔴 **แถวที่รหัสไม่ใช่รหัสสินค้า** — ยิงนับทั้งทะเบียน 16 ก.ย. 2569 เจอ 1 แถวจาก 2,672:
+      รหัสเป็นสตริงตัวเลือกของมาร์เก็ตเพลสต่อกัน (`400014402:-1#General;191288010:-1#White…`)
+      ไม่มีชื่อสินค้า · ไม่มี available/buy/active · แต่มี **qty 100** และราคาติดมา
+   ⇒ ถ้าปล่อยให้ดูเหมือนสินค้าปกติ คนจะนับของ 100 ชิ้นนี้รวมเข้าคลัง และกดเข้าไปเจอจอเปล่า
+   ⇒ ติดป้ายบอกตรง ๆ ว่าแถวนี้เชื่อไม่ได้ (แจ้งฝั่งท่อแล้ว — ต้นทางอยู่ที่การซิงก์มาร์เก็ตเพลส) */
+function รหัสผิดรูป(sku?: string | null): boolean {
+  const s = String(sku ?? '')
+  return s.includes(';') || s.includes('#') || s.length > 40
 }
 
 export default function CoreStockPage() {
