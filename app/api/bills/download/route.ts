@@ -9,11 +9,24 @@ export const maxDuration = 60
 
 const sanitize = (s: string) => s.replace(/[\\/:*?"<>|]/g, '_').slice(0, 80)
 
-// GET /api/bills/download?month=2026-06 -> ZIP
+// GET /api/bills/download?month=2026-06            -> ZIP รวมทุกเจ้า (หน้า /bills)
+// GET /api/bills/download?month=2026-06&vendor=tiktok -> ZIP เฉพาะเจ้าเดียว (ปุ่มในการ์ดเดือน)
+//
+// 🔴 เพิ่ม vendor 15 ก.ย. 2569 — ท่านประธานสั่ง "เพิ่มปุ่มโหลดทั้งหมด"
+//    TikTok เดือนหนึ่งมี 8-10 ใบ ต้องกดโหลดทีละใบ
+//    ⚠️ ทำเป็น ZIP ก้อนเดียว **ห้ามให้จอยิงโหลดทีละใบรัว ๆ**
+//       เบราว์เซอร์บล็อกการดาวน์โหลดอัตโนมัติหลายไฟล์ติดกัน (ยิงจริงแล้วโดนบล็อกมาแล้ว)
+//       และยิงรัวยังกินโควตา Gmail ต่อนาทีจนชนเพดาน ซึ่งเป็นบั๊กที่เพิ่งแก้ไปวันเดียวกัน
 export async function GET(req: NextRequest) {
   const month = req.nextUrl.searchParams.get('month')
+  const vendorId = req.nextUrl.searchParams.get('vendor')
   if (!month || !/^\d{4}-\d{2}$/.test(month)) {
     return NextResponse.json({ error: 'ต้องระบุ ?month=YYYY-MM' }, { status: 400 })
+  }
+  // ระบุเจ้าที่ไม่รู้จัก ⇒ ตีกลับ **ห้ามเงียบแล้วส่ง ZIP รวมทุกเจ้าไปแทน**
+  // (คนกดขอของอย่างหนึ่ง แล้วได้อีกอย่างโดยไม่รู้ตัว = แย่กว่าขึ้น error)
+  if (vendorId && !VENDORS.some(v => v.id === vendorId)) {
+    return NextResponse.json({ error: `ไม่รู้จักผู้ให้บริการ: ${vendorId}` }, { status: 400 })
   }
 
   try {
@@ -27,7 +40,8 @@ export async function GET(req: NextRequest) {
     const rows: string[][] = [['ผู้ให้บริการ', 'วันที่บิล', 'หัวข้ออีเมล', 'ยอดที่พบ', 'ไฟล์แนบ']]
     const missing: string[] = []
 
-    for (const vendor of VENDORS) {
+    const vendorList = vendorId ? VENDORS.filter(v => v.id === vendorId) : VENDORS
+    for (const vendor of vendorList) {
       let bills
       try {
         bills = await searchVendorBills(token, vendor, after, before)
@@ -112,7 +126,8 @@ export async function GET(req: NextRequest) {
     return new NextResponse(buf as any, {
       headers: {
         'Content-Type': 'application/zip',
-        'Content-Disposition': `attachment; filename="Ads ${month}.zip"`,
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent(
+          (vendorId ? `${VENDORS.find(v => v.id === vendorId)!.name} ` : 'Ads ') + month + '.zip')}`,
       },
     })
   } catch (e: any) {

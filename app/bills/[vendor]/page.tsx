@@ -22,6 +22,34 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
   const info = VENDOR_INFO[params.vendor] ?? { name: params.vendor, emoji: '🧾' }
   const [data, setData] = useState<{ months: Record<string, BillFile[]>; staleReason?: string; lastScan?: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
+  const [zipping, setZipping] = useState<string | null>(null)   // เดือนที่กำลังรวมไฟล์อยู่
+
+  /* 🔴 15 ก.ย. 2569 — ท่านประธานสั่งเพิ่มปุ่ม "โหลดทั้งหมด" ต่อเดือน (TikTok เดือนละ 8-10 ใบ)
+     ⚠️ ต้องมีสถานะ "กำลังรวมไฟล์" ให้เห็น — ฝั่งเซิร์ฟเวอร์ต้องดึงไฟล์จาก Gmail ทีละใบ
+        ใช้เวลาหลายสิบวินาที ถ้าไม่บอกอะไรเลย คนจะนึกว่าปุ่มเสียแล้วกดซ้ำ ๆ จนยิงซ้อนกัน
+     ⚠️ ห้ามยิงโหลดทีละใบรัว ๆ — เบราว์เซอร์บล็อก และกินโควตา Gmail จนชนเพดาน */
+  async function โหลดทั้งเดือน(m: string) {
+    if (zipping) return                       // กันกดซ้อน
+    setZipping(m)
+    try {
+      const r = await fetch(`/api/bills/download?month=${m}&vendor=${params.vendor}`)
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}))
+        throw new Error(j.error || `ดึงไม่สำเร็จ (${r.status})`)
+      }
+      const blob = await r.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `${info.name} ${m}.zip`
+      document.body.appendChild(a); a.click(); a.remove()
+      setTimeout(() => URL.revokeObjectURL(url), 10000)
+    } catch (e: any) {
+      setErr(`โหลดทั้งเดือน ${m} ไม่สำเร็จ: ${String(e?.message ?? e)}`)
+    } finally {
+      setZipping(null)
+    }
+  }
 
   useEffect(() => {
     fetch(`/api/bills/vendor?vendor=${params.vendor}`)
@@ -79,12 +107,32 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
         const [y, mo] = m.split('-').map(Number)
         return (
           <Card key={m} className="mb-3">
-            <div className="text-[14px] font-bold text-gray-800 mb-1">
-              📅 <span className="text-red-600">{mo} ({EN_MONTHS[mo - 1]}) {y}</span>
-              <span className="mx-1 text-gray-300">·</span>
-              {TH_MONTHS[mo - 1]} {y + 543}
-              <span className="ml-2 text-[11px] font-normal text-gray-400">{data!.months[m].length} ใบ</span>
+            <div className="flex items-start justify-between gap-2 mb-1">
+              <div className="text-[14px] font-bold text-gray-800">
+                📅 <span className="text-red-600">{mo} ({EN_MONTHS[mo - 1]}) {y}</span>
+                <span className="mx-1 text-gray-300">·</span>
+                {TH_MONTHS[mo - 1]} {y + 543}
+                <span className="ml-2 text-[11px] font-normal text-gray-400">{data!.months[m].length} ใบ</span>
+              </div>
+              <button
+                onClick={() => โหลดทั้งเดือน(m)}
+                disabled={!!zipping}
+                title={`รวมบิลทั้ง ${data!.months[m].length} ใบของเดือนนี้เป็นไฟล์ ZIP ไฟล์เดียว`}
+                className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium border transition ${
+                  zipping === m
+                    ? 'bg-amber-50 border-amber-200 text-amber-700'
+                    : zipping
+                      ? 'bg-gray-50 border-gray-200 text-gray-300'
+                      : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
+                }`}>
+                {zipping === m ? '⏳ กำลังรวมไฟล์…' : '⬇️ โหลดทั้งเดือน'}
+              </button>
             </div>
+            {zipping === m && (
+              <div className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mb-1">
+                กำลังดึงบิลทีละใบจากอีเมล อาจใช้เวลา 20–40 วินาที — ยังไม่ต้องกดซ้ำ
+              </div>
+            )}
             {data!.months[m].map((f, i) => (
               <div key={i} className="flex items-center justify-between border-t border-gray-100 py-2 gap-2">
                 <div className="text-[12px] text-gray-700 break-all flex-1">
