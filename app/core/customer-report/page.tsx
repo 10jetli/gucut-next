@@ -42,9 +42,18 @@ const NO_NAME = 'ไม่ระบุชื่อ'
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
 
+/* ช่วงเวลา — เรียงตามผัง `dateperiod` ของ ZORT (กดอ่านจากจอจริง 16 ก.ย. 2569)
+   🔴 **ZORT มี 10 ค่า เราใส่ได้ 4** เพราะท่อ `bycustomer` รับแต่ `days` (นับถอยจากวันนี้)
+      ยิงตรวจแล้ว: ส่ง `from`/`to` ไป ท่อ **เมินเงียบ** แล้วตอบช่วงของ days=90 กลับมาเหมือนเดิม
+      ⇒ ถ้าใส่ "เดือนที่แล้ว / เดือนนี้ / ปีนี้ / วันนี้ / กำหนดเอง" ตอนนี้ จอจะโชว์ช่วงหนึ่ง
+        แต่เลขเป็นของอีกช่วง — โกหกแบบที่หาไม่เจอ ⇒ **ไม่ใส่จนกว่าท่อจะรับ from/to**
+   ⚠️ และคำว่า "ย้อนหลัง 3 เดือน" ของสองระบบ **ไม่ใช่ช่วงเดียวกัน**
+      ZORT = วันที่ 1 ของเดือนที่ถอยไป 3 เดือน ถึงวันนี้ (อ่านจากจอ: 1/6/2569 - 16/9/2569)
+      ของเรา = 90 วันนับถอยหลังจากวันนี้ ⇒ จอต้องโชว์ช่วงจริงที่ท่อใช้เสมอ (ดูป้ายใต้ตัวเลือก) */
 const RANGES = [
   { days: 30, label: 'ย้อนหลัง 1 เดือน' },
   { days: 90, label: 'ย้อนหลัง 3 เดือน' },
+  { days: 180, label: 'ย้อนหลัง 6 เดือน' },
   { days: 365, label: 'ย้อนหลัง 1 ปี' },
 ]
 
@@ -96,7 +105,7 @@ function TrendChart({ rows }: { rows: MonthlyRow[] }) {
 export default function CoreCustomersPage() {
   const [days, setDays] = useState(90)
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState<'all' | 'repeat' | 'once'>('all')
+  const [tab, setTab] = useState<'all' | 'a' | 'b'>('all')
   const [page, setPage] = useState(0)
 
   const [people, setPeople] = useState<Person[]>([])
@@ -112,6 +121,14 @@ export default function CoreCustomersPage() {
   /** วันแรกสุดที่กระจกมีข้อมูล — '' = ท่อยังไม่ส่ง (ก่อน deploy รอบ 21:00) */
   const [historyFrom, setHistoryFrom] = useState('')
   const [monthly, setMonthly] = useState<MonthlyRow[]>([])
+  /** ช่วงจริงที่ท่อใช้ (ท่อ echo กลับมา) — **ห้ามคำนวณเองในจอ** เพราะเราไม่ได้เป็นคนตัดวัน
+   *  ⚠️ เอาไว้ให้คนเทียบกับ ZORT ได้ว่าคำว่า "3 เดือน" ของสองฝั่งไม่ใช่ช่วงเดียวกัน */
+  const [range, setRange] = useState<{ from: string; to: string }>({ from: '', to: '' })
+  /** ยอดทั้งช่วงที่ท่อนับให้ (ไม่ได้ถูกตัดที่ 500 ราย) — ใช้เป็นตัวหารและตัวปิดช่องว่าง
+   *  null = ท่อไม่ได้ส่งมา ⇒ **ห้ามเดาจากแถวที่โหลดมา** */
+  const [totalSales, setTotalSales] = useState<number | null>(null)
+  /** มุมมองการ์ดจำนวนลูกค้า — ผังเดียวกับ dropdown `typeoption` ของ ZORT (จำนวนลูกค้า/ยอดขาย) */
+  const [cardBy, setCardBy] = useState<'people' | 'sales'>('people')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -154,6 +171,8 @@ export default function CoreCustomersPage() {
       )
       // ขอบประวัติของกระจก — ตัวกันนิยาม "ใหม่" เพี้ยนตรงขอบ (กระจกเริ่ม ~มิ.ย. 2569)
       setHistoryFrom(typeof d.historyFrom === 'string' ? d.historyFrom : '')
+      setRange({ from: typeof d.from === 'string' ? d.from : '', to: typeof d.to === 'string' ? d.to : '' })
+      setTotalSales(typeof d.totalSales === 'number' ? d.totalSales : null)
       setMonthly(Array.isArray(d.monthly) ? d.monthly : [])
       const un = d?.unnamed
       if (un && Number(un.orders) > 0) {
@@ -181,12 +200,25 @@ export default function CoreCustomersPage() {
   const repeat = named.filter((p) => p.orders >= 2)
   const once = named.filter((p) => p.orders === 1)
 
+  /* ✅ นิยามแบบ ZORT ("ใหม่" = ซื้อครั้งแรกทั้งประวัติอยู่ในช่วง) ใช้ได้เมื่อท่อส่ง newInRange มา
+     ⚠️ ตัดสินว่า "ท่อพร้อม" จาก **การมีฟิลด์จริงในข้อมูล** ไม่ใช่จากวันที่ deploy
+     ⚠️ newInRange เป็นสามสถานะ true/false/null — **null คือไม่รู้ ห้ามตีเป็น false**
+        คนกลุ่มนี้ต้องนับแยกและโชว์ ไม่ใช่หายไปเงียบ ๆ */
+  const hasZortDef = named.some((p) => typeof p.newInRange === 'boolean')
+  const newC = hasZortDef ? named.filter((p) => p.newInRange === true) : once
+  const repC = hasZortDef ? named.filter((p) => p.newInRange === false) : repeat
+  const unkC = hasZortDef ? named.filter((p) => typeof p.newInRange !== 'boolean') : []
+  /* คำที่ใช้บนจอ — ลอกจาก ZORT เมื่อเรามีนิยามเดียวกันเท่านั้น
+     ถ้ายังไม่มี newInRange ต้องใช้คำของเราเอง ห้ามแปะคำ ZORT ทับนิยามที่ไม่ตรง */
+  const LAB_A = hasZortDef ? 'ลูกค้าใหม่' : 'ซื้อครั้งเดียวในช่วง'
+  const LAB_B = hasZortDef ? 'ลูกค้าซื้อซ้ำ' : 'ซื้อซ้ำในช่วง'
+
   const filtered = useMemo(() => {
-    const base = tab === 'repeat' ? repeat : tab === 'once' ? once : people
+    const base = tab === 'b' ? repC : tab === 'a' ? newC : people
     const needle = q.trim().toLowerCase()
     const list = needle ? base.filter((p) => p.name.toLowerCase().includes(needle)) : base
     return [...list].sort((a, b) => b.amount - a.amount)
-  }, [people, repeat, once, tab, q])
+  }, [people, newC, repC, tab, q])
 
   const totalAmount = people.reduce((s, p) => s + p.amount, 0)
   const shown = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
@@ -249,6 +281,20 @@ export default function CoreCustomersPage() {
         }
       />
 
+      {/* 🔴 **ช่วงจริงต้องขึ้นจอเสมอ** — คำว่า "ย้อนหลัง 3 เดือน" ของเรากับของ ZORT คนละช่วง
+             (ZORT = ตั้งแต่วันที่ 1 ของเดือนที่ถอยไป 3 เดือน · ของเรา = นับถอย 90 วัน)
+             ถ้าไม่เขียนไว้ คนจะเอาสองจอมาเทียบแล้วสรุปว่า "ตัวเลขผิด" ทั้งที่ช่วงไม่เท่ากัน
+             วันที่ที่โชว์คือวันที่ **ท่อ echo กลับมา** ไม่ใช่วันที่จอคำนวณเอง */}
+      {(range.from || range.to) && (
+        <p className="text-[11.5px] text-gray-500 -mt-1 mb-3">
+          ช่วงที่ใช้จริง <b>{thaiDate(range.from)} – {thaiDate(range.to)}</b>
+          <span className="text-gray-400">
+            {' '}· ZORT นับ &ldquo;ย้อนหลัง N เดือน&rdquo; จาก<b>วันที่ 1 ของเดือน</b> ⇒ ช่วงไม่ตรงกับของเรา เทียบยอดตรง ๆ ไม่ได้
+            {' '}· ZORT ยังมี วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว · ปีนี้ · กำหนดเอง ซึ่งเรา<b>ยังทำไม่ได้</b> เพราะท่อรับแต่จำนวนวันย้อนหลัง
+          </span>
+        </p>
+      )}
+
       {error && <ErrorBox title="ดึงข้อมูลลูกค้าไม่ได้">{error}</ErrorBox>}
       {loading && people.length === 0 && <LoadingState />}
 
@@ -269,26 +315,81 @@ export default function CoreCustomersPage() {
                  **ต้องเขียนนิยามบนจอ** ไม่งั้นคนเทียบสองจอแล้วงงว่าทำไมเลขไม่ตรง */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
             <div className="bg-white border border-gray-200 rounded-md p-4">
-              <p className="text-[15px] font-semibold text-gray-900 mb-3">👥 จำนวนลูกค้า</p>
+              {/* หัวการ์ด + ตัวสลับมุมมอง — ผังเดียวกับ dropdown `typeoption` ของ ZORT
+                  (กดอ่านจากจอจริง 16 ก.ย. 2569: จำนวนลูกค้า ⇒ 2 แถว · ยอดขาย ⇒ 3 แถว มี "ไม่ระบุ" เพิ่ม) */}
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <p className="text-[15px] font-semibold text-gray-900">👥 จำนวนลูกค้า</p>
+                <select
+                  value={cardBy}
+                  onChange={(e) => setCardBy(e.target.value as 'people' | 'sales')}
+                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white"
+                >
+                  <option value="people">จำนวนลูกค้า</option>
+                  <option value="sales">ยอดขาย</option>
+                </select>
+              </div>
               {named.length === 0
                 ? <p className="text-[13px] text-gray-400">ยังไม่มีลูกค้าที่ระบุชื่อในช่วงนี้</p>
                 : (() => {
-                  /* ✅ นิยามแบบ ZORT ("ใหม่" = ซื้อครั้งแรกทั้งประวัติอยู่ในช่วง) ใช้ได้เมื่อ
-                     ท่อส่ง newInRange มา (รอบ 21:00 6 ก.ย.) · ก่อนหน้านั้นถอยไปนิยามช่วงแบบเดิม
-                     ⚠️ ตัดสินว่า "ท่อพร้อม" จากการ **มีฟิลด์จริงในข้อมูล** ไม่ใช่จากวันที่ —
-                        จอนี้ต้องทำงานถูกทั้งก่อนและหลัง deploy ของอีกฝั่ง ไม่ว่าใครขึ้นก่อน */
-                  const hasZortDef = named.some((p) => typeof p.newInRange === 'boolean')
-                  const newC = hasZortDef ? named.filter((p) => p.newInRange === true) : once
-                  const repC = hasZortDef ? named.filter((p) => p.newInRange === false) : repeat
-                  /* ⚠️ **newInRange เป็นสามสถานะ: true/false/null — null คือ "ไม่รู้" ห้ามตีเป็น false**
-                     (ฝั่งท่อกำชับ 6 ก.ย. — และสารภาพว่ารุ่นแรกของเขาเผลอให้ข้อมูลหายกลายเป็น false
-                      คำถามเรื่องสัญญาข้อมูลจับได้ก่อน push) ⇒ คนที่ไม่รู้ต้อง**นับและโชว์แยก**
-                     ไม่ใช่หายจากวงกลมเงียบ ๆ — คนหายจากกราฟคือคำตอบที่ผิดแบบมองไม่เห็น */
-                  const unkC = hasZortDef ? named.filter((p) => typeof p.newInRange !== 'boolean') : []
                   const total = newC.length + repC.length || 1
                   const pctNew = Math.round((newC.length / total) * 1000) / 10
                   const pctRep = Math.round((repC.length / total) * 1000) / 10
                   const C = 2 * Math.PI * 42
+
+                  /* ── มุมมอง "ยอดขาย" (typeoption ของ ZORT) ─────────────────────────
+                     🔴 **ยอดของสองกลุ่มนี้บวกได้เฉพาะรายที่โหลดมา** (ตัดที่ 500 รายที่ยอดสูงสุด)
+                        ถ้าโชว์แค่สองก้อนแล้วเงียบ คนจะอ่านว่านี่คือยอดทั้งช่วง ⇒ ผิด
+                        ⇒ ปิดช่องว่างด้วยสองก้อนที่เหลือ ให้บวกแล้วเท่ากับยอดที่ท่อนับให้จริง:
+                           · ไม่ระบุชื่อ (POS) — ท่อส่งมาแยกอยู่แล้ว (ZORT ก็มีแถว "ไม่ระบุ" ในมุมมองนี้)
+                           · ส่วนที่อยู่นอก 500 รายแรก — **ยังไม่รู้ว่าเป็นใหม่หรือซื้อซ้ำ** ห้ามยัดเข้ากลุ่มใดกลุ่มหนึ่ง */
+                  const sumOf = (list: Person[]) => list.reduce((n, x) => n + x.amount, 0)
+                  const salesNew = sumOf(newC)
+                  const salesRep = sumOf(repC)
+                  const salesUnk = sumOf(unkC)
+                  const unnamedRow = people.find((x) => x.name === NO_NAME)
+                  const salesNoName = unnamedRow ? unnamedRow.amount : 0
+                  /* ยอดที่ท่อนับทั้งช่วง (ไม่ได้ถูกตัด) — ไม่มีก็ไม่เดา */
+                  const rest = totalSales === null
+                    ? null
+                    : Math.max(0, Math.round((totalSales - salesNew - salesRep - salesUnk - salesNoName) * 100) / 100)
+
+                  if (cardBy === 'sales') {
+                    const bar = (v: number, color: string) => (
+                      <span className="inline-block h-2 rounded-sm align-middle"
+                        style={{ background: color, width: `${totalSales ? Math.max(2, (v / totalSales) * 160) : 2}px` }} />
+                    )
+                    return (
+                      <div className="text-[13px] space-y-2">
+                        <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
+                          {LAB_A} <b>{fmtMoney(salesNew)}</b> บาท {bar(salesNew, '#8ea8f8')}</p>
+                        <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
+                          {LAB_B} <b>{fmtMoney(salesRep)}</b> บาท {bar(salesRep, '#f2938c')}</p>
+                        {salesUnk > 0 && (
+                          <p className="text-gray-600"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-300" />
+                            ไม่ทราบสถานะ <b>{fmtMoney(salesUnk)}</b> บาท</p>
+                        )}
+                        <p className="text-gray-600"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-400" />
+                          ไม่ระบุชื่อ (ส่วนใหญ่เป็นหน้าร้าน) <b>{fmtMoney(salesNoName)}</b> บาท {bar(salesNoName, '#9ca3af')}</p>
+                        {/* 🔴 ก้อนที่ปิดช่องว่าง — มีเมื่อถูกตัดที่ 500 รายเท่านั้น */}
+                        {rest !== null && rest > 0 && (
+                          <p className="text-amber-800"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-amber-300" />
+                            อยู่นอก 500 รายแรก <b>{fmtMoney(rest)}</b> บาท
+                            <span className="text-[11.5px] text-amber-700"> — ยังไม่รู้ว่าเป็น{LAB_A}หรือ{LAB_B}</span>
+                          </p>
+                        )}
+                        {/* ⚠️ ก้อน "อยู่นอก 500 รายแรก" คือ **ส่วนที่เหลือ** (ยอดทั้งช่วง ลบก้อนที่รู้)
+                            ⇒ มันบวกครบเพราะวิธีคิด ไม่ใช่เพราะเราไปตรวจมา — เขียนให้ตรงตามนั้น */}
+                        <p className="text-[11px] text-gray-400 leading-relaxed max-w-[330px] pt-1">
+                          {totalSales !== null
+                            ? <>ยอดทั้งช่วงที่ท่อนับให้ <b>{fmtMoney(totalSales)}</b> บาท ·
+                              ก้อนสุดท้ายคือ<b>ส่วนที่เหลือ</b>จากยอดนั้น (ไม่ใช่เลขที่แยกกลุ่มมาแล้ว)</>
+                            : <>ท่อไม่ได้ส่งยอดรวมทั้งช่วงมารอบนี้ ⇒ บอกไม่ได้ว่าสองกลุ่มนี้ครบหรือยัง</>}
+                          {' '}· ZORT มีมุมมองนี้เหมือนกัน (ลูกค้าใหม่ · ลูกค้าซื้อซ้ำ · ไม่ระบุ)
+                        </p>
+                      </div>
+                    )
+                  }
+
                   return (
                     <div className="flex items-center gap-6 flex-wrap">
                       <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
@@ -298,10 +399,10 @@ export default function CoreCustomersPage() {
                       </svg>
                       <div className="text-[13px] space-y-1.5">
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
-                          {hasZortDef ? 'ลูกค้าใหม่' : 'ซื้อครั้งเดียวในช่วง'}{' '}
+                          {LAB_A}{' '}
                           <b>{newC.length.toLocaleString('th-TH')}</b> ราย ({pctNew}%)</p>
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
-                          {hasZortDef ? 'ลูกค้าซื้อซ้ำ' : 'ซื้อซ้ำในช่วง'}{' '}
+                          {LAB_B}{' '}
                           <b>{repC.length.toLocaleString('th-TH')}</b> ราย ({pctRep}%)</p>
                         {unkC.length > 0 && (
                           <p className="text-[12px] text-gray-500">
@@ -310,11 +411,18 @@ export default function CoreCustomersPage() {
                             <span className="text-gray-400"> (หา firstDay ไม่ได้ — ไม่ได้อยู่ในวงกลม)</span>
                           </p>
                         )}
+                        {/* 🔴 ถูกตัดที่ 500 ราย ⇒ **วงกลมนี้ไม่ใช่ทั้งช่วง** ต้องเขียนไว้ตรงนี้
+                            ไม่ใช่ปล่อยให้คนอ่านไปเทียบกับเลข 547/255 ของ ZORT ซึ่งเป็นทั้งชุด */}
+                        {truncated && (
+                          <p className="text-[11.5px] text-amber-700">
+                            นับจาก {named.length.toLocaleString('th-TH')} รายที่โหลดมาเท่านั้น
+                            {distinctNames !== null && <> (ทั้งช่วงมี {distinctNames.toLocaleString('th-TH')} ราย)</>}
+                            {' '}— ZORT โชว์ตัวเลขของทั้งชุด เทียบกันตรง ๆ ไม่ได้
+                          </p>
+                        )}
                         {hasZortDef ? (
                           <p className="text-[11px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
                             นิยามแบบ ZORT: &ldquo;ใหม่&rdquo; = ซื้อครั้งแรก(ทั้งประวัติ)อยู่ในช่วงที่เลือก
-                            {/* ⚠️ ขอบประวัติ — กระจกเริ่มเก็บ ~มิ.ย. 2569 คนที่ซื้อก่อนหน้านั้น
-                                จะดูเป็น "ใหม่" เกินจริง (ฝั่งท่อกำชับให้เขียนกำกับ 6 ก.ย.) */}
                             {historyFrom && (
                               <> · <b className="text-amber-700">ข้อมูลย้อนได้ถึง {thaiDate(historyFrom)}</b> —
                                 คนที่เคยซื้อก่อนหน้านั้นจะถูกนับเป็น &ldquo;ใหม่&rdquo; เกินจริง</>
@@ -360,9 +468,11 @@ export default function CoreCustomersPage() {
               คลังเงาไม่ได้เก็บที่อยู่/จังหวัดของใบขาย ⇒ ทำตารางจริงไม่ได้ ห้ามเดา
               (ZORT ใช้ที่อยู่จัดส่ง — ของเรามีในระบบออเดอร์เว็บเท่านั้น ไม่ครอบคลุมมาร์เก็ตเพลส) */}
           <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-4 text-[12.5px] text-gray-600">
-            ผัง ZORT มีตาราง <b>จังหวัด × จำนวนลูกค้า</b> ตรงนี้ (ภาพ 75: ไม่ระบุ 190 · เลย 21 · สงขลา 21 …)
+            ผัง ZORT มีตาราง <b>จังหวัด × จำนวนลูกค้า</b> ตรงนี้ และเลือกได้ว่าจะนับ
+            <b> จำนวนลูกค้า · จำนวนรายการ · มูลค่ารายการ</b> (กดดูจอจริง 16 ก.ย. 2569)
             — คลังเงายังไม่เก็บจังหวัดของใบขาย จึง<b>ยังทำไม่ได้ ไม่ใช่ลืม</b> ·
-            ที่อยู่มีเฉพาะออเดอร์ที่สั่งผ่านเว็บ (ไม่ครอบคลุมมาร์เก็ตเพลส) ทำตารางจากส่วนเดียวจะเอียง
+            ทะเบียนผู้ติดต่อมีช่องที่อยู่ก็จริง แต่<b>เป็นข้อความอิสระที่ส่วนใหญ่ไม่มีชื่อจังหวัด</b>
+            {' '}(สุ่มดู 100 ราย: มีที่อยู่ 88 · อ่านชื่อจังหวัดออกเพียง 1) ⇒ แยกจังหวัดจากตรงนั้นจะได้ตารางที่ผิดเกือบทั้งใบ
           </div>
 
           {/* 🔴 **เลขบนแท็บนับจากรายที่โหลดมาเท่านั้น** — ตอนถูกตัด มันไม่ใช่ยอดของทั้งช่วง
@@ -376,15 +486,26 @@ export default function CoreCustomersPage() {
               {' '}(ยอดเงินของแต่ละรายที่แสดงถูกต้องครบ ไม่ได้ถูกตัด)
             </p>
           )}
+          {/* แท็บ — ผัง `tableoption` ของ ZORT (ลูกค้าใหม่ · ลูกค้าซื้อซ้ำ · Marketplace Username)
+              🔑 **ใช้คำของ ZORT ได้ต่อเมื่อเรานับด้วยนิยามเดียวกัน** (ท่อส่ง newInRange มา)
+                 ถ้าไม่มี ต้องใช้คำของเราเอง ไม่ใช่แปะคำ ZORT ทับนิยามที่ไม่ตรง
+              ⚠️ คนที่ "ไม่ทราบสถานะ" อยู่ในแท็บทั้งหมดเท่านั้น ⇒ สองแท็บล่างบวกกันไม่เท่าแท็บแรก
+                 (บอกไว้ใต้แท็บ ไม่ใช่ปล่อยให้คนบวกเอง) */}
           <Tabs
             tabs={[
               { id: 'all', label: 'ทั้งหมด', count: people.length },
-              { id: 'repeat', label: 'ซื้อซ้ำ', count: repeat.length },
-              { id: 'once', label: 'ซื้อครั้งเดียว', count: once.length },
+              { id: 'a', label: LAB_A, count: newC.length },
+              { id: 'b', label: LAB_B, count: repC.length },
             ]}
             active={tab}
-            onChange={(id) => { setTab(id as 'all' | 'repeat' | 'once'); setPage(0) }}
+            onChange={(id) => { setTab(id as 'all' | 'a' | 'b'); setPage(0) }}
           />
+          <p className="text-[11px] text-gray-400 mt-1">
+            แท็บ &ldquo;ทั้งหมด&rdquo; รวมใบที่ไม่ระบุชื่อ
+            {unkC.length > 0 && <> และคนที่ยังไม่ทราบสถานะอีก {unkC.length.toLocaleString('th-TH')} ราย</>}
+            {' '}⇒ สองแท็บขวาบวกกันไม่เท่าแท็บแรก ·
+            {' '}ZORT มีแท็บที่สามคือ <b>Marketplace Username</b> — คลังเงายังไม่เก็บชื่อผู้ใช้ฝั่งมาร์เก็ตเพลส จึงยังทำไม่ได้
+          </p>
 
           <TableWrap>
             <table className="w-full min-w-[720px]">
