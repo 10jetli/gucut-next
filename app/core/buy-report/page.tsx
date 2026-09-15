@@ -30,7 +30,11 @@ interface Resp { total?: number; amount?: number; rows?: Po[]
   /** ⚠️ **สถานะที่สาม** — "ทำต่อไม่ได้" (คลังเงายังไม่พร้อม) ไม่ใช่ error และไม่ใช่ข้อมูลว่าง
    *  ท่อจะไม่ส่งช่องข้อมูลมาด้วยเมื่อมีค่านี้ ⇒ ต้องเช็คก่อนตัวกัน "ตอบมาไม่ครบ" เสมอ */
   skip?: string }
-interface ItemRow { sku: string; name?: string; qty?: number; amount?: number; orders?: number; lastDate?: string }
+/** แถวของตารางรายสินค้า · เมื่อจัดกลุ่ม (by≠sku) ท่อส่ง `groupKey` มาแทน `sku`/`name` */
+interface ItemRow {
+  sku?: string; name?: string; qty?: number; amount?: number; orders?: number; lastDate?: string
+  groupKey?: string; skus?: number
+}
 interface ItemsResp {
   skus?: number; lines?: number; amount?: number; rows?: ItemRow[]
   /** ขอบเขตร้านของ **เส้นนี้เอง** — ท่อเพิ่มให้ 15 ก.ย. 2569 (gucut-web ab69ec5)
@@ -40,6 +44,12 @@ interface ItemsResp {
    *  `truncated` = ยังมีของเหลืออีกนอกเหนือจากที่ส่งมา (คนละเรื่องกับ `limitClamped`
    *  ซึ่งแปลว่า "ให้น้อยกว่าที่ขอเพราะชนเพดาน") */
   total?: number; shown?: number; truncated?: boolean
+  /** 🗓️ ขอบเขตวันของ **เส้นนี้เอง** (ท่อ gucut-web e3071fb · 16 ก.ย. 2569)
+   *  🔴 **ที่มาของบั๊กที่ฝั่งท่อจับได้**: ก่อนหน้านี้ตารางรายสินค้า **ไม่มีตัวกรองวันเลย**
+   *     ⇒ กดเลือกช่วงไหนก็เป็นยอด "ตลอดกาล" ตลอด ในขณะที่กล่องสรุป/กราฟ/ตารางใบซื้อกรองตามช่วง
+   *     ⇒ จอเดียวสองขอบเขตโดยไม่มีอะไรบอก · ตอนนี้ท่อรับ from/to แล้ว ⇒ ส่งทุกครั้ง + เช็ค applied */
+  dateScope?: string
+  applied?: { from?: string | null; to?: string | null; by?: string | null }
   /** 🔴 ท่อตัดใบซื้อที่ยกเลิกออกให้แล้วหรือยัง (gucut-web 5a8f55d · 15 ก.ย. 2569)
    *  `true` = ตารางรายสินค้า **ไม่นับใบยกเลิก** เหมือนรายงานยอดซื้อของ ZORT
    *  `undefined` = ท่อรุ่นก่อนหน้า ⇒ **ยังนับรวมอยู่** ⇒ จอต้องเขียนเตือนแบบเดิม
@@ -147,25 +157,45 @@ export default function BuyReportPage() {
      ไม่งั้นตารางรายใบกับตารางรายสินค้าจะเป็นคนละร้านโดยที่จอดูปกติทุกประการ
      (คลาสเดียวกับ "อย่าเอาตัวเลขจากแหล่งหนึ่งไปโชว์คู่กับของจากอีกแหล่ง" ใน CLAUDE.md) */
   const [store, setStore] = useState<StoreId>('')
+  /** 📦 จัดกลุ่มตารางรายสินค้า — ผังเดียวกับ dropdown `tableoption` ของ ZORT
+   *  ⚠️ `user` (ผู้ใช้งาน) ท่อตอบ ok:false เพราะกระจกใบซื้อไม่มีผู้สร้างใบ ⇒ ปิดตัวเลือกไว้พร้อมเหตุผล */
+  const [by, setBy] = useState<'sku' | 'category' | 'vendor' | 'warehouse'>('sku')
   const [items, setItems] = useState<ItemsResp | null>(null)
   const [itemsErr, setItemsErr] = useState('')
   const [itemQ, setItemQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (storeId = store) => {
+  const load = useCallback(async (storeId = store, byId: 'sku' | 'category' | 'vendor' | 'warehouse' = by, fromDay = from, toDay = to) => {
     setLoading(true)
     setError('')
     try {
       const st = storeId ? `&store=${storeId}` : ''
       // ใบซื้อมีหลักสิบใบ ดึงมาทั้งหมดครั้งเดียวแล้วกรองช่วงเวลาในเครื่อง
+      /* 🗓️ **ตารางรายสินค้าต้องกรองช่วงเดียวกับที่จอเลือก** (ท่อรับ from/to แล้ว · e3071fb)
+         ก่อนหน้านี้เส้นนี้ไม่มีตัวกรองวัน ⇒ เป็นยอดตลอดกาลเสมอ ในขณะที่กล่องสรุป/กราฟกรองตามช่วง
+         ⇒ จอเดียวสองขอบเขต **โดยไม่มีอะไรบอก** (ฝั่งท่อจับได้ 16 ก.ย. 2569) */
+      const range = `&from=${fromDay}&to=${toDay}`
       const [res, iRes] = await Promise.all([
         fetch(`/api/web/core?list=purchases&limit=200${st}`),
         // ⚠️ ล้มก็ไม่ทำให้ทั้งจอพัง แต่ต้องจำไว้ว่าล้มเพราะอะไร (ท่อพัง ≠ ไม่มีของ)
-        fetch(`/api/web/core?list=purchaseitems&limit=200${st}`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/web/core?list=purchaseitems&limit=200${st}${range}&by=${byId}`).then((r) => r.json()).catch(() => null),
       ])
-      setItems(iRes && !iRes.error ? iRes : null)
-      setItemsErr(!iRes ? 'ยิงไปที่ท่อรายการสินค้าในใบซื้อไม่สำเร็จ' : (typeof iRes.error === 'string' ? iRes.error : ''))
+      /* 🔴 **เส้นนี้ตอบ error เป็น HTTP 200 + ok:false** (ธรรมเนียม okJson ของท่อ)
+         ⇒ ดู `ok` ไม่ใช่ status · และ **ต้องเช็คว่าท่อใช้ช่วงวัน/การจัดกลุ่มที่เราส่งไปจริง**
+            ถ้าไม่ตรง แปลว่าตัวเลขที่เห็นเป็นของขอบเขตอื่น ⇒ ห้ามเอามาโชว์เฉย ๆ */
+      const iOk = iRes && iRes.ok !== false && typeof iRes.error !== 'string'
+      const usedFrom = iRes?.applied?.from ?? null
+      const usedTo = iRes?.applied?.to ?? null
+      const usedBy = iRes?.applied?.by ?? null
+      const mismatch = iOk && (usedFrom !== fromDay || usedTo !== toDay || (usedBy ?? 'sku') !== byId)
+      setItems(iOk && !mismatch ? iRes : null)
+      setItemsErr(!iRes
+        ? 'ยิงไปที่ท่อรายการสินค้าในใบซื้อไม่สำเร็จ'
+        : (typeof iRes.error === 'string' && iRes.error) ? iRes.error
+          : mismatch
+            ? `ท่อไม่ได้ใช้เงื่อนไขที่จอส่งไป (ขอ ${fromDay}–${toDay} แบบ ${byId} · ท่อใช้ ${usedFrom ?? 'ทั้งหมด'}–${usedTo ?? 'ทั้งหมด'} แบบ ${usedBy ?? 'sku'}) ⇒ ไม่แสดงตัวเลขที่ขอบเขตไม่ตรง`
+            : '')
       const j: Resp = await res.json()
       if (!res.ok || (j as { error?: string })?.error) {
         throw new Error((j as { error?: string })?.error ?? `HTTP ${res.status}`)
@@ -184,7 +214,7 @@ export default function BuyReportPage() {
     } finally {
       setLoading(false)
     }
-  }, [store])
+  }, [store, by, from, to])
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -294,12 +324,12 @@ export default function BuyReportPage() {
         <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-4 flex flex-wrap items-end gap-4">
           <label className="text-[12px] text-gray-600">
             ตั้งแต่
-            <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}
+            <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); void load(store, by, e.target.value, to) }}
               className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
           <label className="text-[12px] text-gray-600">
             ถึง
-            <input type="date" value={to} onChange={(e) => setTo(e.target.value)}
+            <input type="date" value={to} onChange={(e) => { setTo(e.target.value); void load(store, by, from, e.target.value) }}
               className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
           {/* 🗓️ ช่วงสำเร็จรูปให้ครบตามที่ ZORT มี (กดดูจอ ZORT เอง 16 ก.ย. 2569:
@@ -322,7 +352,9 @@ export default function BuyReportPage() {
                 <button
                   key={label}
                   type="button"
-                  onClick={() => { setFrom(f); setTo(t) }}
+                  /* 🔴 เปลี่ยนช่วงวันแล้ว **ต้องยิงใหม่** เพราะตารางรายสินค้ากรองที่เซิร์ฟเวอร์แล้ว
+                     (ของเดิมกรองในเครื่องอย่างเดียวจึงไม่ต้องยิง — ลืมข้อนี้จะได้ตารางของช่วงก่อน) */
+                  onClick={() => { setFrom(f); setTo(t); void load(store, by, f, t) }}
                   className={`text-[12px] rounded-full px-2.5 py-1 border ${
                     on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
@@ -418,7 +450,24 @@ export default function BuyReportPage() {
                 <span className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center text-[15px]">📊</span>
                 <p className="text-[15px] font-semibold text-gray-900">ยอดซื้อ รายสินค้า</p>
               </div>
-              <span className="text-[12.5px] text-gray-600 border border-gray-300 rounded px-2.5 py-1.5">สินค้า</span>
+              {/* 📦 dropdown จัดกลุ่ม — ผังเดียวกับ `tableoption` ของ ZORT
+                     (สินค้า · หมวดหมู่ · ผู้ติดต่อ · ผู้ใช้งาน · คลัง/สาขา)
+                     🔴 "ผู้ใช้งาน" ปิดไว้พร้อมเหตุผล — ท่อตอบ ok:false ว่ากระจกใบซื้อไม่ได้เก็บผู้สร้างใบ
+                        (เปิดให้เลือกแล้วขึ้นแดงทีหลัง = ปุ่มหลอก) */}
+              <select
+                value={by}
+                onChange={(e) => {
+                  const v = e.target.value as 'sku' | 'category' | 'vendor' | 'warehouse'
+                  setBy(v); void load(store, v)
+                }}
+                className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
+              >
+                <option value="sku">สินค้า</option>
+                <option value="category">หมวดหมู่</option>
+                <option value="vendor">ผู้ติดต่อ</option>
+                <option value="warehouse">คลัง/สาขา</option>
+                <option value="user" disabled>ผู้ใช้งาน (กระจกใบซื้อไม่เก็บผู้สร้างใบ)</option>
+              </select>
               <input value={itemQ} onChange={(e) => setItemQ(e.target.value)} placeholder="พิมพ์คำค้นหา"
                 className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]" />
             </div>
@@ -430,12 +479,21 @@ export default function BuyReportPage() {
                 รายละเอียดวิธีคิด (เช่น "ที่ขาดคือรหัสยอดน้อยสุด") ปล่อยไว้ท้ายตารางได้ */}
             {items && (
               <p className="text-[12.5px] text-amber-900 bg-amber-50 border-y border-amber-300 px-4 py-2.5 leading-relaxed">
-                ⚠️ <b>ตารางนี้เป็นยอดทุกช่วงเวลา ไม่ได้ขยับตามช่วงวันที่ด้านบน</b>
-                {' '}(ท่อยังไม่รับตัวกรองวันที่) · รวม <b>{fmtNum(items.skus ?? 0)}</b> รหัส
+                {/* 🔄 **ข้อความนี้เคยเขียนว่า "ตารางนี้เป็นยอดทุกช่วงเวลา ไม่ได้ขยับตามช่วงวันที่"**
+                       ซึ่งจริงตอนนั้น (ท่อไม่รับ from/to) แต่ **16 ก.ย. 2569 ท่อรับแล้ว** (gucut-web e3071fb)
+                       ⇒ ถ้าปล่อยไว้จะกลายเป็นคำโกหกทันที · ตอนนี้ตารางนี้กรองช่วงเดียวกับหัวจอแล้ว
+                       (ป้ายวันจริงมาจาก `dateScope` ของท่อ อยู่ใต้บรรทัดนี้) */}
+                📦 ในช่วงที่เลือก: รวม <b>{fmtNum(items.skus ?? 0)}</b> {by === 'sku' ? 'รหัส' : 'กลุ่ม'}
                 จาก <b>{fmtNum(items.lines ?? 0)}</b> บรรทัด เป็นเงิน <b>{fmtMoney(items.amount ?? 0)}</b> บาท
                 {typeof all?.amount === 'number' && Math.abs((items.amount ?? 0) - all.amount) > 1 && (
-                  <> · น้อยกว่ายอดรวมใบซื้อทั้งหมด <b>{fmtMoney(all.amount - (items.amount ?? 0))}</b> บาท
-                    เพราะบางใบไม่มีรายการสินค้าแนบมา</>
+                  <>
+                    {' '}· ต่างจากยอดรวมใบซื้อในหัวจอ <b>{fmtMoney(Math.abs(all.amount - (items.amount ?? 0)))}</b> บาท
+                    {/* 🔴 สองยอดนี้คิดคนละชั้น — เขียนไว้ ไม่ใช่ปล่อยให้คนคิดว่าตัวใดตัวหนึ่งผิด */}
+                    <br /><span className="text-gray-500">
+                      ยอดตารางนี้คิดจาก<b>บรรทัดสินค้า</b> · ยอดในหัวจอคิดจาก<b>หัวใบ</b>
+                      {' '}⇒ ต่างกันได้เมื่อบางใบไม่มีรายการสินค้าแนบมา หรือหัวใบมีค่าใช้จ่ายอื่นรวมอยู่
+                    </span>
+                  </>
                 )}
               </p>
             )}
@@ -450,13 +508,24 @@ export default function BuyReportPage() {
                    ⇒ ตอนนี้ท่อส่งแล้ว (gucut-web ab69ec5) จึงอ่านของตัวเองได้ตรง ๆ
                 ⚠️ ไม่มีช่อง = ไม่แสดง · ห้ามยืมจากเส้นอื่นแม้จะเป็นเรื่องซื้อเหมือนกัน */}
             <StoreScopeLine scope={items?.storeScope} />
+            {/* 🗓️ **ขอบเขตวันของตารางนี้ มาจากท่อ (`dateScope`) ไม่ใช่จอเขียนเอง**
+                   เพราะบั๊กที่เพิ่งแก้คือ "ตารางนี้เป็นยอดตลอดกาลทั้งที่จอเลือกช่วงไว้"
+                   ⇒ ให้ท่อเป็นคนบอกว่ากรองด้วยวันอะไร จะได้ไม่มีวันหลุดอีก */}
+            {items?.dateScope && (
+              <p className="text-[11.5px] text-gray-500 px-4 md:px-5 pb-1">🗓️ {items.dateScope}</p>
+            )}
 
             <TableWrap>
               <table className="w-full min-w-[760px]">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className={TH}>รหัสสินค้า</th>
-                    <th className={TH}>สินค้า</th>
+                    {/* หัวคอลัมน์เปลี่ยนตามการจัดกลุ่ม — ไม่งั้นคนอ่านว่า "รหัสสินค้า" แต่เห็นชื่อหมวด */}
+                    <th className={TH}>{
+                      by === 'sku' ? 'รหัสสินค้า'
+                        : by === 'category' ? 'หมวดหมู่'
+                          : by === 'vendor' ? 'ผู้ติดต่อ (ผู้ขาย)' : 'คลัง / สาขา'
+                    }</th>
+                    <th className={TH}>{by === 'sku' ? 'สินค้า' : 'จำนวนรหัสในกลุ่ม'}</th>
                     <th className={THR}>จำนวน</th>
                     <th className={THR}>ยอดซื้อ (บาท)</th>
                     <th className={THR}>ยอดซื้อ (%)</th>
@@ -473,12 +542,24 @@ export default function BuyReportPage() {
                         : (itemQ ? 'ไม่พบสินค้าที่ค้นหา' : 'ยังไม่มีรายการสินค้าในใบซื้อ')} />
                   )}
                   {itemRows.map((r) => (
-                    <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                      <td className={`${TD} text-blue-600 whitespace-nowrap`}>{r.sku}</td>
+                    /* 🔴 โหมดจัดกลุ่ม (by≠sku) ท่อส่ง `groupKey` มาแทนรหัส/ชื่อ
+                       ⇒ คอลัมน์แรกต้องเปลี่ยนความหมายด้วย ไม่ใช่โชว์ช่องว่างเพราะไม่มี `sku` */
+                    <tr key={r.sku ?? r.groupKey} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                      <td className={`${TD} ${by === 'sku' ? 'text-blue-600' : 'text-gray-700'} whitespace-nowrap`}>
+                        {by === 'sku' ? r.sku : (r.groupKey || '—')}
+                      </td>
                       <td className={TD}>
-                        <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
-                          {r.name || '—'}
-                        </Link>
+                        {by === 'sku' && r.sku
+                          ? (
+                            <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                              {r.name || '—'}
+                            </Link>
+                          )
+                          : (
+                            <span className="text-gray-500">
+                              {typeof r.skus === 'number' ? `${fmtNum(r.skus)} รหัสสินค้าในกลุ่มนี้` : '—'}
+                            </span>
+                          )}
                         {r.lastDate && (
                           <span className="block text-[11px] text-gray-400">
                             ซื้อล่าสุด {thaiDate(r.lastDate)}{r.orders ? ` · ${fmtNum(r.orders)} ใบ` : ''}
