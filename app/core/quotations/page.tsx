@@ -8,6 +8,7 @@
 //    ⇒ ต้องเขียนบนจอว่าเป็นข้อมูลสด เพราะจอพี่น้องข้าง ๆ อ่านจากคลังเงาทั้งหมด
 //      คนใช้ต้องรู้ว่าจอไหนยิง ZORT จริง เวลา ZORT ล่มจะได้เข้าใจว่าทำไมจอนี้จอเดียวที่ว่าง
 import { useCallback, useEffect, useState } from 'react'
+import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import { QUOTATION_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -28,7 +29,11 @@ interface Row {
   number: string; customer?: string; phone?: string
   amount?: number; status?: string; date?: string; reference?: string
 }
-interface Resp { total?: number; live?: boolean; rows?: Row[]; note?: string }
+interface Resp {
+  /** ขอบเขตร้านของข้อมูลชุดนี้ — **ข้อความมาจากท่อ จอไม่แต่งเอง** (ใบ t_mu2kxy6u)
+   *  ไม่มีช่อง = ไม่แสดง · ห้ามพิมพ์ z1 ตายตัว (วันที่ท่อดึง z2 เข้ามา ข้อความจะเป็นเท็จเงียบ ๆ) */
+  storeScope?: string
+ total?: number; live?: boolean; rows?: Row[]; note?: string }
 
 // ⚠️ ZORT เขียนป้ายว่า "รออนุมัติ" กับ "อนุมัติแล้ว" ในจอนี้ — คนละคำกับจอรายการขาย
 //    ค่าดิบเป็น Pending/Success เหมือนกัน แต่ความหมายในบริบทใบเสนอราคาคือการอนุมัติ
@@ -221,6 +226,9 @@ export default function QuotationsPage() {
               {loading ? '⏳' : '⟳'}
             </button>
           </div>
+
+          {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
+          <StoreScopeLine scope={data?.storeScope} />
 
           <TableWrap>
             <table className="w-full min-w-[780px]">

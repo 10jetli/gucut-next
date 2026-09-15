@@ -13,6 +13,7 @@
 // ⚠️ **ห้ามเอาไปรวมกับ stock_moves** — ตารางนั้นคือของที่ "เราปรับเอง"
 //    ส่วนจอนี้คือกระจกของ ZORT · รวมกันเมื่อไหร่ = ตัดสต็อกสองรอบ
 import { useCallback, useEffect, useState } from 'react'
+import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
@@ -44,6 +45,10 @@ interface Row {
   note?: string
 }
 interface Resp {
+  /** ขอบเขตร้านของข้อมูลชุดนี้ — **ข้อความมาจากท่อ จอไม่แต่งเอง** (ใบ t_mu2kxy6u)
+   *  ไม่มีช่อง = ไม่แสดง · ห้ามพิมพ์ z1 ตายตัว (วันที่ท่อดึง z2 เข้ามา ข้อความจะเป็นเท็จเงียบ ๆ) */
+  storeScope?: string
+
   skip?: string
   total: number
   oldest?: string
@@ -255,6 +260,9 @@ export default function CoreTransfersPage() {
               {loading ? '⏳' : '⟳'}
             </button>
           </div>
+
+          {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
+          <StoreScopeLine scope={data?.storeScope} />
 
           <TableWrap>
             <table className="w-full min-w-[860px]">

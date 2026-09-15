@@ -12,6 +12,7 @@
 //    ZORT เองก็ขึ้น "ไม่มียอดซื้อ" ในช่วง 3 เดือนล่าสุด เพราะใบซื้อทั้ง 32 ใบเก่ากว่านั้น
 //    ถ้าจอเงียบ ๆ ว่าง คนอ่านจะสรุปผิดทันที ⇒ ต้องบอกว่ามีกี่ใบและใบล่าสุดเมื่อไหร่
 import Link from 'next/link'
+import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -21,6 +22,10 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, 
 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
 interface Resp { total?: number; amount?: number; rows?: Po[]
+  /** ขอบเขตร้านของข้อมูลชุดนี้ — **ข้อความมาจากท่อ จอไม่แต่งเอง** (ใบ t_mu2kxy6u)
+   *  🔴 มาจากคำตอบ `list=purchases` เท่านั้น — **`list=purchaseitems` ไม่ส่งช่องนี้มา** (ยิงตรวจแล้ว 15 ก.ย.)
+   *     ⇒ ห้ามเอาของจากเส้นแรกไปติดป้ายให้ตารางรายสินค้าที่มาจากเส้นที่สอง เป็นคนละคำตอบ */
+  storeScope?: string
   /** ⚠️ **สถานะที่สาม** — "ทำต่อไม่ได้" (คลังเงายังไม่พร้อม) ไม่ใช่ error และไม่ใช่ข้อมูลว่าง
    *  ท่อจะไม่ส่งช่องข้อมูลมาด้วยเมื่อมีค่านี้ ⇒ ต้องเช็คก่อนตัวกัน "ตอบมาไม่ครบ" เสมอ */
   skip?: string }
@@ -359,6 +364,11 @@ export default function BuyReportPage() {
                 )}
               </p>
             )}
+
+            {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบ list=purchases (`all`) เท่านั้น
+                ⚠️ ตารางรายสินค้าข้างล่างมาจาก list=purchaseitems ซึ่ง **ไม่ส่งช่องนี้** ⇒ ไม่ติดป้ายให้ตารางนั้น
+                   (ไม่มีช่อง = ไม่แสดง · ห้ามเดาว่าเป็นขอบเขตเดียวกันเพราะเป็นเรื่องซื้อเหมือนกัน) */}
+            <StoreScopeLine scope={all?.storeScope} />
 
             <TableWrap>
               <table className="w-full min-w-[760px]">

@@ -27,6 +27,7 @@
 //    บวกเองจาก N แถวแรกแล้วเขียนว่า "ทั้งหมด" = เลขที่ต่ำกว่าความจริงเสมอ โดยไม่มีอะไรฟ้อง
 //    (คลาสเดียวกับ "หน้าแรกไม่ใช่ตัวแทน" ที่เจอมาแล้วสามครั้ง) ⇒ เขียนกำกับว่าเป็นยอดของกี่ใบ
 import { useCallback, useEffect, useState } from 'react'
+import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import { toThai, thaiMoment } from '@/lib/recipe-fresh'
@@ -48,6 +49,10 @@ interface Row {
   date?: string; paid?: string
 }
 interface Resp {
+  /** ขอบเขตร้านของข้อมูลชุดนี้ — **ข้อความมาจากท่อ จอไม่แต่งเอง** (ใบ t_mu2kxy6u)
+   *  ไม่มีช่อง = ไม่แสดง · ห้ามพิมพ์ z1 ตายตัว (วันที่ท่อดึง z2 เข้ามา ข้อความจะเป็นเท็จเงียบ ๆ) */
+  storeScope?: string
+
   ok?: boolean; rows?: Row[]; total?: number | null; live?: boolean
   error?: string
   /** ค่าที่ท่อใช้จริง — ใช้เป็นด่านเทียบกับคำค้นที่จอส่ง (ท่อส่งมาให้เพื่อการนี้) */
@@ -262,6 +267,9 @@ export default function ReturnOrdersPage() {
               )}
             </p>
           )}
+
+          {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
+          <StoreScopeLine scope={d?.storeScope} />
 
           <TableWrap>
             <table className="w-full min-w-[860px]">
