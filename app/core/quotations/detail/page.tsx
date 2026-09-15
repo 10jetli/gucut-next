@@ -12,6 +12,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, thaiDate } from '@/components/zort'
+import { QUOTATION_DETAIL_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Line {
   sku?: string; name?: string; qty?: number; unit?: string
@@ -128,7 +129,13 @@ function Inner() {
               ⚠️ เช็ค "มีคีย์ไหม" ไม่ใช่ค่า truthy — ใบยอด ฿0 มีจริง (ของแถม/ลดเต็มจำนวน) */}
           {named ? (
             <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
-              <div><p className="text-gray-400 text-[11px]">สถานะ</p>{d.status || <span className="text-gray-300">—</span>}</div>
+              {/* 🔤 เดิมโชว์ค่าดิบ ("Voided") — เขียนเป็น `{d.status || …}` จึงรอดการกวาดสองรอบก่อน
+                  คำ + ป้ายช่องลอกจากจอ ZORT จอเดียวกัน (`/Quotation/Details` ใช้ป้ายว่า "สถานะรายการ")
+                  จับคู่ใบเดียวกันสองฝั่งแล้ว 16 ก.ย. 2569 ⇒ Voided = "ถูกยกเลิก" (ตารางของ ZORT ใช้ "ยกเลิก") */}
+              <div><p className="text-gray-400 text-[11px]">สถานะรายการ</p>
+                {d.status
+                  ? <span title={`ค่าที่ท่อส่งมา: ${d.status}`}>{zortWord(QUOTATION_DETAIL_STATUS, d.status).text}</span>
+                  : <span className="text-gray-300">—</span>}</div>
               <div><p className="text-gray-400 text-[11px]">วันที่</p>{d.date ? thaiDate(d.date) : <span className="text-gray-300">—</span>}</div>
               <div className="col-span-2"><p className="text-gray-400 text-[11px]">ลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
               <div><p className="text-gray-400 text-[11px]">ยอดใบ</p><span className="tabular-nums font-medium">{baht(d.amount)}</span></div>
@@ -154,6 +161,21 @@ function Inner() {
               )}
             </div>
           )}
+
+          {/* 🔬 **เทียบกับจอรายละเอียดใบเสนอราคาของ ZORT** (`/Quotation/Details` · อ่านอย่างเดียว 16 ก.ย. 2569)
+              ของเขามีกล่อง/ปุ่มที่จอเราไม่มี — เขียนไว้บนจอ ดีกว่าให้คนเปิดหาแล้วไม่เจอ
+              ⚠️ ทุกอย่างในรายการนี้เป็น **การเขียนข้อมูล** (แนบไฟล์ · Tag · โอนสินค้า · ส่ง SMS)
+                 ⇒ ทำไม่ได้จนท่านประธานอนุมัติจอเขียน — ห้ามทำเงียบ ๆ */}
+          <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+            <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> (เทียบของจริง 16 ก.ย. 2569) —
+            {' '}พูดคุย (คอมเมนต์ในใบ) · <b>Tag ผู้ใช้งาน</b> · แนบไฟล์ · พิมพ์เอกสาร (A4/A5) ·
+            {' '}<b>โอนสินค้าบางส่วน</b> (ระบุจำนวนที่โอนต่อรายการ) · ส่ง SMS ให้ลูกค้า · ช่อง <b>วันที่อนุมัติ</b>
+            {' '}· แก้ไข/คัดลอกใบ
+            <div className="mt-1 text-gray-500">
+              ทั้งหมดเป็นการ<b>เขียนข้อมูลเข้า ZORT</b> ⇒ จอนี้เป็นจออ่านอย่างเดียวจนกว่าท่านประธานจะอนุมัติ ·
+              ระหว่างนี้ทำได้ที่ ZORT ตามปกติ
+            </div>
+          </div>
 
           {d.lines === null || d.lines === undefined ? (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
