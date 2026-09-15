@@ -271,8 +271,8 @@ export default function CoreTransfersPage() {
               // ZORT โชว์ ทั้งหมด · รอโอน (2) · สำเร็จ — แท็บที่เป็น 0 ก็ต้องโชว์
               tabs={[
                 { id: 'all', label: 'ทั้งหมด', count: data.total },
-                { id: 'Pending', label: 'รอโอน', count: countOf('Pending') },
-                { id: 'Success', label: 'สำเร็จ', count: countOf('Success') },
+                { id: 'Pending', label: zortWord(TRANSFER_STATUS, 'Pending').text, count: countOf('Pending') },
+                { id: 'Success', label: zortWord(TRANSFER_STATUS, 'Success').text, count: countOf('Success') },
               ]}
               active={tab}
               onChange={(id) => { setTab(id); load(0, id) }}

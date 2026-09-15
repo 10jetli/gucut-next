@@ -24,6 +24,7 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
+import { SALE_CREATE_TRANSFER_CHOICE, zortWord } from '@/lib/zort-words'
 
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
@@ -166,10 +167,18 @@ export default function NewSalePage() {
           <input className={inp} value={address} onChange={(e) => setAddress(e.target.value)} /></label>
         <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">คลัง</span>
           <input className={inp} value={warehouse} onChange={(e) => setWarehouse(e.target.value)} placeholder="เช่น KLD" /></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">สถานะใบ</span>
-          <select className={inp} value={status} onChange={(e) => setStatus(e.target.value as 'Pending' | 'Success')}>
-            <option value="Pending">Pending — ยังไม่จบ</option>
-            <option value="Success">Success — จบแล้ว</option>
+        {/* 🔤 **คำอังกฤษบนจอที่คนขายต้องอ่าน** — เดิมช่องนี้ขึ้น "Pending — ยังไม่จบ" / "Success — จบแล้ว"
+            ⇒ โรคเดียวกับที่ท่านประธานทักเรื่องคอลัมน์ชำระเงิน · คำใหม่ลอกจากจอ ZORT `/Sell/Add` จอเดียวกัน
+            (ที่นั่นเป็นปุ่มวิทยุคู่ `warehousetype0/1` ใต้หัวข้อ "คลังสินค้า/สาขา") ⇒ ป้ายช่องจึงเปลี่ยนตามเรื่องที่มันทำ
+            ค่าดิบที่ส่งให้ท่ออยู่ใน title ของช่อง — ห้ามลบ คนตรวจต้องรู้ว่าจอนี้ส่งอะไรออกไป */}
+        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">การโอนสินค้า</span>
+          <select
+            className={inp}
+            value={status}
+            title={`ค่าที่ส่งให้ ZORT: ${status} · ZORT เองโชว์ช่องนี้เป็นปุ่มวิทยุใต้หัวข้อ "คลังสินค้า/สาขา"`}
+            onChange={(e) => setStatus(e.target.value as 'Pending' | 'Success')}>
+            <option value="Pending">{zortWord(SALE_CREATE_TRANSFER_CHOICE, 'Pending').text}</option>
+            <option value="Success">{zortWord(SALE_CREATE_TRANSFER_CHOICE, 'Success').text}</option>
           </select></label>
         <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">ส่วนลด (บาท)</span>
           <input className={inp} value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" /></label>
