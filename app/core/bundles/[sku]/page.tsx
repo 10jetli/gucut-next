@@ -23,6 +23,7 @@
 //    และ **นาฬิกาที่สาม**: stockSyncedAt = ตัวเลขคงเหลือ/พร้อมขายซิงก์ล่าสุด (ทุกครึ่งชั่วโมง)
 //    ⇒ ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว มีเทสคุมการสลับสามค่านี้
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -59,6 +60,9 @@ interface WhStock {
 }
 /** ยอดขายหนึ่งช่วง · `amount` = null คือ **ท่อไม่มีข้อมูลให้ ไม่ใช่ขายได้ 0 บาท** */
 interface Span { label: string; from: string; to: string; qty: number | null; amount: number | null; error?: string }
+/** แถวขายของชุด — ช่องตามที่ `list=stockcard` ส่งมาจริง (ยิงดูแล้ว ไม่ได้เดา)
+ *  🚫 **ไม่มีช่องคลัง/สาขา และช่องการชำระเงิน** ⇒ สองคอลัมน์นั้นต้องขึ้น "—" ห้ามเดา */
+interface SaleRow { date?: string; kind?: string; status?: string; ref?: string; party?: string; qty?: number; amount?: number }
 
 const THAI_MONTH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
@@ -110,6 +114,17 @@ export default function BundleDetailPage() {
   const [chartLoading, setChartLoading] = useState(false)
   const [wh, setWh] = useState<WhStock[] | null>(null)
   const [whErr, setWhErr] = useState('')
+  /* 🔓 **ปลดล็อกตารางรายการขายของชุด** (ใบ t_mu2ndt8a · 15 ก.ย. 2569)
+     พิสูจน์แล้วว่า **ZORT บันทึกการขายชุดไว้ที่รหัสชุด ไม่ใช่รหัสลูก**:
+     · กวาดบัตรสต็อกของชุดทั้ง 360 ตัว ⇒ **14 ตัวมีแถวขาย รวม 23 แถว** ที่เหลือ 346 ตัวไม่มีเลย
+     · และของชุดกับของลูก **ไม่ซ้ำใบกันเลย** (03409-3 · 03413-3 · 03496-3 ⇒ ใบซ้ำ 0/6 · 0/4 · 0/2)
+       ⇒ ขายชุดตัดที่รหัสชุดเท่านั้น **ไม่นับซ้ำกับลูก**
+     · ที่ตัวอย่าง 5 ชุดแรกได้ 0 เพราะ **ชุดพวกนั้นยังไม่เคยขาย** ไม่ใช่เพราะเก็บเป็นรหัสลูก
+     ⚠️ ว่างจึงแปลว่า "ชุดนี้ยังไม่เคยขาย" ได้จริง — แต่ **เฉพาะกับการขาย**
+        เพราะบัตรสต็อกของชุดไม่มีการเคลื่อนไหวชนิดอื่นเลย (293 ชุดมีของในคลังแต่ไม่มีประวัติ)
+        ⇒ ห้ามอ่านตารางว่างว่า "ชุดนี้ไม่มีของ/ไม่มีความเคลื่อนไหว" */
+  const [sales, setSales] = useState<SaleRow[] | null>(null)
+  const [salesErr, setSalesErr] = useState('')
   const imgOf = useSkuImages(640)
   const [menu, setMenu] = useState<'' | 'cmd' | 'print' | 'push'>('')
 
@@ -129,6 +144,17 @@ export default function BundleDetailPage() {
       setItems(Array.isArray(iRes?.rows) ? iRes.rows : [])
       setCollectedAt(typeof iRes?.collectedAt === 'string' ? iRes.collectedAt : '')
       setCheckedAt(typeof iRes?.recipeCheckedAt === 'string' ? iRes.recipeCheckedAt : null)
+      /* 🧾 รายการขายของชุด — ยิงแยกและ **ไม่ให้ล้มทั้งหน้า** ถ้าเส้นนี้พลาด
+         (ของหลักคือสูตรชุดกับสต็อก · ตารางขายเป็นส่วนเสริม)
+         ⚠️ ล้มเหลว = เขียนว่าอ่านไม่ได้ **ห้ามขึ้นว่าไม่มีการขาย** */
+      fetch(`/api/web/core?list=stockcard&sku=${encodeURIComponent(sku)}&kind=sale&limit=200`)
+        .then((r) => r.json())
+        .then((sc) => {
+          if (sc?.error) { setSales(null); setSalesErr(String(sc.error)); return }
+          if (!Array.isArray(sc?.rows)) { setSales(null); setSalesErr('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)'); return }
+          setSales(sc.rows as SaleRow[]); setSalesErr('')
+        })
+        .catch((e) => { setSales(null); setSalesErr(String(e instanceof Error ? e.message : e)) })
     } catch (e) {
       setBundle(null)
       setError(String(e instanceof Error ? e.message : e))
@@ -544,10 +570,42 @@ export default function BundleDetailPage() {
                 </tr>
               </thead>
               <tbody>
-                {/* 🔴 หัวคอลัมน์ครบตามผัง ZORT แต่ **ท่อยังไม่มีเส้นดึงใบขายรายสินค้า**
-                       ⇒ เขียนเหตุผลตรง ๆ **ห้ามขึ้น "ไม่มีรายการขาย"** เพราะเราไม่ได้ตรวจแล้วพบว่าไม่มี */}
-                <EmptyState cols={9} icon="🧾" title="ยังดึงรายการขายรายชุดไม่ได้ — ไม่ได้แปลว่าไม่มีการขาย"
-                  detail="ZORT มีตารางนี้ในหน้าเดียวกัน แต่ท่อยังไม่มีเส้นที่ค้นใบขายด้วยรหัสสินค้าในบรรทัด (ยิงจริง 14 ก.ย. 2569: ค้นด้วยรหัสชุดได้ 0 ใบ เพราะคำค้นไม่ได้ไล่ถึงบรรทัดสินค้า) · ฝั่งท่อกำลังไล่ต่อ" />
+                {/* 🔓 **เติมของจริงได้แล้ว** (ใบ t_mu2ndt8a) — อ่านจากบัตรสต็อกของ **รหัสชุด** ตรง ๆ
+                       เดิมเขียนว่า "ท่อยังไม่มีเส้นดึงใบขายรายสินค้า" ซึ่งจริงเฉพาะเส้นค้นใบ (`q`)
+                       แต่ `list=stockcard&kind=sale` ดึงได้อยู่แล้ว · ที่เคยได้ 0 เพราะชุดตัวอย่างไม่เคยขาย */}
+                {salesErr && (
+                  <EmptyState cols={9} icon="⚠️" title="อ่านรายการขายของชุดนี้ไม่สำเร็จ — ไม่ได้แปลว่าไม่มีการขาย"
+                    detail={salesErr} />
+                )}
+                {!salesErr && sales === null && (
+                  <EmptyState cols={9} icon="⏳" title="กำลังอ่านรายการขายของชุดนี้" detail="" />
+                )}
+                {!salesErr && sales !== null && sales.length === 0 && (
+                  /* ✅ ว่างแบบนี้ **ตรวจแล้วจริง** — พูดได้ว่ายังไม่เคยขาย (ต่างจากเดิมที่ยังไม่ได้ตรวจ)
+                     ⚠️ แต่บอกขอบเขตด้วยว่าเป็นเรื่อง "การขาย" เท่านั้น */
+                  <EmptyState cols={9} icon="🧾" title="ชุดนี้ยังไม่เคยขาย"
+                    detail="อ่านบัตรสต็อกของรหัสชุดแล้วไม่มีรายการขายเลย — ทั้งร้านมีเพียง 14 ชุดจาก 360 ที่เคยขาย (รวม 23 ใบ) ⇒ ว่างเป็นเรื่องปกติ · หมายเหตุ: บัตรสต็อกของชุดไม่มีการเคลื่อนไหวชนิดอื่น ⇒ ว่างที่นี่ไม่ได้แปลว่าชุดนี้ไม่มีของในคลัง" />
+                )}
+                {!salesErr && (sales ?? []).map((r, i) => (
+                  <tr key={`${r.ref ?? i}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                    <td className={TD}>{r.kind || <span className="text-gray-300">—</span>}</td>
+                    <td className={`${TD} whitespace-nowrap`}>{r.ref || <span className="text-gray-300">—</span>}</td>
+                    <td className={`${TD} max-w-[190px] truncate`}>{r.party || <span className="text-gray-300">—</span>}</td>
+                    <td className={`${TD} whitespace-nowrap text-gray-600`}>{r.date || <span className="text-gray-300">—</span>}</td>
+                    <td className={TDR}>{typeof r.qty === 'number' ? fmtNum(r.qty) : <span className="text-gray-300">—</span>}</td>
+                    {/* 🔴 บัตรสต็อกไม่ส่งคลังรายแถวมา ⇒ ขีด ห้ามเดาว่าเป็นคลังหลัก */}
+                    <td className={TD}><span className="text-gray-300" title="บัตรสต็อกของ ZORT ไม่ได้ส่งคลัง/สาขามาในแถว">—</span></td>
+                    <td className={TDR}>{typeof r.amount === 'number' ? fmtMoney(r.amount) : <span className="text-gray-300">—</span>}</td>
+                    {/* 🔤 **ต้องผ่านตารางคำ** — บัตรสต็อกส่งค่าดิบมา (ยิงดูแล้วได้ "Success")
+                        ถ้าโชว์ตรง ๆ จะเป็นคำอังกฤษบนจอ = บั๊กเดียวกับที่ท่านประธานทักเรื่อง "Pending"
+                        (ใบ t_mu23dljn) · ไม่รู้จัก = คืนค่าดิบ ไม่เดา */}
+                    <td className={TD}>
+                      {r.status ? zortWord(SALE_STATUS, r.status).text : <span className="text-gray-300">—</span>}
+                    </td>
+                    {/* 🔴 ไม่มีช่องการชำระเงินในบัตรสต็อก ⇒ ขีด */}
+                    <td className={TD}><span className="text-gray-300" title="บัตรสต็อกของ ZORT ไม่ได้ส่งสถานะการชำระเงินมา">—</span></td>
+                  </tr>
+                ))}
               </tbody>
             </table>
           </TableWrap>
