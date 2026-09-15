@@ -10,6 +10,7 @@
 //   → แถวค้นหา (ช่องกลม + ลิงก์ค้นหาขั้นสูง · ขวาเป็นตัวกรอง) → แท็บสถานะมีจำนวนในวงเล็บ
 //   → ตารางหัวเทาตัวเล็ก คอลัมน์แรกเป็นเลขลำดับ ลิงก์สีน้ำเงิน สถานะเป็นป้ายกลม เลขลบสีแดง
 import { useState, type ReactNode } from 'react'
+import { PAY_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { thaiDate } from '@/lib/format'
 
@@ -293,23 +294,26 @@ export function thaiShort(iso?: string | null): string {
 export { thaiDate }
 
 /* ── สถานะการชำระเงิน ─────────────────────────────────────────────────
-   ⚠️ ค่าที่เซิร์ฟเวอร์ส่งมาเป็นค่าดิบจาก ZORT (Paid/Unpaid/PartialPaid)
-      **เก็บดิบ แปลตอนแสดง** เหมือนชื่อสถานะ — ส่งค่าไทยกลับไปกรองจะกรองไม่ตรง
-   ⚠️ ค่าที่ไม่รู้จักให้แสดงค่าดิบไปตรง ๆ **ห้ามเดาว่าเป็นชำระครบ**
-      เดาผิดข้างนี้ = จอบอกว่าเก็บเงินแล้วทั้งที่ยังไม่ได้เงิน */
-const PAY_TH: Record<string, { text: string; tone: PillTone }> = {
-  Paid: { text: 'ชำระครบ', tone: 'green' },
-  Unpaid: { text: 'ยังไม่ชำระ', tone: 'orange' },
-  PartialPaid: { text: 'ชำระบางส่วน', tone: 'orange' },
-  Partial: { text: 'ชำระบางส่วน', tone: 'orange' },
-  Overpaid: { text: 'ชำระเกิน', tone: 'blue' },
-  Voided: { text: 'ยกเลิก', tone: 'red' },
+   🔴 **คำย้ายไป `lib/zort-words.ts` แล้ว** (15 ก.ย. 2569 · ใบ t_mu23dljn)
+      เพราะเดิมแผนที่คำอยู่ที่นี่ชุดหนึ่ง และอยู่ในเพจอีก 5 ไฟล์คนละชุด
+      ⇒ ค่าเดียวกันแปลไม่เหมือนกัน และค่าที่ไม่อยู่ในแผนที่ **หลุดเป็นอังกฤษออกจอ**
+      (นั่นคือ "Pending" ที่ท่านประธานถ่ายจอมาให้ดู — ท่อส่ง `Pending` แต่แผนที่เดิมมีแต่ `Unpaid`)
+   📏 วัดแล้วท่อส่งมาแค่ 4 ค่า: Paid 20,977 · Voided 892 · Pending 269 · Partial Payment 3
+      ⇒ ค่าเดิมในแผนที่นี้ (`Unpaid` · `PartialPaid` · `Overpaid`) **ไม่มีในข้อมูลจริงเลย**
+        = เคยเขียนเผื่อไว้จากชื่อที่เดา แล้วค่าที่มาจริงกลับไม่ถูกครอบ
+   ⚠️ ค่าที่ไม่รู้จักยังคงแสดงค่าดิบ **ห้ามเดาว่าเป็นชำระครบ** — เดาผิดข้างนี้
+      = จอบอกว่าเก็บเงินแล้วทั้งที่ยังไม่ได้เงิน */
+const PAY_TONE: Record<string, PillTone> = {
+  Paid: 'green',
+  Pending: 'orange',
+  'Partial Payment': 'orange',
+  Voided: 'red',
 }
 export function PaymentPill({ value }: { value?: string | null }) {
   const raw = String(value ?? '').trim()
   if (!raw) return <span className="text-gray-300">—</span>
-  const hit = PAY_TH[raw]
-  return <Pill tone={hit?.tone ?? 'gray'}>{hit?.text ?? raw}</Pill>
+  const w = zortWord(PAY_STATUS, raw)
+  return <Pill tone={PAY_TONE[raw] ?? 'gray'}>{w.text}</Pill>
 }
 
 /* ── เมนูจุดสามจุดท้ายแถว ──────────────────────────────────────────────

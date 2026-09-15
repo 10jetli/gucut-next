@@ -8,6 +8,7 @@
 //    ⇒ ต้องเขียนบนจอว่าเป็นข้อมูลสด เพราะจอพี่น้องข้าง ๆ อ่านจากคลังเงาทั้งหมด
 //      คนใช้ต้องรู้ว่าจอไหนยิง ZORT จริง เวลา ZORT ล่มจะได้เข้าใจว่าทำไมจอนี้จอเดียวที่ว่าง
 import { useCallback, useEffect, useState } from 'react'
+import { QUOTATION_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -32,12 +33,13 @@ interface Resp { total?: number; live?: boolean; rows?: Row[]; note?: string }
 // ⚠️ ZORT เขียนป้ายว่า "รออนุมัติ" กับ "อนุมัติแล้ว" ในจอนี้ — คนละคำกับจอรายการขาย
 //    ค่าดิบเป็น Pending/Success เหมือนกัน แต่ความหมายในบริบทใบเสนอราคาคือการอนุมัติ
 //    ⇒ แปลตามจอต้นแบบ ไม่ใช่แปลตามค่าดิบ
-const STATUS_TH: Record<string, string> = {
-  Pending: 'รออนุมัติ',
-  Success: 'อนุมัติแล้ว',
-  Voided: 'ยกเลิก',
+/* คำสถานะมาจาก `lib/zort-words.ts` ที่เดียว — เดิมไฟล์นี้มีแผนที่คำของตัวเอง
+   ⇒ ค่าเดียวกันแปลไม่เหมือนกันข้ามจอ และค่าที่ไม่อยู่ในแผนที่หลุดเป็นอังกฤษออกจอ
+   (ใบ t_mu23dljn · ทุกคำในไฟล์นั้นอ่านมาจากจอ ZORT จริง ไม่มีคำไหนแปลเอง) */
+const statusTh = (s?: string) => {
+  const w = zortWord(QUOTATION_STATUS, s)
+  return w.text || 'ไม่ระบุสถานะ'
 }
-const statusTh = (s?: string) => STATUS_TH[String(s ?? '')] ?? (s || 'ไม่ระบุสถานะ')
 
 export default function QuotationsPage() {
   const [data, setData] = useState<Resp | null>(null)

@@ -13,6 +13,7 @@
 // ⚠️ **ห้ามเอาไปรวมกับ stock_moves** — ตารางนั้นคือของที่ "เราปรับเอง"
 //    ส่วนจอนี้คือกระจกของ ZORT · รวมกันเมื่อไหร่ = ตัดสต็อกสองรอบ
 import { useCallback, useEffect, useState } from 'react'
+import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -56,12 +57,13 @@ interface Resp {
 const PAGE = 50
 
 // ชื่อสถานะดิบจาก ZORT — **แปลบนจอเท่านั้น** ค่าที่ส่งกลับ API ต้องเป็นค่าดิบ
-const STATUS_TH: Record<string, string> = {
-  Success: 'สำเร็จ',
-  Pending: 'รอโอน',
-  Voided: 'ยกเลิก',
+/* คำสถานะมาจาก `lib/zort-words.ts` ที่เดียว — เดิมไฟล์นี้มีแผนที่คำของตัวเอง
+   ⇒ ค่าเดียวกันแปลไม่เหมือนกันข้ามจอ และค่าที่ไม่อยู่ในแผนที่หลุดเป็นอังกฤษออกจอ
+   (ใบ t_mu23dljn · ทุกคำในไฟล์นั้นอ่านมาจากจอ ZORT จริง ไม่มีคำไหนแปลเอง) */
+const statusTh = (s?: string) => {
+  const w = zortWord(TRANSFER_STATUS, s)
+  return w.text || 'ไม่ระบุสถานะ'
 }
-const statusTh = (s?: string) => STATUS_TH[String(s ?? '')] ?? (s || 'ไม่ระบุ')
 const statusTone = (s?: string) =>
   s === 'Success' ? 'green' : s === 'Voided' ? 'red' : s ? 'orange' : 'gray'
 

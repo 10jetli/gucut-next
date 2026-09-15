@@ -270,7 +270,11 @@ export default function NewPurchaseReturnPage() {
           {(['Pending', 'Success'] as const).map((s) => (
             <label key={s} className="flex items-center gap-1.5 text-[13px] text-gray-800">
               <input type="radio" checked={status === s} onChange={() => setStatus(s)} />
-              {s === 'Pending' ? 'รอดำเนินการ (Pending)' : 'สำเร็จ (Success)'}
+              {/* 🔤 ใบ t_mu23dljn — "สำเร็จ" เป็นคำที่ ZORT ใช้ทุกจอ (พิสูจน์แล้ว) ⇒ ถอด (Success) ออก
+                  ⚠️ **ตัวเลือก "รอดำเนินการ" ยังไม่ใช่คำของ ZORT** — ยังไม่รู้ว่าจอคืนของซื้อของ ZORT
+                     เรียกสถานะนี้ว่าอะไร (คงคำเดิมไว้ก่อน พร้อมวงเล็บ เพื่อไม่ให้ความหมายหาย)
+                     ⇒ ส่งถามฝั่ง ZORT ไว้แล้ว ได้คำมาแล้วแก้ที่ lib/zort-words.ts */}
+              {s === 'Pending' ? 'รอดำเนินการ (Pending)' : 'สำเร็จ'}
             </label>
           ))}
         </div>

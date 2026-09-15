@@ -7,6 +7,7 @@
 // ⚠️ หัวใจของหน้านี้คือแท็บ "สินค้าที่ถูกคืนบ่อย" ไม่ใช่รายการใบคืน
 //    ยอดคืนรวมบอกแค่ว่าเจ็บเท่าไหร่ แต่บอกไม่ได้ว่าต้องไปแก้อะไร
 import { useCallback, useEffect, useState } from 'react'
+import { PAY_STATUS, zortWord } from '@/lib/zort-words'
 import type { ReturnsResult } from '@/lib/returns'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -470,7 +471,7 @@ export default function ReturnsPage() {
                       )
                     })}
                     {o.warehouse && <p><span className="text-gray-400">คลังรับคืน </span><span className="text-gray-700">{o.warehouse}</span></p>}
-                    {o.paymentStatus && <p><span className="text-gray-400">เงินคืน </span><span className={o.paymentStatus === 'Paid' ? 'font-medium text-emerald-700' : 'text-gray-700'}>{o.paymentStatus === 'Paid' ? 'คืนแล้ว' : o.paymentStatus}</span></p>}
+                    {o.paymentStatus && <p><span className="text-gray-400">เงินคืน </span><span className={o.paymentStatus === 'Paid' ? 'font-medium text-emerald-700' : 'text-gray-700'}>{o.paymentStatus === 'Paid' ? 'คืนแล้ว' : zortWord(PAY_STATUS, o.paymentStatus).text}</span></p>}
                     {o.note && <p className="sm:col-span-2"><span className="text-gray-400">หมายเหตุ </span><span className="text-gray-700">{o.note}</span></p>}
                   </div>
 

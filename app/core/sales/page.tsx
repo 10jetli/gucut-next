@@ -7,6 +7,7 @@
 //              → แถวค้นหา + ตัวเลือกช่วงเวลา → แท็บสถานะมีจำนวนในวงเล็บ
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
 import { useCallback, useEffect, useState } from 'react'
+import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
@@ -94,13 +95,13 @@ const thaiDay = (back = 0) =>
 // ⚠️ ชื่อสถานะในคลังเงาเป็นภาษาอังกฤษดิบจาก ZORT — **แปลบนจอเท่านั้น**
 //    ค่าที่ส่งกลับ API ต้องเป็นค่าดิบเสมอ ไม่งั้นกรองไม่ตรง (เซิร์ฟเวอร์เทียบตรงตัว ไม่ใช่ LIKE)
 //    ชื่อที่ไม่รู้จักให้แสดงค่าดิบไปเลย ดีกว่าเดาคำแปลผิด
-const STATUS_TH: Record<string, string> = {
-  Success: 'สำเร็จ',
-  Voided: 'ยกเลิก',
-  Pending: 'รอดำเนินการ',
-  Waiting: 'รอ',
+/* คำสถานะมาจาก `lib/zort-words.ts` ที่เดียว — เดิมไฟล์นี้มีแผนที่คำของตัวเอง
+   ⇒ ค่าเดียวกันแปลไม่เหมือนกันข้ามจอ และค่าที่ไม่อยู่ในแผนที่หลุดเป็นอังกฤษออกจอ
+   (ใบ t_mu23dljn · ทุกคำในไฟล์นั้นอ่านมาจากจอ ZORT จริง ไม่มีคำไหนแปลเอง) */
+const statusTh = (s?: string) => {
+  const w = zortWord(SALE_STATUS, s)
+  return w.text || 'ไม่ระบุสถานะ'
 }
-const statusTh = (s: string) => STATUS_TH[s] ?? (s || 'ไม่ระบุสถานะ')
 
 /* ── ใบที่ปิดแล้วแต่ยังไม่มีเลขพัสดุ ──────────────────────────────────
    **ป้ายนี้ไม่แก้ตัวเลขไหนทั้งนั้น หน้าที่เดียวคือทำให้เห็น**

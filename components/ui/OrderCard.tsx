@@ -1,5 +1,6 @@
 'use client'
 import type { Order } from '@/lib/types'
+import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import { fmtBaht } from '@/lib/format'
 
 function statusColor(s: string) {
@@ -45,7 +46,10 @@ export default function OrderCard({ order }: { order: Order }) {
       </div>
       <div className="flex items-center justify-between mt-0.5">
         <span className={`text-[12px] font-semibold ${statusColor(order.status)}`}>
-          {order.status}
+          {/* เดิมโชว์ค่าดิบ (Pending/Paid/Complete) = อังกฤษบนจอ · ใบ t_mu23dljn
+              ⚠️ การ์ดนี้ใช้กับออเดอร์ของเว็บเราเอง ไม่ใช่ ZORT ⇒ ค่าที่ไม่อยู่ในแผนที่ ZORT
+                 จะคืนค่าดิบตามเดิม **ไม่เดาคำแทน** (คำที่ระบบไม่มีสถานะรองรับ = จอโกหก) */}
+          {zortWord(SALE_STATUS, order.status).text || zortWord(PAY_STATUS, order.status).text}
         </span>
         <span className="text-[11px] text-gray-400">
           {date} {time}

@@ -4,6 +4,7 @@
 //   lines:[{sku,name,qty}]|null, fields} — โครงจากซอร์สท่อจริง getTransferDetail
 // ⚠️ สามสถานะบรรทัดสินค้า: null = ZORT ไม่ส่งช่องบรรทัดมา · [] = ใบนี้ไม่มีของ — คนละคำ
 import { Suspense, useCallback, useEffect, useState } from 'react'
+import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
@@ -103,7 +104,11 @@ function Inner() {
       {!loading && !error && d && !wrongLevel && (
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
-            <div><p className="text-gray-400 text-[11px]">สถานะ</p><Pill tone={d.status === 'Success' ? 'green' : 'orange'}>{d.status || '—'}</Pill></div>
+            <div><p className="text-gray-400 text-[11px]">สถานะ</p>{/* เดิมโชว์ค่าดิบจากท่อ (Success/Pending) = อังกฤษบนจอ · ใบ t_mu23dljn
+                  คำมาจาก lib/zort-words.ts ที่เดียว · ไม่รู้จัก = คืนค่าดิบ ไม่เดา */}
+              <Pill tone={d.status === 'Success' ? 'green' : 'orange'}>
+                {zortWord(TRANSFER_STATUS, d.status).text || '—'}
+              </Pill></div>
             <div><p className="text-gray-400 text-[11px]">วันที่โอน</p>{thaiDate(d.date)}</div>
             <div>
               <p className="text-gray-400 text-[11px]">จากคลัง → ไปคลัง</p>

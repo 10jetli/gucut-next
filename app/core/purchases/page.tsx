@@ -14,6 +14,7 @@
 //    แต่จะได้จอที่ **หน้าตาผ่านแต่ข้อมูลผิดความหมาย** — "เหมือน ZORT 100%"
 //    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
 import { useCallback, useEffect, useState } from 'react'
+import { PURCHASE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -51,14 +52,13 @@ const PAGE = 50
 
 // ชื่อสถานะในคลังเงาเป็นภาษาอังกฤษดิบจาก ZORT — **แปลบนจอเท่านั้น**
 // ค่าที่ส่งกลับ API ต้องเป็นค่าดิบ ไม่งั้นกรองไม่ตรง (กติกาเดียวกับจอรายการขาย)
-const STATUS_TH: Record<string, string> = {
-  Success: 'สำเร็จ',
-  Voided: 'ยกเลิก',
-  Pending: 'รอดำเนินการ',
-  Waiting: 'รอโอน',
-  WaitingPayment: 'รอชำระ',
+/* คำสถานะมาจาก `lib/zort-words.ts` ที่เดียว — เดิมไฟล์นี้มีแผนที่คำของตัวเอง
+   ⇒ ค่าเดียวกันแปลไม่เหมือนกันข้ามจอ และค่าที่ไม่อยู่ในแผนที่หลุดเป็นอังกฤษออกจอ
+   (ใบ t_mu23dljn · ทุกคำในไฟล์นั้นอ่านมาจากจอ ZORT จริง ไม่มีคำไหนแปลเอง) */
+const statusTh = (s?: string) => {
+  const w = zortWord(PURCHASE_STATUS, s)
+  return w.text || 'ไม่ระบุสถานะ'
 }
-const statusTh = (s: string) => STATUS_TH[s] ?? (s || 'ไม่ระบุสถานะ')
 const statusTone = (s: string) =>
   s === 'Success' ? 'green' : s === 'Voided' ? 'red' : s ? 'orange' : 'gray'
 

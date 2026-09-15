@@ -15,6 +15,7 @@
 //    เราเพิ่งเริ่มเก็บช่องขนส่ง 3 ก.ย. 2569 ⇒ ใบเก่าที่ไม่ขยับแล้วยังไม่มีเลขพัสดุ
 //    ห้ามเขียนว่า "ทั้งหมด N ใบ" ⇒ ต้องเขียนว่า "เท่าที่เก็บได้" พร้อมบอกว่า ZORT มีเท่าไหร่
 import { useCallback, useEffect, useState } from 'react'
+import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtNum } from '@/lib/format'
@@ -47,10 +48,13 @@ interface Resp {
 }
 
 const PAGE = 50
-const STATUS_TH: Record<string, string> = {
-  Success: 'สำเร็จ', Voided: 'ยกเลิก', Pending: 'รอดำเนินการ', Waiting: 'รอ',
+/* คำสถานะมาจาก `lib/zort-words.ts` ที่เดียว — เดิมไฟล์นี้มีแผนที่คำของตัวเอง
+   ⇒ ค่าเดียวกันแปลไม่เหมือนกันข้ามจอ และค่าที่ไม่อยู่ในแผนที่หลุดเป็นอังกฤษออกจอ
+   (ใบ t_mu23dljn · ทุกคำในไฟล์นั้นอ่านมาจากจอ ZORT จริง ไม่มีคำไหนแปลเอง) */
+const statusTh = (s?: string) => {
+  const w = zortWord(SALE_STATUS, s)
+  return w.text || 'ไม่ระบุสถานะ'
 }
-const statusTh = (s?: string) => STATUS_TH[String(s ?? '')] ?? (s || 'ไม่ระบุสถานะ')
 
 export default function LogisticsPage() {
   const router = useRouter()
