@@ -24,6 +24,7 @@ const knownMonthCounts = new Map([
 ])
 const knownTotals = new Map([
   ['tiktok', 108],
+  ['meta', 4],
   ['cloudflare', 2],
 ])
 const knownDocuments = [
@@ -189,7 +190,8 @@ async function loadZip(vendor, month, expected) {
 const rows = []
 const totals = new Map()
 const documentProof = []
-for (const vendor of await vendorIds()) {
+const requestedVendors = await vendorIds()
+for (const vendor of requestedVendors) {
   console.error(`อ่านดัชนี ${vendor}`)
   try {
     const data = await loadVendor(vendor)
@@ -239,11 +241,13 @@ for (const row of rows) {
 console.log('')
 console.log('ตรวจเทียบต้นทางภายนอกที่ท่านประธานยืนยัน:')
 for (const [vendor, source] of knownTotals) {
+  if (!requestedVendors.includes(vendor)) continue
   const got = totals.get(vendor)
   const note = got?.staleReason ? ` · ดัชนีค้าง: ${clean(got.staleReason)}` : ''
   console.log(`- ${got?.name || vendor}: ต้นทาง ${source} ใบ · ดัชนี ${got?.indexed ?? 'อ่านไม่ได้'} ใบ${note}`)
 }
 for (const doc of knownDocuments) {
+  if (!requestedVendors.includes(doc.vendor)) continue
   const proof = documentProof.find(item => item.vendor === doc.vendor && item.month === doc.month && item.id === doc.id)
   console.log(`- ${doc.vendor} ${doc.month} ${doc.id}: พบเลข=${proof?.invoice ? 'ใช่' : 'ไม่พบ'} · พบยอด=${proof?.amountFound ? 'ใช่' : 'ไม่พบ'}`)
 }
