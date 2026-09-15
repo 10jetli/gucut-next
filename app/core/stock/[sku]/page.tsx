@@ -37,6 +37,13 @@ interface Row {
   /** น้ำหนักหน่วยกรัม — **null = ยังไม่รู้ · 0 = ของไม่มีน้ำหนัก** คนละเรื่องกัน
    *  ทั้งคลังมีน้ำหนักจริงแค่ 669 จาก 2,898 ตัว (23%) ⇒ ส่วนใหญ่ต้องขึ้น "—" */
   weight?: number | null
+  /** 🖼️ รูปจาก ZORT (ท่อ gucut-web fc52832 · 15 ก.ย. 2569) — **สามสถานะ ห้ามยุบ**
+   *    `null`       = ยังไม่รู้ (ไม่อยู่ในทะเบียนสินค้า/ยังไม่ซิงก์)
+   *    `""`         = ZORT ไม่มีรูปของรหัสนี้
+   *    `"https://…"` = มีรูป **แต่เป็นไฟล์ดิบ** (บางใบเกือบ 2 MB · ส่วนใหญ่เป็นลิงก์ของ Lazada/Shopee ที่ตายได้)
+   *  🔴 ลำดับที่ฝั่งท่อกำหนด: ใช้ **แผนที่รูปย่อของเราก่อนเสมอ** ไม่มีค่อยตกมาที่ช่องนี้
+   *     และใช้ได้เฉพาะ **หน้ารายละเอียด/แถวน้อย ๆ** เท่านั้น (จอที่มีเป็นร้อยแถวห้ามใช้) */
+  imagePath?: string | null
 }
 /** หนึ่งแถวในสต็อกการ์ด — มาจาก `list=stockcard` (ขาย · ซื้อ · ปรับด้วยมือของเรา)
  *  ⚠️ ไม่มี `จาก` / `ไป` / `คงเหลือ` เพราะกระจกใบโอนเก็บแค่หัวใบ ดูรายละเอียดที่ท้ายการ์ด */
@@ -437,14 +444,29 @@ export default function ProductDetailPage() {
 
           {/* กล่องข้อมูล — รูปซ้าย ขวาสองคอลัมน์ ตามผัง ZORT */}
           <div className="bg-white border border-gray-200 rounded-md p-5 mt-4 flex flex-wrap gap-6">
-            {img
+            {/* 🖼️ ลำดับรูปตามที่ฝั่งท่อกำหนด (fc52832):
+                   ① แผนที่รูปย่อของเรา (128px · เบา) ② ไม่มีค่อยใช้ `imagePath` ของ ZORT (ไฟล์ดิบ)
+                   ③ ไม่มีทั้งคู่ ⇒ **แยกให้ออกว่า "ZORT ไม่มีรูป" กับ "ยังไม่รู้"**
+                      กล่องเทาเฉย ๆ บอกไม่ได้ว่าต้องไปถ่ายรูปเพิ่ม หรือรอระบบซิงก์
+                ⚠️ ไฟล์ดิบใหญ่ ⇒ ใส่ `loading="lazy"` + กรอบขนาดตายตัวกันจอกระตุก */}
+            {img || row.imagePath
               ? (
                 // eslint-disable-next-line @next/next/no-img-element
-                <img src={img} alt="" className="w-[220px] h-[160px] rounded border border-gray-200 object-cover bg-white" />
+                <img
+                  src={img || (row.imagePath as string)}
+                  alt=""
+                  loading="lazy"
+                  className="w-[220px] h-[160px] rounded border border-gray-200 object-cover bg-white"
+                />
               )
               : (
-                <span className="w-[220px] h-[160px] rounded border border-gray-200 bg-gray-100 flex items-center justify-center text-[28px] text-gray-300">
-                  🖼️
+                <span className="w-[220px] h-[160px] rounded border border-gray-200 bg-gray-100 flex flex-col items-center justify-center gap-1 text-center px-3">
+                  <span className="text-[28px] text-gray-300">🖼️</span>
+                  <span className="text-[11.5px] text-gray-500">
+                    {row.imagePath === ''
+                      ? 'ZORT ไม่มีรูปของรหัสนี้ — ต้องถ่ายรูปเพิ่ม'
+                      : 'ยังไม่รู้ว่ามีรูปไหม (รหัสนี้ไม่อยู่ในทะเบียนสินค้า หรือยังไม่ซิงก์)'}
+                  </span>
                 </span>
               )}
 
