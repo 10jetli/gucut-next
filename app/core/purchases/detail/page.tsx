@@ -33,7 +33,16 @@ const REAL_SEND_ENABLED = false
 interface ZortPo { id: number; number: string; status: string | null; warehousecode: string | null }
 interface ZortPoResp { ok?: boolean; found?: boolean; purchaseOrder?: ZortPo; error?: string; unknown?: boolean; duplicate?: boolean; ids?: number[]; fallthrough?: boolean }
 
-function ReceiveBox({ number, lines }: { number: string; lines: Line[] }) {
+/* 🔴 **กล่องรับของต้องรู้ว่าใบนี้เป็นของร้านไหน** (ฝั่งท่อจับได้จากโค้ด 15 ก.ย. 2569)
+   เดิมรับมาแต่ `number` แล้วยิง `?zortpo=<เลขที่ใบ>` โดย**ไม่บอกร้าน**
+   และท่อฝั่งเขียน (zortpo/poreceive) ใช้รหัส ZORT ของ **ร้าน z1 อย่างเดียว**
+   ⇒ เปิดใบของ z2 แล้วกล่องนี้จะไปหาเลขเดียวกันใน z1 · เลขที่ใบซ้ำข้ามร้านได้จริง
+     ⇒ อาจได้ **ใบคนละใบของอีกร้าน** แล้วจอขึ้นว่า "ใบนี้ใน ZORT: id ___"
+     ⇒ วันที่เปิดปุ่มส่งจริง = **รับของเข้าผิดร้าน** โดยจอดูปกติทุกประการ
+   ⚠️ ตอนนี้ยังไม่เกิดความเสียหายเพราะปุ่มส่งจริงปิดอยู่ — แก้ก่อนเปิดปุ่ม */
+function ReceiveBox({ number, store, lines }: { number: string; store?: string | null; lines: Line[] }) {
+  /* z1 เท่านั้นที่เขียนเข้า ZORT ได้ตอนนี้ · ไม่รู้ร้าน = ท่อคืน z1 ให้ ⇒ ถือว่า z1 */
+  const writable = !store || store === 'z1'
   const [po, setPo] = useState<ZortPo | null>(null)
   const [poErr, setPoErr] = useState('')
   const [poLoading, setPoLoading] = useState(true)
@@ -51,7 +60,9 @@ function ReceiveBox({ number, lines }: { number: string; lines: Line[] }) {
   const findPo = useCallback(async () => {
     setPoLoading(true); setPoErr(''); setPo(null)
     try {
-      const r = await fetch(`/api/web/core?zortpo=${encodeURIComponent(number)}`)
+      /* 🏬 ส่งร้านไปด้วยเสมอ — ถ้าท่อรุ่นใหม่จะได้ตอบ 400 ตรง ๆ เมื่อร้านไม่ใช่ z1
+         แทนที่จะถอยไปหาใบของ z1 เงียบ ๆ (ฝั่งท่อกำลังใส่ด่านนี้) */
+      const r = await fetch(`/api/web/core?zortpo=${encodeURIComponent(number)}${store ? `&store=${encodeURIComponent(store)}` : ''}`)
       const j: ZortPoResp = await r.json().catch(() => ({}))
       if (j.fallthrough) { setPoErr('ท่อยังไม่มีเส้น zortpo (ท่อรุ่นเก่า) — รอขึ้นระบบ'); return }
       if (j.duplicate) { setPoErr(`เลขที่ใบนี้ซ้ำกัน ${j.ids?.length ?? '?'} ใบใน ZORT (id ${j.ids?.join(', ')}) — รับของจากจอนี้ไม่ได้ ต้องไปทำใน ZORT`); return }
@@ -59,8 +70,8 @@ function ReceiveBox({ number, lines }: { number: string; lines: Line[] }) {
       if (!j.found || !j.purchaseOrder) { setPoErr(`ZORT ตอบว่าไม่มีใบสั่งซื้อเลขที่ ${number} ตรงตัว`); return }
       setPo(j.purchaseOrder)
     } catch (e) { setPoErr(String(e instanceof Error ? e.message : e)) } finally { setPoLoading(false) }
-  }, [number])
-  useEffect(() => { findPo() }, [findPo])
+  }, [number, store])
+  useEffect(() => { if (writable) findPo() }, [findPo, writable])
 
   const items = useMemo(() => Object.entries(counts)
     .map(([sku, v]) => ({ sku, qty: Number(v.trim()) }))
@@ -81,6 +92,8 @@ function ReceiveBox({ number, lines }: { number: string; lines: Line[] }) {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           ref, id: po.id,
+          /* 🏬 บอกร้านไปกับคำสั่งเขียนด้วย — ท่อจะได้ปฏิเสธชัด ๆ ถ้าไม่ใช่ร้านที่เขียนได้ */
+          ...(store ? { store } : {}),
           ...(po.warehousecode ? { warehouse: po.warehousecode } : {}),
           ...(date ? { date } : {}),
           ...(mode === 'partial' ? { items } : {}),
@@ -91,7 +104,25 @@ function ReceiveBox({ number, lines }: { number: string; lines: Line[] }) {
       if (!confirm && r?.dryRun && r?.ok !== false) setOkDry(sig)
       if (confirm && r?.ok) setOkDry('')
     } catch (e) { setErr(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
-  }, [po, mode, items, counts, date, ref, sig])
+  }, [po, mode, items, counts, date, ref, sig, store])
+
+  /* 🔴 **ใบของร้านที่เขียนเข้า ZORT ไม่ได้ ⇒ ไม่แสดงกล่องนี้เลย**
+     แสดงแล้วปิดปุ่มไม่พอ — คนจะกรอกจำนวนจนเสร็จแล้วค่อยรู้ว่าส่งไม่ได้
+     และที่แย่กว่านั้นคือ ถ้าเผลอปล่อยให้ยิง มันจะไปหาใบเลขเดียวกันในร้าน z1 */
+  if (!writable) {
+    return (
+      <section className="mt-4 rounded border-2 border-gray-200 bg-gray-50 p-3">
+        <h2 className="mb-1 text-[14px] font-semibold">📦 รับของ / ตรวจนับสินค้าเข้า</h2>
+        <p className="text-[12.5px] text-gray-700 leading-relaxed">
+          ⛔ <b>ใบนี้เป็นของ{storeLabel(store === 'z2' ? 'z2' : 'z1')} — รับของผ่านระบบเรายังไม่รองรับ</b>
+          <br />ท่อฝั่งเขียนต่อกับ ZORT ได้<b>เฉพาะ{storeLabel('z1')}</b>เท่านั้น
+          {' '}⇒ ถ้าปล่อยให้กดจากใบนี้ ระบบจะไปหา<b>เลขที่ใบเดียวกันในอีกร้าน</b>
+          {' '}ซึ่งเป็นคนละใบได้ (เลขที่ใบซ้ำข้ามร้านได้จริง) ⇒ <b>ของจะเข้าผิดร้าน</b>
+          <br />⇒ ระหว่างนี้ให้รับของใบนี้<b>ใน ZORT โดยตรง</b>
+        </p>
+      </section>
+    )
+  }
 
   return (
     <section className="mt-4 rounded border-2 border-amber-200 bg-amber-50/40 p-3">
@@ -387,7 +418,8 @@ function Inner() {
           </section>
 
           {/* รับของ/ตรวจนับ — เปิดได้เฉพาะใบที่มีเลขที่ใบ (ท่อหา id ของ ZORT จากเลขนี้) */}
-          {(d.number || no) && <ReceiveBox number={d.number || no} lines={d.lines ?? []} />}
+          {/* 🏬 ส่งร้านของใบ (ค่าที่ท่อตอบ) เข้าไปด้วย — ไม่ใช่ค่าที่อ่านจาก URL */}
+          {(d.number || no) && <ReceiveBox number={d.number || no} store={d.store} lines={d.lines ?? []} />}
         </>
       )}
     </div>

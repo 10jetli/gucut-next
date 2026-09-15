@@ -9,6 +9,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
 import { PageHead, BtnGhost, Pill, TableWrap, TH, TD, thaiDate } from '@/components/zort'
 
 interface Line { sku?: string; name?: string; qty?: number }
@@ -32,6 +33,10 @@ function Inner() {
   const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  /* 🔴 **สาเหตุที่ล้มเหลว แยกสามแบบ** (ท่อ gucut-web 01f7b9f · 15 ก.ย. 2569)
+     เดิมทุกแบบขึ้นข้อความเดียวกัน ⇒ คนอ่านเดาเองว่า "ไม่มีใบนี้" ซึ่งผิดได้ทั้งสองทาง
+     ⚠️ คำตอบที่ล้มเหลว **มาเป็น HTTP 200 + ok:false** ⇒ ดูแต่ res.ok ไม่พอ (ยิงเห็นเองแล้ว) */
+  const [why, setWhy] = useState<DocErrorView | null>(null)
   /* 🔴 **จอรายการโอนจดกับดักนี้ไว้เองตั้งแต่ต้น แต่จอรายละเอียดไม่ได้รับบทเรียนตามมา**
      (เจอกับของจริง 14 ก.ย. 2569 · ใบ TF-202609002)
      ท่อส่ง **รหัสคลัง** มา (NEW · KLD · ANJ) ส่วน ZORT แสดง **ชื่อคลัง** ("โกดัง")
@@ -43,13 +48,17 @@ function Inner() {
 
   const load = useCallback(async () => {
     if (!id) { setError('ไม่ได้ระบุใบ (ต้องเปิดจากจอรายการโอน)'); setLoading(false); return }
-    setLoading(true); setError('')
+    setLoading(true); setError(''); setWhy(null)
     try {
       const res = await fetch(`/api/web/core?transfer=${encodeURIComponent(id)}`)
       const j = (await res.json().catch(() => null)) as Resp | null
       if (j === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
       if (typeof j.skip === 'string') throw new Error(j.skip)
-      if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
+      if (isDocFail(j, res.ok)) {
+        const v = docErrorView(j as DocFail, res.status)
+        setWhy(v)
+        throw new Error(v.text)
+      }
       setD(j)
       const w = await fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null)
       const map: Record<string, string> = {}
@@ -74,7 +83,19 @@ function Inner() {
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
 
-      {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดึงใบโอนไม่ได้'}>{error}</ErrorBox>}
+      {/* 🔴 กล่องนี้ต้องบอก **สามอย่างที่ต่างกัน** ไม่ใช่ประโยคเดียวคลุมทุกกรณี
+             · เลขผิดรูป ⇒ ยังไม่ได้ถาม ZORT เลย  · ติดต่อ ZORT ไม่ได้ ⇒ ยังไม่รู้ว่ามีใบไหม
+             · ZORT ตอบแต่ไม่ส่งใบ ⇒ อาจเลขผิดหรือไม่มีใบ — **ห้ามฟันว่า "ไม่มีใบนี้"** */}
+      {error && why && (
+        <ErrorBox title={why.title}>
+          {why.text}
+          <br /><span className="text-[12px] text-gray-700">⇒ {why.next}</span>
+          {why.raw && why.raw !== why.text && (
+            <><br /><span className="text-[11.5px] text-gray-500">ข้อความจากระบบ: {why.raw}</span></>
+          )}
+        </ErrorBox>
+      )}
+      {error && !why && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดึงใบโอนไม่ได้'}>{error}</ErrorBox>}
       {loading && <LoadingState />}
 
       {!loading && !error && d && wrongLevel && (
