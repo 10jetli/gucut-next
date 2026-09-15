@@ -227,6 +227,11 @@ export default function DashboardPage() {
   const [whs, setWhs] = useState<{ code: string; name: string; stockValue: number | null }[] | null>(null)
   const [whErr, setWhErr] = useState('')
   const [movers, setMovers] = useState<{ sku: string; name: string; qty: number; amount: number }[] | null>(null)
+  /* 🏆 หมวดหมู่ขายดีปีนี้ — ท่อรวมให้ฝั่งเซิร์ฟเวอร์ (gucut-web b0a4aa3 · `by=category`)
+     🔴 **ห้ามรวมเองจากรายการรายสินค้า** เพราะรายการนั้นถูกตัดที่ limit ⇒ หางหายแล้วอันดับเพี้ยน
+        (ฝั่งท่อกำชับข้อนี้ตรง ๆ) ⇒ จอต้องยิง `by=category` เท่านั้น และเช็ค `applied.by` ก่อนใช้ */
+  const [cats, setCats] = useState<{ category: string; qty: number; amount: number; skus: number; orders: number }[] | null>(null)
+  const [catsErr, setCatsErr] = useState('')
   const [moversErr, setMoversErr] = useState('')
   /** จำนวนวันของการ์ด "สินค้าเคลื่อนไหว" — ZORT มี dropdown ตรงนี้ */
   const [moverDays, setMoverDays] = useState(7)
@@ -246,7 +251,7 @@ export default function DashboardPage() {
     setSideNote('')
 
     const d0 = thaiDay(0)
-    const [tRes, wRes, sRes, rRes, retRes, sheetRes, pendRes, mRes, whRes, movRes] = await Promise.allSettled([
+    const [tRes, wRes, sRes, rRes, retRes, sheetRes, pendRes, mRes, whRes, movRes, catRes] = await Promise.allSettled([
       getJson(`/api/web/core?list=orders&from=${d0}&to=${d0}&limit=1`),
       getJson(`/api/web/core?list=orders&from=${thaiDay(6)}&to=${d0}&limit=1`),
       getJson(`/api/web/core?list=stock&limit=1`),
@@ -258,6 +263,8 @@ export default function DashboardPage() {
       getJson('/api/web/core?monthly=1&months=24'),
       getJson('/api/web/core?list=warehouses'),
       getJson(`/api/web/core?list=topproducts&from=${thaiDay(moverDays - 1)}&to=${d0}&limit=10`),
+      /* ยอดตามหมวดของ **ปีนี้** (1 ม.ค. → วันนี้) — ใช้กับการ์ด "หมวดหมู่ขายดีปีนี้" */
+      getJson(`/api/web/core?list=topproducts&from=${new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 4)}-01-01&to=${d0}&by=category&limit=100`),
     ])
 
     if (tRes.status === 'fulfilled') setToday(tRes.value)
@@ -292,6 +299,18 @@ export default function DashboardPage() {
     } else {
       setMovers(null)
       setMoversErr(movRes.status === 'rejected' ? String((movRes.reason as Error)?.message ?? movRes.reason) : 'ท่อตอบมาไม่ครบ (ไม่มีรายการสินค้า)')
+    }
+
+    /* 🔴 **ด่าน `applied.by`** — ถ้าท่อไม่ได้รวมตามหมวดให้จริง (รุ่นเก่า/พารามิเตอร์ตก)
+       ต้องถือว่า "ยังไม่รู้" ไม่ใช่เอา items ที่เป็นรายสินค้ามาโชว์เป็นหมวด */
+    if (catRes.status === 'fulfilled' && catRes.value?.applied?.by === 'category' && Array.isArray(catRes.value?.items)) {
+      setCats(catRes.value.items as { category: string; qty: number; amount: number; skus: number; orders: number }[])
+      setCatsErr('')
+    } else {
+      setCats(null)
+      setCatsErr(catRes.status === 'rejected'
+        ? String((catRes.reason as Error)?.message ?? catRes.reason)
+        : 'ท่อไม่ได้รวมตามหมวดให้ (applied.by ไม่ใช่ category)')
     }
 
     if (retRes.status === 'fulfilled') {
@@ -346,6 +365,12 @@ export default function DashboardPage() {
     const cur = months.filter((m) => inRange(m.ym, thisYear)).reduce((a, m) => a + (Number(m.sales) || 0), 0)
     return ((cur - prev) / prev) * 100
   })()
+  /** หมวดที่ขายดีที่สุดปีนี้ — ท่อเรียงตาม amount มาให้แล้ว แต่ **ไม่พึ่งลำดับของท่อ** หาเองอีกชั้น
+   *  (ถ้าวันหนึ่งท่อเปลี่ยนการเรียง การ์ดนี้จะยังถูก) */
+  const topCat = cats && cats.length
+    ? cats.reduce((a, b) => ((Number(b.amount) || 0) > (Number(a.amount) || 0) ? b : a))
+    : null
+
   /* หน้าต่างกราฟ 4 เดือนแบบ ZORT · เรียงเก่า→ใหม่ · `trendBack` = ถอยไปกี่ชุด */
   const trendWindow = (() => {
     if (!months || months.length === 0) return [] as { ym: string; sales: number }[]
@@ -433,9 +458,13 @@ export default function DashboardPage() {
             ยิงตรวจเอง 15 ก.ย. 2569: `list=topproducts` ส่งมาแค่ sku · name · qty · amount
             และ `list=stock` ก็ไม่ส่งหมวดหมู่รายตัว (กรองด้วย `category=` ได้ แต่ไม่คืนค่ามา)
             ⇒ เขียนว่ารออะไรอยู่ **ห้ามเดาหมวดจากชื่อสินค้า** (เดาแล้วจะดูน่าเชื่อและผิดเงียบ ๆ) */}
+        {/* 🏆 หมวดหมู่ขายดีปีนี้ — ท่อรวมมาให้แล้ว (b0a4aa3) ⇒ การ์ดนี้ขึ้นของจริงแล้ว
+               ⚠️ กองที่ยังไม่จัดหมวดของ ZORT ก็เป็นหมวดหนึ่งเหมือนกัน **โชว์ตามจริง ห้ามซ่อน**
+                  (ฝั่งท่อกำชับ · ของจริงมันติดอันดับ 4 ด้วยซ้ำ) */}
         <ZortBigCard
           icon="🏆" label="หมวดหมู่ขายดีปีนี้"
-          unknown="ยังบอกไม่ได้ — ยอดขายรายสินค้าที่ท่อส่งมาไม่มีหมวดหมู่ติดมาด้วย (ขอให้ฝั่งท่อส่ง category มากับ list=topproducts แล้วการ์ดนี้จะขึ้นเอง)"
+          value={topCat ? topCat.category : undefined}
+          unknown={topCat ? undefined : (cats ? 'ปีนี้ยังไม่มียอดขายให้จัดอันดับ' : `ยังดึงยอดตามหมวดไม่ได้${catsErr ? ` (${catsErr})` : ''}`)}
         />
         <ZortBigCard
           icon="🔁" label="เปรียบเทียบยอดขาย ตั้งแต่ต้นปี (YTD)"
@@ -458,7 +487,8 @@ export default function DashboardPage() {
               value="total" onChange={() => { /* มีชนิดเดียวที่ทำได้จริง */ }}
               title="ZORT เลือกชุดข้อมูลได้หลายแบบ ของเรามีแบบเดียว">
               <option value="total">ยอดขายรวม</option>
-              <option value="cat" disabled>ตามหมวดหมู่ (ยังไม่มี)</option>
+              {/* ท่อรวมตามหมวดได้แล้ว (b0a4aa3) — ที่ขาดคือกราฟรายหมวดบนจอ ⇒ เขียนตามจริง */}
+              <option value="cat" disabled>ตามหมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
             </select>
           </div>
           {/* 🔴 ไม่มีข้อมูล ⇒ **วาดกรอบไว้** พร้อมข้อความ ห้ามซ่อนกราฟ (กติกาในใบ) */}

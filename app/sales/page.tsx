@@ -40,7 +40,10 @@ interface Report {
   channels: { label: string; name: string; store: string; sales: number; orders: number; prevSales: number }[]
   // ยอดเงินรายสินค้ามาจาก /api/core?list=topproducts (รวมจาก order_items จริง)
   // ยังเป็น optional ไว้ เผื่อท่อนั้นล่ม — โชว์ขีดดีกว่าโชว์เลขที่เดาเอง
-  topProducts: { name: string; sku: string; qty: number; amount?: number }[] | null
+  /** ⑦ `category` มากับทุกแถวแล้ว (ท่อ gucut-web b0a4aa3 · 15 ก.ย. 2569)
+   *  🔴 สามสถานะ: มีชื่อหมวด · `''` = ZORT ยังไม่จัดหมวด (หรือคลังไม่รู้จัก sku) · ไม่มีคีย์เลย = ท่อรุ่นเก่า
+   *     ⇒ สองอันหลังเขียนไม่เหมือนกัน ห้ามรวบเป็น "ไม่มีหมวด" อันเดียว */
+  topProducts: { name: string; sku: string; qty: number; amount?: number; category?: string }[] | null
   /** ⚠️ ท่อสินค้าขายดีล้มเหลว — ต้องแยกจาก "ไม่มียอดขาย" ให้ขาด
    *  ตารางว่างเพราะยิงไม่ผ่าน แล้วเขียนว่า "ยังไม่มียอดขายในช่วงนี้"
    *  = พูดแทนธุรกิจว่าขายไม่ได้ ทั้งที่เราแค่ถามไม่สำเร็จ */
@@ -297,10 +300,14 @@ function ReportKindSelect() {
       value="total"
       onChange={() => { /* มีค่าเดียวที่เลือกได้จริง */ }}
       className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
-      title="ตอนนี้มีชนิดเดียว — ยอดขายตามหมวดหมู่ยังทำไม่ได้ เพราะท่อยังไม่ส่งหมวดหมู่มากับยอดขายรายสินค้า"
+      /* 🔄 **แก้ป้าย 15 ก.ย. 2569** — เดิมเขียนว่า "ยังไม่มี" เพราะท่อไม่ส่งหมวดมา
+         ตอนนี้ท่อส่งแล้ว (b0a4aa3 · `by=category` รวมให้ฝั่งเซิร์ฟเวอร์ 36 หมวด)
+         ⇒ ที่ยังขาดคือ **จอยังไม่ได้ทำ** ไม่ใช่ข้อมูลไม่มี · เขียนให้ตรงกับความจริงปัจจุบัน
+         (ข้อความที่เคยถูกแล้วไม่มีใครกลับมาแก้ = โกหกเงียบ ๆ — บทเรียนเดิมของโปรเจกต์นี้) */
+      title="ท่อรวมยอดตามหมวดให้ได้แล้ว แต่จอนี้ยังไม่ได้ทำมุมมองรายหมวด"
     >
       <option value="total">ยอดขายรวม</option>
-      <option value="cat" disabled>ยอดขายตามหมวดหมู่ (ยังไม่มี)</option>
+      <option value="cat" disabled>ยอดขายตามหมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
     </select>
   )
 }
@@ -387,7 +394,8 @@ export default function SalesReportPage() {
       }
 
       const prevByChan = new Map(prev.channels.map((c) => [c.channel, c.amount]))
-      const bestRows: { sku: string; name: string; qty: number; amount: number }[] =
+      /* `category` = ช่องใหม่จากท่อ (b0a4aa3) · ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ จอต้องเงียบ ไม่ใช่เขียนว่าไม่มีหมวด */
+      const bestRows: { sku: string; name: string; qty: number; amount: number; category?: string }[] =
         Array.isArray(best?.items) ? best.items.filter((r: { qty: number }) => r.qty > 0) : []
       const topError = !best ? 'ยิงไปที่ท่อสินค้าขายดีไม่สำเร็จ'
         : (typeof best.error === 'string' ? best.error
@@ -419,7 +427,7 @@ export default function SalesReportPage() {
         returnsSyncComplete: cur.returnsSyncComplete,
         returnsScope: cur.returnsScope,
         topProducts: bestRows.map((r) => ({
-          name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount,
+          name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount, category: r.category,
         })),
       })
     } catch (e) {
@@ -648,10 +656,10 @@ export default function SalesReportPage() {
                     value="sku"
                     onChange={() => { /* มีแบบเดียวที่ทำได้จริง */ }}
                     className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
-                    title="ZORT จัดกลุ่มได้ 5 แบบ ของเรายังทำได้แบบเดียว (รายสินค้า)"
+                    title="ZORT จัดกลุ่มได้ 5 แบบ · ของเราทำได้แบบเดียวบนจอนี้ (รายสินค้า) — หมวดหมู่ท่อพร้อมแล้วแต่จอยังไม่ได้ทำ"
                   >
                     <option value="sku">สินค้า</option>
-                    <option value="cat" disabled>หมวดหมู่ (ยังไม่มี)</option>
+                    <option value="cat" disabled>หมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
                     <option value="contact" disabled>ผู้ติดต่อ (ยังไม่มี)</option>
                     <option value="user" disabled>ผู้ใช้งาน (ยังไม่มี)</option>
                     <option value="wh" disabled>คลัง/สาขา (ยังไม่มี)</option>
@@ -669,10 +677,7 @@ export default function SalesReportPage() {
                 <p className="text-[11.5px] text-gray-400 px-4 md:px-5 pt-1">
                   ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum((report.topProducts ?? []).length)} รายการ)
                   {' '}ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์
-                  {/* ⑦ หมวดหมู่ใต้ชื่อสินค้า — ZORT มี เรายังไม่มีข้อมูล ⇒ บอกตรง ๆ ว่ารออะไร */}
-                  <br />⚠️ ZORT มีบรรทัด &ldquo;หมวดหมู่&rdquo; ใต้ชื่อสินค้า — ของเรายังไม่มี
-                  {' '}เพราะยอดขายรายสินค้าที่ท่อส่งมามีแค่ <b>รหัส · ชื่อ · จำนวน · ยอด</b> (ยิงตรวจแล้ว 15 ก.ย. 2569)
-                  {' '}⇒ ขอให้ฝั่งท่อส่งหมวดหมู่มาด้วยแล้วจอจะขึ้นเองทันที
+                  {/* ⑦ หมวดหมู่ใต้ชื่อสินค้า — ท่อส่งมาแล้ว (b0a4aa3) ⇒ ขึ้นจริงในตารางข้างล่าง */}
                 </p>
                 <TableWrap>
                   <table className="w-full min-w-[720px]">
@@ -712,6 +717,13 @@ export default function SalesReportPage() {
                               <Link href={`/core/stock/${encodeURIComponent(p.sku)}`} className="text-blue-600 hover:underline">
                                 {p.name}
                               </Link>
+                              {/* ⑦ บรรทัดหมวดหมู่ใต้ชื่อ — ตำแหน่งเดียวกับ ZORT
+                                     🔴 สามสถานะ: มีหมวด · ZORT ยังไม่จัดหมวด · ท่อรุ่นเก่าไม่ส่งช่องมา (เงียบ) */}
+                              {typeof p.category === 'string' && (
+                                <span className="block text-[11px] text-gray-400">
+                                  หมวดหมู่: {p.category || '(ยังไม่ได้จัดหมวดใน ZORT)'}
+                                </span>
+                              )}
                             </td>
                             <td className={TDR}>{fmtNum(p.qty)}</td>
                             {/* ⚠️ ไม่มียอดเงินจริงให้แสดงขีด ห้ามคูณ qty × ราคาขาย ซึ่งเป็นการเดา */}
