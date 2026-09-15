@@ -37,7 +37,12 @@ interface DeadRow {
   lastSoldAt?: string | null; onhand?: number; value?: number
 }
 /** ค่าที่คัดมาจากจอหมวดหมู่ของ ZORT — ต้นทุนเฉลี่ยถ่วงน้ำหนักที่ API ไม่เปิดให้ดึง */
-interface CatResp { zortTotalValue?: number; zortCollectedAt?: string; zortCategories?: number }
+interface CatResp {
+  zortTotalValue?: number; zortCollectedAt?: string; zortCategories?: number
+  /** มูลค่าคงเหลือรายหมวด (ท่อส่งมาในคำตอบเดียวกัน) — ใช้กับมุมมอง "รายหมวดหมู่" ของการ์ดมูลค่า
+   *  ⚠️ ฐานคนละอันกับมูลค่ารายคลัง (อันนั้นเป็นเลขที่ ZORT ตอบสด) ⇒ ผลรวมไม่เท่ากันได้ */
+  rows?: { cat_name: string; skus?: number; onhand_value?: number }[]
+}
 interface DeadResp {
   skip?: string; days?: number; total?: number; rows?: DeadRow[]
   /** มูลค่ารวมของสินค้าจมทั้งชุด (คิดจากราคาขาย) */
@@ -48,7 +53,12 @@ interface DeadResp {
   cut?: string
 }
 
+/* ช่วง "สินค้าจม" — ให้ครบตามที่ ZORT มี (กดดูจอ ZORT เอง 16 ก.ย. 2569 · `tableoption` 5 ค่า)
+   ⚠️ ท่อรับ `days` เป็นจำนวนเต็มอิสระอยู่แล้ว (ยิงตรวจ: days=7 ⇒ 1,981 · 30 ⇒ 1,789 · 90 ⇒ 1,568)
+      ⇒ เพิ่มตัวเลือกได้เลย ไม่ต้องรอท่อ */
 const DEAD_RANGES = [
+  { days: 7, label: 'ขายไม่ได้เกิน 7 วัน' },
+  { days: 30, label: 'ขายไม่ได้เกิน 1 เดือน' },
   { days: 90, label: 'ขายไม่ได้เกิน 3 เดือน' },
   { days: 180, label: 'ขายไม่ได้เกิน 6 เดือน' },
   { days: 365, label: 'ขายไม่ได้เกิน 1 ปี' },
@@ -61,6 +71,11 @@ export default function CoreProductReportPage() {
   const [deadErr, setDeadErr] = useState('')
   const [catErr, setCatErr] = useState('')
   const [deadDays, setDeadDays] = useState(90)
+  /** 🏬 มูลค่าคงเหลือรายคลัง (ZORT มีการ์ดนี้) · `stockValue: null` = ยังไม่รู้ ห้ามนับเป็น 0 */
+  const [whs, setWhs] = useState<{ code: string; name?: string; stockValue?: number | null }[] | null>(null)
+  const [whErr, setWhErr] = useState('')
+  /** มุมมองการ์ดมูลค่าคงเหลือ — ผังเดียวกับ dropdown `typeoption` ของ ZORT */
+  const [valueBy, setValueBy] = useState<'warehouse' | 'category'>('warehouse')
   const [q, setQ] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -69,13 +84,16 @@ export default function CoreProductReportPage() {
     setLoading(true)
     setError('')
     try {
-      const [sRes, dRes, cRes] = await Promise.all([
+      const [sRes, dRes, cRes, wRes] = await Promise.all([
         fetch('/api/web/core?list=stock&limit=1').then((r) => r.json()),
         // ท่อนี้มีแล้ว · ล้มก็ไม่ทำให้ทั้งจอพัง แค่ตารางสินค้าจมว่าง
         // ⚠️ แต่ต้องจำไว้ว่า "ล้มเพราะอะไร" — ท่อพังกับไม่มีสินค้าจม เขียนเหมือนกันไม่ได้
         fetch(`/api/web/core?list=deadstock&days=${days}`).then((r) => r.json()).catch(() => null),
         // ค่าที่คัดจาก ZORT — ล้มก็แค่ไม่มีบรรทัดเทียบ ไม่ทำให้ทั้งจอพัง
         fetch('/api/web/core?list=categories').then((r) => r.json()).catch(() => null),
+        /* 🏬 มูลค่าคงเหลือรายคลัง — ZORT มีการ์ดนี้ในจอเดียวกัน (typeoption: รายคลัง/รายหมวดหมู่)
+           ⚠️ คลังที่ ZORT ไม่ส่งตัวเลขมา (`stockValue: null`) = **ยังไม่รู้ ไม่ใช่ 0** ⇒ แยกแถวไว้ */
+        fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null),
       ])
       if (sRes?.error) throw new Error(sRes.error)
       setStock(sRes)
@@ -84,6 +102,10 @@ export default function CoreProductReportPage() {
          คนอ่านจะนึกว่าจอไม่มีข้อมูลนั้น ทั้งที่แค่ยิงไม่ผ่านรอบนี้ (โรคเดียวกับ deadstock ที่ข้าง ๆ กันมีตัวบอกแล้ว) */
       setCat(cRes && !cRes.error ? cRes : null)
       setCatErr(!cRes ? 'ยิงไปที่ท่อหมวดหมู่ไม่สำเร็จ' : (typeof cRes.error === 'string' ? cRes.error : ''))
+      setWhs(wRes && Array.isArray(wRes.warehouses) ? wRes.warehouses : null)
+      setWhErr(!wRes ? 'ยิงไปที่ท่อรายชื่อคลังไม่สำเร็จ'
+        : (typeof wRes.error === 'string' ? wRes.error
+          : (Array.isArray(wRes.warehouses) ? '' : 'ท่อตอบมาไม่ครบ (ไม่มีรายชื่อคลัง)')))
       setDead(dRes && !dRes.error ? dRes : null)
       setDeadErr(!dRes ? 'ยิงไปที่ท่อสินค้าจมไม่สำเร็จ' : (typeof dRes.error === 'string' ? dRes.error : ''))
     } catch (e) {
@@ -220,16 +242,101 @@ export default function CoreProductReportPage() {
                   (`25` — โกดัง 16,456,971.3 · KLD 1,562.32 · ANJ 0)
                   ⇒ ที่จริงคือ **API ไม่ส่งมา** ไม่ใช่ **ZORT ไม่มี** ⇒ เป็น ⏳ ไม่ใช่ ❌
                   ⚠️ **ห้ามวาดวงกลม 100% ของคลังเดียว** ยังคงเดิม — วาดจากข้อมูลที่ไม่มีคือการเดา */}
-              <div className="flex flex-col items-center justify-center py-12 text-center">
-                <span className="text-[34px] opacity-60">🥧</span>
-                <p className="text-[13px] text-gray-700 mt-2">ยังไม่ได้ดึงข้อมูลแยกรายคลัง</p>
-                <p className="text-[12px] text-gray-500 mt-1 max-w-[380px] leading-relaxed">
-                  คลังเงาของเราเก็บสต็อกรวมทั้งร้าน ยังไม่ได้แยกตามคลัง ·
-                  <b> จอ ZORT มีตัวเลขนี้อยู่</b> (ทั้งกราฟวงกลมในจอนี้ และตัวเลขในจอคลังสินค้า/สาขา)
-                  แต่ API ไม่ส่งค่าแยกรายคลังมา ⇒ เป็นของที่<b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b> ·
-                  มีแค่ 3 คลัง ถ้า API ไม่ให้ก็คัดมาด้วยมือได้
-                </p>
+              {/* 🔄 **แก้ของค้าง 16 ก.ย. 2569** — บล็อกเดิมเขียนว่า "API ไม่ส่งค่าแยกรายคลังมา"
+                     ซึ่งจริงตอนเขียน แต่ตอนนี้ `list=warehouses` ส่ง `stockValue` รายคลังมาแล้ว
+                     (ยิงจริง: NEW 16,296,871.16 · KLD 1,562.32 · ANJ 0)
+                     ⇒ ปล่อยไว้คือคำโกหก และทำให้คนคิดว่าต้องไปคัดมือ
+                  🔴 `stockValue` เป็น `null` = **ยังไม่รู้** (ZORT ไม่ให้สิทธิ์ดูคลังนั้น) ⇒ แยกแถว ห้ามนับเป็น 0 */}
+              <div className="flex flex-wrap items-center gap-2 mb-2">
+                <select
+                  value={valueBy}
+                  onChange={(e) => setValueBy(e.target.value as 'warehouse' | 'category')}
+                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
+                >
+                  <option value="warehouse">รายคลัง</option>
+                  <option value="category">รายหมวดหมู่</option>
+                </select>
+                <span className="text-[11.5px] text-gray-400">
+                  {valueBy === 'warehouse'
+                    ? 'มูลค่าคงเหลือที่ ZORT ตอบรายคลัง (ถามสดตอนเปิดหน้า)'
+                    : 'มูลค่าคงเหลือตามหมวด — ฐานเดียวกับการ์ดบนสุด (ต้นทุนเฉลี่ยที่คัดจาก ZORT)'}
+                </span>
               </div>
+
+              {valueBy === 'warehouse' && (
+                whErr && !whs
+                  ? <p className="text-[12.5px] text-red-700 py-6 text-center">⚠️ ดึงมูลค่ารายคลังไม่ได้: {whErr}</p>
+                  : (
+                    <table className="w-full text-[12.5px]">
+                      <thead>
+                        <tr className="text-gray-500 border-b border-gray-200">
+                          <th className="text-left font-medium py-1.5">คลังสินค้า</th>
+                          <th className="text-right font-medium">มูลค่าคงเหลือ (บาท)</th>
+                          <th className="text-right font-medium">สัดส่วน</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(whs ?? []).map((w) => {
+                          const known = (whs ?? []).filter((x) => typeof x.stockValue === 'number')
+                          const total = known.reduce((a, x) => a + (x.stockValue as number), 0)
+                          return (
+                            <tr key={w.code} className="border-b border-gray-100 last:border-0">
+                              <td className="py-1.5 text-gray-700">{w.name || w.code} <span className="text-gray-400">({w.code})</span></td>
+                              <td className="text-right text-gray-700">
+                                {typeof w.stockValue === 'number'
+                                  ? fmtMoney(w.stockValue)
+                                  : <span className="text-amber-700">ยังไม่รู้</span>}
+                              </td>
+                              <td className="text-right text-gray-500">
+                                {typeof w.stockValue === 'number' && total > 0
+                                  ? `${((w.stockValue / total) * 100).toFixed(1)}%`
+                                  : <span className="text-gray-300">—</span>}
+                              </td>
+                            </tr>
+                          )
+                        })}
+                        {!whs && !whErr && (
+                          <tr><td colSpan={3} className="py-4 text-gray-400">กำลังถามมูลค่ารายคลัง…</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )
+              )}
+
+              {valueBy === 'category' && (
+                catErr && !cat
+                  ? <p className="text-[12.5px] text-red-700 py-6 text-center">⚠️ ดึงมูลค่าตามหมวดไม่ได้: {catErr}</p>
+                  : (
+                    <table className="w-full text-[12.5px]">
+                      <thead>
+                        <tr className="text-gray-500 border-b border-gray-200">
+                          <th className="text-left font-medium py-1.5">หมวดหมู่</th>
+                          <th className="text-right font-medium">รหัสสินค้า</th>
+                          <th className="text-right font-medium">มูลค่าคงเหลือ (บาท)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(cat?.rows ?? []).slice(0, 12).map((r) => (
+                          <tr key={r.cat_name} className="border-b border-gray-100 last:border-0">
+                            <td className="py-1.5 text-gray-700">{r.cat_name}</td>
+                            <td className="text-right text-gray-500">{fmtNum(r.skus ?? 0)}</td>
+                            <td className="text-right text-gray-700">{fmtMoney(r.onhand_value ?? 0)}</td>
+                          </tr>
+                        ))}
+                        {(cat?.rows ?? []).length > 12 && (
+                          <tr><td colSpan={3} className="py-2 text-[11.5px] text-gray-400">
+                            แสดง 12 หมวดแรกจาก {fmtNum((cat?.rows ?? []).length)} หมวด — ดูครบที่จอหมวดหมู่
+                          </td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  )
+              )}
+
+              <p className="text-[11.5px] text-gray-400 mt-2 leading-relaxed">
+                ⚠️ สองมุมมองนี้ <b>คิดคนละฐาน</b> — รายคลังคือตัวเลขที่ ZORT ตอบสด · รายหมวดคิดจากต้นทุนเฉลี่ยที่คัดมา
+                {' '}⇒ <b>ผลรวมไม่เท่ากันเป็นเรื่องปกติ</b>
+              </p>
             </Card>
           </div>
 

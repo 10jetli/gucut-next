@@ -177,7 +177,11 @@ export default function BuyReportPage() {
          ⇒ จอเดียวสองขอบเขต **โดยไม่มีอะไรบอก** (ฝั่งท่อจับได้ 16 ก.ย. 2569) */
       const range = `&from=${fromDay}&to=${toDay}`
       const [res, iRes] = await Promise.all([
-        fetch(`/api/web/core?list=purchases&limit=200${st}`),
+        /* 🗓️ **กรองวันที่เซิร์ฟเวอร์แล้ว** (ท่อ gucut-web 1d84c47 · 16 ก.ย. 2569)
+           ของเดิมดึง 200 ใบแรกมากรองวันในเครื่อง ⇒ ถ้าร้านมีใบซื้อเกิน 200 ใบ
+           **ใบที่เกินจะหายเงียบ ๆ** และยอดจะต่ำกว่าจริงโดยไม่มีอะไรฟ้อง (ฝั่งท่อจดเตือนไว้)
+           ตอนนี้ส่ง from/to ไปพร้อมกัน ⇒ ท่อคัดให้ทั้งสรุป/แท็บ/แถว ด้วยเงื่อนไขชุดเดียวกัน */
+        fetch(`/api/web/core?list=purchases&limit=200${st}${range}`),
         // ⚠️ ล้มก็ไม่ทำให้ทั้งจอพัง แต่ต้องจำไว้ว่าล้มเพราะอะไร (ท่อพัง ≠ ไม่มีของ)
         fetch(`/api/web/core?list=purchaseitems&limit=200${st}${range}&by=${byId}`).then((r) => r.json()).catch(() => null),
       ])
@@ -205,6 +209,13 @@ export default function BuyReportPage() {
       /* ลำดับสำคัญ: skip (ทำต่อไม่ได้) ต้องมาก่อน "ตอบมาไม่ครบ" ไม่งั้นจอขึ้นแดงทุกครั้งที่คลังเงายังไม่พร้อม */
       if (j?.skip) throw new Error(SKIP + j.skip)
       if (!j || !('rows' in j)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายการใบซื้อ) — ยังสรุปยอดซื้อไม่ได้')
+      /* 🔴 **ด่านช่วงวันของใบซื้อ** — จอไม่กรองวันเองแล้ว ⇒ ถ้าท่อไม่ได้ใช้ช่วงที่ส่งไป
+         ตัวเลขทั้งหน้าจะเป็นของช่วงอื่นโดยดูปกติทุกประการ ⇒ ต้องล้มให้เห็น ไม่ใช่โชว์ต่อ */
+      const pFrom = (j as { applied?: { from?: string | null } })?.applied?.from ?? null
+      const pTo = (j as { applied?: { to?: string | null } })?.applied?.to ?? null
+      if (pFrom !== fromDay || pTo !== toDay) {
+        throw new Error(`ท่อไม่ได้ใช้ช่วงวันที่จอส่งไป (ขอ ${fromDay}–${toDay} · ท่อใช้ ${pFrom ?? 'ทั้งหมด'}–${pTo ?? 'ทั้งหมด'}) ⇒ ไม่แสดงตัวเลขที่ขอบเขตไม่ตรง`)
+      }
       setAll(j)
       setRows(Array.isArray(j.rows) ? j.rows : [])
     } catch (e) {
@@ -218,10 +229,11 @@ export default function BuyReportPage() {
 
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const inRange = useMemo(
-    () => (rows ?? []).filter((r) => r.po_date && r.po_date >= from && r.po_date <= to),
-    [rows, from, to],
-  )
+  /* 🔄 **เลิกกรองวันในเครื่องแล้ว** — ท่อกรองให้ที่เซิร์ฟเวอร์ (ส่ง from/to ไปกับคำขอ)
+     ⚠️ ยังกรองซ้ำในเครื่องอีกชั้นไม่ได้ เพราะจะตัดแถวที่ท่อคัดมาแล้วทิ้งซ้ำโดยไม่มีเหตุผล
+        (และถ้าท่อเปลี่ยนนิยามวันเมื่อไหร่ สองฝั่งจะไม่ตรงกันเงียบ ๆ)
+     🔴 ตัวที่คุมความถูกต้องคือ **ด่าน `applied.from/to`** ข้างล่าง ไม่ใช่การกรองซ้ำ */
+  const inRange = rows ?? []
   const sum = inRange.reduce((a, r) => a + (Number(r.amount) || 0), 0)
   /* 🔴 **ใบซื้อที่ยกเลิกถูกนับรวมอยู่ในยอดนี้** — และ **ZORT ไม่นับ**
      📏 อ่านจอ ZORT เอง 15 ก.ย. 2569 (`/Dashboard/BuyReport` ช่วงตั้งต้น "ย้อนหลัง 3 เดือน"):
