@@ -912,6 +912,7 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
       ok: true, found: true, sku, id: 999999, warehousecode: w || null,
+      bundle: { id: 999999, sku, name: 'ชุดทดสอบ พร้อมขายเป็นศูนย์', sellprice: '6700', sell_vat_status: 1, active: true },
       summaryStock: { stock: '18', availablestock: '0' },
       detailStock: (denied || silent) ? { stock: null, availablestock: null } : { stock: '18', availablestock: '0' },
       detail: {
@@ -921,6 +922,22 @@ const srv = createServer(async (req, res) => {
         keys: ['resCode', 'resDesc', 'detail'],
       },
     }))
+  }
+
+  /* แก้ชุดสินค้า: dry-run และผลสำเร็จจำลอง ไม่ส่งออกนอกเครื่อง */
+  if (mode === 'good' && /[?&]updatebundle=/.test(req.url) && req.method === 'POST') {
+    const body = (await new Promise((ok) => {
+      let b = ''; req.on('data', (c) => (b += c))
+      req.on('end', () => { try { ok(JSON.parse(b)) } catch { ok(null) } })
+    })) || {}
+    const willSend = {}
+    if (body.name !== undefined) willSend.name = String(body.name).trim()
+    if (body.price !== undefined) willSend.sellprice = String(Number(body.price))
+    if (body.vat !== undefined) willSend.sell_vat_status = Number(body.vat)
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify(body.confirm
+      ? { ok: true, updated: true, ref: body.ref, id: body.id, sku: body.sku, message: `ท่อปลอม: จำลองว่าแก้ชุด ${body.sku} แล้ว` }
+      : { ok: true, dryRun: true, ref: body.ref, willSend: { query: { id: body.id }, body: willSend }, expectSku: body.sku }))
   }
 
   /* สินค้าเป็นชุด (?list=bundles) — มีไว้เดิน **สามทาง** ของแถบอายุตัวเลขคงเหลือ/พร้อมขาย
