@@ -981,6 +981,10 @@ export default function CoreSalesPage() {
                 className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
                 🖨 พิมพ์ใบส่งสินค้า
               </Link>
+              <Link href={`/core/sales/print?doc=shipconfirm&ids=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ใบยืนยันการจัดส่ง
+              </Link>
               <button type="button" onClick={() => { void copyNumbers(picked) }}
                 className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
                 คัดลอกเลขที่ใบที่เลือก
@@ -990,7 +994,8 @@ export default function CoreSalesPage() {
               <span className="text-gray-500 basis-full">
                 ⚠️ ZORT พิมพ์จากจอนี้ได้ <b>8 แบบ</b> (ใบวางบิล · ใบจ่าหน้ากล่อง · ใบจัดเตรียมสินค้า · ฉลากจัดส่ง ·
                 ใบแจ้งยอดชำระ · ใบส่งสินค้า · ใบส่งสินค้า+ใบสั่งซื้อ · ใบยืนยันการจัดส่ง) —
-                <b>ของเรามี 2 แบบ</b> (ใบจัดเตรียมสินค้า · ใบส่งสินค้า) — ที่เหลือรอ<b>ที่อยู่ผู้รับ</b>จากท่อ ·
+                <b>ของเรามี 3 แบบ</b> (ใบจัดเตรียมสินค้า · ใบส่งสินค้า · ใบยืนยันการจัดส่ง) —
+                ที่เหลือรอ<b>ที่อยู่ผู้รับ</b>จากท่อ ·
                 และคำสั่งอีก 8 อย่าง (ปักหมุด · Tag · แก้ข้อมูลขนส่ง ·
                 โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · รวมรายการ · ซ่อน) ยังทำไม่ได้เพราะต้อง<b>เขียนกลับไปที่ ZORT</b>
               </span>

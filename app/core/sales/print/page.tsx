@@ -35,6 +35,8 @@ interface Order {
   id?: string; number?: string | null; customer?: string | null; channel?: string | null
   order_date?: string | null; ship_channel?: string | null; ship_name?: string | null
   tracking_no?: string | null; is_cod?: boolean | null; status?: string | null
+  /** วันที่ส่งของ — ใช้ในใบยืนยันการจัดส่ง · ท่อส่งมาเป็นวันที่เปล่า ๆ (ไม่มีโซนเวลา) */
+  ship_date?: string | null
   amount?: number | null; bill_discount?: number | null; ship_amount?: number | null
 }
 
@@ -44,6 +46,11 @@ interface Order {
 const DOCS = {
   pick: { title: 'ใบจัดเตรียมสินค้า', money: false },
   delivery: { title: 'ใบส่งสินค้า', money: true },
+  /* 📦 **ใบยืนยันการจัดส่ง** — เพิ่ม 17 ก.ย. 2569
+     ZORT มีเอกสารชนิดนี้อยู่ในเมนู "พิมพ์เอกสาร" ของจอรายการขาย
+     ⇒ ทำได้เพราะข้อมูลที่ต้องใช้ **ท่อส่งมาครบแล้ว**: เลขพัสดุ · ขนส่ง · วันส่ง · ชื่อผู้รับ
+        (ต่างจากใบจ่าหน้ากล่อง/ฉลากจัดส่ง ที่ต้องใช้ **ที่อยู่เต็ม** ซึ่งกระจกไม่ได้เก็บ) */
+  shipconfirm: { title: 'ใบยืนยันการจัดส่ง', money: false },
 } as const
 type DocKey = keyof typeof DOCS
 
@@ -72,7 +79,7 @@ export default function SalesPrintPage() {
     const raw = sp.get('ids') ?? ''
     setIds(raw.split(',').map((x) => x.trim()).filter(Boolean).slice(0, MAX_IDS))
     const d = sp.get('doc')
-    if (d === 'delivery' || d === 'pick') setDoc(d)
+    if (d === 'delivery' || d === 'pick' || d === 'shipconfirm') setDoc(d)
   }, [])
 
   const load = useCallback(async (list: string[]) => {
@@ -192,9 +199,28 @@ export default function SalesPrintPage() {
               {s.order?.channel && <div>ช่องทาง: {s.order.channel}</div>}
               {s.order?.ship_channel && <div>ขนส่ง: {s.order.ship_channel}</div>}
               {s.order?.tracking_no && <div>เลขพัสดุ: {s.order.tracking_no}</div>}
-              {s.order?.is_cod && <div className="font-semibold">เก็บเงินปลายทาง (COD)</div>}
+              {/* 🔴 `is_cod` เป็น **ตัวเลข 0/1** ไม่ใช่ boolean ⇒ เขียน `{s.order?.is_cod && …}` เฉย ๆ
+                     React จะเรนเดอร์ **เลข 0** ลงบนใบ (เห็นของจริงบนใบยืนยันการจัดส่ง 17 ก.ย. 2569)
+                  ⇒ ต้องแปลงเป็น boolean ก่อนเสมอ */}
+              {!!s.order?.is_cod && <div className="font-semibold">เก็บเงินปลายทาง (COD)</div>}
             </div>
           </div>
+
+          {/* 📦 ใบยืนยันการจัดส่ง — ส่วนหัวของใบต้องตอบสามคำถาม: ส่งด้วยอะไร · เลขพัสดุอะไร · ส่งวันไหน
+              🔴 **ใบที่ยังไม่มีเลขพัสดุ ห้ามพิมพ์เป็นใบยืนยัน** — เท่ากับยืนยันสิ่งที่ยังไม่เกิด
+                 ⇒ เขียนบนใบนั้นตรง ๆ ว่ายังไม่มีเลขพัสดุ (ไม่ใช่เว้นว่างให้คนเติมเอง) */}
+          {DOCS[doc].title === 'ใบยืนยันการจัดส่ง' && (
+            <div className="mb-3 rounded border border-gray-300 px-3 py-2 text-[13px]">
+              <div className="flex justify-between"><span>ขนส่ง</span>
+                <b>{s.order?.ship_channel || <span className="text-red-700">ท่อไม่ได้ส่งชื่อขนส่งมา</span>}</b></div>
+              <div className="flex justify-between"><span>เลขพัสดุ</span>
+                <b>{s.order?.tracking_no || <span className="text-red-700">ใบนี้ยังไม่มีเลขพัสดุ — ยังยืนยันการส่งไม่ได้</span>}</b></div>
+              <div className="flex justify-between"><span>วันที่ส่ง</span>
+                <b>{s.order?.ship_date ? thaiDate(String(s.order.ship_date).slice(0, 10))
+                  : <span className="text-red-700">ยังไม่มีวันส่ง</span>}</b></div>
+              {!!s.order?.is_cod && <div className="flex justify-between"><span>การชำระ</span><b>เก็บเงินปลายทาง (COD)</b></div>}
+            </div>
+          )}
 
           {(s.items?.length ?? 0) === 0 ? (
             <p className="text-[13px] text-red-700 border border-red-200 bg-red-50 rounded px-3 py-2">
@@ -210,7 +236,9 @@ export default function SalesPrintPage() {
                   <th className="py-1.5 text-right w-20">จำนวน</th>
                   {DOCS[doc].money
                     ? <th className="py-1.5 text-right w-28">จำนวนเงิน</th>
-                    : <th className="py-1.5 w-16 text-center">หยิบแล้ว</th>}
+                    /* ช่องติ๊ก "หยิบแล้ว" มีประโยชน์เฉพาะ **ใบจัดเตรียม** (คนหยิบติ๊กบนกระดาษ)
+                       ใบยืนยันการจัดส่งไม่ต้องมี — ของส่งไปแล้ว จะติ๊กอะไรอีก */
+                    : doc === 'pick' ? <th className="py-1.5 w-16 text-center">หยิบแล้ว</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -230,9 +258,9 @@ export default function SalesPrintPage() {
                           ? fmtMoney(num(it.amount) as number)
                           : <span className="text-red-700">ไม่รู้ยอด</span>}
                       </td>
-                    ) : (
+                    ) : doc === 'pick' ? (
                       <td className="py-1.5 text-center text-gray-300">☐</td>
-                    )}
+                    ) : null}
                   </tr>
                 ))}
               </tbody>
