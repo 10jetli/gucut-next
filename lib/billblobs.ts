@@ -15,6 +15,13 @@ export interface BillEntry {
   attachmentId: string
   size: number
   subject: string
+  /** เลขที่เอกสารที่อ่านมาจาก **เนื้อใน PDF** (เพิ่ม 16 ก.ย. 2569 · ใบ t_mu3g8tq5)
+   *  🔴 เดิมตัวคัดซ้ำบนจออ่านเลขจาก **ชื่อไฟล์** ด้วย regex 4 แบบ (THTT · FBADS · IN- · INV)
+   *     ⇒ เจ้าที่ตั้งชื่อไฟล์คนละแบบ (Adobe) **ไม่เคยถูกคัดซ้ำเลย** ⇒ จอโชว์ 3 ไฟล์ว่าเป็น 3 ใบ
+   *  ⚠️ ของเก่าในแคชไม่มีช่องนี้ (undefined) ⇒ ตัวคัดซ้ำต้องถอยไปใช้ชื่อไฟล์เหมือนเดิม ห้ามพัง */
+  invoiceNo?: string | null
+  /** รอบบิลที่พิมพ์ในเอกสาร (YYYY-MM) — ใช้อธิบายว่าเดือนที่จัดมาจากไหน */
+  period?: string | null
 }
 export interface BillIndex {
   lastScan: string          // สแกน Gmail ครั้งล่าสุด (เขียนทุกรอบ แม้ไม่เจอของใหม่)

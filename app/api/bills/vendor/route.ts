@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
+import { billFilingMonth, billIdentity } from '@/lib/bill-identity'
+import { คัดซ้ำ, เลขที่ใบ } from '@/lib/bill-dedupe'
 import { BillEntry, listVendorBlobFiles, loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
 
 export const dynamic = 'force-dynamic'
@@ -22,9 +24,11 @@ const isBillFile = (name: string) => /\.pdf$/i.test(name) || /\.zip$/i.test(name
 function monthsFromEntries(entries: BillEntry[]) {
   const months: Record<string, any[]> = {}
   for (const e of entries) {
+    /* ⚠️ ต้องส่ง invoiceNo ต่อไปด้วย ไม่งั้น `คัดซ้ำ()` จะไม่เห็นเลขที่อ่านจากเอกสาร
+       (16 ก.ย. 2569 — จุดที่ทำให้ของ Adobe ซ้ำ คือเลขไม่เคยเดินทางมาถึงตัวคัดซ้ำ) */
     ;(months[e.month] ??= []).push({
       filename: e.filename, messageId: e.messageId, attachmentId: e.attachmentId,
-      size: e.size, subject: e.subject,
+      size: e.size, subject: e.subject, invoiceNo: e.invoiceNo ?? null,
     })
   }
   return months
@@ -52,37 +56,6 @@ async function attachRealFiles(months: Record<string, any[]>, vendorId: string, 
   return months
 }
 
-
-/* หาเลขที่ใบจากชื่อไฟล์ — ใช้ตัดสินว่าสองไฟล์คือ "ใบเดียวกัน" หรือไม่
-   🔴 15 ก.ย. 2569 ท่านประธานทัก: เดือน 8 จอโชว์ 8 ใบ แต่ของจริงมี **4 ใบ**
-      เพราะบิลใบเดียวกันเข้าระบบสองทาง แล้วได้ชื่อไฟล์คนละแบบ:
-        · THTT202606634060-บริษัท ศีตกาล เทรดดิ้ง จำกัด-Invoice.pdf   (ตัวเก็บอัตโนมัติ)
-        · TikTok-Invoice-THTT202606634060.pdf                        (ไฟล์แนบในอีเมล)
-      ⇒ นับซ้ำทุกใบ · บัญชีเห็นแล้วนึกว่ามีบิลสองเท่าของจริง
-
-   ⚠️ จับคู่ด้วย **เลขที่ใบเท่านั้น** ห้ามเดาจากขนาดไฟล์หรือวันที่
-      ไฟล์คนละใบอาจขนาดเท่ากันเป๊ะได้ (ใบจากระบบเดียวกันมักเท่ากัน)
-   ⚠️ ไม่มีเลขที่ใบในชื่อ ⇒ **เก็บไว้ทั้งหมด** ห้ามเดาว่าซ้ำ
-      บิลหายหนึ่งใบ = เอกสารภาษีขาดหนึ่งใบ แย่กว่าเห็นซ้ำ */
-function เลขที่ใบ(filename: string): string | null {
-  const m = filename.match(/(THTT\d{6,}|FBADS-[\d-]{6,}|IN-\d{6,}|INV[-_]?\d{6,})/i)
-  return m ? m[1].toUpperCase() : null
-}
-
-/* คัดซ้ำออก — ใบเดียวกันเก็บไว้ใบเดียว
-   ลำดับความน่าเชื่อถือ: ไฟล์ตัวจริงที่อัปไว้ (_REAL_) > ไฟล์แนบอีเมล > ใบที่ระบบสร้างเอง (GEN) */
-function คัดซ้ำ<T extends { filename: string; attachmentId: string }>(files: T[]): T[] {
-  const คะแนน = (f: T) => (f.attachmentId?.startsWith('BLOB:') ? 3 : f.attachmentId === 'GEN' ? 1 : 2)
-  const เก็บ = new Map<string, T>()
-  const ไม่มีเลข: T[] = []
-  for (const f of files) {
-    const no = เลขที่ใบ(f.filename)
-    if (!no) { ไม่มีเลข.push(f); continue }
-    const เดิม = เก็บ.get(no)
-    if (!เดิม || คะแนน(f) > คะแนน(เดิม)) เก็บ.set(no, f)
-  }
-  return Array.from(เก็บ.values()).concat(ไม่มีเลข)
-}
 
 // GET /api/bills/vendor?vendor=shopify
 // ใช้ cache ผลสแกน (เก็บใน Drive) — สแกน Gmail + อ่าน PDF เฉพาะอีเมลใหม่เท่านั้น
@@ -124,6 +97,8 @@ export async function GET(req: NextRequest) {
       const billFiles = b.attachments.filter(a => isBillFile(a.filename))
       for (const att of billFiles) {
         let m = emailMonth
+        let invoiceNo: string | null = null
+        let period: string | null = null
         let skip = false
         let parseErr = ''
         let textLen = 0
@@ -139,7 +114,13 @@ export async function GET(req: NextRequest) {
               matched = pdfHasAccountId(text, vendor.accountId)
               if (!matched) skip = true
             }
-            m = pdfMonth ?? emailMonth
+            /* 🗓️ **รอบบิลชนะวันที่ออกใบ** (แก้ 16 ก.ย. 2569) — เดิมใช้ "วันที่แรกในเอกสาร"
+               ⇒ บิลรอบสิ้นเดือนที่ออกใบต้นเดือนถัดไปถูกจัดผิดเดือน (ท่านประธานเจอใบ มิ.ย. ไปอยู่ ก.ค.) */
+            const filing = billFilingMonth(text)
+            m = (filing.source === 'รอบบิลที่พิมพ์ในใบ' ? filing.month : null) ?? pdfMonth ?? emailMonth
+            const ident = billIdentity(text, vendor.id)
+            invoiceNo = ident.invoiceNo
+            period = filing.month ?? null
           } catch (e: any) { parseErr = e.message ?? String(e) }
         }
         if (debug) {
@@ -153,6 +134,8 @@ export async function GET(req: NextRequest) {
           attachmentId: att.attachmentId,
           size: att.size,
           subject: b.subject,
+          invoiceNo,
+          period,
         })
       }
       if (!b.attachments.length) {
@@ -202,6 +185,7 @@ export async function GET(req: NextRequest) {
         attachmentId: e.attachmentId,
         size: e.size,
         subject: e.subject,
+        invoiceNo: e.invoiceNo ?? null,
       })
     }
 
