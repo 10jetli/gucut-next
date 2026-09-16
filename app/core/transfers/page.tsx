@@ -159,7 +159,16 @@ export default function CoreTransfersPage() {
   const seenKeys = shapeBroken ? Object.keys(rows[0] ?? {}).join(' · ') : ''
   const shown = offset + rows.length
   const byStatus = Array.isArray(data?.byStatus) ? data!.byStatus! : []
-  const countOf = (s: string) => byStatus.find((x) => x.status === s)?.c ?? 0
+  /* 🔴 **ท่อไม่ส่ง byStatus ≠ ทุกสถานะเป็นศูนย์** (เจอด้วยท่อปลอมโหมด partialgood 16 ก.ย. 2569)
+     เดิม `countOf()` คืน 0 เสมอเมื่อไม่มีข้อมูล ⇒ แท็บขึ้น "สำเร็จ (0)" ทั้งที่ความจริงคือ **ยังไม่รู้**
+     ⇒ คนอ่านจะสรุปว่าไม่มีใบสำเร็จเลย ซึ่งเป็นการตัดสินใจผิดจากเลขที่เราไม่ได้รู้จริง
+     ⚠️ ยังต้องโชว์ **ทุกแท็บ** ตามกฎ (แท็บคือสารบัญ) — แค่ไม่ใส่เลขในวงเล็บเมื่อไม่รู้
+        (Tabs รับ count เป็น optional อยู่แล้ว ⇒ undefined = ไม่มีวงเล็บ) */
+  /* ⚠️ **ตรวจเนื้อ ไม่ใช่ตรวจว่ามีก้อน** — ท่อปลอมส่ง `byStatus: [{}]` (อาเรย์ที่มีก้อนว่าง)
+     ถ้าเช็คแค่ length > 0 จะนับว่า "รู้แล้ว" แล้วกลับไปโชว์ (0) เหมือนเดิม
+     ⇒ ต้องมีอย่างน้อยหนึ่งแถวที่มีทั้ง `status` (ข้อความ) และ `c` (ตัวเลข) จริง ๆ */
+  const รู้ตัวนับ = byStatus.some((x) => typeof x?.c === 'number' && typeof x?.status === 'string')
+  const countOf = (s: string) => (รู้ตัวนับ ? (byStatus.find((x) => x.status === s)?.c ?? 0) : undefined)
 
   return (
     <div className="p-4 md:p-6">
