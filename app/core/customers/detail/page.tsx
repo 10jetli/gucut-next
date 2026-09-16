@@ -19,6 +19,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
+import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
@@ -114,7 +115,11 @@ function Inner() {
                     c[k] ? (
                       <tr key={k} className="border-b border-gray-100 last:border-0">
                         <td className="py-1 pr-2 align-top text-gray-500 whitespace-nowrap">{label}</td>
-                        <td className="py-1 break-words">{String(c[k])}</td>
+                        {/* 🗓️ ช่องที่เป็นวันเวลา (อัปเดตล่าสุด) ต้องผ่านตัวจัดรูปแบบ ไม่งั้นปี ค.ศ. หลุดจอ
+                            เจอ 16 ก.ย. 2569 ตอนตรวจด้วยตา: ตารางนี้วนพิมพ์ค่าทุกช่องด้วย String(c[k])
+                            ⇒ ด่านที่ค้นจากรูปแบบ `{x.field}` จับไม่ได้ (คีย์เป็นตัวแปร) — ต้องแก้ที่นี่เอง */}
+                        <td className="py-1 break-words" title={k === 'updated_at' ? `ค่าที่ท่อส่งมา: ${String(c[k])}` : undefined}>
+                          {k === 'updated_at' ? thaiDate(String(c[k])) : String(c[k])}</td>
                       </tr>
                     ) : null
                   )}
@@ -135,8 +140,12 @@ function Inner() {
             <div className="mb-3 flex flex-wrap gap-4 text-[13px]">
               <div><span className="text-gray-500">จำนวนใบ </span><b>{o?.count ?? 0}</b></div>
               <div><span className="text-gray-500">ยอดรวม </span><b>{baht(o?.total)}</b> บาท</div>
-              {o?.firstDay && <div><span className="text-gray-500">ซื้อครั้งแรก </span>{o.firstDay}</div>}
-              {o?.lastDay && <div><span className="text-gray-500">ล่าสุด </span>{o.lastDay}</div>}
+              {/* 🗓️ ช่องชื่อ `firstDay`/`lastDay` ก็เป็นวันที่ — เดิมโชว์ปี ค.ศ. ดิบ (เจอด้วยตา 16 ก.ย. 2569)
+                  ⇒ ด่านตรวจวันที่ต้องรู้จักคำลงท้าย `Day` ด้วย ไม่ใช่แค่ `Date`/`At` (แก้ที่ด่านแล้ว) */}
+              {o?.firstDay && <div><span className="text-gray-500">ซื้อครั้งแรก </span>
+                <span title={`ค่าที่ท่อส่งมา: ${o.firstDay}`}>{thaiDate(o.firstDay)}</span></div>}
+              {o?.lastDay && <div><span className="text-gray-500">ล่าสุด </span>
+                <span title={`ค่าที่ท่อส่งมา: ${o.lastDay}`}>{thaiDate(o.lastDay)}</span></div>}
             </div>
 
             {/* 🔬 **เทียบกับจอ ZORT ตัวจริง** — `/Contact/ContactDetail` (อ่านอย่างเดียว 16 ก.ย. 2569)
@@ -174,7 +183,9 @@ function Inner() {
                   <tbody>
                     {o.recent.map((r, i) => (
                       <tr key={`${r.id ?? r.number ?? i}`} className="border-b border-gray-100 last:border-0">
-                        <td className="py-1 pr-2 whitespace-nowrap">{r.order_date ?? '—'}</td>
+                        {/* 🗓️ เดิมโชว์ปี ค.ศ. ดิบ — เก็บค่าดิบไว้ใน title ให้คนตรวจย้อนได้ */}
+                        <td className="py-1 pr-2 whitespace-nowrap" title={r.order_date ? `ค่าที่ท่อส่งมา: ${r.order_date}` : undefined}>
+                          {r.order_date ? thaiDate(r.order_date) : '—'}</td>
                         <td className="py-1 pr-2">
                           {/* ลิงก์ข้ามจอ — เลขที่ใบต้องกดเข้ารายละเอียดได้เสมอ (แบบแผนข้อ 1 ของ ZORT) */}
                           {r.number

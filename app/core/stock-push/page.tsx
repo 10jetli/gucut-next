@@ -20,6 +20,7 @@ import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill } from '@/components/zort'
+import { thaiDate } from '@/lib/format'
 /* serverTimeMs อยู่ใน returns-api (เกิดจากบั๊กโซนเวลาตอนประกบ /returns) — ตัวเดียวกันใช้ทุกจอ */
 import { serverTimeMs } from '@/lib/returns-api'
 
@@ -300,7 +301,9 @@ export default function StockPushPage() {
                   <div key={key} className="border border-gray-200 rounded-md p-3">
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="text-[13px] font-semibold text-gray-800">{label}</p>
-                      <p className="text-[11px] text-gray-400">{p.day ? `ข้อมูลวันที่ ${p.day}` : ''}</p>
+                      {/* 🗓️ วันที่บนจอเป็น พ.ศ. ทั้งระบบ — ค่าดิบเก็บใน title */}
+                      <p className="text-[11px] text-gray-400" title={p.day ? `ค่าที่ท่อส่งมา: ${p.day}` : undefined}>
+                        {p.day ? `ข้อมูลวันที่ ${thaiDate(p.day)}` : ''}</p>
                     </div>
                     <p className="text-[22px] font-black text-gray-900 tabular-nums leading-tight mt-1">
                       {numText(p.wouldPush)}

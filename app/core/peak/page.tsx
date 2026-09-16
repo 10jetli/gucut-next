@@ -190,7 +190,9 @@ export default function CorePeakPage() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 mb-3">
                     <div className="flex gap-3 py-1">
                       <span className="text-[12.5px] text-gray-500 w-[110px] shrink-0">วันที่</span>
-                      <span className="text-[12.5px] text-gray-800">{sample.issuedDate || '—'}</span>
+                      {/* 🗓️ วันที่บนใบต้องเป็น พ.ศ. เหมือนจออื่น — ค่าดิบเก็บใน title */}
+                      <span className="text-[12.5px] text-gray-800" title={sample.issuedDate ? `ค่าที่ระบบแปลงมา: ${sample.issuedDate}` : undefined}>
+                        {sample.issuedDate ? thaiDate(sample.issuedDate) : '—'}</span>
                     </div>
                     <div className="flex gap-3 py-1">
                       <span className="text-[12.5px] text-gray-500 w-[110px] shrink-0">อ้างอิง</span>

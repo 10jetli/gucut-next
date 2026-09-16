@@ -325,7 +325,11 @@ function DetailInner() {
               <div className="px-4 py-3">
                 <Field label="รายการ" value={<span className="text-blue-600 font-medium">{order.number}</span>} />
                 <Field label="ประเภทรายการ" value="รายการขาย" />
-                <Field label="วันที่" value={order.order_date || '—'} />
+                {/* 🗓️ เดิมโชว์ค่าดิบปี ค.ศ. — ทั้งร้านอ่าน พ.ศ. · thaiDate จะแปลงโซนเวลาให้เฉพาะค่าที่บอกโซนมา
+                    (ค่าที่เป็นวันที่เปล่า ๆ อ่านตรง ๆ ไม่คิดโซน ไม่งั้นวันเลื่อน) · เก็บค่าดิบใน tooltip */}
+                <Field label="วันที่" value={order.order_date
+                  ? <span title={`ค่าที่ท่อส่งมา: ${order.order_date}`}>{thaiDate(order.order_date)}</span>
+                  : '—'} />
                 <Field label="ช่องทางการขาย" value={order.channel || '—'} />
                 {/* 🔵 ZORT ไม่มีช่องนี้ — เราเพิ่มเอง เพราะร้านมี ZORT สองบัญชี ต้องรู้ว่าใบนี้มาจากร้านไหน
                     ย้ายลงมาจากการ์ดบนสุด เพื่อเอาที่ว่างให้การ์ดที่ ZORT ใช้จริง */}
