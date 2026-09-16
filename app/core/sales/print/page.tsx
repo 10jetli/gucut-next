@@ -57,6 +57,13 @@ export default function SalesPrintPage() {
   const [reading, setReading] = useState(0)
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
+  /* 🖨 เวลาที่พิมพ์ — ต้องอยู่ **บนกระดาษ** ไม่ใช่แค่บนจอ
+     คนแพ็กพิมพ์ทีละหลายใบแล้ววางกองไว้ ⇒ ใบที่พิมพ์เมื่อวานกับวันนี้หน้าตาเหมือนกันเป๊ะ
+     ⚠️ ตั้งค่าใน useEffect ไม่ใช่ตอน render — ไม่งั้นเวลาฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน (hydration ต่าง) */
+  const [เวลาพิมพ์, setเวลาพิมพ์] = useState('')
+  useEffect(() => {
+    setเวลาพิมพ์(new Date().toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' }))
+  }, [sheets.length])
 
   /* อ่านรายการเลขที่ใบจาก URL เอง (จอนี้ไม่ได้ห่อ Suspense จึงไม่ใช้ useSearchParams —
      กับดักเดิมที่เคยทำให้ build ล้มที่จอรายการขาย) */
@@ -290,7 +297,8 @@ export default function SalesPrintPage() {
           })()}
 
           <p className="text-[11px] text-gray-400 mt-3">
-            พิมพ์จากกระจกข้อมูลของร้าน — ตัวเลขอ่านจากท่อ ณ เวลาที่พิมพ์ · ใบนี้ไม่ใช่เอกสารทางบัญชี
+            พิมพ์จากกระจกข้อมูลของร้าน{เวลาพิมพ์ && <> เมื่อ <b className="text-gray-500">{เวลาพิมพ์}</b></>} ·
+            ตัวเลขอ่านจากท่อ ณ เวลาที่พิมพ์ · ใบนี้ไม่ใช่เอกสารทางบัญชี
             {DOCS[doc].money && <> · ท่อไม่ได้ส่ง<b>ราคาต่อหน่วย</b>มา จึงมีแต่ยอดรวมของแต่ละบรรทัด</>}
           </p>
         </div>
