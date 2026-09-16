@@ -179,7 +179,13 @@ export default function ConnectionsRegistryPage() {
   const all = Object.values(groups).flat()
   // กลุ่มที่เซิร์ฟเวอร์ส่งมาแต่ไม่มีในรายการข้างบน — ต้องวาดต่อท้าย ห้ามทิ้ง
   const extraGroups = Object.keys(groups).filter((k) => !GROUPS.some((g) => g.key === k))
-  const shown = [...GROUPS, ...extraGroups.map((k) => ({ key: k, label: k, spread: false }))]
+  /* 🔴 กลุ่มแปลกหน้าต้อง **โผล่** และต้อง **บอกด้วยว่าเป็นชื่อดิบจากท่อ**
+     ยิงทดสอบจริง 17 ก.ย. 2569 (ท่อปลอมส่ง `fulfillment` + `crm-plus`):
+     แถวโผล่ครบและถูกนับในหัวจอถูกต้อง ✅ — แต่หัวกลุ่มขึ้นเป็น `crm-plus` ดิบ ๆ
+     ⇒ คนอ่านเห็นคำอังกฤษขีดกลางแล้วนึกว่าแถวเสีย ทั้งที่เป็นของจริงที่เพิ่งเชื่อมเข้ามา
+     (กล่อง "เพิ่มการเชื่อมต่อ" ของ ZORT มี 7 ประเภท จอนี้ตั้งชื่อไทยไว้แค่ 5
+      ⇒ อีก 2 ประเภทจะเข้ามาทางนี้เสมอ — ตั้งชื่อไทยเดาเองไม่ได้ ต้องเห็นของจริงก่อน) */
+  const shown = [...GROUPS, ...extraGroups.map((k) => ({ key: k, label: k, spread: false, ดิบ: true }))]
   // ⚠️ ทางถอยกลับต้อง **ไม่นับช่องที่ตรวจไม่ทัน** รวมมาด้วย — สองกองนี้ได้ null เหมือนกัน
   //    ถ้านับรวม จอจะบอกว่า "ยังไม่มีตัวตรวจ" ทั้งที่ตัวตรวจมีอยู่ แค่ปลายทางช้า
   const unknown = typeof data?.unchecked === 'number'
@@ -341,7 +347,14 @@ export default function ConnectionsRegistryPage() {
                   <table className="w-full min-w-[720px]">
                     <thead className="bg-gray-50 border-b border-gray-200">
                       <tr>
-                        <th className={TH}>{g.label}</th>
+                        <th className={TH}>
+                          {g.label}
+                          {'ดิบ' in g && (
+                            <span className="ml-2 font-normal text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
+                              กลุ่มใหม่ที่จอยังไม่รู้จัก — นี่คือชื่อดิบจากท่อ
+                            </span>
+                          )}
+                        </th>
                         <th className={TH} style={{ width: 190 }}>
                           {g.spread ? 'การกระจายสินค้า' : ''}
                         </th>

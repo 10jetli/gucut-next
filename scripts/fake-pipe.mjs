@@ -210,6 +210,28 @@ const srv = createServer(async (req, res) => {
           : { store: u.searchParams.get('store') || 'z1', storeDefaulted: !u.searchParams.get('store') }),
     }))
   }
+  /* 🔌 จอการเชื่อมต่อ — **ทดสอบว่ากลุ่มที่จอไม่รู้จัก ต้องไม่หายเงียบ**
+     ที่มา (17 ก.ย. 2569 · ใบ t_mu2u9mym): กล่อง "เพิ่มการเชื่อมต่อ" ของ ZORT มี 7 ประเภท
+     (Marketplace · Social · Website · Accounting · Fulfillment · CRM PLUS · Management)
+     แต่จอเรามีรายชื่อกลุ่มเขียนไว้แค่ 5 ⇒ ถ้าร้านไปเชื่อม Fulfillment วันไหน
+     แถวนั้นต้อง **โผล่บนจอ** ไม่ใช่หายไปเพราะไม่มีในรายชื่อ
+     ⚠️ ก่อนหน้านี้เป็นแค่ "อ่านโค้ดแล้วเชื่อว่าได้" — ยังไม่เคยยิงใส่จริง */
+  if ((mode === 'good' || mode === 'badecho') && /[?&]connections=1/.test(req.url)) {
+    const แปลกหน้า = mode === 'badecho' ? {} : {
+      fulfillment: [{ id: 'ff1', name: 'คลังฝากส่งทดสอบ', connected: true }],
+      'crm-plus': [{ id: 'crm1', name: 'ซีอาร์เอ็มทดสอบ', connected: null }],
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, checkedAt: '2026-09-17T00:00:00.000Z',
+      connected: 2, notConnected: 0, unchecked: 1, timedOut: 0, retired: 0,
+      groups: {
+        marketplace: [{ id: 'mp1', name: 'ช่องทางทดสอบ', connected: true }],
+        accounting: [{ id: 'ac1', name: 'บัญชีทดสอบ', connected: false }],
+        ...แปลกหน้า,
+      },
+    }))
+  }
   if (mode === 'partialgood') {
     /* 🔴 **โหมดที่อันตรายที่สุด และควรใช้เป็นโหมดหลักในการกวาด** (บทเรียน 7 ก.ย. 2569)
        ตอบ 200 พร้อมก้อนที่ "ถูกรูปแต่ขาดช่องลูก" ⇒ ผ่านด่าน `x ? …` ทุกด่าน
