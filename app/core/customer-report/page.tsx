@@ -15,8 +15,7 @@ import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText, summaryLine, EmptyState, thaiDate,
-} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText, summaryLine, EmptyState, thaiDate, PageNav,} from '@/components/zort'
 
 interface Row { id: string; channel: string; amount: number; customer: string; order_date: string }
 /** ⚠️ channels เป็น **อาร์เรย์ของ object** ไม่ใช่ข้อความคั่นลูกน้ำ (ฝั่งท่อเลือกแบบนี้ และถูก)
@@ -588,11 +587,11 @@ export default function CoreCustomersPage() {
                 {Math.min((page + 1) * PER_PAGE, filtered.length).toLocaleString('th-TH')} จาก{' '}
                 {filtered.length.toLocaleString('th-TH')} ราย
               </span>
-              <div className="flex items-center gap-2">
-                <BtnGhost onClick={() => setPage((p) => Math.max(0, p - 1))} disabled={page === 0}>← ก่อนหน้า</BtnGhost>
-                <span className="text-[12px] text-gray-500">หน้า {page + 1} / {pageCount}</span>
-                <BtnGhost onClick={() => setPage((p) => Math.min(pageCount - 1, p + 1))} disabled={page + 1 >= pageCount}>ถัดไป →</BtnGhost>
-              </div>
+              {/* เลขหน้าแบบ ZORT (ชิ้นเดียวกับจอรายการอื่น) — จอนี้แบ่งหน้าจากอาเรย์ที่กรองแล้วในเบราว์เซอร์
+                  ⇒ จำนวนทั้งชุดคือ `filtered.length` ซึ่งรู้แน่นอน จึงบอกจำนวนหน้าได้ */}
+              <PageNav offset={page * PER_PAGE} perPage={PER_PAGE} rowsOnPage={shown.length}
+                total={filtered.length}
+                onGo={(off) => setPage(Math.max(0, Math.floor(off / PER_PAGE)))} />
             </div>
           </TableWrap>
 

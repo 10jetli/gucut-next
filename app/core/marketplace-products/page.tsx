@@ -21,8 +21,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner,
-} from '@/components/zort'
+  EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 
 interface Row {
   sku: string; name: string; qty?: number; available?: number
@@ -325,11 +324,10 @@ export default function MarketplaceProductsPage() {
                   failed={meta?.marketplacesFailed} notConnected={meta?.marketplacesNotConnected}
                   at={meta?.marketplacesAt} />
               </span>
-              <div className="flex items-center gap-2">
-                <BtnGhost onClick={() => goPage(Math.max(0, page - 1))} disabled={loading || page === 0}>← ก่อนหน้า</BtnGhost>
-                <span className="text-[12px] text-gray-500">หน้า {page + 1} / {pageCount}</span>
-                <BtnGhost onClick={() => goPage(Math.min(pageCount - 1, page + 1))} disabled={loading || page + 1 >= pageCount}>ถัดไป →</BtnGhost>
-              </div>
+              {/* เลขหน้าแบบ ZORT — จอนี้นับหน้าเป็น index (0 = หน้าแรก) ⇒ แปลง offset ↔ index ที่จุดเดียว */}
+              <PageNav offset={page * PAGE} perPage={PAGE} rowsOnPage={shown.length}
+                total={totalInTab} disabled={loading}
+                onGo={(off) => goPage(Math.max(0, Math.floor(off / PAGE)))} />
             </div>
           </TableWrap>
 
