@@ -92,6 +92,60 @@ Amount due: 2,140.50`
   const k1 = billIdentity('Billing period: Aug 1, 2026 - Aug 31, 2026\nTotal 100.00', 'adobe').key
   const k2 = billIdentity('Billing period: Sep 1, 2026 - Sep 30, 2026\nTotal 100.00', 'adobe').key
   ok(k1 !== k2, 'คนละรอบบิล = คนละกุญแจ', `${k1} vs ${k2}`)
+
+  console.log('⑧ รูปร่างจริงของใบ Adobe (เลขอยู่หน้าป้าย · Service Term · GRAND TOTAL คนละบรรทัด)')
+  /* 🔬 คัดรูปแบบมาจาก PDF จริงในเครื่อง 16 ก.ย. 2569 (เปลี่ยนตัวเลขแล้ว ไม่ใช่ใบจริง)
+     ⚠️ สามอย่างนี้ทำให้ตัวอ่านรุ่นแรกพลาดทั้งใบ:
+        ① ค่าอยู่ **หน้า** ป้าย (`1234567890Invoice Number`) เพราะ PDF อ่านคอลัมน์ขวาก่อนหัวข้อ
+        ② รอบบิลใช้คำว่า **Service Term** ไม่มีคำ period/billing
+        ③ วันที่เป็น `16-SEP-2026` ซึ่งไม่เคยรองรับ · และยอดอยู่บรรทัดถัดไปจากป้าย */
+  const adobeReal = `Bill To
+INVOICE
+Item Details
+Service Term: 16-SEP-2026 to 15-OCT-2026
+Invoice Information
+9999999999Invoice Number
+16-SEP-2026Invoice Date
+Credit CardPayment Terms
+8888888888Order Number
+7777777Customer Number
+USDCurrency
+Federal Tax ID: 77-1234567
+PRODUCT NUMBERPRODUCT DESCRIPTIONQUANTITYUNITUNIT PRICENET AMOUNTTAX RATETAXESTOTAL
+12345678Creative Cloud Pro1EA69.5669.567.00%4.8774.43
+Invoice Total
+NET AMOUNT (USD)
+69.56
+TAXES (SEE DETAILS FOR RATES)
+4.87
+GRAND TOTAL (USD)
+74.43`
+  const ar = billIdentity(adobeReal, 'adobe')
+  ok(ar.invoiceNo === '9999999999', 'อ่านเลขที่ใบที่วางอยู่หน้าป้ายได้', String(ar.invoiceNo))
+  ok(ar.period === '2026-09', 'รอบบิลมาจาก Service Term (16-SEP-2026)', String(ar.period))
+  ok(ar.periodSource === 'รอบบิลที่พิมพ์ในใบ', 'ติดป้ายว่ามาจากรอบบิล', String(ar.periodSource))
+  ok(ar.total === 74.43, 'อ่าน GRAND TOTAL ที่อยู่บรรทัดถัดไปได้', String(ar.total))
+  ok(billFilingMonth(adobeReal).month === '2026-09', 'จัดแฟ้มเดือน 2026-09 ไม่ใช่เดือนที่อีเมลมาถึง')
+
+  console.log('⑨ ใบเสร็จ Meta ภาษาไทย (ไม่มีคำว่าเลขที่ใบแจ้งหนี้เลย)')
+  const metaReal = `ใบเสร็จสำหรับ บัญชีผู้ใช้โฆษณา
+ID บัญชี: 123456789012345
+วันที่เรียกเก็บเงิน/ชำระเงิน
+31 ก.ค. 2569 12:00
+หมายเลขอ้างอิง: 9X9ABCDEF9
+ID ธุรกรรม
+111111111111111-222222222222222
+ชำระแล้ว
+฿16,625.98`
+  const mr = billIdentity(metaReal, 'meta')
+  ok(mr.invoiceNo !== null, 'ได้ตัวตนจากหมายเลขอ้างอิง/ID ธุรกรรม', String(mr.invoiceNo))
+  ok(mr.key !== null, 'มีกุญแจกันซ้ำ (ก่อนแก้: ตัดสินไม่ได้)', String(mr.key))
+  ok(mr.total === 16625.98, 'อ่านยอดที่มีเครื่องหมาย ฿ และคอมมาได้', String(mr.total))
+
+  console.log('⑩ เลขล้วนยาว ๆ ที่ไม่มีตัวคั่น ห้ามถือว่าเป็นยอดเงิน (กันเลขภาษีปนมา)')
+  const taxish = billIdentity('Total\n65182902\nFederal Tax ID: 77-1234567', 'x')
+  ok(taxish.total === null, 'ไม่รับเลข 65182902 เป็นยอดเงิน', String(taxish.total))
+
 } catch (e) {
   console.log('❌ เทสพัง:', e?.message ?? e); fail++
 } finally {
