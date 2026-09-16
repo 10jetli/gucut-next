@@ -276,6 +276,17 @@ const COLS=[
 let colOn=load(LS_COL,null)||Object.fromEntries(COLS.map(c=>[c.key,true]));
 
 function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}}
+/* ➕ รหัสที่ไม่มีใน Shopify แต่ร้านมีจริง — ท่านประธานสั่ง 16 ก.ย. 2569 (กรณี 00531)
+   เก็บแยกคีย์ ไม่ปนกับข้อมูล Shopify (state.base) และไม่ปนกับการแก้ไข (state.ovr)
+   ⇒ ลบคีย์นี้ทั้งก้อนของเดิมก็ยังอยู่ครบ */
+const LS_ADDED="gucut_added_v1";
+state.added=load(LS_ADDED,[]);
+function saveAdded(){save(LS_ADDED,state.added);}
+/* ปั้นให้รูปร่างเหมือนสินค้าจาก Shopify เป๊ะ ⇒ row() ใช้ได้โดยไม่ต้องแก้ row() */
+function addedToBase(a){
+  return {sku:a.sku, model:a.model||"", title:a.name||a.sku, inv:0, price:a.price||0, sold6:0,
+          img:"", qsrc:"", pp:{name:a.nameEn||"", oem:a.oem||"", hh:a.hh||"", cn:a.cn||""}, __added:true};
+}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 // ---- หมวดที่ทำเสร็จแล้ว (เจ้าของร้านกดเองจากเมนูหมวด) ----
 // เก็บเป็นรายชื่อหมวด เพื่อให้เห็นว่าไล่ใส่ข้อมูลถึงรุ่นไหนแล้ว
@@ -380,7 +391,8 @@ function currentRows(){
   const q=document.getElementById("q").value.trim().toLowerCase();
   const fc=document.getElementById("fCat").value, ff=document.getElementById("fFac").value;
   const fs=document.getElementById("fStock").value, fr=document.getElementById("fReco").value;
-  let rows=state.base.map(row).filter(r=>{
+  /* ➕ รวมรหัสที่เพิ่มเองเข้ามาด้วย — ต่อท้าย ไม่แทนที่ state.base */
+  let rows=state.base.concat(state.added.map(addedToBase)).map(row).filter(r=>{
     /* ➕ โหมดดูเฉพาะรายการที่เลือก — กรองก่อนเงื่อนไขอื่นทั้งหมด */
     if(pickOnly && picked.length && !picked.includes(r.sku)) return false;
     if(fc&&fc.indexOf("__")!==0&&r.category!==fc)return false;
@@ -955,6 +967,20 @@ function pickBtns(sku){
          '<button class="pick-del-row'+(มี?'':' off')+'" data-del2="'+esc(sku)+'"'+(มี?'':' disabled')+
          ' title="เอาออกจากรายการที่เลือก">−</button>';
 }
+/* ➕ เพิ่มรหัสที่ไม่มีใน Shopify — ใช้ตอนที่ร้านมีของจริงแต่คลังยังไม่รู้จัก */
+function addNewSku(sku){
+  sku=(sku||"").trim();
+  if(!sku) return;
+  if(state.base.some(x=>x.sku===sku)) return;            /* กันทับของเดิมเด็ดขาด */
+  if(state.added.some(a=>a.sku===sku)) return;
+  const ชื่อ=(document.getElementById("pickIn").dataset.newname||"").trim();
+  state.added.push({sku:sku, name:ชื่อ||sku, at:new Date().toISOString().slice(0,10)});
+  saveAdded();
+  if(!picked.includes(sku)){picked.push(sku);savePicked();}
+  document.getElementById("pickIn").value="";
+  pickMsg("เพิ่มรหัส "+sku+" เข้าคลังแล้ว (กด ✎ แก้ไข เพื่อใส่ชื่อ/รูป)","ok");
+  renderPicks(); render();
+}
 function pickMsg(t,cls){
   const el=document.getElementById("pickMsg");
   el.textContent=t||""; el.className=cls||"";
@@ -965,7 +991,16 @@ function addPick(raw){
   if(!sku){pickMsg("พิมพ์รหัสก่อนครับ","err");return;}
   /* ⚠️ ต้องมีรหัสนี้อยู่จริงถึงเพิ่มได้ — ไม่งั้นได้รายการว่างที่ดูเหมือนสำเร็จ */
   const p=state.base.find(x=>String(x.sku).toLowerCase()===sku.toLowerCase());
-  if(!p){pickMsg("ไม่พบรหัส "+sku+" ในคลัง","err");return;}
+  if(!p){
+    /* ไม่เจอ = เสนอทางออกตรงนั้นเลย ไม่ใช่บอกว่าไม่เจอแล้วจบ
+       ⚠️ ต้องเป็นการกดยืนยันอีกที ไม่เพิ่มให้เอง — รหัสพิมพ์ผิดจะกลายเป็นขยะถาวร */
+    const el=document.getElementById("pickMsg");
+    el.className="err";
+    el.innerHTML='ไม่พบรหัส '+esc(sku)+' ในคลัง <a href="#" id="addNewLink">➕ เพิ่มเป็นรหัสใหม่</a>';
+    const a=document.getElementById("addNewLink");
+    if(a) a.onclick=(e)=>{e.preventDefault();addNewSku(sku);};
+    return;
+  }
   /* มีปุ่ม − แยกแล้ว (16 ก.ย. 2569) ⇒ กด + ซ้ำไม่ต้องถอดออก แค่บอกว่ามีแล้ว
      ⚠️ ถ้าปล่อยให้ + ถอดออกด้วย จะกลายเป็นปุ่มเดียวทำสองอย่าง = กดพลาดแล้วของหาย */
   if(picked.includes(p.sku)){pickMsg("รหัส "+p.sku+" อยู่ในรายการแล้ว","err");return;}

@@ -4,8 +4,11 @@
   /* ➕ รายการที่เลือก 16 ก.ย. 2569 — ต้องอยู่ใน SHARED_KEYS ไม่งั้นเลือกบน iPad แล้ว
      เครื่องอื่นไม่เห็น ทั้งที่ท้ายหน้าเขียนว่า "เห็นตรงกันทุกเครื่อง" */
     var LS_PICKED="gucut_picked_v1";
+    /* ➕ รหัสที่เพิ่มเอง 16 ก.ย. 2569 — ต้องอยู่ใน SHARED_KEYS
+       ไม่งั้นเพิ่มเครื่องนี้แล้วเครื่องอื่นไม่เห็น ทั้งที่หน้าเว็บบอกว่าเห็นตรงกัน */
+    var LS_ADDED="gucut_added_v1";
     var LS_OVR="gucut_overrides_v1", LS_CAT="gucut_catmap_v1", LS_CATNEW="gucut_catnew_v1", LS_FAC="gucut_factories_v1",LS_CATDONE="gucut_catdone_v1";
-  var SHARED_KEYS=[LS_OVR,LS_CAT,LS_CATNEW,LS_FAC,LS_CATDONE,LS_PICKED];
+  var SHARED_KEYS=[LS_OVR,LS_CAT,LS_CATNEW,LS_FAC,LS_CATDONE,LS_PICKED,LS_ADDED];
   var origSetItem=localStorage.setItem.bind(localStorage);
   var timer=null;
   function getAll(){
@@ -15,7 +18,8 @@
       catNew: JSON.parse(localStorage.getItem(LS_CATNEW)||"[]"),
       facs: JSON.parse(localStorage.getItem(LS_FAC)||"[]"),
       catDone: JSON.parse(localStorage.getItem(LS_CATDONE)||"[]"),
-      picked: JSON.parse(localStorage.getItem(LS_PICKED)||"[]")
+      picked: JSON.parse(localStorage.getItem(LS_PICKED)||"[]"),
+      added: JSON.parse(localStorage.getItem(LS_ADDED)||"[]")
     };
   }
   function queueSync(){

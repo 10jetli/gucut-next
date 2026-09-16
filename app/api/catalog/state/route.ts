@@ -19,6 +19,7 @@ export async function GET() {
       /* ➕ รายการที่เลือก — เจอตอนยิงของจริงว่าถ้าไม่มีบรรทัดนี้
          sync.js ส่งขึ้นมาแล้วแต่ฝั่งนี้ทิ้งเงียบ ๆ (ครอบไม่ครบแต่ดูเหมือนครบ) */
       picked: state.picked ?? [],
+      added: state.added ?? [],
       updatedAt: state.updatedAt ?? null,
     })
   } catch (e: any) {
@@ -48,6 +49,10 @@ export async function POST(req: NextRequest) {
       catDone: Array.isArray(body?.catDone) ? body.catDone.filter((x: unknown) => typeof x === 'string') : [],
       picked: Array.isArray(body?.picked)
         ? body.picked.filter((x: unknown) => typeof x === 'string')
+        : [],
+      /* ➕ รหัสที่เพิ่มเอง — กรองให้เหลือเฉพาะรายการที่มี sku เป็นข้อความ */
+      added: Array.isArray(body?.added)
+        ? body.added.filter((x: unknown) => !!x && typeof (x as { sku?: unknown }).sku === 'string')
         : [],
     }
     await saveCatalogStateBlobs(state)

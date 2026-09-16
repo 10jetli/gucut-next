@@ -11,6 +11,11 @@ export interface CatalogState {
    *  ต้องอยู่ใน SHARED_KEYS ของ public/catalog/sync.js ด้วย — ไม่งั้นเลือกบน iPad
    *  แล้วเครื่องอื่นไม่เห็น ทั้งที่ท้ายหน้าเขียนว่า "เห็นตรงกันทุกเครื่อง" */
   picked?: string[]
+  /** ➕ รหัสที่ร้านมีจริงแต่ไม่มีใน Shopify (ท่านประธานสั่ง 16 ก.ย. 2569 กรณี 00531)
+   *  แยกจาก ovr/catMap สนิท — ข้อมูล Shopify ไม่ถูกแตะ
+   *  ต้องอยู่ใน SHARED_KEYS ของ public/catalog/sync.js ด้วย */
+  added?: { sku: string; name?: string; nameEn?: string; oem?: string; hh?: string;
+            cn?: string; model?: string; price?: number; at?: string }[]
   updatedAt?: string
 }
 
