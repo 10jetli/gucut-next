@@ -417,6 +417,11 @@ function CoreStockInner() {
                 🖨 พิมพ์ฉลาก {rows.length} รหัสในหน้านี้
               </Link>
             )}
+            {/* 🖼️ ทางเข้าจอ "รหัสที่ยังไม่มีรูป" (ใบ t_mu2u6eg6) — ทำจอไว้แล้วไม่มีทางเข้า = ไม่มีใครใช้ */}
+            <Link href="/core/stock/no-image"
+              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              🖼️ รหัสที่ยังไม่มีรูป
+            </Link>
             <Link href="/core/stock/new"
               className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
