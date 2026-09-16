@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessageDetail } from '@/lib/gmail'
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 import { billFilingMonth, billIdentity } from '@/lib/bill-identity'
-import { คัดซ้ำ, เลขที่ใบ } from '@/lib/bill-dedupe'
+import { คัดซ้ำพร้อมรายงาน, เลขที่ใบ, type ไฟล์ซ้ำ } from '@/lib/bill-dedupe'
 import { BillEntry, listVendorBlobFiles, loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
 
 export const dynamic = 'force-dynamic'
@@ -213,9 +213,17 @@ export async function GET(req: NextRequest) {
       }
     } catch { /* ถ้าอ่าน Drive ไม่ได้ ให้แสดงเฉพาะบิลจากอีเมลตามปกติ */ }
 
-    for (const k of Object.keys(months)) months[k] = คัดซ้ำ(months[k])
+    /* 🔴 คัดซ้ำแล้ว **ต้องบอกว่าซ่อนอะไรไว้** — ของเดิมซ่อนเงียบ ๆ
+       ⇒ ท่านประธานต้องเปิด PDF ทีละใบเองถึงจะรู้ว่าไฟล์ไหนซ้ำ (ใบ t_mu3g8tq5) */
+    const ซ่อนไว้: Record<string, ไฟล์ซ้ำ[]> = {}
+    for (const k of Object.keys(months)) {
+      const r = คัดซ้ำพร้อมรายงาน(months[k])
+      months[k] = r.เก็บไว้
+      if (r.ซ่อนไว้.length) ซ่อนไว้[k] = r.ซ่อนไว้
+    }
     return NextResponse.json({
       vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months,
+      ...(Object.keys(ซ่อนไว้).length ? { ซ่อนไฟล์ซ้ำ: ซ่อนไว้ } : {}),
       cached: !!idx, newMessages: changed,
       ...(debug ? { debugInfo } : {}),
     })
@@ -226,9 +234,15 @@ export async function GET(req: NextRequest) {
       const idx = await loadBillIndexBlobs(vendor.id)
       if (idx?.entries?.length) {
         const months = await attachRealFiles(monthsFromEntries(idx.entries), vendor.id, vendor.name)
-        for (const k of Object.keys(months)) months[k] = คัดซ้ำ(months[k])
+        const ซ่อนไว้2: Record<string, ไฟล์ซ้ำ[]> = {}
+        for (const k of Object.keys(months)) {
+          const r = คัดซ้ำพร้อมรายงาน(months[k])
+          months[k] = r.เก็บไว้
+          if (r.ซ่อนไว้.length) ซ่อนไว้2[k] = r.ซ่อนไว้
+        }
         return NextResponse.json({
           vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months,
+          ...(Object.keys(ซ่อนไว้2).length ? { ซ่อนไฟล์ซ้ำ: ซ่อนไว้2 } : {}),
           cached: true, newMessages: false,
           // 🔑 ฟิลด์นี้มีความหมายเดียว: "ยังไม่ได้สแกนใหม่ เพราะ…" — ห้ามเอาไปตัดสินใจอย่างอื่น
           staleReason: เหตุ,

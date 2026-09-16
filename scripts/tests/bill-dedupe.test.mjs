@@ -29,7 +29,7 @@ try {
     '--lib', 'es2020', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
-  const { คัดซ้ำ, เลขที่ใบ } = await import(join(out, 'bill-dedupe.js'))
+  const { คัดซ้ำ, เลขที่ใบ, คัดซ้ำพร้อมรายงาน } = await import(join(out, 'bill-dedupe.js'))
 
   console.log('① เคส Adobe ของจริง: 3 ไฟล์ชื่อคนละแบบ แต่เลขในเอกสารเดียวกัน ⇒ ต้องเหลือ 1')
   const adobe = [
@@ -69,6 +69,28 @@ try {
   ]
   const r6 = คัดซ้ำ(ranked)
   ok(r6.length === 1 && r6[0].filename === 'real.pdf', 'เก็บไฟล์ตัวจริงไว้', JSON.stringify(r6.map((x) => x.filename)))
+  console.log('⑦ ซ่อนไฟล์ซ้ำแล้ว **ต้องรายงานว่าซ่อนอะไรไว้** (ใบ t_mu3g8tq5)')
+  /* 🔴 เหตุ: ท่านประธานจับบิล Adobe ซ้ำได้เอง เพราะระบบคัดซ้ำให้แล้วแต่ไม่เคยบอก
+     ⇒ จำนวนที่ซ่อน + ชื่อไฟล์ที่ซ่อน + ชื่อไฟล์ที่เก็บไว้แทน ต้องมีครบ */
+  const rep = คัดซ้ำพร้อมรายงาน(ranked)
+  ok(rep.เก็บไว้.length === 1, 'เก็บไว้ใบเดียว', String(rep.เก็บไว้.length))
+  ok(rep.ซ่อนไว้.length === 2, 'รายงานว่าซ่อน 2 ไฟล์', String(rep.ซ่อนไว้.length))
+  ok(rep.ซ่อนไว้.every((d) => d.ซ้ำกับ === 'real.pdf'), 'บอกว่าซ้ำกับไฟล์ตัวจริง',
+    JSON.stringify(rep.ซ่อนไว้.map((d) => d.ซ้ำกับ)))
+  ok(rep.ซ่อนไว้.every((d) => d.เลขที่ใบ === 'INV-9'), 'ติดเลขที่ใบที่ใช้ตัดสินมาด้วย',
+    JSON.stringify(rep.ซ่อนไว้.map((d) => d.เลขที่ใบ)))
+  const ชื่อที่ซ่อน = rep.ซ่อนไว้.map((d) => d.ชื่อไฟล์).sort().join(',')
+  ok(ชื่อที่ซ่อน === 'gen.pdf,mail.pdf', 'ชื่อไฟล์ที่ซ่อนถูกต้อง', ชื่อที่ซ่อน)
+
+  console.log('⑧ ไม่มีไฟล์ซ้ำ ⇒ รายงานต้องว่าง (ห้ามฟ้องมั่ว)')
+  const rep2 = คัดซ้ำพร้อมรายงาน(two)
+  ok(rep2.ซ่อนไว้.length === 0, 'คนละใบ = ไม่ซ่อนอะไร', String(rep2.ซ่อนไว้.length))
+
+  console.log('⑨ ไม่มีเลขที่ใบ ⇒ เก็บทั้งหมด และไม่นับว่าซ่อน')
+  const ไม่มีเลข = [f('สลิป-1.pdf', 'A1'), f('สลิป-2.pdf', 'A2')]
+  const rep3 = คัดซ้ำพร้อมรายงาน(ไม่มีเลข)
+  ok(rep3.เก็บไว้.length === 2 && rep3.ซ่อนไว้.length === 0, 'เก็บครบ ไม่ซ่อน',
+    `${rep3.เก็บไว้.length}/${rep3.ซ่อนไว้.length}`)
 } catch (e) {
   console.log('❌ เทสพัง:', e?.message ?? e); fail++
 } finally {

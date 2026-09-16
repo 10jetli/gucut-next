@@ -20,7 +20,14 @@ interface BillFile {
 
 export default function VendorPage({ params }: { params: { vendor: string } }) {
   const info = VENDOR_INFO[params.vendor] ?? { name: params.vendor, emoji: '🧾' }
-  const [data, setData] = useState<{ months: Record<string, BillFile[]>; staleReason?: string; lastScan?: string } | null>(null)
+  /** ไฟล์ซ้ำที่ถูกซ่อน — ท่อส่งมาเป็นรายเดือน (เพิ่ม 16 ก.ย. 2569 · ใบ t_mu3g8tq5)
+   *  🔴 ของเดิมคัดซ้ำแล้วเงียบ ⇒ ท่านประธานต้องเปิด PDF เองทีละใบถึงจะรู้ว่าไฟล์ไหนซ้ำ */
+  const [เปิดซ้ำ, setเปิดซ้ำ] = useState<string | null>(null)
+  const [data, setData] = useState<{
+    months: Record<string, BillFile[]>
+    ซ่อนไฟล์ซ้ำ?: Record<string, { ชื่อไฟล์: string; ซ้ำกับ: string; เลขที่ใบ: string }[]>
+    staleReason?: string; lastScan?: string
+  } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [zipping, setZipping] = useState<string | null>(null)   // เดือนที่กำลังรวมไฟล์อยู่
 
@@ -144,6 +151,31 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
                 {zipping === m ? '⏳ กำลังรวมไฟล์…' : '⬇️ โหลดทั้งเดือน'}
               </button>
             </div>
+            {/* 🔎 บอกว่าซ่อนไฟล์ซ้ำไว้กี่ไฟล์ + กดดูได้ว่าไฟล์ไหนซ้ำกับไฟล์ไหน
+                🔴 เหตุ: ท่านประธานจับบิล Adobe ซ้ำได้เอง 16 ก.ย. 2569 (ส.ค. 3 ไฟล์ = ใบเดียว)
+                   ระบบคัดซ้ำให้แล้วแต่ไม่เคยบอก ⇒ คนตรวจไม่มีทางรู้ว่ามันคัดอะไรออกไป
+                ⚠️ บอกจำนวน "ไฟล์" ไม่ใช่ "ใบ" — ไฟล์ซ้ำไม่ได้แปลว่ามีบิลเกิน */}
+            {(data!.ซ่อนไฟล์ซ้ำ?.[m]?.length ?? 0) > 0 && (
+              <div className="text-[11.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-lg px-2 py-1 mb-1">
+                🔁 ซ่อนไฟล์ที่เป็น<b>ใบเดียวกัน</b>ไว้ {data!.ซ่อนไฟล์ซ้ำ![m].length} ไฟล์{' '}
+                <button type="button" className="text-blue-600 hover:underline"
+                  onClick={() => setเปิดซ้ำ(เปิดซ้ำ === m ? null : m)}>
+                  {เปิดซ้ำ === m ? 'ซ่อนรายละเอียด' : 'ดูว่าไฟล์ไหน'}
+                </button>
+                {เปิดซ้ำ === m && (
+                  <ul className="mt-1 space-y-0.5">
+                    {data!.ซ่อนไฟล์ซ้ำ![m].map((d, i) => (
+                      <li key={i} className="break-all">
+                        · <span className="text-gray-500">{d.ชื่อไฟล์}</span>
+                        <span className="text-gray-400"> — ใบเดียวกับ </span>
+                        <span className="text-gray-700">{d.ซ้ำกับ}</span>
+                        <span className="text-gray-400"> (เลขที่ใบตรงกัน)</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
             {zipping === m && (
               <div className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mb-1">
                 กำลังดึงบิลทีละใบจากอีเมล อาจใช้เวลา 20–40 วินาที — ยังไม่ต้องกดซ้ำ
