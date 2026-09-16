@@ -24,7 +24,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  EmptyState, ChannelTag, thaiDate, Pill, RowCheck,} from '@/components/zort'
+  EmptyState, ChannelTag, thaiDate, Pill, RowCheck, BulkBar,} from '@/components/zort'
 
 interface Job {
   /** id จริงของใบ (`z1/<number>`) — ท่อเริ่มส่งมา 9 ก.ย. 2569 · ท่อรุ่นก่อนไม่มี ⇒ ต้องเป็น optional */
@@ -252,22 +252,7 @@ export default function PackingPage() {
             onChange={setTab}
           />
 
-          {picked.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
-              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
-              <Link href={`/core/sales/print?ids=${encodeURIComponent(picked.join(','))}`}
-                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                🖨 พิมพ์ใบจัดเตรียมสินค้า
-              </Link>
-              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
-              {เลือกไม่ได้ > 0 && (
-                <span className="text-amber-800 basis-full">
-                  ⚠️ อีก {เลือกไม่ได้.toLocaleString('th-TH')} ใบในหน้านี้<b>เลือกไม่ได้</b> เพราะท่อไม่ได้ส่งรหัสใบมา —
-                  เปิดทีละใบจากเลขที่ใบแทน (ใบพวกนี้ไม่ได้หายไปไหน)
-                </span>
-              )}
-            </div>
-          )}
+          
 
           <TableWrap>
             <table className="w-full min-w-[720px]">
@@ -348,6 +333,24 @@ export default function PackingPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {picked.length > 0 && (
+            <BulkBar>
+              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
+              <Link href={`/core/sales/print?ids=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ใบจัดเตรียมสินค้า
+              </Link>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {เลือกไม่ได้ > 0 && (
+                <span className="text-amber-800 basis-full">
+                  ⚠️ อีก {เลือกไม่ได้.toLocaleString('th-TH')} ใบในหน้านี้<b>เลือกไม่ได้</b> เพราะท่อไม่ได้ส่งรหัสใบมา —
+                  เปิดทีละใบจากเลขที่ใบแทน (ใบพวกนี้ไม่ได้หายไปไหน)
+                </span>
+              )}
+            </BulkBar>
+          )}
+
 
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
             ⚠️ <b>จอนี้อ่านอย่างเดียว ไม่มีปุ่มทำเครื่องหมายว่าแพ็คแล้วโดยตั้งใจ</b> —

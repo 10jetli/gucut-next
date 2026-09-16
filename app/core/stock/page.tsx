@@ -22,7 +22,7 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck,} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import BlockedStock from '@/components/zort/BlockedStock'
 
@@ -575,27 +575,7 @@ function CoreStockInner() {
 
           {/* ☑️ แถบคำสั่งของแถวที่เลือก — โผล่เมื่อเลือกแล้วเท่านั้น (เหมือน ZORT)
               🔴 มีเฉพาะคำสั่งที่ **ทำได้จริง** · คำสั่งของ ZORT ที่เรายังทำไม่ได้เขียนบอกไว้ตรง ๆ */}
-          {picked.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
-              <b>เลือก {picked.length.toLocaleString('th-TH')} รายการ</b>
-              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
-              <Link href={`/core/stock/print?sku=${encodeURIComponent(picked.join(','))}`}
-                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                🖨 พิมพ์ฉลากที่เลือก
-              </Link>
-              <button type="button" onClick={() => { void copySkus(picked) }}
-                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                คัดลอกรหัสที่เลือก
-              </button>
-              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
-              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
-              <span className="text-gray-500 basis-full">
-                ⚠️ เมนู “คำสั่ง” ของ ZORT ยังมีอีก 5 อย่างที่<b>เรายังทำไม่ได้</b> —
-                ซื้อสินค้า · ขายสินค้า · โอนสินค้า · จัดหมวดหมู่ · เพิ่ม Tag (และปักหมุดบนสุด)
-                เพราะทุกอันต้อง<b>เขียนกลับไปที่ ZORT</b> ซึ่งท่อยังไม่เปิดให้ทำเป็นชุด
-              </span>
-            </div>
-          )}
+          
 
           <TableWrap>
             <table className="w-full min-w-[920px]">
@@ -838,6 +818,29 @@ function CoreStockInner() {
               </div>
             </div>
           </TableWrap>
+
+          {picked.length > 0 && (
+            <BulkBar>
+              <b>เลือก {picked.length.toLocaleString('th-TH')} รายการ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <Link href={`/core/stock/print?sku=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ฉลากที่เลือก
+              </Link>
+              <button type="button" onClick={() => { void copySkus(picked) }}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                คัดลอกรหัสที่เลือก
+              </button>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+              <span className="text-gray-500 basis-full">
+                ⚠️ เมนู “คำสั่ง” ของ ZORT ยังมีอีก 5 อย่างที่<b>เรายังทำไม่ได้</b> —
+                ซื้อสินค้า · ขายสินค้า · โอนสินค้า · จัดหมวดหมู่ · เพิ่ม Tag (และปักหมุดบนสุด)
+                เพราะทุกอันต้อง<b>เขียนกลับไปที่ ZORT</b> ซึ่งท่อยังไม่เปิดให้ทำเป็นชุด
+              </span>
+            </BulkBar>
+          )}
+
         </>
       )}
     </div>

@@ -16,7 +16,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck,} from '@/components/zort'
+  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
@@ -798,33 +798,7 @@ export default function CoreSalesPage() {
 
           {/* ☑️ แถบคำสั่งของใบที่เลือก — โผล่เมื่อเลือกแล้วเท่านั้น (เหมือน ZORT)
               🔴 มีเฉพาะคำสั่งที่ **ทำได้จริง** · ที่เหลือเขียนบอกตรง ๆ ว่ายังทำไม่ได้และเพราะอะไร */}
-          {picked.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
-              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
-              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
-              <Link href={`/core/sales/print?ids=${encodeURIComponent(picked.join(','))}`}
-                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                🖨 พิมพ์ใบจัดเตรียมสินค้า
-              </Link>
-              <Link href={`/core/sales/print?doc=delivery&ids=${encodeURIComponent(picked.join(','))}`}
-                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                🖨 พิมพ์ใบส่งสินค้า
-              </Link>
-              <button type="button" onClick={() => { void copyNumbers(picked) }}
-                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                คัดลอกเลขที่ใบที่เลือก
-              </button>
-              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
-              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
-              <span className="text-gray-500 basis-full">
-                ⚠️ ZORT พิมพ์จากจอนี้ได้ <b>8 แบบ</b> (ใบวางบิล · ใบจ่าหน้ากล่อง · ใบจัดเตรียมสินค้า · ฉลากจัดส่ง ·
-                ใบแจ้งยอดชำระ · ใบส่งสินค้า · ใบส่งสินค้า+ใบสั่งซื้อ · ใบยืนยันการจัดส่ง) —
-                <b>ของเรามี 2 แบบ</b> (ใบจัดเตรียมสินค้า · ใบส่งสินค้า) — ที่เหลือรอ<b>ที่อยู่ผู้รับ</b>จากท่อ ·
-                และคำสั่งอีก 8 อย่าง (ปักหมุด · Tag · แก้ข้อมูลขนส่ง ·
-                โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · รวมรายการ · ซ่อน) ยังทำไม่ได้เพราะต้อง<b>เขียนกลับไปที่ ZORT</b>
-              </span>
-            </div>
-          )}
+          
 
           <TableWrap>
             <table className="w-full min-w-[1080px]">
@@ -994,6 +968,35 @@ export default function CoreSalesPage() {
               </div>
             )}
           </TableWrap>
+
+          {picked.length > 0 && (
+            <BulkBar>
+              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <Link href={`/core/sales/print?ids=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ใบจัดเตรียมสินค้า
+              </Link>
+              <Link href={`/core/sales/print?doc=delivery&ids=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ใบส่งสินค้า
+              </Link>
+              <button type="button" onClick={() => { void copyNumbers(picked) }}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                คัดลอกเลขที่ใบที่เลือก
+              </button>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+              <span className="text-gray-500 basis-full">
+                ⚠️ ZORT พิมพ์จากจอนี้ได้ <b>8 แบบ</b> (ใบวางบิล · ใบจ่าหน้ากล่อง · ใบจัดเตรียมสินค้า · ฉลากจัดส่ง ·
+                ใบแจ้งยอดชำระ · ใบส่งสินค้า · ใบส่งสินค้า+ใบสั่งซื้อ · ใบยืนยันการจัดส่ง) —
+                <b>ของเรามี 2 แบบ</b> (ใบจัดเตรียมสินค้า · ใบส่งสินค้า) — ที่เหลือรอ<b>ที่อยู่ผู้รับ</b>จากท่อ ·
+                และคำสั่งอีก 8 อย่าง (ปักหมุด · Tag · แก้ข้อมูลขนส่ง ·
+                โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · รวมรายการ · ซ่อน) ยังทำไม่ได้เพราะต้อง<b>เขียนกลับไปที่ ZORT</b>
+              </span>
+            </BulkBar>
+          )}
+
 
           {/* ⚠️ สามคอลัมน์ที่เพิ่งเพิ่มยังไม่มีค่ามา — ต้องบอกว่า "ยังไม่ส่งมา" ไม่ใช่ปล่อยให้
               เห็นขีดยาวทั้งคอลัมน์แล้วเข้าใจว่าออเดอร์พวกนี้ไม่มีขนส่ง/ยังไม่จ่ายเงิน */}

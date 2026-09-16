@@ -23,7 +23,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck,} from '@/components/zort'
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 
@@ -294,23 +294,7 @@ export default function CorePurchasesPage() {
             onChange={(v) => { setStore(v); load(0, tab, v) }} />
           <StoreScopeLine scope={data?.storeScope} />
 
-          {picked.length > 0 && (
-            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
-              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
-              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
-              <button type="button" onClick={() => { void copyNumbers(picked) }}
-                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                คัดลอกเลขที่ใบที่เลือก
-              </button>
-              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
-              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
-              <span className="text-gray-500 basis-full">
-                ⚠️ คำสั่งเป็นชุดของ ZORT (ปักหมุด · Tag · โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · ซ่อน · ลบ · ยกเลิกรายการ)
-                <b>เรายังทำไม่ได้</b> เพราะต้องเขียนกลับไปที่ ZORT · ส่วนใบแปะจดหมาย/กล่องต้องใช้<b>ที่อยู่ผู้รับ</b>
-                ซึ่งท่อยังไม่ส่งมา (ขอไว้แล้ว)
-              </span>
-            </div>
-          )}
+          
 
           <TableWrap>
             <table className="w-full min-w-[900px]">
@@ -398,6 +382,25 @@ export default function CorePurchasesPage() {
                   onPerPage={(n) => { setPerPage(n); load(0, undefined, undefined, n) }} />
             </div>
           </TableWrap>
+
+          {picked.length > 0 && (
+            <BulkBar>
+              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <button type="button" onClick={() => { void copyNumbers(picked) }}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                คัดลอกเลขที่ใบที่เลือก
+              </button>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+              <span className="text-gray-500 basis-full">
+                ⚠️ คำสั่งเป็นชุดของ ZORT (ปักหมุด · Tag · โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · ซ่อน · ลบ · ยกเลิกรายการ)
+                <b>เรายังทำไม่ได้</b> เพราะต้องเขียนกลับไปที่ ZORT · ส่วนใบแปะจดหมาย/กล่องต้องใช้<b>ที่อยู่ผู้รับ</b>
+                ซึ่งท่อยังไม่ส่งมา (ขอไว้แล้ว)
+              </span>
+            </BulkBar>
+          )}
+
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             ยอดรวมตรงกับ ZORT ทุกบาท (ตรวจแล้ว {fmtNum(data.total)} ใบ · {fmtMoney(data.amount)}) ·
