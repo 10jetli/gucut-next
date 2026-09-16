@@ -23,8 +23,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark,
-} from '@/components/zort'
+  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark, PageNav,} from '@/components/zort'
 
 interface Row {
   id: string; number: string; trackingNo?: string; date?: string
@@ -371,14 +370,13 @@ export default function LogisticsPage() {
                 {รู้จำนวน ? <>{fmtNum(tabTotal)} รายการ</> : <span className="text-amber-700">ยังไม่รู้ว่าทั้งชุดมีกี่รายการ (ท่อไม่ได้บอกจำนวนมา)</span>}
                 {only && <span className="text-gray-400"> (เฉพาะแท็บที่เลือก)</span>}
               </span>
-              <span className="flex gap-2">
-                <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>ก่อนหน้า</BtnGhost>
-                {/* ⚠️ เทียบกับจำนวนของแท็บ ไม่ใช่ยอดรวมทั้งหมด — ไม่งั้นปุ่มนี้กดได้ทั้งที่ไม่มีหน้าถัดไป
-                    แล้วคนกดจะเจอหน้าว่าง ซึ่งอ่านเหมือน "ข้อมูลหาย" มากกว่า "หมดแล้ว" */}
-                {/* ไม่รู้จำนวนทั้งชุด ⇒ ยังกดถัดไปได้ (ห้ามล็อกปุ่มด้วยเลขที่เราไม่รู้ว่าจริงไหม)
-                    แต่ถ้ารู้จำนวนแล้วและถึงท้ายชุด ⇒ ล็อกตามเดิม */}
-                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || (รู้จำนวน && offset + rows.length >= tabTotal)}>ถัดไป</BtnGhost>
-              </span>
+              {/* เลขหน้าแบบ ZORT (ชิ้นเดียวกับจอรายการอื่น) — ZORT ไล่หน้าด้วยเลขหน้าเสมอ
+                  🔴 **ไม่รู้จำนวนทั้งชุด ⇒ ส่ง total = null** ⇒ PageNav จะไม่คิดเลขหน้าสุดท้ายเอง
+                     และเขียนบนจอว่า "ยังไม่รู้ว่าทั้งชุดมีกี่หน้า" แทนการเดา (กฎสามสถานะ)
+                  ⚠️ ใช้ยอด **ของแท็บที่เลือก** ไม่ใช่ยอดรวมทุกแท็บ ไม่งั้นปุ่มถัดไปกดได้ทั้งที่ไม่มีของ */}
+              <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                total={รู้จำนวน ? tabTotal : null}
+                disabled={loading} onGo={(off) => load(off)} />
             </div>
           </TableWrap>
 

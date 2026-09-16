@@ -45,7 +45,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState, RowMenu } from '@/components/zort'
+import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState, RowMenu, PageNav} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 
 interface DocRow {
@@ -318,13 +318,24 @@ export default function AccountingDocsPage() {
 
           {/* แบ่งหน้า — ใช้ `page` ของท่อตรง ๆ และโชว์ว่ากำลังอยู่หน้าไหนจาก applied ไม่ใช่จากตัวแปรจอ
               (ถ้าท่อตีความหน้าไม่เหมือนที่จอส่งไป จะเห็นได้ทันที) */}
-          <div className="flex items-center gap-2 mt-3 text-[12.5px] text-gray-600">
-            <BtnGhost onClick={() => load(Math.max(1, page - 1))} disabled={loading || page <= 1}>‹ ก่อนหน้า</BtnGhost>
-            <span>
-              หน้า <b>{data.applied?.page ?? page}</b> จาก {totalPages}
-              {typeof count === 'number' && <> · ทั้งชุด {fmtNum(count)} ใบ</>}
-            </span>
-            <BtnGhost onClick={() => load(page + 1)} disabled={loading || !data.hasMore}>ถัดไป ›</BtnGhost>
+          <div className="flex flex-wrap items-center gap-2 mt-3 text-[12.5px] text-gray-600">
+            {/* เลขหน้าแบบ ZORT — ใช้ชิ้นเดียวกับจอรายการอื่น
+                ⚠️ **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** (ท่อเมิน offset — กับดักที่จดไว้หัวไฟล์)
+                   ⇒ แปลง offset ↔ page ตรงนี้จุดเดียว: page = offset/PAGE + 1 */}
+            <PageNav
+              offset={(page - 1) * PAGE}
+              perPage={PAGE}
+              rowsOnPage={rows.length}
+              total={typeof count === 'number' ? count : null}
+              disabled={loading}
+              onGo={(off) => load(Math.max(1, Math.floor(off / PAGE) + 1))}
+            />
+            {/* 🔎 หน้าที่ **ท่อบอกว่ากำลังอยู่** — ถ้าไม่ตรงกับที่จอขอ แปลว่าท่อตีความหน้าไม่เหมือนกัน */}
+            {typeof data.applied?.page === 'number' && data.applied.page !== page && (
+              <span className="text-amber-800">
+                ⚠️ ท่อบอกว่ากำลังอยู่หน้า <b>{data.applied.page}</b> แต่จอขอหน้า <b>{page}</b>
+              </span>
+            )}
             {data.limitClamped && (
               <span className="text-amber-700">⚠️ ท่อลดจำนวนต่อหน้าให้เองเพราะชนเพดาน</span>
             )}
