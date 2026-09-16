@@ -16,6 +16,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
+import StoreEcho from '@/components/zort/StoreEcho'
 import { PURCHASE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -40,6 +41,11 @@ interface Row {
   note?: string | null
 }
 interface Resp {
+  /** 🏬 ร้านที่ท่อใช้จริง + ท่อเลือกให้เองหรือเปล่า — ยิงยืนยันครบ 4 เส้น 17 ก.ย. 2569
+   *  (ไม่ส่ง store ⇒ z1 + storeDefaulted:true · ส่ง z2 ⇒ z2 + false · ค่ามั่ว ⇒ 400)
+   *  ⚠️ **ไม่ได้อยู่ใน `applied`** แต่อยู่ชั้นบน ⇒ ต้องอ่านจากตรงนี้ */
+  store?: string | null
+  storeDefaulted?: boolean
   /** ขอบเขตร้านของข้อมูลชุดนี้ — **ข้อความมาจากท่อ จอไม่แต่งเอง** (ใบ t_mu2kxy6u)
    *  ไม่มีช่อง = ไม่แสดง · ห้ามพิมพ์ z1 ตายตัว (วันที่ท่อดึง z2 เข้ามา ข้อความจะเป็นเท็จเงียบ ๆ) */
   storeScope?: string
@@ -316,6 +322,8 @@ export default function CorePurchasesPage() {
           <StorePicker value={store} disabled={loading}
             onChange={(v) => { setStore(v); load(0, tab, v) }} />
           <StoreScopeLine scope={data?.storeScope} />
+          {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
+          <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />
 
           
 

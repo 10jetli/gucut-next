@@ -182,7 +182,7 @@ const srv = createServer(async (req, res) => {
         : { q: q || null, withPhone: wp, withEmail: we },
     }))
   }
-  if ((mode === 'good' || mode === 'partialgood') && /[?&]list=purchases\b/.test(req.url)) {
+  if ((mode === 'good' || mode === 'partialgood' || mode === 'badecho') && /[?&]list=purchases\b/.test(req.url)) {
     const u = new URL(req.url, 'http://x')
     const q = (u.searchParams.get('q') || '').trim()
     const limit = Number(u.searchParams.get('limit')) || 50
@@ -198,6 +198,16 @@ const srv = createServer(async (req, res) => {
       applied: mode === 'partialgood'
         ? { q: q ? q + 'เพี้ยน' : 'คำที่จอไม่ได้ขอ', limit: limit - 1, offset, from: null, to: null }
         : { q: q || null, limit, offset, from: null, to: null },
+      /* 🏬 ท่อจริงบอกกลับที่ **ชั้นบน** ว่าใช้ร้านไหน และเลือกให้เองหรือเปล่า
+         (ยิงยืนยัน 17 ก.ย. 2569 ครบ 4 เส้น: purchases · returnorders · quotations · transfers)
+         โหมด badecho = **ตอบร้านผิดจากที่ขอ** — ปลูกบั๊กให้ `<StoreEcho>` ต้องดัง */
+      ...(mode === 'badecho'
+        ? { store: 'z1', storeDefaulted: true }
+        /* โหมด partialgood = **ไม่บอกเลยว่าร้านไหน** ⇒ จอต้องขึ้น "ยืนยันไม่ได้" ไม่ใช่เงียบ
+           (สถานะที่สาม: ไม่รู้ ≠ ตรงกันดี) */
+        : mode === 'partialgood'
+          ? {}
+          : { store: u.searchParams.get('store') || 'z1', storeDefaulted: !u.searchParams.get('store') }),
     }))
   }
   if (mode === 'partialgood') {
