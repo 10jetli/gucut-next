@@ -73,6 +73,22 @@ export default function CorePurchasesPage() {
   const [store, setStore] = useState<StoreId>('')
   const [tab, setTab] = useState('all')
   const [offset, setOffset] = useState(0)
+  /* ☑️ เลือกหลายใบ — ZORT `/Buy/list` ติ๊กแล้วมีเมนู "คำสั่ง" 7 อย่าง (วัดจอจริง 16 ก.ย. 2569):
+       ปักหมุดบนสุด · ถอนหมุด · เพิ่ม Tag · โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · ซ่อน · ลบรายการ · ยกเลิกรายการ
+     และ "พิมพ์เอกสาร" มีแบบเดียว: ใบแปะจดหมาย/กล่อง (ต้องใช้ที่อยู่ ⇒ ท่อยังไม่ส่งมา)
+     ⚠️ ทุกคำสั่งของ ZORT **เขียนกลับไปที่ ZORT** ⇒ เราทำได้แค่คัดลอกเลขที่ใบ
+        ⇒ ใส่เท่าที่ทำได้จริง + เขียนบอกที่เหลือ **ห้ามทำปุ่มหลอก** */
+  const [picked, setPicked] = useState<string[]>([])
+  const [copyMsg, setCopyMsg] = useState('')
+  const copyNumbers = async (list: string[]) => {
+    try {
+      await navigator.clipboard.writeText(list.join(','))
+      setCopyMsg(`คัดลอกแล้ว ${list.length.toLocaleString('th-TH')} เลขที่ใบ`)
+    } catch {
+      setCopyMsg('คัดลอกไม่สำเร็จ — เบราว์เซอร์ไม่อนุญาตให้เขียนคลิปบอร์ด')
+    }
+    setTimeout(() => setCopyMsg(''), 6000)
+  }
   const [perPage, setPerPage] = useState(PAGE)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
@@ -96,6 +112,7 @@ export default function CorePurchasesPage() {
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
       setData(d)
       setOffset(off)
+      setPicked([])
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
     } finally {
@@ -277,29 +294,61 @@ export default function CorePurchasesPage() {
             onChange={(v) => { setStore(v); load(0, tab, v) }} />
           <StoreScopeLine scope={data?.storeScope} />
 
+          {picked.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
+              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <button type="button" onClick={() => { void copyNumbers(picked) }}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                คัดลอกเลขที่ใบที่เลือก
+              </button>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+              <span className="text-gray-500 basis-full">
+                ⚠️ คำสั่งเป็นชุดของ ZORT (ปักหมุด · Tag · โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · ซ่อน · ลบ · ยกเลิกรายการ)
+                <b>เรายังทำไม่ได้</b> เพราะต้องเขียนกลับไปที่ ZORT · ส่วนใบแปะจดหมาย/กล่องต้องใช้<b>ที่อยู่ผู้รับ</b>
+                ซึ่งท่อยังไม่ส่งมา (ขอไว้แล้ว)
+              </span>
+            </div>
+          )}
+
           <TableWrap>
             <table className="w-full min-w-[900px]">
+              {/* 🔃 หัวคอลัมน์ที่ **จอ ZORT กดเรียงได้** มี tooltip บอกว่าของเรายังเรียงไม่ได้
+                  (ยิงทดสอบ 16 ก.ย. 2569: ท่อเส้นนี้เมิน `sort=` ทุกค่า รวมค่ามั่ว ⇒ ทำปุ่มไว้ = ปุ่มหลอก)
+                  ⚠️ ลอกไปใช้จออื่นได้เฉพาะคอลัมน์ที่ **ไปวัดจอ ZORT มาแล้วจริง ๆ** ห้ามเดา */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
+                  <th className={TH} style={{ width: 34 }}>
+                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                      checked={rows.length > 0 && picked.length === rows.length}
+                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < rows.length }}
+                      onChange={(e) => setPicked(e.target.checked ? rows.map((r) => String(r.number)) : [])} />
+                  </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}>วันที่</th>
-                  <th className={TH}>รายการ</th>
-                  <th className={TH}>ผู้ติดต่อ</th>
-                  <th className={THR}>มูลค่า</th>
-                  <th className={TH}>สถานะ</th>
-                  <th className={TH}>ชำระเงิน</th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ผู้ติดต่อ</span></th>
+                  <th className={THR}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">มูลค่า</span></th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ชำระเงิน</span></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 && (
                   q
-                    ? <EmptyState cols={8} icon="🔍" title="ไม่พบใบสั่งซื้อที่ค้นหา" detail="ลองพิมพ์เลขที่ใบหรือชื่อผู้ขายให้สั้นลง" />
-                    : <EmptyState cols={8} icon="🧾" title="ยังไม่มีใบสั่งซื้อในแท็บนี้"
+                    ? <EmptyState cols={9} icon="🔍" title="ไม่พบใบสั่งซื้อที่ค้นหา" detail="ลองพิมพ์เลขที่ใบหรือชื่อผู้ขายให้สั้นลง" />
+                    : <EmptyState cols={9} icon="🧾" title="ยังไม่มีใบสั่งซื้อในแท็บนี้"
                         detail="ใบสั่งซื้อดึงมาจาก ZORT — เปิดใบใหม่ที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={r.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                  <tr key={r.number} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(String(r.number)) ? 'bg-[#eef1fa]' : ''}`}>
+                    <td className={TD}>
+                      <input type="checkbox" aria-label={`เลือก ${r.number}`}
+                        checked={picked.includes(String(r.number))}
+                        onChange={(e) => setPicked((old) => (e.target.checked ? [...old, String(r.number)] : old.filter((x) => x !== String(r.number))))} />
+                    </td>
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
                     {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
