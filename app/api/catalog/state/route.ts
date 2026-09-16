@@ -16,6 +16,9 @@ export async function GET() {
       catNew: state.catNew ?? [],
       facs: state.facs ?? [],
       catDone: state.catDone ?? [],
+      /* ➕ รายการที่เลือก — เจอตอนยิงของจริงว่าถ้าไม่มีบรรทัดนี้
+         sync.js ส่งขึ้นมาแล้วแต่ฝั่งนี้ทิ้งเงียบ ๆ (ครอบไม่ครบแต่ดูเหมือนครบ) */
+      picked: state.picked ?? [],
       updatedAt: state.updatedAt ?? null,
     })
   } catch (e: any) {
@@ -43,6 +46,9 @@ export async function POST(req: NextRequest) {
       catNew: Array.isArray(body?.catNew) ? body.catNew : [],
       facs: Array.isArray(body?.facs) ? body.facs : [],
       catDone: Array.isArray(body?.catDone) ? body.catDone.filter((x: unknown) => typeof x === 'string') : [],
+      picked: Array.isArray(body?.picked)
+        ? body.picked.filter((x: unknown) => typeof x === 'string')
+        : [],
     }
     await saveCatalogStateBlobs(state)
     return NextResponse.json({ ok: true })

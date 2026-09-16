@@ -7,6 +7,10 @@ export interface CatalogState {
   facs: { n: string; w?: string }[]
   /** หมวดที่ทำเสร็จแล้ว — โชว์เขียว+ติ๊กถูกในเมนูหมวด (1 ก.ย. 2569) */
   catDone?: string[]
+  /** ➕ รายการรหัสที่ผู้ใช้เลือกไว้ดูพร้อมกัน (ท่านประธานสั่ง 16 ก.ย. 2569)
+   *  ต้องอยู่ใน SHARED_KEYS ของ public/catalog/sync.js ด้วย — ไม่งั้นเลือกบน iPad
+   *  แล้วเครื่องอื่นไม่เห็น ทั้งที่ท้ายหน้าเขียนว่า "เห็นตรงกันทุกเครื่อง" */
+  picked?: string[]
   updatedAt?: string
 }
 
