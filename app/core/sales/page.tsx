@@ -233,6 +233,27 @@ export default function CoreSalesPage() {
   /** รายการที่ถูกใส่กลับให้รอบนี้ · ว่าง = ไม่ได้ใช้ของที่จำไว้ */
   const [restored, setRestored] = useState<string[]>([])
   const [offset, setOffset] = useState(0)
+  /* ☑️ เลือกหลายใบแล้วสั่งงาน — ZORT ทำแบบนี้ (ติ๊กแล้วมี "คำสั่ง" กับ "พิมพ์เอกสาร" โผล่)
+     วัดจอ ZORT จริง 16 ก.ย. 2569 `/Sell/list`:
+       คำสั่ง (8): ปักหมุดบนสุด · ถอนหมุด · เพิ่ม Tag · แก้ไขข้อมูลขนส่ง · โอนสินค้าทั้งหมด ·
+                   ชำระเต็มจำนวน · รวมรายการ · ซ่อน   (+ ปุ่ม "พร้อมส่ง (Marketplace)")
+       พิมพ์เอกสาร (8): ใบวางบิล · ใบจ่าหน้าจดหมาย/กล่อง · ใบจัดเตรียมสินค้า · ฉลากจัดส่ง ·
+                   ใบแจ้งยอดชำระ · ใบส่งสินค้า (PDF) · ใบส่งสินค้า+ใบสั่งซื้อ · ใบยืนยันการจัดส่ง
+     ⚠️ เราทำได้จริงตอนนี้แค่ **ใบจัดเตรียมสินค้า** (อ่านอย่างเดียว) กับ **คัดลอกเลขที่ใบ**
+        คำสั่งที่เหลือทุกอันต้องเขียนกลับไปที่ ZORT ⇒ ไม่ทำปุ่มหลอก เขียนบอกบนแถบแทน
+     🔴 ล้างที่เลือกทุกครั้งที่โหลดใหม่ — ไม่งั้นใบที่มองไม่เห็นบนจอค้างอยู่ในคำสั่ง */
+  const [picked, setPicked] = useState<string[]>([])
+  const [copyMsg, setCopyMsg] = useState('')
+  const copyNumbers = async (list: string[]) => {
+    const nums = list.map((id) => rows.find((r) => r.id === id)?.number ?? id)
+    try {
+      await navigator.clipboard.writeText(nums.join(','))
+      setCopyMsg(`คัดลอกแล้ว ${nums.length.toLocaleString('th-TH')} เลขที่ใบ`)
+    } catch {
+      setCopyMsg('คัดลอกไม่สำเร็จ — เบราว์เซอร์ไม่อนุญาตให้เขียนคลิปบอร์ด')
+    }
+    setTimeout(() => setCopyMsg(''), 6000)
+  }
   const [perPage, setPerPage] = useState(PAGE)
 
   const [data, setData] = useState<ListResp | null>(null)
@@ -298,6 +319,7 @@ export default function CoreSalesPage() {
       if (cached) {
         setData(cached.data)
         setOffset(off)
+        setPicked([])
         setStaleAge(cached.ageMs)
         setLoading(false)
       }
@@ -308,6 +330,7 @@ export default function CoreSalesPage() {
       putApiCache(url, j)
       setData(j)
       setOffset(off)
+      setPicked([])
       setStaleAge(null)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
@@ -773,10 +796,41 @@ export default function CoreSalesPage() {
             </button>
           </div>
 
+          {/* ☑️ แถบคำสั่งของใบที่เลือก — โผล่เมื่อเลือกแล้วเท่านั้น (เหมือน ZORT)
+              🔴 มีเฉพาะคำสั่งที่ **ทำได้จริง** · ที่เหลือเขียนบอกตรง ๆ ว่ายังทำไม่ได้และเพราะอะไร */}
+          {picked.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
+              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <Link href={`/core/sales/print?ids=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ใบจัดเตรียมสินค้า
+              </Link>
+              <button type="button" onClick={() => { void copyNumbers(picked) }}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                คัดลอกเลขที่ใบที่เลือก
+              </button>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+              <span className="text-gray-500 basis-full">
+                ⚠️ ZORT พิมพ์จากจอนี้ได้ <b>8 แบบ</b> (ใบวางบิล · ใบจ่าหน้ากล่อง · ใบจัดเตรียมสินค้า · ฉลากจัดส่ง ·
+                ใบแจ้งยอดชำระ · ใบส่งสินค้า · ใบส่งสินค้า+ใบสั่งซื้อ · ใบยืนยันการจัดส่ง) —
+                <b>ของเรามีแบบเดียว</b>คือใบจัดเตรียมสินค้า · และคำสั่งอีก 8 อย่าง (ปักหมุด · Tag · แก้ข้อมูลขนส่ง ·
+                โอนสินค้าทั้งหมด · ชำระเต็มจำนวน · รวมรายการ · ซ่อน) ยังทำไม่ได้เพราะต้อง<b>เขียนกลับไปที่ ZORT</b>
+              </span>
+            </div>
+          )}
+
           <TableWrap>
             <table className="w-full min-w-[1080px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
+                  <th className={TH} style={{ width: 34 }}>
+                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                      checked={rows.length > 0 && picked.length === rows.length}
+                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < rows.length }}
+                      onChange={(e) => setPicked(e.target.checked ? rows.map((r) => r.id) : [])} />
+                  </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>วันที่</th>
                   <th className={TH}>รายการ</th>
@@ -792,7 +846,7 @@ export default function CoreSalesPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <EmptyState cols={11} icon="🧾" title="ไม่พบใบขายในเงื่อนไขนี้"
+                  <EmptyState cols={12} icon="🧾" title="ไม่พบใบขายในเงื่อนไขนี้"
                     detail="ลองเปลี่ยนแท็บ ช่วงเวลา หรือช่องทาง · ออเดอร์ใหม่จากมาร์เก็ตเพลสจะเข้ามาในรอบซิงก์ถัดไป" />
                 )}
                 {rows.map((r, i) => (
@@ -801,6 +855,13 @@ export default function CoreSalesPage() {
                     onClick={() => openDetail(r.id, i)}
                     className="border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50"
                   >
+                    {/* ⚠️ ทั้งแถวกดแล้วเปิดรายละเอียด ⇒ ช่องติ๊กต้อง stopPropagation
+                        ไม่งั้นติ๊กทีเดียวได้ทั้งติ๊กและเด้งเข้าใบ (ผู้ใช้จะงงว่าทำไมจอเปลี่ยน) */}
+                    <td className={TD} onClick={(e) => e.stopPropagation()}>
+                      <input type="checkbox" aria-label={`เลือก ${r.number}`}
+                        checked={picked.includes(r.id)}
+                        onChange={(e) => setPicked((old) => (e.target.checked ? [...old, r.id] : old.filter((x) => x !== r.id)))} />
+                    </td>
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     {/* ZORT เขียน "วันนี้/เมื่อวานนี้" ไม่ใช่วันที่ดิบ — อ่านเร็วกว่าตอนกวาดตา */}
                     <td className={`${TD} whitespace-nowrap text-gray-500`} title={r.order_date}>
