@@ -111,6 +111,27 @@ export default function SalesPrintPage() {
   const empty = sheets.filter((s) => !s.error && (s.items?.length ?? 0) === 0)
   const ok = sheets.filter((s) => !s.error && (s.items?.length ?? 0) > 0)
 
+  /* 📋 **ใบสรุปของที่ต้องหยิบ (รวมทุกใบที่เลือก)** — 🔵 ของเราเพิ่มเอง ZORT ไม่มี
+     เหตุผล: คนแพ็ก 31 ใบต้องเดินคลัง 31 รอบถ้าถือใบทีละใบ · รวมยอดรายรหัสก่อน เดินรอบเดียวหยิบครบ
+     ⚠️ **ไม่แทนใบรายใบ** — ยังพิมพ์ใบรายใบตามเดิม เพราะตอนแพ็กต้องรู้ว่าของชิ้นไหนเข้ากล่องไหน
+     ⚠️ ใบที่ **อ่านไม่สำเร็จ** ไม่ถูกนับในสรุป ⇒ ถ้ามีใบพัง สรุปนี้จะขาด ⇒ เขียนบอกบนใบสรุปตรง ๆ
+     🔴 บรรทัดที่ท่อไม่ส่งจำนวนมา (`qty` เป็น null) **ห้ามนับเป็น 0** — แยกไปนับเป็น "ไม่รู้จำนวน" */
+  const สรุปหยิบ = (() => {
+    const map = new Map<string, { sku: string; name: string; qty: number; ไม่รู้: number; ใบ: number }>()
+    for (const s of ok) {
+      for (const it of s.items ?? []) {
+        const sku = String(it.sku ?? '').trim() || '(ไม่มีรหัส)'
+        const cur = map.get(sku) ?? { sku, name: String(it.name ?? ''), qty: 0, ไม่รู้: 0, ใบ: 0 }
+        if (typeof it.qty === 'number') cur.qty += it.qty
+        else cur.ไม่รู้ += 1
+        cur.ใบ += 1
+        if (!cur.name && it.name) cur.name = String(it.name)
+        map.set(sku, cur)
+      }
+    }
+    return Array.from(map.values()).sort((a, b) => a.sku.localeCompare(b.sku, 'th'))
+  })()
+
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
       <style>{`
@@ -183,6 +204,49 @@ export default function SalesPrintPage() {
           <p className="text-[12.5px] text-gray-600 mb-3">กำลังอ่านใบที่ {reading} จาก {ids.length} — ยังพิมพ์ไม่ได้จนกว่าจะอ่านครบ</p>
         )}
       </div>
+
+      {doc === 'pick' && ok.length > 1 && สรุปหยิบ.length > 0 && (
+        <div className="sheet bg-white border border-gray-200 rounded-lg p-5 mb-4">
+          <div className="border-b border-gray-200 pb-3 mb-3">
+            <h2 className="text-[17px] font-semibold">ใบสรุปของที่ต้องหยิบ (รวม {ok.length.toLocaleString('th-TH')} ใบ)</h2>
+            <p className="text-[12.5px] text-gray-600">
+              🔵 <b>ของเราเพิ่มเอง — ZORT ไม่มีใบนี้</b> · หยิบรอบเดียวให้ครบทุกใบ แล้วค่อยแยกลงกล่องตามใบรายใบที่อยู่ถัดไป
+              {failed.length > 0 && (
+                <span className="block text-red-700">
+                  🔴 สรุปนี้<b>ยังไม่ครบ</b> — มี {failed.length.toLocaleString('th-TH')} ใบที่อ่านไม่สำเร็จ จึงไม่ถูกนับรวม
+                </span>
+              )}
+            </p>
+          </div>
+          <table className="w-full text-[13px]">
+            <thead>
+              <tr className="border-b border-gray-300 text-left">
+                <th className="py-1.5 w-8">#</th>
+                <th className="py-1.5 w-32">รหัสสินค้า</th>
+                <th className="py-1.5">ชื่อสินค้า</th>
+                <th className="py-1.5 text-right w-24">รวมต้องหยิบ</th>
+                <th className="py-1.5 text-right w-20">กี่ใบ</th>
+                <th className="py-1.5 w-14 text-center">หยิบแล้ว</th>
+              </tr>
+            </thead>
+            <tbody>
+              {สรุปหยิบ.map((r, i) => (
+                <tr key={r.sku} className="border-b border-gray-100">
+                  <td className="py-1.5 text-gray-400">{i + 1}</td>
+                  <td className="py-1.5 font-medium">{r.sku}</td>
+                  <td className="py-1.5">{r.name || <span className="text-gray-400">— ท่อไม่ได้ส่งชื่อมา</span>}</td>
+                  <td className="py-1.5 text-right font-semibold">
+                    {r.qty.toLocaleString('th-TH')}
+                    {r.ไม่รู้ > 0 && <span className="text-red-700"> +{r.ไม่รู้} บรรทัดไม่รู้จำนวน</span>}
+                  </td>
+                  <td className="py-1.5 text-right text-gray-500">{r.ใบ.toLocaleString('th-TH')}</td>
+                  <td className="py-1.5 text-center text-gray-300">☐</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {sheets.filter((s) => !s.error).map((s) => (
         <div key={s.id} className="sheet bg-white border border-gray-200 rounded-lg p-5 mb-4">
