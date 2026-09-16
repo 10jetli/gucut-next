@@ -467,7 +467,9 @@ export default function CoreProductReportPage() {
                             </span>
                           )}
                       </td>
-                      <td className={TDR}>{fmtNum(Number(r.onhand ?? 0))}</td>
+                      {/* 🔴 คงเหลือที่ "ไม่รู้" ห้ามโชว์ 0 — 0 แปลว่าของหมด ซึ่งพาไปสั่งของผิด
+                          (ช่องนี้เป็น optional ในชนิดข้อมูล · ช่องมูลค่าข้าง ๆ ทำถูกอยู่แล้ว ⇒ ทำให้เหมือนกัน) */}
+                      <td className={TDR}>{typeof r.onhand === 'number' ? fmtNum(r.onhand) : <span className="text-gray-300">—</span>}</td>
                       <td className={TDR}>{typeof r.value === 'number' ? fmtMoney(r.value) : <span className="text-gray-300">—</span>}</td>
                     </tr>
                   ))}

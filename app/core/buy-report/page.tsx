@@ -578,10 +578,15 @@ export default function BuyReportPage() {
                           </span>
                         )}
                       </td>
-                      <td className={TDR}>{fmtNum(Number(r.qty ?? 0))}</td>
-                      <td className={TDR}>{fmtMoney(Number(r.amount ?? 0))}</td>
+                      {/* 🔴 ช่องพวกนี้เป็น optional ในชนิดข้อมูล ⇒ `?? 0` ทำให้ "ท่อไม่ส่งมา" กลายเป็นเลข 0
+                          ในตารางที่คนเอาไปดูว่าซื้อของตัวไหนไปเท่าไหร่ (แก้ 16 ก.ย. 2569)
+                          ⇒ ไม่มีค่า ⇒ ขีด ตามธรรมเนียมของทั้งระบบ · มีค่า 0 จริงยังโชว์ 0 เหมือนเดิม */}
+                      <td className={TDR}>{typeof r.qty === 'number' ? fmtNum(r.qty) : <span className="text-gray-300">—</span>}</td>
+                      <td className={TDR}>{typeof r.amount === 'number' ? fmtMoney(r.amount) : <span className="text-gray-300">—</span>}</td>
                       <td className={TDR}>
-                        {itemsTotal > 0 ? `${((Number(r.amount ?? 0) / itemsTotal) * 100).toFixed(1)}%` : '—'}
+                        {typeof r.amount === 'number' && itemsTotal > 0
+                          ? `${((r.amount / itemsTotal) * 100).toFixed(1)}%`
+                          : <span className="text-gray-300">—</span>}
                       </td>
                     </tr>
                   ))}

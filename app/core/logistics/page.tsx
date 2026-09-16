@@ -316,7 +316,8 @@ export default function LogisticsPage() {
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
                     </td>
                     <td className={`${TD} max-w-[200px] truncate`}>{r.receiver || <span className="text-gray-300">—</span>}</td>
-                    <td className={TDR}>{fmtNum(Number(r.lines ?? 0))}</td>
+                    {/* ไม่รู้จำนวนรายการในใบ ⇒ ขีด (0 แปลว่าใบนี้ไม่มีสินค้าเลย ซึ่งคนละเรื่อง) */}
+                    <td className={TDR}>{typeof r.lines === 'number' ? fmtNum(r.lines) : <span className="text-gray-300">—</span>}</td>
                     <td className={TD}>
                       {/* ⚠️ COD = เก็บเงินปลายทาง (ยังไม่ได้เงิน) ไม่ใช่ "จ่ายแล้ว" — ห้ามใช้สีเขียว */}
                       {r.isCod
