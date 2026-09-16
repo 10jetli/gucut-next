@@ -2,32 +2,11 @@
 // @ts-ignore - pdf-parse ไม่มี type definitions
 import pdfParse from 'pdf-parse/lib/pdf-parse.js'
 
-const TH_ABBR: Record<string, number> = {
-  'ม.ค.': 1, 'ก.พ.': 2, 'มี.ค.': 3, 'เม.ย.': 4, 'พ.ค.': 5, 'มิ.ย.': 6,
-  'ก.ค.': 7, 'ส.ค.': 8, 'ก.ย.': 9, 'ต.ค.': 10, 'พ.ย.': 11, 'ธ.ค.': 12,
-}
-const TH_FULL = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม']
-const EN = ['jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec']
-
-const fixYear = (y: number) => (y > 2200 ? y - 543 : y) // พ.ศ. → ค.ศ.
-const pad = (n: number) => String(n).padStart(2, '0')
-
-// หา "วันที่แรก" ในข้อความ → คืนค่าเดือนแบบ YYYY-MM (หัวบิลมักมีวันที่เรียกเก็บเงินอยู่บนสุด)
-export function monthFromText(text: string): string | null {
-  // 11 มิ.ย. 2026 / 13 มิ.ย. 2569
-  let m = text.match(/(\d{1,2})\s*(ม\.ค\.|ก\.พ\.|มี\.ค\.|เม\.ย\.|พ\.ค\.|มิ\.ย\.|ก\.ค\.|ส\.ค\.|ก\.ย\.|ต\.ค\.|พ\.ย\.|ธ\.ค\.)\s*(\d{4})/)
-  if (m) return `${fixYear(+m[3])}-${pad(TH_ABBR[m[2]])}`
-  // 11 มิถุนายน 2569
-  m = text.match(new RegExp(`(\\d{1,2})\\s*(${TH_FULL.join('|')})\\s*(\\d{4})`))
-  if (m) return `${fixYear(+m[3])}-${pad(TH_FULL.indexOf(m[2]) + 1)}`
-  // Jun 11, 2026
-  m = text.match(/(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?\s+(\d{1,2}),?\s+(\d{4})/i)
-  if (m) return `${fixYear(+m[3])}-${pad(EN.indexOf(m[1].toLowerCase()) + 1)}`
-  // 11 June 2026
-  m = text.match(/(\d{1,2}),?\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,?\s*(\d{4})/i)
-  if (m) return `${fixYear(+m[3])}-${pad(EN.indexOf(m[2].toLowerCase()) + 1)}`
-  return null
-}
+// 🔁 ตรรกะอ่านข้อความย้ายไป `lib/bill-text.ts` แล้ว (16 ก.ย. 2569) — ไฟล์นี้เหลือหน้าที่ "แกะ PDF"
+//    เหตุ: ตัวกันบิลซ้ำกับเทสต้อง compile ตรรกะข้อความเดี่ยว ๆ โดยไม่ลาก pdf-parse มาด้วย
+//    ⚠️ re-export ของเดิมไว้ครบ — ของที่ import monthFromText จากไฟล์นี้ยังใช้ได้เหมือนเดิม
+export { monthFromText, billPeriodFromText, invoiceNoFromText, totalFromText } from './bill-text'
+import { monthFromText } from './bill-text'
 
 // อ่าน 2 หน้าแรกของ PDF แล้วคืนทั้งข้อความและเดือนบนหัวบิล (ใช้ครั้งเดียว ไม่ parse ซ้ำ)
 export async function pdfBillInfo(buf: Buffer): Promise<{ month: string | null; text: string }> {

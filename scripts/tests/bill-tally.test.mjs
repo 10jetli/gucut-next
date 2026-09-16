@@ -19,7 +19,7 @@ execFileSync('npx', ['tsc', 'lib/bill-tally.ts', '--outDir', out,
   '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler', '--lib', 'es2020,dom'],
   { cwd: process.cwd(), stdio: 'inherit' })
 writeFileSync(join(out, 'package.json'), '{"type":"module"}')
-const { emptyTally, countExists, countWrongAccount, countPdfUnreadable, countNoWrite, skippedTotal, tallyReport } =
+const { emptyTally, countExists, countWrongAccount, countPdfUnreadable, countNoWrite, countDupBill, countNeedsHumanCheck, skippedTotal, tallyReport } =
   await import(join(out, 'bill-tally.js'))
 
 let fail = 0
@@ -31,20 +31,21 @@ const ref = (n) => ({ messageId: `m${n}`, month: '2026-09', file: `Statement_${n
 
 console.log('① ผลรวมตัวนับย่อยทุกตัว = skipped เสมอ (ข้อที่ CEO สั่งตรึง)')
 {
-  /* ไล่ทุกส่วนผสมของ **สี่** เหตุผล 0–3 ครั้ง = 256 ชุด ไม่ใช่เคสที่เลือกมาให้ผ่าน
-     (เพิ่มมิติที่สี่ตอนแยก "อ่าน PDF ไม่ออก" ออกจาก "เลขบัญชีไม่ตรง" 14 ก.ย. 2569) */
+  /* ไล่ทุกส่วนผสมของ **ห้า** เหตุผล 0–3 ครั้ง = 1,024 ชุด ไม่ใช่เคสที่เลือกมาให้ผ่าน
+     (มิติที่สี่ = "อ่าน PDF ไม่ออก" 14 ก.ย. 2569 · มิติที่ห้า = "ใบซ้ำที่ชื่อไฟล์ต่างกัน" 16 ก.ย. 2569) */
   let bad = []
-  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let c = 0; c < 4; c++) for (let d = 0; d < 4; d++) {
+  for (let a = 0; a < 4; a++) for (let b = 0; b < 4; b++) for (let c = 0; c < 4; c++) for (let d = 0; d < 4; d++) for (let e = 0; e < 4; e++) {
     const t = emptyTally()
     for (let i = 0; i < a; i++) countExists(t)
     for (let i = 0; i < b; i++) countWrongAccount(t, ref(i))
     for (let i = 0; i < c; i++) countNoWrite(t)
     for (let i = 0; i < d; i++) countPdfUnreadable(t, ref(100 + i))
+    for (let i = 0; i < e; i++) countDupBill(t, { ...ref(200 + i), sameAs: 'ของเดิม.pdf' })
     const r = tallyReport(t)
-    if (r.skipped !== a + b + c + d) bad.push(`(${a},${b},${c},${d}) ⇒ skipped=${r.skipped}`)
-    if (r.skipped !== skippedTotal(t)) bad.push(`(${a},${b},${c},${d}) ⇒ รายงานไม่ตรงกับตัวคิด`)
+    if (r.skipped !== a + b + c + d + e) bad.push(`(${a},${b},${c},${d},${e}) ⇒ skipped=${r.skipped}`)
+    if (r.skipped !== skippedTotal(t)) bad.push(`(${a},${b},${c},${d},${e}) ⇒ รายงานไม่ตรงกับตัวคิด`)
   }
-  ok('ครบทั้ง 256 ส่วนผสม ผลรวมลงตัวทุกชุด', bad.length === 0, bad.slice(0, 3).join(' · '))
+  ok('ครบทั้ง 1,024 ส่วนผสม ผลรวมลงตัวทุกชุด', bad.length === 0, bad.slice(0, 3).join(' · '))
 }
 
 console.log('①ข อ่าน PDF ไม่ออก ต้องไม่ไปโผล่ในกอง "เลขบัญชีไม่ตรง" (ตีความคนละขั้ว)')
@@ -92,6 +93,28 @@ console.log('④ รายชื่อใบที่ถูกคัด — ม�
   const empty = tallyReport(emptyTally())
   ok('ไม่มีใบถูกคัด ⇒ ไม่มีคีย์ rejectedSample เลย (ห้ามส่งก้อนว่างให้เข้าใจผิดว่าตรวจแล้วไม่มี)',
      !('rejectedSample' in empty), JSON.stringify(empty))
+}
+
+
+console.log('①ค ใบซ้ำที่ชื่อไฟล์ต่างกัน (16 ก.ย. 2569 · ใบ t_mu3g8tq5) — ต้องแยกกองและรวมใน skipped')
+{
+  const t = emptyTally()
+  countDupBill(t, { ...ref(9), sameAs: '2026-08_xxx_Adobe.pdf' })
+  const r = tallyReport(t)
+  ok('นับเข้า skippedDupBill = 1', r.skippedDupBill === 1, String(r.skippedDupBill))
+  ok('ไม่รั่วไปกอง "มีไฟล์ชื่อนี้แล้ว"', r.skippedExists === 0, String(r.skippedExists))
+  ok('รวมอยู่ใน skipped (ใบนี้ถูกข้ามจริง)', r.skipped === 1, String(r.skipped))
+  ok('บอกด้วยว่าไปซ้ำกับไฟล์ไหน', (r.rejectedSample ?? []).some((x) => String(x.reason).includes('2026-08_xxx_Adobe.pdf')))
+}
+
+console.log('①ง "ตัดสินไม่ได้ว่าซ้ำหรือไม่" — ห้ามนับเป็นถูกข้าม เพราะไฟล์ถูกเก็บจริง')
+{
+  const t = emptyTally()
+  countNeedsHumanCheck(t, { ...ref(11), why: 'ในใบไม่มีเลขที่เอกสาร และอ่านยอดรวมไม่ได้' })
+  const r = tallyReport(t)
+  ok('นับเข้า needsHumanCheck = 1', r.needsHumanCheck === 1, String(r.needsHumanCheck))
+  ok('ไม่ไปเพิ่ม skipped', r.skipped === 0, String(r.skipped))
+  ok('มีเหตุผลติดมาให้คนตามรอย', (r.rejectedSample ?? []).some((x) => String(x.reason).includes('ตัดสินไม่ได้')))
 }
 
 console.log(fail === 0 ? '\n✅ ผ่านทุกข้อ' : `\n❌ ตก ${fail} ข้อ`)

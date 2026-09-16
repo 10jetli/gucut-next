@@ -40,6 +40,15 @@ window.auditTabs = async function auditTabs(opts) {
       b.querySelectorAll('tbody tr').length > a.querySelectorAll('tbody tr').length ? b : a)
     return [...t.querySelectorAll('tbody tr')].filter((r) => r.querySelectorAll('td').length > 2).length
   }
+  /** ข้อความของแถวแรก — ใช้จับว่า "ตารางเปลี่ยนแล้ว" แม้จำนวนแถวเท่าเดิม */
+  const firstRowText = () => {
+    const tables = [...document.querySelectorAll('table')]
+    if (!tables.length) return ''
+    const t = tables.reduce((a, b) =>
+      b.querySelectorAll('tbody tr').length > a.querySelectorAll('tbody tr').length ? b : a)
+    const r = t.querySelector('tbody tr')
+    return r ? (r.innerText || '').replace(/\s+/g, ' ').trim().slice(0, 80) : ''
+  }
   const tabButtons = () => [...document.querySelectorAll('button')]
     .map((b) => ({ el: b, text: (b.innerText || '').replace(/\s+/g, ' ').trim() }))
     .filter((o) => o.text && o.text.length < 40 && /\(\s*[\d,]+\s*\)/.test(o.text))
@@ -54,8 +63,26 @@ window.auditTabs = async function auditTabs(opts) {
     // ⚠️ หาปุ่มใหม่ทุกครั้ง — React เปลี่ยน DOM หลังกด ปุ่มเก่าอาจไม่อยู่แล้ว
     const btn = tabButtons().find((o) => o.text === text)
     if (!btn) { out.push({ แท็บ: text, ผล: 'หาปุ่มซ้ำไม่เจอหลังกดแท็บก่อนหน้า' }); continue }
+    const ก่อนกด = { n: countRows(), หัวแถว: firstRowText() }
     btn.el.click()
-    await sleep(waitMs)                        // ① กดก่อน แล้วค่อยอ่าน
+    /* 🔴 **รอ "สัญญาณบวก" ไม่ใช่นับเวลา** (บทเรียนเดียวกับ scripts/sweep-in-browser.js)
+       เจอกับตัวเองวันนี้: ตั้ง waitMs = 4.5 วิ กับจอเอกสารบัญชี ⇒ ตารางยังไม่รีเฟรช
+       ⇒ เครื่องมือรายงานว่า "ชนิด 3 (0) กดแล้วได้ 50 แถว" ซึ่ง **ผิด** (ยิงท่อตรง ๆ ได้ 0 แถวจริง)
+       = ผลบวกปลอมที่เกือบกลายเป็นรายงานบั๊กที่ไม่มีอยู่จริง
+       ⇒ เปลี่ยนเป็นรอจนกว่าจะ **เห็นการเปลี่ยน** หรือ **ตัวโหลดหาย** และถ้าไม่ชัดให้บอกว่า "ตัดสินไม่ได้" */
+    let สภาพ = 'ตัดสินไม่ได้'
+    const เพดาน = Math.max(waitMs, 15000)
+    for (let t = 0; t < เพดาน; t += 500) {
+      await sleep(500)
+      const กำลังโหลด = /กำลังโหลด|กำลังดึง|กำลังถาม/.test(document.body.innerText || '')
+      const now = { n: countRows(), หัวแถว: firstRowText() }
+      if (!กำลังโหลด && (now.n !== ก่อนกด.n || now.หัวแถว !== ก่อนกด.หัวแถว)) { สภาพ = 'ตัดสินได้ (ตารางเปลี่ยน)'; break }
+      if (!กำลังโหลด && t >= 3000 && now.n === ก่อนกด.n && now.หัวแถว === ก่อนกด.หัวแถว) {
+        /* ไม่เปลี่ยนเลยหลัง 3 วิ และไม่มีตัวโหลด = อาจเป็นแท็บที่ผลเหมือนเดิมจริง ๆ
+           ⇒ ยังตัดสินได้ แต่ติดป้ายให้คนอ่านรู้ว่า "เหมือนเดิม" ไม่ใช่ "ยังไม่ทันโหลด" */
+        สภาพ = 'ตัดสินได้ (ตารางเหมือนเดิม)'; break
+      }
+    }
     const body = document.body.innerText || ''
     const m = /\(\s*([\d,]+)\s*\)/.exec(text)
     out.push({
@@ -63,6 +90,7 @@ window.auditTabs = async function auditTabs(opts) {
       สัญญา: m ? Number(m[1].replace(/,/g, '')) : null,
       แถวที่ได้: countRows(),
       // ② เก็บท่อนข้อความจริง ไม่ใช่แค่ true/false
+      สภาพการรอ: สภาพ,
       เหตุที่จอเขียนไว้: (body.split('\n').map((s) => s.trim())
         .find((l) => CLUE.some((k) => l.includes(k)) || PAGING.test(l)) || null),
     })

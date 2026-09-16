@@ -27,6 +27,11 @@ export interface BillIndex {
 
 const STORE = 'gucut-bills'
 const fkey = (vendorId: string, filename: string) => `f/${vendorId}/${filename}`
+/** ทะเบียน "ตัวตนของใบ → ชื่อไฟล์ที่เก็บไว้แล้ว" (เพิ่ม 16 ก.ย. 2569 · ใบ t_mu3g8tq5)
+ *  🔴 เหตุ: ท่านประธานจับได้เองว่าบิล Adobe ซ้ำ — ส.ค. 3 ไฟล์ = ใบเดียวกัน · ก.ค. 4 ไฟล์ = ใบเดียวกัน
+ *     ต้นเหตุคือกันซ้ำด้วย **ชื่อไฟล์** ⇒ ใบเดิมที่มาในชื่อใหม่ผ่านด่านทุกครั้ง
+ *  ⚠️ encode กันอักขระ `/` ในเลขที่เอกสาร (เช่น INV/2026/08) ไปตัดคีย์เป็นชั้น ๆ */
+const idkey = (vendorId: string, identity: string) => `i/${vendorId}/${encodeURIComponent(identity)}`
 
 export interface BlobBillFile {
   id: string // = key ในรูป BLOB:<key> ให้ file route เปิดได้
@@ -55,12 +60,62 @@ export async function uploadBillToBlobs(
 }
 
 // อัปโหลด 1 ไฟล์ (ข้ามถ้ามีชื่อนี้แล้ว) — คืน true ถ้าเขียนจริง, false ถ้าข้าม
+// ⚠️ **ตัวนี้กันซ้ำได้แค่ชื่อไฟล์** ⇒ ใบเดียวกันที่มาในชื่อต่างกันจะเข้าถังซ้ำ (บั๊กที่ท่านประธานจับได้ 16 ก.ย. 2569)
+//    ของใหม่ให้ใช้ `syncBillByIdentity()` แทน · ตัวนี้เก็บไว้ให้จออัปโหลดมือที่คนเลือกไฟล์เองใช้
 export async function syncBillToBlobs(
   vendorId: string, filename: string, mimeType: string, bytes: Buffer,
 ): Promise<boolean> {
   if (await blobFileExists(vendorId, filename)) return false
   await uploadBillToBlobs(vendorId, filename, mimeType, bytes)
   return true
+}
+
+// ── ตัวตนของใบ (กันซ้ำแบบไม่พึ่งชื่อไฟล์) ───────────────────────────────
+/** ใบนี้เคยเก็บไว้แล้วหรือยัง — คืน **ชื่อไฟล์เดิม** ถ้าเคย · null ถ้าไม่เคย */
+export async function findBillByIdentity(vendorId: string, identity: string): Promise<string | null> {
+  if (!identity) return null
+  const store = getStore(STORE)
+  const v = await store.get(idkey(vendorId, identity), { type: 'text' }).catch(() => null)
+  const name = String(v ?? '').trim()
+  return name || null
+}
+
+export async function rememberBillIdentity(vendorId: string, identity: string, filename: string): Promise<void> {
+  if (!identity) return
+  const store = getStore(STORE)
+  await store.set(idkey(vendorId, identity), filename)
+}
+
+export type BillWriteResult = {
+  written: boolean
+  /** เหตุผลเป็นข้อความไทยที่เอาไปโชว์ได้ตรง ๆ — ห้ามคืนแค่ true/false เพราะสามเหตุผลนี้คนละเรื่อง */
+  reason: 'เขียนใหม่' | 'มีไฟล์ชื่อนี้อยู่แล้ว' | 'ใบนี้มีอยู่แล้วในชื่อไฟล์อื่น' | 'เขียนใหม่ (ยังตัดสินไม่ได้ว่าซ้ำ)'
+  /** ไปซ้ำกับไฟล์ไหน (เฉพาะกรณีซ้ำด้วยตัวตน) */
+  sameAs?: string
+}
+
+/** เขียนบิล 1 ใบ โดยกันซ้ำ **ด้วยตัวตนของใบ** ก่อน แล้วค่อยกันด้วยชื่อไฟล์
+ *  @param identity กุญแจจาก `billIdentity()` · ส่ง null ได้ถ้าอ่านตัวตนไม่ได้
+ *  🔴 identity = null **ห้ามแปลว่า "ไม่ซ้ำ"** ⇒ ยังเก็บไฟล์ (ทิ้งบิลจริงเสียหายกว่า)
+ *     แต่คืนเหตุผลว่า "ยังตัดสินไม่ได้" เพื่อให้ตัวเรียกไปนับใส่ needsHumanCheck */
+export async function syncBillByIdentity(
+  vendorId: string, filename: string, mimeType: string, bytes: Buffer, identity: string | null,
+): Promise<BillWriteResult> {
+  if (identity) {
+    const already = await findBillByIdentity(vendorId, identity)
+    if (already) return { written: false, reason: 'ใบนี้มีอยู่แล้วในชื่อไฟล์อื่น', sameAs: already }
+  }
+  if (await blobFileExists(vendorId, filename)) {
+    /* ชื่อซ้ำแต่ทะเบียนตัวตนยังไม่มี = ไฟล์เก่าที่เก็บก่อนมีทะเบียน ⇒ ลงทะเบียนย้อนหลังให้ */
+    if (identity) await rememberBillIdentity(vendorId, identity, filename)
+    return { written: false, reason: 'มีไฟล์ชื่อนี้อยู่แล้ว' }
+  }
+  await uploadBillToBlobs(vendorId, filename, mimeType, bytes)
+  if (identity) {
+    await rememberBillIdentity(vendorId, identity, filename)
+    return { written: true, reason: 'เขียนใหม่' }
+  }
+  return { written: true, reason: 'เขียนใหม่ (ยังตัดสินไม่ได้ว่าซ้ำ)' }
 }
 
 // ลบไฟล์บิล 1 ใบ — **ต้องระบุชื่อเต็มเป๊ะ ไม่มี wildcard ไม่มีลบเป็นชุด**
