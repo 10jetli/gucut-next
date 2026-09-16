@@ -96,6 +96,9 @@ color:#1e3a8a;border-radius:999px;padding:3px 6px 3px 11px;font-size:13px}
 .pick-tools{display:flex;gap:8px;align-items:center;margin-left:auto;font-size:13px}
 .pick-tools button{background:#f1f5f9;border:1px solid #cfd4dd;border-radius:7px;padding:4px 10px;
 cursor:pointer;font-size:13px;font-family:inherit}
+.pick-add-row{border:1px solid #cfd4dd;background:#fff;border-radius:6px;padding:3px 9px;
+font-size:13px;cursor:pointer;margin-right:5px;font-family:inherit;color:#2563eb;font-weight:700;line-height:1}
+.pick-add-row:hover{background:#e8efff;border-color:#93b4fb}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
@@ -416,7 +419,7 @@ function cell(r,key,q){
     case"reco":{const rc=reco(r.stock,r.sku);return '<td class="num"><span class="reco r'+rc.lvl+'">'+rc.txt+'</span></td>';}
     case"sold6":return '<td class="num" style="color:#5f6368">'+(r.sold6>0?r.sold6:'-')+'</td>';
     case"qty":{const t=(r.qsrc==="po")?"ของหมด — ใช้จำนวนที่เคยสั่งสูงสุด":(r.qsrc==="min")?"ของหมด — จำนวนสั่งขั้นต่ำ":"แผนสั่ง 12 เดือน จากยอดขายทุกช่องทาง 12 เดือน ZORT";const mk=(r.qsrc==="po")?' ↺':(r.qsrc==="min")?' ●':'';return '<td class="num" title="'+t+'">'+(r.qty>0?'<b style="color:#d93025">'+r.qty+'</b>'+(mk?'<span style="font-size:10px;color:#888">'+mk+'</span>':''):'<span style="color:#137333">พอ</span>')+'</td>';}
-    case"edit":return '<td class="num"><button class="edit-btn" data-sku="'+esc(r.sku)+'">✎ แก้ไข</button></td>';
+    case"edit":return '<td class="num"><button class="pick-add-row" data-add="'+esc(r.sku)+'" title="เพิ่มรหัสนี้เข้ารายการที่เลือก">'+(picked.includes(r.sku)?'✓':'+')+'</button><button class="edit-btn" data-sku="'+esc(r.sku)+'">✎ แก้ไข</button></td>';
   }
   return "<td></td>";
 }
@@ -440,6 +443,8 @@ function render(){
   }).join("");
   app.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(k==="edit"||k==="img")return;if(state.sort.key===k)state.sort.dir*=-1;else state.sort={key:k,dir:1};render();});
   app.querySelectorAll(".edit-btn").forEach(b=>b.onclick=()=>openEdit(b.dataset.sku));
+    /* ➕ ปุ่ม + ในแถว — ท่านประธานเลือกเอง 16 ก.ย. 2569 (ค้นเจอแล้วกดเพิ่มได้เลย ไม่ต้องพิมพ์ซ้ำ) */
+    app.querySelectorAll(".pick-add-row").forEach(b=>b.onclick=()=>addPick(b.dataset.add));
     renderPicks();
 }
 
@@ -917,7 +922,11 @@ fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
    ⚠️ เก็บแยกคีย์ ไม่แตะข้อมูลสินค้าและการแก้ไขเดิมเลยสักช่อง */
 const LS_PICKED="gucut_picked_v1";
 let picked=load(LS_PICKED,[]);
-let pickOnly=false;
+/* จำโหมดไว้ข้ามการรีเฟรช — ท่านประธานเลือก "จำว่าดูเฉพาะที่เลือก"
+   ⚠️ ถ้าไม่จำ: รีเฟรชแล้วตารางเด้งกลับไปทั้งคลัง 2,265 แถว ทั้งที่ยังเลือกของไว้
+      คนใช้จะนึกว่ารายการที่เลือกหาย แล้วเลือกใหม่ซ้ำ */
+const LS_PICKONLY="gucut_pickonly_v1";
+let pickOnly=load(LS_PICKONLY,false)===true;
 function savePicked(){save(LS_PICKED,picked);}
 function pickMsg(t,cls){
   const el=document.getElementById("pickMsg");
@@ -930,21 +939,22 @@ function addPick(raw){
   /* ⚠️ ต้องมีรหัสนี้อยู่จริงถึงเพิ่มได้ — ไม่งั้นได้รายการว่างที่ดูเหมือนสำเร็จ */
   const p=state.base.find(x=>String(x.sku).toLowerCase()===sku.toLowerCase());
   if(!p){pickMsg("ไม่พบรหัส "+sku+" ในคลัง","err");return;}
-  if(picked.includes(p.sku)){pickMsg("รหัส "+p.sku+" อยู่ในรายการแล้ว","err");return;}
+  /* กดปุ่มที่เป็น ✓ อยู่แล้ว = ต้องการถอดออก ไม่ใช่ความผิดพลาด */
+  if(picked.includes(p.sku)){delPick(p.sku);pickMsg("เอา "+p.sku+" ออกจากรายการแล้ว","ok");return;}
   picked.push(p.sku); savePicked();
-  pickOnly=true;                      /* เพิ่มแล้วสลับมาโหมดดูเฉพาะที่เลือกทันที */
+  pickOnly=true; save(LS_PICKONLY,true);   /* เพิ่มแล้วสลับมาโหมดดูเฉพาะที่เลือกทันที */
   document.getElementById("pickIn").value="";
   pickMsg("เพิ่ม "+p.sku+" แล้ว","ok");
   renderPicks(); render();
 }
 function delPick(sku){
   picked=picked.filter(s=>s!==sku); savePicked();
-  if(!picked.length) pickOnly=false;
+  if(!picked.length){pickOnly=false;save(LS_PICKONLY,false);}
   renderPicks(); render();
 }
 function clearPicks(){
   if(!picked.length) return;
-  picked=[]; savePicked(); pickOnly=false; renderPicks(); render();
+  picked=[]; savePicked(); pickOnly=false; save(LS_PICKONLY,false); renderPicks(); render();
 }
 function renderPicks(){
   const box=document.getElementById("pickChips");
@@ -963,7 +973,7 @@ function renderPicks(){
     '</span>';
   box.querySelectorAll("button[data-del]").forEach(b=>b.onclick=()=>delPick(b.dataset.del));
   const t=document.getElementById("pickToggle");
-  if(t) t.onclick=()=>{pickOnly=!pickOnly;renderPicks();render();};
+  if(t) t.onclick=()=>{pickOnly=!pickOnly;save(LS_PICKONLY,pickOnly);renderPicks();render();};
   const c=document.getElementById("pickClear");
   if(c) c.onclick=clearPicks;
 }
