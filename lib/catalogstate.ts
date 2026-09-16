@@ -7,6 +7,11 @@ export interface CatalogState {
   facs: { n: string; w?: string }[]
   /** หมวดที่ทำเสร็จแล้ว — โชว์เขียว+ติ๊กถูกในเมนูหมวด (1 ก.ย. 2569) */
   catDone?: string[]
+  /** ➕ รหัสที่พิมพ์เพิ่มเองในหน้าคลังอะไหล่ (ท่านประธานสั่ง 16 ก.ย. 2569)
+   *  แยกจาก ovr/catMap สนิท — ข้อมูลจาก Shopify ไม่ถูกแตะ
+   *  ต้องอยู่ใน SHARED_KEYS ของ public/catalog/sync.js ด้วย ไม่งั้นเครื่องอื่นไม่เห็น */
+  added?: { sku: string; name?: string; nameEn?: string; oem?: string; hh?: string;
+            price?: number; category?: string; at?: string }[]
   updatedAt?: string
 }
 
