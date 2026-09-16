@@ -33,7 +33,7 @@
 //    แย่กว่าไม่มีปุ่ม · เขียนบนจอว่าต้องโหลดจากหน้า ZORT เอง
 // ⚠️ **ไม่โชว์ `detail`** ตามที่ฝั่งท่อกำชับ (เป็นก้อนข้อมูลอ้างอิงของเอกสาร ไม่ใช่ของที่จอนี้ต้องแสดง)
 // ⚠️ **ท่อล่ม (502) = อ่านไม่ได้ ไม่ใช่ 0 ใบ** — สามสถานะเดิมของโปรเจกต์
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
@@ -87,7 +87,16 @@ export default function AccountingDocsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (p = 1, t = type) => {
+  /* 🔴 **บั๊กที่เจอด้วยการกดจริง 16 ก.ย. 2569 (งานยืน t_mu2u9mym)**
+     เดิม `load` ผูก deps ไว้กับ `type` และมี `useEffect(() => load(1, ''), [load])`
+     ⇒ ทุกครั้งที่กดปุ่มชนิดเอกสาร `type` เปลี่ยน ⇒ `load` ถูกสร้างใหม่ ⇒ **effect รันซ้ำแล้วโหลด type=''**
+     ผลบนจอ: กด "ใบหัก ณ ที่จ่าย (0)" แล้วเห็น 0 รายการจริงอยู่ ~4 วินาที
+             แล้วจอ **เด้งกลับเป็น "ทั้งหมด 694"** เอง โดยไม่มีใครกดอะไร
+     ⇒ คนใช้จะสรุปว่า "ปุ่มกรองชนิดกดแล้วไม่มีผล" ซึ่งเป็นคลาสปุ่มหลอกที่ห้ามมีในระบบนี้
+     ⇒ แก้โดยให้ `load` **ไม่ผูกกับ type** (อ่านค่าปัจจุบันจาก ref) ⇒ effect จึงรันครั้งเดียวจริง
+        และปุ่มรีเฟรช/เลขหน้า ยังคงชนิดที่เลือกอยู่ไว้ได้เหมือนเดิม */
+  const typeRef = useRef(type)
+  const load = useCallback(async (p = 1, t = typeRef.current) => {
     setLoading(true); setError('')
     try {
       /* 🔴 ใช้ `page=` เท่านั้น — `offset` ถูกเมินเงียบ (ดูหัวไฟล์) */
@@ -99,15 +108,15 @@ export default function AccountingDocsPage() {
       if (typeof j?.skip === 'string' && j.skip) throw new Error(j.skip)
       if (!res.ok || j?.error) throw new Error(j?.error ?? `ท่อตอบ ${res.status}`)
       if (!Array.isArray(j?.rows)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)')
-      setData(j); setPage(p)
+      setData(j); setPage(p); typeRef.current = t
     } catch (e) {
       /* 🔴 อ่านไม่ได้ ≠ ไม่มีเอกสาร — ล้างข้อมูลแล้วให้กล่องแดงพูด ห้ามโชว์ 0 ใบ */
       setData(null)
       setError(String(e instanceof Error ? e.message : e))
     } finally { setLoading(false) }
-  }, [type])
+  }, [])
 
-  useEffect(() => { load(1, '') }, [load])
+  useEffect(() => { void load(1, '') }, [load])
 
   const rows = data?.rows ?? []
   const count = data?.count
@@ -206,7 +215,7 @@ export default function AccountingDocsPage() {
       {/* ตัวกรองชนิด — ตัวเลขข้างปุ่มคือ "เคยวัดได้" ไม่ใช่ค่าสด จึงเขียนกำกับ */}
       <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {TYPES.map((t) => (
-          <button key={t.v || 'all'} onClick={() => { setType(t.v); load(1, t.v) }}
+          <button key={t.v || 'all'} onClick={() => { setType(t.v); typeRef.current = t.v; void load(1, t.v) }}
             className={`text-[12.5px] rounded-full px-3 py-1 border ${
               type === t.v ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
             }`}>
