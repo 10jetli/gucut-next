@@ -329,11 +329,13 @@ export default function CoreBundlesPage() {
           </div>
           <TableWrap>
             <table className="w-full min-w-[940px]">
+              {/* 🔃 ช่องที่ **จอ ZORT กดเรียงได้** (วัดจอจริง 16 ก.ย. 2569) — ของเรายังเรียงไม่ได้
+                  เพราะท่อเมิน `sort` ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก · ติดเฉพาะช่องที่วัดมาแล้ว */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}>รหัส</th>
-                  <th className={TH}>สินค้าเป็นชุด</th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">รหัส</span></th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">สินค้าเป็นชุด</span></th>
                   <th className={THR}>ราคาสินค้ารวม</th>
                   <th className={THR}>ราคาขาย</th>
                   {/* 🕰 สองคอลัมน์นี้คือของที่แถบอายุข้างบนกำกับอยู่ — ใส่นาฬิกาให้ชี้ตรงกัน

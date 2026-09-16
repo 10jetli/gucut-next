@@ -343,9 +343,11 @@ export default function CoreCategoriesPage() {
 
           <TableWrap>
             <table className="w-full min-w-[720px]">
+              {/* 🔃 ช่องที่ **จอ ZORT กดเรียงได้** (วัดจอจริง 16 ก.ย. 2569) — ของเรายังเรียงไม่ได้
+                  เพราะท่อเมิน `sort` ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก · ติดเฉพาะช่องที่วัดมาแล้ว */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH}>ชื่อหมวดหมู่</th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">ชื่อหมวดหมู่</span></th>
                   <th className={THR}>จำนวน SKU</th>
                   <th className={THR}>มูลค่าสินค้าคงเหลือ</th>
                   <th className={THR}>มูลค่าสินค้าพร้อมขาย</th>
