@@ -1,8 +1,11 @@
 // GUCUT catalog — sync ค่าโรงงาน/การแก้ไข/หมวดหมู่ ระหว่างเครื่อง (แทนที่จะเก็บแค่ localStorage เครื่องเดียว)
 // โหลดไฟล์นี้ก่อน index.html จะได้ patch localStorage.setItem ทันเวลา
 (function(){
-  var LS_OVR="gucut_overrides_v1", LS_CAT="gucut_catmap_v1", LS_CATNEW="gucut_catnew_v1", LS_FAC="gucut_factories_v1",LS_CATDONE="gucut_catdone_v1";
-  var SHARED_KEYS=[LS_OVR,LS_CAT,LS_CATNEW,LS_FAC,LS_CATDONE];
+  /* ➕ รายการที่เลือก 16 ก.ย. 2569 — ต้องอยู่ใน SHARED_KEYS ไม่งั้นเลือกบน iPad แล้ว
+     เครื่องอื่นไม่เห็น ทั้งที่ท้ายหน้าเขียนว่า "เห็นตรงกันทุกเครื่อง" */
+    var LS_PICKED="gucut_picked_v1";
+    var LS_OVR="gucut_overrides_v1", LS_CAT="gucut_catmap_v1", LS_CATNEW="gucut_catnew_v1", LS_FAC="gucut_factories_v1",LS_CATDONE="gucut_catdone_v1";
+  var SHARED_KEYS=[LS_OVR,LS_CAT,LS_CATNEW,LS_FAC,LS_CATDONE,LS_PICKED];
   var origSetItem=localStorage.setItem.bind(localStorage);
   var timer=null;
   function getAll(){
@@ -11,7 +14,8 @@
       catMap: JSON.parse(localStorage.getItem(LS_CAT)||"{}"),
       catNew: JSON.parse(localStorage.getItem(LS_CATNEW)||"[]"),
       facs: JSON.parse(localStorage.getItem(LS_FAC)||"[]"),
-      catDone: JSON.parse(localStorage.getItem(LS_CATDONE)||"[]")
+      catDone: JSON.parse(localStorage.getItem(LS_CATDONE)||"[]"),
+      picked: JSON.parse(localStorage.getItem(LS_PICKED)||"[]")
     };
   }
   function queueSync(){

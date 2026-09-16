@@ -75,6 +75,27 @@
   .modal .preview{width:80px;height:80px;object-fit:contain;background:#fafafa;border-radius:8px;border:1px solid var(--line);margin-top:6px}
   .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
   .hint{font-size:11px;color:var(--muted);margin-top:3px}
+#pickBar{margin:14px auto;max-width:1400px;padding:10px 14px;border:1px solid #d7dbe3;
+border-radius:10px;background:#fbfcfe}
+#pickBar .pick-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+#pickIn{flex:1;min-width:190px;padding:7px 10px;border:1px solid #cfd4dd;border-radius:8px;
+font-size:14px;font-family:inherit}
+#pickAdd{background:#2563eb;color:#fff;border:0;border-radius:8px;padding:8px 14px;
+font-size:14px;cursor:pointer;font-family:inherit;white-space:nowrap}
+#pickAdd:hover{background:#1d4ed8}
+#pickMsg{font-size:13px}
+#pickMsg.err{color:#dc2626}
+#pickMsg.ok{color:#16a34a}
+#pickChips{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+#pickChips:empty{margin-top:0}
+.pchip{display:inline-flex;align-items:center;gap:6px;background:#e8efff;border:1px solid #c7d7fb;
+color:#1e3a8a;border-radius:999px;padding:3px 6px 3px 11px;font-size:13px}
+.pchip b{font-weight:600}
+.pchip button{background:0;border:0;color:#64748b;cursor:pointer;font-size:15px;line-height:1;padding:0 3px}
+.pchip button:hover{color:#dc2626}
+.pick-tools{display:flex;gap:8px;align-items:center;margin-left:auto;font-size:13px}
+.pick-tools button{background:#f1f5f9;border:1px solid #cfd4dd;border-radius:7px;padding:4px 10px;
+cursor:pointer;font-size:13px;font-family:inherit}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
@@ -128,6 +149,16 @@
   <div id="facBar" style="display:flex;gap:12px;flex-wrap:wrap;padding:16px 12px 6px"></div>
 </header>
 <main id="app"><div class="empty">กำลังโหลดข้อมูล…</div></main>
+<!-- ➕ แถบรายการที่เลือก — ท่านประธานสั่ง 16 ก.ย. 2569
+     "เสิร์ชหาสินค้าแล้วเพิ่มได้อีกทาง ทีละรหัส" -->
+<section id="pickBar">
+  <div class="pick-row">
+    <input id="pickIn" type="text" placeholder="พิมพ์รหัสสินค้าแล้วกด + (ทีละรหัส)" autocomplete="off">
+    <button id="pickAdd" type="button">+ เพิ่มเข้ารายการ</button>
+    <span id="pickMsg"></span>
+  </div>
+  <div id="pickChips"></div>
+</section>
 <section id="trfPage" style="display:none;padding:14px;max-width:960px;margin:0 auto">
   <div id="trfSetup" style="display:none;max-width:560px;margin:0 auto">
     <h3>การเชื่อมต่อ ZORT</h3>
@@ -333,6 +364,8 @@ function currentRows(){
   const fc=document.getElementById("fCat").value, ff=document.getElementById("fFac").value;
   const fs=document.getElementById("fStock").value, fr=document.getElementById("fReco").value;
   let rows=state.base.map(row).filter(r=>{
+    /* ➕ โหมดดูเฉพาะรายการที่เลือก — กรองก่อนเงื่อนไขอื่นทั้งหมด */
+    if(pickOnly && picked.length && !picked.includes(r.sku)) return false;
     if(fc&&fc.indexOf("__")!==0&&r.category!==fc)return false;
     if(ff&&r.factory!==ff)return false;
     if(ff&&reco(r.stock,r.sku).lvl===0)return false;
@@ -407,6 +440,7 @@ function render(){
   }).join("");
   app.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(k==="edit"||k==="img")return;if(state.sort.key===k)state.sort.dir*=-1;else state.sort={key:k,dir:1};render();});
   app.querySelectorAll(".edit-btn").forEach(b=>b.onclick=()=>openEdit(b.dataset.sku));
+    renderPicks();
 }
 
 // ---- column chooser ----
@@ -877,6 +911,66 @@ fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
     if(location.hash==="#trf")showPage("trf");
   });
 }).catch(e=>{document.getElementById("app").innerHTML='<div class="empty">โหลดข้อมูลไม่สำเร็จ: '+e+'</div>';});
+
+/* ➕ รายการที่เลือก — ท่านประธานสั่ง 16 ก.ย. 2569
+   "เสิร์ชหาสินค้าแล้วเพิ่มได้อีกทาง ทีละรหัส"
+   ⚠️ เก็บแยกคีย์ ไม่แตะข้อมูลสินค้าและการแก้ไขเดิมเลยสักช่อง */
+const LS_PICKED="gucut_picked_v1";
+let picked=load(LS_PICKED,[]);
+let pickOnly=false;
+function savePicked(){save(LS_PICKED,picked);}
+function pickMsg(t,cls){
+  const el=document.getElementById("pickMsg");
+  el.textContent=t||""; el.className=cls||"";
+  if(t) setTimeout(()=>{if(el.textContent===t){el.textContent="";el.className="";}},4000);
+}
+function addPick(raw){
+  const sku=(raw||"").trim();
+  if(!sku){pickMsg("พิมพ์รหัสก่อนครับ","err");return;}
+  /* ⚠️ ต้องมีรหัสนี้อยู่จริงถึงเพิ่มได้ — ไม่งั้นได้รายการว่างที่ดูเหมือนสำเร็จ */
+  const p=state.base.find(x=>String(x.sku).toLowerCase()===sku.toLowerCase());
+  if(!p){pickMsg("ไม่พบรหัส "+sku+" ในคลัง","err");return;}
+  if(picked.includes(p.sku)){pickMsg("รหัส "+p.sku+" อยู่ในรายการแล้ว","err");return;}
+  picked.push(p.sku); savePicked();
+  pickOnly=true;                      /* เพิ่มแล้วสลับมาโหมดดูเฉพาะที่เลือกทันที */
+  document.getElementById("pickIn").value="";
+  pickMsg("เพิ่ม "+p.sku+" แล้ว","ok");
+  renderPicks(); render();
+}
+function delPick(sku){
+  picked=picked.filter(s=>s!==sku); savePicked();
+  if(!picked.length) pickOnly=false;
+  renderPicks(); render();
+}
+function clearPicks(){
+  if(!picked.length) return;
+  picked=[]; savePicked(); pickOnly=false; renderPicks(); render();
+}
+function renderPicks(){
+  const box=document.getElementById("pickChips");
+  if(!box) return;
+  if(!picked.length){box.innerHTML="";return;}
+  const ชิป=picked.map(s=>{
+    const p=state.base.find(x=>x.sku===s);
+    const ชื่อ=p?esc(String(p.title||"").replace(/^\d+\s*/,"").slice(0,26)):"";
+    return '<span class="pchip"><b>'+esc(s)+'</b>'+(ชื่อ?' <span>'+ชื่อ+'</span>':'')+
+           '<button type="button" data-del="'+esc(s)+'" title="เอาออก">×</button></span>';
+  }).join("");
+  box.innerHTML=ชิป+
+    '<span class="pick-tools">'+
+      '<button type="button" id="pickToggle">'+(pickOnly?"↩︎ แสดงทั้งคลัง":"👁 แสดงเฉพาะที่เลือก")+'</button>'+
+      '<button type="button" id="pickClear">ล้างทั้งหมด ('+picked.length+')</button>'+
+    '</span>';
+  box.querySelectorAll("button[data-del]").forEach(b=>b.onclick=()=>delPick(b.dataset.del));
+  const t=document.getElementById("pickToggle");
+  if(t) t.onclick=()=>{pickOnly=!pickOnly;renderPicks();render();};
+  const c=document.getElementById("pickClear");
+  if(c) c.onclick=clearPicks;
+}
+document.getElementById("pickAdd").onclick=()=>addPick(document.getElementById("pickIn").value);
+document.getElementById("pickIn").addEventListener("keydown",e=>{
+  if(e.key==="Enter"){e.preventDefault();addPick(e.target.value);}
+});
 </script>
 </body>
 </html>
