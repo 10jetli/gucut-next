@@ -233,6 +233,7 @@ export default function CoreSalesPage() {
   /** รายการที่ถูกใส่กลับให้รอบนี้ · ว่าง = ไม่ได้ใช้ของที่จำไว้ */
   const [restored, setRestored] = useState<string[]>([])
   const [offset, setOffset] = useState(0)
+  const [perPage, setPerPage] = useState(PAGE)
 
   const [data, setData] = useState<ListResp | null>(null)
   const [loading, setLoading] = useState(true)
@@ -261,7 +262,7 @@ export default function CoreSalesPage() {
 
   const load = useCallback(async (
     off = 0,
-    opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string },
+    opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string; size?: number },
   ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
@@ -275,7 +276,7 @@ export default function CoreSalesPage() {
       const toDay = (opt?.to ?? advTo) || thaiDay(0)
       const qs = new URLSearchParams({
         list: 'orders', from: fromDay, to: toDay,
-        limit: String(PAGE), offset: String(off),
+        limit: String(opt?.size ?? perPage), offset: String(off),
       })
       if (ch) qs.set('channel', ch)
       if (st) qs.set('status', st)
@@ -315,7 +316,7 @@ export default function CoreSalesPage() {
     } finally {
       setLoading(false)
     }
-  }, [days, channel, status, q, store, advFrom, advTo, advParams])
+  }, [days, channel, status, q, store, advFrom, advTo, advParams, perPage])
 
   /* 💾 เปิดจอมา: ถ้ามีของที่จำไว้ ให้ใส่กลับ **แล้วประกาศ** · ไม่มีก็โหลดตามปกติ
      ⚠️ อ่าน localStorage ใน effect เท่านั้น (อ่านตอนวาดครั้งแรก = จอฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน) */
@@ -917,9 +918,10 @@ export default function CoreSalesPage() {
                 <span className="text-[12px] text-gray-500">
                   แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {data.total.toLocaleString('th-TH')} รายการ
                 </span>
-                <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
                   total={typeof data.total === 'number' ? data.total : null}
-                  disabled={loading} onGo={(off) => load(off)} />
+                  disabled={loading} onGo={(off) => load(off)}
+                  onPerPage={(n) => { setPerPage(n); load(0, { size: n }) }} />
               </div>
             )}
           </TableWrap>

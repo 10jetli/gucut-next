@@ -73,15 +73,16 @@ export default function CorePurchasesPage() {
   const [store, setStore] = useState<StoreId>('')
   const [tab, setTab] = useState('all')
   const [offset, setOffset] = useState(0)
+  const [perPage, setPerPage] = useState(PAGE)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (off = 0, tabId = tab, storeId = store) => {
+  const load = useCallback(async (off = 0, tabId = tab, storeId = store, size = perPage) => {
     setLoading(true)
     setError('')
     try {
-      const qs = new URLSearchParams({ list: 'purchases', limit: String(PAGE), offset: String(off) })
+      const qs = new URLSearchParams({ list: 'purchases', limit: String(size), offset: String(off) })
       /* 🔴 **เลิกส่ง `status` ไปท่อ — ท่อเมินพารามิเตอร์นี้** (ยิงพิสูจน์ 16 ก.ย. 2569)
          ยิง `status=Voided` · `Success` · `Pending` ⇒ ได้ **33 แถวเท่ากันทุกครั้ง** และแถวมีสถานะปนกัน
          (`applied` ของท่อไม่มีช่อง status ด้วย) ⇒ เดิมกดแท็บ "สำเร็จ" แล้วยังเห็นใบยกเลิกปนอยู่
@@ -100,7 +101,7 @@ export default function CorePurchasesPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, tab, store])
+  }, [q, tab, store, perPage])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -342,9 +343,10 @@ export default function CorePurchasesPage() {
               <span className="text-[12px] text-gray-500">
                 แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
               </span>
-              <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+              <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
                 total={typeof data.total === 'number' ? data.total : null}
-                disabled={loading} onGo={(off) => load(off)} />
+                disabled={loading} onGo={(off) => load(off)}
+                  onPerPage={(n) => { setPerPage(n); load(0, undefined, undefined, n) }} />
             </div>
           </TableWrap>
 

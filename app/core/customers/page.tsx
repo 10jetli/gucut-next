@@ -74,6 +74,7 @@ export default function CoreContactsPage() {
   const [q, setQ] = useState('')
   const [tab, setTab] = useState('')
   const [offset, setOffset] = useState(0)
+  const [perPage, setPerPage] = useState(PAGE)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   /* 🔍 **ค้นหาขั้นสูง — ท่อเปิดให้แล้ว 15 ก.ย. 2569** (gucut-web bea658d)
@@ -93,12 +94,12 @@ export default function CoreContactsPage() {
   const load = useCallback(async (
     off = 0,
     term = q,
-    opt?: { withPhone?: boolean; withEmail?: boolean },
+    opt?: { withPhone?: boolean; withEmail?: boolean; size?: number },
   ) => {
     setLoading(true)
     setError('')
     try {
-      const qs = new URLSearchParams({ list: 'contacts', limit: String(PAGE), offset: String(off) })
+      const qs = new URLSearchParams({ list: 'contacts', limit: String(opt?.size ?? perPage), offset: String(off) })
       if (term.trim()) qs.set('q', term.trim())
       if (opt?.withPhone ?? withPhone) qs.set('withphone', '1')
       if (opt?.withEmail ?? withEmail) qs.set('withemail', '1')
@@ -112,7 +113,7 @@ export default function CoreContactsPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, withPhone, withEmail])
+  }, [q, withPhone, withEmail, perPage])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -449,9 +450,10 @@ export default function CoreContactsPage() {
                   {typeof data.total === 'number' && <> จาก {fmtNum(data.total)}</>}
                 </span>
                 <span className="flex gap-2">
-                  <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                  <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
                     total={typeof data.total === 'number' ? data.total : null}
-                    disabled={loading} onGo={(off) => load(off)} />
+                    disabled={loading} onGo={(off) => load(off)}
+                    onPerPage={(n) => { setPerPage(n); load(0, undefined, { size: n }) }} />
                 </span>
               </div>
             </TableWrap>

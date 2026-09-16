@@ -25,8 +25,16 @@ type Props = {
   /** จำนวนแถวที่ได้จริงในหน้านี้ — ใช้ตัดสินว่ายังมีหน้าถัดไปไหมตอนไม่รู้ total */
   rowsOnPage: number
   onGo: (offset: number) => void
+  /** มีตัวเลือก "จำนวนต่อหน้า" ด้วยไหม — ส่งมาเมื่อจอรองรับการเปลี่ยนจำนวนจริง ๆ เท่านั้น
+   *  ⚠️ **เปลี่ยนแล้วต้องกลับหน้าแรกเสมอ** ไม่งั้น offset เดิมชี้กลางชุด แล้วคนงงว่าแถวหายไปไหน
+   *     (จอที่เรียก onPerPage ต้องยิงใหม่ด้วย offset 0 พร้อมค่าใหม่ในรอบเดียวกัน —
+   *      setState ไม่ทันในรอบเดียว จึงส่งค่าใหม่ไปกับคำสั่งโหลดตรง ๆ) */
+  onPerPage?: (size: number) => void
   disabled?: boolean
 }
+
+/** ชุดจำนวนต่อหน้า — **ชุดเดียวกับ ZORT เป๊ะ** (อ่านจากจอจริง 16 ก.ย. 2569) */
+export const PAGE_CHOICES = [10, 20, 50, 100]
 
 const BTN = 'px-2.5 py-1.5 rounded border text-[13px] leading-none disabled:opacity-40 disabled:cursor-not-allowed'
 const PLAIN = `${BTN} bg-white border-gray-300 text-gray-700 hover:bg-gray-50`
@@ -44,7 +52,7 @@ function pagesToShow(cur: number, last: number): (number | '…')[] {
   return out
 }
 
-export default function PageNav({ offset, perPage, total, rowsOnPage, onGo, disabled }: Props) {
+export default function PageNav({ offset, perPage, total, rowsOnPage, onGo, onPerPage, disabled }: Props) {
   const cur = Math.floor(offset / perPage) + 1
   const รู้จำนวนทั้งชุด = typeof total === 'number'
   const last = รู้จำนวนทั้งชุด ? Math.max(1, Math.ceil((total as number) / perPage)) : null
@@ -76,6 +84,17 @@ export default function PageNav({ offset, perPage, total, rowsOnPage, onGo, disa
 
       <button type="button" className={PLAIN} disabled={disabled || !มีหน้าถัดไป}
         onClick={() => onGo(offset + perPage)}>ถัดไป →</button>
+
+      {onPerPage && (
+        <>
+          <span className="text-[12px] text-gray-500 ml-1">จำนวนต่อหน้า</span>
+          <select value={perPage} disabled={disabled}
+            onChange={(e) => onPerPage(Number(e.target.value))}
+            className="text-[13px] border border-gray-300 rounded px-2 py-1.5 bg-white">
+            {PAGE_CHOICES.map((n) => <option key={n} value={n}>{n}</option>)}
+          </select>
+        </>
+      )}
     </div>
   )
 }

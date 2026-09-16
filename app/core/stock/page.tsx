@@ -94,10 +94,8 @@ interface Resp {
 }
 
 const PAGE = 50
-/* 📏 **จำนวนต่อหน้า — ชุดเดียวกับ ZORT เป๊ะ** (อ่านจากจอจริง `/Product/list` 16 ก.ย. 2569: 10/20/50/100)
-   ZORT ตั้งต้นที่ 20 · จอนี้ตั้งต้นที่ 50 มาแต่เดิม **คงไว้** เพราะเปลี่ยนแล้วคนที่ใช้อยู่ต้องกดไล่หน้าถี่ขึ้น
-   (ค่าตั้งต้นต่างกันไม่ทำให้คนงง เพราะเลือกได้เองและเขียนกำกับไว้ — ต่างจากตัวเลือกที่ไม่มีให้เลือกเลย) */
-const PAGE_CHOICES = [10, 20, 50, 100]
+/* 📏 จำนวนต่อหน้า: ชุดตัวเลือก (10/20/50/100 แบบ ZORT) อยู่ใน `components/zort/PageNav.tsx`
+   ZORT ตั้งต้นที่ 20 · จอนี้ตั้งต้นที่ 50 มาแต่เดิม **คงไว้** เพราะเปลี่ยนแล้วคนที่ใช้อยู่ต้องกดไล่หน้าถี่ขึ้น */
 
 const SORTS = [
   { id: 'qty', label: 'ของใกล้หมดก่อน' },
@@ -730,19 +728,10 @@ function CoreStockInner() {
                 )}
               </span>
               <div className="flex gap-2">
-                {/* 📏 จำนวนต่อหน้า — ZORT มีตัวเลือกนี้ทุกจอรายการ คนคุ้นกับการเปลี่ยนเอง
-                    ⚠️ เปลี่ยนแล้วต้องกลับไปหน้าแรก ไม่งั้น offset เดิมจะชี้กลางชุดแล้วคนงงว่าแถวหาย */}
-                <span className="text-[12px] text-gray-500 self-center">จำนวนต่อหน้า</span>
-                <select
-                  value={perPage}
-                  onChange={(e) => { const n = Number(e.target.value); setPerPage(n); load(0, sort, tab, kind, q, n) }}
-                  className="text-[13px] border border-gray-300 rounded px-2 py-1.5 bg-white"
-                >
-                  {PAGE_CHOICES.map((n) => <option key={n} value={n}>{n}</option>)}
-                </select>
-                {/* เลขหน้าแบบ ZORT — กดข้ามได้ในคลิกเดียว (ของเดิมมีแค่ถัดไป ⇒ อยากดูหน้า 40 ต้องกด 39 ครั้ง) */}
+                {/* เลขหน้า + จำนวนต่อหน้า แบบ ZORT — คุมจากชิ้นเดียว (components/zort/PageNav.tsx) */}
                 <PageNav offset={offset} perPage={perPage} total={inTab} rowsOnPage={rows.length}
-                  disabled={loading} onGo={(off) => load(off)} />
+                  disabled={loading} onGo={(off) => load(off)}
+                  onPerPage={(n) => { setPerPage(n); load(0, sort, tab, kind, q, n) }} />
               </div>
             </div>
           </TableWrap>

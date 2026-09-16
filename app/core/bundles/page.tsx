@@ -114,6 +114,7 @@ function Qty({ n, unit, maybeNegative }: { n?: number; unit?: string; maybeNegat
 export default function CoreBundlesPage() {
   const [q, setQ] = useState('')
   const [offset, setOffset] = useState(0)
+  const [perPage, setPerPage] = useState(PAGE)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -138,12 +139,12 @@ export default function CoreBundlesPage() {
     }
   }, [items])
 
-  const load = useCallback(async (off = 0) => {
+  const load = useCallback(async (off = 0, size = perPage) => {
     setLoading(true)
     setError('')
     try {
       // ⚠️ จอนี้ต้องส่ง marketplaces=1 ถึงจะได้โลโก้ช่องทาง (ต่างจาก list=stock ที่ส่งมาให้เลย)
-      const qs = new URLSearchParams({ list: 'bundles', limit: String(PAGE), offset: String(off), marketplaces: '1' })
+      const qs = new URLSearchParams({ list: 'bundles', limit: String(size), offset: String(off), marketplaces: '1' })
       if (q.trim()) qs.set('q', q.trim())
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
@@ -155,7 +156,7 @@ export default function CoreBundlesPage() {
     } finally {
       setLoading(false)
     }
-  }, [q])
+  }, [q, perPage])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -438,9 +439,10 @@ export default function CoreBundlesPage() {
               <span className="text-[12px] text-gray-500">
                 แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
               </span>
-              <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+              <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
                 total={typeof data.total === 'number' ? data.total : null}
-                disabled={loading} onGo={(off) => load(off)} />
+                disabled={loading} onGo={(off) => load(off)}
+                onPerPage={(n) => { setPerPage(n); load(0, n) }} />
             </div>
           </TableWrap>
 
