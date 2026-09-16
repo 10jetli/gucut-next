@@ -93,7 +93,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
 }
 
 export default function LedgerScreen({
-  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, purpose, meanwhile,
+  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, purpose, meanwhile,
   emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv,
 }: {
   title: string
@@ -130,6 +130,10 @@ export default function LedgerScreen({
    *  ⚠️ ใส่ได้เฉพาะจอที่ **ยังไม่ต่อท่อ** และต้องเขียนที่มาของเลขไว้ในตัวข้อความเอง
    *     เช่น "จอ ZORT โชว์ 0 หน้า (เปิดดูด้วยตา)" ไม่ใช่ "มี 0 หน้า" ลอย ๆ */
   sumLabel?: string
+  /** วันที่ที่ "เลขใน sumLabel" ถูกเปิดดูที่ ZORT จริง — ไม่ส่งมา = ใช้วันตรวจรวมของจอตระกูลนี้
+   *  🔴 เพิ่ม 16 ก.ย. 2569 เพราะเจอของจริง: จอเซลเพจยืนยันสดวันนี้ แต่ประโยคยังขึ้นวันที่รวม 3 ก.ย.
+   *     ⇒ ประโยคเดียวมีสองวันที่ อ่านแล้วไม่รู้ว่าอันไหนคือวันที่ของเลขนั้น */
+  sumSeenAt?: string
   /** ZORT เขียนอะไรไว้ในกล่องว่าง — เอาไว้บอกว่าจอนี้มีไว้ทำอะไร */
   purpose: string
   /** ตอนนี้ร้านทำเรื่องนี้ที่ไหน */
@@ -257,9 +261,9 @@ export default function LedgerScreen({
         summary={cantRead
           /* หลักฐาน+วันที่ยิงตรวจแสดงในกล่อง "หลักฐาน:" ในตารางว่างข้างล่าง (ทะเบียน · 14 ก.ย. 2569) */
           /* ไม่มี sumLabel = ไม่มีเลขที่คัดมาด้วยมือให้อ้าง ⇒ พูดแค่สถานะ ห้ามเดาจำนวน */
-          ? <span>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้{sumLabel ? <> — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</> : null}</span>
+          ? <span>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้{sumLabel ? <> — ที่ ZORT เมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)} {sumLabel}</> : null}</span>
           : !zortList
-            ? <span>ยังไม่ได้ต่อกับ ZORT{sumLabel ? <> — ที่ ZORT เมื่อ {thaiDate(CHECKED_AT)} {sumLabel}</> : null}</span>
+            ? <span>ยังไม่ได้ต่อกับ ZORT{sumLabel ? <> — ที่ ZORT เมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)} {sumLabel}</> : null}</span>
             : zLoading
               ? <span className="text-gray-500">กำลังถาม ZORT…</span>
               : (zUnknown || zErr)
@@ -427,7 +431,11 @@ export default function LedgerScreen({
                     : zUnknown && zCode === '500' ? 'ZORT ขัดข้องฝั่งเขา (ข้อผิดพลาดภายในของ ZORT) — ยังไม่รู้ว่ามีรายการโอนเงินไหม'
                       : zUnknown ? 'ถาม ZORT ไม่สำเร็จ — ยังไม่รู้ว่ามีกี่รายการ'
                         : zortAnswered ? 'ZORT ตอบแล้วว่าไม่มีรายการ'
-                          : cantRead ? 'ZORT ไม่เปิดเส้นให้ทำเรื่องนี้ — ไม่ใช่ยังไม่ได้ทำ'
+                          /* 🗓️ **วันที่ยิงตรวจของคำนี้อยู่รายคีย์ในทะเบียน `lib/zort-menu.ts` ช่อง impossible**
+                             (นับเมื่อ 16 ก.ย. 2569: 22 คีย์ · วันที่ยิงตรวจ 14 ก.ย. 2569 จำนวน 16 คีย์ · 15 ก.ย. 2569 จำนวน 2 คีย์)
+                             จอนี้เป็นตัวแสดงร่วมของหลายเมนู ⇒ ห้ามฝังวันที่ตายตัวในข้อความ
+                             แต่กล่องหลักฐานใต้บรรทัดนี้พิมพ์ข้อความจากทะเบียนพร้อมวันที่ให้เห็นทุกครั้ง */
+                          : cantRead ? 'ZORT ไม่เปิดเส้นให้ทำเรื่องนี้ — ไม่ใช่ยังไม่ได้ทำ (วันที่ยิงตรวจอยู่ในกล่องหลักฐานข้างล่าง)'
                             : impossible ? 'ยังไม่ได้ต่อท่อกับ ZORT (และสร้าง/แก้ผ่าน ZORT ไม่ได้ — ดูหลักฐานข้างล่าง)'
                               : 'ยังไม่ได้ต่อท่อกับ ZORT'}
                 </p>
@@ -556,7 +564,9 @@ export default function LedgerScreen({
               ? `จำนวน ${zCount} รายการ (แสดง ${rows!.length})`
               : `จำนวน ${zCount ?? rows!.length} รายการ`)
             : zUnknown ? 'ยังไม่รู้จำนวน (ถาม ZORT ไม่สำเร็จ)'
-              : cantRead ? 'ไม่มีข้อมูลให้ดึง (ZORT ไม่เปิดเส้น)' : 'ยังไม่ได้ดึงข้อมูล'} | จำนวนต่อหน้า
+              /* 🗓️ เหมือนกับข้างบน: หลักฐาน + วันที่ยิงตรวจมาจากทะเบียน `lib/zort-menu.ts` รายคีย์
+                 (ตรวจทะเบียนเมื่อ 16 ก.ย. 2569 — คีย์ที่ติดธงนี้ยิงตรวจไว้ 14–15 ก.ย. 2569) */
+              : cantRead ? 'ไม่มีข้อมูลให้ดึง (ZORT ไม่เปิดเส้น — ดูวันที่ยิงตรวจในกล่องหลักฐาน)' : 'ยังไม่ได้ดึงข้อมูล'} | จำนวนต่อหน้า
         </span>
         <select
           disabled
