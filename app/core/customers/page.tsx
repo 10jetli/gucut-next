@@ -297,11 +297,25 @@ export default function CoreContactsPage() {
 
       {/* ✅ ด่านสะท้อนค่าที่ท่อใช้จริง — ถ้าสิ่งที่จอส่งกับสิ่งที่ท่อใช้ไม่ตรงกัน ต้องเห็น
           (ท่อส่ง `applied` มาให้ใช้เป็นด่านโดยเฉพาะ) */}
-      {data?.applied && (withPhone !== !!data.applied.withPhone || withEmail !== !!data.applied.withEmail) && (
+      {/* ⚠️ **ตรวจคำค้นด้วย ไม่ใช่แค่สองสวิตช์** (เพิ่ม 17 ก.ย. 2569)
+          ของเดิมเทียบแต่ `withPhone`/`withEmail` ⇒ วันไหนท่อเมิน `q` หรือใช้คำอื่น
+          จอจะโชว์รายชื่อทั้งกองโดยที่คนเพิ่งพิมพ์คำค้น **แล้วไม่มีอะไรฟ้อง**
+          (จอรายการซื้อเพิ่งได้ด่านแบบเดียวกันไปเมื่อคืน — ทำให้เหมือนกันทั้งสองจอ) */}
+      {data?.applied && (
+        withPhone !== !!data.applied.withPhone ||
+        withEmail !== !!data.applied.withEmail ||
+        (q.trim() ? (data.applied.q ?? '') !== q.trim() : !!(data.applied.q ?? ''))
+      ) && (
         <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-3">
-          ⚠️ <b>ตัวกรองที่จอเลือกกับที่ท่อใช้จริงไม่ตรงกัน</b> — ท่อใช้:
-          {' '}มีเบอร์ {data.applied.withPhone ? 'ใช่' : 'ไม่'} · มีอีเมล {data.applied.withEmail ? 'ใช่' : 'ไม่'}
-          {' '}⇒ ผลที่เห็นอาจไม่ตรงกับที่เลือก
+          ⚠️ <b>ตัวกรองที่จอเลือกกับที่ท่อใช้จริงไม่ตรงกัน</b>
+          <span className="block mt-0.5">
+            จอขอ: คำค้น “{q.trim() || '(ไม่ได้ค้น)'}” · มีเบอร์ {withPhone ? 'ใช่' : 'ไม่'} · มีอีเมล {withEmail ? 'ใช่' : 'ไม่'}
+          </span>
+          <span className="block">
+            ท่อใช้จริง: คำค้น “{data.applied.q || '(ไม่ได้ค้น)'}” · มีเบอร์ {data.applied.withPhone ? 'ใช่' : 'ไม่'} ·
+            มีอีเมล {data.applied.withEmail ? 'ใช่' : 'ไม่'}
+          </span>
+          <span className="block mt-0.5 text-gray-600">⇒ รายชื่อที่เห็นเป็นของเงื่อนไขที่ท่อใช้ ไม่ใช่ของที่เพิ่งกด</span>
         </div>
       )}
 

@@ -161,6 +161,27 @@ const srv = createServer(async (req, res) => {
         ก็ยังไม่รู้ว่ามันจับได้จริงไหม** (บทเรียน guard-must-be-tested-with-planted-bug)
      ⇒ โหมด good = `applied` ตรงกับที่ขอ (จอต้องเงียบ)
         โหมด partialgood = `applied.q` **เพี้ยนไปจากที่ขอ** (จอต้องขึ้นคำเตือน) */
+  /* ── ผู้ติดต่อ (จอ /core/customers) — ทดสอบ **ด่านเทียบ `applied`** ของจอนั้น
+     🔴 ท่อจริงส่ง `applied` = { q · withPhone · withEmail } ⇒ จอเทียบได้ว่า "ที่ขอ" กับ "ที่ใช้จริง" ตรงไหม
+     ⚠️ ห้ามใส่ชื่อ/เบอร์ของจริงในไฟล์นี้ — ใช้ชื่อสมมติล้วน (กฎข้อมูลส่วนบุคคลของทีม)
+        โหมด good ⇒ applied ตรง · โหมด partialgood ⇒ applied เพี้ยน (จอต้องฟ้อง) */
+  if ((mode === 'good' || mode === 'partialgood') && /[?&]list=contacts\b/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const q = (u.searchParams.get('q') || '').trim()
+    const wp = u.searchParams.get('withphone') === '1'
+    const we = u.searchParams.get('withemail') === '1'
+    const rows = [
+      { id: 1, name: 'ลูกค้าทดสอบ หนึ่ง', code: 'C-ทดสอบ-1', phone: '0000000000', email: '', type: null },
+      { id: 2, name: 'ลูกค้าทดสอบ สอง', code: 'C-ทดสอบ-2', phone: '', email: 'test2@example.invalid', type: null },
+    ]
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, total: rows.length, limit: 50, offset: 0, rows,
+      applied: mode === 'partialgood'
+        ? { q: q ? q + 'เพี้ยน' : 'คำที่จอไม่ได้ขอ', withPhone: !wp, withEmail: we }
+        : { q: q || null, withPhone: wp, withEmail: we },
+    }))
+  }
   if ((mode === 'good' || mode === 'partialgood') && /[?&]list=purchases\b/.test(req.url)) {
     const u = new URL(req.url, 'http://x')
     const q = (u.searchParams.get('q') || '').trim()
