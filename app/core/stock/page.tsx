@@ -21,7 +21,7 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav,
 } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import BlockedStock from '@/components/zort/BlockedStock'
@@ -740,12 +740,9 @@ function CoreStockInner() {
                 >
                   {PAGE_CHOICES.map((n) => <option key={n} value={n}>{n}</option>)}
                 </select>
-                <BtnGhost onClick={() => load(Math.max(0, offset - perPage))} disabled={loading || offset === 0}>
-                  ← ก่อนหน้า
-                </BtnGhost>
-                <BtnGhost onClick={() => load(offset + perPage)} disabled={loading || shown >= inTab}>
-                  ถัดไป →
-                </BtnGhost>
+                {/* เลขหน้าแบบ ZORT — กดข้ามได้ในคลิกเดียว (ของเดิมมีแค่ถัดไป ⇒ อยากดูหน้า 40 ต้องกด 39 ครั้ง) */}
+                <PageNav offset={offset} perPage={perPage} total={inTab} rowsOnPage={rows.length}
+                  disabled={loading} onGo={(off) => load(off)} />
               </div>
             </div>
           </TableWrap>

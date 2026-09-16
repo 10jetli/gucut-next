@@ -22,8 +22,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, TD,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate,
-} from '@/components/zort'
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 
 /* 🔴 **ชื่อฟิลด์เคยผิดทั้งชุด — คอลัมน์ขึ้นขีดกลางทุกแถวโดยไม่มีอะไรฟ้อง** (แก้ 5 ก.ย. 2569)
@@ -368,14 +367,9 @@ export default function CoreTransfersPage() {
               <span className="text-[12px] text-gray-500">
                 แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
               </span>
-              <div className="flex gap-2">
-                <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
-                  ← ก่อนหน้า
-                </BtnGhost>
-                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= data.total}>
-                  ถัดไป →
-                </BtnGhost>
-              </div>
+              <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                total={typeof data.total === 'number' ? data.total : null}
+                disabled={loading} onGo={(off) => load(off)} />
             </div>
           </TableWrap>
 

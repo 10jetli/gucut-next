@@ -26,8 +26,7 @@ import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner,
-} from '@/components/zort'
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
@@ -439,14 +438,9 @@ export default function CoreBundlesPage() {
               <span className="text-[12px] text-gray-500">
                 แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
               </span>
-              <div className="flex gap-2">
-                <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
-                  ← ก่อนหน้า
-                </BtnGhost>
-                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= data.total}>
-                  ถัดไป →
-                </BtnGhost>
-              </div>
+              <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                total={typeof data.total === 'number' ? data.total : null}
+                disabled={loading} onGo={(off) => load(off)} />
             </div>
           </TableWrap>
 

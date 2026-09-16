@@ -30,8 +30,7 @@ import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, TD, BtnGhost, LinkText, EmptyState, RowMenu,
-} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, TD, BtnGhost, LinkText, EmptyState, RowMenu, PageNav,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import DataFreshness, { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
@@ -450,13 +449,9 @@ export default function CoreContactsPage() {
                   {typeof data.total === 'number' && <> จาก {fmtNum(data.total)}</>}
                 </span>
                 <span className="flex gap-2">
-                  <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>ก่อนหน้า</BtnGhost>
-                  <BtnGhost
-                    onClick={() => load(offset + PAGE)}
-                    disabled={loading || (typeof data.total === 'number' && offset + rows.length >= data.total)}
-                  >
-                    ถัดไป
-                  </BtnGhost>
+                  <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                    total={typeof data.total === 'number' ? data.total : null}
+                    disabled={loading} onGo={(off) => load(off)} />
                 </span>
               </div>
             </TableWrap>

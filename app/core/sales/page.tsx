@@ -16,8 +16,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill, StaleBar,
-} from '@/components/zort'
+  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
@@ -918,14 +917,9 @@ export default function CoreSalesPage() {
                 <span className="text-[12px] text-gray-500">
                   แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {data.total.toLocaleString('th-TH')} รายการ
                 </span>
-                <div className="flex gap-2">
-                  <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
-                    ← ก่อนหน้า
-                  </BtnGhost>
-                  <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= data.total}>
-                    ถัดไป →
-                  </BtnGhost>
-                </div>
+                <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                  total={typeof data.total === 'number' ? data.total : null}
+                  disabled={loading} onGo={(off) => load(off)} />
               </div>
             )}
           </TableWrap>
