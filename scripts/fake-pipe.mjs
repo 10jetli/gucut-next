@@ -838,7 +838,7 @@ const srv = createServer(async (req, res) => {
   /* โหมด 'midpipe' = ท่อรุ่นกลาง: **รับตัวกรองช่องทางแล้ว แต่ยังไม่คืน channelCounts**
      (คือสภาพจริงของ production ช่วง 11-12 ก.ย. 2569) — ใช้ทดสอบว่าจอ
      **ไม่โชว์ตัวเลขบนแท็บ** แทนที่จะนับจากแถวหน้าเดียวแล้วได้เลขผิดแบบดูสมเหตุสมผล */
-  if ((mode === 'good' || mode === 'oldpipe' || mode === 'midpipe' || mode === 'nototal') && /[?&]list=stock\b/.test(req.url) && /[?&]marketplaces=1/.test(req.url)) {
+  if ((mode === 'good' || mode === 'oldpipe' || mode === 'midpipe' || mode === 'nototal' || mode === 'badecho') && /[?&]list=stock\b/.test(req.url) && /[?&]marketplaces=1/.test(req.url)) {
     const u = new URL(req.url, 'http://x')
     const limit = Math.min(200, Number(u.searchParams.get('limit')) || 50)
     const offset = Math.max(0, Number(u.searchParams.get('offset')) || 0)
@@ -878,6 +878,13 @@ const srv = createServer(async (req, res) => {
       checkedMarketplaces: ['shopee', 'lazada', 'tiktok'], marketplacesAt: '2026-09-11T08:00:00.000Z',
       ...(oldPipe ? {} : { rowsMatched: pool.length, rowsReturned: page.length }),
       ...(channel && !oldPipe ? { channel, ...(mode === 'midpipe' ? {} : { channelCounts: counts }) } : {}),
+      /* 🔑 เส้นสต็อกของท่อจริง **ไม่มีช่อง `applied`** แต่ echo `only`/`kind` ที่ชั้นบน
+         (ยิงยืนยัน 17 ก.ย. 2569: ไม่ส่ง ⇒ null · ส่ง ⇒ ค่าเดิมเป๊ะ)
+         โหมด badecho = **echo ผิดจากที่ขอ** — ปลูกบั๊กไว้ให้คำเตือนบนจอต้องขึ้น
+         (ถ้าไม่มีโหมดนี้ คำเตือนจะไม่เคยถูกทดสอบเลย = ด่านที่ไม่มีใครลองยิงใส่) */
+      ...(mode === 'badecho'
+        ? { only: 'low', kind: 'goods' }
+        : { only: u.searchParams.get('only'), kind: u.searchParams.get('kind') }),
     }))
   }
   /* หมวดหมู่ + สินค้าในหมวด — มี 218 รหัสโดยตั้งใจ (เลขจริงของหมวด 'อะไหล่ 5200…')

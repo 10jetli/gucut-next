@@ -87,6 +87,12 @@ interface Resp {
   noSkuWithStock?: number
   /** จำนวนสินค้าทั้งหมดที่ ZORT มี (รวมตัวที่ไม่มีรหัส) */
   zortTotal?: number
+  /** 🔑 **เส้นนี้ไม่มีช่อง `applied`** (ยิงตรวจ 17 ก.ย. 2569 — 6 จาก 8 เส้นที่จอเราใช้มี แต่เส้นนี้ไม่มี)
+   *  มีแต่ **echo กระจายที่ชั้นบน**: `only` · `kind` · `limit` · `offset`
+   *  ⇒ เอามาเทียบได้เหมือน `applied` ของจออื่น (ค่าที่ไม่ได้ส่ง ท่อคืน `null` เป๊ะ ⇒ เทียบตรง ๆ ไม่เตือนหลอก)
+   *  ⚠️ **ไม่ echo `q` · `category` · `sort`** ⇒ สามตัวนี้จอยืนยันจากคำตอบไม่ได้ ต้องพึ่งค่าควบคุมที่ยิงมือ */
+  only?: string | null
+  kind?: string | null
   limit: number; offset: number; rows: Row[]
   /** คีย์ใหม่ความหมายเดียว — แถวที่เข้าเงื่อนไขทั้งหมด (แทน shown ที่กำกวม) */
   rowsMatched?: number
@@ -170,6 +176,8 @@ function CoreStockInner() {
   /** ⚠️ ยิงของใหม่พลาด **แต่ยังโชว์ของเก่าอยู่** — ต้องเปลี่ยนข้อความบนแถบ ไม่ใช่เอาแถบออก
    *  เอาแถบออก = จอโชว์ตัวเลขอายุ 60 วิ โดยไม่มีอะไรบอกว่ามันเก่า */
   const [staleFailed, setStaleFailed] = useState(false)
+  /** ตัวกรองที่ท่อ echo กลับมาไม่ตรงกับที่จอส่งไป — ว่าง = ตรงกันดี */
+  const [echoWarn, setEchoWarn] = useState('')
 
   /* ⚠️ `qText` ต้องรับเป็นพารามิเตอร์ได้ — `setQ()` ยังไม่มีผลในรอบเดียวกัน
      ⇒ ปุ่ม "ค้นทีละคำ" ที่ setQ แล้วเรียก load() เฉย ๆ จะยิงด้วยคำเดิม (เจอคลาสนี้มาแล้วที่จอเอกสารบัญชี) */
@@ -206,6 +214,15 @@ function CoreStockInner() {
       const res = await fetch(url)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+      /* 🔴 **ตอบ 200 ไม่ได้แปลว่าทำให้** — เทียบตัวกรองที่ท่อ echo กลับมากับที่เราส่งไป
+         เส้นนี้ไม่มี `applied` แบบจออื่น แต่ echo `only`/`kind` ที่ชั้นบน (ยิงยืนยันรูปแบบแล้ว
+         17 ก.ย. 2569: ไม่ส่ง ⇒ `null` · ส่ง ⇒ ค่าเดิมเป๊ะ ⇒ เทียบได้โดยไม่เตือนหลอก)
+         ถ้าวันใดท่อเมินแท็บเงียบ ๆ ตัวนับกับแถวจะมาคนละกติกา = โรคประจำโปรเจกต์ข้อ 2 ก.ย. 2569 */
+      const ส่งไป = { only: tabId !== 'all' ? tabId : null, kind: kindId === 'goods' ? 'goods' : null }
+      const ไม่ตรง = (['only', 'kind'] as const)
+        .filter((k) => (ส่งไป[k] ?? null) !== (d?.[k] ?? null))
+        .map((k) => `${k === 'only' ? 'แท็บ' : 'ชนิด'}: ขอ ${ส่งไป[k] ?? 'ทั้งหมด'} แต่ท่อใช้ ${d?.[k] ?? 'ทั้งหมด'}`)
+      setEchoWarn(ไม่ตรง.join(' · '))
       putApiCache(url, d)
       setData(d)
       setOffset(off)
@@ -577,6 +594,14 @@ function CoreStockInner() {
                 <button onClick={() => setCategory('')} title="ถอดตัวกรองหมวด"
                   className="text-blue-500 hover:text-blue-800 font-bold ml-0.5">✕</button>
               </span>
+            </p>
+          )}
+          {/* 🔴 ท่อใช้ตัวกรองไม่ตรงกับที่จอขอ — ถ้าเงียบไว้ ตัวนับกับแถวจะมาคนละกติกา
+              และจอจะ "ดูปกติทุกประการ" (เคสวันที่ 2 ก.ย. 2569 ทั้งสามเคสเป็นแบบนี้) */}
+          {echoWarn && (
+            <p className="text-[12.5px] mb-3 bg-red-50 border border-red-200 text-red-800 rounded-lg px-3 py-2">
+              ⚠️ <b>ท่อใช้ตัวกรองไม่ตรงกับที่จอขอ</b> — {echoWarn}
+              <br />⇒ ตัวเลขสรุปกับแถวที่เห็นอาจมาคนละกติกา <b>อย่าเพิ่งเชื่อเลขบนจอนี้</b> จนกว่าจะแจ้งฝั่งท่อ
             </p>
           )}
           <MarketStaleBar stale={data.marketplacesStale} staleMs={data.marketplacesStaleMs} at={data.marketplacesAt} />
