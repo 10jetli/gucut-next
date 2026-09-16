@@ -124,6 +124,26 @@ function CoreStockInner() {
   const [kind, setKind] = useState<'goods' | 'all'>('goods')
   const [offset, setOffset] = useState(0)
   const [perPage, setPerPage] = useState(PAGE)
+  /* ☑️ **เลือกหลายแถวแล้วสั่งงานเป็นชุด** — ZORT ทำแบบนี้ (ติ๊กแล้วมีปุ่ม "คำสั่ง" กับ "พิมพ์เอกสาร" โผล่)
+     วัดจอจริง 16 ก.ย. 2569: เมนู "คำสั่ง" ของ ZORT มี 7 อย่าง —
+     ซื้อสินค้า · ขายสินค้า · โอนสินค้า · ปักหมุดไว้บนสุด · ถอนหมุดจากบนสุด · จัดหมวดหมู่ · เพิ่ม Tag
+     ⚠️ ของเราทำได้จริงแค่ **พิมพ์ฉลาก** กับ **คัดลอกรหัส** ⇒ ใส่แค่สองอย่างนี้
+        ที่เหลือเขียนบอกว่ายังทำไม่ได้ **ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร**
+     🔴 ล้างที่เลือกทุกครั้งที่โหลดใหม่ — ไม่งั้นติ๊กไว้หน้า 1 แล้วเปลี่ยนตัวกรอง
+        จะเหลือรหัสที่ **มองไม่เห็นบนจอ** ค้างอยู่ในคำสั่ง (คนกดพิมพ์แล้วได้ของที่ไม่ได้ตั้งใจ) */
+  const [picked, setPicked] = useState<string[]>([])
+  const [copyMsg, setCopyMsg] = useState('')
+  /** คัดลอกรหัสที่เลือกลงคลิปบอร์ด — **ต้องบอกผลทุกครั้ง**
+   *  คลิปบอร์ดล้มได้จริง (เบราว์เซอร์ไม่อนุญาต/ไม่ใช่ https) ⇒ เงียบไว้ = คนไปวางแล้วได้ของเก่า */
+  const copySkus = async (list: string[]) => {
+    try {
+      await navigator.clipboard.writeText(list.join(','))
+      setCopyMsg(`คัดลอกแล้ว ${list.length.toLocaleString('th-TH')} รหัส`)
+    } catch {
+      setCopyMsg('คัดลอกไม่สำเร็จ — เบราว์เซอร์ไม่อนุญาตให้เขียนคลิปบอร์ด (ลองเลือกข้อความแล้วคัดลอกเอง)')
+    }
+    setTimeout(() => setCopyMsg(''), 6000)
+  }
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -164,6 +184,7 @@ function CoreStockInner() {
       const cached = peekApiCache<Resp>(url)
       if (cached) {
         setData(cached.data)
+        setPicked([])
         setOffset(off)
         setStaleAge(cached.ageMs)
         setLoading(false) // ← มีของให้ดูแล้ว ไม่ต้องขึ้นจอโหลด
@@ -175,6 +196,7 @@ function CoreStockInner() {
       putApiCache(url, d)
       setData(d)
       setOffset(off)
+      setPicked([])
       setStaleAge(null)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
@@ -532,6 +554,31 @@ function CoreStockInner() {
             </p>
           )}
           <MarketStaleBar stale={data.marketplacesStale} staleMs={data.marketplacesStaleMs} at={data.marketplacesAt} />
+
+          {/* ☑️ แถบคำสั่งของแถวที่เลือก — โผล่เมื่อเลือกแล้วเท่านั้น (เหมือน ZORT)
+              🔴 มีเฉพาะคำสั่งที่ **ทำได้จริง** · คำสั่งของ ZORT ที่เรายังทำไม่ได้เขียนบอกไว้ตรง ๆ */}
+          {picked.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
+              <b>เลือก {picked.length.toLocaleString('th-TH')} รายการ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <Link href={`/core/stock/print?sku=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ฉลากที่เลือก
+              </Link>
+              <button type="button" onClick={() => { void copySkus(picked) }}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                คัดลอกรหัสที่เลือก
+              </button>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+              <span className="text-gray-500 basis-full">
+                ⚠️ เมนู “คำสั่ง” ของ ZORT ยังมีอีก 5 อย่างที่<b>เรายังทำไม่ได้</b> —
+                ซื้อสินค้า · ขายสินค้า · โอนสินค้า · จัดหมวดหมู่ · เพิ่ม Tag (และปักหมุดบนสุด)
+                เพราะทุกอันต้อง<b>เขียนกลับไปที่ ZORT</b> ซึ่งท่อยังไม่เปิดให้ทำเป็นชุด
+              </span>
+            </div>
+          )}
+
           <TableWrap>
             <table className="w-full min-w-[920px]">
               <thead className="bg-white border-b border-gray-200">
@@ -542,6 +589,14 @@ function CoreStockInner() {
                     ⇒ ทำหัวคอลัมน์ให้กดได้ทั้ง 6 = **ปุ่มหลอก** 4 อัน (กดแล้วลำดับไม่เปลี่ยน ไม่มีอะไรบอก)
                        จึงกดได้เฉพาะสองอันที่เรียงได้จริง ที่เหลือเขียนเหตุผลไว้ใน tooltip + ขอไปที่ท่อแล้ว */}
                 <tr>
+                  <th className={TH} style={{ width: 34 }}>
+                    {/* ติ๊กทั้งหน้า — **ทั้งหน้าเท่านั้น ไม่ใช่ทั้งคลัง** (ZORT ก็เลือกได้แค่หน้าที่เห็น)
+                        ป้ายบอกจำนวนอยู่ในแถบคำสั่งข้างบน จะได้ไม่มีใครเข้าใจว่าเลือกครบ 2,666 รหัส */}
+                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                      checked={rows.length > 0 && picked.length === rows.length}
+                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < rows.length }}
+                      onChange={(e) => setPicked(e.target.checked ? rows.map((r) => r.sku) : [])} />
+                  </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>
                     <button type="button" onClick={() => { setSort('sku'); load(0, 'sku') }}
@@ -586,13 +641,18 @@ function CoreStockInner() {
                     ตารางเปล่าอ่านได้ทั้ง "ไม่มีข้อมูล" และ "โหลดไม่สำเร็จ" คนใช้แยกไม่ออก */}
                 {rows.length === 0 && (
                   tab === 'inactive'
-                    ? <EmptyState cols={9} icon="📦" title="ยังไม่มีสินค้าที่ปิดใช้งาน"
+                    ? <EmptyState cols={10} icon="📦" title="ยังไม่มีสินค้าที่ปิดใช้งาน"
                         detail="สินค้าทุกตัวในคลังเปิดขายอยู่ — ถ้าปิดใช้งานสินค้าที่ ZORT รายการจะมาโผล่ที่นี่" />
-                    : <EmptyState cols={9} icon="🔍" title="ไม่พบสินค้าในเงื่อนไขนี้"
+                    : <EmptyState cols={10} icon="🔍" title="ไม่พบสินค้าในเงื่อนไขนี้"
                         detail="ลองล้างคำค้น หรือเปลี่ยนแท็บ · ถ้าเพิ่งเพิ่มสินค้าที่ ZORT ต้องรอรอบซิงก์ถัดไป" />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                  <tr key={r.sku} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(r.sku) ? 'bg-[#eef1fa]' : ''}`}>
+                    <td className={TD}>
+                      <input type="checkbox" aria-label={`เลือก ${r.sku}`}
+                        checked={picked.includes(r.sku)}
+                        onChange={(e) => setPicked((old) => (e.target.checked ? [...old, r.sku] : old.filter((x) => x !== r.sku)))} />
+                    </td>
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
                     {/* ⚠️ ZORT วางรูปไว้**ในคอลัมน์ชื่อสินค้า** ไม่ใช่คอลัมน์แยก (ภาพ 02-สินค้า.jpg)
