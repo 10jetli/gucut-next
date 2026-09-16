@@ -808,7 +808,16 @@ const srv = createServer(async (req, res) => {
       if (i % 5 === 0) tags.push('lazada')
       if (i % 7 === 0) tags.push('tiktok')
       if (i % 2 === 0) tags.push('gucut')
-      all.push({ sku: `MP-${String(i).padStart(3, '0')}`, name: `สินค้าทดสอบ ${i}`, qty: i, active: true, marketplaces: tags })
+      /* 🖼️ **สามสถานะของรูปสินค้า** — จอต้องแยกออกทั้งสาม (ใบ t_mu2u6eg6)
+           ① มีรูปย่อในถังเรา (ตารางขึ้นรูปได้เลย) — ในของจริงมาจาก sku-images.json
+           ② ZORT มีรูป แต่ยังไม่มีรูปย่อ ⇒ จอต้องให้ตัวย่อของ Next ย่อให้ (เพิ่ม 16 ก.ย. 2569)
+           ③ ไม่มีรูปเลย ⇒ กล่องเทา + บอกเหตุผลใน tooltip
+         ⚠️ URL ในข้อ ② ตั้งใจให้ **โหลดไม่ขึ้น** (โฮสต์อนุญาตแต่ไฟล์ไม่มีจริง)
+            เพราะสิ่งที่ต้องทดสอบคือ "ย่อไม่สำเร็จแล้วต้องกลับไปเป็นกล่องเทา ไม่ใช่รูปแตก" */
+      const รูป = i % 4 === 0
+        ? { imagePath: `https://image.zort.co.th/ImagesStorage/ProductImages/0/0/ทดสอบ-${i}.png` }
+        : i % 4 === 1 ? { imageFile: `ทดสอบ-${i}.webp` } : { imagePath: '' }
+      all.push({ sku: `MP-${String(i).padStart(3, '0')}`, name: `สินค้าทดสอบ ${i}`, qty: i, active: true, marketplaces: tags, ...รูป })
     }
     const counts = { shopee: 0, lazada: 0, tiktok: 0, gucut: 0, none: 0 }
     for (const r of all) { if (!r.marketplaces.length) counts.none++; for (const t of r.marketplaces) counts[t]++ }

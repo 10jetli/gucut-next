@@ -11,6 +11,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { fmtMoney } from '@/lib/format'
 import { coverageText } from '@/lib/csv-export'
 import ExportButton from '@/components/zort/ExportButton'
@@ -96,6 +97,19 @@ interface Resp {
 const PAGE = 50
 /* 📏 จำนวนต่อหน้า: ชุดตัวเลือก (10/20/50/100 แบบ ZORT) อยู่ใน `components/zort/PageNav.tsx`
    ZORT ตั้งต้นที่ 20 · จอนี้ตั้งต้นที่ 50 มาแต่เดิม **คงไว้** เพราะเปลี่ยนแล้วคนที่ใช้อยู่ต้องกดไล่หน้าถี่ขึ้น */
+
+/** URL รูปดิบจาก ZORT/มาร์เก็ตเพลส — ใช้เฉพาะตอนไม่มีรูปย่อในถังเรา
+ *  ⚠️ คืนค่าเฉพาะ https เท่านั้น (ตัวย่อรูปของ Next รับ http ไม่ได้ตามที่ตั้งไว้ใน next.config)
+ *     และต้องเป็นโฮสต์ที่อนุญาตไว้แล้ว ไม่งั้น Next จะโยน error ทั้งจอ ไม่ใช่แค่รูปนั้นพัง */
+const โฮสต์รูปที่อนุญาต = ['image.zort.co.th', 'cf.shopee.co.th', '.slatic.net', 'i.ibb.co']
+function รูปดิบของZORT(row: { imagePath?: string | null }): string | null {
+  const u = typeof row?.imagePath === 'string' ? row.imagePath.trim() : ''
+  if (!u.startsWith('https://')) return null
+  try {
+    const host = new URL(u).hostname
+    return โฮสต์รูปที่อนุญาต.some((h) => host === h || host.endsWith(h)) ? u : null
+  } catch { return null }
+}
 
 const SORTS = [
   { id: 'qty', label: 'ของใกล้หมดก่อน' },
@@ -671,7 +685,32 @@ function CoreStockInner() {
                               className="w-10 h-10 rounded border border-gray-200 object-cover bg-white shrink-0"
                             />
                           )
-                          : (
+                          : รูปดิบของZORT(r)
+                            ? (
+                              /* 🖼️ **ทางที่สอง: ให้ตัวย่อรูปของ Next ย่อรูปจาก ZORT ให้เอง**
+                                 🔴 ที่มา: ท่านประธานสั่ง "รูปต้องขึ้นทุกรหัส" (ใบ t_mu2u6eg6)
+                                 📏 วัดจริงทั้งคลัง 16 ก.ย. 2569 **หลังนับแผนที่ sku-images.json ด้วย**:
+                                    จอขึ้นรูปได้แล้ว **2,204** · ไม่มีรูปเลย **468** · ZORT มีรูปแต่จอขึ้นไม่ได้ **0**
+                                    ⇒ ทางนี้ยังไม่ได้ใช้กับของวันนี้สักรหัส แต่เก็บไว้เป็น **ตาข่ายของรหัสใหม่**
+                                       (ZORT มีรูปทันที · แผนที่รูปย่อตามมาทีหลัง)
+                                 ⚠️ ห้ามวาง URL ดิบตรง ๆ (ไฟล์ละ ~2 MB × 50 แถว) — ตัวนี้ขอขนาด 40 px
+                                    ผ่านตัวย่อของ Next ⇒ เบราว์เซอร์ได้รูปเล็ก และแคชที่ CDN หลังคำขอแรก
+                                 ⚠️ ย่อไม่สำเร็จ (โฮสต์ล่ม/รูปหาย) ⇒ **ต้องกลับไปเป็นกล่องเทา ไม่ใช่รูปแตก**
+                                    ⇒ ใช้ onError ซ่อนตัวเอง (กล่องเทาอยู่ข้างหลังแล้ว) */
+                              <span className="relative block w-10 h-10 shrink-0">
+                                <span className="absolute inset-0 rounded border border-gray-200 bg-gray-100" />
+                                <Image
+                                  src={รูปดิบของZORT(r) as string}
+                                  alt=""
+                                  width={40}
+                                  height={40}
+                                  unoptimized={false}
+                                  className="relative w-10 h-10 rounded border border-gray-200 object-cover bg-white"
+                                  onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden' }}
+                                />
+                              </span>
+                            )
+                            : (
                             /* ไม่มีรูป — กล่องเทาเหมือนเดิม แต่ **บอกเหตุผลผ่าน title** ให้ต่างกันสองแบบ
                                (ใส่ข้อความในตารางทุกแถวจะรก ⇒ ใช้ tooltip · หน้ารายละเอียดเขียนเต็ม) */
                             <span
