@@ -146,6 +146,22 @@ ID ธุรกรรม
   const taxish = billIdentity('Total\n65182902\nFederal Tax ID: 77-1234567', 'x')
   ok(taxish.total === null, 'ไม่รับเลข 65182902 เป็นยอดเงิน', String(taxish.total))
 
+
+  console.log('⑪ PDF ไทยที่แกะข้อความออกมาเพี้ยน (ำ กลายเป็น ํา · วรรณยุกต์หาย) ต้องยังหาป้ายเจอ')
+  /* 🔬 ของจริงจากใบ LINE และใบเสร็จ Meta (16 ก.ย. 2569): ข้อความที่แกะได้เขียนว่า
+     `จํานวนเงิน฿1,605.0` (ใช้ ํ + า แทน ำ) และ `ชําระแลว` (วรรณยุกต์หาย)
+     ⇒ ป้ายภาษาไทยทุกป้ายจะ "ไม่เจอ" เงียบ ๆ ถ้าไม่ทำข้อความให้หลวมก่อนเทียบ */
+  const thaiBroken = 'รายละเอียดใบกํากับภาษี\nวันชําระเงิน31/07/2026 12:00\nจํานวนเงิน฿1,605.0'
+  const tb = billIdentity(thaiBroken, 'line')
+  ok(tb.total === 1605.0, 'อ่านยอดจากป้าย "จํานวนเงิน" (รูปเพี้ยน) ได้', String(tb.total))
+  ok(tb.period === '2026-07', 'อ่านเดือนจาก 31/07/2026 ได้ (วันที่ > 12 ⇒ ไม่กำกวม)', String(tb.period))
+  ok(tb.key === 'line|p:2026-07|amt:1605', 'ได้กุญแจจากรอบบิล+ยอด', String(tb.key))
+
+  console.log('⑫ วันที่ตัวเลขที่กำกวม (ทั้งวันและเดือน ≤ 12) ⇒ ห้ามเดา')
+  const ambiguous = billIdentity('วันชําระเงิน07/08/2026\nจํานวนเงิน฿100.00', 'line')
+  ok(ambiguous.period === null, 'ไม่เดาเดือนจาก 07/08/2026', String(ambiguous.period))
+  ok(ambiguous.key === null, 'ไม่มีรอบบิล ⇒ ตัดสินไม่ได้ (ไม่เดาว่าไม่ซ้ำ)', String(ambiguous.key))
+
 } catch (e) {
   console.log('❌ เทสพัง:', e?.message ?? e); fail++
 } finally {

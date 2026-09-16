@@ -11,6 +11,18 @@ const TH_FULL = ['มกราคม', 'กุมภาพันธ์', 'มี
 const EN = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
 
 export const fixYear = (y: number) => (y > 2200 ? y - 543 : y) // พ.ศ. → ค.ศ.
+
+/** ทำข้อความไทยให้ "หลวม" ก่อนเทียบป้าย — แก้ปัญหาที่ PDF แกะข้อความไทยออกมาไม่ตรงรูป
+ *  🔴 เจอของจริง 16 ก.ย. 2569 (ใบ LINE กับใบเสร็จ Meta):
+ *     · `ำ` ถูกแกะออกมาเป็น `ํา` (นิคหิต + สระอา) ⇒ `จำนวนเงิน` กลายเป็น `จํานวนเงิน` ⇒ regex ไม่ match
+ *     · วรรณยุกต์หายทั้งใบ ⇒ `ข้อมูล` กลายเป็น `ขอมูล`
+ *  ⇒ ถ้าไม่ทำให้หลวม ป้ายภาษาไทยทุกป้ายจะ "ไม่เจอ" แบบเงียบ ๆ ทั้งที่อยู่ในเอกสารตรง ๆ
+ *  ⚠️ ใช้กับ **การหาป้ายเท่านั้น** ห้ามเอาข้อความที่ผ่านตัวนี้ไปเก็บหรือไปโชว์ (มันทำให้คำเพี้ยน) */
+export function thaiLoose(s: string): string {
+  return String(s ?? '')
+    .replace(/\u0E4D\u0E32/g, '\u0E33')      // ํ + า → ำ
+    .replace(/[\u0E47-\u0E4E]/g, '')         // ตัดวรรณยุกต์/ไม้ไต่คู้/ทัณฑฆาต
+}
 const pad = (n: number) => String(n).padStart(2, '0')
 
 /** หา "วันที่แรก" ในข้อความ → คืนเดือนแบบ YYYY-MM
@@ -26,6 +38,19 @@ export function monthFromText(text: string): string | null {
   if (m) return `${fixYear(+m[3])}-${pad(EN.indexOf(m[1].toLowerCase()) + 1)}`
   m = text.match(/(\d{1,2}),?\s*(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\.?,?\s*(\d{4})/i)
   if (m) return `${fixYear(+m[3])}-${pad(EN.indexOf(m[2].toLowerCase()) + 1)}`
+  /* 2026.07.31 หรือ 2026-07-31 — ปีขึ้นต้น = ไม่กำกวม (เจอในใบ LINE: `Payment date:2026.07.31`) */
+  m = text.match(/(\d{4})[./-](\d{1,2})[./-](\d{1,2})\b/)
+  if (m && +m[2] >= 1 && +m[2] <= 12) return `${fixYear(+m[1])}-${pad(+m[2])}`
+  /* 31/07/2026 — **กำกวม** ระหว่าง วัน/เดือน กับ เดือน/วัน
+     ⇒ รับเฉพาะตอนที่ตัวเลขตัวใดตัวหนึ่ง > 12 (ตัวนั้นต้องเป็นวันแน่นอน)
+     🔴 ถ้าทั้งคู่ ≤ 12 **คืน null ไม่เดา** — เดาผิดหนึ่งครั้งคือบิลไปอยู่ผิดเดือนแบบเงียบ ๆ
+        (บทเรียนวันนี้: การจัดเดือนผิดคือสิ่งที่ท่านประธานจับได้เอง) */
+  m = text.match(/\b(\d{1,2})\/(\d{1,2})\/(\d{4})\b/)
+  if (m) {
+    const a = +m[1], b = +m[2], y = fixYear(+m[3])
+    if (a > 12 && b >= 1 && b <= 12) return `${y}-${pad(b)}`        // วัน/เดือน/ปี
+    if (b > 12 && a >= 1 && a <= 12) return `${y}-${pad(a)}`        // เดือน/วัน/ปี
+  }
   /* 16-SEP-2026 — รูปแบบของ Adobe (เจอจาก PDF จริง 16 ก.ย. 2569)
      ⚠️ ไม่มีรูปแบบนี้มาก่อน ⇒ บิล Adobe ทุกใบ "อ่านวันที่ไม่ออก" เงียบ ๆ ตั้งแต่ต้น */
   m = text.match(/(\d{1,2})-(jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*-(\d{4})/i)
@@ -47,9 +72,12 @@ const PERIOD_LABELS = [
 /** เดือนของ **รอบบิล** ที่พิมพ์อยู่ในเอกสาร (ไม่ใช่วันที่ออกใบ)
  *  คืน null ถ้าเอกสารไม่ได้เขียนรอบบิลไว้ — **ห้ามเดา** คนเรียกต้องรู้ว่าไม่รู้ */
 export function billPeriodFromText(text: string): { month: string; label: string } | null {
+  const t = thaiLoose(text)
   for (const label of PERIOD_LABELS) {
-    const re = new RegExp(`(${label})\\s*[:：]?\\s*([^\\n]{0,80})`, 'i')
-    const m = text.match(re)
+    /* ⚠️ ป้ายต้องผ่าน thaiLoose ด้วย — ไม่งั้นป้ายที่มีวรรณยุกต์ (เช่น "ชำระแล้ว") จะไม่ตรงกับ
+       ข้อความที่เพิ่งถูกตัดวรรณยุกต์ออก (เจอตอนเทสแดงขึ้นทันที 16 ก.ย. 2569) */
+    const re = new RegExp(`(${thaiLoose(label)})\\s*[:：]?\\s*([^\\n]{0,80})`, 'i')
+    const m = t.match(re)
     if (!m) continue
     const month = monthFromText(m[2])
     if (month) return { month, label: m[1].trim() }
@@ -71,19 +99,21 @@ const NO_LABELS = [
 /** เลขที่เอกสารตามที่พิมพ์ในบิล — คืน null ถ้าไม่เจอ (ห้ามสร้างเลขเอง)
  *  ⚠️ กันจับวันที่มาเป็นเลขที่ใบ: ต้องมีตัวอักษรหรือยาวพอ และไม่ใช่รูปแบบวันที่ */
 export function invoiceNoFromText(text: string): string | null {
+  const t = thaiLoose(text)
   const ดูเหมือนวันที่ = (raw: string) =>
     /^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(raw)                        // 11/06/2026
     || /^\d{4}-\d{2}-\d{2}$/.test(raw)                                  // 2026-06-11
     || /^\d{1,2}-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)/i.test(raw) // 16-SEP-2026
   for (const label of NO_LABELS) {
     // ⓐ ป้ายอยู่หน้า ค่าอยู่หลัง (รูปแบบปกติ)
-    let m = text.match(new RegExp(`${label}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'i'))
+    const lab = thaiLoose(label)
+    let m = t.match(new RegExp(`${lab}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'i'))
     let raw = m ? m[1].replace(/[.,;]+$/, '') : ''
     /* ⓑ **ค่าอยู่หน้า ป้ายอยู่หลัง** — เจอของจริงในใบ Adobe (16 ก.ย. 2569)
        ข้อความที่แกะจาก PDF ออกมาเป็น `1234567890Invoice Number` (คอลัมน์ขวาถูกอ่านก่อนหัวข้อ)
        ⇒ ถ้าไม่รองรับรูปนี้ จะไปหยิบค่าของป้ายอื่นมาผิดใบ (ตัวรุ่นแรกได้เลขจาก Invoice Date มา) */
     if (!raw || ดูเหมือนวันที่(raw)) {
-      const m2 = text.match(new RegExp(`([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})\\s*${label}`, 'i'))
+      const m2 = t.match(new RegExp(`([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})\\s*${lab}`, 'i'))
       if (m2) raw = m2[1].replace(/[.,;]+$/, '')
     }
     if (!raw || ดูเหมือนวันที่(raw)) continue
@@ -94,8 +124,11 @@ export function invoiceNoFromText(text: string): string | null {
 
 /** ยอดรวมของใบ — ใช้เป็นตัวช่วยยืนยันตัวตนเมื่อไม่มีเลขที่ใบ */
 export function totalFromText(text: string): number | null {
+  const t = thaiLoose(text)
   const labels = ['grand\\s*total', 'invoice\\s*total', 'total\\s*due', 'amount\\s*due', 'total\\s*amount',
     'net\\s*amount', 'total',
+    /* 🔬 เจอในใบ LINE ของจริง (16 ก.ย. 2569): เขียนว่า `จำนวนเงิน฿1,605.0` ติดกันไม่มีช่องว่าง */
+    'จำนวนเงิน', 'ยอดชำระ', 'ราคารวม',
     'ยอดรวมทั้งสิ้น', 'รวมทั้งสิ้น', 'ยอดที่ต้องชำระ', 'ยอดรวม', 'ชำระแล้ว']
   /* 🔴 **ต้องมีคอมมาหรือจุดทศนิยม** (เจอของจริง 16 ก.ย. 2569)
      ใบ Adobe ทำให้ตัวรุ่นแรกอ่านยอดได้ `65182902` ซึ่งไม่ใช่ยอดเงิน — เป็นเลขที่ติดกันในบรรทัดเดียว
@@ -104,10 +137,10 @@ export function totalFromText(text: string): number | null {
   const เงิน = '(?:THB|บาท|฿|USD|\\$)?\\s*(\\d{1,3}(?:,\\d{3})+(?:\\.\\d{1,2})?|\\d+\\.\\d{2})'
   for (const label of labels) {
     for (const re of [
-      new RegExp(`${label}[^\\n]{0,30}?${เงิน}`, 'i'),          // ค่าอยู่บรรทัดเดียวกับป้าย
-      new RegExp(`${label}[^\\n]{0,40}\\n\\s*${เงิน}`, 'i'),   // ค่าอยู่บรรทัดถัดไป (Adobe · GRAND TOTAL (USD))
+      new RegExp(`${thaiLoose(label)}[^\\n]{0,30}?${เงิน}`, 'i'),        // ค่าอยู่บรรทัดเดียวกับป้าย
+      new RegExp(`${thaiLoose(label)}[^\\n]{0,40}\\n\\s*${เงิน}`, 'i'), // ค่าอยู่บรรทัดถัดไป (Adobe)
     ]) {
-      const m = text.match(re)
+      const m = t.match(re)
       if (!m) continue
       const n = Number(m[1].replace(/,/g, ''))
       if (Number.isFinite(n) && n > 0) return n
