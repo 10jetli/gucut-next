@@ -14,6 +14,7 @@
 import Link from 'next/link'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
+import StoreEcho from '@/components/zort/StoreEcho'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -23,6 +24,10 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, 
 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
 interface Resp { total?: number; amount?: number; rows?: Po[]
+  /** 🏬 ร้านที่ท่อใช้จริง + ท่อเลือกให้เองไหม — **ชั้นบน ไม่ได้อยู่ใน `applied`**
+   *  ยิงยืนยัน 17 ก.ย. 2569: ไม่ส่ง store ⇒ z1 + storeDefaulted:true · ส่ง z2 ⇒ z2 + false */
+  store?: string | null
+  storeDefaulted?: boolean
   /** ขอบเขตร้านของข้อมูลชุดนี้ — **ข้อความมาจากท่อ จอไม่แต่งเอง** (ใบ t_mu2kxy6u)
    *  🔴 มาจากคำตอบ `list=purchases` เท่านั้น — **`list=purchaseitems` ไม่ส่งช่องนี้มา** (ยิงตรวจแล้ว 15 ก.ย.)
    *     ⇒ ห้ามเอาของจากเส้นแรกไปติดป้ายให้ตารางรายสินค้าที่มาจากเส้นที่สอง เป็นคนละคำตอบ */
@@ -322,6 +327,9 @@ export default function BuyReportPage() {
       <StorePicker value={store} disabled={loading}
         onChange={(v) => { setStore(v); load(v) }}
         note="ยอดซื้อทั้งหน้านี้เป็นของร้านที่เลือกเท่านั้น — เส้นใบซื้อตอบทีละร้าน" />
+
+      {/* 🔴 เทียบว่าท่อใช้ร้านเดียวกับที่จอขอจริง (เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ) */}
+      <StoreEcho ขอ={store} ได้={all?.store} ท่อเลือกให้={all?.storeDefaulted} />
 
       <div className="flex flex-wrap items-center gap-3 -mt-1 mb-4">
         <p className="text-[17px] font-semibold text-gray-800">

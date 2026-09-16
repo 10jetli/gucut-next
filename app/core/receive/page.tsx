@@ -135,7 +135,19 @@ export default function ReceivePage() {
           .then((x) => x.json())
         if (r?.error) throw new Error(r.error)
         const got: Doc[] = Array.isArray(r?.rows) ? r.rows : []
-        if (got.length) { rows = got; foundStore = st; break }
+        /* ตรวจร้านเอง: จอนี้ **ค้นวนทีละร้าน** (z1 แล้ว z2) ไม่ได้มีปุ่มให้เลือกร้าน
+           ⇒ ไม่มี "ร้านที่ผู้ใช้ขอ" ให้เทียบแบบ <StoreEcho> · สิ่งที่ต้องกันคือป้ายบนผลลัพธ์
+             ซึ่งแก้แล้วให้อ่านจากคำตอบของท่อโดยตรง (ดูคอมเมนต์ข้างล่าง)
+           🔴 **ติดป้ายร้านจากคำตอบของท่อ ไม่ใช่จากค่าที่เราขอ** (แก้ 17 ก.ย. 2569 · ใบ t_mu2u9mym)
+           เดิมเขียน `foundStore = st` = ป้ายบนจอเป็น "ร้านที่เราขอ" ซึ่งเป็น **คำกล่าวอ้างที่ไม่มีใครตรวจ**
+           วันที่ท่อเมิน `store` ใบของ z1 จะถูกติดป้ายว่า z2 — และคนยืนรับของอยู่หน้าคลัง
+           จะเช็คของตามใบผิดร้านโดยไม่มีอะไรดูผิดเลย (เลขที่ใบสองร้านซ้ำกันได้จริง)
+           ⚠️ ท่อรุ่นที่ยังไม่ส่ง `store` กลับมา ⇒ ถอยไปใช้ค่าที่ขอ (ดีกว่าไม่มีป้าย) */
+        if (got.length) {
+          rows = got
+          foundStore = r?.store === 'z1' || r?.store === 'z2' ? r.store : st
+          break
+        }
       }
       if (!rows.length) { setNotFound(true); setDoc(null); setMirrorStore(null); return }
       setMirrorStore(foundStore)

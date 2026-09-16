@@ -20,6 +20,7 @@ import { PURCHASE_DETAIL_PAY_STATUS, PURCHASE_DETAIL_TRANSFER_STATUS, zortWord }
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
+import StoreEcho from '@/components/zort/StoreEcho'
 import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 
@@ -318,6 +319,11 @@ function Inner() {
           {d?.id != null && <span className="text-gray-300"> · id {String(d.id)}</span>}
         </>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
+
+      {/* 🔴 หัวจอข้างบนโชว์ร้าน "ที่ท่อตอบ" ซึ่งถูกแล้ว — แต่ยังไม่ได้บอกว่า **ตรงกับที่ลิงก์ขอไหม**
+          ลิงก์บอก z2 แล้วท่อตอบ z1 ⇒ คนอ่านเห็นแค่ z1 เฉย ๆ โดยไม่รู้ว่ากำลังอ่านใบผิดร้าน
+          ⚠️ เลขที่ใบของสองร้านซ้ำกันได้ ⇒ อ่านผิดร้านแล้วไม่มีอะไรดูผิดเลย */}
+      <StoreEcho ขอ={store} ได้={d?.store} />
 
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดึงใบสั่งซื้อไม่ได้'}>{error}</ErrorBox>}
       {/* 🔴 **เลขที่ใบซ้ำกันในร้านเดียวกันได้จริง** — ท่อจะไม่เลือกใบให้ (ตั้งใจ) แต่ส่ง id มาให้

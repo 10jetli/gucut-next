@@ -122,6 +122,9 @@ export default function CoveragePage() {
          ⇒ **จอไม่ต้องรู้ว่าร้านมีกี่ร้าน** วันเพิ่มร้านที่สามจอไม่ต้องแก้อะไรเลย
          และท่อรับประกันเองว่าร้านใดร้านหนึ่งล้ม = error ทั้งก้อน ไม่คืนผลรวมบางส่วน */
       const ask = async (st: string) => {
+        /* ตรวจร้านเอง: เส้น `zortmonthly` มีกติกาคนละแบบกับเส้นเอกสาร — ค่า `store` ที่ตอบกลับ
+           เป็น `'all'` พร้อมอาร์เรย์ `stores` (จอเช็คไว้แล้วที่ตัวแปร `knowsAll` ข้างล่าง)
+           ⇒ ใช้ <StoreEcho> ไม่ได้เพราะรูปคำตอบไม่เหมือนกัน แต่ **เทียบแล้ว ไม่ได้ปล่อยผ่าน** */
         const q = new URLSearchParams({ zortmonthly: '1', ym, store: st })
         const res = await fetch(`/api/web/core?${q}`)
         const j = await res.json().catch(() => null)

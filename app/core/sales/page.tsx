@@ -20,7 +20,8 @@ import {
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
-import { storeLabel } from '@/components/zort/StorePicker'
+import { storeLabel, type StoreId } from '@/components/zort/StorePicker'
+import StoreEcho from '@/components/zort/StoreEcho'
 import ExportButton from '@/components/zort/ExportButton'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
@@ -59,6 +60,8 @@ interface Row {
 interface ChannelRow { channel: string; orders: number; amount: number }
 interface StatusRow { status: string; orders: number; amount: number }
 interface ListResp {
+  /** 🏬 ร้านที่ท่อใช้จริง — เส้นนี้ `null` = **รวมทุกร้าน** (ไม่ใช่ z1) ยิงยืนยัน 17 ก.ย. 2569 */
+  store?: string | null
   skip?: string
   from: string; to: string
   total: number; totalAmount: number
@@ -727,6 +730,11 @@ export default function CoreSalesPage() {
           )}
           {/* ⚠️ เลขทุกตัวบนจอนี้ต้องบอกว่ามาจากกี่ร้าน — ชื่อช่องทางซ้ำกันข้ามร้านได้ */}
           {' '}· ร้าน {store === 'z1' ? 'ร้านออนไลน์ (z1)' : store === 'z2' ? 'หน้าร้าน (z2)' : <b>รวมทั้ง 2 ร้าน</b>}
+          {/* 🔴 ประโยคข้างบนพูดจาก **ตัวแปรของจอ** ไม่ใช่จากคำตอบของท่อ
+              ⇒ วันที่ท่อเมิน `store` ประโยคนี้จะยังเขียนว่า "หน้าร้าน" อย่างมั่นใจ
+              ยิงยืนยัน 17 ก.ย. 2569: เส้นนี้ echo `store` กลับมา และ **ไม่ส่ง/ส่ง all ⇒ `null` = ทุกร้าน**
+              (ต่างจากเส้นเอกสารอื่นที่ค่าว่างแปลว่า z1) ⇒ ต้องบอก `ว่างคือ` ให้ถูก ไม่งั้นเตือนหลอก */}
+          <StoreEcho ขอ={store as StoreId} ได้={data.store} ว่างคือ="ทุกร้าน" />
           {channel && ` · ช่องทาง ${channel}`}
           {/* 🔴 **เลขบนแท็บนับเฉพาะช่วงนี้ ไม่ใช่ทั้งคลัง — ต้องเขียนบอก**
               ของจริง 4 ก.ย. 2569: แท็บ "รอดำเนินการ" ขึ้น 17 (ในกรอบ 3 เดือน)
