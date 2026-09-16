@@ -257,7 +257,9 @@ export default function CorePurchasesPage() {
           {tab !== 'all' && (
             <p className="text-[11.5px] text-gray-500 mb-1">
               {loadedAll
-                ? <>กรองในเบราว์เซอร์ — โหลดใบซื้อมาครบทั้ง {fmtNum(Number(data?.total ?? 0))} ใบแล้ว จึงเท่ากับกรองทั้งชุด
+                /* สาขานี้เข้าได้เฉพาะตอน loadedAll = true ซึ่งบังคับว่า total เป็นตัวเลขแล้ว
+                   ⇒ ไม่ต้องมี `?? 0` (และด่าน check-unknown-vs-zero จะได้ไม่ต้องยกเว้นจุดนี้) */
+                ? <>กรองในเบราว์เซอร์ — โหลดใบซื้อมาครบทั้ง {fmtNum(Number(data?.total))} ใบแล้ว จึงเท่ากับกรองทั้งชุด
                   {' '}· เหลือ <b>{fmtNum(rows.length)}</b> ใบในแท็บนี้</>
                 : <>⚠️ กรองในเบราว์เซอร์ <b>เฉพาะ {fmtNum(allRows.length)} ใบที่โหลดมา</b>
                   {' '}({typeof data?.total === 'number'

@@ -128,7 +128,7 @@ function DetailInner() {
 
   const [order, setOrder] = useState<Order | null>(null)
   const [items, setItems] = useState<Item[]>([])
-  const [nav, setNav] = useState<{ prev?: Order; next?: Order; total: number } | null>(null)
+  const [nav, setNav] = useState<{ prev?: Order; next?: Order; total: number | null } | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -172,7 +172,8 @@ function DetailInner() {
       setNav({
         prev: at > 0 ? rows[at - 1] : undefined,
         next: at >= 0 && at + 1 < rows.length ? rows[at + 1] : undefined,
-        total: Number(d?.total ?? 0),
+        /* null = ท่อไม่ได้บอกจำนวนใบทั้งชุด ⇒ แถบเลื่อนใบต้องไม่เขียนว่า "จาก 0 ใบ" */
+        total: typeof d?.total === 'number' ? d.total : null,
       })
     } catch {
       setNav(null) // เลื่อนใบไม่ได้ไม่ควรทำให้ทั้งหน้าพัง
@@ -263,7 +264,8 @@ function DetailInner() {
         </div>
         {nav && idx >= 0 && (
           <div className="flex items-center gap-2 text-[12.5px] text-gray-500">
-            <span>{(idx + 1).toLocaleString('th-TH')}/{nav.total.toLocaleString('th-TH')}</span>
+            {/* ไม่รู้จำนวนทั้งชุด ⇒ เขียน "?" ไม่ใช่ 0 (0 แปลว่าไม่มีใบเลย ซึ่งขัดกับการที่เราเปิดใบอยู่) */}
+            <span>{(idx + 1).toLocaleString('th-TH')}/{nav.total === null ? '?' : nav.total.toLocaleString('th-TH')}</span>
             {nav.prev
               ? <Link href={hrefFor(nav.prev, idx - 1)} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50">‹</Link>
               : <span className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-300">‹</span>}
