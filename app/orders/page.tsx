@@ -34,6 +34,15 @@ export default function OrdersPage() {
 
   return (
     <div>
+      {/* 🔴 **จอนี้ยิง ZORT ตรง ๆ — วันที่เลิกใช้ ZORT จอนี้จะว่างทันที**
+          กฎของโปรเจกต์ (เขียนไว้ที่ app/sales/page.tsx): "จอที่ยัง fetch /api/zort อยู่ = ยังไม่เสร็จ"
+          จอนี้ไม่มีลิงก์ในเมนูแล้ว แต่ **ยังเปิดด้วย URL ได้** (บุ๊กมาร์กเก่าบนแท็บเล็ตหน้าร้าน)
+          ⇒ ห้ามลบของเดิม (กฎท่านประธาน) แต่ต้องบอกความจริงว่าของจริงอยู่ที่ไหน
+          ⚠️ เขียนไว้ **บนสุดของจอ** — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
+      <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+        ⚠️ จอนี้อ่านจาก <b>ZORT โดยตรง</b> (ไม่ใช่กระจกข้อมูลของเรา) — วันที่ร้านเลิกใช้ ZORT จอนี้จะว่าง
+        {' '}· จอที่ใช้งานจริงคือ <a href="/core/sales" className="text-blue-600 hover:underline font-medium">รายการขาย</a>
+      </p>
       <div className="sticky top-0 md:top-14 bg-white/90 backdrop-blur-md z-10 flex gap-2 px-4 py-2.5 border-b border-gray-100">
         {['1', '2'].map(s => (
           <PillButton key={s} active={store === s} onClick={() => setStore(s)}>
