@@ -87,6 +87,13 @@ const typeTh = (t?: string | number) => {
 
 export default function CoreTransfersPage() {
   const [q, setQ] = useState('')
+  /* 🔎 **ยอดตอนไม่ได้ค้น** — เก็บไว้เทียบว่าคำค้นถูกใช้จริงไหม
+     🔬 วัดของจริง 16 ก.ย. 2569: ท่อ `list=transfers&q=` ค้นเจอจริงเมื่อคำค้นยาวพอ
+        (`202609`→4 · `TF-2026`→168 · `TF-202609004`→1 · ไม่สนตัวพิมพ์)
+        แต่คำสั้นบางคำ (`T` · `TF` · `TF-` · `TF-2`) **คืนครบทั้ง 12,005 เหมือนไม่ได้ค้น**
+     🔴 อันตรายคือจอจะโชว์ทั้งกองโดยที่คนเพิ่งพิมพ์คำค้น ⇒ อ่านได้ว่า "ทุกใบตรงกับที่ค้น"
+     ⇒ จอเทียบเองว่าผลเท่ากับตอนไม่ได้ค้นไหม แล้วเขียนเตือน (ยังไม่รู้กติกาจริงของท่อ ⇒ เขียนว่า "อาจ") */
+  const [totalNoQuery, setTotalNoQuery] = useState<number | null>(null)
   /* 🏬 **ร้านที่กำลังดู** (ท่อ gucut-web 7351c3c · 15 ก.ย. 2569)
      ⚠️ เส้นนี้ **ตอบทีละร้านเท่านั้น** — ยิงจริงยืนยัน 15 ก.ย.: ไม่ระบุ ⇒ z1 12,003 · z2 15,514
         · `store=all` ⇒ **400** · ส่ง `source=` แทน `store=` ⇒ **400**
@@ -121,6 +128,8 @@ export default function CoreTransfersPage() {
       ])
       if (tRes?.error) throw new Error(tRes.error)
       setData(tRes)
+      // จำยอด "ตอนไม่ได้ค้น" ไว้เป็นฐานเทียบ (อัปเดตทุกครั้งที่โหลดโดยไม่มีคำค้น)
+      if (!q.trim() && typeof tRes?.total === 'number') setTotalNoQuery(tRes.total)
       setOffset(off)
       const map: Record<string, string> = {}
       for (const w of (Array.isArray(wRes?.warehouses) ? wRes.warehouses : [])) {
@@ -259,6 +268,17 @@ export default function CoreTransfersPage() {
         advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
       />
 
+      {/* 🔎 คำค้นที่ท่อ "อาจไม่ได้ใช้" — ผลเท่ากับตอนไม่ได้ค้นเป๊ะ
+          🔬 วัด 16 ก.ย. 2569: `T` · `TF` · `TF-` · `TF-2` คืนครบ 12,005 เท่าตอนไม่ค้น
+             ส่วน `202609` · `TF-2026` · เลขเต็มใบ ค้นเจอจริง ⇒ กติกาจริงของท่อยังไม่รู้ (ถามไปแล้ว)
+          🔴 ถ้าไม่เขียนอะไรเลย คนพิมพ์คำค้นแล้วเห็นทั้งกอง จะอ่านว่า "ทุกใบตรงกับที่ค้น" */}
+      {q.trim() && typeof data?.total === 'number' && data.total === totalNoQuery && (
+        <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+          🔎 ผลลัพธ์<b>เท่ากับตอนไม่ได้ค้น</b> ({data.total.toLocaleString('th-TH')} ใบ) —
+          คำค้น “{q.trim()}” <b>อาจสั้นเกินไปจนท่อไม่ได้ใช้</b> ⇒ แถวที่เห็นยังเป็นทั้งกอง ไม่ใช่ผลค้นหา
+          <span className="block mt-0.5 text-gray-600">ลองพิมพ์ให้ยาวขึ้น เช่น เลขที่ใบเต็ม หรือเลขปี-เดือน (เช่น 202609)</span>
+        </p>
+      )}
       {error && <ErrorBox title="ดึงรายการโอนสินค้าไม่ได้">{error}</ErrorBox>}
 
       {shapeBroken && (
