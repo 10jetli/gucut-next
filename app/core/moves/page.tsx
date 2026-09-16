@@ -70,7 +70,9 @@ function MovesInner() {
   const [msgTone, setMsgTone] = useState<'ok' | 'warn' | 'err'>('ok')
 
   const [moves, setMoves] = useState<Move[]>([])
-  const [total, setTotal] = useState(0)
+  /* null = ท่อไม่ได้บอกจำนวน (คนละเรื่องกับ 0 = ไม่มีประวัติ)
+     จอนี้อันตรายเป็นพิเศษตามคอมเมนต์ในตัวโหลด: คนเห็นว่าว่างแล้วกรอกซ้ำ ⇒ ของเข้าสองรอบจริง */
+  const [total, setTotal] = useState<number | null>(null)
   /* มาจากลิงก์พร้อมรหัส = กรองประวัติด้วยรหัสนั้นทันที **ไม่ใช่แค่ความสะดวก**
      ตาข่ายกันซ้ำคือ UNIQUE(reason,ref,sku) ซึ่งกันได้เฉพาะ "ยิงซ้ำกุญแจเดิม" —
      คนที่ไม่เห็นว่าของเข้าไปแล้วจะกรอกใบใหม่ด้วย ref ใหม่ แล้วสต็อกบวมเงียบ ๆ
@@ -93,7 +95,7 @@ function MovesInner() {
          เขาจะกรอกใหม่ด้วยเลขอ้างอิงใหม่ ⇒ **ของเข้าสองรอบจริง** (ตาข่ายกันซ้ำใช้ไม่ได้) */
       if (!d || !('rows' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีประวัติ) — ยังบอกไม่ได้ว่ามีใบไหนบ้าง')
       setMoves(Array.isArray(d.rows) ? d.rows : [])
-      setTotal(Number(d.total ?? 0))
+      setTotal(typeof d.total === 'number' ? d.total : null)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
       setMoves([])
@@ -257,7 +259,10 @@ function MovesInner() {
       <Card padded={false} className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-gray-100">
           <p className="text-[13px] font-semibold text-gray-700">
-            ประวัติการปรับสต็อก {total > 0 && <span className="text-gray-400 font-normal">({fmtNum(total)} ใบ)</span>}
+            ประวัติการปรับสต็อก{' '}
+            {total === null
+              ? <span className="text-amber-700 font-normal">(ยังไม่รู้ว่ามีกี่ใบ — ท่อไม่ได้บอกจำนวน)</span>
+              : total > 0 && <span className="text-gray-400 font-normal">({fmtNum(total)} ใบ)</span>}
           </p>
           <div className="flex gap-2">
             <input value={filterSku} onChange={(e) => setFilterSku(e.target.value)}

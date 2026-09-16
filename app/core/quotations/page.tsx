@@ -124,7 +124,11 @@ export default function QuotationsPage() {
    *  ⇒ วันไหนใบเสนอราคาเกิน 200 **ยอดรวมข้างบนจะเงียบ ๆ ต่ำกว่าจริง**
    *  บทเรียนจากจอรายงานยอดซื้อ: บรรทัดสรุปที่ถูก + ตารางที่ไม่ครบ อันตรายกว่าตัวเลขผิดตรง ๆ
    *  เพราะไม่มีอะไรดูขัดตา — ตาข่ายจึงต้องใส่**ก่อน**ถึงวันนั้น ไม่ใช่รอให้มีคนเจอ */
-  const cut = Math.max(0, Number(data?.total ?? 0) - all.length)
+  /* 🔴 **ท่อไม่บอกจำนวนทั้งชุด ≠ โหลดครบแล้ว** (แก้ 16 ก.ย. 2569 · เจอด้วยท่อปลอม partialgood)
+     เดิม `Number(data?.total ?? 0) - all.length` ⇒ ไม่มี total ⇒ cut = 0
+     ⇒ จอสรุปว่า "โหลดมาครบทั้งชุด จึงเท่ากับกรองทั้งชุด" ซึ่งเป็น **คำรับประกันที่เราไม่ได้รู้** */
+  const รู้ทั้งชุด = typeof data?.total === 'number' && Number.isFinite(data.total)
+  const cut = รู้ทั้งชุด ? Math.max(0, Number(data!.total) - all.length) : 0
 
   return (
     <div className="p-4 md:p-6">
@@ -256,7 +260,11 @@ export default function QuotationsPage() {
         canClear={advOn || Object.values(draft).some((v) => String(v).trim() !== '') || q.trim() !== ''}
         /* 🔴 **จอนี้ไม่มีตัวกรองฝั่งเซิร์ฟเวอร์เลย** (ท่อรับแต่ `store`/`page`/`limit`)
            ⇒ ห้ามใช้ช่อง serverFiltered เพราะประโยคของมันคือ "กรองที่เซิร์ฟเวอร์ ครอบทั้งชุด" = เท็จกับจอนี้ */
-        clientFiltered={cut > 0
+        /* ไม่รู้จำนวนทั้งชุด ⇒ ห้ามพูดว่า "เท่ากับกรองทั้งชุด" */
+        clientFiltered={!รู้ทั้งชุด
+          /* ⚠️ ช่องนี้รับ **ข้อความล้วน** ⇒ ใส่ ** แล้วมันโชว์ดอกจันจริง ๆ บนจอ (เห็นตอนตรวจด้วยท่อปลอม) */
+          ? `กรองในเบราว์เซอร์จาก ${fmtNum(all.length)} ใบที่โหลดมา · ยังไม่รู้ว่าทั้งชุดมีกี่ใบ (ท่อไม่ได้บอกจำนวน) ⇒ ยังยืนยันไม่ได้ว่ากรองครบทั้งชุด`
+          : cut > 0
           ? `กรองในเบราว์เซอร์จาก ${fmtNum(all.length)} ใบที่โหลดมา (ยังขาดอีก ${fmtNum(cut)} ใบ) · ท่อกรองให้เฉพาะร้าน (${storeLabel(store)})`
           : `กรองในเบราว์เซอร์ — โหลดมาครบทั้ง ${fmtNum(all.length)} ใบแล้ว จึงเท่ากับกรองทั้งชุด · ท่อกรองให้เฉพาะร้าน (${storeLabel(store)})`}
         notAvailable={[
@@ -378,7 +386,7 @@ export default function QuotationsPage() {
 
           {cut > 0 && (
             <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
-              ตารางนี้แสดง <b>{all.length}</b> จาก <b>{Number(data?.total ?? 0)}</b> ใบ
+              ตารางนี้แสดง <b>{all.length}</b> จาก <b>{รู้ทั้งชุด ? Number(data!.total) : 'ยังไม่รู้ว่ากี่'}</b> ใบ
               — ขาดอีก <b>{cut}</b> ใบ (ท่อคืนได้สูงสุด 200 แถวต่อครั้ง และจอนี้ยังไม่มีการแบ่งหน้า)
               ⇒ <b>ยอดรวมด้านบนจึงต่ำกว่าความจริง</b>
             </p>

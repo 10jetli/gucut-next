@@ -260,7 +260,9 @@ export default function CorePurchasesPage() {
                 ? <>กรองในเบราว์เซอร์ — โหลดใบซื้อมาครบทั้ง {fmtNum(Number(data?.total ?? 0))} ใบแล้ว จึงเท่ากับกรองทั้งชุด
                   {' '}· เหลือ <b>{fmtNum(rows.length)}</b> ใบในแท็บนี้</>
                 : <>⚠️ กรองในเบราว์เซอร์ <b>เฉพาะ {fmtNum(allRows.length)} ใบที่โหลดมา</b>
-                  {' '}(ทั้งหมด {fmtNum(Number(data?.total ?? 0))} ใบ) — ตัวเลขบนแท็บเป็นของทั้งชุด</>}
+                  {' '}({typeof data?.total === 'number'
+                    ? <>ทั้งหมด {fmtNum(Number(data.total))} ใบ</>
+                    : <>ยังไม่รู้ว่าทั้งชุดมีกี่ใบ — ท่อไม่ได้บอกจำนวน</>}) — ตัวเลขบนแท็บเป็นของทั้งชุด</>}
               {' '}· <span className="text-gray-400">ท่อยังไม่รับตัวกรองสถานะ — ขอไว้แล้ว</span>
             </p>
           )}
