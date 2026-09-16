@@ -46,7 +46,12 @@ export function PageHead({
         <h1 className="text-[26px] leading-tight font-semibold text-gray-900">{title}</h1>
         {summary && <div className="text-[13px] text-gray-500 mt-1">{summary}</div>}
       </div>
-      {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
+      {/* 🔴 **`shrink-0` ทำให้แถวปุ่มล้นจอบนมือถือ/แท็บเล็ต** (วัดจริง 16 ก.ย. 2569)
+          flex-wrap ห่อได้ก็จริง แต่ `shrink-0` ห้ามกล่องหดลงต่ำกว่าความกว้างของเนื้อใน
+          ⇒ จอสินค้าที่ 390px **ล้นออกไป 479px** · จอรายการขายล้น 199px · ที่ 820px ก็ยังล้น 107px
+             อาการ: เลื่อนจอไปทางขวาแล้วเจอที่ว่าง · ปุ่มบางตัวโผล่นอกจอ (ร้านใช้แท็บเล็ตหน้าเคาน์เตอร์)
+          ⇒ เปลี่ยนเป็น `min-w-0` ให้หดแล้วห่อบรรทัดได้จริง · จอกว้างยังเหมือนเดิมเพราะ justify-between */}
+      {actions && <div className="flex flex-wrap items-center gap-2 min-w-0">{actions}</div>}
     </div>
   )
 }
