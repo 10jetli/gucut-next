@@ -1,0 +1,83 @@
+#!/usr/bin/env node
+/* ด่านก่อน build: `setX(ค่าใหม่)` แล้วสั่งโหลดในจังหวะเดียวกัน **ต้องส่งค่าใหม่ไปกับคำสั่งโหลดด้วย**
+ *
+ * 🔴 ที่มา — บั๊กคลาสนี้กัด 3 ครั้งในโปรเจกต์นี้ (สองครั้งเกิดในวันเดียว 16 ก.ย. 2569):
+ *    · จอเอกสารบัญชี: กดตัวกรองชนิดเอกสารแล้วยิงด้วยชนิด **เดิม** ⇒ จอโชว์ของชนิดก่อนหน้า
+ *    · จอสินค้า ปุ่ม "ค้นทีละคำ": `setQ(w)` แล้ว `load(0)` ⇒ ยิงด้วยคำค้นเดิม
+ *    · จอสินค้า ตัวเลือกจำนวนต่อหน้า: `setPerPage(n)` แล้ว `load(0)` ⇒ ยิงด้วยจำนวนเดิม
+ *
+ * 🔑 เหตุจริง: `setState` ของ React **ไม่มีผลในรอบเดียวกัน** — โค้ดที่เรียกต่อท้ายยังเห็นค่าเก่าเสมอ
+ *    อาการบนจอคือ "กดแล้วเหมือนไม่เกิดอะไร" หรือ "ต้องกดสองครั้งถึงจะถูก"
+ *    ⇒ **ไม่มี error ไม่มีอะไรแดง** ตรงกับโรคประจำของโปรเจกต์: ระบบทำงานถูก แต่สื่อสารผิด
+ *
+ * วิธีตรวจ: หาบรรทัดที่มีทั้ง `setSomething(อาร์กิวเมนต์)` และคำสั่งโหลด (`load(` / `reload(` / `refetch(`)
+ *   แล้วดูว่าอาร์กิวเมนต์ตัวเดียวกันนั้นถูกส่งเข้าไปในคำสั่งโหลดด้วยไหม
+ * ⚠️ ตรวจได้แค่ "ส่งค่าไปด้วยไหม" ไม่ได้ตรวจว่า "ส่งถูกตำแหน่ง" — ยังต้องกดดูด้วยตา
+ *    (แต่จับกรณีที่ไม่ส่งเลย ซึ่งเป็นกรณีที่เกิดจริงทั้งสามครั้ง)
+ * ⚠️ ตั้งใจไม่ส่ง (เช่นโหลดใหม่ทั้งชุดโดยไม่สนค่านั้น) ⇒ เขียน `/* โหลดใหม่ทั้งชุด *​/` ต่อท้ายบรรทัด
+ */
+import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+
+const ROOT = new URL('..', import.meta.url).pathname
+const โหลด = /\b(load|reload|refetch|fetchAgain)\s*\(([^)]*)\)/
+const ตั้งค่า = /\bset([A-Z฀-๿][A-Za-z0-9_฀-๿]*)\s*\(\s*([^);]+?)\s*\)/g
+/** ข้ออ้างที่ยอมรับได้ — เขียนต่อท้ายบรรทัดเดียวกัน */
+const ยกเว้นในบรรทัด = /โหลดใหม่ทั้งชุด|ไม่ต้องส่งค่านี้/
+
+function walk(dir, out = []) {
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name)
+    const st = statSync(p)
+    if (st.isDirectory()) { if (name !== 'node_modules' && name !== '.next') walk(p, out) }
+    else if (name.endsWith('.tsx')) out.push(p)
+  }
+  return out
+}
+
+const ปัญหา = []
+for (const file of walk(join(ROOT, 'app'))) {
+  const lines = readFileSync(file, 'utf8').split('\n')
+  lines.forEach((line, i) => {
+    const mLoad = line.match(โหลด)
+    if (!mLoad) return
+    if (ยกเว้นในบรรทัด.test(line)) return
+    const args = mLoad[2]
+    ตั้งค่า.lastIndex = 0
+    let m
+    while ((m = ตั้งค่า.exec(line))) {
+      const ชื่อ = m[1]
+      /* ไม่ใช่ setState ของ React — ฟังก์ชันมาตรฐานที่ชื่อขึ้นต้นด้วย set เหมือนกัน */
+      if (/^(Timeout|Interval|Immediate|Item|Attribute|Property|Date|FullYear|Hours|Minutes|Seconds|Time|UTC)/.test(ชื่อ)) continue
+      const ค่า = m[2].trim()
+      /* ค่าที่เป็นก้อนว่าง/ค่าคงที่ ไม่ต้องส่งต่อ (เช่น setPicked([]) · setError('')) */
+      if (/^(\[\]|''|""|``|null|undefined|true|false|\{\}|0)$/.test(ค่า)) continue
+      /* ตัวตั้งค่าที่ไม่เกี่ยวกับคำขอ (สถานะจอล้วน ๆ) — ชื่อที่ขึ้นต้นด้วยพวกนี้ข้ามได้ */
+      if (/^(Open|Show|Msg|Err|Error|Loading|Busy|Copy|Toast|Sel|Menu|Expanded|Tab$)/.test(ชื่อ)) continue
+      /* ส่งค่าไปกับคำสั่งโหลดแล้วหรือยัง
+         🔴 **ห้ามใช้ includes() ตรง ๆ** — ตัวแปรชื่อสั้นจะไปเจอในคำอื่นแล้วผ่านฟรี
+            (เจอจริงตอนทดสอบด่านนี้เอง: ค่า `n` ไป match กับคำว่า `kind` ⇒ บั๊กที่ปลูกไว้รอดด่าน)
+         ⇒ เทียบแบบ "ทั้งคำ" ด้วยขอบเขตคำ */
+      const หนี = ค่า.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+      const ส่งแล้ว = new RegExp(`(^|[^A-Za-z0-9_$])${หนี}([^A-Za-z0-9_$]|$)`).test(args)
+      if (!ส่งแล้ว) {
+        ปัญหา.push({
+          ไฟล์: file.replace(ROOT, ''), บรรทัด: i + 1, ตัวตั้งค่า: `set${ชื่อ}(${ค่า})`,
+          คำสั่งโหลด: mLoad[0],
+        })
+      }
+    }
+  })
+}
+
+if (ปัญหา.length) {
+  console.error('🔴 พบการสั่งโหลดที่ยังใช้ค่าเดิม (setState ไม่มีผลในรอบเดียวกัน):\n')
+  for (const p of ปัญหา) {
+    console.error(`  ${p.ไฟล์}:${p.บรรทัด}`)
+    console.error(`    ${p.ตัวตั้งค่า}  แล้วสั่ง  ${p.คำสั่งโหลด}`)
+    console.error('    ⇒ ต้องส่งค่าใหม่เข้าไปในคำสั่งโหลดด้วย เช่น load(0, …, ค่าใหม่)\n')
+  }
+  console.error('ตั้งใจไม่ส่ง? เขียนเหตุผลต่อท้ายบรรทัดว่า /* โหลดใหม่ทั้งชุด */')
+  process.exit(1)
+}
+console.log('✅ ไม่พบการสั่งโหลดที่ใช้ค่าเดิม')
