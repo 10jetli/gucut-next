@@ -328,6 +328,18 @@ export default function CoreCustomersPage() {
                   <option value="sales">ยอดขาย</option>
                 </select>
               </div>
+              {/* 🔴 **มีคนแต่จำแนกไม่ได้ ≠ ทุกกลุ่มเป็นศูนย์** (เจอด้วยท่อปลอมโหมด partialgood 16 ก.ย. 2569)
+                  ถ้าท่อส่งรายชื่อมาแต่ **ไม่ส่งจำนวนใบต่อคน** (orders) ⇒ ไม่มีใครเข้าเกณฑ์ทั้งสองกลุ่ม
+                  จอเดิมเขียนว่า "ซื้อครั้งเดียวในช่วง 0 ราย (0%)" กับ "ซื้อซ้ำ 0 ราย (0%)"
+                  = ยืนยันเลข 0 กับ 0% เป็นข้อเท็จจริงทั้งที่แค่ **ยังไม่รู้**
+                  ⇒ แยกสถานะนี้ออกมาพูดตรง ๆ ก่อนถึงกราฟ */}
+              {named.length > 0 && newC.length + repC.length + unkC.length === 0 && (
+                <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-2 leading-relaxed">
+                  ⚠️ มีลูกค้าที่ระบุชื่อ <b>{named.length.toLocaleString('th-TH')}</b> ราย
+                  {' '}แต่<b>ท่อไม่ได้ส่งจำนวนใบต่อคนมา</b> ⇒ <b>ยังแยกกลุ่มลูกค้าใหม่/ซื้อซ้ำไม่ได้</b>
+                  {' '}— เลขในกราฟข้างล่างจึงยัง<b>ไม่ใช่ 0 จริง ๆ</b> แต่คือ &ldquo;ยังไม่รู้&rdquo;
+                </p>
+              )}
               {named.length === 0
                 ? <p className="text-[13px] text-gray-400">ยังไม่มีลูกค้าที่ระบุชื่อในช่วงนี้</p>
                 : (() => {

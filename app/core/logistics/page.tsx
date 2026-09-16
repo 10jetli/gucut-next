@@ -111,6 +111,12 @@ export default function LogisticsPage() {
           : data?.total)
     ?? data?.total ?? 0
   )
+  /* 🔴 **ท่อไม่บอกจำนวน ≠ จำนวนเป็นศูนย์** (เจอด้วยท่อปลอมโหมด partialgood 16 ก.ย. 2569)
+     ถ้าทุกคีย์หายไปหมด `tabTotal` จะตกมาเป็น 0 แล้วจอเขียนว่า **"แสดง 1 จาก 0 รายการ"**
+     ซึ่งขัดกันในตัวเอง (มีแถวให้เห็น 1 แถว แต่บอกว่าทั้งชุดมี 0)
+     ⇒ แยกสถานะ "ไม่รู้จำนวน" ออกมา แล้วให้จอพูดว่าไม่รู้ ไม่ใช่พูดเลข 0 */
+  const รู้จำนวน = [data?.rowsMatched, data?.shown, data?.unshipped, data?.shipped, data?.cod, data?.total]
+    .some((v) => typeof v === 'number' && Number.isFinite(v))
 
   /** 🔴 **ด่านชั้นสอง: ตรวจ "เนื้อข้อมูล" ไม่ใช่แค่คำสะท้อนกลับ**
    *  ด่าน `applied`/`only` เช็คได้แค่ว่าเซิร์ฟเวอร์ **บอกว่า** อ่านตัวกรองแล้ว
@@ -346,14 +352,17 @@ export default function LogisticsPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
               <span>
-                แสดง {fmtNum(offset + rows.length)} จาก {fmtNum(tabTotal)} รายการ
+                แสดง {fmtNum(offset + rows.length)} จาก{' '}
+                {รู้จำนวน ? <>{fmtNum(tabTotal)} รายการ</> : <span className="text-amber-700">ยังไม่รู้ว่าทั้งชุดมีกี่รายการ (ท่อไม่ได้บอกจำนวนมา)</span>}
                 {only && <span className="text-gray-400"> (เฉพาะแท็บที่เลือก)</span>}
               </span>
               <span className="flex gap-2">
                 <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>ก่อนหน้า</BtnGhost>
                 {/* ⚠️ เทียบกับจำนวนของแท็บ ไม่ใช่ยอดรวมทั้งหมด — ไม่งั้นปุ่มนี้กดได้ทั้งที่ไม่มีหน้าถัดไป
                     แล้วคนกดจะเจอหน้าว่าง ซึ่งอ่านเหมือน "ข้อมูลหาย" มากกว่า "หมดแล้ว" */}
-                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || offset + rows.length >= tabTotal}>ถัดไป</BtnGhost>
+                {/* ไม่รู้จำนวนทั้งชุด ⇒ ยังกดถัดไปได้ (ห้ามล็อกปุ่มด้วยเลขที่เราไม่รู้ว่าจริงไหม)
+                    แต่ถ้ารู้จำนวนแล้วและถึงท้ายชุด ⇒ ล็อกตามเดิม */}
+                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || (รู้จำนวน && offset + rows.length >= tabTotal)}>ถัดไป</BtnGhost>
               </span>
             </div>
           </TableWrap>
