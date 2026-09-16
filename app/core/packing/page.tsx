@@ -130,6 +130,14 @@ export default function PackingPage() {
 
   const totalAmount = jobs.reduce((s, j) => s + (Number(j.amount) || 0), 0)
 
+  /* ☑️ เลือกใบแล้วพิมพ์ **ใบจัดเตรียมสินค้า** ทีเดียวหลายใบ (จอใหม่ 16 ก.ย. 2569 · `/core/sales/print`)
+     จอนี้คือที่ที่คนแพ็กยืนอยู่จริง ⇒ ควรพิมพ์ใบหยิบของได้จากตรงนี้ ไม่ใช่ต้องไปที่จอรายการขาย
+     🔴 **ใบที่ท่อไม่ได้ส่ง `id` มา เลือกไม่ได้** — จอพิมพ์ต้องใช้ id (`z1/<เลขที่ใบ>`)
+        เดา prefix เองไม่ได้ ⇒ ติ๊กไม่ได้ **พร้อมบอกเหตุผล** ดีกว่าให้ติ๊กแล้วพิมพ์ออกมาไม่ครบ */
+  const [picked, setPicked] = useState<string[]>([])
+  const เลือกได้ = rows.filter((j) => j.id)
+  const เลือกไม่ได้ = rows.length - เลือกได้.length
+
   return (
     <div className="p-4 md:p-6">
       <PageHead
@@ -245,10 +253,33 @@ export default function PackingPage() {
             onChange={setTab}
           />
 
+          {picked.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-[12.5px] bg-[#eef1fa] border border-[#c9d4f5] rounded px-3 py-2 mb-3">
+              <b>เลือก {picked.length.toLocaleString('th-TH')} ใบ</b>
+              <Link href={`/core/sales/print?ids=${encodeURIComponent(picked.join(','))}`}
+                className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                🖨 พิมพ์ใบจัดเตรียมสินค้า
+              </Link>
+              <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {เลือกไม่ได้ > 0 && (
+                <span className="text-amber-800 basis-full">
+                  ⚠️ อีก {เลือกไม่ได้.toLocaleString('th-TH')} ใบในหน้านี้<b>เลือกไม่ได้</b> เพราะท่อไม่ได้ส่งรหัสใบมา —
+                  เปิดทีละใบจากเลขที่ใบแทน (ใบพวกนี้ไม่ได้หายไปไหน)
+                </span>
+              )}
+            </div>
+          )}
+
           <TableWrap>
             <table className="w-full min-w-[720px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
+                  <th className={TH} style={{ width: 34 }}>
+                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                      checked={เลือกได้.length > 0 && picked.length === เลือกได้.length}
+                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < เลือกได้.length }}
+                      onChange={(e) => setPicked(e.target.checked ? เลือกได้.map((j) => j.id as string) : [])} />
+                  </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>เลขที่ใบ</th>
                   <th className={TH}>ช่องทาง</th>
@@ -259,7 +290,7 @@ export default function PackingPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <EmptyState cols={6} icon="📦"
+                  <EmptyState cols={7} icon="📦"
                     title={jobs.length === 0 ? 'ไม่มีใบค้างส่ง — แพ็คครบแล้ว' : 'ไม่พบใบในเงื่อนไขนี้'}
                     detail={jobs.length === 0
                       ? 'ทุกใบที่ลูกค้าจ่ายแล้วถูกส่งออกไปหมดแล้ว'
@@ -269,6 +300,13 @@ export default function PackingPage() {
                   const a = ageDays(j.day)
                   return (
                     <tr key={j.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                      <td className={TD}>
+                        <input type="checkbox" aria-label={`เลือก ${j.number}`}
+                          disabled={!j.id}
+                          title={j.id ? undefined : 'ท่อไม่ได้ส่งรหัสใบมา ⇒ พิมพ์ใบจัดเตรียมจากแถวนี้ไม่ได้ (กดที่เลขที่ใบเพื่อเปิดใบแทน)'}
+                          checked={!!j.id && picked.includes(j.id)}
+                          onChange={(e) => setPicked((old) => (e.target.checked ? [...old, j.id as string] : old.filter((x) => x !== j.id)))} />
+                      </td>
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={TD}>
                         {/* ท่อส่ง `id` มาแล้วตั้งแต่ 9 ก.ย. 2569 (2d6bfea) ⇒ ลิงก์ตรง ๆ ได้ เร็วกว่าและไม่ต้องยิงเพิ่ม
