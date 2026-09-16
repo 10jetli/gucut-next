@@ -16,11 +16,6 @@ export async function GET() {
       catNew: state.catNew ?? [],
       facs: state.facs ?? [],
       catDone: state.catDone ?? [],
-      /* ➕ รหัสที่พิมพ์เพิ่มเองในหน้าคลังอะไหล่ — ท่านประธานสั่ง 16 ก.ย. 2569
-         🔴 ถ้าไม่มีบรรทัดนี้ เพิ่มรหัสบน iPad แล้วเครื่องอื่นไม่เห็น
-            ทั้งที่ท้ายหน้าเขียนว่า "เห็นตรงกันทุกเครื่อง" ⇒ จอโกหกโดยไม่มีอะไรฟ้อง
-         (เจอตอนยิงของจริงหลัง deploy — sync.js ส่งมาแล้วแต่ฝั่งนี้ทิ้งทิ้ง) */
-      added: state.added ?? [],
       updatedAt: state.updatedAt ?? null,
     })
   } catch (e: any) {
@@ -48,11 +43,6 @@ export async function POST(req: NextRequest) {
       catNew: Array.isArray(body?.catNew) ? body.catNew : [],
       facs: Array.isArray(body?.facs) ? body.facs : [],
       catDone: Array.isArray(body?.catDone) ? body.catDone.filter((x: unknown) => typeof x === 'string') : [],
-      /* ➕ รับรหัสที่เพิ่มเอง — กรองให้เหลือเฉพาะรายการที่มี sku เป็นข้อความ
-         ⚠️ ไม่ยุ่งกับ ovr/catMap ของเดิมเลย เป็นช่องแยกล้วน ๆ */
-      added: Array.isArray(body?.added)
-        ? body.added.filter((x: unknown) => !!x && typeof (x as { sku?: unknown }).sku === 'string')
-        : [],
     }
     await saveCatalogStateBlobs(state)
     return NextResponse.json({ ok: true })
