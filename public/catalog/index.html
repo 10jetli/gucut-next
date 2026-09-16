@@ -75,6 +75,10 @@
   .modal .preview{width:80px;height:80px;object-fit:contain;background:#fafafa;border-radius:8px;border:1px solid var(--line);margin-top:6px}
   .modal .row{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
   .hint{font-size:11px;color:var(--muted);margin-top:3px}
+.addsku-btn{margin-left:auto;background:#16a34a;color:#fff;border:0;border-radius:6px;
+padding:3px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+.addsku-btn:hover{background:#15803d}
+.group-bar{display:flex;align-items:center;gap:10px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
 </head>
@@ -228,6 +232,17 @@ const COLS=[
 let colOn=load(LS_COL,null)||Object.fromEntries(COLS.map(c=>[c.key,true]));
 
 function load(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch(e){return d}}
+/* ➕ รหัสที่พิมพ์เพิ่มเอง — ท่านประธานสั่ง 16 ก.ย. 2569
+   เก็บแยกคีย์ ไม่ปนกับข้อมูลจาก Shopify (state.base) และไม่ปนกับการแก้ไข (state.ovr)
+   ⇒ ของเดิมปลอดภัย 100% ต่อให้ลบคีย์นี้ทิ้งทั้งก้อน */
+const LS_ADDED="gucut_added_v1";
+state.added=load(LS_ADDED,[]);
+function saveAdded(){save(LS_ADDED,state.added);}
+/* ปั้นให้หน้าตาเหมือนสินค้าที่มาจาก Shopify เป๊ะ ๆ เพื่อให้ row() ใช้ได้โดยไม่ต้องแก้ row() */
+function addedToBase(a){
+  return {sku:a.sku, model:"", title:a.name||a.sku, inv:0, price:a.price||0, sold6:0, img:"",
+          qsrc:"", pp:{name:a.nameEn||"", oem:a.oem||"", hh:a.hh||"", cn:""}, __added:true};
+}
 function save(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
 // ---- หมวดที่ทำเสร็จแล้ว (เจ้าของร้านกดเองจากเมนูหมวด) ----
 // เก็บเป็นรายชื่อหมวด เพื่อให้เห็นว่าไล่ใส่ข้อมูลถึงรุ่นไหนแล้ว
@@ -332,7 +347,8 @@ function currentRows(){
   const q=document.getElementById("q").value.trim().toLowerCase();
   const fc=document.getElementById("fCat").value, ff=document.getElementById("fFac").value;
   const fs=document.getElementById("fStock").value, fr=document.getElementById("fReco").value;
-  let rows=state.base.map(row).filter(r=>{
+  /* ➕ รวมรหัสที่พิมพ์เพิ่มเองเข้ามาด้วย — ต่อท้าย ไม่แทนที่ state.base */
+  let rows=state.base.concat(state.added.map(addedToBase)).map(row).filter(r=>{
     if(fc&&fc.indexOf("__")!==0&&r.category!==fc)return false;
     if(ff&&r.factory!==ff)return false;
     if(ff&&reco(r.stock,r.sku).lvl===0)return false;
@@ -402,11 +418,12 @@ function render(){
   app.innerHTML=keys.map(k=>{
     const head="<tr>"+vis.map(c=>'<th data-sort="'+c.key+'">'+c.label+" "+arrow(c.key)+"</th>").join("")+"</tr>";
     const body=groups[k].map(r=>"<tr>"+vis.map(c=>cell(r,c.key,q)).join("")+"</tr>").join("");
-    return '<section class="group"><div class="group-bar"><span>ITEM: '+esc(k)+'</span><span class="cnt">total number : '+groups[k].length+'</span></div>'+
+    return '<section class="group"><div class="group-bar"><span>ITEM: '+esc(k)+'</span><span class="cnt">total number : '+groups[k].length+'</span><button class="addsku-btn" data-cat="'+esc(k)+'" title="พิมพ์เพิ่มรหัสในหมวดนี้">+ เพิ่มรหัส</button></div>'+
       '<div class="tblwrap"><table><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div></section>';
   }).join("");
   app.querySelectorAll("th[data-sort]").forEach(th=>th.onclick=()=>{const k=th.dataset.sort;if(k==="edit"||k==="img")return;if(state.sort.key===k)state.sort.dir*=-1;else state.sort={key:k,dir:1};render();});
   app.querySelectorAll(".edit-btn").forEach(b=>b.onclick=()=>openEdit(b.dataset.sku));
+    app.querySelectorAll(".addsku-btn").forEach(b=>b.onclick=()=>addSku(b.dataset.cat));
 }
 
 // ---- column chooser ----
@@ -877,6 +894,35 @@ fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
     if(location.hash==="#trf")showPage("trf");
   });
 }).catch(e=>{document.getElementById("app").innerHTML='<div class="empty">โหลดข้อมูลไม่สำเร็จ: '+e+'</div>';});
+
+/* ➕ พิมพ์เพิ่มรหัสทีละรายการ — ท่านประธานสั่ง 16 ก.ย. 2569
+   ⚠️ กันชนรหัสเดิม: ถ้ารหัสมีอยู่แล้วใน Shopify ให้ปฏิเสธ **ห้ามเขียนทับของเดิมเด็ดขาด** */
+function addSku(cat){
+  const sku=(prompt("พิมพ์รหัสสินค้าใหม่ (หมวด: "+cat+")")||"").trim();
+  if(!sku) return;
+  if(state.base.some(p=>p.sku===sku)){
+    alert("รหัส "+sku+" มีอยู่แล้วในข้อมูลจาก Shopify\nถ้าต้องการแก้ ให้กดปุ่ม \"แก้ไข\" ที่แถวนั้นแทน");
+    return;
+  }
+  if(state.added.some(a=>a.sku===sku)){
+    alert("รหัส "+sku+" เพิ่มไว้แล้ว");
+    return;
+  }
+  const name=(prompt("ชื่อสินค้า (ภาษาไทย) — เว้นว่างได้")||"").trim();
+  state.added.push({sku:sku, name:name, nameEn:"", oem:"", hh:"", price:0, category:cat,
+                    at:new Date().toISOString().slice(0,10)});
+  /* หมวดหมู่: ใช้ทางเดิมของหน้า (catMap) เพื่อให้แถวใหม่ไปอยู่กลุ่มที่กดเพิ่ม */
+  state.catMap[sku]=cat; save(LS_CAT,state.catMap);
+  saveAdded();
+  render();
+}
+/* ลบได้เฉพาะรหัสที่เพิ่มเอง — ของเดิมจาก Shopify แตะไม่ได้ตลอดกาล */
+function delAddedSku(sku){
+  if(!state.added.some(a=>a.sku===sku)) return;
+  if(!confirm("ลบรหัส "+sku+" ที่พิมพ์เพิ่มเองใช่ไหม\n(ข้อมูลจาก Shopify ไม่ถูกแตะ)")) return;
+  state.added=state.added.filter(a=>a.sku!==sku);
+  saveAdded(); render();
+}
 </script>
 </body>
 </html>
