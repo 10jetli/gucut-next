@@ -10,7 +10,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag,
 } from '@/components/zort'
@@ -65,7 +65,7 @@ async function fetchRange(from: string, to: string) {
   const res = await fetch(`/api/web/core?${qs}`)
   const d = await res.json()
   if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
-  if (d?.skip) throw new Error(d.skip)
+  if (d?.skip) throw new Error(SKIP + d.skip)
   /* 🔴 ช่องใบคืนเป็น null ได้ = **อ่านตารางใบคืนไม่ได้** ⇒ ส่ง null ต่อไปให้จอเขียนว่า "ยังไม่รู้"
      ห้ามแปลงเป็น 0 ตรงนี้ — 0 แปลว่าไม่มีใครคืนของ ซึ่งคนละเรื่องกัน */
   const num = (v: unknown) => (typeof v === 'number' ? v : null)

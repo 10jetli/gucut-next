@@ -1036,6 +1036,12 @@ const srv = createServer(async (req, res) => {
           failedParts: [{ store: 'z1', error: 'ZORT ตอบ 500' }, { store: 'z2', error: null }],
         }))
       }
+      /* 🔴 **ผลที่สี่: ตอบ 200 + `skip`** = "ทำส่วนนี้ต่อไม่ได้" ไม่ใช่ทั้ง error และไม่ใช่ 0
+         เพิ่ม 16 ก.ย. 2569 เพราะจอเดิมยุบ skip เข้าไปในสาย error ⇒ ช่องเดือนเขียนเหมือนท่อล้ม
+         ⚠️ ห้ามใช้เดือนเดียวกับเคส error (2026-05) ไม่งั้นทดสอบได้ทีละอย่างเท่านั้น */
+      if (ym === '2026-06') {
+        return res.end(JSON.stringify({ skip: 'ยังไม่ได้ต่อสิทธิ์อ่านรายงานรายเดือนของ ZORT — นับใบเดือนนี้ไม่ได้', ym, store: 'all' }))
+      }
       return res.end(JSON.stringify({
         ok: true, ym, store: 'all', stores: ['z1', 'z2'],
         zortCount: z1(base) + z2(base),
@@ -1047,6 +1053,8 @@ const srv = createServer(async (req, res) => {
     const part = (n) => (store === 'z2' ? Math.round(n * 0.6) : n - Math.round(n * 0.6))
     res.writeHead(200, { 'content-type': 'application/json' })
     if (ym === '2026-05') return res.end(JSON.stringify({ error: 'ZORT ตอบ 500' }))
+    // สถานะที่สามรายเดือน (ดูคอมเมนต์ในขา store=all) — ต้องมีในขานี้ด้วย ไม่งั้นทางถอยยังไม่ถูกทดสอบ
+    if (ym === '2026-06') return res.end(JSON.stringify({ skip: 'ยังไม่ได้ต่อสิทธิ์อ่านรายงานรายเดือนของ ZORT — นับใบเดือนนี้ไม่ได้' }))
     // เดือนที่กระจกว่างแต่ ZORT มีใบ = เคสที่ต้องขึ้นแดง "เรายังไม่ได้กวาด"
     if (ym === '2026-04') return res.end(JSON.stringify({ ok: true, ym, store, zortCount: part(95), countsCancelled: true }))
     if (ym === '2026-03') return res.end(JSON.stringify({ ok: true, ym, store, zortCount: 0, countsCancelled: true }))

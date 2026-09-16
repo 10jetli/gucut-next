@@ -12,7 +12,7 @@
 //    สิ่งที่ตัดสินได้จริงคือ 0 กับ ไม่ใช่ 0
 import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
 
 interface Month { ym: string; orders: number; sales: number }
@@ -130,7 +130,11 @@ export default function CoveragePage() {
 
       if (store) {
         const { res, j } = await ask(store)
-        if (!res.ok || !j || j.error || j.skip) throw new Error(String(j?.error || j?.skip || `ท่อตอบ ${res.status}`))
+        /* 🔴 `skip` (ท่อตอบ 200 + บอกว่าทำต่อไม่ได้) **ไม่ใช่ error** ⇒ ต้องใส่ SKIP นำหน้า
+           ไม่งั้นช่องเดือนนี้เขียนเหมือนท่อล้ม ทั้งที่เป็นสถานะที่สาม (เดิมยุบรวมกันในบรรทัดเดียว) */
+        if (!res.ok || !j || j.error || j.skip) {
+          throw new Error(j?.skip ? SKIP + String(j.skip) : String(j?.error || `ท่อตอบ ${res.status}`))
+        }
         if (typeof j.zortCount !== 'number') throw new Error('ท่อตอบมาไม่มีช่อง zortCount')
         setZort((s) => ({ ...s, [ym]: { count: j.zortCount, stores: 1, via: 'all' } }))
         return
@@ -145,6 +149,10 @@ export default function CoveragePage() {
         setZort((s) => ({ ...s, [ym]: { count: all.j.zortCount, stores: all.j.stores.length, via: 'all' } }))
         return
       }
+      /* 🔴 `skip` จากขา `all` = **ท่อทำเดือนนี้ต่อไม่ได้** ⇒ ถอยไปถามทีละร้านก็ได้คำตอบเดิม
+         และแถมคำว่า "ร้าน z1:" มาข้างหน้าทั้งที่ไม่ได้เกี่ยวกับร้านใดร้านหนึ่ง (เห็นของจริงด้วยท่อปลอม 16 ก.ย. 2569)
+         ⇒ จบที่นี่เลย ด้วยข้อความที่ไม่มีชื่อร้านมาหลอกว่าเป็นปัญหาของร้านนั้น */
+      if (all.res.ok && typeof all.j?.skip === 'string' && all.j.skip) throw new Error(SKIP + all.j.skip)
       if (all.res.ok && all.j?.error && Array.isArray(all.j.failedParts)) {
         const which = all.j.failedParts.filter((p: { error?: string }) => p?.error)
           .map((p: { store?: string; error?: string }) => `${p.store}: ${p.error}`).join(' · ')
@@ -158,7 +166,10 @@ export default function CoveragePage() {
         // eslint-disable-next-line no-await-in-loop -- ท่อสั่งให้ถามทีละคำขอ ห้ามยิงพร้อมกัน
         const { res, j } = await ask(st)
         if (!res.ok || !j || j.error || j.skip) {
-          throw new Error(`ร้าน ${st}: ${String(j?.error || j?.skip || `ท่อตอบ ${res.status}`)}`)
+          // ⚠️ SKIP ต้องอยู่ **หน้าสุด** ของข้อความ ไม่งั้น isSkip() มองไม่เห็น (ชื่อร้านต่อท้ายได้)
+          throw new Error(j?.skip
+            ? `${SKIP}ร้าน ${st}: ${String(j.skip)}`
+            : `ร้าน ${st}: ${String(j?.error || `ท่อตอบ ${res.status}`)}`)
         }
         if (typeof j.zortCount !== 'number') throw new Error(`ร้าน ${st}: ท่อตอบมาไม่มีช่อง zortCount`)
         total += j.zortCount
@@ -186,7 +197,7 @@ export default function CoveragePage() {
       const res = await fetch(`/api/web/core?${q}`)
       const j = (await res.json().catch(() => null)) as Resp | null
       if (j === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
-      if (typeof j.skip === 'string') throw new Error(j.skip)
+      if (typeof j.skip === 'string') throw new Error(SKIP + j.skip)
       if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
       /* 🔴 **ตอบ 200 แต่ก้อนข้างในว่าง = ยังไม่รู้ ไม่ใช่ "ทุกเดือนเรียบร้อย"**
          เจอด้วยท่อปลอมโหมด partialgood (9 ก.ย. 2569): ท่อส่ง months:[] มาโดยไม่มี from/to
@@ -200,6 +211,12 @@ export default function CoveragePage() {
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }
   }, [store])
   useEffect(() => { load() }, [load])
+
+  /* 🔴 **เปลี่ยนขอบเขตร้านแล้วต้องล้างคำตอบเก่า** (เห็นของจริงด้วยท่อปลอม 16 ก.ย. 2569)
+     เดิมกด "ร้านที่ 1" แล้วตารางยังโชว์เลขที่ถามมาตอน "ทั้ง 2 ร้าน" อยู่ครบทุกแถว
+     ⇒ ป้ายบอกขอบเขตหนึ่ง เลขเป็นของอีกขอบเขตหนึ่ง = ตระกูลเดียวกับกฎ "ห้ามเอาเลขคนละแหล่งมาวางคู่กัน"
+     ล้างแล้วช่องกลับเป็นปุ่ม "ถาม ZORT" ⇒ คนเห็นชัดว่ายังไม่ได้ถามในขอบเขตใหม่ */
+  useEffect(() => { setZort({}) }, [store])
 
   const rows = d?.from && d?.to && d.months ? fill(d.from, d.to, d.months) : []
   const gaps = rows.filter((r) => r.missing)
@@ -302,7 +319,14 @@ export default function CoveragePage() {
                           {asking === r.ym ? 'กำลังถาม…' : 'ถาม ZORT'}
                         </button>
                       ) : z.error ? (
-                        <span className="text-amber-800">⏳ {z.error}</span>
+                        /* สามสถานะในช่องเดียว: ยังไม่เคยถาม (ปุ่ม) · ถามไม่ได้ · ได้เลขมาแล้ว
+                           ⚠️ "ท่อทำส่วนนี้ต่อไม่ได้" กับ "ท่อล้ม" ห้ามหน้าตาเหมือนกัน —
+                              เดิมขึ้น ⏳ เหลืองทั้งคู่ ⇒ ท่อล้มอ่านเหมือนกำลังรออยู่เฉย ๆ */
+                        isSkip(z.error) ? (
+                          <span className="text-amber-800">⏳ ยังถามส่วนนี้ไม่ได้ (ไม่ใช่ข้อผิดพลาด): {z.error.slice(SKIP.length)}</span>
+                        ) : (
+                          <span className="text-red-600">⚠️ ถาม ZORT ไม่ได้ — ยังไม่รู้ว่าเดือนนี้มีกี่ใบ: {z.error}</span>
+                        )
                       ) : (
                         <span className={verdict(r, z.count!).tone}>
                           {verdict(r, z.count!).text}

@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
 import {
@@ -176,6 +176,8 @@ export default function CoreBundlesPage() {
         title="สินค้าเป็นชุด"
         /* 🔴 ล้มเหลวแล้วห้ามค้างที่ "กำลังโหลด…" (แก้ 6 ก.ย. 2569) */
         summary={error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
+          /* สถานะที่สามมาทาง data.skip ได้ด้วย ⇒ หัวจอต้องพูดเรื่องเดียวกับกล่องเหลือง */
+          : data?.skip ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง'
           : data ? `จำนวน ${fmtNum(data.total)} รายการ` : 'กำลังโหลด…'}
         actions={
           <>
@@ -245,9 +247,9 @@ export default function CoreBundlesPage() {
 
       {error && <ErrorBox title="ดึงสินค้าเป็นชุดไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
-      {data?.skip && (
-        <div className="bg-white border border-gray-200 rounded-md p-4 text-[13px] text-gray-500">{data.skip}</div>
-      )}
+      {/* ⚠️ สถานะที่สาม (ท่อตอบ 200 + ช่อง `skip`) ต้องเป็น **เหลือง** และคุมสไตล์จาก ErrorBox ที่เดียว
+          เดิมเป็นกล่องขาว/เทา ⇒ อ่านเหมือนข้อความประกอบ ไม่ใช่สถานะของจอ (แก้ยกชุด 16 ก.ย. 2569) */}
+      {data?.skip && <ErrorBox>{SKIP + data.skip}</ErrorBox>}
 
       {data && !data.skip && (
         <>

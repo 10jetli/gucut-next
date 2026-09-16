@@ -36,7 +36,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState, RowMenu } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 
@@ -105,7 +105,10 @@ export default function AccountingDocsPage() {
       const res = await fetch(`/api/web/core?${qs}`)
       const j = await res.json()
       /* ⚠️ `skip` มาก่อน error เสมอ (สัญญาของท่อ) — "ทำต่อไม่ได้" ไม่ใช่ error */
-      if (typeof j?.skip === 'string' && j.skip) throw new Error(j.skip)
+      /* 🔴 **ต้องใส่ SKIP นำหน้า** ไม่งั้น isSkip() มองไม่เห็น ⇒ จอขึ้นกล่อง**แดง** + หัวจอว่า "ไม่สำเร็จ"
+         ทั้งที่เป็นสถานะที่สาม (เจอด้วยท่อปลอมโหมด skip 16 ก.ย. 2569: จอนี้ขึ้นทั้งแดงและเหลืองพร้อมกัน)
+         ⇒ สอนให้คนเลิกสนใจสีแดง ซึ่งเป็นสิ่งที่กฎในไฟล์ ErrorBox เตือนไว้ตรง ๆ */
+      if (typeof j?.skip === 'string' && j.skip) throw new Error(SKIP + j.skip)
       if (!res.ok || j?.error) throw new Error(j?.error ?? `ท่อตอบ ${res.status}`)
       if (!Array.isArray(j?.rows)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)')
       setData(j); setPage(p); typeRef.current = t
@@ -226,9 +229,15 @@ export default function AccountingDocsPage() {
         <span className="text-[11.5px] text-gray-400 ml-1">ตัวเลขในวงเล็บวัดไว้ 15 ก.ย. 2569 — ไม่ใช่ค่าสด</span>
       </div>
 
-      {error && <ErrorBox title={isSkip(error) ? 'ยังอ่านเอกสารไม่ได้' : 'อ่านเอกสารไม่สำเร็จ'}>{error}
-        <span className="block mt-1 text-[12px]">⚠️ อ่านไม่ได้ <b>ไม่ได้แปลว่าไม่มีเอกสาร</b> — ลองรีเฟรชอีกครั้ง</span>
-      </ErrorBox>}
+      {/* ⚠️ โน้ต "ลองรีเฟรช" ใช้ได้เฉพาะตอน **ผิดพลาดจริง** — สถานะที่สามรีเฟรชกี่ครั้งก็เหมือนเดิม
+          (ต้องไปตั้งค่าปลายทางก่อน) ⇒ แนะนำผิดจะทำให้คนกดรีเฟรชวนอยู่อย่างนั้น */}
+      {error && (isSkip(error) ? (
+        <ErrorBox>{error}</ErrorBox>
+      ) : (
+        <ErrorBox title="อ่านเอกสารไม่สำเร็จ">{error}
+          <span className="block mt-1 text-[12px]">⚠️ อ่านไม่ได้ <b>ไม่ได้แปลว่าไม่มีเอกสาร</b> — ลองรีเฟรชอีกครั้ง</span>
+        </ErrorBox>
+      ))}
       {loading && !data && <LoadingState />}
 
       {data && (

@@ -28,7 +28,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, BtnGhost, LinkText, EmptyState, RowMenu,
 } from '@/components/zort'
@@ -133,6 +133,9 @@ export default function CoreContactsPage() {
              (เจอด้วยการเปิดจอตอนดึงข้อมูลไม่ได้ 6 ก.ย. 2569 — อ่านโค้ดแล้วไม่เห็น
               เพราะสองข้อความอยู่คนละที่ในไฟล์ และแต่ละอันถูกของมันเอง) */
           error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง') :
+          /* สถานะที่สามมาทาง `data.skip` ได้ด้วย ⇒ หัวจอต้องพูดเรื่องเดียวกับกล่องเหลือง
+             (ไม่งั้นหัวจอเข้าสาขาปกติแล้วรายงานจำนวน/ความล้มเหลว คนละเรื่องกับกล่อง) */
+          data?.skip ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' :
           data
             ? (
               <>
@@ -304,9 +307,9 @@ export default function CoreContactsPage() {
 
       {error && <ErrorBox title="ดึงรายชื่อผู้ติดต่อไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
-      {data?.skip && (
-        <div className="bg-white border border-gray-200 rounded-md p-4 text-[13px] text-gray-500">{data.skip}</div>
-      )}
+      {/* ⚠️ สถานะที่สาม (ท่อตอบ 200 + ช่อง `skip`) ต้องเป็น **เหลือง** และคุมสไตล์จาก ErrorBox ที่เดียว
+          เดิมเป็นกล่องขาว/เทา ⇒ อ่านเหมือนข้อความประกอบ ไม่ใช่สถานะของจอ (แก้ยกชุด 16 ก.ย. 2569) */}
+      {data?.skip && <ErrorBox>{SKIP + data.skip}</ErrorBox>}
 
       {data && !data.skip && (
         <>

@@ -11,6 +11,8 @@
 // ⚠️ **แปลเฉพาะแบบที่รู้จักจริง ๆ** ที่เหลือปล่อยผ่านตามเดิม — เดาความหมายผิดแล้วชี้ทางผิด
 //    แย่กว่าปล่อยข้อความอังกฤษไว้เฉย ๆ
 
+import { Children } from 'react'
+
 /** ตัวชี้ว่าข้อความนี้คือ **สถานะที่สาม** ไม่ใช่ความผิดพลาด
  *  🔴 สัญญาฝั่งท่อ (6 ก.ย. 2569): `skip` = "ทำต่อไม่ได้" เช่น คลังเงายังไม่ตั้งค่า
  *     หรือยังไม่มีภาพถ่ายสต็อกสักวัน — **ไม่ใช่ error และไม่ใช่ข้อมูลว่าง**
@@ -22,6 +24,18 @@ export const SKIP = '⏳'
  *  ⚠️ ไม่ถาม = หัวจอเขียนว่าล้มเหลว แต่กล่องข้างล่างเป็นสีเหลืองบอกว่าไม่ใช่ข้อผิดพลาด
  *     สองข้อความขัดกันเอง (กฎเดียวกับที่ไล่แก้ทั้งคืน: **หัวจอกับกล่องต้องพูดเรื่องเดียวกัน**) */
 export const isSkip = (msg?: string) => typeof msg === 'string' && msg.startsWith(SKIP)
+
+/** ข้อความนำของกล่อง — รับทั้ง string เดี่ยว และ children ที่เป็นชุด (string + โน้ตต่อท้าย)
+ *  🔴 เจอของจริง 16 ก.ย. 2569 ที่ `/core/accounting-docs`:
+ *     จอส่ง `{error}<span>โน้ต</span>` ⇒ children เป็น **อาเรย์** ⇒ ตัวเช็ค `typeof === 'string'` ไม่ติด
+ *     ⇒ **สถานะที่สามขึ้นกล่องแดง** ทั้งที่หัวจอเขียนว่า "ยังทำงานส่วนนี้ต่อไม่ได้"
+ *        = หัวจอกับกล่องขัดกันเองอีกรอบ ซึ่งเป็นเรื่องเดียวกับที่กฎด้านบนเตือนไว้
+ *  ⇒ แก้ที่กล่องนี้ที่เดียว จอไหนพ่วงโน้ตมาก็ยังอ่านสถานะที่สามออก (แก้ทีละจอ = ตกหล่นแน่นอน) */
+function leadText(children: React.ReactNode): string | null {
+  if (typeof children === 'string') return children
+  if (Array.isArray(children) && typeof children[0] === 'string') return children[0]
+  return null
+}
 
 /** ข้อความที่รู้จัก → คำอธิบายไทย + บอกว่าทำอะไรต่อ */
 const KNOWN: { match: RegExp; th: string }[] = [
@@ -51,13 +65,19 @@ export default function ErrorBox({
   children,
 }: { title?: string; children?: React.ReactNode }) {
   // สถานะ "ทำต่อไม่ได้" — สีเหลือง ไม่ใช่แดง และเปลี่ยนหัวข้อให้ตรงความหมาย
-  if (typeof children === 'string' && children.startsWith(SKIP)) {
+  const lead = leadText(children)
+  if (lead && lead.startsWith(SKIP)) {
+    /* ตัด ⏳ ออกจากข้อความนำ **แต่คงของที่จอพ่วงมาไว้ครบ** (ห้ามทิ้งข้อความต้นฉบับ — กฎบนหัวไฟล์)
+       Children.map ใส่ key ให้เอง ⇒ ไม่ต้อง slice อาเรย์ด้วยมือแล้วโดน React เตือนเรื่อง key */
+    const body = typeof children === 'string'
+      ? children.slice(SKIP.length)
+      : Children.map(children, (c, i) => (i === 0 && typeof c === 'string' ? c.slice(SKIP.length) : c))
     return (
       <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-sm text-amber-900 flex gap-3">
         <span className="text-lg leading-none shrink-0">⏳</span>
         <div>
           <p className="font-semibold">ยังทำงานส่วนนี้ต่อไม่ได้ (ไม่ใช่ข้อผิดพลาด)</p>
-          <p className="leading-relaxed">{children.slice(SKIP.length)}</p>
+          <p className="leading-relaxed">{body}</p>
         </div>
       </div>
     )

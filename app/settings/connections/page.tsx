@@ -20,7 +20,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox from '@/components/ui/ErrorBox'
+import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState } from '@/components/zort'
 import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 
@@ -233,9 +233,9 @@ export default function ConnectionsRegistryPage() {
           </p>
         </>
       )}
-      {data?.skip && (
-        <div className="bg-white border border-gray-200 rounded-md p-4 text-[13px] text-gray-500">{data.skip}</div>
-      )}
+      {/* ⚠️ สถานะที่สาม (ท่อตอบ 200 + ช่อง `skip`) ต้องเป็น **เหลือง** และคุมสไตล์จาก ErrorBox ที่เดียว
+          เดิมเป็นกล่องขาว/เทา ⇒ อ่านเหมือนข้อความประกอบ ไม่ใช่สถานะของจอ (แก้ยกชุด 16 ก.ย. 2569) */}
+      {data?.skip && <ErrorBox>{SKIP + data.skip}</ErrorBox>}
 
       {data && !data.skip && (
         <>

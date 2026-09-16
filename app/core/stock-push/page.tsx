@@ -18,7 +18,7 @@
 //    (อยู่ในคำตอบตอนยิงเท่านั้น) จอต้องบอกข้อจำกัดนี้ตรง ๆ ห้ามให้คนอ่านเข้าใจว่าเห็นครบ
 import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill } from '@/components/zort'
 import { thaiDate } from '@/lib/format'
 /* serverTimeMs อยู่ใน returns-api (เกิดจากบั๊กโซนเวลาตอนประกบ /returns) — ตัวเดียวกันใช้ทุกจอ */
@@ -153,7 +153,7 @@ export default function StockPushPage() {
       const res = await fetch('/api/web/core?stockpushlog=1')
       const d = (await res.json().catch(() => null)) as LogResp | null
       if (d === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
-      if (typeof d.skip === 'string') throw new Error(d.skip)
+      if (typeof d.skip === 'string') throw new Error(SKIP + d.skip)
       if (!res.ok || d.error) throw new Error(d.error || `ท่อตอบ ${res.status}`)
       if (!Array.isArray(d.log)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี log)')
       setLog(d.log)
@@ -175,7 +175,7 @@ export default function StockPushPage() {
       const res = await fetch('/api/web/core?stockpush=1')
       const d = (await res.json().catch(() => null)) as PlanResp | null
       if (d === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
-      if (typeof d.skip === 'string') throw new Error(d.skip)
+      if (typeof d.skip === 'string') throw new Error(SKIP + d.skip)
       if (!res.ok || d.error) throw new Error(d.error || `ท่อตอบ ${res.status}`)
       /* 🔴 ตอบ 200 แต่ไม่มีแพลตฟอร์มไหนเลย = ยังบอกไม่ได้ว่าไม่มีอะไรต้องดัน
          (สถานะที่สี่: สำเร็จแต่ตอบก้อนเปล่า — เคยกัดมาแล้วหลายจอ) */

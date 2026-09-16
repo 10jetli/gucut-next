@@ -15,7 +15,7 @@ import { fmtMoney } from '@/lib/format'
 import { coverageText } from '@/lib/csv-export'
 import ExportButton from '@/components/zort/ExportButton'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
@@ -220,6 +220,13 @@ function CoreStockInner() {
         summary={
           /* 🔴 ล้มเหลวแล้วห้ามค้างที่ "กำลังโหลด…" (แก้ 6 ก.ย. 2569 — เจอตอนเปิดจอจริงตอนของพัง) */
           error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง')
+          /* 🔴 **สถานะที่สามมาได้สองทาง** (แก้ 16 ก.ย. 2569 · เจอด้วยท่อปลอมโหมด skip)
+             ทาง ① error ที่ขึ้นต้นด้วย SKIP · ทาง ② ท่อตอบ 200 พร้อมช่อง `skip` ⇒ `data.skip`
+             เดิมจอเช็คแค่ทาง ① ⇒ ทาง ② ทำให้หัวจอไปเข้าสาขาปกติแล้วเขียนว่า
+             "จำนวน — รายการ (เซิร์ฟเวอร์ไม่ได้ส่งจำนวนมา)" ซึ่งอ่านเหมือนข้อมูลมีปัญหา
+             ขณะที่กล่องข้างล่างบอกว่า "ยังทำส่วนนี้ต่อไม่ได้" ⇒ **หัวจอกับกล่องพูดคนละเรื่อง**
+             (กฎเดิมของโปรเจกต์: หัวจอกับกล่องต้องพูดเรื่องเดียวกัน) */
+          : data?.skip ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง'
           : data ? (
             <>
               {/* ⚠️ **รูปประโยคนี้ลอกจาก ZORT เป๊ะ** — "จำนวน N รายการ | ลิงก์ | ลิงก์"
@@ -383,9 +390,9 @@ function CoreStockInner() {
 
       {error && <ErrorBox title="ดึงสินค้าไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
-      {data?.skip && (
-        <div className="bg-white border border-gray-200 rounded-md p-4 text-[13px] text-gray-500">{data.skip}</div>
-      )}
+      {/* ⚠️ เดิมเป็นกล่องขาว/เทา ⇒ ดูเหมือนข้อความประกอบ ไม่ใช่สถานะของจอ
+          สถานะที่สามต้องเป็น **เหลือง** และคุมสไตล์จาก ErrorBox ที่เดียว (ส่ง SKIP นำหน้า) */}
+      {data?.skip && <ErrorBox>{SKIP + data.skip}</ErrorBox>}
 
       {data && !data.skip && (
         <>

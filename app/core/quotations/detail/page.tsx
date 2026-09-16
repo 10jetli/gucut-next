@@ -9,7 +9,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, thaiDate } from '@/components/zort'
 import { QUOTATION_DETAIL_STATUS, zortWord } from '@/lib/zort-words'
@@ -54,7 +54,7 @@ function Inner() {
       const res = await fetch(`/api/web/core?quotation=${encodeURIComponent(id)}`)
       const j = (await res.json().catch(() => null)) as Resp | null
       if (j === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
-      if (typeof j.skip === 'string') throw new Error(j.skip)
+      if (typeof j.skip === 'string') throw new Error(SKIP + j.skip)
       if (isDocFail(j, res.ok)) {
         const v = docErrorView(j as DocFail, res.status)
         setWhy(v)

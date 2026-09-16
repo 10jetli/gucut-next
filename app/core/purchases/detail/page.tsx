@@ -18,7 +18,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { PURCHASE_DETAIL_PAY_STATUS, PURCHASE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
 import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
@@ -275,7 +275,7 @@ function Inner() {
       const res = await fetch(`/api/web/core?purchase=${encodeURIComponent(no)}${store ? `&store=${store}` : ''}`)
       const j = (await res.json().catch(() => null)) as Resp | null
       if (j === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
-      if (typeof j.skip === 'string') throw new Error(j.skip)
+      if (typeof j.skip === 'string') throw new Error(SKIP + j.skip)
       if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
       setD(j)
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }

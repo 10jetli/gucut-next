@@ -21,7 +21,7 @@ import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney } from '@/lib/format'
 import { SALE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { ChannelTag, Pill, thaiDate } from '@/components/zort'
 
 interface OrderRow {
@@ -71,7 +71,7 @@ export default function PackWizardPage() {
       const res = await fetch(`/api/web/core?order=${encodeURIComponent(id)}`)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error || `ท่อตอบ ${res.status}`)
-      if (typeof d?.skip === 'string') throw new Error(d.skip)
+      if (typeof d?.skip === 'string') throw new Error(SKIP + d.skip)
       if (!d?.order || !Array.isArray(d?.items)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี order/items)')
       setOrder(d.order); setItems(d.items); setPicked({}); setCandidates(null); setStep(1)
     } catch (e) {
@@ -90,7 +90,7 @@ export default function PackWizardPage() {
       const res = await fetch(`/api/web/core?list=orders&q=${encodeURIComponent(term)}&from=${from}&to=${to}&limit=10`)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error || `ท่อตอบ ${res.status}`)
-      if (typeof d?.skip === 'string') throw new Error(d.skip)
+      if (typeof d?.skip === 'string') throw new Error(SKIP + d.skip)
       if (!Array.isArray(d?.rows)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)')
       if (d.rows.length === 0) {
         setError(`ไม่พบใบที่ตรงกับ "${term}" ใน 120 วันหลังสุด — ค้นได้ทั้งเลขที่ใบและเลขพัสดุ (ใบ POS ไม่มีเลขพัสดุ ใช้เลขที่ใบ)`)

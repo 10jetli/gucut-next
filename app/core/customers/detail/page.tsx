@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
 
 interface Order {
@@ -59,7 +59,7 @@ function Inner() {
       const res = await fetch(`/api/web/core?customer=${encodeURIComponent(key)}`)
       const j = (await res.json().catch(() => null)) as Resp | null
       if (j === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
-      if (typeof j.skip === 'string') throw new Error(j.skip)
+      if (typeof j.skip === 'string') throw new Error(SKIP + j.skip)
       if (!res.ok || j.error) throw new Error(j.error || `ท่อตอบ ${res.status}`)
       setD(j)
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }

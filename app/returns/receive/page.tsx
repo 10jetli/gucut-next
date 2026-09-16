@@ -23,7 +23,7 @@
 //    จนกว่า API จริงขึ้น (สร้างล่วงหน้าตามแผน CEO 7 ก.ย. ดึก: ทำส่วนไม่รอ API ก่อน)
 import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
-import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
+import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { ChannelTag, Pill, thaiDate } from '@/components/zort'
 import {
   returnsApi, setStaffPin, ReturnDoc, Verdict, STATE_LABEL, TAKEOVER_REASONS,
@@ -139,7 +139,7 @@ export default function ReturnReceivePage() {
       const res = await fetch(`/api/returns?list=orders&q=${encodeURIComponent(term)}&from=${from}&to=${to}&limit=10`)
       const d = await res.json().catch(() => null)
       if (d === null || !res.ok || d?.error) throw new Error(d?.error || `ท่อตอบ ${res.status}`)
-      if (typeof d?.skip === 'string') throw new Error(d.skip)
+      if (typeof d?.skip === 'string') throw new Error(SKIP + d.skip)
       if (!Array.isArray(d?.rows)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)')
       if (d.rows.length === 0) setError(`ไม่พบใบที่ตรงกับ "${term}" ในปีหลังสุด — ถ้าใบเก่ากว่านั้น/ซื้อหน้าร้านยุคก่อน ใช้ปุ่ม "หาใบไม่เจอ"`)
       else setCandidates(d.rows)
