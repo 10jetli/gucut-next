@@ -319,15 +319,17 @@ export default function CoreTransfersPage() {
 
           <TableWrap>
             <table className="w-full min-w-[860px]">
-              <thead className="bg-white border-b border-gray-200">
+              {/* 🔃 คอลัมน์ที่ **จอ ZORT กดเรียงได้** มี tooltip บอกว่าของเรายังเรียงไม่ได้ (ท่อเมิน sort ทุกค่า)
+                    วัดจอ ZORT จริง 16 ก.ย. 2569 — ติดเฉพาะช่องที่วัดมาแล้ว ห้ามเดา */}
+                <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}>วันที่</th>
-                  <th className={TH}>รายการ</th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
                   <th className={TH}>ประเภท</th>
                   <th className={TH}>จาก</th>
                   <th className={TH}>ไป</th>
-                  <th className={TH}>สถานะ</th>
+                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>

@@ -367,11 +367,13 @@ export default function CoreContactsPage() {
           {!data.needQuery && (
             <TableWrap>
               <table className="w-full min-w-[860px]">
+                {/* 🔃 คอลัมน์ที่ **จอ ZORT กดเรียงได้** มี tooltip บอกว่าของเรายังเรียงไม่ได้ (ท่อเมิน sort ทุกค่า)
+                    วัดจอ ZORT จริง 16 ก.ย. 2569 — ติดเฉพาะช่องที่วัดมาแล้ว ห้ามเดา */}
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
                     <th className={TH} style={{ width: 44 }}>#</th>
-                    <th className={TH}>รหัส</th>
-                    <th className={TH}>ชื่อ</th>
+                    <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รหัส</span></th>
+                    <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ชื่อ</span></th>
                     <th className={TH}>เลขประจำตัวผู้เสียภาษี</th>
                     <th className={TH}>เบอร์โทรศัพท์</th>
                     <th className={TH}>อีเมล</th>
