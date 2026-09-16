@@ -11,6 +11,11 @@
   var SHARED_KEYS=[LS_OVR,LS_CAT,LS_CATNEW,LS_FAC,LS_CATDONE,LS_PICKED,LS_ADDED];
   var origSetItem=localStorage.setItem.bind(localStorage);
   var timer=null;
+  /* 🔒 ด่านกันข้อมูลหาย (16 ก.ย. 2569) — ดูเหตุผลเต็มหัวคอมมิต
+     พร้อมส่ง = โหลดจากเซิร์ฟเวอร์เสร็จแล้วเท่านั้น
+     ก่อนหน้านั้นห้ามส่งอะไรขึ้นไปเด็ดขาด ไม่งั้นเครื่องที่ข้อมูลว่างจะทับของจริง */
+  var พร้อมส่ง=false;
+  var จากเซิร์ฟเวอร์=null;
   function getAll(){
     return {
       ovr: JSON.parse(localStorage.getItem(LS_OVR)||"{}"),
@@ -22,10 +27,26 @@
       added: JSON.parse(localStorage.getItem(LS_ADDED)||"[]")
     };
   }
+  /* ⚠️ ของว่างทับของไม่ว่างไม่ได้ — คืนสำเนาที่ปลอดภัยไปส่งแทน */
+  function กันของว่างทับ(payload){
+    if(!จากเซิร์ฟเวอร์) return payload;
+    var out={}, k;
+    for(k in payload){
+      var ใหม่=payload[k], เดิม=จากเซิร์ฟเวอร์[k];
+      var ใหม่ว่าง = !ใหม่ || (ใหม่.length===0) || (typeof ใหม่==='object' && !Array.isArray(ใหม่) && Object.keys(ใหม่).length===0);
+      var เดิมไม่ว่าง = เดิม && ((เดิม.length>0) || (typeof เดิม==='object' && !Array.isArray(เดิม) && Object.keys(เดิม).length>0));
+      if(ใหม่ว่าง && เดิมไม่ว่าง){
+        out[k]=เดิม;
+        console.warn('กันไว้: ไม่ส่งของว่างไปทับ '+k+' ที่เซิร์ฟเวอร์มีข้อมูลอยู่');
+      } else out[k]=ใหม่;
+    }
+    return out;
+  }
   function queueSync(){
+    if(!พร้อมส่ง) return;      /* ยังไม่รู้ว่าบนเซิร์ฟเวอร์มีอะไร ⇒ ห้ามเขียนทับ */
     clearTimeout(timer);
     timer=setTimeout(function(){
-      fetch("/api/catalog/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(getAll())}).catch(function(){});
+      fetch("/api/catalog/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(กันของว่างทับ(getAll()))}).catch(function(){});
     },600);
   }
   localStorage.setItem=function(k,v){
@@ -97,7 +118,7 @@
     },Promise.resolve(false));
   }
   function pushNow(){
-    return fetch("/api/catalog/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(getAll())}).catch(function(){});
+    return fetch("/api/catalog/state",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(กันของว่างทับ(getAll()))}).catch(function(){});
   }
   // ═══════════════════════════════════════════════════════════════════════
 
@@ -106,6 +127,9 @@
   //    ⇒ เซิร์ฟเวอร์แค่อ่านไม่ได้ชั่วคราว แต่ผลคือข้อมูลกลางถูกเขียนทับด้วยของเครื่องเดียว
   //    ⇒ "ไม่รู้" ต้องแปลว่า "ไม่ทำอะไร" ไม่ใช่ "ถือว่าไม่มี"
   fetch("/api/catalog/state",{cache:"no-store"}).then(function(r){return r.ok?r.json():null;}).then(function(j){
+    /* 🔒 อ่านไม่ได้ = ไม่เปิดธง ⇒ ไม่ส่งอะไรขึ้นไปเลยรอบนี้ */
+    if(j){ จากเซิร์ฟเวอร์={ovr:j.ovr,catMap:j.catMap,catNew:j.catNew,facs:j.facs,
+                            catDone:j.catDone,picked:j.picked,added:j.added}; พร้อมส่ง=true; }
     if(!j){ console.warn("อ่านสถานะคลังอะไหล่จากเซิร์ฟเวอร์ไม่ได้ — ใช้ของในเครื่องต่อ และยังไม่ดันขึ้นเซิร์ฟเวอร์"); return; }
     if(j&&j.exists){
       var newOvr=JSON.stringify(j.ovr||{});
