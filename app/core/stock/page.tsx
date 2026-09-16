@@ -94,6 +94,11 @@ interface Resp {
 }
 
 const PAGE = 50
+/* 📏 **จำนวนต่อหน้า — ชุดเดียวกับ ZORT เป๊ะ** (อ่านจากจอจริง `/Product/list` 16 ก.ย. 2569: 10/20/50/100)
+   ZORT ตั้งต้นที่ 20 · จอนี้ตั้งต้นที่ 50 มาแต่เดิม **คงไว้** เพราะเปลี่ยนแล้วคนที่ใช้อยู่ต้องกดไล่หน้าถี่ขึ้น
+   (ค่าตั้งต้นต่างกันไม่ทำให้คนงง เพราะเลือกได้เองและเขียนกำกับไว้ — ต่างจากตัวเลือกที่ไม่มีให้เลือกเลย) */
+const PAGE_CHOICES = [10, 20, 50, 100]
+
 const SORTS = [
   { id: 'qty', label: 'ของใกล้หมดก่อน' },
   { id: 'sold', label: 'ขายดีก่อน' },
@@ -120,6 +125,7 @@ function CoreStockInner() {
   //    ไม่งั้นวันหนึ่งจะมีคนหา "ค่าบริการซ่อม" แล้วไม่เจอ นึกว่าข้อมูลหาย
   const [kind, setKind] = useState<'goods' | 'all'>('goods')
   const [offset, setOffset] = useState(0)
+  const [perPage, setPerPage] = useState(PAGE)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -136,14 +142,14 @@ function CoreStockInner() {
 
   /* ⚠️ `qText` ต้องรับเป็นพารามิเตอร์ได้ — `setQ()` ยังไม่มีผลในรอบเดียวกัน
      ⇒ ปุ่ม "ค้นทีละคำ" ที่ setQ แล้วเรียก load() เฉย ๆ จะยิงด้วยคำเดิม (เจอคลาสนี้มาแล้วที่จอเอกสารบัญชี) */
-  const load = useCallback(async (off = 0, sortId = sort, tabId = tab, kindId = kind, qText = q) => {
+  const load = useCallback(async (off = 0, sortId = sort, tabId = tab, kindId = kind, qText = q, size = perPage) => {
     setLoading(true)
     setError('')
     try {
       // ⚠️ `marketplaces=1` ต้องส่งเสมอ ไม่งั้นคอลัมน์ Marketplace ว่างทุกแถวแบบเงียบ ๆ
       //    (ยิงของจริงเทียบแล้ว: ไม่ส่ง → marketplaces:null · ส่ง → ['shopee'] · 3 ก.ย. 2569)
       const qs = new URLSearchParams({
-        list: 'stock', sort: sortId, limit: String(PAGE), offset: String(off), marketplaces: '1',
+        list: 'stock', sort: sortId, limit: String(size), offset: String(off), marketplaces: '1',
       })
       // กรองฝั่งเซิร์ฟเวอร์แล้ว — แท็บจึงกรองทั้งคลังจริง ไม่ใช่แค่หน้าที่กำลังดู
       if (tabId !== 'all') qs.set('only', tabId)
@@ -179,7 +185,7 @@ function CoreStockInner() {
     } finally {
       setLoading(false)
     }
-  }, [q, sort, tab, kind])
+  }, [q, sort, tab, kind, perPage])
 
   /* โหลดครั้งแรก + เมื่อหมวดเปลี่ยน — `q` ตั้งต้นจาก URL ถูกส่งไปด้วยเพราะ `load` อ่านค่าจาก state ปัจจุบัน
      ⚠️ ห้ามใส่ `q` ใน deps — ไม่งั้นจอจะยิงท่อทุกตัวอักษรที่พิมพ์ (ช่องค้นหาต้องกด Enter เท่านั้น) */
@@ -531,14 +537,40 @@ function CoreStockInner() {
           <TableWrap>
             <table className="w-full min-w-[920px]">
               <thead className="bg-white border-b border-gray-200">
+                {/* 🔃 **กดหัวคอลัมน์เพื่อเรียง — ทำเท่าที่ท่อเรียงได้จริงเท่านั้น**
+                    จอ ZORT `/Product/list` กดเรียงได้ 6 คอลัมน์: รหัส · ชื่อสินค้า · ราคาซื้อ · ราคาขาย · คงเหลือ · พร้อมขาย
+                    ยิงท่อทดสอบแล้ว 16 ก.ย. 2569: `?list=stock&sort=` รับจริงแค่ **qty · sold · sku**
+                    ค่าที่ไม่รู้จัก (price · name · buy · available) **ตกกลับเป็น qty เงียบ ๆ ตอบ 200 เหมือนเดิม**
+                    ⇒ ทำหัวคอลัมน์ให้กดได้ทั้ง 6 = **ปุ่มหลอก** 4 อัน (กดแล้วลำดับไม่เปลี่ยน ไม่มีอะไรบอก)
+                       จึงกดได้เฉพาะสองอันที่เรียงได้จริง ที่เหลือเขียนเหตุผลไว้ใน tooltip + ขอไปที่ท่อแล้ว */}
                 <tr>
                   <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}>รหัส</th>
-                  <th className={TH}>ชื่อสินค้า</th>
-                  <th className={THR}>ราคาซื้อ</th>
-                  <th className={THR}>ราคาขาย</th>
-                  <th className={THR}>คงเหลือ</th>
-                  <th className={THR}>พร้อมขาย</th>
+                  <th className={TH}>
+                    <button type="button" onClick={() => { setSort('sku'); load(0, 'sku') }}
+                      className="hover:underline" title="เรียงตามรหัสสินค้า (ท่อเรียงให้ทั้งชุด ไม่ใช่แค่หน้านี้)">
+                      รหัส{sort === 'sku' && ' ↑'}
+                    </button>
+                  </th>
+                  <th className={TH}>
+                    <span title="จอ ZORT กดเรียงช่องนี้ได้ แต่ท่อของเรายังเรียงตามชื่อไม่ได้ (ส่ง sort=name ไปแล้วมันตกกลับเป็นเรียงตามของใกล้หมด) — ขอฝั่งท่อไว้แล้ว ยังไม่ทำปุ่มที่กดแล้วไม่เกิดอะไร">
+                      ชื่อสินค้า
+                    </span>
+                  </th>
+                  <th className={THR}>
+                    <span title="จอ ZORT กดเรียงช่องนี้ได้ แต่ท่อของเรายังเรียงตามราคาซื้อไม่ได้ — ขอฝั่งท่อไว้แล้ว">ราคาซื้อ</span>
+                  </th>
+                  <th className={THR}>
+                    <span title="จอ ZORT กดเรียงช่องนี้ได้ แต่ท่อของเรายังเรียงตามราคาขายไม่ได้ — ขอฝั่งท่อไว้แล้ว">ราคาขาย</span>
+                  </th>
+                  <th className={THR}>
+                    <button type="button" onClick={() => { setSort('qty'); load(0, 'qty') }}
+                      className="hover:underline" title="เรียงจากของใกล้หมดก่อน (ท่อเรียงให้ทั้งชุด ไม่ใช่แค่หน้านี้)">
+                      คงเหลือ{sort === 'qty' && ' ↑'}
+                    </button>
+                  </th>
+                  <th className={THR}>
+                    <span title="จอ ZORT กดเรียงช่องนี้ได้ แต่ท่อของเรายังเรียงตามจำนวนพร้อมขายไม่ได้ — ขอฝั่งท่อไว้แล้ว">พร้อมขาย</span>
+                  </th>
                   {/* 🔴 **เคยเขียนไว้ว่า "API ไม่ส่งข้อมูลผูกสินค้ากับร้านมาร์เก็ตเพลสมาเลย
                       ⇒ ใส่ขีด" แล้วค้าง** — ท่อส่ง `marketplaces` มาตั้งแต่ 3 ก.ย. 2569
                       จอรายละเอียดสินค้ากับจอสินค้าชุดวาดโลโก้ได้มาตลอด **แต่จอนี้ยังขีดตายอยู่**
@@ -698,10 +730,20 @@ function CoreStockInner() {
                 )}
               </span>
               <div className="flex gap-2">
-                <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>
+                {/* 📏 จำนวนต่อหน้า — ZORT มีตัวเลือกนี้ทุกจอรายการ คนคุ้นกับการเปลี่ยนเอง
+                    ⚠️ เปลี่ยนแล้วต้องกลับไปหน้าแรก ไม่งั้น offset เดิมจะชี้กลางชุดแล้วคนงงว่าแถวหาย */}
+                <span className="text-[12px] text-gray-500 self-center">จำนวนต่อหน้า</span>
+                <select
+                  value={perPage}
+                  onChange={(e) => { const n = Number(e.target.value); setPerPage(n); load(0, sort, tab, kind, q, n) }}
+                  className="text-[13px] border border-gray-300 rounded px-2 py-1.5 bg-white"
+                >
+                  {PAGE_CHOICES.map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+                <BtnGhost onClick={() => load(Math.max(0, offset - perPage))} disabled={loading || offset === 0}>
                   ← ก่อนหน้า
                 </BtnGhost>
-                <BtnGhost onClick={() => load(offset + PAGE)} disabled={loading || shown >= inTab}>
+                <BtnGhost onClick={() => load(offset + perPage)} disabled={loading || shown >= inTab}>
                   ถัดไป →
                 </BtnGhost>
               </div>
