@@ -23,7 +23,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav,} from '@/components/zort'
+  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 
@@ -320,10 +320,10 @@ export default function CorePurchasesPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 34 }}>
-                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                    <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
-                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < rows.length }}
-                      onChange={(e) => setPicked(e.target.checked ? rows.map((r) => String(r.number)) : [])} />
+                      indeterminate={picked.length > 0 && picked.length < rows.length}
+                      onChange={(v) => setPicked(v ? rows.map((r) => String(r.number)) : [])} />
                   </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
@@ -345,9 +345,9 @@ export default function CorePurchasesPage() {
                 {rows.map((r, i) => (
                   <tr key={r.number} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(String(r.number)) ? 'bg-[#eef1fa]' : ''}`}>
                     <td className={TD}>
-                      <input type="checkbox" aria-label={`เลือก ${r.number}`}
+                      <RowCheck label={`เลือก ${r.number}`}
                         checked={picked.includes(String(r.number))}
-                        onChange={(e) => setPicked((old) => (e.target.checked ? [...old, String(r.number)] : old.filter((x) => x !== String(r.number))))} />
+                        onChange={(v) => setPicked((old) => (v ? [...old, String(r.number)] : old.filter((x) => x !== String(r.number))))} />
                     </td>
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>

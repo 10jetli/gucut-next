@@ -22,8 +22,7 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav,
-} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import BlockedStock from '@/components/zort/BlockedStock'
 
@@ -611,10 +610,10 @@ function CoreStockInner() {
                   <th className={TH} style={{ width: 34 }}>
                     {/* ติ๊กทั้งหน้า — **ทั้งหน้าเท่านั้น ไม่ใช่ทั้งคลัง** (ZORT ก็เลือกได้แค่หน้าที่เห็น)
                         ป้ายบอกจำนวนอยู่ในแถบคำสั่งข้างบน จะได้ไม่มีใครเข้าใจว่าเลือกครบ 2,666 รหัส */}
-                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                    <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
-                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < rows.length }}
-                      onChange={(e) => setPicked(e.target.checked ? rows.map((r) => r.sku) : [])} />
+                      indeterminate={picked.length > 0 && picked.length < rows.length}
+                      onChange={(v) => setPicked(v ? rows.map((r) => r.sku) : [])} />
                   </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>
@@ -668,9 +667,9 @@ function CoreStockInner() {
                 {rows.map((r, i) => (
                   <tr key={r.sku} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(r.sku) ? 'bg-[#eef1fa]' : ''}`}>
                     <td className={TD}>
-                      <input type="checkbox" aria-label={`เลือก ${r.sku}`}
+                      <RowCheck label={`เลือก ${r.sku}`}
                         checked={picked.includes(r.sku)}
-                        onChange={(e) => setPicked((old) => (e.target.checked ? [...old, r.sku] : old.filter((x) => x !== r.sku)))} />
+                        onChange={(v) => setPicked((old) => (v ? [...old, r.sku] : old.filter((x) => x !== r.sku)))} />
                     </td>
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>

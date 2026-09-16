@@ -56,6 +56,45 @@ export function PageHead({
   )
 }
 
+/* ── ช่องติ๊กเลือกแถว ──────────────────────────────────────────────────
+   🔴 **วัดของจริง 16 ก.ย. 2569 บนความกว้างแท็บเล็ต (820px)**: ช่องติ๊กมาตรฐานของเบราว์เซอร์
+      มีขนาดกดได้แค่ **13×13 px** ทั้งที่ช่องตารางกว้าง 37×100 px
+      ⇒ ร้านใช้แท็บเล็ตที่หน้าเคาน์เตอร์ · นิ้วคนกดพลาดบ่อยและไปโดนแถว (ทั้งแถวเปิดรายละเอียด)
+      ⇒ ใช้ `label` ครอบให้ **ทั้งช่องเป็นเป้ากด** และขยายตัวช่องเป็น 16px
+   ⚠️ ทั้งแถวของบางจอกดแล้วเปิดใบ ⇒ ต้อง `stopPropagation` ที่ตัวป้าย ไม่งั้นติ๊กแล้วจอเด้ง */
+export function RowCheck({ checked, onChange, label, disabled, title, indeterminate }: {
+  checked: boolean
+  onChange: (v: boolean) => void
+  /** ข้อความสำหรับเครื่องอ่านหน้าจอ เช่น `เลือก ${sku}` */
+  label: string
+  disabled?: boolean
+  title?: string
+  /** ติ๊กบางส่วน (ใช้กับช่องติ๊กหัวตาราง) */
+  indeterminate?: boolean
+}) {
+  return (
+    <label
+      /* ⚠️ ช่องแรกของตารางแคบ (~16px) ⇒ `w-full` ไม่ช่วยอะไร — ต้องกำหนดเป้ากดขั้นต่ำเอง
+         32×32 เป็นขั้นต่ำที่พอสำหรับนิ้ว (ยังไม่ถึง 44 ของ Apple แต่ไม่ดันคอลัมน์อื่นจนเบียด) */
+      /* ⚠️ ไม่ใช้ระยะขอบติดลบดึงเป้ากดออกนอกช่อง — เคยลองแล้วเป้าไปทับแถว/หัวตารางข้าง ๆ
+         แล้วกดมุมล่างซ้ายไม่ติ๊ก (วัดจริง 16 ก.ย. 2569) ⇒ ให้เป้าอยู่ในช่องของตัวเอง */
+      className={`flex min-w-[32px] min-h-[32px] items-center justify-center ${disabled ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+      title={title}
+      onClick={(e) => e.stopPropagation()}
+    >
+      <input
+        type="checkbox"
+        aria-label={label}
+        className="w-4 h-4"
+        checked={checked}
+        disabled={disabled}
+        ref={(el) => { if (el) el.indeterminate = !!indeterminate }}
+        onChange={(e) => onChange(e.target.checked)}
+      />
+    </label>
+  )
+}
+
 /* ── ปุ่ม ──────────────────────────────────────────────────────────────
    ZORT ใช้ปุ่มทรงแคปซูล — ปุ่มรองพื้นขาวขอบเทา · ปุ่มหลักพื้นน้ำเงินเข้ม */
 export function BtnPrimary({ children, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement>) {

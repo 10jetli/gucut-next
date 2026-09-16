@@ -24,8 +24,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  EmptyState, ChannelTag, thaiDate, Pill,
-} from '@/components/zort'
+  EmptyState, ChannelTag, thaiDate, Pill, RowCheck,} from '@/components/zort'
 
 interface Job {
   /** id จริงของใบ (`z1/<number>`) — ท่อเริ่มส่งมา 9 ก.ย. 2569 · ท่อรุ่นก่อนไม่มี ⇒ ต้องเป็น optional */
@@ -275,10 +274,10 @@ export default function PackingPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 34 }}>
-                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                    <RowCheck label="เลือกทั้งหน้า"
                       checked={เลือกได้.length > 0 && picked.length === เลือกได้.length}
-                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < เลือกได้.length }}
-                      onChange={(e) => setPicked(e.target.checked ? เลือกได้.map((j) => j.id as string) : [])} />
+                      indeterminate={picked.length > 0 && picked.length < เลือกได้.length}
+                      onChange={(v) => setPicked(v ? เลือกได้.map((j) => j.id as string) : [])} />
                   </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>เลขที่ใบ</th>
@@ -301,11 +300,11 @@ export default function PackingPage() {
                   return (
                     <tr key={j.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={TD}>
-                        <input type="checkbox" aria-label={`เลือก ${j.number}`}
+                        <RowCheck label={`เลือก ${j.number}`}
                           disabled={!j.id}
                           title={j.id ? undefined : 'ท่อไม่ได้ส่งรหัสใบมา ⇒ พิมพ์ใบจัดเตรียมจากแถวนี้ไม่ได้ (กดที่เลขที่ใบเพื่อเปิดใบแทน)'}
                           checked={!!j.id && picked.includes(j.id)}
-                          onChange={(e) => setPicked((old) => (e.target.checked ? [...old, j.id as string] : old.filter((x) => x !== j.id)))} />
+                          onChange={(v) => setPicked((old) => (v ? [...old, j.id as string] : old.filter((x) => x !== j.id)))} />
                       </td>
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={TD}>

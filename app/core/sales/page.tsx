@@ -16,7 +16,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav,} from '@/components/zort'
+  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
@@ -834,10 +834,10 @@ export default function CoreSalesPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH} style={{ width: 34 }}>
-                    <input type="checkbox" aria-label="เลือกทั้งหน้า"
+                    <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
-                      ref={(el) => { if (el) el.indeterminate = picked.length > 0 && picked.length < rows.length }}
-                      onChange={(e) => setPicked(e.target.checked ? rows.map((r) => r.id) : [])} />
+                      indeterminate={picked.length > 0 && picked.length < rows.length}
+                      onChange={(v) => setPicked(v ? rows.map((r) => r.id) : [])} />
                   </th>
                   <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
@@ -866,9 +866,9 @@ export default function CoreSalesPage() {
                     {/* ⚠️ ทั้งแถวกดแล้วเปิดรายละเอียด ⇒ ช่องติ๊กต้อง stopPropagation
                         ไม่งั้นติ๊กทีเดียวได้ทั้งติ๊กและเด้งเข้าใบ (ผู้ใช้จะงงว่าทำไมจอเปลี่ยน) */}
                     <td className={TD} onClick={(e) => e.stopPropagation()}>
-                      <input type="checkbox" aria-label={`เลือก ${r.number}`}
+                      <RowCheck label={`เลือก ${r.number}`}
                         checked={picked.includes(r.id)}
-                        onChange={(e) => setPicked((old) => (e.target.checked ? [...old, r.id] : old.filter((x) => x !== r.id)))} />
+                        onChange={(v) => setPicked((old) => (v ? [...old, r.id] : old.filter((x) => x !== r.id)))} />
                     </td>
                     <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     {/* ZORT เขียน "วันนี้/เมื่อวานนี้" ไม่ใช่วันที่ดิบ — อ่านเร็วกว่าตอนกวาดตา */}
