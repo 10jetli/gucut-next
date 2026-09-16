@@ -17,7 +17,7 @@ import {
 
 interface Report {
   range: { from: string; to: string; days: number }
-  totals: { sales: number; orders: number; avg: number; prevSales: number; prevOrders: number }
+  totals: { sales: number | null; orders: number | null; avg: number | null; prevSales: number | null; prevOrders: number | null }
   /** 🔴 **ใบคืนของใบขายในตัวกรองนี้** — ท่อคิดมาให้แล้ว (gucut-web bea658d · 15 ก.ย. 2569)
    *  `null` = อ่านตารางใบคืนไม่ได้ ⇒ "ยังไม่รู้" **ห้ามแสดง 0**
    *  ⚠️ เดิมจอนับเอง จาก "ใบคืนที่ออกในช่วงนี้" ซึ่ง **คนละคำถาม** กับ
@@ -70,8 +70,12 @@ async function fetchRange(from: string, to: string) {
      ห้ามแปลงเป็น 0 ตรงนี้ — 0 แปลว่าไม่มีใครคืนของ ซึ่งคนละเรื่องกัน */
   const num = (v: unknown) => (typeof v === 'number' ? v : null)
   return {
-    total: Number(d.total ?? 0),
-    amount: Number(d.totalAmount ?? 0),
+    /* 🔴 **กฎเดียวกับ returnedCount ข้างบน แต่เดิมไม่ได้ใช้กับสองช่องนี้** (แก้ 16 ก.ย. 2569)
+       `Number(d.total ?? 0)` ทำให้ "ท่อไม่ได้บอกจำนวน" กลายเป็น **0 ใบ** บนจอ
+       และ "ท่อไม่ได้บอกยอด" กลายเป็น **0 บาท** ⇒ เลข 0 บนจอเงินคือเลขที่แพงที่สุด
+       (เจอด้วยท่อปลอมโหมด partialgood: จอสรุปยอดขายเขียน "0 ใบ · เฉลี่ยใบละ 0 บาท") */
+    total: num(d.total),
+    amount: num(d.totalAmount),
     channels: (Array.isArray(d.byChannel) ? d.byChannel : []) as CoreChan[],
     returnedCount: num(d.returnedCount),
     returnedAmount: num(d.returnedAmount),
@@ -160,9 +164,11 @@ function groupDaily(daily: Report['daily'], b: Bucket): Report['daily'] {
 function downloadSummary(report: Report) {
   const lines = [
     ['ช่วงวันที่', `${report.range.from} ถึง ${report.range.to}`],
-    ['ยอดขายรวม (บาท)', String(report.totals.sales)],
-    ['จำนวนใบขาย', String(report.totals.orders)],
-    ['เฉลี่ยต่อใบ (บาท)', String(Math.round(report.totals.avg))],
+    /* ⚠️ null = ท่อไม่ได้บอก ⇒ ไฟล์ต้องเขียน "ยังไม่รู้" ไม่ใช่ 0 และไม่ใช่คำว่า null
+       (ไฟล์นี้ถูกเอาไปทำบัญชีต่อ — 0 ในไฟล์คือตัวเลขที่คนเชื่อ) */
+    ['ยอดขายรวม (บาท)', report.totals.sales === null ? 'ยังไม่รู้ — ท่อไม่ได้ส่งยอดมา' : String(report.totals.sales)],
+    ['จำนวนใบขาย', report.totals.orders === null ? 'ยังไม่รู้ — ท่อไม่ได้ส่งจำนวนมา' : String(report.totals.orders)],
+    ['เฉลี่ยต่อใบ (บาท)', report.totals.avg === null ? 'ยังไม่รู้' : String(Math.round(report.totals.avg))],
     /* 🔴 **ไฟล์ที่โหลดออกไปต้องมีคำกำกับเหมือนบนจอ** — ไม่งั้นยอดที่ยังไม่หักใบคืน
        หลุดออกไปอยู่ในไฟล์ที่คนเอาไปทำบัญชีต่อ โดยไม่มีอะไรบอกว่ามันเกินจริง
        ⚠️ ดึงไม่สำเร็จก็ต้องเขียนว่า "ยังไม่รู้" ห้ามเว้นว่างหรือใส่ 0 */
@@ -172,7 +178,9 @@ function downloadSummary(report: Report) {
     ...(report.returns === null ? [] : [
       ['มูลค่าที่ถูกคืน (บาท)', String(report.returns.amount)],
       /* ✅ ไม่ใช่ "โดยประมาณ" อีกแล้ว — ท่อจับคู่ใบคืนกับใบขายในขอบเขตเดียวกับตัวกรองนี้ */
-      ['ยอดขายสุทธิหลังหักใบคืน (บาท)', String(Math.round((report.totals.sales - report.returns.amount) * 100) / 100)],
+      ['ยอดขายสุทธิหลังหักใบคืน (บาท)', report.totals.sales === null
+        ? 'ยังไม่รู้ — ท่อไม่ได้ส่งยอดขายมา จึงหักใบคืนไม่ได้'
+        : String(Math.round((report.totals.sales - report.returns.amount) * 100) / 100)],
       /* 🔴 ขอบเขตต้องมาจากท่อ ไม่ใช่เขียนเอง — ท่อรู้ว่าตัวเองจับคู่ด้วยอะไร */
       ...(report.returnsScope ? [['ขอบเขตการหักใบคืน', report.returnsScope]] : []),
       /* 🔴 ใบคืนที่หาใบขายต้นทางไม่เจอ = ไม่ได้ถูกหัก ⇒ ต้องอยู่ในไฟล์ด้วย
@@ -507,9 +515,10 @@ export default function SalesReportPage() {
       setReport({
         range: { from, to, days: d },
         totals: {
+          /* null = ท่อไม่ได้บอก ⇒ จอเขียน "ยังไม่รู้" · 0 = บอกแล้วว่าไม่มี (คนละเรื่อง) */
           sales: cur.amount,
           orders: cur.total,
-          avg: cur.total ? cur.amount / cur.total : 0,
+          avg: cur.total === null || cur.amount === null ? null : (cur.total ? cur.amount / cur.total : 0),
           prevSales: prev.amount,
           prevOrders: prev.total,
         },
@@ -696,11 +705,23 @@ export default function SalesReportPage() {
                     <ReportKindSelect />
                   </div>
                   <div className="flex flex-col items-center justify-center py-8">
+                    {/* 🔴 **ท่อไม่ส่งตัวเลขมา ≠ ยอดเป็นศูนย์** (เจอด้วยท่อปลอมโหมด partialgood 16 ก.ย. 2569)
+                        เดิมจอเขียน "0 ใบ · เฉลี่ยใบละ 0 บาท" เมื่อ `totals` ขาดช่อง
+                        ⇒ ยืนยันเลข 0 เป็นข้อเท็จจริงทั้งที่แค่ยังไม่รู้ · เลข 0 บนจอเงินคือเลขที่แพงที่สุด
+                        ⇒ ไม่มีตัวเลขจริง ⇒ เขียน "ยังไม่รู้" ตรง ๆ (กฎสามสถานะของโปรเจกต์) */}
                     <p className="text-[34px] font-semibold text-blue-600 leading-none">
-                      {fmtMoney(report.totals.sales)}
+                      {typeof report.totals?.sales === 'number'
+                        ? fmtMoney(report.totals.sales)
+                        : <span className="text-[20px] text-amber-700">ยังไม่รู้ยอดขาย</span>}
                     </p>
                     <p className="text-[12.5px] text-gray-500 mt-2">
-                      {fmtNum(report.totals.orders)} ใบ · เฉลี่ยใบละ {fmtMoney(report.totals.avg)} บาท
+                      {typeof report.totals?.orders === 'number'
+                        ? <>{fmtNum(report.totals.orders)} ใบ</>
+                        : <span className="text-amber-700">ยังไม่รู้จำนวนใบ</span>}
+                      {' · '}
+                      {typeof report.totals?.avg === 'number'
+                        ? <>เฉลี่ยใบละ {fmtMoney(report.totals.avg)} บาท</>
+                        : <span className="text-amber-700">ยังไม่รู้ค่าเฉลี่ย</span>}
                     </p>
 
                     {/* 🔴 **ยอดข้างบนยังไม่ได้หักของที่ลูกค้าคืน** — ZORT ไม่พลิกสถานะใบเดิม
@@ -729,7 +750,9 @@ export default function SalesReportPage() {
                         ใบขายในช่วงนี้ที่ถูกคืน <b>{fmtNum(report.returns.count)} ใบ</b>
                         {' '}รวม <b>{fmtMoney(report.returns.amount)}</b> บาท
                         <br />
-                        ⇒ <b>ยอดสุทธิ {fmtMoney(report.totals.sales - report.returns.amount)} บาท</b>
+                        ⇒ <b>{report.totals.sales === null
+                          ? 'ยังไม่รู้ยอดสุทธิ (ท่อไม่ได้ส่งยอดขายมา)'
+                          : `ยอดสุทธิ ${fmtMoney(report.totals.sales - report.returns.amount)} บาท`}</b>
                         {/* 🔴 ใบคืนที่หาใบขายต้นทางไม่เจอ = **ไม่ได้ถูกหักออก** ⇒ ต้องบอก ห้ามเงียบ
                             และมันไม่ผูกกับตัวกรองร้าน/ช่องทาง ⇒ เอาไปรวมเองไม่ได้ */}
                         {report.unmatchedReturns && report.unmatchedReturns.count > 0 && (
