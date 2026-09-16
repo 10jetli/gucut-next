@@ -50,6 +50,10 @@ interface Resp {
   limit: number
   offset: number
   byStatus?: { status: string; c: number }[]
+  /** เงื่อนไขที่ท่อ **ใช้จริง** — มีไว้ให้จอตรวจว่าที่ขอไปกับที่ได้มาตรงกันไหม
+   *  🔴 กฎประจำโปรเจกต์: **ตอบ 200 ไม่ได้แปลว่าทำให้** ⇒ ถ้าท่อบอกมาแล้ว จอต้องเอามาเทียบ
+   *  ⚠️ ท่อรุ่นก่อนไม่มีช่องนี้ (undefined) ⇒ ห้ามถือว่า "ไม่ตรง" ต้องข้ามการตรวจไปเฉย ๆ */
+  applied?: { q?: string | null; limit?: number | null; offset?: number | null; from?: string | null; to?: string | null }
   rows: Row[]
 }
 
@@ -268,6 +272,25 @@ export default function CorePurchasesPage() {
               {loading ? '⏳' : '⟳'}
             </button>
           </div>
+
+          {/* ✅ **ด่านเทียบ "ที่ขอไป" กับ "ที่ท่อใช้จริง"** — ท่อส่ง `applied` มาให้แล้ว
+              🔴 เหตุ: ถ้าวันหนึ่งท่อเมินคำค้นหรือหั่น `limit` ลงเงียบ ๆ จอจะโชว์ของชุดอื่น
+                 โดยไม่มีอะไรฟ้อง (คลาสเดียวกับที่เจอกับ `status` ของเส้นนี้เอง)
+              ⚠️ ท่อรุ่นก่อนไม่ส่ง `applied` ⇒ ข้ามการตรวจ ไม่ใช่ฟ้องว่าไม่ตรง */}
+          {data?.applied && (
+            (q.trim() ? (data.applied.q ?? '') !== q.trim() : !!(data.applied.q ?? '')) ||
+            (typeof data.applied.limit === 'number' && data.applied.limit !== perPage) ||
+            (typeof data.applied.offset === 'number' && data.applied.offset !== offset)
+          ) && (
+            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
+              ⚠️ <b>ท่อใช้เงื่อนไขไม่ตรงกับที่จอส่งไป</b> — จอขอ: คำค้น “{q.trim() || '(ไม่ได้ค้น)'}” ·
+              ครั้งละ {fmtNum(perPage)} · เริ่มที่แถว {fmtNum(offset)}
+              {' '}· ท่อใช้จริง: คำค้น “{data.applied.q || '(ไม่ได้ค้น)'}” ·
+              ครั้งละ {typeof data.applied.limit === 'number' ? fmtNum(data.applied.limit) : 'ไม่บอก'} ·
+              เริ่มที่แถว {typeof data.applied.offset === 'number' ? fmtNum(data.applied.offset) : 'ไม่บอก'}
+              <span className="block mt-0.5 text-gray-600">⇒ ตัวเลขและแถวที่เห็นเป็นของเงื่อนไขที่ท่อใช้ ไม่ใช่ของที่เพิ่งกด</span>
+            </p>
+          )}
 
           {/* 🔴 **แท็บนี้กรองในเครื่อง ไม่ใช่ที่เซิร์ฟเวอร์** — ต้องเขียนไว้ตามกฎแท็บใน CLAUDE.md
                  ท่อเมินพารามิเตอร์ `status` (ยิงพิสูจน์ 16 ก.ย. 2569: ส่ง Voided/Success/Pending

@@ -155,6 +155,30 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({ ok: true, rows: [{ id: 'v1', views: 120, half: 80, full: 40, likes: 9, comments: 2, dur: 31 }] }))
   }
+  /* ── รายการซื้อ (จอ /core/purchases) — มีไว้ทดสอบ **ด่านเทียบ `applied`** โดยเฉพาะ
+     🔴 ที่มา 17 ก.ย. 2569: ท่อจริงส่ง `applied` (q · limit · offset · from · to) มาให้แล้ว
+        จอจึงเทียบได้ว่า "ที่ขอไป" กับ "ที่ท่อใช้จริง" ตรงกันไหม — แต่ **ด่านที่ไม่เคยเห็นของไม่ตรง
+        ก็ยังไม่รู้ว่ามันจับได้จริงไหม** (บทเรียน guard-must-be-tested-with-planted-bug)
+     ⇒ โหมด good = `applied` ตรงกับที่ขอ (จอต้องเงียบ)
+        โหมด partialgood = `applied.q` **เพี้ยนไปจากที่ขอ** (จอต้องขึ้นคำเตือน) */
+  if ((mode === 'good' || mode === 'partialgood') && /[?&]list=purchases\b/.test(req.url)) {
+    const u = new URL(req.url, 'http://x')
+    const q = (u.searchParams.get('q') || '').trim()
+    const limit = Number(u.searchParams.get('limit')) || 50
+    const offset = Number(u.searchParams.get('offset')) || 0
+    const rows = [
+      { number: 'PO-ทดสอบ-1', vendor: 'ผู้ขายทดสอบ', po_date: '2026-09-10', status: 'Success', amount: 1000, payment_status: 'Paid', warehouse: 'NEW' },
+      { number: 'PO-ทดสอบ-2', vendor: 'ผู้ขายทดสอบ', po_date: '2026-09-11', status: 'Pending', amount: 2000, payment_status: 'Pending', warehouse: 'NEW' },
+    ]
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      ok: true, total: rows.length, amount: 3000, limit, offset, rows,
+      byStatus: [{ status: 'Success', c: 1 }, { status: 'Pending', c: 1 }],
+      applied: mode === 'partialgood'
+        ? { q: q ? q + 'เพี้ยน' : 'คำที่จอไม่ได้ขอ', limit: limit - 1, offset, from: null, to: null }
+        : { q: q || null, limit, offset, from: null, to: null },
+    }))
+  }
   if (mode === 'partialgood') {
     /* 🔴 **โหมดที่อันตรายที่สุด และควรใช้เป็นโหมดหลักในการกวาด** (บทเรียน 7 ก.ย. 2569)
        ตอบ 200 พร้อมก้อนที่ "ถูกรูปแต่ขาดช่องลูก" ⇒ ผ่านด่าน `x ? …` ทุกด่าน
