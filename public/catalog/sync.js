@@ -113,16 +113,24 @@
       var newCatNew=JSON.stringify(j.catNew||[]);
       var newFac=JSON.stringify(j.facs||[]);
       var newDone=JSON.stringify(j.catDone||[]);
+      /* ➕ คีย์ที่เพิ่มมาทีหลัง — **ต้องอยู่ทางลงด้วย** ไม่ใช่แค่ทางขึ้น
+         (16 ก.ย. 2569: ลืมข้อนี้ ⇒ เพิ่ม 00531 เครื่องหนึ่งแล้วอีกเครื่องไม่เห็น) */
+      var newPicked=JSON.stringify(j.picked||[]);
+      var newAdded=JSON.stringify(j.added||[]);
       var changed = newOvr!==(localStorage.getItem(LS_OVR)||"{}") ||
                     newCat!==(localStorage.getItem(LS_CAT)||"{}") ||
                     newCatNew!==(localStorage.getItem(LS_CATNEW)||"[]") ||
                     newFac!==(localStorage.getItem(LS_FAC)||"[]") ||
-                    newDone!==(localStorage.getItem(LS_CATDONE)||"[]");
+                    newDone!==(localStorage.getItem(LS_CATDONE)||"[]") ||
+                    newPicked!==(localStorage.getItem(LS_PICKED)||"[]") ||
+                    newAdded!==(localStorage.getItem(LS_ADDED)||"[]");
       origSetItem(LS_OVR,newOvr);
       origSetItem(LS_CAT,newCat);
       origSetItem(LS_CATNEW,newCatNew);
       origSetItem(LS_FAC,newFac);
       origSetItem(LS_CATDONE,newDone);
+      origSetItem(LS_PICKED,newPicked);
+      origSetItem(LS_ADDED,newAdded);
       return applyOemSeed().then(function(seeded){
         if(seeded)return pushNow().then(function(){
           if(sessionStorage.getItem(SEED_FLAG))return;   // เติมไปแล้วรอบนึง ไม่ reload ซ้ำ

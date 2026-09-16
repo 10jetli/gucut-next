@@ -459,7 +459,9 @@ function render(){
   const keys=Object.keys(groups).sort((a,b)=>a.localeCompare(b,"en",{numeric:true}));
   const vis=COLS.filter(c=>colOn[c.key]);
   const app=document.getElementById("app");
-  if(!rows.length){app.innerHTML='<div class="empty">ไม่พบรายการที่ตรงกับเงื่อนไข</div>';return;}
+  /* 🔴 ทางนี้เคยคืนค่าออกก่อนอัปเดตปุ่ม ⇒ ค้นไม่เจอ (0 แถว) แต่ปุ่มยังขึ้น (2265)
+      ท่านประธานเห็นจากภาพหน้าจอ 16 ก.ย. 2569 */
+    if(!rows.length){app.innerHTML='<div class="empty">ไม่พบรายการที่ตรงกับเงื่อนไข</div>';renderPicks();updateBulkBtns();return;}
   const arrow=k=>state.sort.key===k?('<span class="arrow">'+(state.sort.dir>0?"▲":"▼")+'</span>'):"";
   app.innerHTML=keys.map(k=>{
     const head="<tr>"+vis.map(c=>'<th data-sort="'+c.key+'">'+c.label+" "+arrow(c.key)+"</th>").join("")+"</tr>";
