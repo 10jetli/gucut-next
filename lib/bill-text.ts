@@ -112,14 +112,14 @@ export function invoiceNoFromText(text: string): string | null {
   for (const label of NO_LABELS) {
     const lab = thaiLoose(label)
     // ⓐ ป้ายอยู่หน้า ค่าอยู่หลัง (รูปแบบปกติ)
-    for (const m of t.matchAll(new RegExp(`${lab}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'gi'))) {
+    for (const m of Array.from(t.matchAll(new RegExp(`${lab}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'gi')))) {
       const raw = m[1].replace(/[.,;]+$/, '')
       if (ใช้ได้(raw)) return raw.toUpperCase()
     }
     /* ⓑ **ค่าอยู่หน้า ป้ายอยู่หลัง** — เจอของจริงในใบ Adobe (16 ก.ย. 2569)
        ข้อความที่แกะจาก PDF ออกมาเป็น `1234567890Invoice Number` (คอลัมน์ขวาถูกอ่านก่อนหัวข้อ)
        ⇒ ถ้าไม่รองรับรูปนี้ จะไปหยิบค่าของป้ายอื่นมาผิดใบ (ตัวรุ่นแรกได้เลขจาก Invoice Date มา) */
-    for (const m2 of t.matchAll(new RegExp(`([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})\\s*${lab}`, 'gi'))) {
+    for (const m2 of Array.from(t.matchAll(new RegExp(`([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})\\s*${lab}`, 'gi')))) {
       const raw = m2[1].replace(/[.,;]+$/, '')
       if (ใช้ได้(raw)) return raw.toUpperCase()
     }
