@@ -1179,6 +1179,36 @@ const srv = createServer(async (req, res) => {
   /* แผนดันสต็อกรอบถัดไป (?stockpush=1) — โครงจากการยิงของจริง 11 ก.ย. 2569
      ⚠️ จงใจให้ **สามเจ้าไม่เหมือนกัน**: shopee ปกติ · lazada bucketsAddUp=false (ต้องขึ้นแดง)
         · tiktok ตอบ skip (ต้องขึ้นเหลือง ไม่ใช่ 0) — ทดสอบว่าจอแยกสามทิศได้จริง */
+  /* 🧪 สมุดสถานะดันสต็อก `?pushstate=1` (17 ก.ย. 2569 · ต่อจอเข้ากับสมุดของ CEO)
+     · stalepush  : ตัวกวาดเงียบ 3 ชม. + ยังซ้อม + ไม่เคยยืนยัน + มีรหัสถูกข้ามมา 3 วัน ⇒ ระบบเรา 🔴 · ออโต้ 🔴 · ถูกข้าม 🔴
+     · good       : กวาด 5 นาทีก่อน ยิงจริง · ยืนยัน 10 นาทีก่อน · ไม่มีค้าง
+                    🔑 channelsWithoutWriter = ["tiktok"] **จงใจตัด shopee ออก** ⇒ จอต้องเลิกขึ้น "ไม่มีตัวยิง" ของ Shopee เอง
+                    = พิสูจน์ว่าจออ่านรายชื่อจากท่อ ไม่ได้ฝังไว้
+     · pushinconclusive : ต่อฐานไม่ได้ ⇒ ต้องไม่มี 🟢 ที่อิงสมุด */
+  if (/[?&]pushstate=1/.test(req.url) && ['stalepush', 'good', 'pushinconclusive', 'pushok'].includes(mode)) {
+    const iso = (msAgo) => new Date(Date.now() - msAgo).toISOString()
+    const body = mode === 'pushinconclusive'
+      ? { inconclusive: true, why: 'ต่อฐานคลังเงาไม่ได้' }
+      /* pushok = ของจริงวันนี้ที่ดีแล้ว: มีตัวยิงช่องทางเดียว (Lazada) ยืนยัน 10 นาทีก่อน ⇒ Lazada ต้องขึ้น 🟢 ได้จริง */
+      : mode === 'pushok'
+        ? { ok: true, autoOn: true,
+            lastSweep: { at: iso(5 * 60e3), channel: 'lazada', mode: 'live', planned: 3, pushed: 3, rejected: 0, skipped: 0, ms: 7000, note: null },
+            counts: { ทั้งหมด: 74, เคยยืนยัน: 70, กำลังถูกข้าม: 0, มีข้อผิดพลาด: 0, ยืนยันล่าสุด: iso(10 * 60e3), ถูกข้ามนานสุดตั้งแต่: null },
+            stuck: [], channelsWithoutWriter: ['shopee', 'tiktok'] }
+      : mode === 'stalepush'
+        ? { ok: true, autoOn: true,
+            lastSweep: { at: iso(3 * 3600e3), channel: 'lazada', mode: 'dry', planned: 59, pushed: 0, rejected: 0, skipped: 15, ms: 9000, note: null },
+            counts: { ทั้งหมด: 74, เคยยืนยัน: 0, กำลังถูกข้าม: 15, มีข้อผิดพลาด: 0, ยืนยันล่าสุด: null, ถูกข้ามนานสุดตั้งแต่: iso(3 * 86400e3) },
+            stuck: [{ sku: 'T-NEG-1', channel: 'lazada', skip_reason: 'negative', skip_streak: 288, skip_first_at: iso(3 * 86400e3), last_error: null },
+                    { sku: 'T-UNK-1', channel: 'lazada', skip_reason: 'unknown', skip_streak: 12, skip_first_at: iso(3 * 3600e3), last_error: null }],
+            channelsWithoutWriter: ['shopee', 'tiktok'] }
+        : { ok: true, autoOn: true,
+            lastSweep: { at: iso(5 * 60e3), channel: 'lazada', mode: 'live', planned: 3, pushed: 3, rejected: 0, skipped: 0, ms: 7000, note: null },
+            counts: { ทั้งหมด: 74, เคยยืนยัน: 70, กำลังถูกข้าม: 0, มีข้อผิดพลาด: 0, ยืนยันล่าสุด: iso(10 * 60e3), ถูกข้ามนานสุดตั้งแต่: null },
+            stuck: [], channelsWithoutWriter: ['tiktok'] }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify(body))
+  }
   /* 🧪 โหมด stalepush — ทดสอบกระดานสถานะดันสต็อก (17 ก.ย. 2569 · ใบงานจอสถานะดันสต็อก)
      · log: Lazada ยิงสำเร็จล่าสุด **5 วันก่อน** ⇒ แถบอัปเดตออโต้ต้องขึ้น 🔴 (ไม่ใช่เขียว)
      · แผน Lazada: ตัวเลขจริงจากใบงาน (1,954 · ตรง 1,709 · ต่าง 42 · ติดลบ 5 · ไม่รู้จัก 10) + กองเดา/หลายรหัส ครบ 188

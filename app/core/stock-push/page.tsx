@@ -22,7 +22,7 @@ import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill } from '@/components/zort'
 import { thaiDate } from '@/lib/format'
 /* serverTimeMs อยู่ใน returns-api (เกิดจากบั๊กโซนเวลาตอนประกบ /returns) — ตัวเดียวกันใช้ทุกจอ */
-import PushStatusBoard, { thaiDateTime } from '@/components/zort/PushStatusBoard'
+import PushStatusBoard, { thaiDateTime, มีตัวยิง, type PushStateResp } from '@/components/zort/PushStatusBoard'
 
 interface PushRow { sku?: string; from?: number; to?: number; kind?: string }
 interface PushRound {
@@ -139,8 +139,6 @@ export default function StockPushPage() {
   const [log, setLog] = useState<PushRound[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  /** เวลาที่ท่อของเราตอบ log สำเร็จครั้งล่าสุด — ใช้กับแถบ "ออนไลน์ — ระบบเรา" */
-  const [logAt, setLogAt] = useState<number | null>(null)
   /* ผล verify ต่อรอบ — คีย์ = at ของรอบ */
   const [verify, setVerify] = useState<Record<string, VerifyResp | 'busy'>>({})
 
@@ -154,10 +152,29 @@ export default function StockPushPage() {
       if (!res.ok || d.error) throw new Error(d.error || `ท่อตอบ ${res.status}`)
       if (!Array.isArray(d.log)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี log)')
       setLog(d.log)
-      setLogAt(Date.now())
     } catch (e) { setError(String(e instanceof Error ? e.message : e)); setLog(null) } finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
+
+  /* ── สมุดสถานะดันสต็อก (`?pushstate=1` · CEO 17 ก.ย. 2569) ──
+     ✅ **อ่านฐานอย่างเดียว ไม่ยิงแพลตฟอร์ม เร็ว ⇒ โหลดตอนเปิดหน้าได้** (ต่างจาก `?stockpush=1` ที่ต้องกดเอง) */
+  const [pstate, setPstate] = useState<PushStateResp | null>(null)
+  const [pstateLoading, setPstateLoading] = useState(true)
+  const [pstateErr, setPstateErr] = useState('')
+  const loadState = useCallback(async () => {
+    setPstateLoading(true); setPstateErr('')
+    try {
+      const res = await fetch('/api/web/core?pushstate=1')
+      const d = (await res.json().catch(() => null)) as PushStateResp | null
+      if (d === null) throw new Error(`อ่านคำตอบไม่ออก (HTTP ${res.status})`)
+      if (typeof d.skip === 'string') throw new Error(SKIP + d.skip)
+      if (!res.ok || d.error) throw new Error(d.error || `ท่อตอบ ${res.status}`)
+      /* inconclusive = ต่อฐานไม่ได้ ⇒ เก็บไว้ให้กระดานพูดเองว่า "อ่านสมุดไม่ได้" ไม่ใช่โยนทิ้งเป็น error ลอย ๆ */
+      if (!d.inconclusive && d.ok !== true) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี ok)')
+      setPstate(d)
+    } catch (e) { setPstateErr(String(e instanceof Error ? e.message : e)); setPstate(null) } finally { setPstateLoading(false) }
+  }, [])
+  useEffect(() => { loadState() }, [loadState])
 
   /* ── แผนรอบถัดไป (ซ้อม) ──
      🔴 **กดเองเท่านั้น ห้ามโหลดตอนเปิดจอ** — เส้นนี้ไปกวาดของจริงทั้งสามแพลตฟอร์ม
@@ -233,14 +250,14 @@ export default function StockPushPage() {
             <span className="text-gray-400">งานเขียนชิ้นแรกที่ทำแทน ZORT — Lazada เปิดใช้แล้ว 8 ก.ย. 2569</span>
           </>
         }
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        actions={<BtnGhost onClick={() => { load(); loadState() }} disabled={loading || pstateLoading}>{loading || pstateLoading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
       />
 
       {/* 🔴 **เดิมตรงนี้เป็นป้ายเขียนตายตัว** "✅ Lazada — ยิงจริงแล้ว (16/16 · 8 ก.ย. 2569)"
           ⇒ เขียวค้างตลอดไม่ว่าของจริงจะหยุดยิงไปกี่วัน = สิ่งที่ท่านประธานบ่นว่า "ไม่ออโต้" แต่จอไม่เคยบอก
           ⇒ แทนด้วยกระดานที่วัดจากข้อมูลจริง (ท่านประธานอนุมัติ 17 ก.ย. 2569) */}
       <PushStatusBoard
-        log={log} logLoading={loading} logErr={error} logAt={logAt}
+        state={pstate} stateLoading={pstateLoading} stateErr={pstateErr}
         plan={plan} planBusy={planBusy} planErr={planErr} planAt={planAt}
         onAsk={loadPlan}
       />
@@ -299,8 +316,16 @@ export default function StockPushPage() {
                   )
                 }
                 const would = N(p.wouldPush)
+                const writer = มีตัวยิง(pstate, key)
                 return (
                   <div key={key} className="border border-gray-200 rounded-md p-3">
+                    {/* 🔴 แผนมีจริง แต่ช่องทางนี้ยิงไม่ออก — ห้ามให้ดูเหมือนการ์ด Lazada (CEO ชี้ 17 ก.ย. 2569)
+                        รายชื่อมาจาก `channelsWithoutWriter` ของท่อ ไม่ได้ฝังในจอ */}
+                    {writer === false && (
+                      <p className="text-[11.5px] font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2 py-1 mb-1.5">
+                        ⬜ ยังดันไม่ได้ — ไม่มีตัวยิง · ตัวเลขในการ์ดนี้เป็นแผนที่คิดได้ <u>กดยังไงก็ยิงไม่ออก</u>
+                      </p>
+                    )}
                     <div className="flex items-baseline justify-between gap-2">
                       <p className="text-[13px] font-semibold text-gray-800">{label}</p>
                       {/* 🗓️ วันที่บนจอเป็น พ.ศ. ทั้งระบบ — ค่าดิบเก็บใน title */}

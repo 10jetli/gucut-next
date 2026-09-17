@@ -10,7 +10,9 @@
  * 🔴 **จอนี้ไม่ยิงเส้นแผน (`?stockpush=1`) ตอนเปิดหน้า** — เส้นนั้นกวาดของจริงทั้งสามเจ้า ~15–25 วิ
  *    ⇒ แถบ "เชื่อม" กับ "ช่องทางออนไลน์" จะเป็น ⬜ จนกว่าคนจะกดถาม (กติกาหน้าสถานะของร้าน)
  *
- * 🔴 **แถบ "อัปเดตออโต้" วัดจากเวลายิงสำเร็จจริงใน log เท่านั้น** — ไม่มีสวิตช์ให้อ่านโดยตั้งใจ
+ * 🔴 **แถบ "อัปเดตออโต้" วัดจาก `counts.ยืนยันล่าสุด` ของสมุดสถานะ (`?pushstate=1`)** — CEO สั่ง 17 ก.ย. 2569
+ *    🚫 ห้ามใช้ `autoOn` (สวิตช์) · เดิมรุ่นแรกวัดจาก log ซึ่งนับเฉพาะรอบที่ยิงออก
+ *       ⇒ วันไหนสต็อกตรงอยู่แล้ว ตัวกวาดวิ่งถูกแต่ไม่มีรอบยิง แถบจะแดงผิด · สมุดสถานะแก้ข้อนี้
  *
  * ⚠️ เวลาใน log เป็น **UTC** (`2026-09-11T22:42:18Z`) — ต้องแปลงเป็นเวลาไทยก่อนแสดง
  *    ใบงานต้นทางอ่านเป็น "11 ก.ย. 22:42" ซึ่งคือ UTC · เวลาไทยจริงคือ 12 ก.ย. 05:42 (ห่าง 7 ชม. ข้ามวัน)
@@ -19,8 +21,25 @@ import { serverTimeMs } from '@/lib/returns-api'
 import { isSkip } from '@/components/ui/ErrorBox'
 
 export type PlatformKey = 'shopee' | 'lazada' | 'tiktok'
+const PLATFORM_KEYS: PlatformKey[] = ['lazada', 'shopee', 'tiktok']
 
-export interface BoardRound { at?: string; platform?: string; fired?: number; pushed?: number; rejected?: number }
+/** คำตอบ `?pushstate=1` — สมุดสถานะดันสต็อกของ CEO (gucut-web · 17 ก.ย. 2569)
+ *  อ่านฐานอย่างเดียว เร็ว ⇒ จอเรียกตอนเปิดหน้าได้ · เวลาทุกช่องเป็น ISO (UTC)
+ *  ⚠️ `counts` **รวมทุกช่องทาง ไม่ได้แยก** — วันนี้มีตัวยิงช่องทางเดียวจึงใช้ได้ (ดู `นับรวมหลายช่องทาง`) */
+export interface PushStateResp {
+  ok?: boolean; error?: string; skip?: string
+  inconclusive?: boolean; why?: string
+  /** 🚫 **ห้ามใช้ทำแถบใด ๆ** — บอกแค่ว่าสวิตช์ยิงจริงเปิดไหม (CEO กำชับ) */
+  autoOn?: boolean
+  lastSweep?: { at?: string; channel?: string; mode?: string; planned?: number; pushed?: number; rejected?: number; skipped?: number; ms?: number; note?: string | null } | null
+  counts?: {
+    ทั้งหมด?: number | null; เคยยืนยัน?: number | null; กำลังถูกข้าม?: number | null
+    มีข้อผิดพลาด?: number | null; ยืนยันล่าสุด?: string | null; ถูกข้ามนานสุดตั้งแต่?: string | null
+  } | null
+  stuck?: Array<{ sku?: string; channel?: string; skip_reason?: string; skip_streak?: number; skip_first_at?: string; last_error?: string | null }>
+  /** ช่องทางที่ **ยิงไม่ออก** — ท่อเป็นเจ้าของรายชื่อนี้ จอห้ามฝังเอง (CEO สั่ง 17 ก.ย. 2569) */
+  channelsWithoutWriter?: string[]
+}
 export interface BoardSide {
   platformSkus?: number; same?: number; wouldPush?: number
   skipNegative?: number; skipUnknown?: number; skipConflict?: number
@@ -37,10 +56,11 @@ const TONE: Record<Tone, { dot: string; box: string; word: string }> = {
   unknown: { dot: '⬜', box: 'border-gray-200 bg-gray-50 text-gray-700', word: 'ไม่รู้' },
 }
 
-/** ช่องทางไหน **มีตัวยิงจริง** — ยืนยันจากโค้ดท่อ 17 ก.ย. 2569:
- *  lazada = `stock-push-live.mjs` (อนุมัติ 8 ก.ย.) · shopee = ไม่มีตัวยิงเลย · tiktok = `tiktok-stock.mjs` อ่านอย่างเดียว
- *  ⚠️ **ค่านี้เก่าได้** — ถ้า log มีรอบยิงสำเร็จของช่องทางที่เขียนว่าไม่มีตัวยิง จอจะเชื่อ log แทน (ดู `hasPusher`) */
-const PUSHER_AT_WRITE_TIME: Record<PlatformKey, boolean> = { lazada: true, shopee: false, tiktok: false }
+/* 🔴 เดิมมีตาราง PUSHER_AT_WRITE_TIME ฝังรายชื่อช่องทางที่มีตัวยิงไว้ในจอ — **ถอดแล้ว**
+   CEO สั่ง: ตรวจจาก `channelsWithoutWriter` ที่ท่อส่งมาเท่านั้น วันที่สร้างตัวยิงเสร็จ ท่อเอาออกเอง จอไม่ต้องแก้ */
+
+/** ตัวกวาดตั้งเวลาไว้ทุก 15 นาที (`stock-push-sweep.mjs` schedule *\/15) ⇒ เงียบเกิน 2 รอบ = ผิดปกติ */
+const รอบกวาด_นาที = 15
 
 const N = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
 const n = (v: unknown) => { const x = N(v); return x === null ? '—' : x.toLocaleString('th-TH') }
@@ -111,14 +131,28 @@ function linkBar(side: BoardSide | undefined, asked: boolean, planErr: string): 
   }
 }
 
-/* ── 🟢 ออนไลน์ — แยก "ระบบเรา" กับ "ช่องทาง" คนละบรรทัด คนละที่แก้ ── */
-function oursBar(logLoading: boolean, logErr: string, logAt: number | null): Bar {
-  if (logLoading && logAt === null) return { tone: 'unknown', text: 'กำลังถามท่อของเรา…' }
-  if (logErr) return isSkip(logErr)
-    ? { tone: 'warn', text: `ท่อของเราตอบว่ายังทำงานส่วนนี้ไม่ได้: ${logErr}` }
-    : { tone: 'bad', text: `ท่อของเราไม่ตอบ — ${logErr}` }
-  if (logAt === null) return { tone: 'unknown', text: 'ยังไม่ได้ถามท่อของเรา' }
-  return { tone: 'ok', text: `ท่อของเราตอบ (ถามเมื่อ ${thaiClock(logAt)})` }
+/* ── 📶 ออนไลน์ — แยก "ระบบเรา" กับ "ช่องทาง" คนละบรรทัด คนละที่แก้ ──
+   "ระบบเรา" = **ตัวกวาดวิ่งเสร็จล่าสุดเมื่อไหร่** (ไม่ใช่แค่หน้าเว็บตอบ) */
+function oursBar(st: PushStateResp | null, loading: boolean, err: string, now: number): Bar {
+  if (loading && !st) return { tone: 'unknown', text: 'กำลังอ่านสมุดสถานะ…' }
+  if (err) return isSkip(err)
+    ? { tone: 'warn', text: `ท่อของเราตอบว่ายังทำงานส่วนนี้ไม่ได้: ${err}` }
+    : { tone: 'bad', text: `ท่อของเราไม่ตอบ — ${err}` }
+  if (!st) return { tone: 'unknown', text: 'ยังไม่ได้อ่านสมุดสถานะ' }
+  if (st.inconclusive) return { tone: 'bad', text: `ท่อของเราตอบ แต่อ่านสมุดสถานะไม่ได้ — ${st.why ?? 'ไม่บอกเหตุ'}` }
+  const ls = st.lastSweep
+  if (ls === null) return { tone: 'bad', text: 'ท่อของเราตอบ แต่ตัวกวาดอัตโนมัติยังไม่เคยวิ่งเลย' }
+  const ms = serverTimeMs(ls?.at)
+  if (ms === null) return { tone: 'unknown', text: 'ท่อไม่ได้บอกว่าตัวกวาดวิ่งล่าสุดเมื่อไหร่' }
+  const age = now - ms
+  const tone: Tone = age <= 2 * รอบกวาด_นาที * 60e3 ? 'ok' : age <= 2 * 3600e3 ? 'warn' : 'bad'
+  const โหมด = ls?.mode === 'live' ? 'ยิงจริง' : ls?.mode === 'dry' ? 'ซ้อม (ยังไม่ยิงของจริง)' : `โหมดไม่รู้จัก: ${ls?.mode ?? '—'}`
+  return {
+    tone,
+    text: <>ตัวกวาดวิ่งล่าสุด <b>{thaiDateTime(ls?.at)}</b> ({ago(ms, now)}) · โหมด {โหมด}
+      {tone !== 'ok' && ` — ตั้งไว้ทุก ${รอบกวาด_นาที} นาที แต่เงียบไปนานกว่านั้น`}
+      {ls?.note && <span className="block text-red-800">⚠️ รอบนั้นแจ้งว่า: {ls.note}</span>}</>,
+  }
 }
 function channelBar(label: string, side: BoardSide | undefined, asked: boolean, planErr: string, planAt: number | null): Bar {
   if (!asked) return { tone: 'unknown', text: `ยังไม่ได้ถามว่าติดต่อ ${label} ได้ไหม` }
@@ -128,32 +162,74 @@ function channelBar(label: string, side: BoardSide | undefined, asked: boolean, 
   return { tone: 'ok', text: `อ่านสต็อกจาก ${label} ได้ ${n(side.platformSkus)} รหัส${planAt ? ` (ถามเมื่อ ${thaiClock(planAt)})` : ''}` }
 }
 
-/* ── 🔄 อัปเดตออโต้ — เวลายิงสำเร็จจริงเท่านั้น ── */
-function autoBar(key: PlatformKey, log: BoardRound[] | null, logErr: string, now: number): Bar {
-  if (log === null) return { tone: 'unknown', text: logErr ? 'อ่านประวัติการยิงไม่ได้ — ไม่รู้ว่ายิงสำเร็จล่าสุดเมื่อไหร่ (ไม่ได้แปลว่าไม่เคยยิง)' : 'กำลังอ่านประวัติการยิง…' }
-  const ของเจ้านี้ = log.filter((r) => String(r.platform ?? '').toLowerCase() === key)
-  const สำเร็จ = ของเจ้านี้
-    .filter((r) => (N(r.pushed) ?? 0) > 0)
-    .map((r) => ({ r, ms: serverTimeMs(r.at) }))
-    .filter((x): x is { r: BoardRound; ms: number } => x.ms !== null)
-    .sort((a, b) => b.ms - a.ms)
-  const hasPusher = PUSHER_AT_WRITE_TIME[key] || สำเร็จ.length > 0
-  if (!hasPusher) return { tone: 'unknown', text: 'ยังดันไม่ได้ — ไม่มีตัวยิง' }
-  if (!สำเร็จ.length) return { tone: 'bad', text: `ยังไม่เคยยิงสำเร็จ${ของเจ้านี้.length ? ` (มี ${ของเจ้านี้.length} รอบที่ยิงแล้วไม่สำเร็จ)` : ''}${log.length >= 50 ? ' · ⚠️ log เก็บแค่ 50 รอบล่าสุด' : ''}` }
+/** ช่องทางนี้ **มีตัวยิงไหม** ตามที่ท่อบอก — true/false/null(ไม่รู้) */
+export function มีตัวยิง(st: PushStateResp | null, key: PlatformKey): boolean | null {
+  if (!st || st.inconclusive || !Array.isArray(st.channelsWithoutWriter)) return null
+  return !st.channelsWithoutWriter.map((c) => String(c).toLowerCase()).includes(key)
+}
 
-  const last = สำเร็จ[0]
-  const age = now - last.ms
-  const tone: Tone = age <= 3600e3 ? 'ok' : age <= 24 * 3600e3 ? 'warn' : 'bad'
-  /* รอบที่ใหม่กว่ารอบสำเร็จล่าสุด แต่ถูกปฏิเสธ — ต้องเห็น ไม่งั้นเวลาสำเร็จเก่า ๆ ดูเหมือนแค่ "ยังไม่ถึงรอบ" */
-  const ปฏิเสธหลังจากนั้น = ของเจ้านี้.filter((r) => (serverTimeMs(r.at) ?? 0) > last.ms && (N(r.rejected) ?? 0) > 0)
+/* ── 🔄 อัปเดตออโต้ — วัดจาก `counts.ยืนยันล่าสุด` เท่านั้น (CEO สั่ง 17 ก.ย. 2569) ──
+   🚫 ห้ามแตะ `autoOn` · `verified_at` ตั้งได้ที่เดียวคือรอบกวาดถัดไปพิสูจน์ว่ารหัสหายจากแผนจริง */
+function autoBar(key: PlatformKey, st: PushStateResp | null, err: string, now: number): Bar {
+  const writer = มีตัวยิง(st, key)
+  if (writer === null) return { tone: 'unknown', text: err ? 'อ่านสมุดสถานะไม่ได้ — ไม่รู้ว่าช่องทางนี้อัปเดตอัตโนมัติอยู่ไหม' : 'ไม่รู้ — ท่อไม่ได้บอกว่าช่องทางไหนมีตัวยิง' }
+  if (!writer) return { tone: 'unknown', text: 'ยังดันไม่ได้ — ไม่มีตัวยิง' }
+  const c = st?.counts
+  if (!c) return { tone: 'unknown', text: 'ท่อไม่ได้ส่งตัวนับของสมุดสถานะมา — ไม่รู้' }
+  const นับรวมหลายช่องทาง = PLATFORM_KEYS.filter((k) => มีตัวยิง(st, k)).length > 1
+  const หมายเหตุรวม = นับรวมหลายช่องทาง ? ' · ⚠️ ตัวเลขนี้รวมทุกช่องทางที่มีตัวยิง ท่อยังไม่แยกรายช่องทาง' : ''
+  const ms = serverTimeMs(c.ยืนยันล่าสุด)
+  if (ms === null) {
+    const ls = st?.lastSweep
+    const เหตุ = ls === null ? 'ตัวกวาดยังไม่เคยวิ่ง'
+      : ls?.mode === 'dry' ? 'ตัวกวาดยังอยู่โหมดซ้อม ยังไม่ได้ยิงของจริงสักรหัส'
+      : 'ยังไม่มีรหัสไหนที่รอบกวาดถัดไปพิสูจน์ได้ว่าลงจริง'
+    return { tone: 'bad', text: `ยังไม่เคยยืนยันว่าดันถึงแพลตฟอร์มจริงสักรหัส · ${เหตุ}${หมายเหตุรวม}` }
+  }
+  const age = now - ms
+  /* 🔴 ตัวนับของสมุดเป็น **ยอดรวมทุกช่องทาง** ⇒ มีตัวยิงเกินหนึ่งช่องทางเมื่อไหร่ เวลายืนยันนี้อาจเป็นของช่องทางอื่นทั้งหมด
+     ⇒ ห้ามให้ดวงไฟยืนยันแทนช่องทางนี้ (เจอตอนทดสอบ 17 ก.ย. 2569: Shopee ขึ้นเขียวจากเวลาของ Lazada) ⇒ ⬜ ไม่รู้ */
+  const tone: Tone = นับรวมหลายช่องทาง ? 'unknown' : age <= 3600e3 ? 'ok' : age <= 24 * 3600e3 ? 'warn' : 'bad'
   return {
-    tone: ปฏิเสธหลังจากนั้น.length ? 'bad' : tone,
+    tone,
+    text: <>{นับรวมหลายช่องทาง && 'ไม่รู้รายช่องทาง — '}ยืนยันว่าถึงแพลตฟอร์มล่าสุด <b>{thaiDateTime(c.ยืนยันล่าสุด)}</b> ({ago(ms, now)})
+      {' '}· เคยยืนยัน {n(c.เคยยืนยัน)} จาก {n(c.ทั้งหมด)} รหัสในสมุด{หมายเหตุรวม}</>,
+  }
+}
+
+/* ── 🧊 ถูกข้าม — ตอบคำถามท่านประธาน "รหัสที่ถูกข้ามทุกรอบมาสามวัน จอขึ้นสีอะไร" ⇒ แดง ──
+   เกิน 1 ชม. เหลือง · เกิน 24 ชม. แดง · ไม่ว่าเหตุที่ข้ามจะถูกกฎแค่ไหน (ของที่ถูกข้ามก็ทำให้ขายเกินได้) */
+const เหตุข้าม: Record<string, string> = { negative: 'คลังเราติดลบ', unknown: 'คลังเราไม่รู้จักรหัสนี้', conflict: 'ข้อมูลขัดกัน' }
+function skipBar(key: PlatformKey, st: PushStateResp | null, now: number): Bar | null {
+  if (มีตัวยิง(st, key) !== true) return null
+  const c = st?.counts
+  if (!c) return { tone: 'unknown', text: 'ไม่รู้ — ท่อไม่ได้ส่งตัวนับมา' }
+  const จำนวน = N(c.กำลังถูกข้าม)
+  if (จำนวน === null) return { tone: 'unknown', text: 'ยังไม่มีข้อมูลในสมุด — ไม่รู้ว่ามีรหัสค้างไหม' }
+  if (จำนวน === 0) return { tone: 'ok', text: 'ไม่มีรหัสที่กำลังถูกข้าม' }
+  const ms = serverTimeMs(c.ถูกข้ามนานสุดตั้งแต่)
+  const age = ms === null ? null : now - ms
+  const tone: Tone = age === null ? 'warn' : age > 24 * 3600e3 ? 'bad' : age > 3600e3 ? 'warn' : 'ok'
+  const ของช่องทางนี้ = (st?.stuck ?? []).filter((x) => String(x.channel ?? '').toLowerCase() === key)
+  return {
+    tone,
     text: (
       <>
-        ยิงสำเร็จล่าสุด <b>{thaiDateTime(last.r.at)}</b> ({ago(last.ms, now)})
-        {tone === 'bad' && ' — ไม่มีรอบไหนยิงสำเร็จหลังจากนั้น ⇒ ตอนนี้ยังไม่ได้อัปเดตอัตโนมัติ'}
-        {ปฏิเสธหลังจากนั้น.length > 0 && (
-          <span className="block text-red-800 mt-0.5">⚠️ หลังจากนั้นมี {ปฏิเสธหลังจากนั้น.length} รอบที่ถูกปฏิเสธ</span>
+        กำลังถูกข้าม <b>{n(จำนวน)}</b> รหัส · นานสุดตั้งแต่ <b>{thaiDateTime(c.ถูกข้ามนานสุดตั้งแต่)}</b>
+        {ms !== null && ` (${ago(ms, now)})`}
+        {ของช่องทางนี้.length > 0 && (
+          <details className="mt-1">
+            <summary className="cursor-pointer">ดูรหัสที่ค้างนานสุด {ของช่องทางนี้.length} รายการ
+              {ของช่องทางนี้.length < จำนวน && ` (ท่อส่งมาแค่ ${ของช่องทางนี้.length} จาก ${n(จำนวน)})`}</summary>
+            <ul className="mt-1 space-y-0.5">
+              {ของช่องทางนี้.map((x) => (
+                <li key={`${x.sku}-${x.skip_first_at}`} className="font-mono text-[11px]">
+                  {x.sku} · {เหตุข้าม[String(x.skip_reason)] ?? `เหตุที่จอยังไม่รู้จัก (${x.skip_reason})`}
+                  {' '}· ข้ามติดกัน {n(x.skip_streak)} รอบ · ตั้งแต่ {thaiDateTime(x.skip_first_at)}
+                </li>
+              ))}
+            </ul>
+          </details>
         )}
       </>
     ),
@@ -172,11 +248,11 @@ function BarRow({ icon, name, bar }: { icon: string; name: string; bar: Bar }) {
 }
 
 export default function PushStatusBoard(props: {
-  log: BoardRound[] | null; logLoading: boolean; logErr: string; logAt: number | null
+  state: PushStateResp | null; stateLoading: boolean; stateErr: string
   plan: Partial<Record<PlatformKey, BoardSide>> | null; planBusy: boolean; planErr: string; planAt: number | null
   onAsk: () => void
 }) {
-  const { log, logLoading, logErr, logAt, plan, planBusy, planErr, planAt, onAsk } = props
+  const { state, stateLoading, stateErr, plan, planBusy, planErr, planAt, onAsk } = props
   const now = Date.now()
   const asked = plan !== null || !!planErr
   const CH: Array<{ key: PlatformKey; label: string }> = [
@@ -184,6 +260,7 @@ export default function PushStatusBoard(props: {
     { key: 'shopee', label: 'Shopee' },
     { key: 'tiktok', label: 'TikTok' },
   ]
+  const ours = oursBar(state, stateLoading, stateErr, now)
   return (
     <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
@@ -191,7 +268,7 @@ export default function PushStatusBoard(props: {
           <p className="text-[14px] font-semibold text-gray-900">สถานะการดันสต็อก — เชื่อม · ออนไลน์ · อัปเดตออโต้</p>
           <p className="text-[11.5px] text-gray-500 mt-0.5">
             ⬜ = <b>ไม่รู้</b> (ยังไม่ได้ถาม หรือถามไม่สำเร็จ) — ไม่ได้แปลว่าปกติ ·
-            อัปเดตออโต้วัดจาก<b>เวลายิงสำเร็จจริง</b> ไม่ได้ดูว่าเปิดสวิตช์ไว้
+            อัปเดตออโต้วัดจาก<b>เวลาที่รอบกวาดยืนยันว่าเลขถึงแพลตฟอร์มจริง</b> ไม่ได้ดูว่าเปิดสวิตช์ไว้
           </p>
         </div>
         <button type="button" onClick={onAsk} disabled={planBusy}
@@ -202,15 +279,25 @@ export default function PushStatusBoard(props: {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
         {CH.map(({ key, label }) => {
           const side = plan?.[key]
-          const auto = autoBar(key, log, logErr, now)
+          const writer = มีตัวยิง(state, key)
+          const link = linkBar(side, asked, planErr)
+          const skip = skipBar(key, state, now)
           return (
             <div key={key} className="border border-gray-200 rounded-md p-2.5 space-y-1.5">
               <p className="text-[13px] font-semibold text-gray-900">{label}</p>
-              <BarRow icon="🔗" name="เชื่อม" bar={linkBar(side, asked, planErr)} />
+              {/* 🔴 ช่องทางที่ยิงไม่ออก: "แผนจะดัน" มีจริง แต่กดยังไงก็ไม่ออก ⇒ ต้องบอกคู่กับตัวเลข (CEO ชี้ 17 ก.ย. 2569) */}
+              {writer === false && (
+                <p className="text-[12px] font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2.5 py-1.5">
+                  ⬜ ยังดันไม่ได้ — ไม่มีตัวยิง
+                  <span className="block font-normal text-gray-600">ตัวเลขข้างล่างคือแผนที่คิดได้ ไม่ใช่ของที่จะถูกดัน</span>
+                </p>
+              )}
+              <BarRow icon="🔗" name="เชื่อม" bar={link} />
               {/* ⚠️ ไอคอนหน้าชื่อแถบห้ามเป็นดวงไฟสี — เดิมใช้ 🟢 ตายตัว วางข้าง "⬜ ไม่รู้" แล้วอ่านขัดกันเอง */}
-              <BarRow icon="📶" name="ออนไลน์ — ระบบเรา" bar={oursBar(logLoading, logErr, logAt)} />
+              <BarRow icon="📶" name="ออนไลน์ — ระบบเรา" bar={ours} />
               <BarRow icon="📶" name={`ออนไลน์ — ${label}`} bar={channelBar(label, side, asked, planErr, planAt)} />
-              <BarRow icon="🔄" name="อัปเดตออโต้" bar={auto} />
+              <BarRow icon="🔄" name="อัปเดตออโต้" bar={autoBar(key, state, stateErr, now)} />
+              {skip && <BarRow icon="🧊" name="ถูกข้าม" bar={skip} />}
             </div>
           )
         })}
