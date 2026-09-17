@@ -62,6 +62,8 @@ interface Resp {
   storeScope?: string
 
   ok?: boolean; rows?: Row[]; total?: number | null; live?: boolean
+  /** ยอดรวมจากกระจก (ท่อ b2890b4) — ใช้เป็น "มูลค่าทั้งหมด" ได้เฉพาะเมื่อ count = total ของ ZORT */
+  mirrorTotals?: { count?: number; amount?: number; countExcludingVoided?: number; amountExcludingVoided?: number; syncedAtUtc?: string | null; syncComplete?: boolean | null } | null
   error?: string
   /** ค่าที่ท่อใช้จริง — ใช้เป็นด่านเทียบกับคำค้นที่จอส่ง (ท่อส่งมาให้เพื่อการนี้) */
   applied?: { q?: string | null; source?: 'mirror' | 'zort' }
@@ -141,6 +143,11 @@ export default function ReturnOrdersPage() {
   const total = typeof d?.total === 'number' ? d.total : null
   /** ดึงมาไม่ครบทั้งหมดหรือเปล่า — ใช้ตัดสินว่าจะเขียนยอดรวมแบบไหน */
   const partial = total !== null && rows.length < total
+  /* 💰 ยอดทั้งหมดจากกระจก — **ใช้ได้เมื่อจำนวนใบของกระจกเท่ากับของ ZORT สดพอดีเท่านั้น** (B3 ในใบสำรวจ t_mu5bhh84)
+     คนละแหล่งกัน ⇒ ถ้าจำนวนไม่เท่า ห้ามเอามาวางเป็น "ทั้งหมด" (กฎข้อ 4 ของ CLAUDE.md) · วัดจริง 17 ก.ย.: z1 692=692 · z2 239=239
+     ⚠️ ยังไม่รู้ว่า "มูลค่าทั้งหมด" ของ ZORT รวมใบยกเลิกไหม (จอ ZORT ตอบ 500 ตอนวัด) ⇒ บอกทั้งสองแบบ */
+  const mt = d?.mirrorTotals
+  const ใช้ยอดกระจก = !q.trim() && total !== null && typeof mt?.count === 'number' && mt.count === total && typeof mt.amount === 'number'
 
   return (
     <div className="p-4 md:p-6">
@@ -162,11 +169,21 @@ export default function ReturnOrdersPage() {
               <>
                 จำนวน <b>{total !== null ? fmtNum(total) : fmtNum(rows.length)}</b> รายการ
                 {/* 🔴 ยอดรวมต้องประกาศขอบเขตตัวเองเสมอ ห้ามเขียนคำว่า "ทั้งหมด" ถ้าดึงมาไม่ครบ */}
-                {rows.length > 0 && (
+                {ใช้ยอดกระจก ? (
+                  <>
+                    {', '}มูลค่าทั้งหมด <b>{fmtMoney(mt!.amount!)}</b>
+                    {typeof mt!.amountExcludingVoided === 'number' && mt!.countExcludingVoided !== mt!.count && (
+                      <span className="text-gray-500"> (ไม่นับใบยกเลิก {fmtNum(mt!.count! - (mt!.countExcludingVoided ?? 0))} ใบ = {fmtMoney(mt!.amountExcludingVoided)})</span>
+                    )}
+                  </>
+                ) : rows.length > 0 && (
                   <>
                     {', '}
                     มูลค่า{partial ? `เฉพาะ ${fmtNum(rows.length)} ใบล่าสุด` : 'ทั้งหมด'}{' '}
                     <b>{fmtMoney(sumShown)}</b>
+                    {partial && typeof mt?.count === 'number' && mt.count !== total && (
+                      <span className="text-gray-500"> (ยอดทั้งหมดจากกระจกใช้ไม่ได้ตอนนี้: กระจกมี {fmtNum(mt.count)} ใบ แต่ ZORT มี {fmtNum(total!)} ใบ)</span>
+                    )}
                   </>
                 )}
                 {' | '}
