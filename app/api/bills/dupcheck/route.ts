@@ -84,8 +84,13 @@ export async function GET(req: NextRequest) {
        (เลขในชื่อไฟล์ = ส่วนที่มีตัวเลข ≥ 6 ตัว หลังตัดเดือน/รหัสอีเมลนำหน้า · ไม่มีเลขในชื่อ ⇒ ไม่ตัดสินด้วยด่านนี้) */
     const เลขในชื่อ = (name: string) => {
       const base = name.replace(/^\d{4}-\d{2}_[0-9a-f]{10,}_/i, '').replace(/^\d{4}-\d{2}_/, '').replace(/^REAL_/, '')
-      const m = base.match(/[A-Z]{0,8}-?[A-Z0-9]*\d[A-Z0-9-]{5,}/i)
-      return m ? m[0].toUpperCase() : null
+      /* ใช้เฉพาะรูปเลขเอกสารที่รู้จัก — รุ่นแรกสกัดแบบกว้าง ได้ "INVOICE-THTT…" กับ "THTT…-" ⇒ ฟ้องผิด TikTok 90/90 กลุ่ม
+         ⚠️ Adobe ตั้งชื่อใบเดียวกันหลายแบบ (เลข 10 หลัก · ADB…) ⇒ รูป ADB ไม่ใส่ ไม่งั้นฟ้องผิดทุกกลุ่มของ Adobe */
+      for (const re of [/THTT\d{8,}/, /TH\d{8,}IVIS\d+/, /FBADS-\d+-\d+/, /IN-\d{6,}/]) {
+        const m = base.match(re)
+        if (m) return m[0].toUpperCase()
+      }
+      return null
     }
     const dup = Array.from(byKey.entries())
       .filter(([, list]) => list.length > 1)

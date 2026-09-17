@@ -186,6 +186,15 @@ ID ธุรกรรม
   ok(r1.key !== i1.key, 'ใบเสร็จกับใบแจ้งหนี้รอบเดียวกัน ไม่เป็นกุญแจเดียวกัน', `${r1.key} vs ${i1.key}`)
   ok(r1.invoiceNo === '2222-3333-4444', 'ใบเสร็จใช้เลขที่ใบเสร็จเป็นตัวตน', String(r1.invoiceNo))
 
+  console.log('⑮ เลขที่ตามหลัง "Refer to Tax Invoice Number" คือเลขที่อ้างถึง ไม่ใช่ตัวตนของใบนี้')
+  /* 🔬 รูปจริงจาก Lazada (18 ก.ย. 2569 · ตัวเลขสมมติ) — ใบกำกับจริง กับเอกสารที่อ้างถึงใบนั้น ต้องไม่ใช่กุญแจเดียวกัน */
+  const lzInv = 'Tax ID: 0000000000000\nInvoice No.: THMPTI0000000000000001\nInvoice Date: 2026-08-01\nPeriod: 2026-07-25 - 2026-07-31'
+  const lzRef = 'Period 2026-07-25 - 2026-07-31\nRefer to Tax Invoice Number\nTHMPTI0000000000000001 (2026-08-01)\nNo.Code/DescriptionsAmount (THB)'
+  const li = billIdentity(lzInv, 'lazada'); const lr = billIdentity(lzRef, 'lazada')
+  ok(li.invoiceNo === 'THMPTI0000000000000001', 'ใบกำกับจริงยังอ่านเลขได้', String(li.invoiceNo))
+  ok(lr.invoiceNo !== 'THMPTI0000000000000001', 'เอกสารที่อ้างถึง ไม่ใช้เลขที่อ้างถึงเป็นตัวตน', String(lr.invoiceNo))
+  ok(li.key !== lr.key, 'สองเอกสารได้คนละกุญแจ (หรืออีกใบตัดสินไม่ได้)', `${li.key} vs ${lr.key}`)
+
 } catch (e) {
   console.log('❌ เทสพัง:', e?.message ?? e); fail++
 } finally {

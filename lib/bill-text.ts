@@ -112,6 +112,11 @@ export function invoiceNoFromText(text: string): string | null {
      (ป้าย `Invoice #` ตามด้วยคำ `INVOICE` · หรือ `INVOICEInvoice Number` ที่ ⓑ หยิบคำหน้าป้าย)
      ⇒ ลองทุกตำแหน่งที่ป้ายปรากฏ ไม่ใช่ตำแหน่งแรก และข้ามค่าที่ไม่มีตัวเลข */
   const ใช้ได้ = (raw: string) => !!raw && /\d/.test(raw) && !ดูเหมือนวันที่(raw)
+  /* 🔴 **เลขที่ "อ้างถึง" เอกสารอื่น ไม่ใช่ตัวตนของใบนี้** (18 ก.ย. 2569 · ของจริง Lazada)
+     เอกสาร Lazada ชนิดหนึ่งพิมพ์ `Refer to Tax Invoice Number THMPTI…` ⇒ ตัวอ่านหยิบเลขใบกำกับที่อ้างถึง
+     ⇒ เอกสารคนละใบ (เลขในชื่อไฟล์คนละเลข) ได้กุญแจเดียวกับใบกำกับ ⇒ ถูกนับเป็นซ้ำ 4 กลุ่ม
+     ⇒ ป้ายที่มีคำ refer/อ้างอิงถึง นำหน้าในระยะสั้น ๆ ให้ข้าม */
+  const เป็นการอ้างถึง = (index: number) => /(refer(?:ence)?\s*to|อ้างอิงถึง|อ้างถึง)[^\n]{0,15}$/i.test(t.slice(Math.max(0, index - 30), index))
   /* 🔴 **ใบเสร็จต้องใช้เลขที่ใบเสร็จเป็นตัวตน ไม่ใช่เลขใบแจ้งหนี้ที่พิมพ์อ้างอิงไว้** (18 ก.ย. 2569)
      ใบเสร็จ Anthropic พิมพ์ทั้ง `Invoice number` (เท่ากับใบแจ้งหนี้คู่กัน) และ `Receipt number`
      ⇒ ถ้าใช้ป้ายตามลำดับเดิม ใบแจ้งหนี้กับใบเสร็จของรอบเดียวกันได้กุญแจเดียวกัน = ถูกนับเป็นใบซ้ำ ทั้งที่คนละเอกสาร */
@@ -122,6 +127,7 @@ export function invoiceNoFromText(text: string): string | null {
     const lab = thaiLoose(label)
     // ⓐ ป้ายอยู่หน้า ค่าอยู่หลัง (รูปแบบปกติ)
     for (const m of Array.from(t.matchAll(new RegExp(`${lab}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'gi')))) {
+      if (เป็นการอ้างถึง(m.index ?? 0)) continue
       const raw = m[1].replace(/[.,;]+$/, '')
       if (ใช้ได้(raw)) return raw.toUpperCase()
     }
