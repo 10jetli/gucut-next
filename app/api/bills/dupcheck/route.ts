@@ -45,6 +45,7 @@ export async function GET(req: NextRequest) {
     const misfiled: { file: string; เดือนในชื่อไฟล์: string | null; รอบบิลในใบ: string }[] = []
     const keys: { file: string; key: string }[] = []
     const snippets: { file: string; text: string }[] = []
+    const ตรวจรายไฟล์: { file: string; ชนิด: string; เลขของตัวเอง: boolean | null }[] = []
     let read = 0
     /* 🔴 **ข้ามเงียบห้ามมี** (แก้ 17 ก.ย. 2569 · ยิงจริงครั้งแรก) — ได้ "ไฟล์ในถัง 9 · อ่านรอบนี้ 0 · ใบซ้ำ 0"
        ซึ่งอ่านได้ว่า "ไม่มีซ้ำ" ทั้งที่ไม่ได้อ่านสักใบ ⇒ นับทุกเหตุที่ข้าม และบอกว่าผลสรุปได้หรือยัง */
@@ -63,6 +64,24 @@ export async function GET(req: NextRequest) {
       if (debug) {
         const i = text.search(/invoice\s*(?:no|number|#)|receipt\s*(?:no|number|#)|เลขที่/i)
         snippets.push({ file: f.name, text: i >= 0 ? text.slice(Math.max(0, i - 30), i + 90) : text.slice(0, 120) })
+      }
+      /* ✅ ตรวจรอบสุดท้ายก่อนเสนอลบ (CEO ขอ 18 ก.ย. 2569) — ตัวอ่านพังมา 3 แบบ ⇒ ทุกไฟล์ในกลุ่มต้อง
+         (ก) มีเลขที่ใบที่ใช้เป็นกุญแจ **อยู่ในเนื้อ PDF แบบเป็นเลขของตัวเอง** (ไม่ได้ตามหลัง refer to) และ
+         (ข) **ชนิดเอกสารเดียวกัน** (ใบแจ้งหนี้ · ใบเสร็จ · ใบลดหนี้ · เอกสารที่อ้างถึงใบอื่น = คนละใบ) */
+      if (debug) {
+        const ident0 = billIdentity(text, vendorId)
+        const head = text.slice(0, 600)
+        const docType = /credit\s*(?:note|memo)|ใบลดหนี้/i.test(head) ? 'ใบลดหนี้'
+          : /refer(?:ence)?\s*to\s*(?:tax\s*)?invoice/i.test(text) ? 'อ้างถึงใบอื่น'
+          : /\breceipt\b|ใบเสร็จ/i.test(head) ? 'ใบเสร็จ'
+          : 'ใบแจ้งหนี้/ใบกำกับ'
+        let เลขของตัวเอง: boolean | null = null
+        if (ident0.invoiceNo) {
+          const norm = text.replace(/([A-Za-z0-9])\u0000(?=[A-Za-z0-9])/g, '$1-').toUpperCase()
+          const hits = Array.from(norm.matchAll(new RegExp(ident0.invoiceNo.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'g')))
+          เลขของตัวเอง = hits.some((h) => !/REFER(?:ENCE)?\s*TO[^\n]{0,40}$/.test(norm.slice(Math.max(0, (h.index ?? 0) - 50), h.index ?? 0)))
+        }
+        ตรวจรายไฟล์.push({ file: f.name, ชนิด: docType, เลขของตัวเอง })
       }
       const ident = billIdentity(text, vendorId)
       if (!ident.key) { undecidable.push({ file: f.name, why: ident.why ?? 'ไม่ทราบเหตุ' }); continue }
@@ -115,7 +134,7 @@ export async function GET(req: NextRequest) {
       ตัดสินไม่ได้: undecidable,
       ข้าม: ข้าม,
       ...(withKeys ? { กุญแจทุกไฟล์: keys } : {}),
-      ...(debug ? { ข้อความรอบป้าย: snippets } : {}),
+      ...(debug ? { ข้อความรอบป้าย: snippets, ตรวจรายไฟล์ } : {}),
       /* ผลเชื่อได้เมื่ออ่านครบทุกไฟล์ในช่วง และตัดสินได้ทุกใบ — ไม่งั้น "ใบซ้ำ 0" ไม่ได้แปลว่าไม่มีซ้ำ */
       สรุปได้: read === slice.length && undecidable.length === 0 && files.length <= skip + limit,
       ...(read < slice.length ? { เตือน: `อ่านได้ ${read} จาก ${slice.length} ไฟล์ในช่วง — ใบซ้ำ/จัดผิดเดือนอาจมีในไฟล์ที่ข้าม ห้ามสรุปว่าไม่มีซ้ำ` } : {}),
