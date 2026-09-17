@@ -1185,11 +1185,18 @@ const srv = createServer(async (req, res) => {
                     🔑 channelsWithoutWriter = ["tiktok"] **จงใจตัด shopee ออก** ⇒ จอต้องเลิกขึ้น "ไม่มีตัวยิง" ของ Shopee เอง
                     = พิสูจน์ว่าจออ่านรายชื่อจากท่อ ไม่ได้ฝังไว้
      · pushinconclusive : ต่อฐานไม่ได้ ⇒ ต้องไม่มี 🟢 ที่อิงสมุด */
-  if (/[?&]pushstate=1/.test(req.url) && ['stalepush', 'good', 'pushinconclusive', 'pushok'].includes(mode)) {
+  if (/[?&]pushstate=1/.test(req.url) && ['stalepush', 'good', 'pushinconclusive', 'pushok', 'pushfired', 'pushfiredrecent'].includes(mode)) {
     const iso = (msAgo) => new Date(Date.now() - msAgo).toISOString()
     const body = mode === 'pushinconclusive'
       ? { inconclusive: true, why: 'ต่อฐานคลังเงาไม่ได้' }
       /* pushok = ของจริงวันนี้ที่ดีแล้ว: มีตัวยิงช่องทางเดียว (Lazada) ยืนยัน 10 นาทีก่อน ⇒ Lazada ต้องขึ้น 🟢 ได้จริง */
+      /* pushfired = ยิงแล้ว 76 เมื่อ 2 ชม. ก่อน แต่ยืนยันไม่ได้ (สายขาดหลังยิง) ⇒ ออโต้ต้อง 🔴
+         pushfiredrecent = ยิงแล้วเมื่อ 5 นาทีก่อน ยังไม่ถึงรอบยืนยัน ⇒ ออโต้ต้อง 🟡 ไม่ใช่แดง */
+      : mode === 'pushfired' || mode === 'pushfiredrecent'
+        ? { ok: true, autoOn: false,
+            lastSweep: { at: iso(5 * 60e3), channel: 'lazada', mode: 'dry', planned: 1, pushed: 0, rejected: 0, skipped: 15, ms: 9000, note: null },
+            counts: { ทั้งหมด: 92, เคยยิง: 76, ยิงล่าสุด: iso(mode === 'pushfired' ? 2 * 3600e3 : 5 * 60e3), เคยยืนยัน: 0, กำลังถูกข้าม: 15, มีข้อผิดพลาด: 0, ยืนยันล่าสุด: null, ถูกข้ามนานสุดตั้งแต่: iso(3 * 3600e3) },
+            stuck: [], channelsWithoutWriter: ['shopee', 'tiktok'] }
       : mode === 'pushok'
         ? { ok: true, autoOn: true,
             lastSweep: { at: iso(5 * 60e3), channel: 'lazada', mode: 'live', planned: 3, pushed: 3, rejected: 0, skipped: 0, ms: 7000, note: null },
