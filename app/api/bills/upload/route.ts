@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteBillBlob, syncBillToBlobs } from '@/lib/billblobs'
+import { deleteBillBlob, syncBillToBlobs, syncBillByIdentity } from '@/lib/billblobs'
+import { ตัวตนของไฟล์อัป } from '@/lib/bill-ingest'
 import { BILL_VENDORS } from '@/lib/vendors'
 
 export const dynamic = 'force-dynamic'
@@ -51,9 +52,25 @@ export async function POST(req: NextRequest) {
     }
 
     const driveName = `${month}_REAL_${filename.endsWith('.pdf') ? filename : filename + '.pdf'}`
+    /* 🔴 **กันซ้ำด้วยตัวตนของใบ เหมือนขาอีเมล** (แก้ 18 ก.ย. 2569 · ใบ t_mu3g8tq5)
+       เดิมเส้นนี้ใช้ `syncBillToBlobs` ซึ่งกันซ้ำด้วย **ชื่อไฟล์** อย่างเดียว
+       ⇒ บิลที่ตัวเก็บสคริปต์ส่งเข้ามา **ไม่เคยผ่านตัวกันซ้ำด้วยตัวตนเลย**
+          ของจริงที่ตามมา: คู่ "สำเนาอีเมล + สำเนาสคริปต์" TikTok 92 ไฟล์ · Apple 9 ไฟล์
+       ⚠️ อ่านตัวตนไม่ได้ ⇒ ถอยไปกันด้วยชื่อไฟล์เหมือนเดิม **ห้ามทิ้งไฟล์** (บิลหายแย่กว่าบิลซ้ำ) และบอกเหตุกลับไป */
+    const { key: identKey, why: identWhy } = await ตัวตนของไฟล์อัป(buf, vendorId)
+    if (identKey) {
+      const res = await syncBillByIdentity(vendorId, driveName, 'application/pdf', buf, identKey)
+      return json({
+        ok: true, uploaded: res.written, skipped: !res.written, name: driveName, size: buf.length,
+        ...(res.written ? {} : { reason: res.reason, sameAs: res.sameAs ?? null }),
+        กันซ้ำด้วย: 'ตัวตนของใบ',
+      })
+    }
     const uploaded = await syncBillToBlobs(vendorId, driveName, 'application/pdf', buf)
-
-    return json({ ok: true, uploaded, skipped: !uploaded, name: driveName, size: buf.length })
+    return json({
+      ok: true, uploaded, skipped: !uploaded, name: driveName, size: buf.length,
+      กันซ้ำด้วย: 'ชื่อไฟล์ (อ่านตัวตนของใบไม่ได้)', ตัวตนอ่านไม่ได้เพราะ: identWhy,
+    })
   } catch (e: any) {
     return json({ error: e.message ?? String(e) }, 500)
   }
