@@ -209,7 +209,11 @@ function skipBar(key: PlatformKey, st: PushStateResp | null, now: number): Bar |
   if (จำนวน === 0) return { tone: 'ok', text: 'ไม่มีรหัสที่กำลังถูกข้าม' }
   const ms = serverTimeMs(c.ถูกข้ามนานสุดตั้งแต่)
   const age = ms === null ? null : now - ms
-  const tone: Tone = age === null ? 'warn' : age > 24 * 3600e3 ? 'bad' : age > 3600e3 ? 'warn' : 'ok'
+  /* 🔴 **มีรหัสถูกข้ามอยู่ ⇒ ห้ามขึ้น 🟢 ปกติ** (แก้ 17 ก.ย. 2569 หลังตัวกวาดวิ่งจริงรอบแรก)
+     รุ่นก่อนให้เขียวถ้าข้ามไม่ถึง 1 ชม. ⇒ ของจริงขึ้น "🟢 ปกติ · กำลังถูกข้าม 15 รหัส" = อ่านขัดกันเอง
+     และข้อเสนอที่อนุมัติเขียนว่าช่วงนี้ "ไม่มีสี" ไม่ใช่ "เขียว" · กองที่ข้าม (ติดลบ/ไม่รู้จัก/ขัดกัน) ไม่หายเองด้วย
+     ⇒ มีข้าม = อย่างน้อยเหลือง · เกิน 24 ชม. = แดง */
+  const tone: Tone = age !== null && age > 24 * 3600e3 ? 'bad' : 'warn'
   const ของช่องทางนี้ = (st?.stuck ?? []).filter((x) => String(x.channel ?? '').toLowerCase() === key)
   return {
     tone,
