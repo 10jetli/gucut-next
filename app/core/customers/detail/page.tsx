@@ -18,7 +18,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { SALE_STATUS, PAY_STATUS, CONTACT_TYPE, zortWord } from '@/lib/zort-words'
+import { SALE_STATUS, PAY_STATUS, PURCHASE_STATUS, CONTACT_TYPE, zortWord } from '@/lib/zort-words'
 import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
@@ -46,8 +46,16 @@ interface Products {
   /* ยอดรวมหัวใบของชุดเดียวกัน — ต่างจากผลรวมรายสินค้าได้ (ส่วนลดท้ายบิลที่ ZORT เกลี่ยลงบรรทัดแล้ว) */
   ordersAmount?: number; diffNote?: string
 }
+/* 🧾 ใบซื้อ — ZORT เอาใบซื้อเข้า/ขายออกไว้ตารางเดียวกันแล้วแยกด้วยคอลัมน์ "ประเภท"
+   ⚠️ `purchases: null` = **อ่านตารางใบซื้อไม่ได้ (ยังไม่รู้)** ต่างจาก `count: 0` = ไม่มีใบซื้อ */
+interface BuyRow {
+  id?: string | null; source?: string | null; number?: string | null
+  date?: string | null; status?: string | null; amount?: number; payStatus?: string | null
+}
+interface Purchases { rows?: BuyRow[]; count?: number; amount?: number; scope?: string }
 interface Resp {
   contact?: Record<string, unknown> | null
+  purchases?: Purchases | null
   name?: string
   orders?: { count?: number; total?: number; firstDay?: string; lastDay?: string; recent?: Order[] }
   money?: Money
@@ -89,6 +97,9 @@ function Inner() {
 
   const o = d?.orders
   const c = d?.contact
+  /* ใบซื้อของผู้ติดต่อรายนี้ · purchases === null = อ่านตารางใบซื้อไม่ได้ (ยังไม่รู้) ⇒ ไม่โชว์คอลัมน์ ประเภท
+     แต่ต้องเขียนบอกใต้ตารางว่าอ่านไม่ได้ ไม่ใช่เงียบ */
+  const buys = d?.purchases?.rows ?? []
 
   return (
     <div className="p-4 md:p-6 max-w-[980px]">
@@ -316,15 +327,23 @@ function Inner() {
               {' '}(ไม่ได้คิดจากตาราง 20 แถวข้างล่าง ซึ่งจะผิดสำหรับลูกค้าที่ซื้อเกิน 20 ใบ)
             </div>
 
-            {!o?.recent?.length ? (
+            {/* 🔴 **เงื่อนไขนี้เคยซ่อนใบซื้อทั้งหมด** (เจอด้วยตา 18 ก.ย. 2569)
+                ผู้ติดต่อที่เป็นคู่ค้าอย่างเดียว (ใบขาย 0 ใบ · ใบซื้อ 1 ใบ) จอขึ้นว่า
+                "ยังไม่มีออเดอร์ที่จับคู่กับชื่อนี้" ทั้งที่จอ ZORT โชว์ใบซื้อใบนั้นอยู่
+                ⇒ ตารางต้องขึ้นเมื่อ **มีใบชนิดใดชนิดหนึ่ง** ไม่ใช่เฉพาะตอนมีใบขาย */}
+            {!o?.recent?.length && !buys.length ? (
               <p className="text-[13px] text-gray-500">
                 {masked ? 'ดูประวัติไม่ได้เพราะชื่อถูกปิดบัง' : 'ยังไม่มีออเดอร์ที่จับคู่กับชื่อนี้'}
+                {d?.purchases === null && ' · และอ่านตารางใบซื้อไม่ได้ ⇒ ยังไม่รู้ว่ามีใบซื้อหรือไม่'}
               </p>
             ) : (
               <div className="overflow-x-auto">
                 <table className="w-full text-[13px]">
                   <thead>
                     <tr className="border-b border-gray-200 text-left text-gray-500">
+                      {/* คอลัมน์ ประเภท แบบ ZORT — ตารางเดียวมีทั้งขายออกและซื้อเข้า
+                          ขึ้นเฉพาะเมื่อผู้ติดต่อรายนี้มีใบซื้อจริง ไม่งั้นเป็นคอลัมน์ที่มีค่าเดียวทั้งตาราง */}
+                      {!!buys.length && <th className="py-1 pr-2 font-medium">ประเภท</th>}
                       <th className="py-1 pr-2 font-medium">วันที่</th>
                       <th className="py-1 pr-2 font-medium">เลขที่</th>
                       <th className="py-1 pr-2 font-medium">ช่องทาง</th>
@@ -334,8 +353,9 @@ function Inner() {
                     </tr>
                   </thead>
                   <tbody>
-                    {o.recent.map((r, i) => (
+                    {(o?.recent ?? []).map((r, i) => (
                       <tr key={`${r.id ?? r.number ?? i}`} className="border-b border-gray-100 last:border-0">
+                        {!!buys.length && <td className="py-1 pr-2 whitespace-nowrap">ขายออก</td>}
                         {/* 🗓️ เดิมโชว์ปี ค.ศ. ดิบ — เก็บค่าดิบไว้ใน title ให้คนตรวจย้อนได้ */}
                         <td className="py-1 pr-2 whitespace-nowrap" title={r.order_date ? `ค่าที่ท่อส่งมา: ${r.order_date}` : undefined}>
                           {r.order_date ? thaiDate(r.order_date) : '—'}</td>
@@ -354,12 +374,44 @@ function Inner() {
                         <td className="py-1">{r.pay_status ? zortWord(PAY_STATUS, r.pay_status).text : '—'}</td>
                       </tr>
                     ))}
+                    {/* 🧾 แถวใบซื้อ — ต่อท้ายเป็นกองของตัวเอง **ไม่เรียงปนกับใบขาย**
+                        เพราะสองกองถูกตัดคนละ 20 ใบ ⇒ ถ้าเรียงรวมตามวันแล้วบอกว่า "ล่าสุด"
+                        ใบเก่าของกองหนึ่งจะเบียดใบใหม่ของอีกกองหายไปโดยไม่มีอะไรฟ้อง */}
+                    {buys.map((r, i) => (
+                      <tr key={`buy-${r.id ?? r.number ?? i}`} className="border-b border-gray-100 last:border-0 bg-slate-50/60">
+                        <td className="py-1 pr-2 whitespace-nowrap">ซื้อเข้า</td>
+                        <td className="py-1 pr-2 whitespace-nowrap" title={r.date ? `ค่าที่ท่อส่งมา: ${r.date}` : undefined}>
+                          {r.date ? thaiDate(r.date) : '—'}</td>
+                        <td className="py-1 pr-2">{r.number ?? '—'}</td>
+                        <td className="py-1 pr-2 text-gray-400">—</td>
+                        <td className="py-1 pr-2 text-right tabular-nums">{baht(r.amount)}</td>
+                        {/* ใบซื้อใช้ชุดคำของหน้าใบซื้อ ไม่ใช่ของใบขาย (ZORT แยกคำระหว่างหน้าจริง) */}
+                        <td className="py-1 pr-2">{r.status ? zortWord(PURCHASE_STATUS, r.status).text : '—'}</td>
+                        <td className="py-1">{r.payStatus ? zortWord(PAY_STATUS, r.payStatus).text : '—'}</td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
+                {/* 🧾 ใบซื้อ: บอกให้ชัดว่าเป็นคนละกองที่ถูกตัดคนละ 20 ใบ · null = อ่านไม่ได้ ต้องพูด ไม่ใช่เงียบ */}
+                {d?.purchases === null ? (
+                  <p className="mt-2 text-[12px] text-amber-800">
+                    ⚠️ <b>อ่านตารางใบซื้อไม่ได้</b> — ตารางนี้จึงมีแต่ใบขาย ไม่ได้แปลว่าผู้ติดต่อรายนี้ไม่มีใบซื้อ
+                  </p>
+                ) : buys.length > 0 && (
+                  <p className="mt-2 text-[12px] text-gray-500">
+                    รวมใบซื้อเข้า <b>{buys.length}</b> ใบ
+                    {typeof d?.purchases?.count === 'number' && d.purchases.count > buys.length
+                      ? ` จากทั้งหมด ${d.purchases.count} ใบ` : ''}
+                    {' '}— <b>สองกองนี้ถูกตัดคนละ 20 ใบ</b> จึงแยกกองไว้ ไม่ได้เรียงปนกันตามวัน
+                    {d?.purchases?.scope ? ` · ${d.purchases.scope}` : ''}
+                  </p>
+                )}
                 <p className="mt-2 text-[12px] text-gray-400">
-                  แสดง {o.recent.length} ใบล่าสุด{typeof o.count === 'number' && o.count > o.recent.length ? ` จากทั้งหมด ${o.count} ใบ` : ''}
+                  {(o?.recent?.length ?? 0) === 0
+                    ? 'ไม่มีใบขายที่จับคู่กับชื่อนี้ (ตารางนี้จึงมีแต่ใบซื้อ)'
+                    : `แสดงใบขาย ${o?.recent?.length ?? 0} ใบล่าสุด`}{typeof o?.count === 'number' && o.count > (o.recent?.length ?? 0) ? ` จากทั้งหมด ${o.count} ใบ` : ''}
                   {/* ✅ ดูครบทุกใบ — ท่อ list=orders รับ customer ได้แล้ว (17 ก.ย. 2569) · ต้องบอกว่านับคนละกติกา */}
-                  {typeof o.count === 'number' && o.count > o.recent.length && (
+                  {typeof o?.count === 'number' && o.count > (o.recent?.length ?? 0) && (
                     <>
                       {' · '}
                       <Link href={ลิงก์ใบของลูกค้า(d?.name ?? '', o.firstDay, o.lastDay)} className="text-blue-600 hover:underline">
