@@ -1400,6 +1400,17 @@ const srv = createServer(async (req, res) => {
       failedWhy: { recon: 'D1 ตอบช้าเกินกำหนด', stock: 'ไม่มีสิทธิ์อ่านตาราง' },
     }))
   }
+  /* กองเดียวหาย — ท่อส่ง counts/amounts มาแต่ **ขาดกอง "ใบผี"** (18 ก.ย. 2569)
+     ใช้ทดสอบว่ากองที่หายขึ้นเป็นขีด ไม่ใช่ "0 ใบ · ฿0" (จอแพ็คสินค้า) */
+  if (mode === 'missingbucket') {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      'ต้องส่งของ': [{ number: 'SO-9', channel: 'Shopee', day: '2026-09-05', amount: 500 }],
+      counts: { 'ต้องส่งของ': 1, 'รอจ่ายอยู่': 3 },
+      amounts: { 'ต้องส่งของ': 500, 'รอจ่ายอยู่': 1500 },
+      dormantCutoff: '2026-08-19',
+    }))
+  }
   if (mode === 'nocounts') {
     /* มีรายการงานค้างจริง แต่ **ไม่มีช่อง counts** — ใช้ทดสอบว่าคำเตือน "ใบผี" หายไปเงียบ ๆ ไหม */
     res.writeHead(200, { 'content-type': 'application/json' })

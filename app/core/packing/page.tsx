@@ -64,6 +64,11 @@ function ageTone(d: number | null): 'green' | 'orange' | 'red' | 'gray' {
   return 'green'
 }
 
+/** ตัวเลขที่ท่อไม่ได้ส่งมา ⇒ ขีด (ไม่รู้) · ส่งมาเป็น 0 ⇒ โชว์ 0 (ศูนย์จริง) — สองอย่างนี้ต้องไม่หน้าตาเหมือนกัน */
+function ค่าหรือขีด(v: number | undefined, f: (n: number) => string) {
+  return typeof v === 'number' ? f(v) : <span className="text-gray-300" title="ท่อไม่ได้ส่งยอดของกองนี้มา — ไม่ใช่ศูนย์">—</span>
+}
+
 export default function PackingPage() {
   const router = useRouter()
   const [d, setD] = useState<Resp | null>(null)
@@ -194,14 +199,16 @@ export default function PackingPage() {
               <div className="bg-white border border-gray-200 rounded-md px-3.5 py-2.5">
                 <p className="text-[12px] text-gray-500">รอจ่ายอยู่ — ยังไม่จ่าย แต่ช่องทางยังขายอยู่</p>
                 <p className="text-[14px] text-gray-800 mt-0.5">
-                  <b>{fmtNum(d.counts?.['รอจ่ายอยู่'] ?? 0)}</b> ใบ · {fmtMoney(d.amounts?.['รอจ่ายอยู่'] ?? 0)}
+                  {/* 🔴 กองที่ท่อ **ไม่ได้ส่งมา** ต้องเป็นขีด ไม่ใช่ 0 (18 ก.ย. 2569 · ตัวตรวจ check-honesty ชี้)
+                      กล่องนี้โผล่เมื่อกองใดกองหนึ่งมีค่า ⇒ อีกกองที่หายไปจะเขียนว่า "0 ใบ · ฿0" ทั้งที่ยังไม่รู้ */}
+                  <b>{ค่าหรือขีด(d.counts?.['รอจ่ายอยู่'], fmtNum)}</b> ใบ · {ค่าหรือขีด(d.amounts?.['รอจ่ายอยู่'], fmtMoney)}
                   <span className="text-gray-400 text-[12px]"> — ยังมีโอกาสได้เงิน</span>
                 </p>
               </div>
               <div className="bg-white border border-amber-200 rounded-md px-3.5 py-2.5">
                 <p className="text-[12px] text-amber-800">ใบผี — ยังไม่จ่าย และช่องทางเงียบไปแล้ว</p>
                 <p className="text-[14px] text-gray-800 mt-0.5">
-                  <b>{fmtNum(d.counts?.['ใบผี'] ?? 0)}</b> ใบ · {fmtMoney(d.amounts?.['ใบผี'] ?? 0)}
+                  <b>{ค่าหรือขีด(d.counts?.['ใบผี'], fmtNum)}</b> ใบ · {ค่าหรือขีด(d.amounts?.['ใบผี'], fmtMoney)}
                   <span className="text-amber-700 text-[12px]"> — ไม่มีวันได้เงิน</span>
                 </p>
                 <p className="text-[11.5px] text-gray-500 mt-1 leading-relaxed">
