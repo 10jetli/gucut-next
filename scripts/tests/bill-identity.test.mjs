@@ -195,6 +195,21 @@ ID ธุรกรรม
   ok(lr.invoiceNo !== 'THMPTI0000000000000001', 'เอกสารที่อ้างถึง ไม่ใช้เลขที่อ้างถึงเป็นตัวตน', String(lr.invoiceNo))
   ok(li.key !== lr.key, 'สองเอกสารได้คนละกุญแจ (หรืออีกใบตัดสินไม่ได้)', `${li.key} vs ${lr.key}`)
 
+  console.log('⑯ Apple / Google — ป้ายเฉพาะของสองเจ้านี้ (เดิมตัดสินไม่ได้ทั้งกอง)')
+  /* 🔬 รูปจริง 18 ก.ย. 2569 (ตัวเลขสมมติ) */
+  const appleA = 'icloud.com\nวันที่\n5 ส.ค. 2569\nเลขที่ใบสั่งซื้อ\nMTZ1ABC2DE\nหมายเลขเอกสาร\n111122223333\nเรียกเก็บเงินไปยัง\nVisa .... 1234'
+  const appleB = appleA.replace('111122223333', '444455556666').replace('MTZ1ABC2DE', 'MTZ9ZZZ9ZZ')
+  const ap1 = billIdentity(appleA, 'apple'); const ap2 = billIdentity(appleB, 'apple')
+  ok(ap1.invoiceNo === '111122223333', 'Apple อ่าน "หมายเลขเอกสาร" ได้', String(ap1.invoiceNo))
+  ok(ap1.key !== ap2.key, 'ใบ Apple คนละใบได้คนละกุญแจ', `${ap1.key} vs ${ap2.key}`)
+  const gA = 'Payment Receipt\nPayment dateAug 5, 2026\nBilling ID1234-5678-9012\nPayment methodVisa ••••1234\nPayment numberA123456789'
+  const gB = gA.replace('A123456789', 'A987654321')   // บัญชีเดียวกัน (Billing ID เท่ากัน) แต่คนละใบ
+  const gg1 = billIdentity(gA, 'google'); const gg2 = billIdentity(gB, 'google')
+  ok(gg1.invoiceNo === 'A123456789', 'Google อ่าน "Payment number" ได้', String(gg1.invoiceNo))
+  ok(gg1.key !== gg2.key, 'ใบ Google คนละใบได้คนละกุญแจ (ไม่ใช้ Billing ID ที่เหมือนกันทุกใบ)', `${gg1.key} vs ${gg2.key}`)
+  const adobeOrder = 'Invoice Information\n1234567890Invoice Number\n16-JUL-2026Invoice Date\nCredit CardPayment Terms\n9876543210Order Number'
+  ok(billIdentity(adobeOrder, 'adobe').invoiceNo === '1234567890', 'ใบที่มีทั้งเลขที่ใบและเลขสั่งซื้อ ⇒ ได้เลขที่ใบ', String(billIdentity(adobeOrder, 'adobe').invoiceNo))
+
 } catch (e) {
   console.log('❌ เทสพัง:', e?.message ?? e); fail++
 } finally {
