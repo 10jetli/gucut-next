@@ -32,7 +32,7 @@ interface Warehouse {
    *     เพราะมูลค่าขยับได้ทั้งวัน — เลขที่ไม่มีเวลากำกับจะถูกอ่านว่าเป็นของสด */
   valueCollectedAt?: string
 }
-interface ChannelRow { channel: string; orders: number; amount: number }
+interface WarehouseSales { code: string; orders: number; amount: number }
 
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
@@ -40,7 +40,11 @@ const thaiDay = (back = 0) =>
 export default function CoreBranchesPage() {
   const [rows, setRows] = useState<Warehouse[]>([])
   const [note, setNote] = useState('')
-  const [byChannel, setByChannel] = useState<ChannelRow[]>([])
+  /** ยอดขาย 30 วันรายคลัง **จากคลังที่ผูกกับใบจริง** (`list=orderfacets&warehouses=1`)
+   *  🔴 แทนการเดาจากชื่อช่องทางแล้ว (17 ก.ย. 2569 · A4 ในใบสำรวจ t_mu5bhh84) — ดูเหตุผลที่ statOf */
+  const [byWarehouse, setByWarehouse] = useState<WarehouseSales[]>([])
+  /** ยอดของใบที่ยังไม่รู้คลัง ("" จากท่อ) — ต้องบอกบนจอ ไม่งั้นผลรวมรายคลังดูน้อยกว่ายอดจริงโดยไม่มีเหตุผล */
+  const [unknownWh, setUnknownWh] = useState<WarehouseSales | null>(null)
   /** ⚠️ **ต้องมีตัวนี้ ไม่ใช่ดูแค่ byChannel.length** — ระหว่างที่ยอดขายยังไม่มา
    *  `statOf` จะคืน 0 ทุกคลัง แล้วช่องขึ้น "0 ใบ · ฿0" ซึ่งอ่านว่า **"คลังนี้ 30 วันขายไม่ได้เลย"**
    *  นั่นคือการโกหกในช่วงโหลด — เป็นราคาที่ต้องจ่ายถ้าจะวาดจอก่อนข้อมูลครบ ⇒ ต้องเขียนว่า "กำลังโหลด" */
@@ -79,9 +83,16 @@ export default function CoreBranchesPage() {
             ⇒ ขอแถวเดียวไม่ได้ช่วยอะไร ต้นทุนอยู่ที่รอบไปกลับ D1 ไม่ใช่ขนาดข้อมูล */
       setSalesLoading(true)
       setSalesFailed(false)
-      const salesSoon = fetch(`/api/web/core?list=orders&from=${thaiDay(30)}&to=${thaiDay(0)}&limit=1`)
+      const salesSoon = fetch(`/api/web/core?list=orderfacets&from=${thaiDay(30)}&to=${thaiDay(0)}&warehouses=1`)
         .then((r) => r.json())
-        .then((cRes) => { setByChannel(Array.isArray(cRes?.byChannel) ? cRes.byChannel : []) })
+        .then((cRes) => {
+          /* ⚠️ ไม่มีช่อง byWarehouse = ท่อรุ่นเก่า/ตอบไม่ครบ ⇒ ถือว่าล้ม (ขึ้น ?) ห้ามตกเป็น 0 */
+          if (!Array.isArray(cRes?.byWarehouse)) throw new Error('ไม่มี byWarehouse')
+          const all = cRes.byWarehouse.map((w: { code?: string; orders?: number; amount?: number }) =>
+            ({ code: String(w.code ?? ''), orders: Number(w.orders) || 0, amount: Number(w.amount) || 0 }))
+          setByWarehouse(all.filter((w: WarehouseSales) => w.code))
+          setUnknownWh(all.find((w: WarehouseSales) => !w.code && (w.orders > 0 || w.amount > 0)) ?? null)
+        })
         .catch(() => { setSalesFailed(true) /* ล้มก็แค่คอลัมน์นี้ ไม่ล้มทั้งจอ — แต่ต้องบอกว่าล้ม */ })
         .finally(() => setSalesLoading(false))
 
@@ -108,22 +119,16 @@ export default function CoreBranchesPage() {
 
   useEffect(() => { load() }, [load])
 
-  /** ยอดขาย 30 วันของคลังนั้น — **จับจากชื่อช่องทางที่มีรหัสคลังอยู่** (เช่น "POS KLD")
+  /** ยอดขาย 30 วันของคลังนั้น — **จากคลังที่ผูกกับใบจริง** (ท่อเก็บ warehouse_code ของใบ)
    *
-   *  🔴 **สองเรื่องที่ต้องรู้** (เขียนเพิ่ม 5 ก.ย. 2569 ตอนไล่ตรวจทั้งระบบ)
-   *  ① นี่คือ **การตีความจากชื่อ** ไม่ใช่ข้อมูลที่ผูกกันจริง — ท่อไม่ได้บอกว่าใบไหนขายจากคลังไหน
-   *     ⇒ ต้องติดป้ายบนจอว่าเป็นการจับคู่จากชื่อ ห้ามให้อ่านเป็นยอดที่ระบบผูกไว้
-   *  ② เดิมสร้าง RegExp จาก `code` ตรง ๆ ⇒ **วันที่มีรหัสคลังที่มีอักขระพิเศษ
-   *     (เช่น `A+B` หรือ `(1)`) จะโยน error ตอนวาด = จอขาวทั้งหน้า**
-   *     รหัสวันนี้ปลอดภัย (NEW · KLD · ANJ) แต่รหัสคลังคนตั้งเอง เพิ่มเมื่อไหร่ก็ได้
-   *     ⇒ หนีอักขระก่อนเสมอ */
+   *  🔴 **เดิมเดาจากชื่อช่องทางที่มีรหัสคลัง (เช่น "POS KLD")** — วัดจริง 17 ก.ย. 2569:
+   *     ชื่อช่องทาง 30 วันล่าสุด **ไม่มีสักชื่อที่มีรหัส NEW/KLD/ANJ** ⇒ จอขึ้น KLD "0 ใบ · ฿0" · ANJ "0 ใบ · ฿0"
+   *     ทั้งที่ของจริง KLD 73 ใบ ฿51,738 · ANJ 218 ใบ ฿59,289 (NEW 595 ใบ ฿574,983 · รวม 886 = ยอดทั้งช่วงพอดี)
+   *     = ตัวเลขผิดที่หน้าตาปกติทุกประการ ซึ่งคอมเมนต์เดิมเตือนไว้แล้วว่าวันที่ชื่อเปลี่ยนจะพังเงียบ
+   *  คลังที่ไม่อยู่ในรายการ = ช่วงนี้ไม่มีใบจริง (ผลรวมทุกแถวของท่อ = ยอดทั้งช่วง) ⇒ 0 เป็นค่าจริง */
   const statOf = (code: string) => {
-    const safe = String(code).replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const hit = byChannel.filter((c) => new RegExp(`\\b${safe}\\b`, 'i').test(c.channel))
-    return {
-      orders: hit.reduce((s, r) => s + (Number(r.orders) || 0), 0),
-      amount: hit.reduce((s, r) => s + (Number(r.amount) || 0), 0),
-    }
+    const hit = byWarehouse.find((w) => w.code.toUpperCase() === String(code).toUpperCase())
+    return { orders: hit?.orders ?? 0, amount: hit?.amount ?? 0 }
   }
 
   const list = q.trim()
@@ -213,17 +218,14 @@ export default function CoreBranchesPage() {
                       ⇒ อันตรายคือ**ย้ายของเดิม** ไม่ใช่**เพิ่มของใหม่ต่อท้ายแถว**
                       ⚠️ แต่ต้องติดป้ายว่าเป็นของที่เราเพิ่ม ไม่งั้นรอบหน้าคนไล่เทียบกับภาพ ZORT
                          จะนึกว่าตัวเองอ่านภาพผิด แล้วเสียเวลาไล่หาสิ่งที่ไม่มีอยู่ */}
-                  {/* ⚠️ สองคอลัมน์นี้ **จับคู่จากชื่อช่องทาง** ไม่ใช่ข้อมูลที่ระบบผูกไว้
-                      ⇒ ต้องบอกบนหัวคอลัมน์ ไม่ใช่ซ่อนไว้ในคอมเมนต์ (กติกา: การตีความต้องดูออกว่าเป็นการตีความ) */}
+                  {/* สองคอลัมน์นี้มาจากคลังที่ผูกกับใบจริงแล้ว (เดิมเดาจากชื่อช่องทาง ติดป้าย ≈ ไว้ — ถอดป้ายแล้ว) */}
                   <th className={THR}>
                     บิล 30 วัน
                     <span className="ml-1 text-[10px] font-normal text-blue-500" title="คอลัมน์นี้ ZORT ไม่มี — เราเพิ่มเอง">+เรา</span>
-                    <span className="ml-1 text-[10px] font-normal text-amber-600" title="จับคู่จากชื่อช่องทางที่มีรหัสคลังอยู่ เช่น POS KLD — ไม่ใช่ข้อมูลที่ระบบผูกใบขายกับคลังไว้จริง">≈</span>
                   </th>
                   <th className={THR}>
                     ยอดขาย 30 วัน
                     <span className="ml-1 text-[10px] font-normal text-blue-500" title="คอลัมน์นี้ ZORT ไม่มี — เราเพิ่มเอง">+เรา</span>
-                    <span className="ml-1 text-[10px] font-normal text-amber-600" title="จับคู่จากชื่อช่องทางที่มีรหัสคลังอยู่ เช่น POS KLD — ไม่ใช่ข้อมูลที่ระบบผูกใบขายกับคลังไว้จริง">≈</span>
                   </th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
@@ -273,12 +275,10 @@ export default function CoreBranchesPage() {
                           : <span className="text-gray-300" title="ท่อยังไม่ได้ส่งวันเคลื่อนไหวของคลังนี้มา">—</span>}
                       </td>
                       {/* ⚠️ ระหว่างรอ ห้ามโชว์ 0 — 0 แปลว่า "ขายไม่ได้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
-                      <td className={TDR}>{!w.isPos ? <span className="text-gray-300">—</span>
-                        : salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
+                      <td className={TDR}>{salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
                         : salesFailed ? <span className="text-red-500" title="ดึงยอดขาย 30 วันไม่สำเร็จ — ไม่ใช่ว่าไม่มียอด">?</span>
                         : fmtNum(s.orders)}</td>
-                      <td className={TDR}>{!w.isPos ? <span className="text-gray-300">—</span>
-                        : salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
+                      <td className={TDR}>{salesLoading ? <span className="text-gray-300" title="กำลังโหลดยอดขาย 30 วัน">…</span>
                         : salesFailed ? <span className="text-red-500" title="ดึงยอดขาย 30 วันไม่สำเร็จ — ไม่ใช่ว่าไม่มียอด">?</span>
                         : fmtMoney(s.amount)}</td>
                       <td className={`${TD} text-right`}>
@@ -298,6 +298,10 @@ export default function CoreBranchesPage() {
 
           <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             {note || 'คลังสินค้าดึงมาจาก ZORT ทั้งหมด'} ·
+            {/* ⚠️ ข้อความของท่อ (note) บอกว่าโกดัง "ไม่มียอดขาย" — หมายถึงขายหน้าร้าน (POS) ไม่ได้
+                แต่คอลัมน์นี้นับใบที่ **ตัดของจากคลังนั้น** รวมออนไลน์ ⇒ โกดังจึงมียอด · ต้องเขียนบอก ไม่งั้นสองประโยคขัดกัน */}
+            {' '}บิล/ยอดขาย 30 วัน นับจากใบขายที่ตัดของจากคลังนั้นจริง (รวมทุกช่องทาง ทั้งสองร้าน — โกดังจึงมียอดจากออเดอร์ออนไลน์ แม้ขายหน้าร้านไม่ได้) ·
+            {unknownWh && <> <b className="text-amber-800">มีใบที่ยังไม่รู้คลัง {fmtNum(unknownWh.orders)} ใบ {fmtMoney(unknownWh.amount)}</b> (ไม่ได้นับในคลังใด) ·</>}
             <b> โกดังไม่ใช่จุดขาย</b> จึงไม่มีให้เลือกในจอขายหน้าร้านและไม่มียอดขาย —
             เป็นความตั้งใจ ไม่ใช่ข้อมูลตกหล่น
           </p>
