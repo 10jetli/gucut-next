@@ -18,7 +18,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
+import { SALE_STATUS, PAY_STATUS, CONTACT_TYPE, zortWord } from '@/lib/zort-words'
 import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
@@ -127,8 +127,13 @@ function Inner() {
                         {/* 🗓️ ช่องที่เป็นวันเวลา (อัปเดตล่าสุด) ต้องผ่านตัวจัดรูปแบบ ไม่งั้นปี ค.ศ. หลุดจอ
                             เจอ 16 ก.ย. 2569 ตอนตรวจด้วยตา: ตารางนี้วนพิมพ์ค่าทุกช่องด้วย String(c[k])
                             ⇒ ด่านที่ค้นจากรูปแบบ `{x.field}` จับไม่ได้ (คีย์เป็นตัวแปร) — ต้องแก้ที่นี่เอง */}
-                        <td className="py-1 break-words" title={k === 'updated_at' ? `ค่าที่ท่อส่งมา: ${String(c[k])}` : undefined}>
-                          {k === 'updated_at' ? thaiDate(String(c[k])) : String(c[k])}</td>
+                        {/* 🔤 ช่อง "ประเภท" เคยขึ้นค่าดิบ "Undefined" บนจอไทย (เจอด้วยตา 18 ก.ย. 2569)
+                            ⇒ ผ่านแผนที่คำเหมือนคอลัมน์สถานะ · ค่าดิบเก็บไว้ใน title ให้ตรวจย้อนได้ */}
+                        <td className="py-1 break-words"
+                          title={k === 'updated_at' || k === 'type' ? `ค่าที่ท่อส่งมา: ${String(c[k])}` : undefined}>
+                          {k === 'updated_at' ? thaiDate(String(c[k]))
+                            : k === 'type' ? zortWord(CONTACT_TYPE, String(c[k])).text
+                            : String(c[k])}</td>
                       </tr>
                     ) : null
                   )}
