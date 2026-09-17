@@ -22,7 +22,7 @@ import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill } from '@/components/zort'
 import { thaiDate } from '@/lib/format'
 /* serverTimeMs อยู่ใน returns-api (เกิดจากบั๊กโซนเวลาตอนประกบ /returns) — ตัวเดียวกันใช้ทุกจอ */
-import { serverTimeMs } from '@/lib/returns-api'
+import PushStatusBoard, { thaiDateTime } from '@/components/zort/PushStatusBoard'
 
 interface PushRow { sku?: string; from?: number; to?: number; kind?: string }
 interface PushRound {
@@ -94,13 +94,8 @@ const KIND: Record<string, { text: string; tone: 'blue' | 'green' | 'orange' | '
   close: { text: 'ปิดกันขายเกิน', tone: 'red' },
 }
 
-const thaiTime = (iso?: string) => {
-  const ms = serverTimeMs(iso)
-  if (ms === null) return '—'
-  const t = new Date(ms + 7 * 3600e3)
-  const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-  return `${t.getUTCDate()} ${M[t.getUTCMonth()]} ${t.getUTCFullYear() + 543} ${String(t.getUTCHours()).padStart(2, '0')}:${String(t.getUTCMinutes()).padStart(2, '0')}`
-}
+/* ตัวแปลงเวลาไทยย้ายไปอยู่ที่กระดานสถานะ — ใช้ชุดเดียวกันทั้งจอ (log เก็บเวลาเป็น UTC) */
+const thaiTime = thaiDateTime
 
 
 /* รายการรหัสในกองที่ถูกข้าม — เลขอย่างเดียวตรวจอะไรไม่ได้
@@ -144,6 +139,8 @@ export default function StockPushPage() {
   const [log, setLog] = useState<PushRound[] | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  /** เวลาที่ท่อของเราตอบ log สำเร็จครั้งล่าสุด — ใช้กับแถบ "ออนไลน์ — ระบบเรา" */
+  const [logAt, setLogAt] = useState<number | null>(null)
   /* ผล verify ต่อรอบ — คีย์ = at ของรอบ */
   const [verify, setVerify] = useState<Record<string, VerifyResp | 'busy'>>({})
 
@@ -157,6 +154,7 @@ export default function StockPushPage() {
       if (!res.ok || d.error) throw new Error(d.error || `ท่อตอบ ${res.status}`)
       if (!Array.isArray(d.log)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี log)')
       setLog(d.log)
+      setLogAt(Date.now())
     } catch (e) { setError(String(e instanceof Error ? e.message : e)); setLog(null) } finally { setLoading(false) }
   }, [])
   useEffect(() => { load() }, [load])
@@ -169,6 +167,7 @@ export default function StockPushPage() {
   const [plan, setPlan] = useState<PlanResp | null>(null)
   const [planBusy, setPlanBusy] = useState(false)
   const [planErr, setPlanErr] = useState('')
+  const [planAt, setPlanAt] = useState<number | null>(null)
   const loadPlan = useCallback(async () => {
     setPlanBusy(true); setPlanErr('')
     try {
@@ -182,6 +181,7 @@ export default function StockPushPage() {
       if (!PLATFORMS.some((p) => d[p.key] && typeof d[p.key] === 'object'))
         throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีข้อมูลของแพลตฟอร์มไหนเลย) — ยังบอกไม่ได้ว่าต้องดันอะไร')
       setPlan(d)
+      setPlanAt(Date.now())
     } catch (e) { setPlanErr(String(e instanceof Error ? e.message : e)); setPlan(null) } finally { setPlanBusy(false) }
   }, [])
 
@@ -236,12 +236,14 @@ export default function StockPushPage() {
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
       />
 
-      {/* สถานะรายแพลตฟอร์ม — Shopee/TikTok ยัง skip ตรง ๆ บอกเหตุผลพร้อมวันที่ ห้ามแกล้งเขียว */}
-      <div className="flex flex-wrap gap-2 mb-4 text-[12px]">
-        <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded-full px-3 py-1">✅ Lazada — ยิงจริงแล้ว (16/16 · 8 ก.ย. 2569)</span>
-        <span className="bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-3 py-1" title="เส้นยิงตอบ skip ตรง ๆ — ไม่ใช่ของพัง">⏳ Shopee — รอ Go-Live (เส้นตอบ skip)</span>
-        <span className="bg-amber-50 text-amber-800 border border-amber-200 rounded-full px-3 py-1" title="เส้นยิงตอบ skip ตรง ๆ — ไม่ใช่ของพัง">⏳ TikTok — รอตารางแปลง id (เส้นตอบ skip)</span>
-      </div>
+      {/* 🔴 **เดิมตรงนี้เป็นป้ายเขียนตายตัว** "✅ Lazada — ยิงจริงแล้ว (16/16 · 8 ก.ย. 2569)"
+          ⇒ เขียวค้างตลอดไม่ว่าของจริงจะหยุดยิงไปกี่วัน = สิ่งที่ท่านประธานบ่นว่า "ไม่ออโต้" แต่จอไม่เคยบอก
+          ⇒ แทนด้วยกระดานที่วัดจากข้อมูลจริง (ท่านประธานอนุมัติ 17 ก.ย. 2569) */}
+      <PushStatusBoard
+        log={log} logLoading={loading} logErr={error} logAt={logAt}
+        plan={plan} planBusy={planBusy} planErr={planErr} planAt={planAt}
+        onAsk={loadPlan}
+      />
 
       {/* 🔴 ไม่มีปุ่มยิงจริง — บอกทางที่ถูกแทน */}
       <p className="text-[12px] text-blue-900 bg-blue-50 border border-blue-100 rounded-md px-3.5 py-2 mb-4 leading-relaxed">

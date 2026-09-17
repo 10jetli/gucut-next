@@ -1179,6 +1179,29 @@ const srv = createServer(async (req, res) => {
   /* แผนดันสต็อกรอบถัดไป (?stockpush=1) — โครงจากการยิงของจริง 11 ก.ย. 2569
      ⚠️ จงใจให้ **สามเจ้าไม่เหมือนกัน**: shopee ปกติ · lazada bucketsAddUp=false (ต้องขึ้นแดง)
         · tiktok ตอบ skip (ต้องขึ้นเหลือง ไม่ใช่ 0) — ทดสอบว่าจอแยกสามทิศได้จริง */
+  /* 🧪 โหมด stalepush — ทดสอบกระดานสถานะดันสต็อก (17 ก.ย. 2569 · ใบงานจอสถานะดันสต็อก)
+     · log: Lazada ยิงสำเร็จล่าสุด **5 วันก่อน** ⇒ แถบอัปเดตออโต้ต้องขึ้น 🔴 (ไม่ใช่เขียว)
+     · แผน Lazada: ตัวเลขจริงจากใบงาน (1,954 · ตรง 1,709 · ต่าง 42 · ติดลบ 5 · ไม่รู้จัก 10) + กองเดา/หลายรหัส ครบ 188
+     · แผน Shopee: **จงใจไม่ส่งกองเดา/หลายรหัส** ทั้งที่ bucketsAddUp=true ⇒ ขาด 188
+       = เคสที่ CEO บวกเองแล้วไม่ครบ ⇒ จอต้องฟ้องว่ามีรหัสไม่อยู่ในกองไหน ไม่ใช่เชื่อ bucketsAddUp เฉย ๆ
+     · TikTok: skip ⇒ ช่องทางต้องขึ้นว่าอ่านไม่ได้ */
+  if (mode === 'stalepush' && /stockpushlog=/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ ok: true, log: [
+      { at: new Date(Date.now() - 5 * 86400e3 - 3600e3).toISOString(), platform: 'lazada', fired: 5, pushed: 5, rejected: 0, rows: [{ sku: 'T-1', from: 1, to: 2, kind: 'up' }] },
+      { at: new Date(Date.now() - 9 * 86400e3).toISOString(), platform: 'lazada', fired: 1, pushed: 0, rejected: 1, rows: [{ sku: 'T-2', from: 1, to: 0, kind: 'close' }] },
+    ] }))
+  }
+  if (mode === 'stalepush' && /[?&]stockpush=1/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({ ok: true, mode: 'ซ้อมอย่างเดียว — ไม่เขียนอะไรกลับแพลตฟอร์ม',
+      lazada: { platformSkus: 1954, same: 1709, wouldPush: 42, up: 41, down: 1, reopen: 0, close: 0,
+        skipNegative: 5, skipUnknown: 10, skipConflict: 0, excludedGuess: 2, excludedOneToMany: 186, bucketsAddUp: true, day: '2026-09-17' },
+      shopee: { platformSkus: 1954, same: 1709, wouldPush: 42, up: 41, down: 1, reopen: 0, close: 0,
+        skipNegative: 5, skipUnknown: 10, skipConflict: 0, bucketsAddUp: true, day: '2026-09-17' },
+      tiktok: { skip: 'อ่านจำนวนคงเหลือจาก TikTok ไม่ได้รอบนี้' },
+    }))
+  }
   if (mode === 'good' && /[?&]stockpush=1/.test(req.url)) {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
