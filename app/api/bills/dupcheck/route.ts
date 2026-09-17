@@ -37,12 +37,17 @@ export async function GET(req: NextRequest) {
     const undecidable: { file: string; why: string }[] = []
     const misfiled: { file: string; เดือนในชื่อไฟล์: string | null; รอบบิลในใบ: string }[] = []
     let read = 0
+    /* 🔴 **ข้ามเงียบห้ามมี** (แก้ 17 ก.ย. 2569 · ยิงจริงครั้งแรก) — ได้ "ไฟล์ในถัง 9 · อ่านรอบนี้ 0 · ใบซ้ำ 0"
+       ซึ่งอ่านได้ว่า "ไม่มีซ้ำ" ทั้งที่ไม่ได้อ่านสักใบ ⇒ นับทุกเหตุที่ข้าม และบอกว่าผลสรุปได้หรือยัง */
+    const ข้าม = { ไม่ใช่PDF: [] as string[], โหลดไม่ได้: [] as { file: string; why: string }[], อ่านข้อความไม่ได้: [] as { file: string; why: string }[] }
 
     for (const f of slice) {
-      if (!/\.pdf$/i.test(f.name)) continue          // zip อ่านเนื้อไม่ได้ ⇒ ข้าม (ไม่เดา)
-      const buf = await downloadBlobFile(f.id).catch(() => null)
-      if (!buf) continue
-      const { text } = await pdfBillInfo(buf)
+      if (!/\.pdf$/i.test(f.name)) { ข้าม.ไม่ใช่PDF.push(f.name); continue }          // zip อ่านเนื้อไม่ได้ ⇒ ข้าม (ไม่เดา) แต่ต้องนับ
+      let buf: Buffer | null = null
+      try { buf = await downloadBlobFile(f.id) } catch (e) { ข้าม.โหลดไม่ได้.push({ file: f.name, why: String((e as Error)?.message || e).slice(0, 120) }); continue }
+      if (!buf) { ข้าม.โหลดไม่ได้.push({ file: f.name, why: 'ได้ค่าว่าง' }); continue }
+      let text = ''
+      try { text = (await pdfBillInfo(buf)).text } catch (e) { ข้าม.อ่านข้อความไม่ได้.push({ file: f.name, why: String((e as Error)?.message || e).slice(0, 120) }); continue }
       read++
       const ident = billIdentity(text, vendorId)
       if (!ident.key) { undecidable.push({ file: f.name, why: ident.why ?? 'ไม่ทราบเหตุ' }); continue }
@@ -72,6 +77,10 @@ export async function GET(req: NextRequest) {
       จำนวนใบซ้ำ: dup.reduce((a, g) => a + (g.จำนวนไฟล์ - 1), 0),
       จัดผิดเดือน: misfiled,
       ตัดสินไม่ได้: undecidable,
+      ข้าม: ข้าม,
+      /* ผลเชื่อได้เมื่ออ่านครบทุกไฟล์ในช่วง และตัดสินได้ทุกใบ — ไม่งั้น "ใบซ้ำ 0" ไม่ได้แปลว่าไม่มีซ้ำ */
+      สรุปได้: read === slice.length && undecidable.length === 0 && files.length <= skip + limit,
+      ...(read < slice.length ? { เตือน: `อ่านได้ ${read} จาก ${slice.length} ไฟล์ในช่วง — ใบซ้ำ/จัดผิดเดือนอาจมีในไฟล์ที่ข้าม ห้ามสรุปว่าไม่มีซ้ำ` } : {}),
     })
   }
   return NextResponse.json({
