@@ -44,7 +44,9 @@ export async function GET(req: NextRequest) {
     for (const f of slice) {
       if (!/\.pdf$/i.test(f.name)) { ข้าม.ไม่ใช่PDF.push(f.name); continue }          // zip อ่านเนื้อไม่ได้ ⇒ ข้าม (ไม่เดา) แต่ต้องนับ
       let buf: Buffer | null = null
-      try { buf = await downloadBlobFile(f.id) } catch (e) { ข้าม.โหลดไม่ได้.push({ file: f.name, why: String((e as Error)?.message || e).slice(0, 120) }); continue }
+      /* 🔴 id จาก listVendorBlobFiles ขึ้นต้นด้วย "BLOB:" — ต้องตัดออกก่อนโหลด (ตัวเรียกอื่นตัดหมด: bills/file · billzip)
+         รุ่นแรกส่ง id ตรง ๆ ⇒ โหลดได้ค่าว่างทั้ง 9 ไฟล์ ⇒ "อ่าน 0 · ใบซ้ำ 0" (ยิงจริง 17 ก.ย. 2569) */
+      try { buf = await downloadBlobFile(f.id.replace(/^BLOB:/, '')) } catch (e) { ข้าม.โหลดไม่ได้.push({ file: f.name, why: String((e as Error)?.message || e).slice(0, 120) }); continue }
       if (!buf) { ข้าม.โหลดไม่ได้.push({ file: f.name, why: 'ได้ค่าว่าง' }); continue }
       let text = ''
       try { text = (await pdfBillInfo(buf)).text } catch (e) { ข้าม.อ่านข้อความไม่ได้.push({ file: f.name, why: String((e as Error)?.message || e).slice(0, 120) }); continue }
