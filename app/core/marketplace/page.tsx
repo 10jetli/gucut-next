@@ -62,6 +62,19 @@ interface Data {
   marketplaceCounts?: Record<string, Counts> | null
 }
 
+/** อายุของข้อมูลเป็น "จำนวนวัน" นับตามวันไทย — คืน null เมื่ออ่านวันไม่ออก (ห้ามเดาเป็น 0)
+ *  🔴 เลขที่คัดมาจากรอบเก็บข้อมูล **ต้องบอกอายุตัวเอง** ไม่งั้นอีกสองสัปดาห์จอยังยืนยันเลขของวันนี้
+ *     (กติกาเดียวกับจอกระเป๋าเงินที่ใช้ CHECKED_AT + STALE_DAYS) */
+function อายุวัน(iso?: string | null): number | null {
+  const d = String(iso ?? '').slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null
+  const เก็บเมื่อ = Date.parse(`${d}T00:00:00+07:00`)
+  if (Number.isNaN(เก็บเมื่อ)) return null
+  const วันนี้ไทย = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10)
+  const วันนี้ = Date.parse(`${วันนี้ไทย}T00:00:00+07:00`)
+  return Math.round((วันนี้ - เก็บเมื่อ) / 86400000)
+}
+
 /** เรียงตามผัง ZORT เป๊ะ — Shopee · Lazada · TikTok
  *  ⚠️ ห้ามซ่อนเจ้าที่ยังไม่ได้เชื่อม คนที่ชิน ZORT จะหาแล้วไม่เจอ แล้วนึกว่าระบบเราทำไม่ได้ */
 const PLATFORMS = [
@@ -254,6 +267,22 @@ export default function MarketplaceDashboardPage() {
                     )}
                     {' '}— <b>ไม่ใช่เวลาที่เปิดจอนี้</b>
                   </p>
+                  {/* ⏳ เตือนเมื่อข้อมูลเริ่มเก่า — คิดตอนเรนเดอร์ ⇒ **หายเองเมื่อข้อมูลสด**
+                      (คำเตือนที่ผูกกับข้อมูลจริงไม่เน่า ต่างจากคำเตือนที่ฝังไว้ตายตัว) */}
+                  {(() => {
+                    const อายุสต็อก = อายุวัน(d_unlisted.stockDay)
+                    const อายุสูตร = อายุวัน(d_unlisted.recipeAt)
+                    const เตือน: string[] = []
+                    if (อายุสต็อก !== null && อายุสต็อก >= 1) เตือน.push(`ยอดคงเหลือเก่า ${อายุสต็อก} วัน`)
+                    if (อายุสูตร !== null && อายุสูตร >= 14) เตือน.push(`สูตรสินค้าชุดเก็บมา ${อายุสูตร} วันแล้ว`)
+                    if (!เตือน.length) return null
+                    return (
+                      <p className="text-[11.5px] text-amber-800 mt-1">
+                        ⏳ <b>{เตือน.join(' · ')}</b> — ของอาจขายออกหรือรับเข้าไปแล้วหลังจากนั้น
+                        {' '}⇒ ใช้เป็นรายการตั้งต้นให้ไปเช็คของจริง ไม่ใช่ยอดสด
+                      </p>
+                    )
+                  })()}
                   {Array.isArray(d_unlisted.withStock) && d_unlisted.withStock.length > 0 && (
                     <details className="mt-2">
                       <summary className="text-[12px] text-blue-600 cursor-pointer">ดูรายชื่อสินค้าที่ยังมีของ</summary>
