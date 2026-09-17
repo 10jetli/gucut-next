@@ -167,7 +167,7 @@ const ADV_TH: Record<string, string> = {
 const ADV_KEY: Record<string, string> = {
   paystatus: 'payStatus', cod: 'cod', product: 'product', shipchannel: 'shipChannel',
   shipfrom: 'shipFrom', shipto: 'shipTo', amountmin: 'amountMin', amountmax: 'amountMax', number: 'number',
-  tag: 'tag', createuser: 'createUser', warehouse: 'warehouse',
+  tag: 'tag', createuser: 'createUser', warehouse: 'warehouse', customer: 'customer',
 }
 
 const MEMO_KEY = 'gucut:core-sales:filter'
@@ -224,9 +224,9 @@ export default function CoreSalesPage() {
        cod=1 ⇒ 240 · cod=0 ⇒ 79 (รวม 319 พอดี) · paystatus=Paid ⇒ 300 · Pending ⇒ 2
        product=00313 ⇒ 44 · ช่วงวันส่ง 5–8 ก.ย. ⇒ 75 · amountmin=1000 ⇒ 59 · number=SO ⇒ 22
        shipchannel=Flash ⇒ 315 · ค่าพัง (cod=2 · amountmin=abc · min>max · วันส่งกลับด้าน) ⇒ 400 ทุกตัว
-     🔴 **ช่อง "ชื่อลูกค้า" ยังไม่ทำ** — ยิงแล้วพบว่า `?customer=` ชนกับเส้น "ลูกค้ารายคน"
-        ของท่อ (router จับ `customer` ก่อนถึง `list=orders`) ⇒ ได้ก้อนคนละรูป ไม่มี `total`
-        ⇒ ถ้าต่อไปจะได้จอที่ขึ้น "ไม่มีข้อมูล" เงียบ ๆ ทั้งที่มีของ · แจ้งฝั่งท่อแล้ว */
+     ✅ **ช่อง "ชื่อลูกค้า" ต่อแล้ว 17 ก.ย. 2569** — เดิม `?customer=` ชนกับเส้น "ลูกค้ารายคน" ของท่อ
+        (router จับ `customer` ก่อนถึง `list=orders` ⇒ ได้ก้อนคนละรูป ไม่มี `total`) · ท่อแก้แล้ว 701aa59
+        ⚠️ ด่านรูปคำตอบใน load() ยังอยู่ — ถ้าชนแบบนี้อีกจะขึ้น error ไม่ใช่ตารางว่าง */
   const [fPay, setFPay] = useState('')
   const [fCod, setFCod] = useState('')
   const [fProduct, setFProduct] = useState('')
@@ -243,6 +243,9 @@ export default function CoreSalesPage() {
   const [fTag, setFTag] = useState('')
   const [fCreator, setFCreator] = useState('')
   const [fWh, setFWh] = useState('')
+  /* 👤 ชื่อลูกค้า — ท่อแก้เส้นชนแล้ว (gucut-web 701aa59 · ขึ้น 17 ก.ย. 2569 23:0x)
+     ยิงยืนยันของจริง: customer=a ⇒ 46 จาก 1,337 ใบ + สะท้อน advancedFilters.customer · ค้นแบบ "มีคำนี้อยู่" */
+  const [fCustomer, setFCustomer] = useState('')
   /* 💾 **จำตัวกรองไว้** — ลอกติ๊ก `remember_filter` ของ ZORT (แผง "ตัวกรอง" ใน /Sell/list)
      🔴 ของที่จำไว้ถูกใส่กลับให้เอง ⇒ **ต้องประกาศทุกครั้งที่ใช้** ไม่งั้นคนเห็นรายการน้อยกว่าจริง
         แล้วสรุปยอดผิดทั้งวันโดยไม่มีอะไรบอกว่ากำลังกรองอยู่
@@ -299,8 +302,9 @@ export default function CoreSalesPage() {
     if (fTag.trim()) out.push(['tag', fTag.trim()])
     if (fCreator.trim()) out.push(['createuser', fCreator.trim()])
     if (fWh) out.push(['warehouse', fWh])
+    if (fCustomer.trim()) out.push(['customer', fCustomer.trim()])
     return out
-  }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber, fTag, fCreator, fWh])
+  }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber, fTag, fCreator, fWh, fCustomer])
 
   const load = useCallback(async (
     off = 0,
@@ -662,6 +666,7 @@ export default function CoreSalesPage() {
           { label: 'มูลค่าตั้งแต่', kind: 'number', value: fMin, onChange: (v) => setFMin(String(v)), placeholder: '0', width: 110 },
           { label: 'จนถึงมูลค่า', kind: 'number', value: fMax, onChange: (v) => setFMax(String(v)), placeholder: '999999', width: 110 },
           { label: 'หมายเลขรายการ', kind: 'text', value: fNumber, onChange: (v) => setFNumber(String(v)), placeholder: 'เช่น SO-2026', width: 150 },
+          { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
           { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
           { label: 'ผู้สร้าง', kind: 'text', value: fCreator, onChange: (v) => setFCreator(String(v)), placeholder: 'ชื่อผู้สร้างใบ', width: 130 },
           {
@@ -680,10 +685,6 @@ export default function CoreSalesPage() {
         ]}
         notAvailable={[
           {
-            what: 'ชื่อลูกค้า (ช่องแยก)',
-            why: 'ท่อมีให้แล้ว แต่ชื่อพารามิเตอร์ชนกับเส้น "ลูกค้ารายคน" ⇒ ส่งไปแล้วได้คำตอบคนละรูป (ยิงยืนยันซ้ำ 17 ก.ย. 2569 ยังชนอยู่ · ส่งตัวแก้ให้ฝั่งท่อแล้ว รอขึ้นระบบ) · ระหว่างนี้ใช้ช่องค้นหาด้านบนซึ่งค้นชื่อลูกค้าให้อยู่แล้ว',
-          },
-          {
             what: 'ใบที่ยังไม่รู้คลัง',
             why: 'ใบก่อน 1 ก.ย. 2569 ส่วนหนึ่งท่อยังไม่ได้เก็บรหัสคลัง ⇒ เลือกคลังไหนก็ไม่ขึ้น (วัด 17 ก.ย. 2569: ช่วง 1 ส.ค.–16 ก.ย. มี 40 ใบ) · ยังเลือก "ไม่รู้คลัง" ไม่ได้',
           },
@@ -701,14 +702,14 @@ export default function CoreSalesPage() {
           setAdvFrom(''); setAdvTo('')
           setFPay(''); setFCod(''); setFProduct(''); setFShipCh('')
           setFShipFrom(''); setFShipTo(''); setFMin(''); setFMax(''); setFNumber('')
-          setFTag(''); setFCreator(''); setFWh('')
+          setFTag(''); setFCreator(''); setFWh(''); setFCustomer('')
           /* ⚠️ ล้างแล้วต้องยิงใหม่ทันที ไม่งั้นตารางยังเป็นผลของเงื่อนไขเดิมทั้งที่ช่องว่างหมดแล้ว
              (setState ยังไม่ทันมีผลในรอบนี้ ⇒ ส่ง from/to ว่างตรง ๆ และ advParams รอบถัดไปจะว่างเอง) */
           setTimeout(() => load(0, { from: '', to: '' }), 0)
         }}
         canClear={!!advFrom || !!advTo || advParams().length > 0}
         applyLabel="ค้นหาตามช่วงนี้"
-        serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา · สถานะชำระเงิน · COD · สินค้า · ช่องทางจัดส่ง · วันส่งสินค้า · ช่วงมูลค่า · หมายเลขรายการ · Tag · ผู้สร้าง · คลัง"
+        serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา · สถานะชำระเงิน · COD · สินค้า · ช่องทางจัดส่ง · วันส่งสินค้า · ช่วงมูลค่า · หมายเลขรายการ · ชื่อลูกค้า · Tag · ผู้สร้าง · คลัง"
         extraNote={<>
           ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;
           {/* 💾 ติ๊กจำตัวกรอง — ลอกจาก ZORT (remember_filter) · ไฟเขียวจาก CEO 15 ก.ย. 2569 */}
