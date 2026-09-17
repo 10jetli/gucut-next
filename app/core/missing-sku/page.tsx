@@ -174,6 +174,7 @@ export default function CoreMissingSkuPage() {
 
           {rowsCut > 0 && (
             <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+              {/* ตรวจแล้ว: กล่องนี้เรนเดอร์เมื่อ `rowsCut > 0` ซึ่งคำนวณจาก `typeof data.total === 'number'` ⇒ total เป็นตัวเลขแน่นอน · `?? 0` เข้าไม่ถึง */}
               ⚠️ <b>ตารางข้างล่างไม่ใช่ทั้งหมด</b> — ท่อบอกว่ามี {fmtNum(data.total ?? 0)} รหัส
               แต่ส่งมา {fmtNum(all.length)} ⇒ ขาดไป <b>{fmtNum(rowsCut)}</b> รหัส ·
               เลขบนปุ่มยังถูกต้องเพราะมาจากท่อ แต่<b>แถวที่กดดูได้มีไม่ครบ</b>
