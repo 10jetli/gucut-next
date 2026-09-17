@@ -29,6 +29,10 @@ export async function GET(req: NextRequest) {
   /* keys=1 ⇒ คืนกุญแจตัวตนของ **ทุกไฟล์** ที่อ่านได้ (17 ก.ย. 2569)
      ใบซ้ำคัดได้แค่ภายในคำขอเดียว — เจ้าที่ไฟล์เกิน limit (TikTok 203) ต้องเอากุญแจทุกหน้ามารวมเองถึงจะเห็นคู่ข้ามหน้า */
   const withKeys = sp.get('keys') === '1'
+  /* debug=1 (ต้องระบุ vendor เจ้าเดียว) ⇒ คืนข้อความรอบป้ายเลขที่ใบในเนื้อ PDF ~120 ตัวอักษรต่อไฟล์
+     ใช้ไล่บั๊กตัวอ่าน (18 ก.ย. 2569: Anthropic ได้เลขแค่ส่วนหน้า) โดยไม่ต้องมีไฟล์ในเครื่อง
+     ⚠️ ผลมีเลขเอกสารจริง — เก็บเฉพาะที่ส่วนตัว ห้ามแปะลง repo/claude-shared */
+  const debug = sp.get('debug') === '1' && want !== 'all'
   const vendors = want === 'all' ? BILL_VENDORS.map((v) => v.id) : [want]
 
   const out: any[] = []
@@ -40,6 +44,7 @@ export async function GET(req: NextRequest) {
     const undecidable: { file: string; why: string }[] = []
     const misfiled: { file: string; เดือนในชื่อไฟล์: string | null; รอบบิลในใบ: string }[] = []
     const keys: { file: string; key: string }[] = []
+    const snippets: { file: string; text: string }[] = []
     let read = 0
     /* 🔴 **ข้ามเงียบห้ามมี** (แก้ 17 ก.ย. 2569 · ยิงจริงครั้งแรก) — ได้ "ไฟล์ในถัง 9 · อ่านรอบนี้ 0 · ใบซ้ำ 0"
        ซึ่งอ่านได้ว่า "ไม่มีซ้ำ" ทั้งที่ไม่ได้อ่านสักใบ ⇒ นับทุกเหตุที่ข้าม และบอกว่าผลสรุปได้หรือยัง */
@@ -55,6 +60,10 @@ export async function GET(req: NextRequest) {
       let text = ''
       try { text = (await pdfBillInfo(buf)).text } catch (e) { ข้าม.อ่านข้อความไม่ได้.push({ file: f.name, why: String((e as Error)?.message || e).slice(0, 120) }); continue }
       read++
+      if (debug) {
+        const i = text.search(/invoice\s*(?:no|number|#)|receipt\s*(?:no|number|#)|เลขที่/i)
+        snippets.push({ file: f.name, text: i >= 0 ? text.slice(Math.max(0, i - 30), i + 90) : text.slice(0, 120) })
+      }
       const ident = billIdentity(text, vendorId)
       if (!ident.key) { undecidable.push({ file: f.name, why: ident.why ?? 'ไม่ทราบเหตุ' }); continue }
       if (withKeys) keys.push({ file: f.name, key: ident.key })
@@ -86,6 +95,7 @@ export async function GET(req: NextRequest) {
       ตัดสินไม่ได้: undecidable,
       ข้าม: ข้าม,
       ...(withKeys ? { กุญแจทุกไฟล์: keys } : {}),
+      ...(debug ? { ข้อความรอบป้าย: snippets } : {}),
       /* ผลเชื่อได้เมื่ออ่านครบทุกไฟล์ในช่วง และตัดสินได้ทุกใบ — ไม่งั้น "ใบซ้ำ 0" ไม่ได้แปลว่าไม่มีซ้ำ */
       สรุปได้: read === slice.length && undecidable.length === 0 && files.length <= skip + limit,
       ...(read < slice.length ? { เตือน: `อ่านได้ ${read} จาก ${slice.length} ไฟล์ในช่วง — ใบซ้ำ/จัดผิดเดือนอาจมีในไฟล์ที่ข้าม ห้ามสรุปว่าไม่มีซ้ำ` } : {}),
