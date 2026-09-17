@@ -1046,6 +1046,15 @@ const srv = createServer(async (req, res) => {
   /* SKU ที่คลังไม่รู้จัก (?list=missing-sku) — จอต้องใช้เลขจากท่อ ไม่ใช่นับจากแถว
      ⚠️ จงใจให้ **แถวที่ส่งมาน้อยกว่ายอดที่ประกาศ** เพื่อทดสอบว่าจอขึ้นป้ายเตือน
         และเลขบนปุ่มยังถูกต้อง (มาจากท่อ ไม่ได้นับจากแถวที่ขาด) */
+  /* ท่อส่งแถวมา แต่ **ไม่ส่งตัวนับ** unknown/mappedToBase (18 ก.ย. 2569)
+     ใช้ทดสอบว่าเลขบนปุ่มเป็นขีด ไม่ใช่ (0) — การ์ดข้างบนเขียน "ไม่รู้" อยู่แล้ว */
+  if (mode === 'nosummary' && /[?&]list=missing-sku/.test(req.url)) {
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify({
+      rows: [{ sku: 'MS-001', name: 'รหัสไม่รู้จัก 1', shopee: 1, baseSku: 'MS-1', baseQty: 2, baseName: 'รหัสฐาน 1', buildable: null, matchesShopee: null }],
+      computed: 1,
+    }))
+  }
   if (mode === 'good' && /[?&]list=missing-sku/.test(req.url)) {
     const rows = []
     for (let i = 1; i <= 10; i++) {

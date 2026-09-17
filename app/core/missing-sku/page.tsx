@@ -151,13 +151,15 @@ export default function CoreMissingSkuPage() {
                 className={`text-[12.5px] font-semibold rounded-xl px-3 py-1.5 border transition-colors ${
                   view === 'unknown' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                 }`}>
-                ไม่รู้จักเลย ({fmtNum(data.unknown ?? 0)})
+                {/* 🔴 เลขบนปุ่มคือคำสัญญา — ท่อไม่ส่งมา ต้องเป็นขีด ไม่ใช่ (0)
+                    การ์ดข้างบนเขียน "ไม่รู้" อยู่แล้ว ⇒ ปุ่มเขียน (0) จะขัดกันเองในจอเดียว (ตัวตรวจ check-honesty ชี้ 18 ก.ย. 2569) */}
+                ไม่รู้จักเลย ({typeof data.unknown === 'number' ? fmtNum(data.unknown) : '—'})
               </button>
               <button onClick={() => setView('mapped')}
                 className={`text-[12.5px] font-semibold rounded-xl px-3 py-1.5 border transition-colors ${
                   view === 'mapped' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-50'
                 }`}>
-                พอเดารหัสฐานได้ ({fmtNum(data.mappedToBase ?? 0)})
+                พอเดารหัสฐานได้ ({typeof data.mappedToBase === 'number' ? fmtNum(data.mappedToBase) : '—'})
               </button>
               <button onClick={() => setView('buildable')}
                 className={`text-[12.5px] font-semibold rounded-xl px-3 py-1.5 border transition-colors ${
