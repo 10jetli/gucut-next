@@ -6,6 +6,8 @@ export const dynamic = 'force-dynamic'
 // POST /api/bills/fixmonth { secret, vendor, match, month }
 // Move wrongly-classified cached bill entries to the correct month.
 // Any entry whose filename contains `match` gets its month set to `month`.
+// ไม่เปิดสาธารณะโดยตั้งใจ: เส้นนี้ **ย้ายบิลข้ามเดือน (เขียนข้อมูล)** ⇒ ต้องล็อกอิน + secret สองชั้น
+//    (ต่างจาก dupcheck/report ที่อ่านอย่างเดียว) · scripts/check-secret-routes.mjs อ่านบรรทัดนี้
 export async function POST(req: NextRequest) {
     const body = await req.json()
     const { secret, vendor, match, month } = body
