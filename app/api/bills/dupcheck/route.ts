@@ -26,6 +26,9 @@ export async function GET(req: NextRequest) {
   const want = (sp.get('vendor') || 'all').trim()
   const limit = Math.min(200, Math.max(1, Number(sp.get('limit') ?? 60) || 60))
   const skip = Math.max(0, Number(sp.get('skip') ?? 0) || 0)
+  /* keys=1 ⇒ คืนกุญแจตัวตนของ **ทุกไฟล์** ที่อ่านได้ (17 ก.ย. 2569)
+     ใบซ้ำคัดได้แค่ภายในคำขอเดียว — เจ้าที่ไฟล์เกิน limit (TikTok 203) ต้องเอากุญแจทุกหน้ามารวมเองถึงจะเห็นคู่ข้ามหน้า */
+  const withKeys = sp.get('keys') === '1'
   const vendors = want === 'all' ? BILL_VENDORS.map((v) => v.id) : [want]
 
   const out: any[] = []
@@ -36,6 +39,7 @@ export async function GET(req: NextRequest) {
     const byKey = new Map<string, { file: string; invoiceNo: string | null; period: string | null }[]>()
     const undecidable: { file: string; why: string }[] = []
     const misfiled: { file: string; เดือนในชื่อไฟล์: string | null; รอบบิลในใบ: string }[] = []
+    const keys: { file: string; key: string }[] = []
     let read = 0
     /* 🔴 **ข้ามเงียบห้ามมี** (แก้ 17 ก.ย. 2569 · ยิงจริงครั้งแรก) — ได้ "ไฟล์ในถัง 9 · อ่านรอบนี้ 0 · ใบซ้ำ 0"
        ซึ่งอ่านได้ว่า "ไม่มีซ้ำ" ทั้งที่ไม่ได้อ่านสักใบ ⇒ นับทุกเหตุที่ข้าม และบอกว่าผลสรุปได้หรือยัง */
@@ -53,6 +57,7 @@ export async function GET(req: NextRequest) {
       read++
       const ident = billIdentity(text, vendorId)
       if (!ident.key) { undecidable.push({ file: f.name, why: ident.why ?? 'ไม่ทราบเหตุ' }); continue }
+      if (withKeys) keys.push({ file: f.name, key: ident.key })
       const list = byKey.get(ident.key) ?? []
       list.push({ file: f.name, invoiceNo: ident.invoiceNo, period: ident.period })
       byKey.set(ident.key, list)
@@ -80,6 +85,7 @@ export async function GET(req: NextRequest) {
       จัดผิดเดือน: misfiled,
       ตัดสินไม่ได้: undecidable,
       ข้าม: ข้าม,
+      ...(withKeys ? { กุญแจทุกไฟล์: keys } : {}),
       /* ผลเชื่อได้เมื่ออ่านครบทุกไฟล์ในช่วง และตัดสินได้ทุกใบ — ไม่งั้น "ใบซ้ำ 0" ไม่ได้แปลว่าไม่มีซ้ำ */
       สรุปได้: read === slice.length && undecidable.length === 0 && files.length <= skip + limit,
       ...(read < slice.length ? { เตือน: `อ่านได้ ${read} จาก ${slice.length} ไฟล์ในช่วง — ใบซ้ำ/จัดผิดเดือนอาจมีในไฟล์ที่ข้าม ห้ามสรุปว่าไม่มีซ้ำ` } : {}),
