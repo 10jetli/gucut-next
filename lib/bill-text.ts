@@ -104,20 +104,25 @@ export function invoiceNoFromText(text: string): string | null {
     /^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(raw)                        // 11/06/2026
     || /^\d{4}-\d{2}-\d{2}$/.test(raw)                                  // 2026-06-11
     || /^\d{1,2}-(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)/i.test(raw) // 16-SEP-2026
+  /* 🔴 **ค่าต้องมีตัวเลขอย่างน้อยหนึ่งตัว** (แก้ 18 ก.ย. 2569 · ของจริง Cloudflare)
+     ใบ Cloudflare 3 ใบคนละเลข ได้เลขที่ใบเป็นคำว่า `INVOICE` ทั้งหมด ⇒ กุญแจเดียวกัน ⇒ ถูกนับเป็น "ใบซ้ำ"
+     (ป้าย `Invoice #` ตามด้วยคำ `INVOICE` · หรือ `INVOICEInvoice Number` ที่ ⓑ หยิบคำหน้าป้าย)
+     ⇒ ลองทุกตำแหน่งที่ป้ายปรากฏ ไม่ใช่ตำแหน่งแรก และข้ามค่าที่ไม่มีตัวเลข */
+  const ใช้ได้ = (raw: string) => !!raw && /\d/.test(raw) && !ดูเหมือนวันที่(raw)
   for (const label of NO_LABELS) {
-    // ⓐ ป้ายอยู่หน้า ค่าอยู่หลัง (รูปแบบปกติ)
     const lab = thaiLoose(label)
-    let m = t.match(new RegExp(`${lab}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'i'))
-    let raw = m ? m[1].replace(/[.,;]+$/, '') : ''
+    // ⓐ ป้ายอยู่หน้า ค่าอยู่หลัง (รูปแบบปกติ)
+    for (const m of t.matchAll(new RegExp(`${lab}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'gi'))) {
+      const raw = m[1].replace(/[.,;]+$/, '')
+      if (ใช้ได้(raw)) return raw.toUpperCase()
+    }
     /* ⓑ **ค่าอยู่หน้า ป้ายอยู่หลัง** — เจอของจริงในใบ Adobe (16 ก.ย. 2569)
        ข้อความที่แกะจาก PDF ออกมาเป็น `1234567890Invoice Number` (คอลัมน์ขวาถูกอ่านก่อนหัวข้อ)
        ⇒ ถ้าไม่รองรับรูปนี้ จะไปหยิบค่าของป้ายอื่นมาผิดใบ (ตัวรุ่นแรกได้เลขจาก Invoice Date มา) */
-    if (!raw || ดูเหมือนวันที่(raw)) {
-      const m2 = t.match(new RegExp(`([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})\\s*${lab}`, 'i'))
-      if (m2) raw = m2[1].replace(/[.,;]+$/, '')
+    for (const m2 of t.matchAll(new RegExp(`([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})\\s*${lab}`, 'gi'))) {
+      const raw = m2[1].replace(/[.,;]+$/, '')
+      if (ใช้ได้(raw)) return raw.toUpperCase()
     }
-    if (!raw || ดูเหมือนวันที่(raw)) continue
-    return raw.toUpperCase()
   }
   return null
 }

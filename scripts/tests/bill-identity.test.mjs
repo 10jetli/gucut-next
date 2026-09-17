@@ -162,6 +162,18 @@ ID ธุรกรรม
   ok(ambiguous.period === null, 'ไม่เดาเดือนจาก 07/08/2026', String(ambiguous.period))
   ok(ambiguous.key === null, 'ไม่มีรอบบิล ⇒ ตัดสินไม่ได้ (ไม่เดาว่าไม่ซ้ำ)', String(ambiguous.key))
 
+  console.log('⑬ ค่าที่ไม่มีตัวเลขเลย (คำป้ายเอง เช่น INVOICE) ⇒ ห้ามใช้เป็นเลขที่ใบ')
+  /* 🔬 ของจริง 18 ก.ย. 2569: ใบ Cloudflare **3 ใบคนละเลข** (IN-75520671 · IN-77550881 · IN-79323479)
+     ได้กุญแจเดียวกัน `inv:INVOICE` ⇒ ถูกจัดเป็น "ใบซ้ำ" ทั้งกลุ่ม · ตัวกันซ้ำตอนเก็บใช้ตัวอ่านเดียวกัน ⇒ ใบใหม่เสี่ยงถูกปัดทิ้ง
+     ⇒ เลขที่ใบต้องมีตัวเลขอย่างน้อยหนึ่งตัว · ไม่เจอเลขจริง ⇒ ไปป้ายถัดไป/ตัดสินไม่ได้ ห้ามคืนคำป้าย */
+  const cfShape1 = 'INVOICEInvoice Number IN-77550881\nDate of issue Sep 2, 2026\nAmount due $2.10'
+  const cfShape2 = 'Cloudflare, Inc.\nINVOICE\nInvoice # INVOICE\nInvoice number IN-79323479\nTotal $5.29'
+  const c1 = billIdentity(cfShape1, 'cloudflare')
+  const c2 = billIdentity(cfShape2, 'cloudflare')
+  ok(c1.invoiceNo !== 'INVOICE' && c2.invoiceNo !== 'INVOICE', 'ไม่หยิบคำ INVOICE มาเป็นเลขที่ใบ', `${c1.invoiceNo} · ${c2.invoiceNo}`)
+  ok(c1.key !== c2.key, 'ใบคนละเลขต้องได้คนละกุญแจ', `${c1.key} vs ${c2.key}`)
+  ok(c2.invoiceNo === 'IN-79323479', 'ข้ามป้ายที่ได้ค่าไม่มีตัวเลข แล้วหาเลขจริงจากป้ายถัดไป', String(c2.invoiceNo))
+
 } catch (e) {
   console.log('❌ เทสพัง:', e?.message ?? e); fail++
 } finally {
