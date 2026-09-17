@@ -40,6 +40,11 @@ export interface PushStateResp {
   /** ช่องทางที่ **ยิงไม่ออก** — ท่อเป็นเจ้าของรายชื่อนี้ จอห้ามฝังเอง (CEO สั่ง 17 ก.ย. 2569) */
   channelsWithoutWriter?: string[]
 }
+/** รอบยิงจริงหนึ่งรอบจาก `?stockpushlog=1` (เวลา UTC) — ใช้จับ "ยิงจริงแล้วพัง" ที่สมุดสถานะมองไม่เห็น */
+export interface BoardPushRound {
+  at?: string; platform?: string; fired?: number; pushed?: number; rejected?: number
+  rows?: Array<{ result?: string; why?: string }>
+}
 export interface BoardSide {
   platformSkus?: number; same?: number; wouldPush?: number
   skipNegative?: number; skipUnknown?: number; skipConflict?: number
@@ -182,7 +187,9 @@ function autoBar(key: PlatformKey, st: PushStateResp | null, err: string, now: n
   if (ms === null) {
     const ls = st?.lastSweep
     const เหตุ = ls === null ? 'ตัวกวาดยังไม่เคยวิ่ง'
-      : ls?.mode === 'dry' ? 'ตัวกวาดยังอยู่โหมดซ้อม ยังไม่ได้ยิงของจริงสักรหัส'
+      /* 🔴 เดิมเขียน "ยังไม่ได้ยิงของจริงสักรหัส" — **เท็จ** วันที่รอบยิงจริง 14:01 ถูกปฏิเสธทั้งรอบ
+         แล้วรอบซ้อม 14:15 มาทับ `lastSweep` (เจอบนข้อมูลจริง 17 ก.ย. 2569) ⇒ พูดเฉพาะเรื่องรอบล่าสุดที่รู้แน่ */
+      : ls?.mode === 'dry' ? 'รอบกวาดล่าสุดเป็นโหมดซ้อม (ไม่ได้ยิง) — ดูแถบ "ยิงจริงล่าสุด" ว่าเคยยิงจริงแล้วผลเป็นอย่างไร'
       : 'ยังไม่มีรหัสไหนที่รอบกวาดถัดไปพิสูจน์ได้ว่าลงจริง'
     return { tone: 'bad', text: `ยังไม่เคยยืนยันว่าดันถึงแพลตฟอร์มจริงสักรหัส · ${เหตุ}${หมายเหตุรวม}` }
   }
@@ -194,6 +201,42 @@ function autoBar(key: PlatformKey, st: PushStateResp | null, err: string, now: n
     tone,
     text: <>{นับรวมหลายช่องทาง && 'ไม่รู้รายช่องทาง — '}ยืนยันว่าถึงแพลตฟอร์มล่าสุด <b>{thaiDateTime(c.ยืนยันล่าสุด)}</b> ({ago(ms, now)})
       {' '}· เคยยืนยัน {n(c.เคยยืนยัน)} จาก {n(c.ทั้งหมด)} รหัสในสมุด{หมายเหตุรวม}</>,
+  }
+}
+
+/* ── 🎯 ยิงจริงล่าสุด — อ่านจากประวัติการยิง ไม่ใช่สมุดสถานะ ──
+   🔴 **ที่มา (17 ก.ย. 2569 14:01): ยิงจริงขึ้น Lazada 76 ตัว ถูกปฏิเสธทั้ง 76 — แต่กระดานไม่มีอะไรแดงเลย**
+      · `lastSweep` ถูกรอบซ้อม 14:15 เขียนทับภายใน 15 นาที ⇒ ความล้มเหลวหายจากจอ
+      · สมุดสถานะบอก `มีข้อผิดพลาด 0` (บั๊กฝั่งท่อ: ตัวกันเวลาตัดการเขียนผลยิงทิ้ง)
+      ⇒ แหล่งเดียวที่จำความล้มเหลวไว้คือ `stockpush/log` ⇒ จอต้องอ่านจากตรงนี้ด้วย
+   กติกา: รอบยิงจริงล่าสุดของช่องทาง **มีถูกปฏิเสธ ⇒ 🔴** จนกว่าจะมีรอบใหม่กว่าที่ยิงผ่าน
+   ⚠️ "ยิงผ่าน" ในแถบนี้ = แพลตฟอร์มตอบรับ · ยังไม่ใช่ "ยืนยันแล้ว" (อันนั้นคือแถบอัปเดตออโต้) */
+function lastLiveBar(key: PlatformKey, log: BoardPushRound[] | null, logErr: string, st: PushStateResp | null, now: number): Bar | null {
+  if (มีตัวยิง(st, key) === false) return null
+  if (log === null) return logErr ? { tone: 'unknown', text: 'อ่านประวัติการยิงไม่ได้ — ไม่รู้ว่ายิงจริงล่าสุดผ่านไหม' } : null
+  const รอบ = log
+    .filter((r) => String(r.platform ?? '').toLowerCase() === key)
+    .map((r) => ({ r, ms: serverTimeMs(r.at) }))
+    .filter((x): x is { r: BoardPushRound; ms: number } => x.ms !== null)
+    .sort((a, b) => b.ms - a.ms)
+  if (!รอบ.length) return { tone: 'unknown', text: 'ยังไม่เคยยิงจริง' }
+  const { r, ms } = รอบ[0]
+  const ปฏิเสธ = N(r.rejected) ?? 0
+  const เข้า = N(r.pushed) ?? 0
+  const ยิง = N(r.fired)
+  /* เหตุผลที่พบบ่อยสุดในรอบนั้น — ให้คนเห็นว่าพังเพราะอะไร ไม่ใช่แค่ว่าพัง */
+  const นับเหตุ = new Map<string, number>()
+  for (const x of r.rows ?? []) if (x.result === 'rejected' && x.why) นับเหตุ.set(x.why, (นับเหตุ.get(x.why) ?? 0) + 1)
+  const เหตุหลัก = Array.from(นับเหตุ.entries()).sort((a, b) => b[1] - a[1])[0]
+  const tone: Tone = ปฏิเสธ > 0 ? 'bad' : เข้า > 0 ? 'ok' : 'warn'
+  return {
+    tone,
+    text: (
+      <>
+        ยิงจริงล่าสุด <b>{thaiDateTime(r.at)}</b> ({ago(ms, now)}) · ยิง {n(ยิง)} · เข้า <b>{n(เข้า)}</b> · ถูกปฏิเสธ <b>{n(ปฏิเสธ)}</b>
+        {เหตุหลัก && <span className="block">เหตุ: {เหตุหลัก[0]}{นับเหตุ.size > 1 ? ` (และเหตุอื่นอีก ${นับเหตุ.size - 1} แบบ)` : ''}</span>}
+      </>
+    ),
   }
 }
 
@@ -253,10 +296,11 @@ function BarRow({ icon, name, bar }: { icon: string; name: string; bar: Bar }) {
 
 export default function PushStatusBoard(props: {
   state: PushStateResp | null; stateLoading: boolean; stateErr: string
+  log: BoardPushRound[] | null; logErr: string
   plan: Partial<Record<PlatformKey, BoardSide>> | null; planBusy: boolean; planErr: string; planAt: number | null
   onAsk: () => void
 }) {
-  const { state, stateLoading, stateErr, plan, planBusy, planErr, planAt, onAsk } = props
+  const { state, stateLoading, stateErr, log, logErr, plan, planBusy, planErr, planAt, onAsk } = props
   const now = Date.now()
   const asked = plan !== null || !!planErr
   const CH: Array<{ key: PlatformKey; label: string }> = [
@@ -300,6 +344,7 @@ export default function PushStatusBoard(props: {
               {/* ⚠️ ไอคอนหน้าชื่อแถบห้ามเป็นดวงไฟสี — เดิมใช้ 🟢 ตายตัว วางข้าง "⬜ ไม่รู้" แล้วอ่านขัดกันเอง */}
               <BarRow icon="📶" name="ออนไลน์ — ระบบเรา" bar={ours} />
               <BarRow icon="📶" name={`ออนไลน์ — ${label}`} bar={channelBar(label, side, asked, planErr, planAt)} />
+              {(() => { const b = lastLiveBar(key, log, logErr, state, now); return b && <BarRow icon="🎯" name="ยิงจริงล่าสุด" bar={b} /> })()}
               <BarRow icon="🔄" name="อัปเดตออโต้" bar={autoBar(key, state, stateErr, now)} />
               {skip && <BarRow icon="🧊" name="ถูกข้าม" bar={skip} />}
             </div>

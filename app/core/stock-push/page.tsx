@@ -24,7 +24,7 @@ import { thaiDate } from '@/lib/format'
 /* serverTimeMs อยู่ใน returns-api (เกิดจากบั๊กโซนเวลาตอนประกบ /returns) — ตัวเดียวกันใช้ทุกจอ */
 import PushStatusBoard, { thaiDateTime, มีตัวยิง, type PushStateResp } from '@/components/zort/PushStatusBoard'
 
-interface PushRow { sku?: string; from?: number; to?: number; kind?: string }
+interface PushRow { sku?: string; from?: number; to?: number; kind?: string; result?: string; why?: string }
 interface PushRound {
   at?: string; platform?: string
   fired?: number; pushed?: number; rejected?: number
@@ -258,6 +258,7 @@ export default function StockPushPage() {
           ⇒ แทนด้วยกระดานที่วัดจากข้อมูลจริง (ท่านประธานอนุมัติ 17 ก.ย. 2569) */}
       <PushStatusBoard
         state={pstate} stateLoading={pstateLoading} stateErr={pstateErr}
+        log={log} logErr={error}
         plan={plan} planBusy={planBusy} planErr={planErr} planAt={planAt}
         onAsk={loadPlan}
       />
