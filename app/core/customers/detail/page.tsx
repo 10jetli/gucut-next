@@ -36,11 +36,20 @@ interface Money {
   thisMonth?: number; thisYear?: number; month?: string | null; year?: string | null
   scope?: string; outstanding?: number | null; outstandingWhy?: string
 }
+/* 🧺 กล่อง "ยอดขาย · รายสินค้า" แบบ ZORT — ท่อตัดมา 20 อันดับ แต่ส่ง count/amount ของทั้งชุดมาด้วย
+   ⇒ จอต้องเขียนว่า "มีทั้งหมด N แสดง M" ห้ามวางแถวที่ถูกตัดคู่กับยอดรวมเฉย ๆ */
+interface ProdRow { sku?: string | null; name?: string | null; qty?: number; amount?: number }
+interface Products {
+  rows?: ProdRow[]; count?: number; amount?: number; scope?: string
+  /* ยอดรวมหัวใบของชุดเดียวกัน — ต่างจากผลรวมรายสินค้าได้ (ส่วนลดท้ายบิลที่ ZORT เกลี่ยลงบรรทัดแล้ว) */
+  ordersAmount?: number; diffNote?: string
+}
 interface Resp {
   contact?: Record<string, unknown> | null
   name?: string
   orders?: { count?: number; total?: number; firstDay?: string; lastDay?: string; recent?: Order[] }
   money?: Money
+  products?: Products
   matchNote?: string
   error?: string; skip?: string
 }
@@ -198,6 +207,52 @@ function Inner() {
               </p>
             )}
 
+            {/* 🧺 ยอดขายรายสินค้า — กล่องเดียวกับ "ยอดขาย · รายสินค้า" ของ ZORT
+                ⚠️ ท่อส่งมา 20 อันดับแรก ⇒ ต้องเขียนกำกับว่าทั้งหมดมีกี่รายการ ไม่งั้นคนอ่านนึกว่าเท่านี้ */}
+            {d?.products && (d.products.rows?.length ?? 0) > 0 && (
+              <div className="mb-3 rounded border border-gray-200 bg-white p-2.5">
+                <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
+                  <h3 className="text-[13px] font-semibold">ยอดขาย · รายสินค้า</h3>
+                  <span className="text-[11.5px] text-gray-500">
+                    มีทั้งหมด {d.products.count ?? '—'} รายการ · รวม {baht(d.products.amount)} บาท ·
+                    {' '}แสดง {d.products.rows?.length} อันดับแรกตามมูลค่า
+                  </span>
+                </div>
+                {/* 🔴 สองเลขนี้ต่างกันได้จริง (วัดแล้ว 7,570 กับ 6,570) — ต้องเขียนบอก ห้ามวางเลขเดียวเงียบ ๆ
+                    ไม่งั้นคนเปิดเทียบกับ ZORT จะเห็นของเราสูงกว่าแล้วไม่รู้ว่าใครผิด */}
+                {typeof d.products.ordersAmount === 'number'
+                  && Math.round(d.products.ordersAmount) !== Math.round(d.products.amount ?? 0) && (
+                  <p className="mb-1.5 rounded border border-amber-200 bg-amber-50 px-2.5 py-1.5 text-[11.5px] text-amber-900 leading-relaxed">
+                    ⚠️ ผลรวมรายสินค้า <b>{baht(d.products.amount)}</b> ไม่เท่ากับยอดรวมใบที่ชำระครบ{' '}
+                    <b>{baht(d.products.ordersAmount)}</b> (ต่าง {baht(Math.round(((d.products.amount ?? 0) - d.products.ordersAmount) * 100) / 100)} บาท)
+                    {d.products.diffNote ? ` — ${d.products.diffNote}` : ''}
+                  </p>
+                )}
+                <table className="w-full text-[12.5px]">
+                  <thead>
+                    <tr className="border-b border-gray-200 text-left text-gray-500">
+                      <th className="py-1 pr-2 font-medium">สินค้า</th>
+                      <th className="py-1 pr-2 font-medium text-right">จำนวน</th>
+                      <th className="py-1 font-medium text-right">มูลค่า</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.products.rows?.map((r, i) => (
+                      <tr key={`${r.sku ?? i}`} className="border-b border-gray-100 last:border-0">
+                        <td className="py-1 pr-2">
+                          {r.name ?? '—'}
+                          {r.sku && <span className="ml-1 text-[11px] text-gray-400">{r.sku}</span>}
+                        </td>
+                        <td className="py-1 pr-2 text-right tabular-nums">{baht(r.qty)}</td>
+                        <td className="py-1 text-right tabular-nums">{baht(r.amount)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {d.products.scope && <p className="mt-1.5 text-[11px] text-gray-400">{d.products.scope}</p>}
+              </div>
+            )}
+
             {/* 🔬 **เทียบกับจอ ZORT ตัวจริง** — `/Contact/ContactDetail` (อ่านอย่างเดียว 16 ก.ย. 2569)
                 ZORT มีการ์ดเงิน 3 ใบ (ยอดขายเดือนนี้ · ยอดขายปีนี้ · **ยอดค้างชำระ**) + กล่อง "ยอดขาย รายสินค้า"
                 + ตารางที่มีคอลัมน์ **ประเภท** (รวมเอกสารหลายชนิด ไม่ใช่แค่ใบขาย) + Export ตามช่วงวันที่
@@ -206,7 +261,7 @@ function Inner() {
                    จะได้เลขที่ **ดูสมเหตุสมผลแต่ผิด** สำหรับคนที่ซื้อเกิน 20 ใบ ⇒ ขอท่อเพิ่มช่อง ไม่คำนวณเอง
                    (คลาสเดียวกับบทเรียน "เลขจากลิสต์ที่ถูก cap ห้ามเอาไปใช้") */}
             <div className="mb-3 text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 leading-relaxed">
-              <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — ยอดขาย<b>รายสินค้า/รายหมวดหมู่</b> · ตัวกรองช่วงวันของกล่องยอดขาย
+              <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — ยอดขาย<b>รายหมวดหมู่</b> · ตัวกรองช่วงวันของกล่องยอดขาย
               {' '}· <b>Download Excel</b> · ตารางของ ZORT มีคอลัมน์ <b>ประเภท</b> (รวมใบซื้อเข้า/ขายออกในตารางเดียว)
               {' '}ส่วนตารางนี้เป็นใบขายอย่างเดียว
               <br />
