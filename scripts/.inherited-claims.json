@@ -889,6 +889,11 @@
       "hash": "a07aa1eb2b42",
       "by": "คุณส้ม (gucut2)",
       "at": "2026-09-15"
+    },
+    "components/zort/AdvancedSearch.tsx :: app/core/logistics/page.tsx": {
+      "hash": "a07aa1eb2b42",
+      "by": "gucut2 (อ่านครบ 6 บรรทัด: แผงโผล่เฉพาะท่อที่สะท้อน from · ท่อกรองทั้งตัวนับแท็บและแถว)",
+      "at": "2026-09-17"
     }
   }
 }

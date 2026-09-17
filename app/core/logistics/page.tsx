@@ -19,6 +19,7 @@ import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtNum } from '@/lib/format'
+import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
@@ -43,6 +44,10 @@ interface Resp {
   carrierUngroupedNames?: number
   limit: number; offset: number; only?: string | null
   coversFrom?: string; zortShows?: number; note?: string
+  /** ค่าที่ท่อ **ใช้จริง** — `from`/`to`/`carrier` เพิ่มฝั่งท่อ (gucut-web 0585512 · 17 ก.ย. 2569)
+   *  ⚠️ **ไม่มีคีย์ = ท่อรุ่นก่อนที่เมินตัวกรองเงียบ** ⇒ ห้ามโชว์ช่อง (null = มีคีย์แต่ไม่ได้กรอง ต่างกัน) */
+  applied?: { only?: string | null; q?: string | null; from?: string | null; to?: string | null; carrier?: string | null }
+  ignored?: { only?: string; carrier?: string }
   rows: Row[]
 }
 
@@ -63,29 +68,42 @@ export default function LogisticsPage() {
   const [offset, setOffset] = useState(0)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  /* 🔍 ช่วงวัน + ขนส่ง — ZORT มีใน "ค้นหาขั้นสูง" ของจอนี้ */
+  const [advOpen, setAdvOpen] = useState(false)
+  const [fFrom, setFFrom] = useState('')
+  const [fTo, setFTo] = useState('')
+  const [fCarrier, setFCarrier] = useState('')
+  /** รายชื่อกลุ่มขนส่งตอน **ยังไม่กรองขนส่ง** — กรองแล้ว `carrierGroups` เหลือกลุ่มเดียว ตัวเลือกจะหดตาม */
+  const [carrierOpts, setCarrierOpts] = useState<{ carrier: string; c: number; names?: { name: string; c: number }[] }[]>([])
 
-  const load = useCallback(async (off = 0, onlyId = only) => {
+  const load = useCallback(async (off = 0, onlyId = only, adv?: { from: string; to: string; carrier: string }) => {
     setLoading(true)
     setError('')
     try {
       const qs = new URLSearchParams({ list: 'logistics', limit: String(PAGE), offset: String(off) })
       if (onlyId) qs.set('only', onlyId)
       if (q.trim()) qs.set('q', q.trim())
+      const a = adv ?? { from: fFrom, to: fTo, carrier: fCarrier }
+      if (a.from) qs.set('from', a.from)
+      if (a.to) qs.set('to', a.to)
+      if (a.carrier) qs.set('carrier', a.carrier)
       const res = await fetch(`/api/web/core?${qs}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
       setData(j)
+      if (!j?.applied?.carrier && Array.isArray(j?.carrierGroups)) setCarrierOpts(j.carrierGroups)
       setOffset(off)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
     } finally {
       setLoading(false)
     }
-  }, [only, q])
+  }, [only, q, fFrom, fTo, fCarrier])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = data?.rows ?? []
+  const canAdv = Boolean(data?.applied && 'from' in data.applied)
   const tabs = [
     { id: '', label: 'ทั้งหมด', count: data?.total },
     // 🔴 **แท็บ "ยังไม่มีเลขพัสดุ" คือของที่ต้องลงมือจริง** — ท่อส่ง unshipped มาตั้งแต่แรก
@@ -127,6 +145,15 @@ export default function LogisticsPage() {
     if (only === 'cod' && rows.some((r) => !r.isCod)) return 'เก็บเงินปลายทาง'
     if (only === 'unshipped' && rows.some((r) => r.trackingNo)) return 'ยังไม่มีเลขพัสดุ'
     if (only === 'shipped' && rows.some((r) => !r.trackingNo)) return 'ส่งแล้ว'
+    /* ด่านเดียวกันกับตัวกรองใหม่ — ท่อบอกว่าใช้แล้ว แต่แถวหลุดเงื่อนไข ⇒ ฟ้อง */
+    const ap = data.applied
+    if (ap?.from && rows.some((r) => r.date && r.date.slice(0, 10) < ap.from!)) return `ตั้งแต่ ${ap.from}`
+    if (ap?.to && rows.some((r) => r.date && r.date.slice(0, 10) > ap.to!)) return `ถึง ${ap.to}`
+    if (ap?.carrier) {
+      const g = carrierOpts.find((x) => x.carrier === ap.carrier)
+      const ok = new Set(g?.names?.map((n) => n.name) ?? [ap.carrier])
+      if (g && rows.some((r) => !ok.has(r.carrier || '(ยังไม่ระบุขนส่ง)'))) return `ขนส่ง ${ap.carrier}`
+    }
     return ''
   })()
 
@@ -191,10 +218,15 @@ export default function LogisticsPage() {
           ⚠️ <b>เลขบนหัวจอนี้เทียบกับจอ “บริการขนส่ง” ของ ZORT ตรง ๆ ไม่ได้</b> — นับคนละหน่วย:
           ที่นี่ 1 แถว = <b>ใบขาย 1 ใบที่มีข้อมูลขนส่ง</b> · ที่ ZORT 1 แถว = <b>การจองขนส่ง 1 ครั้งผ่านระบบเขา</b>
           ⇒ ของเราจึง<b>มากกว่า</b>ของเขามาก ไม่ใช่ฝั่งไหนข้อมูลหาย
-          <br />
-          ⚠️ <b>จอนี้ยังกรองตามช่วงวัน / เจ้าขนส่ง / สถานะการส่งไม่ได้</b> (ZORT มี “ค้นหาขั้นสูง”)
-          — ยิงตรวจ 17 ก.ย. 2569: ท่อ<b>เมินพารามิเตอร์ทั้งสามเงียบ ๆ</b> (ยอดรวมไม่ขยับเลยสักท่า)
-          ⇒ <b>ยังไม่ทำปุ่มไว้ เพราะกดแล้วจะไม่เกิดอะไรขึ้น</b> · ขอฝั่งท่อไว้แล้ว
+          {/* ข้อความนี้จริงเฉพาะท่อรุ่นที่ไม่สะท้อน from กลับ — ท่อใหม่ขึ้นแล้วแผงค้นหาขั้นสูงโผล่แทน */}
+          {data && !canAdv && (
+            <>
+              <br />
+              ⚠️ <b>จอนี้ยังกรองตามช่วงวัน / เจ้าขนส่ง / สถานะการส่งไม่ได้</b> (ZORT มี “ค้นหาขั้นสูง”)
+              — ยิงตรวจ 17 ก.ย. 2569: ท่อ<b>เมินพารามิเตอร์ทั้งสามเงียบ ๆ</b> (ยอดรวมไม่ขยับเลยสักท่า)
+              ⇒ <b>ยังไม่ทำปุ่มไว้ เพราะกดแล้วจะไม่เกิดอะไรขึ้น</b> · ส่งตัวแก้ให้ฝั่งท่อแล้ว รอขึ้นระบบ
+            </>
+          )}
         </span>
         (เมนู 9 จุด → <b>L Shipping Point</b> ซึ่งตัด “พอยท์” ต่อการจองหนึ่งครั้ง · ร้านใช้อยู่จริง
         โดยรายการล่าสุดที่เห็นคือ 15 ก.ย. 2569)
@@ -205,8 +237,47 @@ export default function LogisticsPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขพัสดุ ชื่อผู้รับ เลขที่ใบขาย"
-        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
+        advanced={
+          <>
+            <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
+            {/* 🔴 โชว์ลิงก์แผงเฉพาะเมื่อท่อ **สะท้อนคีย์ from กลับมา** — ท่อรุ่นก่อนเมินเงียบ
+                ⇒ ช่องที่กรอกแล้วไม่มีผลแย่กว่าไม่มีช่อง (กฎข้อ ① ของแผง) */}
+            {canAdv && <>{' · '}<AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} /></>}
+          </>
+        }
       />
+      {canAdv && (
+        <AdvancedSearch
+          open={advOpen}
+          fields={[
+            { label: 'ตั้งแต่วันที่', kind: 'date', value: fFrom, onChange: (v) => setFFrom(String(v)) },
+            { label: 'ถึงวันที่', kind: 'date', value: fTo, onChange: (v) => setFTo(String(v)) },
+            {
+              label: 'ขนส่ง',
+              kind: 'select',
+              value: fCarrier,
+              onChange: (v) => setFCarrier(String(v)),
+              width: 200,
+              options: [{ value: '', label: 'ทั้งหมด' }, ...carrierOpts.map((g) => ({ value: g.carrier, label: `${g.carrier} (${fmtNum(g.c)})` }))],
+            },
+          ]}
+          onApply={() => load(0)}
+          onClear={() => {
+            setFFrom(''); setFTo(''); setFCarrier('')
+            load(0, only, { from: '', to: '', carrier: '' })
+          }}
+          canClear={Boolean(fFrom || fTo || fCarrier)}
+          serverFiltered="คำค้นหา · แท็บ · ช่วงวันที่ · ขนส่ง"
+          notAvailable={[
+            { what: 'สถานะการส่ง 5 ค่าแบบ ZORT', why: 'กระจกเก็บแต่สถานะใบขาย ไม่มีสถานะการส่งของขนส่ง ⇒ ทำตัวเลือกไปก็กดแล้วไม่ตรงความหมาย' },
+            { what: 'ขนส่งแบบติ๊กหลายเจ้า', why: 'ท่อรับทีละเจ้า' },
+          ]}
+          extraNote={<>วันที่ = <b>วันส่งสินค้า</b> ถ้าใบยังไม่มีวันส่งใช้<b>วันที่สั่ง</b> (วันเดียวกับคอลัมน์วันที่ในตาราง) · ตัวเลือกขนส่งมาจากช่วงวันที่ตอนยังไม่เลือกขนส่ง</>}
+        />
+      )}
+      {data?.ignored?.carrier && (
+        <p className="text-[12.5px] text-amber-800 mb-2">⚠️ ท่อไม่รู้จักขนส่ง &quot;{data.ignored.carrier}&quot; ในช่วงนี้ — <b>ตารางไม่ได้กรองขนส่ง</b></p>
+      )}
 
       {error && <ErrorBox title="ดึงรายการขนส่งไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
@@ -409,7 +480,7 @@ export default function LogisticsPage() {
 
           {/* 🔎 ของที่ ZORT มีในจอนี้แต่เรายังไม่มี — กดอ่านแผงจริงของเขา 16 ก.ย. 2569
               เขียนไว้บนจอเพราะคนที่ชิน ZORT จะไล่หา แล้วถ้าไม่บอกจะคิดว่าเราลืม */}
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          {!canAdv && <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
             <b>ค้นหาขั้นสูงของ ZORT ในจอนี้มี</b> รายการ · ชื่อผู้รับ · ช่วงวันที่ ·
             ติ๊กเลือก<b>ขนส่ง 9 เจ้า</b> · ติ๊กเลือก<b>สถานะการส่ง 5 ค่า</b>
             (สำเร็จ · รอชำระ · รอส่ง · กำลังส่ง · ถูกยกเลิก) —
@@ -420,7 +491,7 @@ export default function LogisticsPage() {
             {' '}และช่อง <code>applied</code> ที่ท่อตอบมีแค่ 4 คีย์ <code>only · limit · offset · q</code>
             {' '}⇒ <b>คีย์ที่ไม่อยู่ในนั้นคือคีย์ที่ท่อไม่รู้จัก</b>) ⇒ ถ้าใส่ช่องพวกนั้นตอนนี้
             จะเป็นช่องที่กรอกแล้วไม่มีผล ซึ่งแย่กว่าไม่มีช่อง · <b>ขอฝั่งท่อไว้แล้ว</b>
-          </p>
+          </p>}
         </>
       )}
     </div>

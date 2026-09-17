@@ -1179,6 +1179,35 @@ const srv = createServer(async (req, res) => {
   /* แผนดันสต็อกรอบถัดไป (?stockpush=1) — โครงจากการยิงของจริง 11 ก.ย. 2569
      ⚠️ จงใจให้ **สามเจ้าไม่เหมือนกัน**: shopee ปกติ · lazada bucketsAddUp=false (ต้องขึ้นแดง)
         · tiktok ตอบ skip (ต้องขึ้นเหลือง ไม่ใช่ 0) — ทดสอบว่าจอแยกสามทิศได้จริง */
+  /* 🧪 จอบริการขนส่ง `list=logistics` (17 ก.ย. 2569) — ท่อรุ่นเก่า vs ท่อที่รับ from/to/carrier
+     · logisticsold : applied มีแค่ only/limit/offset/q ⇒ จอต้อง **ไม่โชว์** แผงค้นหาขั้นสูง + ข้อความเดิมยังอยู่
+     · logisticsnew : สะท้อน from/to/carrier ⇒ แผงโผล่ · carrier=Flash Express กรองจริง
+     · logisticsliar: สะท้อนว่ากรอง Flash Express แต่แถวมี Kerry ปน ⇒ จอต้องขึ้นกล่องแดง */
+  if (/list=logistics/.test(req.url) && ['logisticsold', 'logisticsnew', 'logisticsliar'].includes(mode)) {
+    const u = new URL(req.url, 'http://x')
+    const newer = mode !== 'logisticsold'
+    const carrier = u.searchParams.get('carrier') || null
+    const from = u.searchParams.get('from') || null
+    const to = u.searchParams.get('to') || null
+    const groups = [
+      { carrier: 'Flash Express', c: 7, known: true, names: [{ name: 'Flash Express', c: 5 }, { name: 'FLASH', c: 2 }] },
+      { carrier: 'Kerry Express', c: 3, known: true, names: [{ name: 'Kerry', c: 3 }] },
+    ]
+    let rows = [
+      { id: '1', number: 'SO-T1', trackingNo: 'TH1', date: '2026-09-10', receiver: 'ผู้รับทดสอบ', carrier: 'Flash Express', status: 'Success', isCod: true, lines: 1 },
+      { id: '2', number: 'SO-T2', trackingNo: 'TH2', date: '2026-09-12', receiver: 'ผู้รับทดสอบ', carrier: 'FLASH', status: 'Success', isCod: false, lines: 2 },
+      { id: '3', number: 'SO-T3', trackingNo: 'KE3', date: '2026-09-14', receiver: 'ผู้รับทดสอบ', carrier: 'Kerry', status: 'Success', isCod: false, lines: 1 },
+    ]
+    if (newer && carrier && mode === 'logisticsnew') rows = rows.filter((r) => groups.find((g) => g.carrier === carrier)?.names.some((n) => n.name === r.carrier))
+    const body = {
+      ok: true, total: 10, shown: rows.length, shipped: 10, unshipped: 0, cod: 1, limit: 50, offset: 0, only: null,
+      applied: newer ? { only: null, limit: 50, offset: 0, q: null, from, to, carrier } : { only: null, limit: 50, offset: 0, q: null },
+      carrierGroups: newer && carrier ? groups.filter((g) => g.carrier === carrier) : groups,
+      carrierUngrouped: 0, carrierUngroupedNames: 0, rows,
+    }
+    res.writeHead(200, { 'content-type': 'application/json' })
+    return res.end(JSON.stringify(body))
+  }
   /* 🧪 สมุดสถานะดันสต็อก `?pushstate=1` (17 ก.ย. 2569 · ต่อจอเข้ากับสมุดของ CEO)
      · stalepush  : ตัวกวาดเงียบ 3 ชม. + ยังซ้อม + ไม่เคยยืนยัน + มีรหัสถูกข้ามมา 3 วัน ⇒ ระบบเรา 🔴 · ออโต้ 🔴 · ถูกข้าม 🔴
      · good       : กวาด 5 นาทีก่อน ยิงจริง · ยืนยัน 10 นาทีก่อน · ไม่มีค้าง
