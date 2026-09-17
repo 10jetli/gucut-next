@@ -209,8 +209,15 @@ export default function CoreSalesPage() {
      ⚠️ **ห้ามใส่ช่องกรองที่ท่อไม่รองรับ** ลงในแผงนี้ — ช่องที่กรอกแล้วไม่มีผล
         แย่กว่าไม่มีช่อง เพราะคนกรอกแล้วเชื่อว่ากรองแล้ว */
   const [advOpen, setAdvOpen] = useState(false)
-  const [advFrom, setAdvFrom] = useState('')
-  const [advTo, setAdvTo] = useState('')
+  /* 🔴 **รับ `?from=` `?to=` จาก URL ด้วย** (แก้ 17 ก.ย. 2569 · ใบ t_mu2u9mym)
+     ลิงก์ `?q=<เลขที่ใบ>` อย่างเดียวค้นได้แค่ในช่วง 90 วันของจอ
+     วัดจริง: สุ่มใบที่มีสลิป 12 ใบ ⇒ ค้นในช่วง 90 วันเจอ **1 ใบ** · เปิดช่วงกว้างเจอ **12 ใบ**
+     ⇒ คนกดลิงก์จากจอลูกค้า/จอไฟล์แล้วเห็น "ไม่พบ" ทั้งที่ใบมีอยู่จริง = ลิงก์ที่หลอกว่าไม่มีของ
+     ⇒ จอที่ลิงก์เข้ามาต้องส่งช่วงวันของใบนั้นมาด้วย */
+  const [advFrom, setAdvFrom] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('from') ?? '')
+  const [advTo, setAdvTo] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('to') ?? '')
   /* 🔍 **ตัวกรองขั้นสูงชุดใหม่** (ท่อ gucut-web eb79ccc · 15 ก.ย. 2569)
      ยิงยืนยันเองแล้วทุกตัวก่อนต่อจอ (z1 1–14 ก.ย. ฐาน 319 ใบ):
        cod=1 ⇒ 240 · cod=0 ⇒ 79 (รวม 319 พอดี) · paystatus=Paid ⇒ 300 · Pending ⇒ 2
@@ -348,7 +355,15 @@ export default function CoreSalesPage() {
      ⚠️ อ่าน localStorage ใน effect เท่านั้น (อ่านตอนวาดครั้งแรก = จอฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน) */
   useEffect(() => {
     const memo = loadFilter(MEMO_KEY)
-    if (!memo) { load(0); return }
+    /* 🔴 **ลิงก์เจาะจงใบต้องชนะตัวกรองที่จำไว้** (แก้ 17 ก.ย. 2569)
+       ถ้าคนเคยติ๊กจำตัวกรอง (ร้าน · สถานะ · ช่วงวัน) แล้วกดลิงก์ `?q=<เลขที่ใบ>` มา
+       ตัวกรองที่จำไว้จะมาทับ ⇒ ใบที่ลิงก์ชี้อาจโดนกรองหายไปเงียบ ๆ
+       ⇒ มีคำค้นจาก URL = ไม่เอาตัวกรองที่จำไว้มาใช้รอบนี้ (ค่าที่จำไว้ยังอยู่ ไม่ได้ลบ) */
+    const deepLink = new URLSearchParams(window.location.search).has('q')
+    if (!memo || deepLink) {
+      if (deepLink && (advFrom || advTo)) setAdvOpen(true)
+      load(0); return
+    }
     setRemember(true)
     setRestored(describeFilter(memo, { days: DEFAULT_DAYS }, {
       /* ใช้คำจากเจ้าของคำ ไม่เขียนใหม่ที่นี่ */

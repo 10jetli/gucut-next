@@ -23,6 +23,7 @@ import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
+import { ลิงก์ใบขาย } from '@/lib/sale-link'
 
 interface Order {
   id?: string; source?: string; number?: string; channel?: string; status?: string
@@ -189,7 +190,7 @@ function Inner() {
                         <td className="py-1 pr-2">
                           {/* ลิงก์ข้ามจอ — เลขที่ใบต้องกดเข้ารายละเอียดได้เสมอ (แบบแผนข้อ 1 ของ ZORT) */}
                           {r.number
-                            ? <Link href={`/core/sales?q=${encodeURIComponent(r.number)}`} className="text-blue-600 hover:underline">{r.number}</Link>
+                            ? <Link href={ลิงก์ใบขาย(r.number, r.order_date)} className="text-blue-600 hover:underline">{r.number}</Link>
                             : '—'}
                         </td>
                         <td className="py-1 pr-2">{r.channel ?? '—'}</td>
