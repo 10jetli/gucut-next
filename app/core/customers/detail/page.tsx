@@ -39,8 +39,10 @@ interface Money {
 /* 🧺 กล่อง "ยอดขาย · รายสินค้า" แบบ ZORT — ท่อตัดมา 20 อันดับ แต่ส่ง count/amount ของทั้งชุดมาด้วย
    ⇒ จอต้องเขียนว่า "มีทั้งหมด N แสดง M" ห้ามวางแถวที่ถูกตัดคู่กับยอดรวมเฉย ๆ */
 interface ProdRow { sku?: string | null; name?: string | null; qty?: number; amount?: number }
+interface CatRow { category?: string | null; amount?: number; skus?: number }
 interface Products {
   rows?: ProdRow[]; count?: number; amount?: number; scope?: string
+  byCategory?: CatRow[]
   /* ยอดรวมหัวใบของชุดเดียวกัน — ต่างจากผลรวมรายสินค้าได้ (ส่วนลดท้ายบิลที่ ZORT เกลี่ยลงบรรทัดแล้ว) */
   ordersAmount?: number; diffNote?: string
 }
@@ -66,6 +68,7 @@ function Inner() {
   const key = sp.get('name') ?? sp.get('id') ?? ''
   const [d, setD] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
+  const [tab, setTab] = useState<'สินค้า' | 'หมวดหมู่'>('สินค้า')
   const [error, setError] = useState('')
 
   const masked = key.includes('*')
@@ -212,10 +215,26 @@ function Inner() {
             {d?.products && (d.products.rows?.length ?? 0) > 0 && (
               <div className="mb-3 rounded border border-gray-200 bg-white p-2.5">
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
-                  <h3 className="text-[13px] font-semibold">ยอดขาย · รายสินค้า</h3>
+                  {/* แท็บเดียวกับ ZORT (รายสินค้า · รายหมวดหมู่) — ทั้งสองแท็บมาจากชุดข้อมูลเดียวกัน
+                      ⇒ ตัวเลขสองแท็บบวกได้เท่ากัน ไม่ใช่คนละกติกา (กฎเรื่องแท็บข้อ 4) */}
+                  <h3 className="text-[13px] font-semibold">ยอดขาย ·</h3>
+                  {(['สินค้า', 'หมวดหมู่'] as const).map((t) => (
+                    <button key={t} type="button" onClick={() => setTab(t)}
+                      className={`rounded-full px-2.5 py-0.5 text-[12px] ${tab === t
+                        ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                      ราย{t}
+                    </button>
+                  ))}
+                  {/* ⚠️ คำกำกับต้องเปลี่ยนตามแท็บ — เดิมเขียน "มีทั้งหมด N รายการ" ค้างไว้ทั้งสองแท็บ
+                      ทั้งที่แท็บหมวดหมู่กำลังนับ "หมวด" ไม่ใช่ "รายการสินค้า" (เจอด้วยตา 18 ก.ย. 2569) */}
                   <span className="text-[11.5px] text-gray-500">
-                    มีทั้งหมด {d.products.count ?? '—'} รายการ · รวม {baht(d.products.amount)} บาท ·
-                    {' '}แสดง {d.products.rows?.length} อันดับแรกตามมูลค่า
+                    {tab === 'สินค้า' ? (
+                      <>มีทั้งหมด {d.products.count ?? '—'} รายการ · รวม {baht(d.products.amount)} บาท ·
+                        {' '}แสดง {d.products.rows?.length} อันดับแรกตามมูลค่า</>
+                    ) : (
+                      <>แยกได้ {d.products.byCategory?.length ?? '—'} หมวด · รวม {baht(d.products.amount)} บาท
+                        {' '}(ยอดรวมเท่ากับแท็บรายสินค้า — ชุดข้อมูลเดียวกัน)</>
+                    )}
                   </span>
                 </div>
                 {/* 🔴 สองเลขนี้ต่างกันได้จริง (วัดแล้ว 7,570 กับ 6,570) — ต้องเขียนบอก ห้ามวางเลขเดียวเงียบ ๆ
@@ -228,27 +247,55 @@ function Inner() {
                     {d.products.diffNote ? ` — ${d.products.diffNote}` : ''}
                   </p>
                 )}
-                <table className="w-full text-[12.5px]">
-                  <thead>
-                    <tr className="border-b border-gray-200 text-left text-gray-500">
-                      <th className="py-1 pr-2 font-medium">สินค้า</th>
-                      <th className="py-1 pr-2 font-medium text-right">จำนวน</th>
-                      <th className="py-1 font-medium text-right">มูลค่า</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {d.products.rows?.map((r, i) => (
-                      <tr key={`${r.sku ?? i}`} className="border-b border-gray-100 last:border-0">
-                        <td className="py-1 pr-2">
-                          {r.name ?? '—'}
-                          {r.sku && <span className="ml-1 text-[11px] text-gray-400">{r.sku}</span>}
-                        </td>
-                        <td className="py-1 pr-2 text-right tabular-nums">{baht(r.qty)}</td>
-                        <td className="py-1 text-right tabular-nums">{baht(r.amount)}</td>
+                {tab === 'สินค้า' ? (
+                  <table className="w-full text-[12.5px]">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-left text-gray-500">
+                        <th className="py-1 pr-2 font-medium">สินค้า</th>
+                        <th className="py-1 pr-2 font-medium text-right">จำนวน</th>
+                        <th className="py-1 font-medium text-right">มูลค่า</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {d.products.rows?.map((r, i) => (
+                        <tr key={`${r.sku ?? i}`} className="border-b border-gray-100 last:border-0">
+                          <td className="py-1 pr-2">
+                            {r.name ?? '—'}
+                            {r.sku && <span className="ml-1 text-[11px] text-gray-400">{r.sku}</span>}
+                          </td>
+                          <td className="py-1 pr-2 text-right tabular-nums">{baht(r.qty)}</td>
+                          <td className="py-1 text-right tabular-nums">{baht(r.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                ) : !d.products.byCategory?.length ? (
+                  /* ท่อรุ่นเก่ายังไม่ส่งแท็บนี้มา = ยังไม่รู้ ไม่ใช่ "ไม่มีหมวด" */
+                  <p className="text-[12.5px] text-gray-500">ท่อยังไม่ส่งยอดรายหมวดหมู่มา</p>
+                ) : (
+                  <table className="w-full text-[12.5px]">
+                    <thead>
+                      <tr className="border-b border-gray-200 text-left text-gray-500">
+                        <th className="py-1 pr-2 font-medium">หมวดหมู่</th>
+                        <th className="py-1 pr-2 font-medium text-right">จำนวน SKU</th>
+                        <th className="py-1 font-medium text-right">มูลค่า</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {d.products.byCategory.map((r, i) => (
+                        <tr key={`${r.category ?? 'ไม่รู้'}-${i}`} className="border-b border-gray-100 last:border-0">
+                          {/* 🔴 หมวดว่าง = SKU ไม่อยู่ในคลังสินค้าของเรา ⇒ เขียนว่า "ยังไม่รู้หมวด"
+                              ห้ามเขียนว่า "อื่น ๆ" ซึ่งฟังเหมือนหมวดจริงที่ตั้งใจจัดไว้ */}
+                          <td className="py-1 pr-2">
+                            {r.category ?? <span className="text-gray-500">ยังไม่รู้หมวด <span className="text-[11px] text-gray-400">(SKU ไม่อยู่ในคลังสินค้า)</span></span>}
+                          </td>
+                          <td className="py-1 pr-2 text-right tabular-nums">{r.skus ?? '—'}</td>
+                          <td className="py-1 text-right tabular-nums">{baht(r.amount)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
                 {d.products.scope && <p className="mt-1.5 text-[11px] text-gray-400">{d.products.scope}</p>}
               </div>
             )}
