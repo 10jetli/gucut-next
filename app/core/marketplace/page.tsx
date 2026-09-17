@@ -17,7 +17,7 @@
 //    ไม่มีค่าจากท่อ = ขึ้นขีดพร้อมเหตุผล · เลขที่วัดวันนี้อยู่ในคอมเมนต์เท่านั้น ไม่ได้อยู่ในหน้าจอ
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtNum } from '@/lib/format'
+import { fmtNum, thaiDate } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -35,8 +35,26 @@ interface Counts {
   store?: string | null
 }
 
+/* 🧺 ของที่ Shopee **ถอดจากหน้าร้าน (UNLIST)** แต่คลังเรายังมีของ — ท่อ `?shopeeunlisted=1`
+   ⚠️ สามข้อที่ฝั่งท่อกำชับ และจอนี้ต้องทำตาม:
+     ① **หน่วยไม่เหมือนกัน** — `items` = "สินค้า" (หน่วยเดียวกับเลข UNLIST บนจอ Shopee) ·
+        `skus` = "ตัวเลือก" ⇒ ต้องเขียนหน่วยกำกับทุกเลข ห้ามเอาสองหน่วยมาเทียบกัน
+     ② `itemsUnknown`/`skusUnknown` = **ยังไม่รู้ว่ามีของไหม** ห้ามรวมเข้ากอง "ไม่มีของ"
+     ③ `stockDay`/`recipeAt` = เวลาที่ข้อมูลถูกเก็บ **ไม่ใช่เวลาเปิดจอ** ⇒ ต้องโชว์อายุข้อมูล */
+interface Unlisted {
+  declaredByShopee?: number | null
+  sawAll?: boolean | null
+  items?: number | null; itemsWithStock?: number | null; itemsNoStock?: number | null; itemsUnknown?: number | null
+  skus?: number | null; skusWithStock?: number | null; skusNoStock?: number | null; skusUnknown?: number | null
+  stockDay?: string | null; recipeAt?: string | null; recipeCheckedAt?: string | null
+  withStock?: { itemId?: number; name?: string }[] | null
+  unknown?: { itemId?: number; name?: string; why?: string[] }[] | null
+  note?: string | null
+}
+
 interface Data {
   checkedMarketplaces?: string[] | null
+  unlisted?: Unlisted | null
   marketplacesFailed?: Record<string, string> | null
   marketplacesNotConnected?: Record<string, string> | null
   marketplacesUnreliable?: Record<string, string> | null
@@ -65,7 +83,10 @@ export default function MarketplaceDashboardPage() {
          `limit=1` เพราะจอนี้ไม่ได้ใช้ตัวแถว ใช้แต่ค่าสรุปหัวก้อน — ไม่ต้องลากมา 200 แถวฟรี ๆ */
       const r = await fetch('/api/web/core?list=stock&marketplaces=1&limit=1').then((x) => x.json())
       if (r?.error) throw new Error(r.error)
-      setData(r)
+      /* ยิงแยกก้อน: ถ้าเส้นนี้ยังไม่มีหรือช้า **ห้ามทำให้จอหลักพัง** ⇒ catch แล้วปล่อยเป็น null (= ยังไม่รู้) */
+      const u = await fetch('/api/web/core?shopeeunlisted=1')
+        .then((x) => x.json()).catch(() => null)
+      setData({ ...r, unlisted: (u && !u.error && u.unlisted) ? u.unlisted : null })
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
       setData(null)
@@ -80,6 +101,7 @@ export default function MarketplaceDashboardPage() {
   const isChecked = (id: string) => checked.some((c) => String(c).toLowerCase() === id)
   const why = (id: string) =>
     (data?.marketplacesFailed?.[id] ?? data?.marketplacesNotConnected?.[id] ?? '').trim()
+  const d_unlisted = data?.unlisted ?? null
   const countOf = (id: string): Counts | null => {
     const c = data?.marketplaceCounts
     if (!c || typeof c !== 'object') return null
@@ -193,6 +215,70 @@ export default function MarketplaceDashboardPage() {
               ⇒ **เทียบกับเลขที่เราไม่รู้ขอบเขต = สร้างส่วนต่างที่ไม่มีใครอธิบายได้** (เพิ่งโดนมาแล้วกับใบโอน 194 ใบ
                  ที่คำอธิบายเดาไว้ว่า "API ไม่ส่ง" แล้วค้างเป็นปริศนา 15 วัน)
               ⇒ จอนี้จึงบอก **ที่มาของเลขตัวเอง** แทนการเทียบ · ถ้าวันหนึ่งวัดเลข "ที่เชื่อมต่อ" ของ ZORT ได้จริง ค่อยเอากลับมาเทียบ */}
+          {/* 🧺 **ของที่ถูกถอดจากหน้าร้าน Shopee แต่คลังยังมีของ** — เงินจมที่มองไม่เห็นจากจอไหนเลย
+              เขียนตามกติกาสามข้อของฝั่งท่อ: หน่วยกำกับทุกเลข · "ยังไม่รู้" แยกกอง · โชว์อายุข้อมูล */}
+          {d_unlisted && (
+            <Card>
+              <p className="text-[13px] font-semibold text-gray-700 mb-1">
+                Shopee · ถอดจากหน้าร้านแล้ว แต่คลังเรายังมีของ
+              </p>
+              {typeof d_unlisted.itemsWithStock === 'number' ? (
+                <>
+                  <p className="text-[12.5px] text-gray-700 leading-relaxed">
+                    <b className="text-[19px] text-amber-700">{fmtNum(d_unlisted.itemsWithStock)}</b>
+                    {' '}<b>สินค้า</b> ที่ Shopee ถอดจากหน้าร้านแล้ว แต่<b>คลังเรายังมีของ</b>
+                    {typeof d_unlisted.items === 'number' && <> · จากที่ถูกถอดทั้งหมด <b>{fmtNum(d_unlisted.items)}</b> สินค้า</>}
+                  </p>
+                  <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
+                    ไม่มีของในคลัง <b>{fmtNum(d_unlisted.itemsNoStock)}</b> สินค้า ·
+                    {' '}<b className="text-amber-700">ยังไม่รู้ว่ามีของไหม {fmtNum(d_unlisted.itemsUnknown)}</b> สินค้า
+                    {' '}<span className="text-gray-400">(ส่วนใหญ่เพราะไม่ได้กรอกรหัสสินค้าไว้บน Shopee — “ยังไม่รู้” ไม่ใช่ “ไม่มี”)</span>
+                  </p>
+                  {/* หน่วยที่สองต้องเขียนแยกให้ชัด ห้ามเอาไปปนกับเลขสินค้า */}
+                  {typeof d_unlisted.skus === 'number' && (
+                    <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
+                      นับเป็น<b>ตัวเลือก</b> (คนละหน่วยกับ “สินค้า” ข้างบน): ทั้งหมด {fmtNum(d_unlisted.skus)} ·
+                      {' '}มีของ {fmtNum(d_unlisted.skusWithStock)} · ไม่มีของ {fmtNum(d_unlisted.skusNoStock)} ·
+                      {' '}ยังไม่รู้ {fmtNum(d_unlisted.skusUnknown)}
+                    </p>
+                  )}
+                  <p className="text-[11.5px] text-gray-400 mt-1.5 leading-relaxed">
+                    เลข UNLIST ที่ Shopee ประกาศเอง {fmtNum(d_unlisted.declaredByShopee)} สินค้า
+                    {d_unlisted.sawAll === false && <b className="text-amber-700"> · ⚠️ ดึงมาได้ไม่ครบ</b>}
+                    {/* 🗓️ ค่าดิบเก็บไว้ใน title ให้ตรวจย้อนได้ — จอโชว์วันไทยเสมอ (ด่าน check-thai-date จับได้ตอน build) */}
+                    {d_unlisted.stockDay && (
+                      <> · ยอดคงเหลือ ณ วันที่ <span title={`ค่าที่ท่อส่งมา: ${d_unlisted.stockDay}`}>{thaiDate(d_unlisted.stockDay)}</span></>
+                    )}
+                    {d_unlisted.recipeAt && (
+                      <> · สูตรสินค้าชุดเก็บเมื่อ <span title={`ค่าที่ท่อส่งมา: ${d_unlisted.recipeAt}`}>{thaiDate(String(d_unlisted.recipeAt).slice(0, 10))}</span></>
+                    )}
+                    {' '}— <b>ไม่ใช่เวลาที่เปิดจอนี้</b>
+                  </p>
+                  {Array.isArray(d_unlisted.withStock) && d_unlisted.withStock.length > 0 && (
+                    <details className="mt-2">
+                      <summary className="text-[12px] text-blue-600 cursor-pointer">ดูรายชื่อสินค้าที่ยังมีของ</summary>
+                      <ul className="mt-1 text-[12px] text-gray-600 list-disc pl-5 space-y-0.5">
+                        {d_unlisted.withStock.slice(0, 12).map((x, i) => (
+                          <li key={`${x.itemId ?? i}`}>{x.name ?? '—'}</li>
+                        ))}
+                      </ul>
+                      {d_unlisted.withStock.length > 12 && (
+                        <p className="text-[11.5px] text-gray-400 mt-1">
+                          แสดง 12 จาก {fmtNum(d_unlisted.withStock.length)} สินค้า
+                        </p>
+                      )}
+                    </details>
+                  )}
+                </>
+              ) : (
+                <p className="text-[12.5px] text-gray-500">ท่อยังไม่ส่งตัวเลขกลุ่มนี้มา — <b>ยังไม่รู้</b> ไม่ใช่ว่าไม่มี</p>
+              )}
+              <p className="text-[11.5px] text-gray-400 mt-2">
+                🚫 ตอนนี้มีเฉพาะ <b>Shopee</b> — Lazada/TikTok ยังไม่มีเส้นแบบนี้ ⇒ <b>ห้ามอ่านว่าเป็นภาพรวมทุกเจ้า</b>
+              </p>
+            </Card>
+          )}
+
           <Card>
             <p className="text-[13px] font-semibold text-gray-700 mb-2">เลขบนจอนี้มาจากไหน</p>
             <ul className="text-[12.5px] text-gray-600 space-y-1.5 leading-relaxed list-disc pl-4">
