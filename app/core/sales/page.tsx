@@ -161,12 +161,13 @@ const PAGE = 50
 const ADV_TH: Record<string, string> = {
   payStatus: 'สถานะชำระเงิน', cod: 'เก็บเงินปลายทาง', product: 'สินค้า', shipChannel: 'ช่องทางจัดส่ง',
   shipFrom: 'ส่งตั้งแต่', shipTo: 'ส่งถึง', amountMin: 'มูลค่าตั้งแต่', amountMax: 'มูลค่าถึง',
-  number: 'หมายเลขรายการ', customer: 'ชื่อลูกค้า',
+  number: 'หมายเลขรายการ', customer: 'ชื่อลูกค้า', tag: 'Tag', createUser: 'ผู้สร้าง', warehouse: 'คลัง',
 }
 /** ชื่อพารามิเตอร์ที่จอส่ง → ชื่อคีย์ที่ท่อสะท้อนกลับ (คนละสะกด ⇒ ต้องมีตารางแปลง ไม่ใช่เดา) */
 const ADV_KEY: Record<string, string> = {
   paystatus: 'payStatus', cod: 'cod', product: 'product', shipchannel: 'shipChannel',
   shipfrom: 'shipFrom', shipto: 'shipTo', amountmin: 'amountMin', amountmax: 'amountMax', number: 'number',
+  tag: 'tag', createuser: 'createUser', warehouse: 'warehouse',
 }
 
 const MEMO_KEY = 'gucut:core-sales:filter'
@@ -235,6 +236,13 @@ export default function CoreSalesPage() {
   const [fMin, setFMin] = useState('')
   const [fMax, setFMax] = useState('')
   const [fNumber, setFNumber] = useState('')
+  /* 🏷 Tag · ผู้สร้าง · คลัง — ท่อเปิดแล้ว (gucut-web orders-tag-creator-warehouse) · ยิงยืนยันของจริง 17 ก.ย. 2569
+     z1+z2 1 ส.ค.–16 ก.ย. ฐาน 1,337 ใบ: warehouse=NEW ⇒ 900 · KLD ⇒ 98 · W0001 ⇒ 0 (รหัสคลังเป็นตัวย่อ ไม่ใช่ W000x)
+     tag / createuser ⇒ ค้นแบบ "มีคำนี้อยู่" · warehouse ⇒ **ต้องตรงตัว** ⇒ ทำเป็นตัวเลือก ไม่ใช่ช่องพิมพ์
+     ⚠️ ใบก่อน 1 ก.ย. 2569 ส่วนหนึ่งยังไม่รู้คลัง (ท่อยังไม่กวาดย้อนหลัง) ⇒ เลือกคลังแล้วใบพวกนั้นไม่ขึ้น */
+  const [fTag, setFTag] = useState('')
+  const [fCreator, setFCreator] = useState('')
+  const [fWh, setFWh] = useState('')
   /* 💾 **จำตัวกรองไว้** — ลอกติ๊ก `remember_filter` ของ ZORT (แผง "ตัวกรอง" ใน /Sell/list)
      🔴 ของที่จำไว้ถูกใส่กลับให้เอง ⇒ **ต้องประกาศทุกครั้งที่ใช้** ไม่งั้นคนเห็นรายการน้อยกว่าจริง
         แล้วสรุปยอดผิดทั้งวันโดยไม่มีอะไรบอกว่ากำลังกรองอยู่
@@ -288,8 +296,11 @@ export default function CoreSalesPage() {
     if (fMin.trim()) out.push(['amountmin', fMin.trim()])
     if (fMax.trim()) out.push(['amountmax', fMax.trim()])
     if (fNumber.trim()) out.push(['number', fNumber.trim()])
+    if (fTag.trim()) out.push(['tag', fTag.trim()])
+    if (fCreator.trim()) out.push(['createuser', fCreator.trim()])
+    if (fWh) out.push(['warehouse', fWh])
     return out
-  }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber])
+  }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber, fTag, fCreator, fWh])
 
   const load = useCallback(async (
     off = 0,
@@ -337,6 +348,11 @@ export default function CoreSalesPage() {
       const res = await fetch(url)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
+      /* 🔴 **ตอบ 200 แต่คนละรูป ต้องเป็น error ไม่ใช่ "ไม่มีรายการ"** (17 ก.ย. 2569)
+         ยิงจริง `list=orders&customer=…` ⇒ ท่อส่งก้อน "ลูกค้ารายคน" กลับมา (ไม่มี total · ไม่มี rows)
+         ⇒ จอเดิมขึ้นตารางว่างเงียบ ๆ · กันไว้ทุกพารามิเตอร์ ไม่ใช่เฉพาะ customer */
+      if (!j?.skip && (!Array.isArray(j?.rows) || typeof j?.total !== 'number'))
+        throw new Error('ท่อตอบกลับมาคนละรูป (ไม่มีรายการใบ/ยอดรวม) — ไม่ใช่ "ไม่มีใบ" · อาจมีตัวกรองที่ชนกับเส้นอื่นของท่อ')
       putApiCache(url, j)
       setData(j)
       setOffset(off)
@@ -646,15 +662,30 @@ export default function CoreSalesPage() {
           { label: 'มูลค่าตั้งแต่', kind: 'number', value: fMin, onChange: (v) => setFMin(String(v)), placeholder: '0', width: 110 },
           { label: 'จนถึงมูลค่า', kind: 'number', value: fMax, onChange: (v) => setFMax(String(v)), placeholder: '999999', width: 110 },
           { label: 'หมายเลขรายการ', kind: 'text', value: fNumber, onChange: (v) => setFNumber(String(v)), placeholder: 'เช่น SO-2026', width: 150 },
+          { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
+          { label: 'ผู้สร้าง', kind: 'text', value: fCreator, onChange: (v) => setFCreator(String(v)), placeholder: 'ชื่อผู้สร้างใบ', width: 130 },
+          {
+            label: 'คลัง',
+            kind: 'select',
+            value: fWh,
+            onChange: (v) => setFWh(String(v)),
+            width: 170,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: 'NEW', label: 'NEW' },
+              { value: 'KLD', label: 'KLD' },
+              { value: 'ANJ', label: 'ANJ' },
+            ],
+          },
         ]}
         notAvailable={[
           {
             what: 'ชื่อลูกค้า (ช่องแยก)',
-            why: 'ท่อมีให้แล้ว แต่ชื่อพารามิเตอร์ชนกับเส้น "ลูกค้ารายคน" ⇒ ส่งไปแล้วได้คำตอบคนละรูป (แจ้งฝั่งท่อแล้ว) · ระหว่างนี้ใช้ช่องค้นหาด้านบนซึ่งค้นชื่อลูกค้าให้อยู่แล้ว',
+            why: 'ท่อมีให้แล้ว แต่ชื่อพารามิเตอร์ชนกับเส้น "ลูกค้ารายคน" ⇒ ส่งไปแล้วได้คำตอบคนละรูป (ยิงยืนยันซ้ำ 17 ก.ย. 2569 ยังชนอยู่ · ส่งตัวแก้ให้ฝั่งท่อแล้ว รอขึ้นระบบ) · ระหว่างนี้ใช้ช่องค้นหาด้านบนซึ่งค้นชื่อลูกค้าให้อยู่แล้ว',
           },
           {
-            what: 'Tag · ผู้สร้าง · คลังของใบ',
-            why: 'ฝั่งท่อกำลังเก็บเข้ากระจก (ยิง ZORT จริง 15 ก.ย. พบ Tag 65 ใบ · ผู้สร้าง 41 ใบ · คลัง 640/640) — รอสัญญาเส้นก่อนถึงจะต่อได้',
+            what: 'ใบที่ยังไม่รู้คลัง',
+            why: 'ใบก่อน 1 ก.ย. 2569 ส่วนหนึ่งท่อยังไม่ได้เก็บรหัสคลัง ⇒ เลือกคลังไหนก็ไม่ขึ้น (วัด 17 ก.ย. 2569: ช่วง 1 ส.ค.–16 ก.ย. มี 40 ใบ) · ยังเลือก "ไม่รู้คลัง" ไม่ได้',
           },
           {
             what: 'Serial no · ชื่อตัวแทน',
@@ -670,13 +701,14 @@ export default function CoreSalesPage() {
           setAdvFrom(''); setAdvTo('')
           setFPay(''); setFCod(''); setFProduct(''); setFShipCh('')
           setFShipFrom(''); setFShipTo(''); setFMin(''); setFMax(''); setFNumber('')
+          setFTag(''); setFCreator(''); setFWh('')
           /* ⚠️ ล้างแล้วต้องยิงใหม่ทันที ไม่งั้นตารางยังเป็นผลของเงื่อนไขเดิมทั้งที่ช่องว่างหมดแล้ว
              (setState ยังไม่ทันมีผลในรอบนี้ ⇒ ส่ง from/to ว่างตรง ๆ และ advParams รอบถัดไปจะว่างเอง) */
           setTimeout(() => load(0, { from: '', to: '' }), 0)
         }}
         canClear={!!advFrom || !!advTo || advParams().length > 0}
         applyLabel="ค้นหาตามช่วงนี้"
-        serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา · สถานะชำระเงิน · COD · สินค้า · ช่องทางจัดส่ง · วันส่งสินค้า · ช่วงมูลค่า · หมายเลขรายการ"
+        serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา · สถานะชำระเงิน · COD · สินค้า · ช่องทางจัดส่ง · วันส่งสินค้า · ช่วงมูลค่า · หมายเลขรายการ · Tag · ผู้สร้าง · คลัง"
         extraNote={<>
           ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;
           {/* 💾 ติ๊กจำตัวกรอง — ลอกจาก ZORT (remember_filter) · ไฟเขียวจาก CEO 15 ก.ย. 2569 */}
