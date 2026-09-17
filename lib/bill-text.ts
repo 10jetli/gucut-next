@@ -99,7 +99,10 @@ const NO_LABELS = [
 /** เลขที่เอกสารตามที่พิมพ์ในบิล — คืน null ถ้าไม่เจอ (ห้ามสร้างเลขเอง)
  *  ⚠️ กันจับวันที่มาเป็นเลขที่ใบ: ต้องมีตัวอักษรหรือยาวพอ และไม่ใช่รูปแบบวันที่ */
 export function invoiceNoFromText(text: string): string | null {
-  const t = thaiLoose(text)
+  /* 🔬 ของจริง Anthropic (18 ก.ย. 2569): ขีดในเลขที่ใบถูกแกะออกมาเป็นอักขระ NUL — `ZEBE#ZQP\u0000####`
+     ⇒ ตัวอ่านหยุดที่ NUL ได้แค่ส่วนหน้าที่ทุกใบใช้ร่วมกัน ⇒ ทุกใบของเจ้านั้นได้กุญแจเดียวกัน (ใบซ้ำปลอม)
+     ⇒ NUL ที่อยู่ระหว่างตัวอักษร/ตัวเลข ให้ถือเป็นขีด */
+  const t = thaiLoose(text).replace(/([A-Za-z0-9])\u0000(?=[A-Za-z0-9])/g, '$1-')
   const ดูเหมือนวันที่ = (raw: string) =>
     /^\d{1,2}[-/]\d{1,2}[-/]\d{2,4}$/.test(raw)                        // 11/06/2026
     || /^\d{4}-\d{2}-\d{2}$/.test(raw)                                  // 2026-06-11
@@ -109,7 +112,13 @@ export function invoiceNoFromText(text: string): string | null {
      (ป้าย `Invoice #` ตามด้วยคำ `INVOICE` · หรือ `INVOICEInvoice Number` ที่ ⓑ หยิบคำหน้าป้าย)
      ⇒ ลองทุกตำแหน่งที่ป้ายปรากฏ ไม่ใช่ตำแหน่งแรก และข้ามค่าที่ไม่มีตัวเลข */
   const ใช้ได้ = (raw: string) => !!raw && /\d/.test(raw) && !ดูเหมือนวันที่(raw)
-  for (const label of NO_LABELS) {
+  /* 🔴 **ใบเสร็จต้องใช้เลขที่ใบเสร็จเป็นตัวตน ไม่ใช่เลขใบแจ้งหนี้ที่พิมพ์อ้างอิงไว้** (18 ก.ย. 2569)
+     ใบเสร็จ Anthropic พิมพ์ทั้ง `Invoice number` (เท่ากับใบแจ้งหนี้คู่กัน) และ `Receipt number`
+     ⇒ ถ้าใช้ป้ายตามลำดับเดิม ใบแจ้งหนี้กับใบเสร็จของรอบเดียวกันได้กุญแจเดียวกัน = ถูกนับเป็นใบซ้ำ ทั้งที่คนละเอกสาร */
+  const labels = /receipt\s*(?:no\.?|number|id)|เลขที่ใบเสร็จ/i.test(t)
+    ? [...NO_LABELS.filter((l) => /receipt|ใบเสร็จ/i.test(l)), ...NO_LABELS.filter((l) => !/receipt|ใบเสร็จ/i.test(l))]
+    : NO_LABELS
+  for (const label of labels) {
     const lab = thaiLoose(label)
     // ⓐ ป้ายอยู่หน้า ค่าอยู่หลัง (รูปแบบปกติ)
     for (const m of Array.from(t.matchAll(new RegExp(`${lab}\\s*[:：#]?\\s*([A-Za-z0-9][A-Za-z0-9\\-/_]{3,30})`, 'gi')))) {

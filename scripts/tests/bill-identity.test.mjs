@@ -174,6 +174,18 @@ ID ธุรกรรม
   ok(c1.key !== c2.key, 'ใบคนละเลขต้องได้คนละกุญแจ', `${c1.key} vs ${c2.key}`)
   ok(c2.invoiceNo === 'IN-79323479', 'ข้ามป้ายที่ได้ค่าไม่มีตัวเลข แล้วหาเลขจริงจากป้ายถัดไป', String(c2.invoiceNo))
 
+  console.log('⑭ ขีดในเลขที่ใบถูกแกะเป็น NUL · ใบเสร็จอ้างเลขใบแจ้งหนี้ ⇒ ต้องไม่เป็นใบซ้ำปลอม')
+  /* 🔬 รูปจริงจาก Anthropic (18 ก.ย. 2569 · ตัวเลขสมมติ): `Invoice numberABCD1EFG\u00000001`
+     และใบเสร็จพิมพ์ `Invoice number` เดียวกัน + `Receipt number2222\u00003333\u00004444` */
+  const anInvMay = 'Page 1 of 1\nInvoice\nInvoice numberABCD1EFG\u00000001\nDate of issueMay 5, 2026\nAnthropic, PBC'
+  const anRecMay = 'Page 1 of 1\nReceipt\nInvoice numberABCD1EFG\u00000001\nReceipt number2222\u00003333\u00004444\nDate paidMay 5, 2026'
+  const anInvAug = 'Page 1 of 1\nInvoice\nInvoice numberABCD1EFG\u00000002\nDate of issueAugust 5, 2026\nAnthropic, PBC'
+  const i1 = billIdentity(anInvMay, 'anthropic'); const r1 = billIdentity(anRecMay, 'anthropic'); const i2 = billIdentity(anInvAug, 'anthropic')
+  ok(i1.invoiceNo === 'ABCD1EFG-0001', 'อ่านเลขเต็มแม้ขีดเป็น NUL', String(i1.invoiceNo))
+  ok(i1.key !== i2.key, 'ใบแจ้งหนี้คนละเดือนได้คนละกุญแจ (ไม่ใช่แค่ส่วนหน้า)', `${i1.key} vs ${i2.key}`)
+  ok(r1.key !== i1.key, 'ใบเสร็จกับใบแจ้งหนี้รอบเดียวกัน ไม่เป็นกุญแจเดียวกัน', `${r1.key} vs ${i1.key}`)
+  ok(r1.invoiceNo === '2222-3333-4444', 'ใบเสร็จใช้เลขที่ใบเสร็จเป็นตัวตน', String(r1.invoiceNo))
+
 } catch (e) {
   console.log('❌ เทสพัง:', e?.message ?? e); fail++
 } finally {

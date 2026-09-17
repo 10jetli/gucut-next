@@ -79,9 +79,22 @@ export async function GET(req: NextRequest) {
       }
     }
 
+    /* 🚦 ด่านเทียบกับชื่อไฟล์ (18 ก.ย. 2569) — ตัวอ่านเลขที่ใบพังมาแล้ว 2 แบบ (หยิบคำ INVOICE · ตัดเลขขาดที่ NUL)
+       ทั้งสองแบบทำให้ **ใบคนละเลขได้กุญแจเดียวกัน** ⇒ ถ้าเลขเอกสารที่อยู่ในชื่อไฟล์ของกลุ่มเดียวกันไม่ตรงกัน ⇒ ฟ้อง ไม่นับเป็นซ้ำชัด
+       (เลขในชื่อไฟล์ = ส่วนที่มีตัวเลข ≥ 6 ตัว หลังตัดเดือน/รหัสอีเมลนำหน้า · ไม่มีเลขในชื่อ ⇒ ไม่ตัดสินด้วยด่านนี้) */
+    const เลขในชื่อ = (name: string) => {
+      const base = name.replace(/^\d{4}-\d{2}_[0-9a-f]{10,}_/i, '').replace(/^\d{4}-\d{2}_/, '').replace(/^REAL_/, '')
+      const m = base.match(/[A-Z]{0,8}-?[A-Z0-9]*\d[A-Z0-9-]{5,}/i)
+      return m ? m[0].toUpperCase() : null
+    }
     const dup = Array.from(byKey.entries())
       .filter(([, list]) => list.length > 1)
-      .map(([key, list]) => ({ กุญแจ: key, จำนวนไฟล์: list.length, ไฟล์: list }))
+      .map(([key, list]) => {
+        const เลข = list.map((x) => เลขในชื่อ(x.file))
+        const มีครบ = เลข.every(Boolean)
+        const ขัด = มีครบ && new Set(เลข).size > 1
+        return { กุญแจ: key, จำนวนไฟล์: list.length, ไฟล์: list, ...(ขัด ? { ขัดกับชื่อไฟล์: true } : {}) }
+      })
 
     out.push({
       vendor: vendorId,
@@ -91,6 +104,8 @@ export async function GET(req: NextRequest) {
       ยังไม่ได้อ่าน: Math.max(0, files.length - (skip + limit)),
       ใบซ้ำ: dup,
       จำนวนใบซ้ำ: dup.reduce((a, g) => a + (g.จำนวนไฟล์ - 1), 0),
+      /* กลุ่มที่เลขในชื่อไฟล์ไม่ตรงกัน — อย่านับรวมเป็นซ้ำชัด ต้องให้คนดู */
+      กลุ่มขัดกับชื่อไฟล์: dup.filter((g) => g.ขัดกับชื่อไฟล์).length,
       จัดผิดเดือน: misfiled,
       ตัดสินไม่ได้: undecidable,
       ข้าม: ข้าม,
