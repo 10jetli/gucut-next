@@ -126,6 +126,8 @@ export default function CoreCustomersPage() {
   /** ยอดทั้งช่วงที่ท่อนับให้ (ไม่ได้ถูกตัดที่ 500 ราย) — ใช้เป็นตัวหารและตัวปิดช่องว่าง
    *  null = ท่อไม่ได้ส่งมา ⇒ **ห้ามเดาจากแถวที่โหลดมา** */
   const [totalSales, setTotalSales] = useState<number | null>(null)
+  /** จำนวนใบทั้งช่วงที่ท่อนับให้ (ไม่ถูกตัดที่ 500 ราย) — null = ท่อไม่ส่ง ⇒ ถอยไปบวกจากแถวพร้อมบอกว่าเป็นของรายที่แสดง */
+  const [totalOrders, setTotalOrders] = useState<number | null>(null)
   /** มุมมองการ์ดจำนวนลูกค้า — ผังเดียวกับ dropdown `typeoption` ของ ZORT (จำนวนลูกค้า/ยอดขาย) */
   const [cardBy, setCardBy] = useState<'people' | 'sales'>('people')
   const [loading, setLoading] = useState(true)
@@ -172,6 +174,7 @@ export default function CoreCustomersPage() {
       setHistoryFrom(typeof d.historyFrom === 'string' ? d.historyFrom : '')
       setRange({ from: typeof d.from === 'string' ? d.from : '', to: typeof d.to === 'string' ? d.to : '' })
       setTotalSales(typeof d.totalSales === 'number' ? d.totalSales : null)
+      setTotalOrders(typeof d.totalOrders === 'number' ? d.totalOrders : null)
       setMonthly(Array.isArray(d.monthly) ? d.monthly : [])
       const un = d?.unnamed
       if (un && Number(un.orders) > 0) {
@@ -220,6 +223,12 @@ export default function CoreCustomersPage() {
   }, [people, newC, repC, tab, q])
 
   const totalAmount = people.reduce((s, p) => s + p.amount, 0)
+  /* 🔴 **ตัวหารของ % ต้องเป็นยอดทั้งช่วง ไม่ใช่ยอดของรายที่โหลดมา** (แก้ 17 ก.ย. 2569 · A1 ในใบสำรวจ t_mu5bhh84)
+     ช่วง 365 วัน ท่อส่งมา 500 จาก 4,281 ราย ⇒ ของเดิมหารด้วย 6.81 ล้าน (500 ราย + ไม่มีชื่อ) แทน 9.15 ล้าน
+     ⇒ % ทุกแถวสูงเกินจริงราว 34% · ท่อส่ง totalSales มาให้ตั้งแต่แรก แต่ตารางไม่ได้ใช้
+     ท่อไม่ส่ง (รุ่นเก่า) ⇒ ถอยไปใช้ยอดของรายที่แสดง และหัวคอลัมน์บอกขอบเขต */
+  const ตัวหารร้อยละ = totalSales !== null && totalSales > 0 ? totalSales : totalAmount
+  const ร้อยละของทั้งช่วง = totalSales !== null && totalSales > 0
   const shown = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
 
@@ -249,7 +258,9 @@ export default function CoreCustomersPage() {
               : summaryLine(people.length, totalAmount)}
             {' | '}
             <span className="text-gray-400">
-              รวมจากออเดอร์ {scanned.toLocaleString('th-TH')} ใบในคลังของเราเอง{scope ? ` · ${scope}` : ''}
+              {/* 🔴 เดิมบวกจากแถวที่โหลดมา ⇒ ช่วง 365 วันขึ้น 6,229 ใบ ทั้งที่ท่อนับได้ 11,484 */}
+              รวมจากออเดอร์ {(totalOrders ?? scanned).toLocaleString('th-TH')} ใบในคลังของเราเอง
+              {totalOrders === null && truncated ? ' (นับเฉพาะรายที่แสดง)' : ''}{scope ? ` · ${scope}` : ''}
             </span>
           </>
         )}
@@ -528,7 +539,9 @@ export default function CoreCustomersPage() {
                   <th className={THR}>จำนวนใบ</th>
                   <th className={THR}>ยอดรวม</th>
                   {/* ZORT (ภาพ 76) มีคอลัมน์ ยอดขาย (%) — สัดส่วนต่อยอดรวมของช่วง */}
-                  <th className={THR}>ยอดขาย (%)</th>
+                  <th className={THR} title={ร้อยละของทั้งช่วง ? 'ร้อยละของยอดขายทั้งช่วง (ท่อนับทุกใบ ไม่ใช่เฉพาะรายที่แสดง)' : 'ร้อยละของยอดรวมเฉพาะรายที่แสดง — ท่อไม่ได้ส่งยอดทั้งช่วงมา'}>
+                    ยอดขาย (%{ร้อยละของทั้งช่วง ? '' : ' ของรายที่แสดง'})
+                  </th>
                   <th className={THR}>ซื้อล่าสุด</th>
                 </tr>
               </thead>
@@ -569,10 +582,9 @@ export default function CoreCustomersPage() {
                     </td>
                     <td className={TDR}>{p.orders.toLocaleString('th-TH')}</td>
                     <td className={TDR}>{fmtMoney(p.amount)}</td>
-                    {/* ⚠️ ตัวหารคือยอดรวมของช่วง (totalAmount) — ตอนถูกตัดที่ 500 ราย
-                        มันคือยอดของรายที่แสดง ป้ายหัวจอบอกขอบเขตแล้ว · กันหารศูนย์ด้วย */}
+                    {/* ตัวหาร = ยอดทั้งช่วงจากท่อ (ดู ตัวหารร้อยละ) · กันหารศูนย์ด้วย */}
                     <td className={`${TDR} text-gray-500`}>
-                      {totalAmount > 0 ? `${(Math.round((p.amount / totalAmount) * 1000) / 10).toLocaleString('th-TH')}%` : '—'}
+                      {ตัวหารร้อยละ > 0 ? `${(Math.round((p.amount / ตัวหารร้อยละ) * 1000) / 10).toLocaleString('th-TH')}%` : '—'}
                     </td>
                     <td className={`${TDR} text-gray-500`}>{thaiDate(p.last)}</td>
                   </tr>
