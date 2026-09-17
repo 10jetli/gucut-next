@@ -291,11 +291,27 @@ export default function MarketplaceDashboardPage() {
                           <li key={`${x.itemId ?? i}`}>{x.name ?? '—'}</li>
                         ))}
                       </ul>
-                      {d_unlisted.withStock.length > 12 && (
-                        <p className="text-[11.5px] text-gray-400 mt-1">
-                          แสดง 12 จาก {fmtNum(d_unlisted.withStock.length)} สินค้า
-                        </p>
-                      )}
+                      {/* 🔴 **ห้ามใช้ความยาวของรายการเป็น "ทั้งหมด"** — รายการอาจถูกท่อตัดมา
+                          ตัวเลขที่เชื่อได้คือ `itemsWithStock` ซึ่งท่อนับจากทั้งชุด
+                          (คลาสเดียวกับที่เจอทั้งคืน: เลขจากลิสต์ที่ถูก cap ห้ามเอาไปใช้เป็นยอดรวม) */}
+                      {(() => {
+                        const แสดง = Math.min(12, d_unlisted.withStock!.length)
+                        const ทั้งหมด = typeof d_unlisted.itemsWithStock === 'number' ? d_unlisted.itemsWithStock : null
+                        const ส่งมา = d_unlisted.withStock!.length
+                        if (ทั้งหมด === null) {
+                          return ส่งมา > แสดง
+                            ? <p className="text-[11.5px] text-gray-400 mt-1">แสดง {แสดง} จาก {fmtNum(ส่งมา)} ที่ท่อส่งมา (ยังไม่รู้ยอดทั้งชุด)</p>
+                            : null
+                        }
+                        return (
+                          <p className="text-[11.5px] text-gray-400 mt-1">
+                            แสดง {แสดง} จากทั้งหมด {fmtNum(ทั้งหมด)} สินค้า
+                            {ส่งมา < ทั้งหมด && (
+                              <b className="text-amber-700"> · ท่อส่งรายชื่อมาแค่ {fmtNum(ส่งมา)} ⇒ รายชื่อนี้ยังไม่ครบ</b>
+                            )}
+                          </p>
+                        )
+                      })()}
                     </details>
                   )}
                 </>
