@@ -17,6 +17,17 @@ const เลื่อนวัน = (iso: string, n: number) => {
   return d.toISOString().slice(0, 10)
 }
 
+/** ลิงก์ไปรายการขายของลูกค้าคนหนึ่ง "ทุกใบ" (17 ก.ย. 2569) — จอลูกค้ารายคนได้จากท่อแค่ 20 ใบล่าสุด
+ *  ⚠️ จอรายการขายค้นชื่อแบบ **มีคำนี้อยู่** แต่จอลูกค้าจับชื่อ **ตรงตัว** ⇒ อาจมีชื่ออื่นที่มีคำเดียวกันปน
+ *     และจอรายการขายนับใบยกเลิกด้วย ⇒ จำนวนสองจอต่างกันได้ — คนเรียกต้องเขียนบอกคู่กับลิงก์ */
+export function ลิงก์ใบของลูกค้า(ชื่อ: string, วันแรก?: string | null, วันล่าสุด?: string | null): string {
+  const qs = new URLSearchParams({ customer: ชื่อ })
+  const วัน = (x?: string | null) => (typeof x === 'string' && /^\d{4}-\d{2}-\d{2}/.test(x) ? x.slice(0, 10) : '')
+  qs.set('from', วัน(วันแรก) ? เลื่อนวัน(วัน(วันแรก), -1) : วันแรกที่มีข้อมูล)
+  if (วัน(วันล่าสุด)) qs.set('to', เลื่อนวัน(วัน(วันล่าสุด), 1))
+  return `/core/sales?${qs}`
+}
+
 export function ลิงก์ใบขาย(เลขที่ใบ: string, วันที่ใบ?: string | null): string {
   const qs = new URLSearchParams({ q: เลขที่ใบ })
   const วัน = typeof วันที่ใบ === 'string' && /^\d{4}-\d{2}-\d{2}/.test(วันที่ใบ) ? วันที่ใบ.slice(0, 10) : ''

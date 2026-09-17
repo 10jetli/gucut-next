@@ -245,7 +245,8 @@ export default function CoreSalesPage() {
   const [fWh, setFWh] = useState('')
   /* 👤 ชื่อลูกค้า — ท่อแก้เส้นชนแล้ว (gucut-web 701aa59 · ขึ้น 17 ก.ย. 2569 23:0x)
      ยิงยืนยันของจริง: customer=a ⇒ 46 จาก 1,337 ใบ + สะท้อน advancedFilters.customer · ค้นแบบ "มีคำนี้อยู่" */
-  const [fCustomer, setFCustomer] = useState('')
+  const [fCustomer, setFCustomer] = useState(() =>
+    typeof window === 'undefined' ? '' : new URLSearchParams(window.location.search).get('customer') ?? '')
   /* 💾 **จำตัวกรองไว้** — ลอกติ๊ก `remember_filter` ของ ZORT (แผง "ตัวกรอง" ใน /Sell/list)
      🔴 ของที่จำไว้ถูกใส่กลับให้เอง ⇒ **ต้องประกาศทุกครั้งที่ใช้** ไม่งั้นคนเห็นรายการน้อยกว่าจริง
         แล้วสรุปยอดผิดทั้งวันโดยไม่มีอะไรบอกว่ากำลังกรองอยู่
@@ -308,7 +309,7 @@ export default function CoreSalesPage() {
 
   const load = useCallback(async (
     off = 0,
-    opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string; size?: number },
+    opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string; size?: number; q?: string; customer?: string },
   ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
@@ -327,9 +328,11 @@ export default function CoreSalesPage() {
       if (ch) qs.set('channel', ch)
       if (st) qs.set('status', st)
       if (sr) qs.set('store', sr)
-      if (q.trim()) qs.set('q', q.trim())
+      const qq = opt?.q ?? q
+      if (qq.trim()) qs.set('q', qq.trim())
       /* 🔍 ตัวกรองขั้นสูง — ส่งเฉพาะช่องที่กรอก · ว่าง = ไม่ส่ง (ท่อถือว่าไม่กรอง) */
       for (const [k, v] of advParams()) qs.set(k, v)
+      if (opt?.customer !== undefined) { if (opt.customer.trim()) qs.set('customer', opt.customer.trim()); else qs.delete('customer') }
       // ⚠️ **ส่ง cancelled=1 เสมอ** — ค่าเริ่มต้นของ API ตัดใบยกเลิกทิ้ง
       //    ถ้าไม่ส่ง byStatus จะไม่มี "Voided" เลย ⇒ ไม่มีแท็บยกเลิกให้กด
       //    และถ้าเผลอมีแท็บ กดแล้วจะได้ 0 ใบทั้งที่มี 44 ใบ (ฝั่งท่อหลังบ้านเตือนไว้)
@@ -379,9 +382,23 @@ export default function CoreSalesPage() {
        ถ้าคนเคยติ๊กจำตัวกรอง (ร้าน · สถานะ · ช่วงวัน) แล้วกดลิงก์ `?q=<เลขที่ใบ>` มา
        ตัวกรองที่จำไว้จะมาทับ ⇒ ใบที่ลิงก์ชี้อาจโดนกรองหายไปเงียบ ๆ
        ⇒ มีคำค้นจาก URL = ไม่เอาตัวกรองที่จำไว้มาใช้รอบนี้ (ค่าที่จำไว้ยังอยู่ ไม่ได้ลบ) */
-    const deepLink = new URLSearchParams(window.location.search).has('q')
+    /* ลิงก์จากจอลูกค้ารายคน (`?customer=`) ก็เป็นลิงก์เจาะจง — ตัวกรองที่จำไว้ห้ามมาทับเหมือนกัน */
+    const sp0 = new URLSearchParams(window.location.search)
+    const deepLink = sp0.has('q') || sp0.has('customer')
     if (!memo || deepLink) {
-      if (deepLink && (advFrom || advTo)) setAdvOpen(true)
+      if (deepLink) {
+        /* 🔴 **อ่าน URL ซ้ำตรงนี้ ห้ามเชื่อค่าตั้งต้นของ useState** (แก้ 17 ก.ย. 2569 23:3x · เจอจากการกดจริง)
+           กดลิงก์ `<Link>` จากจออื่น (นำทางฝั่งเบราว์เซอร์) ⇒ ตอนจอนี้วาดครั้งแรก window.location ยังเป็น URL ของจอเดิม
+           ⇒ q/from/to/customer ตั้งต้นเป็นค่าว่าง ⇒ ลิงก์เลขที่ใบจากจอลูกค้าเปิดมาได้รายการ 90 วันทั้งกอง ไม่มีคำค้น
+           ทดสอบรุ่นแรกด้วยการเปิด URL ตรง ๆ จึงผ่าน — ต้องทดสอบด้วยการกดลิงก์ · ตอน effect วิ่ง URL ถูกแล้ว */
+        const urlQ = sp0.get('q') ?? ''
+        const urlFrom = sp0.get('from') ?? ''
+        const urlTo = sp0.get('to') ?? ''
+        const urlCustomer = sp0.get('customer') ?? ''
+        setQ(urlQ); setAdvFrom(urlFrom); setAdvTo(urlTo); setFCustomer(urlCustomer)
+        if (urlFrom || urlTo || urlCustomer) setAdvOpen(true)
+        load(0, { q: urlQ, from: urlFrom, to: urlTo, customer: urlCustomer }); return
+      }
       load(0); return
     }
     setRemember(true)

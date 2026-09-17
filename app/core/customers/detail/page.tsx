@@ -23,7 +23,7 @@ import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
-import { ลิงก์ใบขาย } from '@/lib/sale-link'
+import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
 interface Order {
   id?: string; source?: string; number?: string; channel?: string; status?: string
@@ -206,6 +206,19 @@ function Inner() {
                 </table>
                 <p className="mt-2 text-[12px] text-gray-400">
                   แสดง {o.recent.length} ใบล่าสุด{typeof o.count === 'number' && o.count > o.recent.length ? ` จากทั้งหมด ${o.count} ใบ` : ''}
+                  {/* ✅ ดูครบทุกใบ — ท่อ list=orders รับ customer ได้แล้ว (17 ก.ย. 2569) · ต้องบอกว่านับคนละกติกา */}
+                  {typeof o.count === 'number' && o.count > o.recent.length && (
+                    <>
+                      {' · '}
+                      <Link href={ลิงก์ใบของลูกค้า(d?.name ?? '', o.firstDay, o.lastDay)} className="text-blue-600 hover:underline">
+                        ดูครบทุกใบในรายการขาย
+                      </Link>
+                      <span className="block text-[11.5px] text-gray-400">
+                        จอรายการขายค้นชื่อแบบ &ldquo;มีคำนี้อยู่&rdquo; และนับใบยกเลิกด้วย ⇒ จำนวนอาจมากกว่า {o.count} ใบที่นี่
+                        (ที่นี่จับชื่อตรงตัว ไม่นับใบยกเลิก)
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
             )}
