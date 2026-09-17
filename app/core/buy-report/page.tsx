@@ -253,6 +253,12 @@ export default function BuyReportPage() {
      วันนี้ใบซื้อทั้งหมด 32 ใบ จึงยังครบ แต่วันที่เกิน 200 ยอดจะน้อยกว่าจริงแบบเงียบ ๆ
      ⇒ เทียบจำนวนแถวกับตัวนับของท่อ แล้วเตือนทันทีที่ชนเพดาน ไม่ต้องรอให้มีคนสังเกต */
   const cutRows = Boolean(all && typeof all.total === 'number' && (rows?.length ?? 0) < all.total)
+  /* 🔑 **หัวการ์ดต้องใช้ยอดของทั้งช่วงจากท่อ ไม่ใช่ผลบวกของแถวที่โหลดมา** (A2 ในใบสำรวจ t_mu5bhh84 · 18 ก.ย. 2569)
+     ท่อส่ง `amount` (ยอดทั้งช่วง) + `total` (จำนวนใบทั้งช่วง) มาอยู่แล้ว · แถวถูกตัดที่ 200 เมื่อไหร่ ผลบวกจากแถวจะต่ำกว่าจริงเงียบ ๆ
+     ⚠️ กราฟกับตารางยังคิดจากแถวที่โหลดมา ⇒ ตอนถูกตัดต้องมีคำเตือน (กล่องข้างบน) · ไม่มี `amount` = ท่อรุ่นเก่า ⇒ ถอยไปใช้ผลบวกแถว */
+  const ยอดทั้งช่วง = typeof all?.amount === 'number' ? all.amount : null
+  const จำนวนใบทั้งช่วง = typeof all?.total === 'number' ? all.total : null
+  const หัวยอด = ยอดทั้งช่วง ?? sum
 
   const points = useMemo(() => {
     const m = new Map<string, { label: string; value: number }>()
@@ -406,15 +412,16 @@ export default function BuyReportPage() {
                 <p className="text-[15px] font-semibold text-gray-900">สรุปยอดซื้อ</p>
               </div>
               <div className="flex flex-col items-center justify-center py-12">
-                {sum > 0
+                {หัวยอด > 0
                   ? (
                     <p className="text-[32px] font-semibold text-blue-600 leading-none">
-                      {fmtMoney(sum)}<span className="text-[15px] text-gray-500 font-normal"> บาท</span>
+                      {fmtMoney(หัวยอด)}<span className="text-[15px] text-gray-500 font-normal"> บาท</span>
                     </p>
                   )
                   : <p className="text-[30px] font-bold text-blue-600 leading-none">ไม่มียอดซื้อ</p>}
                 <p className="text-[12px] text-gray-500 mt-2">
-                  {fmtNum(inRange.length)} ใบ ในช่วงที่เลือก
+                  {fmtNum(จำนวนใบทั้งช่วง ?? inRange.length)} ใบ ในช่วงที่เลือก
+                  {cutRows && <span className="block text-amber-800">⚠️ กราฟและตารางข้างล่างคิดจาก {fmtNum(inRange.length)} ใบที่โหลดมาเท่านั้น</span>}
                 </p>
                 <button onClick={downloadExcel}
                   className="mt-5 text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded px-3.5 py-1.5 hover:bg-gray-50">
