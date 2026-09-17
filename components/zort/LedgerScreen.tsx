@@ -267,7 +267,17 @@ export default function LedgerScreen({
             : zLoading
               ? <span className="text-gray-500">กำลังถาม ZORT…</span>
               : (zUnknown || zErr)
-                ? <span className="text-amber-800">ถาม ZORT ไม่สำเร็จรอบนี้ — <b>ยังไม่รู้ว่ามีกี่รายการ</b> (ไม่ใช่ 0)</span>
+                /* 🔴 **"ถามไม่สำเร็จ" ไม่ได้แปลว่าไม่มีใครรู้** (เพิ่ม 17 ก.ย. 2569 · ใบ t_mu2u9mym)
+                     ถ้ามีการ **เปิดจอ ZORT ดูเองแล้วจดไว้พร้อมวันที่** (`sumLabel` + `sumSeenAt`)
+                     ต้องเอามาบอกด้วย — ไม่งั้นจอปิดปากเงียบทั้งที่เรารู้คำตอบอยู่
+                     ⚠️ แต่ยังต้องขึ้นว่า **ยังไม่รู้** นำหน้าเสมอ เพราะของที่คัดมาด้วยมือ
+                        คือภาพ ณ วันนั้น ไม่ใช่ค่าสด ⇒ ห้ามเอามาแทนคำตอบของท่อ */
+                ? (
+                  <span className="text-amber-800">
+                    ถาม ZORT ไม่สำเร็จรอบนี้ — <b>ยังไม่รู้ว่ามีกี่รายการ</b> (ไม่ใช่ 0)
+                    {sumLabel ? <> · เปิดจอ ZORT ดูเองเมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)}: {sumLabel}</> : null}
+                  </span>
+                )
                 : <span>ถาม ZORT สดรอบนี้ — <b>{zCount ?? rows?.length ?? 0} รายการ</b></span>}
         actions={
           <>
