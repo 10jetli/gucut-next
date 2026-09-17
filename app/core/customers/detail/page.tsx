@@ -29,10 +29,18 @@ interface Order {
   id?: string; source?: string; number?: string; channel?: string; status?: string
   amount?: number; order_date?: string; tracking_no?: string; pay_status?: string
 }
+/* 💰 การ์ดเงินแบบเดียวกับ ZORT — ท่อคิดให้จาก SQL ทั้งกอง (ไม่ได้คิดจากตาราง 20 แถวข้างล่าง)
+   ⚠️ ทั้งก้อนอาจเป็น undefined ได้ ถ้าจอขึ้นก่อนท่อรุ่นใหม่ ⇒ ต้องอ่านออกว่า "ท่อยังไม่ส่ง"
+      ไม่ใช่ "ลูกค้าคนนี้ยอด 0" (เลขศูนย์ที่ไม่มีที่มา คือเลขที่หลอกคนอ่าน) */
+interface Money {
+  thisMonth?: number; thisYear?: number; month?: string | null; year?: string | null
+  scope?: string; outstanding?: number | null; outstandingWhy?: string
+}
 interface Resp {
   contact?: Record<string, unknown> | null
   name?: string
   orders?: { count?: number; total?: number; firstDay?: string; lastDay?: string; recent?: Order[] }
+  money?: Money
   matchNote?: string
   error?: string; skip?: string
 }
@@ -149,6 +157,42 @@ function Inner() {
                 <span title={`ค่าที่ท่อส่งมา: ${o.lastDay}`}>{thaiDate(o.lastDay)}</span></div>}
             </div>
 
+            {/* 💰 **การ์ดเงิน 3 ใบแบบเดียวกับ ZORT** (เติม 18 ก.ย. 2569)
+                🔬 กติกาการนับ **วัดจากจอ ZORT จริง 3 ราย ไม่ได้เดา** — ZORT นับที่ "การชำระเงิน = ชำระครบ"
+                   ไม่ใช่สถานะเอกสาร (ใบ "รอโอนสินค้า" ที่ชำระครบแล้ว ZORT ก็นับ)
+                ⚠️ ใบที่สามของ ZORT (ยอดค้างชำระ) **จงใจไม่ใส่เลข** — วัดแล้วพบว่า ZORT ไม่ได้เอา
+                   ผลรวมใบที่ยังไม่ชำระมาใส่ ⇒ ถ้าเราคิดเองจะได้เลขที่ดูดีแต่ตอบคนละคำถามกับจอที่คนเชื่ออยู่ */}
+            <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+              {[
+                { t: 'ยอดขายเดือนนี้ (บาท)', v: d?.money?.thisMonth, sub: d?.money?.month },
+                { t: 'ยอดขายปีนี้ (บาท)', v: d?.money?.thisYear, sub: d?.money?.year },
+              ].map((c) => (
+                <div key={c.t} className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="text-[12px] text-gray-500">{c.t}</div>
+                  {typeof c.v === 'number' ? (
+                    <div className="text-[17px] font-semibold tabular-nums">{baht(c.v)}</div>
+                  ) : (
+                    /* ท่อยังไม่ส่งช่องนี้มา = ยังไม่รู้ ⇒ ขีด ไม่ใช่ 0 */
+                    <div className="text-[17px] font-semibold text-gray-400" title="ท่อรุ่นนี้ยังไม่ส่งช่องนี้มา">—</div>
+                  )}
+                  <div className="text-[11px] text-gray-400">{c.sub ? `ช่วง ${c.sub}` : 'ยังไม่รู้ช่วงที่ตัด'}</div>
+                </div>
+              ))}
+              <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2">
+                <div className="text-[12px] text-amber-900">ยอดค้างชำระ (บาท)</div>
+                <div className="text-[17px] font-semibold text-amber-700">ยังคิดไม่ได้</div>
+                <div className="text-[11px] text-amber-800 leading-snug">
+                  {d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'}
+                </div>
+              </div>
+            </div>
+            {d?.money?.scope && (
+              <p className="mb-3 text-[11.5px] text-gray-500">
+                กติกาของสองการ์ดแรก: {d.money.scope}
+                {' · '}จอ ZORT เขียน “-” เมื่อไม่มียอด ส่วนจอนี้เขียนเลข 0 (ขีดของเราแปลว่า “ยังไม่รู้”)
+              </p>
+            )}
+
             {/* 🔬 **เทียบกับจอ ZORT ตัวจริง** — `/Contact/ContactDetail` (อ่านอย่างเดียว 16 ก.ย. 2569)
                 ZORT มีการ์ดเงิน 3 ใบ (ยอดขายเดือนนี้ · ยอดขายปีนี้ · **ยอดค้างชำระ**) + กล่อง "ยอดขาย รายสินค้า"
                 + ตารางที่มีคอลัมน์ **ประเภท** (รวมเอกสารหลายชนิด ไม่ใช่แค่ใบขาย) + Export ตามช่วงวันที่
@@ -157,11 +201,12 @@ function Inner() {
                    จะได้เลขที่ **ดูสมเหตุสมผลแต่ผิด** สำหรับคนที่ซื้อเกิน 20 ใบ ⇒ ขอท่อเพิ่มช่อง ไม่คำนวณเอง
                    (คลาสเดียวกับบทเรียน "เลขจากลิสต์ที่ถูก cap ห้ามเอาไปใช้") */}
             <div className="mb-3 text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 leading-relaxed">
-              <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — ยอดขายเดือนนี้ · ยอดขายปีนี้ · <b>ยอดค้างชำระ</b> · ยอดขายรายสินค้า
-              {' '}· ตารางของ ZORT มีคอลัมน์ <b>ประเภท</b> (รวมเอกสารหลายชนิด) ส่วนตารางนี้เป็นใบขายอย่างเดียว
+              <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — ยอดขาย<b>รายสินค้า/รายหมวดหมู่</b> · ตัวกรองช่วงวันของกล่องยอดขาย
+              {' '}· <b>Download Excel</b> · ตารางของ ZORT มีคอลัมน์ <b>ประเภท</b> (รวมใบซื้อเข้า/ขายออกในตารางเดียว)
+              {' '}ส่วนตารางนี้เป็นใบขายอย่างเดียว
               <br />
-              เหตุผล: ท่อส่งมาแค่ <b>สรุปรวม + รายการล่าสุดไม่เกิน 20 ใบ</b> (วัดเมื่อ 16 ก.ย. 2569) ⇒
-              {' '}<b>คำนวณยอดรายเดือน/ค้างชำระจากตารางนี้จะผิด</b>สำหรับลูกค้าที่ซื้อเกิน 20 ใบ — ขอท่อเพิ่มช่องแล้ว ยังไม่เดาเอง
+              ✅ <b>การ์ดยอดขายเดือนนี้/ปีนี้ทำได้แล้ว 18 ก.ย. 2569</b> — ท่อคิดจากใบทั้งกองด้วยคำสั่งของตัวเอง
+              {' '}(ไม่ได้คิดจากตาราง 20 แถวข้างล่าง ซึ่งจะผิดสำหรับลูกค้าที่ซื้อเกิน 20 ใบ)
             </div>
 
             {!o?.recent?.length ? (
