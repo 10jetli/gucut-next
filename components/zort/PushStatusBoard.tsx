@@ -42,6 +42,13 @@ export interface PushStateResp {
   stuck?: Array<{ sku?: string; channel?: string; skip_reason?: string; skip_streak?: number; skip_first_at?: string; last_error?: string | null }>
   /** ช่องทางที่ **ยิงไม่ออก** — ท่อเป็นเจ้าของรายชื่อนี้ จอห้ามฝังเอง (CEO สั่ง 17 ก.ย. 2569) */
   channelsWithoutWriter?: string[]
+  /** 📊 แยกรายช่องทาง (ท่อ 0002c04 · 17 ก.ย. 2569 ตอนมีตัวยิงสามเจ้า)
+   *  ⚠️ ช่องบนสุด lastSweep/counts **รวมทุกเจ้า** ⇒ มีช่องนี้เมื่อไหร่ต้องอ่านช่องนี้ ไม่งั้นรอบซ้อมของเจ้าหนึ่งทับรอบยิงจริงของอีกเจ้า
+   *  🚫 `autoOn` ในนี้ก็ห้ามใช้ทำสีแถบเหมือนกัน — เขียนเป็นข้อความบอกสวิตช์ได้อย่างเดียว */
+  byChannel?: Partial<Record<string, {
+    มีตัวยิง?: boolean; autoOn?: boolean
+    lastSweep?: PushStateResp['lastSweep']; counts?: PushStateResp['counts']
+  }>>
 }
 /** รอบยิงจริงหนึ่งรอบจาก `?stockpushlog=1` (เวลา UTC) — ใช้จับ "ยิงจริงแล้วพัง" ที่สมุดสถานะมองไม่เห็น */
 export interface BoardPushRound {
@@ -141,7 +148,7 @@ function linkBar(side: BoardSide | undefined, asked: boolean, planErr: string): 
 
 /* ── 📶 ออนไลน์ — แยก "ระบบเรา" กับ "ช่องทาง" คนละบรรทัด คนละที่แก้ ──
    "ระบบเรา" = **ตัวกวาดวิ่งเสร็จล่าสุดเมื่อไหร่** (ไม่ใช่แค่หน้าเว็บตอบ) */
-function oursBar(st: PushStateResp | null, loading: boolean, err: string, now: number): Bar {
+function oursBar(st: (PushStateResp & { แยกรายช่องทาง?: boolean }) | null, loading: boolean, err: string, now: number): Bar {
   if (loading && !st) return { tone: 'unknown', text: 'กำลังอ่านสมุดสถานะ…' }
   if (err) return isSkip(err)
     ? { tone: 'warn', text: `ท่อของเราตอบว่ายังทำงานส่วนนี้ไม่ได้: ${err}` }
@@ -149,7 +156,7 @@ function oursBar(st: PushStateResp | null, loading: boolean, err: string, now: n
   if (!st) return { tone: 'unknown', text: 'ยังไม่ได้อ่านสมุดสถานะ' }
   if (st.inconclusive) return { tone: 'bad', text: `ท่อของเราตอบ แต่อ่านสมุดสถานะไม่ได้ — ${st.why ?? 'ไม่บอกเหตุ'}` }
   const ls = st.lastSweep
-  if (ls === null) return { tone: 'bad', text: 'ท่อของเราตอบ แต่ตัวกวาดอัตโนมัติยังไม่เคยวิ่งเลย' }
+  if (ls === null) return { tone: 'bad', text: st.แยกรายช่องทาง ? 'ท่อของเราตอบ แต่ตัวกวาดอัตโนมัติของช่องทางนี้ยังไม่เคยวิ่งเลย' : 'ท่อของเราตอบ แต่ตัวกวาดอัตโนมัติยังไม่เคยวิ่งเลย' }
   const ms = serverTimeMs(ls?.at)
   if (ms === null) return { tone: 'unknown', text: 'ท่อไม่ได้บอกว่าตัวกวาดวิ่งล่าสุดเมื่อไหร่' }
   const age = now - ms
@@ -170,6 +177,13 @@ function channelBar(label: string, side: BoardSide | undefined, asked: boolean, 
   return { tone: 'ok', text: `อ่านสต็อกจาก ${label} ได้ ${n(side.platformSkus)} รหัส${planAt ? ` (ถามเมื่อ ${thaiClock(planAt)})` : ''}` }
 }
 
+/** มุมมองของช่องทางเดียว — ท่อมี byChannel ⇒ ใช้รอบกวาด/ตัวนับของช่องทางนั้น · ไม่มี ⇒ ใช้ช่องรวมเดิม (ท่อรุ่นเก่า) */
+export function มุมมองช่องทาง(st: PushStateResp | null, key: PlatformKey): (PushStateResp & { แยกรายช่องทาง?: boolean }) | null {
+  const bc = st?.byChannel?.[key]
+  if (!st || st.inconclusive || !bc) return st
+  return { ...st, lastSweep: bc.lastSweep ?? null, counts: bc.counts ?? null, แยกรายช่องทาง: true }
+}
+
 /** ช่องทางนี้ **มีตัวยิงไหม** ตามที่ท่อบอก — true/false/null(ไม่รู้) */
 export function มีตัวยิง(st: PushStateResp | null, key: PlatformKey): boolean | null {
   if (!st || st.inconclusive || !Array.isArray(st.channelsWithoutWriter)) return null
@@ -178,13 +192,13 @@ export function มีตัวยิง(st: PushStateResp | null, key: Platform
 
 /* ── 🔄 อัปเดตออโต้ — วัดจาก `counts.ยืนยันล่าสุด` เท่านั้น (CEO สั่ง 17 ก.ย. 2569) ──
    🚫 ห้ามแตะ `autoOn` · `verified_at` ตั้งได้ที่เดียวคือรอบกวาดถัดไปพิสูจน์ว่ารหัสหายจากแผนจริง */
-function autoBar(key: PlatformKey, st: PushStateResp | null, err: string, now: number): Bar {
+function autoBar(key: PlatformKey, st: (PushStateResp & { แยกรายช่องทาง?: boolean }) | null, err: string, now: number): Bar {
   const writer = มีตัวยิง(st, key)
   if (writer === null) return { tone: 'unknown', text: err ? 'อ่านสมุดสถานะไม่ได้ — ไม่รู้ว่าช่องทางนี้อัปเดตอัตโนมัติอยู่ไหม' : 'ไม่รู้ — ท่อไม่ได้บอกว่าช่องทางไหนมีตัวยิง' }
   if (!writer) return { tone: 'unknown', text: 'ยังดันไม่ได้ — ไม่มีตัวยิง' }
   const c = st?.counts
-  if (!c) return { tone: 'unknown', text: 'ท่อไม่ได้ส่งตัวนับของสมุดสถานะมา — ไม่รู้' }
-  const นับรวมหลายช่องทาง = PLATFORM_KEYS.filter((k) => มีตัวยิง(st, k)).length > 1
+  if (!c) return { tone: 'unknown', text: st?.แยกรายช่องทาง ? 'สมุดยังไม่มีรหัสของช่องทางนี้ — ยังไม่เคยกวาด ไม่รู้' : 'ท่อไม่ได้ส่งตัวนับของสมุดสถานะมา — ไม่รู้' }
+  const นับรวมหลายช่องทาง = !st?.แยกรายช่องทาง && PLATFORM_KEYS.filter((k) => มีตัวยิง(st, k)).length > 1
   const หมายเหตุรวม = นับรวมหลายช่องทาง ? ' · ⚠️ ตัวเลขนี้รวมทุกช่องทางที่มีตัวยิง ท่อยังไม่แยกรายช่องทาง' : ''
   const ms = serverTimeMs(c.ยืนยันล่าสุด)
   /* 🔑 **ยังไม่เคยยืนยัน มีสามสาเหตุที่หน้าตาเหมือนกันเป๊ะ** (CEO ชี้ 17 ก.ย. 2569 · ท่อ aca11a2)
@@ -264,10 +278,10 @@ function lastLiveBar(key: PlatformKey, log: BoardPushRound[] | null, logErr: str
 /* ── 🧊 ถูกข้าม — ตอบคำถามท่านประธาน "รหัสที่ถูกข้ามทุกรอบมาสามวัน จอขึ้นสีอะไร" ⇒ แดง ──
    เกิน 1 ชม. เหลือง · เกิน 24 ชม. แดง · ไม่ว่าเหตุที่ข้ามจะถูกกฎแค่ไหน (ของที่ถูกข้ามก็ทำให้ขายเกินได้) */
 const เหตุข้าม: Record<string, string> = { negative: 'คลังเราติดลบ', unknown: 'คลังเราไม่รู้จักรหัสนี้', conflict: 'ข้อมูลขัดกัน' }
-function skipBar(key: PlatformKey, st: PushStateResp | null, now: number): Bar | null {
+function skipBar(key: PlatformKey, st: (PushStateResp & { แยกรายช่องทาง?: boolean }) | null, now: number): Bar | null {
   if (มีตัวยิง(st, key) !== true) return null
   const c = st?.counts
-  if (!c) return { tone: 'unknown', text: 'ไม่รู้ — ท่อไม่ได้ส่งตัวนับมา' }
+  if (!c) return { tone: 'unknown', text: st?.แยกรายช่องทาง ? 'สมุดยังไม่มีรหัสของช่องทางนี้ — ยังไม่เคยกวาด ไม่รู้ว่ามีรหัสค้างไหม' : 'ไม่รู้ — ท่อไม่ได้ส่งตัวนับมา' }
   const จำนวน = N(c.กำลังถูกข้าม)
   if (จำนวน === null) return { tone: 'unknown', text: 'ยังไม่มีข้อมูลในสมุด — ไม่รู้ว่ามีรหัสค้างไหม' }
   if (จำนวน === 0) return { tone: 'ok', text: 'ไม่มีรหัสที่กำลังถูกข้าม' }
@@ -329,7 +343,6 @@ export default function PushStatusBoard(props: {
     { key: 'shopee', label: 'Shopee' },
     { key: 'tiktok', label: 'TikTok' },
   ]
-  const ours = oursBar(state, stateLoading, stateErr, now)
   return (
     <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
       <div className="flex items-start justify-between gap-3 flex-wrap mb-2">
@@ -350,7 +363,11 @@ export default function PushStatusBoard(props: {
           const side = plan?.[key]
           const writer = มีตัวยิง(state, key)
           const link = linkBar(side, asked, planErr)
-          const skip = skipBar(key, state, now)
+          /* แยกรายช่องทางเมื่อท่อมี byChannel — ทั้ง "ระบบเรา" · อัปเดตออโต้ · ถูกข้าม */
+          const stK = มุมมองช่องทาง(state, key)
+          const ours = oursBar(stK, stateLoading, stateErr, now)
+          const skip = skipBar(key, stK, now)
+          const สวิตช์ = state?.byChannel?.[key]?.autoOn
           return (
             <div key={key} className="border border-gray-200 rounded-md p-2.5 space-y-1.5">
               <p className="text-[13px] font-semibold text-gray-900">{label}</p>
@@ -361,12 +378,18 @@ export default function PushStatusBoard(props: {
                   <span className="block font-normal text-gray-600">ตัวเลขข้างล่างคือแผนที่คิดได้ ไม่ใช่ของที่จะถูกดัน</span>
                 </p>
               )}
+              {/* ข้อความบอกสวิตช์เท่านั้น — 🚫 ห้ามเอา autoOn ไปทำสีแถบ (CEO กำชับ) */}
+              {writer === true && typeof สวิตช์ === 'boolean' && (
+                <p className="text-[11.5px] text-gray-600">
+                  สวิตช์ยิงอัตโนมัติของช่องทางนี้: <b>{สวิตช์ ? 'เปิด' : 'ปิด — ตัวกวาดคิดแผนแต่ไม่ยิง ต้องสั่งยิงเอง'}</b>
+                </p>
+              )}
               <BarRow icon="🔗" name="เชื่อม" bar={link} />
               {/* ⚠️ ไอคอนหน้าชื่อแถบห้ามเป็นดวงไฟสี — เดิมใช้ 🟢 ตายตัว วางข้าง "⬜ ไม่รู้" แล้วอ่านขัดกันเอง */}
               <BarRow icon="📶" name="ออนไลน์ — ระบบเรา" bar={ours} />
               <BarRow icon="📶" name={`ออนไลน์ — ${label}`} bar={channelBar(label, side, asked, planErr, planAt)} />
               {(() => { const b = lastLiveBar(key, log, logErr, state, now); return b && <BarRow icon="🎯" name="ยิงจริงล่าสุด" bar={b} /> })()}
-              <BarRow icon="🔄" name="อัปเดตออโต้" bar={autoBar(key, state, stateErr, now)} />
+              <BarRow icon="🔄" name="อัปเดตออโต้" bar={autoBar(key, stK, stateErr, now)} />
               {skip && <BarRow icon="🧊" name="ถูกข้าม" bar={skip} />}
             </div>
           )
