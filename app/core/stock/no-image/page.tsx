@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState } from '@/components/zort'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { fmtNum } from '@/lib/format'
+import { fmtNum, thaiDate } from '@/lib/format'
 
 const PER = 200
 
@@ -31,10 +31,17 @@ export default function NoImagePage() {
   const imgOf = useSkuImages()
   const [rows, setRows] = useState<Row[]>([])
   const [total, setTotal] = useState<number | null>(null)
+  /* ⚠️ "ขายไป" ต้องกำกับช่วงเวลาเสมอ — เลข 42 ไม่มีความหมายถ้าไม่รู้ว่านับกี่วัน
+     ท่อส่ง `soldDays` (ตอนนี้ 30) กับ `day` (วันที่ของภาพถ่ายสต็อก) มาให้อยู่แล้ว */
+  const [soldDays, setSoldDays] = useState<number | null>(null)
+  const [วันข้อมูล, setวันข้อมูล] = useState<string | null>(null)
   const [อ่านแล้ว, setอ่านแล้ว] = useState(0)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copyMsg, setCopyMsg] = useState('')
+  /* 🔑 **ต้องมีทางกลับไปเรียงตามรหัส** — คนถ่ายรูปจริงหยิบของจากชั้นตามรหัส
+     ถ้าล็อกให้เรียงตามยอดขายอย่างเดียว เขาต้องวิ่งทั่วคลัง (CTO ทักไว้ 18 ก.ย. 2569) */
+  const [เรียงแบบ, setเรียงแบบ] = useState<'ควรถ่ายก่อน' | 'รหัส'>('ควรถ่ายก่อน')
 
   const load = useCallback(async () => {
     setLoading(true); setError(''); setRows([]); setอ่านแล้ว(0); setTotal(null)
@@ -53,6 +60,8 @@ export default function NoImagePage() {
         if (!res.ok || j.error) throw new Error(String(j.error || `ท่อตอบ ${res.status}`))
         const page: Row[] = Array.isArray(j.rows) ? j.rows : []
         if (cap === null && typeof j.total === 'number') { cap = j.total; setTotal(j.total) }
+        if (typeof j.soldDays === 'number') setSoldDays(j.soldDays)
+        if (typeof j.day === 'string') setวันข้อมูล(j.day)
         all.push(...page)
         off += page.length
         setอ่านแล้ว(off)
@@ -89,8 +98,10 @@ export default function NoImagePage() {
     return 3
   }
   const ไม่มีรูปเลย = [...ยังไม่จัดลำดับ].sort((a, b) =>
-    คะแนน(a) - คะแนน(b) || (เลข(b.sold) ?? 0) - (เลข(a.sold) ?? 0) || (เลข(b.qty) ?? 0) - (เลข(a.qty) ?? 0)
-    || String(a.sku).localeCompare(String(b.sku)))
+    เรียงแบบ === 'รหัส'
+      ? String(a.sku).localeCompare(String(b.sku))
+      : (คะแนน(a) - คะแนน(b) || (เลข(b.sold) ?? 0) - (เลข(a.sold) ?? 0) || (เลข(b.qty) ?? 0) - (เลข(a.qty) ?? 0)
+        || String(a.sku).localeCompare(String(b.sku))))
   const ควรถ่ายก่อน = ไม่มีรูปเลย.filter((r) => คะแนน(r) === 0).length
   const มีของเฉย = ไม่มีรูปเลย.filter((r) => คะแนน(r) === 1).length
   const ครบแล้ว = !loading && total !== null && อ่านแล้ว >= total
@@ -123,6 +134,35 @@ export default function NoImagePage() {
           {total !== null ? <> จาก <b>{fmtNum(total)}</b> รหัส</> : <> รหัส (ท่อยังไม่บอกว่าทั้งหมดมีกี่รหัส)</>}
           {' '}· ตัวเลขข้างล่าง<b>ยังไม่ใช่คำตอบสุดท้าย</b>
         </p>
+      )}
+
+      {/* 🎯 **แถบนี้ต้องอยู่เหนือตัวเลข** — คนเปิดจอมาต้องเห็นทันทีว่ากำลังเรียงด้วยอะไร
+          ถ้าต้องเลื่อนจอถึงจะเห็นว่าเรียงแบบไหน = วางผิดที่ (CTO ทัก 18 ก.ย. 2569)
+          ⚠️ เกณฑ์ลำดับนี้เราตั้งเอง ไม่ใช่ลำดับของ ZORT
+          ⚠️ `qty`/`sold` ที่ท่อไม่ส่ง **ไม่ใช่ 0** ⇒ ตกไปกลุ่มท้าย ไม่ใช่ถูกนับว่าไม่เคยขาย */}
+      {ครบแล้ว && ไม่มีรูปเลย.length > 0 && (
+        <div className="text-[12.5px] text-gray-700 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+          <div className="flex flex-wrap items-center gap-2">
+            <span>🎯 <b>ควรถ่ายก่อน {fmtNum(ควรถ่ายก่อน)} รหัส</b> — มีของในคลัง<b>และ</b>เคยขายได้</span>
+            <span className="text-gray-500">· รองลงมา มีของแต่ยังไม่เคยขาย {fmtNum(มีของเฉย)} รหัส</span>
+            <span className="ml-auto flex items-center gap-1">
+              <span className="text-gray-500">เรียงตาม:</span>
+              {(['ควรถ่ายก่อน', 'รหัส'] as const).map((k) => (
+                <button key={k} type="button" onClick={() => setเรียงแบบ(k)}
+                  className={`rounded-full px-2.5 py-0.5 border text-[12px] ${เรียงแบบ === k
+                    ? 'bg-[#4669e5] text-white border-[#4669e5]'
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                  {k === 'รหัส' ? 'รหัส (เดินชั้นตามลำดับ)' : 'ควรถ่ายก่อน'}
+                </button>
+              ))}
+            </span>
+          </div>
+          <span className="block text-[11.5px] text-gray-500 mt-1">
+            เกณฑ์นี้เราตั้งเอง ไม่ใช่ลำดับของ ZORT ·
+            {' '}ช่อง “ขายไป” นับ {soldDays === null ? 'ช่วงที่ท่อกำหนด (ยังไม่รู้จำนวนวัน)' : `${soldDays} วันล่าสุด`}
+            {วันข้อมูล && <> · ยอดคงเหลือเป็นภาพ ณ วันที่ {thaiDate(วันข้อมูล)}</>}
+          </span>
+        </div>
       )}
 
       {ครบแล้ว && (
@@ -159,20 +199,6 @@ export default function NoImagePage() {
             เปิดจัดการรูปภาพสินค้าใน ZORT ↗
           </a>
         </div>
-      )}
-
-      {/* 🎯 **จัดลำดับว่าควรถ่ายอันไหนก่อน** (เพิ่ม 18 ก.ย. 2569)
-          ของเดิมเรียงตามรหัส ⇒ คนถ่ายเริ่มจากรหัสน้อยสุด ซึ่งอาจเป็นของที่ไม่มีใครซื้อ
-          ⚠️ เกณฑ์นี้เป็นของเราเอง ไม่ใช่กติกาของ ZORT — เขียนกำกับบนจอไว้แล้ว
-          ⚠️ `sold`/`qty` ที่ไม่มีค่า **ไม่ใช่ 0** ⇒ ตกไปอยู่กลุ่มท้าย ไม่ใช่ถูกนับว่าไม่เคยขาย */}
-      {ครบแล้ว && ไม่มีรูปเลย.length > 0 && (
-        <p className="text-[12.5px] text-gray-600 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
-          🎯 <b>ควรถ่ายก่อน {fmtNum(ควรถ่ายก่อน)} รหัส</b> — ของที่<b>มีของในคลัง</b>และ<b>เคยขายได้</b>
-          {' '}(เรียงจากขายมากไปน้อยให้แล้ว) · รองลงมาคือของที่มีของแต่ยังไม่เคยขาย {fmtNum(มีของเฉย)} รหัส
-          <span className="block text-[11.5px] text-gray-500 mt-0.5">
-            เกณฑ์นี้เราตั้งเอง ไม่ใช่ลำดับของ ZORT · ตัวเลขขายมาจากช่วงที่ทะเบียนสินค้าเก็บไว้
-          </span>
-        </p>
       )}
 
       {ครบแล้ว && (
