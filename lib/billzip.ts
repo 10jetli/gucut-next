@@ -1,7 +1,8 @@
 import JSZip from 'jszip'
 import { VENDORS, getAccessToken, fetchAttachment, fetchMessageDetail, extractAmounts } from '@/lib/gmail'
 import { emailToPdf } from '@/lib/emailPdf'
-import { loadBillIndexBlobs, listVendorBlobFiles, downloadBlobFile } from '@/lib/billblobs'
+import { loadBillIndexBlobs, listVendorBlobFiles, loadRealPeriods, downloadBlobFile } from '@/lib/billblobs'
+import { filingMonthOf } from '@/lib/bill-filing'
 
 // สร้างซอง ZIP ของบิลเดือนหนึ่ง เจ้าหนึ่ง — **ที่เดียว** ใช้ทั้ง
 //   · /api/bills/zip      (หน้าเว็บ · ต้องล็อกอิน)
@@ -46,9 +47,14 @@ export async function สร้างซองบิล(vendorId: string | null,
              TikTok-Invoice-THTT202606634060.pdf                        (ไฟล์แนบในเมล)
        🔑 จับได้เพราะยิงของจริงแล้วเลขไม่ตรงกับที่ควรเป็น — ไม่ใช่จากการอ่านโค้ด
        ⚠️ เก็บไฟล์ในถังไว้ทั้งคู่ **ไม่ลบ** (ของภาษี) — คัดที่ชั้นแสดงผลเท่านั้น */
+    /* 🔴 **เดือนของไฟล์มาจากรอบบิลในเอกสาร ไม่ใช่ชื่อไฟล์** (ท่านประธานสั่ง 18 ก.ย. 2569)
+       ⚠️ ข้อนี้สำคัญเป็นพิเศษกับ zip เพราะไฟล์ที่ดาวน์โหลดไปคือของที่เอาไปส่งบัญชีจริง
+          ถ้าจอจัดใบนี้ไว้ มิ.ย. แต่ zip ของ มิ.ย. ไม่มีมันอยู่ข้างใน = คนละกติกาสองที่
+       อ่านจากแคชรอบบิลเท่านั้น ไม่แกะ PDF ที่นี่ (หน้ารายเจ้าเป็นคนเติมแคชให้) */
+    const รอบบิลแคช = await loadRealPeriods(vendor.id).catch(() => ({} as Record<string, string | null>))
     const ทั้งหมด = (await listVendorBlobFiles(vendor.id))
       .map(f => ({ f, m: f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/) }))
-      .filter(x => x.m && x.m[1] === month)
+      .filter(x => x.m && (filingMonthOf(x.f.name, (รอบบิลแคช as Record<string, string | null>)[x.f.name]).month ?? x.m[1]) === month)
       .sort((a, b) => a.m![2].localeCompare(b.m![2]))
     const ใบจริงคัดแล้ว = new Map<string, typeof ทั้งหมด[number]>()
     const ใบจริงไม่มีเลข: typeof ทั้งหมด = []

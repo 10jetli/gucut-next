@@ -1,5 +1,6 @@
 import { BILL_VENDORS, type BillVendorInfo } from '@/lib/vendors'
-import { loadBillIndexBlobs, listVendorBlobNames } from '@/lib/billblobs'
+import { loadBillIndexBlobs, listVendorBlobNames, loadRealPeriods } from '@/lib/billblobs'
+import { filingMonthOf } from '@/lib/bill-filing'
 
 // สรุปสถานะบิลรายเจ้า — **ที่เดียว** ใช้ทั้ง /api/bills/report (ทีม AI ใช้รหัส)
 // และ /api/bills/status (หน้าเว็บใช้เซสชัน)
@@ -34,9 +35,22 @@ export async function สรุปบิลรายเจ้า(vendor: BillVen
     const idx = await loadBillIndexBlobs(vendor.id)
     // ⚠️ ใช้ตัวอ่านแบบเบา — หน้านี้ไม่ต้องใช้ขนาดไฟล์
     //    ของเดิมขอ metadata ทีละไฟล์ ทำให้หน้า /bills รอ 8.9 วินาที
+    /* 🔴 **เดือนต้องมาจากรอบบิลในเอกสาร ไม่ใช่คำนำหน้าชื่อไฟล์** (ท่านประธานสั่ง 18 ก.ย. 2569)
+       ที่นี่อ่านจาก**แคชรอบบิล**อย่างเดียว ไม่แกะ PDF เอง เพราะหน้านี้รวมทุกเจ้าในคำขอเดียว
+       ⇒ ไฟล์ที่ยังไม่เคยถูกอ่าน จะใช้ชื่อไฟล์ไปก่อน แล้วขยับเองเมื่อหน้ารายเจ้าอ่านมันครั้งแรก
+       ⚠️ ถ้าไม่ทำตรงนี้ด้วย จอรวมกับจอรายเจ้าจะนับคนละเดือน = ตัวเลขสองที่ไม่ตรงกันโดยไม่มีใครรู้ว่าทำไม
+          (กฎ CLAUDE.md ข้อ 4: อย่าเอาตัวเลขจากแหล่งหนึ่งไปโชว์คู่กับของจากอีกแหล่งหนึ่ง) */
+    const รอบบิลแคช = await loadRealPeriods(vendor.id).catch(() => ({}))
     const real = (await listVendorBlobNames(vendor.id).catch(() => []))
       .map(n => n.match(/^(\d{4}-\d{2})_REAL_(.+)$/))
-      .filter(Boolean) as RegExpMatchArray[]
+      .filter(Boolean)
+      .map((m) => {
+        const mm = m as RegExpMatchArray
+        /* เขียนทับช่องเดือนในผลลัพธ์ regex ให้เป็นเดือนที่จัดจริง — ตัวโค้ดข้างล่างอ่าน m[1] อยู่แล้ว */
+        const c = filingMonthOf(mm[0], (รอบบิลแคช as Record<string, string | null>)[mm[0]])
+        mm[1] = c.month ?? mm[1]
+        return mm
+      }) as RegExpMatchArray[]
 
     const เดือน: VendorBillStatus['เดือน'] = {}
     const เห็นแล้ว = new Set<string>()

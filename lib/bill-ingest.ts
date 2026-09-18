@@ -4,21 +4,33 @@
  *    ⇒ บิลจากสคริปต์ไม่เคยผ่านตัวกันซ้ำด้วยตัวตน ⇒ คู่ "สำเนาอีเมล + สำเนาสคริปต์" (TikTok 92 · Apple 9 ไฟล์)
  * 🔑 แยกมาเป็นฟังก์ชันของตัวเอง **เพื่อให้ทดสอบกับ PDF จริงได้** — ด่านที่อ่านแค่ซอร์ส
  *    พิสูจน์ไม่ได้ว่าโค้ดยัง "ทำงาน" อยู่ (ลองปิดสาขาด้วย `if (false &&` แล้วด่านซอร์สยังเขียว) */
-import { billIdentity } from './bill-identity'
+import { billIdentity, billFilingMonth } from './bill-identity'
 import { pdfBillInfo } from './billdate'
 
 export interface ตัวตนไฟล์อัป {
   key: string | null
   /** null = อ่านได้ · มีข้อความ = อ่านไม่ได้เพราะอะไร (ผู้เรียกต้องถอยไปกันด้วยชื่อไฟล์ ห้ามทิ้งไฟล์) */
   why: string | null
+  /** รอบบิลที่พิมพ์ในเอกสาร (YYYY-MM) — ใช้ "จัดเข้าเดือน" ตามคำสั่งท่านประธาน 18 ก.ย. 2569
+   *  🔴 สามสถานะ: มีค่า = รู้ · `null` = อ่านใบได้แต่ไม่เจอรอบบิล · **ไม่มีช่องนี้ = อ่านใบไม่ได้เลย**
+   *     (ยุบสองอันหลังเข้าด้วยกันเมื่อไหร่ ไฟล์ที่อ่านไม่ออกจะถูกแกะ PDF ซ้ำตลอดกาล) */
+  period?: string | null
 }
 
 export async function ตัวตนของไฟล์อัป(buf: Buffer, vendorId: string): Promise<ตัวตนไฟล์อัป> {
   try {
     const { text } = await pdfBillInfo(buf)
     const ident = billIdentity(text, vendorId)
-    return { key: ident.key ?? null, why: ident.key ? null : (ident.why ?? 'อ่านตัวตนของใบไม่ได้') }
+    /* 🗓️ **คืนรอบบิลออกไปด้วย** (เพิ่ม 18 ก.ย. 2569) — เส้นอัปไฟล์จะได้จดไว้ตั้งแต่ตอนอัป
+       ⇒ ไฟล์ใหม่จัดเดือนถูกตั้งแต่ใบแรกที่เข้ามา ไม่ต้องรอให้จอมาแกะ PDF ทีหลัง
+       ⚠️ เราแกะ PDF อยู่แล้วตรงนี้ ⇒ ไม่มีต้นทุนเพิ่ม · ทิ้งค่านี้ไปคือทิ้งของที่อยู่ในมือ */
+    return {
+      key: ident.key ?? null,
+      why: ident.key ? null : (ident.why ?? 'อ่านตัวตนของใบไม่ได้'),
+      period: billFilingMonth(text).month,
+    }
   } catch (e) {
+    /* อ่านไฟล์ไม่ได้ ⇒ **ไม่รู้รอบบิล** (undefined) ไม่ใช่ "ไม่มีรอบบิล" (null) */
     return { key: null, why: `อ่านเนื้อ PDF ไม่ได้: ${String((e as Error)?.message ?? e).slice(0, 120)}` }
   }
 }

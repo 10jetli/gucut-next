@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { deleteBillBlob, syncBillToBlobs, syncBillByIdentity } from '@/lib/billblobs'
+import { deleteBillBlob, syncBillToBlobs, syncBillByIdentity , loadRealPeriods, saveRealPeriods } from '@/lib/billblobs'
 import { ตัวตนของไฟล์อัป } from '@/lib/bill-ingest'
 import { BILL_VENDORS } from '@/lib/vendors'
 
@@ -57,7 +57,19 @@ export async function POST(req: NextRequest) {
        ⇒ บิลที่ตัวเก็บสคริปต์ส่งเข้ามา **ไม่เคยผ่านตัวกันซ้ำด้วยตัวตนเลย**
           ของจริงที่ตามมา: คู่ "สำเนาอีเมล + สำเนาสคริปต์" TikTok 92 ไฟล์ · Apple 9 ไฟล์
        ⚠️ อ่านตัวตนไม่ได้ ⇒ ถอยไปกันด้วยชื่อไฟล์เหมือนเดิม **ห้ามทิ้งไฟล์** (บิลหายแย่กว่าบิลซ้ำ) และบอกเหตุกลับไป */
-    const { key: identKey, why: identWhy } = await ตัวตนของไฟล์อัป(buf, vendorId)
+    const { key: identKey, why: identWhy, period } = await ตัวตนของไฟล์อัป(buf, vendorId)
+    /* 🗓️ **จดรอบบิลของไฟล์นี้ไว้ตั้งแต่ตอนอัป** (ท่านประธานสั่ง 18 ก.ย. 2569:
+       เดือนที่ใช้จัดต้องมาจากรอบบิลในเอกสาร ไม่ใช่ชื่อไฟล์)
+       ⚠️ จดด้วย `driveName` ซึ่งเป็นชื่อที่ถูกใช้จริงในถัง — ไม่ใช่ชื่อที่ผู้ส่งกรอกมา
+       ⚠️ `period === undefined` = อ่านใบไม่ได้ ⇒ **ไม่จดอะไรเลย** เพื่อให้จอลองอ่านใหม่รอบหน้า
+       ⚠️ จดไม่สำเร็จห้ามทำให้การอัปล้มเหลว — ไฟล์เข้าถังแล้วสำคัญกว่าแคช */
+    if (period !== undefined) {
+      try {
+        const m = await loadRealPeriods(vendorId)
+        m[driveName] = period
+        await saveRealPeriods(vendorId, m)
+      } catch { /* จดไม่ได้ ⇒ จอจะแกะ PDF เองรอบหน้า */ }
+    }
     if (identKey) {
       const res = await syncBillByIdentity(vendorId, driveName, 'application/pdf', buf, identKey)
       return json({

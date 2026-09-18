@@ -3,7 +3,11 @@ import { VENDORS, getAccessToken, searchVendorBills, fetchAttachment, fetchMessa
 import { pdfBillInfo, pdfHasAccountId } from '@/lib/billdate'
 import { billFilingMonth, billIdentity } from '@/lib/bill-identity'
 import { คัดซ้ำพร้อมรายงาน, เลขที่ใบ, type ไฟล์ซ้ำ } from '@/lib/bill-dedupe'
-import { BillEntry, listVendorBlobFiles, loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
+import {
+  BillEntry, listVendorBlobFiles, loadBillIndexBlobs, saveBillIndexBlobs,
+  downloadBlobFile, loadRealPeriods, saveRealPeriods,
+} from '@/lib/billblobs'
+import { filingMonthOf, filingNote, splitRealName } from '@/lib/bill-filing'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -35,24 +39,65 @@ function monthsFromEntries(entries: BillEntry[]) {
 }
 
 /* ไฟล์ตัวจริงที่อัปโหลดไว้ (…_REAL_…) — **แทนที่** ใบที่ระบบสร้างจากอีเมล (GEN) ของเดือนนั้น
-   จึงไม่มีทางเห็นสองใบซ้อนกันในเดือนเดียว */
-async function attachRealFiles(months: Record<string, any[]>, vendorId: string, vendorName: string) {
+   จึงไม่มีทางเห็นสองใบซ้อนกันในเดือนเดียว
+
+   🔴 **เดือนที่ใช้จัด มาจากรอบบิลในเอกสาร ไม่ใช่คำนำหน้าชื่อไฟล์** (ท่านประธานสั่ง 18 ก.ย. 2569)
+      ของเดิมที่นี่อ่านเดือนจาก `^(\d{4}-\d{2})_REAL_` ⇒ ใบ Adobe ของ มิ.ย. ที่ชื่อไฟล์ขึ้นต้น 2026-07
+      ไปนอนอยู่ในแฟ้ม ก.ค. · ตัวอ่านเอกสารรู้ว่าเป็น 06 มาตลอด **แต่ไม่มีใครถามมัน**
+      ⇒ ดูเหตุผลเต็มและกติกาที่ห้ามละเมิดใน lib/bill-filing.ts
+   ⚠️ **ไม่แตะชื่อไฟล์ในถังเลย** — ชื่อไฟล์เป็นกุญแจกันซ้ำและถูกอ้างในดัชนี
+      ⇒ ชื่อไฟล์กับเดือนที่จัด **ไม่ตรงกันได้โดยตั้งใจ** และต้องเขียนกำกับให้คนเห็น */
+const เพดานแกะPDFต่อรอบ = 15
+
+async function realFilesByMonth(vendorId: string, vendorName: string) {
+  const realByMonth: Record<string, any[]> = {}
+  const จัดตามรอบบิล: { file: string; จากชื่อไฟล์: string | null; จัดเข้า: string }[] = []
   try {
     const blobFiles = await listVendorBlobFiles(vendorId)
-    const realByMonth: Record<string, any[]> = {}
+    const แคช = await loadRealPeriods(vendorId)
+    let แกะไปแล้ว = 0
+    let แคชเปลี่ยน = false
+
     for (const f of blobFiles) {
-      const m = f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/)
-      if (!m) continue
-      ;(realByMonth[m[1]] ??= []).push({
-        filename: m[2], messageId: '', attachmentId: f.id, size: f.size,
+      const { month: nameMonth, rest } = splitRealName(f.name)
+      if (!nameMonth || !rest) continue
+      /* ยังไม่เคยอ่านไฟล์นี้ ⇒ แกะ PDF หนึ่งครั้งแล้วจำไว้
+         ⚠️ มีเพดานต่อรอบ เพื่อไม่ให้จอค้างตอนเจ้าที่มีไฟล์เยอะ ๆ เปิดครั้งแรก
+            ไฟล์ที่เหลือจะถูกอ่านในรอบถัด ๆ ไป ⇒ ระหว่างนั้นมันใช้ชื่อไฟล์ไปก่อน (ซึ่งบอกไว้ในโค้ดแล้วว่าชั่วคราว) */
+      if (!(f.name in แคช) && แกะไปแล้ว < เพดานแกะPDFต่อรอบ) {
+        แกะไปแล้ว++
+        try {
+          const buf = await downloadBlobFile(f.id)
+          const { text } = buf ? await pdfBillInfo(buf) : { text: '' }
+          แคช[f.name] = billFilingMonth(text ?? '').month
+          แคชเปลี่ยน = true
+        } catch {
+          /* อ่านไฟล์นี้ไม่ได้ ⇒ **ห้ามจำว่า null** เพราะ null แปลว่า "อ่านแล้วไม่เจอ"
+             ปล่อยให้ไม่มีคีย์ไว้ เพื่อให้รอบหน้าลองใหม่ (ไม่รู้ ≠ ไม่มี) */
+        }
+      }
+      const c = filingMonthOf(f.name, แคช[f.name])
+      const m = c.month ?? nameMonth
+      if (c.mismatch) จัดตามรอบบิล.push({ file: rest, จากชื่อไฟล์: c.nameMonth, จัดเข้า: m })
+      ;(realByMonth[m] ??= []).push({
+        filename: rest, messageId: '', attachmentId: f.id, size: f.size,
         subject: `ไฟล์ตัวจริงจาก ${vendorName}`,
+        /* ⚠️ ติดหมายเหตุไปกับตัวไฟล์ด้วย — คนที่เห็นไฟล์ในแฟ้ม มิ.ย. ที่ชื่อขึ้นต้น 07
+           ต้องอ่านเหตุผลได้ตรงนั้น ไม่ใช่ต้องไปหาในที่อื่น */
+        หมายเหตุเดือน: filingNote(c),
       })
     }
-    for (const [m, files] of Object.entries(realByMonth)) {
-      const existing = (months[m] ?? []).filter(x => x.attachmentId !== 'GEN')
-      months[m] = files.concat(existing)
-    }
+    if (แคชเปลี่ยน) await saveRealPeriods(vendorId, แคช)
   } catch { /* อ่านที่เก็บไฟล์ไม่ได้ ⇒ แสดงเฉพาะบิลจากอีเมลตามปกติ */ }
+  return { realByMonth, จัดตามรอบบิล }
+}
+
+async function attachRealFiles(months: Record<string, any[]>, vendorId: string, vendorName: string) {
+  const { realByMonth } = await realFilesByMonth(vendorId, vendorName)
+  for (const [m, files] of Object.entries(realByMonth)) {
+    const existing = (months[m] ?? []).filter(x => x.attachmentId !== 'GEN')
+    months[m] = files.concat(existing)
+  }
   return months
 }
 
@@ -199,26 +244,14 @@ export async function GET(req: NextRequest) {
     // ── รวมไฟล์บิล "ตัวจริง" ที่อัปโหลดไว้ใน Google Drive (ผ่าน /api/bills/upload) ──
     // ชื่อไฟล์รูปแบบ YYYY-MM_REAL_<ชื่อ>.pdf — ถ้าเดือนไหนมีไฟล์ตัวจริง ให้ตัด PDF
     // ที่สร้างจากอีเมล (GEN) ของเดือนนั้นทิ้ง เหลือแต่ตัวจริง
-    try {
-      // ไฟล์จริงที่อัปโหลดไว้ (…_REAL_…) — เก็บบน Netlify Blobs
-      const blobFiles = await listVendorBlobFiles(vendor.id)
-      const realByMonth: Record<string, any[]> = {}
-      for (const f of blobFiles) {
-        const m = f.name.match(/^(\d{4}-\d{2})_REAL_(.+)$/)
-        if (!m) continue
-        ;(realByMonth[m[1]] ??= []).push({
-          filename: m[2],
-          messageId: '',
-          attachmentId: f.id,
-          size: f.size,
-          subject: `ไฟล์ตัวจริงจาก ${vendor.name}`,
-        })
-      }
-      for (const [m, files] of Object.entries(realByMonth)) {
-        const existing = (months[m] ?? []).filter(x => x.attachmentId !== 'GEN')
-        months[m] = files.concat(existing)
-      }
-    } catch { /* ถ้าอ่าน Drive ไม่ได้ ให้แสดงเฉพาะบิลจากอีเมลตามปกติ */ }
+    /* ⚠️ เดิมบล็อกนี้เขียนซ้ำกับ attachRealFiles ข้างบนคนละก๊อบปี้
+       ⇒ ตอนแก้เรื่องเดือนตามรอบบิล ถ้าแก้ที่เดียวจะได้จอที่จัดเดือนคนละแบบตามทางที่ข้อมูลเดินมา
+       ⇒ รวมมาเรียกตัวเดียวกัน (บทเรียนซ้ำของโปรเจกต์: บทเรียนที่แก้ทางหนึ่ง ไม่เดินไปหาพี่น้องของมัน) */
+    const ของจริง = await realFilesByMonth(vendor.id, vendor.name)
+    for (const [m, files] of Object.entries(ของจริง.realByMonth)) {
+      const existing = (months[m] ?? []).filter(x => x.attachmentId !== 'GEN')
+      months[m] = files.concat(existing)
+    }
 
     /* 🔴 คัดซ้ำแล้ว **ต้องบอกว่าซ่อนอะไรไว้** — ของเดิมซ่อนเงียบ ๆ
        ⇒ ท่านประธานต้องเปิด PDF ทีละใบเองถึงจะรู้ว่าไฟล์ไหนซ้ำ (ใบ t_mu3g8tq5) */
@@ -231,6 +264,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       vendor: vendor.id, name: vendor.name, emoji: vendor.emoji, months,
       ...(Object.keys(ซ่อนไว้).length ? { ซ่อนไฟล์ซ้ำ: ซ่อนไว้ } : {}),
+      /* 🔴 ไฟล์ที่ชื่อบอกเดือนหนึ่ง แต่จัดเข้าอีกเดือนตามรอบบิลในเอกสาร
+         ⇒ **ต้องส่งขึ้นจอ** ไม่งั้นคนเห็นไฟล์ชื่อ 2026-07 อยู่ในแฟ้ม มิ.ย. แล้วคิดว่าระบบพัง */
+      ...(ของจริง.จัดตามรอบบิล.length ? { จัดตามรอบบิล: ของจริง.จัดตามรอบบิล } : {}),
       cached: !!idx, newMessages: changed,
       ...(debug ? { debugInfo } : {}),
     })

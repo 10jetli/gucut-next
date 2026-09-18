@@ -186,3 +186,39 @@ export async function saveBillIndexBlobs(vendorId: string, idx: BillIndex): Prom
   const store = getStore(STORE)
   await store.setJSON(`c/${vendorId}`, idx)
 }
+
+// ── รอบบิลของ "ไฟล์ตัวจริง" ที่อัปไว้ — แคชไว้เพื่อไม่ต้องแกะ PDF ทุกครั้งที่เปิดจอ ─────
+//
+// 🔴 **ทำไมต้องมี** (18 ก.ย. 2569 · ท่านประธานสั่งให้จัดเดือนตามรอบบิลในเอกสาร)
+//    เดือนที่ใช้จัดแฟ้มต้องมาจาก **เนื้อใน PDF** ไม่ใช่คำนำหน้าชื่อไฟล์
+//    แต่การแกะ PDF ทุกใบทุกครั้งที่เปิดจอ = ช้าและเปลืองโดยไม่จำเป็น
+//    ⇒ อ่านครั้งเดียวต่อไฟล์ แล้วจำไว้ที่นี่ · ไฟล์ใหม่ที่อัปเข้ามาเขียนลงทันทีตั้งแต่ตอนอัป
+//
+// ⚠️ **`null` ในแผนที่นี้แปลว่า "อ่านแล้วแต่ไม่เจอรอบบิล"** ไม่ใช่ "ยังไม่ได้อ่าน"
+//    ⇒ ไฟล์ที่ยังไม่ได้อ่านคือไฟล์ที่ **ไม่มีคีย์อยู่ในแผนที่** (สองอย่างนี้ต่างกัน
+//      ถ้ายุบรวมกัน ไฟล์ที่อ่านไม่ออกจะถูกแกะ PDF ใหม่ทุกครั้งตลอดไป)
+export interface RealPeriodMap {
+  /** ชื่อไฟล์ในถัง → รอบบิลที่อ่านได้ (YYYY-MM) · null = อ่านแล้วไม่เจอ */
+  [filename: string]: string | null
+}
+
+export async function loadRealPeriods(vendorId: string): Promise<RealPeriodMap> {
+  try {
+    const store = getStore(STORE)
+    const m = (await store.get(`p/${vendorId}`, { type: 'json' })) as RealPeriodMap | null
+    return m && typeof m === 'object' ? m : {}
+  } catch {
+    /* อ่านแคชไม่ได้ ⇒ ถือว่ายังไม่เคยอ่านไฟล์ไหนเลย · จอยังทำงานได้ แค่ช้าลงรอบเดียว */
+    return {}
+  }
+}
+
+export async function saveRealPeriods(vendorId: string, m: RealPeriodMap): Promise<void> {
+  try {
+    const store = getStore(STORE)
+    await store.setJSON(`p/${vendorId}`, m)
+  } catch {
+    /* ⚠️ เขียนแคชไม่ได้ **ห้ามทำให้จอพัง** — จอยังจัดเดือนถูก เพราะเพิ่งอ่านค่ามาสด ๆ
+       แค่รอบหน้าต้องอ่าน PDF ใหม่อีกครั้ง */
+  }
+}

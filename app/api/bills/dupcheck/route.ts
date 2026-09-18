@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { downloadBlobFile, listVendorBlobFiles } from '@/lib/billblobs'
+import { downloadBlobFile, listVendorBlobFiles, loadRealPeriods, saveRealPeriods } from '@/lib/billblobs'
+import { filingMonthOf } from '@/lib/bill-filing'
 import { pdfBillInfo } from '@/lib/billdate'
 import { billFilingMonth, billIdentity } from '@/lib/bill-identity'
 import { BILL_VENDORS } from '@/lib/vendors'
@@ -42,7 +43,13 @@ export async function GET(req: NextRequest) {
     /** กุญแจตัวตน → ไฟล์ที่ถือกุญแจนั้น */
     const byKey = new Map<string, { file: string; invoiceNo: string | null; period: string | null }[]>()
     const undecidable: { file: string; why: string }[] = []
-    const misfiled: { file: string; เดือนในชื่อไฟล์: string | null; รอบบิลในใบ: string }[] = []
+    /* 🔴 เดือนที่ระบบจัดเข้าจริง ≠ รอบบิลในใบ — ตัวนี้คือ "จัดผิดเดือน" ของจริงหลัง 18 ก.ย. 2569 */
+    const misfiled: { file: string; เดือนที่ระบบจัดเข้า: string | null; รอบบิลในใบ: string; เพราะ: string }[] = []
+    /* ชื่อไฟล์ไม่ตรงกับรอบบิล — **ไม่ใช่ความผิด** เพราะเราตั้งใจไม่แก้ชื่อไฟล์ย้อนหลัง
+       (ชื่อไฟล์เป็นกุญแจกันซ้ำและถูกอ้างในดัชนี) ⇒ รายงานแยกช่องไว้ให้เห็นเฉย ๆ */
+    const nameMismatch: { file: string; เดือนในชื่อไฟล์: string; รอบบิลในใบ: string }[] = []
+    const รอบบิลแคช = await loadRealPeriods(vendorId).catch(() => ({} as Record<string, string | null>))
+    let แคชเปลี่ยน = false
     const keys: { file: string; key: string }[] = []
     const snippets: { file: string; text: string }[] = []
     const ตรวจรายไฟล์: { file: string; ชนิด: string; เลขของตัวเอง: boolean | null }[] = []
@@ -90,11 +97,34 @@ export async function GET(req: NextRequest) {
       list.push({ file: f.name, invoiceNo: ident.invoiceNo, period: ident.period })
       byKey.set(ident.key, list)
 
-      /* จัดผิดเดือนไหม — เทียบเดือนที่อยู่หน้าชื่อไฟล์ กับรอบบิลที่พิมพ์ในใบ */
+      /* 🔴 **"จัดผิดเดือน" เปลี่ยนความหมายแล้ว 18 ก.ย. 2569 — อ่านก่อนตีความตัวเลข**
+         ท่านประธานสั่งว่าเดือนที่ใช้จัดต้องมาจากรอบบิลในเอกสาร และ **ไม่แก้ชื่อไฟล์ย้อนหลัง**
+         ⇒ ชื่อไฟล์ที่ไม่ตรงกับรอบบิล **เป็นเรื่องปกติที่ตั้งใจ ไม่ใช่ความผิดพลาดอีกต่อไป**
+         ⇒ ของเดิมที่นับ "ชื่อไฟล์ ≠ รอบบิล" ว่าจัดผิดเดือน จะฟ้องค้างตลอดกาลทั้งที่แก้แล้ว
+
+         สิ่งที่ต้องนับแทนคือ **เดือนที่ระบบจัดมันเข้าไปจริง ๆ ≠ รอบบิลในใบ**
+         ซึ่งเกิดได้จริงเมื่อแคชรอบบิลยังไม่ถูกเติม (จอจะถอยไปใช้ชื่อไฟล์ชั่วคราว)
+         ⇒ ตัวเลขนี้จึงยังมีความหมาย ไม่ใช่ศูนย์โดยนิยาม และเป็นตัวที่บอกว่า "แก้สำเร็จหรือยัง" */
       const filing = billFilingMonth(text)
       const inName = (f.name.match(/^(\d{4}-\d{2})_/) || [])[1] ?? null
-      if (filing.source === 'รอบบิลที่พิมพ์ในใบ' && filing.month && inName && inName !== filing.month) {
-        misfiled.push({ file: f.name, เดือนในชื่อไฟล์: inName, รอบบิลในใบ: filing.month })
+      /* 🔑 **เส้นนี้เป็นตัวเดียวที่เปิดอ่าน PDF ได้โดยไม่ต้องล็อกอิน** ⇒ ให้มันเติมแคชรอบบิลไปด้วยเลย
+         ไม่งั้น "จัดผิดเดือน = 0" จะไปขึ้นอยู่กับว่ามีคนเปิดหน้าบิลของเจ้านั้นหรือยัง
+         ⚠️ **ยังไม่แตะไฟล์บิลสักไฟล์** — เขียนเฉพาะแคช "ชื่อไฟล์ → รอบบิล" ที่คำนวณได้จากเนื้อใน
+            (กติกาอ่านอย่างเดียวของเส้นนี้พูดถึง "ไม่ลบไม่ย้ายไฟล์" ซึ่งยังถือครบทุกข้อ)
+         ⚠️ อัปเดตในหน่วยความจำ **ก่อน** เทียบ เพื่อให้รอบแรกที่ยิงก็เห็นผลจริง ไม่ใช่ต้องยิงสองรอบ */
+      if (รอบบิลแคช[f.name] !== filing.month) { รอบบิลแคช[f.name] = filing.month; แคชเปลี่ยน = true }
+      const จัดเข้าเดือน = filingMonthOf(f.name, รอบบิลแคช[f.name]).month
+      if (filing.source === 'รอบบิลที่พิมพ์ในใบ' && filing.month && จัดเข้าเดือน !== filing.month) {
+        misfiled.push({
+          file: f.name, เดือนที่ระบบจัดเข้า: จัดเข้าเดือน, รอบบิลในใบ: filing.month,
+          เพราะ: f.name in รอบบิลแคช
+            ? 'แคชรอบบิลของไฟล์นี้ไม่ตรงกับที่อ่านได้ตอนนี้'
+            : 'ยังไม่เคยอ่านรอบบิลของไฟล์นี้ (เปิดหน้าบิลของเจ้านี้หนึ่งครั้งให้มันอ่าน แล้วยิงซ้ำ)',
+        })
+      }
+      /* ชื่อไฟล์ไม่ตรงกับเดือนที่จัด — **รายงานแยกช่อง ไม่ใช่ความผิด** (ดูเหตุผลข้างบน) */
+      if (filing.month && inName && inName !== filing.month) {
+        nameMismatch.push({ file: f.name, เดือนในชื่อไฟล์: inName, รอบบิลในใบ: filing.month })
       }
     }
 
@@ -120,6 +150,9 @@ export async function GET(req: NextRequest) {
         return { กุญแจ: key, จำนวนไฟล์: list.length, ไฟล์: list, ...(ขัด ? { ขัดกับชื่อไฟล์: true } : {}) }
       })
 
+    /* เขียนแคชที่อ่านได้รอบนี้กลับไป — จอบิลจะจัดเดือนถูกทันทีโดยไม่ต้องแกะ PDF เอง */
+    if (แคชเปลี่ยน) await saveRealPeriods(vendorId, รอบบิลแคช).catch(() => {})
+
     out.push({
       vendor: vendorId,
       ไฟล์ในถัง: files.length,
@@ -131,6 +164,11 @@ export async function GET(req: NextRequest) {
       /* กลุ่มที่เลขในชื่อไฟล์ไม่ตรงกัน — อย่านับรวมเป็นซ้ำชัด ต้องให้คนดู */
       กลุ่มขัดกับชื่อไฟล์: dup.filter((g) => g.ขัดกับชื่อไฟล์).length,
       จัดผิดเดือน: misfiled,
+      /* ⚠️ อ่านคู่กันเสมอ: ตัวบนคือของที่ต้องเป็น 0 · ตัวล่างเป็น 0 ไม่ได้และไม่ต้องเป็น 0 */
+      ชื่อไฟล์ไม่ตรงกับรอบบิล: nameMismatch,
+      หมายเหตุเรื่องเดือน: 'เดือนที่ใช้จัดมาจากรอบบิลในเอกสาร (คำสั่งท่านประธาน 18 ก.ย. 2569) · '
+        + 'ชื่อไฟล์เดิมไม่ถูกแก้ย้อนหลังโดยตั้งใจ เพราะเป็นกุญแจกันซ้ำและถูกอ้างในดัชนี ⇒ '
+        + '"ชื่อไฟล์ไม่ตรงกับรอบบิล" เป็นเรื่องปกติ ส่วน "จัดผิดเดือน" คือของที่ต้องเป็น 0',
       ตัดสินไม่ได้: undecidable,
       ข้าม: ข้าม,
       ...(withKeys ? { กุญแจทุกไฟล์: keys } : {}),
