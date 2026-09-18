@@ -20,7 +20,12 @@ import { fmtNum } from '@/lib/format'
 
 const PER = 200
 
-interface Row { sku: string; name?: string | null; imageFile?: string | null; imagePath?: string | null; active?: boolean }
+/* ⚠️ ต้องเก็บ `qty` กับ `sold` มาด้วย — ใช้จัดลำดับว่า "ควรถ่ายรูปอันไหนก่อน"
+   (ท่อส่งสองช่องนี้มากับ `list=stock` อยู่แล้ว ไม่ต้องยิงเพิ่ม) */
+interface Row {
+  sku: string; name?: string | null; imageFile?: string | null; imagePath?: string | null
+  active?: boolean; qty?: number | null; sold?: number | null
+}
 
 export default function NoImagePage() {
   const imgOf = useSkuImages()
@@ -71,7 +76,23 @@ export default function NoImagePage() {
     const p = String(r.imagePath ?? '').trim()
     return p && p !== 'None'
   })
-  const ไม่มีรูปเลย = เหลือ.filter((r) => !ZORTมีแต่ยังไม่ย่อ.includes(r))
+  const ยังไม่จัดลำดับ = เหลือ.filter((r) => !ZORTมีแต่ยังไม่ย่อ.includes(r))
+  /* 🎯 เรียงว่า "ควรถ่ายอันไหนก่อน" — ของที่มีของในคลัง**และ**เคยขายได้ ขึ้นก่อน
+     เพราะเป็นของที่มีของอยู่จริงและมีคนซื้อจริง ⇒ ถ่ายแล้วได้ผลทันที
+     ⚠️ ค่าที่ไม่มา (`null`/`undefined`) **ไม่ใช่ 0** ⇒ ให้ตกไปกลุ่มท้าย ไม่ใช่ถูกนับว่าไม่เคยขาย */
+  const เลข = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  const คะแนน = (r: Row) => {
+    const q = เลข(r.qty), s2 = เลข(r.sold)
+    if ((q ?? 0) > 0 && (s2 ?? 0) > 0) return 0      // มีของ + เคยขาย
+    if ((q ?? 0) > 0) return 1                        // มีของ แต่ยังไม่เคยขาย
+    if ((s2 ?? 0) > 0) return 2                       // เคยขาย แต่ตอนนี้ของหมด
+    return 3
+  }
+  const ไม่มีรูปเลย = [...ยังไม่จัดลำดับ].sort((a, b) =>
+    คะแนน(a) - คะแนน(b) || (เลข(b.sold) ?? 0) - (เลข(a.sold) ?? 0) || (เลข(b.qty) ?? 0) - (เลข(a.qty) ?? 0)
+    || String(a.sku).localeCompare(String(b.sku)))
+  const ควรถ่ายก่อน = ไม่มีรูปเลย.filter((r) => คะแนน(r) === 0).length
+  const มีของเฉย = ไม่มีรูปเลย.filter((r) => คะแนน(r) === 1).length
   const ครบแล้ว = !loading && total !== null && อ่านแล้ว >= total
 
   const copy = async () => {
@@ -140,6 +161,20 @@ export default function NoImagePage() {
         </div>
       )}
 
+      {/* 🎯 **จัดลำดับว่าควรถ่ายอันไหนก่อน** (เพิ่ม 18 ก.ย. 2569)
+          ของเดิมเรียงตามรหัส ⇒ คนถ่ายเริ่มจากรหัสน้อยสุด ซึ่งอาจเป็นของที่ไม่มีใครซื้อ
+          ⚠️ เกณฑ์นี้เป็นของเราเอง ไม่ใช่กติกาของ ZORT — เขียนกำกับบนจอไว้แล้ว
+          ⚠️ `sold`/`qty` ที่ไม่มีค่า **ไม่ใช่ 0** ⇒ ตกไปอยู่กลุ่มท้าย ไม่ใช่ถูกนับว่าไม่เคยขาย */}
+      {ครบแล้ว && ไม่มีรูปเลย.length > 0 && (
+        <p className="text-[12.5px] text-gray-600 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+          🎯 <b>ควรถ่ายก่อน {fmtNum(ควรถ่ายก่อน)} รหัส</b> — ของที่<b>มีของในคลัง</b>และ<b>เคยขายได้</b>
+          {' '}(เรียงจากขายมากไปน้อยให้แล้ว) · รองลงมาคือของที่มีของแต่ยังไม่เคยขาย {fmtNum(มีของเฉย)} รหัส
+          <span className="block text-[11.5px] text-gray-500 mt-0.5">
+            เกณฑ์นี้เราตั้งเอง ไม่ใช่ลำดับของ ZORT · ตัวเลขขายมาจากช่วงที่ทะเบียนสินค้าเก็บไว้
+          </span>
+        </p>
+      )}
+
       {ครบแล้ว && (
         <TableWrap>
           <table className="w-full">
@@ -148,6 +183,10 @@ export default function NoImagePage() {
                 <th className={TH} style={{ width: 44 }}>#</th>
                 <th className={TH}>รหัส</th>
                 <th className={TH}>ชื่อสินค้า</th>
+                {/* ⚠️ ต้องโชว์เหตุผลของลำดับ ไม่งั้นคนอ่านไม่รู้ว่าทำไมรหัสนี้อยู่บน
+                    (ลำดับที่อธิบายตัวเองไม่ได้ = คนจะเรียงใหม่เองแล้วเสียประโยชน์ที่ตั้งใจให้) */}
+                <th className={TH} style={{ width: 70, textAlign: 'right' }}>คงเหลือ</th>
+                <th className={TH} style={{ width: 70, textAlign: 'right' }}>ขายไป</th>
                 <th className={TH} style={{ width: 90 }}>สถานะ</th>
               </tr>
             </thead>
@@ -163,6 +202,8 @@ export default function NoImagePage() {
                     <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">{r.sku}</Link>
                   </td>
                   <td className={TD}>{r.name || <span className="text-gray-400">— ท่อไม่ส่งชื่อมา</span>}</td>
+                  <td className={TD} style={{ textAlign: 'right' }}>{typeof r.qty === 'number' ? fmtNum(r.qty) : <span className="text-gray-300" title="ท่อไม่ได้ส่งจำนวนมา — ไม่ใช่ 0">—</span>}</td>
+                  <td className={TD} style={{ textAlign: 'right' }}>{typeof r.sold === 'number' ? fmtNum(r.sold) : <span className="text-gray-300" title="ท่อไม่ได้ส่งยอดขายมา — ไม่ใช่ 0">—</span>}</td>
                   <td className={TD}>
                     {r.active === false
                       ? <span className="text-[11px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">ปิดใช้งาน</span>
