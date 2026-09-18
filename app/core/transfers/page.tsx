@@ -13,6 +13,7 @@
 // ⚠️ **ห้ามเอาไปรวมกับ stock_moves** — ตารางนั้นคือของที่ "เราปรับเอง"
 //    ส่วนจอนี้คือกระจกของ ZORT · รวมกันเมื่อไหร่ = ตัดสต็อกสองรอบ
 import { useCallback, useEffect, useState } from 'react'
+import AdvancedSearch from '@/components/zort/AdvancedSearch'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
@@ -62,6 +63,14 @@ interface Resp {
   limit?: number
   offset?: number
   byStatus?: { status: string; c: number }[]
+  /** ✅ ท่อเปิดตัวกรองสถานะ/ช่วงวันที่ให้แล้ว (CEO 18 ก.ย. 2569) — **อ่านจากคำตอบ ห้ามเดา**
+   *  `applied.status` มีค่า = ท่อกรองให้จริง ⇒ แถวที่เห็นคือทั้งชุด ไม่ใช่แค่หน้านี้
+   *  `ignored` = ตัวที่ท่อ **ประกาศว่าเมิน** (days · page) — ดีกว่าหายเงียบ
+   *  ⚠️ ค่าสถานะคือค่าในตาราง ไม่ใช่คำไทย · ส่งคำไทยไปได้ 400 พร้อม supportedStatus */
+  applied?: { q?: string | null; store?: string | null; status?: string | null; from?: string | null; to?: string | null } | null
+  ignored?: Record<string, unknown> | null
+  supportedFilters?: string[]
+  supportedStatus?: string[]
   rows: Row[]
 }
 
@@ -113,13 +122,31 @@ export default function CoreTransfersPage() {
   const [wErr, setWErr] = useState(false)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
+  /* ช่วงวันที่ — ท่อเทียบกับ `transfer_date` = **วันที่เอกสาร**
+     ⚠️ ZORT มี fromstockdate/tostockdate (วันเคลื่อนสต็อก) เป็นคนละแกน
+        กระจกเราไม่มีข้อมูลนั้นเลย ⇒ **ห้ามทำช่องนั้นบนจอ** (CEO ยืนยัน 18 ก.ย. 2569) */
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [advOpen, setAdvOpen] = useState(false)
 
-  const load = useCallback(async (off = 0, tabId = tab, storeId = store, size = perPage) => {
+  const load = useCallback(async (off = 0, tabId = tab, storeId = store, size = perPage, fromD = from, toD = to) => {
     setLoading(true)
     setError('')
     try {
       const qs = new URLSearchParams({ list: 'transfers', limit: String(size), offset: String(off) })
-      /* 🔴 **เลิกส่ง `status` — ท่อเมินพารามิเตอร์นี้** (ยิงพิสูจน์ 16 ก.ย. 2569)
+      /* ✅ **ส่ง `status` แล้ว** ตั้งแต่ 18 ก.ย. 2569 — ท่อเปิดตัวกรองให้ (CEO)
+         ⚠️ ส่งเป็น **ค่าในตาราง** (Success · Voided · Pending) ไม่ใช่คำไทย — ส่งคำไทยได้ 400
+            (ท่อเลือกตีกลับแทนที่จะเมิน เพราะเมินแล้วจอจะโชว์ครบ 12,005 ใบ
+             ซึ่งคนอ่านว่า "ไม่มีใบไหนถูกกรองออก" = คำตอบที่ดูสมบูรณ์ทั้งที่ตัวกรองไม่ทำงาน)
+         🔴 **ท่อรุ่นเก่ายังเมินพารามิเตอร์นี้เงียบ ๆ** ⇒ ห้ามเดาว่าส่งแล้วได้กรอง
+            จอตัดสินจาก `applied.status` ที่ตอบกลับมาเท่านั้น (ดู `ท่อกรองสถานะให้` ข้างล่าง)
+         ประวัติ: 16 ก.ย. 2569 ยิง status=… แล้ว total 12,005 เท่ากันทุกครั้ง แถวเป็น Success ล้วน
+         ⇒ เดิมกดแท็บ "รอโอน (2)" แล้วได้ 0 แถว = แท็บสัญญา 2 ใบ แต่ไม่มีของ */
+      if (tabId && tabId !== 'all') qs.set('status', tabId)
+      if (fromD) qs.set('from', fromD)
+      if (toD) qs.set('to', toD)
+      /* (คอมเมนต์เดิมเก็บไว้เป็นประวัติ — อย่าลบ จะได้ไม่มีใครรื้อกลับไปกรองในเครื่อง) */
+      /* 🔴 **เดิมเลิกส่ง `status` เพราะท่อเมินพารามิเตอร์นี้** (ยิงพิสูจน์ 16 ก.ย. 2569)
          ยิง status=Success/Pending/Voided ⇒ total 12,005 เท่ากันทุกครั้ง · แถวเป็น Success ล้วนทุกครั้ง
          และคำตอบ **ไม่มีช่อง `applied` เลย** ⇒ ไม่มีทางรู้จากคำตอบว่าท่อกรองให้หรือไม่
          ⇒ เดิมกดแท็บ "รอโอน (2)" แล้วได้ 50 แถวที่เป็น "สำเร็จ" ทั้งหมด = แท็บสัญญา 2 ใบ แต่โชว์ของคนละกอง
@@ -148,7 +175,7 @@ export default function CoreTransfersPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, tab, store, perPage])
+  }, [q, tab, store, perPage, from, to])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -183,6 +210,15 @@ export default function CoreTransfersPage() {
      ⇒ ต้องมีอย่างน้อยหนึ่งแถวที่มีทั้ง `status` (ข้อความ) และ `c` (ตัวเลข) จริง ๆ */
   const รู้ตัวนับ = byStatus.some((x) => typeof x?.c === 'number' && typeof x?.status === 'string')
   const countOf = (s: string) => (รู้ตัวนับ ? (byStatus.find((x) => x.status === s)?.c ?? 0) : undefined)
+
+  /* 🔑 **ท่อกรองให้จริงไหม — ตัดสินจากคำตอบ ไม่ใช่จากการที่เราส่งไป**
+     ท่อรุ่นเก่าเมิน `status` เงียบ ๆ (ไม่มี `applied` เลย) ⇒ ถ้าจอเชื่อว่าส่งแล้วได้กรอง
+     มันจะถอดคำเตือน "กรองเฉพาะหน้านี้" ทิ้งทั้งที่ยังกรองไม่ได้ = จอโกหกทันทีที่ deploy ไม่พร้อมกัน
+     ⇒ ดู `supportedFilters` ก่อน แล้วยืนยันซ้ำด้วย `applied.status` ตอนกรองจริง */
+  const ท่อรับสถานะ = Array.isArray(data?.supportedFilters) && data!.supportedFilters!.includes('status')
+  const ท่อรับช่วงวัน = Array.isArray(data?.supportedFilters) && data!.supportedFilters!.includes('from')
+  /** ตอนอยู่แท็บสถานะ: ท่อกรองให้จริงหรือเปล่า (ไม่ได้กรอง ⇒ แถวมาจากหน้านี้เท่านั้น) */
+  const ท่อกรองสถานะให้ = tab === 'all' || data?.applied?.status === tab
 
   return (
     <div className="p-4 md:p-6">
@@ -219,8 +255,10 @@ export default function CoreTransfersPage() {
               disabled={loading}
               spec={{
                 filename: 'รายการโอนสินค้า',
-                /* ⚠️ ไม่ใส่ชื่อแท็บลงขอบเขต เพราะไฟล์ไม่ได้กรองด้วยสถานะจริง (ท่อไม่รองรับ) */
-                scope: `${storeLabel(store)} · ทุกสถานะ${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
+                /* ✅ พอท่อกรองสถานะได้ ไฟล์ก็กรองตามแท็บได้จริง ⇒ ขอบเขตต้องพูดตามความจริงของรอบนั้น
+                   (เดิมเขียนตายว่า "ทุกสถานะ" เพราะท่อยังไม่รองรับ — ปล่อยไว้จะกลายเป็นคำเท็จวันที่ท่ออัปเดต) */
+                scope: `${storeLabel(store)} · ${ท่อรับสถานะ && tab !== 'all' ? zortWord(TRANSFER_STATUS, tab).text : 'ทุกสถานะ'}`
+                  + `${from || to ? ` · ${from || '…'} ถึง ${to || '…'}` : ''}${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
                 title: 'รายการโอนสินค้า',
                 note: wErr ? 'รอบนี้ดึงชื่อคลังไม่ได้ — คอลัมน์ชื่อคลังจึงเว้นว่าง (รหัสคลังยังอยู่ครบ)' : undefined,
                 /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอกำลังโชว์** — ฝั่งท่อกำชับตรง ๆ
@@ -229,13 +267,21 @@ export default function CoreTransfersPage() {
                 filters: [
                   ['ร้าน', storeLabel(store)],
                   /* 🔴 ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ⇒ เขียนให้ตรง ไม่ใช่ใส่ชื่อแท็บเฉย ๆ */
-                  ['แท็บสถานะบนจอ', tab === 'all' ? 'ทั้งหมด'
-                    : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ได้ทุกสถานะ`],
+                  ['สถานะ', tab === 'all' ? 'ทั้งหมด'
+                    : ท่อรับสถานะ
+                      ? zortWord(TRANSFER_STATUS, tab).text
+                      : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อรุ่นนี้ยังไม่รองรับ) ได้ทุกสถานะ`],
+                  ['ช่วงวันที่เอกสาร', from || to ? `${from || '(ไม่กำหนด)'} ถึง ${to || '(ไม่กำหนด)'}` : '(ทั้งหมด)'],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({ list: 'transfers', limit: String(limit), offset: String(offsetAt) })
-                  /* 🔴 ท่อเมิน `status` ⇒ ไม่ส่งไป และต้องเขียนในไฟล์ว่าไฟล์นี้ได้ทุกสถานะ */
+                  /* ✅ ส่งตัวกรองเดียวกับที่จอกำลังโชว์ — ไฟล์ต้องเป็นของชุดเดียวกับที่คนเห็น
+                     🔴 ส่ง `status` **ก็ต่อเมื่อท่อรับจริง** ไม่งั้นท่อรุ่นเก่าจะเมินเงียบ
+                        แล้วไฟล์จะได้ทุกสถานะทั้งที่หัวไฟล์เขียนว่ากรองแล้ว */
+                  if (ท่อรับสถานะ && tab !== 'all') qs.set('status', tab)
+                  if (from) qs.set('from', from)
+                  if (to) qs.set('to', to)
                   if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
                   const r = await fetch(`/api/web/core?${qs}`)
@@ -272,7 +318,13 @@ export default function CoreTransfersPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขที่ใบโอน หรือคำอธิบาย"
-        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
+        advanced={
+          <>
+            <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
+            {/* ปุ่มเปิดแผงโผล่เฉพาะตอนท่อกรองวันได้จริง — ปุ่มที่เปิดแผงว่างคือปุ่มหลอก */}
+            {ท่อรับช่วงวัน && <> · <LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText></>}
+          </>
+        }
       />
 
       {/* 🔎 คำค้นที่ "ตรงกับทุกใบ" — ผลเท่ากับตอนไม่ได้ค้นเป๊ะ
@@ -317,9 +369,26 @@ export default function CoreTransfersPage() {
             <Tabs
               // ZORT โชว์ ทั้งหมด · รอโอน (2) · สำเร็จ — แท็บที่เป็น 0 ก็ต้องโชว์
               tabs={[
-                { id: 'all', label: 'ทั้งหมด', count: data.total },
+                /* 🔴 **บั๊กที่ทดสอบเจอเอง 18 ก.ย. 2569 ตอนต่อตัวกรองสถานะของท่อ**
+                   เดิมใช้ `data.total` ซึ่งตอนนี้เป็น**ยอดของแท็บที่เลือกอยู่**
+                   ⇒ กดแท็บ "ยกเลิก" แล้วแท็บ "ทั้งหมด" เปลี่ยนจาก 12,005 เป็น 28
+                   = กฎแท็บข้อ 1 ของ CLAUDE.md เป๊ะ (ตัวนับต้องไม่ถูกกรองด้วยแท็บที่เลือก)
+                   ⇒ ใช้ผลรวมของ byStatus ซึ่งท่อตั้งใจให้ **นับข้ามตัวกรองสถานะ**
+                      (แต่ยังนับตาม q/from/to ⇒ ถูกต้องแล้วสำหรับ "ทั้งหมดในเงื่อนไขที่กรองอยู่")
+                   ไม่รู้ byStatus ⇒ ถอยไปใช้ total ตามเดิม (ไม่รู้ ≠ ศูนย์) */
+                {
+                  id: 'all', label: 'ทั้งหมด',
+                  count: รู้ตัวนับ ? byStatus.reduce((a, x) => a + (typeof x.c === 'number' ? x.c : 0), 0) : data.total,
+                },
                 { id: 'Pending', label: zortWord(TRANSFER_STATUS, 'Pending').text, count: countOf('Pending') },
                 { id: 'Success', label: zortWord(TRANSFER_STATUS, 'Success').text, count: countOf('Success') },
+                /* 🔴 **แท็บยกเลิกโผล่ก็ต่อเมื่อท่อกรองสถานะได้จริง**
+                   ก่อน 18 ก.ย. 2569 จงใจไม่ทำ เพราะกรองในเครื่องจะสัญญา 28 ใบแล้วกดได้ 0 แถว
+                   (กฎแท็บข้อ 2: เลขในวงเล็บคือคำสัญญา · แท็บที่หลอกแย่กว่าไม่มีแท็บ)
+                   ⇒ ท่อรุ่นเก่ายังไม่มีแท็บนี้ให้กด ซึ่งถูกต้องแล้ว ไม่ใช่ของหาย */
+                ...(ท่อรับสถานะ
+                  ? [{ id: 'Voided', label: zortWord(TRANSFER_STATUS, 'Voided').text, count: countOf('Voided') }]
+                  : []),
               ]}
               active={tab}
               onChange={(id) => { setTab(id); load(0, id) }}
@@ -335,7 +404,7 @@ export default function CoreTransfersPage() {
           {/* 🔴 **แท็บนี้กรองเฉพาะหน้าที่เห็น** — ท่อไม่รับตัวกรองสถานะ (กฎแท็บข้อ 3 ใน CLAUDE.md)
                  ตัวเลขบนแท็บมาจาก `byStatus` = ทั้งชุด (Success 11,975 · Voided 28 · Pending 2)
                  แต่แถวมาจากหน้าที่โหลดมา 50 ใบ ⇒ **ต้องเขียนว่าต่างกันตรงไหน ห้ามปล่อยเงียบ** */}
-          {tab !== 'all' && !loadedAll && (
+          {tab !== 'all' && !loadedAll && !ท่อกรองสถานะให้ && (
             <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-1 leading-relaxed">
               ⚠️ <b>ตัวเลขบนแท็บเป็นของทั้งชุด แต่แถวที่กรองได้มาจากหน้านี้เท่านั้น</b> —
               ท่อยังไม่รับตัวกรองสถานะ (ยิงตรวจแล้ว 16 ก.ย. 2569 · ขอไว้แล้ว) ⇒
@@ -352,6 +421,9 @@ export default function CoreTransfersPage() {
                  (กฎแท็บข้อ 2 ของ CLAUDE.md: เลขในวงเล็บคือคำสัญญา · แท็บที่หลอกแย่กว่าไม่มีแท็บ)
                  ⇒ บอกเป็น **ข้อมูล** ว่ามีอยู่เท่าไร พร้อมบอกตรง ๆ ว่ายังแยกดูไม่ได้ */}
           {(() => {
+            /* ✅ พอท่อกรองสถานะได้ บรรทัดนี้ **หายเอง** เพราะมีแท็บยกเลิกให้กดแล้ว
+               (ข้อความชั่วคราวต้องผูกกับเงื่อนไขที่ทำให้มันจำเป็น ไม่งั้นมันค้างเป็นคำเท็จ) */
+            if (ท่อรับสถานะ) return null
             const v = byStatus.find((x) => x.status === 'Voided')?.c
             if (typeof v !== 'number' || v === 0) return null
             return (
@@ -362,6 +434,27 @@ export default function CoreTransfersPage() {
               </p>
             )
           })()}
+
+          {/* 🔎 ช่วงวันที่ — โผล่เฉพาะตอนท่อรับจริง (ท่อรุ่นเก่าเมินเงียบ ⇒ ช่องที่กรองไม่ได้คือปุ่มหลอก)
+              ⚠️ **ไม่มีช่อง "วันเคลื่อนสต็อก"** ที่ ZORT มี (fromstockdate/tostockdate) โดยตั้งใจ —
+                 กระจกเราไม่มีข้อมูลนั้นเลย ทำช่องไปก็กรองไม่ได้ (CEO ยืนยัน 18 ก.ย. 2569) */}
+          {ท่อรับช่วงวัน && (
+            <AdvancedSearch
+              open={advOpen}
+              fields={[
+                { label: 'ตั้งแต่วันที่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
+                { label: 'ถึงวันที่', kind: 'date', value: to, onChange: (v) => setTo(v) },
+              ]}
+              onApply={() => load(0, tab, store, perPage, from, to)}
+              onClear={() => { setFrom(''); setTo(''); load(0, tab, store, perPage, '', '') }}
+              canClear={!!(from || to)}
+              serverFiltered="ช่วงวันที่เอกสาร · สถานะ · ร้าน · คำค้น"
+              notAvailable={[
+                { what: 'วันที่เคลื่อนสต็อก (ZORT มี fromstockdate/tostockdate)', why: 'กระจกของเราเก็บแต่วันที่เอกสาร ยังไม่มีคอลัมน์วันเคลื่อนสต็อก — ทำช่องไปก็กรองไม่ได้' },
+                { what: 'ชนิดการโอน (โอน · ยกมา · ปรับ · ประกอบ · แยกส่วน)', why: 'ท่อยังไม่รับเป็นตัวกรอง — ขอไว้แล้ว' },
+              ]}
+            />
+          )}
 
           {/* 🏬 เลือกร้าน — ปุ่มชุดเดียวกับจอเอกสารอื่น (components/zort/StorePicker) */}
           <StorePicker value={store} disabled={loading}
