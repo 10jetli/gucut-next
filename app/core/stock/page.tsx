@@ -12,7 +12,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { fmtMoney } from '@/lib/format'
+import { fmtMoney, fmtNum } from '@/lib/format'
 import { coverageText } from '@/lib/csv-export'
 import ExportButton from '@/components/zort/ExportButton'
 import LoadingState from '@/components/ui/LoadingState'
@@ -127,6 +127,33 @@ function CoreStockInner() {
      ค่าพิเศษ '(ยังไม่ได้จัดหมวดใน ZORT)' = แถว category ว่าง (สัญญากับท่อ 66d2c0f · จับคู่ตรงตัวไม่ใช่ LIKE) */
   const sp = useSearchParams()
   const [category, setCategory] = useState(() => sp.get('category') ?? '')
+  /* 🗂️ รายชื่อหมวดสำหรับตัวเลือก — **โหลดตอนกดเท่านั้น** ไม่โหลดพร้อมจอ
+     เพราะจอนี้มีกติกาของตัวเองว่าต้องไม่กลายเป็นตัวกินเครดิตเสียเอง (ดูหัวไฟล์)
+     🔑 **ตัวเลขข้างชื่อหมวดใช้ได้จริง** — ยิงเทียบแล้ว 18 ก.ย. 2569:
+        `list=categories` ให้ skus 218/182/172 · `list=stock&category=` ให้ total 218/182/172 **ตรงกันเป๊ะ**
+        ⇒ มาจากกติกาเดียวกัน วางคู่กันได้โดยไม่ต้องเขียนกำกับส่วนต่าง
+        (ต่างจากเคส 2 ก.ย. 2569 ที่ตัวนับมาจากทั้งคลัง แต่แถวกรองจาก 400 แถวแรก) */
+  const [cats, setCats] = useState<{ name: string; skus: number }[] | null>(null)
+  const [catsErr, setCatsErr] = useState('')
+  const [catsLoading, setCatsLoading] = useState(false)
+  const โหลดหมวด = useCallback(async () => {
+    if (cats || catsLoading) return
+    setCatsLoading(true); setCatsErr('')
+    try {
+      const j = await fetch('/api/web/core?list=categories').then((r) => r.json())
+      const rows = Array.isArray(j?.rows) ? j.rows : []
+      if (!rows.length) throw new Error('ท่อไม่ได้ส่งรายชื่อหมวดมา')
+      setCats(rows
+        .map((r: { cat_name?: string; name?: string; skus?: number }) => ({
+          name: String(r.cat_name ?? r.name ?? ''), skus: Number(r.skus) || 0,
+        }))
+        .filter((r: { name: string }) => r.name))
+    } catch (e) {
+      /* ⚠️ โหลดไม่ได้ต้องบอก ไม่ใช่เงียบแล้วโชว์รายการว่าง — รายการว่างอ่านได้ว่า "ไม่มีหมวด" */
+      setCatsErr(String(e instanceof Error ? e.message : e))
+    } finally { setCatsLoading(false) }
+  }, [cats, catsLoading])
+
   /* 🔴 **รับ `?q=` จาก URL ด้วย** (แก้ 16 ก.ย. 2569 · เจอตอนไล่ตามลิงก์ข้ามจอ)
      จออื่นลิงก์เข้ามาด้วย `?q=<รหัสสินค้า>` อยู่ **4 จุด**: จอสินค้าเป็นชุด (2 จุด) ·
      จอรายละเอียดใบซื้อ · จอรายละเอียดหมวดหมู่ ("ดูในจอคลังสินค้า")
@@ -235,7 +262,13 @@ function CoreStockInner() {
     } finally {
       setLoading(false)
     }
-  }, [q, sort, tab, kind, perPage])
+  /* 🔴 **ต้องมี `category` ใน deps** (แก้ 18 ก.ย. 2569)
+     เดิมไม่มี และไม่มีใครเห็นบั๊ก เพราะหมวดตั้งค่าได้จาก URL ตอนเปิดจอเท่านั้น
+     ⇒ ตอนเปิดจอ closure ได้ค่าถูกอยู่แล้ว · พอเพิ่มตัวเลือกหมวดบนจอ **บั๊กโผล่ทันที**:
+       กดเลือกหมวด → จอยิงใหม่จริง แต่ closure เก่าไม่มีค่าหมวด ⇒ คำขอไม่มี `category=`
+       ⇒ จอโชว์ป้าย "กรองหมวด: X" แต่แถวเป็นชุดเดิมทั้งชุด = **คนอ่านเชื่อว่ากรองแล้ว**
+     (โรคเดียวกับตัวกรองเงียบที่ไล่กวาดอยู่ ต่างกันแค่ว่ารอบนี้เงียบที่ฝั่งจอ ไม่ใช่ฝั่งท่อ) */
+  }, [q, sort, tab, kind, perPage, category])
 
   /* โหลดครั้งแรก + เมื่อหมวดเปลี่ยน — `q` ตั้งต้นจาก URL ถูกส่งไปด้วยเพราะ `load` อ่านค่าจาก state ปัจจุบัน
      ⚠️ ห้ามใส่ `q` ใน deps — ไม่งั้นจอจะยิงท่อทุกตัวอักษรที่พิมพ์ (ช่องค้นหาต้องกด Enter เท่านั้น) */
@@ -587,15 +620,40 @@ function CoreStockInner() {
           />
 
           {/* 🕰 คอลัมน์ Marketplace มาจากแคชเซิร์ฟเวอร์ที่ "คืนของเก่าก่อน" ได้ — แถบนี้ห้ามถอด */}
-          {category && (
-            <p className="text-[12.5px] mb-3">
-              <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-full px-3 py-1">
+          {/* 🗂️ ตัวเลือกหมวดหมู่ — ZORT มีช่องนี้บนจอสินค้า ของเราเดิมรับค่าจาก URL ได้อย่างเดียว
+              (เทียบทีละชิ้น 18 ก.ย. 2569 · ท่อรับ `category` อยู่แล้ว ⇒ เป็นช่องเดียวที่ทำได้ในเลนจอ)
+              ⚠️ ใช้ <select> ธรรมดาเพื่อให้ใช้ได้บนมือถือด้วย และเลือกแล้วยิงทันทีเหมือนตัวกรองอื่นของจอนี้ */}
+          <div className="flex items-center gap-2 flex-wrap mb-3">
+            <select
+              value={category}
+              onFocus={โหลดหมวด}
+              onMouseDown={โหลดหมวด}
+              onChange={(e) => { setCategory(e.target.value); setOffset(0) }}
+              className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white max-w-[280px]"
+              title="กรองตามหมวดหมู่ — ตัวเลขคือจำนวนรหัสในหมวดนั้นทั้งคลัง"
+            >
+              <option value="">🗂️ ทุกหมวดหมู่</option>
+              {/* ระหว่างยังไม่โหลด ให้เห็นค่าที่เลือกอยู่เสมอ (ค่ามาจาก URL ได้) */}
+              {category && !cats?.some((c) => c.name === category) && <option value={category}>{category}</option>}
+              {cats?.map((c) => (
+                <option key={c.name} value={c.name}>{c.name} ({fmtNum(c.skus)})</option>
+              ))}
+            </select>
+            {catsLoading && <span className="text-[11.5px] text-gray-400">กำลังโหลดรายชื่อหมวด…</span>}
+            {/* ⚠️ โหลดรายชื่อหมวดไม่ได้ ต้องบอก — รายการว่างอ่านได้ว่า "ไม่มีหมวด" ซึ่งคนละเรื่อง */}
+            {catsErr && (
+              <span className="text-[11.5px] text-amber-800" title={catsErr}>
+                ⚠️ โหลดรายชื่อหมวดไม่ได้ — ยังกรองด้วยลิงก์ <code>?category=</code> ได้อยู่
+              </span>
+            )}
+            {category && (
+              <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-full px-3 py-1 text-[12.5px]">
                 🗂️ กรองหมวด: <b>{category}</b>
-                <button onClick={() => setCategory('')} title="ถอดตัวกรองหมวด"
+                <button onClick={() => { setCategory(""); setOffset(0) }} title="ถอดตัวกรองหมวด"
                   className="text-blue-500 hover:text-blue-800 font-bold ml-0.5">✕</button>
               </span>
-            </p>
-          )}
+            )}
+          </div>
           {/* 🔴 ท่อใช้ตัวกรองไม่ตรงกับที่จอขอ — ถ้าเงียบไว้ ตัวนับกับแถวจะมาคนละกติกา
               และจอจะ "ดูปกติทุกประการ" (เคสวันที่ 2 ก.ย. 2569 ทั้งสามเคสเป็นแบบนี้) */}
           {echoWarn && (
