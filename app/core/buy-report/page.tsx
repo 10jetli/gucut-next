@@ -150,6 +150,12 @@ function BuyChart({ points }: { points: { label: string; value: number }[] }) {
   )
 }
 
+/** วันที่กรอกครบแล้วหรือยัง — `<input type=date>` ยิง `onChange` **ทุกครั้งที่ช่องใดช่องหนึ่งขยับ**
+ *  ⇒ ระหว่างพิมพ์ปี จะได้ค่ากลางทางอย่าง `0002-09-01` · `0202-09-01` แล้วยิงท่อไปด้วย
+ *  ⇒ เปลืองคำขอ D1 และจอโชว์ผลของช่วงวันที่ไม่มีอยู่จริงชั่วขณะ
+ *  (เจอ 18 ก.ย. 2569 ตอนไล่หาจอที่ยิงท่อทุกตัวอักษร ต่อจากจอสินค้าบน Marketplace) */
+const วันครบ = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && Number(v.slice(0, 4)) >= 1000
+
 export default function BuyReportPage() {
   const [rows, setRows] = useState<Po[] | null>(null)
   const [all, setAll] = useState<Resp | null>(null)
@@ -350,12 +356,12 @@ export default function BuyReportPage() {
         <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-4 flex flex-wrap items-end gap-4">
           <label className="text-[12px] text-gray-600">
             ตั้งแต่
-            <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); void load(store, by, e.target.value, to) }}
+            <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); if (วันครบ(e.target.value)) void load(store, by, e.target.value, to) }}
               className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
           <label className="text-[12px] text-gray-600">
             ถึง
-            <input type="date" value={to} onChange={(e) => { setTo(e.target.value); void load(store, by, from, e.target.value) }}
+            <input type="date" value={to} onChange={(e) => { setTo(e.target.value); if (วันครบ(e.target.value)) void load(store, by, from, e.target.value) }}
               className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
           {/* 🗓️ ช่วงสำเร็จรูปให้ครบตามที่ ZORT มี (กดดูจอ ZORT เอง 16 ก.ย. 2569:
