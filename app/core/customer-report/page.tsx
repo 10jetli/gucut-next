@@ -35,7 +35,10 @@ interface Person {
  *  (ฝั่งท่อกำชับตอนออกแบบ 6 ก.ย. — หน่วยต่างกัน เส้นอยู่กราฟเดียวกันได้แต่ต้องมีป้ายหน่วย) */
 interface MonthlyRow { month: string; newCustomers?: number; repeatCustomers?: number; unnamedOrders?: number }
 
-const PER_PAGE = 50
+/* 🔢 จำนวนต่อหน้า — ZORT ให้เลือก 10/20/50/100 ทุกจอรายการ
+   จอนี้แบ่งหน้า **ในเบราว์เซอร์** (ดึงมาทั้งชุดแล้วตัดแสดง) ⇒ เปลี่ยนค่าไม่ต้องยิงท่อใหม่
+   ⇒ ไม่มีปัญหา setState ตามไม่ทันแบบจอที่แบ่งหน้าฝั่งท่อ */
+const PER_PAGE_เริ่มต้น = 50
 const NO_NAME = 'ไม่ระบุชื่อ'
 
 const thaiDay = (back = 0) =>
@@ -106,6 +109,7 @@ export default function CoreCustomersPage() {
   const [q, setQ] = useState('')
   const [tab, setTab] = useState<'all' | 'a' | 'b'>('all')
   const [page, setPage] = useState(0)
+  const [PER_PAGE, setPerPage] = useState(PER_PAGE_เริ่มต้น)
 
   const [people, setPeople] = useState<Person[]>([])
   const [scanned, setScanned] = useState(0)
@@ -608,7 +612,9 @@ export default function CoreCustomersPage() {
                   ⇒ จำนวนทั้งชุดคือ `filtered.length` ซึ่งรู้แน่นอน จึงบอกจำนวนหน้าได้ */}
               <PageNav offset={page * PER_PAGE} perPage={PER_PAGE} rowsOnPage={shown.length}
                 total={filtered.length}
-                onGo={(off) => setPage(Math.max(0, Math.floor(off / PER_PAGE)))} />
+                onGo={(off) => setPage(Math.max(0, Math.floor(off / PER_PAGE)))}
+                /* เปลี่ยนจำนวนต่อหน้า ⇒ กลับไปหน้าแรก (หน้า 7 ของชุดเก่าอาจไม่มีอยู่ในชุดใหม่) */
+                onPerPage={(n) => { setPerPage(n); setPage(0) }} />
             </div>
           </TableWrap>
 

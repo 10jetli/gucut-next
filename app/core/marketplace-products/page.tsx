@@ -14,7 +14,7 @@
 //    ⇒ เลขสองจอต้องตรงกันเสมอ · ถ้าวันไหนไม่ตรง แปลว่ามีจอหนึ่งนับเอง ซึ่งผิดกติกา
 // ⚠️ ต้องไล่ทุกหน้า ไม่ใช่หน้าแรกหน้าเดียว — วัดจริง 5 ก.ย.: หน้าแรก 200 แถวให้ shopee 11
 //    แต่ทั้ง 2,672 แถวได้ 76 ⇒ **หน้าแรกไม่ใช่ตัวแทน** (บทเรียนที่เจอมาแล้วสามครั้ง)
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -48,7 +48,9 @@ interface Resp {
 }
 
 /** ขนาดหน้าของตาราง — ใช้ทั้งตอนขอจากท่อและตอนเดินหน้า */
-const PAGE = 50
+/* 🔢 จำนวนต่อหน้า — ZORT ให้เลือก 10/20/50/100 ทุกจอรายการ
+   เส้นนี้ยิง `list=stock` ซึ่งรับได้สูงสุด 200 ⇒ ทั้งสี่ค่าปลอดภัย */
+const PAGE_เริ่มต้น = 50
 /** เพดานรอบดึงของ **ทางถอย** (ท่อรุ่นเก่าที่ยังไม่รับ channel) · 2,672 ÷ 200 = 14 หน้า เผื่อโต 50% */
 const SWEEP_PAGE = 200
 const MAX_PAGES = 20
@@ -68,6 +70,9 @@ export default function MarketplaceProductsPage() {
   const [q, setQ] = useState('')
   const [tab, setTab] = useState('all')
   const [page, setPage] = useState(0)
+  const [PAGE, setPAGE] = useState(PAGE_เริ่มต้น)
+  /** จำนวนต่อหน้าที่ยิงไปจริงล่าสุด (เหตุผลเดียวกับจอขนส่ง/เอกสารบัญชี) */
+  const perRef = useRef(PAGE_เริ่มต้น)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   /** ดึงไม่ครบทุกหน้า — ต้องบอก ไม่ใช่เงียบ (ตัวเลขที่ไม่ครบต้องประกาศขอบเขตตัวเอง) */
@@ -83,11 +88,13 @@ export default function MarketplaceProductsPage() {
 
   /* โหลดหน้าที่คนเปิดดูจริงเท่านั้น (โหมดท่อ) — ไม่กวาดทั้งคลังมานับในเบราว์เซอร์อีก
      ⚠️ ส่ง q ให้ท่อด้วย ไม่กรองในจอ ไม่งั้น "หน้า 1 จาก N" จะนับจากของที่ยังไม่ได้กรอง */
-  const load = useCallback(async (tabNow = tab, pageNow = 0, qNow = q) => {
+  /* ⚠️ รับจำนวนต่อหน้าเป็นพารามิเตอร์ ไม่อ่านจาก state (setState ยังไม่มีผลในรอบเดียวกัน) */
+  const load = useCallback(async (tabNow = tab, pageNow = 0, qNow = q, ขนาด?: number) => {
     setLoading(true)
     setError('')
     setPartial(false)
-    const qs = new URLSearchParams({ list: 'stock', marketplaces: '1', limit: String(PAGE), offset: String(pageNow * PAGE) })
+    const ต่อหน้า = ขนาด ?? perRef.current
+    const qs = new URLSearchParams({ list: 'stock', marketplaces: '1', limit: String(ต่อหน้า), offset: String(pageNow * ต่อหน้า) })
     if (qNow.trim()) qs.set('q', qNow.trim())
     if (tabNow !== 'all') qs.set('channel', tabNow)
     try {
@@ -326,6 +333,8 @@ export default function MarketplaceProductsPage() {
               </span>
               {/* เลขหน้าแบบ ZORT — จอนี้นับหน้าเป็น index (0 = หน้าแรก) ⇒ แปลง offset ↔ index ที่จุดเดียว */}
               <PageNav offset={page * PAGE} perPage={PAGE} rowsOnPage={shown.length}
+                /* เปลี่ยนจำนวนต่อหน้า ⇒ กลับหน้าแรก + ส่งค่าใหม่เข้าไปในคำสั่งโหลด */
+                onPerPage={(n) => { setPAGE(n); setPage(0); void load(tab, 0, q, n) }}
                 total={totalInTab} disabled={loading}
                 onGo={(off) => goPage(Math.max(0, Math.floor(off / PAGE)))} />
             </div>
