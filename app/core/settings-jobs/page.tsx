@@ -21,6 +21,7 @@
 // ⚠️ **เวลาที่เขียนเป็นเวลาไทย** — cron ที่ Netlify เป็น UTC ต้องบวก 7 เสมอ
 //    เขียน UTC ดิบบนจอ = คนอ่านคิดว่างานวิ่งตอนบ่าย ทั้งที่วิ่งตอนตีสาม
 import Link from 'next/link'
+import CronFromPipe from '@/components/zort/CronFromPipe'
 import { PageHead, Pill } from '@/components/zort'
 
 /* 🔄 **ตารางของตัวดันสต็อกเปลี่ยนสองรอบในวันเดียว — ไม่ใช่ใครพิมพ์ผิด**
@@ -305,6 +306,10 @@ export default function SettingsJobsPage() {
         ส่วนข้างล่างคือของจริงฝั่งเราที่มีค่ากว่า:
         <b> มีอะไรวิ่งเองอยู่บ้าง กี่โมง และถ้ามันตายเราจะรู้ได้ยังไง</b>
       </div>
+
+      {/* 🔑 ตารางเดียวกันถูกลอกไว้สองที่ ⇒ ให้ท่อเป็นคนยืนยันตอนเปิดจอ ไม่ใช่รอรอบ build
+          (ด่าน check-cron-table จับได้ก็ต่อเมื่อมีคน build · คนที่เปิดจอคือคนที่กำลังจะเชื่อตัวเลขนี้) */}
+      <CronFromPipe jobs={JOBS.map((j) => ({ src: j.src, cron: j.cron, name: j.name }))} />
 
       <div className="space-y-3">
         {JOBS.map((j) => (
