@@ -65,6 +65,11 @@ interface ListResp {
   skip?: string
   from: string; to: string
   total: number; totalAmount: number
+  /** ✅ สารบัญสถานะทั้งหมดของร้านนี้ (ท่อ b413a35 · 18 ก.ย. 2569)
+   *  มาจาก `SELECT DISTINCT status` ที่กรอง **แค่ร้าน** — ไม่มีวัน ไม่มีคำค้น ไม่มีช่องทาง
+   *  ⇒ ใช้ทำ "รายชื่อแท็บ" · ส่วน `byStatus` ใช้ทำ "จำนวนของแท็บนั้นในผลที่กรองแล้ว"
+   *  ⚠️ **`null` = อ่านไม่ได้ ไม่ใช่ "ไม่มีสถานะ"** (ท่อเลือก null ไม่ใช่ [] ด้วยเหตุผลนี้) */
+  statusesAll?: string[] | null
   /* ── เงินสามตัวที่ต้องแยกให้ขาด (ฝั่งท่อเพิ่มให้ 6 ก.ย. 2569) ──────────────
      🔴 `totalAmount` **รวมใบที่ยังไม่จ่าย** — วัดจริง 1 ม.ค.–6 ก.ย.:
         บวมเกินจริง 11.2% (฿640,345 เป็นใบยังไม่จ่าย เกือบทั้งหมดคือซากช่องทางที่ปิดไปแล้ว)
@@ -483,13 +488,24 @@ export default function CoreSalesPage() {
     })
   }, [data])
 
+  /* ✅ **ท่อแก้ที่ต้นเหตุให้แล้ว (CEO · b413a35)** — `statusesAll` มาจาก `SELECT DISTINCT status`
+     ที่กรอง **แค่ร้าน** ล้วน ๆ (ไม่มีวัน ไม่มีคำค้น ไม่มีช่องทาง) ⇒ เป็นสารบัญสถานะตัวจริง
+     ⇒ **ดีกว่าการจำเอง** เพราะของที่จำได้มีแค่สถานะที่เคยโผล่ในช่วงวันที่เราเปิดดู
+        (เปิดจอครั้งแรกด้วยตัวกรองแคบ ⇒ จำได้ไม่ครบตั้งแต่ต้น แล้วไม่มีอะไรบอก)
+     ⇒ และวันที่ ZORT เพิ่มสถานะใหม่ **แท็บจะโผล่เอง** ไม่ต้องรอใครไปเติมชื่อ
+     ⚠️ `null` = **อ่านไม่ได้ ไม่ใช่ "ไม่มีสถานะ"** (ฝั่งท่อเลือก null ไม่ใช่ [] ด้วยเหตุผลนี้)
+        ⇒ ไม่มี/ว่าง ⇒ ถอยไปใช้รายชื่อที่จำไว้ ไม่ใช่ล้างแท็บทิ้ง */
+  const รายชื่อสถานะ = Array.isArray(data?.statusesAll) && data!.statusesAll!.length
+    ? (data!.statusesAll!.filter(Boolean) as string[])
+    : สถานะที่เคยเห็น
+
   const นับสถานะ = (st: string) => {
     if (!Array.isArray(data?.byStatus)) return undefined          // ไม่รู้ ≠ 0
     return Number(data!.byStatus!.find((r) => r.status === st)?.orders ?? 0)
   }
   const tabs = [
     { id: '', label: 'ทั้งหมด', count: allCount || data?.total },
-    ...สถานะที่เคยเห็น.map((st) => ({ id: st, label: statusTh(st), count: นับสถานะ(st) })),
+    ...รายชื่อสถานะ.map((st) => ({ id: st, label: statusTh(st), count: นับสถานะ(st) })),
   ]
 
   return (
