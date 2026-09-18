@@ -184,12 +184,19 @@ export function Tabs({
   right?: ReactNode
 }) {
   return (
-    <div className="flex items-center gap-1 border-b border-gray-200 mb-0">
+    /* 🔴 **แถบแท็บต้องเลื่อนในตัวเอง ห้ามดันทั้งหน้าให้กว้างเกินจอ** (แก้ 19 ก.ย. 2569)
+       เจอตอนกวาดจอที่ความกว้างมือถือ 390px: `/core/sales` ทั้งหน้ากว้าง 469px ⇒ **ล้น 79px**
+       ⇒ ต้องเลื่อนซ้าย-ขวาทั้งหน้าเพื่ออ่านตาราง และหัวจอก็เลื่อนตามไปด้วย
+       เหตุ: แท็บเพิ่มจาก 5 เป็น 6 ตัวคืนนี้ (ท่อส่ง `statusesAll` ⇒ มีแท็บ Returned เพิ่ม)
+       🔑 **ของเดิมไม่ได้พัง — มันโตข้ามเส้นเฉย ๆ** (คลาสเดียวกับ display-limits-cant-decide)
+          และวันที่ ZORT เพิ่มสถานะใหม่ แท็บจะโผล่เองอีก ⇒ ต้องกันไว้ที่คอมโพเนนต์ ไม่ใช่รายจอ
+       ⚠️ `overflow-x-auto` ต้องมากับ `flex-none` ที่ปุ่ม ไม่งั้น flex จะบีบปุ่มให้แคบแทนที่จะเลื่อน */
+    <div className="flex items-center gap-1 border-b border-gray-200 mb-0 overflow-x-auto">
       {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
-          className={`text-[13.5px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors ${
+          className={`text-[13.5px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
             active === t.id
               ? 'border-blue-600 text-gray-900 font-semibold'
               : 'border-transparent text-gray-500 hover:text-gray-700'
