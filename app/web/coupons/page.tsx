@@ -156,6 +156,15 @@ export default function WebCouponsPage() {
                 <span className="block text-[12px] text-gray-500 mt-0.5 truncate">
                   {label(c)}{c.min ? ` · ขั้นต่ำ ฿${c.min.toLocaleString('th-TH')}` : ''}
                   {c.quota ? ` · ใช้แล้ว ${c.used || 0}/${c.quota}` : c.used ? ` · ใช้แล้ว ${c.used}` : ''}
+                  {/* 🔴 **โควตาเต็ม = โค้ดตายเหมือนหมดอายุ แต่ของเดิมบอกแค่วันหมดอายุ** (แก้ 18 ก.ย. 2569)
+                      คนเขียนจอคิดเรื่อง "โค้ดตาย" มาแล้ว แต่คิดแค่ทางเวลา ไม่ได้คิดทางโควตา
+                      ⇒ ลูกค้าที่เห็นโปรจากโฆษณาจะกดใช้ไม่ได้ที่หน้าจ่ายเงิน โดยฝั่งร้านไม่รู้ตัวเลย
+                      ⚠️ `quota: 0` ในระบบนี้แปลว่า **ไม่จำกัด** ไม่ใช่โควตาศูนย์ ⇒ ต้องไม่เตือน (เงื่อนไข `c.quota > 0` ข้างล่างคุมไว้) */}
+                  {c.quota > 0 && (c.used || 0) >= c.quota
+                    ? <b className="text-red-600"> · โควตาเต็มแล้ว — ลูกค้ากดใช้ไม่ได้</b>
+                    : c.quota > 0 && (c.used || 0) / c.quota >= 0.9
+                      ? <b className="text-amber-700"> · โควตาใกล้เต็ม</b>
+                      : null}
                   {c.until ? ` · ถึง ${new Date(c.until).toLocaleDateString('th-TH', { day: 'numeric', month: 'short' })}` : ''}
                 </span>
               </span>
