@@ -463,11 +463,33 @@ export default function CoreSalesPage() {
       amount: voidedRows.reduce((n, r) => n + Number(r.amount || 0), 0),
     }
     : null
+  /* 🔴 **แท็บหายทั้งแท็บตอนกรอง — เจอด้วยการกดจริง 18 ก.ย. 2569 (งานยืน ZORT 100%)**
+     เดิมสร้างแท็บจาก `byStatus` ตรง ๆ ⇒ สถานะที่ผลลัพธ์รอบนั้นไม่มี **หายไปทั้งปุ่ม**
+     ของจริง: ก่อนค้น 5 แท็บ (ทั้งหมด · สำเร็จ · ยกเลิก 98 · รอโอน 14 · รอส่ง 2)
+              ค้น "SO-2026" ⇒ เหลือ 3 แท็บ · **ยกเลิก กับ รอส่ง หายไปเลย**
+     ⇒ คนที่ค้นแล้วอยากรู้ว่า "ในผลนี้มีใบยกเลิกไหม" อ่านได้ว่า **จอนี้ไม่มีตัวกรองนั้น**
+        ทั้งที่ความจริงคือ **กรองแล้วไม่เจอสักใบ** — สองอย่างนี้ต่างกันมาก
+     ⇒ ขัดกฎที่โปรเจกต์เขียนไว้เอง (จอโอนสินค้า: "แท็บที่เป็น 0 ก็ต้องโชว์")
+     ⚠️ **สามสถานะ ห้ามยุบ**: มี byStatus แล้วไม่เจอสถานะนั้น = **0 ใบจริง** (นับจากชุดที่กรองแล้ว)
+        · ไม่มี byStatus เลย (ท่อรุ่นเก่า/ล้ม) = **ไม่รู้** ⇒ ส่ง undefined ให้ Tabs ⇒ ไม่มีวงเล็บ
+     ⚠️ จำลำดับจากรอบแรกที่เห็น เพื่อไม่ให้ปุ่มสลับที่ตอนกรอง (ปุ่มขยับ = คนกดผิด) */
+  const [สถานะที่เคยเห็น, setสถานะที่เคยเห็น] = useState<string[]>([])
+  useEffect(() => {
+    const มา = (data?.byStatus ?? []).map((r) => r.status).filter(Boolean) as string[]
+    if (!มา.length) return
+    setสถานะที่เคยเห็น((เดิม) => {
+      const เพิ่ม = มา.filter((x) => !เดิม.includes(x))
+      return เพิ่ม.length ? [...เดิม, ...เพิ่ม] : เดิม
+    })
+  }, [data])
+
+  const นับสถานะ = (st: string) => {
+    if (!Array.isArray(data?.byStatus)) return undefined          // ไม่รู้ ≠ 0
+    return Number(data!.byStatus!.find((r) => r.status === st)?.orders ?? 0)
+  }
   const tabs = [
     { id: '', label: 'ทั้งหมด', count: allCount || data?.total },
-    ...(data?.byStatus ?? []).map((r) => ({
-      id: r.status, label: statusTh(r.status), count: r.orders,
-    })),
+    ...สถานะที่เคยเห็น.map((st) => ({ id: st, label: statusTh(st), count: นับสถานะ(st) })),
   ]
 
   return (
