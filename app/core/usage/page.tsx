@@ -85,6 +85,16 @@ export default function CoreUsagePage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [at, setAt] = useState<Date | null>(null)
+  /* 💳 เครดิตแยกประเภท — ของที่ตอบคำถาม "อะไรเผาเครดิต" ได้ตรงที่สุด
+     🔴 **ที่มา 18 ก.ย. 2569**: เว็บล่มเพราะเครดิตหมด แล้วทั้งทีมเถียงกันว่าอะไรเป็นตัวเผา
+        ตัวเลขนี้มีอยู่ในคำตอบของท่อมาตลอด (`top`) **แต่ไม่มีใครเห็นถ้าไม่ยิงเอง**
+        ⇒ ของที่ต้องยิงเองถึงจะเห็น เท่ากับไม่มีสำหรับคนที่ต้องตัดสินใจ */
+  const [cred, setCred] = useState<{
+    plan?: number | null; used?: number | null; left?: number | null
+    planConfirmed?: boolean; planSource?: string | null
+    stale?: boolean; unknown?: boolean; off?: boolean
+    top?: [string, number][] | null; at?: number | null
+  } | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -104,6 +114,18 @@ export default function CoreUsagePage() {
   }, [])
 
   useEffect(() => { load() }, [load])
+  /* 🔴 **เครดิตต้องโหลดแยก ไม่ผูกกับเส้น usage** (แก้ 18 ก.ย. 2569)
+     สองเส้นนี้ใช้คีย์คนละใบ: `usage=1` ต้องมี NETLIFY_API_TOKEN · เครดิตใช้คีย์หลังร้านของเรา
+     ⇒ เอาไปผูกกัน = วันที่คีย์ตัวแรกหาย **การ์ดเครดิตหายไปด้วยทั้งที่อ่านได้ปกติ**
+     (บั๊กคลาสเดียวกับที่เพิ่งไปแก้ให้จอมาร์เก็ตเพลส: ประตูเดียวคุมของหลายกอง) */
+  useEffect(() => {
+    let alive = true
+    fetch('/api/netlify-credits')
+      .then((r) => r.json())
+      .then((j) => { if (alive) setCred(j) })
+      .catch(() => { if (alive) setCred({ unknown: true }) })
+    return () => { alive = false }
+  }, [])
 
   const w: Win = d?.windows?.[win] ?? {}
   const rowsBySite: SiteRow[] = Array.isArray(w.bySite) && w.bySite.length ? w.bySite
@@ -125,6 +147,61 @@ export default function CoreUsagePage() {
 
       {error && <ErrorBox title="อ่านข้อมูลการใช้งานไม่ได้">{error}</ErrorBox>}
       {loading && !d && <LoadingState />}
+
+      {/* 💳 การ์ด "อะไรเผาเครดิต" — ตอบคำถามของท่านประธาน 18 ก.ย. 2569 ด้วยตัวเลขแยกประเภท
+              ⚠️ ไม่รู้ ≠ 0 · ค่าค้าง (stale) ต้องเขียนกำกับ · ไม่มีเพดานยืนยัน ต้องบอก */}
+          {cred && (
+            <Card className="mb-4">
+              <p className="text-[14.5px] font-semibold text-gray-900 mb-1">อะไรเผาเครดิตรอบบิลนี้</p>
+              {cred.off ? (
+                <p className="text-[12.5px] text-gray-500">ยังไม่ได้ตั้งคีย์อ่านเครดิต — จอนี้ยังไม่ได้เฝ้าอะไรเลย</p>
+              ) : cred.unknown || typeof cred.used !== 'number' ? (
+                <p className="text-[12.5px] text-gray-500">
+                  อ่านเครดิตไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าใช้ไป 0</b> แปลว่ายังไม่รู้
+                </p>
+              ) : (
+                <>
+                  <p className="text-[13px] text-gray-700">
+                    ใช้ไป <b>{fmtNum(Math.round(cred.used))}</b>
+                    {typeof cred.plan === 'number' && <> จาก {fmtNum(cred.plan)} เครดิต</>}
+                    {typeof cred.left === 'number' && <> · เหลือ <b>{fmtNum(Math.round(cred.left))}</b></>}
+                    {cred.stale && <span className="text-amber-800"> · ⚠️ ค่านี้ไม่ใช่ของสด เป็นค่าที่อ่านได้ครั้งล่าสุด</span>}
+                    {!cred.planConfirmed && <span className="text-gray-400"> · เพดานยังไม่ได้ยืนยันจาก Netlify</span>}
+                  </p>
+                  {Array.isArray(cred.top) && cred.top.length > 0 ? (
+                    <table className="mt-2 text-[12.5px]">
+                      <tbody>
+                        {cred.top.map(([ชื่อ, เครดิต]) => {
+                          const pct = cred.used ? Math.round((Number(เครดิต) / cred.used) * 1000) / 10 : null
+                          return (
+                            <tr key={ชื่อ}>
+                              <td className="pr-3 text-gray-600">{ชื่อ}</td>
+                              <td className="pr-3 text-right font-semibold text-gray-900 tabular-nums">{fmtNum(Number(เครดิต))}</td>
+                              <td className="text-gray-400 tabular-nums">{pct === null ? '' : `${pct}%`}</td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  ) : (
+                    /* ⚠️ ไม่มีรายละเอียด ≠ ไม่มีการใช้งาน */
+                    <p className="text-[12px] text-gray-400 mt-1">ท่อไม่ได้ส่งรายละเอียดแยกประเภทมารอบนี้</p>
+                  )}
+                  <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
+                    📏 <b>ราคาของ deploy วัดจริงแล้ว 18 ก.ย. 2569: ~15 เครดิตต่อครั้ง</b>
+                    {' '}(วันนั้น deploy 2 ครั้ง = 30 เครดิต · และทั้งเดือนก่อนหน้า 886 ครั้ง = 13,290 เครดิต — หารได้ 15.0 เท่ากัน)
+                    <span className="block">
+                      ⇒ งบที่ตั้งไว้ <b>667 เครดิต/วัน</b> (20,000 ÷ 30) เท่ากับ <b>ราว 44 deploy/วัน</b> ทั้งสองระบบรวมกัน
+                      {' '}· กติกาปัจจุบัน <b>1 deploy/วัน/repo</b> จึงห่างจากเพดานมาก
+                    </span>
+                    <span className="block text-gray-400">
+                      ⚠️ ตัวเลขนี้เป็น<b>ตัวขับเคลื่อนเครดิต</b>ตามที่ Netlify แบ่งหมวดให้ ไม่ใช่รายการบิล
+                    </span>
+                  </p>
+                </>
+              )}
+            </Card>
+          )}
 
       {/* ⚠️ ยังไม่ได้ตั้งคีย์ = ต้องบอกวิธีตรง ๆ **ห้ามขึ้นจอว่าง** ให้เดาเอาเองว่าพังหรือไม่มีข้อมูล */}
       {d?.skip && (
