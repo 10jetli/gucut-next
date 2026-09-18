@@ -50,6 +50,22 @@ const pageFiles = walk("app", "page.tsx");
 const pages = pageFiles.map((p) => p.replace(/^app/, "").replace(/\/page\.tsx$/, "") || "/").sort();
 const corePages = pages.filter((p) => p.startsWith("/core"));
 
+/* ── ปุ่มส่งจริง: จอไหนเปิดแล้ว จอไหนยังปิด ──────────────────────
+   🔴 **ที่มา 18 ก.ย. 2569** — เอกสารเทียบเมนูเขียนว่า "ปุ่มส่งจริงยังปิด" อยู่ 3 จุด
+      ทั้งที่ท่านประธานสั่งเปิดไปแล้ว 4 จอ · คอมเมนต์ในโค้ดเองก็ค้างอีกจุด
+      ⇒ คลาสเดียวกับ "คำกล่าวอ้างหมดอายุ": ไม่มีใครโกหก แค่ไม่มีใครไล่แก้ทุกที่ที่เคยเขียน
+   ⇒ ให้ **โค้ดเป็นคนตอบ** ว่าใบไหนเปิด ไม่ใช่ความจำของคนเขียนเอกสาร
+   ⚠️ จอที่ไม่มีตัวแปรนี้ = จอที่ไม่ได้เขียนข้อมูลออกนอกระบบ ⇒ ไม่นับ ไม่ใช่ "ปิด"
+      (ไม่รู้ ≠ ปิด — ถ้านับเป็นปิด เลข "ยังปิด" จะพองด้วยจอที่ไม่เกี่ยวเลย) */
+const realSend = pageFiles
+  .map((f) => {
+    const m = read(f).match(/const\s+REAL_SEND_ENABLED\s*=\s*(true|false)\b/);
+    if (!m) return null;
+    return { path: f.replace(/^app/, "").replace(/\/page\.tsx$/, ""), open: m[1] === "true" };
+  })
+  .filter(Boolean)
+  .sort((a, b) => a.path.localeCompare(b.path));
+
 /* ── ถังเก็บข้อมูลของฝั่งนี้ (คนละชุดกับหน้าร้าน) ───────────────── */
 const sources = [...walk("app", "route.ts"), ...walk("app", "page.tsx"), ...list("lib").map((e) => `lib/${e.name}`)]
   .filter((p) => p.endsWith(".ts") || p.endsWith(".tsx"))
@@ -120,6 +136,11 @@ const data = {
   pages: { count: pages.length, core: corePages.length, coreNames: corePages },
   blobs,
   pipe: { allow: pipeAllow, count: pipeAllow.length },
+  realSend: {
+    screens: realSend,
+    open: realSend.filter((r) => r.open).length,
+    closed: realSend.filter((r) => !r.open).length,
+  },
   integrations,
   unlabelled,
 };
@@ -136,6 +157,7 @@ writeFileSync(
 console.log(
   `gen-arch(หลังร้าน): API ${apiRoutes.length} เส้นทาง · หน้า ${pages.length} (core ${corePages.length}) · ` +
     `ถัง ${blobs.length} · ท่อกลางอนุญาต ${pipeAllow.length} · ` +
+    `ปุ่มส่งจริง เปิด ${realSend.filter((r) => r.open).length}/${realSend.length} · ` +
     `ของนอกบ้าน ${integrations.filter((i) => i.inCode).length}/${integrations.length}` +
     (unlabelled.length ? ` · ⚠️ ตัวแปรยังไม่จัดหมวด ${unlabelled.length}` : "")
 );

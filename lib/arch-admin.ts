@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-18T09:20:17.235Z",
+  "generatedAt": "2026-09-18T09:28:37.045Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
@@ -181,6 +181,60 @@ export const ARCH_ADMIN = {
       "zort-archive"
     ],
     "count": 25
+  },
+  "realSend": {
+    "screens": [
+      {
+        "path": "/core/branches/new",
+        "open": false
+      },
+      {
+        "path": "/core/bundles/new",
+        "open": false
+      },
+      {
+        "path": "/core/customers/new",
+        "open": false
+      },
+      {
+        "path": "/core/import",
+        "open": false
+      },
+      {
+        "path": "/core/purchases/detail",
+        "open": false
+      },
+      {
+        "path": "/core/purchases/new",
+        "open": true
+      },
+      {
+        "path": "/core/purchases/returns/new",
+        "open": false
+      },
+      {
+        "path": "/core/quotations/new",
+        "open": true
+      },
+      {
+        "path": "/core/sales/new",
+        "open": true
+      },
+      {
+        "path": "/core/stock/[sku]/edit",
+        "open": false
+      },
+      {
+        "path": "/core/stock/cost",
+        "open": false
+      },
+      {
+        "path": "/core/stock/new",
+        "open": true
+      }
+    ],
+    "open": 4,
+    "closed": 8
   },
   "integrations": [
     {

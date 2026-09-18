@@ -275,10 +275,14 @@ export default function ArchPage() {
     pages?: { count?: number; core?: number }
     blobs?: string[]
     pipe?: { count?: number }
+    realSend?: { screens?: { path: string; open: boolean }[]; open?: number; closed?: number }
     integrations?: { id: string; name: string; what: string; inCode: boolean }[]
     unlabelled?: string[]
   }
   const adminBlobs = Array.isArray(A.blobs) ? A.blobs : []
+  /* จอที่เขียนข้อมูลออกนอกระบบได้ — ตัวสแกนอ่าน REAL_SEND_ENABLED จากซอร์สตอน build
+     ⚠️ จอที่ไม่มีตัวแปรนี้ไม่อยู่ในรายการ (ไม่เกี่ยว ≠ ปิด) */
+  const realSend = Array.isArray(A.realSend?.screens) ? A.realSend!.screens! : []
   const adminInts = Array.isArray(A.integrations) ? A.integrations : []
   const adminStamp = A.generatedAt
     ? new Date(A.generatedAt).toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short' })
@@ -551,6 +555,36 @@ export default function ArchPage() {
                           ไม่พบการเรียกใช้ในโค้ด
                         </span>
                       )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ── ปุ่มส่งจริง — จอไหนเขียนของจริงออกนอกระบบได้แล้ว ──
+                🔴 **เกิดจากของจริง 18 ก.ย. 2569**: เอกสารเทียบเมนูเขียนว่า "ปุ่มส่งจริงยังปิด" อยู่ 3 จุด
+                   และคอมเมนต์ในโค้ดอีก 1 จุด ทั้งที่ท่านประธานสั่งเปิดไปแล้ว 4 จอ
+                   ⇒ ไม่มีใครโกหก แค่ไม่มีใครไล่แก้ทุกที่ที่เคยเขียน · คำตอบคือให้โค้ดเป็นคนตอบ
+                ⚠️ นี่คือคำถามที่ตอบผิดแล้วอันตรายที่สุดในระบบนี้ (เปิด = เขียนของจริงเข้า ZORT ได้) */}
+            {realSend.length > 0 && (
+              <div className="rounded-lg border p-3.5" style={{ background: C.surface, borderColor: C.line }}>
+                <p className="text-[13.5px] font-semibold mb-1" style={{ color: C.ink }}>
+                  ปุ่มส่งจริง — เปิด {realSend.filter((r) => r.open).length} จาก {realSend.length} จอ
+                </p>
+                <p className="text-[11.5px] mb-2" style={{ color: C.muted }}>
+                  อ่านจาก <code>REAL_SEND_ENABLED</code> ในซอร์สตอน build ·
+                  จอที่ไม่มีตัวแปรนี้<b>ไม่อยู่ในรายการ</b> เพราะไม่ได้เขียนข้อมูลออกนอกระบบ (ไม่เกี่ยว ≠ ปิด)
+                </p>
+                <div className="space-y-1">
+                  {realSend.map((r) => (
+                    <div key={r.path} className="flex flex-wrap items-baseline gap-2">
+                      <span className="text-[10.5px] rounded px-1.5 py-0.5"
+                        style={r.open
+                          ? { background: '#FEE2E2', color: '#991B1B' }
+                          : { background: C.surface2, color: C.muted }}>
+                        {r.open ? 'เปิด — ส่งของจริงได้' : 'ยังปิด'}
+                      </span>
+                      <span className="text-[12.5px] font-mono" style={{ color: C.ink }}>{r.path}</span>
                     </div>
                   ))}
                 </div>
