@@ -34,7 +34,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { fmtMoney, fmtNum, thaiDate } from '@/lib/format'
 import {
-  recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, RECIPE_SYNC_LABEL,
+  recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, ป้ายรอบซิงก์,
 } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -104,6 +104,11 @@ export default function BundleDetailPage() {
   const [collectedAt, setCollectedAt] = useState('')
   /* ⚠️ สามเวลานี้ตอบคนละคำถาม — เก็บแยกกันเด็ดขาด (ดูหัวไฟล์) */
   const [checkedAt, setCheckedAt] = useState<string | null>(null)
+  /* 🔑 เกณฑ์ความสดมาจากท่อ ไม่ใช่เลขฝังในจอ (ฝั่งท่อ b33e3f7 — คิดจาก cron จริง)
+     ⚠️ ต้องแยก **undefined (ท่อรุ่นเก่า)** ออกจาก **null (ท่ออ่าน cron ไม่ได้)**
+        ⇒ เก็บเป็น `undefined` เริ่มต้น และห้ามเขียน `?? อะไร` ตอนส่งต่อ */
+  const [เกณฑ์, setเกณฑ์] = useState<number | null | undefined>(undefined)
+  const [รอบชั่วโมง, setรอบชั่วโมง] = useState<number | null | undefined>(undefined)
   const [stockSyncedAt, setStockSyncedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -147,6 +152,8 @@ export default function BundleDetailPage() {
       setItems(Array.isArray(iRes?.rows) ? iRes.rows : [])
       setCollectedAt(typeof iRes?.collectedAt === 'string' ? iRes.collectedAt : '')
       setCheckedAt(typeof iRes?.recipeCheckedAt === 'string' ? iRes.recipeCheckedAt : null)
+      setเกณฑ์('recipeStaleAfterHours' in (iRes ?? {}) ? iRes.recipeStaleAfterHours : undefined)
+      setรอบชั่วโมง('recipeExpectedEveryHours' in (iRes ?? {}) ? iRes.recipeExpectedEveryHours : undefined)
       /* 🧾 รายการขายของชุด — ยิงแยกและ **ไม่ให้ล้มทั้งหน้า** ถ้าเส้นนี้พลาด
          (ของหลักคือสูตรชุดกับสต็อก · ตารางขายเป็นส่วนเสริม)
          ⚠️ ล้มเหลว = เขียนว่าอ่านไม่ได้ **ห้ามขึ้นว่าไม่มีการขาย** */
@@ -220,7 +227,8 @@ export default function BundleDetailPage() {
 
   const img = imgOf(sku)
   /* ⚠️ ลำดับ argument สำคัญ: checkedAt ก่อน changedAt (เทส recipe-fresh คุมการสลับไว้) */
-  const fresh = recipeFreshness(checkedAt, collectedAt || null)
+  const fresh = recipeFreshness(checkedAt, collectedAt || null, Date.now(), เกณฑ์)
+  const รอบ = ป้ายรอบซิงก์(รอบชั่วโมง)
   const stock = stockSyncFreshness(stockSyncedAt)
   const unit = bundle?.unit || 'SET'
 
@@ -645,15 +653,25 @@ export default function BundleDetailPage() {
           {/* ── ความสดของข้อมูลสองชุด (สูตร vs ตัวเลขสต็อก) ───────────────── */}
           <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
             {fresh.state === 'ok' && (
-              <>✅ สูตรชุดนี้<b>ซิงก์จาก ZORT อัตโนมัติ{RECIPE_SYNC_LABEL}</b> — ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
+              <>✅ สูตรชุดนี้<b>ซิงก์จาก ZORT อัตโนมัติ{รอบ && ` ${รอบ}`}</b> — ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
                 {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}</>
             )}
             {fresh.state === 'stale' && (
-              <span className="text-amber-800">🔴 ควรตรวจ{RECIPE_SYNC_LABEL} แต่ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
+              <span className="text-amber-800">🔴 ควรตรวจ{รอบ && ` ${รอบ}`} แต่ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
                 {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>} ⇒ <b>ตัวซิงก์น่าจะหยุด</b></span>
             )}
             {fresh.state === 'unknown' && (
               <>⚠️ ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่ (ท่อไม่ได้ส่งเวลามา) — <b>ไม่ได้แปลว่าซิงก์หยุด</b></>
+            )}
+            {/* 🔴 **สถานะใหม่ต้องมีสาขาทุกจอที่เรนเดอร์สถานะ** ไม่งั้นจอเงียบสนิทตอนท่อบอกว่าไม่รู้รอบ
+                (เพิ่มสถานะแล้วลืมจอใดจอหนึ่ง = จอนั้นจะไม่พูดอะไรเลย ซึ่งอ่านเหมือน "ปกติ") */}
+            {fresh.state === 'ไม่รู้รอบ' && (
+              <span className="text-gray-600">⚠️ ยังไม่รู้ว่าควรซิงก์รอบไหน (ท่ออ่านตารางงานไม่ได้) — ตรวจล่าสุด{' '}
+                <b>{thaiMoment(fresh.checkedThai)}</b>
+                {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>} ⇒ <b>บอกไม่ได้ว่าสดหรือหยุด</b></span>
+            )}
+            {fresh.ใช้ค่าสำรอง && (
+              <span className="text-gray-500"> (ท่อรุ่นนี้ยังไม่ส่งรอบมา — ใช้เกณฑ์สำรอง)</span>
             )}
             {fresh.changedThai && (
               <> · สูตร<b>เปลี่ยนล่าสุด</b> {thaiMoment(fresh.changedThai)}

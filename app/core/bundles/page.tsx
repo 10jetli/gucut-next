@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
-import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, RECIPE_SYNC_LABEL } from '@/lib/recipe-fresh'
+import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, ป้ายรอบซิงก์ } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
@@ -54,6 +54,13 @@ interface Resp {
   total: number
   active?: number
   inactive?: number
+  /* 🔑 เกณฑ์ความสด **มาจากท่อ** (ฝั่งท่อ b33e3f7 · คิดจาก cron จริงในสารบัญที่ build สร้าง)
+     ⚠️ สามสถานะ: มีเลข = ใช้เลขนั้น · `null` = ท่ออ่าน cron ไม่ได้ ⇒ ไม่รู้รอบ
+        · **ไม่มีคีย์เลย** = ท่อรุ่นเก่า ⇒ ใช้เกณฑ์สำรองแต่ต้องประกาศบนจอ */
+  recipeExpectedEveryHours?: number | null
+  recipeStaleAfterHours?: number | null
+  recipeExpectedCron?: string | null
+  recipeExpectedNote?: string | null
   negative?: number
   /** ✅ ท่อเปิดให้ 18 ก.ย. 2569 (gucut-web 8af6ef0) — **ตัวนับที่เดินตามตัวกรอง `only`**
    *  `total` ยัง**ข้าม** only โดยตั้งใจ (แท็บต้องเห็นของทุกกอง เหมือนกติกา byStatus ของใบโอน)
@@ -177,7 +184,12 @@ export default function CoreBundlesPage() {
 
   /* ความสดของการซิงก์สูตรชุด — ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว (มีเทสคุม)
      ⚠️ ส่ง checkedAt ก่อน changedAt **ห้ามสลับ** — สลับแล้วจอจะขึ้นว่าซิงก์หยุดทั้งที่ปกติ */
-  const fresh = recipeFreshness(data?.recipeCheckedAt, data?.recipeAt ?? data?.collectedAt)
+  /* 🔑 เกณฑ์มาจากท่อ (`recipeStaleAfterHours`) ไม่ใช่เลขฝังในจอ — ฝั่งท่อคิดจาก cron จริง
+     ⚠️ ส่งค่าดิบไปตรง ๆ **ห้ามแปลง `?? ค่าอะไร`** เพราะ undefined (ท่อรุ่นเก่า)
+        กับ null (ท่ออ่าน cron ไม่ได้) ต้องออกคนละทาง — ดู lib/recipe-fresh.ts */
+  const fresh = recipeFreshness(data?.recipeCheckedAt, data?.recipeAt ?? data?.collectedAt,
+    Date.now(), data?.recipeStaleAfterHours)
+  const รอบ = ป้ายรอบซิงก์(data?.recipeExpectedEveryHours)
   /* 🔴 **นาฬิกาที่สอง** — ความสดของ *ตัวเลข* คงเหลือ/พร้อมขาย (คนละอันกับความสดของ *สูตร*)
      ⚠️ ห้ามส่ง recipeCheckedAt/recipeAt เข้าตัวนี้ (ฝั่งท่อกำชับ · เทสข้อ ⑤ ดักไว้) */
   const stock = stockSyncFreshness(data?.stockSyncedAt)
@@ -299,16 +311,30 @@ export default function CoreBundlesPage() {
                  กับ ตรวจกับ ZORT ล่าสุด (อันนี้คือความสด) — ดู lib/recipe-fresh.ts */}
           <div className={`text-[12.5px] rounded-md px-3.5 py-2.5 mb-3 leading-relaxed border ${
             fresh.state === 'stale' ? 'text-amber-900 bg-amber-50 border-amber-300'
-              : fresh.state === 'unknown' ? 'text-gray-700 bg-gray-50 border-gray-300'
+              : (fresh.state === 'unknown' || fresh.state === 'ไม่รู้รอบ') ? 'text-gray-700 bg-gray-50 border-gray-300'
                 : 'text-emerald-900 bg-emerald-50 border-emerald-200'}`}>
             {fresh.state === 'ok' && (
-              <>✅ <b>สูตรชุดซิงก์จาก ZORT อัตโนมัติ{RECIPE_SYNC_LABEL}</b> — ตรวจกับ ZORT ล่าสุด
+              <>✅ <b>สูตรชุดซิงก์จาก ZORT อัตโนมัติ{รอบ && ` ${รอบ}`}</b> — ตรวจกับ ZORT ล่าสุด
                 {' '}<b>{thaiMoment(fresh.checkedThai)}</b>{fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}</>
             )}
             {fresh.state === 'stale' && (
-              <>🔴 <b>สูตรชุดควรซิงก์{RECIPE_SYNC_LABEL} แต่ตรวจล่าสุดเมื่อ {thaiMoment(fresh.checkedThai)}</b>
+              <>🔴 <b>สูตรชุดควรซิงก์{รอบ && ` ${รอบ}`} แต่ตรวจล่าสุดเมื่อ {thaiMoment(fresh.checkedThai)}</b>
                 {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}
                 {' '}⇒ <b>ตัวซิงก์น่าจะหยุด</b> · ตัวเลขที่นี่อาจเก่ากว่าของจริงใน ZORT</>
+            )}
+            {/* 🔴 ท่อบอกเองว่าอ่านรอบไม่ได้ ⇒ **มีอายุ แต่ไม่มีเส้นแบ่ง** ⇒ ตัดสินไม่ได้
+                ห้ามถอยไปใช้เลขฝัง (ฝั่งท่อกำชับ: ถอยเมื่อไหร่ก็กลับไปมีสองแหล่งความจริง) */}
+            {fresh.state === 'ไม่รู้รอบ' && (
+              <>⚠️ <b>ยังไม่รู้ว่าสูตรชุดควรซิงก์รอบไหน</b> (ท่ออ่านตารางงานไม่ได้)
+                {' '}— ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
+                {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}
+                {' '}⇒ <b>บอกไม่ได้ว่าสดหรือหยุด</b> ไม่ใช่ว่าปกติ</>
+            )}
+            {/* ⚠️ ทางถอยต้อง **พูดออกมา** ไม่ใช่ตัดสินเงียบ ๆ ด้วยเลขที่ตกลงกันไว้เมื่อวาน */}
+            {fresh.ใช้ค่าสำรอง && (
+              <span className="block text-[11.5px] text-gray-500 mt-1">
+                (ท่อรุ่นนี้ยังไม่ส่งรอบมาให้ — ตัดสินด้วยเกณฑ์สำรองที่ตกลงกันไว้ ไม่ใช่รอบที่ท่อยืนยัน)
+              </span>
             )}
             {fresh.state === 'unknown' && (
               <>⚠️ <b>ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่</b> (ท่อไม่ได้ส่งเวลามา)
