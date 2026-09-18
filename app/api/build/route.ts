@@ -29,12 +29,23 @@ export async function GET(req: NextRequest) {
   const required = process.env.DRIVESYNC_SECRET
   if (!required || req.nextUrl.searchParams.get('secret') !== required) {
     /* ⚠️ ตอบสั้นและเหมือนกันทุกกรณีที่ไม่ผ่าน — ไม่บอกว่าเพราะไม่มี env หรือรหัสผิด */
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    /* 🔴 **401 ของเส้นนี้ต้องแยกออกจาก 401 ของด่านล็อกอิน** (แก้ 18 ก.ย. 2569 · เจอกับตัวเอง)
+       ยิงตอนยังไม่ deploy ได้ 401 · ยิงตอน deploy แล้วแต่รหัสผิดก็ได้ 401 เหมือนกันเป๊ะ
+       ⇒ ตัวเฝ้าแยกไม่ออก ต้องไปยิงเส้นอื่นมาเป็นตัวควบคุมทุกครั้ง
+       ⇒ ใส่หัว `x-gucut-route: build` = หลักฐานว่าเส้นนี้มีอยู่แล้ว โดยไม่เปิดเผยอะไรเลย */
+    return NextResponse.json({ error: 'Unauthorized' }, {
+      status: 401,
+      headers: { 'x-gucut-route': 'build' },
+    })
   }
   /* อ่านตอนถูกเรียก (ไม่ใช่ตอน import) — Netlify ใส่ค่าให้ตั้งแต่ build และคงอยู่ในฟังก์ชัน */
-  const commit = process.env.COMMIT_REF || null
-  const branch = process.env.BRANCH || null
-  const context = process.env.CONTEXT || null
+  /* 🔴 **อ่านจากค่าที่ฝังตอน build** (next.config.mjs → `env`) ไม่ใช่ env ตอนถูกเรียก
+     ยิงของจริงหลัง deploy 18 ก.ย. 2569: `process.env.COMMIT_REF` ใน runtime = undefined
+     ⇒ เส้นนี้เคยคืน `commit: null` ทั้งที่ build สำเร็จ */
+  const commit = process.env.BUILD_COMMIT || null
+  const branch = process.env.BUILD_BRANCH || null
+  const context = process.env.BUILD_CONTEXT || null
+  const buildAtUtc = process.env.BUILD_AT || null
 
   return NextResponse.json({
     ok: true,
@@ -46,7 +57,9 @@ export async function GET(req: NextRequest) {
     context,
     /* 🔴 เวลานี้คือ **เวลาที่ตอบคำขอ** ไม่ใช่เวลาที่ build
        ⇒ ตั้งชื่อให้ตรงความหมาย ห้ามเรียกว่า buildAt เพราะคนจะเอาไปคิดอายุของรุ่นผิด */
+    /** เวลาที่ build รุ่นนี้ — ใช้ตอบว่าของที่วิ่งอยู่เก่าแค่ไหน */
+    buildAtUtc,
     servedAtUtc: new Date().toISOString(),
-    source: commit ? 'env ของ Netlify ตอน build' : 'ไม่มีค่าใน env — น่าจะรันนอก Netlify (เช่นในเครื่อง)',
+    source: commit ? 'ฝังตอน build จาก COMMIT_REF ของ Netlify' : 'ไม่มีค่าตอน build — น่าจะ build นอก Netlify (เช่นในเครื่อง)',
   })
 }

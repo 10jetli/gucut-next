@@ -49,6 +49,15 @@ interface Detail {
   lines?: { sku?: string; name?: string; qty?: number }[] | null
   fields?: string[]
   error?: string
+  /* 🔴 **ช่องใหม่จากท่อ 18 ก.ย. 2569 — จอเตรียมรับไว้ก่อนท่อขึ้นเว็บ** (กฎฝั่งรับเตรียมช่องก่อน)
+     ที่มา: ยิงของจริงวันนี้พบว่า ZORT ตอบ `resCode 100 · "Invalid ID."` ทั้งกรณี
+     **ใบไม่มีอยู่จริง** และกรณี **ใบมีอยู่แต่ API เราเข้าไม่ถึง** (ใบของคลัง KLD/ANJ)
+     ⇒ แยกจากคำตอบเดียวไม่ได้ ⇒ ท่อจึงติดธง `ambiguousMissing` มาให้
+     ⚠️ **ห้ามเขียนบนจอว่า "ไม่มีใบนี้"** เมื่อธงนี้ขึ้น — ใบ KLD มีอยู่จริง อ่านมาจากจอ ZORT เอง */
+  denied?: boolean
+  ambiguousMissing?: boolean
+  resCode?: string
+  resDesc?: string
 }
 interface Line { sku: string; qty: string }
 
@@ -100,6 +109,8 @@ export default function ReceivePage() {
   const [err, setErr] = useState('')
   /** ค้นแล้วไม่เจอ — **คนละสถานะกับค้นไม่สำเร็จ** (ต้องเขียนคนละคำ) */
   const [notFound, setNotFound] = useState(false)
+  /** เหตุที่ ZORT ตอบกลับตอนดึงสด — ใช้เขียนข้อความให้ตรงเหตุ ไม่ใช่เหมาว่า "ไม่พบ" */
+  const [liveWhy, setLiveWhy] = useState<Detail | null>(null)
   const [result, setResult] = useState<MoveResp | null>(null)
 
   const find = useCallback(async () => {
@@ -112,6 +123,7 @@ export default function ReceivePage() {
             กระจกซิงก์ทุกครึ่งชั่วโมง = ใบที่เพิ่งเปิดจะยังไม่มี */
       const d: Detail = await fetch(`/api/web/core?transfer=${encodeURIComponent(term)}`)
         .then((x) => x.json()).catch(() => ({ error: 'เรียกไม่สำเร็จ' }))
+      setLiveWhy(d && d.error ? d : null)
       if (d && !d.error && d.number) {
         setDetail(d); setSrc('live')
         setDoc({ number: d.number, status: d.status, from_wh: d.from, to_wh: d.to, transfer_date: d.date })
@@ -290,7 +302,20 @@ export default function ReceivePage() {
           {notFound && (
             /* ⚠️ สามสถานะ: ไม่พบใบ / ค้นไม่สำเร็จ (ขึ้นกล่องแดงข้างบน) / ยังไม่ได้ค้น */
             <div className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-4 text-left leading-relaxed">
-              <b>ไม่พบใบโอนที่ตรงกับ &ldquo;{q.trim()}&rdquo;</b> — ค้นจากเลขใบและเลขอ้างอิงในคลังเงา
+              {/* 🔴 **"ไม่พบ" ไม่เท่ากับ "ไม่มี"** — ถ้าท่อบอกว่าแยกไม่ออก ต้องเขียนตามนั้น */}
+              {liveWhy?.ambiguousMissing || liveWhy?.denied ? (
+                <>
+                  <b>ยังบอกไม่ได้ว่าใบนี้มีอยู่หรือไม่</b> — ZORT ตอบ
+                  {' '}<span className="font-mono">{liveWhy.resDesc || liveWhy.resCode || 'รหัสปฏิเสธ'}</span>
+                  {' '}ซึ่ง<b>แยกไม่ออกระหว่าง &ldquo;ไม่มีใบนี้&rdquo; กับ &ldquo;มีอยู่แต่ระบบเราเข้าไม่ถึง&rdquo;</b>
+                  <br />
+                  📌 ของจริงที่วัดไว้ 18 ก.ย. 2569: ใบของคลัง <b>KLD</b> และ <b>ANJ</b> เข้าไม่ถึงทั้งหมด
+                  {' '}(ใบโอนในกระจกเรามีแต่ของคลังโกดัง 12,005 ใบ · ของ ZORT ทั้งหมด 12,199)
+                  {' '}⇒ ถ้าใบนี้เป็นของสองคลังนั้น ให้รับของใน ZORT โดยตรงไปก่อน
+                </>
+              ) : (
+                <b>ไม่พบใบโอนที่ตรงกับ &ldquo;{q.trim()}&rdquo;</b>
+              )} — ค้นจากเลขใบและเลขอ้างอิงในคลังเงา
               <br />
               ค้นสองทางแล้วทั้งคู่: ดึงสดจาก ZORT และหาในคลังเงา
               <br />

@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-18T08:47:27.391Z",
+  "generatedAt": "2026-09-18T08:58:23.819Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
@@ -264,9 +264,11 @@ export const ARCH_ADMIN = {
     }
   ],
   "unlabelled": [
-    "BRANCH",
+    "BUILD_AT",
+    "BUILD_BRANCH",
+    "BUILD_COMMIT",
+    "BUILD_CONTEXT",
     "COMMIT_REF",
-    "CONTEXT",
     "NETLIFY",
     "STAFF_USERS_LOCAL_DIR"
   ]
