@@ -21,8 +21,11 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill } from '@/components/zort'
 import { thaiDate } from '@/lib/format'
+import PipeNote from '@/components/ui/PipeNote'
 /* serverTimeMs อยู่ใน returns-api (เกิดจากบั๊กโซนเวลาตอนประกบ /returns) — ตัวเดียวกันใช้ทุกจอ */
 import PushStatusBoard, { thaiDateTime, มีตัวยิง, type PushStateResp } from '@/components/zort/PushStatusBoard'
+/* ของค้างรายรหัส — กระดานบอกว่า "ระบบยังเดินอยู่ไหม" แต่ตอบไม่ได้ว่า "ตัวไหนไม่เคยขึ้นเลย" */
+import StuckPushList from '@/components/zort/StuckPushList'
 
 interface PushRow { sku?: string; from?: number; to?: number; kind?: string; result?: string; why?: string }
 interface PushRound {
@@ -263,6 +266,10 @@ export default function StockPushPage() {
         onAsk={loadPlan}
       />
 
+      {/* ของค้างรายรหัส — วางไว้เหนือแผนรอบถัดไปโดยตั้งใจ
+          เพราะ "ตัวที่ค้างมา 101 รอบแล้ว" สำคัญกว่า "รอบหน้าจะยิงอะไร" สำหรับคนที่เปิดจอมาแก้ปัญหา */}
+      <StuckPushList />
+
       {/* 🔴 ไม่มีปุ่มยิงจริง — บอกทางที่ถูกแทน */}
       <p className="text-[12px] text-blue-900 bg-blue-50 border border-blue-100 rounded-md px-3.5 py-2 mb-4 leading-relaxed">
         จอนี้<b>ดูอย่างเดียวโดยตั้งใจ</b> — การดันรอบใหม่เป็นการอนุมัติรายครั้งของเจ้าของร้าน
@@ -459,8 +466,8 @@ export default function StockPushPage() {
             {/* ข้อควรรู้จากท่อ — **อ่านจากคำตอบ ห้ามพิมพ์ตายไว้ในจอ** (ท่อแก้กติกาแล้วจอจะโกหกทันที) */}
             {(plan.safetyNote || plan.readNote) && (
               <div className="text-[11.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-3 leading-relaxed space-y-1">
-                {plan.readNote && <p>📖 {plan.readNote}</p>}
-                {plan.safetyNote && <p>🛡 {plan.safetyNote}</p>}
+                {plan.readNote && <p>📖 <PipeNote>{plan.readNote}</PipeNote></p>}
+                {plan.safetyNote && <p>🛡 <PipeNote>{plan.safetyNote}</PipeNote></p>}
               </div>
             )}
           </>

@@ -60,7 +60,7 @@ function walk(dir, out = []) {
 /* ⚠️ **ห้ามใช้ `[^)]*` ตรงกลาง** — ท่าที่เจอจริงคือ `thaiDate(String(x.at).slice(0, 10))`
    ซึ่งมีวงเล็บปิดคั่นอยู่ข้างใน ⇒ ด่านรุ่นแรกของผมเองปล่อยผ่านทั้งที่ปลูกบั๊กกลับเข้าไปแล้ว
    (พิสูจน์ด้วยการปลูกบั๊ก 18 ก.ย. 2569 — ถ้าไม่ลองจะได้ด่านที่ "เขียวเสมอ" ซึ่งแย่กว่าไม่มีด่าน) */
-const RE_ตัดก่อนแปลง = /\b(thaiDate|thaiShort|thaiDayTime)\s*\([^;]{0,120}?\.slice\(\s*0\s*,\s*10\s*\)/
+const RE_ตัดก่อนแปลง = /\b(thaiDate|thaiDateTime|thaiShort|thaiDayTime)\s*\([^;]{0,120}?\.slice\(\s*0\s*,\s*10\s*\)/
 const พบตัดก่อนแปลง = []
 
 const พบ = []
@@ -73,7 +73,9 @@ for (const file of [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components')
     if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*') || t.startsWith('{/*')) return
     if (RE_ตัดก่อนแปลง.test(ln)) พบตัดก่อนแปลง.push(`${rel}:${i + 1}  ${t.slice(0, 110)}`)
     if (!RE.test(ln)) return
-    if (/thaiDate|thaiShort|thaiDayTime|fmt[A-Z]/.test(ln)) return
+    /* thaiDateTime อยู่ที่ components/zort/PushStatusBoard.tsx — อ่านโค้ดยืนยันแล้ว 18 ก.ย. 2569
+       ว่าบวก +7 ชม.แล้วออกปี พ.ศ. (ใช้กับเวลาจากฐานซึ่งเป็น UTC) */
+    if (/thaiDate|thaiDateTime|thaiShort|thaiDayTime|fmt[A-Z]/.test(ln)) return
     if (ln.includes('${') || ln.includes('key=') || ln.includes('===')) return
     /* prop ของ component มักขึ้นบรรทัดใหม่ ⇒ มองย้อนขึ้นไป 3 บรรทัดหาแท็กที่เปิดอยู่
        (เจอจริง: `at={data.marketplacesAt} />` อยู่บรรทัดที่ 3 ของ <MarketCoverage …>) */
