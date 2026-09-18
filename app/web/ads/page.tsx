@@ -109,6 +109,19 @@ function SrcBlock({ title, s }: { title: string; s: Src }) {
   )
 }
 
+/** สคริปต์ Google Ads เงียบไปนานเกินกติกาหรือยัง
+ *
+ *  🔑 **ใช้เกณฑ์เดียวกับฝั่งท่อ (48 ชม.)** ที่ `netlify/functions/status.mjs` ใช้อยู่แล้ว —
+ *     สคริปต์ตั้งให้รันวันละครั้ง ⇒ เกินสองวันคือหยุดไปแล้วแน่ ๆ
+ *     ⚠️ **ห้ามตั้งเลขใหม่ให้ต่างจากฝั่งท่อ** ไม่งั้นจอสถานะกับจอนี้จะบอกคนละอย่างเรื่องเดียวกัน
+ *  ⚠️ ไม่เคยส่งเลย (`pushedAt` ว่าง) = คนละเรื่องกับ "ส่งแล้วแต่นานมาแล้ว" ⇒ คืน null ให้ผู้เรียกแยกเอง
+ */
+const SCRIPT_GRACE_HOURS = 48
+function scriptSilentHours(pushedAt?: number | null): number | null {
+  if (typeof pushedAt !== 'number' || !Number.isFinite(pushedAt) || pushedAt <= 0) return null
+  return Math.round((Date.now() - pushedAt) / 3600000)
+}
+
 export default function WebAdsPage() {
   const [cfg, setCfg] = useState<Cfg | null>(null)
   const [rep, setRep] = useState<Report | null>(null)
@@ -175,6 +188,13 @@ export default function WebAdsPage() {
                 {rep.roas !== null ? rep.roas.toFixed(2) : '—'}
               </p>
               <p className="text-[11px] text-gray-400 mt-1.5">ยอดขาย ÷ ค่าโฆษณา (เกิน 1 = คุ้ม)</p>
+              {/* คำเตือนต้องอยู่**ติดกับตัวเลขที่มันเตือน** ไม่ใช่ในกล่องอื่นที่ต้องเลื่อนไปหา
+                  (บทเรียน 18 ก.ย. 2569: คำเตือนที่ต้องไปหาถึงจะเห็น เท่ากับไม่มีสำหรับคนที่กำลังอ่านตัวเลข) */}
+              {(() => {
+                const ชม = scriptSilentHours(cfg?.google?.pushedAt)
+                if (ชม === null || ชม <= SCRIPT_GRACE_HOURS) return null
+                return <p className="text-[11px] text-amber-800 mt-1 font-semibold">⚠️ ตัวหารไม่ครบ — ค่าโฆษณาหยุดอัปเดตมา {ชม} ชม.</p>
+              })()}
             </div>
             <div className="bg-white rounded-2xl border border-gray-100/80 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
               <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ช่วงเวลา</p>
@@ -197,6 +217,21 @@ export default function WebAdsPage() {
             Google ส่งล่าสุด {cfg.google.pushedAt ? `${when(cfg.google.pushedAt)} · ${cfg.google.pushRows} แถว ${cfg.google.pushDays} วัน` : 'ยังไม่เคยส่งเข้ามา'}
             {' '}— วางในหน้า Google Ads → เครื่องมือ → สคริปต์ ตั้งรันวันละครั้ง
           </p>
+          {/* 🔴 **ของเดิมมีเงื่อนไขเดียวคือ "เคยส่ง/ไม่เคยส่ง" ไม่ได้ดูว่าเก่าแค่ไหน** (แก้ 18 ก.ย. 2569)
+              ถ้าสคริปต์ตาย ค่าโฆษณาจะต่ำกว่าจริงเงียบ ๆ ⇒ **ROAS ข้างบนจะเขียวเกินจริง**
+              แล้วคนจะเพิ่มงบโฆษณาจากตัวหารที่ไม่ครบ — จอเดิมไม่มีอะไรฟ้องเลย */}
+          {(() => {
+            const ชม = scriptSilentHours(cfg.google.pushedAt)
+            if (ชม === null || ชม <= SCRIPT_GRACE_HOURS) return null
+            return (
+              <p className="mt-2 text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2 leading-relaxed">
+                ⚠️ <b>ไม่มีข้อมูลเข้ามา {ชม} ชั่วโมงแล้ว</b> — สคริปต์ใน Google Ads อาจถูกปิดหรือหมดสิทธิ์
+                <span className="block mt-0.5">
+                  ⇒ ค่าโฆษณาที่ใช้คิดข้างบน<b>ต่ำกว่าจริง</b> ⇒ <b>ROAS จะดูดีเกินจริง</b> อย่าเพิ่งเอาไปตัดสินใจเพิ่มงบ
+                </span>
+              </p>
+            )
+          })()}
           {showScript && (
             <>
               <pre className="mt-3 max-h-64 overflow-auto rounded-xl bg-gray-900 p-3 text-[10.5px] leading-relaxed text-emerald-200"><code>{adsScript(cfg.google.pushKey)}</code></pre>
