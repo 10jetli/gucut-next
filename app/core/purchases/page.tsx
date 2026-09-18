@@ -27,6 +27,7 @@ import {
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
+import AdvancedSearch from '@/components/zort/AdvancedSearch'
 
 interface Row {
   number: string
@@ -104,11 +105,15 @@ export default function CorePurchasesPage() {
     setTimeout(() => setCopyMsg(''), 6000)
   }
   const [perPage, setPerPage] = useState(PAGE)
+  /* ช่วงวันที่ใบซื้อ — ท่อเทียบกับ `po_date` (ท่อเรียกว่า "วันที่ใบซื้อ" ใน dateScope) */
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [advOpen, setAdvOpen] = useState(false)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = useCallback(async (off = 0, tabId = tab, storeId = store, size = perPage) => {
+  const load = useCallback(async (off = 0, tabId = tab, storeId = store, size = perPage, f = from, t = to) => {
     setLoading(true)
     setError('')
     try {
@@ -119,6 +124,11 @@ export default function CorePurchasesPage() {
          และกดแท็บ "รอโอน (0)" ก็ยังเห็น 33 แถว ⇒ **ตัวนับกับตัวแถวคนละกติกา** (กฎแท็บใน CLAUDE.md)
          ⇒ กรองในเครื่องแทน (ใบซื้อทั้งร้าน 33 ใบ · หน้าละ 50 ⇒ โหลดครบในหน้าเดียว = กรองครบทั้งชุด)
             และถ้าวันไหนใบเกินหนึ่งหน้า จะมีข้อความบอกว่ากรองเฉพาะที่โหลดมา */
+      /* ✅ **ท่อรับ `from`/`to` จริง** — ยิงยืนยัน 18 ก.ย. 2569: total 33 → 32 · `applied` สะท้อนกลับ
+         · amount 6,243,403.20 → 6,001,653.20 ⇒ ต่างกัน 241,750 = ใบเก่ากว่า 1/1/2566 หนึ่งใบ
+         ⚠️ **คนละเรื่องกับ `status` ที่ท่อยังเมิน** — อย่าเขียนรวมว่า "ท่อไม่รับตัวกรอง" */
+      if (f) qs.set('from', f)
+      if (t) qs.set('to', t)
       if (storeId) qs.set('store', storeId)
       if (q.trim()) qs.set('q', q.trim())
       const res = await fetch(`/api/web/core?${qs}`)
@@ -132,7 +142,7 @@ export default function CorePurchasesPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, tab, store, perPage])
+  }, [q, tab, store, perPage, from, to])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -259,8 +269,45 @@ export default function CorePurchasesPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขที่ใบสั่งซื้อ หรือชื่อผู้ขาย"
-        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
+        advanced={
+          <>
+            <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
+            {' '}· <LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>
+          </>
+        }
       />
+
+      {/* 🔎 ช่วงวันที่ใบซื้อ — ท่อรับจริง (ยิงยืนยัน 18 ก.ย. 2569) */}
+      <AdvancedSearch
+        open={advOpen}
+        fields={[
+          { label: 'ตั้งแต่วันที่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
+          { label: 'ถึงวันที่', kind: 'date', value: to, onChange: (v) => setTo(v) },
+        ]}
+        onApply={() => load(0, tab, store, perPage, from, to)}
+        onClear={() => { setFrom(''); setTo(''); load(0, tab, store, perPage, '', '') }}
+        canClear={!!(from || to)}
+        serverFiltered="ช่วงวันที่ใบซื้อ · ร้าน · คำค้น"
+        notAvailable={[
+          { what: 'สถานะ (สำเร็จ · ยกเลิก · รอโอน)', why: 'ท่อยังไม่รับเป็นตัวกรอง — ยิงยืนยันซ้ำ 18 ก.ย. 2569 (ส่ง status= แล้ว total ค้าง 33) · แท็บด้านบนจึงกรองในเครื่อง' },
+        ]}
+      />
+
+      {/* 🔴 **กับดักปี พ.ศ. — ดักไว้เพราะมีคนเหยียบจริงวันนี้**
+          ท่อรับค่าไปตรง ๆ แล้วคืน 0 ใบเงียบ ๆ ถ้าใส่ปี พ.ศ. (`from=2566-01-01`)
+          ⇒ คนอ่านจะเชื่อว่า "ช่วงนั้นไม่มีใบซื้อ" ทั้งที่เป็นเรื่องรูปแบบวันที่
+          ⚠️ อ่านจาก `applied` ที่ท่อสะท้อนกลับ ไม่ใช่จากค่าที่จอส่งไป (ท่ออาจแปลงค่าเอง) */}
+      {(() => {
+        const ปี = (x?: string | null) => Number(String(x ?? '').slice(0, 4))
+        const พศ = [data?.applied?.from, data?.applied?.to].filter((x) => ปี(x) > 2400)
+        if (!พศ.length) return null
+        return (
+          <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+            ⚠️ <b>วันที่ที่ส่งไปเป็นปี พ.ศ.</b> ({พศ.join(' · ')}) — ท่อคิดเป็นปี ค.ศ. ⇒ มักได้ <b>0 ใบ</b>
+            {' '}ทั้งที่ช่วงนั้นมีใบอยู่ · ใส่เป็นปี ค.ศ. (เช่น 2023) แทน
+          </p>
+        )
+      })()}
 
       {error && <ErrorBox title="ดึงรายการซื้อไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}
@@ -452,8 +499,16 @@ export default function CorePurchasesPage() {
                 ⚠️ วันที่เขียนบรรทัดนี้ **ยืนยันซ้ำไม่ได้** — จอ ZORT /Buy/list ตอบ
                    "ไม่สามารถทำรายการได้" และแสดง 0 แถว (ลองสามแบบ · เซสชันท่านประธาน)
                 ⇒ เขียนตรง ๆ ว่าตรวจครั้งล่าสุดเมื่อไหร่ ดีกว่าปล่อยให้อ่านว่า "ตรงอยู่ตอนนี้" */}
-            ยอดรวม<b>เคยตรวจแล้วว่าตรงกับ ZORT ทุกบาท</b> (ครั้งล่าสุด 7 ก.ย. 2569) —
-            ชุดนี้ {fmtNum(data.total)} ใบ · {fmtMoney(data.amount)} ·
+            ยอดรวม<b>ตรงกับ ZORT ทุกสตางค์</b> — ยืนยัน 18 ก.ย. 2569 ช่วง 1 ม.ค. 2566 – 18 ก.ย. 2569:
+            {' '}ZORT <b>6,001,652.20</b> · ของเรา <b>6,001,653.20</b> ⇒ ต่าง <b>฿1.00 พอดี</b>
+            {' '}คือใบ <b>PO-202609001 ที่ถูกยกเลิก</b> (ท่อรวมใบยกเลิก · ZORT ไม่รวม) ⇒ หักแล้วตรงเป๊ะ
+            {' '}· ส่วนต่างจาก &ldquo;ทุกวันที่&rdquo; คือใบเก่ากว่า 1 ม.ค. 2566 อีก 1 ใบ (฿241,750) —
+            {' '}อธิบายได้ครบทั้งสองส่วน ไม่เหลือเศษ
+            <br />
+            ⚠️ เทียบผ่าน <b>/Dashboard/BuyReport</b> ของ ZORT เพราะจอ <b>/Buy/list</b> ของเขา
+            {' '}<b>เปิดไม่ได้</b> (ตอบ &ldquo;ไม่สามารถทำรายการได้&rdquo; · ทำซ้ำได้ 2 เซสชัน 18 ก.ย. 2569)
+            <br />
+            ชุดที่เห็นตอนนี้ {fmtNum(data.total)} ใบ · {fmtMoney(data.amount)} ·
             จอนี้เป็น<b>ใบสั่งซื้อของ ZORT</b> คนละอย่างกับ{' '}
             <Link href="/core/factory-orders" className="text-blue-600 hover:underline">สั่งของกับโรงงาน</Link>
             {' '}ที่ร้านใช้ติดตามมัดจำและกำหนดส่ง
