@@ -14,6 +14,7 @@
 //    ⇒ ตรวจตอนกดกระดิ่งเท่านั้น แล้วจำผลไว้ใน sessionStorage ให้หน้าอื่นใช้ต่อ (ปิดแท็บก็หาย)
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
+import { ป้ายจากทะเบียน } from '@/lib/nav-config'
 
 const CACHE_KEY = 'gucut-bell'
 /** ผลตรวจเก่ากว่านี้ถือว่าใช้ตัดสินใจไม่ได้แล้ว
@@ -321,6 +322,12 @@ interface AppTile {
   blank?: boolean
 }
 
+/* 🔴 **ชื่อบนแผงนี้เคยพิมพ์ซ้ำจากทะเบียนเมนู** (ใบ S5 · 19 ก.ย. 2569 · ฝั่งท่อตัดสินว่าเข้าเจตนากฎข้อ 1)
+   กฎข้อ 1 ใน CLAUDE.md มีไว้กัน **สองแหล่งความจริง** และกันเมนูหายตอน clone
+   แผงแอปเป็นทางเข้าที่คนใช้จริง ⇒ ชื่อควรมาจากทะเบียนเดียวกับเมนูซ้าย
+   ⚠️ **ทำแบบเพิ่มอย่างเดียว ห้ามตัดของเดิม** — ทะเบียนไม่มีเส้นไหน ให้ใช้ชื่อที่เขียนไว้ตรงนี้ต่อ
+      (`/core/manual` ยังไม่มีในทะเบียน ณ วันที่เขียน ⇒ ถ้าบังคับให้มาจากทะเบียน แผ่นนั้นจะหายจากจอ
+       ซึ่งผิดคำสั่งท่านประธานที่ว่า "อย่าลบเมนูเก่า ของเดิมต้องเห็นตั้งแต่เปิดหน้า") */
 const APPS: AppTile[] = [
   // ของ ZORT แผ่นนี้เปิดแอป ZORT Chat Commerce (รวมแชท Facebook + LINE)
   // ของเรา = /core/chat จอรวมแชทที่รับ **หน้าเว็บร้าน** ได้จริงแล้ว 1 ช่องทาง
@@ -361,7 +368,8 @@ function AppsButton() {
                 className="flex flex-col items-center gap-2 px-1 py-3 rounded-lg hover:bg-[#eef4ff] transition-colors text-center"
               >
                 <a.icon />
-                <span className="text-[12.5px] text-gray-700 leading-tight">{a.label}</span>
+                {/* ทะเบียนมาก่อน · ไม่มีในทะเบียนค่อยใช้ชื่อเดิม (เพิ่มอย่างเดียว ไม่ตัดของเดิม) */}
+                <span className="text-[12.5px] text-gray-700 leading-tight">{ป้ายจากทะเบียน(a.href) ?? a.label}</span>
               </Link>
             ))}
           </div>
