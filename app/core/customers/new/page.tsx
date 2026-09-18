@@ -28,6 +28,16 @@ const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] out
 
 type Resp = WriteResp & { willSend?: Record<string, unknown> }
 
+/** ป้ายกำกับช่องกรอก — **ต้องอยู่ระดับโมดูล** (ดูเหตุผลในคอมเมนต์ที่จุดเรียก) */
+function F({ l, children, req: rq }: { l: string; children: React.ReactNode; req?: boolean }) {
+  return (
+    <label className="block">
+      <span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}{rq && <span className="text-red-500"> *</span>}</span>
+      {children}
+    </label>
+  )
+}
+
 export default function NewContactPage() {
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
@@ -92,12 +102,12 @@ export default function NewContactPage() {
     } finally { setBusy(false) }
   }, [code, name, phone, email, idnumber, address, branchname, branchno, line, facebook, ref, sig])
 
-  const F = ({ l, children, req: rq }: { l: string; children: React.ReactNode; req?: boolean }) => (
-    <label className="block">
-      <span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}{rq && <span className="text-red-500"> *</span>}</span>
-      {children}
-    </label>
-  )
+  /* 🔴 **ย้าย `F` ออกไประดับโมดูลแล้ว 18 ก.ย. 2569 — ห้ามย้ายกลับ**
+     ตัวห่อนี้ไม่มี `<input>` อยู่ในตัวเอง (รับมาทาง `children`) **แต่ยังทำให้พิมพ์ไม่ได้อยู่ดี**
+     เพราะ React ถอด **ทั้งต้นไม้ข้างใน** ทิ้งเมื่อชนิดของตัวห่อเปลี่ยน ⇒ `<input>` ที่เป็นลูกก็ถูกสร้างใหม่
+     🔬 วัดของจริง: พิมพ์ "ทดสอบABC123" ⇒ ได้ `'ท'` · `document.activeElement` = `BODY`
+     🔑 **ด่านสแกนโครงสร้างรอบแรกจับตัวนี้ไม่ได้** เพราะมันมองหา `<input>` ในตัวคอมโพเนนต์
+        ⇒ ตัวที่จับได้คือ **ตัวทดสอบที่พิมพ์ลงช่องจริง** (`scripts/ทดสอบพิมพ์ลงช่อง.py`) ในการรันรอบแรก */
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">

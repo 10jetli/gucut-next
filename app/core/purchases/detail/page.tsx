@@ -289,13 +289,8 @@ function Inner() {
       ? Math.round((d.amount - d.lineTotal) * 100) / 100
       : null
 
-  const Field = ({ k, v }: { k: string; v?: string | null }) =>
-    v ? (
-      <div className="flex gap-2 text-[13px]">
-        <span className="min-w-[92px] text-gray-500">{k}</span>
-        <span className="break-words">{v}</span>
-      </div>
-    ) : null
+  /* ย้าย `Field` ออกไประดับโมดูลแล้ว 18 ก.ย. 2569 — ห้ามประกาศ component ซ้อนในอีก
+     (จอนี้ไม่มีช่องกรอก จึงไม่เคยแสดงอาการ แต่รูปแบบเดียวกันทำให้จออื่นพิมพ์ไม่ได้) */
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
@@ -469,6 +464,18 @@ function Inner() {
           {(d.number || no) && <ReceiveBox number={d.number || no} store={d.store} lines={d.lines ?? []} />}
         </>
       )}
+    </div>
+  )
+}
+
+/** แถวข้อมูลหนึ่งบรรทัด — **ระดับโมดูลเท่านั้น** (ห้ามย้ายเข้าไปในคอมโพเนนต์)
+ *  เหตุผลอยู่ในคอมเมนต์ที่จุดเรียก · ย้ายมา 18 ก.ย. 2569 */
+function Field({ k, v }: { k: string; v?: string | null }) {
+  if (!v) return null
+  return (
+    <div className="flex gap-2 text-[13px]">
+      <span className="min-w-[92px] text-gray-500">{k}</span>
+      <span className="break-words">{v}</span>
     </div>
   )
 }

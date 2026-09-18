@@ -8,6 +8,13 @@ function I({ d, className = 'w-4 h-4' }: { d: string; className?: string }) {
 }
 const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
 
+/** ป้ายกำกับช่องกรอก — ระดับโมดูลเท่านั้น (ห้ามย้ายเข้าไปในคอมโพเนนต์) */
+function F({ l, children }: { l: string; children: React.ReactNode }) {
+  return (
+    <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
+  )
+}
+
 export default function WebPointsPage() {
   const [cfg, setCfg] = useState<Cfg | null>(null)
   const [msg, setMsg] = useState('')
@@ -49,9 +56,9 @@ export default function WebPointsPage() {
     finally { setBusy(false) }
   }
 
-  const F = ({ l, children }: { l: string; children: React.ReactNode }) => (
-    <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
-  )
+  /* 🔴 ย้ายตัวห่อช่องกรอกออกไประดับโมดูลแล้ว 18 ก.ย. 2569 — **ห้ามย้ายกลับ**
+     ตัวห่อที่รับ `children` ก็ทำให้ `<input>` ข้างในถูกสร้างใหม่ทุกครั้งที่ state เปลี่ยน
+     ⇒ พิมพ์ได้ตัวอักษรเดียวแล้วโฟกัสหลุด (เจอของจริงที่จอเพิ่มผู้ติดต่อ 18 ก.ย. 2569) */
 
   return (
     <div className="space-y-4 max-w-2xl">

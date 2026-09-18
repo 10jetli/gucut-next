@@ -23,6 +23,13 @@ const IC = {
 const label = (c: Coupon) =>
   c.type === 'percent' ? `ลด ${c.value}%${c.max ? ` (สูงสุด ฿${c.max.toLocaleString('th-TH')})` : ''}` : `ลด ฿${c.value.toLocaleString('th-TH')}`
 
+/** ป้ายกำกับช่องกรอก — ระดับโมดูลเท่านั้น (ห้ามย้ายเข้าไปในคอมโพเนนต์) */
+function Field({ l, children }: { l: string; children: React.ReactNode }) {
+  return (
+    <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
+  )
+}
+
 export default function WebCouponsPage() {
   const [list, setList] = useState<Coupon[] | null>(null)
   const [form, setForm] = useState<Coupon | null>(null)
@@ -72,9 +79,9 @@ export default function WebCouponsPage() {
     load()
   }
 
-  const Field = ({ l, children }: { l: string; children: React.ReactNode }) => (
-    <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
-  )
+  /* 🔴 ย้ายตัวห่อช่องกรอกออกไประดับโมดูลแล้ว 18 ก.ย. 2569 — **ห้ามย้ายกลับ**
+     ตัวห่อที่รับ `children` ก็ทำให้ `<input>` ข้างในถูกสร้างใหม่ทุกครั้งที่ state เปลี่ยน
+     ⇒ พิมพ์ได้ตัวอักษรเดียวแล้วโฟกัสหลุด (เจอของจริงที่จอเพิ่มผู้ติดต่อ 18 ก.ย. 2569) */
   const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
 
   return (
