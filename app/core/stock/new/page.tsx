@@ -77,8 +77,26 @@ const REAL_SEND_ENABLED = true
    ⇒ นี่คือ "ระบบทำงานถูก แต่สื่อสารผิด" ตัวจริง — และคำอธิบายที่ผิดก็พาคนไปรอผิดที่เหมือนกัน
       (ดูย่อหน้า "สาเหตุที่แท้จริง" บนหัวไฟล์ ว่าร่างแรกเขียนผิดไว้ว่าอย่างไร) */
 
+/** ช่องกรอกหนึ่งช่อง — **ต้องอยู่ระดับโมดูล** (เหตุผลอยู่ในคอมเมนต์ที่จุดเรียก) */
+function Field({ label, value, onChange, ph, hint }:
+  { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; ph?: string; hint?: string }) {
+  return (
+    <label className="block">
+      <span className="text-[12.5px] text-gray-600">{label}</span>
+      <input value={value} onChange={onChange} placeholder={ph}
+        className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" />
+      {hint && <span className="block text-[11.5px] text-gray-400 mt-0.5">{hint}</span>}
+    </label>
+  )
+}
+
 export default function NewProductPage() {
-  const [f, setF] = useState({ sku: '', name: '', price: '', cost: '', unit: '', barcode: '', category: '' })
+  /* 🔑 **ช่องขนส่งกับ Tag เพิ่ม 18 ก.ย. 2569** — ท่อ `?addproduct=1` รับ `weight/width/length/height/tags`
+     มาตั้งแต่ต้น (ยืนยันในซอร์สท่อ `zortAddProduct` + เอกสาร ZORT API V4)
+     แต่จอนี้เขียนไว้เองว่า "ท่อเรายังไม่มีช่องนี้" ⇒ **คำกล่าวอ้างที่เป็นเท็จโดยไม่มีใครรู้**
+     ⇒ ตรงกับกติกาที่ตกลงกันคืนนี้: **ก่อนบอกว่าอีกฝั่งไม่มี ให้ไปอ่านของอีกฝั่งก่อน** */
+  const [f, setF] = useState({ sku: '', name: '', price: '', cost: '', unit: '', barcode: '', category: '',
+    weight: '', width: '', length: '', height: '', tags: '' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [res, setRes] = useState<WriteResp | null>(null)
@@ -107,7 +125,8 @@ export default function NewProductPage() {
     setErr(''); setRes(null)
     if (!f.sku.trim() || !f.name.trim()) { setErr('ต้องมีทั้งรหัสสินค้าและชื่อสินค้า'); return }
     /* ⚠️ ตัวเลขต้องเป็นตัวเลขจริง — ท่อจะตีกลับอยู่แล้ว แต่บอกที่จอเร็วกว่าและชัดกว่า */
-    for (const [k, label] of [['price', 'ราคาขาย'], ['cost', 'ราคาซื้อ']] as const) {
+    for (const [k, label] of [['price', 'ราคาขาย'], ['cost', 'ราคาซื้อ'],
+      ['weight', 'น้ำหนัก'], ['width', 'กว้าง'], ['length', 'ยาว'], ['height', 'สูง']] as const) {
       const raw = f[k].trim()
       if (raw !== '' && !Number.isFinite(Number(raw))) { setErr(`${label}ต้องเป็นตัวเลข`); return }
     }
@@ -124,6 +143,13 @@ export default function NewProductPage() {
           ...(f.unit.trim() ? { unit: f.unit.trim() } : {}),
           ...(f.barcode.trim() ? { barcode: f.barcode.trim() } : {}),
           ...(f.category.trim() ? { category: f.category.trim() } : {}),
+          /* ⚠️ ท่อตีกลับถ้าไม่ใช่ตัวเลขไม่ติดลบ · ช่องว่างไม่ส่ง (ท่อข้ามให้เอง) */
+          ...(f.weight.trim() ? { weight: Number(f.weight) } : {}),
+          ...(f.width.trim() ? { width: Number(f.width) } : {}),
+          ...(f.length.trim() ? { length: Number(f.length) } : {}),
+          ...(f.height.trim() ? { height: Number(f.height) } : {}),
+          /* Tag: ท่อรับเป็นอาเรย์ (≤20 ตัว ตัวละ ≤40 ตัวอักษร) ⇒ จอรับเป็นคำคั่นด้วยจุลภาค */
+          ...(f.tags.trim() ? { tags: f.tags.split(',').map((t) => t.trim()).filter(Boolean) } : {}),
           ...(confirm ? { confirm: true } : {}),
         }),
       }).then((x) => x.json())
@@ -136,14 +162,17 @@ export default function NewProductPage() {
     } catch (e) { setErr(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
   }, [f, ref, sig])
 
-  const F = ({ label, k, ph, hint }: { label: string; k: keyof typeof f; ph?: string; hint?: string }) => (
-    <label className="block">
-      <span className="text-[12.5px] text-gray-600">{label}</span>
-      <input value={f[k]} onChange={set(k)} placeholder={ph}
-        className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" />
-      {hint && <span className="block text-[11.5px] text-gray-400 mt-0.5">{hint}</span>}
-    </label>
-  )
+  /* 🔴🔴 **เคยเป็นบั๊กที่ทำให้ฟอร์มนี้ใช้ไม่ได้เลย — พิมพ์ได้ทีละตัวอักษร** (แก้ 18 ก.ย. 2569)
+     เดิมประกาศ `const F = (...) => ...` **ไว้ในตัว component** ⇒ ทุกครั้งที่ state เปลี่ยน
+     React เห็นเป็น **ชนิด component ตัวใหม่** ⇒ **ถอด `<input>` เดิมทิ้งแล้วสร้างใหม่**
+     ⇒ พิมพ์ตัวแรก → state เปลี่ยน → input ถูกสร้างใหม่ → **โฟกัสหลุดไปที่ body**
+     ⇒ ตัวที่สองเป็นต้นไปไม่เข้าช่องเลย · ค่าที่ส่งท่อจึงเหลือ **ตัวอักษรเดียวทุกช่อง**
+     🔬 วัดของจริง: พิมพ์ `ABCDE` ทีละตัว ⇒ ค่าในช่อง = `'A'` · `document.activeElement` = `BODY`
+        และโหมดซ้อมส่งท่อได้ `{sku:'Z', name:'ท', weight:'2', tag:['โ']}`
+     🔑 **ทำไมไม่มีใครเจอมาก่อน**: จอเรนเดอร์ครบ ไม่มี error ไม่มีอะไรแดง ตัวกวาดจอผ่านฉลุย
+        และคนที่ "สร้างสินค้าจริงสำเร็จ" ทำผ่าน **เส้นท่อโดยตรง ไม่ได้พิมพ์บนฟอร์มนี้**
+        ⇒ ของที่ไม่เคยมีใคร **ใช้จริงด้วยมือ** จะดูดีตลอดกาล
+     ⚠️ **ห้ามย้าย F กลับเข้าไปข้างในอีก** ไม่ว่าจะเพื่อให้อ่านง่ายแค่ไหน */
 
   return (
     <div className="p-4 md:p-6 max-w-[820px]">
@@ -171,13 +200,18 @@ export default function NewProductPage() {
         {/* 🔤 **ป้ายช่องลอกจากจอ ZORT จอเดียวกัน** (`/Product/CreateMainProduct` · อ่านอย่างเดียว 16 ก.ย. 2569)
             เดิมเราตั้งชื่อเอง: "ต้นทุน" · "หน่วยนับ" · "บาร์โค้ด" ⇒ คนที่ชิน ZORT ต้องแปลในหัวทุกช่อง
             ZORT เรียก: ราคาซื้อ · หน่วย · รหัสคิวอาร์โค้ดและบาร์โค้ด (คำสั่งท่านประธาน: ให้เหมือน 100%) */}
-        <F label="รหัสสินค้า *" k="sku" ph="เช่น 03731" hint="ใช้เป็นกุญแจของทั้งระบบ — ตั้งผิดแล้วแก้ยาก (ZORT เรียกช่องนี้ว่ารหัสสินค้า ไม่ใช่ SKU)" />
-        <F label="ชื่อสินค้า *" k="name" ph="ชื่อที่จะโชว์" />
-        <F label="ราคาขาย" k="price" ph="ไม่ใส่ก็ได้" />
-        <F label="ราคาซื้อ" k="cost" ph="ไม่ใส่ก็ได้" />
-        <F label="หน่วย" k="unit" ph="ตัวอย่าง: ชิ้น, ตัว" />
-        <F label="รหัสคิวอาร์โค้ดและบาร์โค้ด" k="barcode" ph="ไม่ใส่ก็ได้" />
-        <F label="หมวดหมู่" k="category" ph="ไม่มีหมวดหมู่" hint="ต้องเป็นชื่อที่มีอยู่แล้วใน ZORT ไม่งั้นมันจะเมินช่องนี้เงียบ ๆ (จอ ZORT สร้างหมวดใหม่ได้ในจอเดียวกัน จอเรายังไม่ได้)" />
+        <Field label="รหัสสินค้า *" value={f.sku} onChange={set('sku')} ph="เช่น 03731" hint="ใช้เป็นกุญแจของทั้งระบบ — ตั้งผิดแล้วแก้ยาก (ZORT เรียกช่องนี้ว่ารหัสสินค้า ไม่ใช่ SKU)" />
+        <Field label="ชื่อสินค้า *" value={f.name} onChange={set('name')} ph="ชื่อที่จะโชว์" />
+        <Field label="ราคาขาย" value={f.price} onChange={set('price')} ph="ไม่ใส่ก็ได้" />
+        <Field label="ราคาซื้อ" value={f.cost} onChange={set('cost')} ph="ไม่ใส่ก็ได้" />
+        <Field label="หน่วย" value={f.unit} onChange={set('unit')} ph="ตัวอย่าง: ชิ้น, ตัว" />
+        <Field label="รหัสคิวอาร์โค้ดและบาร์โค้ด" value={f.barcode} onChange={set('barcode')} ph="ไม่ใส่ก็ได้" />
+        <Field label="น้ำหนัก (กรัม)" value={f.weight} onChange={set('weight')} ph="ไม่ใส่ก็ได้" hint="กล่อง “ข้อมูลขนส่ง” ของ ZORT — หน่วยตามที่จอ ZORT เขียนไว้" />
+        <Field label="กว้าง (ซม.)" value={f.width} onChange={set('width')} ph="ไม่ใส่ก็ได้" />
+        <Field label="ยาว (ซม.)" value={f.length} onChange={set('length')} ph="ไม่ใส่ก็ได้" />
+        <Field label="สูง (ซม.)" value={f.height} onChange={set('height')} ph="ไม่ใส่ก็ได้" />
+        <Field label="Tag สินค้า" value={f.tags} onChange={set('tags')} ph="คั่นด้วยจุลภาค เช่น โซ่, NEWWAVE" hint="ท่อรับได้ไม่เกิน 20 แท็ก แท็กละ 40 ตัวอักษร" />
+        <Field label="หมวดหมู่" value={f.category} onChange={set('category')} ph="ไม่มีหมวดหมู่" hint="ต้องเป็นชื่อที่มีอยู่แล้วใน ZORT ไม่งั้นมันจะเมินช่องนี้เงียบ ๆ (จอ ZORT สร้างหมวดใหม่ได้ในจอเดียวกัน จอเรายังไม่ได้)" />
       </div>
 
       {/* 🔬 **เทียบกับจอ ZORT จริงแล้วเขียนไว้บนจอ** — ใบงานยืน t_mu2u9mym
@@ -191,8 +225,12 @@ export default function NewProductPage() {
         <ul className="list-disc ml-5 mt-1 space-y-0.5">
           <li><b>ประเภท: สินค้า / บริการ</b> — ของเราสร้างได้แบบเดียว ยังไม่รู้ว่าท่อส่งประเภทได้ไหม</li>
           <li><b>รูปสินค้า (ZORT ใส่ได้ 9 รูปตอนสร้าง)</b> — จอเราใส่รูปได้ทีหลังทีละรหัสที่จอแก้สินค้า</li>
-          <li><b>น้ำหนัก (กรัม) · ขนาด (กว้าง ยาว สูง) (ซม.)</b> — กล่อง &ldquo;ข้อมูลขนส่ง&rdquo; ของ ZORT · ท่อเรายังไม่มีช่องนี้</li>
-          <li><b>Tag สินค้า</b> — ยังไม่มีทั้งตอนสร้างและตอนค้นในจอเรา</li>
+          {/* ✅ **สองข้อนี้ถูกถอดออก 18 ก.ย. 2569 — เพราะมันเป็นเท็จมาตลอด**
+              เดิมเขียนว่า "ท่อเรายังไม่มีช่องนี้" แต่ `zortAddProduct` ของท่อรับ weight/width/length/height/tags
+              มาตั้งแต่ต้น (ยืนยันจากซอร์สท่อ + เอกสาร ZORT API V4) ⇒ **จอเขียนดูถูกความสามารถของท่อเอง**
+              🔑 คลาสเดียวกับ channel-gaps กลับด้าน: ท่อมีของ แต่จออ้างว่าไม่มี ⇒ ไม่มีใครไปใช้
+                 และคำอ้างแบบนี้ **ไม่มีด่านไหนจับได้** เพราะมันพูดถึงของอีก repo หนึ่ง */}
+          <li><b>Tag สินค้า — ตอนค้นหา</b> ยังไม่มีในจอสินค้า (ตอนสร้างมีแล้ว)</li>
           <li><b>Serial Number · ล็อต/วันหมดอายุ · สินค้าแถม · แสดงในหน้าสั่งซื้อ (ดรอปชิป)</b> — กล่อง &ldquo;ตั้งค่า&rdquo; ของ ZORT ทั้งกล่อง</li>
           <li><b>ยอดยกมา + สินค้าเข้าที่คลังไหน</b> — ZORT ตั้งจำนวนตั้งต้นให้ได้ตอนสร้าง · ของเราสร้างแล้วยอดเป็น 0 ต้องไปตั้งต่างหาก</li>
           <li><b>สินค้าหลากคุณสมบัติ (สี/ขนาด)</b> — ZORT ผูกได้ตอนสร้าง (จอ <code>/Product/Variantlist</code> ของร้านมี 0 รายการ ⇒ ร้านยังไม่ได้ใช้)</li>

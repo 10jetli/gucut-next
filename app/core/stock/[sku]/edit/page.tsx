@@ -34,6 +34,19 @@ const EMPTY: Fields = { name: '', price: '', cost: '', unit: '', barcode: '' }
 const newRef = (kind: string) =>
   `${kind}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`
 
+/** ช่องกรอกหนึ่งช่อง — **ต้องอยู่ระดับโมดูล** (ดูเหตุผลในคอมเมนต์ที่จุดเรียก) */
+function Field({ label, value, onChange, ph, hint }:
+  { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; ph?: string; hint?: string }) {
+  return (
+    <label className="block">
+      <span className="text-[12.5px] text-gray-600">{label}</span>
+      <input value={value} onChange={onChange} placeholder={ph}
+        className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" />
+      {hint && <span className="block text-[11.5px] text-gray-400 mt-0.5">{hint}</span>}
+    </label>
+  )
+}
+
 export default function EditProductPage() {
   const params = useParams<{ sku: string }>()
   const sku = (() => {
@@ -147,14 +160,11 @@ export default function EditProductPage() {
     } finally { setDelBusy(false) }
   }, [product, delRef])
 
-  const F = ({ label, k, ph, hint }: { label: string; k: keyof Fields; ph?: string; hint?: string }) => (
-    <label className="block">
-      <span className="text-[12.5px] text-gray-600">{label}</span>
-      <input value={f[k]} onChange={set(k)} placeholder={ph}
-        className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" />
-      {hint && <span className="block text-[11.5px] text-gray-400 mt-0.5">{hint}</span>}
-    </label>
-  )
+  /* 🔴 **ย้าย `F` ออกไประดับโมดูลแล้ว 18 ก.ย. 2569 — ห้ามย้ายกลับ**
+     ประกาศ component ไว้ในตัว component ⇒ React สร้าง `<input>` ใหม่ทุกครั้งที่ state เปลี่ยน
+     ⇒ **พิมพ์ได้ตัวเดียวแล้วโฟกัสหลุด** (วัดจริงที่จอเพิ่มสินค้า: พิมพ์ ABCDE ได้ 'A')
+     จอนี้เป็นฝาแฝดของจอเพิ่มสินค้า และ **ตัวกวาดจอเปิดมันไม่ได้ด้วย** (มีช่องแปรใน URL)
+     ⇒ มองไม่เห็นสองชั้น: ตัวกวาดไม่เปิด และต่อให้เปิดก็ไม่มีใครพิมพ์ */
 
   return (
     <div className="p-4 md:p-6 max-w-[820px]">
@@ -193,11 +203,11 @@ export default function EditProductPage() {
               <input value={product.sku} disabled className="w-full border border-gray-200 bg-gray-50 rounded px-3 py-2 text-[14px] mt-1" />
               <span className="block text-[11.5px] text-gray-400 mt-0.5">เปลี่ยนรหัสผ่าน API ไม่ได้ — รหัสคือกุญแจของทั้งระบบ</span>
             </label>
-            <F label="ชื่อสินค้า" k="name" />
-            <F label="ราคาขาย" k="price" />
-            <F label="ต้นทุน (ราคาซื้อที่ตั้งไว้)" k="cost" hint="ZORT มีแค่ราคาซื้อที่ตั้งไว้ ไม่ใช่ต้นทุนเฉลี่ย" />
-            <F label="หน่วยนับ" k="unit" />
-            <F label="บาร์โค้ด" k="barcode" />
+            <Field label="ชื่อสินค้า" value={f.name} onChange={set('name')} />
+            <Field label="ราคาขาย" value={f.price} onChange={set('price')} />
+            <Field label="ต้นทุน (ราคาซื้อที่ตั้งไว้)" value={f.cost} onChange={set('cost')} hint="ZORT มีแค่ราคาซื้อที่ตั้งไว้ ไม่ใช่ต้นทุนเฉลี่ย" />
+            <Field label="หน่วยนับ" value={f.unit} onChange={set('unit')} />
+            <Field label="บาร์โค้ด" value={f.barcode} onChange={set('barcode')} />
           </div>
 
           <div className="text-[12px] text-gray-500 mt-2">
