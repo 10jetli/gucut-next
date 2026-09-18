@@ -22,6 +22,7 @@ import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
   sku: string; name: string; qty?: number; available?: number
@@ -221,7 +222,50 @@ export default function MarketplaceProductsPage() {
               </>
             )
         }
-        actions={<BtnGhost onClick={() => { load(tab, page, q); loadCounts() }} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        actions={
+          <>
+            <BtnGhost onClick={() => { load(tab, page, q); loadCounts() }} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 📤 **ZORT มีปุ่มนี้จริงที่จอเดียวกัน** — เปิดดู `/Marketplace/list` ของเขา 18 ก.ย. 2569
+                เห็นปุ่ม "Export to Excel" ⇒ อันนี้คือการทำตามผังเขาจริง
+                (ต่างจากจอวางแผนสั่งซื้อที่เขาไม่มีปุ่มนี้ — ตรวจแล้วเหมือนกัน)
+                ⚠️ ไฟล์ต้องกรองด้วย **แท็บช่องทางเดียวกับที่จอกำลังโชว์** ไม่งั้นไฟล์กับจอคนละชุด
+                ⚠️ ตารางนี้ไม่มีข้อมูลส่วนบุคคล (รหัส/ชื่อสินค้า/จำนวน/ช่องทาง) ⇒ ส่งออกได้ */}
+            <ExportButton
+              disabled={loading}
+              spec={{
+                filename: `สินค้าบนมาร์เก็ตเพลส-${new Date().toISOString().slice(0, 10)}`,
+                title: 'สินค้าบนมาร์เก็ตเพลส',
+                filters: [
+                  ['แท็บช่องทาง', tab === 'all' ? 'ทั้งหมด' : tab === 'none' ? 'ยังไม่ได้ลงขายที่ไหนเลย' : tab],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({
+                    list: 'stock', marketplaces: '1', limit: String(limit), offset: String(offsetAt),
+                  })
+                  if (tab !== 'all') qs.set('channel', tab)
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return {
+                    rows: (Array.isArray(d.rows) ? d.rows : []) as Row[],
+                    total: typeof d.total === 'number' ? d.total : null,
+                  }
+                },
+                header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ', 'พร้อมขาย', 'ลงขายที่ช่องทาง', 'สถานะ'],
+                /* ⚠️ ช่องที่ท่อไม่ส่ง = เว้นว่าง ห้ามแทนด้วยขีดหรือ 0 */
+                toRow: (r: Row) => [
+                  r.sku, r.name ?? null,
+                  typeof r.qty === 'number' ? r.qty : null,
+                  typeof r.available === 'number' ? r.available : null,
+                  (r.marketplaces ?? []).join(' · ') || null,
+                  r.active === false ? 'ปิดใช้งาน' : 'ใช้งาน',
+                ],
+              }}
+            />
+          </>
+        }
       />
 
       {error && <ErrorBox title="ดึงรายการสินค้าไม่ได้">{error}</ErrorBox>}
