@@ -1,10 +1,16 @@
 'use client'
 // รายการขาย → สร้างรายการขาย (เขียนทะลุไป ZORT Order/AddOrder)
 //
-// 🔴 **ปุ่มส่งจริงปิดอยู่ และยังไม่เคยมีใบไหนถูกยิงจริงเลยสักใบ**
-//    ฝั่งท่อเปิดเส้น `?addsale=1` ให้ 14 ก.ย. 2569 แต่ยังไม่เคยยิงจริง
-//    เจ้าของร้านอนุมัติการเขียนจริงไว้ **เฉพาะใบเสนอราคา** (6 ก.ย. 2569) ⇒ ใบขายต้องขออนุมัติแยก
-//    ⇒ จอนี้ "ทดลองส่ง" ได้เต็มที่ (เห็นของที่จะส่งจริงทุกช่อง) แต่ยังส่งเข้า ZORT ไม่ได้
+// ✅ **ปุ่มส่งจริงเปิดแล้ว 18 ก.ย. 2569** (ท่านประธานอนุมัติใบขายโดยเฉพาะ · ใบ t_mu6kxfbn)
+//    ฝั่งท่อเปิดเส้น `?addsale=1` ให้ตั้งแต่ 14 ก.ย. 2569 · เจ้าของร้านเคยอนุมัติเขียนจริงไว้
+//    เฉพาะใบเสนอราคา (6 ก.ย.) และเพิ่มสินค้า (18 ก.ย. เช้า) ⇒ ใบขายเป็นใบที่สาม
+//
+// 🔴 **ใบขายอันตรายกว่าสองใบแรกอย่างมีนัยสำคัญ — ตัดสต็อกจริง บันทึกรายรับจริง**
+//    ยิงซ้ำหนึ่งครั้ง = สต็อกหายสองรอบ + ยอดขายเบิ้ล ⇒ กู้คืนต้องไปยกเลิกเอกสารในระบบบัญชี
+//    ⇒ ฟอร์มนี้ **ล็อกถาวรทันทีที่กดส่งจริง** ไม่ว่าผลจะเป็นอะไร (สำเร็จ/ซ้ำ/ไม่รู้ผล/ZORT ล่ม)
+//       เพราะท่อจดกันซ้ำเฉพาะตอนสำเร็จ ⇒ กดซ้ำหลัง error จะยิงเข้า ZORT ใหม่จริง ๆ
+//
+// 🔴 **การยกเลิกไม่สมมาตร** — ยกเลิกบนเว็บเราไม่ยกเลิกใน ZORT ⇒ เขียนไว้ในกล่องหลังส่งสำเร็จแล้ว
 //
 // 🔴 **ZORT ลบเอกสารผ่าน API ไม่ได้** — ใบที่ส่งผิดจะค้างถาวรจนกว่าจะเข้าไปจัดการเอง
 //    ⇒ บังคับซ้อมก่อนเสมอ และผูกผลซ้อมกับ "เนื้อหา" ไม่ใช่ "การกดปุ่ม"
@@ -30,11 +36,41 @@ interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
 
 /** คำตอบของเส้นนี้มีช่องเพิ่มจากของกลาง — ยอดที่ท่อคิดได้เอง (ใช้เทียบกับยอดที่จอคิด) */
-type SaleResp = WriteResp & { linesTotal?: number | null; willSend?: Record<string, unknown> }
+type SaleResp = WriteResp & {
+  linesTotal?: number | null
+  willSend?: Record<string, unknown>
+  /** เลขที่ใบที่ถูกบันทึกจริง — ท่อคืนมาตอนส่งสำเร็จ (ถ้าจอไม่ได้ส่ง `number` ไป ท่อใช้ `ref` เป็นเลขที่ใบ) */
+  number?: string
+  /** ยอดสุทธิที่ **ท่อ** คิดแล้วส่งเข้า ZORT (สินค้า − ส่วนลด + ค่าส่ง)
+   *  🔴 เอามาเทียบกับยอดที่จอคิด — ต่างกันเมื่อไหร่แปลว่าสองฝั่งคิดคนละกติกา ต้องฟ้อง ไม่ใช่เลือกเชื่อข้างเดียว */
+  amount?: number
+  /** ใบเดิมที่เคยบันทึกไว้ — ท่อคืนช่องนี้เฉพาะตอน `duplicate` (มาจากทะเบียนกันซ้ำ)
+   *  🔴 ต้องเอา **เลขที่ใบเดิม** ขึ้นจอ ไม่ใช่บอกแค่ว่า "เคยส่งแล้ว" — คนต้องตามไปดูใบนั้นได้ */
+  first?: { kind?: string; number?: string; amount?: number; lines?: number } | null
+}
 
-/** 🔴 สวิตช์ปุ่มส่งจริง — **ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติใบขายโดยเฉพาะ**
- *  ใบขายผูกกับเงินที่รับจริงและสต็อกที่ตัดจริง ⇒ ใบผิดกระทบทั้งบัญชีและคลัง */
-const REAL_SEND_ENABLED = false
+/** ✅ **เปิดแล้ว 18 ก.ย. 2569 — ท่านประธานอนุมัติใบขายโดยเฉพาะ**
+ *
+ *  🔴 **ใบนี้ต่างจากจอเพิ่มสินค้าอย่างมีนัยสำคัญ** (CTO กำชับตอนส่งคำสั่ง):
+ *     ใบขาย **ตัดสต็อกจริงและบันทึกรายรับจริง** ส่วนเพิ่มสินค้าแค่สร้างทะเบียน
+ *     ⇒ ยิงซ้ำหนึ่งครั้ง = สต็อกหายสองรอบ + ยอดขายเบิ้ล ซึ่งกู้คืนยากกว่าสินค้าซ้ำมาก
+ *       เพราะต้องไปยกเลิกเอกสารในระบบบัญชีเอง
+ *  ⇒ `ref` กันซ้ำเป็นค่าเดิมของฟอร์มใบนั้นเสมอ (สร้างครั้งเดียวตอนเปิดหน้า)
+ *     และหลังส่งสำเร็จ **ปิดปุ่มถาวรสำหรับฟอร์มนั้น** ไม่ใช่ปิดชั่วคราว
+ *
+ *  🔴 **การยกเลิกไม่สมมาตร** — ยกเลิกใบบนเว็บเรา **ไม่ยกเลิกใน ZORT**
+ *     ต้องเข้าไปยกเลิกในระบบเขาเอง ⇒ ข้อความหลังส่งสำเร็จต้องเขียนข้อนี้ไว้ทุกครั้ง */
+const REAL_SEND_ENABLED = true
+
+/** ZORT ตอบไม่ได้ (5xx) ≠ ข้อมูลที่กรอกผิด ≠ โค้ดเราพัง — **ต้องแยกให้คนอ่านออก**
+ *
+ *  🔴 ของจริงวันนี้ 18 ก.ย. 2569: โมดูลขายของ ZORT (`/Sell/*`) ตอบ **500 ทั้งหมด**
+ *     (วัดเองจากเบราว์เซอร์ที่ล็อกอิน 13:21 น. · โมดูลอื่น 200 ในนาทีเดียวกัน)
+ *  ⚠️ ท่อไม่มีช่องบอกสถานะ HTTP ของ ZORT ตรง ๆ — มันฝังมาในข้อความ (`ZORT ตอบไม่ใช่ JSON (HTTP 500)`)
+ *     ⇒ จอจับจากรูปข้อความไปก่อน และ **ขอช่องจริงจากฝั่งท่อแล้ว** (ห้ามถือว่านี่คือทางถาวร)
+ *  🔴 และ **ห้ามเขียนว่า "ไม่มีอะไรถูกสร้าง"** — ZORT อาจบันทึกไปแล้วแต่ตอบ error กลับมา
+ *     ⇒ ต้องบอกให้ไปตรวจใน ZORT ก่อนกดส่งใหม่ (กติกาเดิมของโปรเจกต์: ไม่รู้ผล ≠ ไม่สำเร็จ) */
+const ดูเหมือนZORTล่ม = (x?: string | null) => /HTTP\s*5\d\d/.test(String(x ?? ''))
 
 const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
 const PAY = ['เงินสด', 'โอนเงิน', 'บัตรเครดิต', 'เก็บปลายทาง']
@@ -56,6 +92,8 @@ export default function NewSalePage() {
   const [err, setErr] = useState('')
   const [res, setRes] = useState<SaleResp | null>(null)
   const [okDry, setOkDry] = useState('')
+  /** ส่งจริงไปแล้วในฟอร์มใบนี้ ⇒ **ปิดปุ่มถาวร** จนกว่าจะเปิดใบใหม่ (ดูเหตุผลที่ REAL_SEND_ENABLED) */
+  const [locked, setLocked] = useState(false)
 
   /* 🔴 เลขอ้างอิง — สร้างฝั่งเบราว์เซอร์เท่านั้น (กัน hydration ไม่ตรง) และ **ครั้งเดียวต่อการเปิดหน้า**
      ห้ามสร้างใหม่ตอนกด ไม่งั้นกดสองครั้ง = ได้ใบสองใบใน ZORT ที่ลบไม่ได้ */
@@ -81,6 +119,10 @@ export default function NewSalePage() {
 
   /** ยอดที่ **จอ** คิด — ใช้เทียบกับยอดที่ท่อคิด ไม่ใช่ใช้ส่ง */
   const ourLinesTotal = ready.reduce((s, l) => s + l.price * l.qty, 0)
+  /** ยอดสุทธิฝั่งจอ (สินค้า − ส่วนลด + ค่าส่ง) — เทียบกับ `amount` ที่ท่อคิดหลังส่งจริง
+   *  ⚠️ ช่องว่าง = 0 ตรงนี้ถูกต้อง เพราะ "ไม่กรอกส่วนลด" แปลว่าไม่มีส่วนลดจริง ๆ
+   *     (คนละเรื่องกับค่าที่ท่อไม่ส่งมา ซึ่งแปลว่าไม่รู้) */
+  const ourNet = ourLinesTotal - (Number(discount) || 0) + (Number(shipping) || 0)
   /* ท่อคิดยอดเอง ⇒ ต่างกันเมื่อไหร่แปลว่าเราสองฝั่งคิดคนละกติกา ต้องฟ้อง */
 
   const send = useCallback(async (confirm: boolean) => {
@@ -128,6 +170,11 @@ export default function NewSalePage() {
       }
       setRes(r)
       if (!confirm && r?.dryRun && r?.ok !== false) setOkDry(sig)
+      /* 🔴 **ล็อกทันทีที่กดส่งจริงแล้วปลายทางรับเรื่องไป ไม่ว่าผลจะเป็นอะไร**
+         สำเร็จ · เคยส่งแล้ว · ไม่รู้ผล · ZORT ตอบ 5xx ⇒ **ทั้งสี่กรณีห้ามกดซ้ำจากฟอร์มเดิม**
+         เพราะท่อจดกันซ้ำ (`ref`) **เฉพาะตอนสำเร็จ** ⇒ กดซ้ำหลัง 5xx จะยิงเข้า ZORT ใหม่จริง ๆ
+         ⇒ ถ้า ZORT บันทึกใบแรกไว้แล้วแต่ตอบ error = ได้ใบสองใบ สต็อกหายสองรอบ */
+      if (confirm) setLocked(true)
       if (confirm && r?.ok) setOkDry('')
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e))
@@ -259,26 +306,86 @@ export default function NewSalePage() {
       {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
-        <button onClick={() => send(false)} disabled={busy || !ref}
+        <button onClick={() => send(false)} disabled={busy || !ref || locked}
           className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
-          style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
-          ส่งเข้า ZORT จริง
-        </button>
+        {/* 🔴 ส่งจริงไปแล้ว ⇒ **ไม่มีปุ่มให้กดอีก** ไม่ใช่ปุ่มจาง ๆ ที่ยังเล็งกดได้
+            ใบขายตัดสต็อกจริง ⇒ กดซ้ำ = สต็อกหายสองรอบ ยอดขายเบิ้ล */}
+        {locked ? (
+          <span className="rounded-full px-5 py-2 text-[13px] font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300">
+            ส่งใบนี้ไปแล้ว — ปิดการส่งซ้ำของใบนี้ถาวร
+          </span>
+        ) : (
+          <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
+            className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+            style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
+            ส่งเข้า ZORT จริง
+          </button>
+        )}
+        {locked && (
+          <button onClick={() => window.location.reload()} className="text-[12.5px] text-blue-600 hover:underline">
+            เปิดใบใหม่ (โหลดหน้าใหม่ จะได้เลขอ้างอิงใหม่)
+          </button>
+        )}
       </div>
 
-      {/* สามสถานะของปุ่มส่งจริง ห้ามยุบ: ปิดทั้งระบบ / ยังไม่ได้ซ้อม / พร้อมส่ง */}
-      {!REAL_SEND_ENABLED ? (
-        <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
-          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — เจ้าของร้านอนุมัติการเขียนจริงไว้เฉพาะใบเสนอราคา
-          {' '}ใบขายต้องขออนุมัติแยก · <b>ยังไม่เคยมีใบไหนถูกยิงจริงผ่านเส้นนี้เลย</b>
-          {' '}ระหว่างนี้ทดลองส่งได้เต็มที่ เห็นทุกช่องที่จะส่งจริง
-        </p>
+      {/* สามสถานะของปุ่มส่งจริง ห้ามยุบ: ส่งไปแล้ว / ยังไม่ได้ซ้อม / พร้อมส่ง */}
+      {locked ? (
+        <p className="text-[12.5px] text-gray-500 mt-2">ใบนี้ส่งไปแล้ว — ถ้าจะสร้างใบถัดไป ต้องเปิดใบใหม่ (เลขอ้างอิงเดิมกันซ้ำอยู่)</p>
       ) : !dryOk && (
         <p className="text-[12.5px] text-gray-500 mt-2">ต้องทดลองส่งให้ผ่านก่อน · แก้อะไรหลังซ้อม ปุ่มส่งจริงจะปิดเองอีกครั้ง</p>
+      )}
+
+      {/* 🔴 **ZORT ตอบไม่ได้ ≠ ข้อมูลผิด ≠ โค้ดเราพัง** — กล่องนี้ต้องมาก่อน WriteResult
+          ไม่งั้นคนจะอ่านกล่องแดง "ไม่สำเร็จ ไม่มีอะไรถูกสร้าง" ซึ่ง **ยืนยันแบบนั้นไม่ได้** */}
+      {locked && res && !res.dryRun && ดูเหมือนZORTล่ม(res.error) && (
+        <div className="text-[13px] text-amber-900 bg-amber-50 border-2 border-amber-400 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
+          <b>⚠️ ระบบ ZORT ตอบไม่ได้ตอนนี้ — ไม่ใช่ความผิดของข้อมูลที่กรอก และไม่ใช่โค้ดฝั่งเรา</b>
+          <br />
+          ข้อความจากปลายทาง: <span className="font-mono text-[12px]">{res.error}</span>
+          <br />
+          🔴 <b>ก่อนกดส่งใหม่ ให้เปิด ZORT ดูก่อนว่ามีใบนี้แล้วหรือยัง</b> — ZORT อาจบันทึกไปแล้วแต่ตอบ error กลับมา
+          {' '}(อ้างอิง <code>{res.ref || ref}</code>) · ตัวกันซ้ำของระบบจดเฉพาะตอนสำเร็จ
+          {' '}⇒ <b>กดซ้ำจะยิงเข้า ZORT ใหม่จริง ๆ</b>
+          <br />
+          📅 <b>วันนี้ 18 ก.ย. 2569 โมดูลขายของ ZORT ล่มอยู่</b> (วัดเอง 13:21 น. — จอรายการขาย/สร้างรายการขายของเขาตอบ 500)
+          {' '}ถ้าเป็นเพราะเรื่องนี้ ให้รอแล้วลองใหม่ภายหลัง
+        </div>
+      )}
+
+      {/* ℹ️ เคยส่งใบนี้ไปแล้ว — **ห้ามขึ้นเขียวเหมือนสร้างใหม่** และต้องบอกเลขที่ใบเดิม */}
+      {locked && res && !res.dryRun && res.duplicate && (
+        <div className="text-[13px] text-blue-900 bg-blue-50 border border-blue-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
+          <b>ℹ️ ใบนี้เคยบันทึกเข้า ZORT ไปแล้ว — รอบนี้ไม่ได้สร้างใบใหม่</b>
+          {res.first?.number ? <> · ใบเดิมคือเลขที่ <b className="font-mono">{res.first.number}</b></> : null}
+          {typeof res.first?.amount === 'number' ? <> ยอด ฿{res.first.amount.toLocaleString('th-TH')}</> : null}
+          <br />
+          ⇒ <b>สต็อกถูกตัดไปแล้วครั้งเดียวเท่านั้น</b> (ตัวกันซ้ำจับได้จากเลขอ้างอิง <code>{res.ref || ref}</code>)
+          {' '}· ถ้าตั้งใจจะสร้างใบใหม่จริง ๆ ต้องเปิดใบใหม่เพื่อให้ได้เลขอ้างอิงใหม่
+        </div>
+      )}
+
+      {/* ✅ ส่งสำเร็จ — ต้องบอกสามเรื่องที่ไม่มีอยู่ในกล่องผลลัพธ์กลาง */}
+      {locked && res && !res.dryRun && res.ok && !res.duplicate && (
+        <div className="text-[13px] text-emerald-950 bg-emerald-50 border border-emerald-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
+          <b>✅ ใบนี้เข้า ZORT แล้ว</b>
+          {res.number ? <> · เลขที่ใบ <b className="font-mono">{res.number}</b></> : null}
+          {typeof res.amount === 'number' ? <> · ยอดสุทธิที่ท่อคิด <b>฿{res.amount.toLocaleString('th-TH')}</b></> : null}
+          {/* 🔴 ยอดที่จอคิด กับยอดที่ท่อคิด ต่างกันเมื่อไหร่ = คนละกติกา ⇒ เหลือง ไม่ใช่เขียว */}
+          {typeof res.amount === 'number' && Math.abs(res.amount - ourNet) > 0.01 && (
+            <div className="mt-1.5 text-amber-900 bg-amber-100 border border-amber-300 rounded px-2.5 py-1.5">
+              ⚠️ <b>ยอดไม่ตรงกัน</b> — จอคิดได้ ฿{ourNet.toLocaleString('th-TH')} แต่ท่อส่งเข้า ZORT ฿{res.amount.toLocaleString('th-TH')}
+              {' '}⇒ <b>ให้เชื่อเลขในใบของ ZORT</b> แล้วแจ้งทีมทันที (สองฝั่งคิดคนละกติกา)
+            </div>
+          )}
+          <br />
+          🔴 <b>ยกเลิกใบบนเว็บเรา ไม่ยกเลิกใน ZORT</b> — ถ้าใบนี้ผิด ต้องเข้าไปยกเลิกในระบบ ZORT เอง
+          {' '}ไม่งั้นใบยังอยู่และ<b>สต็อกยังถูกตัดไปแล้ว</b>
+          <br />
+          📦 ใบนี้ <b>ตัดสต็อกจริงและบันทึกรายรับจริง</b> ⇒ ตรวจใน ZORT อีกครั้งว่าช่องที่ตั้งใจใส่เข้าครบไหม
+          {' '}(ZORT เมินช่องที่ไม่รู้จักแบบเงียบ ๆ)
+        </div>
       )}
 
       <div className="mt-3"><WriteResult r={res} /></div>
