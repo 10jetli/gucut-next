@@ -27,6 +27,8 @@
 //    บวกเองจาก N แถวแรกแล้วเขียนว่า "ทั้งหมด" = เลขที่ต่ำกว่าความจริงเสมอ โดยไม่มีอะไรฟ้อง
 //    (คลาสเดียวกับ "หน้าแรกไม่ใช่ตัวแทน" ที่เจอมาแล้วสามครั้ง) ⇒ เขียนกำกับว่าเป็นยอดของกี่ใบ
 import { useCallback, useEffect, useState } from 'react'
+import AdvancedSearch from '@/components/zort/AdvancedSearch'
+import PageNav from '@/components/zort/PageNav'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
@@ -66,7 +68,9 @@ interface Resp {
   mirrorTotals?: { count?: number; amount?: number; countExcludingVoided?: number; amountExcludingVoided?: number; syncedAtUtc?: string | null; syncComplete?: boolean | null } | null
   error?: string
   /** ค่าที่ท่อใช้จริง — ใช้เป็นด่านเทียบกับคำค้นที่จอส่ง (ท่อส่งมาให้เพื่อการนี้) */
-  applied?: { q?: string | null; source?: 'mirror' | 'zort' }
+  applied?: { q?: string | null; source?: 'mirror' | 'zort'; from?: string | null; to?: string | null; days?: number | null }
+  /** เลขหน้าที่ท่อใช้จริง + จำนวนหน้าทั้งหมด (ท่อส่งมาตลอด แต่จอไม่เคยใช้จนถึง 18 ก.ย. 2569) */
+  page?: number; pages?: number
   /** มี q ⇒ อ่านจากกระจก ⇒ ต้องบอกว่าซิงก์เมื่อไหร่ · null = ไม่รู้ **ห้ามแปลว่าสด** */
   syncedAtUtc?: string | null
   /** false = กระจกยังไม่ครบ ⇒ ผลค้นอาจขาดใบ · null = ไม่รู้ */
@@ -95,6 +99,16 @@ export default function ReturnOrdersPage() {
      ยิงจริง 15 ก.ย.: ไม่ระบุ ⇒ z1 689 ใบ · z2 239 ใบ · `store=all` ⇒ **400**
      ⇒ เส้นนี้ตอบทีละร้าน ⇒ **ไม่มีตัวเลือก "ทุกร้าน"** */
   const [store, setStore] = useState<StoreId>('')
+  /* 🔴 **ท่อรับ from/to/days และ page มาตลอด แต่จอไม่เคยส่งเลย** (เจอ 18 ก.ย. 2569
+     ตอนกวาดว่า "ท่อโฆษณาตัวกรองอะไรไว้บ้างที่จอไม่เคยใช้" — supportedFilters บอกเอง)
+     ผลที่ตามมาก่อนหน้านี้: ใบคืนมี 693 ใบ จอเห็นแค่ 100 ใบแรก **และไม่มีทางไปดูที่เหลือ**
+     ⚠️ กรองวันที่ทำให้ท่อสลับไปอ่าน **กระจก** แทน ZORT สด (applied.source เปลี่ยนเป็น mirror)
+        ⇒ กล่องแจ้ง "ผลค้นมาจากกระจก" ข้างล่างจะขึ้นเอง เพราะมันผูกกับ applied.source อยู่แล้ว
+        วัดแล้ว 18 ก.ย. 2569: กระจกให้ 2567=110 · 2568=401 · 2569=182 รวม 693 **ตรงกับ ZORT สดทุกปี** */
+  const [from, setFrom] = useState('')
+  const [to, setTo] = useState('')
+  const [advOpen, setAdvOpen] = useState(false)
+  const [page, setPage] = useState(1)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   /** ⚠️ เส้นยังไม่ขึ้นเว็บ ≠ ดึงไม่สำเร็จ ≠ ไม่มีใบสักใบ — สามอย่างนี้ต้องเขียนคนละคำ
@@ -108,12 +122,17 @@ export default function ReturnOrdersPage() {
      ทั้งที่ร้านมี 689 ใบ · และไฟล์ส่งออกก็กรองไม่ได้ตามไปด้วย
      ⚠️ มี q ⇒ ท่ออ่านจาก **กระจก** (source: mirror · live:false) ไม่ใช่ ZORT สด
         ⇒ ต้องเขียนบนจอว่าผลมาจากกระจกและซิงก์เมื่อไหร่ ไม่ใช่ปล่อยให้เข้าใจว่าสดเสมอ */
-  const load = useCallback(async (term = q, storeId = store) => {
+  const load = useCallback(async (term = q, storeId = store, f = from, t = to, pg = 1) => {
     setLoading(true); setError(''); setNotDeployed(false)
+    setPage(pg)
     try {
       const qs = new URLSearchParams({ list: 'returnorders', limit: String(LIMIT) })
       if (storeId) qs.set('store', storeId)
       if (term.trim()) qs.set('q', term.trim())
+      /* ส่งเฉพาะช่องที่มีค่า — ส่งค่าว่างไปคือบังคับให้ท่อสลับไปอ่านกระจกโดยไม่มีใครขอ */
+      if (f) qs.set('from', f)
+      if (t) qs.set('to', t)
+      if (pg > 1) qs.set('page', String(pg))
       const got = await coreJson<Resp>(`/api/web/core?${qs}`, ['rows', 'live'])
       setKnown(got.known)
       /* 🔴 อ่าน error จาก **คำตอบดิบ** ไม่ใช่จากตัวที่กรองรูปแล้ว
@@ -131,7 +150,7 @@ export default function ReturnOrdersPage() {
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e)); setD(null)
     } finally { setLoading(false) }
-  }, [q, store])
+  }, [q, store, from, to])
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = Array.isArray(d?.rows) ? d!.rows! : []
@@ -143,6 +162,11 @@ export default function ReturnOrdersPage() {
   const total = typeof d?.total === 'number' ? d.total : null
   /** ดึงมาไม่ครบทั้งหมดหรือเปล่า — ใช้ตัดสินว่าจะเขียนยอดรวมแบบไหน */
   const partial = total !== null && rows.length < total
+  /* 🔴 **ถ้อยคำที่กลายเป็นเท็จทันทีที่จอมีเลขหน้า** (เจอตอนเพิ่มเลขหน้าเอง 18 ก.ย. 2569)
+     เดิมเขียนว่า "ใบล่าสุด" ได้เพราะจอดึงได้แค่ 100 ใบแรกเสมอ
+     พอกดไปหน้า 2 แถวที่เห็นไม่ใช่ใบล่าสุดอีกต่อไป แต่ข้อความยังพูดเหมือนเดิม
+     ⇒ เพิ่มความสามารถแล้วต้องไล่ดูว่าประโยคไหน**เคยจริงเพราะข้อจำกัดเดิม** */
+  const ใบชุดนี้ = page > 1 ? `ใบในหน้า ${page}` : 'ใบล่าสุด'
   /* 💰 ยอดทั้งหมดจากกระจก — **ใช้ได้เมื่อจำนวนใบของกระจกเท่ากับของ ZORT สดพอดีเท่านั้น** (B3 ในใบสำรวจ t_mu5bhh84)
      คนละแหล่งกัน ⇒ ถ้าจำนวนไม่เท่า ห้ามเอามาวางเป็น "ทั้งหมด" (กฎข้อ 4 ของ CLAUDE.md) · วัดจริง 17 ก.ย.: z1 692=692 · z2 239=239
      ⚠️ ยังไม่รู้ว่า "มูลค่าทั้งหมด" ของ ZORT รวมใบยกเลิกไหม (จอ ZORT ตอบ 500 ตอนวัด) ⇒ บอกทั้งสองแบบ */
@@ -179,7 +203,7 @@ export default function ReturnOrdersPage() {
                 ) : rows.length > 0 && (
                   <>
                     {', '}
-                    มูลค่า{partial ? `เฉพาะ ${fmtNum(rows.length)} ใบล่าสุด` : 'ทั้งหมด'}{' '}
+                    มูลค่า{partial ? `เฉพาะ ${fmtNum(rows.length)} ${ใบชุดนี้}` : 'ทั้งหมด'}{' '}
                     <b>{fmtMoney(sumShown)}</b>
                     {partial && typeof mt?.count === 'number' && mt.count !== total && (
                       <span className="text-gray-500"> (ยอดทั้งหมดจากกระจกใช้ไม่ได้ตอนนี้: กระจกมี {fmtNum(mt.count)} ใบ แต่ ZORT มี {fmtNum(total!)} ใบ)</span>
@@ -268,7 +292,7 @@ export default function ReturnOrdersPage() {
         <>
           {partial && (
             <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2 mb-3 leading-relaxed">
-              แสดง <b>{fmtNum(rows.length)}</b> ใบล่าสุด จากทั้งหมด <b>{fmtNum(total!)}</b> ใบ —
+              แสดง <b>{fmtNum(rows.length)}</b> {ใบชุดนี้} จากทั้งหมด <b>{fmtNum(total!)}</b> ใบ —
               ยอดเงินข้างบนเป็นของ<b>เฉพาะที่ดึงมา</b> ไม่ใช่ยอดสะสมทั้งหมด
               <br />
               ⚠️ และยอดนั้นบวกจากช่อง <b>amount</b> ของ ZORT ซึ่ง<b>ยังไม่ได้พิสูจน์ว่าคือยอดคืนของใบ</b>
@@ -281,7 +305,28 @@ export default function ReturnOrdersPage() {
             onChange={setQ}
             onSubmit={() => load()}
             placeholder="ค้นเลขที่ใบคืน · เลขใบขายอ้างอิง · ชื่อลูกค้า"
-            advanced={<LinkText onClick={() => { setQ(''); load('') }}>ล้างคำค้น</LinkText>}
+            advanced={<LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
+          />
+
+          {/* 🔎 ค้นหาขั้นสูง — ZORT มีช่วงวันที่บนจอนี้ และท่อเรารับ from/to มาตลอด
+              ⚠️ ใส่ได้เฉพาะช่องที่ท่อกรองจริง (กฎข้อ ① ของแผงนี้) */}
+          <AdvancedSearch
+            open={advOpen}
+            fields={[
+              { label: 'ตั้งแต่วันที่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
+              { label: 'ถึงวันที่', kind: 'date', value: to, onChange: (v) => setTo(v) },
+            ]}
+            onApply={() => load(q, store, from, to, 1)}
+            onClear={() => { setFrom(''); setTo(''); setQ(''); load('', store, '', '', 1) }}
+            canClear={!!(from || to || q.trim())}
+            serverFiltered="ช่วงวันที่ · ร้าน · คำค้น (เลขที่ใบคืน · ใบขายอ้างอิง · ชื่อลูกค้า)"
+            notAvailable={[
+              { what: 'สถานะ / การชำระเงิน', why: 'ท่อยังไม่รับเป็นตัวกรอง — กรองในเบราว์เซอร์จะกรองได้แค่หน้าที่เห็น จึงไม่ทำ' },
+            ]}
+            extraNote={
+              <>⚠️ <b>ใส่ช่วงวันที่แล้วข้อมูลจะมาจากกระจกของเรา ไม่ใช่ ZORT สด</b> —
+                {' '}กล่องข้างล่างจะบอกเองว่ารอบนี้อ่านจากไหนและซิงก์เมื่อไหร่</>
+            }
           />
 
           {/* 🔴 **ผลค้นมาจากกระจก ไม่ใช่ ZORT สด — ต้องบอก** (ท่อกำชับ 15 ก.ย. 2569)
@@ -375,6 +420,27 @@ export default function ReturnOrdersPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {/* 📄 เลขหน้า — ท่อรับ `page` มาตลอด แต่จอไม่เคยส่ง ⇒ เห็นแค่ 100 ใบแรกจาก 693
+              และ **ไม่มีทางไปดูที่เหลือเลย** · PageNav อ่าน total จากท่อ ไม่รู้ total ก็บอกว่าไม่รู้เอง
+              ⚠️ ไม่มีตัวเลือกจำนวนต่อหน้า เพราะเส้นนี้ยังไม่ได้พิสูจน์ว่ารับ limit อื่นครบ
+                 ⇒ ให้ปุ่มที่กดแล้วได้ผลจริงเท่านั้น (กติกา "ห้ามมีปุ่มหลอก") */}
+          <div className="flex justify-end mt-3">
+            <PageNav
+              offset={(page - 1) * LIMIT} perPage={LIMIT}
+              total={typeof d?.total === 'number' ? d.total : undefined}
+              rowsOnPage={rows.length} disabled={loading}
+              onGo={(off) => load(q, store, from, to, Math.floor(off / LIMIT) + 1)}
+            />
+          </div>
+
+          {/* ✅ ด่านเทียบหน้าที่จอขอ กับหน้าที่ท่อใช้จริง — เส้นนี้ส่ง `page` กลับมาให้
+              (เคยเจอมาแล้วว่าส่งพารามิเตอร์ไปแล้วท่อเมินเงียบ ๆ ⇒ แถวที่เห็นคือชุดเดิม) */}
+          {typeof d?.page === 'number' && d.page !== page && (
+            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2">
+              ⚠️ จอขอหน้า <b>{page}</b> แต่ท่อใช้หน้า <b>{d.page}</b> — แถวที่เห็นไม่ใช่หน้าที่กด
+            </p>
+          )}
 
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
             {/* 🔴 เช่นเดียวกับบรรทัดหัวจอ — "สดทุกครั้ง" จริงเฉพาะตอนไม่ได้ค้น */}
