@@ -18,8 +18,12 @@
 export type ZortReady = 'replace' | 'readonly'
 
 export const READY_BADGE: Record<ZortReady, { dot: string; text: string; tone: 'green' | 'amber' }> = {
-  replace: { dot: '🟢', text: 'ใช้แทน ZORT ได้เลย', tone: 'green' },
-  readonly: { dot: '🟡', text: 'ดูได้ · งานเขียนยังทำที่ ZORT', tone: 'amber' },
+  /* 🔑 **ขึ้นต้นด้วย "ความสามารถ:"** (CEO ตัดสิน 19 ก.ย. 2569)
+     ป้ายนี้พูดถึง **ความสามารถของจอ** ไม่ใช่ **ข้อมูลรอบนี้** — เดิมไม่มีคำกำกับ
+     ⇒ ตอนท่อพัง จอขึ้น "🟢 ใช้แทน ZORT ได้เลย" คู่กับ "ดึงข้อมูลไม่สำเร็จ" แล้วอ่านขัดกัน
+     ⇒ เขียนขอบเขตให้เห็น ไม่ใช่ให้เดา (คู่กับแถบเตือนเหนือป้ายใน ZortReadyBar) */
+  replace: { dot: '🟢', text: 'ความสามารถ: ใช้แทน ZORT ได้เลย', tone: 'green' },
+  readonly: { dot: '🟡', text: 'ความสามารถ: ดูได้ · งานเขียนยังทำที่ ZORT', tone: 'amber' },
 }
 
 /** เส้นทาง → สถานะ (เทียบตรงตัวก่อน แล้วค่อยลองตัดท้าย /xxx ทีละชั้น — ดู zortReadyOf) */
