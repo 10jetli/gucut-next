@@ -233,7 +233,8 @@ export default function MarketplaceProductsPage() {
             <ExportButton
               disabled={loading}
               spec={{
-                filename: `สินค้าบนมาร์เก็ตเพลส-${new Date().toISOString().slice(0, 10)}`,
+                filename: 'สินค้าบนมาร์เก็ตเพลส',
+                scope: tab === 'all' ? 'ทุกช่องทาง' : tab === 'none' ? 'ยังไม่ได้ลงขายที่ไหนเลย' : `ช่องทาง ${tab}`,
                 title: 'สินค้าบนมาร์เก็ตเพลส',
                 filters: [
                   ['แท็บช่องทาง', tab === 'all' ? 'ทั้งหมด' : tab === 'none' ? 'ยังไม่ได้ลงขายที่ไหนเลย' : tab],

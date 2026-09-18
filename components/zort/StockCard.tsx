@@ -120,7 +120,8 @@ export default function StockCard({ sku }: { sku: string }) {
             disabled={loading || !data}
             label="📤 ส่งออกบัตรสต็อก"
             spec={{
-              filename: `บัตรสต็อก-${sku}${from || to ? `-${from || 'เริ่มแรก'}-ถึง-${to || 'ล่าสุด'}` : ''}`,
+              filename: `บัตรสต็อก-${sku}`,
+              scope: from || to ? `${from || 'เริ่มแรก'} ถึง ${to || 'ล่าสุด'}` : 'ทั้งหมดเท่าที่มี',
               title: `บัตรสต็อก ${sku}`,
               /* 🔴 หัวไฟล์ต้องบอกว่า **ไม่รวมอะไร** — ไฟล์ออกนอกระบบแล้วไม่มีใครย้อนมาถาม
                  ข้อความมาจากท่อ (`coverage` · `missingKinds`) ไม่ใช่เขียนตายตัวในโค้ด */

@@ -209,7 +209,8 @@ export default function ReturnOrdersPage() {
             <ExportButton
               disabled={loading}
               spec={{
-                filename: `ใบคืนจากลูกค้า-${new Date().toISOString().slice(0, 10)}`,
+                filename: 'ใบคืนจากลูกค้า',
+                scope: `${storeLabel(store)}${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
                 title: 'ใบคืนสินค้าจากลูกค้า',
                 note: 'ใบคืนที่ลูกค้าคืนเรา (CN-) — คนละชุดกับใบคืนที่เราส่งคืนผู้ขาย'
                   + ' · เลขที่ใบคืนซ้ำกันได้จริง (ยิงตรวจ 15 ก.ย. 2569: 689 ใบ เลขที่ไม่ซ้ำ 537) — ใช้คอลัมน์ id แยกใบ ห้ามลบแถวที่ดูซ้ำ',

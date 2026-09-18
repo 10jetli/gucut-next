@@ -12,15 +12,20 @@
  */
 import { useState } from 'react'
 import {
-  fetchAllPages, downloadCsv, coverageText, thaiTimeCell, type Cell, type Coverage,
+  fetchAllPages, downloadCsv, coverageText, exportBlocked, exportFilename, thaiTimeCell,
+  type Cell, type Coverage,
 } from '@/lib/csv-export'
 import { BtnGhost } from './index'
 
 export interface ExportSpec<T> {
-  /** ชื่อไฟล์ (ไม่ต้องใส่ .csv) */
+  /** ชื่อไฟล์ (ไม่ต้องใส่ .csv · ตัวปุ่มเติม "-ดึง<วันไทย>" ให้เองตามกติกาข้อ ③) */
   filename: string
   /** ชื่อรายงานบรรทัดแรกของไฟล์ */
   title: string
+  /** ขอบเขตข้อมูลเป็นประโยคเดียว เช่น "ทั้งคลัง" / "ช่วง 01/09–18/09" / "ช่องทาง Shopee"
+   *  🔴 กติกาข้อ ③+④ ของท่านประธาน — ต้องโผล่**ทั้งในชื่อไฟล์และหัวไฟล์**
+   *  ไม่ใส่ = หัวไฟล์จะเขียนว่า "ทั้งชุดตามตัวกรองที่จอใช้อยู่" ซึ่งอ่อนกว่าการบอกตรง ๆ */
+  scope?: string
   /** ตัวกรองที่ใช้ตอนส่งออก — **ต้องเป็นชุดเดียวกับที่จอกำลังกรองอยู่เป๊ะ**
    *  ไม่งั้นคนเทียบเลขในไฟล์กับเลขบนจอแล้วไม่ตรง โดยไม่มีใครรู้ว่าทำไม */
   filters?: [string, string][]
@@ -53,13 +58,24 @@ export default function ExportButton<T>({ spec, disabled, label = '📤 ส่�
         limit: spec.limit ?? 200,
         onProgress: (n) => setGot(n),
       })
+      onDone?.(coverage)
+      /* 🔴 **กติกาข้อ ② ของท่านประธาน (18 ก.ย. 2569): ไล่ไม่ครบ = ไม่ให้ไฟล์ออก**
+         ต้องตัดสินใจ **ก่อน** downloadCsv เสมอ — ไม่ใช่ดาวน์โหลดไปก่อนแล้วค่อยเตือน */
+      const ห้าม = exportBlocked(coverage)
+      if (ห้าม) { setErr(ห้าม); return }
+
+      const เวลาที่ดึง = new Date()
       downloadCsv({
-        filename: spec.filename,
+        filename: exportFilename(spec.filename, spec.scope, เวลาที่ดึง),
         preamble: [
           [`${spec.title} (ส่งออกจาก admin.gucut.com)`],
-          ['เวลาที่ส่งออก', thaiTimeCell(new Date().toISOString())],
+          /* กติกาข้อ ④ — หัวไฟล์ต้องบอก **ดึงเมื่อไหร่** และ **ขอบเขตแค่ไหน** */
+          ['เวลาที่ดึงข้อมูล', thaiTimeCell(เวลาที่ดึง.toISOString())],
+          ['ขอบเขตข้อมูล', spec.scope || 'ทั้งชุดตามตัวกรองที่จอใช้อยู่ตอนกดส่งออก'],
           /* 🔴 ความครบถ้วนต้องอยู่ **ในไฟล์** — ไฟล์ออกนอกระบบไปแล้ว คนเปิดทีหลัง
-             ไม่มีทางย้อนมาดูว่าจอเคยเตือนอะไรไว้ */
+             ไม่มีทางย้อนมาดูว่าจอเคยเตือนอะไรไว้
+             (ตอนนี้ไฟล์ที่ไม่ครบไม่ออกแล้ว แต่ยังมีกรณี "ท่อไม่บอกจำนวนทั้งหมด"
+              ซึ่งออกได้และต้องเขียนกำกับว่ายังไม่รู้ว่าครบไหม) */
           ['ความครบถ้วน', coverageText(coverage)],
           ...(spec.note ? [['หมายเหตุ', spec.note]] : []),
           ...(spec.filters?.length ? [['ตัวกรองที่ใช้ตอนส่งออก', ''], ...spec.filters.map(([k, v]) => [`  ${k}`, v])] : []),
@@ -68,8 +84,14 @@ export default function ExportButton<T>({ spec, disabled, label = '📤 ส่�
         header: spec.header,
         rows: rows.map(spec.toRow),
       })
-      onDone?.(coverage)
-      if (coverage.stoppedBecause) setErr(coverageText(coverage))
+      /* กติกาข้อ ⑥ (ท่านประธานขอไว้เป็นข้อเสริม): จดว่าใคร-จอไหน-เมื่อไหร่-กี่แถว
+         ⚠️ **ห้ามส่งเนื้อข้อมูลไปที่บันทึก** — ส่งแค่ชื่อจอกับจำนวนแถว
+         ⚠️ บันทึกล้มเหลว **ห้ามทำให้ไฟล์ที่ผู้ใช้ได้ไปแล้วดูเหมือนล้มเหลว** ⇒ เงียบ */
+      void fetch('/api/export-log', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ screen: spec.title, scope: spec.scope ?? null, rows: rows.length }),
+      }).catch(() => {})
     } catch (e) {
       setErr(`ส่งออกไม่สำเร็จ: ${e instanceof Error ? e.message : String(e)}`)
     } finally {
@@ -82,8 +104,10 @@ export default function ExportButton<T>({ spec, disabled, label = '📤 ส่�
       <BtnGhost onClick={run} disabled={busy || disabled}>
         {busy ? `กำลังรวบรวม… ${got.toLocaleString('th-TH')} แถว` : label}
       </BtnGhost>
-      {/* ⚠️ ได้ไม่ครบต้องขึ้นบนจอด้วย ไม่ใช่เขียนแต่ในไฟล์ — คนกดปุ่มอยู่ตรงนี้ */}
-      {err && <span className="text-[11.5px] text-amber-800 mt-1 max-w-[320px] leading-snug">{err}</span>}
+      {/* 🔴 ข้อความนี้คือ **ผลลัพธ์เดียวที่ผู้ใช้ได้** เมื่อไฟล์ไม่ออก — ไม่ใช่คำเตือนประกอบ
+          ⇒ ใช้สีแดงเหมือนงานที่ไม่สำเร็จจริง ๆ (ของเดิมเป็นสีเหลือง เพราะตอนนั้นไฟล์ยังออกคู่กัน)
+          กฎ CLAUDE.md: หัวข้อความต้องตรงกับสิ่งที่เกิดขึ้นจริง ไม่ใช่เรื่องถ้อยคำ */}
+      {err && <span className="text-[11.5px] text-red-700 mt-1 max-w-[340px] leading-snug">{err}</span>}
     </span>
   )
 }

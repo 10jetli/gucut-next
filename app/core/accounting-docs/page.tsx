@@ -228,7 +228,8 @@ export default function AccountingDocsPage() {
             <ExportButton
               disabled={loading || !data}
               spec={{
-                filename: `เอกสารบัญชี${type ? `-ชนิด${type}` : ''}`,
+                filename: 'เอกสารบัญชี',
+                scope: data?.applied?.typeLabel || (type ? `ชนิด ${type}` : 'ทุกชนิดเอกสาร'),
                 title: 'เอกสารบัญชีจาก ZORT (จัดการเอกสาร)',
                 filters: [
                   ['ชนิดเอกสาร', data?.applied?.typeLabel || (type ? `ชนิด ${type}` : 'ทั้งหมด')],

@@ -421,7 +421,8 @@ function CoreStockInner() {
               disabled={loading}
               onDone={(c) => { if (c.stoppedBecause) setError(`ส่งออกแล้วแต่ได้ไม่ครบ — ${coverageText(c)} (เขียนไว้ในไฟล์แล้ว)`) }}
               spec={{
-                filename: `คลังสินค้า-${data?.day ?? ''}`,
+                filename: 'คลังสินค้า',
+                scope: `ภาพถ่ายสต็อกวันที่ ${data?.day ?? '(ไม่รู้)'}`,
                 title: 'คลังสินค้า',
                 note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ',
                 filters: [

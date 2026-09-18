@@ -184,7 +184,8 @@ export default function CoreCategoriesPage() {
             <ExportButton
               disabled={loading || !d}
               spec={{
-                filename: `หมวดหมู่สินค้า-${basis === 'zort' ? 'ต้นทุนเฉลี่ยZORT' : basis === 'cost' ? 'ราคาซื้อ' : 'ราคาขาย'}`,
+                filename: 'หมวดหมู่สินค้า',
+                scope: `คิดมูลค่าจาก${basis === 'zort' ? 'ต้นทุนเฉลี่ย ZORT' : basis === 'cost' ? 'ราคาซื้อ' : 'ราคาขาย'}`,
                 title: 'หมวดหมู่สินค้า — มูลค่าคงเหลือและพร้อมขาย',
                 filters: [
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น — ทุกหมวด)'],

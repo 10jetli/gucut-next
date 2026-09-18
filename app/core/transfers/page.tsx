@@ -218,7 +218,9 @@ export default function CoreTransfersPage() {
             <ExportButton
               disabled={loading}
               spec={{
-                filename: `รายการโอนสินค้า-${new Date().toISOString().slice(0, 10)}`,
+                filename: 'รายการโอนสินค้า',
+                /* ⚠️ ไม่ใส่ชื่อแท็บลงขอบเขต เพราะไฟล์ไม่ได้กรองด้วยสถานะจริง (ท่อไม่รองรับ) */
+                scope: `${storeLabel(store)} · ทุกสถานะ${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
                 title: 'รายการโอนสินค้า',
                 note: wErr ? 'รอบนี้ดึงชื่อคลังไม่ได้ — คอลัมน์ชื่อคลังจึงเว้นว่าง (รหัสคลังยังอยู่ครบ)' : undefined,
                 /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอกำลังโชว์** — ฝั่งท่อกำชับตรง ๆ

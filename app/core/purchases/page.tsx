@@ -196,7 +196,8 @@ export default function CorePurchasesPage() {
             <ExportButton
               disabled={loading}
               spec={{
-                filename: `รายการซื้อ-${new Date().toISOString().slice(0, 10)}`,
+                filename: 'รายการซื้อ',
+                scope: storeLabel(store),
                 title: 'รายการซื้อ',
                 /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ — ลืมส่ง store แล้วไฟล์กลายเป็นของ z1 เงียบ ๆ */
                 filters: [

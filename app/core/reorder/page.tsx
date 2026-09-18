@@ -146,7 +146,8 @@ export default function ReorderPage() {
             <ExportButton
               disabled={loading || rows.length === 0}
               spec={{
-                filename: `วางแผนสั่งซื้อซ้ำ-${new Date().toISOString().slice(0, 10)}`,
+                filename: 'วางแผนสั่งซื้อซ้ำ',
+                scope: `คิดยอดใช้จาก ${days} วันล่าสุด${onlyChain ? ' · เฉพาะโซ่' : ''}`,
                 title: 'วางแผนสั่งซื้อซ้ำ',
                 filters: [
                   ['คิดยอดใช้จาก', `${days} วันล่าสุด`],

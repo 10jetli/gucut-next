@@ -192,7 +192,8 @@ export default function CoreBundlesPage() {
             <ExportButton
               disabled={loading}
               spec={{
-                filename: `สินค้าเป็นชุด-${new Date().toISOString().slice(0, 10)}`,
+                filename: 'สินค้าเป็นชุด',
+                scope: q.trim() ? `ค้นหา "${q.trim()}"` : 'ทุกชุด',
                 title: 'สินค้าเป็นชุด',
                 note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ'
                   + ' · คงเหลือ/พร้อมขาย ซิงก์จาก ZORT ทุกครึ่งชั่วโมง · พร้อมขายที่เป็น 0 อาจหมายถึงติดลบ'

@@ -19,6 +19,7 @@ import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtNum } from '@/lib/format'
+import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
@@ -199,6 +200,59 @@ export default function LogisticsPage() {
             <BtnGhost onClick={() => load(offset)} disabled={loading}>
               {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
             </BtnGhost>
+            {/* 📤 ท่านประธานอนุมัติ 18 ก.ย. 2569 ให้ส่งออกได้ทุกจอ **รวมจอนี้ที่มีชื่อผู้รับ**
+                ⇒ ไฟล์ต้องเขียนกำกับว่าเป็นข้อมูลลูกค้า และต้องไม่มีที่อยู่/เบอร์ (จอนี้ไม่มีอยู่แล้ว)
+                🔴 ขอบเขตต้องเป็นชุดเดียวกับที่จอกรองอยู่เป๊ะ — แท็บ `only` เป็นตัวกรองฝั่งท่อ
+                   ลืมส่งไปในไฟล์ = ไฟล์กลายเป็นทั้งกองทั้งที่จอโชว์แค่ "ยังไม่มีเลขพัสดุ" */}
+            <ExportButton
+              disabled={loading || !data || !!error}
+              spec={{
+                filename: 'บริการขนส่ง',
+                scope: [tabs.find((t) => t.id === only)?.label ?? 'ทั้งหมด',
+                  q.trim() ? `ค้นหา "${q.trim()}"` : '',
+                  fFrom || fTo ? `${fFrom || 'เริ่มแรก'} ถึง ${fTo || 'ล่าสุด'}` : '',
+                  fCarrier ? `ขนส่ง ${fCarrier}` : ''].filter(Boolean).join(' · '),
+                title: 'บริการขนส่ง (จากกระจกออเดอร์)',
+                note: 'ไฟล์นี้มีชื่อผู้รับซึ่งเป็นข้อมูลลูกค้า — ห้ามส่งต่อออกนอกร้าน'
+                  + ' · จอนี้อ่านจากกระจกออเดอร์ ไม่ได้ยิง ZORT ⇒ ใบเก่าก่อน '
+                  + (data?.coversFrom ?? '3 ก.ย. 2569') + ' ยังไม่มีเลขพัสดุเก็บไว้'
+                  + (typeof data?.zortShows === 'number' ? ` (ZORT โชว์ ${data.zortShows} ใบ)` : ''),
+                filters: [
+                  ['แท็บ', tabs.find((t) => t.id === only)?.label ?? 'ทั้งหมด'],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                  ['ตั้งแต่วันที่', fFrom || '(ไม่จำกัด)'],
+                  ['ถึงวันที่', fTo || '(ไม่จำกัด)'],
+                  ['ขนส่ง', fCarrier || '(ทุกเจ้า)'],
+                ],
+                fetchPage: async (off, limit) => {
+                  const qs = new URLSearchParams({ list: 'logistics', limit: String(limit), offset: String(off) })
+                  if (only) qs.set('only', only)
+                  if (q.trim()) qs.set('q', q.trim())
+                  if (fFrom) qs.set('from', fFrom)
+                  if (fTo) qs.set('to', fTo)
+                  if (fCarrier) qs.set('carrier', fCarrier)
+                  const res = await fetch(`/api/web/core?${qs}`)
+                  const j: Resp = await res.json()
+                  if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                  /* 🔴 ยอดที่ต้องเทียบคือ **จำนวนของแท็บที่เลือก** ไม่ใช่ `total` ของทั้งกอง
+                     ใช้ total เมื่อไหร่ ⇒ แท็บย่อยจะถูกตัดสินว่า "ไล่ไม่ครบ" ตลอดกาล
+                     แล้วไฟล์จะไม่มีวันออกเลย (ด่านใหม่เข้มกว่าเดิม จึงต้องเลือกเลขให้ถูกตัว) */
+                  const n = typeof j?.rowsMatched === 'number' ? j.rowsMatched
+                    : typeof j?.shown === 'number' ? j.shown
+                    : typeof j?.total === 'number' ? j.total : null
+                  return { rows: j?.rows ?? [], total: n }
+                },
+                header: ['เลขพัสดุ', 'วันที่', 'ชื่อผู้รับ', 'ขนส่ง', 'จำนวนรายการขาย', 'เก็บเงินปลายทาง', 'สถานะ', 'หมายเลขออเดอร์'],
+                toRow: (r: Row) => [
+                  r.trackingNo ?? null, r.date ?? null, r.receiver ?? null, r.carrier ?? null,
+                  /* ⚠️ `lines`/`isCod` ที่ท่อไม่ส่ง ⇒ เว้นว่าง ห้ามเป็น 0 หรือ "ไม่ใช่" */
+                  typeof r.lines === 'number' ? r.lines : null,
+                  r.isCod === undefined ? null : r.isCod ? 'ใช่' : 'ไม่',
+                  r.status ? zortWord(SALE_STATUS, r.status).text : null,
+                  r.number ?? null,
+                ],
+              }}
+            />
             <Link href="/core/soon/shipping"
               className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้ารายการไฟล์ Excel

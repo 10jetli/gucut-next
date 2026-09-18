@@ -528,7 +528,8 @@ export default function CoreSalesPage() {
             <ExportButton
               disabled={loading}
               spec={{
-                filename: `รายการขาย-${advFrom || thaiDay(days - 1)}-ถึง-${advTo || thaiDay(0)}`,
+                filename: 'รายการขาย',
+                scope: `${advFrom || thaiDay(days - 1)} ถึง ${advTo || thaiDay(0)}`,
                 title: 'รายการขาย',
                 note: 'ไฟล์นี้รวมใบยกเลิกไว้ด้วย (เหมือนที่จอแสดง) — ดูคอลัมน์ "สถานะ" เพื่อคัดออกเอง',
                 filters: [
