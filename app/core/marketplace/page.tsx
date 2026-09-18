@@ -17,7 +17,7 @@
 //    ไม่มีค่าจากท่อ = ขึ้นขีดพร้อมเหตุผล · เลขที่วัดวันนี้อยู่ในคอมเมนต์เท่านั้น ไม่ได้อยู่ในหน้าจอ
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtNum, thaiDate } from '@/lib/format'
+import { fmtNum, thaiDate, thaiDayFromUtc } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -89,13 +89,10 @@ function อายุวัน(iso?: string | null, เป็นเวลา_UTC
   return Math.round((วันนี้ - เก็บเมื่อ) / 86400000)
 }
 
-/** เวลาจากฐาน (UTC) → "วันไทย" แบบ YYYY-MM-DD · อ่านไม่ออกคืนค่าเดิมที่ตัด 10 ตัว (ให้ thaiDate ไปจัดการต่อ) */
-function วันไทยจาก_UTC(s?: string | null): string {
-  const v = String(s ?? '').trim()
-  if (!/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(v)) return v.slice(0, 10)
-  const t = Date.parse(v.replace(' ', 'T') + 'Z')
-  return Number.isNaN(t) ? v.slice(0, 10) : new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10)
-}
+/* 📍 ย้าย `วันไทยจาก_UTC` ไปไว้ที่ `lib/format.ts` ในชื่อ `thaiDayFromUtc` (18 ก.ย. 2569)
+   เหตุผล: วันเดียวกันเจอท่าเดียวกันพังอีก 3 จอ (missing-sku · zort-claims · stock รายตัว)
+   ⇒ ตรรกะเดียวกันอยู่คนละไฟล์ = แก้จอหนึ่งแล้วอีกจอยังผิด (กติกาข้อ 3 ของ CLAUDE.md) */
+const วันไทยจาก_UTC = thaiDayFromUtc
 
 /** เรียงตามผัง ZORT เป๊ะ — Shopee · Lazada · TikTok
  *  ⚠️ ห้ามซ่อนเจ้าที่ยังไม่ได้เชื่อม คนที่ชิน ZORT จะหาแล้วไม่เจอ แล้วนึกว่าระบบเราทำไม่ได้ */

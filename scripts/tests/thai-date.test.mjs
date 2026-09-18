@@ -30,7 +30,7 @@ try {
     '--lib', 'es2020,dom', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
-  const { thaiDate } = await import(join(out, 'format.js'))
+  const { thaiDate, thaiDateUtc, thaiDayFromUtc } = await import(join(out, 'format.js'))
 
   const cases = [
     ['2026-03-19T17:00:00.000Z', '20 มี.ค. 2569', 'เที่ยงคืนเวลาไทย — ของเดิมได้ 19 (เลื่อนไปหนึ่งวัน)'],
@@ -48,6 +48,36 @@ try {
     console.log(`  ${ok ? '✅' : '❌'} ${JSON.stringify(input).padEnd(30)} ⇒ ${String(got).padEnd(14)} ${why}`)
     if (!ok) console.log(`     ต้องได้ ${want}`)
   }
+
+  /* ── thaiDateUtc / thaiDayFromUtc ────────────────────────────────────
+     🔴 **ที่มา 18 ก.ย. 2569** — ท่านประธานจับได้ว่าจอมาร์เก็ตเพลสรายงานอายุข้อมูลเกินจริง 1 วัน
+        เหตุ: ท่อเขียนเวลาลง D1 ด้วย `datetime('now')` = **UTC ที่ไม่มีตัวบอกโซน**
+        แล้วฝั่งจอเขียน `thaiDate(x.slice(0, 10))` ⇒ ตัดเวลาทิ้งก่อน ตัวแปลงเลยไม่รู้ว่าต้องแปลง
+        กวาดคลาสเดียวกันวันนั้นเจออีก 3 จอ ⇒ ย้ายตรรกะมาไว้ที่เดียวและคุมด้วยเทสนี้
+     ⚠️ เคสสำคัญที่สุดคือ **17:00–24:00 UTC** ซึ่งเป็นวันถัดไปแล้วในเมืองไทย */
+  console.log('\n— thaiDateUtc (เวลา UTC จากฐาน → วันไทย) —')
+  const casesUtc = [
+    ['2026-09-17 17:00:00', '18 ก.ย. 2569', 'ทรงของ SQLite datetime() — เที่ยงคืนพอดีเวลาไทย (ของเดิมได้ 17 = เพี้ยนหนึ่งวัน)'],
+    ['2026-09-17 16:59:59', '17 ก.ย. 2569', 'ก่อนเที่ยงคืนไทยหนึ่งวินาที ต้องยังเป็น 17 (ขอบที่จับ off-by-one)'],
+    ['2026-09-17T17:00:00.000Z', '18 ก.ย. 2569', 'ทรง ISO ที่บอกโซนมาเอง ต้องได้ผลเดียวกัน'],
+    ['2026-12-31 17:00:00', '1 ม.ค. 2570', 'ข้ามปี'],
+    ['2026-09-17', '17 ก.ย. 2569', '**วันที่เปล่า ๆ ห้ามบวก 7** — ไม่ใช่จุดเวลา บวกแล้วจะเลื่อนกลับทาง'],
+    ['', '—', 'ค่าว่าง'],
+    ['ไม่ใช่วันที่', 'ไม่ใช่วันท', 'อ่านไม่ออก ⇒ ไม่เดา (ตัด 10 ตัวแล้วส่งต่อให้ thaiDate คืนค่าดิบ)'],
+  ]
+  for (const [input, want, why] of casesUtc) {
+    const got = thaiDateUtc(input)
+    const ok = got === want
+    if (!ok) fail++
+    console.log(`  ${ok ? '✅' : '❌'} ${JSON.stringify(input).padEnd(30)} ⇒ ${String(got).padEnd(14)} ${why}`)
+    if (!ok) console.log(`     ต้องได้ ${want}`)
+  }
+
+  /* จอมาร์เก็ตเพลสใช้ตัวนี้ตรง ๆ เพื่อเอาไปคิด "อายุกี่วัน" ⇒ ต้องได้ YYYY-MM-DD เสมอ */
+  const wantDay = '2026-09-18'
+  const gotDay = thaiDayFromUtc('2026-09-17 17:30:00')
+  if (gotDay !== wantDay) { fail++; console.log(`  ❌ thaiDayFromUtc ⇒ ${gotDay} ต้องได้ ${wantDay}`) }
+  else console.log(`  ✅ thaiDayFromUtc('2026-09-17 17:30:00') ⇒ ${gotDay} (ใช้คิดอายุข้อมูลต่อ)`)
 } finally {
   rmSync(out, { recursive: true, force: true })
 }

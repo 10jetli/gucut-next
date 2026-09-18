@@ -9,7 +9,7 @@
 //   · ไม่รู้จักเลย      → ต้องตามหาว่ามันคือสินค้าอะไร แล้วเอาเข้าคลัง
 import { useCallback, useEffect, useState } from 'react'
 import { recipeFreshness, thaiMoment } from '@/lib/recipe-fresh'
-import { fmtNum } from '@/lib/format'
+import { fmtNum, thaiDateUtc } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
@@ -287,7 +287,10 @@ export default function CoreMissingSkuPage() {
                 {/* 🔴 เดิมเขียนว่า "เป็นภาพนิ่ง ไม่ได้ซิงก์เอง" — เท็จแล้วตั้งแต่ 14 ก.ย. 2569
                     (ฝั่งท่อซิงก์สูตรทุกชั่วโมง · gucut-web a17692b) */}
                 {data.recipeAt && (
-                  <> · สูตรชุด<b>เปลี่ยนล่าสุด</b> <b>{thaiDate(String(data.recipeAt).slice(0, 10))}</b></>
+                  /* 🔴 เดิมเขียน `thaiDate(String(data.recipeAt).slice(0, 10))` — **เพี้ยนไปหนึ่งวัน**
+                     `recipeAt` คือ `datetime('now')` ของ D1 = UTC ไม่มีตัวบอกโซน · การตัด 10 ตัวแรก
+                     ทิ้งเวลาไปก่อน ⇒ thaiDate ไม่รู้ว่าต้องแปลง (18 ก.ย. 2569 · คลาสเดียวกับที่ท่านประธานจับได้ที่จอมาร์เก็ตเพลส) */
+                  <> · สูตรชุด<b>เปลี่ยนล่าสุด</b> <b>{thaiDateUtc(data.recipeAt)}</b></>
                 )}
                 {(() => {
                   const f = recipeFreshness(data.recipeCheckedAt, data.recipeAt ?? null)

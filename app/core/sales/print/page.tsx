@@ -273,7 +273,10 @@ export default function SalesPrintPage() {
               <h2 className="text-[17px] font-semibold">{DOCS[doc].title}</h2>
               <p className="text-[13px] text-gray-600">
                 เลขที่ใบ <b>{s.order?.number || s.id}</b>
-                {s.order?.order_date && <> · วันที่ {thaiDate(String(s.order.order_date).slice(0, 10))}</>}
+                {/* ค่าใน `order_date` ฝั่งท่อแกะเป็น **วันไทยล้วน** (`YYYY-MM-DD`) มาแล้วตั้งแต่ตอนซิงก์ (core-sync.mjs · orderDay)
+                    ⇒ ส่งค่าเต็มเข้า thaiDate ได้เลย · การ .slice(0, 10) ทับอีกชั้นไม่ได้ช่วยอะไร แต่ถ้าวันหลังท่อเปลี่ยนไปส่งเวลาติดมาด้วย
+                    การตัดจะกลายเป็นตัวปิดไม่ให้ thaiDate แปลงโซน (18 ก.ย. 2569) */}
+                {s.order?.order_date && <> · วันที่ {thaiDate(s.order.order_date)}</>}
               </p>
             </div>
             <div className="text-[12.5px] text-right text-gray-600">
@@ -298,7 +301,7 @@ export default function SalesPrintPage() {
               <div className="flex justify-between"><span>เลขพัสดุ</span>
                 <b>{s.order?.tracking_no || <span className="text-red-700">ใบนี้ยังไม่มีเลขพัสดุ — ยังยืนยันการส่งไม่ได้</span>}</b></div>
               <div className="flex justify-between"><span>วันที่ส่ง</span>
-                <b>{s.order?.ship_date ? thaiDate(String(s.order.ship_date).slice(0, 10))
+                <b>{s.order?.ship_date ? thaiDate(s.order.ship_date)
                   : <span className="text-red-700">ยังไม่มีวันส่ง</span>}</b></div>
               {!!s.order?.is_cod && <div className="flex justify-between"><span>การชำระ</span><b>เก็บเงินปลายทาง (COD)</b></div>}
             </div>

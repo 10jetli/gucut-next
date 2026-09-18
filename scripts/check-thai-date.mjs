@@ -50,6 +50,19 @@ function walk(dir, out = []) {
   return out
 }
 
+/* ── กฎที่สอง: ตัดเวลาทิ้งก่อนส่งเข้าตัวแปลง ──────────────────────────
+   🔴 **ที่มา 18 ก.ย. 2569** — ท่านประธานจับได้ที่จอมาร์เก็ตเพลสว่าอายุข้อมูลเกินจริง 1 วัน
+      กวาดตามคลาสเดียวกันแล้วเจออีก 3 จอ (missing-sku · zort-claims · stock รายตัว)
+   ⚠️ **ทั้งสี่จุดรอดด่านนี้มาได้** เพราะบรรทัดมีคำว่า `thaiDate` ⇒ กฎข้อแรกปล่อยผ่าน (บรรทัด `if (/thaiDate|…/)`)
+      ⇒ ด่านที่ดูแค่ "มีตัวแปลงไหม" ไม่พอ ต้องดูด้วยว่า **ตัวแปลงได้ของครบไหม**
+   ท่าที่ผิด: `thaiDate(x.at.slice(0, 10))` — ตัด `T..Z` ทิ้งก่อน ⇒ thaiDate ไม่มีทางรู้ว่าต้องแปลงโซน
+   ท่าที่ถูก: `thaiDateUtc(x.at)` (ค่าจากฐาน/UTC) หรือ `thaiDate(x.at)` (ค่าที่บอกโซนมาเอง) */
+/* ⚠️ **ห้ามใช้ `[^)]*` ตรงกลาง** — ท่าที่เจอจริงคือ `thaiDate(String(x.at).slice(0, 10))`
+   ซึ่งมีวงเล็บปิดคั่นอยู่ข้างใน ⇒ ด่านรุ่นแรกของผมเองปล่อยผ่านทั้งที่ปลูกบั๊กกลับเข้าไปแล้ว
+   (พิสูจน์ด้วยการปลูกบั๊ก 18 ก.ย. 2569 — ถ้าไม่ลองจะได้ด่านที่ "เขียวเสมอ" ซึ่งแย่กว่าไม่มีด่าน) */
+const RE_ตัดก่อนแปลง = /\b(thaiDate|thaiShort|thaiDayTime)\s*\([^;]{0,120}?\.slice\(\s*0\s*,\s*10\s*\)/
+const พบตัดก่อนแปลง = []
+
 const พบ = []
 for (const file of [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components'))]) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
@@ -58,6 +71,7 @@ for (const file of [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components')
   บรรทัด.forEach((ln, i) => {
     const t = ln.trim()
     if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*') || t.startsWith('{/*')) return
+    if (RE_ตัดก่อนแปลง.test(ln)) พบตัดก่อนแปลง.push(`${rel}:${i + 1}  ${t.slice(0, 110)}`)
     if (!RE.test(ln)) return
     if (/thaiDate|thaiShort|thaiDayTime|fmt[A-Z]/.test(ln)) return
     if (ln.includes('${') || ln.includes('key=') || ln.includes('===')) return
@@ -79,4 +93,12 @@ if (พบ.length) {
   console.error('   ถ้าช่องนั้นไม่ใช่วันที่จริง (ชื่อพ้องกัน) ให้ใส่ไฟล์ + เหตุผลใน `ยกเว้น` ของ scripts/check-thai-date.mjs')
   process.exit(1)
 }
-console.log('✅ ไม่มีวันที่ดิบหลุดขึ้นจอ')
+if (พบตัดก่อนแปลง.length) {
+  console.error('\n🔴 ตัดเวลาทิ้งก่อนส่งเข้าตัวแปลงวันที่ — วันบนจอจะเป็นวัน UTC ไม่ใช่วันไทย')
+  for (const x of พบตัดก่อนแปลง) console.error('   ' + x)
+  console.error('\n   ค่าจากฐาน/ท่อ (UTC) ⇒ ใช้ `thaiDateUtc(ค่า)` จาก lib/format.ts')
+  console.error('   ค่าที่บอกโซนมาเอง (…Z หรือ +07:00) ⇒ ส่งค่าเต็มเข้า `thaiDate(ค่า)` ตรง ๆ ห้าม .slice(0, 10)')
+  console.error('   เหตุผล: .slice ทิ้งเวลาและโซนไปก่อน ⇒ ตัวแปลงไม่มีทางรู้ว่าต้องแปลง และไม่มีอะไรฟ้อง')
+  process.exit(1)
+}
+console.log('✅ ไม่มีวันที่ดิบหลุดขึ้นจอ · ไม่มีการตัดเวลาทิ้งก่อนส่งเข้าตัวแปลง')

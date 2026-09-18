@@ -19,6 +19,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, thaiDate, thaiHm, EndpointMissing } from '@/components/zort'
+import { thaiDateUtc } from '@/lib/format'
 import { coreJson } from '@/lib/api-shape'
 
 interface Claim { what?: string; endpoint?: string; at?: string }
@@ -134,7 +135,10 @@ export default function ZortClaimsPage() {
                 {' '}<span className="text-emerald-800">(ตรวจเฉพาะที่มีชื่อเส้นเขียนไว้ในโค้ด)</span></>}
             {d.checkedAt && (
               <span className="block text-[11.5px] mt-1 opacity-80">
-                ตรวจเมื่อ {thaiDate(d.checkedAt.slice(0, 10))} {thaiHm(d.checkedAt)} น. (เวลาไทย)
+                {/* 🔴 เดิมตัด 10 ตัวแรกก่อนส่งเข้า thaiDate ⇒ **วันเป็น UTC แต่เวลาเป็นไทย ในบรรทัดเดียวกัน**
+                    (`checkedAt` มาจาก `new Date().toISOString()` ฝั่งท่อ · `thaiHm` บวก 7 ให้อยู่แล้ว)
+                    ⇒ ของที่ตรวจช่วง 17:00–24:00 UTC จะขึ้น "เมื่อวาน 03:30 น." ซึ่งไม่มีอยู่จริง (แก้ 18 ก.ย. 2569) */}
+                ตรวจเมื่อ {thaiDateUtc(d.checkedAt)} {thaiHm(d.checkedAt)} น. (เวลาไทย)
               </span>
             )}
           </div>

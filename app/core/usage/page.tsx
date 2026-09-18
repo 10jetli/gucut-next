@@ -28,7 +28,13 @@ interface Usage {
   windows?: Record<string, Win>
   bySite?: SiteRow[]
   daily?: DailyRow[]
-  bandwidth?: { used?: number; included?: number; period?: string } | number
+  /** 🔴 **ชื่อช่องเดิมบนจอไม่มีอยู่จริงในคำตอบของท่อ** (เจอ 18 ก.ย. 2569 ตอนกวาดเรื่องวันที่)
+   *  ท่อส่ง `usedGB · includedGB · periodStart · periodEnd` (lib/netlify-usage.mjs)
+   *  แต่จอเดิมอ่าน `used · included · period` ⇒ **ไม่มีช่องไหนตรงเลยสักช่อง**
+   *  ⇒ `Number(undefined) || 0` ทำให้จอเขียนว่า **"ใช้ไป 0"** มาตลอด ทั้งที่แปลว่า "ยังไม่รู้"
+   *     และนี่คือจอที่ควรเป็นคนบอกว่าเครดิตใกล้หมด — วันที่เครดิตหมดจริง (18 ก.ย. 2569) จอนี้ก็ยังขึ้น 0
+   *  ⚠️ หน่วยคือ **GB** (ท่อหารพันล้านมาแล้ว) — ของเดิมไม่มีหน่วยกำกับด้วย */
+  bandwidth?: { usedGB?: number; includedGB?: number; periodStart?: string; periodEnd?: string } | number
   caveat?: string
 }
 
@@ -231,9 +237,15 @@ export default function CoreUsagePage() {
             <Card className="mt-3">
               <p className="text-[14.5px] font-semibold text-gray-900 mb-1">แบนด์วิดท์ (รอบบิลปัจจุบัน)</p>
               <p className="text-[13px] text-gray-700">
-                ใช้ไป {fmtNum(Number(d.bandwidth.used) || 0)}
-                {typeof d.bandwidth.included === 'number' && <> จาก {fmtNum(d.bandwidth.included)}</>}
-                {d.bandwidth.period && <span className="text-gray-400"> · รอบ {thaiDate(String(d.bandwidth.period).slice(0, 10))}</span>}
+                {/* ⚠️ ห้ามใช้ `|| 0` กับค่าที่อาจไม่มา — 0 GB แปลว่า "ไม่ได้ใช้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
+                ใช้ไป {typeof d.bandwidth.usedGB === 'number'
+                  ? <b>{fmtNum(d.bandwidth.usedGB)} GB</b>
+                  : <span className="text-gray-400" title="ท่อไม่ได้ส่งยอดแบนด์วิดท์มารอบนี้ — ไม่ใช่ว่าใช้ไป 0">—</span>}
+                {typeof d.bandwidth.includedGB === 'number' && <> จาก {fmtNum(d.bandwidth.includedGB)} GB ที่แพ็กเกจให้</>}
+                {d.bandwidth.periodStart && (
+                  <span className="text-gray-400"> · รอบบิล {thaiDate(d.bandwidth.periodStart)}
+                    {d.bandwidth.periodEnd && <> – {thaiDate(d.bandwidth.periodEnd)}</>}</span>
+                )}
               </p>
             </Card>
           )}

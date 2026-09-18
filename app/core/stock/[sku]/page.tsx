@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
-import { fmtMoney, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum, thaiDateUtc } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -537,7 +537,9 @@ export default function ProductDetailPage() {
                                ⇒ ชุดที่ไม่มีใครแก้จะค้างที่ 3 ก.ย. ตลอดไป ห้ามเอาไปสื่อว่าข้อมูลเก่า */}
                         {inBundles.collectedAt && (
                           <p className="text-[11px] text-gray-400 mt-0.5">
-                            อยู่ใน {list.length} ชุด · สูตรชุด<b>เปลี่ยนล่าสุด</b> {inBundles.collectedAt.slice(0, 10)}
+                            {/* 🔴 เดิมโชว์ `collectedAt.slice(0, 10)` ⇒ **เป็นวัน UTC และเป็นปี ค.ศ. ดิบ** สองเรื่องในจุดเดียว
+                                (`collectedAt` = MAX ของ `bundle_items.at` ซึ่งเขียนด้วย `datetime('now')` = UTC · แก้ 18 ก.ย. 2569) */}
+                            อยู่ใน {list.length} ชุด · สูตรชุด<b>เปลี่ยนล่าสุด</b> {thaiDateUtc(inBundles.collectedAt)}
                             {' '}(ซิงก์จาก ZORT ทุกชั่วโมง — ชุดที่ไม่มีใครแก้ วันที่นี้จะไม่ขยับ)
                           </p>
                         )}
@@ -730,7 +732,8 @@ export default function ProductDetailPage() {
                     <tr key={`${m.ref ?? ''}-${m.date ?? ''}-${i}`}
                       className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} whitespace-nowrap text-gray-600`}>
-                        {m.date ? thaiDate(String(m.date).slice(0, 10)) : '-'}
+                        {/* วันของแถวความเคลื่อนไหวมาเป็นวันไทยล้วนจากท่อ — ห้ามตัดก่อนส่งเข้า thaiDate (ดู lib/format.ts) */}
+                        {m.date ? thaiDate(m.date) : '-'}
                       </td>
                       <td className={`${TD} whitespace-nowrap`}>{m.kind || '-'}</td>
                       <td className={`${TD} text-gray-500 whitespace-nowrap`}>{m.status || '-'}</td>
