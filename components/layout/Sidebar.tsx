@@ -15,7 +15,7 @@ import Link from 'next/link'
 import CreditBadge from '@/components/ui/CreditBadge'
 // (เดิม import useEffect/useState ไว้ใช้กับป้ายเครดิต — ย้ายไป CreditBadge แล้ว 18 ก.ย. 2569)
 import type { NavItem } from '@/lib/nav-config'
-import { READY_BADGE, zortReadyOf } from '@/lib/zort-ready'
+import { ป้ายของเส้นทาง } from '@/lib/zort-ready'
 
 // ลิงก์ไปไฟล์ static (เช่น /catalog/index.html#trf) ต้องเปิดแบบโหลดหน้าจริง
 // ไม่ใช้ Next <Link> เพราะ client-router ของ Next จะตัด hash (#trf) ทิ้งระหว่างนำทาง
@@ -137,8 +137,8 @@ export default function Sidebar({
                           <>
                             <span className="truncate">{c.label}</span>
                             {/* จุดสถานะ "ใช้แทน ZORT ได้หรือยัง" — อ่านจากทะเบียนเดียว lib/zort-ready.ts */}
-                            {(() => { const r = zortReadyOf(c.href); return r
-                              ? <span className="text-[7px] shrink-0" title={READY_BADGE[r].text}>{READY_BADGE[r].dot}</span>
+                            {(() => { const r = ป้ายของเส้นทาง(c.href); return r
+                              ? <span className="text-[7px] shrink-0" title={r.หัว}>{r.dot}</span>
                               : null })()}
                             {c.soon && !active && <span className="text-[9px] shrink-0">◦</span>}
                           </>

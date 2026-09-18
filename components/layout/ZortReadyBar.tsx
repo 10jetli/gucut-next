@@ -7,13 +7,14 @@
 // ⚠️ วางไว้ใน layout กลางที่เดียว — **ห้ามไปแปะรายจอ** (ทะเบียนเดียว จุดวาดเดียว)
 // ⚠️ จอที่ไม่อยู่ในทะเบียน = ไม่วาดอะไรเลย (เครื่องมือของเราเองที่ ZORT ไม่เคยมี)
 import { usePathname } from 'next/navigation'
-import { READY_BADGE, zortReadyOf } from '@/lib/zort-ready'
+import { ป้ายของเส้นทาง } from '@/lib/zort-ready'
 
 export default function ZortReadyBar() {
   const pathname = usePathname()
-  const status = zortReadyOf(pathname ?? '')
-  if (!status) return null
-  const b = READY_BADGE[status]
+  /* 🔑 **ถ้อยคำทั้งหมดประกอบที่ lib/zort-ready.ts ที่เดียว** — จอนี้แค่วาด
+     (ห้ามเติมประโยคตรงนี้อีก ไม่งั้นวันที่ความจริงเปลี่ยน จะต้องไล่แก้สองที่) */
+  const b = ป้ายของเส้นทาง(pathname ?? '')
+  if (!b) return null
   return (
     <div
       className={`px-4 md:px-6 py-1.5 text-[12px] border-b ${
@@ -22,10 +23,8 @@ export default function ZortReadyBar() {
           : 'bg-amber-50 text-amber-800 border-amber-100'
       }`}
     >
-      {b.dot} <b>{b.text}</b>
-      {status === 'readonly' && (
-        <span className="text-amber-700/80"> — จนกว่าด่านดันสต็อก 3 แพลตฟอร์ม + สะพาน PEAK จะผ่าน</span>
-      )}
+      {b.dot} <b>{b.หัว}</b>
+      {b.ท้าย && <span className="text-amber-700/80"> — {b.ท้าย}</span>}
     </div>
   )
 }
