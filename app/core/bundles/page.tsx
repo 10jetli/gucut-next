@@ -25,7 +25,7 @@ import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
 import {
-  PageHead, SearchRow, TableWrap, TH, THR, TD, TDR,
+  PageHead, SearchRow, TableWrap, Tabs, TH, THR, TD, TDR,
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 
@@ -55,6 +55,14 @@ interface Resp {
   active?: number
   inactive?: number
   negative?: number
+  /** ✅ ท่อเปิดให้ 18 ก.ย. 2569 (gucut-web 8af6ef0) — **ตัวนับที่เดินตามตัวกรอง `only`**
+   *  `total` ยัง**ข้าม** only โดยตั้งใจ (แท็บต้องเห็นของทุกกอง เหมือนกติกา byStatus ของใบโอน)
+   *  🚫 **ห้ามอ่าน `shown`** — ฝั่งท่อประกาศว่าเลิกใช้เพราะความหมายกำกวม (CEO กำชับ)
+   *  ⚠️ `truncated` คือตัวบอกว่ายังมีหน้าถัดไป — **ห้ามคำนวณเอาจาก total** */
+  rowsMatched?: number
+  rowsReturned?: number
+  truncated?: boolean
+  only?: string | null
   note?: string
   /** 🔴 **สูตรเปลี่ยนล่าสุดเมื่อไหร่** ไม่ใช่ "ตรวจล่าสุด" — สูตรที่ไม่เคยเปลี่ยนจะค้างตลอดไป */
   collectedAt?: string
@@ -115,6 +123,11 @@ export default function CoreBundlesPage() {
   const [q, setQ] = useState('')
   const [offset, setOffset] = useState(0)
   const [perPage, setPerPage] = useState(PAGE)
+  /* แท็บ เปิด/ปิดใช้งาน — ลอกจากจอสินค้าซึ่งลอก ZORT มาอีกที
+     🔴 **ไม่ได้ทำมาก่อนโดยตั้งใจ** — ก่อน 18 ก.ย. 2569 ท่อกรอง only ได้ที่ระดับแถว
+        แต่ `total` ไม่เดินตาม ⇒ แท็บจะขึ้น "ปิดใช้งาน (360)" แล้วกดได้ 0 แถว
+        (กฎแท็บข้อ 2: เลขในวงเล็บคือคำสัญญา) · ตอนนี้ท่อส่ง rowsMatched มาแล้วจึงทำได้ */
+  const [tab, setTab] = useState<'all' | 'active' | 'inactive'>('all')
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -139,13 +152,15 @@ export default function CoreBundlesPage() {
     }
   }, [items])
 
-  const load = useCallback(async (off = 0, size = perPage) => {
+  const load = useCallback(async (off = 0, size = perPage, tabId = tab) => {
     setLoading(true)
     setError('')
     try {
       // ⚠️ จอนี้ต้องส่ง marketplaces=1 ถึงจะได้โลโก้ช่องทาง (ต่างจาก list=stock ที่ส่งมาให้เลย)
       const qs = new URLSearchParams({ list: 'bundles', limit: String(size), offset: String(off), marketplaces: '1' })
       if (q.trim()) qs.set('q', q.trim())
+      /* แท็บ = ตัวกรองฝั่งเซิร์ฟเวอร์จริง (ท่อรับ only=active|inactive · ค่าอื่นตีกลับ ไม่ใช่เมินเงียบ) */
+      if (tabId !== 'all') qs.set('only', tabId)
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
@@ -156,7 +171,7 @@ export default function CoreBundlesPage() {
     } finally {
       setLoading(false)
     }
-  }, [q, perPage])
+  }, [q, perPage, tab])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -169,6 +184,12 @@ export default function CoreBundlesPage() {
 
   const rows = data?.rows ?? []
   const shown = offset + rows.length
+  /* จำนวนของแท็บที่เลือกอยู่ — มาจากท่อเสมอ ห้ามจอนับเอง
+     แท็บ "ทั้งหมด" ⇒ total (ซึ่งข้าม only อยู่แล้ว) · แท็บอื่น ⇒ rowsMatched ที่เดินตาม only
+     🚫 ห้ามอ่าน `shown` ของท่อ (เลิกใช้แล้ว) — `shown` ตัวนี้เป็นของจอเอง คนละตัวกัน */
+  const จำนวนแท็บนี้ = tab === 'all'
+    ? (typeof data?.total === 'number' ? data.total : undefined)
+    : (typeof data?.rowsMatched === 'number' ? data.rowsMatched : undefined)
 
   return (
     <div className="p-4 md:p-6">
@@ -241,6 +262,22 @@ export default function CoreBundlesPage() {
         placeholder="ค้นหา รหัสชุด หรือชื่อชุด"
         advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
       />
+
+      {/* แท็บ เปิด/ปิดใช้งาน — ผังเดียวกับจอสินค้า (ลอก ZORT มาอีกที)
+          🔑 **ตัวนับมาจากท่อทั้งสามกอง และไม่ถูกกรองด้วยแท็บที่เลือก** (`total`/`active`/`inactive`
+             ข้าม only โดยตั้งใจ) ⇒ กดแท็บไหนอยู่ เลขของแท็บอื่นก็ยังถูก (กฎแท็บข้อ 1)
+          ⚠️ ไม่รู้ตัวนับ ⇒ ส่ง undefined ให้ Tabs ⇒ **ไม่มีวงเล็บ** ดีกว่าโชว์ 0 ที่แปลว่าไม่รู้ */}
+      {data && (
+        <Tabs
+          tabs={[
+            { id: 'all', label: 'ทั้งหมด', count: typeof data.total === 'number' ? data.total : undefined },
+            { id: 'active', label: 'เปิดใช้งาน', count: typeof data.active === 'number' ? data.active : undefined },
+            { id: 'inactive', label: 'ปิดใช้งาน', count: typeof data.inactive === 'number' ? data.inactive : undefined },
+          ]}
+          active={tab}
+          onChange={(id) => { const t = id as typeof tab; setTab(t); load(0, perPage, t) }}
+        />
+      )}
 
       {/* 🔴 คำเตือนว่าข้อมูลเชื่อไม่ได้ — **ต้องอยู่หัวจอ เหนือตาราง**
           เคยวางท้ายตารางแล้วไม่มีใครเห็น แม้แต่คนที่ตั้งใจหา (4 ก.ย. 2569) */}
@@ -439,11 +476,21 @@ export default function CoreBundlesPage() {
             </table>
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
+              {/* 🔴 **ตอนอยู่แท็บ ต้องใช้จำนวนของแท็บนั้น ไม่ใช่ `total`**
+                  `total` ข้ามตัวกรอง only โดยตั้งใจ (ไว้ทำตัวนับแท็บ) ⇒ เอามาทำ "จาก Y" จะเกินจริง
+                  ⚠️ ท่อรุ่นเก่าไม่ส่ง rowsMatched ⇒ ไม่รู้ ห้ามเดา · ถอยไปใช้ total เฉพาะตอนอยู่แท็บทั้งหมด */}
+              {/* 🔴 ตอนแท็บว่าง ข้อความเดิมอ่านว่า "แสดง 1–0 จาก 0 รายการ" ซึ่งไม่ใช่ภาษาคน
+                  (เจอตอนกดแท็บ "ปิดใช้งาน" ที่มี 0 ชุดจริง ๆ — เลขถูกแต่ประโยคพัง) */}
               <span className="text-[12px] text-gray-500">
-                แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
+                {rows.length === 0
+                  ? 'ไม่มีชุดสินค้าในแท็บนี้'
+                  : <>แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก{' '}
+                    {typeof จำนวนแท็บนี้ === 'number'
+                      ? fmtNum(จำนวนแท็บนี้)
+                      : <span className="text-amber-700">ไม่รู้ (ท่อไม่ได้ส่งจำนวนของแท็บนี้มา)</span>} รายการ</>}
               </span>
               <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
-                total={typeof data.total === 'number' ? data.total : null}
+                total={typeof จำนวนแท็บนี้ === 'number' ? จำนวนแท็บนี้ : null}
                 disabled={loading} onGo={(off) => load(off)}
                 onPerPage={(n) => { setPerPage(n); load(0, n) }} />
             </div>
