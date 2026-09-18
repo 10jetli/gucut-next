@@ -35,7 +35,6 @@ const ยกเว้น = {
   'Report.topError': 'app/sales: ข้อความที่จอเขียนเองเมื่อยิงท่อสินค้าขายดีไม่สำเร็จ',
   'Report.returnsError': 'app/sales: ข้อความที่จอเขียนเองเมื่อดึงใบคืนไม่สำเร็จ',
   'Data.marketplaceCounts': 'app/core/marketplace: ท่อยังไม่มีตัวนับนี้ · จอคืน null และขึ้น "—" ถูกแล้ว (ตรวจ 18 ก.ย. 2569)',
-  'Resp.registry': 'app/core/settings-company: ท่อไม่มีช่องนี้ ⇒ ส่วนนั้นไม่เคยขึ้นจอ — เขียนกำกับไว้ในไฟล์แล้ว',
   'Job.howToTell': 'app/core/settings-jobs: ตารางงานคัดมือในไฟล์จอเอง ไม่ได้มาจากท่อ',
   'Job.ifDead': 'app/core/settings-jobs: เหตุผลเดียวกับ Job.howToTell',
   'Report.prevSales': 'app/sales: จอคำนวณเองจากยอดช่วงก่อนหน้า (ดู prev.amount)',

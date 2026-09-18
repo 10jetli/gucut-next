@@ -24,8 +24,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, Pill } from '@/components/zort'
+import { PageHead, BtnGhost, Pill, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
 import { SettingsNav } from '@/components/zort/SettingsNav'
+import { fmtNum } from '@/lib/format'
 
 /* 🔴 **ชื่อช่องต้องตรงกับ SHOP_DATA ของจริง** (netlify/lib/shop-data.mjs ฝั่งท่อ)
    ใบอนุญาต: no · issued · expires · authority · note
@@ -57,7 +58,16 @@ interface Resp {
   licenses?: Doc[]
   trademarks?: Doc[]
   distributorships?: Doc[]
-  registry?: Record<string, string>
+  /** 🔴 **รูปร่างจริงไม่ใช่ Record<string,string>** — ตรวจจากต้นทาง gucut-web/src/lib/licenses.ts (18 ก.ย. 2569)
+   *  `{ source, checkedAt, entries: [{ no, province, name, role }] }`
+   *  ⚠️ ของเดิมจอเขียนว่าเป็นแผนที่ค่าธรรมดาแล้ววนพิมพ์ทุกช่อง ⇒ ถ้าท่อส่งมาจริงจะได้
+   *     บรรทัด `entries` เป็น **[object Object]** บนจอ · และ `checkedAt` เป็นปี ค.ศ. ดิบ
+   *     (เจอก่อนขึ้นจอเพราะไปอ่านรูปร่างจากต้นทาง ไม่ได้รอเห็นบนจอ) */
+  registry?: {
+    source?: string
+    checkedAt?: string
+    entries?: { no?: number; province?: string; name?: string; role?: string }[]
+  }
   error?: string
 }
 
@@ -288,14 +298,37 @@ export default function SettingsCompanyPage() {
               ⇒ เก็บโค้ดไว้ได้ แต่ห้ามนับว่า "จอนี้มีบัญชีทะเบียนราชการแล้ว"
                  ของที่มีในโค้ดแต่ไม่มีวันแสดง = ของที่ไม่มีอยู่จริงสำหรับคนใช้
               ⇒ ถ้าอยากได้จริง ต้องขอฝั่งท่อเพิ่มช่องนี้ก่อน แล้วค่อยมาบอกว่าทำเสร็จ */}
-          {d?.registry && Object.keys(d.registry).length > 0 && (
+          {!!d?.registry?.entries?.length && (
             <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
-              <p className="text-[15px] font-semibold text-gray-800 mb-2">บัญชีทะเบียนราชการ</p>
-              <dl className="text-[13px] space-y-1.5">
-                {Object.entries(d.registry).map(([k, v]) => (
-                  <div key={k}><dt className="text-gray-400 text-[11.5px]">{k}</dt><dd className="text-gray-800">{String(v)}</dd></div>
-                ))}
-              </dl>
+              <p className="text-[15px] font-semibold text-gray-800 mb-1">บัญชีทะเบียนราชการ</p>
+              {d.registry.source && (
+                <p className="text-[11.5px] text-gray-500 mb-2 leading-relaxed">
+                  {d.registry.source}
+                  {d.registry.checkedAt && <> · ตรวจกับต้นทางล่าสุด {thai(d.registry.checkedAt)}</>}
+                </p>
+              )}
+              <TableWrap>
+                <table className="w-full text-[13px]">
+                  <thead><tr>
+                    <th className={THR}>ลำดับ</th><th className={TH}>จังหวัด</th>
+                    <th className={TH}>ชื่อผู้ประกอบการ</th><th className={TH}>สถานะ</th>
+                  </tr></thead>
+                  <tbody>
+                    {d.registry.entries.map((r, i) => (
+                      <tr key={`${r.no ?? i}-${r.province ?? ''}`} className="border-t border-gray-100">
+                        <td className={TDR}>{typeof r.no === 'number' ? fmtNum(r.no) : '—'}</td>
+                        <td className={TD}>{r.province || '—'}</td>
+                        <td className={TD}>{r.name || '—'}</td>
+                        <td className={TD}>{r.role || '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </TableWrap>
+              <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
+                ⚠️ รายชื่อนี้เป็น<b>ของทางราชการ</b> — เราคัดมาแสดง ไม่ได้เป็นคนออกให้
+                {' '}⇒ ถ้าต้องใช้อ้างอิงจริง ให้ดูจากประกาศต้นทางเสมอ
+              </p>
             </div>
           )}
         </>
