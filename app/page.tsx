@@ -315,7 +315,9 @@ export default function DashboardPage() {
   /** กราฟยอดขายรวม: ชนิด + หน้าต่าง 4 เดือนที่กำลังดู (0 = ล่าสุด · เพิ่มขึ้น = ถอยหลัง) */
   const [trendKind, setTrendKind] = useState<'line' | 'bar'>('line')
   const [trendBack, setTrendBack] = useState(0)
-  const [returns, setReturns] = useState<{ total: number; amount: number } | null>(null)
+  /** ใบคืนจากลูกค้าในช่วง 30 วัน — `docs` = จำนวนใบ · `unreadable` = ใบที่อ่านเนื้อในไม่ได้
+   *  ⚠️ ไม่มี "มูลค่า" ในเส้นนี้ ⇒ **ไม่โชว์ยอดเงิน** ดีกว่าโชว์เลขที่เดาเอา */
+  const [returns, setReturns] = useState<{ docs: number; unreadable: number } | null>(null)
   const [factory, setFactory] = useState({ production: 0, pending: 0 })
   const [coreError, setCoreError] = useState('')
   const [sideNote, setSideNote] = useState('')
@@ -333,7 +335,14 @@ export default function DashboardPage() {
       getJson(`/api/web/core?list=orders&from=${thaiDay(6)}&to=${d0}&limit=1`),
       getJson(`/api/web/core?list=stock&limit=1`),
       getJson(`/api/web/core?list=orders&from=${thaiDay(30)}&to=${d0}&limit=6`),
-      getJson('/api/returns?days=30'),
+      /* 🔴 **เดิมยิง `/api/returns?days=30` แล้วได้ 403 ทุกครั้ง** (เจอ 18 ก.ย. 2569 ตอนไล่ทดลองใช้ทุกจอ)
+         เส้น `/api/returns` เป็นรีเลย์ของ**จอรับคืนสินค้า** ที่รับพารามิเตอร์เฉพาะรายการที่อนุญาต
+         และ `days` ไม่อยู่ในรายการนั้น ⇒ ตอบ 403 ⇒ การ์ดนี้ขึ้น "—" มาตลอด
+         ⚠️ จอไม่ได้โกหก (ขึ้น "—" ไม่ใช่ 0 และมีชื่ออยู่ในรายการเส้นที่ดึงไม่ได้)
+            แต่ **ของที่ไม่เคยทำงานเลย ก็คือของที่ไม่มี** ⇒ ต้องแก้ ไม่ใช่ปล่อยให้ขึ้นขีดต่อไป
+         ⇒ ย้ายมาใช้ `?returnskus=1&days=` ซึ่งนับ **ใบคืนในช่วงวันจริง** (`docsInRange`)
+            และบอกด้วยว่าอ่านไม่ได้กี่ใบ (`unreadable`) ⇒ แยก "ไม่มี" ออกจาก "อ่านไม่ได้" ได้ */
+      getJson('/api/web/core?returnskus=1&days=30'),
       getJson('/api/sheets'),
       getJson('/api/web/core?pending=1'),
       /* 24 เดือน — พอสำหรับทั้ง "ยอดปีนี้" และ "เทียบกับปีที่แล้วช่วงเดียวกัน (YTD)" */
@@ -390,9 +399,13 @@ export default function DashboardPage() {
         : 'ท่อไม่ได้รวมตามหมวดให้ (applied.by ไม่ใช่ category)')
     }
 
-    if (retRes.status === 'fulfilled') {
-      setReturns({ total: Number(retRes.value?.total ?? 0), amount: Number(retRes.value?.amount ?? 0) })
+    if (retRes.status === 'fulfilled' && typeof retRes.value?.docsInRange === 'number') {
+      setReturns({
+        docs: Number(retRes.value.docsInRange),
+        unreadable: Number(retRes.value?.unreadable ?? 0),
+      })
     } else {
+      /* ⚠️ ท่อไม่ส่ง `docsInRange` = **ยังไม่รู้** ⇒ ปล่อย null ให้การ์ดขึ้น "—" ไม่ใช่ 0 */
       setReturns(null)
     }
     if (sheetRes.status === 'fulfilled' && Array.isArray(sheetRes.value?.orders)) {
@@ -756,10 +769,16 @@ export default function DashboardPage() {
           note={!coreError && stock ? `ของหมด ${fmtNum(stock.outOfStock)} · เหลือน้อย ${fmtNum(stock.low)}` : undefined}
           noteTone={stock && stock.outOfStock > 0 ? 'red' : 'gray'}
         />
+        {/* ⚠️ หน่วยเปลี่ยนจาก "รายการ" เป็น "ใบ" เพราะเลขที่ได้คือ **จำนวนใบคืน** ไม่ใช่จำนวนชิ้น
+            หน่วยผิดคือการโกหกแบบที่ไม่มีใครจับได้ (เลขถูก แต่คนอ่านเข้าใจอีกอย่าง) */}
         <StatCard
-          icon="↩️" tone="orange" label="สินค้าตีกลับ (30 วัน)"
-          value={returns ? fmtNum(returns.total) : '—'} unit="รายการ"
-          note={returns && returns.total > 0 ? `มูลค่า ${fmtMoney(returns.amount)}` : undefined}
+          icon="↩️" tone="orange" label="ใบคืนจากลูกค้า (30 วัน)"
+          value={returns ? fmtNum(returns.docs) : '—'} unit="ใบ"
+          note={returns
+            ? (returns.unreadable > 0
+              ? `อ่านเนื้อในไม่ได้ ${fmtNum(returns.unreadable)} ใบ — ไม่ใช่ว่าไม่มี`
+              : undefined)
+            : 'ยังอ่านไม่ได้รอบนี้ — ไม่ใช่ว่าไม่มีใบคืน'}
           noteTone="red"
         />
       </div>
