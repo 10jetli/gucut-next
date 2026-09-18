@@ -55,17 +55,40 @@ if (!key) {
   process.exit(1)
 }
 
-/* ถามท่อด้วยชื่อที่รู้ว่าไม่มีจริง ⇒ ท่อตอบ 400 พร้อมรายชื่อ accepts ทั้งหมด
-   (ใช้ข้อความ error ของท่อเป็นแหล่งความจริง ไม่ใช่รายชื่อที่เราจำไว้เอง) */
-const res = await fetch('https://gucut.com/api/core?list=__ไม่มีจริง__&limit=1', {
-  headers: { 'x-admin-key': key },
-})
-const j = await res.json().catch(() => null)
-const ท่อมี = Array.isArray(j?.accepts) ? j.accepts : null
+const ยิง = async (qs) => {
+  const r = await fetch(`https://gucut.com/api/core?${qs}`, { headers: { 'x-admin-key': key } })
+  return { r, j: await r.json().catch(() => null) }
+}
+
+/* ① ทางหลัก: เส้นสารบัญที่ฝั่งท่อทำให้ (CEO · 18 ก.ย. 2569) — **สร้างจากซอร์สตอน build**
+      ⇒ ไม่ใช่รายชื่อที่คนพิมพ์ด้วยมือ จึงไม่ล้าสมัย (เขาแก้ที่ต้นเหตุ ไม่ได้เติมชื่อที่ขาด) */
+let ท่อมี = null
+let paramRoutes = null
+let ขอบเขตParam = null
+let ทางที่ใช้ = ''
+{
+  const { j } = await ยิง('endpoints=1')
+  /* 🔴 ท่อรุ่นเก่าตอบ 200 + fallthrough ⇒ **ไม่ใช่คำตอบของเส้นนี้** ห้ามอ่านว่าไม่มีเส้นสักเส้น */
+  if (j && j.fallthrough !== true && Array.isArray(j.lists)) {
+    ท่อมี = j.lists
+    paramRoutes = Array.isArray(j.paramRoutes) ? j.paramRoutes : null
+    ขอบเขตParam = j['⚠️ ขอบเขตของ paramRoutes'] ?? null
+    ทางที่ใช้ = '?endpoints=1 (สารบัญที่ท่อสร้างจากซอร์สตอน build)'
+  }
+}
+
+/* ② ทางถอย: ถามด้วยชื่อที่ไม่มีจริง ⇒ ท่อตอบ 400 พร้อม accepts
+      ใช้เมื่อท่อยังไม่ deploy เส้นสารบัญ · **ทางนี้ให้เฉพาะกอง `list=`** */
 if (!ท่อมี) {
-  console.error(`🔴 ท่อไม่ได้ส่งรายชื่อ accepts มา (HTTP ${res.status}) — ตรวจไม่ได้รอบนี้`)
-  console.error('   ⇒ **ไม่ใช่ "ไม่มีเส้นที่ไม่ได้ใช้"** แค่ยังไม่รู้ · ' + JSON.stringify(j).slice(0, 160))
-  process.exit(1)
+  const { r, j } = await ยิง('list=__ไม่มีจริง__&limit=1')
+  if (Array.isArray(j?.accepts)) {
+    ท่อมี = j.accepts
+    ทางที่ใช้ = 'ข้อความ 400 ของท่อ (ท่อรุ่นนี้ยังไม่มี ?endpoints=1)'
+  } else {
+    console.error(`🔴 ท่อไม่ได้ส่งรายชื่อมาเลย (HTTP ${r.status}) — ตรวจไม่ได้รอบนี้`)
+    console.error('   ⇒ **ไม่ใช่ "ไม่มีเส้นที่ไม่ได้ใช้"** แค่ยังไม่รู้ · ' + JSON.stringify(j).slice(0, 160))
+    process.exit(1)
+  }
 }
 
 /* จอเรียกอะไรบ้าง — ทั้ง `list=xxx` ใน URL ตรง ๆ และ `list: 'xxx'` ใน URLSearchParams */
@@ -79,7 +102,8 @@ for (const f of walk(join(ROOT, 'app')).concat(walk(join(ROOT, 'components')))) 
 const ไม่มีใครใช้ = ท่อมี.filter((x) => !จอเรียก.has(x))
 const เรียกแต่ท่อไม่รู้จัก = [...จอเรียก].filter((x) => !ท่อมี.includes(x)).sort()
 
-console.log(`ท่อมี ${ท่อมี.length} ชนิด · จอเรียก ${จอเรียก.size} ชนิด`)
+console.log(`แหล่งรายชื่อ: ${ทางที่ใช้}`)
+console.log(`ท่อมี ${ท่อมี.length} ชนิด (กอง list=) · จอเรียก ${จอเรียก.size} ชนิด`)
 if (ไม่มีใครใช้.length) {
   console.log(`\n💤 ท่อมีแต่ไม่มีจอไหนเรียก ${ไม่มีใครใช้.length} เส้น: ${ไม่มีใครใช้.join(' · ')}`)
   console.log('   ⇒ **ไม่ใช่ของพัง** แต่คือของที่อาจมีค่าและไม่มีใครรู้ว่ามี — เปิดดูเนื้อก่อนตัดสิน')
@@ -90,4 +114,20 @@ if (เรียกแต่ท่อไม่รู้จัก.length) {
   console.log(`\n⚠️ จอเรียกชื่อที่ท่อไม่รู้จัก: ${เรียกแต่ท่อไม่รู้จัก.join(' · ')}`)
   console.log('   ⚠️ อาจเป็นผลลวงจากตัวกวาด — เช่นจอใช้ `zortlist=` ซึ่งเป็นคนละพารามิเตอร์')
   console.log('   ⇒ **ยิงยืนยันทีละชื่อก่อนแจ้ง** (ของจริงรอบแรกของผมลวงทั้งหมด)')
+}
+
+/* ── กอง `paramRoutes` — **รายการที่ต้องดูด้วยตา ไม่ใช่เกณฑ์ผ่าน/ไม่ผ่าน** ──
+   ⚠️ CEO กำชับตอนส่งกองนี้มา และผมเขียนตามคำเตือนของเขาตรง ๆ:
+      · กองนี้ **หยาบกว่า `lists`** เพราะ `searchParams.get()` ถูกใช้อ่านตัวกรองด้วย
+      · ในนั้นมีเส้นแอดมิน/ภายในเยอะมาก (addsale · addproduct · backup · movedel …)
+        **จอไม่ควรเรียกหลายตัวเลย** ⇒ เทียบว่า "จอเรียกครบไหม" จะแดงเป็นกองและไม่มีความหมาย
+   🔑 **ห้ามนับเป็นจำนวนเส้นที่แน่นอน และห้ามเอาไปทำตัวเลขบนจอ**
+      (เลขที่หยาบซึ่งไม่มีป้ายกำกับ จะถูกเอาไปใช้ตัดสินใจภายในวันเดียว) */
+if (paramRoutes) {
+  console.log(`\n📋 ท่อมีเส้นแบบพารามิเตอร์อีก ~${paramRoutes.length} ชื่อ — **ดูด้วยตา ไม่ใช่เกณฑ์ผ่าน**`)
+  if (ขอบเขตParam) console.log(`   ⚠️ ${ขอบเขตParam}`)
+  console.log('   ⇒ ไม่เทียบอัตโนมัติโดยตั้งใจ · ส่วนใหญ่เป็นเส้นแอดมิน/ภายในที่จอไม่ควรเรียก')
+} else {
+  console.log('\n📋 ท่อรุ่นนี้ยังไม่ส่ง paramRoutes มา ⇒ **ตรวจได้เฉพาะกอง `list=`**')
+  console.log('   ⚠️ เส้นที่ไม่ได้อยู่ในรูป `list=` (เช่น `?skuaudit=1`) จึง**ยังไม่ถูกตรวจเลย**')
 }
