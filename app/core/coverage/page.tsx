@@ -87,8 +87,12 @@ interface ZortMonth {
    *       = **แดงลวงเต็มจำนวน** แล้วคนจะไปไล่หาว่ากระจกเกินมา
    *  ⇒ `null`/ไม่มีคีย์ = **ยังไม่รู้ยอด** · `0` = ZORT บอกว่าศูนย์จริง — ห้ามยุบสองอันนี้ */
   amount?: number | null
-  /** ชื่อร้านที่ ZORT ไม่ส่งยอด/จำนวนมา — ท่อส่งมาในคีย์ไทย `ร้านที่ยังไม่รู้ยอด`
-   *  🔴 **ต้องเอาชื่อร้านขึ้นจอ** ไม่ใช่บอกแค่ว่า "ไม่รู้" — คนต้องรู้ว่าต้องไปดูร้านไหน */
+  /** ชื่อร้านที่ ZORT ไม่ส่งยอด/จำนวนมา
+   *  🔴 **ต้องเอาชื่อร้านขึ้นจอ** ไม่ใช่บอกแค่ว่า "ไม่รู้" — คนต้องรู้ว่าต้องไปดูร้านไหน
+   *  ⚠️ ท่อส่งสองชื่อจากตัวแปรเดียวกัน: `unknownStores` (อังกฤษ · ตัวที่เครื่องอ่าน)
+   *     กับ `ร้านที่ยังไม่รู้ยอด` (ไทย · ไว้ให้คนอ่าน log) — ฝั่งท่อตัดที่ราก 18 ก.ย. 2569
+   *     เพราะด่าน check-pipe-keys มองคีย์ไทยไม่เห็น ⇒ ถ้ามีแต่คีย์ไทย วันที่ท่อเปลี่ยนชื่อ จอจะพังเงียบ
+   *  ⚠️ **ยังต้องอ่านคีย์ไทยเป็นทางถอย** จนกว่าท่อรุ่นใหม่จะขึ้นเว็บจริง (ตอนนี้ค้าง 17 commit) */
   unknownStores?: string[]
 }
 
@@ -138,7 +142,9 @@ export default function CoveragePage() {
       const อ่านจำนวน = (j: Record<string, unknown>, ป้าย: string) => {
         if (!('zortCount' in j)) throw new Error(`${ป้าย}ท่อตอบมาไม่มีช่อง zortCount (ท่อรุ่นเก่า)`)
         if (j.zortCount === null) {
-          const ร้าน = Array.isArray(j['ร้านที่ยังไม่รู้ยอด']) ? (j['ร้านที่ยังไม่รู้ยอด'] as string[]).join(' · ') : ''
+          const รายชื่อ = Array.isArray(j.unknownStores) ? j.unknownStores
+            : Array.isArray(j['ร้านที่ยังไม่รู้ยอด']) ? j['ร้านที่ยังไม่รู้ยอด'] : null
+          const ร้าน = รายชื่อ ? (รายชื่อ as string[]).join(' · ') : ''
           throw new Error(`${SKIP}${ป้าย}ZORT ไม่ส่งตัวเลขของเดือนนี้มา${ร้าน ? ` (ร้าน ${ร้าน})` : ''}`
             + ' — ยังไม่รู้ว่ามีกี่ใบ ไม่ใช่ว่าไม่มีใบ')
         }
@@ -188,7 +194,9 @@ export default function CoveragePage() {
           [ym]: {
             count: น, stores: all.j.stores.length, via: 'all',
             amount: typeof all.j.zortAmount === 'number' ? all.j.zortAmount : null,
-            unknownStores: Array.isArray(all.j['ร้านที่ยังไม่รู้ยอด']) ? all.j['ร้านที่ยังไม่รู้ยอด'] : undefined,
+            /* อังกฤษก่อน (ท่อรุ่นใหม่) · ถอยไปไทย (ท่อที่ยัง deploy ไม่ขึ้น) — ค่าเดียวกันทั้งคู่ */
+            unknownStores: Array.isArray(all.j.unknownStores) ? all.j.unknownStores
+              : Array.isArray(all.j['ร้านที่ยังไม่รู้ยอด']) ? all.j['ร้านที่ยังไม่รู้ยอด'] : undefined,
           },
         }))
         return
