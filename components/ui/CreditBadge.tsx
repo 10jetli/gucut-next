@@ -29,7 +29,12 @@ export function useCredits(): สถานะ {
       .then((r) => r.json())
       .then((j: ข้อมูลเครดิต) => {
         if (!alive) return
-        /* ⚠️ "ตอบมาแต่ไม่มีช่อง left" นับเป็นอ่านไม่ได้ — มีก้อนแม่ ไม่ได้แปลว่ามีช่องลูก */
+        /* ⚠️ "ตอบมาแต่ไม่มีช่อง left" นับเป็นอ่านไม่ได้ — มีก้อนแม่ ไม่ได้แปลว่ามีช่องลูก
+           🔑 แต่ถ้าท่อ**บอกเหตุผลมาเอง** (`off` = ยังไม่ได้ตั้งคีย์ · `unknown` = อ่านไม่ได้รอบนี้)
+              ต้องส่งต่อให้ creditAlert เป็นคนเขียนข้อความ **ไม่ใช่กลืนเป็น error ก้อนเดียว**
+              ไม่งั้นข้อความ "ยังไม่ได้ตั้งคีย์ — จอนี้ยังไม่ได้เฝ้าอะไรเลย" จะไม่มีวันขึ้นจอ
+              (เจอตอนทบทวนของตัวเองก่อน deploy 18 ก.ย. 2569 — คลาสเดียวกับตารางที่ไม่มีวันแสดง) */
+        if (j?.off || j?.unknown) { setS({ state: 'ok', a: creditAlert(j) }); return }
         if (typeof j?.left !== 'number' && typeof j?.used !== 'number') { setS({ state: 'error' }); return }
         setS({ state: 'ok', a: creditAlert(j) })
       })
@@ -73,7 +78,9 @@ export default function CreditBadge({ dark = false }: { dark?: boolean }) {
   return (
     <span
       className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${สีของ(a.level, dark)}`}
-      title={`${a.ข้อความ}${a.planConfirmed ? '' : ' · เพดานยังไม่ได้ยืนยันจาก Netlify (ท่อใช้ค่าตั้งต้น)'}`}
+      /* ⚠️ ต่อท้ายเรื่องเพดาน **เฉพาะตอนที่เพดานถูกเอาไปใช้คิดจริง** (มี pct)
+         ตอนอ่านไม่ได้/ยังไม่ตั้งคีย์ เพดานไม่เกี่ยวเลย — เติมไปก็เป็นคำเตือนที่ไม่ได้เตือนอะไร */
+      title={`${a.ข้อความ}${a.pct !== null && !a.planConfirmed ? ' · เพดานยังไม่ได้ยืนยันจาก Netlify (ท่อใช้ค่าตั้งต้น)' : ''}`}
     >
       {a.stale ? '⚡~' : '⚡'}{เลข}
     </span>
