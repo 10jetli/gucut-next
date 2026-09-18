@@ -41,7 +41,10 @@ from playwright.sync_api import sync_playwright
 ]
 
 จอ = ["/core/logistics", "/core/sales", "/core/stock", "/core/transfers",
-      "/core/purchases", "/core/marketplace-products", "/core/return-orders"]
+      "/core/purchases", "/core/marketplace-products", "/core/return-orders",
+      # เพิ่ม 19 ก.ย. 2569: จอที่วาด **แถบกราฟ/ชิป** จากรายการปลายเปิด (ไม่ใช่แค่แท็บ)
+      # ⚠️ พวกนี้โตแล้วจอ "ยาวลง" ไม่ใช่ "กว้างออก" ⇒ ไม่ล้นแนวนอน แต่ต้องดูว่าไม่พัง
+      "/core", "/core/channels", "/core/categories"]
 
 
 def ขยาย(ของ):
@@ -94,7 +97,11 @@ with sync_playwright() as p:
         try:
             page.goto(ฐาน + path, wait_until="domcontentloaded", timeout=60000)
             พร้อม = False
-            for _ in range(30):
+            """เพดานรอ 45 วิ ไม่ใช่ 30 — ที่ 5 เท่า จอขนส่งมีชิปขนส่ง **95 ตัว**
+               ใช้เวลาเรนเดอร์เกิน 30 วิ ⇒ ตัวทดสอบเคยตอบ "ตัดสินไม่ได้" ทั้งที่จอปกติดี
+               (เปิดดูเองแล้ว: 8,792 ตัวอักษร · กว้าง 375/390 ⇒ ไม่ล้น · ชื่อปลอมขึ้นครบ)
+               ⚠️ ยิ่งปลูกเยอะ ยิ่งช้า ⇒ **เพดานเวลาต้องโตตามจำนวนที่ปลูก** ไม่ใช่ค่าคงที่"""
+            for _ in range(45 if เท่าตัว > 2 else 30):
                 page.wait_for_timeout(1000)
                 t = page.locator("main").inner_text()
                 """⚠️ เงื่อนไข "พร้อม" นี้เคยเข้มเกินไป — จอขนส่งตอบว่า "ตัดสินไม่ได้ใน 30 วิ"
