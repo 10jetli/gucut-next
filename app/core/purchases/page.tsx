@@ -315,7 +315,7 @@ export default function CorePurchasesPage() {
                   {' '}({typeof data?.total === 'number'
                     ? <>ทั้งหมด {fmtNum(Number(data.total))} ใบ</>
                     : <>ยังไม่รู้ว่าทั้งชุดมีกี่ใบ — ท่อไม่ได้บอกจำนวน</>}) — ตัวเลขบนแท็บเป็นของทั้งชุด</>}
-              {' '}· <span className="text-gray-400">ท่อยังไม่รับตัวกรองสถานะ — ขอไว้แล้ว</span>
+              {' '}· <span className="text-gray-400">ท่อยังไม่รับตัวกรองสถานะ — ยิงยืนยันซ้ำ 18 ก.ย. 2569 (ส่ง status= แล้ว total ค้าง 33 เท่าเดิม) · ขอไว้แล้ว</span>
             </p>
           )}
 
