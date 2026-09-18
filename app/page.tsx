@@ -58,24 +58,37 @@ async function getJson(url: string) {
 
 /** การ์ดตัวเลขแบบแดชบอร์ด ZORT — ไอคอนกลมพื้นพาสเทลซ้าย · ป้ายเล็กกับเลขใหญ่ชิดขวา
  *  (ลอกจาก zort-ui/23-zort-หน้าแรก-แดชบอร์ด.jpg) */
+/* การ์ดสรุปแบบ ZORT
+ *
+ * 🔴 **เดิมมี prop `big?: 'red' | 'plain'` ไว้ทำตัวเลขเป็นสีแดง แต่ไล่ทั้งไฟล์แล้วไม่มีใครส่งมาเลยสักที่**
+ *    (กวาดเจอ 18 ก.ย. 2569) ⇒ เป็นโค้ดตายที่ทำให้คนอ่านนึกว่า "การ์ดนี้มีเกณฑ์เตือนแล้ว" ทั้งที่ไม่มี
+ *    ⇒ เอาออก ดีกว่าเก็บไว้ให้เข้าใจผิด
+ *
+ * ⚠️ **สีพื้นไอคอนไม่ใช่เกณฑ์** — `bg`/`fg` ถูกส่งมาตายตัวจากผู้เรียก (การ์ดค้างชำระแดงเสมอ
+ *    ไม่ว่าจะ 0 ใบหรือ 1,000 ใบ) ⇒ สีนั้นบอกแค่ว่า "การ์ดนี้เรื่องเงิน" ไม่ได้บอกว่าอันตราย
+ * ⚠️ **ยังตั้งเกณฑ์จริงไม่ได้** เพราะเกณฑ์ที่ถูกของยอดค้างคือ **อายุใบ** (ค้างมากี่วัน) ไม่ใช่จำนวนใบ
+ *    ซึ่งท่อยังไม่ส่งอายุมา ⇒ ห้ามตั้งเพดานเป็นจำนวนใบเอง (จะได้ตัวเตือนที่ร้องผิดเวลา)
+ *    ⇒ สิ่งเดียวที่พูดได้จากข้อมูลที่มีคือ **0 ใบ = ไม่มีอะไรค้าง** ซึ่งเป็นข้อเท็จจริง ไม่ใช่เกณฑ์ที่เดาเอา
+ */
 function ZortStat({
-  icon, bg, fg, label, value, big, note,
+  icon, bg, fg, label, value, note, quiet,
 }: {
   icon: string; bg: string; fg: string
   label: string
   value: string
-  big?: 'red' | 'plain'
   note?: string
+  /** ไม่มีอะไรค้างจริง ๆ (0 ใบ) ⇒ ลดสีไอคอนลงให้เป็นกลาง — ไม่ใช่ "ยังไม่รู้" */
+  quiet?: boolean
 }) {
   return (
     <div className="bg-white border border-gray-200 rounded-md px-4 py-3.5 flex items-center gap-3">
       <span className="w-10 h-10 rounded-full flex items-center justify-center text-[17px] shrink-0"
-        style={{ background: bg, color: fg }}>
+        style={quiet ? { background: '#f3f4f6', color: '#9ca3af' } : { background: bg, color: fg }}>
         {icon}
       </span>
       <span className="min-w-0 flex-1 text-right">
         <span className="block text-[12px] text-gray-500 truncate">{label}</span>
-        <span className={`block text-[24px] leading-tight font-semibold ${big === 'red' ? 'text-red-500' : 'text-gray-800'}`}>
+        <span className="block text-[24px] leading-tight font-semibold text-gray-800">
           {value}
         </span>
         {note && <span className="block text-[11px] text-gray-400 mt-0.5">{note}</span>}
@@ -634,6 +647,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <ZortStat
             icon="💲" bg="#FDECEC" fg="#dc2626"
+            /* ⚠️ `=== 0` เท่านั้น — `undefined` แปลว่ายังไม่รู้ ห้ามทำให้ดูเงียบเหมือนไม่มีอะไรค้าง */
+            quiet={pending?.counts?.['รอจ่ายอยู่'] === 0}
             label="รายการขาย ค้างชำระเงิน"
             value={pending?.counts?.['รอจ่ายอยู่'] === undefined
               ? 'ยังไม่มีข้อมูล'
@@ -644,6 +659,7 @@ export default function DashboardPage() {
           />
           <ZortStat
             icon="🎒" bg="#E6F7EF" fg="#059669"
+            quiet={pending?.counts?.['ต้องส่งของ'] === 0}
             label="รายการขาย ค้างโอนสินค้า"
             value={pending?.counts?.['ต้องส่งของ'] === undefined
               ? 'ยังไม่มีข้อมูล'
