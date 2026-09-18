@@ -27,7 +27,14 @@ interface DryRun {
   dryRun?: boolean; ready?: boolean
   count?: number; incomplete?: number; sample?: DrySample
 }
-interface DryResp { day?: string; orders?: number; peak?: DryRun }
+/* 🔴 **ท่อบอกขอบเขตมาแล้ว แต่จอเคยไม่รับมาแสดง** (เจอ 19 ก.ย. 2569 · ใบ S3)
+   ยิง `?peak=dry&day=` ของจริงแล้วพบว่าคำตอบมี 3 ช่องที่จอไม่เคยอ่าน:
+     · `scopeNote` = "เฉพาะร้าน ศีตกาล เทรดดิ้ง — ร้าน ceojet ยังไม่ได้เอามาคิดภาษี"
+     · `taxStore`  = "z1"   · `truncated` = true/false
+   ⇒ จอโชว์ "แปลงได้ 13 ใบ" ลอย ๆ · ร้านมี **สองร้าน** คนอ่านจะนึกว่าคือทั้งธุรกิจ
+   ⇒ ตรงกับกฎแท็บข้อ 4 ใน CLAUDE.md: เลขที่ไม่บอกขอบเขต คนอ่านจะเติมขอบเขตให้เอง
+      และเติมกว้างกว่าความจริงเสมอ */
+interface DryResp { day?: string; orders?: number; peak?: DryRun; scopeNote?: string; taxStore?: string; truncated?: boolean }
 
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
@@ -157,6 +164,20 @@ export default function CorePeakPage() {
             </p>
           )}
           {peak?.skip && <p className="text-[13px] text-gray-500">{peak.skip}</p>}
+
+          {/* ⚠️ ขอบเขตต้องอยู่ **เหนือ**ตัวเลข ไม่ใช่เชิงอรรถใต้ตาราง — คนอ่านเลขก่อนเสมอ */}
+          {dry?.scopeNote && (
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+              📌 <b>ขอบเขตของตัวเลขชุดนี้</b> — {dry.scopeNote}
+              {dry.taxStore && <span className="text-gray-500"> (รหัสร้านที่คิดภาษี: {dry.taxStore})</span>}
+            </p>
+          )}
+          {dry?.truncated && (
+            <p className="text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2 mb-3">
+              🔴 <b>รายการถูกตัด</b> — ออเดอร์ของวันนี้มีมากกว่าที่ท่อส่งมาให้ซ้อม
+              ⇒ ตัวเลขข้างล่าง <b>ไม่ใช่ทั้งวัน</b>
+            </p>
+          )}
 
           {peak && !peak.skip && (
             <>
