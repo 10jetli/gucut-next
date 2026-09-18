@@ -92,15 +92,20 @@ for (const เส้น of ["orders", "stock"]) {
     }
   }
 
-  /* ④ byStatusFiltered ต้อง **ต่าง** เมื่อ total ต่าง — ตัวนี้คือหัวใจของเกณฑ์ */
-  const a = เปล่า.j?.mirrorTotals?.byStatusFiltered;
-  const b = ช่วง.j?.mirrorTotals?.byStatusFiltered;
-  const totalต่าง = เปล่า.j?.total !== ช่วง.j?.total;
-  if (a && b && totalต่าง) {
-    บอก(JSON.stringify(a) !== JSON.stringify(b),
-      `④ \`byStatusFiltered\` ต่างกันเมื่อ total ต่าง (${เปล่า.j?.total} vs ${ช่วง.j?.total})`);
-  } else {
-    console.log(`⚠️ ④ ตัดสินไม่ได้ — ${!a || !b ? "ยังไม่มี `byStatusFiltered`" : "total เท่ากันสองคำขอ"} · **ไม่ใช่ว่าผ่าน**`);
+  /* ④ **ผลรวมของ `byStatusFiltered` ต้องเท่ากับ `total` ของคำขอนั้น**
+     🔴 เกณฑ์แรกที่ผมเขียน ("ต้องต่างจาก byStatus เมื่อ total ต่าง") **เทียบผิดคู่**
+        — ผมเอาคำขอ *ไม่กรอง* (byStatusFiltered = null ตามสัญญา) ไปเทียบ ⇒ ตัดสินไม่ได้ตลอดกาล
+     🔴 และมันยังตัดสินผิดได้ด้วย: `q=CN` แมตช์ **ทุกใบ** ⇒ byStatusFiltered เท่ากับ byStatus พอดี
+        ตามเกณฑ์เดิมจะอ่านว่า "ไม่ได้กรอง" ทั้งที่กรองแล้วได้ทุกใบจริง ๆ
+     ✅ เกณฑ์ที่ถูกคือ **ตัวนับต้องรวมได้เท่ากับจำนวนแถวทั้งชุดของคำขอนั้น**
+        = กติกาเดียวกับที่เราใช้กับแท็บทุกจอ: **ตัวนับกับตัวแถวต้องมาจากกติกาเดียวกัน** */
+  for (const [ชื่อ, ผล] of [["q=CN", ค้น], ["ช่วงวัน", ช่วง]]) {
+    const src = ผล.j?.applied?.source;
+    const bf = ผล.j?.mirrorTotals?.byStatusFiltered;
+    if (src !== "mirror") { console.log(`⚠️ ④ ${ชื่อ}: source=${JSON.stringify(src)} (คาด mirror) ⇒ ตัดสินไม่ได้ · **ไม่ใช่ว่าผ่าน**`); continue; }
+    if (!Array.isArray(bf)) { บอก(false, `④ ${ชื่อ}: \`byStatusFiltered\` ไม่ใช่รายการ (ได้ ${JSON.stringify(bf)})`); continue; }
+    const รวม = bf.reduce((a, r) => a + Number(r?.c ?? 0), 0);
+    บอก(รวม === ผล.j?.total, `④ ${ชื่อ}: ผลรวม byStatusFiltered (${รวม}) = total (${ผล.j?.total})`);
   }
 }
 
