@@ -235,7 +235,11 @@ export default function MarketplaceDashboardPage() {
               <p className="text-[13px] font-semibold text-gray-700 mb-1">
                 Shopee · ถอดจากหน้าร้านแล้ว แต่คลังเรายังมีของ
               </p>
-              {typeof d_unlisted.itemsWithStock === 'number' ? (
+              {/* 🔴 **ประตูต้องถามทีละกอง ไม่ใช่กองแรกกองเดียว** — ของเดิมคุมทั้งใบด้วย `itemsWithStock`
+                  ⇒ วันที่ท่อส่งเลข "ตัวเลือก" มาแต่ไม่ส่งเลข "สินค้า" การ์ดจะซ่อนของที่มีอยู่จริงทั้งหมด
+                  เป็นบั๊กคลาสเดียวกับที่เพิ่งแก้ให้จอลูกค้ารายคนคืนนี้ (`92e77be`) และรอดมาในโค้ดของตัวเอง
+                  [[empty-state-must-ask-every-group-in-the-table]] */}
+              {typeof d_unlisted.itemsWithStock === 'number' && (
                 <>
                   <p className="text-[12.5px] text-gray-700 leading-relaxed">
                     <b className="text-[19px] text-amber-700">{fmtNum(d_unlisted.itemsWithStock)}</b>
@@ -247,15 +251,19 @@ export default function MarketplaceDashboardPage() {
                     {' '}<b className="text-amber-700">ยังไม่รู้ว่ามีของไหม {fmtNum(d_unlisted.itemsUnknown)}</b> สินค้า
                     {' '}<span className="text-gray-400">(ส่วนใหญ่เพราะไม่ได้กรอกรหัสสินค้าไว้บน Shopee — “ยังไม่รู้” ไม่ใช่ “ไม่มี”)</span>
                   </p>
-                  {/* หน่วยที่สองต้องเขียนแยกให้ชัด ห้ามเอาไปปนกับเลขสินค้า */}
-                  {typeof d_unlisted.skus === 'number' && (
+                </>
+              )}
+
+              {/* หน่วยที่สองต้องเขียนแยกให้ชัด ห้ามเอาไปปนกับเลขสินค้า · และมีประตูของตัวเอง */}
+              {typeof d_unlisted.skus === 'number' && (
                     <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
                       นับเป็น<b>ตัวเลือก</b> (คนละหน่วยกับ “สินค้า” ข้างบน): ทั้งหมด {fmtNum(d_unlisted.skus)} ·
                       {' '}มีของ {fmtNum(d_unlisted.skusWithStock)} · ไม่มีของ {fmtNum(d_unlisted.skusNoStock)} ·
                       {' '}ยังไม่รู้ {fmtNum(d_unlisted.skusUnknown)}
                     </p>
-                  )}
-                  <p className="text-[11.5px] text-gray-400 mt-1.5 leading-relaxed">
+              )}
+
+              <p className="text-[11.5px] text-gray-400 mt-1.5 leading-relaxed">
                     เลข UNLIST ที่ Shopee ประกาศเอง {fmtNum(d_unlisted.declaredByShopee)} สินค้า
                     {d_unlisted.sawAll === false && <b className="text-amber-700"> · ⚠️ ดึงมาได้ไม่ครบ</b>}
                     {/* 🗓️ ค่าดิบเก็บไว้ใน title ให้ตรวจย้อนได้ — จอโชว์วันไทยเสมอ (ด่าน check-thai-date จับได้ตอน build) */}
@@ -314,8 +322,8 @@ export default function MarketplaceDashboardPage() {
                       })()}
                     </details>
                   )}
-                </>
-              ) : (
+              {/* ข้อความ "ยังไม่รู้" ขึ้นเฉพาะตอน **ไม่มีสักกองเลย** ไม่ใช่ตอนกองใดกองหนึ่งหาย */}
+              {typeof d_unlisted.itemsWithStock !== 'number' && typeof d_unlisted.skus !== 'number' && (
                 <p className="text-[12.5px] text-gray-500">ท่อยังไม่ส่งตัวเลขกลุ่มนี้มา — <b>ยังไม่รู้</b> ไม่ใช่ว่าไม่มี</p>
               )}
               <p className="text-[11.5px] text-gray-400 mt-2">
