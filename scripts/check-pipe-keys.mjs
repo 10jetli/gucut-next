@@ -42,7 +42,6 @@ const ยกเว้น = {
   'Bill.vendorId': 'app/core/finance: ก้อน Bill มาจาก /api/bills ของ Next ไม่ใช่ท่อ core',
   'Bill.vendorName': 'app/core/finance: เหตุผลเดียวกับ Bill.vendorId',
   'Bill.subject': 'app/core/finance: เหตุผลเดียวกับ Bill.vendorId',
-  'MemberResp.collectedDayTH': 'app/core/stock/[sku]: **จอเตรียมรับล่วงหน้า** — ท่อยังไม่ส่ง จอจึงแปลงเองไปพลางก่อน และจะใช้ค่าท่อทันทีที่มา (18 ก.ย. 2569)',
 }
 
 function walk(dir, out = []) {
