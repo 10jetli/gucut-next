@@ -132,7 +132,12 @@ export default function PackingPage() {
       || String(j.channel ?? '').toLowerCase().includes(needle))
     : inTab)].sort((a, b) => (ageDays(b.day) ?? 0) - (ageDays(a.day) ?? 0))
 
-  const totalAmount = jobs.reduce((s, j) => s + (Number(j.amount) || 0), 0)
+  /* 🔴 **ใบที่ท่อไม่ส่งยอดมา ต้องนับแยก ไม่ใช่บวกเป็น 0 เงียบ ๆ** (แก้ 18 ก.ย. 2569)
+     ของเดิม `Number(j.amount) || 0` ⇒ ใบที่ไม่มียอด ถูกบวกเป็นศูนย์
+     ⇒ ยอดรวมต่ำกว่าจริงโดยไม่มีอะไรฟ้อง ซึ่งอันตรายกว่าตัวเลขผิดตรง ๆ
+       เพราะมันดูสมเหตุสมผลทุกประการ (บทเรียนซ้ำของโปรเจกต์นี้) */
+  const totalAmount = jobs.reduce((s, j) => s + (typeof j.amount === 'number' ? j.amount : 0), 0)
+  const ใบที่ไม่รู้ยอด = jobs.filter((j) => typeof j.amount !== 'number').length
 
   /* ☑️ เลือกใบแล้วพิมพ์ **ใบจัดเตรียมสินค้า** ทีเดียวหลายใบ (จอใหม่ 16 ก.ย. 2569 · `/core/sales/print`)
      จอนี้คือที่ที่คนแพ็กยืนอยู่จริง ⇒ ควรพิมพ์ใบหยิบของได้จากตรงนี้ ไม่ใช่ต้องไปที่จอรายการขาย
@@ -154,6 +159,11 @@ export default function PackingPage() {
             : (
               <>
                 ต้องแพ็คและส่ง <b>{fmtNum(jobs.length)}</b> ใบ · รวม {fmtMoney(totalAmount)}
+                {/* 🔴 ใบที่ท่อไม่ส่งยอดมา **ต้องประกาศติดกับตัวเลข** ไม่ใช่ปล่อยให้ยอดรวมต่ำกว่าจริงเงียบ ๆ
+                    (ป้ายบอกขอบเขตต้องมาถึงตาก่อนตัวเลข — กฎที่ CEO ยกเป็นกติกา 12 ก.ย. 2569) */}
+                {ใบที่ไม่รู้ยอด > 0 && (
+                  <span className="text-amber-800"> (ยอดนี้ยังไม่รวม {fmtNum(ใบที่ไม่รู้ยอด)} ใบที่ท่อไม่ได้ส่งยอดมา)</span>
+                )}
                 {' | '}
                 <span className="text-gray-400">
                   ใบที่ลูกค้าจ่ายแล้วแต่ยังไม่ได้ส่ง — <b>ลูกค้ารออยู่จริง</b>

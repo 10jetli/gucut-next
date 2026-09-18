@@ -18,9 +18,19 @@ import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 
 const ROOT = new URL('..', import.meta.url).pathname
-const ก้อนคำตอบ = 'd|j|data|res|resp|body'
+const ก้อนคำตอบ = 'd|j|zj|data|res|resp|body'
 const ช่องสรุป = 'total|totalAmount|totalPaidAmount|count|amount|sum|sales|orders|rowsMatched|shown'
-const RE = new RegExp(`Number\\(\\s*(?:${ก้อนคำตอบ})\\??\\.(?:${ช่องสรุป})\\b\\s*\\?\\?\\s*0\\s*\\)`)
+  + '|noSkuInZort|zortTotal|zortCount|zortAmount|services|unshipped|shipped'
+/* 🔴 **ต้องจับทั้ง `?? 0` และ `|| 0`** (แก้ 18 ก.ย. 2569)
+   ของเดิมจับเฉพาะ `?? 0` ⇒ **พลาดของจริงที่เจอวันนี้**:
+   `app/core/categories/page.tsx` เขียน `Number(zj.noSkuInZort) || 0`
+   ⇒ ท่อไม่ส่งช่องนี้มา = ได้ 0 ⇒ ตาข่ายเทียบหมวดบวก "ไม่มีรหัส 0" แล้วประกาศว่าไม่ครบ
+     ทั้งที่แปลว่ายังไม่รู้ · `lib/category-net.ts` รองรับ null ถูกอยู่แล้ว จอเป็นคนทำพิษ
+   ⚠️ `|| 0` อันตรายกว่า `?? 0` ด้วยซ้ำ เพราะมันกลืน 0 จริงและค่าว่างไปด้วย
+   ⚠️ และชื่อก้อนคำตอบต้องครอบตัวแปรที่จอใช้จริง (`zj` ของจอหมวดหมู่) ไม่ใช่เฉพาะชื่อยอดนิยม */
+const RE = new RegExp(
+  `Number\\(\\s*(?:${ก้อนคำตอบ})\\??\\.(?:${ช่องสรุป})\\b\\s*\\)?\\s*(?:\\?\\?|\\|\\|)\\s*0`
+)
 
 /** จุดที่ยอมได้ — ต้องมีเหตุผล */
 const ยกเว้น = {

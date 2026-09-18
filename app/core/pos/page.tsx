@@ -158,7 +158,12 @@ function CorePosInner() {
    *  ทั้งที่ของอาจมีอยู่เต็มชั้น แค่เซิร์ฟเวอร์ตอบไม่ได้ตอนนั้น */
   const [searchErr, setSearchErr] = useState('')
   const [cat, setCat] = useState('')          // หมวดที่เปิดอยู่ ('' = ยังไม่ได้เลือก)
-  const [catTotal, setCatTotal] = useState(0) // มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
+  /* มีทั้งหมดกี่ตัวในหมวดนั้น (ไม่ใช่แค่ที่โหลดมา)
+     🔴 `null` = **ท่อไม่ได้บอกจำนวน** (แก้ 18 ก.ย. 2569 · ด่าน check-unknown-vs-zero ที่ขยายแล้วจับได้)
+        ของเดิม `Number(d?.total) || 0` ⇒ ท่อไม่ส่ง total ⇒ ได้ 0 ⇒ ป้าย "มี N ตัว แสดง M"
+        **หายไปเงียบ ๆ** ทั้งที่ของจริงอาจมีอีกเป็นร้อย (กฎ CLAUDE.md ข้อ 4 บังคับให้เขียนป้ายนี้) */
+const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+  const [catTotal, setCatTotal] = useState<number | null>(0)
   /* 🔴 **สามสถานะของช่องที่ท่อรุ่นใหม่ส่งมา** — ท่อรุ่นเก่ายังไม่มีช่องเหล่านี้
      ⇒ `undefined` = ท่อยังไม่บอก (ไม่ใช่ false) · ห้ามยุบให้เหลือสองสถานะ
         ไม่งั้นช่วงที่จอขึ้นก่อนท่อ จอจะพูดแทนท่อว่า "ไม่ใช่หมวดที่เดา" ทั้งที่ยังไม่รู้ */
@@ -169,7 +174,8 @@ function CorePosInner() {
   const [catButtonItems, setCatButtonItems] = useState<number | null>(null)
   // ⚠️ ผลค้นหาก็ต้องบอกจำนวนที่เจอจริงเหมือนกัน — ไม่งั้นคนขายค้นแล้วเห็น 20 ตัว
   //    นึกว่าร้านมีแค่นั้น ทั้งที่มี 124 ตัว (โรคเดิม: ตัวเลขกับรายการมาคนละที่)
-  const [searchTotal, setSearchTotal] = useState(0)
+  /** `null` = ท่อไม่ได้บอกว่าผลค้นทั้งหมดมีกี่รายการ (คนละเรื่องกับ "ไม่เจอ") */
+  const [searchTotal, setSearchTotal] = useState<number | null>(0)
   const [cart, setCart] = useState<CartLine[]>([])
   const [customer, setCustomer] = useState(() => (sp.get('customer') ?? '').trim())
   const [saving, setSaving] = useState(false)
@@ -202,7 +208,9 @@ function CorePosInner() {
   const [byPay, setByPay] = useState<{ method: string; orders: number; amount: number }[]>([])
   // ชื่อไทยของวิธีจ่ายมาจากเซิร์ฟเวอร์ — ห้ามฮาร์ดโค้ด ร้านเพิ่มวิธีจ่ายได้
   const [payNames, setPayNames] = useState<Record<string, string>>({})
-  const [dayTotal, setDayTotal] = useState({ orders: 0, amount: 0 })
+  /* ยอดปิดวันนี้ · `null` = **ท่อไม่ได้บอก** ไม่ใช่ "ขายได้ 0 บาท"
+     🔴 นี่คือตัวเลขเงินบนจอที่คนขายใช้ปิดยอด ⇒ โชว์ 0 ตอนไม่รู้ = ตัวเลขเงินที่โกหก */
+  const [dayTotal, setDayTotal] = useState<{ orders: number | null; amount: number | null }>({ orders: 0, amount: 0 })
   const [held, setHeld] = useState<HeldBill[]>([])
   // 🔴 ยืนยัน "ตั้งใจแจกฟรี" — ต้องติ๊กเองเท่านั้น ห้ามติ๊กให้อัตโนมัติ
   const [allowZero, setAllowZero] = useState(false)
@@ -378,7 +386,7 @@ function CorePosInner() {
       const d = await res.json()
       const rows: Found[] = Array.isArray(d?.rows) ? d.rows : []
       setFound((prev) => (append ? [...prev, ...rows] : rows))
-      setCatTotal(Number(d?.total) || 0)
+      setCatTotal(เลขหรือไม่รู้(d?.total))
       /* ท่อรุ่นเก่าไม่มีช่องพวกนี้ ⇒ คงค่า undefined ไว้ ไม่แปลว่า false */
       setCatUnknown(typeof d?.unknownCat === 'boolean' ? d.unknownCat : undefined)
       setCatGuessed(typeof d?.guessedRows === 'number' ? d.guessedRows : undefined)
@@ -427,7 +435,7 @@ function CorePosInner() {
             : []
       )
       setPayNames(d?.methods && typeof d.methods === 'object' ? d.methods : {})
-      setDayTotal({ orders: Number(d?.total) || 0, amount: Number(d?.totalAmount) || 0 })
+      setDayTotal({ orders: เลขหรือไม่รู้(d?.total), amount: เลขหรือไม่รู้(d?.totalAmount) })
     } catch (e) {
       // ประวัติดึงไม่ได้ไม่ควรขวางการขาย — แต่ต้องบอกให้รู้ ห้ามเงียบแล้วโชว์ว่า "ยังไม่มีบิล"
       setSalesErr(String(e instanceof Error ? e.message : e))
@@ -457,7 +465,7 @@ function CorePosInner() {
           }
           setSearchErr('')
           setFound(d.rows)
-          setSearchTotal(Number(d?.total) || 0)
+          setSearchTotal(เลขหรือไม่รู้(d?.total))
         })
         .catch((e) => { if (alive) { setSearchErr(String(e?.message ?? e)); setFound([]); setSearchTotal(0) } })
         .finally(() => { if (alive) setLooking(false) })
@@ -843,7 +851,10 @@ function CorePosInner() {
                   )
                   : found.length === 0
                   ? <span className="text-gray-500">ไม่พบสินค้าที่ตรงกับ &quot;{q.trim()}&quot;</span>
-                  : searchTotal > found.length
+                  : searchTotal === null && found.length > 0
+                    ? /* ท่อไม่บอกจำนวนทั้งหมด ⇒ ห้ามเงียบ เพราะคนจะเชื่อว่าที่เห็นคือทั้งหมด */
+                      `แสดง ${found.length} รายการ — ท่อไม่ได้บอกว่าทั้งหมดมีกี่รายการ`
+                  : searchTotal !== null && searchTotal > found.length
                     ? (
                       <span className="text-amber-700">
                         พบ <b>{searchTotal.toLocaleString('th-TH')}</b> รายการ แสดง {found.length} รายการแรก
@@ -915,7 +926,7 @@ function CorePosInner() {
                     </p>
                   )}
                   {/* เลขบนปุ่มไม่ตรงกับของที่ได้ = มีอะไรไม่ตรงกันอยู่ ต้องเห็น ไม่ใช่เงียบ */}
-                  {catButtonItems !== null && catButtonItems !== catTotal && catUnknown !== true && (
+                  {catButtonItems !== null && catTotal !== null && catButtonItems !== catTotal && catUnknown !== true && (
                     <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-2.5 py-1.5 leading-relaxed">
                       ⚠️ <b>เลขบนปุ่มกับของที่ได้ไม่ตรงกัน</b> — ปุ่มบอก {catButtonItems.toLocaleString('th-TH')} ตัว
                       {' '}แต่คลังคืนมา {catTotal.toLocaleString('th-TH')} ตัว ⇒ อย่าใช้เลขนี้ตัดสินว่าของครบ
@@ -928,7 +939,7 @@ function CorePosInner() {
                       {' '}(ไม่ได้มาจากทะเบียนสินค้าใน ZORT)
                     </p>
                   )}
-                  {catTotal > found.length && (
+                  {catTotal !== null && catTotal > found.length && (
                     <div className="flex items-center gap-2 flex-wrap">
                       <p className="text-[12px] text-gray-700">
                         หมวดนี้มี <b>{catTotal.toLocaleString('th-TH')}</b> ตัว · แสดงแล้ว {found.length.toLocaleString('th-TH')} ตัว
@@ -938,11 +949,15 @@ function CorePosInner() {
                         disabled={catLoadingMore}
                         className="text-[12.5px] font-semibold text-blue-600 hover:underline disabled:opacity-40"
                       >
-                        {catLoadingMore ? 'กำลังโหลด…' : `ดูเพิ่มอีก ${Math.min(200, catTotal - found.length).toLocaleString('th-TH')} ตัว`}
+                        {catLoadingMore ? 'กำลังโหลด…' : `ดูเพิ่มอีก ${Math.min(200, (catTotal ?? 0) - found.length).toLocaleString('th-TH')} ตัว`}
                       </button>
                     </div>
                   )}
-                  {catTotal > 0 && catTotal === found.length && found.length > 200 && (
+                  {catTotal === null && found.length > 0 && (
+                    /* 🔴 ไม่รู้จำนวนทั้งหมด ⇒ ต้องบอก ไม่ใช่ปล่อยให้คนเดาว่าที่เห็นคือครบ */
+                    <p className="text-[12px] text-amber-800">แสดง {found.length.toLocaleString('th-TH')} ตัว — ท่อไม่ได้บอกว่าหมวดนี้มีทั้งหมดกี่ตัว</p>
+                  )}
+                  {catTotal !== null && catTotal > 0 && catTotal === found.length && found.length > 200 && (
                     <p className="text-[12px] text-gray-500">ครบทั้งหมด {catTotal.toLocaleString('th-TH')} ตัวแล้ว</p>
                   )}
                 </div>
@@ -1202,9 +1217,12 @@ function CorePosInner() {
           </div>
           <div className="flex items-baseline justify-between px-4 py-3 border-t border-gray-200 bg-blue-50/60">
             <span className="text-[14px] font-bold text-gray-800">
-              รวมทั้งวัน ({dayTotal.orders.toLocaleString('th-TH')} ใบ)
+              รวมทั้งวัน ({dayTotal.orders === null ? '— ' : dayTotal.orders.toLocaleString('th-TH') + ' '}ใบ)
             </span>
-            <span className="text-[22px] font-black text-gray-900">{fmtBaht(dayTotal.amount)}</span>
+            {/* 🔴 ไม่รู้ยอด ⇒ ขีด ไม่ใช่ ฿0 — ตัวเลขเงินที่แปลว่า "ยังไม่รู้" ห้ามหน้าตาเหมือนศูนย์จริง */}
+            <span className="text-[22px] font-black text-gray-900">
+              {dayTotal.amount === null ? <span className="text-gray-400">— (ท่อไม่ได้ส่งยอดมา)</span> : fmtBaht(dayTotal.amount)}
+            </span>
           </div>
         </div>
       )}
@@ -1226,10 +1244,10 @@ function CorePosInner() {
                ตัวเลขแรกอาจน้อยกว่าจำนวนแถวทั้งที่รายการถูกตัดจริง
                ⇒ ต้องเช็ค "แตะเพดาน" (`>= SALES_LIMIT`) ประกบด้วย
             ⚠️ ป้ายอยู่ **เหนือรายการ** ตามกติกา: ขอบเขตต้องมาถึงตาก่อนตัวเลข */}
-        {!salesErr && (dayTotal.orders > sales.length || sales.length >= SALES_LIMIT) && (
+        {!salesErr && ((dayTotal.orders !== null && dayTotal.orders > sales.length) || sales.length >= SALES_LIMIT) && (
           <p className="text-[12.5px] text-amber-900 bg-amber-50 border-b border-amber-300 px-4 py-2.5 leading-relaxed">
             ⚠️ <b>รายการนี้ไม่ครบ</b> — แสดงได้สูงสุด <b>{SALES_LIMIT}</b> ใบ
-            {dayTotal.orders > sales.length && <> · วันนี้มี <b>{dayTotal.orders.toLocaleString('th-TH')}</b> ใบ (ไม่นับใบยกเลิก)</>}
+            {dayTotal.orders !== null && dayTotal.orders > sales.length && <> · วันนี้มี <b>{dayTotal.orders.toLocaleString('th-TH')}</b> ใบ (ไม่นับใบยกเลิก)</>}
             {' '}⇒ <b>หาบิลไม่เจอในนี้ ไม่ได้แปลว่ายังไม่ได้เปิด</b> อย่าเปิดใบใหม่ซ้ำ
             {' '}ให้ค้นจากจอ <b>รายการขาย</b> ก่อน
           </p>
