@@ -67,6 +67,10 @@ export default function BlockedStock() {
   }
   if (!d || d.skip) return null
 
+  /* "ท่อไม่ได้ส่งช่องนี้" ต้องอ่านต่างจาก "ท่อส่งมาว่า 0" — ในกล่องไล่หาสาเหตุยิ่งต้องต่าง */
+  const ขีดถ้าไม่รู้ = (v: unknown) =>
+    typeof v === 'number' ? fmtNum(v) : <b title="ท่อไม่ได้ส่งช่องนี้มา">—</b>
+
   const roots = Number(d.roots ?? 0)
   const blocked = Number(d.blockedSkus ?? 0)
   const rows = Array.isArray(d.rows) ? d.rows : []
@@ -75,8 +79,12 @@ export default function BlockedStock() {
   if (d.addsUp === false) {
     return (
       <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
-        🔴 <b>ตัวเลขสินค้าติดลบยังไม่ลงตัว</b> — ท่อบอกว่าแถวที่ติดลบ {fmtNum(Number(d.negativeRows ?? 0))} แถว
-        {' '}แต่แยกเป็นค่าบริการ {fmtNum(Number(d.services ?? 0))} + ต้นเหตุ {fmtNum(roots)} แล้วไม่เท่ากัน
+        {/* 🔴 กล่องนี้ขึ้นตอน "ตัวเลขไม่ลงตัว" ⇒ คนจะอ่านเลขพวกนี้เพื่อหาว่าหายตรงไหน
+            ⇒ ช่องที่ท่อ **ไม่ได้ส่งมา** ห้ามพิมพ์เป็น 0 เด็ดขาด เพราะ 0 อ่านได้ว่า
+               "ส่วนนี้ไม่มีเลย" ซึ่งชี้คนไปผิดทางทันทีในกล่องที่มีไว้ให้ไล่หาสาเหตุ
+            ⇒ ไม่รู้ต้องขึ้นขีด แล้วบอกตรง ๆ ว่าท่อไม่ได้ส่งช่องนั้นมา (แก้ 19 ก.ย. 2569) */}
+        🔴 <b>ตัวเลขสินค้าติดลบยังไม่ลงตัว</b> — ท่อบอกว่าแถวที่ติดลบ {ขีดถ้าไม่รู้(d.negativeRows)} แถว
+        {' '}แต่แยกเป็นค่าบริการ {ขีดถ้าไม่รู้(d.services)} + ต้นเหตุ {fmtNum(roots)} แล้วไม่เท่ากัน
         {' '}⇒ มีของหายระหว่างทาง <b>อย่าเพิ่งใช้ตัวเลขนี้ตัดสินใจ</b>
       </div>
     )
