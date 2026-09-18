@@ -47,6 +47,10 @@ type SaleResp = WriteResp & {
   /** ใบเดิมที่เคยบันทึกไว้ — ท่อคืนช่องนี้เฉพาะตอน `duplicate` (มาจากทะเบียนกันซ้ำ)
    *  🔴 ต้องเอา **เลขที่ใบเดิม** ขึ้นจอ ไม่ใช่บอกแค่ว่า "เคยส่งแล้ว" — คนต้องตามไปดูใบนั้นได้ */
   first?: { kind?: string; number?: string; amount?: number; lines?: number } | null
+  /** สถานะ HTTP ที่ ZORT ตอบกลับ · `zortDown` = ตอบ 5xx — ช่องจริงจากท่อ (18 ก.ย. 2569)
+   *  🔴 ใช้ช่องนี้ก่อนเสมอ **อย่าอ่านจากข้อความ** — ข้อความเปลี่ยนเมื่อไหร่ ตัวจับจะเงียบโดยไม่มีอะไรฟ้อง */
+  zortHttp?: number
+  zortDown?: boolean
 }
 
 /** ✅ **เปิดแล้ว 18 ก.ย. 2569 — ท่านประธานอนุมัติใบขายโดยเฉพาะ**
@@ -70,7 +74,17 @@ const REAL_SEND_ENABLED = true
  *     ⇒ จอจับจากรูปข้อความไปก่อน และ **ขอช่องจริงจากฝั่งท่อแล้ว** (ห้ามถือว่านี่คือทางถาวร)
  *  🔴 และ **ห้ามเขียนว่า "ไม่มีอะไรถูกสร้าง"** — ZORT อาจบันทึกไปแล้วแต่ตอบ error กลับมา
  *     ⇒ ต้องบอกให้ไปตรวจใน ZORT ก่อนกดส่งใหม่ (กติกาเดิมของโปรเจกต์: ไม่รู้ผล ≠ ไม่สำเร็จ) */
-const ดูเหมือนZORTล่ม = (x?: string | null) => /HTTP\s*5\d\d/.test(String(x ?? ''))
+const ดูเหมือนZORTล่ม = (r?: SaleResp | null) => {
+  if (!r) return false
+  /* ✅ **ช่องจริงมาแล้ว 18 ก.ย. 2569** — ฝั่งท่อเพิ่ม `zortDown` / `zortHttp` ให้ตามที่ขอ
+     (และรวมตัวส่งต่อเป็น helper เดียว เพราะเดิมตัวเรียก 17 จุดคัดเฉพาะ ok/ref/unknown/error
+      ⇒ ช่องใหม่ไม่ถึงจอเลยแม้แต่จุดเดียว — คลาสเดียวกับ relay ที่ตัดช่องทิ้ง) */
+  if (r.zortDown === true) return true
+  if (typeof r.zortHttp === 'number') return r.zortHttp >= 500
+  /* ⚠️ ทางถอยสำหรับท่อรุ่นที่ยังไม่ขึ้นเว็บ — จับจากรูปข้อความไปก่อน
+     **ลบทิ้งได้เมื่อท่อรุ่นใหม่ขึ้นครบแล้ว** (อย่าปล่อยไว้จนกลายเป็นโค้ดที่ไม่มีใครกล้าแตะ) */
+  return /HTTP\s*5\d\d/.test(String(r.error ?? ''))
+}
 
 const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
 const PAY = ['เงินสด', 'โอนเงิน', 'บัตรเครดิต', 'เก็บปลายทาง']
@@ -339,7 +353,7 @@ export default function NewSalePage() {
 
       {/* 🔴 **ZORT ตอบไม่ได้ ≠ ข้อมูลผิด ≠ โค้ดเราพัง** — กล่องนี้ต้องมาก่อน WriteResult
           ไม่งั้นคนจะอ่านกล่องแดง "ไม่สำเร็จ ไม่มีอะไรถูกสร้าง" ซึ่ง **ยืนยันแบบนั้นไม่ได้** */}
-      {locked && res && !res.dryRun && ดูเหมือนZORTล่ม(res.error) && (
+      {locked && res && !res.dryRun && ดูเหมือนZORTล่ม(res) && (
         <div className="text-[13px] text-amber-900 bg-amber-50 border-2 border-amber-400 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
           <b>⚠️ ระบบ ZORT ตอบไม่ได้ตอนนี้ — ไม่ใช่ความผิดของข้อมูลที่กรอก และไม่ใช่โค้ดฝั่งเรา</b>
           <br />
