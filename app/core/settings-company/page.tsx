@@ -282,6 +282,12 @@ export default function SettingsCompanyPage() {
           <DocTable title="หนังสือแต่งตั้งตัวแทนจำหน่าย (ของร้าน)" rows={d?.distributorships}
             empty="ท่อยังไม่ส่งรายการหนังสือแต่งตั้งมา" />
 
+          {/* ⚠️ **ส่วนนี้ยังไม่เคยขึ้นจอเลยสักครั้ง** (ตรวจ 18 ก.ย. 2569)
+              เส้น `shopinfo=1` ส่งมาแค่ `seller · licensee · licenses · trademarks · distributorships`
+              (ดู gucut-web/scripts/gen-shop-data.mjs) — **ไม่มีช่อง `registry`**
+              ⇒ เก็บโค้ดไว้ได้ แต่ห้ามนับว่า "จอนี้มีบัญชีทะเบียนราชการแล้ว"
+                 ของที่มีในโค้ดแต่ไม่มีวันแสดง = ของที่ไม่มีอยู่จริงสำหรับคนใช้
+              ⇒ ถ้าอยากได้จริง ต้องขอฝั่งท่อเพิ่มช่องนี้ก่อน แล้วค่อยมาบอกว่าทำเสร็จ */}
           {d?.registry && Object.keys(d.registry).length > 0 && (
             <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
               <p className="text-[15px] font-semibold text-gray-800 mb-2">บัญชีทะเบียนราชการ</p>
