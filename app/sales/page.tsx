@@ -48,6 +48,12 @@ interface Report {
    *  ตารางว่างเพราะยิงไม่ผ่าน แล้วเขียนว่า "ยังไม่มียอดขายในช่วงนี้"
    *  = พูดแทนธุรกิจว่าขายไม่ได้ ทั้งที่เราแค่ถามไม่สำเร็จ */
   topError?: string
+  /* 🔴 **ท่อส่งขอบเขตของยอดเงินมาตลอด แต่จอไม่เคยประกาศไว้ ⇒ ไม่มีทางแสดง** (19 ก.ย. 2569)
+     `list=topproducts` ส่ง `amountScope` = "amount = ตัดใบยกเลิกออกแล้ว **แต่ยังรวมใบที่ยังไม่จ่าย**"
+     ⇒ ตาราง "ยอดขาย(บาท)" ในจอนี้จึง **ไม่ใช่เงินที่เก็บได้แล้ว** แต่ไม่มีอะไรบอกคนอ่าน
+     ⇒ คนเอาไปเทียบกับเงินในบัญชีแล้วจะงง หรือแย่กว่านั้นคือเชื่อว่าขายดีกว่าความจริง
+     ⚠️ คลาสเดียวกับกฎแท็บข้อ 4 ใน CLAUDE.md แต่หนักกว่า **เพราะเป็นตัวเลขเงิน** */
+  amountScope?: string
 }
 
 interface CoreRow { number: string; channel: string; amount: number; order_date: string }
@@ -554,6 +560,7 @@ export default function SalesReportPage() {
         topProducts: bestRows.map((r) => ({
           name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount, category: r.category,
         })),
+        amountScope: typeof best?.amountScope === 'string' ? best.amountScope : undefined,
       })
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
@@ -909,6 +916,14 @@ export default function SalesReportPage() {
                   {' '}ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์
                   {/* ⑦ หมวดหมู่ใต้ชื่อสินค้า — ท่อส่งมาแล้ว (b0a4aa3) ⇒ ขึ้นจริงในตารางข้างล่าง */}
                 </p>
+                {/* ⚠️ ขอบเขตของ "ยอดขาย(บาท)" — มาจากท่อ ไม่ได้พิมพ์เอง
+                    พิมพ์เองเมื่อไหร่ก็กลายเป็นคำค้างวันที่ท่อเปลี่ยนกติกา (บทเรียนใบ S4) */}
+                {report.amountScope && (
+                  <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200
+                    rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
+                    📌 ขอบเขตของคอลัมน์ <b>ยอดขาย(บาท)</b> — {report.amountScope.replace(/\*\*/g, '')}
+                  </p>
+                )}
                 <TableWrap>
                   <table className="w-full min-w-[720px]">
                     <thead className="bg-white border-b border-gray-200">

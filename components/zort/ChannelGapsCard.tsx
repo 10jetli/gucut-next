@@ -33,6 +33,14 @@ interface Resp {
   total?: number | null
   quietDays?: number | null; lookbackDays?: number | null; minSold?: number | null
   note?: string; caveat?: string
+  /* 🔴 **ท่อส่งสองช่องนี้มาตลอด แต่การ์ดไม่เคยประกาศไว้ ⇒ ไม่มีทางแสดง** (เจอ 19 ก.ย. 2569)
+     กวาดทั้งระบบเทียบ "ช่องบอกขอบเขตที่ท่อส่ง" กับ "ชื่อที่มีอยู่ในโค้ดจอ" แล้วเจอ 3 เส้นที่หลุด
+     ทิศนี้อันตรายกว่า "ประกาศแล้วไม่ใช้" เพราะจอ **ทิ้งของที่ไม่รู้ว่ามีอยู่** — ไม่มีใครเห็นว่าหาย
+     · `excluded` = รหัสที่ถูกตัดออกจากการวิเคราะห์ (เลิกขาย/ขายทางแชท/POS) รวมกันหลักร้อย
+       ⇒ ไม่บอก = คนอ่านนึกว่าการ์ดนี้ดูครบทุกรหัสในคลัง
+     · `truncated` = รายการถูกตัด (คนละเรื่องกับ `pagingDone` ที่การ์ดเช็คอยู่แล้ว) */
+  excluded?: Record<string, number> | null
+  truncated?: boolean
   rows?: GapRow[]
   pagingDone?: boolean
 }
@@ -137,6 +145,23 @@ export default function ChannelGapsCard() {
             {เต็ม.pagingDone === false && (
               <p className="text-amber-800 mt-1">⚠️ ท่อบอกว่ายังมีต่อ — รายการนี้ยังไม่ครบทั้งชุด</p>
             )}
+            {เต็ม.truncated && (
+              <p className="text-amber-800 mt-1">⚠️ ท่อบอกว่า<b>รายการถูกตัด</b> — ที่เห็นไม่ใช่ทั้งชุด</p>
+            )}
+            {/* ⚠️ ขอบเขตต้องบอกเสมอ: การ์ดนี้ **ไม่ได้ดูทุกรหัสในคลัง** */}
+            {(() => {
+              const ตัดออก = Object.entries(เต็ม.excluded ?? {}).filter(([, v]) => n(v) && (n(v) as number) > 0)
+              if (!ตัดออก.length) return null
+              const แปล: Record<string, string> = { retired: 'เลิกขายแล้ว', chat: 'ขายทางแชท', pos: 'ขายหน้าร้าน', other: 'อื่น ๆ' }
+              const รวม = ตัดออก.reduce((a, [, v]) => a + (n(v) as number), 0)
+              return (
+                <p className="text-gray-500 mt-1">
+                  📌 ไม่ได้นับ <b>{fmtNum(รวม)}</b> รหัสในการวิเคราะห์นี้
+                  {' '}({ตัดออก.map(([k, v]) => `${แปล[k] ?? k} ${fmtNum(v)}`).join(' · ')})
+                  {' '}— ตัวเลขข้างบนจึงไม่ใช่ทั้งคลัง
+                </p>
+              )
+            })()}
           </>
         )}
       </div>
