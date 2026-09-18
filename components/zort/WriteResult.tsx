@@ -33,6 +33,12 @@ export interface WriteResp {
   ref?: string
   /** ยังไม่ได้ส่งจริง (โหมดซ้อม) */
   dryRun?: boolean
+  /** 🔬 **สิ่งที่จะถูกส่งไปจริง** — ท่อคืนมาในโหมดซ้อม (CTO ยืนยัน 18 ก.ย. 2569)
+   *  ⚠️ **ต้องเอาขึ้นจอให้คนอ่านก่อนกดจริง** ไม่ใช่เก็บไว้เฉย ๆ
+   *     เพราะ ZORT **เมินช่องที่ไม่รู้จักแบบเงียบ ๆ** ⇒ ถ้าไม่เห็นก่อน จะรู้ตอนของเข้าไปแล้ว
+   *  ⚠️ จอไม่รู้ว่าท่อจะส่งช่องอะไรมาบ้าง ⇒ **วาดตามที่ได้มาจริง ห้ามเขียนชื่อช่องตายตัว**
+   *     ไม่งั้นวันที่ท่อเพิ่มช่อง จอจะไม่โชว์ช่องใหม่แล้วไม่มีใครรู้ */
+  willSend?: Record<string, unknown> | null
   detail?: unknown
 }
 
@@ -81,6 +87,36 @@ export function WriteResult({ r }: { r: WriteResp | null }) {
             {r.message || 'ตรวจข้อมูลผ่านแล้ว แต่ยังไม่มีอะไรถูกสร้างใน ZORT'}
             {' '}<b>ต้องกด &ldquo;ส่งจริง&rdquo; อีกครั้งถึงจะเข้า</b>
           </p>
+          {/* 🔬 ของที่จะถูกส่งจริง — วาดตามช่องที่ท่อส่งมา ไม่ใช่ตามที่จอเดา */}
+          {r.willSend && typeof r.willSend === 'object' && Object.keys(r.willSend).length > 0 && (
+            <div className="mt-2 bg-white/70 border border-blue-200 rounded px-2.5 py-2">
+              <b className="text-[12.5px]">สิ่งที่จะถูกส่งเข้า ZORT จริง</b>
+              <table className="mt-1 text-[12px]">
+                <tbody>
+                  {Object.entries(r.willSend).map(([k, v]) => (
+                    <tr key={k}>
+                      <td className="pr-3 align-top text-blue-800 font-mono">{k}</td>
+                      {/* ⚠️ ค่าว่าง/null ต้องเขียนว่า "ไม่ส่งช่องนี้" ไม่ใช่เว้นว่างให้เดาเอง */}
+                      <td className="align-top">
+                        {v === null || v === undefined || v === ''
+                          ? <span className="text-gray-400">(ไม่ส่งช่องนี้)</span>
+                          : typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              <p className="text-[11.5px] text-blue-900/70 mt-1.5">
+                ช่องที่กรอกแล้วไม่โผล่ในตารางนี้ = <b>ท่อไม่ได้ส่งช่องนั้นไป</b> — ตรวจก่อนกดจริง
+              </p>
+            </div>
+          )}
+          {!r.willSend && (
+            <p className="text-[11.5px] text-blue-900/70 mt-1.5">
+              ⚠️ รอบนี้ท่อไม่ได้ส่งรายการ &ldquo;สิ่งที่จะถูกส่งจริง&rdquo; กลับมา —
+              จอจึงยืนยันแทนไม่ได้ว่าช่องไหนจะเข้าบ้าง
+            </p>
+          )}
         </Box>
       )}
 
@@ -102,11 +138,19 @@ export function WriteResult({ r }: { r: WriteResp | null }) {
       )}
 
       {state === 'duplicate' && (
-        <Box tone="blue" title="ℹ️ ใบนี้เคยส่งไปแล้ว — ไม่ได้สร้างซ้ำ">
+        /* 🔴 **ห้ามเป็นสีเขียว** — ท่านประธาน/CTO กำชับ 18 ก.ย. 2569: ขึ้นเขียวเหมือนสร้างใหม่สำเร็จ
+           จะทำให้คนเชื่อว่าเพิ่งได้ของใหม่ แล้วไปตามหาใบที่สองที่ไม่มีอยู่จริง */
+        <Box tone="blue" title="ℹ️ ใบนี้เคยบันทึกไปแล้ว — รอบนี้ไม่ได้สร้างอะไรเพิ่ม">
           <p className="mt-1">
-            {r.message || 'ระบบกันซ้ำจับได้ว่าเป็นใบเดียวกับที่เคยส่ง'}
+            {r.message || 'ระบบกันซ้ำจับได้ว่าเป็นใบเดียวกับที่เคยส่ง ⇒ ของเดิมยังอยู่ใน ZORT ใบเดียวเหมือนเดิม'}
             {r.ref && <> · อ้างอิง <code>{r.ref}</code></>}
           </p>
+          {/* ของเดิมคือใบไหน — ถ้าท่อบอกมา ต้องโชว์ ไม่ใช่ให้ไปหาเอง */}
+          {r.detail != null && (
+            <p className="mt-1 text-[12px] font-mono break-all">
+              ของเดิม: {typeof r.detail === 'object' ? JSON.stringify(r.detail) : String(r.detail)}
+            </p>
+          )}
         </Box>
       )}
 
