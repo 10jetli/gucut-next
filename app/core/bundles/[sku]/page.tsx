@@ -25,7 +25,8 @@
 //       เท่านั้น หรือเป็นยอดรวมทั้งร้าน — ต้องเขียนบนจอ ห้ามตั้งหัวข้อว่า "คลัง NEW" ลอย ๆ
 //
 // 🔴 **สองเวลาคนละเรื่อง**: สูตรเปลี่ยนล่าสุด (ค้างได้) ≠ ตรวจกับ ZORT ล่าสุด (คือความสด)
-//    และ **นาฬิกาที่สาม**: stockSyncedAt = ตัวเลขคงเหลือ/พร้อมขายซิงก์ล่าสุด (ทุกครึ่งชั่วโมง)
+//    และ **นาฬิกาที่สาม**: stockSyncedAt = ตัวเลขคงเหลือ/พร้อมขายซิงก์ล่าสุด
+//    (รอบมาจากท่อ `stockExpectedEveryHours` — แยกเป็นงาน bundle-stock-sync แล้ว 19 ก.ย. 2569)
 //    ⇒ ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว มีเทสคุมการสลับสามค่านี้
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
@@ -34,7 +35,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { fmtMoney, fmtNum, thaiDate } from '@/lib/format'
 import {
-  recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, ป้ายรอบซิงก์,
+  recipeFreshness, thaiMoment, stockSyncFreshness, agoText, ป้ายรอบซิงก์,
 } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -109,6 +110,9 @@ export default function BundleDetailPage() {
         ⇒ เก็บเป็น `undefined` เริ่มต้น และห้ามเขียน `?? อะไร` ตอนส่งต่อ */
   const [เกณฑ์, setเกณฑ์] = useState<number | null | undefined>(undefined)
   const [รอบชั่วโมง, setรอบชั่วโมง] = useState<number | null | undefined>(undefined)
+  /* ⚠️ เกณฑ์สต็อกคนละตัวกับเกณฑ์สูตร — ฝั่งท่อกำชับห้ามใช้ตัวเดียวตัดสินทั้งคู่ */
+  const [เกณฑ์สต็อก, setเกณฑ์สต็อก] = useState<number | null | undefined>(undefined)
+  const [รอบสต็อกชม, setรอบสต็อกชม] = useState<number | null | undefined>(undefined)
   const [stockSyncedAt, setStockSyncedAt] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -154,6 +158,8 @@ export default function BundleDetailPage() {
       setCheckedAt(typeof iRes?.recipeCheckedAt === 'string' ? iRes.recipeCheckedAt : null)
       setเกณฑ์('recipeStaleAfterHours' in (iRes ?? {}) ? iRes.recipeStaleAfterHours : undefined)
       setรอบชั่วโมง('recipeExpectedEveryHours' in (iRes ?? {}) ? iRes.recipeExpectedEveryHours : undefined)
+      setเกณฑ์สต็อก('stockStaleAfterHours' in (iRes ?? {}) ? iRes.stockStaleAfterHours : undefined)
+      setรอบสต็อกชม('stockExpectedEveryHours' in (iRes ?? {}) ? iRes.stockExpectedEveryHours : undefined)
       /* 🧾 รายการขายของชุด — ยิงแยกและ **ไม่ให้ล้มทั้งหน้า** ถ้าเส้นนี้พลาด
          (ของหลักคือสูตรชุดกับสต็อก · ตารางขายเป็นส่วนเสริม)
          ⚠️ ล้มเหลว = เขียนว่าอ่านไม่ได้ **ห้ามขึ้นว่าไม่มีการขาย** */
@@ -229,7 +235,8 @@ export default function BundleDetailPage() {
   /* ⚠️ ลำดับ argument สำคัญ: checkedAt ก่อน changedAt (เทส recipe-fresh คุมการสลับไว้) */
   const fresh = recipeFreshness(checkedAt, collectedAt || null, Date.now(), เกณฑ์)
   const รอบ = ป้ายรอบซิงก์(รอบชั่วโมง)
-  const stock = stockSyncFreshness(stockSyncedAt)
+  const stock = stockSyncFreshness(stockSyncedAt, Date.now(), เกณฑ์สต็อก)
+  const รอบสต็อก = ป้ายรอบซิงก์(รอบสต็อกชม)
   const unit = bundle?.unit || 'SET'
 
   /* 📊 ยอดขายเดือนนี้ + กราฟ 6 เดือน — **คิดจากแถวขายที่โหลดมาแล้ว ไม่ยิงเพิ่มสักครั้ง**
@@ -680,11 +687,11 @@ export default function BundleDetailPage() {
             <br />
             {/* 🔴 นาฬิกาที่สอง — ตัวเลขคงเหลือ/พร้อมขาย คนละอันกับความสดของสูตร */}
             {stock.state === 'ok' && (
-              <>🕰 ตัวเลข<b>คงเหลือ / พร้อมขาย</b> ซิงก์ล่าสุด <b>{thaiMoment(stock.syncedThai)}</b> ({agoText(stock.ageMinutes)}) · ทุกครึ่งชั่วโมง</>
+              <>🕰 ตัวเลข<b>คงเหลือ / พร้อมขาย</b> ซิงก์ล่าสุด <b>{thaiMoment(stock.syncedThai)}</b> ({agoText(stock.ageMinutes)}){รอบสต็อก && <> · {รอบสต็อก}</>}</>
             )}
             {stock.state === 'stale' && (
               <span className="text-amber-800">🔴 ตัวเลข<b>คงเหลือ / พร้อมขาย</b> ซิงก์ล่าสุด <b>{thaiMoment(stock.syncedThai)}</b>
-                {' '}({agoText(stock.ageMinutes)}) ⇒ เกิน {STOCK_STALE_MINUTES} นาที <b>ตัวซิงก์น่าจะหยุด</b> — ตัวเลขอาจเก่ากว่าของจริง</span>
+                {' '}({agoText(stock.ageMinutes)}) ⇒ <b>ตัวซิงก์น่าจะหยุด</b> — ตัวเลขอาจเก่ากว่าของจริง</span>
             )}
             {stock.state === 'unknown' && (
               <>⚠️ ยังไม่รู้ว่าตัวเลข<b>คงเหลือ / พร้อมขาย</b> ซิงก์ล่าสุดเมื่อไหร่ (ท่อไม่ได้ส่งเวลามา) — ไม่ได้แปลว่าซิงก์หยุด</>

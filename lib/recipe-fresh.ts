@@ -144,7 +144,17 @@ export function thaiMoment(d: Date | null): string {
  */
 
 /** เกินกี่นาทีถือว่าซิงก์สต็อกชุดหยุด — ท่อซิงก์ทุก 30 นาที เผื่อพลาดสองรอบ */
-export const STOCK_STALE_MINUTES = 90
+/* 🔴 **เลิกใช้ `STOCK_STALE_MINUTES = 90` แล้ว (19 ก.ย. 2569) — อย่าเพิ่มกลับ**
+   90 นาทีถูกตั้งสมัยที่เชื่อว่าสต็อกชุดซิงก์ทุกครึ่งชั่วโมง · พอฝั่งท่อลดรอบงานเพื่อลดเครดิต
+   ตัวเลขสต็อกชุดถูกลากไปเป็นวันละครั้งด้วย (ผลข้างเคียงที่ไม่มีใครตั้งใจ)
+   ⇒ วันนั้นแถบแดงขึ้น **22.5 ชม./วัน** ทั้งที่งานทำงานตามตารางใหม่ทุกประการ
+   ⇒ ฝั่งท่อแยก `bundle-stock-sync` ออกมาแล้ว (ชั่วโมงละครั้ง) และส่งเกณฑ์มาเอง
+
+   ⚠️ **สองเกณฑ์นี้ห้ามใช้ตัวเดียวตัดสินทั้งคู่** (ฝั่งท่อกำชับ)
+      · `stockStaleAfterHours`  = 2   (สต็อกชุด — ชั่วโมงละครั้ง + เผื่อ 1)
+      · `recipeStaleAfterHours` = 25  (สูตรชุด — วันละครั้ง + เผื่อ 1)
+      ใช้ตัวเดียวตัดสินทั้งสอง = อาการเดิมกลับด้าน (สต็อกจะเงียบ 25 ชม. ทั้งที่ควรร้องตั้งแต่ 2) */
+export const STOCK_STALE_HOURS_ทางถอย = 1.5
 
 export interface StockFreshness {
   state: RecipeState
@@ -152,13 +162,31 @@ export interface StockFreshness {
   ageMinutes: number | null
   /** เวลาซิงก์ล่าสุด แปลงเป็นเวลาไทยแล้ว · null = ไม่รู้ */
   syncedThai: Date | null
+  /** true = ตัดสินด้วยค่าสำรองเพราะท่อยังไม่ส่งเกณฑ์ ⇒ จอต้องพูดออกมา */
+  ใช้ค่าสำรอง?: boolean
 }
 
-export function stockSyncFreshness(syncedAtUtc?: string | null, now = Date.now()): StockFreshness {
+export function stockSyncFreshness(
+  syncedAtUtc?: string | null,
+  now = Date.now(),
+  /** `undefined` = ท่อรุ่นเก่าไม่มีคีย์ · `null` = ท่ออ่าน cron ไม่ได้ ⇒ ไม่รู้รอบ */
+  staleAfterHours?: number | null,
+): StockFreshness {
   const syncedThai = toThai(syncedAtUtc)
   if (!syncedThai) return { state: 'unknown', ageMinutes: null, syncedThai: null }
   const ageMinutes = Math.round((now - (syncedThai.getTime() - 7 * 3600_000)) / 60_000)
-  return { state: ageMinutes > STOCK_STALE_MINUTES ? 'stale' : 'ok', ageMinutes, syncedThai }
+  /* สามทางเหมือนฝั่งสูตร — ห้ามยุบ (ดูเหตุผลที่ `recipeFreshness`) */
+  if (staleAfterHours === null) {
+    return { state: 'ไม่รู้รอบ', ageMinutes, syncedThai, ใช้ค่าสำรอง: false }
+  }
+  const เกณฑ์นาที = (typeof staleAfterHours === 'number' && Number.isFinite(staleAfterHours)
+    ? staleAfterHours : STOCK_STALE_HOURS_ทางถอย) * 60
+  return {
+    state: ageMinutes > เกณฑ์นาที ? 'stale' : 'ok',
+    ageMinutes,
+    syncedThai,
+    ใช้ค่าสำรอง: staleAfterHours === undefined,
+  }
 }
 
 /** "8 นาทีที่แล้ว" / "3 ชม. 10 น.ที่แล้ว" — อ่านง่ายกว่าเลขนาทีดิบเมื่อค้างนาน */

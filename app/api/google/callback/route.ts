@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
   const html = `<!doctype html><html lang="th"><meta charset="utf-8">
 <body style="font-family:sans-serif;max-width:640px;margin:40px auto;padding:0 16px">
 <h2>✅ ได้ Refresh Token แล้ว</h2>
-<p>คัดลอกค่าด้านล่าง ไปใส่ใน Vercel → Settings → Environment Variables ชื่อ <b>GOOGLE_REFRESH_TOKEN</b> แล้ว Redeploy</p>
+<p>คัดลอกค่าด้านล่าง ไปใส่ใน Netlify → Environment variables ชื่อ <b>GOOGLE_REFRESH_TOKEN</b> แล้ว deploy ใหม่</p>
 <textarea style="width:100%;height:120px;font-size:13px" onclick="this.select()">${data.refresh_token}</textarea>
 <p style="color:#888;font-size:13px">⚠️ เก็บเป็นความลับ — ใครมี token นี้จะอ่านอีเมลคุณได้ อย่าแชร์หรือ commit ลง git</p>
 </body></html>`

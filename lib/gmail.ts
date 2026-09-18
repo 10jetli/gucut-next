@@ -1,5 +1,5 @@
 // ─── Gmail API helper (REST, no googleapis dependency) ───────────────────────
-// ใช้ refresh token แบบ single-user: ตั้งค่า env 3 ตัวบน Vercel
+// ใช้ refresh token แบบ single-user: ตั้งค่า env 3 ตัวบน Netlify (ย้ายจาก Vercel ส.ค. 2569)
 //   GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GOOGLE_REFRESH_TOKEN
 // วิธีขอ refresh token ครั้งแรก: เปิด /api/google/auth (ดู SETUP-BILLS.md)
 

@@ -6,7 +6,7 @@ import { signStaffToken, STAFF_TOKEN_TTL_SEC } from '@/lib/staff-token'
 
 export const dynamic = 'force-dynamic'
 
-// รายชื่อพนักงาน (คนละรหัสผ่าน แยกกันได้ว่าใครล็อกอิน) — ตั้งใน Vercel env
+// รายชื่อพนักงาน (คนละรหัสผ่าน แยกกันได้ว่าใครล็อกอิน) — ตั้งใน Netlify env (ย้ายจาก Vercel ส.ค. 2569)
 // env ที่ต้องตั้ง: STAFF_NAME_1..8 / STAFF_PASS_1..8 (คู่ไหนไม่ครบจะถูกข้าม)
 const cleanEnv = (v?: string) => (v ?? '').trim()
 function staffList() {
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
   const adminPass = process.env.SITE_PASSWORD
   const legacyStaffPass = process.env.STAFF_PASSWORD // รหัสพนักงานตัวเก่า (ใช้ร่วมกัน) — เก็บไว้เผื่อยังไม่ได้ย้ายมาใช้รหัสแยกคน
   if (!adminPass) {
-    return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า SITE_PASSWORD บน Vercel' }, { status: 500 })
+    return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า SITE_PASSWORD ใน Netlify → Environment variables' }, { status: 500 })
   }
   const ip = whoIs(req)
   const mins = blockedFor(ip)

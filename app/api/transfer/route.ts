@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 30
 
-// บัญชี ZORT สำหรับระบบโอนสินค้า (3 บัญชี) — ตั้งใน Vercel env
+// บัญชี ZORT สำหรับระบบโอนสินค้า (3 บัญชี) — ตั้งใน Netlify env (ย้ายจาก Vercel ส.ค. 2569)
 // ลำดับตรงกับฟอร์มตั้งค่าเดิม: 1=ศีตกาล/โกดัง (คลัง NEW), 2=ZAMA/ANJ (คลัง ANJ), 3=ZAMA/KLD (คลัง KLD)
 // env ที่ต้องตั้ง: ZORT_TRF_STORENAME_1..3, ZORT_TRF_APIKEY_1..3, ZORT_TRF_APISECRET_1..3
 // ล้างค่าที่อาจติดมาตอนวางค่า: ช่องว่าง/ขึ้นบรรทัด/เครื่องหมายคำพูดหุ้มค่า
@@ -37,7 +37,7 @@ const escHtml = (s: string) => String(s ?? '').replace(/&/g, '&amp;').replace(/<
 async function sendTelegramApproval(payload: any) {
   const token = cleanEnv(process.env.TELEGRAM_BOT_TOKEN)
   const chatId = cleanEnv(process.env.TELEGRAM_CHAT_ID)
-  if (!token || !chatId) return { ok: false, error: 'ยังไม่ได้ตั้งค่า TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID บน Vercel' }
+  if (!token || !chatId) return { ok: false, error: 'ยังไม่ได้ตั้งค่า TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID ใน Netlify → Environment variables' }
   const b64 = Buffer.from(JSON.stringify(payload)).toString('base64')
   const list: any[] = payload.list || []
   const lines = list.map((it) => `• <b>${escHtml(it.sku)}</b> ${escHtml(it.name || '')} × ${it.number}`).join('\n')
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ stores })
   }
   if (!isConfigured()) {
-    return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า ZORT_TRF_* บน Vercel' }, { status: 400 })
+    return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า ZORT_TRF_* ใน Netlify → Environment variables' }, { status: 400 })
   }
   const acc = pickStore(req.nextUrl.searchParams.get('store'))
   if (!acc) return NextResponse.json({ error: 'store ต้องเป็น 1-3' }, { status: 400 })
@@ -114,7 +114,7 @@ export async function GET(req: NextRequest) {
 // POST /api/transfer  { op: 'void', store: N, id: '...' }      → ยกเลิกใบโอน
 export async function POST(req: NextRequest) {
   if (!isConfigured()) {
-    return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า ZORT_TRF_* บน Vercel' }, { status: 400 })
+    return NextResponse.json({ error: 'ยังไม่ได้ตั้งค่า ZORT_TRF_* ใน Netlify → Environment variables' }, { status: 400 })
   }
   let body: any
   try { body = await req.json() } catch {

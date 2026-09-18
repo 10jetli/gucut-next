@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // ขั้นตอน bootstrap ครั้งเดียว: แลก authorization code จาก Shopify OAuth เป็น Admin API access token
 // เข้าทางนี้ได้ก็ต่อเมื่อผ่านหน้าติดตั้งแอปของ Shopify มาแล้วเท่านั้น (ต้องล็อกอิน Shopify admin ของร้านก่อน)
-// ผลลัพธ์ที่ได้ (access_token) ให้คัดลอกไปตั้งเป็น env var SHOPIFY_ADMIN_TOKEN ใน Vercel ด้วยตัวเอง
+// ผลลัพธ์ที่ได้ (access_token) ให้คัดลอกไปตั้งเป็น env var SHOPIFY_ADMIN_TOKEN ใน Netlify ด้วยตัวเอง (ย้ายจาก Vercel ส.ค. 2569)
 // — ระบบนี้ไม่บันทึก token ไว้ที่ไหนทั้งสิ้น แสดงผลครั้งเดียวในหน้านี้เท่านั้น
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
   const clientSecret = process.env.SHOPIFY_CLIENT_SECRET
   if (!clientId || !clientSecret) {
     return NextResponse.json(
-      { error: 'ยังไม่ได้ตั้งค่า SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET ใน Vercel' },
+      { error: 'ยังไม่ได้ตั้งค่า SHOPIFY_CLIENT_ID / SHOPIFY_CLIENT_SECRET ใน Netlify → Environment variables' },
       { status: 500 }
     )
   }
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     })
     const data = await res.json()
     return NextResponse.json({
-      note: 'คัดลอก access_token ด้านล่างไปตั้งเป็น SHOPIFY_ADMIN_TOKEN ใน Vercel (Settings → Environment Variables) จากนั้นตั้ง SHOPIFY_STORE_DOMAIN เป็นค่า shop ด้านล่างด้วย',
+      note: 'คัดลอก access_token ด้านล่างไปตั้งเป็น SHOPIFY_ADMIN_TOKEN ใน Netlify → Environment variables จากนั้นตั้ง SHOPIFY_STORE_DOMAIN เป็นค่า shop ด้านล่างด้วย',
       shop,
       ...data,
     })

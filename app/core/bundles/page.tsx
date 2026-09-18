@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
-import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, ป้ายรอบซิงก์ } from '@/lib/recipe-fresh'
+import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, ป้ายรอบซิงก์ } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
@@ -61,6 +61,10 @@ interface Resp {
   recipeStaleAfterHours?: number | null
   recipeExpectedCron?: string | null
   recipeExpectedNote?: string | null
+  /* ⚠️ **คนละงานกับสูตรชุดแล้ว** (ฝั่งท่อแยก `bundle-stock-sync` ออกมา 19 ก.ย. 2569)
+     ห้ามเอาเกณฑ์ของสูตร (25 ชม.) มาตัดสินสต็อก (2 ชม.) — จะเงียบ 25 ชม. ทั้งที่ควรร้องตั้งแต่ 2 */
+  stockExpectedEveryHours?: number | null
+  stockStaleAfterHours?: number | null
   negative?: number
   /** ✅ ท่อเปิดให้ 18 ก.ย. 2569 (gucut-web 8af6ef0) — **ตัวนับที่เดินตามตัวกรอง `only`**
    *  `total` ยัง**ข้าม** only โดยตั้งใจ (แท็บต้องเห็นของทุกกอง เหมือนกติกา byStatus ของใบโอน)
@@ -77,7 +81,10 @@ interface Resp {
   /** ไปถาม ZORT ล่าสุดเมื่อไหร่ (UTC) · null = ไม่รู้ ⇒ **ห้ามเขียนว่าซิงก์หยุด** */
   recipeCheckedAt?: string | null
   /** 🔴 **ซิงก์ตัวเลขสต็อกชุด (คงเหลือ/พร้อมขาย) ครบรอบล่าสุด (UTC)** · null = ไม่รู้
-   *  ⚠️ **คนละนาฬิกากับ recipeCheckedAt** — อันนั้นคือสูตร (รอบดูที่ `RECIPE_SYNC_LABEL`) อันนี้คือตัวเลข (ทุกครึ่งชั่วโมง)
+   *  ⚠️ **คนละนาฬิกา และตั้งแต่ 19 ก.ย. 2569 คนละงานจริง ๆ แล้ว**
+   *     สูตร = `bundle-recipe-sync` (วันละครั้ง) · ตัวเลขสต็อก = `bundle-stock-sync` (ชั่วโมงละครั้ง)
+   *     ก่อนหน้านั้นเป็นงานเดียวกัน ⇒ สองเวลานี้เคยห่างกัน 8 วินาทีเสมอ ซึ่งเป็นเบาะแสที่ทำให้จับได้
+   *     🚫 รอบของทั้งคู่มาจากท่อ (`recipeExpectedEveryHours` / `stockExpectedEveryHours`) **ห้ามพิมพ์เอง**
    *     เอามาปนกันคือสิ่งที่ฝั่งท่อกำชับห้าม (ดู lib/recipe-fresh.ts) */
   stockSyncedAt?: string | null
   checkedMarketplaces?: string[]
@@ -190,9 +197,11 @@ export default function CoreBundlesPage() {
   const fresh = recipeFreshness(data?.recipeCheckedAt, data?.recipeAt ?? data?.collectedAt,
     Date.now(), data?.recipeStaleAfterHours)
   const รอบ = ป้ายรอบซิงก์(data?.recipeExpectedEveryHours)
+  const รอบสต็อก = ป้ายรอบซิงก์(data?.stockExpectedEveryHours)
   /* 🔴 **นาฬิกาที่สอง** — ความสดของ *ตัวเลข* คงเหลือ/พร้อมขาย (คนละอันกับความสดของ *สูตร*)
      ⚠️ ห้ามส่ง recipeCheckedAt/recipeAt เข้าตัวนี้ (ฝั่งท่อกำชับ · เทสข้อ ⑤ ดักไว้) */
-  const stock = stockSyncFreshness(data?.stockSyncedAt)
+  /* ⚠️ เกณฑ์ของ **สต็อก** ไม่ใช่ของสูตร — ส่งค่าดิบ ห้าม `?? อะไร` (undefined ≠ null) */
+  const stock = stockSyncFreshness(data?.stockSyncedAt, Date.now(), data?.stockStaleAfterHours)
 
   const rows = data?.rows ?? []
   const shown = offset + rows.length
@@ -229,7 +238,7 @@ export default function CoreBundlesPage() {
                 scope: q.trim() ? `ค้นหา "${q.trim()}"` : 'ทุกชุด',
                 title: 'สินค้าเป็นชุด',
                 note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ'
-                  + ' · คงเหลือ/พร้อมขาย ซิงก์จาก ZORT ทุกครึ่งชั่วโมง · พร้อมขายที่เป็น 0 อาจหมายถึงติดลบ'
+                  + ` · คงเหลือ/พร้อมขาย ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''} · พร้อมขายที่เป็น 0 อาจหมายถึงติดลบ`
                   + ' (ZORT API ไม่ส่งค่าติดลบของช่องนี้)',
                 filters: [['คำค้นหา', q.trim() || '(ไม่ได้ค้น)']],
                 fetchPage: async (offsetAt, limit) => {
@@ -380,17 +389,17 @@ export default function CoreBundlesPage() {
               ⇒ ตัวเลขที่ไม่บอกอายุ = คำยืนยันที่พิสูจน์ไม่ได้ · จัดชิดขวาให้อยู่แนวคอลัมน์สองอันนั้น */}
           <div className={`flex justify-end text-[12px] leading-relaxed rounded-t-md px-3 py-1.5 border border-b-0 ${
             stock.state === 'stale' ? 'text-amber-900 bg-amber-50 border-amber-300'
-              : stock.state === 'unknown' ? 'text-gray-600 bg-gray-50 border-gray-300'
+              : (stock.state === 'unknown' || stock.state === 'ไม่รู้รอบ') ? 'text-gray-600 bg-gray-50 border-gray-300'
                 : 'text-gray-600 bg-white border-gray-200'}`}>
             <span>
               {stock.state === 'ok' && (
                 <>🕰 <b>คงเหลือ / พร้อมขาย</b> ซิงก์จาก ZORT ล่าสุด <b>{thaiMoment(stock.syncedThai)}</b>
-                  {' '}({agoText(stock.ageMinutes)}) · ซิงก์ทุกครึ่งชั่วโมง</>
+                  {' '}({agoText(stock.ageMinutes)}){รอบสต็อก && <> · ซิงก์{รอบสต็อก}</>}</>
               )}
               {stock.state === 'stale' && (
                 <>🔴 <b>ตัวเลขคงเหลือ / พร้อมขาย อาจเก่ากว่าของจริง</b> — ซิงก์ล่าสุด
                   {' '}<b>{thaiMoment(stock.syncedThai)}</b> ({agoText(stock.ageMinutes)})
-                  {' '}ทั้งที่ควรซิงก์ทุกครึ่งชั่วโมง ⇒ <b>เกิน {STOCK_STALE_MINUTES} นาทีแล้ว ตัวซิงก์น่าจะหยุด</b></>
+                  {รอบสต็อก && <> ทั้งที่ควรซิงก์{รอบสต็อก}</>} ⇒ <b>ตัวซิงก์น่าจะหยุด</b></>
               )}
               {stock.state === 'unknown' && (
                 <>⚠️ <b>ยังไม่รู้ว่าตัวเลขคงเหลือ / พร้อมขาย ซิงก์ล่าสุดเมื่อไหร่</b> (ท่อไม่ได้ส่งเวลามา)
@@ -411,10 +420,10 @@ export default function CoreBundlesPage() {
                   <th className={THR}>ราคาขาย</th>
                   {/* 🕰 สองคอลัมน์นี้คือของที่แถบอายุข้างบนกำกับอยู่ — ใส่นาฬิกาให้ชี้ตรงกัน
                       ไม่งั้นแถบลอยอยู่ข้างบนแล้วคนเดาไม่ออกว่ามันพูดถึงคอลัมน์ไหน */}
-                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT ทุกครึ่งชั่วโมง — ดูอายุที่แถบเหนือตาราง (เกิน ${STOCK_STALE_MINUTES} นาทีถือว่าซิงก์หยุด)`}>
+                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''} — ดูอายุที่แถบเหนือตาราง`}>
                     คงเหลือ <span className="opacity-50 font-normal">🕰</span>
                   </th>
-                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT ทุกครึ่งชั่วโมง — ดูอายุที่แถบเหนือตาราง · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
+                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''} — ดูอายุที่แถบเหนือตาราง · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
                     พร้อมขาย <span className="opacity-50 font-normal">🕰</span>
                   </th>
                   <th className={TH}>วันหมดอายุรายการ</th>

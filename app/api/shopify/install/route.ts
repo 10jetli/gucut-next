@@ -7,7 +7,7 @@ export async function GET(request: NextRequest) {
   const shop = process.env.SHOPIFY_STORE_DOMAIN
   if (!clientId || !shop) {
     return NextResponse.json(
-      { error: 'ยังไม่ได้ตั้งค่า SHOPIFY_CLIENT_ID / SHOPIFY_STORE_DOMAIN ใน Vercel' },
+      { error: 'ยังไม่ได้ตั้งค่า SHOPIFY_CLIENT_ID / SHOPIFY_STORE_DOMAIN ใน Netlify → Environment variables' },
       { status: 500 }
     )
   }
