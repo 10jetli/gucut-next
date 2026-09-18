@@ -50,11 +50,21 @@ try {
     ok('ตรวจเมื่อครึ่งชั่วโมงก่อน ⇒ ok', fresh.state === 'ok' && fresh.ageHours === 0.5, JSON.stringify(fresh))
     ok('   และยังบอกวันที่สูตรเปลี่ยนล่าสุดแยกต่างหาก', thaiMoment(fresh.changedThai).startsWith('3 ก.ย. 2569'))
 
-    const stale = recipeFreshness('2026-09-14T05:00:00Z', '2026-09-03T04:00:00Z', NOW)
-    ok(`เกิน ${RECIPE_STALE_HOURS} ชม. ⇒ stale`, stale.state === 'stale' && stale.ageHours === 10, JSON.stringify(stale))
+    /* 🔴 **ข้อมูลทดสอบต้องขยับตามเกณฑ์ ไม่งั้นเทสจะเลิกทดสอบอะไรเงียบ ๆ** (19 ก.ย. 2569)
+       เกณฑ์เปลี่ยน 6 → 25 ชม. (รอบจริงเป็นวันละครั้ง) ⇒ ของเดิมอายุ 10 ชม. กลายเป็น `ok`
+       ⚠️ ทางที่ผิดตรงนี้คือ **แก้ค่าที่คาดหวังให้ผ่าน** ⇒ ได้เทสที่ผ่านโดยไม่ได้ทดสอบอะไร
+          (คลาสเดียวกับ `q=CN` ที่แมตช์ทุกใบ — ดูบทเรียน test-must-discriminate ④)
+       ⇒ ต้องเลื่อน **ข้อมูล** ให้กลับไปอยู่คนละฝั่งของเส้นแบ่ง แล้วคงคำถามเดิมไว้ */
+    const stale = recipeFreshness('2026-09-13T09:00:00Z', '2026-09-03T04:00:00Z', NOW)   // 30 ชม.
+    ok(`เกิน ${RECIPE_STALE_HOURS} ชม. ⇒ stale`, stale.state === 'stale' && stale.ageHours === 30, JSON.stringify(stale))
 
-    const edge = recipeFreshness('2026-09-14T09:00:00Z', null, NOW)   // 6 ชม. พอดี
-    ok('6 ชม. พอดี ⇒ ยัง ok (เกินเท่านั้นถึงเตือน)', edge.state === 'ok', JSON.stringify(edge))
+    const edge = recipeFreshness('2026-09-13T14:00:00Z', null, NOW)   // 25 ชม. พอดี
+    ok(`${RECIPE_STALE_HOURS} ชม. พอดี ⇒ ยัง ok (เกินเท่านั้นถึงเตือน)`,
+      edge.state === 'ok' && edge.ageHours === RECIPE_STALE_HOURS, JSON.stringify(edge))
+
+    /* 🔒 **ด่านกันเกณฑ์เลื่อนแล้วไม่มีใครรู้** — ผูกเกณฑ์กับรอบจริงที่ฝั่งท่อยืนยัน
+       รอบ = วันละครั้ง ⇒ เกณฑ์ต้องมากกว่า 24 ชม. เสมอ · ต่ำกว่านั้น = จอจะแดงทุกวันทั้งที่ปกติ */
+    ok('เกณฑ์ต้องเผื่อรอบวันละครั้ง (> 24 ชม.)', RECIPE_STALE_HOURS > 24, String(RECIPE_STALE_HOURS))
   }
 
   console.log('③ 🔴 ไม่รู้ ≠ ซิงก์หยุด')

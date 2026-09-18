@@ -34,7 +34,7 @@ import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import { fmtMoney, fmtNum, thaiDate } from '@/lib/format'
 import {
-  recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES,
+  recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, RECIPE_SYNC_LABEL,
 } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -645,11 +645,11 @@ export default function BundleDetailPage() {
           {/* ── ความสดของข้อมูลสองชุด (สูตร vs ตัวเลขสต็อก) ───────────────── */}
           <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
             {fresh.state === 'ok' && (
-              <>✅ สูตรชุดนี้<b>ซิงก์จาก ZORT อัตโนมัติทุกชั่วโมง</b> — ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
+              <>✅ สูตรชุดนี้<b>ซิงก์จาก ZORT อัตโนมัติ{RECIPE_SYNC_LABEL}</b> — ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
                 {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}</>
             )}
             {fresh.state === 'stale' && (
-              <span className="text-amber-800">🔴 ควรตรวจทุกชั่วโมง แต่ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
+              <span className="text-amber-800">🔴 ควรตรวจ{RECIPE_SYNC_LABEL} แต่ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
                 {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>} ⇒ <b>ตัวซิงก์น่าจะหยุด</b></span>
             )}
             {fresh.state === 'unknown' && (

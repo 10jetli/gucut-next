@@ -19,7 +19,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
-import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES } from '@/lib/recipe-fresh'
+import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, STOCK_STALE_MINUTES, RECIPE_SYNC_LABEL } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
@@ -70,7 +70,7 @@ interface Resp {
   /** ไปถาม ZORT ล่าสุดเมื่อไหร่ (UTC) · null = ไม่รู้ ⇒ **ห้ามเขียนว่าซิงก์หยุด** */
   recipeCheckedAt?: string | null
   /** 🔴 **ซิงก์ตัวเลขสต็อกชุด (คงเหลือ/พร้อมขาย) ครบรอบล่าสุด (UTC)** · null = ไม่รู้
-   *  ⚠️ **คนละนาฬิกากับ recipeCheckedAt** — อันนั้นคือสูตร (ทุกชั่วโมง) อันนี้คือตัวเลข (ทุกครึ่งชั่วโมง)
+   *  ⚠️ **คนละนาฬิกากับ recipeCheckedAt** — อันนั้นคือสูตร (รอบดูที่ `RECIPE_SYNC_LABEL`) อันนี้คือตัวเลข (ทุกครึ่งชั่วโมง)
    *     เอามาปนกันคือสิ่งที่ฝั่งท่อกำชับห้าม (ดู lib/recipe-fresh.ts) */
   stockSyncedAt?: string | null
   checkedMarketplaces?: string[]
@@ -292,7 +292,8 @@ export default function CoreBundlesPage() {
       {data && !data.skip && (
         <>
           {/* 🔴 **ข้อความเดิมกลายเป็นเท็จแล้ว** — เดิมเขียนว่า "ภาพนิ่งเก็บครั้งเดียว ไม่ได้ซิงก์เอง"
-              ฝั่งท่อทำให้ซิงก์สูตรทุกชั่วโมงแล้ว (gucut-web a17692b · ตรวจ 360/360 · แจ้ง 14 ก.ย. 2569)
+              ฝั่งท่อทำให้ซิงก์สูตรอัตโนมัติแล้ว (gucut-web a17692b · ตรวจ 360/360 · แจ้ง 14 ก.ย. 2569)
+              ⚠️ รอบเปลี่ยนเป็นวันละครั้งเมื่อ 18 ก.ย. 2569 (aacde9e · ลดเครดิต 69%) ⇒ **ห้ามพิมพ์รอบซ้ำตรงนี้**
               ⇒ ปล่อยไว้ = จอเตือนเรื่องที่ไม่มีอยู่แล้ว และคนจะไม่เชื่อคำเตือนอันอื่นด้วย
               🔴 **สองเวลาคนละเรื่อง ห้ามสลับ**: สูตรเปลี่ยนล่าสุด (ค้างได้ถ้าไม่มีใครแก้)
                  กับ ตรวจกับ ZORT ล่าสุด (อันนี้คือความสด) — ดู lib/recipe-fresh.ts */}
@@ -301,11 +302,11 @@ export default function CoreBundlesPage() {
               : fresh.state === 'unknown' ? 'text-gray-700 bg-gray-50 border-gray-300'
                 : 'text-emerald-900 bg-emerald-50 border-emerald-200'}`}>
             {fresh.state === 'ok' && (
-              <>✅ <b>สูตรชุดซิงก์จาก ZORT อัตโนมัติทุกชั่วโมง</b> — ตรวจกับ ZORT ล่าสุด
+              <>✅ <b>สูตรชุดซิงก์จาก ZORT อัตโนมัติ{RECIPE_SYNC_LABEL}</b> — ตรวจกับ ZORT ล่าสุด
                 {' '}<b>{thaiMoment(fresh.checkedThai)}</b>{fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}</>
             )}
             {fresh.state === 'stale' && (
-              <>🔴 <b>สูตรชุดควรซิงก์ทุกชั่วโมง แต่ตรวจล่าสุดเมื่อ {thaiMoment(fresh.checkedThai)}</b>
+              <>🔴 <b>สูตรชุดควรซิงก์{RECIPE_SYNC_LABEL} แต่ตรวจล่าสุดเมื่อ {thaiMoment(fresh.checkedThai)}</b>
                 {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}
                 {' '}⇒ <b>ตัวซิงก์น่าจะหยุด</b> · ตัวเลขที่นี่อาจเก่ากว่าของจริงใน ZORT</>
             )}
