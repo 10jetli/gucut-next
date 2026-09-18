@@ -31,6 +31,7 @@ import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { SALE_CREATE_TRANSFER_CHOICE, zortWord } from '@/lib/zort-words'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
@@ -64,8 +65,10 @@ type SaleResp = WriteResp & {
  *
  *  🔴 **การยกเลิกไม่สมมาตร** — ยกเลิกใบบนเว็บเรา **ไม่ยกเลิกใน ZORT**
  *     ต้องเข้าไปยกเลิกในระบบเขาเอง ⇒ ข้อความหลังส่งสำเร็จต้องเขียนข้อนี้ไว้ทุกครั้ง */
-const REAL_SEND_ENABLED = true
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('sales/new')
 /** ZORT ตอบไม่ได้ (5xx) ≠ ข้อมูลที่กรอกผิด ≠ โค้ดเราพัง — **ต้องแยกให้คนอ่านออก**
  *
  *  🔴 ของจริงวันนี้ 18 ก.ย. 2569: โมดูลขายของ ZORT (`/Sell/*`) ตอบ **500 ทั้งหมด**

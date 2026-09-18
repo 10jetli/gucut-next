@@ -17,6 +17,7 @@ import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
@@ -26,8 +27,10 @@ const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
  *  เหตุผลเดิมที่เคยปิด: ใบสั่งซื้อผูกกับคู่ค้าและของที่จะเข้าคลังจริง ⇒ ใบผิดที่ค้างอยู่ อาจทำให้มีคนสั่งของตามใบนั้น
  *  ⇒ ท่อมีทางยกเลิกใบแล้ว (gucut-web POST ?voidpo · อ่านกลับยืนยัน Voided) ใบผิดจึงไม่ค้าง
  *  ⚠️ เปิดเฉพาะใบปกติ (Pending) · โหมดอย่างง่าย ?quick=1 ส่ง Success (รับของเข้าคลังทันที) **ยังปิด** ดูเงื่อนไขที่ปุ่ม */
-const REAL_SEND_ENABLED = true
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('purchases/new')
 function NewPurchaseOrderInner() {
   // รับรหัสสินค้ามาจากเมนู ⋮ ของจอสินค้า/ลูกค้าได้ ("ซื้อสินค้า" → เปิดใบพร้อมบรรทัดแรก)
   // เติมตั้งแต่ตอนสร้าง state ไม่ใช่ใน effect — กติกาเดียวกับจอ moves (กันช่องกระพริบว่าง)

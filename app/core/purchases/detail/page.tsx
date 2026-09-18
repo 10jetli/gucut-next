@@ -23,6 +23,7 @@ import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 /* ── รับของ / ตรวจนับสินค้าเข้า (soon: stock-count · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
    ท่อ (gucut-web): GET ?zortpo=<เลขที่ใบ> → id ของ ZORT (กระจกไม่มี id · เลขที่ใบซ้ำได้ ท่อไม่เดา)
@@ -30,8 +31,10 @@ import type { WriteResp } from '@/components/zort'
                       มี items = รับบางส่วนตามที่นับได้ · ไม่มี = รับครบทั้งใบ
    🔴 ยิงจริงแล้วสต็อกขยับทันที ถอยผ่าน API ไม่ได้ · 🔴 ยังไม่รู้ว่าจำนวนเป็น "ยอดรอบนี้" หรือ "ยอดสะสม"
    🔴 ปุ่มรับจริงปิดอยู่ (REAL_SEND_ENABLED) รอท่านประธานอนุมัติ — แบบเดียวกับจอเขียนอื่น */
-const REAL_SEND_ENABLED = false
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('purchases/detail')
 interface ZortPo { id: number; number: string; status: string | null; warehousecode: string | null }
 interface ZortPoResp { ok?: boolean; found?: boolean; purchaseOrder?: ZortPo; error?: string; unknown?: boolean; duplicate?: boolean; ids?: number[]; fallthrough?: boolean }
 

@@ -31,6 +31,7 @@ import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 interface Line { sku: string; qty: string; price: string }
 
@@ -54,8 +55,10 @@ const BLANK: Line = { sku: '', qty: '', price: '' }
       "ใบสั่งซื้อกับเพิ่มสินค้ายังปิดอยู่" **หมดอายุไปแล้ว** (ท่านประธานสั่งเปิดทั้งสองใบ 18 ก.ย. 2569)
       ⇒ อย่าอ่านคอมเมนต์เป็นสถานะปัจจุบัน · สถานะจริงอ่านจาก `REAL_SEND_ENABLED` ของแต่ละจอ
       (18 ก.ย. 2569 เปิด 4 จอ: ใบเสนอราคา · เพิ่มสินค้า · ใบซื้อ · สร้างรายการขาย) */
-const REAL_SEND_ENABLED = true
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('quotations/new')
 export default function NewQuotationPage() {
   const [customer, setCustomer] = useState('')
   const [phone, setPhone] = useState('')

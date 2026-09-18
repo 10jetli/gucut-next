@@ -17,10 +17,13 @@ import { useParams } from 'next/navigation'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import ProductImageBox from './ProductImageBox'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ (แก้/ลบของจริงใน ZORT) */
-const REAL_SEND_ENABLED = false
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('stock/[sku]/edit')
 interface ZortProduct {
   id: number; sku: string; name: string; barcode: string | null
   sellprice: number | null; purchaseprice: number | null; stock: number | null; availablestock: number | null

@@ -15,9 +15,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { PageHead } from '@/components/zort'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ */
-const REAL_SEND_ENABLED = false
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('stock/cost')
 const MAX_ROWS = 100
 const CONCURRENCY = 3
 

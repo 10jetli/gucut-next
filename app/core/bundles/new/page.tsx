@@ -16,10 +16,13 @@
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ShortAddForm } from '@/components/zort/ShortAddForm'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติ "การเพิ่มสินค้าชุด" โดยเฉพาะ */
-const REAL_SEND_ENABLED = false
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('bundles/new')
 const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
 
 interface Line { sku: string; qty: string }
@@ -116,7 +119,7 @@ export default function NewBundlePage() {
             + 'ไม่แน่ใจให้ปล่อยเป็น “ไม่ระบุ” แล้วไปตั้งภาษีที่ ZORT จะแน่นอนกว่า',
         },
       ]}
-      lockedNote={<>เจ้าของร้านอนุมัติการเขียนจริงไว้เฉพาะใบเสนอราคา
+      lockedNote={<>ท่านประธานอนุมัติการเขียนจริงเป็นราย ๆ ไป — จอนี้ยังไม่อยู่ในรายการที่อนุมัติ
         {' '}การเพิ่มสินค้าชุดต้องขออนุมัติแยก · ระหว่างนี้ทดลองส่งได้เต็มที่ เห็นทุกช่องที่จะส่งจริง</>}
       extra={(
         <div className="mt-5">

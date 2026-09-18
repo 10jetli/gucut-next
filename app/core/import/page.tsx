@@ -16,9 +16,13 @@ import { useSearchParams } from 'next/navigation'
 import { PageHead, BtnGhost } from '@/components/zort'
 import { readImportFile } from '@/lib/excel-rows'
 import type { ImportKind, ParseResult } from '@/lib/excel-rows'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติการนำเข้าจริงเข้า ZORT */
-const REAL_SEND_ENABLED = false
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('import')
 const CHUNK = 20
 
 const KINDS: { kind: ImportKind; label: string; soon: string; columns: string; note?: string }[] = [

@@ -31,11 +31,14 @@ import { PageHead, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components
 import type { WriteResp } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import { looksLikeFallThrough } from '@/lib/api-shape'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติ "ใบคืนของให้ผู้ขาย" โดยเฉพาะ
  *  เหตุผลที่ต้องแยกอนุมัติ: ใบนี้ **ตัดของออกจากคลังจริง** และไม่มีเส้นยกเลิก */
-const REAL_SEND_ENABLED = false
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('purchases/returns/new')
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
 
@@ -311,7 +314,7 @@ export default function NewPurchaseReturnPage() {
 
       {!REAL_SEND_ENABLED ? (
         <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
-          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — เจ้าของร้านอนุมัติการเขียนจริงไว้เฉพาะใบเสนอราคา
+          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — ท่านประธานอนุมัติการเขียนจริงเป็นราย ๆ ไป — จอนี้ยังไม่อยู่ในรายการที่อนุมัติ
           {' '}ใบคืนของ<b>ตัดสต็อกจริงและยกเลิกไม่ได้</b> จึงต้องขออนุมัติแยก ·
           {' '}ระหว่างนี้ทดลองส่งได้เต็มที่ เห็นทุกช่องที่จะส่งจริง
         </p>

@@ -1,7 +1,7 @@
 'use client'
 // ลูกค้า/คู่ค้า → เพิ่มผู้ติดต่อใหม่ (เขียนทะลุไป ZORT Contact/AddContact)
 //
-// 🔴 **ปุ่มส่งจริงปิดอยู่** — เจ้าของร้านอนุมัติการเขียนจริงไว้เฉพาะใบเสนอราคา (6 ก.ย. 2569)
+// 🔴 **ปุ่มส่งจริงปิดอยู่** — ท่านประธานอนุมัติการเขียนจริงเป็นราย ๆ ไป — จอนี้ยังไม่อยู่ในรายการที่อนุมัติ (6 ก.ย. 2569)
 //    ผู้ติดต่อต้องขออนุมัติแยก · ระหว่างนี้ "ทดลองส่ง" ได้เต็มที่ เห็นทุกช่องที่จะส่งจริง
 //
 // 🔴 **ZORT ลบผ่าน API ไม่ได้** ⇒ ผู้ติดต่อที่สร้างผิดจะค้างในทะเบียน
@@ -20,10 +20,13 @@ import Link from 'next/link'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
+import { ส่งจริงได้ } from '@/lib/real-send'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติการเพิ่มผู้ติดต่อโดยเฉพาะ */
-const REAL_SEND_ENABLED = false
-
+/* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
+   เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
+   (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
+const REAL_SEND_ENABLED = ส่งจริงได้('customers/new')
 const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
 
 type Resp = WriteResp & { willSend?: Record<string, unknown> }
@@ -152,7 +155,7 @@ export default function NewContactPage() {
 
       {!REAL_SEND_ENABLED ? (
         <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
-          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — เจ้าของร้านอนุมัติการเขียนจริงไว้เฉพาะใบเสนอราคา
+          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — ท่านประธานอนุมัติการเขียนจริงเป็นราย ๆ ไป — จอนี้ยังไม่อยู่ในรายการที่อนุมัติ
           {' '}การเพิ่มผู้ติดต่อต้องขออนุมัติแยก · ระหว่างนี้ทดลองส่งได้เต็มที่ เห็นทุกช่องที่จะส่งจริง
         </p>
       ) : !dryOk && (
