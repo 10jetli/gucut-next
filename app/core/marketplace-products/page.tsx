@@ -198,7 +198,18 @@ export default function MarketplaceProductsPage() {
   const pageCount = Math.max(1, Math.ceil(totalInTab / PAGE))
   const goTab = (id: string) => { setTab(id); setPage(0); if (serverFilter !== false) load(id, 0, q); }
   const goPage = (next: number) => { setPage(next); if (serverFilter) load(tab, next, q) }
-  const goSearch = (v: string) => { setQ(v); setPage(0); if (serverFilter) load(tab, 0, v) }
+  /* 🔴 **เคยยิงท่อทุกตัวอักษรที่พิมพ์ ⇒ พิมพ์ได้ตัวเดียวแล้วโฟกัสหลุด** (แก้ 18 ก.ย. 2569)
+     เดิม `onChange` เรียก `load()` ทุกครั้ง ⇒ `loading` เป็น true ⇒ บล็อก `{!loading && …}`
+     ที่ครอบทั้งจอ (รวม **ช่องค้นหาเอง**) ถูกถอดทิ้ง ⇒ ช่องหาย ⇒ ตัวอักษรที่สองไม่เข้า
+     🔬 วัดจริง: พิมพ์ "ทดสอบABC123" ได้ `'ท'` · `document.activeElement` = `BODY`
+     🔑 เจอด้วย `scripts/ทดสอบพิมพ์ลงช่อง.py` โหมด `ทุกจอ` — **ด่านสแกนโครงสร้างไม่มีทางเจอ**
+        เพราะไม่มีคอมโพเนนต์ซ้อนในเลย ต้นเหตุคือ **ตัวจอเองถอดลูกทิ้งตอนโหลด**
+     ⇒ แก้ให้ `onChange` แค่จำคำที่พิมพ์ · **ยิงท่อตอนกด Enter / กดค้นหา** เท่านั้น
+        (ท่าเดียวกับจอรายการขาย และตรงกับ ZORT ที่มีปุ่มค้นหา)
+     ผลพลอยได้: เลิกยิงท่อ 1 คำขอต่อ 1 ตัวอักษร */
+  const goSearch = (v: string) => { setQ(v); setPage(0) }
+  /** ยิงจริง — ใช้ตอนกด Enter หรือกดล้างคำค้น */
+  const doSearch = (v: string) => { setQ(v); setPage(0); if (serverFilter) load(tab, 0, v) }
 
   return (
     <div className="p-4 md:p-6">
@@ -311,9 +322,9 @@ export default function MarketplaceProductsPage() {
           <SearchRow
             value={q}
             onChange={goSearch}
-            onSubmit={() => goSearch(q)}
+            onSubmit={() => doSearch(q)}
             placeholder="รหัสสินค้า หรือชื่อสินค้า"
-            advanced={<LinkText onClick={() => goSearch('')}>ล้างคำค้น</LinkText>}
+            advanced={<LinkText onClick={() => doSearch('')}>ล้างคำค้น</LinkText>}
           />
 
           {/* ⚠️ ไม่มีตัวเลขบนแท็บ = ยังไม่ได้เลขจากท่อ **ต้องเขียนบอก** ไม่ใช่ปล่อยให้เดาเอง */}

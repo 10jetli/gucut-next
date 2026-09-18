@@ -16,6 +16,11 @@
 วิธีใช้:
     SITE_PASSWORD=xxx npx next dev -p 3111     # หรือชี้ไป production ที่ล็อกอินแล้ว
     python3 scripts/ทดสอบพิมพ์ลงช่อง.py http://localhost:3111 9222
+    python3 scripts/ทดสอบพิมพ์ลงช่อง.py https://admin.gucut.com 9223 ทุกจอ
+
+โหมด `ทุกจอ` = ไล่ทุกเส้นทางใน `window.ALL_ROUTES` ของตัวกวาด (สร้างตอน build เหมือนกัน)
+  ⚠️ ช้ากว่ามาก (100+ จอ) และ **ไม่ครอบจอที่มีช่องแปรใน URL** (ดู ROUTES_NOT_SWEPT)
+  ⇒ ใช้เป็นการกวาดเป็นครั้งคราว · ของประจำคือโหมดปกติที่ครอบจอเขียนของจริง
 """
 import json
 import re
@@ -30,6 +35,17 @@ from playwright.sync_api import sync_playwright
 
 # ค่าตัวอย่างสำหรับเส้นทางที่มีช่องแปรใน URL — เปิดเปล่า ๆ ไม่ได้
 ค่าตัวอย่าง = {"sku": "01209", "id": "1", "key": "stock-count", "vendor": "meta", "slug": "x"}
+
+
+def ทุกจอ():
+    """เส้นทางทั้งหมดที่เปิดตรง ๆ ได้ — อ่านจากตัวกวาด (gen-arch เขียนให้ตอน build)"""
+    src = Path("scripts/sweep-in-browser.js").read_text(encoding="utf-8")
+    m = re.search(r"window\.ALL_ROUTES = (\[[^\]]*\])", src)
+    if not m:
+        print("🛑 อ่าน ALL_ROUTES จากตัวกวาดไม่ได้ — หยุด ไม่เดารายชื่อ")
+        sys.exit(2)
+    # None = ไม่รู้สถานะปุ่มส่งจริงในโหมดนี้ — **ห้ามพิมพ์ว่า "ปิด" เพราะเราไม่ได้ดู** 
+    return [(p, None) for p in json.loads(m.group(1))]
 
 
 def รายชื่อจอ():
@@ -59,24 +75,31 @@ def ทดสอบจอ(page, path):
     if not ช่อง:
         return "ไม่มีช่องกรอกที่พิมพ์ได้ (ข้าม)", None
     el = ช่อง[0]
+    """🔴 **ช่อง `type=number` รับตัวอักษรไทยไม่ได้ — เบราว์เซอร์ทิ้งให้เอง**
+       รอบแรกของเครื่องมือนี้ใช้คำไทยกับทุกช่อง ⇒ จอ `/import` และ `/web/points`
+       ขึ้น 🔴 ทั้งที่ **ไม่ได้พัง** (ได้ '5.05123' เพราะเหลือแต่เลข · โฟกัสยังอยู่ที่ INPUT)
+       ⇒ **ธงแดงลวงจากเครื่องมือ อันตรายพอกับการไม่เจอบั๊ก** เพราะคนจะเลิกเชื่อผลทั้งชุด
+       ⇒ ช่องตัวเลขต้องทดสอบด้วยตัวเลข"""
+    ชนิด = (el.get_attribute("type") or "text").lower()
+    คำ = "12345" if ชนิด == "number" else คำทดสอบ
     เดิม = el.input_value()
     el.click()
     page.keyboard.press("End")
-    for ch in คำทดสอบ:
+    for ch in คำ:
         page.keyboard.type(ch)
         page.wait_for_timeout(60)
     ได้ = el.input_value()
     โฟกัส = page.evaluate("document.activeElement && document.activeElement.tagName")
-    ครบ = ได้ == เดิม + คำทดสอบ
+    ครบ = ได้ == เดิม + คำ
     """🔑 เช็คสองอย่าง ไม่ใช่อย่างเดียว:
        ① ตัวอักษรครบไหม  ② โฟกัสยังอยู่ที่ช่องไหม
        ข้อ ② คือตัวที่ฟ้องอาการ "ช่องถูกสร้างใหม่" ได้ตรงที่สุด"""
-    return ("✅ พิมพ์ได้ครบ" if ครบ else f"🔴 พิมพ์ไม่ครบ — ได้ {ได้!r} ควรได้ {เดิม + คำทดสอบ!r}"), โฟกัส
+    return ("✅ พิมพ์ได้ครบ" if ครบ else f"🔴 พิมพ์ไม่ครบ — ได้ {ได้!r} ควรได้ {เดิม + คำ!r}"), โฟกัส
 
 
 def main():
-    จอ = รายชื่อจอ()
-    print(f"จอที่เขียนของจริงเข้า ZORT: {len(จอ)} จอ (อ่านจากผังที่สร้างตอน build)\n")
+    จอ = ทุกจอ() if "ทุกจอ" in sys.argv else รายชื่อจอ()
+    print(f"ไล่ {len(จอ)} จอ (รายชื่อมาจากของที่สร้างตอน build ไม่ได้พิมพ์เอง)\n")
     พัง = 0
     with sync_playwright() as p:
         b = p.chromium.connect_over_cdp(f"http://127.0.0.1:{พอร์ต}")
@@ -86,8 +109,8 @@ def main():
                 ผล, โฟกัส = ทดสอบจอ(page, path)
             except Exception as e:
                 ผล, โฟกัส = f"🔴 เปิดจอไม่ได้: {type(e).__name__}", None
-            ป้าย = "ปุ่มส่งจริงเปิด" if เปิดอยู่ else "ปุ่มส่งจริงปิด"
-            print(f"{path:34s} [{ป้าย}] {ผล}" + (f" · โฟกัส={โฟกัส}" if โฟกัส else ""))
+            ป้าย = "" if เปิดอยู่ is None else (" [ปุ่มส่งจริงเปิด]" if เปิดอยู่ else " [ปุ่มส่งจริงปิด]")
+            print(f"{path:34s}{ป้าย} {ผล}" + (f" · โฟกัส={โฟกัส}" if โฟกัส else ""))
             if ผล.startswith("🔴") or (โฟกัส and โฟกัส != "INPUT"):
                 พัง += 1
         page.close()

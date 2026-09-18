@@ -100,6 +100,16 @@ export default function NewSalePage() {
   const [shipping, setShipping] = useState('')
   const [paid, setPaid] = useState('')
   const [paymentMethod, setPaymentMethod] = useState('')
+  /* 🔑 **เก็บเงินปลายทาง** — ท่อ (`zortAddSale`) รับ `cod` มาตั้งแต่ต้น แต่ฟอร์มไม่เคยมีช่อง
+     ⇒ "ของที่ซื้อมาแล้วไม่ได้แกะกล่อง" (เจอ 18 ก.ย. 2569 ตอนเทียบช่องที่ท่อรับกับช่องที่จอส่ง)
+     ⚠️ คำว่า **เก็บเงินปลายทาง** ไม่ได้ตั้งเอง — เป็นคำที่ใช้อยู่แล้วในจอบริการส่งสินค้าของเรา
+        ซึ่งมาจากข้อมูลจริงของ ZORT ⇒ ไม่ใช่การเดาคำบนจอที่กำลังลอก ZORT
+     🚫 ยังไม่เปิดอีกสองช่องที่ท่อรับได้ (`number` เลขที่เอกสาร · `day` วันที่เอกสาร)
+        · `number` — ยังไม่มีคำที่ยืนยันจากจอ ZORT (หมวด Sell ตอบ 500 อ่านไม่ได้)
+        · `day` — **ตั้งย้อนหลังได้ ⇒ แตะวันที่ทางบัญชี** ร้านใช้ PEAK ทำภาษี
+          ใบที่ลงผิดเดือนจะไปโผล่ผิดงวด ⇒ ต้องรู้ก่อนว่า ZORT ยอมย้อนหลังกี่วัน
+          และจอต้องกันวันที่ข้ามงวดที่ปิดบัญชีแล้ว (ฝั่งท่อตั้งเงื่อนไขนี้ 18 ก.ย. 2569) */
+  const [cod, setCod] = useState(false)
   const [note, setNote] = useState('')
   const [lines, setLines] = useState<Line[]>([{ ...BLANK }])
   const [busy, setBusy] = useState(false)
@@ -127,8 +137,8 @@ export default function NewSalePage() {
 
   const sig = useMemo(() => JSON.stringify({
     customer: customer.trim(), phone: phone.trim(), address: address.trim(), channel: channel.trim(),
-    warehouse: warehouse.trim(), status, discount, shipping, paid, paymentMethod, note: note.trim(), ready,
-  }), [customer, phone, address, channel, warehouse, status, discount, shipping, paid, paymentMethod, note, ready])
+    warehouse: warehouse.trim(), status, discount, shipping, paid, paymentMethod, note: note.trim(), cod, ready,
+  }), [customer, phone, address, channel, warehouse, status, discount, shipping, paid, paymentMethod, note, cod, ready])
   const dryOk = okDry !== '' && okDry === sig
 
   /** ยอดที่ **จอ** คิด — ใช้เทียบกับยอดที่ท่อคิด ไม่ใช่ใช้ส่ง */
@@ -168,6 +178,8 @@ export default function NewSalePage() {
           discount: num(discount),
           shipping: num(shipping),
           ...(hasPaid ? { paid: num(paid), paymentMethod: paymentMethod.trim() } : {}),
+          /* ท่อส่งต่อเป็น `isCOD` เฉพาะตอนเป็น true ⇒ ไม่ติ๊ก = ไม่ส่งช่องนี้เลย (เหมือนเดิมทุกประการ) */
+          ...(cod ? { cod: true } : {}),
           items: ready.map((l) => ({ sku: l.sku, name: l.name, qty: l.qty, price: l.price })),
           ...(confirm ? { confirm: true } : {}),
         }),
@@ -252,6 +264,10 @@ export default function NewSalePage() {
             <option value="">— ยังไม่ระบุ —</option>
             {PAY.map((p) => <option key={p} value={p}>{p}</option>)}
           </select></label>
+        <label className="flex items-center gap-2 self-end pb-2">
+          <input type="checkbox" checked={cod} onChange={(e) => setCod(e.target.checked)} className="w-4 h-4" />
+          <span className="text-[13px] text-gray-700">เก็บเงินปลายทาง</span>
+        </label>
         <label className="block md:col-span-3"><span className="block text-[11px] font-semibold text-gray-400 mb-1">หมายเหตุ</span>
           <input className={inp} value={note} onChange={(e) => setNote(e.target.value)} /></label>
       </div>
