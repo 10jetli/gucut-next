@@ -24,6 +24,7 @@ import {
   EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import { skuScopeNote } from '@/lib/sku-scope'
+import ChannelGapsCard from '@/components/zort/ChannelGapsCard'
 
 interface Row {
   sku: string; name: string; qty?: number; available?: number
@@ -283,6 +284,11 @@ export default function MarketplaceProductsPage() {
       {!loading && !error && (
         <>
           <MarketUnreliableBanner unreliable={meta?.marketplacesUnreliable} />
+
+          {/* 💤 "เคยขายได้บนช่องทางนั้นแล้วเงียบ" — ท่อมีข้อมูลนี้มาตลอด ไม่มีจอไหนเคยแสดง
+              CEO สั่งให้ทำ **แค่การ์ดสรุป** ไม่ใช่จอเต็ม เพราะการลงมือคืองานคน (เปิดหน้าร้านดูทีละรหัส)
+              ⇒ รายละเอียดทั้งหมดและเงื่อนไขการถอดทิ้ง อยู่ในหัวไฟล์ของคอมโพเนนต์ */}
+          <ChannelGapsCard />
 
           {/* 🔴 กำลังใช้ทางถอย = ต้องเห็น ไม่ใช่ถอยเงียบ ๆ (กฎ fallbacks-must-announce) */}
           {serverFilter === false && (
