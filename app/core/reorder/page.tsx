@@ -22,6 +22,7 @@ import { fmtNum, TH_MONTHS } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, EmptyState } from '@/components/zort'
+import ExportButton from '@/components/zort/ExportButton'
 import LinkStock from '@/components/zort/LinkStock'
 
 interface Row {
@@ -134,6 +135,52 @@ export default function ReorderPage() {
               {DAYS.map((n) => <option key={n} value={n}>คิดยอดใช้จาก {n} วันล่าสุด</option>)}
             </select>
             <BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 📤 ปุ่มส่งออก (เติม 18 ก.ย. 2569 · งานยืน)
+                ⚠️ **ตรวจแล้วว่า ZORT ไม่มีปุ่มนี้ที่จอ `/ReorderPoint` ของเขา** (เปิดดูจริง 18 ก.ย. 2569)
+                   ⇒ อันนี้ **ไม่ใช่การทำตาม ZORT** แต่เป็นของที่เราเพิ่มเพราะคนซื้อของเอาไปคุยกับโรงงานจริง
+                   (ZORT มีปุ่มส่งออกที่จอสินค้า · เอกสาร · ใบเสนอราคา · ขนส่ง · Marketplace — แต่ไม่มีที่จอนี้)
+                🔑 จอนี้ดึงมาทั้งชุดในคำขอเดียว (ไม่มีการแบ่งหน้า) ⇒ ไฟล์ = ของที่เห็นบนจอทั้งหมดจริง
+                   ไม่ต้องไล่หน้า และไม่ต้องเขียนคำเตือนเรื่อง "ได้แค่หน้านี้"
+                ⚠️ ต้องเขียนช่วงวันที่ใช้คิดยอดลงไฟล์ ไม่งั้นเปิดไฟล์ทีหลังจะไม่รู้ว่านับจากกี่วัน
+                ⚠️ ช่องที่ท่อไม่ส่ง คืน null ให้เว้นว่าง **ห้ามใส่ขีด** (ขีดในไฟล์ Excel กลายเป็นข้อความ) */}
+            <ExportButton
+              disabled={loading || rows.length === 0}
+              spec={{
+                filename: `วางแผนสั่งซื้อซ้ำ-${new Date().toISOString().slice(0, 10)}`,
+                title: 'วางแผนสั่งซื้อซ้ำ',
+                filters: [
+                  ['คิดยอดใช้จาก', `${days} วันล่าสุด`],
+                  ['ตัวกรองบนจอ', onlyChain ? 'เฉพาะโซ่ (มีฟันต่อม้วน)' : 'ทุกสินค้า'],
+                  ['จำนวนแถวในไฟล์', `${rows.length} แถว (เท่ากับที่เห็นบนจอ — จอนี้ดึงมาทั้งชุดในครั้งเดียว)`],
+                ],
+                /* ตัวส่งออกของเราออกแบบให้ไล่หน้าเสมอ — จอนี้ไม่มีการแบ่งหน้า
+                   ⇒ คืนทั้งชุดในรอบเดียวแล้วบอก `total` เท่ากับจำนวนแถว ⇒ มันจะหยุดเองหลังรอบแรก
+                   🔑 ยิงใหม่จากท่อ (ไม่ใช้ของที่ค้างบนจอ) เพื่อให้ไฟล์เป็นของสดตอนกดส่งออก
+                   ⚠️ ต้องกรองด้วยเงื่อนไขเดียวกับจอ (`onlyChain`) ไม่งั้นไฟล์กับจอจะคนละชุด */
+                fetchPage: async () => {
+                  const res = await fetch(`/api/web/core?reorder=1&days=${days}`)
+                  const d = await res.json()
+                  if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
+                  if (typeof d?.skip === 'string' && d.skip) throw new Error(d.skip)
+                  const ทั้งหมด: Row[] = Array.isArray(d.rows) ? d.rows : []
+                  const เอา = onlyChain ? ทั้งหมด.filter((r) => r.teethPerRoll) : ทั้งหมด
+                  return { rows: เอา, total: เอา.length }
+                },
+                header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ (ฟัน)', 'ฟันต่อม้วน', 'คงเหลือ (ม้วน)',
+                  'ใช้ไปต่อวัน (ฟัน)', 'ของจะหมดในกี่วัน', 'ตัดไปกี่เส้น (ต่ำสุด)', 'ตัดไปกี่เส้น (สูงสุด)', 'จำนวนที่ลงขาย'],
+                toRow: (r: Row) => [
+                  r.sku, r.name ?? null,
+                  typeof r.teeth === 'number' ? r.teeth : null,
+                  typeof r.teethPerRoll === 'number' ? r.teethPerRoll : null,
+                  typeof r.rolls === 'number' ? r.rolls : null,
+                  typeof r.teethPerDay === 'number' ? r.teethPerDay : null,
+                  typeof r.daysLeft === 'number' ? r.daysLeft : null,
+                  typeof r.ladderTeethMin === 'number' ? r.ladderTeethMin : null,
+                  typeof r.ladderTeethMax === 'number' ? r.ladderTeethMax : null,
+                  typeof r.listings === 'number' ? r.listings : null,
+                ],
+              }}
+            />
           </>
         }
       />
