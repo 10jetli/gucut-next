@@ -428,7 +428,9 @@ export default function CoreSalesPage() {
 
   // ZORT กดแถวแล้วไป "หน้ารายละเอียดรายการขาย" เต็มหน้า ไม่ใช่กางในตาราง
   // ส่งลำดับใบ (i) กับตัวกรองเดิมไปด้วย เพื่อให้หน้านั้นมีลูกศรเลื่อนใบก่อน/ถัดไปได้
-  function openDetail(id: string, i: number) {
+  /** ที่อยู่ของหน้ารายละเอียดใบนั้น — **ตัวเดียวใช้ทั้งกดแถวและลิงก์**
+   *  ⚠️ ห้ามมีสองที่สร้าง URL นี้ ไม่งั้นวันหนึ่งกดแถวกับกดเลขที่ใบจะพาไปคนละที่ */
+  function detailHref(id: string, i: number) {
     const qs = new URLSearchParams({
       id, i: String(offset + i),
       from: thaiDay(days - 1), to: thaiDay(0),
@@ -440,7 +442,10 @@ export default function CoreSalesPage() {
     if (store) qs.set('store', store)
     // ต้องตรงกับตัวกรองที่ใช้ดึงรายการเป๊ะ ไม่งั้นลูกศรเลื่อนใบข้ามไปคนละชุด
     qs.set('cancelled', '1')
-    router.push(`/core/sales/detail?${qs}`)
+    return `/core/sales/detail?${qs}`
+  }
+  function openDetail(id: string, i: number) {
+    router.push(detailHref(id, i))
   }
 
   const rows = data?.rows ?? []
@@ -925,8 +930,12 @@ export default function CoreSalesPage() {
                     <td className={TD}>
                       {/* เลขที่ใบต้องกดได้ — ZORT กดเลขเข้ารายละเอียดตรง ๆ (เดิมเป็น span สีฟ้า
                           ที่กดไม่ได้ = ผิดสัญญาสีฟ้าที่จอหมวดหมู่จดไว้เอง · กวาดคลาส 8 ก.ย. 2569) */}
-                      <button onClick={() => openDetail(r.id, i)}
-                        className="text-blue-600 font-medium hover:underline">{r.number}</button>
+                      {/* 🔗 **ทำเป็นลิงก์จริง ไม่ใช่ปุ่ม** (18 ก.ย. 2569 · งานยืน "กดเข้าไปลึก ๆ")
+                          ของเดิมเป็น `<button>` ⇒ กดได้แต่ **เปิดแท็บใหม่ไม่ได้**
+                          ส่วน ZORT เป็นลิงก์ ⇒ คนแพ็กของเปิดหลายใบพร้อมกันได้
+                          ⚠️ ต้อง `stopPropagation` ไม่งั้นลิงก์กับ onClick ของแถวจะทำงานซ้อนกัน */}
+                      <Link href={detailHref(r.id, i)} onClick={(e) => e.stopPropagation()}
+                        className="text-blue-600 font-medium hover:underline">{r.number}</Link>
                       {/* 🔴 **เลขที่ใบซ้ำกันข้ามร้านจริง** (ฝั่งท่อจับได้ 15 ก.ย. 2569)
                           z1 และ z2 เดินเลขคนละชุด ⇒ `SO-202503029` มีทั้งสองร้าน **คนละใบ คนละยอด**
                           (z1 ฿7,757 ค้างชำระ · z2 ฿450 จ่ายแล้ว) · ตัวกรองร้านตั้งต้นคือ "ทุกร้าน"
