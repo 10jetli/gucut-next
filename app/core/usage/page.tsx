@@ -15,6 +15,7 @@
 //    (ฝั่งเซิร์ฟเวอร์แคชไว้ 1 ชั่วโมงแล้วอีกชั้น)
 import { useCallback, useEffect, useState } from 'react'
 import { fmtNum } from '@/lib/format'
+import { bandwidthAlert, เกณฑ์ } from '@/lib/usage-alert'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -247,6 +248,28 @@ export default function CoreUsagePage() {
                     {d.bandwidth.periodEnd && <> – {thaiDate(d.bandwidth.periodEnd)}</>}</span>
                 )}
               </p>
+              {/* 🔴 **การ์ดนี้เคยมีแต่ตัวเลข ไม่มีเกณฑ์เตือนเลยสักอัน** (18 ก.ย. 2569)
+                  ⇒ วันที่โควตาหมดจริงจนเว็บล่ม จอนี้ก็เงียบ ทั้งที่ทั้งทีมเชื่อว่ามันเป็นตาข่าย
+                  เกณฑ์อยู่ที่ lib/usage-alert.ts และมีเทสป้อนค่าปลอมให้ร้องจริง
+                  (scripts/tests/usage-alert.test.mjs) — ตัวเตือนที่ไม่เคยถูกทำให้ร้อง คือสมมติฐาน ไม่ใช่ตาข่าย */}
+              {(() => {
+                const a = bandwidthAlert(d.bandwidth as { usedGB?: number; includedGB?: number })
+                if (a.level === 'ok') return null
+                const สี = a.level === 'over' ? 'text-red-900 bg-red-50 border-red-300'
+                  : a.level === 'warn' ? 'text-amber-900 bg-amber-50 border-amber-300'
+                  : a.level === 'watch' ? 'text-amber-900 bg-amber-50 border-amber-200'
+                  : 'text-gray-600 bg-gray-50 border-gray-200'
+                const นำหน้า = a.level === 'over' ? '🔴' : a.level === 'unknown' ? 'ℹ️' : '⚠️'
+                return (
+                  <p className={`mt-2 text-[12.5px] border rounded-md px-3 py-2 leading-relaxed ${สี}`}>
+                    {นำหน้า} <b>{a.ข้อความ}</b>
+                    <span className="block text-[11px] opacity-75 mt-0.5">
+                      เกณฑ์: จับตา {เกณฑ์.watch}% · เตือน {เกณฑ์.warn}% · เกินโควตา {เกณฑ์.over}%
+                      {' '}(แบนด์วิดท์เป็นตัวขับเคลื่อนเครดิตตัวหนึ่ง ไม่ใช่ยอดเครดิตทั้งหมด — ดูข้อความข้างบน)
+                    </span>
+                  </p>
+                )
+              })()}
             </Card>
           )}
         </>
