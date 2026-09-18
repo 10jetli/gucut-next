@@ -81,6 +81,15 @@ interface ZortMonth {
    *     ⇒ ถ้าจอถอยตลอดกาลจะไม่มีอะไรฟ้องเลย (ตระกูล nets-expire-silently)
    *     ฝั่งท่อชี้ประเด็นนี้เอง 9 ก.ย. 2569 ตอนเขียนกำกับว่าห้ามถอด `stores` */
   via?: 'all' | 'perStore'
+  /** ยอดเงินที่ ZORT นับได้ในเดือนนั้น (`zortAmount`)
+   *  🔴 **ชนิดเป็น "ตัวเลข หรือ null"** — ฝั่งท่อแก้ให้ 18 ก.ย. 2569 หลังเจอว่าเดิมใช้ `|| 0`
+   *     ⇒ ZORT ไม่ส่งยอดมา = จออ่านว่า "ZORT มียอดศูนย์บาท" ⇒ ส่วนต่างเท่ากับยอดฝั่งเราทั้งก้อน
+   *       = **แดงลวงเต็มจำนวน** แล้วคนจะไปไล่หาว่ากระจกเกินมา
+   *  ⇒ `null`/ไม่มีคีย์ = **ยังไม่รู้ยอด** · `0` = ZORT บอกว่าศูนย์จริง — ห้ามยุบสองอันนี้ */
+  amount?: number | null
+  /** ชื่อร้านที่ ZORT ไม่ส่งยอด/จำนวนมา — ท่อส่งมาในคีย์ไทย `ร้านที่ยังไม่รู้ยอด`
+   *  🔴 **ต้องเอาชื่อร้านขึ้นจอ** ไม่ใช่บอกแค่ว่า "ไม่รู้" — คนต้องรู้ว่าต้องไปดูร้านไหน */
+  unknownStores?: string[]
 }
 
 /** แปลผลเทียบ "กระจกเรา" กับ "ZORT" — คำตัดสินที่จอนี้ตั้งใจให้ได้มาตั้งแต่แรก
@@ -121,6 +130,21 @@ export default function CoveragePage() {
       /* ทางหลัก: `store=all` — ท่อบวกให้ในคำขอเดียว (ee196c1) และคืน `stores` มาด้วย
          ⇒ **จอไม่ต้องรู้ว่าร้านมีกี่ร้าน** วันเพิ่มร้านที่สามจอไม่ต้องแก้อะไรเลย
          และท่อรับประกันเองว่าร้านใดร้านหนึ่งล้ม = error ทั้งก้อน ไม่คืนผลรวมบางส่วน */
+      /* 🔴 **`zortCount`/`zortAmount` เป็น null ได้แล้ว** (ฝั่งท่อแก้ 18 ก.ย. 2569)
+         `null` = ท่อรู้ว่าตัวเองไม่รู้ (ZORT ไม่ส่งยอดของบางร้านมา) พร้อมบอกชื่อร้านใน `ร้านที่ยังไม่รู้ยอด`
+         ⚠️ **ห้ามยุบกับ "ไม่มีช่องนี้เลย"** ซึ่งแปลว่าท่อเป็นรุ่นเก่า — คนละเรื่อง คนละทางแก้
+            ของเดิมจอเขียนข้อความเดียวว่า "ท่อตอบมาไม่มีช่อง zortCount" ⇒ พอท่อเริ่มส่ง null
+            จอจะโทษว่าท่อเก่า ทั้งที่ท่อใหม่และกำลังบอกความจริงว่ายังไม่รู้เพราะร้านไหน */
+      const อ่านจำนวน = (j: Record<string, unknown>, ป้าย: string) => {
+        if (!('zortCount' in j)) throw new Error(`${ป้าย}ท่อตอบมาไม่มีช่อง zortCount (ท่อรุ่นเก่า)`)
+        if (j.zortCount === null) {
+          const ร้าน = Array.isArray(j['ร้านที่ยังไม่รู้ยอด']) ? (j['ร้านที่ยังไม่รู้ยอด'] as string[]).join(' · ') : ''
+          throw new Error(`${SKIP}${ป้าย}ZORT ไม่ส่งตัวเลขของเดือนนี้มา${ร้าน ? ` (ร้าน ${ร้าน})` : ''}`
+            + ' — ยังไม่รู้ว่ามีกี่ใบ ไม่ใช่ว่าไม่มีใบ')
+        }
+        if (typeof j.zortCount !== 'number') throw new Error(`${ป้าย}ช่อง zortCount ไม่ใช่ตัวเลข`)
+        return j.zortCount
+      }
       const ask = async (st: string) => {
         /* ตรวจร้านเอง: เส้น `zortmonthly` มีกติกาคนละแบบกับเส้นเอกสาร — ค่า `store` ที่ตอบกลับ
            เป็น `'all'` พร้อมอาร์เรย์ `stores` (จอเช็คไว้แล้วที่ตัวแปร `knowsAll` ข้างล่าง)
@@ -138,8 +162,14 @@ export default function CoveragePage() {
         if (!res.ok || !j || j.error || j.skip) {
           throw new Error(j?.skip ? SKIP + String(j.skip) : String(j?.error || `ท่อตอบ ${res.status}`))
         }
-        if (typeof j.zortCount !== 'number') throw new Error('ท่อตอบมาไม่มีช่อง zortCount')
-        setZort((s) => ({ ...s, [ym]: { count: j.zortCount, stores: 1, via: 'all' } }))
+        const น = อ่านจำนวน(j, '')
+        setZort((s) => ({
+          ...s,
+          [ym]: {
+            count: น, stores: 1, via: 'all',
+            amount: typeof j.zortAmount === 'number' ? j.zortAmount : null,
+          },
+        }))
         return
       }
 
@@ -148,8 +178,19 @@ export default function CoveragePage() {
          ⇒ ห้ามเชื่อแค่ 200 · ต้องเห็นหลักฐานว่าท่อรู้จักจริง (`store === 'all'` + มี `stores`)
             ไม่งั้นได้เลขร้านเดียวมาเทียบกับกระจกสองร้าน ซึ่งคือบั๊กเดิมที่เพิ่งแก้ไป */
       const knowsAll = all.res.ok && all.j && all.j.store === 'all' && Array.isArray(all.j.stores)
-      if (knowsAll && typeof all.j.zortCount === 'number') {
-        setZort((s) => ({ ...s, [ym]: { count: all.j.zortCount, stores: all.j.stores.length, via: 'all' } }))
+      if (knowsAll && 'zortCount' in all.j) {
+        /* ⚠️ เรียก `อ่านจำนวน` ก่อนเสมอ — มันจะโยน SKIP ให้เองถ้าท่อบอกว่ายังไม่รู้
+           (ของเดิมเช็ค `typeof === 'number'` แล้วตกไปทางถอย ⇒ ไปถามทีละร้าน
+            แล้วได้คำตอบเดิมอีกรอบ = ยิง ZORT ซ้ำฟรี ๆ แล้วจอขึ้นคำว่า "ทางถอย" หลอกอีก) */
+        const น = อ่านจำนวน(all.j, '')
+        setZort((s) => ({
+          ...s,
+          [ym]: {
+            count: น, stores: all.j.stores.length, via: 'all',
+            amount: typeof all.j.zortAmount === 'number' ? all.j.zortAmount : null,
+            unknownStores: Array.isArray(all.j['ร้านที่ยังไม่รู้ยอด']) ? all.j['ร้านที่ยังไม่รู้ยอด'] : undefined,
+          },
+        }))
         return
       }
       /* 🔴 `skip` จากขา `all` = **ท่อทำเดือนนี้ต่อไม่ได้** ⇒ ถอยไปถามทีละร้านก็ได้คำตอบเดิม
@@ -165,6 +206,9 @@ export default function CoveragePage() {
       // ทางถอย: ท่อรุ่นเก่า — ถามทีละร้านแล้วบวกเอง (โค้ดเดิมก่อน ee196c1)
       const stores: Array<'z1' | 'z2'> = ['z1', 'z2']
       let total = 0
+      /** ยอดรวม · `null` = มีร้านที่ยังไม่รู้ยอด ⇒ ห้ามคืนผลรวมบางส่วน */
+      let amountTotal: number | null = 0
+      const amountUnknown: string[] = []
       for (const st of stores) {
         // eslint-disable-next-line no-await-in-loop -- ท่อสั่งให้ถามทีละคำขอ ห้ามยิงพร้อมกัน
         const { res, j } = await ask(st)
@@ -174,10 +218,21 @@ export default function CoveragePage() {
             ? `${SKIP}ร้าน ${st}: ${String(j.skip)}`
             : `ร้าน ${st}: ${String(j?.error || `ท่อตอบ ${res.status}`)}`)
         }
-        if (typeof j.zortCount !== 'number') throw new Error(`ร้าน ${st}: ท่อตอบมาไม่มีช่อง zortCount`)
-        total += j.zortCount
+        total += อ่านจำนวน(j, `ร้าน ${st}: `)
+        /* 🔴 **ยอดเงินรวมเอง ต้องหยุดทันทีที่มีร้านใดไม่รู้** ไม่ใช่บวกข้ามไป
+           บวกข้าม = ได้ยอดที่ต่ำกว่าจริงโดยหน้าตาปกติ แล้วคนจะไปไล่หาว่ากระจกเกินมา
+           (ฝั่งท่อเพิ่งแก้บั๊กรูปนี้ของตัวเองวันนี้ — จออย่าไปทำซ้ำที่ชั้นของเรา) */
+        if (typeof j.zortAmount === 'number') amountTotal = (amountTotal ?? 0) + j.zortAmount
+        else { amountTotal = null; amountUnknown.push(st) }
       }
-      setZort((s) => ({ ...s, [ym]: { count: total, stores: stores.length, via: 'perStore' } }))
+      setZort((s) => ({
+        ...s,
+        [ym]: {
+          count: total, stores: stores.length, via: 'perStore',
+          amount: amountTotal,
+          unknownStores: amountUnknown.length ? amountUnknown : undefined,
+        },
+      }))
     } catch (e) {
       setZort((s) => ({ ...s, [ym]: { error: String(e instanceof Error ? e.message : e) } }))
     } finally { setAsking('') }
@@ -337,6 +392,23 @@ export default function CoveragePage() {
                           {z.via === 'perStore' && (
                             <span className="text-amber-700" title="ท่อไม่รู้จัก store=all ⇒ จอถามทีละร้านแล้วบวกเอง — เลขถูกแต่ช้ากว่า">
                               {' '}· ทางถอย
+                            </span>
+                          )}
+                          {/* 💰 **ยอดเงินฝั่ง ZORT — ช่องที่ฝั่งท่อเพิ่งเปิดให้ 18 ก.ย. 2569**
+                              🔴 สามสถานะ ห้ามยุบ: รู้ยอด · ZORT บอกว่าศูนย์จริง · **ยังไม่รู้ยอด**
+                              ⚠️ **ห้ามวางเลขสองฝั่งคู่กันเฉย ๆ** — ZORT รวมใบยกเลิก กระจกเราหักแล้ว
+                                 ⇒ ต้องเขียนขอบเขตกำกับทั้งสองข้าง (กฎข้อ 4 ใน CLAUDE.md) */}
+                          {z.amount === null || z.amount === undefined ? (
+                            <span className="block text-[11.5px] text-amber-800">
+                              💰 <b>ยังไม่รู้ยอดเงินฝั่ง ZORT</b>
+                              {z.unknownStores?.length ? ` (ร้าน ${z.unknownStores.join(' · ')} ไม่ส่งยอดมา)` : ''}
+                              {' '}— ไม่ได้แปลว่ายอดเป็นศูนย์ ⇒ ยังเทียบยอดเดือนนี้ไม่ได้
+                            </span>
+                          ) : (
+                            <span className="block text-[11.5px] text-gray-500">
+                              💰 ZORT ฿{Math.round(z.amount).toLocaleString('th-TH')} (รวมใบยกเลิก)
+                              {!r.missing && <> · กระจกเรา ฿{Math.round(r.sales).toLocaleString('th-TH')} (หักใบยกเลิกแล้ว)</>}
+                              {' '}<span className="text-gray-400">— คนละขอบเขต ไม่ต้องเท่ากันเป๊ะ</span>
                             </span>
                           )}
                         </span>
