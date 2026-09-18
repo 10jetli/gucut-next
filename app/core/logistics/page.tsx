@@ -14,7 +14,7 @@
 // 🔴 **จำนวนของเราน้อยกว่า ZORT และห้ามปิดบัง**
 //    เราเพิ่งเริ่มเก็บช่องขนส่ง 3 ก.ย. 2569 ⇒ ใบเก่าที่ไม่ขยับแล้วยังไม่มีเลขพัสดุ
 //    ห้ามเขียนว่า "ทั้งหมด N ใบ" ⇒ ต้องเขียนว่า "เท่าที่เก็บได้" พร้อมบอกว่า ZORT มีเท่าไหร่
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -51,7 +51,10 @@ interface Resp {
   rows: Row[]
 }
 
-const PAGE = 50
+/* 🔢 จำนวนต่อหน้า — ZORT ให้เลือก 10/20/50/100 ทุกจอรายการ
+   ยิงทดสอบ 18 ก.ย. 2569: เส้น `list=logistics` รับครบทุกค่า `limitClamped=false`
+   ⇒ ค่าตั้งต้นคง 50 ไว้เหมือนเดิม */
+const PAGE_เริ่มต้น = 50
 /* คำสถานะมาจาก `lib/zort-words.ts` ที่เดียว — เดิมไฟล์นี้มีแผนที่คำของตัวเอง
    ⇒ ค่าเดียวกันแปลไม่เหมือนกันข้ามจอ และค่าที่ไม่อยู่ในแผนที่หลุดเป็นอังกฤษออกจอ
    (ใบ t_mu23dljn · ทุกคำในไฟล์นั้นอ่านมาจากจอ ZORT จริง ไม่มีคำไหนแปลเอง) */
@@ -75,12 +78,18 @@ export default function LogisticsPage() {
   const [fCarrier, setFCarrier] = useState('')
   /** รายชื่อกลุ่มขนส่งตอน **ยังไม่กรองขนส่ง** — กรองแล้ว `carrierGroups` เหลือกลุ่มเดียว ตัวเลือกจะหดตาม */
   const [carrierOpts, setCarrierOpts] = useState<{ carrier: string; c: number; names?: { name: string; c: number }[] }[]>([])
+  const [PAGE, setPAGE] = useState(PAGE_เริ่มต้น)
+  /** จำนวนต่อหน้าที่ยิงไปจริงล่าสุด — เก็บใน ref เพราะ `load` ไม่ควรผูกกับ state ตัวนี้ */
+  const perRef = useRef(PAGE_เริ่มต้น)
 
-  const load = useCallback(async (off = 0, onlyId = only, adv?: { from: string; to: string; carrier: string }) => {
+  /* ⚠️ รับ "จำนวนต่อหน้า" เป็นพารามิเตอร์ ห้ามอ่านจาก state ในนี้
+     (setState ยังไม่มีผลในรอบเดียวกัน — ด่าน check-stale-state-load จับเคสนี้มาแล้ววันนี้) */
+  const load = useCallback(async (off = 0, onlyId = only, adv?: { from: string; to: string; carrier: string }, ขนาด?: number) => {
     setLoading(true)
     setError('')
     try {
-      const qs = new URLSearchParams({ list: 'logistics', limit: String(PAGE), offset: String(off) })
+      const ต่อหน้า = ขนาด ?? perRef.current
+      const qs = new URLSearchParams({ list: 'logistics', limit: String(ต่อหน้า), offset: String(off) })
       if (onlyId) qs.set('only', onlyId)
       if (q.trim()) qs.set('q', q.trim())
       const a = adv ?? { from: fFrom, to: fTo, carrier: fCarrier }
@@ -92,7 +101,7 @@ export default function LogisticsPage() {
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
       setData(j)
       if (!j?.applied?.carrier && Array.isArray(j?.carrierGroups)) setCarrierOpts(j.carrierGroups)
-      setOffset(off)
+      setOffset(off); perRef.current = ต่อหน้า
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
     } finally {
@@ -470,6 +479,9 @@ export default function LogisticsPage() {
                      และเขียนบนจอว่า "ยังไม่รู้ว่าทั้งชุดมีกี่หน้า" แทนการเดา (กฎสามสถานะ)
                   ⚠️ ใช้ยอด **ของแท็บที่เลือก** ไม่ใช่ยอดรวมทุกแท็บ ไม่งั้นปุ่มถัดไปกดได้ทั้งที่ไม่มีของ */}
               <PageNav offset={offset} perPage={PAGE} rowsOnPage={rows.length}
+                /* ⚠️ เปลี่ยนจำนวนต่อหน้า ⇒ กลับไปหน้าแรกเสมอ และ **ส่งค่าใหม่เข้าไปในคำสั่งโหลด**
+                   (ไม่ใช่หวังให้ setPAGE มีผลทัน — เคสนี้ด่านจับได้ที่จอเอกสารบัญชีมาแล้ววันนี้) */
+                onPerPage={(n) => { setPAGE(n); void load(0, only, undefined, n) }}
                 total={รู้จำนวน ? tabTotal : null}
                 disabled={loading} onGo={(off) => load(off)} />
             </div>
