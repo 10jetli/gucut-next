@@ -24,7 +24,13 @@ import sys
 
 from playwright.sync_api import sync_playwright
 
-เท่าตัว = int(sys.argv[1]) if len(sys.argv) > 1 else 2
+"""โหมด `ว่าง` = ทดสอบ **ด้านตรงข้าม**: รายการปลายเปิดกลายเป็น [] (ไม่มีสมาชิกเลย)
+   🔑 รายการที่โตได้ ก็หดได้ — วันที่ร้านปิดช่องทางจนเหลือศูนย์ หรือท่อกรองจนไม่เหลือ
+      จอต้องไม่พังและต้องไม่บอกว่า 0 ทั้งที่ยังไม่รู้
+   ⚠️ ต่างจากท่อปลอมโหมด partialgood ตรงที่นั่นส่ง `[{}]` (มีสมาชิกแต่ว่างข้างใน)
+      ส่วนตัวนี้ส่ง `[]` (ไม่มีสมาชิกเลย) — สองอย่างนี้เดินคนละทางในโค้ด"""
+เท่าตัว = int(sys.argv[1]) if len(sys.argv) > 1 and sys.argv[1] != "ว่าง" else 2
+โหมดว่าง = len(sys.argv) > 1 and sys.argv[1] == "ว่าง"
 พอร์ต = sys.argv[2] if len(sys.argv) > 2 else "9222"
 ฐาน = "http://localhost:3111"
 
@@ -43,7 +49,9 @@ def ขยาย(ของ):
     if isinstance(ของ, dict):
         out = {}
         for k, v in ของ.items():
-            if k in รายการปลายเปิด and isinstance(v, list) and v:
+            if k in รายการปลายเปิด and isinstance(v, list) and โหมดว่าง:
+                out[k] = []
+            elif k in รายการปลายเปิด and isinstance(v, list) and v:
                 ใหม่ = list(v)
                 for รอบ in range(1, เท่าตัว):
                     for m in v:
@@ -81,7 +89,7 @@ with sync_playwright() as p:
 
     page.route("**/api/web/core**", แทรก)
 
-    print(f"ปลูกสมาชิกเพิ่มเป็น {เท่าตัว} เท่า แล้ววัดที่ความกว้าง 390px\n")
+    print(("ล้างรายการปลายเปิดให้ว่าง []" if โหมดว่าง else f"ปลูกสมาชิกเพิ่มเป็น {เท่าตัว} เท่า") + " แล้ววัดที่ความกว้าง 390px\n")
     for path in จอ:
         try:
             page.goto(ฐาน + path, wait_until="domcontentloaded", timeout=60000)
@@ -89,7 +97,13 @@ with sync_playwright() as p:
             for _ in range(30):
                 page.wait_for_timeout(1000)
                 t = page.locator("main").inner_text()
-                if len(t) > 220 and "กำลังโหลด" not in t[:120]:
+                """⚠️ เงื่อนไข "พร้อม" นี้เคยเข้มเกินไป — จอขนส่งตอบว่า "ตัดสินไม่ได้ใน 30 วิ"
+                   ทั้งที่เปิดดูเองแล้วเรนเดอร์ครบ 7,332 ตัวอักษร
+                   ⇒ เกณฑ์ที่ผูกกับคำว่า "กำลังโหลด" ในหัวข้อความ แพ้จอที่คงคำนั้นไว้นานกว่าเพื่อน
+                   ⇒ ผ่อนเป็น: เนื้อหายาวพอ **หรือ** มีตารางขึ้นแล้ว · และคงคำว่า
+                     "ตัดสินไม่ได้" ไว้เมื่อครบเพดานจริง (ห้ามแปลงเป็น "ผ่าน")"""
+                มีตาราง = page.locator("main table tbody tr").count() > 0
+                if (len(t) > 220 and "กำลังโหลด" not in t[:120]) or (len(t) > 600 and มีตาราง):
                     พร้อม = True
                     break
             page.wait_for_timeout(1200)
@@ -103,6 +117,17 @@ with sync_playwright() as p:
                        ตัวการ: เกิน.slice(0, 2).map(e => e.tagName + '.' + (e.className || '').toString().slice(0, 45)) }
             }""")
             ล้น = r["doc"] - r["จอ"]
+            if โหมดว่าง:
+                """โหมดว่างวัดคนละเรื่อง — ว่างแล้วไม่มีทางล้น
+                   สิ่งที่ต้องดูคือ **จอพูดว่าอะไร**: ต้องไม่พัง · ไม่โชว์ค่าเพี้ยน
+                   และไม่ประกาศ 0 ทั้งที่ท่อแค่ไม่ได้ส่งรายการมา"""
+                t = page.locator("main").inner_text()
+                ขยะ = [w for w in ("NaN", "undefined", "[object Object]", "Infinity") if w in t]
+                หัว = [x.strip() for x in t.split("\n") if x.strip()][:3]
+                print(f"{path:30s} {'🔴 ค่าเพี้ยน ' + str(ขยะ) if ขยะ else '✅ ไม่มีค่าเพี้ยน'}")
+                for h in หัว:
+                    print(f"{'':32s}| {h[:110]}")
+                continue
             ผล = "✅ ไม่ล้น" if ล้น <= 4 else f"🔴 ล้น {ล้น}px · {r['ตัวการ']}"
             print(f"{path:30s} {ผล}")
         except Exception as e:
