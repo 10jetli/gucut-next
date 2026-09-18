@@ -96,11 +96,29 @@ const วันที่ค้าง = (r: StuckRow) => {
   return Math.floor((Date.now() - first) / 86400000)
 }
 
+/* ── ต้นเหตุของกอง "คลังเราติดลบ" ──────────────────────────────────
+   🔴 **เจอของจริง 18 ก.ย. 2569 · นี่คือเหตุผลทั้งหมดที่ก้อนนี้มีอยู่**
+      กองติดลบมี 59 แถว / 29 รหัส — ดูเหมือนงานใหญ่
+      แต่ 24 ใน 29 รหัสเป็น **รหัสแปรของมาร์เก็ตเพลส** (`01209-22.5T` …)
+      ที่ไม่มีแถวของตัวเองในคลังเงาเลย · ตัวที่ติดลบจริงคือ **รหัสฐาน** (`01209` = -134.5)
+      ⇒ ของค้างทั้ง 59 แถว มาจากสินค้าจริงแค่ **7 ตัว** และแก้ `01209` ตัวเดียวปลดได้ 44 แถว
+      (พิสูจน์แล้ว 24/24 ไม่มีข้อยกเว้น — รหัสฐานของทุกตัวอยู่ในรายการติดลบจริง)
+   🔴 **และนี่คือโรคข้อ 4 ของ CLAUDE.md ข้ามจอ**: จอคลังหน้า `only=neg` บอกว่าติดลบ 22 รหัส
+      กองดันไม่ขึ้นบอก 29 รหัส · **ซ้อนกันแค่ 5** ⇒ คนที่ถูกสั่งให้ "ไปแก้ของติดลบ"
+      เปิดจอคลังแล้วแก้ครบ 22 ตัว จะยังเหลือตัวขวางการดันอีก 24 รหัสโดยไม่มีอะไรบอก
+   ⚠️ **ห้ามจับคู่ด้วยการตัดที่ขีดกลางเฉย ๆ** — นั่นคือการเดากติกาการตั้งรหัส
+      จอจะยอมรับว่าเป็นต้นเหตุ **ก็ต่อเมื่อรหัสฐานนั้นอยู่ในรายการติดลบจริงจากท่อ**
+      จับคู่ไม่ได้ ⇒ นับแยกและพูดออกมา ไม่ใช่เดาให้เข้าพวก */
+interface NegRow { sku?: string; qty?: number | null; available?: number | null; name?: string }
+interface NegResp { ok?: boolean; rows?: NegRow[]; shown?: number; error?: string; skip?: string }
+
 export default function StuckPushList() {
   const [d, setD] = useState<StuckResp | null>(null)
   const [busy, setBusy] = useState(true)
   const [err, setErr] = useState('')
   const [open, setOpen] = useState<GroupKey | ''>('')
+  /** รหัสที่คลังเงาบอกว่าติดลบ → จำนวนคงเหลือ · null = ยังไม่รู้ (ถามไม่ได้/ท่อไม่มีตัวกรองนี้) */
+  const [neg, setNeg] = useState<Map<string, number | null> | null>(null)
 
   const load = useCallback(async () => {
     setBusy(true); setErr('')
@@ -117,6 +135,27 @@ export default function StuckPushList() {
     } catch (e) { setErr(String(e instanceof Error ? e.message : e)); setD(null) } finally { setBusy(false) }
   }, [])
   useEffect(() => { load() }, [load])
+
+  /* รายการติดลบจากคลังเงา — โหลดแยก ล้มเหลวได้โดยไม่ทำให้ทั้งก้อนพัง
+     (ถามไม่ได้ ⇒ ไม่โชว์ส่วนต้นเหตุ ไม่ใช่โชว์ว่าไม่มีต้นเหตุ) */
+  useEffect(() => {
+    let ทิ้งแล้ว = false
+    ;(async () => {
+      try {
+        const res = await fetch('/api/web/core?list=stock&only=neg&limit=200')
+        const j = (await res.json().catch(() => null)) as NegResp | null
+        if (ทิ้งแล้ว || !j || !res.ok || j.error || !Array.isArray(j.rows)) return
+        const m = new Map<string, number | null>()
+        for (const r of j.rows) {
+          if (!r.sku) continue
+          const q = typeof r.qty === 'number' ? r.qty : typeof r.available === 'number' ? r.available : null
+          m.set(r.sku, q)
+        }
+        setNeg(m)
+      } catch { /* เงียบโดยตั้งใจ — ส่วนต้นเหตุจะไม่ขึ้น ซึ่งตรงกับความจริงว่ายังไม่รู้ */ }
+    })()
+    return () => { ทิ้งแล้ว = true }
+  }, [])
 
   const rows = d?.rows ?? []
   const total = N(d?.['ทั้งหมดที่ตรงเงื่อนไข'])
@@ -172,6 +211,70 @@ export default function StuckPushList() {
               )
             })}
           </div>
+
+          {/* ── ต้นเหตุของกองติดลบ — เปลี่ยนกำแพงรหัสให้เป็นรายการที่ลงมือได้ ──
+              เรียงตาม "แก้ตัวนี้แล้วปลดได้กี่แถว" เพราะคนมีเวลาจำกัดต้องรู้ว่าเริ่มตรงไหน */}
+          {(() => {
+            if (!neg) return null
+            const ติดลบ = bucket('negative')
+            if (!ติดลบ.length) return null
+            /* ยอมรับเป็นต้นเหตุเฉพาะรหัสที่ท่อยืนยันว่าติดลบจริง — ห้ามเดาจากรูปแบบรหัส */
+            const ต้นเหตุของ = (sku?: string) => {
+              if (!sku) return null
+              if (neg.has(sku)) return sku
+              const ฐาน = sku.split('-')[0]
+              return ฐาน !== sku && neg.has(ฐาน) ? ฐาน : null
+            }
+            const นับ = new Map<string, number>()
+            let หาไม่เจอ = 0
+            for (const r of ติดลบ) {
+              const b = ต้นเหตุของ(r.sku)
+              if (!b) { หาไม่เจอ++; continue }
+              นับ.set(b, (นับ.get(b) ?? 0) + 1)
+            }
+            const เรียง = Array.from(นับ.entries()).sort((a, b) => b[1] - a[1])
+            if (!เรียง.length && !หาไม่เจอ) return null
+            return (
+              <div className="mt-2 border border-red-200 bg-red-50 rounded-md px-3 py-2.5">
+                {/* 🔴 **ทดสอบแล้วเจอถ้อยคำที่โกหกเอง** (18 ก.ย. 2569 · บีบให้จับคู่ไม่ได้)
+                    ฉบับแรกเขียน "มาจากสินค้าจริง 0 ตัว" พร้อมคำอธิบายเรื่องรหัสฐานเต็ม ๆ
+                    ทั้งที่ตอนนั้นจอ **จับคู่ไม่ได้สักแถว** ⇒ อ่านได้ว่าไม่มีต้นเหตุ = ตรงข้ามกับความจริง
+                    ⇒ ไม่มีของให้สรุป ห้ามขึ้นหัวข้อสรุป */}
+                {เรียง.length > 0 && (
+                  <>
+                    <p className="text-[12.5px] font-semibold text-red-900">
+                      🎯 ของค้าง {ติดลบ.length} แถวในกองติดลบ มาจากสินค้าจริง {เรียง.length} ตัว
+                    </p>
+                    <p className="text-[11.5px] text-red-800 mt-0.5 leading-relaxed">
+                      รหัสแปรของมาร์เก็ตเพลสไม่มีสต็อกของตัวเอง — มันติดลบตาม<b>รหัสฐาน</b>
+                      {' '}⇒ แก้ที่รหัสฐานทีเดียวปลดได้ทั้งพวง · <b>จอคลังหน้าของหมดไม่ได้โชว์รหัสแปรพวกนี้</b>
+                    </p>
+                  </>
+                )}
+                {เรียง.length === 0 && (
+                  <p className="text-[12.5px] font-semibold text-red-900">
+                    🔎 ยังบอกไม่ได้ว่าของค้าง {ติดลบ.length} แถวในกองติดลบมาจากสินค้าตัวไหน
+                  </p>
+                )}
+                <div className="mt-1.5 space-y-0.5">
+                  {เรียง.map(([sku, n]) => (
+                    <div key={sku} className="flex flex-wrap items-baseline gap-2 text-[12px]">
+                      <span className="font-mono font-semibold text-red-900">{sku}</span>
+                      <span className="text-red-700 tabular-nums">คงเหลือ {numText(neg.get(sku))}</span>
+                      <span className="text-red-800">⇒ ปลดได้ <b>{n}</b> แถว</span>
+                    </div>
+                  ))}
+                </div>
+                {/* จับคู่ไม่ได้ต้องพูดออกมา — ไม่งั้นคนเชื่อว่ารายการข้างบนครอบคลุมทั้งกอง */}
+                {หาไม่เจอ > 0 && (
+                  <p className="text-[11.5px] text-red-900 mt-1.5">
+                    ⚠️ อีก <b>{หาไม่เจอ}</b> แถว<b>ยังจับคู่ต้นเหตุไม่ได้</b> — คลังเงาไม่ได้บอกว่ารหัสนี้หรือรหัสฐานติดลบ
+                    {' '}⇒ ต้องตามด้วยมือ ไม่ใช่ไม่มีปัญหา
+                  </p>
+                )}
+              </div>
+            )
+          })()}
 
           {/* 🔴 กองของท่อเรียกทั้ง 85 แถวว่า error ทั้งที่ข้อความบอกเองว่าเป็นทิศลงที่เราไม่ส่ง
               ⇒ พูดออกมาบนจอ ไม่ใช่แก้เงียบ ๆ แล้วปล่อยให้ตัวเลขสองที่ไม่ตรงกัน */}
