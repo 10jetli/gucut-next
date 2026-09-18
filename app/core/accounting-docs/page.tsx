@@ -71,7 +71,10 @@ interface Resp {
   limitClamped?: boolean
 }
 
-const PAGE = 50
+/* 🔢 จำนวนต่อหน้า — ZORT ให้เลือก 10/20/50/100 ทุกจอ (ยิงทดสอบ 18 ก.ย. 2569:
+   เส้น `?zortdocrows` รับครบทั้งสี่ค่า ไม่มีการตัดเพดาน `limitClamped=false` ทุกค่า)
+   ⇒ ค่าตั้งต้นคง 50 ไว้เหมือนเดิม จอไม่เปลี่ยนพฤติกรรมให้คนที่ใช้อยู่ */
+const PAGE_เริ่มต้น = 50
 /** ชนิดที่ท่อรับ (1–5) + จำนวนที่ **วัดจากของจริง** 15 ก.ย. 2569 — ไม่ได้เดา
  *  ⚠️ ค่าเหล่านี้เป็น "ภาพ ณ วันวัด" ไม่ใช่ค่าสด ⇒ จอโชว์เป็นคำใบ้ ไม่ใช่ตัวเลขทางการ */
 const TYPES: Array<{ v: string; label: string; seen: number | null }> = [
@@ -91,6 +94,7 @@ const TYPES: Array<{ v: string; label: string; seen: number | null }> = [
 export default function AccountingDocsPage() {
   const [data, setData] = useState<Resp | null>(null)
   const [page, setPage] = useState(1)
+  const [PAGE, setPAGE] = useState(PAGE_เริ่มต้น)
   const [type, setType] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -118,11 +122,17 @@ export default function AccountingDocsPage() {
   const [โหลดครบถึงหน้า, setโหลดครบถึงหน้า] = useState(0)
   const [ครบผิดพลาด, setครบผิดพลาด] = useState('')
   const typeRef = useRef(type)
-  const load = useCallback(async (p = 1, t = typeRef.current) => {
+  /** จำนวนต่อหน้าที่ยิงไปจริงล่าสุด — เก็บใน ref ด้วยเหตุผลเดียวกับ `typeRef` */
+  const perRef = useRef(PAGE_เริ่มต้น)
+  /* ⚠️ **ต้องรับ "จำนวนต่อหน้า" เป็นพารามิเตอร์** ห้ามอ่านจาก state ในนี้
+     เพราะ `setPAGE(n)` ยังไม่มีผลในรอบเดียวกัน ⇒ จะยิงด้วยค่าเก่าเสมอ
+     (ด่าน `check-stale-state-load` จับได้ และตรงกับอาการบนจอ: เลือก 100 แล้วยังได้ 50 แถว) */
+  const load = useCallback(async (p = 1, t = typeRef.current, ขนาด?: number) => {
     setLoading(true); setError('')
     try {
       /* 🔴 ใช้ `page=` เท่านั้น — `offset` ถูกเมินเงียบ (ดูหัวไฟล์) */
-      const qs = new URLSearchParams({ zortdocrows: '1', limit: String(PAGE), page: String(p) })
+      const ต่อหน้า = ขนาด ?? perRef.current
+      const qs = new URLSearchParams({ zortdocrows: '1', limit: String(ต่อหน้า), page: String(p) })
       if (t) qs.set('type', t)
       const res = await fetch(`/api/web/core?${qs}`)
       const j = await res.json()
@@ -133,7 +143,7 @@ export default function AccountingDocsPage() {
       if (typeof j?.skip === 'string' && j.skip) throw new Error(SKIP + j.skip)
       if (!res.ok || j?.error) throw new Error(j?.error ?? `ท่อตอบ ${res.status}`)
       if (!Array.isArray(j?.rows)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มี rows)')
-      setData(j); setPage(p); typeRef.current = t
+      setData(j); setPage(p); typeRef.current = t; perRef.current = ต่อหน้า
     } catch (e) {
       /* 🔴 อ่านไม่ได้ ≠ ไม่มีเอกสาร — ล้างข้อมูลแล้วให้กล่องแดงพูด ห้ามโชว์ 0 ใบ */
       setData(null)
@@ -467,6 +477,9 @@ export default function AccountingDocsPage() {
               total={typeof count === 'number' ? count : null}
               disabled={loading}
               onGo={(off) => load(Math.max(1, Math.floor(off / PAGE) + 1))}
+              /* ⚠️ เปลี่ยนจำนวนต่อหน้าแล้วต้องกลับไปหน้า 1 เสมอ
+                 ไม่งั้น "หน้า 7 จาก 14" กับของใหม่ที่มี 7 หน้า จะกลายเป็นหน้าที่ไม่มีอยู่จริง */
+              onPerPage={(n) => { setPAGE(n); void load(1, typeRef.current, n) }}
             />
             {/* 🔎 หน้าที่ **ท่อบอกว่ากำลังอยู่** — ถ้าไม่ตรงกับที่จอขอ แปลว่าท่อตีความหน้าไม่เหมือนกัน */}
             {typeof data.applied?.page === 'number' && data.applied.page !== page && (
