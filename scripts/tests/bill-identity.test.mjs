@@ -68,6 +68,20 @@ Total 100.00`
   const f3 = billFilingMonth(noPeriod)
   ok(f3.month === '2026-07' && f3.source === 'วันที่แรกในใบ', 'ถอยมาใช้วันที่แรกและติดป้ายที่มา', JSON.stringify(f3))
 
+  /* 🔴 **เคสจริงของ Adobe ที่ท่านประธานจับได้** (เพิ่ม 18 ก.ย. 2569 ตามที่ CTO ขอ)
+     ใบนี้ **ไม่มีรอบบิล** มีแต่ "Invoice Date" ⇒ ต้องได้เดือนของวันที่ในใบ (06) ไม่ใช่เดือนของชื่อไฟล์ (07)
+     ⚠️ ข้อความเอามาจาก PDF จริงในถัง (ไฟล์ 2026-07_..._3480010335.pdf) */
+  const adobeNoPeriod = `Invoice Information
+3480010335Invoice Number
+06-JUN-2026Invoice Date
+Credit CardPayment Terms
+5019060774Order Number`
+  const f4 = billFilingMonth(adobeNoPeriod)
+  ok(f4.month === '2026-06', 'Adobe ที่ไม่มีรอบบิล ⇒ ได้เดือนจากวันที่ในใบ (2026-06)', String(f4.month))
+  ok(f4.source === 'วันที่แรกในใบ', 'และบอกที่มาได้ว่ามาจากวันที่ในใบ — ไม่ใช่ค่าที่ไม่มีที่มา', String(f4.source))
+  const idAdobe = billIdentity(adobeNoPeriod, 'adobe')
+  ok(idAdobe.invoiceNo === '3480010335', 'อ่านเลขที่ใบของ Adobe ใบนี้ได้', String(idAdobe.invoiceNo))
+
   console.log('④ ไม่มีเลขที่ใบ ⇒ ใช้รอบบิล + ยอดรวมเป็นตัวตน')
   const noNo = `Statement
 Billing period: Jul 1, 2026 - Jul 31, 2026
