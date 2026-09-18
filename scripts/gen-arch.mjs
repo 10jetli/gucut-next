@@ -168,10 +168,19 @@ writeFileSync(
 const sweepFile = join(root, "scripts/sweep-in-browser.js");
 const sweepSrc = readFileSync(sweepFile, "utf8");
 const sweepLine = `window.ALL_ROUTES = ${JSON.stringify(sweepRoutes)}`;
-if (!/window\.ALL_ROUTES = \[[^\]]*\]/.test(sweepSrc)) {
-  throw new Error("gen-arch: หาบรรทัด window.ALL_ROUTES ในตัวกวาดไม่เจอ ⇒ ไม่เขียนทับ (อย่าปล่อยให้เงียบ)");
+/* 🕳️ **ให้เครื่องมือประกาศจุดบอดของตัวเอง** — จอที่มีช่องแปรใน URL เปิดเปล่า ๆ ไม่ได้
+   ⇒ ไม่อยู่ใน ALL_ROUTES · ถ้าไม่เขียนไว้ คนจะอ่านรายชื่อนั้นว่า "จอทั้งหมด"
+   (CEO ตั้งคำถามนี้ 18 ก.ย. 2569: เปลี่ยนเป็นสร้างอัตโนมัติ แก้ "ล้าสมัย" แต่ไม่แก้ "ครอบไม่ครบ") */
+const blindRoutes = pages.filter((p) => p.includes("["));
+const blindLine = `window.ROUTES_NOT_SWEPT = ${JSON.stringify(blindRoutes)}`;
+for (const [ชื่อ, รูป] of [["window.ALL_ROUTES", /window\.ALL_ROUTES = \[[^\]]*\]/], ["window.ROUTES_NOT_SWEPT", /window\.ROUTES_NOT_SWEPT = \[[^\]]*\]/]]) {
+  if (!รูป.test(sweepSrc)) {
+    throw new Error(`gen-arch: หาบรรทัด ${ชื่อ} ในตัวกวาดไม่เจอ ⇒ ไม่เขียนทับ (อย่าปล่อยให้เงียบ)`);
+  }
 }
-const sweepNext = sweepSrc.replace(/window\.ALL_ROUTES = \[[^\]]*\]/, sweepLine);
+const sweepNext = sweepSrc
+  .replace(/window\.ALL_ROUTES = \[[^\]]*\]/, sweepLine)
+  .replace(/window\.ROUTES_NOT_SWEPT = \[[^\]]*\]/, blindLine);
 if (sweepNext !== sweepSrc) writeFileSync(sweepFile, sweepNext);
 
 console.log(
