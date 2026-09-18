@@ -47,6 +47,8 @@ interface Unlisted {
   items?: number | null; itemsWithStock?: number | null; itemsNoStock?: number | null; itemsUnknown?: number | null
   skus?: number | null; skusWithStock?: number | null; skusNoStock?: number | null; skusUnknown?: number | null
   stockDay?: string | null; recipeAt?: string | null; recipeCheckedAt?: string | null
+  /** วันไทยสำเร็จรูปของ `recipeAt` — ฝั่งท่อจะเพิ่มให้ (ยังไม่มีก็ได้ จอแปลงเองจาก UTC) */
+  recipeDayTH?: string | null
   withStock?: { itemId?: number; name?: string }[] | null
   unknown?: { itemId?: number; name?: string; why?: string[] }[] | null
   note?: string | null
@@ -65,14 +67,34 @@ interface Data {
 /** อายุของข้อมูลเป็น "จำนวนวัน" นับตามวันไทย — คืน null เมื่ออ่านวันไม่ออก (ห้ามเดาเป็น 0)
  *  🔴 เลขที่คัดมาจากรอบเก็บข้อมูล **ต้องบอกอายุตัวเอง** ไม่งั้นอีกสองสัปดาห์จอยังยืนยันเลขของวันนี้
  *     (กติกาเดียวกับจอกระเป๋าเงินที่ใช้ CHECKED_AT + STALE_DAYS) */
-function อายุวัน(iso?: string | null): number | null {
-  const d = String(iso ?? '').slice(0, 10)
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d)) return null
-  const เก็บเมื่อ = Date.parse(`${d}T00:00:00+07:00`)
+function อายุวัน(iso?: string | null, เป็นเวลา_UTC = false): number | null {
+  const s = String(iso ?? '').trim()
+  if (!s) return null
+  let วันไทย: string
+  if (เป็นเวลา_UTC && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s)) {
+    /* 🔴 **ค่าที่มีเวลาต่อท้ายจากฐานเป็น UTC** (`datetime('now')` ของ SQLite) — CEO ชี้จากฝั่งท่อ 18 ก.ย. 2569
+       ถ้าตัด 10 ตัวแรกไปใช้ตรง ๆ ช่วง 00:00–07:00 เวลาไทยจะได้ "วันเมื่อวาน" ⇒ **รายงานอายุเกินจริง 1 วัน**
+       ⇒ ต้องบวก 7 ชั่วโมงก่อนตัดวันเสมอ */
+    const t = Date.parse(s.replace(' ', 'T') + 'Z')
+    if (Number.isNaN(t)) return null
+    วันไทย = new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10)
+  } else {
+    วันไทย = s.slice(0, 10)
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(วันไทย)) return null
+  const เก็บเมื่อ = Date.parse(`${วันไทย}T00:00:00+07:00`)
   if (Number.isNaN(เก็บเมื่อ)) return null
   const วันนี้ไทย = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10)
   const วันนี้ = Date.parse(`${วันนี้ไทย}T00:00:00+07:00`)
   return Math.round((วันนี้ - เก็บเมื่อ) / 86400000)
+}
+
+/** เวลาจากฐาน (UTC) → "วันไทย" แบบ YYYY-MM-DD · อ่านไม่ออกคืนค่าเดิมที่ตัด 10 ตัว (ให้ thaiDate ไปจัดการต่อ) */
+function วันไทยจาก_UTC(s?: string | null): string {
+  const v = String(s ?? '').trim()
+  if (!/^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(v)) return v.slice(0, 10)
+  const t = Date.parse(v.replace(' ', 'T') + 'Z')
+  return Number.isNaN(t) ? v.slice(0, 10) : new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10)
 }
 
 /** เรียงตามผัง ZORT เป๊ะ — Shopee · Lazada · TikTok
@@ -271,7 +293,8 @@ export default function MarketplaceDashboardPage() {
                       <> · ยอดคงเหลือ ณ วันที่ <span title={`ค่าที่ท่อส่งมา: ${d_unlisted.stockDay}`}>{thaiDate(d_unlisted.stockDay)}</span></>
                     )}
                     {d_unlisted.recipeAt && (
-                      <> · สูตรสินค้าชุดเก็บเมื่อ <span title={`ค่าที่ท่อส่งมา: ${d_unlisted.recipeAt}`}>{thaiDate(String(d_unlisted.recipeAt).slice(0, 10))}</span></>
+                      <> · สูตรสินค้าชุดเก็บเมื่อ <span title={`ค่าที่ท่อส่งมา: ${d_unlisted.recipeAt} (UTC)`}>
+                        {thaiDate(d_unlisted.recipeDayTH || วันไทยจาก_UTC(d_unlisted.recipeAt))}</span></>
                     )}
                     {' '}— <b>ไม่ใช่เวลาที่เปิดจอนี้</b>
                   </p>
@@ -279,7 +302,11 @@ export default function MarketplaceDashboardPage() {
                       (คำเตือนที่ผูกกับข้อมูลจริงไม่เน่า ต่างจากคำเตือนที่ฝังไว้ตายตัว) */}
                   {(() => {
                     const อายุสต็อก = อายุวัน(d_unlisted.stockDay)
-                    const อายุสูตร = อายุวัน(d_unlisted.recipeAt)
+                    /* ใช้วันไทยสำเร็จรูปจากท่อก่อนถ้ามี (ท่อรู้เขตเวลาของค่าตัวเอง จอไม่ควรต้องเดา)
+                       ยังไม่มีก็แปลงเอง โดยบอกว่าค่าเดิมเป็น UTC */
+                    const อายุสูตร = d_unlisted.recipeDayTH
+                      ? อายุวัน(d_unlisted.recipeDayTH)
+                      : อายุวัน(d_unlisted.recipeAt, true)
                     const เตือน: string[] = []
                     if (อายุสต็อก !== null && อายุสต็อก >= 1) เตือน.push(`ยอดคงเหลือเก่า ${อายุสต็อก} วัน`)
                     if (อายุสูตร !== null && อายุสูตร >= 14) เตือน.push(`สูตรสินค้าชุดเก็บมา ${อายุสูตร} วันแล้ว`)
