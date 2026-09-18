@@ -1,12 +1,12 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-18T07:47:14.888Z",
+  "generatedAt": "2026-09-18T08:21:27.696Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
   "apiRoutes": {
-    "count": 47,
+    "count": 48,
     "names": [
       "ads",
       "ai-visibility",
@@ -25,6 +25,7 @@ export const ARCH_ADMIN = {
       "bills/vendor",
       "bills/watch",
       "bills/zip",
+      "build",
       "catalog/state",
       "connections",
       "export-log",
@@ -263,6 +264,9 @@ export const ARCH_ADMIN = {
     }
   ],
   "unlabelled": [
+    "BRANCH",
+    "COMMIT_REF",
+    "CONTEXT",
     "NETLIFY",
     "STAFF_USERS_LOCAL_DIR"
   ]
