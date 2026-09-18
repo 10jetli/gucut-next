@@ -103,6 +103,20 @@ export default function AccountingDocsPage() {
      ⇒ คนใช้จะสรุปว่า "ปุ่มกรองชนิดกดแล้วไม่มีผล" ซึ่งเป็นคลาสปุ่มหลอกที่ห้ามมีในระบบนี้
      ⇒ แก้โดยให้ `load` **ไม่ผูกกับ type** (อ่านค่าปัจจุบันจาก ref) ⇒ effect จึงรันครั้งเดียวจริง
         และปุ่มรีเฟรช/เลขหน้า ยังคงชนิดที่เลือกอยู่ไว้ได้เหมือนเดิม */
+  /* 🔎 **ค้นหา + ช่วงวันที่ — ZORT มี เราไม่มี** (เทียบทีละชิ้น 18 ก.ย. 2569)
+     จอเขา `/ZDocument/list` มี: ค้นหา · ประเภท · รายการ · ตั้งแต่วันที่ · ถึงวันที่ · จำนวนต่อหน้า
+     ของเรามีแค่ปุ่มชนิดเอกสารกับเลขหน้า
+     🔴 **ท่อกรองให้ไม่ได้** — `?zortdocrows` รับแค่ `page` · `limit` · `type`
+        ⇒ ถ้ากรองเฉพาะหน้าที่เปิดอยู่ จะกลายเป็น "กรองแค่ 50 ใบจาก 694" ซึ่ง CLAUDE.md ห้ามไว้ตรง ๆ
+        ⇒ ทางที่ซื่อสัตย์คือ **โหลดครบทุกหน้าก่อนกรอง** (694 ใบ = 4 คำขอ) แล้วเขียนบนจอว่ากรองจากทั้งหมด
+     ⚠️ ระหว่างยังโหลดไม่ครบ **ห้ามโชว์ผลกรอง** เพราะจะอ่านได้ว่า "มีเท่านี้" ทั้งที่ยังอ่านไม่จบ */
+  const [ค้น, setค้น] = useState('')
+  const [ตั้งแต่, setตั้งแต่] = useState('')
+  const [ถึง, setถึง] = useState('')
+  const [ทั้งหมด, setทั้งหมด] = useState<DocRow[] | null>(null)
+  const [กำลังโหลดครบ, setกำลังโหลดครบ] = useState(false)
+  const [โหลดครบถึงหน้า, setโหลดครบถึงหน้า] = useState(0)
+  const [ครบผิดพลาด, setครบผิดพลาด] = useState('')
   const typeRef = useRef(type)
   const load = useCallback(async (p = 1, t = typeRef.current) => {
     setLoading(true); setError('')
@@ -127,9 +141,58 @@ export default function AccountingDocsPage() {
     } finally { setLoading(false) }
   }, [])
 
+  /* โหลดครบทุกหน้า — ใช้ตอนคนเริ่มกรอง · ไล่ด้วย `page=` เท่านั้น (offset ถูกเมินเงียบ ดูหัวไฟล์)
+     ⚠️ เดินหน้าด้วย **จำนวนหน้าที่ท่อบอก** และหยุดเมื่อหน้าไหนไม่มีแถว
+        (บทเรียน 18 ก.ย. 2569: ห้ามเดินหน้าด้วยเลขที่เราขอเอง) */
+  const โหลดครบ = useCallback(async () => {
+    if (ทั้งหมด || กำลังโหลดครบ) return
+    setกำลังโหลดครบ(true); setครบผิดพลาด(''); setโหลดครบถึงหน้า(0)
+    const กอง: DocRow[] = []
+    try {
+      for (let p = 1; p <= 40; p++) {
+        const qs = new URLSearchParams({ zortdocrows: '1', limit: String(PAGE), page: String(p) })
+        // eslint-disable-next-line no-await-in-loop -- ตั้งใจไล่ทีละหน้า ไม่ยิงพร้อมกัน
+        const res = await fetch(`/api/web/core?${qs}`)
+        // eslint-disable-next-line no-await-in-loop
+        const j = await res.json().catch(() => null)
+        if (!j || (!res.ok && !j.skip)) throw new Error(j?.error ?? `ท่อตอบ ${res.status}`)
+        if (typeof j?.skip === 'string' && j.skip) throw new Error(j.skip)
+        const หน้า: DocRow[] = Array.isArray(j.rows) ? j.rows : []
+        กอง.push(...หน้า)
+        setโหลดครบถึงหน้า(p)
+        if (!หน้า.length) break
+        if (typeof j.totalPages === 'number' && p >= j.totalPages) break
+      }
+      setทั้งหมด(กอง)
+    } catch (e) {
+      /* ⚠️ โหลดไม่ครบ = **ยังกรองไม่ได้** ห้ามเอาที่โหลดมาได้ไปกรองแล้วโชว์เป็นคำตอบ */
+      setครบผิดพลาด(String(e instanceof Error ? e.message : e))
+      setทั้งหมด(null)
+    } finally { setกำลังโหลดครบ(false) }
+  }, [ทั้งหมด, กำลังโหลดครบ])
+
+  const มีตัวกรอง = Boolean(ค้น.trim() || ตั้งแต่ || ถึง)
+  useEffect(() => { if (มีตัวกรอง) void โหลดครบ() }, [มีตัวกรอง, โหลดครบ])
+
   useEffect(() => { void load(1, '') }, [load])
 
-  const rows = data?.rows ?? []
+  /* แถวที่เอาไปแสดง: ถ้าไม่ได้กรอง = หน้าปัจจุบันจากท่อ · ถ้ากรอง = ทั้ง 694 ใบที่โหลดครบแล้ว */
+  const วัน = (r: DocRow) => String(r.documentdateString ?? '').slice(0, 10)
+  const เข้าเงื่อนไข = (r: DocRow) => {
+    const คำ = ค้น.trim().toLowerCase()
+    if (คำ) {
+      const กอง = [r.documentnumber, r.header, r.referencenumber, r.documentdateString]
+        .map((x) => String(x ?? '').toLowerCase())
+      if (!กอง.some((x) => x.includes(คำ))) return false
+    }
+    const d = วัน(r)
+    if (ตั้งแต่ && (!d || d < ตั้งแต่)) return false
+    if (ถึง && (!d || d > ถึง)) return false
+    return true
+  }
+  const rows = มีตัวกรอง
+    ? (ทั้งหมด ?? []).filter(เข้าเงื่อนไข)
+    : (data?.rows ?? [])
   const count = data?.count
   const totalPages = data?.totalPages ?? 1
 
@@ -287,6 +350,45 @@ export default function AccountingDocsPage() {
 
       {data && (
         <>
+          {/* 🔎 แถวค้นหา + ช่วงวันที่ — ลอกผังจาก ZORT `/ZDocument/list`
+              ⚠️ **ต้องบอกขอบเขตของการกรองเสมอ**: ท่อกรองให้ไม่ได้ ⇒ จอโหลดครบ 694 ใบก่อนแล้วกรองเอง
+                 ถ้าปล่อยให้กรองเฉพาะหน้าที่เปิดอยู่ = "กรอง 50 ใบจาก 694" ซึ่ง CLAUDE.md ห้ามไว้ตรง ๆ */}
+          <div className="flex flex-wrap items-end gap-2 mb-3 text-[12.5px]">
+            <label className="flex flex-col gap-0.5">
+              <span className="text-gray-500">ค้นหา</span>
+              <input value={ค้น} onChange={(e) => setค้น(e.target.value)}
+                placeholder="เลขที่เอกสาร · ประเภท · เลขที่อ้างอิง"
+                className="border border-gray-300 rounded px-2 py-1 w-[240px]" />
+            </label>
+            <label className="flex flex-col gap-0.5">
+              <span className="text-gray-500">ตั้งแต่วันที่</span>
+              <input type="date" value={ตั้งแต่} onChange={(e) => setตั้งแต่(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1" />
+            </label>
+            <label className="flex flex-col gap-0.5">
+              <span className="text-gray-500">ถึงวันที่</span>
+              <input type="date" value={ถึง} onChange={(e) => setถึง(e.target.value)}
+                className="border border-gray-300 rounded px-2 py-1" />
+            </label>
+            {มีตัวกรอง && (
+              <button type="button" onClick={() => { setค้น(''); setตั้งแต่(''); setถึง('') }}
+                className="text-gray-600 border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
+                ล้างตัวกรอง
+              </button>
+            )}
+            {มีตัวกรอง && (
+              <span className="text-gray-600">
+                {กำลังโหลดครบ
+                  ? <>⏳ กำลังอ่านให้ครบทุกหน้า (อ่านแล้ว {fmtNum(โหลดครบถึงหน้า * PAGE)} ใบ) — <b>ยังไม่ใช่คำตอบสุดท้าย</b></>
+                  : ครบผิดพลาด
+                    ? <span className="text-amber-800">⚠️ อ่านไม่ครบ ({ครบผิดพลาด}) — <b>ยังกรองไม่ได้</b> ไม่ใช่ว่าไม่มีใบที่ตรง</span>
+                    : ทั้งหมด
+                      ? <>พบ <b>{fmtNum(rows.length)}</b> ใบ — กรองจาก<b>ทั้งหมด {fmtNum(ทั้งหมด.length)} ใบ</b> (โหลดครบแล้ว ไม่ใช่เฉพาะหน้านี้)</>
+                      : null}
+              </span>
+            )}
+          </div>
+
           <TableWrap>
             <table className="w-full min-w-[820px]">
               <thead className="bg-white border-b border-gray-200">
@@ -345,6 +447,15 @@ export default function AccountingDocsPage() {
 
           {/* แบ่งหน้า — ใช้ `page` ของท่อตรง ๆ และโชว์ว่ากำลังอยู่หน้าไหนจาก applied ไม่ใช่จากตัวแปรจอ
               (ถ้าท่อตีความหน้าไม่เหมือนที่จอส่งไป จะเห็นได้ทันที) */}
+          {/* 🔴 **ซ่อนแถบเลขหน้าเมื่อกำลังกรอง** — เพราะตอนกรอง แถวมาจากกองที่โหลดครบ (694 ใบ)
+              ส่วนเลขหน้ามาจากการแบ่งหน้าฝั่งท่อ ⇒ วางคู่กันเมื่อไหร่ = ตัวเลขกับแถวคนละกติกา
+              ซึ่งเป็นโรคประจำที่ CLAUDE.md เตือนไว้ (ตัวนับกับตัวแถวมาคนละที่) */}
+          {มีตัวกรอง ? (
+            <p className="mt-3 text-[12.5px] text-gray-500">
+              กำลังแสดง<b>ผลกรองทั้งหมดในหน้าเดียว</b> — เลขหน้าถูกซ่อนไว้เพราะตัวกรองทำงานกับทั้ง 694 ใบ
+              {' '}· ล้างตัวกรองเพื่อกลับไปดูแบบแบ่งหน้า
+            </p>
+          ) : (
           <div className="flex flex-wrap items-center gap-2 mt-3 text-[12.5px] text-gray-600">
             {/* เลขหน้าแบบ ZORT — ใช้ชิ้นเดียวกับจอรายการอื่น
                 ⚠️ **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** (ท่อเมิน offset — กับดักที่จดไว้หัวไฟล์)
@@ -367,6 +478,7 @@ export default function AccountingDocsPage() {
               <span className="text-amber-700">⚠️ ท่อลดจำนวนต่อหน้าให้เองเพราะชนเพดาน</span>
             )}
           </div>
+          )}
         </>
       )}
     </div>
