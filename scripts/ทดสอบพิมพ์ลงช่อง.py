@@ -27,7 +27,10 @@ import re
 import sys
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent / "lib"))
 from playwright.sync_api import sync_playwright
+# ตัวช่วยกลาง — เขียนลูปรอเองในทุกไฟล์คือทางที่ทำให้กฎถูกเหยียบซ้ำ (ดูหัวไฟล์ตัวช่วย)
+from รอจนจอพร้อม import รอจนพร้อม  # noqa: E402
 
 ฐาน = sys.argv[1] if len(sys.argv) > 1 else "http://localhost:3111"
 พอร์ต = sys.argv[2] if len(sys.argv) > 2 else "9222"
@@ -69,7 +72,11 @@ def รายชื่อจอ():
 
 def ทดสอบจอ(page, path):
     page.goto(ฐาน + path, wait_until="domcontentloaded", timeout=60000)
-    page.wait_for_timeout(9000)
+    """รอสัญญาณบวก ไม่ใช่นับเวลา — ใช้ตัวช่วยกลาง (เหตุผลอยู่ในหัวไฟล์ตัวช่วย)
+       ⚠️ จอยังไม่พร้อมแล้วพิมพ์ = พิมพ์ลงช่องที่กำลังจะถูกสร้างใหม่ ⇒ ได้ผลลวงว่าพิมพ์ไม่ได้"""
+    if not รอจนพร้อม(page, 30):
+        return "⚠️ ตัดสินไม่ได้ (จอยังไม่พร้อม) — **ไม่ใช่ว่าพิมพ์ไม่ได้**", None
+    page.wait_for_timeout(800)
     ช่อง = [e for e in page.locator("main input").all()
             if not e.is_disabled() and (e.get_attribute("type") or "text") in ("text", "search", "number", "")]
     if not ช่อง:
