@@ -24,6 +24,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum, thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import { categoryCoverage } from '@/lib/category-net'
+import { skuScopeNote } from '@/lib/sku-scope'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, RowMenu } from '@/components/zort'
 
@@ -96,7 +97,14 @@ export default function CoreCategoriesPage() {
       const zj = zres ? await zres.json().catch(() => null) : null
       setZort(
         zj && typeof zj.zortTotal === 'number'
-          ? { zortTotal: zj.zortTotal, noSkuInZort: Number(zj.noSkuInZort) || 0, zortCountedAt: zj.zortCountedAt }
+          /* 🔴 **ห้าม `Number(x) || 0`** (แก้ 18 ก.ย. 2569) — ท่อไม่ส่งช่องนี้มา ⇒ ได้ 0
+             ⇒ ตาข่ายจะบวก "ไม่มีรหัส 0" แล้วประกาศว่าไม่ครบ ทั้งที่ยังไม่รู้จำนวน
+             (ไม่รู้ ≠ ศูนย์ · CTO กำชับข้อ 3 ของงานป้ายขอบเขต) */
+          ? {
+            zortTotal: zj.zortTotal,
+            noSkuInZort: typeof zj.noSkuInZort === 'number' ? zj.noSkuInZort : undefined,
+            zortCountedAt: zj.zortCountedAt,
+          }
           : null,
       )
     } catch (e) {
@@ -194,6 +202,9 @@ export default function CoreCategoriesPage() {
                     : basis === 'cost' ? 'ราคาซื้อในทะเบียนสินค้า' : 'ราคาขาย'],
                 ],
                 note: [
+                  /* 🔴 ขอบเขตต้องอยู่ในหัวไฟล์ (CTO กำชับข้อ 5 · 18 ก.ย. 2569)
+                     อ่านจำนวนจากท่อทุกครั้ง — ท่อไม่บอก ⇒ ฟังก์ชันจะไม่ใส่จำนวนให้เอง */
+                  skuScopeNote(zort?.noSkuInZort),
                   basis === 'zort'
                     ? 'ฐานนี้เป็นค่าที่คัดมาจากจอ ZORT ไม่ใช่คิดสดจากคลังเงา ⇒ ซื้อของเข้าใหม่แล้วเลขจะเก่าจนกว่าจะคัดใหม่'
                     : 'ฐานนี้คิดสดจากทะเบียนสินค้าในคลังเงา — **ไม่ตรงกับเลขบนจอ ZORT** เพราะ ZORT คิดด้วยต้นทุนเฉลี่ย',

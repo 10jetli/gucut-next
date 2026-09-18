@@ -14,6 +14,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import { coverageText } from '@/lib/csv-export'
+import { skuScopeNote } from '@/lib/sku-scope'
 import ExportButton from '@/components/zort/ExportButton'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
@@ -387,6 +388,12 @@ function CoreStockInner() {
                   {typeof data.noSkuWithStock !== 'number' && <>)</>}
                 </span>
               )}
+              {/* 🔴 **ท่อไม่ได้ส่ง `noSkuInZort` มา ⇒ ยังต้องบอกขอบเขต แต่ห้ามใส่จำนวน**
+                  (ท่านประธานสั่ง 18 ก.ย. 2569 · CTO กำชับข้อ 3: ไม่รู้จำนวน ≠ รู้ว่าเป็นศูนย์)
+                  ⇒ เงียบไปเลยไม่ได้ เพราะคนจะเอาเลขนี้ไปเทียบกับจอ ZORT แล้วสรุปว่ากระจกขาดของ */}
+              {typeof data.noSkuInZort !== 'number' && !category && !q.trim() && tab === 'all' && (
+                <span className="text-gray-400"> ({skuScopeNote(data.noSkuInZort)})</span>
+              )}
               {/* 🔴 มีของแต่ไม่มีรหัส = **สต็อกที่ระบบเราตามไม่ได้เลย** ต้องเห็นชัด ไม่ใช่ในวงเล็บสีเทา */}
               {Number(data.noSkuWithStock) > 0 && (
                 <span className="block mt-1 text-[12px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
@@ -424,7 +431,10 @@ function CoreStockInner() {
                 filename: 'คลังสินค้า',
                 scope: `ภาพถ่ายสต็อกวันที่ ${data?.day ?? '(ไม่รู้)'}`,
                 title: 'คลังสินค้า',
-                note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ',
+                /* 🔴 **ขอบเขตต้องอยู่ในหัวไฟล์ด้วย** — ไฟล์ที่ออกไปแล้วไม่มีใครตามไปอธิบายให้
+                   (CTO กำชับข้อ 5 · 18 ก.ย. 2569) และ **อ่านจำนวนจากท่อทุกครั้ง ห้ามเขียนเลขตายตัว** */
+                note: `${skuScopeNote(data?.noSkuInZort)}`
+                  + ' · ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ',
                 filters: [
                   ['วันที่ของภาพถ่ายสต็อก', data?.day ?? '(ไม่รู้)'],
                   ['แท็บ', tab === 'all' ? 'ทั้งหมด' : tab],

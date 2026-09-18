@@ -23,6 +23,7 @@ import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
+import { skuScopeNote } from '@/lib/sku-scope'
 
 interface Row {
   sku: string; name: string; qty?: number; available?: number
@@ -33,6 +34,10 @@ interface Row {
 }
 interface Resp {
   rows?: Row[]; total?: number
+  /** จำนวนสินค้าใน ZORT ที่ยังไม่ได้ตั้งรหัส — ท่อส่งมาให้กับทุกคำขอ `list=stock`
+   *  🔴 ใช้เขียนกำกับขอบเขตในหัวไฟล์ Excel · **ห้ามเขียนเลขนี้ตายตัวในโค้ด** (ร้านตั้งรหัสเพิ่มแล้วเลขลด)
+   *  ⚠️ ไม่มีคีย์ = ไม่รู้ ⇒ ตัวเขียนป้ายจะไม่ใส่จำนวนให้เอง (ไม่รู้ ≠ ศูนย์) */
+  noSkuInZort?: number
   /** ท่อสะท้อนกลับว่ารับตัวกรองช่องทางแล้ว — **ไม่มีคีย์นี้ = ท่อรุ่นเก่า** (ดู SERVER_FILTER) */
   channel?: string
   /** เลขของทุกแท็บจากท่อ นับจากชุดเดียวกับแถวที่ส่งมา (มีเฉพาะตอนกรองช่องทาง) */
@@ -236,6 +241,9 @@ export default function MarketplaceProductsPage() {
                 filename: 'สินค้าบนมาร์เก็ตเพลส',
                 scope: tab === 'all' ? 'ทุกช่องทาง' : tab === 'none' ? 'ยังไม่ได้ลงขายที่ไหนเลย' : `ช่องทาง ${tab}`,
                 title: 'สินค้าบนมาร์เก็ตเพลส',
+                /* 🔴 ขอบเขตต้องอยู่ในหัวไฟล์ (CTO กำชับข้อ 5 · 18 ก.ย. 2569) — จอนี้อ่านจาก
+                   ทะเบียนสินค้าเหมือนจอคลัง ⇒ สินค้าที่ยังไม่ได้ตั้งรหัสไม่อยู่ในไฟล์นี้ */
+                note: skuScopeNote(meta?.noSkuInZort),
                 filters: [
                   ['แท็บช่องทาง', tab === 'all' ? 'ทั้งหมด' : tab === 'none' ? 'ยังไม่ได้ลงขายที่ไหนเลย' : tab],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
