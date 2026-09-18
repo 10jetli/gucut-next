@@ -216,6 +216,14 @@ export default function CoreUsagePage() {
               <div className="flex flex-wrap items-baseline gap-2 mb-1">
                 <p className="text-[14.5px] font-semibold text-gray-900">เวลา build รายวัน</p>
                 <p className="text-[11.5px] text-gray-400">แท่งแดง = วันที่ใช้เกิน 60 นาที · เอาเมาส์ชี้เพื่อดูตัวเลข</p>
+                {/* 🔴 **ห้ามคิดเปอร์เซ็นต์กับนาที build** — Netlify ไม่เปิดเพดานนาทีมาให้
+                    ถ้าเราตั้งตัวหารเอง จะได้ % ที่ดูน่าเชื่อแต่ไม่มีใครตรวจได้ และกลายเป็นเกณฑ์ที่ร้องผิดเวลา
+                    ซึ่งแย่กว่าไม่ร้อง (CEO ตัดสิน 18 ก.ย. 2569) ⇒ ตัวเลขนี้ดู **แนวโน้ม** อย่างเดียว
+                    ส่วนเกณฑ์เตือนจริงอยู่ที่ป้ายเครดิต (มุมซ้ายบน) ซึ่งเป็นตัวที่ทำให้เว็บล่มจริง */}
+                <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-100 rounded px-2 py-1 mt-1 inline-block">
+                  ⚠️ Netlify ไม่ส่งเพดานนาที build มา ⇒ <b>ดูแนวโน้มได้ แต่บอกเป็น % ของโควตาไม่ได้</b> ·
+                  {' '}เกณฑ์เตือนที่ใช้จริงอยู่ที่<b>ป้ายเครดิต</b>
+                </p>
               </div>
               <DailyChart rows={dailyInWin} />
             </Card>

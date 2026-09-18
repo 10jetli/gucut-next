@@ -12,7 +12,8 @@
 //    เจ้าของร้านส่งภาพครอปมาให้ถึงเห็นว่าเป็นบล็อกน้ำเงินเข้ม
 //    ⇒ บทเรียน: สีกับพื้นหลังต้องดูจากภาพครอปที่ชัดพอ อย่าสรุปจากภาพย่อทั้งหน้า
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import CreditBadge from '@/components/ui/CreditBadge'
+// (เดิม import useEffect/useState ไว้ใช้กับป้ายเครดิต — ย้ายไป CreditBadge แล้ว 18 ก.ย. 2569)
 import type { NavItem } from '@/lib/nav-config'
 import { READY_BADGE, zortReadyOf } from '@/lib/zort-ready'
 
@@ -46,22 +47,8 @@ interface SidebarProps {
 export default function Sidebar({
   navItems, collapsed, openGroups, anim, sidebarW, isActive, pathname, toggleGroup, toggleCollapse,
 }: SidebarProps) {
-  // เครดิต Netlify คงเหลือ — เจ้าของร้านสั่งให้โชว์ข้างโลโก้ (28 ส.ค. 2569) ยังเก็บไว้
-  /* สามสถานะ ห้ามยุบเหลือสอง: ยังโหลด / อ่านได้ / อ่านไม่ได้ (กฎจอข้อ 4)
-     ⚠️ "ตอบมาแต่ไม่มีช่อง left" นับเป็นอ่านไม่ได้ — มีก้อนแม่ ไม่ได้แปลว่ามีช่องลูก */
-  const [credits, setCredits] = useState<{ state: 'loading' | 'ok' | 'error'; left?: number }>({ state: 'loading' })
-  useEffect(() => {
-    let alive = true
-    fetch('/api/netlify-credits')
-      .then((r) => r.json())
-      .then((j) => {
-        if (!alive) return
-        if (typeof j?.left === 'number') setCredits({ state: 'ok', left: j.left })
-        else setCredits({ state: 'error' })
-      })
-      .catch(() => { if (alive) setCredits({ state: 'error' }) })
-    return () => { alive = false }
-  }, [])
+  /* 📍 เครดิต Netlify ย้ายไปเป็นชิ้นเดียวที่ components/ui/CreditBadge.tsx (18 ก.ย. 2569)
+     เดิมโค้ดชุดนี้ถูกคัดลอกไว้ทั้งที่นี่และใน MobileNav.tsx **พร้อมเกณฑ์เตือนที่คัดลอกไปด้วย** */
 
   return (
     <aside
@@ -99,20 +86,8 @@ export default function Sidebar({
       {/* 🔴 **มาตรวัดที่หายไปเงียบตอนตัวเองพัง หน้าตาเหมือน "ทุกอย่างปกติ" เป๊ะ** (แก้ 13 ก.ย. 2569)
           ของเดิมล้มแล้วซ่อนป้ายทิ้ง ⇒ วันที่เส้นเครดิตพัง เจ้าของร้านจะไม่รู้ว่าเลิกเฝ้าแล้ว
           ⇒ อ่านไม่ได้ ให้ขึ้น ⚡? ไว้ **ไม่ใช่หายไป และไม่ใช่โชว์เลขมั่ว** */}
-      {credits.state !== 'loading' && !collapsed && (
-        <div className="px-3 pt-2 pb-1">
-          <span
-            className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${
-              credits.state === 'error' ? 'bg-white/5 text-white/40'
-                : credits.left! < 1000 ? 'bg-orange-400/25 text-orange-200' : 'bg-white/10 text-white/70'
-            }`}
-            title={credits.state === 'error'
-              ? 'อ่านเครดิต Netlify ไม่ได้รอบนี้ — ไม่ได้แปลว่าเครดิตหมด แปลว่ายังไม่รู้'
-              : 'เครดิต Netlify คงเหลือ (จาก 5,000/เดือน)'}
-          >
-            ⚡{credits.state === 'error' ? '?' : credits.left!.toLocaleString('th-TH')}
-          </span>
-        </div>
+      {!collapsed && (
+        <div className="px-3 pt-2 pb-1"><CreditBadge dark /></div>
       )}
 
       <nav className="flex-1 overflow-y-auto py-2">

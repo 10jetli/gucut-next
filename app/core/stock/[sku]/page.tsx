@@ -80,7 +80,10 @@ interface StockCardResp {
 const CARD_LIMIT = 100
 /** ชุดที่มีรหัสนี้เป็นส่วนประกอบ — ถามด้วย `bundleitems&member=<รหัส>` */
 interface InBundle { bundleSku: string; bundleName?: string; qty?: number }
-interface MemberResp { applied?: { member?: string }; rows?: InBundle[]; collectedAt?: string }
+/** ⚠️ `collectedAt` เป็น **UTC** (MAX ของ `bundle_items.at` ที่เขียนด้วย `datetime('now')`) — ชื่อช่องไม่ได้บอกไว้
+ *  `collectedDayTH` = วันไทยสำเร็จรูปจากท่อ **ถ้ามีต้องใช้ก่อน** (ท่อรู้เขตเวลาของค่าตัวเอง ไม่ใช่ให้จอเดา)
+ *  เส้นนี้ยังไม่ส่งมา ⇒ จอแปลงเองไปพลางก่อน และจะสลับมาใช้ของท่อเองเมื่อท่อเริ่มส่ง */
+interface MemberResp { applied?: { member?: string }; rows?: InBundle[]; collectedAt?: string; collectedDayTH?: string | null }
 /** ยอดขายรายเดือนของรหัสนี้ — ถามทีละเดือนด้วย `topproducts&sku=` */
 /** จุดหนึ่งเดือนบนกราฟ
  *  🔴 `amount` ที่ท่อส่งมา **รวมใบที่ยังไม่จ่าย** (ฝั่งท่อวัดจริง 6 ก.ย. 2569: ทั้งระบบ ~฿564,000)
@@ -535,11 +538,11 @@ export default function ProductDetailPage() {
                             ฝั่งท่อทำให้ซิงก์สูตรทุกชั่วโมงแล้ว (gucut-web a17692b)
                             ⚠️ และ collectedAt คือ "สูตรเปลี่ยนล่าสุด" ไม่ใช่ "ตรวจล่าสุด"
                                ⇒ ชุดที่ไม่มีใครแก้จะค้างที่ 3 ก.ย. ตลอดไป ห้ามเอาไปสื่อว่าข้อมูลเก่า */}
-                        {inBundles.collectedAt && (
+                        {(inBundles.collectedDayTH || inBundles.collectedAt) && (
                           <p className="text-[11px] text-gray-400 mt-0.5">
                             {/* 🔴 เดิมโชว์ `collectedAt.slice(0, 10)` ⇒ **เป็นวัน UTC และเป็นปี ค.ศ. ดิบ** สองเรื่องในจุดเดียว
                                 (`collectedAt` = MAX ของ `bundle_items.at` ซึ่งเขียนด้วย `datetime('now')` = UTC · แก้ 18 ก.ย. 2569) */}
-                            อยู่ใน {list.length} ชุด · สูตรชุด<b>เปลี่ยนล่าสุด</b> {thaiDateUtc(inBundles.collectedAt)}
+                            อยู่ใน {list.length} ชุด · สูตรชุด<b>เปลี่ยนล่าสุด</b> {inBundles.collectedDayTH ? thaiDate(inBundles.collectedDayTH) : thaiDateUtc(inBundles.collectedAt)}
                             {' '}(ซิงก์จาก ZORT ทุกชั่วโมง — ชุดที่ไม่มีใครแก้ วันที่นี้จะไม่ขยับ)
                           </p>
                         )}
