@@ -49,6 +49,9 @@ const apiRoutes = walk("app/api", "route.ts")
 const pageFiles = walk("app", "page.tsx");
 const pages = pageFiles.map((p) => p.replace(/^app/, "").replace(/\/page\.tsx$/, "") || "/").sort();
 const corePages = pages.filter((p) => p.startsWith("/core"));
+/* เส้นทางที่ "เปิดตรง ๆ ได้" — ตัดหน้าที่มีช่องแปรใน URL ออก (เปิดโดยไม่มีค่าจริงไม่ได้)
+   ใช้เป็นรายชื่อให้ตัวกวาดจอ ⇒ ดูหมายเหตุที่ท้ายไฟล์นี้ */
+const sweepRoutes = pages.filter((p) => !p.includes("["));
 
 /* ── ปุ่มส่งจริง: จอไหนเปิดแล้ว จอไหนยังปิด ──────────────────────
    🔴 **ที่มา 18 ก.ย. 2569** — เอกสารเทียบเมนูเขียนว่า "ปุ่มส่งจริงยังปิด" อยู่ 3 จุด
@@ -133,7 +136,7 @@ const data = {
   project: "gucut-admin",
   repo: "gucut-next",
   apiRoutes: { count: apiRoutes.length, names: apiRoutes },
-  pages: { count: pages.length, core: corePages.length, coreNames: corePages },
+  pages: { count: pages.length, core: corePages.length, coreNames: corePages, names: sweepRoutes },
   blobs,
   pipe: { allow: pipeAllow, count: pipeAllow.length },
   realSend: {
@@ -154,8 +157,26 @@ writeFileSync(
     `export const ARCH_ADMIN = ${JSON.stringify(data, null, 2)} as const;\n`
 );
 
+/* ── รายชื่อจอในตัวกวาด: เขียนทับให้ตอน build ────────────────────
+   🔴 **ที่มา 18 ก.ย. 2569** — `scripts/sweep-in-browser.js` มีรายชื่อจอที่คน**พิมพ์มือ**
+      วันที่ไปเทียบกับของจริง **ขาดไป 28 จอ** (รวมจอที่มีปุ่มส่งจริง เช่น `/core/sales/new`
+      `/core/stock-push` `/core/settings-roles`) ⇒ กวาดแล้วเขียว แต่**ไม่เคยเปิดจอพวกนั้นเลย**
+      = ผลว่างของเครื่องมือที่มองไม่เห็นของที่ต้องตรวจ · คลาสเดียวกับด่านที่ตรวจ 0 ไฟล์แล้วบอกว่าผ่าน
+   🔑 ตรงกับกฎที่ทีมเขียนเองวันเดียวกัน: **รายชื่อที่คนเติมมือจะล้าสมัยเสมอ**
+      ⇒ ให้ตัวสแกนตอน build เป็นคนตอบว่า "จอมีอะไรบ้าง" ไม่ใช่ความจำของคนเขียน
+   ⚠️ ห้ามแก้บรรทัด `window.ALL_ROUTES` ในไฟล์นั้นด้วยมือ — จะถูกเขียนทับรอบหน้า */
+const sweepFile = join(root, "scripts/sweep-in-browser.js");
+const sweepSrc = readFileSync(sweepFile, "utf8");
+const sweepLine = `window.ALL_ROUTES = ${JSON.stringify(sweepRoutes)}`;
+if (!/window\.ALL_ROUTES = \[[^\]]*\]/.test(sweepSrc)) {
+  throw new Error("gen-arch: หาบรรทัด window.ALL_ROUTES ในตัวกวาดไม่เจอ ⇒ ไม่เขียนทับ (อย่าปล่อยให้เงียบ)");
+}
+const sweepNext = sweepSrc.replace(/window\.ALL_ROUTES = \[[^\]]*\]/, sweepLine);
+if (sweepNext !== sweepSrc) writeFileSync(sweepFile, sweepNext);
+
 console.log(
   `gen-arch(หลังร้าน): API ${apiRoutes.length} เส้นทาง · หน้า ${pages.length} (core ${corePages.length}) · ` +
+    `รายชื่อจอในตัวกวาด ${sweepRoutes.length}${sweepNext !== sweepSrc ? " (อัปเดต)" : ""} · ` +
     `ถัง ${blobs.length} · ท่อกลางอนุญาต ${pipeAllow.length} · ` +
     `ปุ่มส่งจริง เปิด ${realSend.filter((r) => r.open).length}/${realSend.length} · ` +
     `ของนอกบ้าน ${integrations.filter((i) => i.inCode).length}/${integrations.length}` +
