@@ -19,6 +19,9 @@ import { useSkuImages } from '@/lib/sku-images'
 import { fmtNum, thaiDate } from '@/lib/format'
 
 const PER = 200
+/** เพดานกันลูปไม่รู้จบ — **เลขนี้ต้องมีที่เดียว** ข้อความบนจออ่านจากตัวนี้ ไม่พิมพ์ซ้ำ
+ *  (ตอนทดสอบเคยลดเพดานเป็น 400 แล้วจอยังเขียนว่า 20,000 ⇒ เลขเกณฑ์สองที่ = เพี้ยนทันที) */
+const เพดานกันวน = 20000
 
 /* ⚠️ ต้องเก็บ `qty` กับ `sold` มาด้วย — ใช้จัดลำดับว่า "ควรถ่ายรูปอันไหนก่อน"
    (ท่อส่งสองช่องนี้มากับ `list=stock` อยู่แล้ว ไม่ต้องยิงเพิ่ม) */
@@ -36,6 +39,8 @@ export default function NoImagePage() {
   const [soldDays, setSoldDays] = useState<number | null>(null)
   const [วันข้อมูล, setวันข้อมูล] = useState<string | null>(null)
   const [อ่านแล้ว, setอ่านแล้ว] = useState(0)
+  /** ลูปหยุดเพราะชนเพดานกันวน ไม่ใช่เพราะอ่านครบ — ต้องแยกจาก "กำลังโหลด" */
+  const [ชนเพดาน, setชนเพดาน] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [copyMsg, setCopyMsg] = useState('')
@@ -44,7 +49,7 @@ export default function NoImagePage() {
   const [เรียงแบบ, setเรียงแบบ] = useState<'ควรถ่ายก่อน' | 'รหัส'>('ควรถ่ายก่อน')
 
   const load = useCallback(async () => {
-    setLoading(true); setError(''); setRows([]); setอ่านแล้ว(0); setTotal(null)
+    setLoading(true); setError(''); setRows([]); setอ่านแล้ว(0); setTotal(null); setชนเพดาน(false)
     const all: Row[] = []
     let off = 0
     let cap: number | null = null
@@ -67,7 +72,12 @@ export default function NoImagePage() {
         setอ่านแล้ว(off)
         if (!page.length) break
         if (cap !== null && off >= cap) break
-        if (off > 20000) break // กันวนไม่รู้จบถ้าท่อเพี้ยน
+        /* 🔴 **เพดานกันวนไม่รู้จบ — แต่ชนแล้วต้องพูด** (แก้ 18 ก.ย. 2569)
+           เดิม `break` เฉย ๆ ⇒ ลูปหยุด · `loading` เป็น false · แต่ `อ่านแล้ว < total`
+           ⇒ จอขึ้น "⏳ กำลังไล่อ่านทุกหน้า" **ค้างตลอดกาล** ทั้งที่มันหยุดไปแล้ว
+           = ยุบสามสถานะเหลือสอง (กำลังทำ / หยุดแล้วไม่ครบ ถูกนับเป็นอันเดียวกัน)
+           ⚠️ วันนี้คลังมี 2,674 รหัส เพดานยังอีกไกล ⇒ **นี่คือกับดักที่รอวันโต ไม่ใช่บั๊กที่เห็นวันนี้** */
+        if (off > เพดานกันวน) { setชนเพดาน(true); break }
       }
       setRows(all)
     } catch (e) {
@@ -130,9 +140,16 @@ export default function NoImagePage() {
       {/* 🔴 ระหว่างยังไม่ครบ **ห้ามโชว์เลขสรุปเป็นคำตอบ** — เขียนว่ากำลังอ่านถึงไหน */}
       {!ครบแล้ว && !error && (
         <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
-          ⏳ กำลังไล่อ่านทุกหน้า — อ่านแล้ว <b>{fmtNum(อ่านแล้ว)}</b>
-          {total !== null ? <> จาก <b>{fmtNum(total)}</b> รหัส</> : <> รหัส (ท่อยังไม่บอกว่าทั้งหมดมีกี่รหัส)</>}
-          {' '}· ตัวเลขข้างล่าง<b>ยังไม่ใช่คำตอบสุดท้าย</b>
+          {ชนเพดาน ? (
+            /* 🔴 หยุดแล้ว **ไม่ใช่กำลังทำ** — ข้อความต้องต่างกัน ไม่งั้นคนนั่งรอของที่ไม่มีวันมา */
+            <>🛑 <b>หยุดอ่านกลางคัน</b> เพราะชนเพดานกันวนที่ <b>{fmtNum(เพดานกันวน)} รหัส</b> — อ่านได้ <b>{fmtNum(อ่านแล้ว)}</b>
+              {total !== null && <> จากทั้งหมด <b>{fmtNum(total)}</b> รหัส</>}
+              {' '}· <b>ตัวเลขข้างล่างไม่ครบ และจะไม่ครบเอง</b> — ต้องมาขยายเพดานในโค้ดก่อน</>
+          ) : (
+            <>⏳ กำลังไล่อ่านทุกหน้า — อ่านแล้ว <b>{fmtNum(อ่านแล้ว)}</b>
+              {total !== null ? <> จาก <b>{fmtNum(total)}</b> รหัส</> : <> รหัส (ท่อยังไม่บอกว่าทั้งหมดมีกี่รหัส)</>}
+              {' '}· ตัวเลขข้างล่าง<b>ยังไม่ใช่คำตอบสุดท้าย</b></>
+          )}
         </p>
       )}
 
