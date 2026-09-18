@@ -14,6 +14,7 @@
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 /** ลิงก์ที่ปลายทางยังไม่อ่านค่า แต่ตั้งใจ — ต้องมีเหตุผล */
@@ -50,7 +51,10 @@ function pageFileOf(route) {
 
 const พบ = []
 let ตรวจไป = 0
-for (const file of walk(join(ROOT, 'app'))) {
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (ดู scripts/lib/ต้องมีของให้ตรวจ.mjs) */
+const ไฟล์ที่ตรวจ = walk(join(ROOT, 'app'))
+ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-link-params')
+for (const file of ไฟล์ที่ตรวจ) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
   const src = readFileSync(file, 'utf8')
   for (const m of src.matchAll(/href=\{?`?(\/[a-zA-Z0-9\-/_.$\[\]{}]+)\?([a-zA-Z_][\w]*)=/g)) {

@@ -17,6 +17,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const ช่องสถานะ = 'status|pay_status|paymentStatus|payStatus|transferStatus'
@@ -49,7 +50,10 @@ function walk(dir, out = []) {
 }
 
 const พบ = []
-for (const file of [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components'))]) {
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (ดู scripts/lib/ต้องมีของให้ตรวจ.mjs) */
+const ไฟล์ที่ตรวจ = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components'))]
+ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-zort-words')
+for (const file of ไฟล์ที่ตรวจ) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
   if (ยกเว้นไฟล์[rel]) continue
   const lines = readFileSync(file, 'utf8').split('\n')

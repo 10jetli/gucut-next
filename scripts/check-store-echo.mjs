@@ -15,6 +15,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 
@@ -50,7 +51,10 @@ function ส่งร้านจริง(src) {
 }
 
 const ปัญหา = []
-for (const file of walk(join(ROOT, 'app'))) {
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (ดู scripts/lib/ต้องมีของให้ตรวจ.mjs) */
+const ไฟล์ที่ตรวจ = walk(join(ROOT, 'app'))
+ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-store-echo')
+for (const file of ไฟล์ที่ตรวจ) {
   const src = readFileSync(file, 'utf8')
   /* ⚠️ เฉพาะจอที่คุยกับ **ท่อของเรา** — จอที่ยิง `/api/zort` ตรง ใช้รหัสร้านคนละชุด (1/2 ไม่ใช่ z1/z2)
      และมีสัญญาคนละฉบับ ⇒ บังคับด้วยกติกาเดียวกันไม่ได้ (ตัวจับรุ่นก่อนฟ้อง `app/orders` ผิด) */

@@ -16,6 +16,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 
@@ -35,7 +36,10 @@ function ตัดคอมเมนต์(src) {
 }
 
 const ปัญหา = []
-for (const file of walk(join(ROOT, 'app'))) {
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (ดู scripts/lib/ต้องมีของให้ตรวจ.mjs) */
+const ไฟล์ที่ตรวจ = walk(join(ROOT, 'app'))
+ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-direct-zort')
+for (const file of ไฟล์ที่ตรวจ) {
   const src = readFileSync(file, 'utf8')
   if (!/['"`]\/api\/zort/.test(src)) continue
   const เนื้อจอ = ตัดคอมเมนต์(src)

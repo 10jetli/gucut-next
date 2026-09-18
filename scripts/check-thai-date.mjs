@@ -18,6 +18,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 /* ชื่อช่องที่ลงท้ายแบบวันเวลา — ดักที่ "รูปแบบชื่อ" เพราะท่อตั้งชื่อไม่เหมือนกันทุกเส้น */
@@ -64,7 +65,10 @@ const RE_ตัดก่อนแปลง = /\b(thaiDate|thaiDateTime|thaiShort
 const พบตัดก่อนแปลง = []
 
 const พบ = []
-for (const file of [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components'))]) {
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (ดู scripts/lib/ต้องมีของให้ตรวจ.mjs) */
+const ไฟล์ที่ตรวจ = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components'))]
+ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-thai-date')
+for (const file of ไฟล์ที่ตรวจ) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
   if (ยกเว้น[rel]) continue
   const บรรทัด = readFileSync(file, 'utf8').split('\n')

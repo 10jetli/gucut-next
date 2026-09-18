@@ -16,6 +16,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const ก้อนคำตอบ = 'd|j|zj|data|res|resp|body'
@@ -49,7 +50,10 @@ function walk(dir, out = []) {
 
 const พบ = []
 let ไฟล์ = 0
-for (const file of [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'lib'))]) {
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (ดู scripts/lib/ต้องมีของให้ตรวจ.mjs) */
+const ไฟล์ที่ตรวจ = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'lib'))]
+ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-unknown-vs-zero')
+for (const file of ไฟล์ที่ตรวจ) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
   ไฟล์++
   /* ⚠️ ต้องรู้จัก **คอมเมนต์บล็อกหลายบรรทัด** ด้วย — รอบแรกด่านไปฟ้องบรรทัดในคอมเมนต์

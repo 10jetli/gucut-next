@@ -25,6 +25,7 @@
 // รันเอง: node scripts/check-claims.mjs
 import { readFileSync, writeFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 /* ⚠️ **ตัวกรองต้องแคบ ไม่งั้นตัวตรวจจะถูกเมิน** (บทเรียนจาก check-nav.mjs วันเดียวกัน)
     รอบแรกจับได้ 86 จุด ซึ่งส่วนใหญ่ไม่ใช่คำกล่าวอ้าง:
@@ -53,6 +54,9 @@ function walk(dir) {
 }
 walk('app')
 walk('components')
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (งาน S2 · 18 ก.ย. 2569)
+   วัดจริงแล้วว่าด่านนี้เคยขึ้นเขียวในสำเนาที่ไม่มีไฟล์จอเลย */
+ต้องมีของให้ตรวจ(files.length, 'check-claims')
 // ⚠️ ไฟล์ API ของเราเองมี status 404 เต็มไปหมด — คนละเรื่องกับคำกล่าวอ้างเรื่อง ZORT
 const skip = (p) => p.startsWith('app/api/')
 

@@ -14,6 +14,7 @@
 //    หน้าที่จงใจไม่ใส่เมนู (จอลูก/จอที่เปิดจากลิงก์ในจออื่น) มีจริงและถูกต้อง
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 // ⚠️ **ต้องอ่านทุกที่ที่พาคนไปหน้าได้ ไม่ใช่แค่ nav-config**
 //    รอบแรกอ่านแค่ nav-config แล้วมันฟ้องว่า /core/manual ไม่มีทางเข้า
@@ -24,6 +25,10 @@ const nav = ['lib/nav-config.ts', 'components/layout/TopBarActions.tsx', 'compon
 // เอาเฉพาะ href ที่เป็นเส้นทางในเว็บนี้ (ตัดลิงก์ออกนอกและไฟล์นิ่งทิ้ง)
 const hrefs = [...nav.matchAll(/href:\s*'([^']+)'/g)].map((m) => m[1])
   .filter((h) => h.startsWith('/') && !h.includes('.html') && !h.startsWith('//'))
+/* 🔒 อ่านไฟล์เมนูไม่ได้ = ไม่มี href ให้ตรวจ ⇒ ห้ามเขียว (งาน S2 · 18 ก.ย. 2569)
+   ⚠️ ต้องอยู่ **หลังจบเชน** — ฉบับแรกผมแทรกคั่นกลาง .map().filter() แล้วด่านพังทันที
+      (และพังแบบ exit 0 ด้วย ⇒ build ไม่รู้ตัว · ดูหมายเหตุท้ายไฟล์นี้) */
+ต้องมีของให้ตรวจ(hrefs.length, 'check-nav')
 
 const pages = new Set()
 function walk(dir, url) {

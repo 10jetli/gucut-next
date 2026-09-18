@@ -28,6 +28,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 
@@ -68,7 +69,10 @@ function ช่วงบล็อก(src, เริ่ม) {
 }
 
 const พบ = []
-for (const file of walk(join(ROOT, 'app')).concat(walk(join(ROOT, 'components')))) {
+/* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (งาน S2 · 18 ก.ย. 2569) */
+const ไฟล์ที่ตรวจ = walk(join(ROOT, 'app')).concat(walk(join(ROOT, 'components')))
+ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-gate-source')
+for (const file of ไฟล์ที่ตรวจ) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
   const src = readFileSync(file, 'utf8')
   /* จับเฉพาะรูป `{ชื่อ && (` และ `{ชื่อ?.ช่อง && (` ที่ตามด้วยบล็อกหลายบรรทัด */
