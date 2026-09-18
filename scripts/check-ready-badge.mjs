@@ -4,7 +4,7 @@
  * 🔴 **ที่มา 18 ก.ย. 2569 (งาน S4/S3)** — เปิดจอจริงบน production แล้วพบว่า
  *    จอที่ `REAL_SEND_ENABLED = true` เหมือนกันทั้งสี่จอ **ติดป้ายคนละแบบ**:
  *      /core/quotations/new · /core/stock/new · /core/purchases/new ⇒ 🟡 "งานเขียนยังทำที่ ZORT"
- *      /core/sales/new                                              ⇒ 🟢 "ใช้แทน ZORT ได้เลย"
+ *      /core/sales/new                                              ⇒ 🟢 "ความสามารถ: ใช้แทน ZORT ได้เลย"
  *    สาเหตุ: `/core/sales/new` **ไม่มีในทะเบียน** ⇒ `zortReadyOf()` ตัดท้ายไปเจอ `/core/sales`
  *    ซึ่งเป็นจอ "ดูรายการ" (replace) ⇒ จอที่เขียนเอกสารจริงได้ป้ายของจอที่อ่านอย่างเดียว
  *
