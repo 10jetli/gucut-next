@@ -91,12 +91,16 @@ if (!ท่อมี) {
   }
 }
 
-/* จอเรียกอะไรบ้าง — ทั้ง `list=xxx` ใน URL ตรง ๆ และ `list: 'xxx'` ใน URLSearchParams */
+/* จอเรียกอะไรบ้าง — ทั้ง `list=xxx` ใน URL ตรง ๆ และ `list: 'xxx'` ใน URLSearchParams
+   🔴 **ต้องมีขอบคำหน้า `list=`** — ไม่งั้นจะไปแมตช์กลางคำว่า `zortlist=` ซึ่งเป็น**คนละพารามิเตอร์**
+      ของจริง: จอคืนให้ผู้ขายใช้ `zortlist=returnpurchaseorders` ⇒ ตัวกวาดรุ่นแรกของผม
+      รายงานว่า "จอเรียกชื่อที่ท่อไม่รู้จัก" **สองรอบติด** ทั้งที่จอถูกมาตลอด
+      ⇒ ธงแดงลวงจากตัวกวาดของตัวเอง = เหตุผลที่คนเลิกเชื่อเครื่องมือภายในสองรอบ */
 const จอเรียก = new Set()
 for (const f of walk(join(ROOT, 'app')).concat(walk(join(ROOT, 'components')))) {
   const s = readFileSync(f, 'utf8')
-  for (const m of s.matchAll(/list=([a-z-]+)/g)) จอเรียก.add(m[1])
-  for (const m of s.matchAll(/list:\s*'([a-z-]+)'/g)) จอเรียก.add(m[1])
+  for (const m of s.matchAll(/(?<![a-zA-Z])list=([a-z-]+)/g)) จอเรียก.add(m[1])
+  for (const m of s.matchAll(/(?<![a-zA-Z])list:\s*'([a-z-]+)'/g)) จอเรียก.add(m[1])
 }
 
 const ไม่มีใครใช้ = ท่อมี.filter((x) => !จอเรียก.has(x))
