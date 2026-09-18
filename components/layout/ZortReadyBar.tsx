@@ -7,7 +7,8 @@
 // ⚠️ วางไว้ใน layout กลางที่เดียว — **ห้ามไปแปะรายจอ** (ทะเบียนเดียว จุดวาดเดียว)
 // ⚠️ จอที่ไม่อยู่ในทะเบียน = ไม่วาดอะไรเลย (เครื่องมือของเราเองที่ ZORT ไม่เคยมี)
 import { usePathname } from 'next/navigation'
-import { ป้ายของเส้นทาง } from '@/lib/zort-ready'
+import { ป้ายของเส้นทาง, กระทบสต็อก, ส่งจริงได้ } from '@/lib/zort-ready'
+import PushSwitchNote from '@/components/layout/PushSwitchNote'
 
 export default function ZortReadyBar() {
   const pathname = usePathname()
@@ -25,6 +26,8 @@ export default function ZortReadyBar() {
     >
       {b.dot} <b>{b.หัว}</b>
       {b.ท้าย && <span className="text-amber-700/80"> — {b.ท้าย}</span>}
+      {/* เฉพาะจอที่เอกสารทำให้สต็อกขยับ **และ** ส่งของจริงได้แล้ว — ที่เหลือเตือนไปก็เป็นเสียงรบกวน */}
+      {กระทบสต็อก.has((pathname ?? '').replace(/\/+$/, '')) && ส่งจริงได้(pathname ?? '') && <PushSwitchNote />}
     </div>
   )
 }
