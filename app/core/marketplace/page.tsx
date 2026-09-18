@@ -17,7 +17,7 @@
 //    ไม่มีค่าจากท่อ = ขึ้นขีดพร้อมเหตุผล · เลขที่วัดวันนี้อยู่ในคอมเมนต์เท่านั้น ไม่ได้อยู่ในหน้าจอ
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { fmtNum, thaiDate, thaiDayFromUtc } from '@/lib/format'
+import { fmtNum, thaiDate, thaiDayFromUtc, ageInThaiDays } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -67,27 +67,8 @@ interface Data {
 /** อายุของข้อมูลเป็น "จำนวนวัน" นับตามวันไทย — คืน null เมื่ออ่านวันไม่ออก (ห้ามเดาเป็น 0)
  *  🔴 เลขที่คัดมาจากรอบเก็บข้อมูล **ต้องบอกอายุตัวเอง** ไม่งั้นอีกสองสัปดาห์จอยังยืนยันเลขของวันนี้
  *     (กติกาเดียวกับจอกระเป๋าเงินที่ใช้ CHECKED_AT + STALE_DAYS) */
-function อายุวัน(iso?: string | null, เป็นเวลา_UTC = false): number | null {
-  const s = String(iso ?? '').trim()
-  if (!s) return null
-  let วันไทย: string
-  if (เป็นเวลา_UTC && /^\d{4}-\d{2}-\d{2}[ T]\d{2}:\d{2}/.test(s)) {
-    /* 🔴 **ค่าที่มีเวลาต่อท้ายจากฐานเป็น UTC** (`datetime('now')` ของ SQLite) — CEO ชี้จากฝั่งท่อ 18 ก.ย. 2569
-       ถ้าตัด 10 ตัวแรกไปใช้ตรง ๆ ช่วง 00:00–07:00 เวลาไทยจะได้ "วันเมื่อวาน" ⇒ **รายงานอายุเกินจริง 1 วัน**
-       ⇒ ต้องบวก 7 ชั่วโมงก่อนตัดวันเสมอ */
-    const t = Date.parse(s.replace(' ', 'T') + 'Z')
-    if (Number.isNaN(t)) return null
-    วันไทย = new Date(t + 7 * 3600 * 1000).toISOString().slice(0, 10)
-  } else {
-    วันไทย = s.slice(0, 10)
-  }
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(วันไทย)) return null
-  const เก็บเมื่อ = Date.parse(`${วันไทย}T00:00:00+07:00`)
-  if (Number.isNaN(เก็บเมื่อ)) return null
-  const วันนี้ไทย = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10)
-  const วันนี้ = Date.parse(`${วันนี้ไทย}T00:00:00+07:00`)
-  return Math.round((วันนี้ - เก็บเมื่อ) / 86400000)
-}
+/* 📍 `อายุวัน` ย้ายไป lib/format.ts ในชื่อ `ageInThaiDays` (18 ก.ย. 2569 — จอโฆษณาต้องใช้ตัวเดียวกัน) */
+const อายุวัน = ageInThaiDays
 
 /* 📍 ย้าย `วันไทยจาก_UTC` ไปไว้ที่ `lib/format.ts` ในชื่อ `thaiDayFromUtc` (18 ก.ย. 2569)
    เหตุผล: วันเดียวกันเจอท่าเดียวกันพังอีก 3 จอ (missing-sku · zort-claims · stock รายตัว)

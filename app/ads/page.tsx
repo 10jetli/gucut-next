@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { fmtBaht, fmtNum, thaiDate } from '@/lib/format'
+import { fmtBaht, fmtNum, thaiDate, ageInThaiDays } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
@@ -83,17 +83,9 @@ function PlatformCard({ title, logo, color, bgColor, data }: {
   )
 }
 
-/** อายุของวันที่แบบ `YYYY-MM-DD` (วันไทย) เป็นจำนวนวัน · อ่านไม่ออก = null **ไม่ใช่ 0**
- *  (0 แปลว่า "ของวันนี้" ซึ่งตรงข้ามกับ "ไม่รู้ว่าเป็นของวันไหน") */
-function ageInDays(day?: string | null): number | null {
-  const s = String(day ?? '').trim()
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null
-  const t = Date.parse(`${s}T00:00:00+07:00`)
-  if (Number.isNaN(t)) return null
-  const วันนี้ไทย = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
-  const วันนี้ = Date.parse(`${วันนี้ไทย}T00:00:00+07:00`)
-  return Math.round((วันนี้ - t) / 86400000)
-}
+/* 📍 ตัวคิดอายุย้ายไปไว้ที่ lib/format.ts ในชื่อ `ageInThaiDays` (18 ก.ย. 2569)
+   เพราะจอมาร์เก็ตเพลสมีตรรกะเดียวกันอยู่ก่อนแล้ว — เขียนซ้ำ = แก้ที่หนึ่งอีกที่ยังผิด */
+const ageInDays = (d?: string | null) => ageInThaiDays(d)
 
 export default function AdsPage() {
   const [data, setData] = useState<AdsData | null>(null)

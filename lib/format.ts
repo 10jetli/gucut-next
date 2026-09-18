@@ -120,3 +120,23 @@ export function thaiDayFromUtc(raw?: string | null): string {
 export function thaiDateUtc(raw?: string | null): string {
   return thaiDate(thaiDayFromUtc(raw))
 }
+
+/** อายุเป็น "จำนวนวันไทย" จากวันที่/เวลาที่ให้มา · อ่านไม่ออก = `null` **ไม่ใช่ 0**
+ *
+ *  📍 **รวมมาจากสองจอ 18 ก.ย. 2569** — จอมาร์เก็ตเพลส (`อายุวัน`) กับจอโฆษณา (`ageInDays`)
+ *     เขียนตรรกะเดียวกันคนละไฟล์ ⇒ แก้ที่หนึ่งอีกที่ยังผิด (กติกาข้อ 3 ของ CLAUDE.md)
+ *
+ *  ⚠️ `0` แปลว่า **"ของวันนี้"** ซึ่งตรงข้ามกับ "ไม่รู้ว่าเป็นของวันไหน" ⇒ ห้ามยุบสองอันนี้
+ *  ⚠️ `จากUTC = true` ใช้กับค่าที่ฐานเขียนด้วย `datetime('now')` (UTC ไม่มีตัวบอกโซน)
+ *     ค่าจาก ZORT ที่เป็นเวลาไทยอยู่แล้ว **ห้ามเปิดธงนี้** (จะเลื่อนวันผิดทาง)
+ */
+export function ageInThaiDays(raw?: string | null, จากUTC = false): number | null {
+  const s = String(raw ?? '').trim()
+  if (!s) return null
+  const วันไทย = จากUTC ? thaiDayFromUtc(s) : s.slice(0, 10)
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(วันไทย)) return null
+  const เก็บเมื่อ = Date.parse(`${วันไทย}T00:00:00+07:00`)
+  if (Number.isNaN(เก็บเมื่อ)) return null
+  const วันนี้ไทย = new Date(Date.now() + 7 * 3600000).toISOString().slice(0, 10)
+  return Math.round((Date.parse(`${วันนี้ไทย}T00:00:00+07:00`) - เก็บเมื่อ) / 86400000)
+}

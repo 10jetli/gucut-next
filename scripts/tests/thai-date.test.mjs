@@ -30,7 +30,7 @@ try {
     '--lib', 'es2020,dom', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
-  const { thaiDate, thaiDateUtc, thaiDayFromUtc } = await import(join(out, 'format.js'))
+  const { thaiDate, thaiDateUtc, thaiDayFromUtc, ageInThaiDays } = await import(join(out, 'format.js'))
 
   const cases = [
     ['2026-03-19T17:00:00.000Z', '20 มี.ค. 2569', 'เที่ยงคืนเวลาไทย — ของเดิมได้ 19 (เลื่อนไปหนึ่งวัน)'],
@@ -78,6 +78,39 @@ try {
   const gotDay = thaiDayFromUtc('2026-09-17 17:30:00')
   if (gotDay !== wantDay) { fail++; console.log(`  ❌ thaiDayFromUtc ⇒ ${gotDay} ต้องได้ ${wantDay}`) }
   else console.log(`  ✅ thaiDayFromUtc('2026-09-17 17:30:00') ⇒ ${gotDay} (ใช้คิดอายุข้อมูลต่อ)`)
+
+  /* ── ageInThaiDays ───────────────────────────────────────────────────
+     📍 รวมตรรกะมาจากจอมาร์เก็ตเพลส + จอโฆษณา (18 ก.ย. 2569)
+     ⚠️ เคสที่ต้องคุมที่สุด: **อ่านไม่ออกต้องได้ null ไม่ใช่ 0** เพราะ 0 แปลว่า "ของวันนี้"
+        ซึ่งตรงข้ามกับ "ไม่รู้ว่าเป็นของวันไหน" — จอเอาไปใช้ตัดสินว่าจะขึ้นแถบเตือนไหม */
+  console.log('\n— ageInThaiDays (อายุเป็นวันไทย) —')
+  const วันนี้ไทย = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
+  const เมื่อวาน = new Date(Date.now() + 7 * 3600e3 - 86400e3).toISOString().slice(0, 10)
+  const เคสอายุ = [
+    [[วันนี้ไทย], 0, 'ของวันนี้ ⇒ 0 (ไม่ใช่ null)'],
+    [[เมื่อวาน], 1, 'เมื่อวาน ⇒ 1'],
+    [['ไม่ใช่วันที่'], null, '**อ่านไม่ออก ⇒ null ห้ามเป็น 0**'],
+    [[''], null, 'ค่าว่าง ⇒ null'],
+    [[null], null, 'ไม่มีค่า ⇒ null'],
+  ]
+  for (const [args, want, why] of เคสอายุ) {
+    const got = ageInThaiDays(...args)
+    const ok = got === want
+    if (!ok) fail++
+    console.log(`  ${ok ? '✅' : '❌'} ${JSON.stringify(args[0]).padEnd(20)} ⇒ ${String(got).padEnd(6)} ${why}`)
+    if (!ok) console.log(`     ต้องได้ ${want}`)
+  }
+  /* ธง "ค่าจากฐานเป็น UTC" ต้องทำให้ค่าที่เขียนตอน 17:00Z นับเป็นวันถัดไปแบบไทย */
+  const เที่ยงคืนไทย = `${วันนี้ไทย}T00:00:00+07:00`
+  const ดิบUTC = new Date(Date.parse(เที่ยงคืนไทย)).toISOString().replace('T', ' ').slice(0, 19)
+  const กับธง = ageInThaiDays(ดิบUTC, true)
+  const ไม่ใส่ธง = ageInThaiDays(ดิบUTC)
+  if (กับธง !== 0 || ไม่ใส่ธง !== 1) {
+    fail++
+    console.log(`  ❌ ธง UTC: ใส่ธงต้องได้ 0 (ได้ ${กับธง}) · ไม่ใส่ธงต้องได้ 1 (ได้ ${ไม่ใส่ธง}) — ค่าทดสอบ ${ดิบUTC}`)
+  } else {
+    console.log(`  ✅ ธง UTC ทำงานถูก: เที่ยงคืนวันนี้ (เวลาไทย) เขียนเป็น UTC = ${ดิบUTC} ⇒ ใส่ธง 0 วัน · ไม่ใส่ธง 1 วัน (เพี้ยนไปหนึ่งวันแบบที่เคยเจอ)`)
+  }
 } finally {
   rmSync(out, { recursive: true, force: true })
 }
