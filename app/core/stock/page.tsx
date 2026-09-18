@@ -9,6 +9,7 @@
 // ⚠️ ตัวเลขที่นี่คือ "ภาพถ่ายสต็อกตอนตี 1" ไม่ใช่ยอดสด — ต้องเขียนบอกบนจอเสมอ
 //    ปล่อยให้เข้าใจว่าสดจะกลายเป็นจอที่โกหกเงียบ ๆ ตอนของขยับระหว่างวัน
 import { Suspense, useCallback, useEffect, useState } from 'react'
+import NegVsPush from '@/components/zort/NegVsPush'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
@@ -621,6 +622,10 @@ function CoreStockInner() {
 
           {/* 🔴 วางไว้เหนือแท็บ — ของที่ลูกค้าซื้อไม่ได้ ต้องเห็นก่อนตัวเลขอื่นทั้งหมด */}
           <BlockedStock />
+
+          {/* 🔗 จอนี้กับจอดันสต็อกนับคนละอย่าง — ขึ้นเฉพาะตอนที่มีตัวขวางที่จอนี้ไม่มีวันแสดง
+              (เลขสองแหล่งวางคู่กันเฉย ๆ = กฎข้อ 4 ของ CLAUDE.md · ที่นี่เป็นข้ามจอ) */}
+          <NegVsPush />
 
           <Tabs
             // ⚠️ **ลอกจาก ZORT ทั้งชุด** (ภาพ 02-สินค้า.jpg) — สามแท็บ **ไม่มีเลขในวงเล็บ**

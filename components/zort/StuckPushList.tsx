@@ -35,6 +35,8 @@ import { BtnGhost, Pill } from '@/components/zort'
 import { thaiDateTime } from '@/components/zort/PushStatusBoard'
 /* ข้อความจากท่อมี **ดาวคู่** ติดมาด้วย — ต้องผ่านตัวนี้ ไม่งั้นดาวขึ้นจอ */
 import PipeNote from '@/components/ui/PipeNote'
+/* กติกาจับคู่ต้นเหตุอยู่ที่เดียว — จอคลังใช้ตัวเดียวกัน (ห้ามเขียนซ้ำ) */
+import { จับคู่ต้นเหตุ, type NegMap } from '@/lib/neg-stuck'
 
 export interface StuckRow {
   sku?: string; channel?: string
@@ -118,7 +120,7 @@ export default function StuckPushList() {
   const [err, setErr] = useState('')
   const [open, setOpen] = useState<GroupKey | ''>('')
   /** รหัสที่คลังเงาบอกว่าติดลบ → จำนวนคงเหลือ · null = ยังไม่รู้ (ถามไม่ได้/ท่อไม่มีตัวกรองนี้) */
-  const [neg, setNeg] = useState<Map<string, number | null> | null>(null)
+  const [neg, setNeg] = useState<NegMap | null>(null)
 
   const load = useCallback(async () => {
     setBusy(true); setErr('')
@@ -145,7 +147,7 @@ export default function StuckPushList() {
         const res = await fetch('/api/web/core?list=stock&only=neg&limit=200')
         const j = (await res.json().catch(() => null)) as NegResp | null
         if (ทิ้งแล้ว || !j || !res.ok || j.error || !Array.isArray(j.rows)) return
-        const m = new Map<string, number | null>()
+        const m: NegMap = new Map()
         for (const r of j.rows) {
           if (!r.sku) continue
           const q = typeof r.qty === 'number' ? r.qty : typeof r.available === 'number' ? r.available : null
@@ -218,21 +220,7 @@ export default function StuckPushList() {
             if (!neg) return null
             const ติดลบ = bucket('negative')
             if (!ติดลบ.length) return null
-            /* ยอมรับเป็นต้นเหตุเฉพาะรหัสที่ท่อยืนยันว่าติดลบจริง — ห้ามเดาจากรูปแบบรหัส */
-            const ต้นเหตุของ = (sku?: string) => {
-              if (!sku) return null
-              if (neg.has(sku)) return sku
-              const ฐาน = sku.split('-')[0]
-              return ฐาน !== sku && neg.has(ฐาน) ? ฐาน : null
-            }
-            const นับ = new Map<string, number>()
-            let หาไม่เจอ = 0
-            for (const r of ติดลบ) {
-              const b = ต้นเหตุของ(r.sku)
-              if (!b) { หาไม่เจอ++; continue }
-              นับ.set(b, (นับ.get(b) ?? 0) + 1)
-            }
-            const เรียง = Array.from(นับ.entries()).sort((a, b) => b[1] - a[1])
+            const { ต้นเหตุ: เรียง, หาไม่เจอ } = จับคู่ต้นเหตุ(ติดลบ, neg)
             if (!เรียง.length && !หาไม่เจอ) return null
             return (
               <div className="mt-2 border border-red-200 bg-red-50 rounded-md px-3 py-2.5">
