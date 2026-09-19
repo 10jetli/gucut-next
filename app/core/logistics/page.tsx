@@ -84,6 +84,26 @@ export default function LogisticsPage() {
   const [fFrom, setFFrom] = useState('')
   const [fTo, setFTo] = useState('')
   const [fCarrier, setFCarrier] = useState('')
+
+  /* 🔴 **ตาข่ายตัวกรอง** (เพิ่ม 19 ก.ย. 2569) — จอนี้ส่ง 5 ตัวกรอง แต่เดิมมีตาข่ายแค่ `carrier`
+     (ผ่าน `ignored.carrier` ซึ่งท่อส่งมาเมื่อชื่อขนส่งไม่ตรงอะไรเลย — ก้อนนั้นอยู่ข้างล่าง ยังอยู่ครบ)
+     ⇒ `q`/`from`/`to`/`only` ไม่มีอะไรเทียบเลย
+     ⚠️ **ยิงวัดแล้ว 19 ก.ย. 2569**: `carrier=Flash Express` ⇒ 35,781 → 32,499 (กรองจริง)
+        และค่าที่ไม่ตรงอะไรเลย ⇒ ท่อคืน `applied.carrier = null` + `ignored = {carrier}` ตรง ๆ
+        🔑 **จำนวนแถวแยก "เมินตัวกรอง" กับ "ค่าไม่ตรงอะไรเลย" ไม่ออก — แต่ `ignored` แยกได้**
+           ⇒ ตาข่ายจึงต้องอ่านคำประกาศของท่อ ไม่ใช่เดาจากจำนวนแถว
+     ⚠️ `only` ของจอใช้ค่าว่างแทน "ไม่กรอง" ⇒ ตรงกับ null ของท่อแล้ว ไม่ต้องแปลง
+     📌 `carrier` ใช้กลไกที่ **ดีกว่าการเทียบ `applied`**: อ่าน `ignored.carrier` ที่ท่อประกาศตรง ๆ
+        (ท่อบอกเองว่ารอบนี้ทิ้งค่าไหน ⇒ ไม่ต้องเดาจากการเทียบค่า) ⇒ รวมไว้ในคำรับรองด้วย
+     เทียบ applied แล้ว: q from to only carrier */
+  const ตัวกรองที่ท่อไม่ได้ใช้ = data?.applied
+    ? ([
+        [q.trim(), data.applied.q ?? '', 'คำค้น'],
+        [fFrom, data.applied.from ?? '', 'วันที่เริ่ม'],
+        [fTo, data.applied.to ?? '', 'วันที่สิ้นสุด'],
+        [only, data.applied.only ?? '', 'แท็บ'],
+      ] as const).filter(([ส่ง, ใช้]) => ส่ง !== '' && ส่ง !== ใช้).map(([, , ชื่อ]) => ชื่อ)
+    : []
   /** รายชื่อกลุ่มขนส่งตอน **ยังไม่กรองขนส่ง** — กรองแล้ว `carrierGroups` เหลือกลุ่มเดียว ตัวเลือกจะหดตาม */
   const [carrierOpts, setCarrierOpts] = useState<{ carrier: string; c: number; names?: { name: string; c: number }[] }[]>([])
   const [PAGE, setPAGE] = useState(PAGE_เริ่มต้น)
@@ -356,6 +376,12 @@ export default function LogisticsPage() {
           ]}
           extraNote={<>วันที่ = <b>วันส่งสินค้า</b> ถ้าใบยังไม่มีวันส่งใช้<b>วันที่สั่ง</b> (วันเดียวกับคอลัมน์วันที่ในตาราง) · ตัวเลือกขนส่งมาจากช่วงวันที่ตอนยังไม่เลือกขนส่ง</>}
         />
+      )}
+      {ตัวกรองที่ท่อไม่ได้ใช้.length > 0 && (
+        <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mb-2">
+          ⚠️ <b>ตัวกรองที่จอส่งกับที่ท่อใช้จริงไม่ตรงกัน</b> — {ตัวกรองที่ท่อไม่ได้ใช้.join(' · ')}
+          {' '}⇒ แถวที่เห็น<b>ไม่ได้ถูกกรองด้วยค่านั้น</b>
+        </p>
       )}
       {data?.ignored?.carrier && (
         <p className="text-[12.5px] text-amber-800 mb-2">⚠️ ท่อไม่รู้จักขนส่ง &quot;{data.ignored.carrier}&quot; ในช่วงนี้ — <b>ตารางไม่ได้กรองขนส่ง</b></p>
