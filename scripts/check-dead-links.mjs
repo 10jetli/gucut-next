@@ -16,10 +16,11 @@
  *   · ลิงก์ที่ประกอบจากตัวแปร (`href={detailHref(id)}`) — ด่านนี้อ่านได้แต่สตริงตรง ๆ
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const R = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const R = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '')
 function walk(d, ext, out = []) {
   let names
   try { names = readdirSync(d) } catch { return out }

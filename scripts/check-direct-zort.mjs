@@ -15,11 +15,12 @@
  * ⚠️ ตรวจได้แค่ "มีข้อความ" ไม่ได้ตรวจว่าวางถูกที่ ⇒ ยังต้องเปิดดูด้วยตา
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 function walk(dir, out = []) {
   for (const name of readdirSync(dir)) {

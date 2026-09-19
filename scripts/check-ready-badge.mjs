@@ -25,11 +25,12 @@
  * 🧪 พิสูจน์ว่าด่านร้องได้จริง: `node scripts/check-ready-badge.mjs --self-test`
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '')
 function walk(d, out = []) {
   let names
   try { names = readdirSync(d) } catch { return out }

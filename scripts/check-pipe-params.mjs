@@ -19,10 +19,11 @@
  * ⚠️ ไม่มี ../gucut-web ⇒ ข้ามแบบมีเสียง (พิมพ์ว่ายังไม่ได้ตรวจ) ไม่ใช่เงียบแล้วผ่าน
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const PIPE = join(ROOT, '..', 'gucut-web')
 const CORE = join(PIPE, 'netlify', 'functions', 'core.mjs')
 

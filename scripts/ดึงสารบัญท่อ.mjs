@@ -25,9 +25,10 @@
  * 🚫 **ไม่อยู่ใน prebuild** — ต้องยิงเน็ต · build ที่ล้มเพราะเน็ตไม่ใช่ build ที่บอกอะไรเรื่องโค้ด
  */
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from 'node:url'
 import { join } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const OUT = join(ROOT, "lib/pipe-snapshot.json");
 
 /** อ่านคีย์จาก .env.local แบบไม่พึ่งไลบรารี (ไฟล์นี้ไม่เข้าเรโป) */

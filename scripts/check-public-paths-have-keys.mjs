@@ -24,10 +24,11 @@
  * 🧪 พิสูจน์ว่าด่านร้องได้จริง: `node scripts/check-public-paths-have-keys.mjs --self-test`
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 /** ไฟล์ที่เปิดโดยตั้งใจและ **ไม่ควรมีกุญแจ** — ต้องมีเหตุผล ไม่ใช่แค่ชื่อ
  *  🔑 คีย์เป็น **เส้นทางไฟล์** ไม่ใช่เส้นทาง URL — เพราะเส้นเดียวมีได้หลายไฟล์ (ดูหัวไฟล์) */

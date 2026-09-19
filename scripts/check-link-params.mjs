@@ -13,11 +13,12 @@
  *    (แต่จับกรณีที่ไม่อ่านเลย ซึ่งเป็นกรณีที่เกิดจริงทั้งสองครั้ง)
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 /** ลิงก์ที่ปลายทางยังไม่อ่านค่า แต่ตั้งใจ — ต้องมีเหตุผล */
 const ยกเว้น = {
   // ตัวอย่างรูปแบบ: 'core/xxx?foo': 'เหตุผล'

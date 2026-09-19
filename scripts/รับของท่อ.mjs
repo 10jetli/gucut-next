@@ -25,9 +25,10 @@
  * 🚫 ไม่อยู่ใน prebuild — ยิงเน็ต และใช้ครั้งเดียวตอนรับของ
  */
 import { readFileSync, existsSync } from "node:fs";
+import { fileURLToPath } from 'node:url'
 import { join } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const key = process.env.GUCUT_WEB_ADMIN_KEY
   || (existsSync(join(ROOT, ".env.local"))
     ? (readFileSync(join(ROOT, ".env.local"), "utf8").match(/^GUCUT_WEB_ADMIN_KEY=(.*)$/m)?.[1] ?? "").trim().replace(/^["']|["']$/g, "")

@@ -30,9 +30,10 @@
  *       ทางที่ผิดคือผ่อนด่านให้เขียว · ทางที่ถูกคือรอ แล้วเขียนเหตุผลไว้ว่ารออะไร
  */
 import { readFileSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const สแนปช็อต = join(ROOT, 'lib/pipe-snapshot.json')
 
 /** cron → ทุกกี่นาที (null = รูปที่ยังแปลไม่ได้ ⇒ **ข้าม ไม่ใช่ผ่าน**) */

@@ -17,10 +17,11 @@
  *    ค่าที่เป็นวันที่เปล่า ๆ (yyyy-MM-dd) อ่านตรง ๆ — คิดโซนจะทำให้วันเลื่อน
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 /* ชื่อช่องที่ลงท้ายแบบวันเวลา — ดักที่ "รูปแบบชื่อ" เพราะท่อตั้งชื่อไม่เหมือนกันทุกเส้น */
 /* ⚠️ ต้องครอบคำลงท้าย `Day` ด้วย — 16 ก.ย. 2569 จอลูกค้ารายคนโชว์ `firstDay`/`lastDay`
    เป็นปี ค.ศ. ดิบ และด่านรุ่นแรกจับไม่ได้เพราะดูแต่ `Date`/`At` */

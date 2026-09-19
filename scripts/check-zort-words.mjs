@@ -16,10 +16,11 @@
  *   · หรืออยู่ในรายการ `ยกเว้น` ข้างล่างพร้อมเหตุผล
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const ช่องสถานะ = 'status|pay_status|paymentStatus|payStatus|transferStatus'
 /* จับเฉพาะ "วางค่าดิบลงจอตรง ๆ" คือในปีกกามีแค่ตัวค่า + ค่าสำรองง่าย ๆ (?? หรือ ||)
    ไม่จับเมื่อถูกห่อด้วยฟังก์ชัน (`{statusTh(r.status)}`) หรือถูกใช้เป็นคีย์ของแผนที่ (`{MAP[r.status]}`)

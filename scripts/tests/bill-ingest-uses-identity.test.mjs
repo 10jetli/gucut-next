@@ -7,11 +7,12 @@
  *    ⇒ ข้อ ② ด้านล่างเรียกฟังก์ชันจริงกับไฟล์ PDF จริงในเครื่อง
  */
 import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-const ROOT = new URL('../..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 let fail = 0
 const ok = (cond, name, extra = '') => {
   if (cond) console.log(`  ✅ ${name}`)

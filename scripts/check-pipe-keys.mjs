@@ -24,10 +24,11 @@
  *    ห้ามเงียบแล้วผ่าน เพราะจะแยกไม่ออกระหว่าง "ตรวจแล้วไม่เจอ" กับ "ไม่ได้ตรวจ"
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const PIPE = join(ROOT, '..', 'gucut-web')
 
 /* ช่องที่จอ "สร้างเอง" หรือมาจากที่อื่น ไม่ใช่ชื่อช่องจากท่อ — ตรวจแล้วทีละอัน 18 ก.ย. 2569 */

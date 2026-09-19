@@ -15,9 +15,10 @@
  * 🧪 ทดสอบว่าด่านร้องได้จริง: `node scripts/check-real-send-registry.mjs --self-test`
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const ทะเบียนไฟล์ = 'lib/real-send.ts'
 
 function walk(dir, out = []) {

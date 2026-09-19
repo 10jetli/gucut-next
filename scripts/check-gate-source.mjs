@@ -27,10 +27,11 @@
  * ⚠️ ด่านนี้ดูเฉพาะรูปแบบ `{ชื่อ && (` ที่ขึ้นบรรทัดใหม่ · รูปอื่นยังต้องกวาดด้วยมือ
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 /** ประตูที่ตรวจแล้วว่าตั้งใจ — คีย์คือ `ไฟล์:ชื่อตัวแปรประตู` */
 /* 🔴 **ห้ามใส่ข้อยกเว้นเพราะอยากให้ด่านเขียว** — ผมทำพลาดแบบนั้นตอนเขียนไฟล์นี้:

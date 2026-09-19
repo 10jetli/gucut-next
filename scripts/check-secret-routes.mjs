@@ -13,10 +13,11 @@
  * ทดสอบตัวตรวจเอง: node scripts/check-secret-routes.mjs --self-test
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 
 export function เส้นที่ใช้secret(files) {
   const out = []

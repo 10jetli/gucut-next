@@ -15,10 +15,11 @@
  * ทางที่ถูก: ใช้ null แทน 0 แล้วให้จอเขียนว่า "ยังไม่รู้" (กฎสามสถานะ: ไม่รู้ ≠ 0 ≠ ไม่มี)
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const ก้อนคำตอบ = 'd|j|zj|data|res|resp|body'
 const ช่องสรุป = 'total|totalAmount|totalPaidAmount|count|amount|sum|sales|orders|rowsMatched|shown'
   + '|noSkuInZort|zortTotal|zortCount|zortAmount|services|unshipped|shipped'

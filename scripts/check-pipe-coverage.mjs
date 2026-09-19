@@ -24,9 +24,10 @@
  *    ⇒ **ผลของสคริปต์นี้จึงเป็น "อย่างน้อยเท่านี้" ไม่ใช่ "ครบเท่านี้"** — แจ้งฝั่งท่อแล้ว
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
-const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
+const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '')
 
 /* อ่านคีย์จาก env ก่อน แล้วค่อยลอง .env.local (ไฟล์นี้ถูก ignore จาก git อยู่แล้ว) */
 function คีย์() {

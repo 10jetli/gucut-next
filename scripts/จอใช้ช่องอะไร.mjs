@@ -30,9 +30,10 @@
  *    ด่านที่ร้อง 60 ครั้งเพื่อของจริง 1 ครั้ง จะถูกปิดทิ้งภายในสัปดาห์เดียว
  */
 import { readdirSync, readFileSync, statSync } from "node:fs";
+import { fileURLToPath } from 'node:url'
 import { join } from "node:path";
 
-const ROOT = new URL("..", import.meta.url).pathname;
+const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const ไฟล์ = [];
 const เดิน = (d) => {
   for (const name of readdirSync(d)) {

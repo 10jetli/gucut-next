@@ -13,11 +13,12 @@
  *    ถ้าเจอชื่อใหม่ที่พลาด ให้เติมในลิสต์ (อย่าปิดด่าน)
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const ROOT = new URL('..', import.meta.url).pathname
+const ROOT = fileURLToPath(new URL('..', import.meta.url))
 /** ชื่อช่อง/ตัวแปรที่ "เป็นตัวเลข" แน่ ๆ ในโปรเจกต์นี้ */
 /* ⚠️ ห้ามใส่ `counts` — ในโปรเจกต์นี้ `counts` เป็น **ก้อนอ็อบเจกต์** (แผนที่ชนิด→จำนวน)
    `{obj && …}` ปลอดภัยอยู่แล้ว ⇒ ใส่ไปจะฟ้องผิด 2 จุด (เจอตอนรันครั้งแรก 17 ก.ย. 2569) */

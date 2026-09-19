@@ -10,9 +10,10 @@
 //
 // ⚠️ ห้ามทำให้ build ตก — อ่านอะไรไม่ได้ให้ใส่ค่าว่าง แล้วปล่อยให้หน้าจอบอกว่าอ่านไม่ได้
 import { readFileSync, readdirSync, writeFileSync, mkdirSync } from "node:fs";
+import { fileURLToPath } from 'node:url'
 import { join, dirname } from "node:path";
 
-const root = new URL("..", import.meta.url).pathname;
+const root = fileURLToPath(new URL("..", import.meta.url));
 const read = (p) => {
   try {
     return readFileSync(join(root, p), "utf8");
