@@ -37,6 +37,15 @@ interface LogResp { ok?: boolean; log?: PushRound[]; error?: string; skip?: stri
 interface VerifyResp {
   ok?: boolean; landed?: string[]
   notLanded?: Array<{ sku?: string; 'ยังต้องดัน'?: string }>
+  /* 🔑 กองที่สาม — ท่อเพิ่มให้หลังจอฟ้องว่า "คำตอบไม่ครบชุด" (19 ก.ย. 2569)
+     ⚠️ **สองเหตุนี้คนละขั้ว ห้ามรวมเป็นก้อนเดียวบนจอ**
+       · `segment_of_cut_product` = รหัสท่อนของสินค้าแบบตัด (ขายเป็นความยาว)
+         คลังมีแต่รหัสแม่ ⇒ **ปกติ ไม่ใช่ความผิดพลาด** · ท่อคืน `baseSku` มาให้ด้วย
+       · `not_in_warehouse` = คลังไม่มีทั้งรหัสแม่และรหัสท่อน ⇒ **อันนี้ควรสงสัยจริง**
+     ⇒ ถ้าขึ้นรวมกันเป็นสีเดียว คนจะชินกับสีนั้นแล้วมองข้ามตัวที่ควรสงสัย */
+  unknown?: Array<{ sku?: string; reason?: string; baseSku?: string; why?: string }>
+  unknownByReason?: Record<string, number>
+  inconclusive?: boolean
   note?: string; error?: string; skip?: string
 }
 
@@ -546,8 +555,39 @@ export default function StockPushPage() {
                                ไม่ใช่เชื่อว่าท่อจะมีแค่สองกองตลอดไป — ชื่อกองใหม่เราไม่ต้องรู้ด้วยซ้ำ
                             ⚠️ ส่วนที่ขาด = **ตัดสินไม่ได้** ห้ามนับเป็นถึง และห้ามนับเป็นไม่ถึง */}
                         {(() => {
+                          /* 🔑 กองที่สามมาแล้ว ⇒ นับรวมด้วย · ที่ยังขาดหลังรวมสามกองแล้ว
+                             คือของที่ **ไม่มีใครรับผิดชอบ** ซึ่งยังต้องเตือนเหมือนเดิม */
+                          const แยกเหตุ = Object.entries(v.unknownByReason ?? {})
+                          const แปลเหตุ: Record<string, string> = {
+                            segment_of_cut_product: 'รหัสท่อนของสินค้าแบบตัด (คลังมีรหัสแม่) — ปกติ',
+                            not_in_warehouse: 'คลังไม่มีรหัสนี้เลย — ควรตรวจ',
+                          }
+                          const ปกติ = v.unknownByReason?.segment_of_cut_product ?? 0
+                          const ควรสงสัย = แยกเหตุ.reduce((a, [k, n]) => a + (k === 'segment_of_cut_product' ? 0 : n), 0)
+                          return (
+                            <>
+                              {แยกเหตุ.length > 0 && (
+                                <span className="block mb-0.5">
+                                  <span className="text-gray-600">
+                                    ยังยืนยันไม่ได้ {ปกติ + ควรสงสัย} รหัส —{' '}
+                                    {แยกเหตุ.map(([k, n], i) => (
+                                      <span key={k} className={k === 'segment_of_cut_product' ? 'text-gray-600' : 'text-amber-800'}>
+                                        {i ? ' · ' : ''}{แปลเหตุ[k] ?? k} <b>{n}</b>
+                                      </span>
+                                    ))}
+                                  </span>
+                                  {/* ⚠️ ตัวที่ควรสงสัยต้องแยกออกมาพูดซ้ำ ไม่ใช่ปนอยู่ในแถวเดียวกับของปกติ */}
+                                  {ควรสงสัย > 0 && (
+                                    <span className="block text-amber-800">
+                                      ⚠️ ใน {ปกติ + ควรสงสัย} รหัสนั้น มี <b>{ควรสงสัย}</b> รหัสที่คลังไม่รู้จักเลย ⇒ <b>ควรตรวจ</b>
+                                      {' '}(ที่เหลือเป็นสินค้าแบบตัด ซึ่งยืนยันไม่ได้โดยธรรมชาติ)
+                                    </span>
+                                  )}
+                                </span>
+                              )}
+                              {(() => {
                           const ส่งไป = (round.rows ?? []).map((r) => r.sku).filter(Boolean).length
-                          const ตอบกลับ = (v.landed ?? []).length + (v.notLanded ?? []).length
+                          const ตอบกลับ = (v.landed ?? []).length + (v.notLanded ?? []).length + (v.unknown ?? []).length
                           return ส่งไป > ตอบกลับ ? (
                             <span className="block text-amber-800 mb-0.5">
                               ⚠️ <b>คำตอบไม่ครบชุด</b> — ส่งไปตรวจ {ส่งไป} รหัส แต่ได้กลับมา {ตอบกลับ}
@@ -555,6 +595,9 @@ export default function StockPushPage() {
                               {' '}— ไม่ใช่ถึงแล้ว และไม่ใช่ยังไม่ถึง
                             </span>
                           ) : null
+                              })()}
+                            </>
+                          )
                         })()}
                         <span className="text-emerald-700">✅ ถึงหน้าร้านแล้ว {(v.landed ?? []).length} ตัว</span>
                         <span className="text-gray-400">
