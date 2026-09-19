@@ -62,16 +62,14 @@ async function fetchItems(orders) {
   return { itemsByOrder, asked: take.length, missed, skippedOverCap: orders.length - take.length };
 }
 
-async function planFor(sourceName, rows, isStuck, today, memory) {
-  const picked = pickStuckOrders(rows, { today, isStuck });
-  const { itemsByOrder, asked, missed, skippedOverCap } = await fetchItems(picked.orders);
-  const groups = groupBySku(picked.orders, itemsByOrder);
-  const { ask, held, overflow } = filterAskable(groups, {
-    today,
-    answeredDays: memory.answeredDays,
-    askedToday: memory.askedToday,
-    maxPerDay: MAX_PER_DAY,
-  });
+/** ประกอบคำตอบจากของที่คิดเสร็จแล้ว — **แยกออกมาเพื่อให้เดินทางที่ตัดรายการได้จริงในเครื่อง**
+ *  🔑 เหตุผลที่แยก (19 ก.ย. 2569 · ฝั่งท่อทำก่อนด้วยการ mock แล้วยิง handler จริง):
+ *     ของผมทำแบบเขาไม่ได้ เพราะ `askedToday`/`answeredDays` มาจาก Netlify Blobs
+ *     ซึ่งในเครื่องจะล้มแล้วถูก `.catch` ให้เป็นชุดว่าง ⇒ `held` ว่างเสมอ
+ *     ⇒ **ทาง `held.length > 10` ไม่มีทางถูกเดินผ่าน handler ในเครื่องเลย**
+ *  ⚠️ สิ่งที่การแยกนี้ **ยังไม่พิสูจน์**: planFor ส่ง `held` ตัวจริงเข้ามาถูกไหม (หนึ่งบรรทัด เห็นได้ใน diff)
+ *     ⇒ อ่อนกว่าของฝั่งท่อหนึ่งชั้น ต้องรายงานคนละคำ ห้ามเขียนว่าพิสูจน์เท่ากัน */
+export function ผลแผน({ sourceName, picked, asked, missed, skippedOverCap, groups, ask, held, overflow, today }) {
   return {
     source: sourceName,
     window: `${MIN_AGE}-${MAX_AGE} วัน`,
@@ -95,6 +93,19 @@ async function planFor(sourceName, rows, isStuck, today, memory) {
     heldBackTotal: held.length,
     overflow: overflow.length,      // เกินเพดานวันนี้ — ไม่หาย พรุ่งนี้ยังอยู่
   };
+}
+
+async function planFor(sourceName, rows, isStuck, today, memory) {
+  const picked = pickStuckOrders(rows, { today, isStuck });
+  const { itemsByOrder, asked, missed, skippedOverCap } = await fetchItems(picked.orders);
+  const groups = groupBySku(picked.orders, itemsByOrder);
+  const { ask, held, overflow } = filterAskable(groups, {
+    today,
+    answeredDays: memory.answeredDays,
+    askedToday: memory.askedToday,
+    maxPerDay: MAX_PER_DAY,
+  });
+  return ผลแผน({ sourceName, picked, asked, missed, skippedOverCap, groups, ask, held, overflow, today });
 }
 
 export default async function handler(req) {
