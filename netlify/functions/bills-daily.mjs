@@ -21,11 +21,12 @@
 const VENDOR_IDS = ["tiktok", "meta", "google", "shopify", "line", "adobe", "apple", "omise", "netlify", "cloudflare", "anthropic", "lazada"];
 
 import { notify } from "./lib-notify.mjs";
+import { วัดเวลางาน, อ่านผลจาก } from "./lib-jobtime.mjs";
 
 const SITE = process.env.URL || "https://admin.gucut.com";
 
 
-export default async function handler() {
+async function งานจริง() {
   const secret = process.env.DRIVESYNC_SECRET;
   const qs = secret ? `&secret=${encodeURIComponent(secret)}` : "";
 
@@ -93,4 +94,16 @@ export default async function handler() {
 // ตี 5 ไทยทุกวัน (22:00 UTC) — ก่อนร้านเปิด บิลเมื่อวานเข้าครบพอดี
 // ⏰ ตี 1 เวลาไทย = 18:00 UTC — ท่านประธานสั่ง 15 ก.ย. 2569 "บอทต้องเข้าไปอับเดต 01.00 น ทุกวัน"
 //    เดิมตี 5 (22:00 UTC) · Netlify นับเป็น UTC เสมอ **อย่าเผลอใส่เวลาไทยตรง ๆ**
+/* ⏱️ ห่อด้วยตัวจับเวลา — จดลงสมุดเล่มเดียวกับฝั่งท่อ (`POST /api/core?joblog=1`)
+   🔑 ตัวจับเวลา **ห้ามเปลี่ยนพฤติกรรมของงานจริง**: คืน Response เดิมทุกประการ
+      ส่งสมุดไม่ได้ ⇒ กลืนไว้ · งานจริงโยน error ⇒ จด failed แล้วโยนต่อ */
+export default async function handler() {
+  const t = await วัดเวลางาน("bills-daily", () => งานจริง(), {
+    /* 🔑 ตัดสินจาก **เนื้อคำตอบ** ไม่ใช่จาก HTTP status — และเก็บตัวเลขในคำตอบเป็นหลักฐาน
+       ว่ารอบนั้นแตะงานจริง (ใบ S1: `ok` ที่ไม่มีเลขประกอบ = คำรับรอง ไม่ใช่หลักฐาน) */
+    อ่านผล: อ่านผลจาก,
+  });
+  return t.ผลลัพธ์;
+}
+
 export const config = { schedule: "0 18 * * *" };

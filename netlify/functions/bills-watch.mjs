@@ -14,6 +14,7 @@
 //    คนละคำถามกัน ข้อความต้องสั่งให้ไป **ตรวจ** ไม่ใช่สรุปแทน
 
 import { notify } from "./lib-notify.mjs";
+import { วัดเวลางาน, อ่านผลจาก } from "./lib-jobtime.mjs";
 
 const SITE = process.env.URL || "https://admin.gucut.com";
 
@@ -28,7 +29,7 @@ const FIX_HINT = {
   apple: "ใบมาทางอีเมล — เช็คว่าเมลเข้ากล่อง gucut@icloud.com ไหม",
 };
 
-export default async function handler() {
+async function งานจริง() {
   const secret = process.env.DRIVESYNC_SECRET;
   /* ยังตั้งค่าไม่ครบ = skip พร้อมเหตุผล **ห้ามตอบ ok** (สัญญากับฝั่งจอ) */
   if (!secret) return json({ skip: "ยังไม่ได้ตั้ง DRIVESYNC_SECRET — ตัวเฝ้าบิลยังทำงานไม่ได้" });
@@ -72,4 +73,16 @@ export default async function handler() {
 
 // วันที่ 10 · 17 · 24 ของทุกเดือน เวลา 08:00 ไทย (01:00 UTC)
 // วันที่ 10 เพราะบิลรอบเดือนก่อนควรเข้าครบแล้ว · 17/24 คือการทวงซ้ำถ้ายังไม่มีใครแก้
+/* ⏱️ ห่อด้วยตัวจับเวลา — จดลงสมุดเล่มเดียวกับฝั่งท่อ (`POST /api/core?joblog=1`)
+   🔑 ตัวจับเวลา **ห้ามเปลี่ยนพฤติกรรมของงานจริง**: คืน Response เดิมทุกประการ
+      ส่งสมุดไม่ได้ ⇒ กลืนไว้ · งานจริงโยน error ⇒ จด failed แล้วโยนต่อ */
+export default async function handler() {
+  const t = await วัดเวลางาน("bills-watch", () => งานจริง(), {
+    /* 🔑 ตัดสินจาก **เนื้อคำตอบ** ไม่ใช่จาก HTTP status — และเก็บตัวเลขในคำตอบเป็นหลักฐาน
+       ว่ารอบนั้นแตะงานจริง (ใบ S1: `ok` ที่ไม่มีเลขประกอบ = คำรับรอง ไม่ใช่หลักฐาน) */
+    อ่านผล: อ่านผลจาก,
+  });
+  return t.ผลลัพธ์;
+}
+
 export const config = { schedule: "0 1 10,17,24 * *" };

@@ -14,6 +14,7 @@
 // ⚠️ เรียกที่ `/.netlify/functions/shelf-report?secret=…` (ไม่ประกาศ path เพราะ middleware
 //    ของ Next คุมล็อกอินทุกเส้น /api/ ที่ไม่อยู่ใน allowlist — เหตุผลเดียวกับ shelf-ask)
 import { MIN_AGE, MAX_AGE, thaiToday, pickStuckOrders, groupBySku } from "./lib-shelf.mjs";
+import { วัดเวลางาน, อ่านผลจาก } from "./lib-jobtime.mjs";
 import { buildShelfReport, PICK } from "./lib-shelf-report.mjs";
 import { notify } from "./lib-notify.mjs";
 
@@ -210,7 +211,7 @@ export async function runShelfReport({ pipe = pipeFetch, today = thaiToday(), mi
   };
 }
 
-export default async function handler(req) {
+async function งานจริง(req) {
   const url = new URL(req.url);
   const secret = process.env.DRIVESYNC_SECRET;
 
@@ -245,4 +246,16 @@ export default async function handler(req) {
 /* ⏰ ตี 7 ไทยทุกวัน (00:00 UTC) — CEO อนุมัติเปิดของจริง 12 ก.ย. 2569 หลังตรวจถ้อยคำ
    ⚠️ **มีผลหลัง deploy รอบถัดไปเท่านั้น** · รอบแรกที่จะเข้ากลุ่มคือเช้าพรุ่งนี้
    ⚠️ ส่งทุกวันแม้ไม่มีใบค้าง (บอกว่า "ไม่มี") — เงียบแยกไม่ออกจาก "งานตามเวลาไม่เคยรัน" */
+/* ⏱️ ห่อด้วยตัวจับเวลา — จดลงสมุดเล่มเดียวกับฝั่งท่อ (`POST /api/core?joblog=1`)
+   🔑 ตัวจับเวลา **ห้ามเปลี่ยนพฤติกรรมของงานจริง**: คืน Response เดิมทุกประการ
+      ส่งสมุดไม่ได้ ⇒ กลืนไว้ · งานจริงโยน error ⇒ จด failed แล้วโยนต่อ */
+export default async function handler(req) {
+  const t = await วัดเวลางาน("shelf-report", () => งานจริง(req), {
+    /* 🔑 ตัดสินจาก **เนื้อคำตอบ** ไม่ใช่จาก HTTP status — และเก็บตัวเลขในคำตอบเป็นหลักฐาน
+       ว่ารอบนั้นแตะงานจริง (ใบ S1: `ok` ที่ไม่มีเลขประกอบ = คำรับรอง ไม่ใช่หลักฐาน) */
+    อ่านผล: อ่านผลจาก,
+  });
+  return t.ผลลัพธ์;
+}
+
 export const config = { schedule: "0 0 * * *" };

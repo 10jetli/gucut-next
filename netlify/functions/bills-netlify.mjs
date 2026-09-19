@@ -23,6 +23,7 @@
 //     ตัวเก็บจะได้ยิงซ้ำทุกวันโดยไม่ต้องจำอะไร)
 
 import { notify } from "./lib-notify.mjs";
+import { วัดเวลางาน, อ่านผลจาก } from "./lib-jobtime.mjs";
 
 const API = "https://api.netlify.com/api/v1";
 const TEAM = process.env.NETLIFY_TEAM_SLUG || "10jetli";
@@ -36,7 +37,7 @@ const fileNameFor = (r) => {
   return `Netlify-${day}-USD${amt}.pdf`;
 };
 
-export default async function handler() {
+async function งานจริง() {
   const token = process.env.NETLIFY_API_TOKEN;
   const secret = process.env.DRIVESYNC_SECRET;
 
@@ -131,4 +132,16 @@ const fail = (why) => json({ ok: false, error: why }, 502);
 
 // ตี 5 ครึ่งไทย (22:30 UTC) — หลังตัวเก็บบิลทางเมล (22:00) ครึ่งชั่วโมง
 // ⚠️ จงใจไม่ให้ชนกัน ทั้งคู่ยิง /api/bills/upload กับ Blobs ก้อนเดียวกัน
+/* ⏱️ ห่อด้วยตัวจับเวลา — จดลงสมุดเล่มเดียวกับฝั่งท่อ (`POST /api/core?joblog=1`)
+   🔑 ตัวจับเวลา **ห้ามเปลี่ยนพฤติกรรมของงานจริง**: คืน Response เดิมทุกประการ
+      ส่งสมุดไม่ได้ ⇒ กลืนไว้ · งานจริงโยน error ⇒ จด failed แล้วโยนต่อ */
+export default async function handler() {
+  const t = await วัดเวลางาน("bills-netlify", () => งานจริง(), {
+    /* 🔑 ตัดสินจาก **เนื้อคำตอบ** ไม่ใช่จาก HTTP status — และเก็บตัวเลขในคำตอบเป็นหลักฐาน
+       ว่ารอบนั้นแตะงานจริง (ใบ S1: `ok` ที่ไม่มีเลขประกอบ = คำรับรอง ไม่ใช่หลักฐาน) */
+    อ่านผล: อ่านผลจาก,
+  });
+  return t.ผลลัพธ์;
+}
+
 export const config = { schedule: "30 22 * * *" };
