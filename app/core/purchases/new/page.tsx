@@ -17,7 +17,7 @@ import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
@@ -268,7 +268,7 @@ function NewPurchaseOrderInner() {
           ส่งจริงเข้า ZORT
         </button>
         {!REAL_SEND_ENABLED
-          ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ส่งจริง</b> — รอเจ้าของร้านอนุมัติใบสั่งซื้อโดยเฉพาะ</span>
+          ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ส่งจริง</b> — {เหตุที่ยังไม่เปิด('purchases/new')}</span>
           : quick
             ? <span className="text-[12.5px] text-amber-800"><b>แบบอย่างง่ายยังไม่เปิดส่งจริง</b> — ใบนี้บันทึกเป็น &ldquo;สำเร็จ&rdquo; ซึ่งรับของเข้าคลังทันทีและยกเลิกจากที่นี่ไม่ได้ · ใช้ <a href="/core/purchases/new" className="underline">สร้างใบสั่งซื้อแบบปกติ</a> แทน</span>
             : !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองส่งให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลองส่ง — ต้องทดลองใหม่'}</span>}

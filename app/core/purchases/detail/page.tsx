@@ -23,7 +23,7 @@ import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 /* ── รับของ / ตรวจนับสินค้าเข้า (soon: stock-count · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
    ท่อ (gucut-web): GET ?zortpo=<เลขที่ใบ> → id ของ ZORT (กระจกไม่มี id · เลขที่ใบซ้ำได้ ท่อไม่เดา)
@@ -159,7 +159,7 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
         {' '}· 🔴 <b>ยังไม่เคยยิงจริงจากจอนี้สักครั้ง</b> (ปุ่มส่งจริงยังปิด · ตรวจจากโค้ด 14 ก.ย. 2569)
         {' '}⇒ <b>ยังไม่รู้</b>ว่า ZORT นับจำนวนที่ส่งเป็น
         &ldquo;ยอดรอบนี้&rdquo; หรือ &ldquo;ยอดสะสม&rdquo; — ใบแรกต้องดูสต็อกก่อน/หลังด้วยตา
-        {!REAL_SEND_ENABLED && <> · <b>ตอนนี้ยังรับจริงไม่ได้</b> รอท่านประธานอนุมัติ (ทดลองใช้ได้)</>}
+        {!REAL_SEND_ENABLED && <> · <b>ตอนนี้ยังรับจริงไม่ได้</b> — {เหตุที่ยังไม่เปิด('purchases/detail')} (ทดลองใช้ได้)</>}
       </p>
 
       {poLoading && <p className="mt-2 text-[13px] text-gray-500">กำลังถาม ZORT ว่าใบนี้คือ id ไหน…</p>}

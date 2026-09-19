@@ -20,7 +20,7 @@ import Link from 'next/link'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติการเพิ่มผู้ติดต่อโดยเฉพาะ */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -155,8 +155,7 @@ export default function NewContactPage() {
 
       {!REAL_SEND_ENABLED ? (
         <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
-          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — ท่านประธานอนุมัติการเขียนจริงเป็นราย ๆ ไป — จอนี้ยังไม่อยู่ในรายการที่อนุมัติ
-          {' '}การเพิ่มผู้ติดต่อต้องขออนุมัติแยก · ระหว่างนี้ทดลองส่งได้เต็มที่ เห็นทุกช่องที่จะส่งจริง
+          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — {เหตุที่ยังไม่เปิด('customers/new')} · ระหว่างนี้ทดลองส่งได้เต็มที่ เห็นทุกช่องที่จะส่งจริง
         </p>
       ) : !dryOk && (
         <p className="text-[12.5px] text-gray-500 mt-2">ต้องทดลองส่งให้ผ่านก่อน · แก้อะไรหลังซ้อม ปุ่มส่งจริงจะปิดเองอีกครั้ง</p>

@@ -17,7 +17,7 @@ import { useParams } from 'next/navigation'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import ProductImageBox from './ProductImageBox'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ (แก้/ลบของจริงใน ZORT) */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -232,7 +232,7 @@ export default function EditProductPage() {
               บันทึกการแก้เข้า ZORT
             </button>
             {!REAL_SEND_ENABLED
-              ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้แก้จริง</b> — รอท่านประธานอนุมัติจอนี้</span>
+              ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้แก้จริง</b> — {เหตุที่ยังไม่เปิด('stock/[sku]/edit')}</span>
               : !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองแก้ให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลอง — ต้องทดลองใหม่'}</span>}
           </div>
 
@@ -265,7 +265,7 @@ export default function EditProductPage() {
                 style={{ background: '#c0392b' }}>
                 ลบจริงใน ZORT
               </button>
-              {!REAL_SEND_ENABLED && <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ลบจริง</b> — รอท่านประธานอนุมัติ</span>}
+              {!REAL_SEND_ENABLED && <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ลบจริง</b> — {เหตุที่ยังไม่เปิด('stock/[sku]/edit')}</span>}
             </div>
           </div>
         </>

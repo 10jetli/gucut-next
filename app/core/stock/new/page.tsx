@@ -56,7 +56,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 /** ✅ **เปิดแล้ว 18 ก.ย. 2569 — ท่านประธานอนุมัติเอง** (ใบกระดาน t_mu6i5c5k)
  *
@@ -319,7 +319,7 @@ export default function NewProductPage() {
             </button>
           )
           : !REAL_SEND_ENABLED
-            ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ส่งจริง</b> — รอคำตอบเรื่องการดันขึ้นมาร์เก็ตเพลส</span>
+            ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ส่งจริง</b> — {เหตุที่ยังไม่เปิด('stock/new')}</span>
             : !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองส่งให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลองส่ง — ต้องทดลองใหม่'}</span>}
       </div>
 

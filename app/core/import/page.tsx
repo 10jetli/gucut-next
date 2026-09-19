@@ -16,7 +16,7 @@ import { useSearchParams } from 'next/navigation'
 import { PageHead, BtnGhost } from '@/components/zort'
 import { readImportFile } from '@/lib/excel-rows'
 import type { ImportKind, ParseResult } from '@/lib/excel-rows'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติการนำเข้าจริงเข้า ZORT */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -203,7 +203,7 @@ function ImportInner() {
                   className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40" style={{ background: '#9aa0a6' }}>
                   นำเข้าจริงเข้า ZORT
                 </button>
-                {!REAL_SEND_ENABLED && <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้นำเข้าจริง</b> — รอท่านประธานอนุมัติ</span>}
+                {!REAL_SEND_ENABLED && <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้นำเข้าจริง</b> — {เหตุที่ยังไม่เปิด('import')}</span>}
               </div>
 
               {sendErr && (

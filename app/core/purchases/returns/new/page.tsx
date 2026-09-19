@@ -31,7 +31,7 @@ import { PageHead, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components
 import type { WriteResp } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import { looksLikeFallThrough } from '@/lib/api-shape'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติ "ใบคืนของให้ผู้ขาย" โดยเฉพาะ
  *  เหตุผลที่ต้องแยกอนุมัติ: ใบนี้ **ตัดของออกจากคลังจริง** และไม่มีเส้นยกเลิก */
@@ -314,8 +314,7 @@ export default function NewPurchaseReturnPage() {
 
       {!REAL_SEND_ENABLED ? (
         <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
-          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — ท่านประธานอนุมัติการเขียนจริงเป็นราย ๆ ไป — จอนี้ยังไม่อยู่ในรายการที่อนุมัติ
-          {' '}ใบคืนของ<b>ตัดสต็อกจริงและยกเลิกไม่ได้</b> จึงต้องขออนุมัติแยก ·
+          🔒 <b>ปุ่มส่งจริงปิดอยู่</b> — {เหตุที่ยังไม่เปิด('purchases/returns/new')} ·
           {' '}ระหว่างนี้ทดลองส่งได้เต็มที่ เห็นทุกช่องที่จะส่งจริง
         </p>
       ) : !dryOk && (

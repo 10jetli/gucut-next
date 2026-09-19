@@ -31,7 +31,7 @@ import { fmtMoney } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 interface Line { sku: string; qty: string; price: string }
 
@@ -281,7 +281,10 @@ export default function NewQuotationPage() {
         </button>
         {!REAL_SEND_ENABLED ? (
           <span className="text-[12.5px] text-amber-800">
-            <b>ยังไม่เปิดให้ส่งจริง</b> — รอผลยิงใบทดสอบใบแรกแบบควบคุมก่อน
+            {/* 🔴 เดิมพิมพ์เหตุด้วยมือว่า "รอผลยิงใบทดสอบใบแรกแบบควบคุมก่อน" ⇒ เป็นเท็จตั้งแต่
+                6 ก.ย. 2569 (ยิงแล้วและเปิดแล้ว) **แต่ไม่มีใครเห็น เพราะกิ่งนี้เดินไม่ถึง**
+                ⇒ อ่านเหตุจากทะเบียน `lib/real-send.ts` · ใบ S4 20 ก.ย. 2569 */}
+            <b>ยังไม่เปิดให้ส่งจริง</b> — {เหตุที่ยังไม่เปิด('quotations/new')}
             {' '}(ทดลองส่งใช้ได้ตามปกติ ตรวจข้อมูลได้เต็มที่)
           </span>
         ) : !dryOk && (

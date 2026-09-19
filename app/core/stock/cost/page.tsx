@@ -15,7 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { PageHead } from '@/components/zort'
-import { ส่งจริงได้ } from '@/lib/real-send'
+import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -222,7 +222,7 @@ export default function ProductCostPage() {
           บันทึกต้นทุนเข้า ZORT
         </button>
         {!REAL_SEND_ENABLED
-          ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้แก้จริง</b> — รอท่านประธานอนุมัติจอนี้</span>
+          ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้แก้จริง</b> — {เหตุที่ยังไม่เปิด('stock/cost')}</span>
           : !canSend && rows.length > 0 && <span className="text-[12.5px] text-gray-500">
             {!fresh ? 'ข้อความเปลี่ยนหลังทดลอง — ต้องทดลองใหม่' : 'ต้องไม่มีรายการที่ไม่ผ่าน/ไม่รู้ผล/ไม่มีใน ZORT และไม่มีบรรทัดผิด'}
           </span>}
