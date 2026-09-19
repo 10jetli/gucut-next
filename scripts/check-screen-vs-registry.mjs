@@ -28,9 +28,10 @@
 // รัน: node scripts/check-screen-vs-registry.mjs   (อยู่ใน prebuild · ตกได้)
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
-const reg = readFileSync('lib/zort-menu.ts', 'utf8')
-const menu = readFileSync('lib/product-menu.ts', 'utf8')
+const reg = ตัดคอมเมนต์(readFileSync('lib/zort-menu.ts', 'utf8'))
+const menu = ตัดคอมเมนต์(readFileSync('lib/product-menu.ts', 'utf8'))
 
 /* ── ทะเบียน: คีย์ → ธงที่ติดอยู่ ─────────────────────────────────────────
    ตัดก้อนด้วย **ตำแหน่งคีย์ถัดไป** ไม่ใช่รูปวงเล็บ (บทเรียนซ้ำ 5 ครั้งของ check-soon) */

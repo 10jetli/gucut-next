@@ -23,6 +23,7 @@
  */
 import { readdirSync, readFileSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const PIPE = join(ROOT, '..', 'gucut-web')
@@ -81,7 +82,7 @@ function อ่านตาราง(dir) {
   if (!existsSync(dir)) return out
   for (const name of readdirSync(dir)) {
     if (!name.endsWith('.mjs')) continue
-    const m = /schedule:\s*"([^"]+)"/.exec(readFileSync(join(dir, name), 'utf8'))
+    const m = /schedule:\s*"([^"]+)"/.exec(ตัดคอมเมนต์(readFileSync(join(dir, name), 'utf8')))
     if (m) out.set(name, m[1])
   }
   return out
@@ -97,7 +98,7 @@ const จอเอง = อ่านตาราง(join(ROOT, 'netlify', 'funct
 /* ② อ่านแถวจากจอ — จับคู่ `cron:` กับ `src:` ในบล็อกเดียวกัน
    ⚠️ ช่อง `src` ของบางแถวมีข้อความต่อท้าย (เช่น "· netlify/lib/…" หรือ "(repo นี้)")
       ⇒ เทียบด้วย "ขึ้นต้นด้วยชื่อไฟล์" ไม่ใช่เท่ากันเป๊ะ ไม่งั้นจะฟ้องผิดตัวทุกแถวที่มีหมายเหตุ */
-const src = readFileSync(จอ, 'utf8')
+const src = ตัดคอมเมนต์(readFileSync(จอ, 'utf8'))
 const แถว = []
 for (const m of src.matchAll(/cron:\s*'([^']+)'[\s\S]{0,400}?src:\s*'([^']+)'/g)) {
   แถว.push({ cron: m[1], src: m[2] })

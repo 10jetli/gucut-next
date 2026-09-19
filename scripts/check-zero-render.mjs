@@ -15,6 +15,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 /** ชื่อช่อง/ตัวแปรที่ "เป็นตัวเลข" แน่ ๆ ในโปรเจกต์นี้ */
@@ -56,7 +57,7 @@ const ปัญหา = []
 const ไฟล์ที่ตรวจ = [...walk(join(ROOT, 'app')), ...walk(join(ROOT, 'components'))]
 ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-zero-render')
 for (const file of ไฟล์ที่ตรวจ) {
-  readFileSync(file, 'utf8').split('\n').forEach((line, i) => {
+  ตัดคอมเมนต์(readFileSync(file, 'utf8')).split('\n').forEach((line, i) => {
     /* จับรูป `{ …ชื่อ && <` หรือ `{ …ชื่อ && (` */
     const m = line.match(/\{\s*([A-Za-z0-9_.?[\]'"\s]*?)\s*&&\s*[<(]/)
     if (!m) return

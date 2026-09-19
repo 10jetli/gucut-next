@@ -15,13 +15,14 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 // ⚠️ **ต้องอ่านทุกที่ที่พาคนไปหน้าได้ ไม่ใช่แค่ nav-config**
 //    รอบแรกอ่านแค่ nav-config แล้วมันฟ้องว่า /core/manual ไม่มีทางเข้า
 //    ทั้งที่เข้าได้จากแผงตารางจุด 9 ช่องบนหัวจอ ⇒ **ตัวตรวจที่ฟ้องผิดจะถูกเมิน**
 //    แล้ววันที่มันฟ้องถูกก็จะไม่มีใครเชื่อ (แย่กว่าไม่มีตัวตรวจ)
 const nav = ['lib/nav-config.ts', 'components/layout/TopBarActions.tsx', 'components/layout/TopBar.tsx']
-  .map((p) => { try { return readFileSync(p, 'utf8') } catch { return '' } }).join('\n')
+  .map((p) => { try { return ตัดคอมเมนต์(readFileSync(p, 'utf8')) } catch { return '' } }).join('\n')
 // เอาเฉพาะ href ที่เป็นเส้นทางในเว็บนี้ (ตัดลิงก์ออกนอกและไฟล์นิ่งทิ้ง)
 const hrefs = [...nav.matchAll(/href:\s*'([^']+)'/g)].map((m) => m[1])
   .filter((h) => h.startsWith('/') && !h.includes('.html') && !h.startsWith('//'))

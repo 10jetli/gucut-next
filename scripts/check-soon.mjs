@@ -13,6 +13,7 @@
 // ใช้: node scripts/check-soon.mjs   (อยู่ใน prebuild — คีย์ที่ไม่มีทะเบียน = ไม่ให้ build ผ่าน)
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOTS = ['app', 'lib', 'components']
 const files = []
@@ -47,7 +48,7 @@ const PATTERNS = [
 ]
 for (const f of files) {
   if (f.endsWith('zort-menu.ts') || f.endsWith('check-soon.mjs')) continue
-  const src = readFileSync(f, 'utf8')
+  const src = ตัดคอมเมนต์(readFileSync(f, 'utf8'))
   for (const re of PATTERNS) {
     for (const m of src.matchAll(re)) {
       linked.set(m[1], [...(linked.get(m[1]) ?? []), f])
@@ -55,7 +56,7 @@ for (const f of files) {
   }
 }
 
-const reg = readFileSync('lib/zort-menu.ts', 'utf8')
+const reg = ตัดคอมเมนต์(readFileSync('lib/zort-menu.ts', 'utf8'))
 const keys = new Set([...reg.matchAll(/^ {2}'?([a-zA-Z0-9-]+)'?:\s*\{/gm)].map((m) => m[1]))
 /** คีย์ที่ทำเสร็จแล้ว (มี builtAt อยู่ในก้อนของมัน)
  *  🔴 **ครั้งที่สี่ที่ regex แข็งเกินไปในตัวตรวจตัวนี้** (14 ก.ย. 2569)

@@ -26,6 +26,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ต้องมีของให้ตรวจ } from "./lib/ต้องมีของให้ตรวจ.mjs";
+import { ตัดคอมเมนต์ } from "./lib/ตัดคอมเมนต์.mjs";
 
 const ราก = ["app", "components"];
 const ไฟล์ = [];
@@ -83,7 +84,7 @@ if (process.argv.includes("--self-test")) {
   process.exit(ดี ? 0 : 1);
 }
 
-const ผิด = หาผิด(ไฟล์, (p) => readFileSync(p, "utf8"));
+const ผิด = หาผิด(ไฟล์, (p) => ตัดคอมเมนต์(readFileSync(p, "utf8")));
 
 ต้องมีของให้ตรวจ(ไฟล์.length, "ตรวจ component ซ้อนใน", 50);
 

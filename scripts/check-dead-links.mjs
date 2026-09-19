@@ -17,6 +17,7 @@
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const R = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 function walk(d, ext, out = []) {
@@ -48,7 +49,7 @@ if (routes.length === 0) {
 const พบ = new Set()
 for (const f of [...walk(join(R, 'app'), '.tsx'), ...walk(join(R, 'components'), '.tsx'), ...walk(join(R, 'lib'), '.ts')]) {
   const rel = f.slice(R.length + 1)
-  const s = readFileSync(f, 'utf8')
+  const s = ตัดคอมเมนต์(readFileSync(f, 'utf8'))
   const re = /href(?:=|:\s*)["'](\/[^"'#?]*)/g
   let m
   while ((m = re.exec(s))) {

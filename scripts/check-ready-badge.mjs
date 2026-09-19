@@ -27,6 +27,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname.replace(/\/$/, '')
 function walk(d, out = []) {
@@ -44,7 +45,10 @@ const หน้า = walk(join(ROOT, 'app'))
 ต้องมีของให้ตรวจ(หน้า.length, 'check-ready-badge')
 
 let ทะเบียน = ''
-try { ทะเบียน = readFileSync(join(ROOT, 'lib/zort-ready.ts'), 'utf8') } catch { /* ไม่มีไฟล์ */ }
+/* 🔴 ตัดคอมเมนต์ก่อน (19 ก.ย. 2569 · งาน S2) — ทั้งสองทะเบียนนี้ถูกอ่านแบบ "มีข้อความนี้ไหม"
+   ⇒ บรรทัดทะเบียนที่ถูกคอมเมนต์ทิ้ง (`// '/core/sales/new': {…}`) ยังทำให้ด่านผ่าน
+   = กลับไปสู่บั๊กเดิมเป๊ะ ๆ ที่ด่านนี้เกิดมาแก้ (ป้ายตกทอดจากเส้นทางแม่) */
+try { ทะเบียน = ตัดคอมเมนต์(readFileSync(join(ROOT, 'lib/zort-ready.ts'), 'utf8')) } catch { /* ไม่มีไฟล์ */ }
 /* 🔒 อ่านทะเบียนไม่ได้ = ตรวจอะไรไม่ได้ (เหตุผลเดียวกับ ต้องมีของให้ตรวจ) */
 if (!ทะเบียน.includes('ZORT_READY')) {
   console.error('🔴 อ่าน lib/zort-ready.ts ไม่ได้ หรือไม่มี ZORT_READY — ด่านนี้ตรวจอะไรไม่ได้ ถือว่าไม่ผ่าน')
@@ -54,7 +58,7 @@ if (!ทะเบียน.includes('ZORT_READY')) {
 /* 🔑 **หาจากทะเบียน ไม่ใช่จากรูปคำในซอร์ส** — ดูเหตุผลที่หัวไฟล์
    `ปุ่มส่งจริง` ใน lib/real-send.ts เป็นแหล่งความจริงเดียวของสถานะเปิด-ปิด */
 let ทะเบียนส่งจริง = ''
-try { ทะเบียนส่งจริง = readFileSync(join(ROOT, 'lib/real-send.ts'), 'utf8') } catch { /* ไม่มีไฟล์ */ }
+try { ทะเบียนส่งจริง = ตัดคอมเมนต์(readFileSync(join(ROOT, 'lib/real-send.ts'), 'utf8')) } catch { /* ไม่มีไฟล์ */ }
 if (!ทะเบียนส่งจริง.includes('ปุ่มส่งจริง')) {
   console.error('🔴 อ่าน lib/real-send.ts ไม่ได้ หรือไม่มี `ปุ่มส่งจริง` — ด่านนี้ตรวจอะไรไม่ได้ ถือว่าไม่ผ่าน')
   process.exit(1)
