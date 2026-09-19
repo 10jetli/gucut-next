@@ -66,7 +66,15 @@ const ทะเบียน = [
       const m = t.match(/ชิ้นส่วน UI ใช้ซ้ำ\s*—([^\n]*)/)
       return m ? m[1].split(',').filter((x) => x.trim()).length : null
     },
-    วัด: () => readdirSync(join(ROOT, 'components/ui')).filter((f) => f.endsWith('.tsx')).length,
+    /* ⚠️ **นับชั้นเดียวโดยตั้งใจ** — คำกล่าวอ้างใน CLAUDE.md พูดถึง `components/ui/` ตรง ๆ
+       ⇒ "ชั้นเดียว" ที่นี่เป็น **หน่วยของคำกล่าวอ้าง** ไม่ใช่การหลุดจากการตรวจ
+       แต่ถ้าวันหนึ่งมีโฟลเดอร์ย่อย เลขจะ **ต่ำกว่าจริงเงียบ ๆ** ⇒ เตือนไว้ (ไม่ลงลึกเอง) */
+    วัด: () => {
+      const ทั้งหมด = readdirSync(join(ROOT, 'components/ui'), { withFileTypes: true })
+      const ย่อย = ทั้งหมด.filter((e) => e.isDirectory())
+      if (ย่อย.length) console.log(`   ⚠️ components/ui มีโฟลเดอร์ย่อย ${ย่อย.length} อัน — **นับชั้นเดียว ไม่ได้นับข้างใน**`)
+      return ทั้งหมด.filter((e) => e.isFile() && e.name.endsWith('.tsx')).length
+    },
     หน่วย: 'ไฟล์ .tsx ใน components/ui (ไม่นับไฟล์อื่น ไม่นับโฟลเดอร์ย่อย)',
     ทำไมสำคัญ: 'กติกาข้อ 5 สั่งให้ดูรายการนี้ก่อนเขียน markup ใหม่ ⇒ รายการไม่ครบ = เขียนซ้ำของที่มีอยู่',
   },
