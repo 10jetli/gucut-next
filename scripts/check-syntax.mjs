@@ -19,9 +19,10 @@
  *
  * 🔒 กวาดได้ 0 ไฟล์ = **ตัวเดินไฟล์พัง ไม่ใช่รีโปสะอาด** ⇒ ตก
  */
-import { readdirSync, statSync } from 'node:fs'
+import { readdirSync, statSync, writeFileSync, unlinkSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
+import { tmpdir } from 'node:os'
 import { spawnSync } from 'node:child_process'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -52,6 +53,26 @@ if (ไฟล์.length === 0) {
   process.exit(1)
 }
 
+/* 🔒 **ตัวควบคุมบวก — ยิงในรอบเดียวกันทุกครั้ง** (กติกาที่ฝั่งท่อตั้งไว้ 19 ก.ย. 2569
+   หลังตัวกวาดของเขาตายด้วย regex ของตัวเองแล้วรายงานว่า "ไม่พบปัญหา")
+   ถ้าวันหนึ่ง `node --check` เลิกทำงาน (เปลี่ยนธง · เปลี่ยนรุ่น node · เรียกผิดทาง)
+   ด่านนี้จะ **เขียวตลอดกาลโดยไม่มีอะไรฟ้อง** — เขียวที่แปลว่า "ไม่ได้ตรวจ" ไม่ใช่ "ไม่มีปัญหา"
+   ⇒ เขียนไฟล์พังของจริงลงที่ชั่วคราว แล้วยืนยันว่า `node --check` **ต้องตก** */
+{
+  const ทาง = join(tmpdir(), `zz-คุม-${process.pid}.mjs`)
+  try {
+    writeFileSync(ทาง, 'const a = (\n')
+    const คุม = spawnSync(process.execPath, ['--check', ทาง], { encoding: 'utf8' })
+    if (คุม.status === 0) {
+      console.error('🔴 ตัวควบคุมบวกไม่ผ่าน — `node --check` ไม่ฟ้องไฟล์ที่พังแน่ ๆ')
+      console.error('   ⇒ **เครื่องมือตรวจไม่ทำงาน** ⇒ ผลของด่านนี้คือ "ไม่รู้" ไม่ใช่ "ผ่าน"')
+      process.exit(1)
+    }
+  } finally {
+    try { unlinkSync(ทาง) } catch { /* ลบไม่ได้ก็ไม่เป็นไร */ }
+  }
+}
+
 const พัง = []
 for (const p of ไฟล์) {
   const r = spawnSync(process.execPath, ['--check', p], { encoding: 'utf8' })
@@ -61,7 +82,7 @@ for (const p of ไฟล์) {
   }
 }
 
-console.log(`ไวยากรณ์ .mjs: ตรวจ ${ไฟล์.length} ไฟล์ (${ราก.join(' · ')})`)
+console.log(`ไวยากรณ์ .mjs: ตรวจ ${ไฟล์.length} ไฟล์ (${ราก.join(' · ')}) · คุม 1/1 ผ่าน`)
 if (พัง.length) {
   console.error(`\n🔴 parse ไม่ผ่าน ${พัง.length} ไฟล์ — **ไฟล์พัง ไม่ใช่เรื่องสไตล์**`)
   for (const x of พัง) console.error('   ' + x)
