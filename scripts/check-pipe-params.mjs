@@ -21,6 +21,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
+import { อยู่ปลายกิ่งไหม, บอกว่าไม่ตัดสิน } from './lib/กำลังเล่นประวัติซ้ำไหม.mjs'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -47,6 +48,17 @@ function walk(dir, out = []) {
     else if (/\.(tsx|ts)$/.test(name)) out.push(p)
   }
   return out
+}
+
+/* 🔑 เทียบกับรีโปอีกฝั่ง = ของนอกคอมมิต ⇒ เล่นประวัติซ้ำแล้วผลไม่ใช่คำตอบเรื่องคอมมิตนั้น
+   (เพิ่ม 20 ก.ย. 2569 · ท่าร่วมกับฝั่งท่อ · ไม่ใช้ธง env เพราะธงที่คนต้องจำใส่จะไม่ถูกใส่) */
+const สภาพประวัติ = อยู่ปลายกิ่งไหม()
+if (สภาพประวัติ.ปลายกิ่ง === false) {
+  บอกว่าไม่ตัดสิน('ด่านตัวกรองของท่อ', สภาพประวัติ.เหตุ)
+  process.exit(0)
+}
+if (สภาพประวัติ.ปลายกิ่ง === null) {
+  console.log(`⚠️ ด่านตัวกรองของท่อ: ตอบไม่ได้ว่าอยู่ปลายกิ่งหรือไม่ (${สภาพประวัติ.เหตุ}) ⇒ **ตัดสินต่อ** แต่บอกไว้`)
 }
 
 if (!existsSync(CORE)) {
