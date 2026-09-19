@@ -69,8 +69,19 @@ if ! "$N" --experimental-test-module-mocks --test scripts/tests/*.test.mjs > /tm
 fi
 grep -E "^# (tests|pass|fail)" /tmp/prepush-test.log | sed 's/^/   /'
 
-if ! node scripts/check-floating.mjs > /tmp/prepush-float.log 2>&1; then
-  echo "❌ เจอ promise ปล่อยลอยในโค้ดเซิร์ฟเวอร์ — ไม่ push"
+# ── ด่าน promise ปล่อยลอย ──
+# 🔴 **"ด่านพัง" กับ "ด่านเจอของผิด" ต้องไม่รายงานเหมือนกัน** (เจอ 19 ก.ย. 2569 ตอนจะ push จริง)
+#    ของเดิมเขียน `if ! node ...` ⇒ ไฟล์ **ไม่มีอยู่จริงในรีโปนี้** (มีเฉพาะฝั่งท่อ)
+#    ⇒ node ตอบ MODULE_NOT_FOUND ⇒ ด่านพิมพ์ว่า **"เจอ promise ปล่อยลอย — ไม่ push"**
+#    ⇒ **คำเท็จ** และทำให้คนไปหา promise ที่ไม่มีอยู่ · ผมเสียเวลาไปหนึ่งรอบกับข้อความนี้
+#    🔑 คลาสเดียวกับที่ทีมไล่ปิดกันทั้งวัน: ระบบทำงานถูก แต่สื่อสารผิด
+# ⚠️ **ไม่มีด่าน ≠ ผ่านด่าน** ⇒ ข้ามได้ แต่ต้องพิมพ์ออกมาทุกครั้ง ไม่ใช่เงียบ
+if [ ! -f scripts/check-floating.mjs ]; then
+  echo "⚠️  ข้ามด่าน promise ปล่อยลอย — **ไม่มี scripts/check-floating.mjs ในรีโปนี้**"
+  echo "    (มีเฉพาะฝั่งท่อ · รีโปนี้ยังไม่มีคนย้ายมา) ⇒ นี่คือช่องว่าง ไม่ใช่ผลผ่าน"
+elif ! node scripts/check-floating.mjs > /tmp/prepush-float.log 2>&1; then
+  echo "❌ ด่าน promise ปล่อยลอยไม่ผ่าน — ไม่ push"
+  echo "   ⚠️ อ่านข้อความข้างล่างก่อนสรุป: **ตัวด่านพังเองก็ออกมาทางนี้เหมือนกัน**"
   tail -5 /tmp/prepush-float.log
   exit 1
 fi
