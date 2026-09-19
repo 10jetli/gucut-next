@@ -174,14 +174,37 @@ const sweepLine = `window.ALL_ROUTES = ${JSON.stringify(sweepRoutes)}`;
    (CEO ตั้งคำถามนี้ 18 ก.ย. 2569: เปลี่ยนเป็นสร้างอัตโนมัติ แก้ "ล้าสมัย" แต่ไม่แก้ "ครอบไม่ครบ") */
 const blindRoutes = pages.filter((p) => p.includes("["));
 const blindLine = `window.ROUTES_NOT_SWEPT = ${JSON.stringify(blindRoutes)}`;
-for (const [ชื่อ, รูป] of [["window.ALL_ROUTES", /window\.ALL_ROUTES = \[[^\]]*\]/], ["window.ROUTES_NOT_SWEPT", /window\.ROUTES_NOT_SWEPT = \[[^\]]*\]/]]) {
+/* 🔴 ของจริง 19 ก.ย. 2569 — รูปเดิมคือ `\[[^\]]*\]` ซึ่งหยุดที่ `]` **ตัวแรก**
+   และ `ROUTES_NOT_SWEPT` คือรายชื่อ **พาธที่มีช่องแปร** ⇒ ข้างในมี `[vendor]` เสมอ
+   ⇒ แทนที่ได้แค่ครึ่งบรรทัด ของเก่าค้างท้าย ⇒ **บรรทัดงอกทุกรอบที่ build** จน 21,427 ตัวอักษร
+   🔑 ด่านข้างล่างเดิมถาม "หาบรรทัดเจอไหม" ซึ่งเจอทุกรอบ ⇒ **คำถามอ่อนเกินไป**
+      ของที่ต้องถามคือ "เขียนแล้วอ่านกลับได้ของเดิมไหม" ⇒ เพิ่มเป็นด่านที่สองด้านล่าง
+   ⚠️ พังเงียบสนิท: ไฟล์ยังรันได้ ค่าตัวแปรยังถูก (ประกาศทับกันในบรรทัดเดียว) */
+const เป้า = [
+  ["window.ALL_ROUTES", /^window\.ALL_ROUTES = .*$/m, sweepLine, sweepRoutes],
+  ["window.ROUTES_NOT_SWEPT", /^window\.ROUTES_NOT_SWEPT = .*$/m, blindLine, blindRoutes],
+];
+for (const [ชื่อ, รูป] of เป้า) {
   if (!รูป.test(sweepSrc)) {
     throw new Error(`gen-arch: หาบรรทัด ${ชื่อ} ในตัวกวาดไม่เจอ ⇒ ไม่เขียนทับ (อย่าปล่อยให้เงียบ)`);
   }
 }
-const sweepNext = sweepSrc
-  .replace(/window\.ALL_ROUTES = \[[^\]]*\]/, sweepLine)
-  .replace(/window\.ROUTES_NOT_SWEPT = \[[^\]]*\]/, blindLine);
+let sweepNext = sweepSrc;
+for (const [, รูป, บรรทัด] of เป้า) sweepNext = sweepNext.replace(รูป, บรรทัด);
+/* ด่านที่สอง: **อ่านของที่เพิ่งเขียนกลับมาแปลงเป็นค่า** แล้วเทียบกับต้นฉบับ
+   ⇒ จับได้ทั้ง "แทนที่ไม่ครบ" และ "เขียนทับผิดบรรทัด" ซึ่งด่านแรกมองไม่เห็นทั้งคู่ */
+for (const [ชื่อ, รูป, , ของจริง] of เป้า) {
+  const ที่เขียน = sweepNext.match(รูป)?.[0] ?? "";
+  let อ่านกลับ;
+  try {
+    อ่านกลับ = JSON.parse(ที่เขียน.slice(ที่เขียน.indexOf("=") + 1).trim());
+  } catch {
+    throw new Error(`gen-arch: บรรทัด ${ชื่อ} ที่เขียนออกไป **อ่านกลับเป็นค่าไม่ได้** (ยาว ${ที่เขียน.length} ตัวอักษร) ⇒ แทนที่ไม่ครบ`);
+  }
+  if (JSON.stringify(อ่านกลับ) !== JSON.stringify(ของจริง)) {
+    throw new Error(`gen-arch: บรรทัด ${ชื่อ} อ่านกลับได้ ${อ่านกลับ.length} รายการ แต่ของจริงมี ${ของจริง.length} ⇒ ไม่เขียนทับ`);
+  }
+}
 if (sweepNext !== sweepSrc) writeFileSync(sweepFile, sweepNext);
 
 console.log(
