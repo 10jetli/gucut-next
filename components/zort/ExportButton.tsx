@@ -91,6 +91,10 @@ export default function ExportButton<T>({ spec, disabled, label = '📤 ส่�
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ screen: spec.title, scope: spec.scope ?? null, rows: rows.length }),
+      // ตรวจแล้ว: การกลืนนี้ตั้งใจ — ไฟล์ถึงมือผู้ใช้แล้วก่อนบรรทัดนี้ · บันทึกการส่งออกล้ม
+      //   ต้องไม่ทำให้จอเขียนว่าส่งออกไม่สำเร็จ (ตรงกับโรค "ทำงานถูก แต่สื่อสารผิด")
+      //   ⚠️ ราคาที่จ่าย: บันทึกอาจขาดเป็นช่วง ๆ โดยไม่มีใครรู้ ⇒ ถ้าวันหนึ่งบันทึกกลายเป็น
+      //   หลักฐานที่ต้องครบ ต้องเปลี่ยนเป็นคิวที่ลองใหม่ ไม่ใช่ปล่อยเงียบแบบนี้ (19 ก.ย. 2569)
       }).catch(() => {})
     } catch (e) {
       setErr(`ส่งออกไม่สำเร็จ: ${e instanceof Error ? e.message : String(e)}`)
