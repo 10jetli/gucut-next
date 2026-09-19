@@ -30,12 +30,22 @@ import { join } from 'node:path'
 const ROOT = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/, '')
 
 /* อ่านคีย์จาก env ก่อน แล้วค่อยลอง .env.local (ไฟล์นี้ถูก ignore จาก git อยู่แล้ว) */
+/* 🔑 **`catch` ที่คืน "ไม่รู้" ต้องแนบเหตุ** (กติการ่วม 20 ก.ย. 2569 · ฝั่งท่อเสนอ ผมรับ)
+   "ไม่มีคีย์เพราะไม่มีไฟล์" (ปกติบนเครื่องนี้) กับ "ไม่มีคีย์เพราะอ่านไฟล์ไม่ได้" (ของเราพัง)
+   เคยอ่านเหมือนกันเป๊ะ ⇒ แยกด้วย `e.code === 'ENOENT'` แล้วเก็บเหตุให้ผู้เรียกพิมพ์ */
+export let เหตุที่ไม่มีคีย์ = null
 function คีย์() {
   if (process.env.GUCUT_WEB_ADMIN_KEY) return process.env.GUCUT_WEB_ADMIN_KEY
   try {
     const m = readFileSync(join(ROOT, '.env.local'), 'utf8').match(/^GUCUT_WEB_ADMIN_KEY=(.+)$/m)
+    if (!m) เหตุที่ไม่มีคีย์ = 'มี .env.local แต่ไม่มีบรรทัด GUCUT_WEB_ADMIN_KEY='
     return m ? m[1].trim() : null
-  } catch { return null }
+  } catch (e) {
+    เหตุที่ไม่มีคีย์ = e?.code === 'ENOENT'
+      ? 'ไม่มีทั้ง env GUCUT_WEB_ADMIN_KEY และไฟล์ .env.local (ปกติบนเครื่องที่ไม่มีคีย์)'
+      : `อ่าน .env.local ไม่ได้: ${String(e?.message ?? e).slice(0, 80)} ⇒ **ของเราพัง ไม่ใช่ไม่มีคีย์**`
+    return null
+  }
 }
 
 function walk(d, out = []) {
@@ -52,6 +62,7 @@ function walk(d, out = []) {
 const key = คีย์()
 if (!key) {
   console.error('🔴 ไม่มี GUCUT_WEB_ADMIN_KEY — สคริปต์นี้ต้องยิงท่อจริงถึงจะรู้ว่าท่อมีเส้นอะไร')
+  console.error(`   เหตุ: ${เหตุที่ไม่มีคีย์ ?? 'ไม่ทราบเหตุ (ตัวเก็บเหตุไม่ถูกตั้ง ⇒ ตะแกรงพัง)'}`)
   console.error('   ใส่ใน .env.local หรือ export ก่อนรัน · **ห้าม hardcode ลงไฟล์นี้** (repo เป็น PUBLIC)')
   process.exit(1)
 }

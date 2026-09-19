@@ -59,19 +59,36 @@ const ยกเว้น = {
    ⇒ ถอยไปใช้ **สำเนาสารบัญ** `lib/pipe-snapshot.json` (สร้างด้วย `scripts/ดึงสารบัญท่อ.mjs`)
    ⚠️ สำเนา **ไม่ใช่แหล่งความจริง** ⇒ ต้องบอกทุกครั้งว่าเทียบกับของวันไหน และเก่าเกินเกณฑ์ต้องเตือน
       (เกณฑ์อยู่ในไฟล์สำเนาเอง ไม่ใช่ในด่าน — เลขเกณฑ์ต้องมีแหล่งเดียว) */
+/* 🔑 **`catch` ที่คืน "ไม่รู้" ต้องแนบเหตุ** (กติการ่วม 20 ก.ย. 2569 · ฝั่งท่อเสนอ ผมรับ)
+   🔴 ของเดิมคืน `null` เท่ากันหมด ⇒ ผู้เรียกพิมพ์ว่า **ไม่มีทั้ง ../gucut-web และ
+      lib/pipe-snapshot.json** ซึ่ง **เป็นเท็จเมื่อไฟล์มีอยู่แต่ JSON เสีย**
+      ⇒ คนอ่านจะไปหาไฟล์ที่อยู่ตรงหน้า แทนที่จะรู้ว่าไฟล์นั้นพัง
+   ⇒ เก็บเหตุไว้ใน `เหตุที่ใช้สำเนาไม่ได้` แล้วให้ผู้เรียกพิมพ์เหตุจริง */
+let เหตุที่ใช้สำเนาไม่ได้ = null
 function จากสำเนา() {
   const f = join(ROOT, 'lib', 'pipe-snapshot.json')
-  if (!existsSync(f)) return null
+  if (!existsSync(f)) { เหตุที่ใช้สำเนาไม่ได้ = 'ไม่มีไฟล์ lib/pipe-snapshot.json'; return null }
   try {
     const j = JSON.parse(readFileSync(f, 'utf8'))
     const jobs = j?.crontable?.jobs
-    if (!Array.isArray(jobs) || !jobs.length) return null
+    if (!Array.isArray(jobs) || !jobs.length) {
+      เหตุที่ใช้สำเนาไม่ได้ = 'ไฟล์สำเนามีอยู่ แต่ไม่มีช่อง crontable.jobs (หรือว่าง) ⇒ **สำเนาไม่ครบ ไม่ใช่ไม่มีสำเนา**'
+      return null
+    }
     const m = new Map()
     for (const r of jobs) {
       if (typeof r?.file === 'string' && typeof r?.cron === 'string') m.set(r.file.split('/').pop(), r.cron)
     }
-    return m.size ? { ตาราง: m, ดึงเมื่อ: j.ดึงเมื่อ, ท่อสร้างเมื่อ: j.ท่อสร้างเมื่อ, เกิน: Number(j.เตือนเมื่อเกินวัน) || 7 } : null
-  } catch { return null }
+    if (!m.size) {
+      เหตุที่ใช้สำเนาไม่ได้ = `ไฟล์สำเนามี jobs ${jobs.length} รายการ แต่ไม่มีรายการไหนมีทั้ง file และ cron ⇒ **รูปข้อมูลเปลี่ยน**`
+      return null
+    }
+    return { ตาราง: m, ดึงเมื่อ: j.ดึงเมื่อ, ท่อสร้างเมื่อ: j.ท่อสร้างเมื่อ, เกิน: Number(j.เตือนเมื่อเกินวัน) || 7 }
+  } catch (e) {
+    เหตุที่ใช้สำเนาไม่ได้ = `ไฟล์สำเนามีอยู่ แต่อ่าน/แปลงไม่ได้: ${String(e?.message ?? e).slice(0, 80)}`
+      + ' ⇒ **นี่คือของเราพัง ไม่ใช่ของไม่มี**'
+    return null
+  }
 }
 
 let แหล่ง = 'ซอร์สท่อข้างบ้าน (../gucut-web)'
@@ -79,7 +96,9 @@ let สำเนา = null
 if (!existsSync(FUNCS)) {
   สำเนา = จากสำเนา()
   if (!สำเนา) {
-    console.error('🔴 ไม่มีทั้ง ../gucut-web และ lib/pipe-snapshot.json ⇒ **ตรวจไม่ได้** (ไม่ใช่ผ่าน)')
+    console.error('🔴 ใช้ทั้งซอร์สท่อและสำเนาไม่ได้ ⇒ **ตรวจไม่ได้** (ไม่ใช่ผ่าน)')
+    console.error(`   · ซอร์สท่อ: ไม่มีโฟลเดอร์ ${FUNCS}`)
+    console.error(`   · สำเนา: ${เหตุที่ใช้สำเนาไม่ได้ ?? 'ไม่ทราบเหตุ (ตัวเก็บเหตุไม่ถูกตั้ง ⇒ ตะแกรงพัง)'}`)
     console.error('   ⇒ รัน `node scripts/ดึงสารบัญท่อ.mjs` บนเครื่องที่มีคีย์ แล้ว commit ไฟล์สำเนา')
     process.exit(1)
   }

@@ -151,13 +151,32 @@ const ตัดคอมเมนต์เข้ม = (x) => x.replace(/\/\*[\s\
 const พบ = []
 /* รายชื่อคีย์ที่ท่อ **ประกาศเอง** ว่าประกอบชื่อตอนรัน (ฝั่งท่อ d814552 · 19 ก.ย. 2569)
    อ่านจากสแนปช็อตสารบัญในเครื่อง — ไม่มี = ท่อรุ่นก่อนหน้านั้น ⇒ ตกไปใช้ทางถอยที่ประกาศตัว */
+/* 🔑 **`catch` ที่คืน "ไม่รู้" ต้องแนบเหตุ** (กติการ่วม 20 ก.ย. 2569 · ฝั่งท่อเสนอ ผมรับ)
+   🔴 ของเดิม `catch { return [] }` ⇒ **สามเหตุอ่านเหมือนกันหมด**:
+      ไม่มีไฟล์สำเนา (ปกติ) · ท่อรุ่นก่อนที่ยังไม่ประกาศ composedKeys (ปกติ) ·
+      **สำเนาพัง/รูปข้อมูลเปลี่ยน (ของเราพัง)** ⇒ อย่างที่สามเงียบสนิทและทำให้ด่านอ่อนลงเอง
+      (ชุดว่าง = ไม่มีคีย์ที่ประกาศ ⇒ ด่านไปใช้ทางถอย "เดาไว้" ซึ่งหลวมกว่า) */
+let เหตุที่ไม่มีคีย์ที่ประกาศ = null
 const คีย์ที่ประกาศ = new Set((() => {
   try {
     const snap = JSON.parse(readFileSync(join(ROOT, 'lib/pipe-snapshot.json'), 'utf8'))
     const c = snap?.endpoints?.composedKeys
-    return Array.isArray(c) ? c : (c && typeof c === 'object' ? Object.values(c).flat() : [])
-  } catch { return [] }
+    if (Array.isArray(c)) return c
+    if (c && typeof c === 'object') return Object.values(c).flat()
+    เหตุที่ไม่มีคีย์ที่ประกาศ = 'สำเนาอ่านได้ แต่ไม่มีช่อง endpoints.composedKeys ⇒ ท่อรุ่นก่อน 19 ก.ย. 2569'
+    return []
+  } catch (e) {
+    เหตุที่ไม่มีคีย์ที่ประกาศ = e?.code === 'ENOENT'
+      ? 'ไม่มีไฟล์ lib/pipe-snapshot.json ⇒ ยังไม่เคยดึงสารบัญท่อในเครื่องนี้'
+      : `อ่าน/แปลง lib/pipe-snapshot.json ไม่ได้: ${String(e?.message ?? e).slice(0, 80)}`
+        + ' ⇒ **ของเราพัง ไม่ใช่ท่อรุ่นเก่า** (ด่านจะอ่อนลงเองถ้าไม่บอก)'
+    return []
+  }
 })())
+if (เหตุที่ไม่มีคีย์ที่ประกาศ) {
+  console.log(`   ⚠️ ไม่มีรายชื่อคีย์ที่ท่อประกาศ ⇒ ตกไปใช้ทางถอย "เดาไว้" ซึ่งหลวมกว่า`)
+  console.log(`      เหตุ: ${เหตุที่ไม่มีคีย์ที่ประกาศ}`)
+}
 const เดาไว้ = []
 for (const file of walk(join(ROOT, 'app'))) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
