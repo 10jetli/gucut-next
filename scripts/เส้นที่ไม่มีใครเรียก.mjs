@@ -109,7 +109,12 @@ for (const ราก of ['app', 'components', 'lib', 'scripts', 'public']) {
     จด(p.replace(ROOT + '/', ''), เนื้อ)
   }
 }
-/* สคริปต์บน g1 — เรียกเส้นของเราได้จริง (คอมเมนต์ `#`) */
+/* สคริปต์บน g1 — เรียกเส้นของเราได้จริง (คอมเมนต์ `#`)
+   📏 **พิสูจน์แล้วว่าอ่าน `~/bin` จริง** (20 ก.ย. 2569 · ท่า HOME ปลอมของฝั่งท่อ) — สามสถานะ:
+     · HOME จริง            ⇒ `/api/mailcheck` **ติดรายการ**
+     · HOME ปลอม + มีตัวเรียกใน `bin/` ⇒ **หลุดจากรายการ**
+     · HOME ปลอม + ไม่มีตัวเรียก      ⇒ **ติดกลับ** (ตัวควบคุม — พิสูจน์ว่าเปลี่ยนเพราะไฟล์ ไม่ใช่เพราะ HOME ต่าง)
+   ⚠️ รันเฉพาะสคริปต์นี้ใต้ HOME ปลอม **อย่ารัน `npm` ทั้งชุด** (แคช npm ย้ายตาม) */
 for (const ราก of [join(process.env.HOME || '', 'bin'), join(process.env.HOME || '', '.hermes/scripts')]) {
   if (!existsSync(ราก)) { กวาดครบ = false; รากที่หาย.push(ราก.replace(process.env.HOME || '', '~')); continue }
   ที่กวาด.push(ราก.replace(process.env.HOME || '', '~'))
