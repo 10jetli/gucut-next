@@ -1,0 +1,109 @@
+/* หมุดตัวเลขที่ **วัดซ้ำได้** — คำสั่งในโค้ดที่อ้างตัวเลขจากโลกจริง ต้องวัดซ้ำได้
+ * (19 ก.ย. 2569 · ใบ S4 · ยกแนวคิดจากฝั่งท่อ `measured-claims.test.mjs`)
+ *
+ * 🔑 **ขอบเขต — แคบโดยตั้งใจ**
+ *   ครอบเฉพาะ **คำสั่งที่อ้างตัวเลขที่วัดจากโลกจริง** ("เปิดอยู่ 12 รายการ" · "ท่อมี 24 เส้น")
+ *   🚫 **ไม่ครอบคำสั่งที่เป็นหลักการ** ("ห้ามยุบสามสถานะ" · "ห้ามเขียนของที่ระบบยังทำไม่ได้ลงคู่มือ")
+ *      เพราะหลักการ **ค้างไม่ได้** — ไม่มีอะไรในโลกทำให้มันเป็นเท็จ ⇒ อยู่นอกขอบเขตตั้งแต่ต้น
+ *   ⇒ เงื่อนไขที่ทำให้คำสั่งค้างได้คือ **มันอ้างค่าที่วัดจากโลกจริง**
+ *     ไม่ใช่ว่ามันมีคำว่า "ห้าม/ต้อง" (ตะแกรงรุ่นแรกผูกกับคำ ⇒ ได้ 26 จุด ส่วนใหญ่เป็นหลักการ)
+ *
+ * 🔴 **หมุดที่ไม่มีวิธีวัดในทะเบียน = แดง** (ฝั่งท่อกำชับ และผมเห็นด้วย)
+ *    ไม่งั้นได้ **คำรับรองที่แต่งตัวมาเป็นกลไก** — ดูเหมือนตรวจได้ และไม่มีใครตรวจ
+ *
+ * ⚠️ วิธีวัดต้องเป็น **คำสั่งในเครื่อง ไม่ยิงเน็ต** — เทสนี้อยู่ใน prebuild ซึ่งรันบ่อยกว่า deploy มาก
+ *    (ยิงเน็ตตอน build = กินเวลาฟังก์ชัน = กินเครดิต · กฎเดิมของเราวันนี้)
+ *
+ * รูปหมุดในโค้ด:  วัดได้(<สิ่งที่นับ>)=<เลข>
+ */
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { join, relative } from 'node:path'
+import { ตัดคอมเมนต์ } from '../lib/ตัดคอมเมนต์.mjs'
+
+const ROOT = fileURLToPath(new URL('../..', import.meta.url))
+
+/** ทะเบียนวิธีวัด — คีย์คือ `<สิ่งที่นับ>` ในหมุด · ค่าคือฟังก์ชันที่คืนตัวเลขจริง
+ *  🚫 หมุดที่ไม่มีคีย์ในนี้ ⇒ **ตก** (ไม่ใช่ข้าม) */
+const วิธีวัด = {
+  'รายการใน PUBLIC_PATHS': () => {
+    const m = readFileSync(join(ROOT, 'middleware.ts'), 'utf8').match(/const PUBLIC_PATHS = \[([\s\S]*?)\]/)
+    return m ? [...m[1].matchAll(/'([^']+)'/g)].length : null
+  },
+  'เส้น API ทั้งหมด': () => {
+    const out = []
+    const เดิน = (d) => {
+      for (const e of readdirSync(d, { withFileTypes: true })) {
+        if (e.name.startsWith('.')) continue
+        const p = join(d, e.name)
+        if (e.isDirectory()) เดิน(p)
+        else if (/^route\.tsx?$/.test(e.name)) out.push(p)
+      }
+    }
+    เดิน(join(ROOT, 'app/api'))
+    return out.length
+  },
+  'เส้นที่ท่อประกาศตัวกรอง': () => {
+    const s = JSON.parse(readFileSync(join(ROOT, 'lib/pipe-snapshot.json'), 'utf8'))
+    return Object.keys(s['ตัวกรองที่รับรายเส้น'] ?? {}).length
+  },
+}
+
+function ไฟล์ทั้งหมด(dir, out = []) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === 'node_modules' || e.name.startsWith('.')) continue
+    const p = join(dir, e.name)
+    if (e.isDirectory()) ไฟล์ทั้งหมด(p, out)
+    else if (/\.(ts|tsx|mjs)$/.test(p)) out.push(p)
+  }
+  return out
+}
+
+const หมุด = /วัดได้\(([^)]+)\)=([0-9,]+)/g
+const เจอ = []
+for (const ราก of ['app', 'components', 'lib', 'scripts', 'middleware.ts']) {
+  const เต็ม = join(ROOT, ราก)
+  let รายการ
+  try { รายการ = statSync(เต็ม).isDirectory() ? ไฟล์ทั้งหมด(เต็ม) : [เต็ม] } catch { continue }
+  for (const p of รายการ) {
+    const src = readFileSync(p, 'utf8')
+    /* 🔑 อ่านจาก **ซอร์สดิบ** — หมุดตั้งใจให้อยู่ในคอมเมนต์ (ท่าเดียวกับช่องรับรองอื่น ๆ) */
+    for (const m of src.matchAll(หมุด)) {
+      เจอ.push({ ไฟล์: relative(ROOT, p), สิ่งที่นับ: m[1].trim(), เลข: Number(m[2].replace(/,/g, '')) })
+    }
+  }
+}
+
+/* 🔒 **ไม่มีหมุดเลย = ไม่ผ่าน** — เขียวที่แปลว่า "ไม่มีอะไรให้ตรวจ" คือสิ่งที่ใบนี้ไล่อยู่พอดี
+   (ถ้าวันหนึ่งมีคนลบหมุดทิ้งหมด เทสนี้ต้องแดง ไม่ใช่เงียบ) */
+if (เจอ.length === 0) {
+  console.error('🔴 ไม่เจอหมุดตัวเลขสักจุด — เทสนี้ตรวจอะไรไม่ได้รอบนี้ ⇒ ถือว่าไม่ผ่าน')
+  console.error('   คำสั่งที่อ้างตัวเลขที่วัดได้ ต้องติดหมุดรูป `วัดได้(<สิ่งที่นับ>)=<เลข>` ไว้ข้าง ๆ')
+  process.exit(1)
+}
+
+let ตก = 0
+console.log(`หมุดตัวเลขที่วัดได้: ${เจอ.length} จุด · ทะเบียนวิธีวัด ${Object.keys(วิธีวัด).length} รายการ`)
+for (const x of เจอ) {
+  const วัด = วิธีวัด[x.สิ่งที่นับ]
+  if (!วัด) {
+    console.error(`🔴 ${x.ไฟล์}: หมุด "${x.สิ่งที่นับ}" **ไม่มีวิธีวัดในทะเบียน**`)
+    console.error('   ⇒ หมุดที่วัดซ้ำไม่ได้ คือคำรับรองที่แต่งตัวมาเป็นกลไก ⇒ ลงทะเบียนวิธีวัด หรือเอาหมุดออก')
+    ตก++; continue
+  }
+  let จริง = null
+  try { จริง = วัด() } catch (e) { จริง = null }
+  if (จริง === null) {
+    console.error(`🔴 ${x.ไฟล์}: วัด "${x.สิ่งที่นับ}" ไม่สำเร็จ ⇒ **ตัดสินไม่ได้ ไม่ใช่ผ่าน**`)
+    ตก++; continue
+  }
+  if (จริง !== x.เลข) {
+    console.error(`🔴 ${x.ไฟล์}: "${x.สิ่งที่นับ}" หมุดเขียน ${x.เลข} · วัดจริงได้ **${จริง}**`)
+    console.error('   ⇒ คำสั่งที่อิงเลขนี้อาจค้างแล้ว — แก้เลข **และอ่านคำสั่งรอบ ๆ ว่ายังจริงไหม**')
+    ตก++; continue
+  }
+  console.log(`   ✅ ${x.สิ่งที่นับ} = ${จริง} (${x.ไฟล์})`)
+}
+
+if (ตก) { console.error(`\n🔴 หมุดตัวเลขที่วัดได้: ตก ${ตก} จุด`); process.exit(1) }
+console.log('✅ ทุกหมุดตรงกับค่าที่วัดได้จริง')
