@@ -18,6 +18,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import { ป้ายชื่อซ้ำจาก } from '@/lib/ชื่อซ้ำ'
 import { SALE_STATUS, PAY_STATUS, PURCHASE_STATUS, CONTACT_TYPE, zortWord } from '@/lib/zort-words'
 import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -61,6 +62,11 @@ interface Resp {
   money?: Money
   products?: Products
   matchNote?: string
+  /* 🔴 **ธงจากท่อ: ชื่อที่ค้นตรงกับผู้ติดต่อมากกว่าหนึ่งราย** (ฝั่งท่อเพิ่ม 19 ก.ย. 2569)
+     ท่อค้นด้วย `id OR code OR name` แล้วคืนรายแรก ⇒ **ชื่อคนไม่ได้ไม่ซ้ำกัน**
+     ⇒ จอจะโชว์ยอดขาย/ประวัติของรายหนึ่ง **เป็นของอีกราย** โดยดูสมเหตุสมผลทุกประการ
+     ⚠️ **ไม่มีคีย์นี้ = ท่อรุ่นเก่า ไม่ใช่ "ไม่ซ้ำ"** ⇒ ต้องแยกสามสถานะที่ชั้นจอ */
+  'ชื่อซ้ำกันหลายราย'?: boolean
   error?: string; skip?: string
 }
 
@@ -100,6 +106,10 @@ function Inner() {
   /* ใบซื้อของผู้ติดต่อรายนี้ · purchases === null = อ่านตารางใบซื้อไม่ได้ (ยังไม่รู้) ⇒ ไม่โชว์คอลัมน์ ประเภท
      แต่ต้องเขียนบอกใต้ตารางว่าอ่านไม่ได้ ไม่ใช่เงียบ */
   const buys = d?.purchases?.rows ?? []
+  /* สามสถานะของ "ชื่อซ้ำ": true = ซ้ำ · false = ไม่ซ้ำ · undefined = **ท่อไม่ได้บอก**
+     🔑 และเตือนเฉพาะตอนที่ **เปิดด้วยชื่อ** — เปิดด้วย id ไม่มีปัญหานี้เลย
+        (คำเตือนที่ขึ้นตอนไม่เกี่ยวข้อง จะถูกเมินจนวันที่มันสำคัญจริง) */
+  const ป้าย = ป้ายชื่อซ้ำจาก(!!sp.get('name') && !sp.get('id'), d?.['ชื่อซ้ำกันหลายราย'], !!d)
 
   return (
     <div className="p-4 md:p-6 max-w-[980px]">
@@ -114,6 +124,25 @@ function Inner() {
           มันตอบคำถามว่า "ใบพวกนี้เป็นของคนนี้จริงไหม" ⇒ กำกับ**ทุกอย่างที่อยู่ใต้มัน**
           เดิมอยู่บรรทัดสุดท้ายของจอด้วยสี gray-400 (อ่อนที่สุดในโปรเจกต์)
           = คนอ่านประวัติการซื้อจบแล้วจึงเจอว่าอาจไม่ใช่คนเดียวกัน */}
+      {/* 🔴 **"อาจเป็นคนละคน" ต้องดังกว่า "ข้อจำกัดการจับคู่"** — อันนี้บอกว่าของที่เห็นอาจไม่ใช่ของคนนี้เลย
+          และต้องอยู่**เหนือ**ทุกอย่าง เพราะมันกำกับทั้งจอ (บทเรียนเดิม: คำเตือนท้ายจอ = อ่านจบแล้วค่อยรู้) */}
+      {ป้าย === 'ซ้ำ' ? (
+          <p className="mb-3 text-[13px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+            🔴 <b>ชื่อนี้ตรงกับผู้ติดต่อมากกว่าหนึ่งราย</b> — ท่อคืน<b>รายแรกที่เจอ</b>
+            <span className="block">
+              ⇒ ยอดขายและประวัติข้างล่างนี้ <b>อาจเป็นของอีกคนที่ชื่อเหมือนกัน</b>
+              {' '}· เปิดจากจอผู้ติดต่อโดยกดที่แถวของคนนั้นโดยตรง จะได้รหัสที่ไม่ซ้ำ
+            </span>
+          </p>
+        ) : ป้าย === 'ยังบอกไม่ได้' ? (
+          <p className="mb-3 text-[12.5px] text-gray-700 bg-gray-50 border border-gray-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+            ℹ️ <b>ยังบอกไม่ได้ว่าชื่อนี้ซ้ำกับผู้ติดต่อรายอื่นไหม</b> — ท่อรุ่นที่ปล่อยอยู่ยังไม่ส่งข้อมูลนี้มา
+            <span className="block text-gray-600">
+              ⇒ <b>ไม่ใช่แปลว่าไม่ซ้ำ</b> · ถ้าตัวเลขดูผิดคาด ให้เปิดจากจอผู้ติดต่อโดยกดแถวของคนนั้นโดยตรง
+            </span>
+          </p>
+        ) : null}
+
       {d?.matchNote && (
         <p className="mb-3 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
           ⚠️ <b>ข้อจำกัดการจับคู่ลูกค้า</b> — {d.matchNote}
