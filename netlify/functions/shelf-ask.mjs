@@ -88,7 +88,11 @@ async function planFor(sourceName, rows, isStuck, today, memory) {
       sku: g.sku, name: g.name, orders: g.orders.length, maxAge: g.maxAge,
       text: askText(g), buttons: askButtons(g, today),
     })),
+    /* 🔑 ตัดรายการเพื่อส่งขึ้นจอ **ต้องส่งจำนวนเต็มไปคู่กันเสมอ** (19 ก.ย. 2569)
+       ไม่งั้นจอเห็น 10 รายการแล้วไม่มีทางรู้ว่ามีมากกว่านั้น — คลาสเดียวกับที่ฝั่งท่อ
+       parse รายการที่ถูกตัดเหลือ 3 บรรทัดแล้วสรุปผิด · เพิ่ม **คีย์ใหม่** ไม่แตะคีย์เดิม */
     heldBack: held.slice(0, 10),
+    heldBackTotal: held.length,
     overflow: overflow.length,      // เกินเพดานวันนี้ — ไม่หาย พรุ่งนี้ยังอยู่
   };
 }

@@ -104,6 +104,8 @@ if (!problems.length) {
 if (problems.length) {
   console.log(`🔴 ตารางบาร์โค้ดมีปัญหา ${problems.length} จุด — ฉลากที่พิมพ์ออกไปจะสแกนได้ค่าผิด`)
   for (const p of problems.slice(0, 20)) console.log(`   ${p}`)
+  /* ตัดได้ แต่ต้องบอกว่าตัด — ไม่งั้นคนอ่าน 20 บรรทัดแล้วเชื่อว่าเห็นครบ (19 ก.ย. 2569) */
+  if (problems.length > 20) console.log(`   … อีก ${problems.length - 20} จุด (รวม ${problems.length})`)
   process.exit(1)
 }
 
