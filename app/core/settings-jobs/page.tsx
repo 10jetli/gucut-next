@@ -22,6 +22,9 @@
 //    เขียน UTC ดิบบนจอ = คนอ่านคิดว่างานวิ่งตอนบ่าย ทั้งที่วิ่งตอนตีสาม
 import Link from 'next/link'
 import CronFromPipe from '@/components/zort/CronFromPipe'
+/* 🔑 นับรอบต่อวันจากช่อง `cron` ที่มีอยู่แล้ว — **ห้ามพิมพ์เลขนี้ลงตาราง**
+   ไม่งั้นได้เลขเกณฑ์สองที่ที่เพี้ยนจากกัน (โรคที่ทีมไล่ปิดทั้งวัน 18–19 ก.ย. 2569) */
+import { รอบต่อวัน, ป้ายรอบต่อวัน } from '@/lib/cron-rate'
 import { PageHead, Pill } from '@/components/zort'
 
 /* 🔄 **ตารางของตัวดันสต็อกเปลี่ยนสองรอบในวันเดียว — ไม่ใช่ใครพิมพ์ผิด**
@@ -283,6 +286,34 @@ export default function SettingsJobsPage() {
         summary={
           <>
             มี <b>{JOBS.length}</b> งานที่วิ่งเองอยู่จริง
+            {(() => {
+              /* 🔑 รวมรอบต่อวัน — **นับเฉพาะงานที่อ่าน cron ออก** และบอกด้วยว่านับไม่ได้กี่ตัว
+                 (งานที่วิ่งเฉพาะบางวันตอบ "รอบต่อวัน" ด้วยเลขเดียวไม่ได้ ⇒ ต้องแยกออก ไม่ใช่นับเป็น 0)
+                 ⚠️ ตัวหารเป็นเฉพาะที่นับได้ ⇒ เปอร์เซ็นต์ต้องเขียนกำกับว่าเทียบกับอะไร */
+              const นับได้ = JOBS.map((j) => รอบต่อวัน(j.cron)).filter((n): n is number => n !== null)
+              const นับไม่ได้ = JOBS.length - นับได้.length
+              const รวม = นับได้.reduce((a, n) => a + n, 0)
+              if (!รวม) return null
+              const กวาด = JOBS.filter((j) => j.src.includes('stock-push-sweep'))
+                .reduce((a, j) => a + (รอบต่อวัน(j.cron) ?? 0), 0)
+              return (
+                <>
+                  {' · รวม '}<b>{รวม.toLocaleString('th-TH')}</b>{' รอบ/วัน'}
+                  {นับไม่ได้ > 0 && (
+                    <span className="text-gray-400">
+                      {' '}(ยังไม่รวมอีก {นับไม่ได้} งานที่วิ่งเฉพาะบางวัน ⇒ นับเป็นรอบ/วันไม่ได้)
+                    </span>
+                  )}
+                  {กวาด > 0 && (
+                    <span className="block text-amber-800 text-[12px]">
+                      ⚠️ ในนั้นเป็นตัวกวาดดันสต็อก <b>{กวาด}</b> รอบ/วัน
+                      {' '}({Math.round((กวาด / รวม) * 100)}% ของรอบที่นับได้)
+                      {' '}— Netlify คิดเงินตาม<b>เวลารันฟังก์ชัน</b> ⇒ ตรงนี้คือจุดที่ควรดูก่อน
+                    </span>
+                  )}
+                </>
+              )
+            })()}
             {' | '}
             <span className="text-gray-400">คัดจากไฟล์ฟังก์ชันจริง · ตรวจล่าสุด {CHECKED_AT}</span>
           </>
@@ -341,6 +372,14 @@ export default function SettingsJobsPage() {
               <span className="flex items-center gap-2 shrink-0">
                 {j.alert && <Pill tone="orange">มีแจ้งเตือนเมื่อล้ม</Pill>}
                 <span className="text-[12.5px] text-gray-700 bg-gray-100 rounded px-2 py-0.5">{j.when}</span>
+                {/* 🔴 **Netlify คิดเงินตามเวลารันฟังก์ชัน ไม่ใช่จำนวนครั้ง**
+                    ⇒ ของที่แพงคือ (วินาทีต่อรอบ × รอบต่อวัน) · จอเดิมมีแต่ cron
+                    คนอ่านต้องนับเองในหัวว่ารอบไหนถี่กว่ากัน ซึ่งไม่มีใครนับจริง
+                    วัดแล้ว 19 ก.ย. 2569: ตัวกวาดดันสต็อก 3 ตัวรวม 288 รอบ/วัน = 61%
+                    ของรอบทั้งหมด 473 รอบ — ซึ่งไม่ตรงกับที่ทุกคนคิดว่าตัวซิงก์แพงที่สุด */}
+                <span className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-2 py-0.5">
+                  {ป้ายรอบต่อวัน(j.cron)}
+                </span>
               </span>
             </div>
             <p className="text-[13px] text-gray-700 leading-relaxed">{j.what}</p>
