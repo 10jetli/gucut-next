@@ -6,6 +6,7 @@
 // ⚠️ คำถามที่ต้องตอบให้ได้คือ "ของตัวไหนถูกคืนบ่อย" ไม่ใช่แค่ "คืนไปกี่ใบ"
 //    ยอดคืนรวมบอกแค่ว่าเจ็บเท่าไหร่ แต่บอกไม่ได้ว่าต้องไปแก้อะไร
 //    ตัวที่ถูกคืนซ้ำ ๆ มักมีสาเหตุจริง (รูปไม่ตรง · สเปกกำกวม · ของเสียบ่อย)
+import { วันไทยจากMs } from './format'
 import { zortFetch } from './zort'
 
 // ⚠️ ใบคืนของจากเว็บหน้าร้าน (gucut.com) ไม่มีใน ZORT
@@ -65,7 +66,10 @@ export interface ReturnsResult {
 
 const num = (v: unknown) => (typeof v === 'number' ? v : Number(v) || 0)
 const str = (v: unknown) => (typeof v === 'string' ? v : '')
-const ymd = (d: Date) => d.toISOString().slice(0, 10)
+/* 🔴 **แก้ 20 ก.ย. 2569** — เหตุผลเดียวกับ `lib/reorder.ts`: ค่านี้ส่งเป็น
+   `returnorderdateafter/before` เข้า ZORT ซึ่งเก็บเวลาไทย ⇒ วัน UTC ทำให้หน้าต่างจบที่เมื่อวาน
+   ในช่วง 00:00–06:59 เวลาไทย ⇒ **ใบคืนของวันนี้หลุดจากการนับ** */
+const ymd = (d: Date) => วันไทยจากMs(d.getTime())
 
 /**
  * ดึงทีละหน้าแต่ยิงพร้อมกันหลายหน้า

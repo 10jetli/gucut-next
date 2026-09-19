@@ -2,6 +2,7 @@
 //
 // ยอดขายมาจาก ZORT ซึ่งรวมออเดอร์ Shopee · Lazada · TikTok · หน้าร้าน ไว้ที่เดียวแล้ว
 // ดึงที่นี่ที่เดียวจึงได้ครบทุกช่องทางตามที่เจ้าของร้านต้องการ
+import { วันไทยจากMs } from './format'
 import { zortFetch } from './zort'
 import { abcClass, forecast, seasonalIndex } from './forecast'
 
@@ -49,6 +50,12 @@ export interface ReorderResult {
   leadDays: number
   coverDays: number
   lookbackDays: number
+  /** หน่วยของหน้าต่างที่ใช้นับ — **ผู้เรียกต้องเอาไปเขียนบนจอ** (20 ก.ย. 2569)
+   *  🔴 ที่มา: หน้าต่างนี้เคยคิดจาก **วัน UTC** ⇒ ช่วง 00:00–06:59 เวลาไทย ออเดอร์ของวันนั้นหลุด
+   *     แก้เป็นวันไทยแล้ว ⇒ **เลขที่คนเคยเห็นเมื่อคืนจะขยับ**
+   *  ⚠️ ผู้เรียกจริงคือหน้าแคตตาล็อก (`public/catalog/index.html`) ซึ่ง **ห้ามแตะตามคำสั่ง**
+   *     ⇒ จึงส่งหมายเหตุมาในคำตอบ ให้ฝั่งที่เรนเดอร์เลือกแสดง — **ไม่ปล่อยให้เลขขยับแบบไม่มีคำอธิบาย** */
+  หน่วยหน้าต่าง: string
   orders: number
   season: number[]
   skus: SkuStat[]
@@ -56,7 +63,13 @@ export interface ReorderResult {
 
 const num = (v: unknown) => (typeof v === 'number' ? v : Number(v) || 0)
 const str = (v: unknown) => (typeof v === 'string' ? v : '')
-const ymd = (d: Date) => d.toISOString().slice(0, 10)
+/* 🔴 **แก้ 20 ก.ย. 2569** — ของเดิม `d.toISOString().slice(0, 10)` ให้ **วัน UTC**
+   แต่ค่านี้ถูกส่งเป็น `orderdateafter/orderdatebefore` เข้า ZORT ซึ่งเก็บ **เวลาไทย**
+   ⇒ ช่วง 00:00–06:59 เวลาไทย หน้าต่างจบที่ "เมื่อวาน" ⇒ **ออเดอร์ของวันนี้หลุดจากการคำนวณ**
+   ⚠️ ร้านทำงานตี 3 จริง ⇒ ชั่วโมงที่บั๊กทำงาน = ชั่วโมงที่คนใช้จอนี้จริง
+   (คลาสเดียวกับบั๊ก `orderdate` ที่ฝั่งท่อเจอวันเดียวกัน · ฝั่งท่อเป็นคนชี้ว่า **แก้เลย ไม่ต้องรอ**
+    เพราะจอนี้เป็นเครื่องช่วยตัดสินใจสด ⇒ เลขที่ตกวันนี้ออกไป **ไม่ใช่เลขที่ถูกกว่า มันคือเลขที่ผิด**) */
+const ymd = (d: Date) => วันไทยจากMs(d.getTime())
 
 /**
  * ดึงข้อมูลทีละหน้า — แต่ยิงพร้อมกันหลายหน้า
@@ -231,6 +244,8 @@ export async function computeReorder(
     leadDays,
     coverDays,
     lookbackDays: LOOKBACK_DAYS,
+    หน่วยหน้าต่าง: `นับยอดขายย้อนหลัง ${LOOKBACK_DAYS} วัน ตามวันปฏิทินไทย`
+      + ' (แก้ 20 ก.ย. 2569 — เดิมคิดเป็นวัน UTC ทำให้ช่วงตี 1–7 โมงเช้าไม่นับออเดอร์ของวันนั้น)',
     orders: counted,
     season,
     skus,
