@@ -14,13 +14,19 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 
 export function เส้นที่ใช้secret(files) {
   const out = []
   for (const [path, src] of files) {
-    const code = src.split('\n').filter((l) => !/^\s*(\/\/|\*|\/\*)/.test(l)).join('\n')
+    /* 🔴 19 ก.ย. 2569 (งาน S2): ตัวกรองเดิมข้ามเฉพาะบรรทัดที่ **ขึ้นต้น** ด้วยคอมเมนต์
+       ⇒ คอมเมนต์ **ท้ายบรรทัด** ที่มีคำว่า process.env.DRIVESYNC_SECRET ยังถูกนับเป็นโค้ด
+       ⇒ เส้นที่ไม่เคยตรวจ secret เลย จะถูกจัดว่า "ตรวจเอง" แล้วด่านไปบังคับให้ใส่ใน PUBLIC_PATHS
+          = **เปิดเส้นออกจากกำแพงล็อกอินเพราะคอมเมนต์** ⇒ ผิดทิศที่อันตรายที่สุดของด่านนี้
+       ⚠️ แต่ `ไม่เปิดสาธารณะโดยตั้งใจ:` ข้างล่าง **ตั้งใจให้เป็นคอมเมนต์** ⇒ อ่านจาก src ดิบต่อไป */
+    const code = ตัดคอมเมนต์(src)
     if (!/process\.env\.DRIVESYNC_SECRET/.test(code)) continue
     const route = '/' + path.replace(/^app\//, '').replace(/\/route\.tsx?$/, '')
     out.push({ route, ตั้งใจ: /ไม่เปิดสาธารณะโดยตั้งใจ:/.test(src) })
