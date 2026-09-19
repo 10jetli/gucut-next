@@ -15,6 +15,7 @@
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 /** ลิงก์ที่ปลายทางยังไม่อ่านค่า แต่ตั้งใจ — ต้องมีเหตุผล */
@@ -56,7 +57,7 @@ const ไฟล์ที่ตรวจ = walk(join(ROOT, 'app'))
 ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-link-params')
 for (const file of ไฟล์ที่ตรวจ) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
-  const src = readFileSync(file, 'utf8')
+  const src = ตัดคอมเมนต์(readFileSync(file, 'utf8'))
   /* 🔴 **ตะแกรงเดิมมองไม่เห็น `href="…"` ธรรมดา** (พบ 19 ก.ย. 2569 · ใบ S2 ด้วยการปลูกของเสีย)
      รูปเดิม `href=\{?`?` รับได้แค่ `href={…}` กับ backtick ⇒ `href="/core/x?y=1"` **หลุดทั้งหมด**
      ⇒ ปลูกลิงก์ที่ปลายทางไม่อ่านด้วยรูปนั้น แล้วด่าน **เงียบสนิท**
@@ -72,7 +73,7 @@ for (const file of ไฟล์ที่ตรวจ) {
     const target = pageFileOf(route)
     if (!target) continue                       // ไม่ใช่เพจในโปรเจกต์นี้ (แคตตาล็อก static ฯลฯ)
     ตรวจไป++
-    const เป้า = readFileSync(target, 'utf8')
+    const เป้า = ตัดคอมเมนต์(readFileSync(target, 'utf8'))
     const อ่าน = new RegExp(`get\\(\\s*['"\`]${key}['"\`]\\s*\\)`).test(เป้า)
     const คีย์ยกเว้น = `${route.replace(/^\//, '')}?${key}`
     if (!อ่าน && !ยกเว้น[คีย์ยกเว้น]) {

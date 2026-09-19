@@ -20,6 +20,7 @@
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 const PIPE = join(ROOT, '..', 'gucut-web')
@@ -55,7 +56,7 @@ if (!existsSync(CORE)) {
 /* ── แบ่งไฟล์ท่อเป็นบล็อกต่อเส้น ─────────────────────────────────
    หาจุดเริ่มของแต่ละเส้น แล้วถือว่าบล็อกจบตรงจุดเริ่มของเส้นถัดไป
    (หยาบแต่พอ — เราต้องการรู้แค่ว่า "ชื่อนี้ถูกอ่านในบริเวณของเส้นนี้ไหม") */
-const src = readFileSync(CORE, 'utf8')
+const src = ตัดคอมเมนต์(readFileSync(CORE, 'utf8'))
 const จุดเริ่ม = []
 for (const m of src.matchAll(/searchParams\.get\("list"\)\s*===\s*"(\w+)"/g)) จุดเริ่ม.push([m[1], m.index])
 for (const m of src.matchAll(/searchParams\.(?:get|has)\("(\w+)"\)/g)) จุดเริ่ม.push([m[1], m.index])
@@ -104,7 +105,7 @@ const ยอมเพราะข้อความล้วน = []
 const พบ = []
 for (const file of walk(join(ROOT, 'app')).concat(walk(join(ROOT, 'components')), walk(join(ROOT, 'lib')))) {
   const rel = file.slice(ROOT.length).replace(/^\/+/, '')
-  const s = readFileSync(file, 'utf8')
+  const s = ตัดคอมเมนต์(readFileSync(file, 'utf8'))
   /* รูปที่ 2: `new URLSearchParams({ list: 'xxx', … })` แล้วตามด้วย `.set('ชื่อ', …)`
      อ่านทั้งชื่อช่องใน object literal และ `.set()` ที่ตามมาในหน้าต่างเดียวกัน
      ⚠️ หยุดที่ `URLSearchParams` ก้อนถัดไป เพื่อไม่ให้ชื่อของอีกเส้นหนึ่งไหลมาปน */

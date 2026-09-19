@@ -13,9 +13,10 @@
  * สแนปช็อตชื่อเมนูของ ZORT: scripts/zort-menu-snapshot.json (เก็บเฉพาะชื่อเมนู ไม่มีข้อมูลร้าน)
  */
 import { readFileSync } from 'node:fs'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const snap = JSON.parse(readFileSync(new URL('./zort-menu-snapshot.json', import.meta.url), 'utf8'))
-const nav = readFileSync(new URL('../lib/nav-config.ts', import.meta.url), 'utf8')
+const nav = ตัดคอมเมนต์(readFileSync(new URL('../lib/nav-config.ts', import.meta.url), 'utf8'))
 
 /** ชื่อของ ZORT ที่เราตั้งใจไม่มี หรือตั้งใจใช้คำอื่น — ต้องมีเหตุผลเสมอ */
 const ยกเว้น = {

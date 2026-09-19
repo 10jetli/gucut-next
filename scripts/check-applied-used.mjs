@@ -19,6 +19,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 
@@ -37,7 +38,7 @@ const ปัญหา = []
 const ไฟล์ที่ตรวจ = walk(join(ROOT, 'app'))
 ต้องมีของให้ตรวจ(ไฟล์ที่ตรวจ.length, 'check-applied-used')
 for (const file of ไฟล์ที่ตรวจ) {
-  const src = readFileSync(file, 'utf8')
+  const src = ตัดคอมเมนต์(readFileSync(file, 'utf8'))
   if (!/\bapplied\?\s*:/.test(src)) continue          // จอนี้ไม่รู้จัก applied ⇒ ไม่เกี่ยว
   /* ต้องมีการอ่านค่าไปใช้จริง — นับเฉพาะบรรทัดที่ **ไม่ใช่** บรรทัดประกาศชนิดข้อมูล */
   const ใช้จริง = src.split('\n').some((line) =>
