@@ -17,7 +17,7 @@
  *
  * วิธีใช้: node scripts/ด่านแยกแยะได้ไหม.mjs
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ปลูกแล้ววัด } from './lib/ปลูกแล้ววัด.mjs'
@@ -281,6 +281,14 @@ for (const x of สูตร) {
 const ในลูกโซ่ = [...ด่านที่ผ่าน].filter((g) => ทั้งหมด.includes(g))
 const นอกลูกโซ่ = [...ด่านที่ผ่าน].filter((g) => !ทั้งหมด.includes(g))
 console.log(`\n📏 พิสูจน์แล้วว่าแยกแยะได้ **${ในลูกโซ่.length} ด่าน** จาก **${ทั้งหมด.length}** ตัวใน prebuild`)
+/* 🔑 **ตัวหารที่ซื่อสัตย์ = ตัวตรวจทั้งหมดที่เรามี ไม่ใช่เฉพาะตัวที่รันใน build**
+   (20 ก.ย. 2569 · ใบ S2 · ฝั่งท่อวัดได้เลขเดียวกัน 9 ตัวโดยไม่ได้นัดกัน)
+   ตัวตรวจที่ยิงของจริงต้องมีเว็บ/คีย์ ⇒ อยู่นอกลูกโซ่ ⇒ **หลุดจากตัวหารของทุกคนพร้อมกัน** */
+const ตัวตรวจนอกลูกโซ่ = readdirSync(join(ROOT, 'scripts'))
+  .filter((f) => f.endsWith('.mjs') && !ทั้งหมด.includes('scripts/' + f))
+  .filter((f) => /^check-|ตรวจ|ยิง|หมุด|ด่าน|ตะแกรง|verify/.test(f))
+console.log(`   📏 **ตัวหารซื่อสัตย์: ${ในลูกโซ่.length + นอกลูกโซ่.length} จาก ${ทั้งหมด.length + ตัวตรวจนอกลูกโซ่.length}** `
+  + `(ด่านใน prebuild ${ทั้งหมด.length} + ตัวตรวจนอกลูกโซ่ ${ตัวตรวจนอกลูกโซ่.length})`)
 if (นอกลูกโซ่.length) {
   console.log(`   ➕ และ **${นอกลูกโซ่.length} ตัวที่อยู่นอกลูกโซ่ prebuild**: ${นอกลูกโซ่.join(' · ')}`)
   console.log('      (นับแยก — ตัวส่วนข้างบนคือด่านใน prebuild เท่านั้น · ยังมีตัวตรวจนอกลูกโซ่อีกหลายตัวที่ยังไม่เคยพิสูจน์)')
