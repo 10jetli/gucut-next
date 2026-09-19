@@ -87,8 +87,10 @@ if ! npm run build > /tmp/prepush-build.log 2>&1; then
   #    รอบแรกที่ลองจริง บรรทัดสรุปจึงเต็มไปด้วยเคสที่ผ่าน และ **สาเหตุจริงไม่โผล่เลย**
   #    ⇒ ท้ายล็อกคือที่ที่ด่านตัวที่ตกพิมพ์ไว้เสมอ (สคริปต์หยุดตรงนั้น) ⇒ พิมพ์ท้ายล็อกด้วยทุกครั้ง
   grep -E "🛑|Failed to compile|error TS|Error:" /tmp/prepush-build.log | head -5
+  # วัดแล้ว 19 ก.ย. 2569: `npm run build` ที่ prebuild ตก **ไม่เติมบรรทัดท้ายของตัวเอง**
+  # ⇒ บรรทัดสุดท้ายของล็อกคือของด่านที่ตกจริง · ใช้ 20 บรรทัดเผื่อด่านที่พิมพ์คำแนะนำยาว
   echo "   ── ท้ายล็อก (ด่านที่ตกอยู่ตรงนี้) ──"
-  tail -12 /tmp/prepush-build.log | sed 's/^/   /'
+  tail -20 /tmp/prepush-build.log | sed 's/^/   /'
   echo "   (ผลเต็มที่ /tmp/prepush-build.log)"
   exit 1
 fi
