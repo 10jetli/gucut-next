@@ -19,11 +19,26 @@
  */
 import { readFileSync, existsSync } from 'node:fs'
 import { createHash } from 'node:crypto'
-import { join } from 'node:path'
+import { spawnSync } from 'node:child_process'
+import { join, isAbsolute } from 'node:path'
 
 const ROOT = process.cwd()
 const ในรีโป = join(ROOT, 'scripts/hooks/pre-push')
-const ติดตั้ง = join(ROOT, '.git/hooks/pre-push')
+/* 🔴 **`.git` เป็น "ไฟล์" ได้ ไม่ใช่โฟลเดอร์เสมอ** — ในรีโปที่ถูก `git worktree add`
+   `.git` คือไฟล์ที่ชี้ไปโฟลเดอร์จริง ⇒ `join(ROOT, '.git/hooks/pre-push')` ไม่มีทางมีอยู่
+   ⇒ **ด่านนี้แดงลวงทุกครั้งที่มีคน build ใน worktree** (เจอจริง 20 ก.ย. 2569 ตอนใช้ worktree
+     ไปตรวจย้อนหลังว่าคำกล่าวอ้าง "build ผ่าน" ในคอมมิตเก่าจริงไหม — ตัววัดตกเพราะสภาพแวดล้อม
+     ไม่ใช่เพราะโค้ด ⇒ ถ้าอ่านไม่ระวังจะสรุปว่า build เคยแดง)
+   ⇒ ถามตำแหน่งจริงจาก git แทนการต่อพาธเอง · ถาม git ไม่ได้ก็ถอยไปใช้พาธเดิม */
+let ติดตั้ง = join(ROOT, '.git/hooks/pre-push')
+try {
+  const r = spawnSync('git', ['rev-parse', '--git-path', 'hooks'], { encoding: 'utf8' })
+  const dir = (r.stdout || '').trim()
+  /* ⚠️ git คืน **พาธเต็ม** ในรีโป worktree (เช่น `/…/gucut-next/.git/hooks`)
+     ⇒ `join(ROOT, dir)` จะเอาไปต่อท้าย ROOT แล้วพัง ⇒ ต้องเช็ค absolute ก่อน
+     (รอบแรกผมแก้แล้วยัง **แดงลวงเหมือนเดิม** เพราะข้อนี้ — ต่างกันแค่เหตุ) */
+  if (r.status === 0 && dir) ติดตั้ง = isAbsolute(dir) ? join(dir, 'pre-push') : join(ROOT, dir, 'pre-push')
+} catch { /* ไม่มี git ⇒ ใช้พาธเดิม */ }
 
 const md5 = (p) => createHash('md5').update(readFileSync(p)).digest('hex').slice(0, 12)
 
