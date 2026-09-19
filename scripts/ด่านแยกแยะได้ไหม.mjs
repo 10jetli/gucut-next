@@ -186,6 +186,15 @@ const สูตร = [
     ต้องเอ่ยถึง: 'app/core/categories/page.tsx',
   },
   {
+    ด่าน: 'scripts/check-honesty.mjs',
+    ไฟล์: 'app/core/categories/page.tsx',
+    เล่า: 'กลืน error เงียบ ๆ ⇒ จอโชว์ว่างเปล่าแทนที่จะบอกว่าดึงไม่ได้ · ด่านนี้ **รายงานอย่างเดียว** (ไม่มี process.exit)',
+    แก้: (s) => s + '\nexport const zzกลืน = () => fetch(\'/api/zzทดสอบ\').catch(() => {})\n',
+    ต้องมีในไฟล์: ".catch(() => {})",
+    ต้องเอ่ยถึง: 'app/core/categories/page.tsx',
+    ยอมรับผล: 'ด่านเห็นแต่ไม่ทำให้ตก',
+  },
+  {
     ด่าน: 'scripts/check-dead-links.mjs',
     ไฟล์: 'components/ui/PillButton.tsx',
     เล่า: 'ลิงก์ไปหน้าที่ไม่มีอยู่จริง — ต้องเขียนในรูป `href=` ที่ด่านประกาศว่าจับ',
