@@ -4,6 +4,7 @@ import { filingMonthOf } from '@/lib/bill-filing'
 import { pdfBillInfo } from '@/lib/billdate'
 import { billFilingMonth, billIdentity } from '@/lib/bill-identity'
 import { BILL_VENDORS } from '@/lib/vendors'
+import { สรุปได้จาก, เหตุที่ยังสรุปไม่ได้ } from '@/lib/dupcheck-verdict'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +52,17 @@ export async function GET(req: NextRequest) {
 
   const out: any[] = []
   for (const vendorId of vendors) {
-    const files = await listVendorBlobFiles(vendorId).catch(() => [])
+    /* 🔴 **ห้าม `.catch(() => [])` ตรงนี้** (แก้ 19 ก.ย. 2569 · เส้น `watch` เขียนกฎนี้ไว้แล้ว
+       กับฟังก์ชันตัวเดียวกัน แต่เส้นนี้ละเมิด) — คลังอ่านไม่ได้แล้วคืนอาร์เรย์ว่าง
+       ⇒ ทุกตัวเลขข้างล่างเป็น 0 ⇒ `สรุปได้: true` พร้อม `ใบซ้ำ: []`
+       ⇒ **เส้นที่ใช้ยืนยันตัวเลข ตอบว่า "สะอาด" ทั้งที่อ่านอะไรไม่ได้เลย** */
+    let files: Awaited<ReturnType<typeof listVendorBlobFiles>> = []
+    let อ่านคลังไฟล์ไม่ได้: string | null = null
+    try {
+      files = await listVendorBlobFiles(vendorId)
+    } catch (e) {
+      อ่านคลังไฟล์ไม่ได้ = String((e as Error)?.message ?? e)
+    }
     const slice = files.slice(skip, skip + limit)
     /** กุญแจตัวตน → ไฟล์ที่ถือกุญแจนั้น */
     const byKey = new Map<string, { file: string; invoiceNo: string | null; period: string | null }[]>()
@@ -168,6 +179,15 @@ export async function GET(req: NextRequest) {
     const เขียนแคชรอบนี้ = แคชเปลี่ยน && !nowrite
     if (เขียนแคชรอบนี้) await saveRealPeriods(vendorId, รอบบิลแคช).catch(() => {})
 
+    const ตัวชี้วัดรอบนี้ = {
+      อ่านคลังไฟล์ไม่ได้,
+      อ่านได้: read,
+      ไฟล์ในช่วง: slice.length,
+      ตัดสินไม่ได้: undecidable.length,
+      ไฟล์ในถัง: files.length,
+      skip,
+      limit,
+    }
     out.push({
       vendor: vendorId,
       ไฟล์ในถัง: files.length,
@@ -191,8 +211,11 @@ export async function GET(req: NextRequest) {
       ข้าม: ข้าม,
       ...(withKeys ? { กุญแจทุกไฟล์: keys } : {}),
       ...(debug ? { ข้อความรอบป้าย: snippets, ตรวจรายไฟล์ } : {}),
-      /* ผลเชื่อได้เมื่ออ่านครบทุกไฟล์ในช่วง และตัดสินได้ทุกใบ — ไม่งั้น "ใบซ้ำ 0" ไม่ได้แปลว่าไม่มีซ้ำ */
-      สรุปได้: read === slice.length && undecidable.length === 0 && files.length <= skip + limit,
+      /* ผลเชื่อได้เมื่อ **ไม่มีเหตุค้างสักข้อ** — คำตัดสินอยู่ใน lib/dupcheck-verdict.ts ที่มีเทสคุม
+         ห้ามคำนวณเองตรงนี้อีก เพราะของเดิมเขียนสามเงื่อนไขในบรรทัดเดียวแล้วลืมข้อที่สำคัญที่สุด */
+      ...(อ่านคลังไฟล์ไม่ได้ ? { อ่านคลังไฟล์ไม่ได้ } : {}),
+      ยังสรุปไม่ได้เพราะ: เหตุที่ยังสรุปไม่ได้(ตัวชี้วัดรอบนี้),
+      สรุปได้: สรุปได้จาก(ตัวชี้วัดรอบนี้),
       ...(read < slice.length ? { เตือน: `อ่านได้ ${read} จาก ${slice.length} ไฟล์ในช่วง — ใบซ้ำ/จัดผิดเดือนอาจมีในไฟล์ที่ข้าม ห้ามสรุปว่าไม่มีซ้ำ` } : {}),
     })
   }

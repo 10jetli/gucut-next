@@ -7,18 +7,15 @@
  */
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
-import { fileURLToPath } from 'node:url'
+import { โหลดโมดูลจากTS } from '../lib/โหลดโมดูลจากTS.mjs'
 
-/* อ่าน .ts ตรง ๆ ไม่ได้ ⇒ แปลงเฉพาะส่วนที่ต้องใช้ด้วย regex ง่าย ๆ ไม่ได้เหมือนกัน
-   ⇒ ลอกตรรกะมาไม่ได้เด็ดขาด (จะกลายเป็นทดสอบสำเนา) ⇒ ใช้ tsc ที่ build ไว้แล้วก็ยังไม่มี
-   ⇒ วิธีที่ซื่อที่สุดที่ทำได้ตอนนี้: ถอด type annotation ออกแล้ว import เป็นโมดูลจริง */
-const ที่อยู่ = fileURLToPath(new URL('../../lib/ชื่อซ้ำ.ts', import.meta.url))
-const src = readFileSync(ที่อยู่, 'utf8')
-  .replace(/export type[^\n]*\n/g, '')
-  .replace(/\)\s*:\s*[^{\n]+\{/g, ') {')          // ชนิดของค่าที่คืน
-  .replace(/:\s*(boolean \| undefined|boolean)\b/g, '')  // ชนิดของพารามิเตอร์
-const mod = await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'))
+/* ⚠️ ลอกตรรกะมาไว้ในเทสไม่ได้เด็ดขาด (จะกลายเป็นทดสอบสำเนา)
+   ⇒ ถอด type annotation ออกแล้ว import ไฟล์จริง — ตัวช่วยอยู่ที่ scripts/lib/โหลดโมดูลจากTS.mjs
+   (รวมจากสองสำเนา 19 ก.ย. 2569 · ตัวช่วยประกาศจุดบอดของตัวเองไว้ในหัวไฟล์) */
+const mod = await โหลดโมดูลจากTS(
+  new URL('../../lib/ชื่อซ้ำ.ts', import.meta.url),
+  [[/:\s*(boolean \| undefined|boolean)\b/g, '']],
+)
 const f = mod.ป้ายชื่อซ้ำจาก
 
 test('ท่อบอกว่าซ้ำ ⇒ ป้ายแดง', () => {
