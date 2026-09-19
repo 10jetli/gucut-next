@@ -63,7 +63,8 @@ interface ItemsResp {
   limitClamped?: boolean; limitNote?: string
 }
 
-type Grain = 'day' | 'month' | 'quarter' | 'year'
+import { ถังของช่วง, ถังของวัน } from '@/lib/report-buckets'
+import type { Grain } from '@/lib/report-buckets'
 const GRAINS: { id: Grain; label: string }[] = [
   { id: 'day', label: 'วัน' },
   { id: 'month', label: 'เดือน' },
@@ -102,20 +103,12 @@ function isoAgo(months: number) {
    (ร้านนี้ทำงานตี 3 จริง — ชั่วโมงที่บั๊กนี้ทำงานพอดี) */
 function todayIso() { return new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10) }
 
-/** ป้ายแกนนอนตามความละเอียดที่เลือก — ต้องเรียงตามเวลาจริง ไม่ใช่เรียงตามตัวอักษร */
-function bucketOf(iso: string, g: Grain) {
-  const [y, m, d] = iso.split('-')
-  if (g === 'year') return { key: y, label: `${Number(y) + 543}` }
-  if (g === 'quarter') {
-    const q = Math.floor((Number(m) - 1) / 3) + 1
-    return { key: `${y}-Q${q}`, label: `Q${q}/${Number(y) + 543}` }
-  }
-  if (g === 'month') {
-    const TH = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-    return { key: `${y}-${m}`, label: `${TH[Number(m) - 1]}/${Number(y) + 543}` }
-  }
-  return { key: `${y}-${m}-${d}`, label: `${Number(d)}/${Number(m)}` }
-}
+/* 🔴 `bucketOf` กับลูปเติมช่องว่าง **ย้ายไป `lib/report-buckets.ts` แล้ว** (20 ก.ย. 2569)
+   เหตุ: ลูปเดิมใช้ `new Date(`${from}T00:00:00`).toISOString()` ⇒ พาร์สเป็นเวลาไทย
+   แล้วแปลงกลับเป็น UTC ⇒ **ถอยหนึ่งวัน** ⇒ grain='month' ช่วง 1–30 ก.ย. ได้โครงแค่ `2026-08`
+   ⇒ เดือนที่ไม่มีใบซื้อยังหายจากกราฟ **ตรงข้ามกับเหตุผลที่คอมเมนต์เดิมอ้างไว้**
+   ⇒ ย้ายไป lib เพราะตรรกะที่อยู่ในเพจ **ทดสอบไม่ได้เลย** · มีเทสตรึงแล้ว 8 เคส
+      (พิสูจน์อำนาจแล้ว: ปลูก `toISOString()` กลับ ⇒ ตก 4 เคส) */
 
 /** กราฟเส้นแบบ ZORT — เส้นเดียว จุดกลม เส้นแนวนอนจาง ๆ · SVG ล้วน ไม่พึ่งไลบรารี */
 function BuyChart({ points }: { points: { label: string; value: number }[] }) {
@@ -266,30 +259,26 @@ export default function BuyReportPage() {
   const จำนวนใบทั้งช่วง = typeof all?.total === 'number' ? all.total : null
   const หัวยอด = ยอดทั้งช่วง ?? sum
 
-  const points = useMemo(() => {
+  const กราฟ = useMemo(() => {
     const m = new Map<string, { label: string; value: number }>()
     // เติมช่องว่างของช่วงเวลาให้ครบก่อน ไม่งั้นเดือนที่ไม่มีใบซื้อจะหายไปจากกราฟ
-    const cur = new Date(`${from}T00:00:00`)
-    const end = new Date(`${to}T00:00:00`)
-    let guard = 0
-    while (cur <= end && guard++ < 400) {
-      const iso = cur.toISOString().slice(0, 10)
-      const b = bucketOf(iso, grain)
-      if (!m.has(b.key)) m.set(b.key, { label: b.label, value: 0 })
-      if (grain === 'day') cur.setDate(cur.getDate() + 1)
-      else if (grain === 'month') cur.setMonth(cur.getMonth() + 1)
-      else if (grain === 'quarter') cur.setMonth(cur.getMonth() + 3)
-      else cur.setFullYear(cur.getFullYear() + 1)
-    }
+    const { ถัง, ชนเพดาน } = ถังของช่วง(from, to, grain)
+    for (const b of ถัง) if (!m.has(b.key)) m.set(b.key, { label: b.label, value: 0 })
+
     for (const r of inRange) {
       if (!r.po_date) continue
-      const b = bucketOf(r.po_date, grain)
+      const b = ถังของวัน(r.po_date, grain)
       const slot = m.get(b.key) ?? { label: b.label, value: 0 }
       slot.value += Number(r.amount) || 0
       m.set(b.key, slot)
     }
-    return Array.from(m.entries()).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v)
+    return {
+      points: Array.from(m.entries()).sort((a, b) => (a[0] < b[0] ? -1 : 1)).map(([, v]) => v),
+      /* 🔑 ลูปถูกตัดเพราะชนเพดาน = **กราฟขาดท้าย** ⇒ ต้องเขียนบนจอ ห้ามโชว์กราฟเงียบ ๆ */
+      โครงขาด: ชนเพดาน,
+    }
   }, [inRange, from, to, grain])
+  const points = กราฟ.points
 
   const itemAll = Array.isArray(items?.rows) ? items!.rows! : []
   const itemRows = itemAll.filter((r) => {
@@ -447,6 +436,12 @@ export default function BuyReportPage() {
                 <span className="text-[12.5px] text-gray-600 border border-gray-300 rounded px-2.5 py-1.5">ยอดซื้อรวม</span>
               </div>
               <BuyChart points={points} />
+              {กราฟ.โครงขาด && (
+                <p className="text-[12px] text-amber-800 mt-1">
+                  ⚠️ <b>ช่วงวันที่เลือกยาวเกินที่กราฟไล่ได้</b> — โครงเวลาถูกตัดที่ 400 ช่อง
+                  {' '}⇒ <b>กราฟนี้ไม่ครบทั้งช่วง</b> ให้ย่อช่วงวัน หรือเปลี่ยนความละเอียดเป็นเดือน/ปี
+                </p>
+              )}
               <div className="flex items-center justify-end gap-1 mt-2">
                 {GRAINS.map((g) => (
                   <button key={g.id} onClick={() => setGrain(g.id)}
