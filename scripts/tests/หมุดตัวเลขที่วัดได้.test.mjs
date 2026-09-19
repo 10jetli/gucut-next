@@ -19,7 +19,11 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
-import { ตัดคอมเมนต์ } from '../lib/ตัดคอมเมนต์.mjs'
+/* 🔴 เคย import `ตัดคอมเมนต์` ไว้ตรงนี้ **แล้วไม่เคยเรียกเลย** (เอาออก 19 ก.ย. 2569)
+   เจอเพราะ coverage รายงาน `ตัดคอมเมนต์.mjs` ว่า funcs 0% ⇒ ไล่ดูแล้วเป็น import ตาย
+   ⚠️ และมันทำให้รายงาน coverage **โกหก**: ไฟล์นั้นขึ้นมาในรายงานเหมือนมีเทสแตะ
+      ทั้งที่ไม่มีอะไรเรียกมันเลย ⇒ ตัวเลขความครอบคลุมดูดีกว่าความจริง
+   🔑 และไฟล์นี้ **ตั้งใจอ่านซอร์สดิบ** (หมุดอยู่ในคอมเมนต์) ⇒ ไม่ควรตัดคอมเมนต์ตั้งแต่ต้น */
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 
