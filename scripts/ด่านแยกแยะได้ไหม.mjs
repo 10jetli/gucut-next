@@ -160,6 +160,32 @@ const สูตร = [
     ต้องเอ่ยถึง: 'ZZใน',
   },
   {
+    ด่าน: 'scripts/check-store-echo.mjs',
+    ไฟล์: 'app/core/return-orders/page.tsx',
+    เล่า: 'ถอด props ของ <StoreEcho> ทิ้ง = จอเลิกเทียบว่าท่อใช้ร้านไหนจริง — ทางปลอมชั้น ② ที่ด่านประกาศว่าปิดแล้ว',
+    แก้: (s) => s.replace(/<StoreEcho[^>]*>/, '<StoreEcho />'),
+    ต้องมีในไฟล์: '<StoreEcho />',
+    ต้องเอ่ยถึง: 'app/core/return-orders/page.tsx',
+  },
+  {
+    ด่าน: 'scripts/check-secret-routes.mjs',
+    ไฟล์: 'app/api/ads/route.ts',
+    /* ⚠️ เป้าต้องเป็นเส้นที่ **ไม่มีป้าย `ไม่เปิดสาธารณะโดยตั้งใจ:`** — รอบแรกผมปลูกใส่ `bills/fixmonth`
+       ซึ่งมีป้ายนั้นอยู่แล้ว ⇒ ด่านข้ามโดยชอบธรรม ⇒ เครื่องมือตอบ "ด่านจับไม่ได้" ซึ่ง **ด่านถูก ผมผิด** */
+    เล่า: 'เส้นตรวจ DRIVESYNC_SECRET เอง แต่ไม่อยู่ใน PUBLIC_PATHS ⇒ คนมี secret ได้ 401 จากด่านล็อกอิน (เกิดจริง 2 ครั้ง)',
+    แก้: (s) => s + '\nexport const zzลับ = process.env.DRIVESYNC_SECRET\n',
+    ต้องมีในไฟล์: 'process.env.DRIVESYNC_SECRET',
+    ต้องเอ่ยถึง: '/api/ads',
+  },
+  {
+    ด่าน: 'scripts/check-applied-used.mjs',
+    ไฟล์: 'app/core/categories/page.tsx',
+    เล่า: 'จอประกาศรู้จักช่อง `applied` แต่ไม่เคยเอามาเทียบ ⇒ ท่อเมินเงื่อนไขแล้วจอไม่รู้',
+    แก้: (s) => s + '\ntype ZZตอบ = { applied?: { q?: string } }\nexport const zzชนิด: ZZตอบ | null = null\n',
+    ต้องมีในไฟล์: 'applied?: { q?: string }',
+    ต้องเอ่ยถึง: 'app/core/categories/page.tsx',
+  },
+  {
     ด่าน: 'scripts/check-dead-links.mjs',
     ไฟล์: 'components/ui/PillButton.tsx',
     เล่า: 'ลิงก์ไปหน้าที่ไม่มีอยู่จริง — ต้องเขียนในรูป `href=` ที่ด่านประกาศว่าจับ',
