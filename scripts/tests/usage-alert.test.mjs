@@ -115,9 +115,34 @@ try {
       console.log(`  ❌ ระดับ ${lv} ต้องบอกให้ไปแจ้งคน — ได้: ${พบ.ข้อความ}`)
     } else console.log(`  ✅ ระดับ ${lv} มีคำสั่งว่าต้องทำอะไรต่อ`)
   }
+  console.log('⑤ 🔴 ความเร็วมาก่อนยอดคงเหลือ — ป้ายเคยเขียวตอนที่ตัวเฝ้าร้อง (19 ก.ย. 2569)')
+  {
+    const ตรวจ = (ชื่อ, เงื่อนไข, เพิ่ม = '') => {
+      if (เงื่อนไข) console.log(`  ✅ ${ชื่อ}`)
+      else { fail++; console.log(`  ❌ ${ชื่อ} ${เพิ่ม}`) }
+    }
+    /* ค่าจริงของวันนั้น: ใช้ไป 1,041 จาก 20,000 = 5.2% ⇒ เกณฑ์เปอร์เซ็นต์ตอบ "ok"
+       แต่ตัวเฝ้าบอกว่าเผา 3,965/วัน ⇒ เหลือ ~4.8 วัน ⇒ ต้องไม่เขียว */
+    const จริง = { plan: 20000, used: 1041, left: 18959, planConfirmed: true }
+    ตรวจ('ยอดคงเหลืออย่างเดียว ⇒ ok (เกณฑ์เดิมยังทำงาน)', creditAlert(จริง).level === 'ok', creditAlert(จริง).level)
+    const ด้วยวัน = { ...จริง, daysLeft: 4.8, burnPerDay: 3965, burnWindowHours: 1 }
+    ตรวจ('มีจำนวนวัน 4.8 ⇒ ต้องเป็น warn ไม่ใช่ ok', creditAlert(ด้วยวัน).level === 'warn', creditAlert(ด้วยวัน).level)
+    ตรวจ('ข้อความบอกอัตราและช่วงที่ใช้คิด',
+      /เผา 3965\/วัน/.test(creditAlert(ด้วยวัน).ข้อความ) && /1 ชม/.test(creditAlert(ด้วยวัน).ข้อความ),
+      creditAlert(ด้วยวัน).ข้อความ)
+    ตรวจ('เหลือ 2 วัน ⇒ over (หนักเท่าเครดิตหมด)', creditAlert({ ...จริง, daysLeft: 2 }).level === 'over')
+    ตรวจ('เหลือ 10 วัน ⇒ watch', creditAlert({ ...จริง, daysLeft: 10 }).level === 'watch')
+    ตรวจ('เหลือ 45 วัน ⇒ กลับไป ok', creditAlert({ ...จริง, daysLeft: 45 }).level === 'ok')
+    /* 🔴 ไม่มีค่ามา = ยังไม่รู้ ไม่ใช่ "เผาช้า" ⇒ ต้องไม่ทำให้เกณฑ์เดิมเพี้ยน */
+    ตรวจ('daysLeft เป็น null ⇒ ใช้เกณฑ์เปอร์เซ็นต์ตามเดิม', creditAlert({ ...จริง, daysLeft: null }).level === 'ok')
+    ตรวจ('ยอดสูง 95% แม้มีวันเหลือเยอะ ⇒ ยังต้อง warn',
+      creditAlert({ plan: 20000, used: 19000, daysLeft: 99 }).level === 'warn',
+      creditAlert({ plan: 20000, used: 19000, daysLeft: 99 }).level)
+  }
 } finally {
   rmSync(out, { recursive: true, force: true })
 }
+
 
 console.log(fail ? `\n❌ ไม่ผ่าน ${fail} ข้อ` : '\n✅ ผ่านทุกข้อ — ตัวเตือนร้องจริงเมื่อป้อนค่าที่ควรทำให้ร้อง')
 process.exit(fail ? 1 : 0)

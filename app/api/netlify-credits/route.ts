@@ -30,6 +30,12 @@ type Credits = {
   note?: string | null
   top?: [string, number][]
   at?: number | null
+  /** 🔑 อัตราการเผา — **ขอฝั่งท่อไว้ 19 ก.ย. 2569 ยังไม่ส่งมา** (ดูเหตุผลที่ lib/usage-alert.ts)
+   *  เตรียมช่องรับไว้ก่อน เพราะถ้าไม่เตรียม วันที่ท่อส่งมามันจะ **หายตรงนี้เงียบ ๆ**
+   *  (เคยเกิดมาแล้วกับ `used` — ตัวเตือนจึงไม่มีทางทำงานบนจอจริงอยู่หลายวัน) */
+  burnPerDay?: number | null
+  daysLeft?: number | null
+  burnWindowHours?: number | null
 }
 
 export async function GET() {
@@ -53,6 +59,11 @@ export async function GET() {
       note: j?.note ?? null,
       top: Array.isArray(j?.top) ? j.top : null,
       at: j?.at ?? null,
+      /* ⚠️ ไม่มีค่ามา = null = **ยังไม่รู้** ⇒ `creditAlert` จะตกไปใช้เกณฑ์เปอร์เซ็นต์ตามเดิม
+         ห้ามใส่ค่าเริ่มต้นเป็นตัวเลข เพราะนั่นคือการเดาอัตราเผาแทนท่อ */
+      burnPerDay: j?.burnPerDay ?? null,
+      daysLeft: j?.daysLeft ?? null,
+      burnWindowHours: j?.burnWindowHours ?? null,
     })
   } catch {
     /* ⚠️ ล้มเหลว = **ยังไม่รู้** ไม่ใช่ "เหลือ 0" — คืน unknown ให้จอเขียนถูก */
