@@ -284,6 +284,16 @@ export const สูตร = [
     ต้องเอ่ยถึง: 'ปลูกไม่ลง',
   },
   {
+    ด่าน: 'scripts/check-pipe-keys.mjs',
+    ไฟล์: 'app/core/branches/page.tsx',
+    เล่า: 'จอประกาศชื่อช่องที่ท่อไม่เคยส่ง ⇒ จออ่านได้ undefined ตลอดกาลโดยไม่มีอะไรฟ้อง',
+    /* ⚠️ เป้าต้องเป็นจอที่ **คุยกับท่อจริง** (มี `/api/web/core` หรือ `coreJson`)
+       และชื่อช่องต้อง **ยาวอย่างน้อย 4 ตัวอักษร** ตามที่ด่านกำหนดเอง (ชื่อสั้นเสี่ยงชนคำอื่น) */
+    แก้: (s) => s.replace('interface ', 'interface ZZPipe { zzFieldNotInPipe?: string }\ninterface ', 1),
+    ต้องมีในไฟล์: 'zzFieldNotInPipe?: string',
+    ต้องเอ่ยถึง: 'zzFieldNotInPipe',
+  },
+  {
     ด่าน: 'scripts/check-dead-links.mjs',
     ไฟล์: 'components/ui/PillButton.tsx',
     เล่า: 'ลิงก์ไปหน้าที่ไม่มีอยู่จริง — ต้องเขียนในรูป `href=` ที่ด่านประกาศว่าจับ',
