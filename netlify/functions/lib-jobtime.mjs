@@ -88,20 +88,36 @@ export async function วัดเวลางาน(ชื่อ, งาน, op
       (skip ไม่ใช่ความสำเร็จ และไม่ใช่ความล้ม — มันคือ "ไม่ได้ทำ") */
 export async function อ่านผลจาก(res) {
   if (!(res instanceof Response)) return { ผล: null, note: null }
-  let b = null
-  try { b = await res.clone().json() } catch { /* ไม่ใช่ JSON ⇒ ตัดสินไม่ได้ */ }
-  if (b && typeof b.skip === "string") return { ผล: null, note: `skip: ${b.skip}`.slice(0, 160) }
+  /* 🔑 **อ่านเนื้อเป็นข้อความก่อนเสมอ แล้วค่อยลองแปลงเป็น JSON**
+     (แก้ 20 ก.ย. 2569 · ใบ S1 กำชับว่าตัววัดต้องพิสูจน์ว่าแตะงานจริง ด้วย **HTTP code + ขนาด body**)
+     🔴 รูเดิม: ถ้าคำตอบไม่ใช่ JSON (เช่น **200 พร้อมหน้า error ของปลายทาง** ซึ่งเป็นอาการจริง
+        ที่ทีมเจอกับ ZORT) ⇒ `b = null` ⇒ ผล null และ note null
+        ⇒ **ไม่มีหลักฐานสักชิ้น และหน้าตาเหมือนกับ "ยังตัดสินไม่ได้" เฉย ๆ**
+     ⇒ ตอนนี้บันทึก **ขนาดไบต์เสมอ** ⇒ 200 ที่ตัวเปล่ากับ 200 ที่มีของ แยกออกจากกันได้ */
+  let ข้อความ = ""
+  try { ข้อความ = await res.clone().text() } catch (e) { return { ผล: null, note: `อ่านเนื้อไม่ได้: ${String(e?.message ?? e)}`.slice(0, 160) } }
+  const ไบต์ = Buffer.byteLength(ข้อความ, "utf8")
+  let b = null, เป็นJson = true
+  try { b = JSON.parse(ข้อความ) } catch { เป็นJson = false }
+
+  if (b && typeof b.skip === "string") return { ผล: null, note: `skip: ${b.skip} · ${ไบต์} ไบต์`.slice(0, 160) }
   const ผล = res.status >= 400 || b?.ok === false ? "failed" : b?.ok === true ? "ok" : null
+
   /* 🔑 หลักฐานว่าแตะงานจริง — เก็บ **ช่องที่เป็นตัวเลข** จากคำตอบ
-     (ใบ S1 กำชับ: `ok` ที่ไม่มีเลขประกอบ = คำรับรอง ไม่ใช่หลักฐาน) */
-  const เลข = b && typeof b === "object"
-    ? Object.entries(b).filter(([, v]) => typeof v === "number").slice(0, 6)
-        .map(([k, v]) => `${k} ${v}`).join(" · ")
-    : ""
-  const arr = b && typeof b === "object"
-    ? Object.entries(b).filter(([, v]) => Array.isArray(v)).slice(0, 3)
-        .map(([k, v]) => `${k} ${v.length}`).join(" · ")
-    : ""
-  const note = [เลข, arr].filter(Boolean).join(" · ") || null
-  return { ผล, note }
+     (ใบ S1 กำชับ: `ok` ที่ไม่มีเลขประกอบ = คำรับรอง ไม่ใช่หลักฐาน)
+     ⚠️ ตัดรายการเพื่อให้โน้ตสั้น **ต้องบอกจำนวนเต็มคู่กันเสมอ** — คลาสเดียวกับที่ทีมไล่กันคืนนี้
+        (ของเดิมที่นี่เขียน `.slice(0, 6)` เฉย ๆ ⇒ คนอ่านโน้ตจะเชื่อว่าเห็นครบ) */
+  const ย่อ = (คู่, เอา) => {
+    const หัว = คู่.slice(0, เอา).map(([k, v]) => `${k} ${v}`).join(" · ")
+    return คู่.length > เอา ? `${หัว} (อีก ${คู่.length - เอา} · รวม ${คู่.length})` : หัว
+  }
+  const ช่อง = b && typeof b === "object" && !Array.isArray(b) ? Object.entries(b) : []
+  const เลข = ย่อ(ช่อง.filter(([, v]) => typeof v === "number"), 6)
+  const arr = ย่อ(ช่อง.filter(([, v]) => Array.isArray(v)).map(([k, v]) => [k, v.length]), 3)
+
+  /* 🔑 **ความเงียบต้องไม่อ่านเป็นหลักฐาน** — ไม่มีเลขในคำตอบ ต้องเขียนว่าไม่มี ไม่ใช่ปล่อยว่าง
+     (บทเรียนของทีม: ช่องที่เว้นว่างคือคำกล่าวอ้างที่ไม่มีใครพูด) */
+  const หลักฐาน = [เลข, arr].filter(Boolean).join(" · ")
+    || (เป็นJson ? "ไม่มีตัวเลขในคำตอบ" : "คำตอบไม่ใช่ JSON")
+  return { ผล, note: `HTTP ${res.status} · ${ไบต์} ไบต์ · ${หลักฐาน}`.slice(0, 200) }
 }
