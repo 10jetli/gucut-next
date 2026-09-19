@@ -68,7 +68,12 @@ interface Resp {
   hasMore?: boolean
   rows?: DocRow[]
   applied?: { page?: number; limit?: number; type?: number | null; typeLabel?: string }
-  limitClamped?: boolean
+  /** 🔴 **สามสถานะ ห้ามยุบเหลือสอง** (ฝั่งท่อทำให้ 19 ก.ย. 2569 ตามที่ขอ)
+   *  `true` = ท่อลดจำนวนต่อหน้าให้เอง · `false` = ไม่ได้ลด · **`null` = ท่อยังบอกไม่ได้**
+   *  ⇒ `null` **ไม่ใช่ "ไล่ครบแล้ว"** — ก่อนหน้านี้คีย์หายไปเลยเมื่อไม่รู้
+   *     ⇒ `undefined && …` ⇒ ไม่ขึ้นอะไร ⇒ อ่านได้ว่าไม่มีปัญหา
+   *  ⚠️ ไม่มีคีย์เลย = ท่อรุ่นเก่า (คนละอย่างกับ `null` ที่แปลว่าท่อรุ่นใหม่แต่ยังตอบไม่ได้) */
+  limitClamped?: boolean | null
 }
 
 /* 🔢 จำนวนต่อหน้า — ZORT ให้เลือก 10/20/50/100 ทุกจอ (ยิงทดสอบ 18 ก.ย. 2569:
@@ -488,8 +493,14 @@ export default function AccountingDocsPage() {
                 ⚠️ ท่อบอกว่ากำลังอยู่หน้า <b>{data.applied.page}</b> แต่จอขอหน้า <b>{page}</b>
               </span>
             )}
-            {data.limitClamped && (
+            {data.limitClamped === true && (
               <span className="text-amber-700">⚠️ ท่อลดจำนวนต่อหน้าให้เองเพราะชนเพดาน</span>
+            )}
+            {/* 🔑 "ยังบอกไม่ได้" ต้องพูดออกมา ไม่ใช่เงียบแบบเดียวกับ "ไม่ได้ลด" */}
+            {data.limitClamped === null && (
+              <span className="text-gray-500">
+                ⚠️ ท่อยังบอกไม่ได้ว่าลดจำนวนต่อหน้าหรือเปล่า — <b>ไม่ได้แปลว่าไล่ครบ</b>
+              </span>
             )}
           </div>
           )}

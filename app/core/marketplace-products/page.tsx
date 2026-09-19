@@ -322,6 +322,21 @@ export default function MarketplaceProductsPage() {
           {tab === 'none' && (() => {
             const ล้ม = Object.keys(meta?.marketplacesFailed ?? {})
             const ยังไม่เชื่อม = Object.keys(meta?.marketplacesNotConnected ?? {})
+            /* 🔴 **ไม่มีคีย์เลย = ท่อรุ่นเก่า ≠ ทุกช่องทางปกติ** (ฝั่งท่อแก้ให้ 19 ก.ย. 2569)
+               สาเหตุเดิมที่คีย์หาย: ค่าเป็น `undefined` แล้ว `JSON.stringify` **ทิ้งคีย์ทั้งคีย์**
+               ⇒ ฝั่งท่อนึกว่าส่งอยู่ตลอดมา · ตอนนี้ส่งเป็น `{}` เมื่อว่าง
+               ⇒ จอจึงแยกได้: มีคีย์+ว่าง = ตรวจครบทุกช่องทางแล้วไม่มีปัญหา
+                  · ไม่มีคีย์ = **ท่อรุ่นเก่า ยังไม่รู้** ⇒ ต้องบอก ไม่ใช่เงียบ */
+            const ท่อบอกสถานะได้ = meta != null
+              && ('marketplacesFailed' in meta || 'marketplacesNotConnected' in meta)
+            if (!ท่อบอกสถานะได้) {
+              return (
+                <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-2 leading-relaxed">
+                  ⚠️ ท่อรุ่นที่เสิร์ฟอยู่<b>ยังไม่บอกสถานะช่องทาง</b> ⇒ แท็บนี้อาจรวมรหัสที่ยังไม่รู้ไว้ด้วย
+                  {' '}— <b>ไม่ได้แปลว่าทุกช่องทางปกติ</b>
+                </div>
+              )
+            }
             if (!ล้ม.length && !ยังไม่เชื่อม.length) return null
             return (
               <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-2 leading-relaxed">
