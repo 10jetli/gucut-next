@@ -354,7 +354,7 @@ export default function CorePage() {
 
           {/* ปุ่มสั่งงาน */}
           <Card>
-            <p className="text-[13px] font-semibold text-gray-700 mb-3">🎛 สั่งงาน (กดเองเท่านั้น — ปกติระบบวิ่งเองทุกครึ่งชั่วโมง + เทียบยอดตี 1)</p>
+            <p className="text-[13px] font-semibold text-gray-700 mb-3">🎛 สั่งงาน (กดเองเท่านั้น — ปกติระบบวิ่งเองชั่วโมงละครั้ง · ตารางเวลาจริงทุกงานดูที่หน้า “งานตามเวลา”)</p>
             <div className="flex flex-wrap gap-2">
               {[
                 { label: 'กระจก 3 วันล่าสุด', qs: 'sync=1&days=3' },

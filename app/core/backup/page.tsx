@@ -299,7 +299,7 @@ export default function BackupPage() {
               )
               : stale
                 ? <>⚠️ สำเนาล่าสุดทำเมื่อ <b>{thaiTime(st.lastRun)}</b> ({mins} นาทีที่แล้ว) —
-                  ปกติทำทุกชั่วโมง ทิ้งช่วงนานกว่านี้แปลว่ารอบอัตโนมัติอาจไม่เดิน กด &quot;สำรองเดี๋ยวนี้&quot; ดูได้</>
+                  ปกติทำทุก 6 ชั่วโมง ทิ้งช่วงนานกว่านี้แปลว่ารอบอัตโนมัติอาจไม่เดิน กด &quot;สำรองเดี๋ยวนี้&quot; ดูได้</>
                 : <>✅ สำเนาล่าสุด <b>{thaiTime(st.lastRun)}</b>
                   {mins !== null && <> ({mins < 1 ? 'เมื่อครู่' : `${mins} นาทีที่แล้ว`})</>} ·
                   รวม <b>{num(totalKeys)}</b> คีย์ · {fmtBytes(totalBytes)} · {stores.length} ถัง</>}

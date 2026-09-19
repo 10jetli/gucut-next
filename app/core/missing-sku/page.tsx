@@ -301,7 +301,13 @@ export default function CoreMissingSkuPage() {
                 )}
                 {(() => {
                   const f = recipeFreshness(data.recipeCheckedAt, data.recipeAt ?? null)
-                  if (f.state === 'ok') return <> · ซิงก์จาก ZORT ทุกชั่วโมง (ตรวจล่าสุด {thaiMoment(f.checkedThai)})</>
+                  {/* 🔴 เดิมเขียน "ซิงก์จาก ZORT ทุกชั่วโมง" — **เท็จตั้งแต่เช้า 19 ก.ย. 2569**
+                      ฝั่งท่อแยกงานสูตรชุดออกเป็น `bundle-recipe-sync` = `0 3 * * *` = **วันละครั้ง**
+                      (ยืนยันจาก `?crontable=1` ของจริง ไม่ใช่จากอ่านซอร์ส)
+                      ⇒ เลิกพิมพ์รอบเวลาเองตรงนี้ เพราะเส้น `list=missing-sku` **ไม่ได้ส่งรอบมาด้วย**
+                         (ส่งเฉพาะที่ `list=bundles`) ⇒ พิมพ์เองเมื่อไหร่ก็เพี้ยนตามท่อไม่ทันอีก
+                      🔑 เหลือเฉพาะของที่วัดได้จริง = เวลาที่ตรวจล่าสุด · รอบเวลาดูที่หน้างานตามเวลา */}
+                  if (f.state === 'ok') return <> · ตรวจกับ ZORT ล่าสุด {thaiMoment(f.checkedThai)}{f.ใช้ค่าสำรอง ? <span className="text-gray-400"> (เส้นนี้ท่อยังไม่บอกรอบซิงก์ ⇒ จอใช้เกณฑ์สำรองตัดสินความสด)</span> : null}</>
                   if (f.state === 'stale') return <> · <b className="text-amber-800">ตรวจล่าสุด {thaiMoment(f.checkedThai)} — ตัวซิงก์น่าจะหยุด</b></>
                   return <> · <span className="text-gray-500">ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่ (ไม่ได้แปลว่าซิงก์หยุด)</span></>
                 })()}
