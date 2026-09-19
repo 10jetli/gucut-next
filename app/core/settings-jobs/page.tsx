@@ -27,6 +27,7 @@ import CronFromPipe from '@/components/zort/CronFromPipe'
 import { รอบต่อวัน, ป้ายรอบต่อวัน } from '@/lib/cron-rate'
 /* เวลาที่ใช้จริงต่อรอบ — อ่านจากสมุดที่ท่อจดไว้ ไม่ได้ยิงงานตามเวลาเพื่อวัด */
 import SweepTiming from '@/components/zort/SweepTiming'
+import JobTiming from '@/components/zort/JobTiming'
 import { PageHead, Pill } from '@/components/zort'
 
 /* 🔄 **ตารางของตัวดันสต็อกเปลี่ยนสองรอบในวันเดียว — ไม่ใช่ใครพิมพ์ผิด**
@@ -386,6 +387,10 @@ export default function SettingsJobsPage() {
       {/* 🔑 ตารางเดียวกันถูกลอกไว้สองที่ ⇒ ให้ท่อเป็นคนยืนยันตอนเปิดจอ ไม่ใช่รอรอบ build
           (ด่าน check-cron-table จับได้ก็ต่อเมื่อมีคน build · คนที่เปิดจอคือคนที่กำลังจะเชื่อตัวเลขนี้) */}
       <SweepTiming />
+      {/* 🔴 การ์ดนี้ครอบ **งานตามเวลาทุกตัว** ไม่ใช่แค่ตัวกวาดดันสต็อก (ใบ S1 · 19 ก.ย. 2569)
+          เขียนรอไว้ก่อนท่อปล่อยของ ตามสัญญาช่องที่ฝั่งท่อส่งมาล่วงหน้า
+          ⇒ ท่อรุ่นที่วิ่งอยู่ยังไม่ส่ง ⇒ **การ์ดไม่แสดงอะไรเลย** (คืน null) ไม่ใช่ขึ้น 0 */}
+      <JobTiming />
       <CronFromPipe jobs={JOBS.map((j) => ({ src: j.src, cron: j.cron, name: j.name }))} />
 
       <div className="space-y-3">
