@@ -252,6 +252,15 @@ const สูตร = [
     ต้องเอ่ยถึง: 'quotations/new',
   },
   {
+    ด่าน: 'scripts/check-link-params.mjs',
+    /* ⚠️ ด่านนี้กวาดเฉพาะ `app/` — รอบแรกผมปลูกที่ `components/` ⇒ นอกขอบเขต (ครั้งที่ 6) */
+    ไฟล์: 'app/core/categories/page.tsx',
+    เล่า: 'ลิงก์ส่งพารามิเตอร์ที่ปลายทางไม่เคยอ่าน ⇒ คนกดแล้วจอปลายทางไม่กรองอะไรเลย · ใช้รูป `href="…"` ธรรมดา ซึ่งเป็นรูปที่ตะแกรงเดิมมองไม่เห็น',
+    แก้: (s) => s + '\nexport const ZZลิงก์ = <a href="/core/stock?zzkey=1">x</a>\n',
+    ต้องมีในไฟล์: 'href="/core/stock?zzkey=1"',
+    ต้องเอ่ยถึง: 'zzkey',
+  },
+  {
     ด่าน: 'scripts/check-dead-links.mjs',
     ไฟล์: 'components/ui/PillButton.tsx',
     เล่า: 'ลิงก์ไปหน้าที่ไม่มีอยู่จริง — ต้องเขียนในรูป `href=` ที่ด่านประกาศว่าจับ',
