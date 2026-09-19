@@ -7,7 +7,7 @@
 // รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน)
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { fmtMoney, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
@@ -427,11 +427,11 @@ function ReportKindSelect() {
  *  ⚠️ เวลาจากท่อเป็น UTC ⇒ +7 ก่อนแสดง (บทเรียนเดิมทั้งโปรเจกต์) */
 function ReturnsFreshness({ utc }: { utc: string | null }) {
   if (!utc) return null
-  const iso = /Z$|[+-]\d{2}:?\d{2}$/.test(utc) ? utc : `${utc.replace(' ', 'T')}Z`
-  const t = new Date(iso)
-  if (Number.isNaN(t.getTime())) return null
-  const ageMin = Math.round((Date.now() - t.getTime()) / 60000)
-  const th = new Date(t.getTime() + 7 * 3600e3)
+  /* 🔑 แปลงที่เดียวทั้งระบบ — ท่อส่งเวลามา 3 รูปแบบ (ดู `มิลลิวินาทีจากท่อ` ใน lib/format.ts) */
+  const ms = มิลลิวินาทีจากท่อ(utc)
+  if (ms === null) return null
+  const ageMin = Math.round((Date.now() - ms) / 60000)
+  const th = new Date(ms + 7 * 3600e3)
   const p = (n: number) => String(n).padStart(2, '0')
   const at = `${p(th.getUTCDate())}/${p(th.getUTCMonth() + 1)} ${p(th.getUTCHours())}:${p(th.getUTCMinutes())} น.`
   const stale = ageMin > 120

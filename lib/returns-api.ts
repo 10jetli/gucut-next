@@ -1,3 +1,4 @@
+import { มิลลิวินาทีจากท่อ } from './format'
 // 📄 สัญญาข้อมูลจอรับคืนสินค้า — **ร่างเสนอจากฝั่งจอ รอฝั่งท่อยืนยัน (7 ก.ย. 2569 ดึก)**
 //
 // ⚠️ **ไฟล์นี้คือที่เดียวที่จอคุยกับท่อเรื่องใบคืน** — ชื่อคีย์/รูปคำตอบทั้งหมดอยู่ที่นี่
@@ -215,9 +216,8 @@ export const returnsApi = {
  *  และอายุใบพองเกินจริง 7 ชม. — จอทุกตัวต้องแปลงผ่านตัวนี้ ห้าม new Date ตรง ๆ */
 export function serverTimeMs(iso?: string | null): number | null {
   if (!iso || typeof iso !== 'string') return null
-  const withZone = /[zZ]|[+-]\d{2}:?\d{2}$/.test(iso)
-  const t = new Date(withZone ? iso : iso.replace(' ', 'T') + 'Z').getTime()
-  return Number.isFinite(t) ? t : null
+  /* 🔑 แปลงที่เดียวทั้งระบบ — ท่อส่งเวลามา 3 รูปแบบ (ดู `มิลลิวินาทีจากท่อ` ใน lib/format.ts) */
+  return มิลลิวินาทีจากท่อ(iso)
 }
 
 /* ── ป้ายสถานะกลาง — จอทุกตัวใช้ชุดเดียวกัน ห้ามพิมพ์ซ้ำ ── */

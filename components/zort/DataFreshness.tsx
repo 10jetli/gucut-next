@@ -1,4 +1,5 @@
 'use client'
+import { มิลลิวินาทีจากท่อ } from '@/lib/format'
 // บรรทัด "ข้อมูล ณ เวลา…" — บอกอายุของตัวเลขบนจอ
 //
 // 🔴 **ทำไมต้องมี** (4 ก.ย. 2569) — ทุกตัวเลขในจอคลังเงานับจากกระจก ไม่ได้ยิง ZORT สด
@@ -27,9 +28,9 @@ export interface Freshness {
 export function parseUtc(s?: string | null): Date | null {
   const raw = String(s ?? '').trim()
   if (!raw) return null
-  const iso = raw.includes('T') ? raw : raw.replace(' ', 'T')
-  const d = new Date(/[Zz]|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : `${iso}Z`)
-  return Number.isNaN(d.getTime()) ? null : d
+  /* 🔑 แปลงที่เดียวทั้งระบบ — ท่อส่งเวลามา 3 รูปแบบ (ดู `มิลลิวินาทีจากท่อ` ใน lib/format.ts) */
+  const ms = มิลลิวินาทีจากท่อ(raw)
+  return ms === null ? null : new Date(ms)
 }
 
 /** เวลาไทยแบบ "23:19 น." · บวก 7 เองจากค่า UTC ไม่พึ่ง Intl

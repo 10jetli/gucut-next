@@ -21,6 +21,7 @@
 // ⚠️ **`never` (ถังที่ตั้งใจไม่สำรอง) ต้องโชว์เสมอ** ไม่งั้นเข้าใจว่าสำรองครบทุกถัง
 //    ทั้งที่รูปบัตรประชาชนเราตั้งใจไม่เก็บ (ประกาศกับลูกค้าว่าเก็บ 7 วันแล้วลบ)
 import { useCallback, useEffect, useState } from 'react'
+import { มิลลิวินาทีจากท่อ } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, BtnPrimary, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
@@ -63,9 +64,10 @@ interface RealResult {
 /** เวลาจากฐานเป็น UTC — บวก 7 แล้วบอกว่าเป็นเวลาไทย ห้ามโชว์ค่าดิบ */
 function thaiTime(s?: string | null) {
   if (!s) return '—'
-  const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s) ? `${s.replace(' ', 'T')}Z` : s
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return s
+  /* 🔑 แปลงที่เดียวทั้งระบบ — ท่อส่งเวลามา 3 รูปแบบ (ดู `มิลลิวินาทีจากท่อ` ใน lib/format.ts) */
+  const ms = มิลลิวินาทีจากท่อ(s)
+  if (ms === null) return s
+  const d = new Date(ms)
   try {
     return `${d.toLocaleString('th-TH', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Asia/Bangkok' })} น.`
   } catch {
@@ -75,10 +77,10 @@ function thaiTime(s?: string | null) {
 /** ผ่านมานานเท่าไหร่ — ใช้ตัดสินว่าสำเนา "สด" หรือ "ค้าง" */
 function minutesSince(s?: string | null): number | null {
   if (!s) return null
-  const iso = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(s) ? `${s.replace(' ', 'T')}Z` : s
-  const d = new Date(iso)
-  if (isNaN(d.getTime())) return null
-  return Math.floor((Date.now() - d.getTime()) / 60000)
+  /* 🔑 แปลงที่เดียวทั้งระบบ — ท่อส่งเวลามา 3 รูปแบบ (ดู `มิลลิวินาทีจากท่อ` ใน lib/format.ts) */
+  const ms = มิลลิวินาทีจากท่อ(s)
+  if (ms === null) return null
+  return Math.floor((Date.now() - ms) / 60000)
 }
 function fmtBytes(n?: number) {
   if (typeof n !== 'number' || n < 0) return '—'

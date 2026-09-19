@@ -12,7 +12,7 @@
 //    ห้ามให้คนกรอกเครื่องหมายเอง เพราะกรอกผิดทีเดียวสต็อกวิ่งผิดทางสองเท่า
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { fmtNum } from '@/lib/format'
+import { fmtNum, มิลลิวินาทีจากท่อ } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -52,9 +52,11 @@ function humanError(msg: string): string {
  *    ค่าที่อ่านไม่ออกให้คืนค่าเดิม ดีกว่าโชว์ "Invalid Date"
  */
 function thaiTime(at: string): string {
-  const d = new Date(`${String(at ?? '').trim().replace(' ', 'T')}Z`)
-  if (Number.isNaN(d.getTime())) return at
-  return new Date(d.getTime() + 7 * 3600e3).toISOString().replace('T', ' ').slice(0, 16)
+  /* 🔴 เดิมเติม `Z` **เสมอ** ⇒ วันที่ท่อเปลี่ยนช่องนี้เป็น ISO จะได้ `…ZZ` ⇒ Invalid Date
+     (ยังไม่เคยเกิด เพราะช่องนี้ยังเป็นแบบเว้นวรรค — แต่เป็นกับดักที่รออยู่) */
+  const ms = มิลลิวินาทีจากท่อ(at)
+  if (ms === null) return at
+  return new Date(ms + 7 * 3600e3).toISOString().replace('T', ' ').slice(0, 16)
 }
 
 function MovesInner() {
