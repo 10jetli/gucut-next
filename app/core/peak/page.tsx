@@ -249,8 +249,15 @@ export default function CorePeakPage() {
                           <tr key={`${p.code}-${i}`} className="border-b border-gray-100 last:border-0">
                             <td className={TD}>{p.code || '—'}</td>
                             <td className={TD}>{p.name || '—'}</td>
-                            <td className={TDR}>{fmtNum(Number(p.quantity) || 0)}</td>
-                            <td className={TDR}>{fmtNum(Number(p.price) || 0)}</td>
+                            {/* 🔴 **ห้าม `Number(x) || 0` กับค่าจากระบบนอกบ้าน** (แก้ 19 ก.ย. 2569 · ใบ t_mu7sk8r9)
+                                `quantity`/`price` เป็น optional ในสัญญา (`DryProduct`) ⇒ PEAK ไม่ส่งมาได้
+                                ⇒ ของเดิมจะโชว์ **0** ซึ่งอ่านว่า "ใบนี้สั่ง 0 ชิ้น ราคา 0 บาท"
+                                   = คำกล่าวอ้างเรื่องเอกสารของลูกค้า ทั้งที่ความจริงคือ **เราไม่รู้**
+                                ⚠️ อันตรายเป็นพิเศษเพราะ PEAK เป็นระบบนอกบ้าน — เราแก้ต้นทางไม่ได้
+                                   และวันที่เขาเปลี่ยนชื่อช่อง จอจะขึ้น 0 ทั้งตารางโดยไม่มีอะไรฟ้อง
+                                ⇒ `fmtNum` คืน "—" ให้เองเมื่อเป็น null/undefined อยู่แล้ว */}
+                            <td className={TDR}>{fmtNum(p.quantity ?? null)}</td>
+                            <td className={TDR}>{fmtNum(p.price ?? null)}</td>
                           </tr>
                         ))}
                         {(sample.products ?? []).length === 0 && (
