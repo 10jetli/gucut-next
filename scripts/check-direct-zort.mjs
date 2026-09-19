@@ -17,6 +17,7 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join } from 'node:path'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
+import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = new URL('..', import.meta.url).pathname
 
@@ -30,10 +31,9 @@ function walk(dir, out = []) {
   return out
 }
 
-/** ตัดคอมเมนต์ออก เพื่อให้เหลือเฉพาะ "ตัวหนังสือที่คนเห็นบนจอ" (โดยประมาณ) */
-function ตัดคอมเมนต์(src) {
-  return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/^\s*\/\/.*$/gm, '')
-}
+/* ใช้ตัวกลาง scripts/lib/ตัดคอมเมนต์.mjs แล้ว (รวบ 19 ก.ย. 2569)
+   ของเดิมแทนคอมเมนต์ด้วย **สตริงว่าง** ⇒ คำสองข้างติดกันได้ · ตัวกลางแทนด้วยช่องว่าง
+   และตัวกลางตัดคอมเมนต์ **ท้ายบรรทัด** ด้วย ซึ่งของเดิมไม่ตัด */
 
 const ปัญหา = []
 /* 🔒 ไม่มีไฟล์ให้ตรวจ = ไม่ผ่าน (ดู scripts/lib/ต้องมีของให้ตรวจ.mjs) */
