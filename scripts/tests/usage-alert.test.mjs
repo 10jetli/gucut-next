@@ -135,6 +135,18 @@ try {
     ตรวจ('เหลือ 45 วัน ⇒ กลับไป ok', creditAlert({ ...จริง, daysLeft: 45 }).level === 'ok')
     /* 🔴 ไม่มีค่ามา = ยังไม่รู้ ไม่ใช่ "เผาช้า" ⇒ ต้องไม่ทำให้เกณฑ์เดิมเพี้ยน */
     ตรวจ('daysLeft เป็น null ⇒ ใช้เกณฑ์เปอร์เซ็นต์ตามเดิม', creditAlert({ ...จริง, daysLeft: null }).level === 'ok')
+    /* 🔴 สามสถานะของ "อัตราเผา" ห้ามยุบเหลือสอง (19 ก.ย. 2569)
+       ท่อรุ่นเก่า = ไม่มีคีย์เลย ⇒ เงียบ · ท่อรุ่นใหม่ที่คิดไม่ได้ = มีคีย์แต่ null ⇒ ต้องบอก */
+    ตรวจ('ท่อรุ่นเก่า (ไม่มีคีย์ daysLeft) ⇒ ไม่ต้องบอกอะไรเรื่องอัตรา',
+      creditAlert(จริง).rateUnknown === false && !/ยังคิดอัตรา/.test(creditAlert(จริง).ข้อความ),
+      JSON.stringify(creditAlert(จริง).ข้อความ))
+    ตรวจ('ท่อบอกเองว่าคิดไม่ได้ (daysLeft: null) ⇒ ต้องเขียนว่ายังไม่รู้อัตรา',
+      creditAlert({ ...จริง, daysLeft: null }).rateUnknown === true
+        && /ยังคิดอัตราการเผาไม่ได้/.test(creditAlert({ ...จริง, daysLeft: null }).ข้อความ),
+      JSON.stringify(creditAlert({ ...จริง, daysLeft: null }).ข้อความ))
+    ตรวจ('คิดได้แล้ว ⇒ เลิกบอกว่าไม่รู้',
+      creditAlert({ ...จริง, daysLeft: 45 }).rateUnknown === false
+        && !/ยังคิดอัตรา/.test(creditAlert({ ...จริง, daysLeft: 45 }).ข้อความ))
     ตรวจ('ยอดสูง 95% แม้มีวันเหลือเยอะ ⇒ ยังต้อง warn',
       creditAlert({ plan: 20000, used: 19000, daysLeft: 99 }).level === 'warn',
       creditAlert({ plan: 20000, used: 19000, daysLeft: 99 }).level)

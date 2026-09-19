@@ -59,11 +59,17 @@ export async function GET() {
       note: j?.note ?? null,
       top: Array.isArray(j?.top) ? j.top : null,
       at: j?.at ?? null,
-      /* ⚠️ ไม่มีค่ามา = null = **ยังไม่รู้** ⇒ `creditAlert` จะตกไปใช้เกณฑ์เปอร์เซ็นต์ตามเดิม
-         ห้ามใส่ค่าเริ่มต้นเป็นตัวเลข เพราะนั่นคือการเดาอัตราเผาแทนท่อ */
-      burnPerDay: j?.burnPerDay ?? null,
-      daysLeft: j?.daysLeft ?? null,
-      burnWindowHours: j?.burnWindowHours ?? null,
+      /* 🔴 **สามสถานะ ห้ามยุบเหลือสอง** (แก้ 19 ก.ย. 2569 — ผมเพิ่งเขียนผิดเองเมื่อ 20 นาทีก่อน)
+         · **ไม่มีคีย์เลย** = ท่อรุ่นเก่าที่ยังไม่รู้จักเรื่องอัตราเผา
+         · `null`          = ท่อรุ่นใหม่ที่บอกเองว่า **คิดไม่ได้รอบนี้**
+                             (ฝั่งท่อกำชับ: หลัง deploy ใหม่ ประวัติว่าง ⇒ จะได้ null สักพัก)
+         · ตัวเลข          = คิดได้
+         ⚠️ ของเดิมผมเขียน `j?.daysLeft ?? null` ⇒ **"ไม่มีคีย์" กลายเป็น null**
+            ⇒ จอแยกไม่ออกว่า "ท่อยังไม่รองรับ" กับ "ท่อรองรับแต่ยังคิดไม่ได้"
+            ⇒ เป็นโรคเดียวกับที่ทีมไล่ปิดกันทั้งวัน และผมเพิ่งเหยียบเอง */
+      ...('burnPerDay' in (j ?? {}) ? { burnPerDay: j.burnPerDay ?? null } : {}),
+      ...('daysLeft' in (j ?? {}) ? { daysLeft: j.daysLeft ?? null } : {}),
+      ...('burnWindowHours' in (j ?? {}) ? { burnWindowHours: j.burnWindowHours ?? null } : {}),
     })
   } catch {
     /* ⚠️ ล้มเหลว = **ยังไม่รู้** ไม่ใช่ "เหลือ 0" — คืน unknown ให้จอเขียนถูก */
