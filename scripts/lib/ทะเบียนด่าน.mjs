@@ -294,6 +294,16 @@ export const สูตร = [
     ต้องเอ่ยถึง: 'zzFieldNotInPipe',
   },
   {
+    ด่าน: 'scripts/check-real-send-registry.mjs',
+    ไฟล์: 'app/core/customers/new/page.tsx',
+    เล่า: 'เขียนค่าตาย `= false` แทนการถามทะเบียน ⇒ สถานะปุ่มส่งจริงหลุดจากแหล่งความจริงเดียว',
+    /* รูปของบั๊กจริง (19 ก.ย. 2569 · ใบ S4): จอเขียน `const REAL_SEND_ENABLED = true/false`
+       เอง ⇒ ทะเบียน `lib/real-send.ts` ไม่ใช่แหล่งความจริงอีกต่อไป และไม่มีอะไรฟ้อง */
+    แก้: (s) => s.replace(/^const REAL_SEND_ENABLED = ส่งจริงได้\([^)]*\)/m, 'const REAL_SEND_ENABLED = false'),
+    ต้องมีในไฟล์: 'const REAL_SEND_ENABLED = false',
+    ต้องเอ่ยถึง: 'customers/new',
+  },
+  {
     ด่าน: 'scripts/check-dead-links.mjs',
     ไฟล์: 'components/ui/PillButton.tsx',
     เล่า: 'ลิงก์ไปหน้าที่ไม่มีอยู่จริง — ต้องเขียนในรูป `href=` ที่ด่านประกาศว่าจับ',
