@@ -33,7 +33,7 @@
  */
 import { readFileSync, existsSync, readdirSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -155,7 +155,12 @@ const mw = readFileSync(join(ROOT, 'middleware.ts'), 'utf8')
 const ก้อน = mw.slice(mw.indexOf('const PUBLIC_PATHS'))
 const รายการ = [...ก้อน.slice(0, ก้อน.indexOf(']')).matchAll(/'([^']+)'/g)].map((m) => m[1])
 
-if (process.argv.includes('--self-test')) {
+/* 🔑 **รันตัวหลักเฉพาะตอนถูกเรียกตรง ๆ** (20 ก.ย. 2569 · คิวตัวที่ ② ของ 9 ตัว)
+   เดิมไฟล์นี้กวาดของจริงทันทีที่ถูก `import` ⇒ เทสแยกไฟล์เอาตัวตัดสินไปใช้ไม่ได้
+   ⇒ ⇒ **โครงสร้างที่ทดสอบยาก ทำให้ไม่มีใครเขียนเทส** (วัดได้จริงวันนี้ทั้ง 9 ตัว) */
+const เป็นตัวหลัก = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])
+
+if (เป็นตัวหลัก && process.argv.includes('--self-test')) {
   /* ปลูกเส้นสาธารณะที่ไม่มีไฟล์ และเส้นที่มีไฟล์แต่ไม่มีกุญแจ */
   const r = ตรวจ(['/api/เส้นปลอมที่ไม่มีอยู่', '/login', ...รายการ])
   const จับได้ = r.some((x) => x.includes('เส้นปลอมที่ไม่มีอยู่'))
@@ -187,6 +192,10 @@ if (process.argv.includes('--self-test')) {
   process.exit(ผ่านหมด ? 0 : 1)
 }
 
+/* ถูก import มาใช้ตัวตัดสิน ⇒ ไม่ลงมือกวาดของจริง และไม่ `exit` ทับผลของผู้เรียก */
+if (!เป็นตัวหลัก) {
+  // ไม่ทำอะไรต่อ — ผู้เรียกจะใช้เฉพาะฟังก์ชันที่ export ไว้
+} else {
 if (รายการ.length < 3) {
   console.log(`🛑 อ่าน PUBLIC_PATHS ได้ ${รายการ.length} เส้น — น้อยผิดปกติ ⇒ ตัวอ่านน่าจะพัง (ตรวจ 0 เส้นแล้วเขียวคือสิ่งที่ห้ามเกิด)`)
   process.exit(1)
@@ -203,3 +212,4 @@ console.log(`✅ เส้นสาธารณะทั้ง ${รายกา
   + ` (ยกเว้นชั้นกุญแจ ${Object.keys(เปิดโดยตั้งใจ).length}: ${Object.keys(เปิดโดยตั้งใจ).join(' · ')})`
   + `\n   ยกเว้นชั้นทางปฏิเสธ ${Object.keys(ปฏิเสธไม่ได้โดยตั้งใจ).length}: ${Object.keys(ปฏิเสธไม่ได้โดยตั้งใจ).join(' · ')}`
   + '\n   ⚠️ ด่านนี้ตอบแค่ "มีการตรวจอยู่" ไม่ได้ตอบว่า "ตรวจแน่นพอ" — คนละคำถาม')
+}
