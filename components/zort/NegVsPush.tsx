@@ -21,7 +21,7 @@ import { จับคู่ต้นเหตุ, type NegMap } from '@/lib/neg-
 interface StuckRow { sku?: string; channel?: string }
 
 export default function NegVsPush() {
-  const [ผล, setผล] = useState<{ ขวาง: number; ไม่โผล่: number; ต้นเหตุ: number; หาไม่เจอ: number } | null>(null)
+  const [ผล, setผล] = useState<{ ขวาง: number; ไม่โผล่: number; ต้นเหตุ: number; หาไม่เจอ: number; ครบไหม: boolean | null; รวมขวาง: number | null } | null>(null)
 
   useEffect(() => {
     let ทิ้งแล้ว = false
@@ -34,6 +34,15 @@ export default function NegVsPush() {
         if (ทิ้งแล้ว) return
         const stuck: StuckRow[] = Array.isArray(a?.rows) ? a.rows : []
         const negRows = Array.isArray(b?.rows) ? b.rows : []
+        /* 🔴 **เส้นนี้ตัดจำนวนแถวเงียบ ๆ** (ใบ S4 · 20 ก.ย. 2569)
+           `?pushstuck=1` มี **เพดานจริง 200 แถว** ไม่ว่าจะขอเท่าไร และมันบอกยอดรวมมาในช่อง
+           `ทั้งหมดที่ตรงเงื่อนไข` ⇒ ของเดิมเรา **ไม่ได้อ่านช่องนั้นเลย**
+           ⇒ ⇒ วันที่แถวเกิน 200 ตัวเลขบนกล่องนี้จะ **ต่ำกว่าจริงโดยไม่มีอะไรฟ้อง**
+           (วัดวันนี้: เหตุ negative 59 แถว ⇒ ยังไม่ถึงเพดาน — แต่กล่องนี้ไม่มีวันรู้ตัวเอง)
+           🔑 กฎที่ตกลงกับฝั่งท่อวันนี้: **พารามิเตอร์ที่เราส่งไป ≠ พารามิเตอร์ที่ถูกใช้**
+              ⇒ ต้องอ่านค่าที่ตอบกลับมา แล้ว **เขียนขอบเขตบนจอ** ไม่ใช่เงียบ */
+        const รวมขวาง = Number(a?.['ทั้งหมดที่ตรงเงื่อนไข'])
+        const ครบไหม = Number.isFinite(รวมขวาง) ? รวมขวาง <= stuck.length : null
         /* ทั้งสองเส้นต้องตอบมาจริง — ขาดเส้นไหนก็ยังบอกไม่ได้ ⇒ เงียบ ไม่ใช่เขียน 0 */
         if (!stuck.length || !negRows.length) return
         const neg: NegMap = new Map()
@@ -43,7 +52,7 @@ export default function NegVsPush() {
         }
         const { ต้นเหตุ, หาไม่เจอ, ไม่โผล่ในจอคลัง } = จับคู่ต้นเหตุ(stuck, neg)
         const รหัสขวาง = new Set(stuck.map((r) => r.sku).filter(Boolean) as string[])
-        setผล({ ขวาง: รหัสขวาง.size, ไม่โผล่: ไม่โผล่ในจอคลัง.length, ต้นเหตุ: ต้นเหตุ.length, หาไม่เจอ })
+        setผล({ ขวาง: รหัสขวาง.size, ไม่โผล่: ไม่โผล่ในจอคลัง.length, ต้นเหตุ: ต้นเหตุ.length, หาไม่เจอ, ครบไหม, รวมขวาง: Number.isFinite(รวมขวาง) ? รวมขวาง : null })
       } catch { /* เงียบโดยตั้งใจ — ถามไม่ได้ ≠ ไม่มีปัญหา แต่ก็ไม่ควรเดาให้ */ }
     })()
     return () => { ทิ้งแล้ว = true }
@@ -66,6 +75,19 @@ export default function NegVsPush() {
       {ผล.ต้นเหตุ > 0 && <> ต้นเหตุจริงมี <b>{ผล.ต้นเหตุ}</b> ตัว ·</>}
       {' '}
       <Link href="/core/stock-push" className="underline font-semibold">ดูรายการที่ขวางการดันและต้นเหตุ</Link>
+      {/* 🔑 ขอบเขตของตัวเลขข้างบน — เขียนเมื่อ **รู้ว่าไม่ครบ** หรือ **ไม่รู้ว่าครบไหม** เท่านั้น
+          (ครบแล้วไม่ต้องเขียน ไม่งั้นกล่องจะเต็มไปด้วยคำเตือนจนคนเลิกอ่าน) */}
+      {ผล.ครบไหม === false && (
+        <span className="block mt-0.5">
+          📏 ตัวเลขข้างบนนับจาก <b>{ผล.ขวาง}</b> รหัสที่ท่อส่งมาได้ จากทั้งหมด <b>{ผล.รวมขวาง}</b> รหัส
+          {' '}(เส้นนี้มีเพดานแถว) ⇒ <b>เป็นขอบล่าง ไม่ใช่ยอดจริง</b>
+        </span>
+      )}
+      {ผล.ครบไหม === null && (
+        <span className="block mt-0.5">
+          📏 ท่อรุ่นนี้ไม่ได้บอกยอดรวม ⇒ <b>ยังไม่รู้ว่าเห็นครบหรือไม่</b> (ไม่ใช่ว่าเห็นครบ)
+        </span>
+      )}
       {ผล.หาไม่เจอ > 0 && (
         <span className="block mt-0.5">
           ⚠️ อีก <b>{ผล.หาไม่เจอ}</b> รหัสยัง<b>จับคู่ต้นเหตุไม่ได้</b> — ต้องตามด้วยมือ ไม่ใช่ไม่มีปัญหา
