@@ -151,6 +151,8 @@ for (const file of ไฟล์ที่ตรวจ) {
 const ทะเบียน = {
   'app/core/usage/page.tsx|at|d':
     'ปกติ — `at` ถูกตั้งใน load() รอบเดียวกับ `d` ⇒ มาจากคำขอเดียวกัน (ตัดสิน 20 ก.ย. 2569)',
+  'app/core/zort-arch/page.tsx|flow|d':
+    'ปกติ — `flow` คือ `d.manual.flow` ⇒ มาจากคำขอเดียวกับประตู `d` เป๊ะ (ตัดสิน 20 ก.ย. 2569 · ด่านนี้จับจอที่เพิ่งเขียนวันเดียวกัน ⇒ ยืนยันว่ามันร้องกับของใหม่จริง)',
   'app/core/bundles/page.tsx|fresh|data': 'ยังไม่ตัดสิน',
   'app/core/bundles/page.tsx|stock|data': 'ยังไม่ตัดสิน',
   'app/core/import/page.tsx|sendErr|parsed': 'ยังไม่ตัดสิน',

@@ -23,7 +23,9 @@
  * ⚠️ **ต้องข้ามอย่างมีเสียง เมื่อไม่มีซอร์สท่อในเครื่อง** (เช่นตอน Netlify build)
  *    ห้ามเงียบแล้วผ่าน เพราะจะแยกไม่ออกระหว่าง "ตรวจแล้วไม่เจอ" กับ "ไม่ได้ตรวจ"
  */
-import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
+import { readdirSync, readFileSync, statSync, existsSync, mkdtempSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
@@ -51,6 +53,12 @@ const ยกเว้น = {
      เพราะคำว่า date โผล่ในซอร์สท่อที่อื่น ⇒ เขียวของมันไม่เคยแปลว่า "ตรวจแล้วตรง"
      🔑 การยกเว้นรายช่องทำให้ก้อนที่มาจากแหล่งเดียวกัน ถูกตัดสินคนละแบบ
         ⇒ ถ้าจะทำต่อ ควรยกเว้น **รายก้อนพร้อมชื่อแหล่ง** ไม่ใช่รายช่อง */
+  /* 🔑 ช่องที่ **จออ่านเผื่อไว้ก่อนที่ท่อจะมี** — ต่างจากช่องที่อ่านผิดชื่อ
+     `flow.basisLegend` คือคำอธิบายว่า `basis` แต่ละค่าแปลว่าอะไร ซึ่งตอนนี้อยู่ใน
+     **คอมเมนต์ของตัวสร้างฝั่งท่อเท่านั้น** ⇒ จอจึงลอกมาไว้เป็นชุดสำรอง และเขียนบนจอว่าลอกมา
+     ⇒ วันที่ท่อส่งช่องนี้มา จอจะใช้ของท่อทันทีและข้อความ "ลอกมา" จะหายไปเอง
+     ⇒ ขอฝั่งท่อไว้แล้ว 20 ก.ย. 2569 · **ถ้าวันหนึ่งเขาส่งมา ให้ถอดบรรทัดนี้ทิ้ง** */
+  'Flow.basisLegend': 'app/core/zort-arch: จออ่านเผื่อ — ท่อยังไม่ส่ง มีชุดสำรองในจอและเขียนกำกับบนจอแล้ว (ขอท่อไว้ 20 ก.ย. 2569)',
   'Bill.emoji': 'app/core/finance: มาจาก lib/gmail.ts → /api/bills (ตรวจซอร์สแล้ว 19 ก.ย. 2569) ไม่ใช่ท่อ core',
   'Bill.date': 'app/core/finance: เหตุผลเดียวกับ Bill.vendorId — เดิมผ่านเพราะคำว่า date บังเอิญมีในซอร์สท่อ',
   /* 🔑 **ถอน `ZortMonth.unknownStores` ออกจากรายการยกเว้นแล้ว 18 ก.ย. 2569**
@@ -208,7 +216,7 @@ for (const file of walk(join(ROOT, 'app'))) {
         เดาไว้.push(`${rel}  ${คีย์}`)
         continue
       }
-      พบ.push(`${rel}  ${คีย์}`)
+      พบ.push({ ข้อความ: `${rel}  ${คีย์}`, ช่อง })
     }
   }
 }
@@ -222,9 +230,59 @@ if (เดาไว้.length) {
   for (const x of เดาไว้) console.log('   ', x)
   console.log('   ⇒ พอฝั่งท่อ push แล้วรัน scripts/ดึงสารบัญท่อ.mjs ใหม่ บรรทัดนี้จะหายไปเอง')
 }
-if (พบ.length) {
-  console.error('\n🔴 จออ่านชื่อช่องที่ไม่มีในซอร์สท่อเลย — ค่าจะเป็น undefined เงียบ ๆ')
-  for (const x of พบ) console.error('   ' + x)
+/* 🔴 **"ไม่มีในซอร์สท่อ" กับ "สำเนาท่อในเครื่องเก่ากว่าที่เขา push แล้ว" คนละเรื่องกันคนละทิศ**
+   ของจริง 20 ก.ย. 2569: ด่านนี้ฟ้องจอผัง ZORT 15 ช่องว่า "ไม่มีในซอร์สท่อเลย"
+   ⇒ ความจริงคือ **สำเนา ../gucut-web ในเครื่องนี้ไม่มีคอมมิตนั้น** ทั้งที่มันเป็น *ยอดของ origin/main*
+      (local HEAD ของฝั่งท่อแยกทางจาก origin/main อยู่)
+   ⇒ ถ้าไม่แยกสองอย่างนี้ ทางแก้ที่คนจะทำคือ **ใส่ยกเว้นทีละช่อง** ⇒ ตาข่ายหายถาวร
+      เพราะเหตุผลที่เขียนในยกเว้นจะเป็น "ตรวจแล้วมีจริง" ซึ่งจริงวันนี้ และไม่มีใครมาถอดวันที่มันเปลี่ยน */
+let ข้อความท่อOrigin = ''
+let อ่านOriginได้ = false
+try {
+  const tmp = mkdtempSync(join(tmpdir(), 'pipe-origin-'))
+  /* ⚠️ ดึงเฉพาะสามโฟลเดอร์ที่ใช้ — `git archive` ทั้งรีโปของท่อได้ **492 MB**
+     (มี out/ กับรูปติดมาด้วย) ⇒ ด่านที่กินดิสก์ครึ่งกิกะไบต์ต่อรอบ คือด่านที่จะถูกถอด */
+  for (const base of ['netlify', 'src', 'scripts']) {
+    try {
+      execSync(`git -C ${JSON.stringify(PIPE)} archive --format=tar origin/main ${base} | tar -x -C ${JSON.stringify(tmp)}`,
+        { stdio: ['ignore', 'ignore', 'ignore'] })
+    } catch { continue }   // โฟลเดอร์นั้นไม่มีใน origin/main ⇒ ข้าม ไม่ใช่ล้มทั้งด่าน
+    const dir = join(tmp, base)
+    if (!existsSync(dir)) continue
+    /* ⚠️ ใช้ `walk()` ตรง ๆ ไม่ได้ — มันเก็บเฉพาะ `.tsx` (ของฝั่งจอ)
+       ถ้าเผลอใช้ จะได้คลังเปล่า **แล้วทุกช่องจะกลายเป็น "ไม่มีบน origin" เงียบ ๆ**
+       ⇒ ตัวเดินไฟล์คนละงาน ต้องคนละตัว */
+    const เดินท่อ = (d) => {
+      for (const name of readdirSync(d)) {
+        if (name === 'node_modules') continue
+        const p = join(d, name)
+        if (statSync(p).isDirectory()) เดินท่อ(p)
+        else if (/\.(mjs|js|ts|tsx|json)$/.test(name)) ข้อความท่อOrigin += '\n' + ตัดคอมเมนต์(readFileSync(p, 'utf8'))
+      }
+    }
+    เดินท่อ(dir)
+  }
+  อ่านOriginได้ = true
+  rmSync(tmp, { recursive: true, force: true })
+} catch {
+  /* ไม่มี git / ไม่มี origin/main ⇒ **ตอบไม่ได้ว่าเก่าหรือไม่มีจริง** ⇒ ต้องพิมพ์ ไม่ใช่เงียบแล้วตัดสิน */
+}
+const มีบนOrigin = (ช่อง) => อ่านOriginได้ && new RegExp('\\b' + ช่อง + '\\b').test(ข้อความท่อOrigin)
+const เก่ากว่า = พบ.filter((x) => มีบนOrigin(x.ช่อง))
+const ไม่มีจริง = พบ.filter((x) => !มีบนOrigin(x.ช่อง))
+
+if (เก่ากว่า.length) {
+  console.log(`\n⚠️ ${เก่ากว่า.length} ช่อง **มีอยู่บน origin/main ของท่อแล้ว แต่ยังไม่มีในสำเนาที่เครื่องนี้อ่าน**`)
+  for (const x of เก่ากว่า) console.log('   ' + x.ข้อความ)
+  console.log('   ⇒ ไม่ใช่ความผิดของจอ และ **ไม่ใช่ของที่ควรใส่ยกเว้น** — สำเนาท่อในเครื่องตามไม่ทันเฉย ๆ')
+  console.log('   ⇒ แก้ที่ต้นเหตุ: ฝั่งท่อ `git pull` ให้สำเนาตรงกับ origin/main')
+}
+if (!อ่านOriginได้ && พบ.length) {
+  console.log('\n⚠️ อ่าน origin/main ของท่อไม่ได้ ⇒ **แยกไม่ออก**ว่า "ไม่มีจริง" หรือ "สำเนาเก่า" — ถือว่าไม่มีจริงไว้ก่อน')
+}
+if (ไม่มีจริง.length) {
+  console.error('\n🔴 จออ่านชื่อช่องที่ไม่มีในซอร์สท่อเลย (ทั้งในสำเนาและบน origin/main) — ค่าจะเป็น undefined เงียบ ๆ')
+  for (const x of ไม่มีจริง) console.error('   ' + x.ข้อความ)
   console.error('\n   ⚠️ undefined ที่ถูกเขียนว่า `Number(x) || 0` จะกลายเป็น **0 ที่ดูเหมือนค่าจริง**')
   console.error('   วิธีแก้: เทียบชื่อช่องกับที่ท่อส่งจริง หรือถ้าจอสร้างค่าเอง ให้ใส่ใน `ยกเว้น` พร้อมเหตุผลที่ตรวจแล้ว')
   process.exit(1)
