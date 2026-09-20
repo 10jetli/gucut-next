@@ -72,7 +72,8 @@ for (const file of ไฟล์ที่ตรวจ) {
   })
 }
 
-console.log(`ตรวจคำสถานะบนจอ: ไฟล์ .tsx ทั้งหมดในสาย app/ components/ · ยกเว้นไว้ ${Object.keys(ยกเว้นไฟล์).length} ไฟล์`)
+console.log(`ตรวจคำสถานะบนจอ: **${ไฟล์ที่ตรวจ.length} ไฟล์** ในสาย app/ components/ · ยกเว้นไว้ ${Object.keys(ยกเว้นไฟล์).length} ไฟล์`
+  + ` (${((Object.keys(ยกเว้นไฟล์).length / (ไฟล์ที่ตรวจ.length || 1)) * 100).toFixed(1)}% ของประชากร)`)
 if (พบ.length) {
   console.error('\n🔴 มีค่าสถานะดิบขึ้นจอโดยไม่ผ่านตารางคำของ ZORT')
   for (const x of พบ) console.error('   ' + x)

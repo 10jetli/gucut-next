@@ -92,7 +92,8 @@ for (const file of ไฟล์ที่ตรวจ) {
   })
 }
 
-console.log(`ตรวจวันที่บนจอ: ไฟล์ .tsx ในสาย app/ components/ · ยกเว้นไว้ ${Object.keys(ยกเว้น).length} ไฟล์`)
+console.log(`ตรวจวันที่บนจอ: **${ไฟล์ที่ตรวจ.length} ไฟล์** ในสาย app/ components/ · ยกเว้นไว้ ${Object.keys(ยกเว้น).length} ไฟล์`
+  + ` (${((Object.keys(ยกเว้น).length / (ไฟล์ที่ตรวจ.length || 1)) * 100).toFixed(1)}% ของประชากร)`)
 if (พบ.length) {
   console.error('\n🔴 มีวันที่ดิบ (ปี ค.ศ.) ขึ้นจอโดยไม่ผ่านตัวจัดรูปแบบ')
   for (const x of พบ) console.error('   ' + x)
