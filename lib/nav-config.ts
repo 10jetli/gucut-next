@@ -287,6 +287,7 @@ export const NAV_ITEMS: NavItem[] = [
       { href: '/core/stock-push', label: 'ดันสต็อกขึ้นแพลตฟอร์ม' },   // ประวัติดันสต็อก — งาน AI/เจ้าของร้าน
       { href: '/core/peak', label: 'สะพานส่งเข้า PEAK' },   // สะพานบัญชี — งาน AI/เจ้าของร้าน
       { href: '/core/reorder', label: 'ของจะหมดเมื่อไหร่' },   // วางแผนสั่งซื้อ — เจ้าของร้าน
+      { href: '/core/admin-log', label: 'สมุดคำสั่งหลังร้าน' },   // จดคำสั่งที่เปลี่ยนข้อมูล (ขั้น 1: เวลา·เส้น·อ้างอิง) — ZORT มีสมุดนี้ เราเพิ่งมี 21 ก.ย. 2569
       { href: '/core/zort-noapi', label: 'ZORT เปิดให้ทำอะไรผ่าน API' },   // เครื่องมือตรวจ ZORT — งาน AI
       { href: '/core/zort-webhook', label: 'Webhook ของ ZORT' },   // เครื่องมือตรวจ ZORT — งาน AI
       { href: '/core/zort-claims', label: 'คำกล่าวอ้างยังจริงไหม' },   // เครื่องมือตรวจ ZORT — งาน AI
