@@ -23,7 +23,8 @@
  *    · **ไม่ครอบ: ผลข้างเคียงที่เงียบ** (เขียนไฟล์โดยไม่พิมพ์อะไร) — ด่านนี้ดูที่ "เสียงที่มันทำ"
  *      ⇒ จับได้เฉพาะตัวที่พิมพ์ออกจอ · ตัวที่เขียนไฟล์เงียบ ๆ ยังต้องพึ่งการอ่านโค้ด
  */
-import { readdirSync } from 'node:fs'
+import { readdirSync, readFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -32,6 +33,7 @@ const dir = resolve(process.cwd(), 'scripts/lib')
 const ไฟล์ = readdirSync(dir).filter((n) => n.endsWith('.mjs')).sort()
 const โหลดไม่ได้ = []
 const ลงมือตอนโหลด = []
+const ออกก่อนเวลา = []
 let ผ่าน = 0
 
 for (const n of ไฟล์) {
@@ -40,10 +42,17 @@ for (const n of ไฟล์) {
      ① ตัวช่วยที่เรียก `process.exit()` ตอนโหลด จะฆ่าด่านนี้ทิ้งแล้วดูเหมือน "ผ่าน"
      ② ต้องแยก "เสียง" ของตัวช่วยออกจากเสียงของด่าน ⇒ จับได้ว่าใครพิมพ์ */
   let out = ''
+  /* 🔑 **หมุดยืนยันว่า `import` เดินจบ** (ฝั่งท่อชี้ช่องนี้ให้ 20 ก.ย. 2569)
+     ปลูก `process.exit(0)` ตอนโหลด ⇒ ลูกออกด้วย **0 อย่างเงียบ ๆ**
+     ⇒ ⇒ **การหยุดกลางทางหน้าตาเหมือนความสำเร็จ** ⇒ ด่านเดิมตอบ "ผ่าน" (ยิงยืนยันฝั่งเราแล้วว่าหลุดจริง)
+     ⇒ ลูกกระบวนการแก้เรื่อง "ตัวช่วยฆ่าด่าน" ได้ แต่ **ไม่แก้เรื่อง "ออกก่อนเวลา"** — คนละตาข่าย
+     🚫 หมุดต้องเป็น **ไฟล์ ไม่ใช่ข้อความบนจอ** ไม่งั้นด่าน "ต้องเงียบตอนโหลด" จะร้องใส่หมุดของตัวเอง */
+  const หมุด = join(tmpdir(), `libload-${process.pid}-${n.replace(/[^\w.-]/g, '_')}.mark`)
+  try { rmSync(หมุด, { force: true }) } catch { /* ไม่มีอยู่แล้วก็ดี */ }
   try {
     out = execFileSync(
       process.execPath,
-      ['-e', `import(${JSON.stringify(url)}).then(m=>{if(Object.keys(m).length===0){console.error("ไม่มี export");process.exit(3)}})`],
+      ['-e', `import(${JSON.stringify(url)}).then(m=>{require("fs").writeFileSync(${JSON.stringify(หมุด)},String(Object.keys(m).length))})`],
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 20000 },
     )
   } catch (e) {
@@ -55,6 +64,18 @@ for (const n of ไฟล์) {
   }
   if (out.trim()) {
     ลงมือตอนโหลด.push(`${n} — พิมพ์ออกมา ${out.trim().length} ตัวอักษรตอนถูกโหลด: "${out.trim().slice(0, 80)}"`)
+    continue
+  }
+  /* อ่านหมุด — ไม่มีหมุด = `import` ไม่เคยเดินจบ ทั้งที่ลูกออกด้วย 0 */
+  let หมุดที่ได้ = null
+  try { หมุดที่ได้ = readFileSync(หมุด, 'utf8') } catch { /* ไม่มีหมุด */ }
+  try { rmSync(หมุด, { force: true }) } catch { /* ลบไม่ได้ก็ไม่เป็นไร */ }
+  if (หมุดที่ได้ === null) {
+    ออกก่อนเวลา.push(`${n} — ลูกออกด้วยรหัส 0 แต่ **หมุดไม่ถูกเขียน** ⇒ \`import\` ไม่เคยเดินจบ (เช่นมี process.exit ตอนโหลด)`)
+    continue
+  }
+  if (หมุดที่ได้.trim() === '0') {
+    โหลดไม่ได้.push(`${n} — โหลดได้แต่ **ไม่มี export เลย** ⇒ ไม่มีใครเอาไปใช้ได้ (ตั้งใจแบบนี้ไหม)`)
     continue
   }
   ผ่าน++
@@ -69,11 +90,17 @@ if (โหลดไม่ได้.length) {
   for (const x of โหลดไม่ได้) console.error('   ' + x)
   console.error('\n   ⚠️ `node --check` ผ่านไม่ได้แปลว่ารันได้ — ไวยากรณ์ถูกกับชื่อมีอยู่จริง คนละเรื่อง')
 }
+if (ออกก่อนเวลา.length) {
+  console.error('\n🔴 ตัวช่วยที่ **ออกกลางทางตอนถูกโหลด** — หน้าตาเหมือนสำเร็จ แต่ `import` ไม่เคยเดินจบ')
+  for (const x of ออกก่อนเวลา) console.error('   ' + x)
+  console.error('   ⇒ ผู้เรียกจะได้โมดูลไม่ครบโดยไม่มีอะไรฟ้อง · วิธีแก้: ห้ามเรียก process.exit ที่ระดับบนสุดของตัวช่วย')
+  console.error('   (สคริปต์ที่ตั้งใจให้รันเดี่ยว ๆ ไม่ควรอยู่ใน scripts/lib/ ตั้งแต่แรก)')
+}
 if (ลงมือตอนโหลด.length) {
   console.error('\n🔴 ตัวช่วยที่ **ลงมือทำอะไรตอนถูกโหลด** — ด่านนี้ import ทุกตัวทุก build')
   for (const x of ลงมือตอนโหลด) console.error('   ' + x)
   console.error('\n   ⇒ ปล่อยไว้ = **ตัวตรวจกลายเป็นตัวสั่งให้ทำงาน** ทุกครั้งที่ build')
   console.error('   วิธีแก้: ย้ายสิ่งที่มันทำไปไว้ **ในฟังก์ชันที่ผู้เรียกสั่งเอง** แล้ว export ฟังก์ชันนั้นแทน')
 }
-if (โหลดไม่ได้.length || ลงมือตอนโหลด.length) process.exit(1)
-console.log('✅ ตัวช่วยทุกตัวโหลดได้ มีของให้ใช้ และเงียบตอนโหลด')
+if (โหลดไม่ได้.length || ลงมือตอนโหลด.length || ออกก่อนเวลา.length) process.exit(1)
+console.log('✅ ตัวช่วยทุกตัวโหลดได้ มีของให้ใช้ เงียบตอนโหลด และ import เดินจบจริง')
