@@ -6,7 +6,7 @@
 // ⚠️ คำถามที่ต้องตอบให้ได้คือ "ของตัวไหนถูกคืนบ่อย" ไม่ใช่แค่ "คืนไปกี่ใบ"
 //    ยอดคืนรวมบอกแค่ว่าเจ็บเท่าไหร่ แต่บอกไม่ได้ว่าต้องไปแก้อะไร
 //    ตัวที่ถูกคืนซ้ำ ๆ มักมีสาเหตุจริง (รูปไม่ตรง · สเปกกำกวม · ของเสียบ่อย)
-import { วันไทยจากMs } from './format'
+import { วันไทยจากMs, ช่วงวันย้อนหลัง } from './format'
 import { zortFetch } from './zort'
 
 // ⚠️ ใบคืนของจากเว็บหน้าร้าน (gucut.com) ไม่มีใน ZORT
@@ -141,10 +141,16 @@ async function siteReturns(days: number): Promise<ReturnOrder[]> {
 export async function computeReturns(days = 30): Promise<ReturnsResult> {
   const today = new Date()
   const start = new Date(today.getTime() - days * 86400_000)
+  /* 🔴 `days` มาจากผู้เรียก ⇒ อาจเป็น null/'' ได้ · `Number(null)` = 0 ⇒ **"ไม่รู้" จะกลายเป็น "วันนี้วันเดียว"**
+     (ฝั่งท่อเจอรูปนี้ในตัวช่วยเดียวกันวันนี้) ⇒ แหล่งกลางคืน `null` เมื่อไม่รู้ ⇒ ตกกลับไปใช้ 30 วันอย่างชัดเจน */
+  const ช่วง = ช่วงวันย้อนหลัง(days, today.getTime()) ?? ช่วงวันย้อนหลัง(30, today.getTime())!
   const [raw, fromSite] = await Promise.all([
     pagedList('ReturnOrder/GetReturnOrders', {
-      returnorderdateafter: ymd(start),
-      returnorderdatebefore: ymd(today),
+      /* 🔑 ใช้แหล่งกลาง `ช่วงวันย้อนหลัง` (lib/format.ts) — มีเทสคุมตั้งแต่ 20 ก.ย. 2569
+         เหตุ: ย้อน diff ของคอมมิตที่แก้บั๊กนี้กลับ ⇒ **สาย 75 ขั้นเงียบสนิท** ⇒ เดิมไม่มีตาข่ายเลย
+         ⚠️ ถอยไปคิดวันเองตรงนี้เมื่อไหร่ = ถอดตาข่ายนั้นออกโดยไม่มีใครเห็น */
+      returnorderdateafter: ช่วง.ตั้งแต่,
+      returnorderdatebefore: ช่วง.ถึง,
     }),
     siteReturns(days),
   ])

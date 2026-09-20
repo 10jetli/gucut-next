@@ -2,7 +2,7 @@
 //
 // ยอดขายมาจาก ZORT ซึ่งรวมออเดอร์ Shopee · Lazada · TikTok · หน้าร้าน ไว้ที่เดียวแล้ว
 // ดึงที่นี่ที่เดียวจึงได้ครบทุกช่องทางตามที่เจ้าของร้านต้องการ
-import { วันไทยจากMs } from './format'
+import { วันไทยจากMs, ช่วงวันย้อนหลัง } from './format'
 import { zortFetch } from './zort'
 import { abcClass, forecast, seasonalIndex } from './forecast'
 
@@ -126,7 +126,12 @@ export async function computeReorder(
 ): Promise<ReorderResult> {
   const today = new Date()
   const start = new Date(today.getTime() - LOOKBACK_DAYS * 86400_000)
-  const range = { orderdateafter: ymd(start), orderdatebefore: ymd(today) }
+  /* 🔑 ใช้แหล่งกลาง `ช่วงวันย้อนหลัง` (lib/format.ts) — มีเทสคุมตั้งแต่ 20 ก.ย. 2569
+     เหตุ: ย้อน diff ของคอมมิตที่แก้บั๊กวันนี้กลับ ⇒ **สาย 75 ขั้น exit 0 · tsc เขียว**
+     ⇒ ⇒ เดิม **ไม่มีอะไรจับเลย** ทั้งที่เส้นนี้ตัดสินว่าจะสั่งซื้อของเท่าไหร่
+     ⚠️ ถอยไปคิดวันเองตรงนี้เมื่อไหร่ = ถอดตาข่ายนั้นออกโดยไม่มีใครเห็น */
+  const ช่วง = ช่วงวันย้อนหลัง(LOOKBACK_DAYS, today.getTime())!
+  const range = { orderdateafter: ช่วง.ตั้งแต่, orderdatebefore: ช่วง.ถึง }
 
   let returnsUnavailable = false
   const [orders, returns, products] = await Promise.all([
