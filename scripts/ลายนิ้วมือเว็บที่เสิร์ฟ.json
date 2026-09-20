@@ -1,0 +1,15 @@
+{
+  "url": "https://admin.gucut.com/login",
+  "วัดเมื่อ_iso": "2026-09-20T15:22:58.978Z",
+  "จำนวนชิ้น": 8,
+  "ชิ้น": [
+    "chunks/231-a23226c276bd08fc.js",
+    "chunks/7023-2c642497c3d1693a.js",
+    "chunks/app/layout-6fca8f3d3d298d66.js",
+    "chunks/app/login/page-06c5c43f68c240df.js",
+    "chunks/fd9d1056-fc2f78993d7dac8f.js",
+    "chunks/main-app-1f8b2b138563c79f.js",
+    "chunks/polyfills-78c92fac7aa8fdd8.js",
+    "chunks/webpack-0a3dd3d0573d242e.js"
+  ]
+}
