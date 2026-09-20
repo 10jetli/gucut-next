@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { ค่าหัวที่ปลอดภัย } from '@/lib/หัวยุค'
 import { authToken, sameToken } from '@/lib/auth-token'
 import { isStaffToken, roleOf, verifyStaffToken } from '@/lib/staff-token'
 
@@ -88,11 +89,18 @@ function staffPasswords() {
  *  🔑 ห่อ **ที่เดียว** (ไม่ไล่ใส่ทีละ `return`) เพราะ middleware มีทางออก 11 ทาง
  *     ⇒ ไล่ใส่ทีละจุด = วันหน้ามีคนเพิ่มทางออกที่ 12 แล้วลืม ⇒ หัวหายเฉพาะบางเส้น
  *     ⇒ ⇒ **หัวที่หายบางเส้น อ่านได้ว่า "ท่อรุ่นเก่า" ⇒ แดงลวงทิศเดียวกับปัญหาที่มันมาแก้** */
-const ตราประทับยุค = process.env.BUILD_COMMIT || 'local'
+const ตราประทับยุค = ค่าหัวที่ปลอดภัย(process.env.BUILD_COMMIT) ?? ค่าหัวที่ปลอดภัย('local')
 
 export async function middleware(req: NextRequest) {
   const res = await ตัดสินคำขอ(req)
-  res.headers.set('x-screen-build', ตราประทับยุค)
+  /* 🔒 **ตาข่ายรับ — เพราะตัวห่อนี้อยู่บนทางออกทั้ง 11 ทาง** (ฝั่งท่อเตือน 21 ก.ย. 2569)
+     ค่าหัว HTTP ต้องเป็น Latin-1 ⇒ อักขระไทยทำให้ `Headers.set` **โยนทันที**
+     ⇒ ⇒ ถ้าไม่มี try/catch **ทุกคำตอบของเว็บพังพร้อมกัน** เพราะของที่ตั้งใจกันลืม
+     🔑 กฎที่ได้: **ของที่ห่อทุกทางออก ต้องพังไม่ได้** ⇒ กรองค่าก่อน + รับพลาดไว้ + คืนคำตอบเดิมเสมอ
+     (ค่าว่าง ⇒ `ตราประทับยุค` เป็น null ⇒ **ไม่ใส่หัวเลย** ดีกว่าใส่หัวว่างที่อ่านว่า "รุ่นไม่มีชื่อ") */
+  if (ตราประทับยุค) {
+    try { res.headers.set('x-screen-build', ตราประทับยุค) } catch { /* ใส่ไม่ได้ = ไม่ใส่ ไม่ใช่พังทั้งคำตอบ */ }
+  }
   return res
 }
 
