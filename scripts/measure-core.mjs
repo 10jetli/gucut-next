@@ -46,15 +46,22 @@ for (const q of QUERIES) {
   const runs = []
   for (let i = 0; i < ROUNDS; i++) {
     const t0 = Date.now()
-    let status = 0; let bytes = 0; let body = null; let err = ''
+    let status = 0; let bytes = 0; let อักขระ = 0; let body = null; let err = ''
     try {
       const res = await fetch(`${BASE}/api/core?${q}`, { headers: { 'x-admin-key': KEY } })
       status = res.status
       const text = await res.text()
-      bytes = text.length
+      /* 🔴 **20 ก.ย. 2569 — เดิมบรรทัดนี้เขียน `text.length` แล้วพิมพ์ว่า "ไบต์"**
+         `String.length` นับ **อักขระ** · คำตอบของท่อเป็นภาษาไทยเกือบทั้งก้อน (ไทย = 3 ไบต์/ตัว)
+         ⇒ เลขที่รายงานต่ำกว่าของจริงราว **สองถึงสามเท่า** และ **ไม่มีอะไรฟ้อง** เพราะมันดูสมเหตุสมผล
+         🔑 ที่มา: ฝั่งท่อกับผมวัดเส้นเดียวกันแล้วได้ 9,886 กับ 19,680 ⇒ **เกือบสรุปว่าเป็นคนละยุคกัน**
+            (ทั้งวันเราไล่เรื่องยุคอยู่พอดี) ของจริงคือ **หน่วยต่างกัน ของเหมือนกันเป๊ะ**
+         ⇒ ⇒ บทเรียน: **ความต่างที่เข้ากับสาเหตุที่เรากำลังคิดอยู่ ต้องตรวจหนักกว่าเดิม ไม่ใช่เบากว่าเดิม** */
+      bytes = Buffer.byteLength(text, 'utf8')
+      อักขระ = text.length
       try { body = JSON.parse(text) } catch { err = 'คำตอบไม่ใช่ JSON' }
     } catch (e) { err = String(e instanceof Error ? e.message : e) }
-    runs.push({ ms: Date.now() - t0, status, bytes, rows: rowCount(body), error: err || body?.error || null })
+    runs.push({ ms: Date.now() - t0, status, bytes, อักขระ, rows: rowCount(body), error: err || body?.error || null })
   }
 
   const times = runs.map((r) => r.ms)
@@ -63,7 +70,7 @@ for (const q of QUERIES) {
   console.log(`  เวลา (${ROUNDS} รอบ): ${times.map((t) => (t / 1000).toFixed(1) + ' วิ').join(' · ')}`)
   for (const r of runs) {
     const rowTxt = r.rows === null ? 'นับแถวไม่ได้' : `${r.rows.toLocaleString('th-TH')} แถว`
-    console.log(`    HTTP ${r.status} · ${r.bytes.toLocaleString('th-TH')} ไบต์ · ${rowTxt}`
+    console.log(`    HTTP ${r.status} · ${r.bytes.toLocaleString('th-TH')} ไบต์ (${r.อักขระ.toLocaleString('th-TH')} อักขระ) · ${rowTxt}`
       + (r.error ? ` · ⚠️ ${String(r.error).slice(0, 70)}` : ''))
   }
   /* 🔴 เร็วเพราะทำงานสำเร็จ กับ เร็วเพราะถูกปฏิเสธ ต้องแยกให้ขาด */
