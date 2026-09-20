@@ -28,6 +28,7 @@ import { tmpdir } from 'node:os'
 import { execFileSync } from 'node:child_process'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
+import { ตัดสินผลโหลด } from './lib/ตัดสินผลโหลด.mjs'
 
 const dir = resolve(process.cwd(), 'scripts/lib')
 const ไฟล์ = readdirSync(dir).filter((n) => n.endsWith('.mjs')).sort()
@@ -42,6 +43,7 @@ for (const n of ไฟล์) {
      ① ตัวช่วยที่เรียก `process.exit()` ตอนโหลด จะฆ่าด่านนี้ทิ้งแล้วดูเหมือน "ผ่าน"
      ② ต้องแยก "เสียง" ของตัวช่วยออกจากเสียงของด่าน ⇒ จับได้ว่าใครพิมพ์ */
   let out = ''
+  let ข้อผิดพลาด = null
   /* 🔑 **หมุดยืนยันว่า `import` เดินจบ** (ฝั่งท่อชี้ช่องนี้ให้ 20 ก.ย. 2569)
      ปลูก `process.exit(0)` ตอนโหลด ⇒ ลูกออกด้วย **0 อย่างเงียบ ๆ**
      ⇒ ⇒ **การหยุดกลางทางหน้าตาเหมือนความสำเร็จ** ⇒ ด่านเดิมตอบ "ผ่าน" (ยิงยืนยันฝั่งเราแล้วว่าหลุดจริง)
@@ -56,28 +58,22 @@ for (const n of ไฟล์) {
       { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 20000 },
     )
   } catch (e) {
-    const err = String(e?.stderr || e?.message || e)
-    /* 🔑 บอกชนิดของ error ด้วย — `ReferenceError` (ลืม import) คนละทางแก้กับ `SyntaxError` */
-    const ชนิด = /(\w*Error)\b/.exec(err)?.[1] ?? 'Error'
-    โหลดไม่ได้.push(`${n} — **${ชนิด}** ${err.replace(/\s+/g, ' ').slice(0, 160)}`)
-    continue
-  }
-  if (out.trim()) {
-    ลงมือตอนโหลด.push(`${n} — พิมพ์ออกมา ${out.trim().length} ตัวอักษรตอนถูกโหลด: "${out.trim().slice(0, 80)}"`)
-    continue
+    ข้อผิดพลาด = String(e?.stderr || e?.message || e)
   }
   /* อ่านหมุด — ไม่มีหมุด = `import` ไม่เคยเดินจบ ทั้งที่ลูกออกด้วย 0 */
   let หมุดที่ได้ = null
   try { หมุดที่ได้ = readFileSync(หมุด, 'utf8') } catch { /* ไม่มีหมุด */ }
   try { rmSync(หมุด, { force: true }) } catch { /* ลบไม่ได้ก็ไม่เป็นไร */ }
-  if (หมุดที่ได้ === null) {
-    ออกก่อนเวลา.push(`${n} — ลูกออกด้วยรหัส 0 แต่ **หมุดไม่ถูกเขียน** ⇒ \`import\` ไม่เคยเดินจบ (เช่นมี process.exit ตอนโหลด)`)
-    continue
-  }
-  if (หมุดที่ได้.trim() === '0') {
-    โหลดไม่ได้.push(`${n} — โหลดได้แต่ **ไม่มี export เลย** ⇒ ไม่มีใครเอาไปใช้ได้ (ตั้งใจแบบนี้ไหม)`)
-    continue
-  }
+
+  /* 🔑 **การตัดสินอยู่คนละที่กับการลงมือ** — เกณฑ์ที่ฝั่งท่อสรุป 20 ก.ย. 2569:
+     *"แก้อะไรแล้วจำนวนเทสไม่ขยับ ให้ถือว่ายังไม่ได้แก้"*
+     ตัวตัดสินเคยฝังอยู่ตรงนี้ ⇒ พิสูจน์ได้ทางเดียวคือปลูกไฟล์จริงทีละทิศ
+     ⇒ ยกไป `scripts/lib/ตัดสินผลโหลด.mjs` + เทส 13 ข้อ (รวมข้อที่ปลูกรุ่นกลืนทุกอย่างไว้ในเทสเอง) */
+  const ต = ตัดสินผลโหลด({ error: ข้อผิดพลาด, เสียง: out, หมุด: หมุดที่ได้ })
+  if (ต.ผล === 'โหลดไม่ได้') { โหลดไม่ได้.push(`${n} — **${ต.ชนิด}** ${ต.เหตุ}`); continue }
+  if (ต.ผล === 'ไม่มี export') { โหลดไม่ได้.push(`${n} — ${ต.เหตุ}`); continue }
+  if (ต.ผล === 'ลงมือตอนโหลด') { ลงมือตอนโหลด.push(`${n} — ${ต.เหตุ}`); continue }
+  if (ต.ผล === 'ออกก่อนเวลา') { ออกก่อนเวลา.push(`${n} — ${ต.เหตุ}`); continue }
   ผ่าน++
 }
 
