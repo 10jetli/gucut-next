@@ -385,16 +385,12 @@ export function PaymentPill({ value }: { value?: string | null }) {
 }
 
 /* ── เมนูจุดสามจุดท้ายแถว ──────────────────────────────────────────────
+   🔑 **ชนิด `RowMenuItem` ย้ายไป `lib/types.ts` แล้ว 20 ก.ย. 2569** (ใบ S5 · กฎข้อ 7)
+      เหตุ: `lib/product-menu.ts` เคย import ชนิดนี้จากที่นี่ ⇒ `lib/` พึ่ง `components/` = ทิศกลับหัว
+      ⇒ ส่งต่อ (re-export) ไว้ที่นี่ด้วย เพื่อให้จอที่ import จาก `@/components/zort` อยู่แล้ว **ไม่ต้องแก้**
    ⚠️ ใส่เฉพาะคำสั่งที่ทำได้จริง — ปุ่มที่กดแล้วไม่เกิดอะไรแย่กว่าไม่มีปุ่ม */
-export interface RowMenuItem {
-  label: string
-  onClick?: () => void
-  /** 🔴 ทำไม่ได้ตอนนี้ — ใส่ **เหตุผล** ไม่ใช่แค่ true
-   *  ⚠️ เมนูที่ตัดรายการที่ทำไม่ได้ทิ้ง จะทำให้คนที่ชิน ZORT หาไม่เจอแล้วนึกว่าระบบเราทำไม่ได้
-   *     ⇒ โชว์ให้ครบตามผัง แต่กดไม่ได้ **พร้อมบอกว่าทำไมและต้องไปทำที่ไหนแทน**
-   *  ⚠️ ห้ามใส่แค่ "ยังไม่พร้อม" — คนอ่านต้องรู้ว่าต้องไปทำที่ไหนต่อ */
-  disabled?: string
-}
+import type { RowMenuItem } from '@/lib/types'
+export type { RowMenuItem }
 
 export function RowMenu({ items }: { items: RowMenuItem[] }) {
   const [open, setOpen] = useState(false)

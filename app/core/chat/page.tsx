@@ -14,6 +14,7 @@
 // ⚠️ **หน้าเดิม /web/chat ยังอยู่ ห้ามลบ** เป็นจอเว็บล้วนแบบง่าย ใช้เป็นทางสำรอง
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
+import SkeletonRows from '@/components/ui/SkeletonRows'
 
 /* ────────────────────────── ข้อมูล ────────────────────────── */
 
@@ -260,9 +261,7 @@ export default function ChatCommercePage() {
 
           <div className="flex-1 overflow-y-auto">
             {rooms === null ? (
-              <div className="p-3 space-y-2 animate-pulse">
-                {[0, 1, 2, 3, 4].map((i) => <div key={i} className="h-12 rounded bg-gray-50" />)}
-              </div>
+              <SkeletonRows rows={5} />
             ) : filter !== 'all' && filter !== 'web' ? (
               <p className="px-3.5 py-6 text-[12.5px] text-gray-400 leading-relaxed">
                 ช่องทางนี้ยังไม่ได้เชื่อม จึงยังไม่มีข้อความเข้ามาที่นี่เลย —

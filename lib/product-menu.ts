@@ -7,7 +7,9 @@
 //
 // ⚠️ **เขียนไว้ที่เดียว** เพราะสองจอต้องได้เมนูเหมือนกันเสมอ —
 //    แยกเขียนสองที่เมื่อไหร่ วันหนึ่งมันจะไม่ตรงกันโดยไม่มีใครรู้
-import type { RowMenuItem } from '@/components/zort'
+/* 🔑 อ่านชนิดจาก `lib/` ไม่ใช่จาก `components/` (แก้ทิศกลับหัว 20 ก.ย. 2569 · ใบ S5)
+   lib ต้องไม่พึ่ง components — ชนิดที่ใช้ข้ามชั้นต้องอยู่ชั้นล่างสุด */
+import type { RowMenuItem } from '@/lib/types'
 
 export function productMenuItems(sku: string, go: (href: string) => void): RowMenuItem[] {
   return [
