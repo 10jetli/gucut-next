@@ -52,6 +52,31 @@ export const สูตร = [
     แก้: (s) => s.replace(/export async function GET\(([^)]*)\)\s*\{/, (m) => m + "\n  fetch('https://example.invalid/zz')"),
     ต้องเอ่ยถึง: 'build/route.ts',
   },
+  /* 🔑 **สามสูตรของ check-floating ตอบคนละคำถาม — ข้อเดียวตอบไม่ได้ทั้งสาม**
+     (ข้อกำหนดจากฝั่งท่อ 21 ก.ย. 2569 · ใบ S2)
+       ① `fetch` ลอยใน `app/api` ⇒ พิสูจน์ว่ากฎยังทำงาน (สูตรข้างบน)
+       ② `fetch` ลอยใน `netlify/functions` ⇒ พิสูจน์ว่า **ขอบเขตใหม่มองเห็นจริง**
+          (ก่อน 21 ก.ย. โฟลเดอร์นี้อยู่นอก ROOTS ⇒ ปลูกแล้วด่านเขียว)
+       ③ ถัง **ชื่อไทย** `.set` ไม่ await ⇒ พิสูจน์ว่า **ดูที่มาของตัวแปรจริง** ไม่ใช่เดาจากชื่ออังกฤษ */
+  {
+    ด่าน: 'scripts/check-floating.mjs',
+    เงื่อนไขเป้า: 'ต้องเป็น fetch ที่ไม่ await ใน **โฟลเดอร์ netlify/functions** — ถ้า ROOTS ไม่ครอบที่นั่น ด่านจะเขียว',
+    ไฟล์: 'netlify/functions/bills-daily.mjs',
+    เล่า: '`fetch()` ไม่ await ใน netlify/functions — พิสูจน์ขอบเขตที่เพิ่มเข้ามา 21 ก.ย. 2569',
+    แก้: (s) => s.replace(/export default async function[^\n]*\n/, (m) => m + "  fetch('https://example.invalid/zz')\n"),
+    ต้องมีในไฟล์: "fetch('https://example.invalid/zz')",
+    ต้องเอ่ยถึง: 'bills-daily',
+  },
+  {
+    ด่าน: 'scripts/check-floating.mjs',
+    เงื่อนไขเป้า: 'ตัวแปรต้องรับค่าจาก `getStore(...)` และ **ชื่อเป็นภาษาไทย** — ถ้าด่านดูแค่ชื่ออังกฤษจะเงียบ',
+    ไฟล์: 'netlify/functions/bills-daily.mjs',
+    เล่า: 'ถังชื่อไทย `.set` ไม่ await — พิสูจน์ว่าด่านดูที่มาของตัวแปร ไม่ใช่รูปของชื่อ',
+    แก้: (s) => s.replace(/export default async function[^\n]*\n/, (m) =>
+      m + "  const ถังทดสอบ = getStore('zz')\n  ถังทดสอบ.set('zz', '1')\n"),
+    ต้องมีในไฟล์: "ถังทดสอบ.set('zz', '1')",
+    ต้องเอ่ยถึง: 'bills-daily',
+  },
   {
     ด่าน: 'scripts/check-claude-md-numbers.mjs',
     ไฟล์: 'middleware.ts',

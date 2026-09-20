@@ -35,7 +35,14 @@ import path from "node:path";
    ⇒ นั่นคือ "ด่านที่เขียวเพราะไม่ได้ตรวจอะไร" ซึ่งอันตรายกว่าไม่มีด่าน
    ⇒ (และผมเพิ่งเจอรูปนี้ตัวเป็น ๆ ตอน hook รายงาน MODULE_NOT_FOUND ว่าเป็น promise ลอย)
    📌 โค้ดฝั่งเซิร์ฟเวอร์ของรีโปนี้อยู่ที่ `app/api/**` (route handler) กับ `lib/**` */
-const ROOTS = ["app/api", "lib"];
+/* 🔴 **ขอบเขตยังไม่ครบ — พบ 21 ก.ย. 2569 (ใบ S2)**
+   คอมเมนต์ข้างบนเขียนว่าโค้ดเซิร์ฟเวอร์ของรีโปนี้อยู่ที่ `app/api` กับ `lib`
+   ⇒ **ไม่จริง**: มี `netlify/functions/*.mjs` **9 ไฟล์** และในนั้นมี **งานตามเวลา 4 ตัว**
+     (bills-daily · bills-netlify · bills-watch · shelf-report) ที่รันบน Netlify จริง
+   ⇒ ⇒ โค้ดที่ **โดนแช่แข็งเมื่อตอบคำขอเสร็จ** — ซึ่งเป็นเหตุผลทั้งหมดที่ด่านนี้มีอยู่ — อยู่นอกการกวาด
+   ⚠️ และด่านตอบว่า "โค้ดเซิร์ฟเวอร์ไม่มี promise ปล่อยลอย ✓" ⇒ **กว้างกว่าที่กวาดจริง**
+   📌 แก้ ROOTS รอบแรก 19 ก.ย. (จาก `netlify/**` → `app/api`+`lib`) **แล้วแก้ไม่ครบ** และไม่มีอะไรฟ้อง */
+const ROOTS = ["app/api", "lib", "netlify/functions", "netlify/lib"].filter((p) => fs.existsSync(p));
 const WRITE_METHODS = new Set(["set", "setJSON", "delete"]);
 const SKIP_MARK = "ปล่อยลอย-ตั้งใจ";
 
@@ -75,6 +82,33 @@ function receiverName(call) {
 // จึงตีความว่าเป็น Blobs เฉพาะเมื่อตัวรับหน้าตาเป็น store (s, s2, store, xxStore ฯลฯ)
 // ส่วน .setJSON มีแต่ Blobs เท่านั้น — จับทุกกรณี
 const STORE_LIKE = /^(s\d?|us|store)$|store$/i;
+
+/* 🔴 **ตะแกรงชื่ออังกฤษพลาดถังจริง — ฝั่งท่อยิงเจอ 21 ก.ย. 2569 (f8cc37a)**
+   ของเขา: ถัง Blobs จริงสามตัวชื่อ `ถัง` · `o` · `cached` ⇒ **ไม่มีทางเข้ารูป `STORE_LIKE`**
+   และตัวแรกเป็น **ชื่อไทย** ซึ่ง regex อังกฤษไม่มีทางจับได้เลย
+   ⇒ ⇒ **เราตั้งชื่อไทยทั้งรีโป ⇒ ตะแกรงที่ผูกกับชื่ออังกฤษจะพลาดมากขึ้นตามเวลา**
+   ✅ ท่าที่ใช้แทน: **ดูที่มาของตัวแปร** — ตัวไหนรับค่าจาก `getStore()`/`getDeployStore()`
+      ถือว่าเป็นถัง ไม่ว่าจะชื่ออะไรภาษาอะไร · แล้ว **union กับตะแกรงชื่อเดิม** (เก็บของเดิมไว้ด้วย
+      เพราะบางไฟล์รับถังมาเป็นพารามิเตอร์ ⇒ มองไม่เห็นที่มา) */
+const ฟังก์ชันสร้างถัง = /^(getStore|getDeployStore)$/;
+/** ชื่อตัวแปรทุกตัวในไฟล์ที่รับค่ามาจาก getStore(...) — ไม่สนภาษาของชื่อ */
+function หาชื่อถังจากที่มา(sf) {
+  const ชื่อ = new Set();
+  const เดิน = (node) => {
+    if (ts.isVariableDeclaration(node) && node.initializer && ts.isIdentifier(node.name)) {
+      let e = node.initializer;
+      if (ts.isAwaitExpression(e)) e = e.expression;
+      if (ts.isCallExpression(e)) {
+        let fn = e.expression;
+        while (ts.isPropertyAccessExpression(fn)) fn = fn.name;
+        if (ts.isIdentifier(fn) && ฟังก์ชันสร้างถัง.test(fn.text)) ชื่อ.add(node.name.text);
+      }
+    }
+    ts.forEachChild(node, เดิน);
+  };
+  เดิน(sf);
+  return ชื่อ;
+}
 /** ชื่อฟังก์ชันต้นสาย เช่น fetch(...) */
 function rootName(call) {
   let e = call.expression;
@@ -101,6 +135,7 @@ for (const root of ROOTS) {
     const text = fs.readFileSync(file, "utf8");
     const lines = text.split("\n");
     const sf = ts.createSourceFile(file, text, ts.ScriptTarget.ES2022, true);
+    const ถังในไฟล์นี้ = หาชื่อถังจากที่มา(sf);
 
     const flag = (node, why) => {
       const { line } = sf.getLineAndCharacterOfPosition(node.getStart());
@@ -123,7 +158,9 @@ for (const root of ROOTS) {
           const tail = tailMethod(expr);
           const rootFn = rootName(expr);
           const recv = receiverName(expr);
-          const blobsWrite = tail === "setJSON" || (WRITE_METHODS.has(tail) && STORE_LIKE.test(recv));
+          /* union: **ที่มาของตัวแปร** (ภาษาอะไรก็ได้) ∪ **ตะแกรงชื่อเดิม** (เผื่อรับถังมาเป็นพารามิเตอร์) */
+          const เป็นถัง = ถังในไฟล์นี้.has(recv) || STORE_LIKE.test(recv);
+          const blobsWrite = tail === "setJSON" || (WRITE_METHODS.has(tail) && เป็นถัง);
           if (tail === "waitUntil") { /* ฝากถูกวิธีแล้ว */ }
           else if (blobsWrite) flag(node, `เขียน Blobs (.${tail}) โดยไม่ await — Netlify ฆ่าทิ้งก่อนเสร็จ`);
           else if (rootFn === "fetch") flag(node, "fetch โดยไม่ await — ตายกลางทางแบบเงียบ");
