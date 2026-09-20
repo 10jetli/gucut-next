@@ -51,11 +51,26 @@ function stripData(text: string) {
   return noInvisible.replace(/\n*REF-DATA:[\s\S]*/, '').trim()
 }
 
+/** ตรวจกุญแจของ webhook — **ใช้ตัวเดียวกันทั้ง GET และ POST**
+ *  🔴 ที่มา 20 ก.ย. 2569 (ใบ S2): ตัวตรวจที่ยิงจริงโดยไม่ใส่กุญแจ ได้ **405** จากเส้นนี้
+ *     เพราะ Next ตอบ "วิธีไม่ถูก" **ก่อน** โค้ดของเราจะได้ตรวจกุญแจ
+ *     ⇒ เส้นนี้จึง **ไม่เคยถูกพิสูจน์ด้วยพฤติกรรมว่าปฏิเสธคนแปลกหน้า** (มีแต่ร่องรอยในซอร์ส)
+ *  🔑 ท่าที่ฝั่งท่อเสนอ และผมทำตาม: **ให้กุญแจมาก่อนวิธี** ⇒ เพิ่ม `GET` ที่ตรวจกุญแจตัวเดียวกัน
+ *     · ไม่มีกุญแจ ⇒ **401** (ตัวตรวจอ่านได้ว่า "ปฏิเสธจริง")
+ *     · มีกุญแจถูก ⇒ **405** (ยังไม่ประมวลผลอะไร — เส้นนี้ทำงานเฉพาะ POST)
+ *  🚫 **GET ไม่แตะข้อมูลและไม่ส่งต่อให้ใคร** ⇒ ตัวตรวจไม่ก่อผลในสิ่งที่มันตรวจ */
+function กุญแจถูกไหม(req: NextRequest): boolean {
+  if (!WEBHOOK_SECRET) return true   // ยังไม่ได้ตั้งกุญแจ ⇒ ไม่มีอะไรให้เทียบ
+  return req.headers.get('x-telegram-bot-api-secret-token') === WEBHOOK_SECRET
+}
+
+export async function GET(req: NextRequest) {
+  if (!กุญแจถูกไหม(req)) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+  return NextResponse.json({ ok: false, error: 'เส้นนี้รับเฉพาะ POST' }, { status: 405 })
+}
+
 export async function POST(req: NextRequest) {
-  if (WEBHOOK_SECRET) {
-    const got = req.headers.get('x-telegram-bot-api-secret-token')
-    if (got !== WEBHOOK_SECRET) return NextResponse.json({ ok: false }, { status: 401 })
-  }
+  if (!กุญแจถูกไหม(req)) return NextResponse.json({ ok: false }, { status: 401 })
   let update: any
   try { update = await req.json() } catch { return NextResponse.json({ ok: true }) }
 

@@ -25,6 +25,18 @@ export async function OPTIONS() {
   return new NextResponse(null, { status: 204, headers: CORS_HEADERS })
 }
 
+/** 🔑 **กุญแจมาก่อนวิธี** (20 ก.ย. 2569 · ใบ S2 · ท่าที่ฝั่งท่อเสนอ)
+ *  ตัวตรวจที่ยิงจริงโดยไม่ใส่กุญแจได้ **405** จากเส้นนี้ ⇒ **พิสูจน์ไม่ได้ว่ามันปฏิเสธคนแปลกหน้า**
+ *  ⇒ เพิ่ม `GET` ที่ **ตรวจกุญแจตัวเดียวกับ DELETE** (อ่านจาก query · ไม่มี body ให้อ่านอยู่แล้ว)
+ *     · ไม่มี/ผิด ⇒ **401** · ถูก ⇒ **405** (อัปโหลดจริงต้องเป็น POST เท่านั้น)
+ *  🚫 **ไม่เขียนไฟล์ ไม่ลบไฟล์** ⇒ ตัวตรวจไม่ก่อผลในสิ่งที่มันตรวจ */
+export async function GET(req: NextRequest) {
+  const required = process.env.DRIVESYNC_SECRET
+  const got = new URL(req.url).searchParams.get('secret') ?? ''
+  if (!required || got !== required) return json({ error: 'Unauthorized' }, 401)
+  return json({ error: 'เส้นนี้อัปโหลดด้วย POST เท่านั้น' }, 405)
+}
+
 const safeName = (s: string) => s.replace(/[\\/:*?"<>|]/g, '_').slice(0, 150)
 
 export async function POST(req: NextRequest) {
