@@ -229,13 +229,21 @@ export function ตัดสินแถว(x, ข้อความคู่ม
 function ยิงคำสั่งนับ(x) {
   let ได้
   let ผิดพลาด = ''
-  try { ได้ = execSync(x.คำสั่งนับ, { encoding: 'utf8', shell: '/bin/bash', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'] }).trim() }
+  try { ได้ = /* 🔴 **ต้องปิดสี** — `node -p` บน Netlify ห่อตัวเลขด้วยรหัสสี ANSI (`ESC[33m12ESC[39m`)
+       ⇒ `Number()` ได้ NaN ⇒ ด่านบอกว่า "คำสั่งไม่ได้คืนตัวเลข (ได้ 12)" ทั้งที่ตาเห็นเลข
+       ⇒ ตกเฉพาะบน Netlify · บน g1 ผ่านทุกครั้ง (node ที่นั่นไม่ใส่สี)
+       ฝั่งท่อเจอบั๊กเดียวกันและแก้แบบเดียวกัน 21 ก.ย. 2569 */
+      execSync(x.คำสั่งนับ, { encoding: 'utf8', shell: '/bin/bash', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'] , env: { ...process.env, NO_COLOR: '1', FORCE_COLOR: '0' } }).trim() }
   catch (e) {
     ได้ = String(e?.stdout ?? '').trim()
     ผิดพลาด = String(e?.stderr ?? e?.message ?? '').trim().split('\n')[0]
     /* 🔑 ไม่ return ทันที — ถ้ามี stdout เป็นตัวเลขอยู่ ก็ยังอ่านได้ · แต่ต้องบอกว่ามี error ด้วย */
   }
-  const เลข = Number(ได้.split('\n').pop())
+  /* ลอกรหัสสีก่อนแปลงเป็นตัวเลข — ตาข่ายชั้นสอง เผื่อคำสั่งอื่นยังใส่สีมา
+       ⚠️ **ห้ามใช้ replace(/[^0-9]/g,'')** — รหัสสีมีตัวเลขข้างใน (33 · 39)
+          `ESC[33m2483ESC[39m` จะกลายเป็น `33248339` (พลาดท่านี้มาแล้วรอบหนึ่ง) */
+    const ลอกสี = (v) => v.replace(/\u001b\[[0-9;]*[A-Za-z]/g, '')
+    const เลข = Number(ลอกสี(ได้).split('\n').pop().trim())
   if (!Number.isFinite(เลข)) {
     /* 🔴 **ข้อความตอนพังต้องวินิจฉัยได้จาก log ของ Netlify ในการอ่านครั้งเดียว** (20 ก.ย. 2569)
        ของเดิมพิมพ์แค่ 40 ตัวแรกของ stdout ⇒ ใน log ขึ้นว่า `ได้ "12` แล้วจบ
