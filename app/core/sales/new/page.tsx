@@ -25,7 +25,7 @@
 //       ต่างเมื่อไหร่ = คนละกติกา ต้องฟ้อง ไม่ใช่เลือกเชื่อข้างใดข้างหนึ่งเงียบ ๆ
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { fmtMoney } from '@/lib/format'
+import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
@@ -126,7 +126,7 @@ export default function NewSalePage() {
      ห้ามสร้างใหม่ตอนกด ไม่งั้นกดสองครั้ง = ได้ใบสองใบใน ZORT ที่ลบไม่ได้ */
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`SO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร('SO'))
   }, [])
 
   /* ⚠️ เส้นนี้ท่อ **บังคับครบทั้งสี่ช่องต่อบรรทัด** (sku · name · qty · price)

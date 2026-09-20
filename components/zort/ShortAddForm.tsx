@@ -25,6 +25,7 @@ import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react
 import { PageHead } from './index'
 import { WriteResult, type WriteResp } from './WriteResult'
 import { looksLikeFallThrough } from '@/lib/api-shape'
+import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
 const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
 
@@ -88,7 +89,7 @@ export function ShortAddForm({
   /* ข้อ 1 — เลขอ้างอิงต้องเกิดฝั่งเบราว์เซอร์ ครั้งเดียวต่อการเปิดหน้า */
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`${refPrefix}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร(refPrefix))
   }, [refPrefix])
 
   const get = (k: string) => (v[k] ?? '').trim()

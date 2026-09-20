@@ -21,6 +21,7 @@ import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติการเพิ่มผู้ติดต่อโดยเฉพาะ */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -60,7 +61,7 @@ export default function NewContactPage() {
   /* เลขอ้างอิงกันส่งซ้ำ — สร้างฝั่งเบราว์เซอร์ครั้งเดียวต่อการเปิดหน้า (กัน hydration + กันกดสองครั้ง) */
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`CT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร('CT'))
   }, [])
 
   const sig = useMemo(() => JSON.stringify({

@@ -13,6 +13,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
+import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
 const MAX_BYTES = 4 * 1024 * 1024
 const MIN_BYTES = 1024
@@ -24,7 +25,7 @@ export default function ProductImageBox({ id, sku, imagepath, realSendEnabled }:
   const fileRef = useRef<HTMLInputElement>(null)
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`PIMG-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร('PIMG'))
   }, [])
   const [data, setData] = useState('')          // data URL ของไฟล์ที่เลือก
   const [info, setInfo] = useState<{ name: string; bytes: number } | null>(null)

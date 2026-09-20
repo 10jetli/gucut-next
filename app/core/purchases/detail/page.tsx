@@ -24,6 +24,7 @@ import StoreEcho from '@/components/zort/StoreEcho'
 import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
 /* ── รับของ / ตรวจนับสินค้าเข้า (soon: stock-count · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
    ท่อ (gucut-web): GET ?zortpo=<เลขที่ใบ> → id ของ ZORT (กระจกไม่มี id · เลขที่ใบซ้ำได้ ท่อไม่เดา)
@@ -66,7 +67,7 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
   const [res, setRes] = useState<WriteResp | null>(null)
   const [okDry, setOkDry] = useState('')
   const [ref, setRef] = useState('')
-  useEffect(() => { setRef(`RCV-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`) }, [])
+  useEffect(() => { setRef(เลขอ้างอิงเอกสาร('RCV')) }, [])
 
   const findPo = useCallback(async () => {
     setPoLoading(true); setPoErr(''); setPo(null)

@@ -13,7 +13,7 @@
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
-import { fmtMoney } from '@/lib/format'
+import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
@@ -67,7 +67,7 @@ function NewPurchaseOrderInner() {
    *  ⚠️ ว่างระหว่างเฟรมแรก = ปุ่มส่งยังกดไม่ได้อยู่แล้ว (ต้องกดทดลองส่งก่อน) จึงไม่มีช่องโหว่ */
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`PO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร('PO'))
   }, [])
 
   const clean = useMemo(() => lines

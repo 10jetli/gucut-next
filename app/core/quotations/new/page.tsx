@@ -27,7 +27,7 @@
 //       (เห็นตัวหนึ่งพังแล้วเหมาพี่น้อง = เดา ไม่ใช่ผลตรวจ)
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { fmtMoney } from '@/lib/format'
+import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
@@ -82,7 +82,7 @@ export default function NewQuotationPage() {
         (deps ว่าง) ไม่ใช่สร้างใหม่ทุกครั้งที่กด ไม่งั้นกดสองครั้ง = ได้เอกสารสองใบใน ZORT ที่ลบไม่ได้ */
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`QT-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร('QT'))
   }, [])
 
   const clean = useMemo(() => lines

@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { PageHead } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -88,7 +89,7 @@ export default function ProductCostPage() {
   /* เลขอ้างอิงฐานสร้างฝั่งเบราว์เซอร์ครั้งเดียวต่อการเปิดหน้า (กันส่งซ้ำ · กัน hydration ไม่ตรง — ดูเหตุผลใน stock/new) */
   const [baseRef, setBaseRef] = useState('')
   useEffect(() => {
-    setBaseRef(`PC-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setBaseRef(เลขอ้างอิงเอกสาร('PC'))
   }, [])
 
   const parsed = useMemo(() => parse(text), [text])

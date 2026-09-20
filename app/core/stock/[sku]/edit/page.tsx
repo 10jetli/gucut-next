@@ -18,6 +18,7 @@ import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import ProductImageBox from './ProductImageBox'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ (แก้/ลบของจริงใน ZORT) */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -35,7 +36,7 @@ type Fields = { name: string; price: string; cost: string; unit: string; barcode
 const EMPTY: Fields = { name: '', price: '', cost: '', unit: '', barcode: '' }
 
 const newRef = (kind: string) =>
-  `${kind}-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`
+  เลขอ้างอิงเอกสาร(kind)
 
 /** ช่องกรอกหนึ่งช่อง — **ต้องอยู่ระดับโมดูล** (ดูเหตุผลในคอมเมนต์ที่จุดเรียก) */
 function Field({ label, value, onChange, ph, hint }:

@@ -57,6 +57,7 @@ import Link from 'next/link'
 import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
 /** ✅ **เปิดแล้ว 18 ก.ย. 2569 — ท่านประธานอนุมัติเอง** (ใบกระดาน t_mu6i5c5k)
  *
@@ -117,7 +118,7 @@ export default function NewProductPage() {
         (deps ว่าง) ไม่ใช่สร้างใหม่ทุกครั้งที่กด ไม่งั้นกดสองครั้ง = ได้เอกสารสองใบใน ZORT ที่ลบไม่ได้ */
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`PD-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร('PD'))
   }, [])
 
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement>) => setF((v) => ({ ...v, [k]: e.target.value }))

@@ -26,7 +26,7 @@
 // ⚠️ **ไม่มีเส้นยกเลิก/แก้ใบคืน** ⇒ ใบที่สร้างผิดต้องไปแก้ใน ZORT เอง ⇒ บังคับซ้อมก่อนทุกครั้ง
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { fmtMoney } from '@/lib/format'
+import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
 import { PageHead, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
@@ -74,7 +74,7 @@ export default function NewPurchaseReturnPage() {
   /* เลขอ้างอิง — สร้างฝั่งเบราว์เซอร์ครั้งเดียว (กัน hydration mismatch + กันกดสองครั้งได้สองใบ) */
   const [ref, setRef] = useState('')
   useEffect(() => {
-    setRef(`RPO-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.random().toString(36).slice(2, 7)}`)
+    setRef(เลขอ้างอิงเอกสาร('RPO'))
   }, [])
 
   /* บรรทัดที่ "ครบพอจะส่ง" — ต้องครบทั้งสี่ช่อง เพราะ ZORT บังคับ name และ price ด้วย */
