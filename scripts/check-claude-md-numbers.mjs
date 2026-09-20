@@ -57,7 +57,12 @@ const ทะเบียน = [
       const m = readFileSync(join(ROOT, 'middleware.ts'), 'utf8').match(/const PUBLIC_PATHS = \[([\s\S]*?)\]/)
       return m ? [...m[1].matchAll(/'([^']+)'/g)].length : null
     },
-    คำสั่งนับ: 'node -e "console.log([...require(\'fs\').readFileSync(\'middleware.ts\',\'utf8\').match(/const PUBLIC_PATHS = \\\\[([\\\\s\\\\S]*?)\\\\]/)[1].matchAll(/\'[^\']+\'/g)].length)"',
+    /* 🔴 **เปลี่ยนจาก `node -e` เป็นคำสั่งเชลล์ล้วน 20 ก.ย. 2569 (build ล้มที่ Netlify)**
+       คำสั่งเดิมเป็น `node -e "…"` ที่มี **เครื่องหมายคำพูดซ้อนสามชั้นและ backslash escape**
+       ⇒ บนเครื่องนี้รันได้ แต่ **บนเชลล์ของ Netlify มันเพี้ยน** ⇒ ด่านอ่านผลไม่เป็นตัวเลข ⇒ build ตก
+       🔑 คลาสที่ทีมมีใบอยู่แล้ว: **`node -e` ที่มีคำพูดซ้อน คือของที่พังต่างเครื่อง**
+          ⇒ คำสั่งที่เขียนไว้ให้คนอื่นยิงซ้ำ **ต้องใช้เครื่องมือพื้นฐานและคำพูดชั้นเดียว** */
+    คำสั่งนับ: `sed -n '/const PUBLIC_PATHS = \\[/,/\\]/p' middleware.ts | grep -o "'[^']*'" | wc -l`,
     หน่วย: 'รายการใน PUBLIC_PATHS (ไม่ใช่จำนวนเส้นจริง — คำนำหน้าอย่าง /api/rokid กางได้หลายเส้น · วัดจริงวันนี้ได้ 15 เส้น)',
     ทำไมสำคัญ: 'อ่านต่ำกว่าจริง = ประเมินความเสี่ยงของกำแพงล็อกอินต่ำกว่าจริง',
   },
@@ -223,10 +228,25 @@ export function ตัดสินแถว(x, ข้อความคู่ม
  *  ⚠️ คำสั่งทั้งหมดเป็นการอ่านล้วน (ls · grep · node -e) ⇒ ไม่มีผลข้างเคียง */
 function ยิงคำสั่งนับ(x) {
   let ได้
-  try { ได้ = execSync(x.คำสั่งนับ, { encoding: 'utf8', shell: '/bin/bash', timeout: 20000 }).trim() }
-  catch (e) { return { ok: false, เหตุ: `รันไม่ผ่าน: ${String(e?.message ?? e).split('\n')[0].slice(0, 90)}` } }
+  let ผิดพลาด = ''
+  try { ได้ = execSync(x.คำสั่งนับ, { encoding: 'utf8', shell: '/bin/bash', timeout: 20000, stdio: ['ignore', 'pipe', 'pipe'] }).trim() }
+  catch (e) {
+    ได้ = String(e?.stdout ?? '').trim()
+    ผิดพลาด = String(e?.stderr ?? e?.message ?? '').trim().split('\n')[0]
+    /* 🔑 ไม่ return ทันที — ถ้ามี stdout เป็นตัวเลขอยู่ ก็ยังอ่านได้ · แต่ต้องบอกว่ามี error ด้วย */
+  }
   const เลข = Number(ได้.split('\n').pop())
-  if (!Number.isFinite(เลข)) return { ok: false, เหตุ: `คำสั่งไม่ได้คืนตัวเลข (ได้ "${ได้.slice(0, 40)}")` }
+  if (!Number.isFinite(เลข)) {
+    /* 🔴 **ข้อความตอนพังต้องวินิจฉัยได้จาก log ของ Netlify ในการอ่านครั้งเดียว** (20 ก.ย. 2569)
+       ของเดิมพิมพ์แค่ 40 ตัวแรกของ stdout ⇒ ใน log ขึ้นว่า `ได้ "12` แล้วจบ
+       ⇒ **แยกไม่ออกว่าเพราะเชลล์ต่าง · เครื่องมือขาด · หรือคำสั่งเพี้ยน** ⇒ เสียรอบ build ไปหนึ่งรอบ */
+    return {
+      ok: false,
+      เหตุ: `คำสั่งไม่ได้คืนตัวเลข · stdout=${JSON.stringify(ได้.slice(0, 80))}`
+        + (ผิดพลาด ? ` · stderr=${JSON.stringify(ผิดพลาด.slice(0, 120))}` : ' · ไม่มี stderr')
+        + ` · node=${process.version} · cwd=${process.cwd().split('/').slice(-2).join('/')}`,
+    }
+  }
   return { ok: true, เลข }
 }
 
