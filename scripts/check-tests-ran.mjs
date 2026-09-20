@@ -34,11 +34,16 @@ for (const n of ไฟล์) {
   const เขียน = (src.match(/^\s*test\s*\(/gm) ?? []).length
   let out = ''
   try {
-    out = execFileSync(process.execPath, [join(dir, n)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000 })
+    out = /* 🔴 **ต้องบังคับตัวรายงานผล** (21 ก.ย. 2569 — ทำ build ตกบน Netlify)
+       node เลือกตัวรายงานเองตามว่าเป็นจอหรือไม่: `tap` (`# tests N`) vs `spec` (`ℹ tests N`)
+       บน g1 ได้ `#` · บน Netlify ได้ `ℹ` ⇒ ด่านที่มองหา `# tests` อ่านไม่เจอ
+       ⇒ สรุปว่า "โปรเซสตายก่อนสรุปผล" ทั้งที่เทสรันจบครบทุกข้อ **ด่านผิดเอง ไม่ใช่เทสพัง**
+       (จับได้เพราะเพิ่งเติม `เหตุที่ตาย` เข้าไป — มันโชว์ `ℹ duration_ms` ออกมาให้เห็น) */
+    execFileSync(process.execPath, ['--test-reporter=tap', join(dir, n)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000 })
   } catch (e) {
     out = String(e?.stdout ?? '') + String(e?.stderr ?? '')
   }
-  const รายงาน = Number((out.match(/# tests (\d+)/) ?? [])[1] ?? NaN)
+  const รายงาน = Number((out.match(/[#\u2139]\s*tests\s+(\d+)/) ?? [])[1] ?? NaN)
   ตรวจได้++
   if (!Number.isFinite(รายงาน)) {
     /* 🔴 **ข้อความเดิมบอกไม่ได้ว่าตายเพราะอะไร** (21 ก.ย. 2569)
