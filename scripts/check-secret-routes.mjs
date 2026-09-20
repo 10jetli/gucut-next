@@ -14,7 +14,7 @@
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { join, relative } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -58,7 +58,13 @@ function walk(dir, acc = []) {
   return acc
 }
 
-if (process.argv.includes('--self-test')) {
+/* 🔑 **รันตัวหลักเฉพาะตอนถูกเรียกตรง ๆ** (20 ก.ย. 2569)
+   เดิมไฟล์นี้ลงมือกวาด `app/api` ทันทีที่ถูก `import` ⇒ เทสแยกไฟล์เอาฟังก์ชันไปใช้ไม่ได้
+   (มันจะกวาดของจริงแล้วอาจ `process.exit` ทับผลของเทส)
+   ⇒ ⇒ **โครงสร้างที่ทดสอบยาก ทำให้ไม่มีใครเขียนเทส** — ไม่ใช่เพราะไม่มีใครอยากเขียน */
+const เป็นตัวหลัก = process.argv[1] && fileURLToPath(import.meta.url) === resolve(process.argv[1])
+
+if (เป็นตัวหลัก && process.argv.includes('--self-test')) {
   const mw = "const PUBLIC_PATHS = ['/login', '/api/bills/drivesync']"
   const ok = ตรวจ(mw, [['app/api/bills/drivesync/route.ts', 'if (s !== process.env.DRIVESYNC_SECRET) x']])
   const bad = ตรวจ(mw, [['app/api/bills/dupcheck/route.ts', 'const required = process.env.DRIVESYNC_SECRET']])
@@ -69,10 +75,12 @@ if (process.argv.includes('--self-test')) {
   process.exit(pass ? 0 : 1)
 }
 
-const files = walk(join(ROOT, 'app/api')).map((p) => [relative(ROOT, p), readFileSync(p, 'utf8')])
-const r = ตรวจ(readFileSync(join(ROOT, 'middleware.ts'), 'utf8'), files)
-console.log(`ตรวจเส้นที่ใช้ DRIVESYNC_SECRET: ${r.จำนวน ?? 0} เส้น`)
-if (r.ผิด.length) {
-  for (const x of r.ผิด) console.log('  🔴', x)
-  process.exit(1)
+if (เป็นตัวหลัก) {
+  const files = walk(join(ROOT, 'app/api')).map((p) => [relative(ROOT, p), readFileSync(p, 'utf8')])
+  const r = ตรวจ(readFileSync(join(ROOT, 'middleware.ts'), 'utf8'), files)
+  console.log(`ตรวจเส้นที่ใช้ DRIVESYNC_SECRET: ${r.จำนวน ?? 0} เส้น`)
+  if (r.ผิด.length) {
+    for (const x of r.ผิด) console.log('  🔴', x)
+    process.exit(1)
+  }
 }
