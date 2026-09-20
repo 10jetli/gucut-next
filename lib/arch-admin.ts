@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-20T01:03:35.585Z",
+  "generatedAt": "2026-09-20T08:12:05.579Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
@@ -59,8 +59,8 @@ export const ARCH_ADMIN = {
     ]
   },
   "pages": {
-    "count": 119,
-    "core": 83,
+    "count": 120,
+    "core": 84,
     "coreNames": [
       "/core",
       "/core/accounting-docs",
@@ -141,6 +141,7 @@ export const ARCH_ADMIN = {
       "/core/usage",
       "/core/variants",
       "/core/wallet",
+      "/core/zort-arch",
       "/core/zort-archive",
       "/core/zort-claims",
       "/core/zort-noapi",
@@ -226,6 +227,7 @@ export const ARCH_ADMIN = {
       "/core/usage",
       "/core/variants",
       "/core/wallet",
+      "/core/zort-arch",
       "/core/zort-archive",
       "/core/zort-claims",
       "/core/zort-noapi",
