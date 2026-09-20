@@ -123,15 +123,25 @@ fi
 #    🔑 เก็บเจตนาเดิมไว้ด้วยทางด่วน: ของด่วนจริงยัง push ได้ แต่ต้อง **ตั้งใจกด**
 #       ⇒ "ถี่" กลายเป็นการตัดสินใจ ไม่ใช่สิ่งที่เกิดเพราะไม่ได้อ่าน
 #    (ฝั่งท่อเปลี่ยนแบบเดียวกันวันนี้ หลังเดินผ่านคำเตือนตัวเองครบ 20 รอบ)
-STAMP="$(git rev-parse --git-dir)/.last-push-at"
+# 🔴 **แก้ 21 ก.ย. 2569 — ด่านนี้ล็อกตัวเองจากสิ่งที่ไม่เคยเกิดขึ้น**
+#    ของเดิมเขียนแสตมป์ **ตอนด่านผ่าน** ⇒ ซึ่งเกิด **ก่อน** git เริ่มส่งจริง
+#    ⇒ push ที่ถูกฆ่า/ล้มกลางทาง **จุดนาฬิกา 45 นาทีทั้งที่ไม่มีอะไรถึง remote**
+#    ของจริงวันนี้: ด่านบอก "เพิ่ง push ไป 4 นาที" · reflog บอกว่า push จริงล่าสุดคือ **3 ชั่วโมงก่อน**
+#    ⇒ ⇒ และราคาของความผิดพลาดนี้แพง: ทุกครั้งที่ลองใหม่ = **รัน build ซ้ำ ~10 นาที**
+# ✅ เปลี่ยนมาอ่านจาก **reflog ของ refs/remotes/origin/<branch>** เฉพาะรายการ `update by push`
+#    ⇒ นับเฉพาะ "ของที่ถึง remote จริง" · `fetch` ไม่นับ · **ไม่มีธงในเครื่องให้เพี้ยน**
+#    🔑 กติกาทั่วไป: **ตัวนับที่ต้องตอบว่า "เกิดขึ้นจริงไหม" ห้ามเขียนก่อนเหตุการณ์**
+UPSTREAM_REF="$(git rev-parse --symbolic-full-name '@{u}' 2>/dev/null || echo refs/remotes/origin/main)"
 NOW=$(date +%s)
 GAP_MIN="${PUSH_MIN_GAP_MIN:-45}"
-if [ -f "$STAMP" ] && [ "${ALLOW_FAST_PUSH:-}" != "1" ]; then
-  LAST=$(cat "$STAMP" 2>/dev/null || echo 0)
-  DIFF=$(( (NOW - LAST) / 60 ))
+LAST_PUSH_AT="$(git reflog show --date=unix "$UPSTREAM_REF" 2>/dev/null \
+  | grep 'update by push' | head -1 | sed -n 's/.*@{\([0-9]*\)}.*/\1/p')"
+if [ -n "$LAST_PUSH_AT" ] && [ "${ALLOW_FAST_PUSH:-}" != "1" ]; then
+  DIFF=$(( (NOW - LAST_PUSH_AT) / 60 ))
   if [ "$DIFF" -lt "$GAP_MIN" ]; then
     AHEAD=$(git rev-list --count @{u}..HEAD 2>/dev/null || echo '?')
-    echo "🛑 push ครั้งก่อนเพิ่งผ่านไป $DIFF นาที (เกณฑ์ $GAP_MIN นาที)"
+    echo "🛑 push ที่ถึง remote จริงครั้งก่อน เพิ่งผ่านไป $DIFF นาที (เกณฑ์ $GAP_MIN นาที)"
+    echo "   (นับจาก reflog ของ $UPSTREAM_REF เฉพาะรายการ 'update by push' — ไม่ใช่ธงในเครื่อง)"
     echo "   ทุกครั้งที่ push = สร้างเว็บใหม่ทั้งก้อน · deploy กินเครดิต 92% ของทั้งหมด"
     echo "   ตอนนี้มี $AHEAD commit ค้างอยู่ ⇒ รอรวบแล้ว push รอบเดียวคุ้มกว่ามาก"
     echo ""
@@ -141,6 +151,6 @@ if [ -f "$STAMP" ] && [ "${ALLOW_FAST_PUSH:-}" != "1" ]; then
     exit 1
   fi
 fi
-echo "$NOW" > "$STAMP"
+# 🚫 ไม่เขียนแสตมป์อีกแล้ว — รอบหน้าไปอ่าน reflog เอาเอง (ซึ่งเป็นหลักฐานหลังเหตุการณ์)
 
-echo "✅ ผ่านด่าน — push ได้"
+echo "✅ ผ่านด่าน — push ได้ (push จริงครั้งก่อน: ${LAST_PUSH_AT:-ไม่มีในreflog})"
