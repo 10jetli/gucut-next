@@ -19,10 +19,20 @@ async function loadFonts() {
   return fontCache
 }
 
+/* 🔴 **เดิมกลืนเหตุทิ้งทั้งหมด** (`catch { return null }` · `!res.ok ⇒ return null`)
+ *    ⇒ รูปไม่เข้า PDF แล้ว **ไม่มีใครรู้ว่าเพราะโฮสต์ล่ม · 403 · หรือไม่ใช่รูป**
+ *    🔑 กติกาทีม 21 ก.ย. 2569: **`catch` ที่บอกเหตุได้ ⇒ ต้องบอก** ·
+ *       บอกไม่ได้จริงจึงกลืนได้ และต้องเขียนกำกับว่าตั้งใจ
+ *    ⇒ ที่นี่ **บอกได้** (มี URL · สถานะ · content-type) ⇒ พิมพ์เหตุลง log แล้วคืน null เหมือนเดิม
+ *    ⚠️ ห้ามโยนต่อ — รูปเป็นของประกอบ ไม่ควรทำให้ทั้งใบเสร็จพัง (ของเดิมถูกข้อนี้แล้ว) */
 async function fetchImageBytes(url: string): Promise<{ bytes: ArrayBuffer; kind: 'png' | 'jpg' } | null> {
+  const ย่อ = (u: string) => u.slice(0, 80)
   try {
     const res = await fetch(url)
-    if (!res.ok) return null
+    if (!res.ok) {
+      console.warn(`[emailPdf] ดึงรูปไม่ได้: HTTP ${res.status} · ${ย่อ(url)}`)
+      return null
+    }
     const ct = res.headers.get('content-type') || ''
     const bytes = await res.arrayBuffer()
     if (ct.includes('png') || /\.png(\?|$)/i.test(url)) return { bytes, kind: 'png' }
@@ -30,8 +40,12 @@ async function fetchImageBytes(url: string): Promise<{ bytes: ArrayBuffer; kind:
     const head = new Uint8Array(bytes.slice(0, 4))
     if (head[0] === 0x89 && head[1] === 0x50) return { bytes, kind: 'png' }
     if (head[0] === 0xff && head[1] === 0xd8) return { bytes, kind: 'jpg' }
+    console.warn(`[emailPdf] ดึงรูปได้แต่ไม่ใช่ PNG/JPG: content-type="${ct}" · ${ย่อ(url)}`)
     return null
-  } catch { return null }
+  } catch (e) {
+    console.warn(`[emailPdf] ดึงรูปพัง: ${String((e as Error)?.message ?? e)} · ${ย่อ(url)}`)
+    return null
+  }
 }
 
 function wrapLine(text: string, font: any, size: number, maxWidth: number): string[] {
@@ -84,7 +98,12 @@ export interface ReceiptData {
 // ── แกะโครงสร้างใบเสร็จ Apple จาก HTML จริง (คืนค่า null ถ้าไม่ใช่แบบฟอร์มนี้) ──
 function parseAppleReceipt(html: string): ReceiptData | null {
   let root
-  try { root = parse(html) } catch { return null }
+  /* 🔑 `catch` นี้ **บอกเหตุได้** (ความยาว html · ข้อความ error) ⇒ ต้องบอก ไม่ใช่คืน null เงียบ
+     ⇒ ไม่งั้น "แกะใบเสร็จ Apple ไม่ได้" จะแยกไม่ออกจาก "อีเมลนี้ไม่ใช่ใบเสร็จ Apple" */
+  try { root = parse(html) } catch (e) {
+    console.warn(`[emailPdf] แกะ HTML ใบเสร็จ Apple ไม่ได้: ${String((e as Error)?.message ?? e)} · ยาว ${html.length} ตัวอักษร`)
+    return null
+  }
   const billing = root.querySelector('.billing-information')
   if (!billing) return null
 
