@@ -34,14 +34,29 @@ for (const n of ไฟล์) {
   const เขียน = (src.match(/^\s*test\s*\(/gm) ?? []).length
   let out = ''
   try {
-    out = execFileSync(process.execPath, [join(dir, n)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000 })
+    out = /* 🔴 **ต้องบังคับตัวรายงานผล** (21 ก.ย. 2569 — ทำ build ตกบน Netlify)
+       node เลือกตัวรายงานเองตามว่าเป็นจอหรือไม่: `tap` (`# tests N`) vs `spec` (`ℹ tests N`)
+       บน g1 ได้ `#` · บน Netlify ได้ `ℹ` ⇒ ด่านที่มองหา `# tests` อ่านไม่เจอ
+       ⇒ สรุปว่า "โปรเซสตายก่อนสรุปผล" ทั้งที่เทสรันจบครบทุกข้อ **ด่านผิดเอง ไม่ใช่เทสพัง**
+       (จับได้เพราะเพิ่งเติม `เหตุที่ตาย` เข้าไป — มันโชว์ `ℹ duration_ms` ออกมาให้เห็น) */
+    execFileSync(process.execPath, ['--test-reporter=tap', join(dir, n)], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], timeout: 120000 })
   } catch (e) {
     out = String(e?.stdout ?? '') + String(e?.stderr ?? '')
   }
-  const รายงาน = Number((out.match(/# tests (\d+)/) ?? [])[1] ?? NaN)
+  const รายงาน = Number((out.match(/[#\u2139]\s*tests\s+(\d+)/) ?? [])[1] ?? NaN)
   ตรวจได้++
   if (!Number.isFinite(รายงาน)) {
-    ผิด.push(`${n} — ใช้ node:test แต่ **ไม่มีบรรทัด \`# tests\`** ⇒ โปรเซสน่าจะตายก่อนสรุปผล`)
+    /* 🔴 **ข้อความเดิมบอกไม่ได้ว่าตายเพราะอะไร** (21 ก.ย. 2569)
+       `out` มี stderr อยู่แล้ว (บรรทัด catch ข้างบนต่อ stdout+stderr ไว้) แต่ไม่เคยถูกแสดง
+       ⇒ ใน log ของ Netlify เห็นแค่ "ไม่มีบรรทัด # tests" แล้วไล่ต่อไม่ได้เลย
+       ⇒ เคสนี้เกิดเฉพาะบน Netlify (บน g1 ผ่านทุกครั้ง) ⇒ **ทำซ้ำที่บ้านไม่ได้**
+          ของที่ทำซ้ำไม่ได้ ต้องให้มัน **อธิบายตัวเองตอนพัง** ไม่งั้นได้แต่เดา
+       (ท่าเดียวกับที่เพิ่งแก้บั๊กรหัสสี ANSI สำเร็จในรอบเดียว) */
+    const เหตุที่ตาย = out.trim().split("\n").filter((l) => l.trim()).slice(-4).join(" ⏎ ").slice(0, 300)
+    ผิด.push(
+      `${n} — ใช้ node:test แต่ **ไม่มีบรรทัด \`# tests\`** ⇒ โปรเซสน่าจะตายก่อนสรุปผล\n` +
+      `      เหตุที่ตาย: ${เหตุที่ตาย || '(ไม่มีอะไรออกมาเลย)'}`
+    )
   } else if (รายงาน !== เขียน) {
     ผิด.push(`${n} — เขียนไว้ **${เขียน}** ข้อ แต่รันจริง **${รายงาน}** ข้อ ⇒ **${เขียน - รายงาน} ข้อไม่ได้รัน**`)
   }
