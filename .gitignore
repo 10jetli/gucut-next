@@ -31,3 +31,4 @@ next-env.d.ts
 # local scripts (contain secrets)
 push.command
 start.command
+.next-verify/

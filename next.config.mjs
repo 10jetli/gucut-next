@@ -13,8 +13,20 @@ const BUILD_ENV = {
   BUILD_AT: new Date().toISOString(),
 }
 
+/* 🔴 **ทำไม `distDir` ต้องเปลี่ยนได้ด้วย env** (เพิ่ม 24 ก.ย. 2569)
+   บน g1 มี `test2-next.service` รัน **`next dev -p 3001` ในโฟลเดอร์นี้เอง** และ **ต้องเปิดไว้ตลอด**
+   (จอทดสอบของท่านประธาน · มี `test-watch.timer` คอยเปิดกลับทุก 10 นาที)
+   ⇒ `next build` ที่เขียน `.next/` ทับ **ทำให้ dev server ตอบ 500 "Cannot find module"**
+   ⇒ ⇒ ด่าน `check-dev-running` จึงหยุด build ไว้ — ถูกต้องแล้ว **แต่ผลคือ build ไม่ได้เลยตราบใดที่ test2 เปิด**
+   ✅ ทางออกที่ไม่ต้องปิดบริการใคร: **ให้ build เขียนคนละที่กับที่ dev เสิร์ฟอยู่**
+      `NEXT_DIST_DIR=.next-verify npm run build`  ⇒ dev server ไม่ถูกแตะเลย
+   ⚠️ ค่าเริ่มต้นต้องเป็น `.next` เสมอ — Netlify และ `next start` อ่านที่นั่น
+      (เปลี่ยนค่าเริ่มต้นเมื่อไหร่ deploy พังทันที) */
+const DIST_DIR = process.env.NEXT_DIST_DIR || '.next'
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  distDir: DIST_DIR,
   env: BUILD_ENV,
   images: {
     /* 🖼️ โฮสต์รูปสินค้าที่ยอมให้ตัวย่อรูปของ Next ดึงได้ (ใบ t_mu2u6eg6 "รูปต้องขึ้นทุกรหัส")
