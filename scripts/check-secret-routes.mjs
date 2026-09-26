@@ -29,7 +29,14 @@ export function เส้นที่ใช้secret(files) {
        ⚠️ แต่ `ไม่เปิดสาธารณะโดยตั้งใจ:` ข้างล่าง **ตั้งใจให้เป็นคอมเมนต์** ⇒ อ่านจาก src ดิบต่อไป */
     const code = ตัดคอมเมนต์(src)
     if (!/process\.env\.DRIVESYNC_SECRET/.test(code)) continue
-    const route = '/' + path.replace(/^app\//, '').replace(/\/route\.tsx?$/, '')
+    /* 🔴 **ขยายขอบเขต 26 ก.ย. 2569 — รีโปนี้มีโค้ดที่รันจริง *สองกอง* ไม่ใช่กองเดียว**
+       เดิมกวาดแค่ `app/api/**\/route.ts` ⇒ ไฟล์ใน `netlify/functions/` ที่ตรวจ
+       `DRIVESYNC_SECRET` เอง **ไม่เคยถูกตรวจเลย** (ของจริงที่หลุด: shelf-ask · shelf-report)
+       ⇒ ⇒ คลาสเดียวกับ `check-floating` ที่ ROOTS แคบ — **ครั้งที่สองในวันเดียว**
+       🔑 คำถามที่ควรถามด่านทุกตัว: *มันกวาดโฟลเดอร์ไหน และรีโปนี้มีโค้ดที่รันจริงอยู่โฟลเดอร์ไหน* */
+    const route = /^netlify\/functions\//.test(path)
+      ? '/.netlify/functions/' + path.replace(/^netlify\/functions\//, '').replace(/\.(mjs|cjs|js|ts)$/, '')
+      : '/' + path.replace(/^app\//, '').replace(/\/route\.tsx?$/, '')
     out.push({ route, ตั้งใจ: /ไม่เปิดสาธารณะโดยตั้งใจ:/.test(src) })
   }
   return out
@@ -49,14 +56,21 @@ export function ตรวจ(middlewareSrc, files) {
   return { ผิด, จำนวน: เส้นที่ใช้secret(files).length }
 }
 
-function walk(dir, acc = []) {
+function walk(dir, รูปไฟล์, acc = []) {
   for (const n of readdirSync(dir)) {
     const p = join(dir, n)
-    if (statSync(p).isDirectory()) walk(p, acc)
-    else if (/^route\.tsx?$/.test(n)) acc.push(p)
+    if (statSync(p).isDirectory()) walk(p, รูปไฟล์, acc)
+    else if (รูปไฟล์.test(n)) acc.push(p)
   }
   return acc
 }
+
+/** สองกองที่รันจริงในรีโปนี้ — เพิ่มกองใหม่ที่นี่ที่เดียว
+ *  ⚠️ เพิ่มกองแล้วต้องเพิ่มการแปลงพาธใน `เส้นที่ใช้secret()` ด้วย ไม่งั้นจะได้ route ที่ผิด */
+const กองที่รันจริง = [
+  { โฟลเดอร์: 'app/api', รูปไฟล์: /^route\.tsx?$/ },
+  { โฟลเดอร์: 'netlify/functions', รูปไฟล์: /\.(mjs|cjs|js)$/ },
+]
 
 /* 🔑 **รันตัวหลักเฉพาะตอนถูกเรียกตรง ๆ** (20 ก.ย. 2569)
    เดิมไฟล์นี้ลงมือกวาด `app/api` ทันทีที่ถูก `import` ⇒ เทสแยกไฟล์เอาฟังก์ชันไปใช้ไม่ได้
@@ -70,14 +84,35 @@ if (เป็นตัวหลัก && process.argv.includes('--self-test')) {
   const bad = ตรวจ(mw, [['app/api/bills/dupcheck/route.ts', 'const required = process.env.DRIVESYNC_SECRET']])
   const cmt = ตรวจ(mw, [['app/api/bills/status/route.ts', '// ต่างจาก report ที่ใช้ DRIVESYNC_SECRET']])
   const intent = ตรวจ(mw, [['app/api/bills/fixmonth/route.ts', '// ไม่เปิดสาธารณะโดยตั้งใจ: เขียนข้อมูล\nconst r = process.env.DRIVESYNC_SECRET']])
-  const pass = ok.ผิด.length === 0 && bad.ผิด.length === 1 && cmt.ผิด.length === 0 && cmt.จำนวน === 0 && intent.ผิด.length === 0
-  console.log(pass ? '✅ self-test ผ่าน (ถูก/ลืมเพิ่ม/แค่คอมเมนต์/ตั้งใจปิด)' : '🔴 self-test ไม่ผ่าน', JSON.stringify({ ok, bad, cmt, intent }))
+  /* เคสของกอง netlify/functions (เพิ่ม 26 ก.ย. 2569 พร้อมการขยายขอบเขต)
+     ⚠️ ต้องมีทั้ง **ควรจับ** และ **ต้องไม่จับ** ไม่งั้นมองไม่เห็นตะแกรงที่กว้างเกิน */
+  const nfBad = ตรวจ(mw, [['netlify/functions/shelf-report.mjs', 'if (q !== process.env.DRIVESYNC_SECRET) x']])
+  const nfOk = ตรวจ("const PUBLIC_PATHS = ['/.netlify/functions/shelf-report']",
+    [['netlify/functions/shelf-report.mjs', 'if (q !== process.env.DRIVESYNC_SECRET) x']])
+  const nfIntent = ตรวจ(mw, [['netlify/functions/shelf-ask.mjs',
+    '// ไม่เปิดสาธารณะโดยตั้งใจ: ตัวตั้งเวลาเรียกภายใน\nif (q !== process.env.DRIVESYNC_SECRET) x']])
+  const nfเฉยๆ = ตรวจ(mw, [['netlify/functions/lib-notify.mjs', 'const a = 1']])
+  const nfPass = nfBad.ผิด.length === 1 && nfBad.ผิด[0].includes('/.netlify/functions/shelf-report')
+    && nfOk.ผิด.length === 0 && nfIntent.ผิด.length === 0 && nfเฉยๆ.จำนวน === 0
+  const pass = nfPass && ok.ผิด.length === 0 && bad.ผิด.length === 1 && cmt.ผิด.length === 0 && cmt.จำนวน === 0 && intent.ผิด.length === 0
+  console.log(pass ? '✅ self-test ผ่าน (ถูก/ลืมเพิ่ม/แค่คอมเมนต์/ตั้งใจปิด + กอง netlify 4 เคส)' : '🔴 self-test ไม่ผ่าน', JSON.stringify({ ok, bad, cmt, intent }))
   process.exit(pass ? 0 : 1)
 }
 
 if (เป็นตัวหลัก) {
-  const files = walk(join(ROOT, 'app/api')).map((p) => [relative(ROOT, p), readFileSync(p, 'utf8')])
+  const files = []
+  const นับกอง = []
+  for (const { โฟลเดอร์, รูปไฟล์ } of กองที่รันจริง) {
+    let ของกอง = []
+    try { ของกอง = walk(join(ROOT, โฟลเดอร์), รูปไฟล์) } catch { ของกอง = [] }
+    นับกอง.push(`${โฟลเดอร์} ${ของกอง.length} ไฟล์`)
+    for (const p of ของกอง) files.push([relative(ROOT, p), readFileSync(p, 'utf8')])
+  }
   const r = ตรวจ(readFileSync(join(ROOT, 'middleware.ts'), 'utf8'), files)
+  /* 🔑 พิมพ์ขอบเขตที่กวาดทุกรอบ — ไม่ใช่แค่จำนวนที่เจอ
+     เพราะ "เจอ 2 เส้น" กับ "เจอ 2 เส้นจากที่กวาด 2 กอง" เป็นประโยคคนละอัน
+     (บทเรียนวันนี้: ผมรายงานจำนวนโดยไม่บอกขอบเขต แล้วมันไม่ครบ) */
+  console.log(`ขอบเขตที่กวาด: ${นับกอง.join(' · ')}`)
   console.log(`ตรวจเส้นที่ใช้ DRIVESYNC_SECRET: ${r.จำนวน ?? 0} เส้น`)
   if (r.ผิด.length) {
     for (const x of r.ผิด) console.log('  🔴', x)
