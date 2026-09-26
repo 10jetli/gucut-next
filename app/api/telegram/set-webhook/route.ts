@@ -50,12 +50,31 @@ async function tg(token: string, method: string, body?: Record<string, unknown>)
 /** ดูสถานะปัจจุบันโดยไม่เปลี่ยนอะไร — ใช้ตรวจก่อน/หลังได้ */
 export async function GET(req: NextRequest) {
   if (!กุญแจแอดมินถูกไหม(req)) return NextResponse.json({ ok: false, error: 'Unauthorized' }, { status: 401 })
+
+  /* 🔴 **แก้ 26 ก.ย. 2569 — รุ่นแรกของเส้นนี้ตอบ 503 เรื่องโทเคนแล้ว *ตัดจบ***
+   *    ⇒ ไม่ได้ตอบคำถามหลักที่สร้างเส้นนี้ขึ้นมา คือ **กุญแจ webhook ถูกตั้งแล้วหรือยัง**
+   *    ⇒ เจอตอนใช้งานจริงครั้งแรก: `TELEGRAM_BOT_TOKEN` ไม่มีค่าใน env ของโปรเจกต์นี้
+   *       (โทเคนอยู่ที่โปรเจกต์ท่อ) ⇒ เส้นนี้ตอบ 503 แล้วเงียบเรื่องกุญแจ
+   *    🔑 บทเรียน: **เส้นที่ถูกสร้างเพื่อตอบคำถามหนึ่ง ต้องตอบคำถามนั้นให้ได้ก่อนเสมอ**
+   *       ไม่ใช่ตัดจบเพราะเงื่อนไขอื่นที่ไม่เกี่ยวกับคำถาม
+   * ⇒ ตอนนี้รายงาน **ทุกช่องที่ตรวจได้** ทุกครั้ง แล้วค่อยบอกว่าอะไรที่ยังตอบไม่ได้และเพราะอะไร */
   const token = cleanEnv(process.env.TELEGRAM_BOT_TOKEN)
+  const secret = cleanEnv(process.env.TELEGRAM_WEBHOOK_SECRET)
+  const สภาพ = {
+    'ตั้งโทเคนแล้วไหม': !!token,
+    'ตั้งกุญแจแล้วไหม': !!secret,
+    _หมายเหตุ: 'true แปลว่า env **มีค่า** ไม่ได้แปลว่า **ค่าถูก** — ตัวที่พิสูจน์ว่าถูกคือ callback จริงที่ผ่านด่าน',
+  }
   if (!token) {
-    return NextResponse.json({ ok: false, 'ยังไม่ได้ตั้ง': 'TELEGRAM_BOT_TOKEN' }, { status: 503 })
+    return NextResponse.json({
+      ok: false,
+      ...สภาพ,
+      'อ่าน getWebhookInfo ไม่ได้เพราะ': 'ไม่มี TELEGRAM_BOT_TOKEN ในโปรเจกต์นี้ ⇒ คุยกับ Telegram จากที่นี่ไม่ได้',
+      'สิ่งที่ยังตอบได้': 'ช่อง ตั้งกุญแจแล้วไหม ข้างบน — ตรวจจาก env ของโปรเจกต์นี้โดยตรง',
+    }, { status: 503 })
   }
   const info = await tg(token, 'getWebhookInfo')
-  return NextResponse.json({ ok: true, ตั้งกุญแจแล้วไหม: !!cleanEnv(process.env.TELEGRAM_WEBHOOK_SECRET), getWebhookInfo: info.body?.result ?? null })
+  return NextResponse.json({ ok: true, ...สภาพ, getWebhookInfo: info.body?.result ?? null })
 }
 
 /** ตั้ง webhook จริง — ต้องส่ง `x-admin-key` และต้องมีทั้งสอง env */
