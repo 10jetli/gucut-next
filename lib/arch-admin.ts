@@ -1,12 +1,12 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-25T08:09:13.220Z",
+  "generatedAt": "2026-09-26T11:21:44.101Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
   "apiRoutes": {
-    "count": 48,
+    "count": 49,
     "names": [
       "ads",
       "ai-visibility",
@@ -47,6 +47,7 @@ export const ARCH_ADMIN = {
       "shopify/oauth-callback",
       "staff-users",
       "store/products",
+      "telegram/set-webhook",
       "telegram/webhook",
       "tracker",
       "tracker/image/[key]",
