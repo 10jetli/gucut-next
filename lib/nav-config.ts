@@ -305,7 +305,7 @@ export const NAV_ITEMS: NavItem[] = [
             แล้วย้ายโฟลเดอร์กลับ + ปลดคอมเมนต์บรรทัดล่างนี้
          (ท่านประธานอนุมัติให้ถอดชั่วคราว 25 ก.ย. 2569 — ไม่ใช่การลบเมนูที่ใช้งานได้
           ตามกติกา never-remove-old-menus เพราะหน้านี้เรียกท่อที่ไม่มีอยู่จริง) */
-      // { href: '/core/admin-log', label: 'สมุดคำสั่งหลังร้าน' },   // ⏸️ รอท่อ ?adminlog=1
+      { href: '/core/admin-log', label: 'สมุดคำสั่งหลังร้าน' },   // ✅ เอากลับ 27 ก.ย. 2569 — ยิงเองแล้ว ?adminlog=1 ตอบจริง ครบ 4 ช่องที่จอต้องใช้ · x-core-build 2026-09-26T17:28:28Z
       { href: '/core/zort-noapi', label: 'ZORT เปิดให้ทำอะไรผ่าน API' },   // เครื่องมือตรวจ ZORT — งาน AI
       { href: '/core/zort-webhook', label: 'Webhook ของ ZORT' },   // เครื่องมือตรวจ ZORT — งาน AI
       { href: '/core/zort-claims', label: 'คำกล่าวอ้างยังจริงไหม' },   // เครื่องมือตรวจ ZORT — งาน AI

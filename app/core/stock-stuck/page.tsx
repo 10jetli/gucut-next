@@ -62,6 +62,20 @@ type ผลเทียบ = {
 const หน้าละ = 100
 const เพดานหน้า = 6        // กันจอดึงทั้งกองในทีเดียว — ถ้าชนเพดานต้องเขียนบนจอว่าชน
 const เพดานตรวจกระจก = 60  // ยิงกระจกรายรหัส ⇒ จำกัดไว้ แล้วบอกว่าเหลือกี่รหัสยังไม่ได้ตรวจ
+const ยิงพร้อมกัน = 8
+/** 🔴 **วัดของจริงบน production 27 ก.ย. 2569 (เปิดจอด้วยตา)**
+ *    `pushstuck` 696 ms · `list=stock&q=` **2,789 ms ต่อรหัส** · `stockcompare` 4,981 ms
+ *    ⇒ 60 รหัส ÷ พร้อมกัน 4 ≈ **42 วินาที** ⇒ จอค้างที่ "กำลังอ่าน..." นานเกินกว่าที่คนจะรอ
+ *    ⇒ ⇒ คนใช้จะอ่านว่าจอพัง **แล้วกดรีโหลด ซึ่งทำให้ยิงซ้ำทั้งชุด**
+ *    🔑 แก้สามอย่าง: โชว์ตารางทันทีที่ได้รายการค้าง · เติมช่องกระจกทีละรหัสพร้อมตัวนับความคืบหน้า
+ *       · ใส่เวลาตัดต่อคำขอ (คำขอเดียวค้าง ห้ามทำให้ทั้งจอค้างตลอดกาล) */
+const เวลาตัดมิลลิ = 15000
+
+async function ยิงมีเวลาตัด(url: string): Promise<Response> {
+  const ตัว = new AbortController()
+  const นาฬิกา = setTimeout(() => ตัว.abort(), เวลาตัดมิลลิ)
+  try { return await fetch(url, { signal: ตัว.signal }) } finally { clearTimeout(นาฬิกา) }
+}
 
 type ผลค้าง = {
   ok?: boolean
@@ -76,7 +90,7 @@ async function ดึงหน้าค้าง(offset: number, ช่อง: s
   const qs = new URLSearchParams({ pushstuck: '1', limit: String(หน้าละ), offset: String(offset) })
   if (ช่อง) qs.set('channel', ช่อง)
   if (เหตุ) qs.set('reason', เหตุ)
-  const res = await fetch(`/api/web/core?${qs}`)
+  const res = await ยิงมีเวลาตัด(`/api/web/core?${qs}`)
   const j = (await res.json()) as ผลค้าง
   if (!res.ok || j.ok === false) throw new Error(j.error || `HTTP ${res.status}`)
   return j
@@ -90,6 +104,7 @@ export default function จอสต็อกค้าง() {
   const [กำลังโหลด, setกำลังโหลด] = useState(true)
   const [พัง, setพัง] = useState<string | null>(null)
   const [เทียบ, setเทียบ] = useState<ผลเทียบ | null>(null)
+  const [กำลังตรวจกระจก, setกำลังตรวจกระจก] = useState(0)
   const [ช่อง, setช่อง] = useState<string>('')
   const [เหตุ, setเหตุ] = useState<string>('')
 
@@ -111,6 +126,8 @@ export default function จอสต็อกค้าง() {
       }
       setชนเพดานหน้า(offset !== null)
       setแถว(เก็บ); setทั้งหมด(รวม)
+      /* 🔑 ปล่อยตารางขึ้นจอก่อน — ช่องกระจก/ผลเทียบค่อยเติมทีละรหัส (ทุกช่องมีสถานะ "ยังไม่ได้ตรวจ" อยู่แล้ว) */
+      setกำลังโหลด(false)
 
       // ── ② ตรวจว่ารหัสมีในกระจกไหม (ยิงรายรหัส · จำกัดจำนวน แล้วบอกบนจอ) ──
       const รหัส = Array.from(new Set(เก็บ.map((x) => x.sku))).slice(0, เพดานตรวจกระจก)
@@ -121,22 +138,25 @@ export default function จอสต็อกค้าง() {
           const sku = คิว.shift()
           if (!sku) return
           try {
-            const r = await fetch(`/api/web/core?list=stock&q=${encodeURIComponent(sku)}&limit=1`)
+            const r = await ยิงมีเวลาตัด(`/api/web/core?list=stock&q=${encodeURIComponent(sku)}&limit=1`)
             const j = await r.json()
             const row = Array.isArray(j?.rows) ? j.rows.find((x: { sku?: string }) => x?.sku === sku) : null
-            ผล[sku] = row
+            const สภาพ: สภาพกระจก = row
               ? { มี: true, available: typeof row.available === 'number' ? row.available : null,
                   name: String(row.name ?? ''), service: !!row.service, active: !!row.active }
               : { มี: false, available: null, name: '', service: false, active: false }
+            ผล[sku] = สภาพ
+            setกระจก((เดิม) => ({ ...เดิม, [sku]: สภาพ }))   // เติมทีละรหัส ⇒ เห็นความคืบหน้าจริง
           } catch { /* ยิงไม่ได้ ⇒ ไม่ใส่คีย์ ⇒ จอขึ้น "ยังไม่ได้ตรวจ" ตามสามสถานะ */ }
         }
       }
-      await Promise.all([ตัวยิง(), ตัวยิง(), ตัวยิง(), ตัวยิง()])
-      setกระจก(ผล)
+      setกำลังตรวจกระจก(รหัส.length)
+      await Promise.all(Array.from({ length: ยิงพร้อมกัน }, () => ตัวยิง()))
+      setกำลังตรวจกระจก(0)
 
       // ── ⑦ ค่าที่แพลตฟอร์มถืออยู่ (ฝั่งท่อให้เส้นมา 26 ก.ย. 2569) — **มีแต่ Shopee** ──
       try {
-        const r = await fetch('/api/web/core?stockcompare=1')
+        const r = await ยิงมีเวลาตัด('/api/web/core?stockcompare=1')
         const j = (await r.json()) as { stock?: ผลเทียบ }
         setเทียบ(j?.stock ?? null)
       } catch { setเทียบ(null) /* ⇒ จอขึ้น "อ่านผลเทียบไม่ได้" ไม่ใช่ 0 */ }
@@ -173,7 +193,8 @@ export default function จอสต็อกค้าง() {
         <div className="font-semibold">อ่านจอนี้อย่างไร — ตัวเลขมาจากสองแหล่ง</div>
         <div>· <b>ช่อง เหตุ/ค้างกี่วัน/streak</b> มาจากสมุดข้ามของท่อ (<code>push_state</code>)</div>
         <div>· <b>ช่อง มีในกระจก/สต็อกในกระจก</b> มาจากกระจกสต็อกของเรา (<code>list=stock</code>) — คนละแหล่ง</div>
-        <div>· <b>ค่าที่แพลตฟอร์มถืออยู่จริง เส้นนี้ไม่ได้ส่งมา</b> ⇒ ช่องนั้นจึงขึ้นว่า “ยังไม่รู้” ไม่ใช่ 0</div>
+        <div>· <b>ค่าที่แพลตฟอร์มถืออยู่</b> มาจากผลเทียบ (<code>stockcompare</code>) — <b>มีแต่ Shopee</b>
+          {' '}⇒ TikTok/Lazada ขึ้น “ยังไม่มีเส้นอ่าน” ไม่ใช่ 0</div>
         <div>· <b>“ไม่มีในกระจก” ไม่เท่ากับ “สต็อกเป็น 0”</b> — รหัสที่แพลตฟอร์มใช้อาจเป็นรหัสลูกที่คลังเราไม่มี</div>
         <div>· สินค้า <b>บริการ</b> ติดลบเป็นเรื่องปกติ (ไม่มีสต็อกให้ตัด) ⇒ แยกออกจากกองก่อนนับ</div>
       </div>
@@ -189,7 +210,14 @@ export default function จอสต็อกค้าง() {
       </div>
 
       {พัง && <ErrorBox title="อ่านรายการรหัสค้างไม่ได้">{พัง}</ErrorBox>}
-      {กำลังโหลด && <LoadingState text="กำลังอ่านสมุดข้ามและกระจกสต็อก..." />}
+      {กำลังโหลด && <LoadingState text="กำลังอ่านสมุดข้ามของท่อ..." />}
+      {!กำลังโหลด && กำลังตรวจกระจก > 0 && (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-[13px] text-blue-900">
+          กำลังตรวจกระจกทีละรหัส {fmtNum(Object.keys(กระจก).length)} / {fmtNum(กำลังตรวจกระจก)}
+          {' — '}ช่องที่ยังไม่ขึ้นค่าคือ <b>ยังไม่ได้ตรวจ</b> ไม่ใช่ไม่มี
+          {' · '}เส้นกระจกตอบช้า ~2.8 วินาทีต่อรหัส (วัดเมื่อ 27 ก.ย. 2569)
+        </div>
+      )}
 
       {!กำลังโหลด && !พัง && (
         <>
