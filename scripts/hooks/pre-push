@@ -61,13 +61,32 @@ N="$(pick_node)" || {
 }
 
 echo "   node ที่ใช้ทดสอบ: $("$N" -v)"
-if ! "$N" --experimental-test-module-mocks --test scripts/tests/*.test.mjs > /tmp/prepush-test.log 2>&1; then
+# ── 🔒 ล็อกของหลักฐาน + จับอินพุตที่เปลี่ยนกลางทาง (เพิ่ม 27 ก.ย. 2569) ──
+# 🔴 **ของจริงที่เกิดวันนี้ ทั้งสองข้อในการ push ครั้งเดียว**
+#   ① `/tmp/prepush-build.log` เป็น **พาธร่วมของสองรีโป** (ฝั่งจอกับฝั่งท่อ/หน้าร้าน)
+#      ⇒ ตอน push ของเราล้มแล้วเปิดอ่านหาเหตุ **เนื้อในเป็น build ของอีกรีโป**
+#      ⇒ ข้อความอธิบายเหตุของ hook เรา **ชี้ไปที่งานของคนอื่น**
+#      🔑 เครื่องมือสองตัวที่เขียนไฟล์ชั่วคราวพาธเดียวกัน จะทำลายหลักฐานของกันและกัน
+#         **เฉพาะตอนที่เราต้องการมันที่สุด — คือตอนล้มพร้อมกัน** และไม่มีอะไรฟ้อง
+#   ② เราสองบัญชีใช้ **clone เดียวกัน** ⇒ อีกฝั่ง commit ลงกลาง build ของเราได้
+#      วันนี้: commit เข้ามา 12:37:36 · build ในhook ล้ม 12:38:22 (ห่าง 46 วิ)
+#      ⇒ อาการที่โผล่ **ไม่ใช่ "อินพุตเปลี่ยน" แต่เป็น "ด่านตก"** ซึ่งอ่านเหมือนโค้ดผิด
+#      ⇒ กันการชนไม่ได้ (คนละกระบวนการ) แต่ **ห้ามให้ผลที่เชื่อถือไม่ได้ถูกอ่านว่าโค้ดผิด**
+REPO_NAME="$(basename "$(git rev-parse --show-toplevel)")"
+LOGDIR="/tmp/prepush-$REPO_NAME"
+mkdir -p "$LOGDIR"
+BUILD_LOG="$LOGDIR/build.log"
+# ลายนิ้วมือของสิ่งที่กำลังจะถูก build: HEAD + สภาพไฟล์ทั้งหมด (รวมที่ยังไม่ commit)
+ลายนิ้วมือ() { printf '%s|%s' "$(git rev-parse HEAD)" "$(git status --porcelain | md5sum | cut -d" " -f1)"; }
+TREE_BEFORE="$(ลายนิ้วมือ)"
+
+if ! "$N" --experimental-test-module-mocks --test scripts/tests/*.test.mjs > $LOGDIR/test.log 2>&1; then
   echo "❌ ชุดทดสอบไม่ผ่าน — ไม่ push"
-  grep -E "^# (tests|pass|fail)|^not ok" /tmp/prepush-test.log | head -12
-  echo "   (ผลเต็มที่ /tmp/prepush-test.log)"
+  grep -E "^# (tests|pass|fail)|^not ok" $LOGDIR/test.log | head -12
+  echo "   (ผลเต็มที่ $LOGDIR/test.log)"
   exit 1
 fi
-grep -E "^# (tests|pass|fail)" /tmp/prepush-test.log | sed 's/^/   /'
+grep -E "^# (tests|pass|fail)" $LOGDIR/test.log | sed 's/^/   /'
 
 # ── 🔴 build เต็ม — **"เทสผ่าน" ไม่ใช่ "build ผ่าน"** (เพิ่ม 19 ก.ย. 2569) ──
 #    ฝั่งท่อเจอกับตัวเองวันนี้: build ตกเงียบมา 3 commit เพราะชุดทดสอบ
@@ -81,17 +100,27 @@ grep -E "^# (tests|pass|fail)" /tmp/prepush-test.log | sed 's/^/   /'
 #       push ถูกจำกัดที่ 45 นาทีต่อครั้งอยู่แล้ว ⇒ ช้าขึ้น 2 นาทีไม่กระทบอะไร
 #       แต่ **push ที่ prebuild แดง = Netlify build ตกทั้งรอบ = เครดิตหายฟรี**
 #       ⇒ จ่าย 2 นาทีในเครื่อง เพื่อไม่จ่ายเครดิตของร้าน
-if ! npm run build > /tmp/prepush-build.log 2>&1; then
+
+if ! npm run build > "$BUILD_LOG" 2>&1; then
   echo "❌ build ไม่ผ่าน — ไม่ push (ถ้าปล่อยไป Netlify จะตกทั้งรอบและเสียเครดิตฟรี)"
   # 🔴 **ห้าม grep `🔴`** — ด่านที่ **ผ่าน** ก็พิมพ์ 🔴 เป็นหัวข้อของเคสทดสอบ
   #    รอบแรกที่ลองจริง บรรทัดสรุปจึงเต็มไปด้วยเคสที่ผ่าน และ **สาเหตุจริงไม่โผล่เลย**
   #    ⇒ ท้ายล็อกคือที่ที่ด่านตัวที่ตกพิมพ์ไว้เสมอ (สคริปต์หยุดตรงนั้น) ⇒ พิมพ์ท้ายล็อกด้วยทุกครั้ง
-  grep -E "🛑|Failed to compile|error TS|Error:" /tmp/prepush-build.log | head -5
+  TREE_AFTER="$(ลายนิ้วมือ)"
+  if [ "$TREE_BEFORE" != "$TREE_AFTER" ]; then
+    echo "   ⚠️ **อินพุตเปลี่ยนกลางทาง — ผลนี้ตัดสินโค้ดไม่ได้**"
+    echo "      ก่อน build: $TREE_BEFORE"
+    echo "      หลัง build: $TREE_AFTER"
+    echo "      (เราสองบัญชีใช้ clone เดียวกัน ⇒ อีกฝั่งอาจ commit/แก้ไฟล์ระหว่างที่ build วิ่ง)"
+    echo "      ⇒ **อย่าเพิ่งไล่หาบั๊กจากข้อความข้างล่าง** — รัน push ใหม่ตอนที่ไม่มีใครแก้ก่อน"
+    echo "      ⇒ ถ้ารันใหม่แล้วยังตก ค่อยเชื่อข้อความนั้น"
+  fi
+  grep -E "🛑|Failed to compile|error TS|Error:" "$BUILD_LOG" | head -5
   # วัดแล้ว 19 ก.ย. 2569: `npm run build` ที่ prebuild ตก **ไม่เติมบรรทัดท้ายของตัวเอง**
   # ⇒ บรรทัดสุดท้ายของล็อกคือของด่านที่ตกจริง · ใช้ 20 บรรทัดเผื่อด่านที่พิมพ์คำแนะนำยาว
   echo "   ── ท้ายล็อก (ด่านที่ตกอยู่ตรงนี้) ──"
-  tail -20 /tmp/prepush-build.log | sed 's/^/   /'
-  echo "   (ผลเต็มที่ /tmp/prepush-build.log)"
+  tail -20 "$BUILD_LOG" | sed 's/^/   /'
+  echo "   (ผลเต็มที่ $BUILD_LOG — แยกต่อรีโปแล้ว ไม่ถูกอีกรีโปเขียนทับ)"
   exit 1
 fi
 echo "   ✅ npm run build ผ่าน (prebuild ครบทุกด่าน)"
@@ -106,10 +135,10 @@ echo "   ✅ npm run build ผ่าน (prebuild ครบทุกด่าน
 if [ ! -f scripts/check-floating.mjs ]; then
   echo "⚠️  ข้ามด่าน promise ปล่อยลอย — **ไม่มี scripts/check-floating.mjs ในรีโปนี้**"
   echo "    (มีเฉพาะฝั่งท่อ · รีโปนี้ยังไม่มีคนย้ายมา) ⇒ นี่คือช่องว่าง ไม่ใช่ผลผ่าน"
-elif ! node scripts/check-floating.mjs > /tmp/prepush-float.log 2>&1; then
+elif ! node scripts/check-floating.mjs > $LOGDIR/float.log 2>&1; then
   echo "❌ ด่าน promise ปล่อยลอยไม่ผ่าน — ไม่ push"
   echo "   ⚠️ อ่านข้อความข้างล่างก่อนสรุป: **ตัวด่านพังเองก็ออกมาทางนี้เหมือนกัน**"
-  tail -5 /tmp/prepush-float.log
+  tail -5 $LOGDIR/float.log
   exit 1
 fi
 
