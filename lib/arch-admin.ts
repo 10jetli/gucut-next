@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-27T09:11:06.457Z",
+  "generatedAt": "2026-09-27T10:00:00.721Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
