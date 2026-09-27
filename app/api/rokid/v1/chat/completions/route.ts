@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { แยกคำสั่งเฮอร์มีส, ฝากให้เฮอร์มีส } from '@/lib/hermes-relay'
 import { askClaude, checkBridgeKey, describeError, streamClaude, bridgeModel, type BridgeRequest } from '@/lib/rokid'
 import { logTurn } from '@/lib/rokid-log'
 
@@ -144,6 +145,44 @@ export async function POST(req: NextRequest) {
     }
     return ''
   })()
+
+  /* ── คำสั่งที่ขึ้นต้นด้วย "เฮอร์มีส" → ฝากเข้าคิวให้ g1 ทำ ไม่ต้องรบกวน Claude ──
+     🔑 ตอบกลับทันที **ไม่รอผล** — งานของ Hermes ใช้เวลาเป็นนาที
+        ถ้ารอ แว่นจะหมดเวลาก่อน (เพดาน 5,000 ms) แล้วดูเหมือนสั่งไม่ติด
+        ⇒ ผลจริงไปโผล่ที่ Telegram ซึ่งท่านเปิดอ่านอยู่แล้ว */
+  const คำสั่งเฮอร์มีส = แยกคำสั่งเฮอร์มีส(lastUserText)
+  if (คำสั่งเฮอร์มีส) {
+    const ตอบ = await ฝากให้เฮอร์มีส(คำสั่งเฮอร์มีส)
+    const model = body.model || bridgeModel()
+    await logTurn({
+      at: new Date().toISOString(),
+      question: lastUserText,
+      answer: ตอบ,
+      model: 'hermes-relay',
+      ms: Date.now() - startedAt,
+      ok: true,
+      stream: Boolean(body.stream),
+    })
+    if (body.stream) {
+      const st = new ReadableStream<Uint8Array>({
+        start(c) {
+          c.enqueue(sseChunk(id, model, created, { role: 'assistant', content: '' }, null))
+          c.enqueue(sseChunk(id, model, created, { content: ตอบ }, null))
+          c.enqueue(sseChunk(id, model, created, {}, 'stop'))
+          c.enqueue(enc.encode('data: [DONE]\n\n'))
+          c.close()
+        },
+      })
+      return new Response(st, {
+        headers: { 'content-type': 'text/event-stream', 'cache-control': 'no-cache' },
+      })
+    }
+    return NextResponse.json({
+      id, object: 'chat.completion', created, model,
+      choices: [{ index: 0, message: { role: 'assistant', content: ตอบ }, finish_reason: 'stop' }],
+      usage: { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 },
+    })
+  }
 
   // ---- แบบสตรีม (SSE) — แว่นจะทยอยแสดงข้อความระหว่างที่ Claude ยังพิมพ์อยู่
   if (body.stream) {
