@@ -24,7 +24,7 @@ lib/
   types.ts                  TypeScript interfaces ที่ใช้ร่วม
 data/ads.json               ข้อมูลโฆษณา (snapshot)
 public/catalog/             เว็บแคตตาล็อก static (index.html + products.json) — คนละระบบกับ Next.js
-middleware.ts               ล็อกทั้งเว็บด้วย SITE_PASSWORD (ยกเว้น /login, /api/auth, /api/google)
+middleware.ts               ล็อกทั้งเว็บด้วย SITE_PASSWORD — **เส้นที่ยกเว้นดูที่ `PUBLIC_PATHS` ในไฟล์นั้น**
 ```
 
 ## กติกาการเขียนโค้ด (ต้องทำตาม)
@@ -42,7 +42,10 @@ middleware.ts               ล็อกทั้งเว็บด้วย SIT
 
 ## กับดักที่รู้แล้ว (อย่าเหยียบซ้ำ)
 
-- ZORT `GetOrders`: ใช้ `page=` เท่านั้น ห้าม `offset=` และ `fromdate/todate` ไม่ทำงาน (กรองวันที่ฝั่ง client)
+- ZORT `GetOrders`: **กรองวันที่ได้จริงที่เซิร์ฟเวอร์** ด้วย `orderdateafter=` / `orderdatebefore=` (รูป `YYYY-MM-DD`) · ชื่อ `fromdate/todate` ใช้กับเส้นนี้ไม่ได้ · หน้าใช้ `page=`
+  📏 ยิงพิสูจน์ 27 ก.ย. 2569: `?sync=1&days=1` ได้ 6 ใบ · `days=30` ได้ 613 ใบ ⇒ ถ้าพารามิเตอร์ถูกเมิน สองเลขต้องเท่ากัน
+  ⇒ ประโยคเดิมที่เขียนว่า *"กรองวันที่ฝั่ง client"* **เป็นเท็จ** — `netlify/lib/core-sync.mjs` ไม่ได้กรองฝั่ง client เลย
+  ⏸️ ข้อ "ห้าม `offset=`" **ยังไม่ได้ยิงตรวจรอบนี้** ⇒ เก็บไว้เป็นข้อควรระวัง ไม่ใช่ข้อที่ยืนยันแล้ว
 - ฟอนต์ไทยใน PDF: ต้องโหลด TTF เต็มไฟล์ + `embedFont(bytes, { subset: true })`
 - รูปใน pdf-lib: ใช้ bytes จาก `fetch().arrayBuffer()` เท่านั้น (Buffer ที่มี byteOffset จะพัง)
 - แคตตาล็อก static อ้าง `products.json` แบบ relative — สองไฟล์ต้องอยู่โฟลเดอร์เดียวกันเสมอ
