@@ -555,6 +555,26 @@ export default function จอสต็อกค้าง() {
             </div>
           )}
           {(() => {
+            /* 🔑 **ป้ายขอบเขตมาก่อนตัวเลข** (ฝั่งท่อชี้ 27 ก.ย. 2569 จากเคส `03800`)
+               เขาวัดเฉพาะ `channel=shopee` ได้ 6 รหัสต้นเหตุ · จอนี้ดูทุกช่องได้ 7
+               ต่างกันเพราะ **ขอบเขต ไม่ใช่เพราะใครผิด** — `03800` อยู่ในกอง TikTok เท่านั้น
+               ⇒ ถ้าจอไม่บอกว่ารหัสไหนกระทบช่องไหน **คนจะไปหาใน Shopee แล้วไม่เจอ** */
+            const ช่องของรหัส: Record<string, Set<string>> = {}
+            for (const x of แถว) {
+              if (x.skip_reason !== 'negative') continue
+              ;(ช่องของรหัส[x.sku] ??= new Set()).add(x.channel)
+            }
+            /* ⚠️ ไม่วนบน Set ตรง ๆ — tsconfig ของรีโปนี้ target ต่ำกว่า es2015 ⇒ ต้องผ่าน Array.from
+               (tsc จับให้แล้วตอน typecheck: TS2802 — ถ้าไม่มีด่านนี้จะพังตอน build บน Netlify แทน) */
+            const รวมช่อง = (skus: string[]) => {
+              const out: string[] = []
+              for (const k of skus) {
+                for (const c of Array.from(ช่องของรหัส[k] ?? new Set<string>())) {
+                  if (!out.includes(c)) out.push(c)
+                }
+              }
+              return out.sort()
+            }
             const ต้นเหตุ: Record<string, string[]> = {}     // รหัสต้นเหตุ → ชุดที่ลากตาม
             const เป็นต้นเหตุเอง: string[] = []
             const ยังไม่รู้: string[] = []
@@ -577,18 +597,31 @@ export default function จอสต็อกค้าง() {
                   ⇒ <b>ต้องไปแก้ที่ {fmtNum(รวมต้นเหตุ)} รหัส</b> ไม่ใช่ {fmtNum(รหัสติดลบไม่ซ้ำ)} รหัส
                   {ยังไม่รู้.length > 0 && <> · <b>ยังไม่รู้ {fmtNum(ยังไม่รู้.length)} รหัส</b> (ถามสูตรไม่สำเร็จ ⇒ ยังไม่นับเป็นต้นเหตุ)</>}
                 </div>
-                {เรียง.map(([ราก, ชุด]) => (
+                {เรียง.map(([ราก, ชุด]) => {
+                  /* ช่องทางที่กระทบ = ช่องของ**ชุดที่ลากตาม** (ไม่ใช่ของรากเอง —
+                     รากอาจไม่ได้อยู่ในกองติดลบด้วยซ้ำ เพราะมันไม่ถูกดันขึ้นแพลตฟอร์มโดยตรง) */
+                  const ช่องกระทบ = รวมช่อง(ชุด.map((t) => t.split(' (')[0]))
+                  return (
                   <div key={ราก} className="rounded-lg bg-white border border-rose-200 p-2">
                     <div>
                       🎯 <b className="font-mono">{ราก}</b> — ลากชุดติดลบตามไป <b>{fmtNum(ชุด.length)}</b> รหัส
+                      {' '}· กระทบช่อง <b>{ช่องกระทบ.length ? ช่องกระทบ.join(' · ') : 'ยังไม่รู้'}</b>
                     </div>
                     <div className="text-[11px] text-gray-600 mt-0.5 break-words">{ชุด.join(' · ')}</div>
                   </div>
-                ))}
+                  )
+                })}
                 {เป็นต้นเหตุเอง.length > 0 && (
                   <div className="rounded-lg bg-white border border-rose-200 p-2">
                     <div>🎯 <b>ไม่ใช่ชุด ⇒ เป็นรหัสต้นเหตุเอง</b> {fmtNum(เป็นต้นเหตุเอง.length)} รหัส</div>
-                    <div className="text-[11px] text-gray-600 mt-0.5 font-mono break-words">{เป็นต้นเหตุเอง.join(' · ')}</div>
+                    <div className="text-[11px] text-gray-600 mt-0.5 break-words">
+                      {เป็นต้นเหตุเอง.map((k) => (
+                        <span key={k} className="inline-block mr-3">
+                          <span className="font-mono">{k}</span>
+                          {' '}<span className="text-gray-500">({รวมช่อง([k]).join('·') || 'ยังไม่รู้ช่อง'})</span>
+                        </span>
+                      ))}
+                    </div>
                   </div>
                 )}
               </>
