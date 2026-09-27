@@ -3,7 +3,18 @@
 //
 // 🔴 **ที่มา 27 ก.ย. 2569** — ยิง `?pushstate=1` ของจริงแล้วพบว่า
 //    สวิตช์ดันสต็อกเปิดอยู่ (`autoOn: true` ทั้งสามช่อง · shopee/tiktok `mode: live`)
-//    แต่ทุกรอบได้ `pushed 0` เพราะของถูกข้ามหมด ⇒ **สต็อกบนหน้าร้านค้างจริง 6–9 วัน**
+//    และรอบที่ผมดูตอนนั้นได้ `pushed 0` ⇒ สต็อกบนหน้าร้านของรหัสที่ถูกข้ามค้างจริง 6–9 วัน
+//    🔴 **แก้คำกล่าวอ้างนี้ 27 ก.ย. 2569 บ่าย (ผมเขียนเองตอนเช้าแล้วมันเท็จภายในวันเดียว)**
+//       ตอนเช้าผมเขียนว่า "ทุกรอบได้ pushed 0" ⇒ **ไม่จริง** · รอบ 27 ก.ย. หลังท่อเปิดช่อง `fired`
+//       ได้ `planned 64 · fired 2 · pushed 2 · rejected 0` ⇒ **มันดันได้จริง แค่ยิงได้ ~2 ตัวต่อรอบ**
+//       ⇒ **แก้รอบที่สองภายในชั่วโมงเดียวกัน**: ผมเขียนต่อว่า "อาการคือปริมาณต่อรอบ" ⇒ **ก็ผิดอีก**
+//          ฝั่งท่อไล่ซอร์สถึงตัวยิงจริง: เพดานต่อรอบคือ 40 · งบเวลา 18 วิ (ใช้ไป 9.3 วิ)
+//          ⇒ **ไม่ใช่ทั้งเพดานและงบเวลา** · ของจริงคือ 62 ตัว **ถูกคัดออกก่อนยิงด้วยด่านรายตัว**
+//          (แผนไม่สดแล้ว · รหัสอยู่หลายที่บนแพลตฟอร์มจนต้องให้คนดู · ด่านอื่น)
+//          🔑 บทเรียนสองรอบติด: ผมรีบตั้งชื่ออาการจากเลขที่เห็น ทั้งที่ยังไม่รู้ว่าเลขนั้นเกิดจากกลไกไหน
+//             ⇒ **ชื่ออาการคือข้อสรุป ไม่ใช่ข้อมูล** ⇒ จอนี้จึงเขียนแต่เลขที่วัดได้
+//             และเรียกส่วนที่ยังไม่มีคอลัมน์ในสมุดว่า "ยังไม่รู้" ห้ามเป็น 0
+//       🔑 คำว่า "ทุกรอบ" มาจากการดูรอบเดียว ⇒ **ห้ามเขียนคำที่ครอบทุกรอบจากตัวอย่างเดียว**
 //    ข้อมูลรายรหัสมีอยู่แล้วที่ `?pushstuck=1` **แต่ไม่มีจอไหนโชว์** ⇒ เห็นได้ทางเดียวคือยิง API เอง
 //
 // 🔑 **สามช่องที่จอนี้ต้องมี (ฝั่งท่อกำหนดมาเอง และเหตุผลสำคัญกว่าตัวช่อง)**
@@ -101,6 +112,36 @@ type ผลค้าง = {
   'ทั้งหมดที่ตรงเงื่อนไข'?: number
 }
 
+/** รอบกวาดล่าสุดจาก `?pushstate=1` — **ทุกช่องเป็น optional เพราะท่อรุ่นเก่าไม่ส่ง**
+ *  🔑 `fired` เพิ่งถูกใส่ใน SELECT ของท่อ 27 ก.ย. 2569 (commit 60ab250)
+ *     ⇒ ท่อรุ่นก่อนหน้านั้นส่งมาไม่ครบ ⇒ จอต้องเขียนว่า "ปิดบัญชีไม่ได้" ไม่ใช่โชว์ 0 */
+type รอบกวาด = {
+  at?: string | null
+  channel?: string | null
+  mode?: string | null
+  planned?: number | null
+  fired?: number | null
+  pushed?: number | null
+  rejected?: number | null
+  skipped?: number | null
+  ms?: number | null
+  /* 🔑 **ชื่อช่องมาจากซอร์สของท่อ ไม่ใช่จากจดหมาย** (ยืนยันด้วยการยิงดูรูปร่างจริง 27 ก.ย. 2569)
+     `not_sent` = คัดออกก่อนยิง · `not_fired` = ไม่ได้ยิงเพราะหมดงบเวลา (snake_case ตามคอลัมน์)
+     ⚠️ **แถวเก่าเป็น null ตลอดไป** ไม่มีทางย้อนไปวัด · รอบ `fast-skip` ก็ null เพราะรอบนั้นไม่ทำอะไร
+     ⇒ `null`/ไม่มีช่อง = **ยังไม่รู้** · `0` = **วัดแล้วได้ศูนย์** — จอต้องเขียนคนละคำ */
+  not_sent?: number | null
+  not_fired?: number | null
+}
+
+/** ชนิดของ "คัดออกก่อนยิง" — **ชุดปิดที่ท่อส่งรายชื่อมาให้เอง**
+ *  🚫 ห้ามพิมพ์คำแปลไว้ที่จอ — วันที่ท่อเพิ่มชนิดที่ 7 จอจะได้ `คำอธิบาย` มาเอง
+ *     และชนิดที่ไม่อยู่ในรายชื่อ = ท่อรุ่นเก่ากว่าข้อมูล ⇒ จอขึ้นว่า "ยังไม่รู้จัก"
+ *  📌 ใช้ `นโยบายเรา` ตัดสินสี **ไม่ใช่ชื่อชนิด** ⇒ ท่อเพิ่มชนิดใหม่ได้โดยจอไม่ต้องแก้ */
+type ชนิดไม่ได้ส่ง = { 'นโยบายเรา'?: boolean; 'คำอธิบาย'?: string }
+
+/** เลขที่เชื่อได้เท่านั้น — ค่าที่ไม่ใช่ตัวเลขคืน null ห้ามแปลงเป็น 0 */
+const เลข = (v: unknown): number | null => (typeof v === 'number' && Number.isFinite(v) ? v : null)
+
 /** ดึงสมุดข้ามหนึ่งหน้า — แยกออกมาเป็นฟังก์ชันมีชนิดชัด (ในลูปทำให้ TS อ่านชนิดวนตัวเอง) */
 async function ดึงหน้าค้าง(offset: number, ช่อง: string, เหตุ: string): Promise<ผลค้าง> {
   const qs = new URLSearchParams({ pushstuck: '1', limit: String(หน้าละ), offset: String(offset) })
@@ -123,6 +164,9 @@ export default function จอสต็อกค้าง() {
   const [กำลังตรวจกระจก, setกำลังตรวจกระจก] = useState(0)
   const [ช่อง, setช่อง] = useState<string>('')
   const [เหตุ, setเหตุ] = useState<string>('')
+  const [รอบรายเจ้า, setรอบรายเจ้า] = useState<Record<string, รอบกวาด> | null>(null)
+  const [ทะเบียนชนิด, setทะเบียนชนิด] = useState<Record<string, ชนิดไม่ได้ส่ง> | null>(null)
+  const [รอบอ่านไม่ได้, setรอบอ่านไม่ได้] = useState<string | null>(null)
 
   const โหลด = useCallback(async () => {
     setกำลังโหลด(true); setพัง(null); setกระจก({})
@@ -176,6 +220,28 @@ export default function จอสต็อกค้าง() {
         const j = (await r.json()) as { stock?: ผลเทียบ }
         setเทียบ(j?.stock ?? null)
       } catch { setเทียบ(null) /* ⇒ จอขึ้น "อ่านผลเทียบไม่ได้" ไม่ใช่ 0 */ }
+
+      /* ── ⑧ รอบกวาดล่าสุด **รายเจ้า** — เพื่อปิดบัญชีรอบนั้น (ท่อเปิดช่องให้ 27 ก.ย. 2569) ──
+         🔑 อ่านจาก `byChannel.<เจ้า>.lastSweep` **ไม่ใช่** `lastSweep` บนสุด
+            ยิงดูรูปร่างจริงแล้วพบว่า `lastSweep` บนสุด **ไม่มีช่อง `fired`** ⇒ ถ้าอ่านที่นั่น
+            จอจะขึ้น "ยังไม่รู้" ตลอดกาลทั้งที่ท่อส่งค่ามาแล้วในอีกที่ */
+      try {
+        const r = await ยิงมีเวลาตัด('/api/web/core?pushstate=1')
+        const j = (await r.json()) as {
+          byChannel?: Record<string, { lastSweep?: รอบกวาด }>
+          'ชนิดที่ไม่ได้ส่ง'?: Record<string, ชนิดไม่ได้ส่ง>
+        }
+        const เก็บ: Record<string, รอบกวาด> = {}
+        for (const [เจ้า, v] of Object.entries(j?.byChannel ?? {})) {
+          if (v?.lastSweep) เก็บ[เจ้า] = v.lastSweep
+        }
+        setรอบรายเจ้า(Object.keys(เก็บ).length ? เก็บ : null)
+        setทะเบียนชนิด(j?.['ชนิดที่ไม่ได้ส่ง'] ?? null)
+        setรอบอ่านไม่ได้(Object.keys(เก็บ).length ? null : 'ท่อตอบแต่ไม่มี byChannel.<เจ้า>.lastSweep')
+      } catch (e) {
+        setรอบรายเจ้า(null)
+        setรอบอ่านไม่ได้(e instanceof Error ? e.message : String(e))
+      }
     } catch (e) {
       setพัง(e instanceof Error ? e.message : String(e))
     } finally {
@@ -203,6 +269,124 @@ export default function จอสต็อกค้าง() {
         <p className="text-sm text-gray-500">
           รหัสที่ถูกข้ามจากการดันสต็อก — ตัวเลขบนหน้าร้านของรหัสพวกนี้ค้างอยู่กับค่าเก่า
         </p>
+      </div>
+
+      {/* ── รอบกวาดล่าสุด: ปิดบัญชีให้ครบ **และบอกว่าก้อนไหนบวกกับก้อนไหนได้** ──
+          🔴 ผมเองพลาดข้อนี้ 27 ก.ย. 2569: เอา `planned` ไปบวกกับ `skipped` แล้วสรุปว่า "หายไป 1 รายการ"
+             ทั้งที่สองก้อนนั้นไม่ใช่ส่วนของกันและกันเลย ⇒ ผมสร้างคำถามที่ไม่มีอยู่แล้วส่งให้คนอื่นไปไล่
+          ⇒ จอนี้จึงต้องเขียน **โซ่ที่ปิดบัญชีได้** ออกมาตรง ๆ ไม่ให้ใครบวกผิดซ้ำ */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 text-[13px] space-y-1">
+        <div className="font-semibold">รอบกวาดล่าสุดของแต่ละเจ้า — ปิดบัญชีได้ครบไหม</div>
+        {รอบรายเจ้า === null ? (
+          <div className="text-gray-500">
+            {รอบอ่านไม่ได้
+              ? <>🛑 <b>อ่านรอบกวาดล่าสุดไม่ได้</b> ({รอบอ่านไม่ได้}) ⇒ <b>ยังไม่รู้</b> ไม่ใช่ว่าไม่มีรอบ</>
+              : 'กำลังอ่านรอบกวาดล่าสุด…'}
+          </div>
+        ) : (() => {
+          /* 🔑 **แยก "ท่อไม่ส่งช่องนี้เลย" ออกจาก "ช่องนี้เป็น null ในรอบนี้"** (27 ก.ย. 2569 · ยิงจริงแล้วเจอ)
+             ของจริง: shopee ได้ `not_sent: 62` แต่ lazada/tiktok ได้ `null` เพราะเป็น**แถวเก่า**
+             (ท่อเพิ่มคอลัมน์วันนี้ · แถวก่อนหน้านั้นเป็น null ตลอดไป · รอบ `fast-skip` ก็ null)
+             ⇒ ถ้าจอเขียนว่า "ท่อยังไม่ส่งช่องนี้" มันจะ**พูดผิด**ทันทีที่มีเจ้าใดเจ้าหนึ่งได้เลขมา
+             ⇒ ดูจากทั้งชุด: มีเจ้าไหนได้ตัวเลขไหม ⇒ แปล null ให้ตรงเหตุ */
+          const ท่อส่งช่องนี้แล้ว = Object.values(รอบรายเจ้า)
+            .some((ร) => เลข(ร.not_sent) !== null || เลข(ร.not_fired) !== null)
+          return Object.entries(รอบรายเจ้า)
+            .filter(([เจ้า]) => !ช่อง || เจ้า === ช่อง)
+            .map(([เจ้า, ร]) => {
+          const planned = เลข(ร.planned)
+          const fired = เลข(ร.fired)
+          const pushed = เลข(ร.pushed)
+          const rejected = เลข(ร.rejected)
+          const skipped = เลข(ร.skipped)
+          const notSent = เลข(ร.not_sent)
+          const notFired = เลข(ร.not_fired)
+          /* โซ่ที่ฝั่งท่อยืนยันจากซอร์ส (27 ก.ย. 2569):
+               planned = fired + not_sent + not_fired      ← ชั้นนอก
+               fired   = pushed + rejected  **เป๊ะเสมอ**   ← ชั้นใน
+             ⚠️ `skipped` เป็นอีกก้อน ห้ามบวกเข้าโซ่ (ผมเคยบวกแล้วได้ "เลขที่หายไป" ที่ไม่มีจริง)
+             🔑 **รับคำยืนยันของอีกฝ่ายมาเป็นด่าน ไม่ใช่มาเป็นความเชื่อ** ⇒ ถ้าวันหนึ่งไม่เป๊ะ จอฟ้องเอง */
+          const ชั้นในลงตัว = fired !== null && pushed !== null && rejected !== null
+            ? fired === pushed + rejected : null
+          const ชั้นนอกลงตัว = planned !== null && fired !== null && notSent !== null && notFired !== null
+            ? planned === fired + notSent + notFired : null
+          const ยังไม่ได้ยิง = planned !== null && fired !== null ? planned - fired : null
+          return (
+            <div key={เจ้า} className="border-t pt-2 first:border-t-0 first:pt-0 space-y-1">
+              <div className="text-gray-600">
+                <b className="text-gray-900">{เจ้า}</b>
+                {' · '}{ร.at ? new Date(ร.at).toLocaleString('th-TH') : 'ไม่รู้เวลา'}
+                {ร.mode ? ` · โหมด ${ร.mode}` : ''}
+                {เลข(ร.ms) !== null ? ` · ${fmtNum(เลข(ร.ms))} ms` : ''}
+              </div>
+              <div className="text-[15px]">
+                ดันขึ้นสำเร็จ <b className="text-green-700">{pushed === null ? 'ยังไม่รู้' : fmtNum(pushed)}</b>
+                {' '}จาก <b>{planned === null ? 'ยังไม่รู้' : fmtNum(planned)}</b> ที่วางแผนไว้
+              </div>
+              <div className="flex flex-wrap gap-x-4 gap-y-1 text-gray-700">
+                <span>ยิงออกไป <b>{fired === null ? 'ยังไม่รู้' : fmtNum(fired)}</b></span>
+                <span>ปลายทางตีกลับ <b>{rejected === null ? 'ยังไม่รู้' : fmtNum(rejected)}</b></span>
+                <span>คัดออกก่อนยิง <b>{notSent === null ? 'ยังไม่รู้' : fmtNum(notSent)}</b></span>
+                <span>หมดงบเวลา <b>{notFired === null ? 'ยังไม่รู้' : fmtNum(notFired)}</b></span>
+              </div>
+              {(notSent === null || notFired === null) && ยังไม่ได้ยิง !== null && ยังไม่ได้ยิง > 0 && (
+                <div className="rounded-lg bg-amber-50 border border-amber-200 p-2 text-amber-900">
+                  🛑 <b>{fmtNum(ยังไม่ได้ยิง)} ตัวที่ไม่ได้ยิงรอบนี้ — ยังแยกไม่ได้ว่าเพราะอะไร</b>
+                  {' '}{ท่อส่งช่องนี้แล้ว
+                    ? <><b>รอบนี้เป็นแถวเก่า</b> (บันทึกไว้ก่อนที่ท่อจะมีคอลัมน์ <code>not_sent</code>/<code>not_fired</code>
+                        {' '}หรือเป็นรอบที่ข้ามเร็ว) ⇒ <b>ไม่มีทางย้อนไปวัด</b> — รอรอบใหม่ของเจ้านี้</>
+                    : <>ท่อรุ่นที่เสิร์ฟอยู่<b>ยังไม่ส่ง</b> <code>not_sent</code>/<code>not_fired</code> เลยแม้เจ้าเดียว</>}
+                  {' '}⇒ ช่องสองช่องบนเขียนว่า <b>“ยังไม่รู้” ไม่ใช่ 0</b>
+                </div>
+              )}
+              {ชั้นนอกลงตัว === false && (
+                <div className="text-red-700">
+                  🔴 <b>วางแผน ≠ ยิงออกไป + คัดออกก่อนยิง + หมดงบเวลา</b>
+                  {' '}({fmtNum(planned)} ≠ {fmtNum(fired)} + {fmtNum(notSent)} + {fmtNum(notFired)})
+                  {' '}⇒ มีทางออกที่ยังไม่ถูกนับ — แจ้งฝั่งท่อ
+                </div>
+              )}
+              {ชั้นนอกลงตัว === true && (
+                <div className="text-green-700">✅ ปิดบัญชีรอบนี้ได้ครบทุกตัว</div>
+              )}
+              {ชั้นในลงตัว === false && (
+                <div className="text-red-700">
+                  🔴 <b>ยิงออกไป ≠ ดันสำเร็จ + ตีกลับ</b> — ฝั่งท่อยืนยันว่าต้องเป๊ะเสมอ ⇒ แจ้งฝั่งท่อ
+                </div>
+              )}
+              <div className="text-gray-500">
+                ถูกข้าม (ไม่เคยเข้าแผนรอบนี้) <b>{skipped === null ? 'ยังไม่รู้' : fmtNum(skipped)}</b>
+                {' '}— <b>เป็นอีกก้อน ห้ามเอาไปบวกเข้าโซ่</b>
+              </div>
+            </div>
+          )
+        })
+        })()}
+        <div className="text-gray-500 border-t pt-2">
+          🔑 <b>โซ่ที่ปิดบัญชีได้</b>: <code>วางแผน = ยิงออกไป + คัดออกก่อนยิง + หมดงบเวลา</code>
+          {' '}· <code>ยิงออกไป = ดันสำเร็จ + ตีกลับ</code>
+        </div>
+        {ทะเบียนชนิด && (
+          <div className="border-t pt-2 space-y-1">
+            <div className="font-semibold">เหตุที่ถูกคัดออกก่อนยิง — คำอธิบายมาจากท่อ ไม่ใช่จอแปลเอง</div>
+            {Object.entries(ทะเบียนชนิด).map(([ชนิด, x]) => (
+              <div key={ชนิด} className="flex gap-2">
+                <span className={x['นโยบายเรา'] === true ? 'text-gray-600'
+                  : x['นโยบายเรา'] === false ? 'text-amber-800' : 'text-gray-400'}>
+                  {x['นโยบายเรา'] === true ? '⚙️' : x['นโยบายเรา'] === false ? '🙋' : '❔'}
+                </span>
+                <span>
+                  <code>{ชนิด}</code> — {x['คำอธิบาย'] || <i>ท่อไม่ได้ส่งคำอธิบายมา ⇒ ยังไม่รู้จัก</i>}
+                  {x['นโยบายเรา'] === false && <b> · ต้องมีคนมาดู</b>}
+                  {x['นโยบายเรา'] === undefined && <b> · ยังไม่รู้ว่าเป็นนโยบายเราหรือของเสีย</b>}
+                </span>
+              </div>
+            ))}
+            <div className="text-gray-500">
+              สีตัดสินจากช่อง <code>นโยบายเรา</code> <b>ไม่ใช่ชื่อชนิด</b> ⇒ ท่อเพิ่มชนิดใหม่ได้โดยจอไม่ต้องแก้
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-900 space-y-1">
