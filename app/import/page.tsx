@@ -9,7 +9,8 @@
 // แล้วตอบคำถามที่ตัดสินใจยากแทน: ต้นทุนถึงหน้าร้านเท่าไหร่ · ควรตั้งขายเท่าไหร่ ·
 // ของเดิมในคลังเหลือเท่าไหร่ · ขายได้วันละกี่ชิ้น
 import { useCallback, useEffect, useState } from 'react'
-import { costOf, DEFAULT_SETTINGS, type ImportItem, type ImportSettings } from '@/lib/import-cost'
+import { costOf, DEFAULT_SETTINGS, type ImportItem, type ImportSettings,
+  type SettingReject } from '@/lib/import-cost'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
@@ -26,6 +27,8 @@ export default function ImportPage() {
   const [form, setForm] = useState<Partial<ImportItem> | null>(null)
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState('')
+  /* ค่าที่กรอกแล้วระบบไม่รับ — ต้องขึ้นจอ ไม่ใช่กลับไปใช้ค่าเดิมเงียบ ๆ */
+  const [ไม่รับ, setไม่รับ] = useState<SettingReject[]>([])
 
   const load = useCallback(async () => {
     try {
@@ -46,6 +49,9 @@ export default function ImportPage() {
     })
     const d = await r.json().catch(() => ({}))
     if (!r.ok) { setErr(d.error || 'บันทึกไม่สำเร็จ'); return false }
+    /* 🔑 บันทึกสำเร็จ แต่บางช่องอาจไม่ถูกรับ ⇒ หัวข้อความต้องไม่บอกว่าล้มเหลว
+       และต้องไม่เงียบ (คลาส "ระบบทำงานถูก แต่สื่อสารผิด") */
+    setไม่รับ(Array.isArray(d.rejected) ? d.rejected : [])
     await load(); return true
   }
 
@@ -86,7 +92,10 @@ export default function ImportPage() {
           ] as const).map(([k, label, step]) => (
             <label key={k}>
               <span className={lbl}>{label}</span>
+              {/* 🔑 `key` ผูกกับค่าที่เก็บได้จริง — ไม่ผูก ช่องจะยังโชว์เลขที่พิมพ์ไป
+                  ทั้งที่ระบบไม่ได้รับค่านั้น (defaultValue ไม่อัปเดตเองหลังบันทึก) */}
               <input
+                key={`${k}-${settings[k]}`}
                 type="number" step={step} defaultValue={settings[k]} id={`s-${k}`}
                 className={inp}
               />
@@ -105,6 +114,20 @@ export default function ImportPage() {
         >
           บันทึกค่า
         </button>
+        {ไม่รับ.length > 0 && (
+          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-900">
+            <b>บันทึกค่าอื่นแล้ว · แต่มี {ไม่รับ.length} ช่องที่ระบบไม่รับ</b> — ช่องเหล่านี้
+            <b> ยังใช้ค่าเดิม</b> ไม่ใช่ค่าที่พิมพ์ไป
+            <ul className="mt-1 list-disc pl-4">
+              {ไม่รับ.map((x) => (
+                <li key={x.ช่อง}>
+                  <b>{x.ช่อง}</b>: พิมพ์ {String(x.ที่กรอก)} — รับได้ {x.ต่ำสุด}–{x.สูงสุด}
+                  {' · '}ยังใช้ <b>{x.ใช้ค่าเดิม}</b> ({x.เหตุ})
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
           ⚠️ <b>ใช้เรทที่ชิปปิ้งคิดจริง ไม่ใช่เรทธนาคาร</b> — ชิปปิ้งมักคิดสูงกว่าเรทกลาง 0.1-0.3 บาท
           ใส่เรทธนาคารจะได้ตัวเลขสวยกว่าความจริงทุกครั้ง<br />

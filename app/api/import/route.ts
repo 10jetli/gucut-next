@@ -6,7 +6,7 @@
 //   POST {del}             ลบรายการ
 import { NextResponse } from 'next/server'
 import { getStore } from '@netlify/blobs'
-import { DEFAULT_SETTINGS, type ImportItem, type ImportSettings } from '@/lib/import-cost'
+import { DEFAULT_SETTINGS, type ImportItem, type ImportSettings, applySettings } from '@/lib/import-cost'
 import type { ReorderResult } from '@/lib/reorder'
 
 export const dynamic = 'force-dynamic'
@@ -74,21 +74,13 @@ export async function POST(request: Request) {
   const { items, settings } = await readAll()
 
   if (body.settings) {
-    const inp = body.settings as Partial<ImportSettings>
-    const num = (v: unknown, def: number, lo = 0, hi = 1e9) => {
-      const n = Number(v)
-      return Number.isFinite(n) && n >= lo && n <= hi ? n : def
-    }
-    const next: ImportSettings = {
-      // ⚠️ เรทต่ำกว่า 3 หรือสูงกว่า 8 คือกรอกผิดแน่ ๆ (เรทจริงแกว่งราว 4.8-5.4)
-      rate: num(inp.rate, settings.rate, 3, 8),
-      perKg: num(inp.perKg, settings.perKg, 0, 1000),
-      perCbm: num(inp.perCbm, settings.perCbm, 0, 100000),
-      handling: num(inp.handling, settings.handling, 0, 10000),
-      minMargin: num(inp.minMargin, settings.minMargin, 0, 90),
-    }
+    /* 🔑 ช่วงที่รับได้และการตัดสินย้ายไป `lib/import-cost.ts` (`applySettings`) — ที่เดียว
+       เหตุ: เดิมเลขช่วงอยู่ที่นี่ แต่เพดานกำไรถูกใช้ในสูตรราคาแนะนำอีกที่ ⇒ เพี้ยนกันได้เงียบ ๆ
+       และเดิมค่าที่เกินช่วง **ถูกแทนด้วยค่าเดิมโดยไม่บอกใคร** ⇒ ตอนนี้ส่ง `rejected` กลับให้จอบอก */
+    const { next, rejected } = applySettings(
+      body.settings as Partial<Record<keyof ImportSettings, unknown>>, settings)
     await s.setJSON(SETTINGS, next)
-    return NextResponse.json({ ok: true, settings: next })
+    return NextResponse.json({ ok: true, settings: next, rejected })
   }
 
   if (body.del) {
