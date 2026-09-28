@@ -44,6 +44,8 @@ interface Resp {
   recipeDayTH?: string | null
   /** ไปถาม ZORT ล่าสุดเมื่อไหร่ (UTC) · null = ไม่รู้ ⇒ ห้ามเขียนว่าซิงก์หยุด */
   recipeCheckedAt?: string | null
+  /** เหตุที่ยังไม่มีเวลาตรวจ (ท่อ 28 ก.ย. 2569) — ข้อความของท่อ จอไม่แต่งเอง */
+  recipeCheckedAtWhy?: string | null
   rows?: Row[]
 }
 
@@ -300,7 +302,10 @@ export default function CoreMissingSkuPage() {
                   <> · สูตรชุด<b>เปลี่ยนล่าสุด</b> <b>{data.recipeDayTH ? thaiDate(data.recipeDayTH) : thaiDateUtc(data.recipeAt)}</b></>
                 )}
                 {(() => {
-                  const f = recipeFreshness(data.recipeCheckedAt, data.recipeAt ?? null)
+                  /* ส่งเหตุจากท่อไปด้วย ⇒ กิ่ง unknown บอกได้ว่า 'ยังไม่เคยตรวจ' หรือ 'อ่านไม่ได้'
+                     ⚠️ จอนี้ไม่ได้ส่งเกณฑ์ (undefined) ⇒ ต้องคงลำดับอาร์กิวเมนต์ให้ถูก */
+                  const f = recipeFreshness(data.recipeCheckedAt, data.recipeAt ?? null,
+                    Date.now(), undefined, data.recipeCheckedAtWhy)
                   {/* 🔴 เดิมเขียน "ซิงก์จาก ZORT ทุกชั่วโมง" — **เท็จตั้งแต่เช้า 19 ก.ย. 2569**
                       ฝั่งท่อแยกงานสูตรชุดออกเป็น `bundle-recipe-sync` = `0 3 * * *` = **วันละครั้ง**
                       (ยืนยันจาก `?crontable=1` ของจริง ไม่ใช่จากอ่านซอร์ส)

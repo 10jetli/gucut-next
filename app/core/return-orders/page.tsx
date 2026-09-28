@@ -66,6 +66,11 @@ interface Resp {
   ok?: boolean; rows?: Row[]; total?: number | null; live?: boolean
   /** ยอดรวมจากกระจก (ท่อ b2890b4) — ใช้เป็น "มูลค่าทั้งหมด" ได้เฉพาะเมื่อ count = total ของ ZORT */
   mirrorTotals?: { count?: number; amount?: number; countExcludingVoided?: number; amountExcludingVoided?: number; syncedAtUtc?: string | null; syncComplete?: boolean | null } | null
+  /** 🆕 **เหตุที่อ่านยอดกระจกไม่ได้** (ท่อเติม 28 ก.ย. 2569 · ใบ t_mul8dqjv)
+   *  🔴 เดิม `mirrorTotals: null` ยุบสองเรื่องเป็นคำเดียว: **ไม่มีกระจก** กับ **อ่านกระจกไม่ได้รอบนี้**
+   *     ⇒ จอเงียบเหมือนกันทั้งสองแบบ แล้วยอดข้างบนเงียบ ๆ กลายเป็น "เฉพาะที่ดึงมา" โดยไม่บอกว่าทำไม
+   *  ⚠️ ข้อความเป็นของท่อ จอไม่แต่งเอง */
+  mirrorTotalsError?: string | null
   error?: string
   /** ค่าที่ท่อใช้จริง — ใช้เป็นด่านเทียบกับคำค้นที่จอส่ง (ท่อส่งมาให้เพื่อการนี้) */
   applied?: { q?: string | null; source?: 'mirror' | 'zort'; from?: string | null; to?: string | null; days?: number | null }
@@ -312,6 +317,14 @@ export default function ReturnOrdersPage() {
               {ใช้ยอดกระจก
                 ? <> ส่วนยอดเงินข้างบนเป็น<b>ยอดของทั้ง {fmtNum(total!)} ใบ</b> (มาจากกระจก ไม่ใช่จากแถวที่เห็น)</>
                 : <> ยอดเงินข้างบนเป็นของ<b>เฉพาะที่ดึงมา</b> ไม่ใช่ยอดสะสมทั้งหมด</>}
+              {/* 🔑 ท่อบอกเหตุมาว่าทำไมยอดกระจกใช้ไม่ได้รอบนี้ ⇒ เขียนออกจอ **ด้วยคำของท่อ**
+                  ไม่งั้น "ยอดเฉพาะที่ดึงมา" จะอ่านเหมือนเป็นเรื่องปกติ ทั้งที่รอบนี้มีของพัง */}
+              {!ใช้ยอดกระจก && d?.mirrorTotalsError && (
+                <span className="block text-amber-900">
+                  ⚠️ อ่านยอดจากกระจกไม่ได้รอบนี้ — ท่อบอกเหตุว่า: <b>{d.mirrorTotalsError}</b>
+                  {' '}(ไม่ใช่ว่าไม่มีกระจก · รอบหน้าที่อ่านได้ ยอดทั้งหมดจะกลับมาเอง)
+                </span>
+              )}
               <br />
               ⚠️ และยอดนั้นบวกจากช่อง <b>amount</b> ของ ZORT ซึ่ง<b>ยังไม่ได้พิสูจน์ว่าคือยอดคืนของใบ</b>
               {' '}— กดเข้าใบแล้วดูช่องเงินทั้งหมดก่อนเอาไปคิดเงินจริง

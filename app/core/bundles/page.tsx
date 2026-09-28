@@ -80,6 +80,9 @@ interface Resp {
   recipeAt?: string | null
   /** ไปถาม ZORT ล่าสุดเมื่อไหร่ (UTC) · null = ไม่รู้ ⇒ **ห้ามเขียนว่าซิงก์หยุด** */
   recipeCheckedAt?: string | null
+  /** 🆕 เหตุที่ยังไม่มีเวลาตรวจ (ท่อ 28 ก.ย. 2569) — null = มีเวลาแล้ว · ไม่มีคีย์ = ท่อรุ่นเก่า
+   *  ⚠️ ข้อความเป็นของท่อ จอไม่แต่งเอง */
+  recipeCheckedAtWhy?: string | null
   /** 🔴 **ซิงก์ตัวเลขสต็อกชุด (คงเหลือ/พร้อมขาย) ครบรอบล่าสุด (UTC)** · null = ไม่รู้
    *  ⚠️ **คนละนาฬิกา และตั้งแต่ 19 ก.ย. 2569 คนละงานจริง ๆ แล้ว**
    *     สูตร = `bundle-recipe-sync` (วันละครั้ง) · ตัวเลขสต็อก = `bundle-stock-sync` (ชั่วโมงละครั้ง)
@@ -90,6 +93,8 @@ interface Resp {
    *     🚫 รอบของทั้งคู่มาจากท่อ (`recipeExpectedEveryHours` / `stockExpectedEveryHours`) **ห้ามพิมพ์เอง**
    *     เอามาปนกันคือสิ่งที่ฝั่งท่อกำชับห้าม (ดู lib/recipe-fresh.ts) */
   stockSyncedAt?: string | null
+  /** 🆕 เหตุที่ยังไม่มีเวลาซิงก์สต็อกชุด (ท่อ 28 ก.ย. 2569) */
+  stockSyncedAtWhy?: string | null
   checkedMarketplaces?: string[]
   /** เจ้าที่ยิงแล้วล่ม + เหตุผล · เจ้าที่ยังไม่ได้เชื่อมร้าน + เหตุผล · เวลาที่ถามล่าสุด (UTC)
    *  ⚠️ "ล่ม" กับ "ยังไม่ได้เชื่อม" คนละเรื่อง — อันหลังเจ้าของร้านกดเองได้เลย */
@@ -197,14 +202,17 @@ export default function CoreBundlesPage() {
   /* 🔑 เกณฑ์มาจากท่อ (`recipeStaleAfterHours`) ไม่ใช่เลขฝังในจอ — ฝั่งท่อคิดจาก cron จริง
      ⚠️ ส่งค่าดิบไปตรง ๆ **ห้ามแปลง `?? ค่าอะไร`** เพราะ undefined (ท่อรุ่นเก่า)
         กับ null (ท่ออ่าน cron ไม่ได้) ต้องออกคนละทาง — ดู lib/recipe-fresh.ts */
+  /* 🆕 เหตุที่ยังไม่รู้เวลาตรวจ — ท่อเติมให้ 28 ก.ย. 2569 (`recipeCheckedAtWhy`)
+     ⇒ แยก "ยังไม่เคยตรวจเลย" ออกจาก "อ่านค่าที่จดไว้ไม่ได้" ซึ่งพาไปคนละทางแก้ */
   const fresh = recipeFreshness(data?.recipeCheckedAt, data?.recipeAt ?? data?.collectedAt,
-    Date.now(), data?.recipeStaleAfterHours)
+    Date.now(), data?.recipeStaleAfterHours, data?.recipeCheckedAtWhy)
   const รอบ = ป้ายรอบซิงก์(data?.recipeExpectedEveryHours)
   const รอบสต็อก = ป้ายรอบซิงก์(data?.stockExpectedEveryHours)
   /* 🔴 **นาฬิกาที่สอง** — ความสดของ *ตัวเลข* คงเหลือ/พร้อมขาย (คนละอันกับความสดของ *สูตร*)
      ⚠️ ห้ามส่ง recipeCheckedAt/recipeAt เข้าตัวนี้ (ฝั่งท่อกำชับ · เทสข้อ ⑤ ดักไว้) */
   /* ⚠️ เกณฑ์ของ **สต็อก** ไม่ใช่ของสูตร — ส่งค่าดิบ ห้าม `?? อะไร` (undefined ≠ null) */
-  const stock = stockSyncFreshness(data?.stockSyncedAt, Date.now(), data?.stockStaleAfterHours)
+  const stock = stockSyncFreshness(data?.stockSyncedAt, Date.now(), data?.stockStaleAfterHours,
+    data?.stockSyncedAtWhy)
 
   const rows = data?.rows ?? []
   const shown = offset + rows.length
@@ -349,7 +357,13 @@ export default function CoreBundlesPage() {
               </span>
             )}
             {fresh.state === 'unknown' && (
-              <>⚠️ <b>ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่</b> (ท่อไม่ได้ส่งเวลามา)
+              <>⚠️ <b>ยังไม่รู้ว่าตรวจกับ ZORT ล่าสุดเมื่อไหร่</b>
+                {/* 🔑 เหตุมาจากท่อตรง ๆ **จอไม่แต่งเอง** — สองเหตุนี้พาไปคนละทางแก้:
+                    "ยังไม่เคยตรวจเลย" = รอรอบถัดไป · "อ่านไม่ได้" = ของมีแต่พัง ต้องไปไล่
+                    ⚠️ ท่อรุ่นเก่าไม่ส่งเหตุมา ⇒ ต้องเขียนว่ายังไม่รู้เหตุ ห้ามเดาให้ */}
+                {fresh['เหตุที่ยังไม่รู้']
+                  ? <> — ท่อบอกเหตุว่า: <b>{fresh['เหตุที่ยังไม่รู้']}</b></>
+                  : <> (ท่อไม่ได้ส่งเวลามา และ<b>ยังไม่ได้บอกเหตุ</b>)</>}
                 {' '}— <b>ไม่ได้แปลว่าซิงก์หยุด</b> แค่บอกความสดไม่ได้</>
             )}
             {fresh.changedThai && (

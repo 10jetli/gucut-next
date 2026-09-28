@@ -136,6 +136,29 @@ try {
     ok('คำอ่านอายุ: 120 นาที ⇒ ไม่มีเศษนาที', agoText(120) === '2 ชม.ที่แล้ว', agoText(120))
     ok('คำอ่านอายุ: null ⇒ "ไม่รู้" (ไม่ใช่ 0 นาที)', agoText(null) === 'ไม่รู้', agoText(null))
   }
+
+  /* ══════ 🆕 เหตุที่ยังไม่รู้เวลา — ท่อเติมให้ 28 ก.ย. 2569 (ใบ t_mul8dqjv) ══════
+     🔴 `state: 'unknown'` ยุบสองเหตุเป็นคำเดียว: **ยังไม่เคยตรวจเลย** กับ **อ่านค่าที่จดไว้ไม่ได้**
+        สองอันนี้พาคนไปคนละทางแก้ (รอรอบถัดไป vs ไปไล่ว่าอะไรพัง)
+     🔒 ข้อความเป็นของท่อ **จอไม่แต่งเอง** — เทสยืนยันว่าส่งต่อตรงตัวอักษร */
+  {
+    console.log('\n🆕 เหตุที่ยังไม่รู้เวลา (จากท่อ)')
+    const เหตุ = 'ยังไม่เคยตรวจสูตรกับ ZORT เลย'
+    const a = recipeFreshness(null, null, NOW, 25, เหตุ)
+    ok('สูตร: ไม่มีเวลา ⇒ unknown พร้อมเหตุของท่อตรงตัวอักษร',
+      a.state === 'unknown' && a['เหตุที่ยังไม่รู้'] === เหตุ, JSON.stringify(a))
+    const b = recipeFreshness(null, null, NOW, 25)
+    ok('สูตร: ท่อรุ่นเก่าไม่ส่งเหตุ ⇒ null (ห้ามเดาเหตุให้)',
+      b.state === 'unknown' && b['เหตุที่ยังไม่รู้'] === null, JSON.stringify(b))
+    const c = recipeFreshness('2026-09-14T15:27:07Z', null, NOW, 25, เหตุ)
+    ok('สูตร: มีเวลาแล้ว ⇒ ไม่ใช่ unknown และไม่เอาเหตุมาแปะ',
+      c.state !== 'unknown' && c['เหตุที่ยังไม่รู้'] === undefined, JSON.stringify(c))
+    const เหตุสต็อก = 'อ่านไม่ได้: ตารางกระจกตอบช้า'
+    const d = stockSyncFreshness(null, NOW, 2, เหตุสต็อก)
+    ok('สต็อก: ไม่มีเวลา ⇒ unknown พร้อมเหตุของท่อ',
+      d.state === 'unknown' && d['เหตุที่ยังไม่รู้'] === เหตุสต็อก, JSON.stringify(d))
+    ok('สต็อก: ไม่ส่งเหตุ ⇒ null', stockSyncFreshness(null, NOW, 2)['เหตุที่ยังไม่รู้'] === null)
+  }
 } finally {
   rmSync(out, { recursive: true, force: true })
 }

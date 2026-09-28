@@ -77,6 +77,13 @@ export interface RecipeFreshness {
   ใช้ค่าสำรอง?: boolean
   /** เวลาที่สูตรเปลี่ยนล่าสุด แปลงเป็นเวลาไทยแล้ว · null = ไม่รู้ */
   changedThai: Date | null
+  /** 🆕 **เหตุที่ยังไม่รู้เวลาตรวจ** — มาจากท่อตรง ๆ (`recipeCheckedAtWhy`/`stockSyncedAtWhy`)
+   *  (ท่อเติมให้ 28 ก.ย. 2569 · ใบ t_mul8dqjv "คลาสอ่านไม่ได้ตอบเหมือนของว่าง")
+   *  🔴 ทำไมต้องมี: `state: 'unknown'` ยุบสองเหตุเป็นคำเดียว —
+   *     **"ยังไม่เคยตรวจเลย"** (งานยังไม่เคยวิ่ง) กับ **"อ่านค่าที่จดไว้ไม่ได้"** (ของมีแต่พัง)
+   *     สองอันนี้พาคนไปคนละทางแก้: อันแรกรอรอบถัดไป อันหลังต้องไปไล่ว่าอะไรพัง
+   *  ⚠️ ข้อความเป็นของท่อ **จอไม่แต่งเอง** (กติกาเดียวกับ srcLabels) · null = ท่อไม่ได้ส่งเหตุมา */
+  เหตุที่ยังไม่รู้?: string | null
 }
 
 /** แปลงเวลาจากท่อ (UTC) เป็นเวลาไทย · รับได้ทั้ง "2026-09-14T12:00:00Z" และ "2026-09-14 12:00:00"
@@ -96,10 +103,14 @@ export function recipeFreshness(
   now = Date.now(),
   /** เกณฑ์จากท่อ · `undefined` = ท่อไม่มีคีย์นี้ (รุ่นเก่า) · `null` = ท่อบอกว่าอ่าน cron ไม่ได้ */
   staleAfterHours?: number | null,
+  /** เหตุที่ท่อบอกว่าทำไมยังไม่มีเวลาตรวจ (`recipeCheckedAtWhy`) — ส่งต่อตรง ๆ ห้ามแปล */
+  why?: string | null,
 ): RecipeFreshness {
   const checkedThai = toThai(checkedAtUtc)
   const changedThai = toThai(changedAtUtc)
-  if (!checkedThai) return { state: 'unknown', ageHours: null, checkedThai: null, changedThai }
+  if (!checkedThai) {
+    return { state: 'unknown', ageHours: null, checkedThai: null, changedThai, เหตุที่ยังไม่รู้: why ?? null }
+  }
   /* อายุคิดจากเวลาจริง (UTC ทั้งคู่) — บวก 7 ทั้งสองฝั่งแล้วลบกันได้ผลเท่ากัน แต่เขียนตรง ๆ ชัดกว่า */
   const ageMs = now - (checkedThai.getTime() - 7 * 3600_000)
   const ageHours = Math.round((ageMs / 3600_000) * 10) / 10
@@ -164,6 +175,8 @@ export interface StockFreshness {
   syncedThai: Date | null
   /** true = ตัดสินด้วยค่าสำรองเพราะท่อยังไม่ส่งเกณฑ์ ⇒ จอต้องพูดออกมา */
   ใช้ค่าสำรอง?: boolean
+  /** 🆕 เหตุที่ยังไม่รู้เวลาซิงก์ — จากท่อ (`stockSyncedAtWhy`) · ดูเหตุผลที่ `RecipeFreshness` */
+  เหตุที่ยังไม่รู้?: string | null
 }
 
 export function stockSyncFreshness(
@@ -171,9 +184,13 @@ export function stockSyncFreshness(
   now = Date.now(),
   /** `undefined` = ท่อรุ่นเก่าไม่มีคีย์ · `null` = ท่ออ่าน cron ไม่ได้ ⇒ ไม่รู้รอบ */
   staleAfterHours?: number | null,
+  /** เหตุที่ท่อบอกว่าทำไมยังไม่มีเวลาซิงก์ (`stockSyncedAtWhy`) — ส่งต่อตรง ๆ ห้ามแปล */
+  why?: string | null,
 ): StockFreshness {
   const syncedThai = toThai(syncedAtUtc)
-  if (!syncedThai) return { state: 'unknown', ageMinutes: null, syncedThai: null }
+  if (!syncedThai) {
+    return { state: 'unknown', ageMinutes: null, syncedThai: null, เหตุที่ยังไม่รู้: why ?? null }
+  }
   const ageMinutes = Math.round((now - (syncedThai.getTime() - 7 * 3600_000)) / 60_000)
   /* สามทางเหมือนฝั่งสูตร — ห้ามยุบ (ดูเหตุผลที่ `recipeFreshness`) */
   if (staleAfterHours === null) {
