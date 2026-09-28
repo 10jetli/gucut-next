@@ -9,6 +9,16 @@
  */
 export const สูตร = [
   {
+    /* 🔑 ปลูกคลาส "จอยิงเส้นที่ท่อกลางไม่อนุญาต" — รูปเดียวกับใบ B08 (จอตายเงียบ 21 วัน)
+       ถอดชื่อออกจาก ALLOW ⇒ จอที่ยิงชื่อนั้นจะได้ 403 ทันทีที่เปิดหน้า */
+    ด่าน: 'scripts/tests/web-relay-allow.test.mjs',
+    ไฟล์: 'app/api/web/[...path]/route.ts',
+    เล่า: "ถอด 'feed-health' ออกจาก ALLOW ของท่อกลาง",
+    แก้: (s) => s.replace("'core', 'feed-health', 'reviews-ingest'", "'core', 'reviews-ingest'", 1),
+    ต้องมีในไฟล์: "'core', 'reviews-ingest'",
+    ต้องเอ่ยถึง: 'feed-health',
+  },
+  {
     /* 🔑 ปลูกบั๊ก B08 กลับ: เชื่อคำตอบ 200 ที่ไม่มีตัวนับว่าเป็น "ไม่มีใบคืน"
        ⇒ ยอดคืนทั้งหน้าต่ำกว่าจริงโดยไม่มีอะไรแดง (ของจริงอยู่มา 9 วันบนกระดาน) */
     ด่าน: 'scripts/tests/returns-site-status.test.mjs',
