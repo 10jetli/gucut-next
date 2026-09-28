@@ -11,7 +11,7 @@
  *    ไม่ได้เลียนแบบตรรกะ — บทเรียนจาก lib/category-net.ts
  */
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, rmSync, writeFileSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
 const out = join(process.cwd(), 'scripts', 'tests', '.out-order-money')
@@ -19,11 +19,18 @@ rmSync(out, { recursive: true, force: true })
 mkdirSync(out, { recursive: true })
 let fail = 0
 try {
-  execFileSync('npx', ['tsc', 'lib/order-money.ts', '--outDir', out,
+  /* 🔴 28 ก.ย. 2569: `order-money.ts` เลิกมีตัวแปลงเลขของตัวเอง แล้วหันไปใช้ของกลางใน `format.ts`
+     ⇒ ต้องแปลง format.ts มาด้วย และต้องเติม `.js` ให้เส้นทางที่ tsc พิมพ์ออกมาแบบไม่มีนามสกุล
+     (เทสตัวนี้ฟ้องทันทีที่ผมรวมสำเนา — ถ้าไม่มีเทส ตัวนี้จะพังเฉพาะตอนรันจริง) */
+  execFileSync('npx', ['tsc', 'lib/order-money.ts', 'lib/format.ts', '--outDir', out,
     '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
     '--lib', 'es2020', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
+  for (const f of readdirSync(out).filter((x) => x.endsWith('.js'))) {
+    const ที่ = join(out, f)
+    writeFileSync(ที่, readFileSync(ที่, 'utf8').replace(/(from\s+['"]\.\/[^'"]+)(['"])/g, '$1.js$2'))
+  }
   const { reconcileOrder } = await import(join(out, 'order-money.js'))
 
   const ok = (name, cond, extra = '') => {

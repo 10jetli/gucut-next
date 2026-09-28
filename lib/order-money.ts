@@ -18,6 +18,7 @@
  *    qty 3 · discount 3.6 ต่อชิ้น · amount 169.2 | หัวใบ 169.2 · bill_discount 12 · ship_amount 12
  *    ⇒ เป็นใบเดียวที่เจอว่า **ทุกตัวแปรไม่เป็นศูนย์** ⇒ ใบที่ตัวแปรเป็น 0 พิสูจน์ได้แค่ว่า "ไม่พัง"
  */
+import { เลขจากท่อ } from './format'
 
 export interface OrderMoneyLine {
   /** ยอดสุทธิของบรรทัด (หักส่วนลดแล้ว) */
@@ -64,7 +65,8 @@ export interface OrderMoney {
 }
 
 const round2 = (n: number) => Math.round(n * 100) / 100
-const num = (v: unknown): number => (Number.isFinite(Number(v)) ? Number(v) : 0)
+/* ตัวแปลงเลขย้ายไปอยู่ที่เดียวใน lib/format.ts แล้ว (28 ก.ย. 2569 — เดิมมี 3 สำเนา) */
+const num = เลขจากท่อ
 
 /** ตัวเลขที่ใช้ได้จริงไหม — แยก "ไม่มีช่อง" ออกจาก "มีช่องแต่เป็น null/อ่านไม่ออก" */
 function known(v: number | null | undefined): v is number {

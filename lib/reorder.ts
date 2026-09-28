@@ -2,7 +2,7 @@
 //
 // ยอดขายมาจาก ZORT ซึ่งรวมออเดอร์ Shopee · Lazada · TikTok · หน้าร้าน ไว้ที่เดียวแล้ว
 // ดึงที่นี่ที่เดียวจึงได้ครบทุกช่องทางตามที่เจ้าของร้านต้องการ
-import { วันไทยจากMs, ช่วงวันย้อนหลัง } from './format'
+import { วันไทยจากMs, ช่วงวันย้อนหลัง, เลขจากท่อ } from './format'
 import { zortFetch } from './zort'
 import { abcClass, forecast, seasonalIndex } from './forecast'
 
@@ -61,7 +61,9 @@ export interface ReorderResult {
   skus: SkuStat[]
 }
 
-const num = (v: unknown) => (typeof v === 'number' ? v : Number(v) || 0)
+/* ตัวแปลงเลขอยู่ที่เดียวใน lib/format.ts แล้ว (28 ก.ย. 2569 — เดิมมี 3 สำเนา ซึ่งรูป `|| 0`
+   ปล่อย Infinity ออกไปบวกในยอดเงิน ต่างจากสำเนาที่เช็ค isFinite) */
+const num = เลขจากท่อ
 const str = (v: unknown) => (typeof v === 'string' ? v : '')
 /* 🔴 **แก้ 20 ก.ย. 2569** — ของเดิม `d.toISOString().slice(0, 10)` ให้ **วัน UTC**
    แต่ค่านี้ถูกส่งเป็น `orderdateafter/orderdatebefore` เข้า ZORT ซึ่งเก็บ **เวลาไทย**
