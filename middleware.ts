@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { ค่าหัวที่ปลอดภัย } from '@/lib/หัวยุค'
 import { authToken, sameToken } from '@/lib/auth-token'
 import { isStaffToken, roleOf, verifyStaffToken } from '@/lib/staff-token'
+import { allowedBy } from '@/lib/route-allow'
 
 // ป้องกันทั้งเว็บด้วยรหัสผ่าน (ตั้งค่าใน env)
 // - SITE_PASSWORD  = แอดมิน เข้าได้ทุกหน้า
@@ -62,9 +63,9 @@ const ACCOUNT_ALLOWED_PREFIXES = [
   '/api/auth',                         // ออกจากระบบได้
 ]
 
-function allowedBy(list: string[], pathname: string) {
-  return list.some((p) => pathname === p || pathname.startsWith(p))
-}
+/* 🔑 ตัวเทียบอยู่ที่ lib/route-allow.ts — **เทสเรียกตัวจริงตัวเดียวกันนี้**
+   (เดิมตัวเทียบอยู่ในไฟล์นี้ ⇒ scripts/tests/roles.test.mjs ต้องคัดลอกตรรกะไปเอง
+    ⇒ แก้ที่นี่แล้วสำเนาในเทสยังเป็นของเก่า = เขียวทั้งที่ของจริงเปลี่ยน) */
 const staffAllowed = (pathname: string) => allowedBy(STAFF_ALLOWED_PREFIXES, pathname)
 
 const cleanEnv = (v?: string) => (v ?? '').trim()
@@ -111,7 +112,10 @@ export async function middleware(req: NextRequest) {
 async function ตัดสินคำขอ(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl
 
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next()
+  /* 🔑 เทียบแบบ "ตรงทั้งเส้นหรือเป็นลูก" ตัวเดียวกับรายการสิทธิ์อื่น (lib/route-allow.ts)
+     เดิมเป็น startsWith เปล่า ๆ ⇒ เส้นชื่อขึ้นต้นเหมือนกันจะหลุดออกนอกกำแพงล็อกอินเอง
+     วัดวันที่แก้ (28 ก.ย. 2569): เส้นในรีโป 173 เส้น หลุดเพราะเหตุนี้ 0 เส้น ⇒ ปิดก่อนมีคนชน */
+  if (allowedBy(PUBLIC_PATHS, pathname)) return NextResponse.next()
 
   const adminPass = process.env.SITE_PASSWORD
   const staffPass = process.env.STAFF_PASSWORD

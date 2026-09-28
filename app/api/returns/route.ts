@@ -12,44 +12,19 @@
 //    ไม่ใส่เงื่อนไขนี้ = พนักงานเปิดดูรายการขายทั้งร้านย้อนหลังได้ (เกินหน้าที่จอนี้)
 // ⚠️ x-staff-pin ส่งต่อให้ปลายทางแปลงเป็นชื่อเอง — ห้ามรับ/ส่งชื่อจาก body (ตกลงกับท่อ)
 import { NextRequest, NextResponse } from 'next/server'
+/* 🔑 ตัวตัดสินพารามิเตอร์ย้ายไป lib/returns-gate.ts แล้ว — เพื่อให้เทสยิงตัวจริงได้
+   (28 ก.ย. 2569 · ใบ B08 — จอ /returns ถูกท่อนี้ปฏิเสธมา 21 วันโดยไม่มีด่านไหนฟ้อง) */
+import { ตัดสินคำขอ } from '@/lib/returns-gate'
 
 export const dynamic = 'force-dynamic'
-
-/** พารามิเตอร์หลักที่จอรับคืนใช้ — อย่างอื่น 403 ทั้งหมด */
-const PRIMARY_GET = ['return', 'order', 'returnphoto'] as const
-const PRIMARY_POST = ['return-receive', 'return-grade', 'return-photo', 'return-takeover', 'return-cancel'] as const
-/** พารามิเตอร์ประกอบที่ยอมให้ติดมา (ต่อเมื่อมีพารามิเตอร์หลักถูกต้องแล้ว) */
-const EXTRA_OK = new Set(['q', 'from', 'to', 'limit', 'list', 'i'])
-
-function pickPrimary(u: URL, method: string): string | null {
-  if (u.searchParams.get('list') === 'returns-inbox') return 'list=returns-inbox'
-  if (method === 'GET' && u.searchParams.get('list') === 'orders') {
-    const q = (u.searchParams.get('q') ?? '').trim()
-    /* ค้นเท่านั้น ห้าม browse — คำค้นสั้น/ว่าง = เจอครึ่งร้าน */
-    return q.length >= 3 ? 'list=orders' : null
-  }
-  const pool = method === 'POST' ? PRIMARY_POST : PRIMARY_GET
-  for (const k of pool) if (u.searchParams.get(k)) return k
-  return null
-}
 
 async function forward(req: NextRequest) {
   const key = process.env.GUCUT_WEB_ADMIN_KEY
   if (!key) return NextResponse.json({ error: 'ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY' }, { status: 503 })
 
   const u = new URL(req.url)
-  const primary = pickPrimary(u, req.method)
-  if (!primary) {
-    return NextResponse.json(
-      { error: 'ท่อนี้เปิดเฉพาะเส้นจอรับคืนสินค้า (และค้นใบขายต้องมีคำค้นอย่างน้อย 3 ตัว)' },
-      { status: 403 })
-  }
-  /* พารามิเตอร์แปลกปลอม = ปฏิเสธทั้งคำขอ — กันคนพ่วงเส้นอื่นมากับคำขอที่หน้าตาถูก */
-  for (const k of Array.from(u.searchParams.keys())) {
-    const known = (PRIMARY_GET as readonly string[]).includes(k)
-      || (PRIMARY_POST as readonly string[]).includes(k) || EXTRA_OK.has(k)
-    if (!known) return NextResponse.json({ error: `พารามิเตอร์ไม่รู้จัก: ${k}` }, { status: 403 })
-  }
+  const ผล = ตัดสินคำขอ(u, req.method)
+  if (!ผล.ผ่าน) return NextResponse.json({ error: ผล.เหตุ }, { status: 403 })
 
   /* dev override เดียวกับท่อกลางหลัก — production เมินตัวแปรเสมอ (เหตุผลเต็มใน /api/web) */
   const base = process.env.NODE_ENV === 'production'

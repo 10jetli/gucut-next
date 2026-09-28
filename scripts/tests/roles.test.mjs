@@ -19,12 +19,16 @@ rmSync(out, { recursive: true, force: true })
 mkdirSync(out, { recursive: true })
 let fail = 0
 try {
-  execFileSync('npx', ['tsc', 'lib/staff-token.ts', '--outDir', out,
+  execFileSync('npx', ['tsc', 'lib/staff-token.ts', 'lib/route-allow.ts', '--outDir', out,
     '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
     '--lib', 'es2020,dom', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
   const { signStaffToken, verifyStaffToken, roleOf, isStaffToken } = await import(join(out, 'staff-token.js'))
+  /* 🔑 **ตัวเทียบเส้นทางเรียกตัวจริง** (lib/route-allow.ts) ไม่ใช่สำเนา — แก้ 28 ก.ย. 2569
+     เดิมเทสนี้เขียน `allowedBy` ของตัวเองไว้บรรทัดเดียว ⇒ วันที่ middleware เปลี่ยนกติกา
+     เทสยังตัดสินด้วยกติกาเก่าและ **เขียวอยู่ดี** (สำเนาไม่ใช่ของร่วม) */
+  const { allowedBy } = await import(join(out, 'route-allow.js'))
 
   const ok = (name, cond, extra = '') => {
     if (cond) console.log(`  ✅ ${name}`)
@@ -41,7 +45,6 @@ try {
   }
   const STAFF = listOf('STAFF_ALLOWED_PREFIXES')
   const ACCOUNT = listOf('ACCOUNT_ALLOWED_PREFIXES')
-  const allowedBy = (list, p) => list.some((x) => p === x || p.startsWith(x))
 
   const SECRET = 'ทดสอบ-รหัสแอดมิน-1234'
 
@@ -95,6 +98,24 @@ try {
     ok('พนักงานเข้าหน้าการเงินไม่ได้', !allowedBy(STAFF, '/core/finance'))
     ok('พนักงานยังเข้าหน้าโอนสินค้าได้เหมือนเดิม', allowedBy(STAFF, '/catalog/index.html'))
     ok('พนักงานยังเข้าจอรับคืนได้เหมือนเดิม', allowedBy(STAFF, '/returns/receive'))
+  }
+
+  console.log('⑦ 🔴 ขอบของเส้นทาง — ชื่อที่ "ขึ้นต้นเหมือนกัน" ต้องไม่ได้สิทธิ์ตามไปด้วย')
+  {
+    const PUBLIC = listOf('PUBLIC_PATHS')
+    /* ที่มา: 28 ก.ย. 2569 เพิ่ม /api/returns-summary (ท่อสรุปใบคืน = ของแอดมิน)
+       ตัวเทียบเดิม startsWith เปล่า ๆ ⇒ มันจะกลายเป็นเส้นของพนักงานเองเพราะรายการมี /api/returns
+       ⇒ พนักงานจะเห็นยอดเงินทั้งร้าน + ชื่อ/เบอร์/ที่อยู่ลูกค้า โดยไม่มีใครสั่ง */
+    ok('🔴 /api/returns-summary ไม่ใช่เส้นของพนักงาน', !allowedBy(STAFF, '/api/returns-summary'))
+    ok('/api/returns (ท่อจอรับคืน) ยังเป็นของพนักงานเหมือนเดิม', allowedBy(STAFF, '/api/returns'))
+    ok('/api/returns/received (ลูกของเส้นนั้น) ยังได้เหมือนเดิม', allowedBy(STAFF, '/api/returns/received'))
+    for (const p of ['/catalogue-private', '/api/transfers-all', '/returns/receive-log', '/api/catalogx'])
+      ok(`🔴 ชื่อขึ้นต้นเหมือนแต่คนละเส้น ต้องไม่ได้สิทธิ์: ${p}`, !allowedBy(STAFF, p))
+    ok('🔴 บัญชี: /api/webhook ไม่ใช่ /api/web', !allowedBy(ACCOUNT, '/api/webhook'))
+    ok('บัญชี: /api/web/core ยังได้เหมือนเดิม', allowedBy(ACCOUNT, '/api/web/core'))
+    ok('🔴 นอกกำแพงล็อกอิน: /login-admin ไม่ใช่ /login', !allowedBy(PUBLIC, '/login-admin'))
+    ok('นอกกำแพงล็อกอิน: /login ยังเข้าได้', allowedBy(PUBLIC, '/login'))
+    ok('นอกกำแพงล็อกอิน: /api/auth/login ยังเข้าได้', allowedBy(PUBLIC, '/api/auth/login'))
   }
 } finally {
   rmSync(out, { recursive: true, force: true })

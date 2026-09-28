@@ -8,7 +8,7 @@
 //    ยอดคืนรวมบอกแค่ว่าเจ็บเท่าไหร่ แต่บอกไม่ได้ว่าต้องไปแก้อะไร
 import { useCallback, useEffect, useState } from 'react'
 import { PAY_STATUS, zortWord } from '@/lib/zort-words'
-import type { ReturnsResult } from '@/lib/returns'
+import type { ReturnsResult, SiteStatus, ZortStatus } from '@/lib/returns'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { thaiDate } from '@/lib/format'
@@ -26,7 +26,13 @@ const CH_COLOR: Record<string, string> = {
 }
 
 export default function ReturnsPage() {
-  const [data, setData] = useState<(ReturnsResult & { cached?: boolean; stale?: boolean }) | null>(null)
+  /* ⚠️ `site` เขียนเป็น optional **โดยตั้งใจ** ทั้งที่ ReturnsResult บังคับมี —
+     เพราะของในแคชที่ถูกเขียนก่อน 28 ก.ย. 2569 ไม่มีช่องนี้จริง ๆ
+     ⇒ ให้ tsc บังคับให้จอจัดการกรณี "ไม่รู้" แทนที่จะเชื่อว่ามีเสมอ */
+  const [data, setData] = useState<
+    (Omit<ReturnsResult, 'site' | 'zort'>
+      & { site?: SiteStatus; zort?: ZortStatus; cached?: boolean; stale?: boolean }) | null
+  >(null)
   const [tab, setTab] = useState<'sku' | 'list'>('sku')
   const [days, setDays] = useState(30)
   const [ch, setCh] = useState('')
@@ -63,7 +69,12 @@ export default function ReturnsPage() {
   const load = useCallback(async (d: number, refresh = false) => {
     setBusy(true); setErr('')
     try {
-      const r = await fetch(`/api/returns?days=${d}${refresh ? '&refresh=1' : ''}`)
+      /* 🔴 **เส้นนี้ย้ายจาก `/api/returns` มา `/api/returns-summary` (28 ก.ย. 2569 · ใบ B08)**
+         ของเดิมยิง `/api/returns?days=` แล้วได้ **403 ทุกครั้งตั้งแต่ 7 ก.ย. 2569** เพราะ path นั้น
+         ถูกเขียนทับเป็นท่อ whitelist ของจอรับคืนสินค้า ⇒ จอนี้ตายสนิท 21 วันโดยไม่มีอะไรแดง
+         ⚠️ ห้ามย้ายกลับไป `/api/returns` — ท่อนั้นเปิดให้พนักงาน ส่วนยอดทั้งร้านเป็นของแอดมิน
+            (มีเทสคุมแล้ว: scripts/tests/returns-gate.test.mjs + roles.test.mjs ข้อ ⑦) */
+      const r = await fetch(`/api/returns-summary?days=${d}${refresh ? '&refresh=1' : ''}`)
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'ดึงข้อมูลไม่สำเร็จ')
       setData(j)
@@ -209,8 +220,49 @@ export default function ReturnsPage() {
         <ErrorBox>ดึงข้อมูลใหม่ไม่สำเร็จ — กำลังแสดงตัวเลขที่ดึงไว้ครั้งก่อน</ErrorBox>
       )}
 
+      {/* 🔴 **ยอดข้างล่างรวมใบคืนจากเว็บหน้าร้านหรือยัง — ต้องเขียนบนจอ ไม่ใช่เดา** (ใบ B08)
+          ใบคืนจากเว็บ gucut.com ไม่มีใน ZORT ⇒ ต้องดึงแยกแล้วบวกเข้า
+          ⇒ ถ้าดึงไม่ได้ ยอดจะ **ต่ำกว่าความจริง** ทั้งที่จอดูปกติทุกประการ
+          ⚠️ `site` เป็น undefined = ข้อมูลชุดนี้มาจากแคชรุ่นก่อนวันที่แก้ ⇒ **ยังไม่รู้** ไม่ใช่ครบ */}
+      {data && !data.site && (
+        <ErrorBox title="ยังไม่รู้ว่ายอดนี้รวมใบคืนจากเว็บหน้าร้านหรือยัง">
+          ตัวเลขชุดนี้มาจากแคชรุ่นก่อน 28 ก.ย. 2569 ซึ่งยังไม่ได้บันทึกสถานะการดึงใบคืนจากเว็บ
+          — กด “ดึงใหม่” เพื่อให้ได้ชุดที่บอกได้
+        </ErrorBox>
+      )}
+      {/* 🔴 ขา ZORT ก็ต้องบอกเหมือนกัน — **ถามไม่สำเร็จ ≠ ไม่มีใบคืน**
+          เจอตอนเปิดจอดูด้วยตา: เครื่องที่ไม่มีคีย์ ZORT ⇒ จอขึ้น "0 ใบ · ฿0" หน้าตาปกติสนิท */}
+      {data?.zort && !data.zort.ok && (
+        <ErrorBox title="ยังถาม ZORT ไม่สำเร็จ — ตัวเลขข้างล่างไม่ใช่ยอดจริง">
+          {data.zort.reason} · ใบคืนจาก Shopee/Lazada/TikTok/หน้าร้าน ทั้งหมดมาจาก ZORT
+          ⇒ ตอนนี้จึงยังไม่มีข้อมูลส่วนนั้นเลย (ไม่ใช่ว่าไม่มีใบคืน)
+        </ErrorBox>
+      )}
+      {data?.site && !data.site.ok && (
+        <ErrorBox title="ยอดข้างล่างยังไม่รวมใบคืนจากเว็บหน้าร้าน">
+          {data.site.reason} · ใบคืนที่ลูกค้าแจ้งผ่าน gucut.com จึงไม่ถูกนับในทุกตัวเลขบนหน้านี้
+          (ยอดจริงสูงกว่าที่เห็น)
+        </ErrorBox>
+      )}
+
       {data && (
         <>
+          {data.site?.ok && (
+            <p className="text-xs text-gray-500">
+              รวมใบคืนจากเว็บหน้าร้านแล้ว {data.site.orders} ใบ (ที่เหลือมาจาก ZORT)
+            </p>
+          )}
+          {/* ⚠️ ฝั่งเว็บอ่านบางใบ/บางบรรทัดไม่ได้ = ยอดต่ำกว่าจริง **เท่าที่อ่านไม่ได้**
+              ตัวเลขพวกนี้ท่อส่งมาให้อยู่แล้ว ⇒ ไม่เขียนบนจอ = ทิ้งของที่มีไว้เฉย ๆ */}
+          {data.site?.ok && ((data.site.unreadable ?? 0) > 0
+            || (data.site.qtyUnreadableLines ?? 0) > 0 || (data.site.priceUnreadableLines ?? 0) > 0) && (
+            <ErrorBox title="ใบคืนจากเว็บหน้าร้านบางส่วนอ่านไม่ได้">
+              {(data.site.unreadable ?? 0) > 0 && <>อ่านใบไม่ได้ {data.site.unreadable} ใบ · </>}
+              {(data.site.qtyUnreadableLines ?? 0) > 0 && <>อ่านจำนวนไม่ได้ {data.site.qtyUnreadableLines} บรรทัด · </>}
+              {(data.site.priceUnreadableLines ?? 0) > 0 && <>อ่านราคาไม่ได้ {data.site.priceUnreadableLines} บรรทัด · </>}
+              ยอดและจำนวนที่เห็นจึง <b>ต่ำกว่าความจริง</b> เท่าที่อ่านไม่ได้
+            </ErrorBox>
+          )}
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             <StatCard icon="↩️" label="ใบคืนของ" value={data.total} />
             <StatCard icon="💸" label="มูลค่าที่คืน" value={baht(data.amount)} tone="red" />

@@ -53,6 +53,66 @@ export interface SkuReturn {
   byChannel: Record<string, number>
 }
 
+/** สถานะการอ่านใบคืนจากเว็บหน้าร้าน — **ต้องเดินทางไปถึงจอ**
+ *  🔴 ที่มา (ใบ B08): เดิม `siteReturns()` คืน `[]` ทั้งตอนอ่านไม่ได้และตอนไม่มีใบคืนจริง
+ *     ⇒ ยอดรวมบนจอ "ดูปกติทุกประการ" แต่ **ขาดใบคืนจากเว็บไปทั้งก้อน**
+ *     ⇒ ไม่รู้ต้องบอกว่าไม่รู้ ห้ามกลายเป็นศูนย์ */
+export interface SiteStatus {
+  /** อ่านได้จริงไหม — `false` แปลว่า **ยอดในผลนี้ยังไม่รวมใบคืนจากเว็บ** */
+  ok: boolean
+  /** ทำไมอ่านไม่ได้ (ภาษาที่คนอ่านรู้ว่าต้องไปแก้อะไร) · `null` เมื่ออ่านได้ */
+  reason: string | null
+  /** อ่านได้กี่ใบ (นับจากที่รวมเข้ายอดแล้วจริง) */
+  orders: number
+  /** ใบที่ฝั่งเว็บอ่านไม่ได้ (ท่อส่งตัวนับนี้มาเสมอ) — `null` = ท่อไม่ได้ส่งตัวนับมา */
+  unreadable: number | null
+  /** บรรทัดสินค้าที่อ่านจำนวน/ราคาไม่ได้ ⇒ ยอดเงินและจำนวนต่ำกว่าจริง */
+  qtyUnreadableLines: number | null
+  priceUnreadableLines: number | null
+}
+
+/** สัญญาของฟีดฝั่งเว็บ: **ตัวนับต้องมาเสมอ ต่อให้เป็น 0**
+ *  (ท่อเขียนไว้เองในไฟล์ `netlify/functions/returns-feed.mjs`:
+ *   "ตัวนับระดับฟีด — ส่งออกเสมอ (0 ได้) เพื่อให้จอแยก 'ท่อยังไม่ส่ง' ออกจาก 'ส่งแล้วและเป็นศูนย์'")
+ *
+ *  🔴 **บั๊ก B08 ตัวจริงอยู่ที่ทางออกฉุกเฉินของท่อ** (บรรทัด 33 ของไฟล์นั้น):
+ *     `catch { return json({ list: [] }) }` ⇒ อ่านคลังใบคืนไม่ได้ ⇒ ตอบ **HTTP 200 + list ว่าง**
+ *     ⇒ ฝั่งเราเห็นคำตอบที่ถูกต้องทุกประการ แล้วประกาศว่า "ไม่มีใบคืนจากเว็บ"
+ *     ⇒ ยอดคืนทั้งหน้าต่ำกว่าจริงโดยไม่มีใครรู้
+ *  🔑 **แยกออกได้จากฝั่งเราเอง**: ทางออกฉุกเฉินนั้นส่งมาแต่ช่อง `list` — **ไม่มีตัวนับ**
+ *     ⇒ ไม่มี `unreadable` เป็นตัวเลข = ไม่ใช่คำตอบปกติ ⇒ **ห้ามนับเป็นศูนย์**
+ *     (การแก้ที่ต้นทางต้องทำในรีโปท่อ — ฝั่งนี้ทำได้คือไม่เชื่อคำตอบที่ผิดสัญญา) */
+export function ตัดสินคำตอบฟีด(j: unknown): { list: ReturnOrder[]; status: SiteStatus } {
+  const ว่าง = (reason: string): { list: ReturnOrder[]; status: SiteStatus } => ({
+    list: [],
+    status: { ok: false, reason, orders: 0, unreadable: null, qtyUnreadableLines: null, priceUnreadableLines: null },
+  })
+  const o = (j ?? {}) as Record<string, unknown>
+  if (!Array.isArray(o.list)) return ว่าง('เว็บหน้าร้านตอบ 200 แต่ไม่มีรายการ (ช่อง list ไม่ใช่อาร์เรย์)')
+  if (typeof o.unreadable !== 'number') {
+    return ว่าง('เว็บหน้าร้านตอบ 200 แต่ไม่ส่งตัวนับ (unreadable) มา ⇒ เป็นทางออกฉุกเฉินของท่อ'
+      + ' (อ่านคลังใบคืนของเว็บไม่ได้) ไม่ใช่ว่าไม่มีใบคืน')
+  }
+  const เลข = (k: string) => (typeof o[k] === 'number' ? (o[k] as number) : null)
+  return {
+    list: o.list as ReturnOrder[],
+    status: {
+      ok: true,
+      reason: null,
+      orders: (o.list as ReturnOrder[]).length,
+      unreadable: o.unreadable,
+      qtyUnreadableLines: เลข('qtyUnreadableLines'),
+      priceUnreadableLines: เลข('priceUnreadableLines'),
+    },
+  }
+}
+
+/** สถานะการอ่านใบคืนจาก ZORT — เหตุผลเดียวกับ SiteStatus: **ถามไม่ได้ ≠ ไม่มีใบคืน**
+ *  🔴 เจอตอนเปิดจอดูด้วยตา 28 ก.ย. 2569: เครื่องที่ไม่มีคีย์ ZORT ⇒ ZORT ตอบ JSON ที่ไม่มีช่อง
+ *     `list` ⇒ `pagedList()` คืนอาร์เรย์ว่าง ⇒ จอขึ้น **"ใบคืนของ 0 ใบ · มูลค่า ฿0"**
+ *     ทั้งที่ยังไม่ได้ถามสำเร็จเลยแม้แต่หน้าเดียว (รูปเดียวกับบั๊ก B08 แค่คนละขา) */
+export interface ZortStatus { ok: boolean; reason: string | null; orders: number }
+
 export interface ReturnsResult {
   at: number
   days: number
@@ -62,6 +122,11 @@ export interface ReturnsResult {
   byMonth: Record<string, number>
   skus: SkuReturn[]
   list: ReturnOrder[]
+  /** ⚠️ ผลชุดเก่าในแคช (ก่อน 28 ก.ย. 2569) ไม่มีช่องนี้ ⇒ จอต้องอ่าน `undefined`
+   *     ว่า **"ยังไม่รู้"** ไม่ใช่ "รวมครบแล้ว" */
+  site: SiteStatus
+  /** ⚠️ ผลชุดเก่าในแคชไม่มีช่องนี้ ⇒ จออ่าน `undefined` ว่า "ยังไม่รู้" */
+  zort: ZortStatus
 }
 
 const num = (v: unknown) => (typeof v === 'number' ? v : Number(v) || 0)
@@ -71,12 +136,28 @@ const str = (v: unknown) => (typeof v === 'string' ? v : '')
    ในช่วง 00:00–06:59 เวลาไทย ⇒ **ใบคืนของวันนี้หลุดจากการนับ** */
 const ymd = (d: Date) => วันไทยจากMs(d.getTime())
 
+/** ZORT ตอบหน้าแรกมาแบบนี้ ⇒ ถามสำเร็จหรือยัง (แยก "ไม่มีใบคืน" ออกจาก "ถามไม่ได้")
+ *  ZORT ตอบ JSON เสมอแม้ตอนปฏิเสธ (คีย์ผิด/ไม่มีคีย์) ⇒ ดูที่ **ช่อง `list`** เท่านั้น */
+export function ตัดสินคำตอบZORT(first: unknown): { ok: boolean; reason: string | null } {
+  const o = (first ?? {}) as Record<string, unknown>
+  if (Array.isArray(o.list)) return { ok: true, reason: null }
+  const เล่า = [o.description, o.message, o.error, o.status]
+    .map((x) => (typeof x === 'string' || typeof x === 'number' ? String(x) : ''))
+    .filter(Boolean).join(' · ').slice(0, 160)
+  return {
+    ok: false,
+    reason: `ถาม ZORT ไม่สำเร็จ — ตอบมาแต่ไม่มีรายการ (ช่อง list ไม่ใช่อาร์เรย์)${เล่า ? `: ${เล่า}` : ''}`,
+  }
+}
+
 /**
  * ดึงทีละหน้าแต่ยิงพร้อมกันหลายหน้า
  * ⚠️ ห้ามยิงเรียงทีละหน้า — ใบคืนของมีหลายร้อยใบ Netlify ตัดที่ 26 วินาที
  *    (บทเรียนเดียวกับ lib/reorder.ts ที่เคยโดนตัดกลางคันมาแล้ว)
  */
-async function pagedList(endpoint: string, params: Record<string, string>, maxPages = 40) {
+async function pagedList(
+  endpoint: string, params: Record<string, string>, maxPages = 40,
+): Promise<{ rows: Record<string, unknown>[]; ok: boolean; reason: string | null }> {
   const get = (page: number) =>
     zortFetch(endpoint, { ...params, page: String(page), limit: String(PAGE_SIZE) }) as Promise<{
       list?: Record<string, unknown>[]
@@ -84,8 +165,9 @@ async function pagedList(endpoint: string, params: Record<string, string>, maxPa
     }>
 
   const first = await get(1)
+  const สถานะ = ตัดสินคำตอบZORT(first)
   const out: Record<string, unknown>[] = Array.isArray(first?.list) ? [...first.list] : []
-  if (out.length < PAGE_SIZE) return out
+  if (out.length < PAGE_SIZE) return { rows: out, ...สถานะ }
 
   const total = Number(first?.count) || 0
   const pages = Math.min(maxPages, total ? Math.ceil(total / PAGE_SIZE) : maxPages)
@@ -101,7 +183,7 @@ async function pagedList(endpoint: string, params: Record<string, string>, maxPa
     }
     if (short) break
   }
-  return out
+  return { rows: out, ...สถานะ }
 }
 
 /**
@@ -122,19 +204,25 @@ export function channelOf(raw: string): string {
  * ⚠️ ต้องมี GUCUT_ADMIN_KEY ใน env ถึงจะดึงได้ — ไม่มีก็แค่ไม่รวมเว็บเข้ามา
  *    ห้ามให้ทั้งหน้าพังเพราะเว็บล่มหรือยังไม่ได้ตั้งคีย์ ใบคืนจาก ZORT ยังต้องดูได้
  */
-async function siteReturns(days: number): Promise<ReturnOrder[]> {
+async function siteReturns(days: number): Promise<{ list: ReturnOrder[]; status: SiteStatus }> {
+  const ว่าง = (reason: string): { list: ReturnOrder[]; status: SiteStatus } => ({
+    list: [],
+    status: { ok: false, reason, orders: 0, unreadable: null, qtyUnreadableLines: null, priceUnreadableLines: null },
+  })
   const key = (process.env.GUCUT_ADMIN_KEY || '').trim()
-  if (!key) return []
+  if (!key) return ว่าง('ยังไม่ได้ตั้ง GUCUT_ADMIN_KEY ที่เซิร์ฟเวอร์ ⇒ ดึงใบคืนจากเว็บไม่ได้')
   try {
     const r = await fetch(`${SITE}/api/returns-feed?days=${days}`, {
       headers: { 'x-admin-key': key },
       signal: AbortSignal.timeout(10000),
     })
-    if (!r.ok) return []
-    const j = (await r.json()) as { list?: ReturnOrder[] }
-    return Array.isArray(j.list) ? j.list : []
-  } catch {
-    return []
+    if (!r.ok) return ว่าง(`เว็บหน้าร้านตอบ HTTP ${r.status} ที่ /api/returns-feed`)
+    /* ตัวตัดสินอยู่ใน `ตัดสินคำตอบฟีด()` ข้างบน — แยกออกมาเพื่อให้เทสยิงได้ทุกรูปคำตอบ
+       (รูปที่แพงที่สุดคือ 200 + list ว่าง ซึ่งเป็นทางออกฉุกเฉินของท่อ ไม่ใช่ "ไม่มีใบคืน") */
+    return ตัดสินคำตอบฟีด(await r.json())
+  } catch (e) {
+    const m = e instanceof Error ? e.message : String(e)
+    return ว่าง(`ต่อเว็บหน้าร้านไม่ได้: ${m}`)
   }
 }
 
@@ -144,7 +232,7 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
   /* 🔴 `days` มาจากผู้เรียก ⇒ อาจเป็น null/'' ได้ · `Number(null)` = 0 ⇒ **"ไม่รู้" จะกลายเป็น "วันนี้วันเดียว"**
      (ฝั่งท่อเจอรูปนี้ในตัวช่วยเดียวกันวันนี้) ⇒ แหล่งกลางคืน `null` เมื่อไม่รู้ ⇒ ตกกลับไปใช้ 30 วันอย่างชัดเจน */
   const ช่วง = ช่วงวันย้อนหลัง(days, today.getTime()) ?? ช่วงวันย้อนหลัง(30, today.getTime())!
-  const [raw, fromSite] = await Promise.all([
+  const [ผลZORT, เว็บ] = await Promise.all([
     pagedList('ReturnOrder/GetReturnOrders', {
       /* 🔑 ใช้แหล่งกลาง `ช่วงวันย้อนหลัง` (lib/format.ts) — มีเทสคุมตั้งแต่ 20 ก.ย. 2569
          เหตุ: ย้อน diff ของคอมมิตที่แก้บั๊กนี้กลับ ⇒ **สาย 75 ขั้นเงียบสนิท** ⇒ เดิมไม่มีตาข่ายเลย
@@ -154,6 +242,8 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
     }),
     siteReturns(days),
   ])
+  const raw = ผลZORT.rows
+  const fromSite = เว็บ.list
 
   const list: ReturnOrder[] = []
   const byChannel: Record<string, { orders: number; amount: number }> = {}
@@ -262,5 +352,7 @@ export async function computeReturns(days = 30): Promise<ReturnsResult> {
     byMonth,
     skus,
     list,
+    site: เว็บ.status,
+    zort: { ok: ผลZORT.ok, reason: ผลZORT.reason, orders: raw.length },
   }
 }
