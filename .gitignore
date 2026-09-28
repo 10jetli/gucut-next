@@ -32,3 +32,6 @@ next-env.d.ts
 push.command
 start.command
 .next-verify/
+/* โฟลเดอร์ build ของโหมด dev ที่ใช้ตรวจจอเป็นครั้งคราว (ตั้งผ่าน NEXT_DIST_DIR)
+   ⚠️ `next dev` จะเติมพาธนี้ลง tsconfig.json ให้เองด้วย — ต้องถอนทุกครั้ง ไม่งั้นติดไปกับ commit */
+.next-dev-*/
