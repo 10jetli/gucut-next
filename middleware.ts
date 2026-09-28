@@ -38,6 +38,11 @@ const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/a
   /* เส้นบอกรุ่นที่วิ่งจริงของจอ — ตัวเฝ้า deploy บน g1 อ่าน (ตรวจ DRIVESYNC_SECRET เองในเส้น)
      🔑 มีเพราะวันนี้พิสูจน์แล้วว่า push สำเร็จ ≠ ขึ้นเว็บ และฝั่งจอไม่มีอะไรให้เทียบเลย */
   '/api/build']
+/* 🔒 **เส้นสาธารณะที่ต้องเทียบ "เต็มเส้น" เท่านั้น** (เพิ่ม 28 ก.ย. 2569 · เงื่อนไข ③ ของฝั่งท่อ)
+   ต่างจาก `PUBLIC_PATHS` ข้างบนซึ่งเปิดลูกทั้งกิ่งด้วย — รายการนี้เปิด **เฉพาะเส้นนั้นเส้นเดียว**
+   เหตุ: เปิดแบบกิ่งคือการเปิดของที่ **ยังไม่มีในอนาคต** ให้ฟรี ⇒ วันที่มีคนสร้าง
+   `/api/build-time/<อะไรก็ได้>` มันจะหลุดออกนอกกำแพงโดยไม่มีใครตัดสินใจ */
+const PUBLIC_EXACT = ['/api/build-time']
 // เส้นทางที่พนักงาน (สิทธิ์โอนสินค้าเท่านั้น) เข้าได้
 /* /returns/receive + /api/returns เพิ่ม 7 ก.ย. 2569 (ร่าง /returns v2 ข้อ 6 — ผ่านเวทีสามเสียง):
    จอรับคืนบนมือถือพนักงาน · ท่อ /api/returns เป็น whitelist เฉพาะเส้นจอนี้ ไม่ใช่ /api/web ทั้งก้อน */
@@ -115,6 +120,7 @@ async function ตัดสินคำขอ(req: NextRequest): Promise<NextRes
   /* 🔑 เทียบแบบ "ตรงทั้งเส้นหรือเป็นลูก" ตัวเดียวกับรายการสิทธิ์อื่น (lib/route-allow.ts)
      เดิมเป็น startsWith เปล่า ๆ ⇒ เส้นชื่อขึ้นต้นเหมือนกันจะหลุดออกนอกกำแพงล็อกอินเอง
      วัดวันที่แก้ (28 ก.ย. 2569): เส้นในรีโป 173 เส้น หลุดเพราะเหตุนี้ 0 เส้น ⇒ ปิดก่อนมีคนชน */
+  if (PUBLIC_EXACT.includes(pathname)) return NextResponse.next()
   if (allowedBy(PUBLIC_PATHS, pathname)) return NextResponse.next()
 
   const adminPass = process.env.SITE_PASSWORD

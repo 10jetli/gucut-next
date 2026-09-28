@@ -9,6 +9,19 @@
  */
 export const สูตร = [
   {
+    /* 🔑 ปลูกการละเมิดข้อตกลงกับฝั่งท่อ: เติมช่องที่สองลงคำตอบสาธารณะ
+       (ข้อตกลง 28 ก.ย. 2569 คือ **ช่องเดียว** — ยิ่งมีช่องน้อย ยิ่งไม่ต้องรีวิวใหม่ตอนมีคนเติม) */
+    ด่าน: 'scripts/tests/build-time-public.test.mjs',
+    ไฟล์: 'app/api/build-time/route.ts',
+    เล่า: 'เติมช่อง commit ลงคำตอบสาธารณะที่ตกลงกันว่ามีช่องเดียว',
+    แก้: (s) => s.replace(
+      'return NextResponse.json({ buildAtUtc: process.env.BUILD_AT || null })',
+      'return NextResponse.json({ buildAtUtc: process.env.BUILD_AT || null, commit: process.env.BUILD_COMMIT || null })',
+      1),
+    ต้องมีในไฟล์: 'commit: process.env.BUILD_COMMIT',
+    ต้องเอ่ยถึง: 'คีย์เดียว',
+  },
+  {
     /* 🔑 ปลูกคลาส "จอยิงเส้นที่ท่อกลางไม่อนุญาต" — รูปเดียวกับใบ B08 (จอตายเงียบ 21 วัน)
        ถอดชื่อออกจาก ALLOW ⇒ จอที่ยิงชื่อนั้นจะได้ 403 ทันทีที่เปิดหน้า */
     ด่าน: 'scripts/tests/web-relay-allow.test.mjs',
