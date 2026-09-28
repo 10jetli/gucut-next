@@ -22,6 +22,10 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { productMenuItems } from '@/lib/product-menu'
 import SkuCodes from '@/components/zort/SkuCodes'
 import StockCard from '@/components/zort/StockCard'
+import StockSource from '@/components/ui/StockSource'
+import ClampedNote from '@/components/ui/ClampedNote'
+import type { คำตอบที่อาจถูกบีบ } from '@/lib/clamped'
+import { type ที่มาเลขสต็อก, type แผนที่ป้ายที่มา } from '@/lib/stock-source'
 import { findOrderId } from '@/lib/open-order'
 import {
   PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu,
@@ -46,6 +50,11 @@ interface Row {
   imagePath?: string | null
   /** ชื่อไฟล์รูปย่อในถังเรา (ย่อจากรูป ZORT แล้ว) — มาก่อนไฟล์ดิบเสมอ */
   imageFile?: string | null
+  /** ที่มาของเลขพร้อมขาย (ท่อ f924185 · 28 ก.ย. 2569) — **เพิ่มช่องอย่างเดียว**
+   *  ท่อรุ่นก่อนไม่ส่งสามช่องนี้ ⇒ ชิ้นส่วนที่แสดงต้องเขียนว่า "ท่อรุ่นนี้ยังไม่ส่ง" ไม่ใช่เงียบ */
+  src?: ที่มาเลขสต็อก['src']
+  srcNote?: ที่มาเลขสต็อก['srcNote']
+  'ทะเบียนว่า'?: ที่มาเลขสต็อก['ทะเบียนว่า']
 }
 /** หนึ่งแถวในสต็อกการ์ด — มาจาก `list=stockcard` (ขาย · ซื้อ · ปรับด้วยมือของเรา)
  *  ⚠️ ไม่มี `จาก` / `ไป` / `คงเหลือ` เพราะกระจกใบโอนเก็บแค่หัวใบ ดูรายละเอียดที่ท้ายการ์ด */
@@ -167,6 +176,13 @@ export default function ProductDetailPage() {
   const [chartErr, setChartErr] = useState('')
   const [chartMode, setChartMode] = useState<'amount' | 'qty'>('amount')
   const [inBundles, setInBundles] = useState<MemberResp | null>(null)
+  /* แผนที่ป้ายของช่อง src — ท่อส่งมาที่เดียวในคำตอบ (ไม่ติดไปทุกแถว) ⇒ เก็บไว้ส่งให้ชิ้นส่วน
+     ⚠️ ท่อรุ่นก่อนไม่ส่ง ⇒ null แล้วชิ้นส่วนจะตกไปใช้ srcNote ของแถว หรือขึ้นค่าดิบ */
+  const [ป้ายที่มา, setป้ายที่มา] = useState<แผนที่ป้ายที่มา | null>(null)
+  /* คำตอบของ list=stock ทั้งก้อน — ใช้อ่านว่าท่อบีบค่าที่เราขอไหม (clamped/applied)
+     ⚠️ จอนี้ขอ limit=20 ซึ่งไม่ควรถูกบีบ ⇒ กล่องจะไม่ขึ้นในกรณีปกติ
+        แต่ถ้าวันหนึ่งท่อลดเพดานลงต่ำกว่านี้ จอจะบอกทันที ไม่ใช่โชว์แถวน้อยลงเงียบ ๆ */
+  const [คำตอบสต็อก, setคำตอบสต็อก] = useState<คำตอบที่อาจถูกบีบ | null>(null)
   const [showAllBundles, setShowAllBundles] = useState(false)
   const imgOf = useSkuImages(640)
 
@@ -183,6 +199,8 @@ export default function ProductDetailPage() {
       const rows: Row[] = Array.isArray(sRes?.rows) ? sRes.rows : []
       // ⚠️ ค้นหาคืนหลายแถว — ต้องหาแถวที่รหัสตรงเป๊ะ ไม่ใช่หยิบแถวแรก
       setRow(rows.find((r) => r.sku === sku) ?? null)
+      setป้ายที่มา(sRes?.srcLabels && typeof sRes.srcLabels === 'object' ? sRes.srcLabels : null)
+      setคำตอบสต็อก(sRes ?? null)
       // ⚠️ ด่านเดิม — เซิร์ฟเวอร์ต้องยืนยันว่าอ่าน member ที่เราส่งไปจริง
       //    ไม่ยืนยัน = ถือว่าไม่รู้ ห้ามแปลว่า "ไม่อยู่ในชุดไหนเลย"
       setInBundles(bRes?.applied?.member === sku ? bRes : null)
@@ -419,6 +437,10 @@ export default function ProductDetailPage() {
                 {/* ⚠️ null = ยังไม่มีในทะเบียน **ห้ามเดาว่าเท่ากับคงเหลือ** */}
                 {row.available == null ? <span className="text-gray-300">-</span> : fmtNum(Number(row.available))}
               </p>
+              {/* 🔑 ที่มาของเลขนี้ — เลขพร้อมขายมาจากภาพถ่ายคลังเงา และบางรหัสทะเบียนทับ ZORT โดยตั้งใจ
+                  ⇒ ไม่มีบรรทัดนี้ คนจะเทียบกับ ZORT แล้วสรุปว่าระบบเพี้ยน (ใบ t_mul363qv) */}
+              <div className="mt-2 text-left"><StockSource row={row} ป้าย={ป้ายที่มา} /></div>
+              <ClampedNote resp={คำตอบสต็อก} ขอ={{ limit: 20, q: sku }} />
             </Card>
             <Card>
               <p className="text-[12px] text-gray-500 text-right">ยอดขายเดือนนี้ (บาท)</p>

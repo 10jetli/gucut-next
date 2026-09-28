@@ -34,6 +34,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import { ageInThaiDays, fmtNum, thaiDateUtc } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
+import StockSource from '@/components/ui/StockSource'
+import { อ่านที่มา, type ที่มาเลขสต็อก, type แผนที่ป้ายที่มา } from '@/lib/stock-source'
 import ErrorBox from '@/components/ui/ErrorBox'
 import PillButton from '@/components/ui/PillButton'
 
@@ -93,7 +95,12 @@ function ตัดสินสภาพแถว(x: {
   return 'ยังไม่รู้'
 }
 /** สภาพในกระจก — `null` = **ยังไม่ได้ตรวจ** (ต่างจาก `มี: false` ที่แปลว่าตรวจแล้วไม่มี) */
+/* ⚠️ ช่องที่มา (src · srcNote · ทะเบียนว่า) ท่อเพิ่มให้ 28 ก.ย. 2569 (f924185) — **เพิ่มช่องอย่างเดียว**
+   ท่อรุ่นก่อนไม่ส่ง ⇒ ชิ้นส่วน StockSource เขียนว่า "ท่อรุ่นนี้ยังไม่ส่งช่องนี้" ห้ามเงียบ
+   เหตุที่ต้องมีบนจอนี้: จอนี้วางเลขจากสองแหล่งคู่กันอยู่แล้ว (สมุดข้าม กับ กระจกสต็อก)
+   และบางรหัสทะเบียนใบอนุญาตทับ ZORT โดยตั้งใจ ⇒ ไม่บอกที่มา คนจะอ่านว่าระบบเพี้ยน */
 type สภาพกระจก = { มี: boolean; available: number | null; name: string; service: boolean; active: boolean }
+  & ที่มาเลขสต็อก
 
 /** ผลเทียบสต็อกกับแพลตฟอร์ม (`?stockcompare=1`) — **มีแต่ Shopee** (ฝั่งท่อยืนยัน 26 ก.ย. 2569)
  *  ⚠️ `diff` ถูกตัดที่ 50 แถวขณะที่ `diffCount` เป็น 100 (`diffTruncated: true`)
@@ -224,6 +231,9 @@ export default function จอสต็อกค้าง() {
   const [แถว, setแถว] = useState<แถวค้าง[]>([])
   const [ทั้งหมด, setทั้งหมด] = useState<number | null>(null)
   const [กระจก, setกระจก] = useState<Record<string, สภาพกระจก>>({})
+  /* แผนที่ป้ายของช่อง src — ท่อส่งมาที่เดียวในคำตอบของ list=stock ⇒ เก็บใบแรกที่เจอไว้ใช้ทุกแถว
+     ⚠️ null = ท่อรุ่นนี้ยังไม่ส่ง ⇒ ชิ้นส่วนจะตกไปใช้ srcNote ของแถว หรือขึ้นค่าดิบ ไม่ใช่เงียบ */
+  const [ป้ายที่มา, setป้ายที่มา] = useState<แผนที่ป้ายที่มา | null>(null)
   const [ชนเพดานหน้า, setชนเพดานหน้า] = useState(false)
   const [กำลังโหลด, setกำลังโหลด] = useState(true)
   const [พัง, setพัง] = useState<string | null>(null)
@@ -322,10 +332,12 @@ export default function จอสต็อกค้าง() {
           try {
             const r = await ยิงมีเวลาตัด(`/api/web/core?list=stock&q=${encodeURIComponent(sku)}&limit=1`)
             const j = await r.json()
+            if (j?.srcLabels && typeof j.srcLabels === 'object') setป้ายที่มา((เดิม) => เดิม ?? j.srcLabels)
             const row = Array.isArray(j?.rows) ? j.rows.find((x: { sku?: string }) => x?.sku === sku) : null
             const สภาพ: สภาพกระจก = row
               ? { มี: true, available: typeof row.available === 'number' ? row.available : null,
-                  name: String(row.name ?? ''), service: !!row.service, active: !!row.active }
+                  name: String(row.name ?? ''), service: !!row.service, active: !!row.active,
+                  ...อ่านที่มา(row as ที่มาเลขสต็อก) }
               : { มี: false, available: null, name: '', service: false, active: false }
             ผล[sku] = สภาพ
             setกระจก((เดิม) => ({ ...เดิม, [sku]: สภาพ }))   // เติมทีละรหัส ⇒ เห็นความคืบหน้าจริง
@@ -881,7 +893,11 @@ export default function จอสต็อกค้าง() {
                       <td className="px-3 py-2 text-right">
                         {!ก ? <span className="text-gray-400">—</span>
                           : !ก.มี ? <span className="text-gray-400">ไม่มีในกระจก</span>
-                            : <b className={(ก.available ?? 0) < 0 ? 'text-red-700' : ''}>{fmtNum(ก.available)}</b>}
+                            : <>
+                                <b className={(ก.available ?? 0) < 0 ? 'text-red-700' : ''}>{fmtNum(ก.available)}</b>
+                                {/* ที่มาของเลขนี้ — แบบสั้น เพราะอยู่ในตารางที่มีหลายสิบแถว */}
+                                <div className="text-right"><StockSource row={ก} ป้าย={ป้ายที่มา} สั้น /></div>
+                              </>}
                       </td>
                       <td className="px-3 py-2 text-right text-gray-500 whitespace-nowrap">
                         {x.planned_qty === null && x.pushed_qty === null && x.verified_qty === null
