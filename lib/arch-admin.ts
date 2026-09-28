@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-28T07:06:32.101Z",
+  "generatedAt": "2026-09-28T07:49:17.271Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
@@ -61,8 +61,8 @@ export const ARCH_ADMIN = {
     ]
   },
   "pages": {
-    "count": 123,
-    "core": 87,
+    "count": 124,
+    "core": 88,
     "coreNames": [
       "/core",
       "/core/accounting-docs",
@@ -85,6 +85,7 @@ export const ARCH_ADMIN = {
       "/core/customers/detail",
       "/core/customers/new",
       "/core/factory-orders",
+      "/core/feed-health",
       "/core/finance",
       "/core/glasses-log",
       "/core/import",
@@ -177,6 +178,7 @@ export const ARCH_ADMIN = {
       "/core/customers/detail",
       "/core/customers/new",
       "/core/factory-orders",
+      "/core/feed-health",
       "/core/finance",
       "/core/glasses-log",
       "/core/import",
@@ -288,6 +290,7 @@ export const ARCH_ADMIN = {
       "clip-stats",
       "core",
       "coupon",
+      "feed-health",
       "legacy",
       "live",
       "marketing",
@@ -306,7 +309,7 @@ export const ARCH_ADMIN = {
       "video-pick",
       "zort-archive"
     ],
-    "count": 25
+    "count": 26
   },
   "realSend": {
     "screens": [],
