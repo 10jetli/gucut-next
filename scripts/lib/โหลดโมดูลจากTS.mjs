@@ -33,6 +33,23 @@ export async function โหลดโมดูลจากTS(ที่อยู�
   if (/^\s*import\s/m.test(src)) {
     throw new Error(`โหลดโมดูลจากTS: ${ที่อยู่} มี import ⇒ ตัวช่วยนี้ใช้ได้เฉพาะไฟล์ที่ไม่มี import`)
   }
+  /* 🔴 **จดไว้ให้ตัววัดความครอบคลุมตามกลับได้** (29 ก.ย. 2569)
+     ตัวช่วยนี้ import จาก `data:` URL ⇒ **ไม่มีไฟล์ให้ coverage ชี้เลย**
+     ⇒ `scripts/เทสแตะไฟล์ไหนจริง.mjs` (ซึ่งกรองเฉพาะ `file://`) มองไม่เห็นโดยโครงสร้าง
+     ⇒ ไฟล์ที่ถูกทดสอบผ่านทางนี้ถูกรายงานว่า "ไม่พบว่าถูกแตะ" ทั้งที่มีเทสพฤติกรรมจริง
+        (เจอ 2 ไฟล์: lib/dupcheck-verdict.ts · lib/ชื่อซ้ำ.ts — ลบลวงคลาสเดิมจากทางที่สาม)
+     🔑 แก้ที่โครงสร้าง: **ให้ตัวโหลดประกาศเองว่ามันโหลดซอร์สไหน** เหมือนที่ shim ของ npx ทำ
+        ไม่ใช่ให้ตัววัดเดาจากชื่อไฟล์ในเทส ⇒ เงียบไม่ได้แปลว่าไม่มี
+     ⚠️ เขียนเฉพาะเมื่อมีคนขอ (ตั้ง env) — ค่าเริ่มต้นคือ **ไม่เขียนอะไรเลย** */
+  if (process.env.GUCUT_TSC_MANIFEST) {
+    try {
+      const { appendFileSync } = await import('node:fs')
+      const { fileURLToPath } = await import('node:url')
+      const ที่จริง = typeof ที่อยู่ === 'string' ? ที่อยู่ : fileURLToPath(ที่อยู่)
+      appendFileSync(process.env.GUCUT_TSC_MANIFEST,
+        JSON.stringify({ ts: ที่จริง, วิธีโหลด: 'data: URL (coverage ตามกลับไม่ได้)' }) + '\n', 'utf8')
+    } catch { /* จดไม่ได้ ห้ามทำให้เทสพัง — ตัวจดต้องไม่ทำให้งานหลักล้ม */ }
+  }
   try {
     return await import('data:text/javascript;base64,' + Buffer.from(src).toString('base64'))
   } catch (e) {
