@@ -7,7 +7,8 @@
     "  ชื่อที่ถูกแก้แล้ว ⇒ **ต้องลบออกจากไฟล์นี้** ไม่งั้นทะเบียนโกหกว่ายังมีหนี้",
     "สร้างด้วย: node scripts/สมอตรงฟรีไหม.mjs --ทะเบียน > scripts/lib/สมออ่อน.json",
     "หมายเหตุ: ช่อง วันที่วัด ของไฟล์นี้ **แก้ด้วยมือจาก 2026-09-29 เป็น 2026-09-30** เพราะรอบที่สร้างมันใช้เวลา UTC (เครื่องรัน UTC · ตอนนั้นเวลาไทย 03:09 ของวันที่ 30) เครื่องมือถูกแก้ให้ใช้เวลาไทยแล้ว ⇒ รอบถัดไปไม่ต้องแก้มือ · จดไว้เพื่อไม่ให้ร่องรอยหาย",
-    "หมายเหตุ: กอง แยกแยะได้ ของไฟล์รุ่นแรกนี้ **ได้จากการอนุมานส่วนต่าง** (ทุกคู่ที่มีสมอ ลบด้วยคู่ที่อยู่ในกองตรงฟรี) ไม่ได้วัดแยกอีกรอบ ทำได้เพราะรอบกวาดจัดทุกคู่ลงกองใดกองหนึ่งครบ และทะเบียนสูตรไม่เปลี่ยนระหว่างนั้น ⇒ รอบถัดไปเครื่องมือจดกองนี้ให้เอง (แก้แล้ว) · ถ้าสงสัย ให้รันตัวกวาดเต็มทับ"
+    "ช่อง คู่ที่รอบกวาดครอบถึง = **รายชื่อคู่ที่รอบกวาดนั้นตรวจถึง** ซึ่งเป็นข้อมูลเข้าของการวัด ⇒ เป็นของที่วัดได้ ไม่ใช่ของที่อนุมาน (CEO สั่ง 30 ก.ย. 2569: ห้ามเก็บกองที่อนุมานลงไฟล์ ให้เก็บของที่วัดได้แล้วคิดตอนอ่าน เพราะของอนุมานที่นอนอยู่ในไฟล์ จะถูกอ่านเป็นของที่วัดในอีกสามวัน) ⇒ ผู้อ่านคิดเอง: อยู่ในรายชื่อนี้และไม่อยู่ในกอง ตรงฟรี ⇒ แยกแยะได้",
+    "ช่อง อาจถึงตัวเขียน/เพราะ/พื้น ถูกคิดใหม่ 30 ก.ย. 2569 ด้วยเกณฑ์ \"อิมพอร์ตความสามารถอะไร\" (แทนเกณฑ์ชื่อฟังก์ชัน ซึ่ง CEO ชี้ว่ามีรูเดียวกับเกณฑ์พาธชั้นล่างลงไป) ทำได้โดยไม่ต้องกวาดด่านซ้ำ เพราะช่องเหล่านี้ขึ้นกับเนื้อไฟล์เท่านั้น ส่วนกอง ตรงฟรี ยังเป็นผลจากรอบกวาดเดิม ไม่ได้แก้"
   ],
   "วันที่วัด": "2026-09-30",
   "ตรงฟรี": [
@@ -16,539 +17,616 @@
       "สมอ": "ไม่เรียก saveRealPeriods เลย",
       "ไฟล์": "app/api/bills/dupcheck/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/dupcheck-route.test.mjs",
       "สมอ": "ส่งคีย์ที่ถอด BLOB: แล้ว",
       "ไฟล์": "app/api/bills/dupcheck/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/dupcheck-route.test.mjs",
       "สมอ": "สรุปได้ = false",
       "ไฟล์": "app/api/bills/dupcheck/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "รหัสผิด ⇒ 401 และไม่เขียน",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "อยู่เดือนถูกแล้ว ⇒ changed = 0",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "เดือน 13 ไม่มีจริง ⇒ 400 และไม่เขียน",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "ย้ายจริง 21 ใบ ไม่ยืนยัน ⇒ 409",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "ย้ายจริงพอดี 20 ใบ ⇒ ผ่านโดยไม่ต้องยืนยัน",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "confirm: true (บูลีนเปล่า) ⇒ ยังตีกลับ 409 และไม่เขียน",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "ถูกตีกลับ 409 ⇒ **ไม่จดประวัติเลย**",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "จดครบทุกใบที่ย้าย พร้อมเดือนเดิม",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "จดครบทุกใบที่ย้าย พร้อมเดือนเดิม",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/fixmonth-route.test.mjs",
       "สมอ": "จับได้ 30 · ย้ายจริง 3 ⇒ ไม่ติดเพดาน",
       "ไฟล์": "app/api/bills/fixmonth/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "GET ไม่มีรหัส ⇒ 401",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "999 ไบต์ ⇒ 400 และไม่เขียน",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "อักขระเส้นทางถูกล้าง",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "อ่านตัวตนไม่ได้ ⇒ **ยังเขียนไฟล์**",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "จดรอบด้วย **ชื่อที่ใช้จริงในถัง**",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "จดรอบไม่สำเร็จ ⇒ การอัป **ยังสำเร็จ**",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "และ **ไม่ลบ**",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "ไม่มีไฟล์ชื่อนั้น ⇒ **404 ไม่ใช่ 200 ok**",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "month=2026-13 (นอกช่วง) ⇒ 400 และไม่เขียน",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/upload-route.test.mjs",
       "สมอ": "ตัวควบคุมลบ: month=2026-01 ⇒ ผ่านและเขียน",
       "ไฟล์": "app/api/bills/upload/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · เปิด POST/PUT/DELETE"
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/check-route-size.mjs",
       "สมอ": "bills/vendor",
       "ไฟล์": "app/api/bills/vendor/route.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/watch-route.test.mjs",
+      "สมอ": "อ่านคลังไฟล์ไม่ได้ก็ลงกองที่สามเหมือนกัน",
+      "ไฟล์": "app/api/bills/watch/route.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/watch-route.test.mjs",
+      "สมอ": "มีเจ้าที่อ่านไม่ได้ ⇒ ok = false",
+      "ไฟล์": "app/api/bills/watch/route.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/watch-route.test.mjs",
+      "สมอ": "เดือนก่อนหน้า = 2026-08",
+      "ไฟล์": "app/api/bills/watch/route.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/watch-route.test.mjs",
+      "สมอ": "ไม่มีดัชนี (null) แต่มีไฟล์จริง ⇒ ยังนับได้",
+      "ไฟล์": "app/api/bills/watch/route.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/watch-route.test.mjs",
+      "สมอ": "นอกช่วง 2026-13",
+      "ไฟล์": "app/api/bills/watch/route.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/watch-route.test.mjs",
+      "สมอ": "ไม่ส่ง month เลย ⇒ ถอยไปเดือนก่อนหน้า",
+      "ไฟล์": "app/api/bills/watch/route.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/เหตุที่ยังไม่รู้.test.mjs",
+      "สมอ": "fallback เป็นข้อความที่จอคิดเอง",
+      "ไฟล์": "app/core/return-orders/page.tsx",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม ExportButton.tsx ซึ่งอิม: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/check-claims.mjs",
+      "สมอ": "คำถามค้าง",
+      "ไฟล์": "app/core/stock/page.tsx",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม ExportButton.tsx ซึ่งอิม: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/billblobs.test.mjs",
       "สมอ": "ใบเดิมคนละชื่อ",
       "ไฟล์": "lib/billblobs.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิมความสามารถ: @netlify/blobs",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
+    },
+    {
+      "ด่าน": "node scripts/tests/billreport.test.mjs",
+      "สมอ": "มีช่องบอกว่าอ่านไม่ได้",
+      "ไฟล์": "lib/billreport.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/billzip.test.mjs",
+      "สมอ": "ชื่อไฟล์ไม่ใช่ตัวตัดสิน",
+      "ไฟล์": "lib/billzip.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/billzip.test.mjs",
+      "สมอ": "ได้ = 1 · ขาด = 1",
+      "ไฟล์": "lib/billzip.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/billzip.test.mjs",
+      "สมอ": "ได้ = 2 (ไม่ใช่ 3)",
+      "ไฟล์": "lib/billzip.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
+    },
+    {
+      "ด่าน": "node scripts/tests/billzip.test.mjs",
+      "สมอ": "เดือนนอกช่วง 13 ⇒ ok:false",
+      "ไฟล์": "lib/billzip.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก ผ่านโมดูลของเราหนึ่งชั้น"
     },
     {
       "ด่าน": "node scripts/tests/export-log.test.mjs",
       "สมอ": "ในบันทึกมีเฉพาะ 5 ช่องที่ประกาศไว้",
       "ไฟล์": "lib/export-log.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิมความสามารถ: @netlify/blobs",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/tests/export-log.test.mjs",
       "สมอ": "ได้ 2 คีย์",
       "ไฟล์": "lib/export-log.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิมความสามารถ: @netlify/blobs",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/tests/export-log.test.mjs",
       "สมอ": "อ่านไม่ได้ ⇒ null",
       "ไฟล์": "lib/export-log.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิมความสามารถ: @netlify/blobs",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/tests/export-log.test.mjs",
       "สมอ": "อ่านวันไม่ออก ⇒ เก็บไว้",
       "ไฟล์": "lib/export-log.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิมความสามารถ: @netlify/blobs",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
+    },
+    {
+      "ด่าน": "node scripts/tests/returns-api.test.mjs",
+      "สมอ": "ห้ามกดซ้ำ",
+      "ไฟล์": "lib/returns-api.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
+    },
+    {
+      "ด่าน": "node scripts/tests/returns-api.test.mjs",
+      "สมอ": "200 + error ⇒ โยน",
+      "ไฟล์": "lib/returns-api.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
+    },
+    {
+      "ด่าน": "node scripts/tests/returns-api.test.mjs",
+      "สมอ": "ให้เวลาเท่ากับรูปที่มี Z",
+      "ไฟล์": "lib/returns-api.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
+    },
+    {
+      "ด่าน": "node scripts/tests/returns-api.test.mjs",
+      "สมอ": "ใน body ไม่มีช่อง \"staff\"",
+      "ไฟล์": "lib/returns-api.ts",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/tests/staff-users.test.mjs",
       "สมอ": "ถูกปิด",
       "ไฟล์": "lib/staff-users.ts",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน"
+      "เพราะ": "อิมความสามารถ: @netlify/blobs",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
+    },
+    {
+      "ด่าน": "node scripts/ตะแกรงของด่านถูกทดสอบไหม.mjs",
+      "สมอ": "zzรูปที่ไม่มีใครทดสอบ",
+      "ไฟล์": "scripts/check-cron-words.mjs",
+      "อาจถึงตัวเขียน": 3,
+      "เพราะ": "อิมความสามารถ: node:fs (เขียนไฟล์)",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/check-plant-formulas.mjs",
       "สมอ": "ปลูกไม่ลง",
       "ไฟล์": "scripts/lib/ทะเบียนด่าน.mjs",
       "อาจถึงตัวเขียน": 3,
-      "เพราะ": "เรียกตัวเขียน · แตะฟิลด์เงิน/จำนวน"
+      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
+      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/tests/returns-route.test.mjs",
       "สมอ": "production ยิงไป gucut.com",
       "ไฟล์": "app/api/returns/route.ts",
       "อาจถึงตัวเขียน": 2,
-      "เพราะ": "เปิด POST/PUT/DELETE"
+      "เพราะ": "เส้นนี้เปิด POST/PUT/DELETE/PATCH",
+      "พื้น": "วิธี HTTP (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/tests/returns-route.test.mjs",
       "สมอ": "ไม่ยิงปลายทาง",
       "ไฟล์": "app/api/returns/route.ts",
       "อาจถึงตัวเขียน": 2,
-      "เพราะ": "เปิด POST/PUT/DELETE"
-    },
-    {
-      "ด่าน": "node scripts/tests/เหตุที่ยังไม่รู้.test.mjs",
-      "สมอ": "fallback เป็นข้อความที่จอคิดเอง",
-      "ไฟล์": "app/core/return-orders/page.tsx",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/check-claims.mjs",
-      "สมอ": "คำถามค้าง",
-      "ไฟล์": "app/core/stock/page.tsx",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
+      "เพราะ": "เส้นนี้เปิด POST/PUT/DELETE/PATCH",
+      "พื้น": "วิธี HTTP (ชื่อไม่ใช่ของเรา)"
     },
     {
       "ด่าน": "node scripts/tests/api-cache.test.mjs",
       "สมอ": "GET ที่ไม่รู้จัก",
       "ไฟล์": "lib/api-cache.ts",
       "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/clamped-note.test.mjs",
-      "สมอ": "เหตุที่ไม่มี = null",
-      "ไฟล์": "lib/clamped.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/forecast-engine.test.mjs",
-      "สมอ": "ตัวที่ทำเงิน 84% เป็น A",
-      "ไฟล์": "lib/forecast.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/import-cost.test.mjs",
-      "สมอ": "ไม่ได้บวกสองทางเข้าด้วยกัน",
-      "ไฟล์": "lib/import-cost.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/neg-stuck.test.mjs",
-      "สมอ": "ห้ามเดาจากขีดกลาง",
-      "ไฟล์": "lib/neg-stuck.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/reorder-engine.test.mjs",
-      "สมอ": "returnsUnavailable",
-      "ไฟล์": "lib/reorder.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "ห้ามกดซ้ำ",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "200 + error ⇒ โยน",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "ให้เวลาเท่ากับรูปที่มี Z",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "ใน body ไม่มีช่อง \"staff\"",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-site-status.test.mjs",
-      "สมอ": "ตัวนับ",
-      "ไฟล์": "lib/returns.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/stock-source.test.mjs",
-      "สมอ": "ไม่เดาว่าเป็น mirror",
-      "ไฟล์": "lib/stock-source.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
-    },
-    {
-      "ด่าน": "node scripts/tests/zort-ready-badge.test.mjs",
-      "สมอ": "ส่วน ② ห้ามเปิดซ้ำ",
-      "ไฟล์": "lib/zort-ready.ts",
-      "อาจถึงตัวเขียน": 1,
-      "เพราะ": "แตะฟิลด์เงิน/จำนวน"
+      "เพราะ": "มีชื่อที่ฟังดูเขียน (setJSON/save*/upsert/บันทึก…)",
+      "พื้น": "⚠️ **ชื่อของเราเอง — เปลี่ยนชื่อแล้วคำตอบเปลี่ยน**"
     },
     {
       "ด่าน": "node scripts/tests/bills-report-route.test.mjs",
       "สมอ": "ไม่ได้ตั้ง env + ไม่ส่งรหัส ⇒ 401",
       "ไฟล์": "app/api/bills/report/route.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bills-report-route.test.mjs",
       "สมอ": "ไม่มีช่องเกินบัญชีขาว",
       "ไฟล์": "app/api/bills/report/route.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bills-status-route.test.mjs",
       "สมอ": "สแกนสม่ำเสมอแต่ไม่มีบิลใหม่ 200 วัน",
       "ไฟล์": "app/api/bills/status/route.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bills-status-route.test.mjs",
       "สมอ": "สถานะ ไม่รู้",
       "ไฟล์": "app/api/bills/status/route.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/watch-route.test.mjs",
-      "สมอ": "อ่านคลังไฟล์ไม่ได้ก็ลงกองที่สามเหมือนกัน",
-      "ไฟล์": "app/api/bills/watch/route.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/watch-route.test.mjs",
-      "สมอ": "มีเจ้าที่อ่านไม่ได้ ⇒ ok = false",
-      "ไฟล์": "app/api/bills/watch/route.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/watch-route.test.mjs",
-      "สมอ": "เดือนก่อนหน้า = 2026-08",
-      "ไฟล์": "app/api/bills/watch/route.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/watch-route.test.mjs",
-      "สมอ": "ไม่มีดัชนี (null) แต่มีไฟล์จริง ⇒ ยังนับได้",
-      "ไฟล์": "app/api/bills/watch/route.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/watch-route.test.mjs",
-      "สมอ": "นอกช่วง 2026-13",
-      "ไฟล์": "app/api/bills/watch/route.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/watch-route.test.mjs",
-      "สมอ": "ไม่ส่ง month เลย ⇒ ถอยไปเดือนก่อนหน้า",
-      "ไฟล์": "app/api/bills/watch/route.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bills-zip-route.test.mjs",
       "สมอ": "มีหัว X-Bills-Missing",
       "ไฟล์": "app/api/bills/zip/route.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bills-zip-route.test.mjs",
       "สมอ": "ไม่ส่ง month ⇒ ส่ง null ต่อไป",
       "ไฟล์": "app/api/bills/zip/route.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/build-time-public.test.mjs",
       "สมอ": "คีย์เดียว",
       "ไฟล์": "app/api/build-time/route.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/auth-token.test.mjs",
       "สมอ": "ว่างเท่ากับว่าง",
       "ไฟล์": "lib/auth-token.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
       "สมอ": "หลุดจากทุกเดือน** ไม่ใช่ ย้ายเดือน",
       "ไฟล์": "lib/bill-month-diff.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
       "สมอ": "แกะรอบไม่ได้ (ไม่ใช่ ไม่เปลี่ยน)",
       "ไฟล์": "lib/bill-month-diff.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
       "สมอ": "ย้ายเดือน",
       "ไฟล์": "lib/bill-month-diff.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
       "สมอ": "ยังสรุปทั้งเจ้าไม่ได้",
       "ไฟล์": "lib/bill-month-diff.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
-      "ด่าน": "node scripts/tests/billreport.test.mjs",
-      "สมอ": "มีช่องบอกว่าอ่านไม่ได้",
-      "ไฟล์": "lib/billreport.ts",
+      "ด่าน": "node scripts/tests/clamped-note.test.mjs",
+      "สมอ": "เหตุที่ไม่มี = null",
+      "ไฟล์": "lib/clamped.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
-      "ด่าน": "node scripts/tests/billzip.test.mjs",
-      "สมอ": "ชื่อไฟล์ไม่ใช่ตัวตัดสิน",
-      "ไฟล์": "lib/billzip.ts",
+      "ด่าน": "node scripts/tests/forecast-engine.test.mjs",
+      "สมอ": "ตัวที่ทำเงิน 84% เป็น A",
+      "ไฟล์": "lib/forecast.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
-      "ด่าน": "node scripts/tests/billzip.test.mjs",
-      "สมอ": "ได้ = 1 · ขาด = 1",
-      "ไฟล์": "lib/billzip.ts",
+      "ด่าน": "node scripts/tests/import-cost.test.mjs",
+      "สมอ": "ไม่ได้บวกสองทางเข้าด้วยกัน",
+      "ไฟล์": "lib/import-cost.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/billzip.test.mjs",
-      "สมอ": "ได้ = 2 (ไม่ใช่ 3)",
-      "ไฟล์": "lib/billzip.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
-    },
-    {
-      "ด่าน": "node scripts/tests/billzip.test.mjs",
-      "สมอ": "เดือนนอกช่วง 13 ⇒ ok:false",
-      "ไฟล์": "lib/billzip.ts",
-      "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/jobtiming-ผลย่อย.test.mjs",
       "สมอ": "ไม่ใช่ NaN/0",
       "ไฟล์": "lib/job-subresult.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
+    },
+    {
+      "ด่าน": "node scripts/tests/neg-stuck.test.mjs",
+      "สมอ": "ห้ามเดาจากขีดกลาง",
+      "ไฟล์": "lib/neg-stuck.ts",
+      "อาจถึงตัวเขียน": 0,
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
+    },
+    {
+      "ด่าน": "node scripts/tests/reorder-engine.test.mjs",
+      "สมอ": "returnsUnavailable",
+      "ไฟล์": "lib/reorder.ts",
+      "อาจถึงตัวเขียน": 0,
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
+    },
+    {
+      "ด่าน": "node scripts/tests/returns-site-status.test.mjs",
+      "สมอ": "ตัวนับ",
+      "ไฟล์": "lib/returns.ts",
+      "อาจถึงตัวเขียน": 0,
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/roles.test.mjs",
       "สมอ": "returns-summary",
       "ไฟล์": "lib/route-allow.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/sale-link.test.mjs",
       "สมอ": "from = ปีแรกที่มีข้อมูล",
       "ไฟล์": "lib/sale-link.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/tests/sale-link.test.mjs",
       "สมอ": "from = วันก่อนหนึ่งวัน",
       "ไฟล์": "lib/sale-link.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
-      "ด่าน": "node scripts/ตะแกรงของด่านถูกทดสอบไหม.mjs",
-      "สมอ": "zzรูปที่ไม่มีใครทดสอบ",
-      "ไฟล์": "scripts/check-cron-words.mjs",
+      "ด่าน": "node scripts/tests/stock-source.test.mjs",
+      "สมอ": "ไม่เดาว่าเป็น mirror",
+      "ไฟล์": "lib/stock-source.ts",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
+    },
+    {
+      "ด่าน": "node scripts/tests/zort-ready-badge.test.mjs",
+      "สมอ": "ส่วน ② ห้ามเปิดซ้ำ",
+      "ไฟล์": "lib/zort-ready.ts",
+      "อาจถึงตัวเขียน": 0,
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     },
     {
       "ด่าน": "node scripts/check-hook-installed.mjs",
       "สมอ": "md5",
       "ไฟล์": "scripts/hooks/pre-push",
       "อาจถึงตัวเขียน": 0,
-      "เพราะ": "ไม่พบสัญญาณตัวเขียนในไฟล์"
+      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
+      "พื้น": "ไม่พบ"
     }
   ],
   "ไม่มีสมอ": [
@@ -557,10 +635,11 @@
       "ไฟล์": "scripts/lib/ตัดคอมเมนต์.mjs"
     }
   ],
-  "แยกแยะได้": [
+  "คู่ที่รอบกวาดครอบถึง": [
     "node scripts/check-applied-used.mjs|app/core/categories/page.tsx",
     "node scripts/check-barcode.mjs|212223",
     "node scripts/check-bill-collector-claims.mjs|adobe: ของจริงเก็บได้ปกติ",
+    "node scripts/check-claims.mjs|คำถามค้าง",
     "node scripts/check-claude-md-numbers.mjs|ของจริง **13**",
     "node scripts/check-compiled-beside-source.mjs|ตัวควบคุมลบ: .js ที่ไม่มีคู่",
     "node scripts/check-cron-table.mjs|zz-งานที่ไม่มีอยู่",
@@ -574,6 +653,7 @@
     "node scripts/check-gate-source.mjs|zzIn",
     "node scripts/check-guard-controls.mjs|check-dev-running.mjs",
     "node scripts/check-honesty.mjs|app/core/categories/page.tsx",
+    "node scripts/check-hook-installed.mjs|md5",
     "node scripts/check-howto-is-a-check.mjs|ไม่ชี้ของที่เปิดหรือยิงได้",
     "node scripts/check-inherited.mjs|coverage",
     "node scripts/check-inherited.mjs|ถูกถอดออกจากขอบเขต",
@@ -590,10 +670,12 @@
     "node scripts/check-node-version.mjs|ต้อง **≥ 99**",
     "node scripts/check-pipe-keys.mjs|zzFieldNotInPipe",
     "node scripts/check-pipe-params.mjs|zznotread",
+    "node scripts/check-plant-formulas.mjs|ปลูกไม่ลง",
     "node scripts/check-public-paths-have-keys.mjs|zz-ไม่มีเส้นนี้",
     "node scripts/check-ready-badge.mjs|quotations/new",
     "node scripts/check-real-send-registry.mjs|customers/new",
     "node scripts/check-real-send-two-sources.mjs|ตัวสแกนตาบอด",
+    "node scripts/check-route-size.mjs|bills/vendor",
     "node scripts/check-screen-vs-registry.mjs|zz-ไม่มีจอนี้",
     "node scripts/check-secret-routes.mjs|/api/ads",
     "node scripts/check-sentinel-leftovers.mjs|stock/page.tsx",
@@ -613,17 +695,89 @@
     "node scripts/check-zort-words.mjs|components/ui/OrderCard.tsx",
     "node scripts/gen-arch.mjs|พื้น",
     "node scripts/gen-arch.mjs|อ่านกลับเป็นค่าไม่ได้",
+    "node scripts/tests/api-cache.test.mjs|GET ที่ไม่รู้จัก",
+    "node scripts/tests/auth-token.test.mjs|ว่างเท่ากับว่าง",
+    "node scripts/tests/bill-month-diff.test.mjs|ยังสรุปทั้งเจ้าไม่ได้",
+    "node scripts/tests/bill-month-diff.test.mjs|ย้ายเดือน",
+    "node scripts/tests/bill-month-diff.test.mjs|หลุดจากทุกเดือน** ไม่ใช่ ย้ายเดือน",
+    "node scripts/tests/bill-month-diff.test.mjs|แกะรอบไม่ได้ (ไม่ใช่ ไม่เปลี่ยน)",
+    "node scripts/tests/billblobs.test.mjs|ใบเดิมคนละชื่อ",
     "node scripts/tests/billreport.test.mjs|จอรวมกับจอรายเจ้านับคนละเดือน",
     "node scripts/tests/billreport.test.mjs|บั๊กเดิม 8 ทั้งที่มี 4",
+    "node scripts/tests/billreport.test.mjs|มีช่องบอกว่าอ่านไม่ได้",
     "node scripts/tests/bills-month-gate.test.mjs|คนขอของอย่างหนึ่งแล้วได้อีกอย่างโดยไม่รู้ตัว",
     "node scripts/tests/bills-month-gate.test.mjs|จ่ายโควตาให้คำขอที่เราปฏิเสธเอง",
     "node scripts/tests/bills-month-gate.test.mjs|ด่านปฏิเสธเกินหน้าที่ แล้วปุ่มโหลด ZIP ตายทุกปุ่ม",
+    "node scripts/tests/bills-report-route.test.mjs|ไม่มีช่องเกินบัญชีขาว",
+    "node scripts/tests/bills-report-route.test.mjs|ไม่ได้ตั้ง env + ไม่ส่งรหัส ⇒ 401",
+    "node scripts/tests/bills-status-route.test.mjs|สถานะ ไม่รู้",
+    "node scripts/tests/bills-status-route.test.mjs|สแกนสม่ำเสมอแต่ไม่มีบิลใหม่ 200 วัน",
+    "node scripts/tests/bills-zip-route.test.mjs|มีหัว X-Bills-Missing",
+    "node scripts/tests/bills-zip-route.test.mjs|ไม่ส่ง month ⇒ ส่ง null ต่อไป",
+    "node scripts/tests/billzip.test.mjs|ชื่อไฟล์ไม่ใช่ตัวตัดสิน",
     "node scripts/tests/billzip.test.mjs|บอกแค่รูปแบบ = คนไล่แก้สิ่งที่ถูกอยู่แล้ว",
     "node scripts/tests/billzip.test.mjs|บั๊กเดิม 8 ทั้งที่มี 4",
+    "node scripts/tests/billzip.test.mjs|เดือนนอกช่วง 13 ⇒ ok:false",
+    "node scripts/tests/billzip.test.mjs|ได้ = 1 · ขาด = 1",
+    "node scripts/tests/billzip.test.mjs|ได้ = 2 (ไม่ใช่ 3)",
+    "node scripts/tests/build-time-public.test.mjs|คีย์เดียว",
+    "node scripts/tests/clamped-note.test.mjs|เหตุที่ไม่มี = null",
     "node scripts/tests/client-ip.test.mjs|ทั้งร้านล็อกอิน",
+    "node scripts/tests/dupcheck-route.test.mjs|สรุปได้ = false",
+    "node scripts/tests/dupcheck-route.test.mjs|ส่งคีย์ที่ถอด BLOB: แล้ว",
+    "node scripts/tests/dupcheck-route.test.mjs|ไม่เรียก saveRealPeriods เลย",
+    "node scripts/tests/export-log.test.mjs|อ่านวันไม่ออก ⇒ เก็บไว้",
+    "node scripts/tests/export-log.test.mjs|อ่านไม่ได้ ⇒ null",
+    "node scripts/tests/export-log.test.mjs|ในบันทึกมีเฉพาะ 5 ช่องที่ประกาศไว้",
+    "node scripts/tests/export-log.test.mjs|ได้ 2 คีย์",
+    "node scripts/tests/fixmonth-route.test.mjs|confirm: true (บูลีนเปล่า) ⇒ ยังตีกลับ 409 และไม่เขียน",
+    "node scripts/tests/fixmonth-route.test.mjs|จดครบทุกใบที่ย้าย พร้อมเดือนเดิม",
+    "node scripts/tests/fixmonth-route.test.mjs|จับได้ 30 · ย้ายจริง 3 ⇒ ไม่ติดเพดาน",
+    "node scripts/tests/fixmonth-route.test.mjs|ถูกตีกลับ 409 ⇒ **ไม่จดประวัติเลย**",
+    "node scripts/tests/fixmonth-route.test.mjs|ย้ายจริง 21 ใบ ไม่ยืนยัน ⇒ 409",
+    "node scripts/tests/fixmonth-route.test.mjs|ย้ายจริงพอดี 20 ใบ ⇒ ผ่านโดยไม่ต้องยืนยัน",
+    "node scripts/tests/fixmonth-route.test.mjs|รหัสผิด ⇒ 401 และไม่เขียน",
+    "node scripts/tests/fixmonth-route.test.mjs|อยู่เดือนถูกแล้ว ⇒ changed = 0",
+    "node scripts/tests/fixmonth-route.test.mjs|เดือน 13 ไม่มีจริง ⇒ 400 และไม่เขียน",
+    "node scripts/tests/forecast-engine.test.mjs|ตัวที่ทำเงิน 84% เป็น A",
+    "node scripts/tests/import-cost.test.mjs|ไม่ได้บวกสองทางเข้าด้วยกัน",
+    "node scripts/tests/jobtiming-ผลย่อย.test.mjs|ไม่ใช่ NaN/0",
+    "node scripts/tests/neg-stuck.test.mjs|ห้ามเดาจากขีดกลาง",
+    "node scripts/tests/reorder-engine.test.mjs|returnsUnavailable",
+    "node scripts/tests/returns-api.test.mjs|200 + error ⇒ โยน",
+    "node scripts/tests/returns-api.test.mjs|ห้ามกดซ้ำ",
+    "node scripts/tests/returns-api.test.mjs|ใน body ไม่มีช่อง \"staff\"",
+    "node scripts/tests/returns-api.test.mjs|ให้เวลาเท่ากับรูปที่มี Z",
     "node scripts/tests/returns-gate.test.mjs|app/returns/page.tsx",
+    "node scripts/tests/returns-route.test.mjs|production ยิงไป gucut.com",
+    "node scripts/tests/returns-route.test.mjs|ไม่ยิงปลายทาง",
+    "node scripts/tests/returns-site-status.test.mjs|ตัวนับ",
+    "node scripts/tests/roles.test.mjs|returns-summary",
+    "node scripts/tests/sale-link.test.mjs|from = ปีแรกที่มีข้อมูล",
+    "node scripts/tests/sale-link.test.mjs|from = วันก่อนหนึ่งวัน",
+    "node scripts/tests/staff-users.test.mjs|ถูกปิด",
+    "node scripts/tests/stock-source.test.mjs|ไม่เดาว่าเป็น mirror",
+    "node scripts/tests/upload-route.test.mjs|999 ไบต์ ⇒ 400 และไม่เขียน",
+    "node scripts/tests/upload-route.test.mjs|GET ไม่มีรหัส ⇒ 401",
+    "node scripts/tests/upload-route.test.mjs|month=2026-13 (นอกช่วง) ⇒ 400 และไม่เขียน",
+    "node scripts/tests/upload-route.test.mjs|จดรอบด้วย **ชื่อที่ใช้จริงในถัง**",
+    "node scripts/tests/upload-route.test.mjs|จดรอบไม่สำเร็จ ⇒ การอัป **ยังสำเร็จ**",
+    "node scripts/tests/upload-route.test.mjs|ตัวควบคุมลบ: month=2026-01 ⇒ ผ่านและเขียน",
+    "node scripts/tests/upload-route.test.mjs|อักขระเส้นทางถูกล้าง",
+    "node scripts/tests/upload-route.test.mjs|อ่านตัวตนไม่ได้ ⇒ **ยังเขียนไฟล์**",
+    "node scripts/tests/upload-route.test.mjs|และ **ไม่ลบ**",
+    "node scripts/tests/upload-route.test.mjs|ไม่มีไฟล์ชื่อนั้น ⇒ **404 ไม่ใช่ 200 ok**",
+    "node scripts/tests/watch-route.test.mjs|นอกช่วง 2026-13",
+    "node scripts/tests/watch-route.test.mjs|มีเจ้าที่อ่านไม่ได้ ⇒ ok = false",
+    "node scripts/tests/watch-route.test.mjs|อ่านคลังไฟล์ไม่ได้ก็ลงกองที่สามเหมือนกัน",
+    "node scripts/tests/watch-route.test.mjs|เดือนก่อนหน้า = 2026-08",
+    "node scripts/tests/watch-route.test.mjs|ไม่มีดัชนี (null) แต่มีไฟล์จริง ⇒ ยังนับได้",
+    "node scripts/tests/watch-route.test.mjs|ไม่ส่ง month เลย ⇒ ถอยไปเดือนก่อนหน้า",
     "node scripts/tests/web-relay-allow.test.mjs|feed-health",
+    "node scripts/tests/zort-ready-badge.test.mjs|ส่วน ② ห้ามเปิดซ้ำ",
     "node scripts/tests/zort-ready-badge.test.mjs|ได้ป้ายของหน้าแรก",
+    "node scripts/tests/เหตุที่ยังไม่รู้.test.mjs|fallback เป็นข้อความที่จอคิดเอง",
+    "node scripts/ตะแกรงของด่านถูกทดสอบไหม.mjs|zzรูปที่ไม่มีใครทดสอบ",
     "node scripts/เส้นที่ไม่มีใครเรียก.mjs|/api/ai-visibility"
   ]
 }
