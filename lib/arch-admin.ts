@@ -1,7 +1,7 @@
 // สร้างอัตโนมัติโดย scripts/gen-arch.mjs ตอน build — **ห้ามแก้ด้วยมือ**
 // แก้ที่นี่จะถูกเขียนทับรอบหน้า และทำให้ผังในหน้า /core/arch โกหกจนกว่าจะมีคนสังเกต
 export const ARCH_ADMIN = {
-  "generatedAt": "2026-09-29T09:34:31.037Z",
+  "generatedAt": "2026-09-29T11:14:12.712Z",
   "site": "admin.gucut.com",
   "project": "gucut-admin",
   "repo": "gucut-next",
@@ -313,9 +313,104 @@ export const ARCH_ADMIN = {
     "count": 26
   },
   "realSend": {
-    "screens": [],
-    "open": 0,
-    "closed": 0
+    "screens": [
+      {
+        "path": "/core/branches/new",
+        "key": "branches/new",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/bundles/new",
+        "key": "bundles/new",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/customers/new",
+        "key": "customers/new",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/import",
+        "key": "import",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/purchases/detail",
+        "key": "purchases/detail",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/purchases/new",
+        "key": "purchases/new",
+        "open": true,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/purchases/returns/new",
+        "key": "purchases/returns/new",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/quotations/new",
+        "key": "quotations/new",
+        "open": true,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/sales/new",
+        "key": "sales/new",
+        "open": true,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/stock/[sku]/edit",
+        "key": "stock/[sku]/edit",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/stock/cost",
+        "key": "stock/cost",
+        "open": false,
+        "openFrom": "ทะเบียน"
+      },
+      {
+        "path": "/core/stock/new",
+        "key": "stock/new",
+        "open": true,
+        "openFrom": "ทะเบียน"
+      }
+    ],
+    "open": 4,
+    "closed": 8,
+    "จอที่ประกาศ": 12,
+    "ทะเบียนเปิด": 4,
+    "คีย์ที่ทะเบียนเปิด": [
+      "purchases/new",
+      "quotations/new",
+      "sales/new",
+      "stock/new"
+    ],
+    "คีย์ที่จอขอ": [
+      "branches/new",
+      "bundles/new",
+      "customers/new",
+      "import",
+      "purchases/detail",
+      "purchases/new",
+      "purchases/returns/new",
+      "quotations/new",
+      "sales/new",
+      "stock/[sku]/edit",
+      "stock/cost",
+      "stock/new"
+    ]
   },
   "integrations": [
     {
