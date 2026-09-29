@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { BILL_VENDORS } from '@/lib/vendors'
 import { loadBillIndexBlobs, listVendorBlobFiles } from '@/lib/billblobs'
+import { เดือนบิลถูกต้อง, เกณฑ์เดือนบิล } from '@/lib/billmonth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -35,8 +36,24 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  /* 🔑 **สามสถานะ ไม่ใช่สอง** (CEO ตัดสิน 30 ก.ย. 2569)
+     · ไม่ส่ง `month` มาเลย  ⇒ ถอยไปเดือนก่อนหน้าได้ — ผู้เรียกไม่ได้อ้างเดือนอะไร
+       และนี่คือทางที่ **ของจริงใช้**: `netlify/functions/bills-watch.mjs` ยิงโดยไม่ส่ง month
+       ⇒ ด่านที่พลาดไปปฏิเสธทางนี้ = ตัวเฝ้าบิลตายทั้งระบบ
+     · ส่งมาแล้วรูปผิด      ⇒ **400** — ผู้เรียกอ้างเดือนหนึ่ง แล้วเราไปตรวจอีกเดือนเงียบ ๆ
+       ⇒ คำตอบอ่านว่า "เดือนที่คุณถามไม่มีบิล" ทั้งที่ไม่ได้ตรวจเดือนนั้นเลย
+          = **คำตอบที่ถูกทุกคำแต่ตอบคำถามอื่น** ซึ่งคนอ่านแยกไม่ออก
+     · อยู่นอกช่วง 01–12     ⇒ **400** — ไม่มีผู้เรียกที่ถูกต้องคนไหนส่งค่านั้น
+       เดิมตอบว่าทุกเจ้าขาดบิลของเดือนที่ไม่มีอยู่จริง ⇒ **คำเตือนเท็จ**
+       และคำเตือนเท็จครั้งที่สองทำให้คนเลิกอ่านคำเตือน
+     ⚠️ `?month=` (มีช่องแต่ว่าง) นับเป็น **ส่งมาแล้วรูปผิด** ⇒ 400
+        เพราะคนพิมพ์ `month=` คือคนที่ตั้งใจจะระบุเดือน ไม่ใช่คนที่ไม่ได้ระบุ
+     📏 กวาดผู้เรียกแล้ว 30 ก.ย. 2569: มีตัวเดียวและไม่ส่ง month ⇒ ด่านนี้ไม่ทำให้ของที่เดินอยู่พัง */
   const q = req.nextUrl.searchParams.get('month')
-  const month = q && /^\d{4}-\d{2}$/.test(q) ? q : prevMonthTH()
+  if (q !== null && !เดือนบิลถูกต้อง(q)) {
+    return NextResponse.json({ error: เกณฑ์เดือนบิล, ส่งมา: q }, { status: 400 })
+  }
+  const month = q ?? prevMonthTH()
   const watched = BILL_VENDORS.filter(v => v.everyMonth)
 
   const missing: { id: string; name: string; note?: string }[] = []

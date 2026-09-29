@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadBillIndexBlobs, saveBillIndexBlobs } from '@/lib/billblobs'
+import { เดือนบิลถูกต้อง, เกณฑ์เดือนบิล } from '@/lib/billmonth'
 
 export const dynamic = 'force-dynamic'
 
@@ -54,9 +55,10 @@ export async function POST(req: NextRequest) {
     if (!required || secret !== required) {
           return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    /* เดือนต้องอยู่ในช่วง 01–12 จริง — `2026-13` เคยผ่านแล้วบิลหายจากทุกจอที่ไล่เดือน 01–12 */
-    if (!vendor || !match || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month || '')) {
-          return NextResponse.json({ error: 'need vendor, match, month (YYYY-MM · เดือน 01–12)' }, { status: 400 })
+    /* เดือนต้องอยู่ในช่วง 01–12 จริง — `2026-13` เคยผ่านแล้วบิลหายจากทุกจอที่ไล่เดือน 01–12
+       🔑 เกณฑ์อยู่ที่ `lib/billmonth.ts` **ที่เดียว** — กติกานี้เคยถูกเขียนซ้ำ 3 ที่และผิดเหมือนกันทั้ง 3 */
+    if (!vendor || !match || !เดือนบิลถูกต้อง(month)) {
+          return NextResponse.json({ error: `need vendor, match, month — ${เกณฑ์เดือนบิล}` }, { status: 400 })
     }
     const idx = await loadBillIndexBlobs(vendor)
     if (!idx) {

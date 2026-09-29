@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { deleteBillBlob, syncBillToBlobs, syncBillByIdentity , loadRealPeriods, saveRealPeriods } from '@/lib/billblobs'
 import { ตัวตนของไฟล์อัป } from '@/lib/bill-ingest'
 import { BILL_VENDORS } from '@/lib/vendors'
+import { เดือนบิลถูกต้อง, เกณฑ์เดือนบิล } from '@/lib/billmonth'
 
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
@@ -52,7 +53,13 @@ export async function POST(req: NextRequest) {
     }
 
     const month = String(form.get('month') ?? '')
-    if (!/^\d{4}-\d{2}$/.test(month)) return json({ error: 'month ต้องเป็นรูปแบบ YYYY-MM' }, 400)
+    /* 🔑 เดือนต้องอยู่ในช่วง 01–12 **จริง** (CEO ตัดสิน 30 ก.ย. 2569)
+       เหตุผลไม่ได้อิงว่าเส้นนี้เขียนข้อมูล — อิงว่า **ไม่มีผู้เรียกที่ถูกต้องคนไหนส่งค่านั้น**
+       ⇒ เดิม `2026-13` ผ่าน แล้วไฟล์เข้าถังจริงชื่อ `2026-13_REAL_…` ซึ่ง **ไม่มีจอไหนไล่เจอ**
+          ⇒ บิลที่มีอยู่ดูเหมือนขาด และตัวเฝ้า (`bills/watch`) จะเตือนว่าขาดด้วย
+       📏 กวาดถังแล้ว 30 ก.ย. 2569: 12 เจ้า · 119 คีย์เดือน · **ไม่มีคีย์นอกช่วงค้างอยู่**
+          (ด่านใหม่กันของใหม่ ไม่ได้แก้อดีต ⇒ ต้องกวาดก่อนจึงรู้ว่ามีอดีตให้แก้ไหม) */
+    if (!เดือนบิลถูกต้อง(month)) return json({ error: เกณฑ์เดือนบิล }, 400)
 
     const filename = safeName(String(form.get('filename') ?? 'invoice.pdf'))
     const file = form.get('file')
