@@ -33,10 +33,20 @@ import { join } from 'node:path'
 export function คอมไพล์เพื่อทดสอบ({ ไฟล์, ปลอม = {}, ที่ออก }) {
   const out = ที่ออก ?? mkdtempSync(join(tmpdir(), `ทดสอบ-${process.pid}-`))
   const tsconfig = join(out, 'tsconfig.json')
+  /* 🔴 **สืบจาก tsconfig ของรีโป ห้ามคิดค่าเอง** (แก้ 29 ก.ย. 2569 หลังเจอของจริง)
+     รุ่นแรกผมตั้ง compilerOptions เองทั้งชุดและ **ลืม `strict: true`** ซึ่งรีโปตั้งไว้
+     ⇒ union ที่แคบด้วยธง (`{ผ่าน:true;...} | {ผ่าน:false;เหตุ}`) แคบไม่ได้
+     ⇒ tsc ตอบ TS2339 ว่าไม่มีช่อง `เหตุ` **ที่ซอร์สจริง** ทั้งที่ `npm run build` ผ่านสบาย
+     🔑 อันตรายสองทิศพร้อมกัน: ได้ error ที่ build ไม่มี · และ **พลาด error ที่ build มี**
+        ⇒ เทสที่คอมไพล์ด้วยกฎคนละชุดกับ build คือเทสที่วัดของคนละตัว
+     ⇒ ใช้ `extends` แล้วทับเฉพาะที่จำเป็นต่อการรันในที่ชั่วคราว */
   writeFileSync(tsconfig, JSON.stringify({
+    extends: join(process.cwd(), 'tsconfig.json'),
     compilerOptions: {
-      target: 'es2022', module: 'es2022', moduleResolution: 'bundler', skipLibCheck: true,
-      esModuleInterop: true, baseUrl: process.cwd(), paths: { '@/*': ['./*'] },
+      /* ทับเท่าที่ต้อง: รันด้วย Node ⇒ ต้องเป็นโมดูลที่ Node เข้าใจ และไม่ต้องมี jsx/plugins ของ Next */
+      module: 'es2022', moduleResolution: 'bundler', target: 'es2022',
+      noEmit: false, jsx: 'react-jsx', plugins: [],
+      baseUrl: process.cwd(), paths: { '@/*': ['./*'] },
       typeRoots: [join(process.cwd(), 'node_modules/@types')], types: ['node'],
       rootDir: process.cwd(), outDir: out,
     },
@@ -62,6 +72,13 @@ export function คอมไพล์เพื่อทดสอบ({ ไฟล�
       const หนี = โมดูล.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')
       s = s.replace(new RegExp(`(['"])${หนี}\\1`, 'g'), JSON.stringify(พาธ))
     }
+    /* 🔑 **พาธย่อที่ "ไม่ได้ปลอม" ต้องชี้ไปไฟล์ที่คอมไพเลอร์พ่นเอง** (เติม 29 ก.ย. 2569)
+       ตัวช่วยรุ่นแรกแทนเฉพาะโมดูลที่สั่งปลอม ⇒ ของจริงที่ปล่อยให้เป็นของจริง
+       ยังเขียนว่า `@/lib/x` ซึ่ง Node แก้ไม่ได้ ⇒ ERR_MODULE_NOT_FOUND
+       🔑 และนี่คือสิ่งที่ทำให้ "ใช้ของจริง ปลอมเฉพาะที่จำเป็น" เป็นไปได้
+          ซึ่งสำคัญ เพราะการปลอมทุกอย่างทำให้เทสกลายเป็นการทดสอบตัวปลอมของตัวเอง */
+    s = s.replace(/(['"])@\/([^'"]+)\1/g, (_m, _q, พาธย่อ) =>
+      JSON.stringify(join(out, พาธย่อ.endsWith('.js') ? พาธย่อ : `${พาธย่อ}.js`)))
     writeFileSync(ที่, s)
   }
 
