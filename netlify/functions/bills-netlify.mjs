@@ -28,6 +28,10 @@
 
 import { notify } from "./lib-notify.mjs";
 import { วัดเวลางาน, อ่านผลจาก } from "./lib-jobtime.mjs";
+/* 🔑 เกณฑ์เดือนบิล — **สำเนาฝั่งนี้** (แชร์กับ lib/billmonth.ts ไม่ได้เชิงโครงสร้าง)
+   ผูกกันด้วยตารางพฤติกรรมร่วม `lib/billmonth-cases.json`
+   และด่าน `scripts/check-month-two-impls.mjs` เทียบพฤติกรรมของทั้งคู่ทุกครั้งที่ build */
+import { เดือนบิลถูกต้อง } from "./lib-billmonth.mjs";
 
 const API = "https://api.netlify.com/api/v1";
 const TEAM = process.env.NETLIFY_TEAM_SLUG || "10jetli";
@@ -75,7 +79,11 @@ async function งานจริง() {
     list.map(async (rec) => {
       const name = fileNameFor(rec);
       const month = String(rec.created_at || "").slice(0, 7);
-      if (!/^\d{4}-\d{2}$/.test(month)) { errs.push(`${name}: วันที่อ่านไม่ออก`); return; }
+      /* ⚠️ เดือนนอกช่วง 01–12 ก็ต้องตก ไม่ใช่แค่รูปไม่ตรง
+         ⇒ เดิมรูปหลวมปล่อย 2026-13 ผ่าน แล้วส่งต่อไปให้ /api/bills/upload
+            ซึ่ง (ตั้งแต่ 30 ก.ย. 2569) ตีกลับ 400 ⇒ ได้ error ที่ชี้ผิดที่
+            คนจะไปไล่หาปัญหาที่เส้นอัป ทั้งที่ต้นเหตุคือวันที่จาก Netlify อ่านไม่ออก */
+      if (!เดือนบิลถูกต้อง(month)) { errs.push(`${name}: วันที่อ่านไม่ออก (${month})`); return; }
       try {
         const pr = await fetch(`${API}/${TEAM}/receipts/${rec.id}`, {
           headers: { authorization: `Bearer ${token}` },
