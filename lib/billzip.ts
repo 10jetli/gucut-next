@@ -1,4 +1,5 @@
 import JSZip from 'jszip'
+import { เดือนบิลถูกต้อง, เกณฑ์เดือนบิล } from './billmonth'
 import { VENDORS, getAccessToken, fetchAttachment, fetchMessageDetail, extractAmounts } from '@/lib/gmail'
 import { emailToPdf } from '@/lib/emailPdf'
 import { loadBillIndexBlobs, listVendorBlobFiles, loadRealPeriods, downloadBlobFile } from '@/lib/billblobs'
@@ -28,8 +29,14 @@ export interface ผลสร้างซอง {
 export async function สร้างซองบิล(vendorId: string | null, month: string | null): Promise<ผลสร้างซอง> {
   const vendor = VENDORS.find(v => v.id === vendorId)
   if (!vendor) return { ok: false, error: `ไม่รู้จักผู้ให้บริการ: ${vendorId}`, ได้: 0, ขาด: 0 }
-  if (!month || !/^\d{4}-\d{2}$/.test(month)) {
-    return { ok: false, error: 'ต้องระบุ month=YYYY-MM', ได้: 0, ขาด: 0 }
+  /* 🔑 เกณฑ์เดือนอยู่ที่ `lib/billmonth.ts` แหล่งเดียว (CEO อนุมัติข้อ 3 · 30 ก.ย. 2569)
+     ⚠️ **ข้อความนี้ไปถึงตาคน** — เส้น `/api/bills/zip` และ `/api/bills/fetchzip`
+        ส่ง `error` นี้ออกไปตรง ๆ แล้วจอ `/bills/<เจ้า>` เอาไปโชว์
+        ⇒ แก้เกณฑ์ที่นี่ = **งานแก้ถ้อยคำบนจอด้วย** ไม่ใช่แค่ตรรกะ (CEO ย้ำข้อนี้)
+        ⇒ คงคำเดิม "ต้องระบุ month=YYYY-MM" ไว้ข้างหน้า แล้วต่อเกณฑ์เต็มจากแหล่งเดียว
+           เพื่อให้คนที่เคยเห็นข้อความเดิมยังอ่านต่อได้ ไม่ใช่เจอคำใหม่ทั้งประโยค */
+  if (!เดือนบิลถูกต้อง(month)) {
+    return { ok: false, error: `ต้องระบุ month=YYYY-MM · ${เกณฑ์เดือนบิล}`, ได้: 0, ขาด: 0 }
   }
 
   const zip = new JSZip()
