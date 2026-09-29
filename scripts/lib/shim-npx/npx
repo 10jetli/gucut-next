@@ -1,0 +1,52 @@
+#!/bin/bash
+# shim ของ npx — เติม --inlineSourceMap ให้ tsc แล้วเก็บแผนที่ที่ **คอมไพเลอร์เขียนเอง**
+# 🔑 ไม่เดาจากชื่อไฟล์ · และ **ต้องอ่านก่อนเทสลบที่ชั่วคราวทิ้ง** ⇒ จึงไม่ใช้ exec
+# ⚠️ ชื่อตัวแปรเป็น ASCII เท่านั้น — ชื่อไทยใน bash ทำให้ค่าเป็นว่างเงียบ ๆ
+if [ "$1" = "tsc" ] && [ -n "$GUCUT_TSC_MANIFEST" ]; then
+  shift
+  "$GUCUT_REAL_NPX" tsc "$@" --inlineSourceMap
+  rc=$?
+  GUCUT_TSC_MANIFEST="$GUCUT_TSC_MANIFEST" python3 - "$@" <<'PY'
+import base64, json, os, re, sys
+m = os.environ['GUCUT_TSC_MANIFEST']; args = sys.argv[1:]
+outdir = None; proj = None
+for i, a in enumerate(args):
+    if a == '--outDir' and i + 1 < len(args): outdir = args[i + 1]
+    if a in ('-p', '--project') and i + 1 < len(args): proj = args[i + 1]
+if proj:
+    try:
+        cfg = json.loads(re.sub(r'(?m)^\s*//.*$', '', open(proj, encoding='utf-8').read()))
+        outdir = cfg.get('compilerOptions', {}).get('outDir') or outdir
+    except Exception as e:
+        print('shim: อ่าน tsconfig ไม่ได้', e, file=sys.stderr)
+rows = []
+if not outdir:
+    # 🔴 ไม่รู้ที่ออก = **วัดไม่ได้** ห้ามเงียบ ไม่งั้นไฟล์นั้นไปนอนในกอง "ไม่มีใครแตะ" ฟรี ๆ
+    rows.append({'measurable': False, 'why': 'ไม่รู้ที่ออกของ tsc', 'args': args[:12]})
+else:
+    outdir = os.path.realpath(outdir)
+    RE = re.compile(r'sourceMappingURL=data:application/json;(?:charset=utf-8;)?base64,([A-Za-z0-9+/=]+)')
+    for root, _d, files in os.walk(outdir):
+        for fn in files:
+            if not fn.endswith('.js'): continue
+            p = os.path.realpath(os.path.join(root, fn))
+            try: s = open(p, encoding='utf-8').read()
+            except Exception: continue
+            g = RE.search(s)
+            ts = None
+            if g:
+                try:
+                    mp = json.loads(base64.b64decode(g.group(1)).decode('utf-8'))
+                    src = (mp.get('sources') or [None])[0]
+                    if src:
+                        ts = os.path.realpath(os.path.join(os.path.dirname(p), mp.get('sourceRoot') or '', src))
+                except Exception:
+                    ts = None
+            # ts = None ⇒ หลักฐานดิบว่า "คอมไพเลอร์ไม่ได้พ่นไฟล์นี้" ไม่ใช่คำตัดสินว่ามันคืออะไร
+            rows.append({'js': p, 'ts': ts})
+with open(m, 'a', encoding='utf-8') as f:
+    for r in rows: f.write(json.dumps(r, ensure_ascii=False) + '\n')
+PY
+  exit $rc
+fi
+exec "$GUCUT_REAL_NPX" "$@"
