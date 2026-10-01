@@ -52,60 +52,6 @@
       "พื้น": "ภายนอก ผ่านโมดูลของเรา 1 ชั้น"
     },
     {
-      "ด่าน": "node scripts/tests/bills-report-route.test.mjs",
-      "สมอ": "ไม่ได้ตั้ง env + ไม่ส่งรหัส ⇒ 401",
-      "ไฟล์": "app/api/bills/report/route.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 2,
-      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 2 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/bills-report-route.test.mjs",
-      "สมอ": "ไม่มีช่องเกินบัญชีขาว",
-      "ไฟล์": "app/api/bills/report/route.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 2,
-      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 2 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/bills-status-route.test.mjs",
-      "สมอ": "สแกนสม่ำเสมอแต่ไม่มีบิลใหม่ 200 วัน",
-      "ไฟล์": "app/api/bills/status/route.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 2,
-      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 2 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/bills-status-route.test.mjs",
-      "สมอ": "สถานะ ไม่รู้",
-      "ไฟล์": "app/api/bills/status/route.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 2,
-      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 2 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/bills-zip-route.test.mjs",
-      "สมอ": "มีหัว X-Bills-Missing",
-      "ไฟล์": "app/api/bills/zip/route.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 2,
-      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 2 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/bills-zip-route.test.mjs",
-      "สมอ": "ไม่ส่ง month ⇒ ส่ง null ต่อไป",
-      "ไฟล์": "app/api/bills/zip/route.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 2,
-      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 2 ชั้น"
-    },
-    {
       "ด่าน": "node scripts/tests/returns-route.test.mjs",
       "สมอ": "production ยิงไป gucut.com",
       "ไฟล์": "app/api/returns/route.ts",
@@ -385,12 +331,6 @@
     "node scripts/tests/bills-month-gate.test.mjs|จ่ายโควตาให้คำขอที่เราปฏิเสธเอง",
     "node scripts/tests/bills-month-gate.test.mjs|จ่ายโควตาให้คำขอที่เราปฏิเสธเอง",
     "node scripts/tests/bills-month-gate.test.mjs|ด่านปฏิเสธเกินหน้าที่ แล้วปุ่มโหลด ZIP ตายทุกปุ่ม",
-    "node scripts/tests/bills-report-route.test.mjs|ไม่มีช่องเกินบัญชีขาว",
-    "node scripts/tests/bills-report-route.test.mjs|ไม่ได้ตั้ง env + ไม่ส่งรหัส ⇒ 401",
-    "node scripts/tests/bills-status-route.test.mjs|สถานะ ไม่รู้",
-    "node scripts/tests/bills-status-route.test.mjs|สแกนสม่ำเสมอแต่ไม่มีบิลใหม่ 200 วัน",
-    "node scripts/tests/bills-zip-route.test.mjs|มีหัว X-Bills-Missing",
-    "node scripts/tests/bills-zip-route.test.mjs|ไม่ส่ง month ⇒ ส่ง null ต่อไป",
     "node scripts/tests/billzip.test.mjs|ชื่อไฟล์กลายเป็นตัวตัดสินเดือน",
     "node scripts/tests/billzip.test.mjs|ตกที่ เดือนนอกช่วง 13 ⇒ ok:false",
     "node scripts/tests/billzip.test.mjs|ตกที่ ได้ = 1 · ขาด = 1",

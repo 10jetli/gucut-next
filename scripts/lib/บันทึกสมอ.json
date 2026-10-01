@@ -74,6 +74,24 @@
         "node scripts/tests/watch-route.test.mjs|เดือนที่มีบิลจริงถูกรายงานว่าขาด",
         "node scripts/tests/watch-route.test.mjs|แดงข้อนี้ = ตัวเฝ้าบิลของจริงตาย"
       ]
+    },
+    {
+      "เวลาไทย": "2026-10-02 05:57",
+      "commit": "6ac7845",
+      "ผ่านตา": 6,
+      "จับได้": {
+        "ตรงฟรี": 0,
+        "ไม่มีสมอ": 0
+      },
+      "ตัดสินไม่ได้": 0,
+      "คีย์ใหม่": [
+        "node scripts/tests/bills-report-route.test.mjs|ตกที่ ไม่มีช่องเกินบัญชีขาว",
+        "node scripts/tests/bills-report-route.test.mjs|ตกที่ ไม่ได้ตั้ง env + ไม่ส่งรหัส ⇒ 401",
+        "node scripts/tests/bills-status-route.test.mjs|ตกที่ สถานะ ไม่รู้",
+        "node scripts/tests/bills-status-route.test.mjs|ตกที่ สแกนสม่ำเสมอแต่ไม่มีบิลใหม่ 200 วัน",
+        "node scripts/tests/bills-zip-route.test.mjs|ตกที่ มีหัว X-Bills-Missing",
+        "node scripts/tests/bills-zip-route.test.mjs|ตกที่ ไม่ส่ง month ⇒ ส่ง null ต่อไป"
+      ]
     }
   ]
 }
