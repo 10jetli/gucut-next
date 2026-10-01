@@ -25,42 +25,6 @@
       "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
     },
     {
-      "ด่าน": "node scripts/tests/export-log.test.mjs",
-      "สมอ": "ในบันทึกมีเฉพาะ 5 ช่องที่ประกาศไว้",
-      "ไฟล์": "lib/export-log.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: @netlify/blobs",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/export-log.test.mjs",
-      "สมอ": "ได้ 2 คีย์",
-      "ไฟล์": "lib/export-log.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: @netlify/blobs",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/export-log.test.mjs",
-      "สมอ": "อ่านไม่ได้ ⇒ null",
-      "ไฟล์": "lib/export-log.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: @netlify/blobs",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/export-log.test.mjs",
-      "สมอ": "อ่านวันไม่ออก ⇒ เก็บไว้",
-      "ไฟล์": "lib/export-log.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: @netlify/blobs",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
       "ด่าน": "node scripts/tests/returns-api.test.mjs",
       "สมอ": "ห้ามกดซ้ำ",
       "ไฟล์": "lib/returns-api.ts",
@@ -808,10 +772,6 @@
     "node scripts/tests/dupcheck-route.test.mjs|สรุปได้ = false",
     "node scripts/tests/dupcheck-route.test.mjs|ส่งคีย์ที่ถอด BLOB: แล้ว",
     "node scripts/tests/dupcheck-route.test.mjs|ไม่เรียก saveRealPeriods เลย",
-    "node scripts/tests/export-log.test.mjs|อ่านวันไม่ออก ⇒ เก็บไว้",
-    "node scripts/tests/export-log.test.mjs|อ่านไม่ได้ ⇒ null",
-    "node scripts/tests/export-log.test.mjs|ในบันทึกมีเฉพาะ 5 ช่องที่ประกาศไว้",
-    "node scripts/tests/export-log.test.mjs|ได้ 2 คีย์",
     "node scripts/tests/fixmonth-route.test.mjs|confirm: true (บูลีนเปล่า) ⇒ ยังตีกลับ 409 และไม่เขียน",
     "node scripts/tests/fixmonth-route.test.mjs|จดครบทุกใบที่ย้าย พร้อมเดือนเดิม",
     "node scripts/tests/fixmonth-route.test.mjs|จดครบทุกใบที่ย้าย พร้อมเดือนเดิม",
