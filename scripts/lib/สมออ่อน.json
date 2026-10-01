@@ -16,78 +16,6 @@
   "กลุ่มทั้งหมด": 88,
   "ตรงฟรี": [
     {
-      "ด่าน": "node scripts/tests/billblobs.test.mjs",
-      "สมอ": "ใบเดิมคนละชื่อ",
-      "ไฟล์": "lib/billblobs.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: @netlify/blobs",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "ห้ามกดซ้ำ",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "200 + error ⇒ โยน",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "ให้เวลาเท่ากับรูปที่มี Z",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-api.test.mjs",
-      "สมอ": "ใน body ไม่มีช่อง \"staff\"",
-      "ไฟล์": "lib/returns-api.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/staff-users.test.mjs",
-      "สมอ": "ถูกปิด",
-      "ไฟล์": "lib/staff-users.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: @netlify/blobs",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/ตะแกรงของด่านถูกทดสอบไหม.mjs",
-      "สมอ": "zzรูปที่ไม่มีใครทดสอบ",
-      "ไฟล์": "scripts/check-cron-words.mjs",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: node:fs (เขียนไฟล์)",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/check-plant-formulas.mjs",
-      "สมอ": "ปลูกไม่ลง",
-      "ไฟล์": "scripts/lib/ทะเบียนด่าน.mjs",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "อิมความสามารถ: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก (ชื่อไม่ใช่ของเรา)"
-    },
-    {
       "ด่าน": "node scripts/tests/dupcheck-route.test.mjs",
       "สมอ": "ไม่เรียก saveRealPeriods เลย",
       "ไฟล์": "app/api/bills/dupcheck/route.ts",
@@ -715,7 +643,6 @@
     "node scripts/check-node-version.mjs|ต้อง **≥ 99**",
     "node scripts/check-pipe-keys.mjs|zzFieldNotInPipe",
     "node scripts/check-pipe-params.mjs|zznotread",
-    "node scripts/check-plant-formulas.mjs|ปลูกไม่ลง",
     "node scripts/check-public-paths-have-keys.mjs|zz-ไม่มีเส้นนี้",
     "node scripts/check-ready-badge.mjs|quotations/new",
     "node scripts/check-real-send-registry.mjs|customers/new",
@@ -746,7 +673,6 @@
     "node scripts/tests/bill-month-diff.test.mjs|ย้ายเดือน",
     "node scripts/tests/bill-month-diff.test.mjs|หลุดจากทุกเดือน** ไม่ใช่ ย้ายเดือน",
     "node scripts/tests/bill-month-diff.test.mjs|แกะรอบไม่ได้ (ไม่ใช่ ไม่เปลี่ยน)",
-    "node scripts/tests/billblobs.test.mjs|ใบเดิมคนละชื่อ",
     "node scripts/tests/billreport.test.mjs|จอรวมกับจอรายเจ้านับคนละเดือน",
     "node scripts/tests/billreport.test.mjs|บั๊กเดิม 8 ทั้งที่มี 4",
     "node scripts/tests/billreport.test.mjs|มีช่องบอกว่าอ่านไม่ได้",
@@ -787,10 +713,6 @@
     "node scripts/tests/jobtiming-ผลย่อย.test.mjs|ไม่ใช่ NaN/0",
     "node scripts/tests/neg-stuck.test.mjs|ห้ามเดาจากขีดกลาง",
     "node scripts/tests/reorder-engine.test.mjs|returnsUnavailable",
-    "node scripts/tests/returns-api.test.mjs|200 + error ⇒ โยน",
-    "node scripts/tests/returns-api.test.mjs|ห้ามกดซ้ำ",
-    "node scripts/tests/returns-api.test.mjs|ใน body ไม่มีช่อง \"staff\"",
-    "node scripts/tests/returns-api.test.mjs|ให้เวลาเท่ากับรูปที่มี Z",
     "node scripts/tests/returns-gate.test.mjs|app/returns/page.tsx",
     "node scripts/tests/returns-route.test.mjs|production ยิงไป gucut.com",
     "node scripts/tests/returns-route.test.mjs|ไม่ยิงปลายทาง",
@@ -798,7 +720,6 @@
     "node scripts/tests/roles.test.mjs|returns-summary",
     "node scripts/tests/sale-link.test.mjs|from = ปีแรกที่มีข้อมูล",
     "node scripts/tests/sale-link.test.mjs|from = วันก่อนหนึ่งวัน",
-    "node scripts/tests/staff-users.test.mjs|ถูกปิด",
     "node scripts/tests/stock-source.test.mjs|ไม่เดาว่าเป็น mirror",
     "node scripts/tests/upload-route.test.mjs|999 ไบต์ ⇒ 400 และไม่เขียน",
     "node scripts/tests/upload-route.test.mjs|GET ไม่มีรหัส ⇒ 401",
@@ -820,7 +741,6 @@
     "node scripts/tests/zort-ready-badge.test.mjs|ส่วน ② ห้ามเปิดซ้ำ",
     "node scripts/tests/zort-ready-badge.test.mjs|ได้ป้ายของหน้าแรก",
     "node scripts/tests/เหตุที่ยังไม่รู้.test.mjs|fallback เป็นข้อความที่จอคิดเอง",
-    "node scripts/ตะแกรงของด่านถูกทดสอบไหม.mjs|zzรูปที่ไม่มีใครทดสอบ",
     "node scripts/เส้นที่ไม่มีใครเรียก.mjs|/api/ai-visibility"
   ]
 }

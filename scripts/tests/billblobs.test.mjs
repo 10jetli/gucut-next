@@ -78,7 +78,9 @@ export function getStore() {
   {
     const r = await syncBillByIdentity('adobe', 'ชื่อใหม่คนละแบบ.pdf', 'application/pdf', ไบต์, 'INV-1001')
     ok('ไม่เขียน', r.written === false, JSON.stringify(r))
-    ok('บอกเหตุว่าเป็นใบเดิมคนละชื่อ', r.reason === 'ใบนี้มีอยู่แล้วในชื่อไฟล์อื่น', r.reason)
+    /* เหตุที่พิมพ์เฉพาะตอนตก — ใช้เป็นสมอของสูตรปลูก (ชื่อข้อถูกพิมพ์ตอนผ่านด้วย ⇒ ตรงฟรี) */
+    ok('บอกเหตุว่าเป็นใบเดิมคนละชื่อ', r.reason === 'ใบนี้มีอยู่แล้วในชื่อไฟล์อื่น',
+      `ได้เหตุ ${JSON.stringify(r.reason)} ⇒ ใบซ้ำถูกเขียนทับเป็นใบใหม่`)
     ok('บอกด้วยว่าไปซ้ำกับไฟล์ไหน', r.sameAs === 'บิล-ส.ค.pdf', String(r.sameAs))
     ok('ไฟล์ชื่อใหม่ต้องไม่ถูกสร้าง', !(await blobFileExists('adobe', 'ชื่อใหม่คนละแบบ.pdf')))
   }
