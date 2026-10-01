@@ -32,6 +32,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { สูตร } from './lib/ทะเบียนด่าน.mjs'
 import { อาจถึงตัวเขียน as ถึงตัวเขียนดิบ } from './lib/ถึงตัวเขียน.mjs'
+import { เป็นผลผลิตของบิลด์ } from './lib/ไฟล์ที่บิลด์เขียน.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 process.chdir(ROOT)
@@ -324,8 +325,10 @@ if (โหมดที่สั่ง === 'self-test') {
 }
 
 const สกปรก = spawnSync('git', ['status', '--porcelain'], { encoding: 'utf8' }).stdout || ''
-/* ไฟล์ที่ build สร้างเอง ไม่นับว่าสกปรก (มันถูกเขียนทุกครั้งที่ build) */
-const แถวสกปรก = สกปรก.trim().split('\n').filter((l) => l.trim() && !/lib\/arch-admin\.ts$/.test(l))
+/* ไฟล์ที่ build สร้างเอง ไม่นับว่าสกปรก (มันถูกเขียนทุกครั้งที่ build)
+   🔑 รายชื่ออยู่ที่ `scripts/lib/ไฟล์ที่บิลด์เขียน.mjs` **ที่เดียว** — เดิมไฟล์นี้พิมพ์ชื่อไว้เอง
+      แล้วยกเว้นแค่ 1 ใน 2 ไฟล์ที่ gen-arch เขียน ⇒ ตัววัดปฏิเสธรันทั้งที่ไม่มีใครแก้อะไร */
+const แถวสกปรก = สกปรก.trim().split('\n').filter((l) => l.trim() && !เป็นผลผลิตของบิลด์(l))
 /* 🔴 **สัญญาณ "ฉันปฏิเสธที่จะรัน" ต้องเป็นข้อความที่พิมพ์เฉพาะตอนปฏิเสธ** (เจอจริง 1 ต.ค. 2569)
    รอบแรกผมให้ผู้เรียกดูคำว่า "ต้นไม้สกปรก" ⇒ แต่ทางที่ **เดินต่อ** ก็พิมพ์คำนั้นในคำเตือนด้วย
    ⇒ ลูกที่ **พังจริง** (ReferenceError) แต่เผอิญพิมพ์คำเตือนนั้นก่อนตาย
