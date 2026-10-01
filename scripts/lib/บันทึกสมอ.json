@@ -29,6 +29,51 @@
         "node scripts/tests/export-log.test.mjs|คนที่สองหายจากสมุด",
         "node scripts/tests/export-log.test.mjs|ปิดทางสืบต่อ"
       ]
+    },
+    {
+      "เวลาไทย": "2026-10-02 05:00",
+      "commit": "74a9ae0",
+      "ผ่านตา": 33,
+      "จับได้": {
+        "ตรงฟรี": 0,
+        "ไม่มีสมอ": 0
+      },
+      "ตัดสินไม่ได้": 0,
+      "คีย์ใหม่": [
+        "node scripts/tests/billzip.test.mjs|ชื่อไฟล์กลายเป็นตัวตัดสินเดือน",
+        "node scripts/tests/billzip.test.mjs|ตกที่ เดือนนอกช่วง 13 ⇒ ok:false",
+        "node scripts/tests/billzip.test.mjs|ตกที่ ได้ = 1 · ขาด = 1",
+        "node scripts/tests/billzip.test.mjs|ตกที่ ได้ = 2 (ไม่ใช่ 3)",
+        "node scripts/tests/dupcheck-route.test.mjs|ตกที่ สรุปได้ = false",
+        "node scripts/tests/dupcheck-route.test.mjs|ตกที่ ส่งคีย์ที่ถอด BLOB: แล้ว",
+        "node scripts/tests/dupcheck-route.test.mjs|ตกที่ ไม่เรียก saveRealPeriods เลย",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ confirm: true (บูลีนเปล่า) ⇒ ยังตีกลับ 409 และไม่เขียน",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ จดครบทุกใบที่ย้าย พร้อมเดือนเดิม",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ จดครบทุกใบที่ย้าย พร้อมเดือนเดิม",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ จับได้ 30 · ย้ายจริง 3 ⇒ ไม่ติดเพดาน",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ ถูกตีกลับ 409 ⇒ **ไม่จดประวัติเลย**",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ ย้ายจริง 21 ใบ ไม่ยืนยัน ⇒ 409",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ ย้ายจริงพอดี 20 ใบ ⇒ ผ่านโดยไม่ต้องยืนยัน",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ รหัสผิด ⇒ 401 และไม่เขียน",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ อยู่เดือนถูกแล้ว ⇒ changed = 0",
+        "node scripts/tests/fixmonth-route.test.mjs|ตกที่ เดือน 13 ไม่มีจริง ⇒ 400 และไม่เขียน",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ 999 ไบต์ ⇒ 400 และไม่เขียน",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ GET ไม่มีรหัส ⇒ 401",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ month=2026-13 (นอกช่วง) ⇒ 400 และไม่เขียน",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ จดรอบด้วย **ชื่อที่ใช้จริงในถัง**",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ จดรอบไม่สำเร็จ ⇒ การอัป **ยังสำเร็จ**",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ อักขระเส้นทางถูกล้าง",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ อ่านตัวตนไม่ได้ ⇒ **ยังเขียนไฟล์**",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ ไม่มีไฟล์ชื่อนั้น ⇒ **404 ไม่ใช่ 200 ok**",
+        "node scripts/tests/upload-route.test.mjs|ตกที่ 🟢 ตัวควบคุมลบ: month=2026-01",
+        "node scripts/tests/upload-route.test.mjs|ตัวลบที่รับ pattern",
+        "node scripts/tests/watch-route.test.mjs|ตกที่ นอกช่วง 2026-13",
+        "node scripts/tests/watch-route.test.mjs|ตรวจผิดเดือนไปทั้งเดือน โดยไม่มี error",
+        "node scripts/tests/watch-route.test.mjs|ตอบว่าเรียบร้อยทั้งที่ยังไม่รู้",
+        "node scripts/tests/watch-route.test.mjs|สองแหล่ง แหล่งใดล้มก็ยังไม่รู้คำตอบ",
+        "node scripts/tests/watch-route.test.mjs|เดือนที่มีบิลจริงถูกรายงานว่าขาด",
+        "node scripts/tests/watch-route.test.mjs|แดงข้อนี้ = ตัวเฝ้าบิลของจริงตาย"
+      ]
     }
   ]
 }
