@@ -86,6 +86,9 @@ export const WEB_TOOLS: WebTool[] = [
   { slug: 'status', path: '/web/status', native: true, isNew: true, cat: 'ระบบ',
     title: 'สถานะระบบ', desc: 'เช็ค 22 เรื่องว่าอะไรใช้ได้ อะไรพัง',
     icon: IC.heart, grad: 'from-red-400 to-rose-600' },
+  { slug: 'payroll', path: '/web/payroll', native: true, isNew: true, cat: 'ระบบ',
+    title: 'เงินเดือนพนักงาน', desc: 'คิดเงินรายเดือน · ออกสลิป · ไฟล์โอนเข้าธนาคาร',
+    icon: IC.clock, grad: 'from-emerald-400 to-teal-600' },
 ]
 
 export const CATS = ['ทั้งหมด', 'การขาย', 'คอนเทนต์', 'การตลาด', 'ระบบ'] as const
