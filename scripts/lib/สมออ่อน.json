@@ -16,60 +16,6 @@
   "กลุ่มทั้งหมด": 88,
   "ตรงฟรี": [
     {
-      "ด่าน": "node scripts/check-route-size.mjs",
-      "สมอ": "bills/vendor",
-      "ไฟล์": "app/api/bills/vendor/route.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 1,
-      "เพราะ": "อิม gmail.ts ซึ่งอิม: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 1 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/เหตุที่ยังไม่รู้.test.mjs",
-      "สมอ": "fallback เป็นข้อความที่จอคิดเอง",
-      "ไฟล์": "app/core/return-orders/page.tsx",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 1,
-      "เพราะ": "อิม ExportButton.tsx ซึ่งอิม: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 1 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/check-claims.mjs",
-      "สมอ": "คำถามค้าง",
-      "ไฟล์": "app/core/stock/page.tsx",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 1,
-      "เพราะ": "อิม ExportButton.tsx ซึ่งอิม: fetch ที่ไม่ใช่ GET",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 1 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/billreport.test.mjs",
-      "สมอ": "มีช่องบอกว่าอ่านไม่ได้",
-      "ไฟล์": "lib/billreport.ts",
-      "อาจถึงตัวเขียน": 3,
-      "ยืมมากี่ชั้น": 1,
-      "เพราะ": "อิม billblobs.ts ซึ่งอิม: @netlify/blobs",
-      "พื้น": "ภายนอก ผ่านโมดูลของเรา 1 ชั้น"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-route.test.mjs",
-      "สมอ": "production ยิงไป gucut.com",
-      "ไฟล์": "app/api/returns/route.ts",
-      "อาจถึงตัวเขียน": 2,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "เส้นนี้เปิด POST/PUT/DELETE/PATCH",
-      "พื้น": "วิธี HTTP (ชื่อไม่ใช่ของเรา)"
-    },
-    {
-      "ด่าน": "node scripts/tests/returns-route.test.mjs",
-      "สมอ": "ไม่ยิงปลายทาง",
-      "ไฟล์": "app/api/returns/route.ts",
-      "อาจถึงตัวเขียน": 2,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "เส้นนี้เปิด POST/PUT/DELETE/PATCH",
-      "พื้น": "วิธี HTTP (ชื่อไม่ใช่ของเรา)"
-    },
-    {
       "ด่าน": "node scripts/tests/api-cache.test.mjs",
       "สมอ": "GET ที่ไม่รู้จัก",
       "ไฟล์": "lib/api-cache.ts",
@@ -260,7 +206,6 @@
     "node scripts/check-applied-used.mjs|app/core/categories/page.tsx",
     "node scripts/check-barcode.mjs|212223",
     "node scripts/check-bill-collector-claims.mjs|adobe: ของจริงเก็บได้ปกติ",
-    "node scripts/check-claims.mjs|คำถามค้าง",
     "node scripts/check-claude-md-numbers.mjs|ของจริง **13**",
     "node scripts/check-compiled-beside-source.mjs|ตัวควบคุมลบ: .js ที่ไม่มีคู่",
     "node scripts/check-cron-table.mjs|zz-งานที่ไม่มีอยู่",
@@ -297,7 +242,6 @@
     "node scripts/check-ready-badge.mjs|quotations/new",
     "node scripts/check-real-send-registry.mjs|customers/new",
     "node scripts/check-real-send-two-sources.mjs|ตัวสแกนตาบอด",
-    "node scripts/check-route-size.mjs|bills/vendor",
     "node scripts/check-screen-vs-registry.mjs|zz-ไม่มีจอนี้",
     "node scripts/check-secret-routes.mjs|/api/ads",
     "node scripts/check-sentinel-leftovers.mjs|stock/page.tsx",
@@ -326,7 +270,6 @@
     "node scripts/tests/billblobs.test.mjs|ใบซ้ำถูกเขียนทับเป็นใบใหม่",
     "node scripts/tests/billreport.test.mjs|จอรวมกับจอรายเจ้านับคนละเดือน",
     "node scripts/tests/billreport.test.mjs|บั๊กเดิม 8 ทั้งที่มี 4",
-    "node scripts/tests/billreport.test.mjs|มีช่องบอกว่าอ่านไม่ได้",
     "node scripts/tests/bills-month-gate.test.mjs|คนขอของอย่างหนึ่งแล้วได้อีกอย่างโดยไม่รู้ตัว",
     "node scripts/tests/bills-month-gate.test.mjs|จ่ายโควตาให้คำขอที่เราปฏิเสธเอง",
     "node scripts/tests/bills-month-gate.test.mjs|จ่ายโควตาให้คำขอที่เราปฏิเสธเอง",
@@ -367,8 +310,6 @@
     "node scripts/tests/returns-api.test.mjs|มีช่อง \"staff\" ⇒ ใครก็อ้างเป็นใครก็ได้",
     "node scripts/tests/returns-api.test.mjs|อายุใบพองเกินจริง",
     "node scripts/tests/returns-gate.test.mjs|app/returns/page.tsx",
-    "node scripts/tests/returns-route.test.mjs|production ยิงไป gucut.com",
-    "node scripts/tests/returns-route.test.mjs|ไม่ยิงปลายทาง",
     "node scripts/tests/returns-site-status.test.mjs|ตัวนับ",
     "node scripts/tests/roles.test.mjs|returns-summary",
     "node scripts/tests/sale-link.test.mjs|from = ปีแรกที่มีข้อมูล",
@@ -394,7 +335,6 @@
     "node scripts/tests/web-relay-allow.test.mjs|feed-health",
     "node scripts/tests/zort-ready-badge.test.mjs|ส่วน ② ห้ามเปิดซ้ำ",
     "node scripts/tests/zort-ready-badge.test.mjs|ได้ป้ายของหน้าแรก",
-    "node scripts/tests/เหตุที่ยังไม่รู้.test.mjs|fallback เป็นข้อความที่จอคิดเอง",
     "node scripts/ตะแกรงของด่านถูกทดสอบไหม.mjs|zzรูปที่ไม่มีใครทดสอบ",
     "node scripts/เส้นที่ไม่มีใครเรียก.mjs|/api/ai-visibility"
   ]
