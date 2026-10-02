@@ -424,7 +424,7 @@ export default function จอสต็อกค้าง() {
   const ติดลบจากท่อ = typeof เทียบ?.negativeInCore === 'number' ? เทียบ.negativeInCore : null
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       <div>
         <h1 className="text-xl font-bold">สต็อกที่ดันขึ้นหน้าร้านไม่สำเร็จ</h1>
         <p className="text-sm text-gray-500">

@@ -74,7 +74,7 @@ export default function AiVisibilityPage() {
   const lastRun = runs[0]
 
   return (
-    <div className="space-y-5">
+    <div className="p-4 md:p-6 space-y-5">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">AI Visibility</h1>

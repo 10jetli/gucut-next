@@ -87,7 +87,7 @@ export default function จอสุขภาพฟีด() {
   const ไม่มีในคลัง = เลข(ผล?.notInZortCount)
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <h1 className="text-xl font-bold text-gray-900">สุขภาพฟีดสินค้าที่ AI อ่าน</h1>

@@ -66,7 +66,7 @@ export default function SiteToolsPage() {
   }, [shown])
 
   return (
-    <div className="space-y-5 max-w-3xl">
+    <div className="p-4 md:p-6 space-y-5 max-w-3xl">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
           <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>

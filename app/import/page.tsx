@@ -61,7 +61,7 @@ export default function ImportPage() {
   const lbl = 'block text-xs font-medium text-gray-600 mb-1'
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-gray-900">ดรอปชิปปิ้ง</h1>

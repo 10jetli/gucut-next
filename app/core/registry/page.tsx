@@ -86,7 +86,7 @@ export default function Page() {
   const บาร์ = รายการ.filter((x) => x.ชนิด === 'บาร์')
 
   return (
-    <div>
+    <div className="p-4 md:p-6">
       <PageHead
         title="ทะเบียนเลื่อยโซ่ยนต์"
         summary="บัญชีรับ-จำหน่ายตามกฎหมาย เทียบกับจำนวนที่หน้าร้านเสิร์ฟอยู่จริง"

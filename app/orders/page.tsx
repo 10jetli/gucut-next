@@ -33,7 +33,7 @@ export default function OrdersPage() {
   }, [store])
 
   return (
-    <div>
+    <div className="p-4 md:p-6">
       {/* 🔴 **จอนี้ยิง ZORT ตรง ๆ — วันที่เลิกใช้ ZORT จอนี้จะว่างทันที**
           กฎของโปรเจกต์ (เขียนไว้ที่ app/sales/page.tsx): "จอที่ยัง fetch /api/zort อยู่ = ยังไม่เสร็จ"
           จอนี้ไม่มีลิงก์ในเมนูแล้ว แต่ **ยังเปิดด้วย URL ได้** (บุ๊กมาร์กเก่าบนแท็บเล็ตหน้าร้าน)

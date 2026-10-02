@@ -97,7 +97,7 @@ export default function GlassesLogPage() {
   const lastPing = entries.find(isPing) ?? null
 
   return (
-    <div className="space-y-4">
+    <div className="p-4 md:p-6 space-y-4">
       <PageHead
         title="บทสนทนาจากแว่น"
         summary="สิ่งที่พูดใส่แว่น Rokid และสิ่งที่ได้ตอบกลับ · เก็บ 7 วันแล้วลบอัตโนมัติ"

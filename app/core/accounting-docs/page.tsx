@@ -212,7 +212,7 @@ export default function AccountingDocsPage() {
   const totalPages = data?.totalPages ?? 1
 
   return (
-    <div>
+    <div className="p-4 md:p-6">
       <PageHead
         title="จัดการเอกสาร"
         summary={
