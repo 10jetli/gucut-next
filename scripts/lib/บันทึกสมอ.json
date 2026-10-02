@@ -92,6 +92,25 @@
         "node scripts/tests/bills-zip-route.test.mjs|ตกที่ มีหัว X-Bills-Missing",
         "node scripts/tests/bills-zip-route.test.mjs|ตกที่ ไม่ส่ง month ⇒ ส่ง null ต่อไป"
       ]
+    },
+    {
+      "เวลาไทย": "2026-10-02 07:55",
+      "commit": "3b34eb1",
+      "ผ่านตา": 7,
+      "จับได้": {
+        "ตรงฟรี": 0,
+        "ไม่มีสมอ": 0
+      },
+      "ตัดสินไม่ได้": 0,
+      "คีย์ใหม่": [
+        "node scripts/tests/api-cache.test.mjs|ตกที่ 🔑 GET ที่ไม่รู้จัก",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ รอบบิลนอกช่วง + ชื่อไฟล์มีเดือน",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ รอบบิลนอกช่วง + ชื่อไฟล์ไม่มีเดือน",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ รอบบิลเป็น ",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ 🔴 อ่านไม่ครบ",
+        "node scripts/tests/sale-link.test.mjs|ตกที่ from = วันก่อนหนึ่งวัน",
+        "node scripts/tests/sale-link.test.mjs|ตกที่ วันที่ใช้ไม่ได้ ("
+      ]
     }
   ]
 }

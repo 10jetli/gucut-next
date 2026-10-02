@@ -16,15 +16,6 @@
   "กลุ่มทั้งหมด": 88,
   "ตรงฟรี": [
     {
-      "ด่าน": "node scripts/tests/api-cache.test.mjs",
-      "สมอ": "GET ที่ไม่รู้จัก",
-      "ไฟล์": "lib/api-cache.ts",
-      "อาจถึงตัวเขียน": 1,
-      "ยืมมากี่ชั้น": 0,
-      "เพราะ": "มีชื่อที่ฟังดูเขียน (setJSON/save*/upsert/บันทึก…)",
-      "พื้น": "⚠️ **ชื่อของเราเอง — เปลี่ยนชื่อแล้วคำตอบเปลี่ยน**"
-    },
-    {
       "ด่าน": "node scripts/tests/build-time-public.test.mjs",
       "สมอ": "คีย์เดียว",
       "ไฟล์": "app/api/build-time/route.ts",
@@ -37,42 +28,6 @@
       "ด่าน": "node scripts/tests/auth-token.test.mjs",
       "สมอ": "ว่างเท่ากับว่าง",
       "ไฟล์": "lib/auth-token.ts",
-      "อาจถึงตัวเขียน": 0,
-      "ยืมมากี่ชั้น": null,
-      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
-      "พื้น": "ไม่พบ"
-    },
-    {
-      "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
-      "สมอ": "หลุดจากทุกเดือน** ไม่ใช่ ย้ายเดือน",
-      "ไฟล์": "lib/bill-month-diff.ts",
-      "อาจถึงตัวเขียน": 0,
-      "ยืมมากี่ชั้น": null,
-      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
-      "พื้น": "ไม่พบ"
-    },
-    {
-      "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
-      "สมอ": "แกะรอบไม่ได้ (ไม่ใช่ ไม่เปลี่ยน)",
-      "ไฟล์": "lib/bill-month-diff.ts",
-      "อาจถึงตัวเขียน": 0,
-      "ยืมมากี่ชั้น": null,
-      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
-      "พื้น": "ไม่พบ"
-    },
-    {
-      "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
-      "สมอ": "ย้ายเดือน",
-      "ไฟล์": "lib/bill-month-diff.ts",
-      "อาจถึงตัวเขียน": 0,
-      "ยืมมากี่ชั้น": null,
-      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
-      "พื้น": "ไม่พบ"
-    },
-    {
-      "ด่าน": "node scripts/tests/bill-month-diff.test.mjs",
-      "สมอ": "ยังสรุปทั้งเจ้าไม่ได้",
-      "ไฟล์": "lib/bill-month-diff.ts",
       "อาจถึงตัวเขียน": 0,
       "ยืมมากี่ชั้น": null,
       "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
@@ -145,24 +100,6 @@
       "ด่าน": "node scripts/tests/roles.test.mjs",
       "สมอ": "returns-summary",
       "ไฟล์": "lib/route-allow.ts",
-      "อาจถึงตัวเขียน": 0,
-      "ยืมมากี่ชั้น": null,
-      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
-      "พื้น": "ไม่พบ"
-    },
-    {
-      "ด่าน": "node scripts/tests/sale-link.test.mjs",
-      "สมอ": "from = ปีแรกที่มีข้อมูล",
-      "ไฟล์": "lib/sale-link.ts",
-      "อาจถึงตัวเขียน": 0,
-      "ยืมมากี่ชั้น": null,
-      "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
-      "พื้น": "ไม่พบ"
-    },
-    {
-      "ด่าน": "node scripts/tests/sale-link.test.mjs",
-      "สมอ": "from = วันก่อนหนึ่งวัน",
-      "ไฟล์": "lib/sale-link.ts",
       "อาจถึงตัวเขียน": 0,
       "ยืมมากี่ชั้น": null,
       "เพราะ": "ไม่พบความสามารถเขียนที่ตามได้",
@@ -263,12 +200,7 @@
     "node scripts/check-zort-words.mjs|components/ui/OrderCard.tsx",
     "node scripts/gen-arch.mjs|พื้น",
     "node scripts/gen-arch.mjs|อ่านกลับเป็นค่าไม่ได้",
-    "node scripts/tests/api-cache.test.mjs|GET ที่ไม่รู้จัก",
     "node scripts/tests/auth-token.test.mjs|ว่างเท่ากับว่าง",
-    "node scripts/tests/bill-month-diff.test.mjs|ยังสรุปทั้งเจ้าไม่ได้",
-    "node scripts/tests/bill-month-diff.test.mjs|ย้ายเดือน",
-    "node scripts/tests/bill-month-diff.test.mjs|หลุดจากทุกเดือน** ไม่ใช่ ย้ายเดือน",
-    "node scripts/tests/bill-month-diff.test.mjs|แกะรอบไม่ได้ (ไม่ใช่ ไม่เปลี่ยน)",
     "node scripts/tests/billblobs.test.mjs|ใบซ้ำถูกเขียนทับเป็นใบใหม่",
     "node scripts/tests/billreport.test.mjs|จอรวมกับจอรายเจ้านับคนละเดือน",
     "node scripts/tests/billreport.test.mjs|ตกที่ มีช่องบอกว่าอ่านไม่ได้",
@@ -323,8 +255,6 @@
     "node scripts/tests/returns-route.test.mjs|ตกที่ ไม่ยิงปลายทาง",
     "node scripts/tests/returns-site-status.test.mjs|ตัวนับ",
     "node scripts/tests/roles.test.mjs|returns-summary",
-    "node scripts/tests/sale-link.test.mjs|from = ปีแรกที่มีข้อมูล",
-    "node scripts/tests/sale-link.test.mjs|from = วันก่อนหนึ่งวัน",
     "node scripts/tests/staff-users.test.mjs|คนที่ถูกปิดยังเข้าระบบได้",
     "node scripts/tests/stock-source.test.mjs|ไม่เดาว่าเป็น mirror",
     "node scripts/tests/upload-route.test.mjs|ตกที่ 999 ไบต์ ⇒ 400 และไม่เขียน",
