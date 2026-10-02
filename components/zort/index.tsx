@@ -315,15 +315,23 @@ export function ChannelTag({ name }: { name: string }) {
   if (!name) return <span className="text-gray-400">—</span>
   const logo = CHANNEL_LOGO.find(([re]) => re.test(name))?.[1]
   const dot = CHANNEL_DOT.find(([re]) => re.test(name))?.[1] ?? 'bg-gray-400'
+  /* 🔴 **ต้องมี `max-w-full`** (แก้ 2 ต.ค. 2569 23:xx — เห็นด้วยตาบนจอจริง)
+     ของเดิมมี `min-w-0` + `truncate` ข้างใน **แต่ไม่มีเพดานกว้าง** ⇒ ตัว `inline-flex` เอง
+     กว้างตามเนื้อหา ⇒ ทะลุ `max-w-[170px]` ของช่องที่ครอบอยู่ (ซึ่ง `overflow` เป็น `visible`)
+     📏 วัดจากจอจริง `/core/sales`: ช่องกว้างจริง 248px · กรอบ 170px ⇒ ล้นไปทับคอลัมน์ "บริการขนส่ง"
+        ผลคือ "Facebook เลื่อยยนต์ gucut newwave" ซ้อนกับ "Flash express" ⇒ **อ่านไม่ออกทั้งสองช่อง**
+        (เซลล์ที่เนื้อล้นกรอบในหน้าเดียว 7 จุด)
+     🔑 แก้ที่คอมโพเนนต์ ไม่ใช่ที่หน้าใดหน้าหนึ่ง — ตัวนี้ถูกใช้ 7 ที่ และหน้าอื่นก็มีโอกาสล้นเหมือนกัน
+     🔑 `title` จำเป็น: ตัดท้ายด้วย … แล้วชื่อเต็มต้องยังเข้าถึงได้ ไม่ใช่หายไปเฉย ๆ */
   return (
-    <span className="inline-flex items-center gap-1.5 min-w-0">
+    <span className="inline-flex items-center gap-1.5 min-w-0 max-w-full align-middle">
       {logo
         ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={logo} alt="" className="w-[18px] h-[18px] rounded-[3px] object-contain shrink-0" />
         )
         : <span className={`w-2 h-2 rounded-full shrink-0 ${dot}`} />}
-      <span className="truncate">{name}</span>
+      <span className="truncate" title={name}>{name}</span>
     </span>
   )
 }
