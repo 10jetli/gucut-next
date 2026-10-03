@@ -28,6 +28,9 @@ import Link from 'next/link'
 import { SOON } from '@/lib/zort-menu'
 import AdvancedSearch from './AdvancedSearch'
 import { fmtMoney } from '@/lib/format'
+/* 🔑 ตัวตัดสิน "ติดฝั่งไหน" อยู่ที่ `lib/upstream-state.ts` ที่เดียว — มีเทสของตัวเอง
+   (เขียนซ้ำในจอ = ตรรกะสองชุดที่จะเพี้ยนกัน และชุดในจอจะไม่มีใครเทส) */
+import { ควรลองใหม่, ฝั่งที่ติดจาก } from '@/lib/upstream-state'
 import { PageHead, TableWrap, TH, THR, thaiDate } from './index'
 
 export interface LedgerCol { label: string; right?: boolean }
@@ -186,6 +189,19 @@ export default function LedgerScreen({
         (ฝั่งท่อกำชับตรง ๆ · และยังห้ามขึ้น "0 รายการ" เหมือนเดิม) */
   const [zCode, setZCode] = useState('')
   const [zDesc, setZDesc] = useState('')
+  /* 🔴 **สี่สถานะของ `upstreamOk` — ห้ามยุบเหลือสอง** (สัญญาร่วม `t_mu1bkrdw` · 4 ต.ค. 2569)
+     ฝั่งท่อส่งช่องนี้มาครบ **ทุกทางออก** แล้ว (วัดจริง 3 ทาง: 200 · 503 · 400)
+       `true`      ถาม ZORT แล้วสำเร็จ
+       `false`     ถาม ZORT แล้ว **ZORT ล้ม** ⇒ โทษ ZORT ได้
+       `null`      **ยังไม่ได้ถาม ZORT** — คำขอของเราถูกตีกลับก่อน (เช่นชนิดไม่รู้จัก)
+                   ⇒ 🚫 **ห้ามเขียนว่า ZORT ตอบผิดพลาด** เพราะ ZORT ไม่เคยถูกถาม
+       `undefined` ท่อรุ่นเก่ายังไม่ส่งช่องนี้ ⇒ **ยังไม่รู้ว่าฝั่งไหน**
+     🚫 **ห้ามเขียน `!upstreamOk`** — `!undefined`, `!null`, `!false` เป็นจริงหมด
+        ⇒ ยุบสี่สถานะเป็นสอง ซึ่งเป็นคลาสบั๊กที่ปิดไปทั้งคืน 3-4 ต.ค. 2569 (B10 · B18 · B19 · B26)
+        มีด่าน `scripts/check-upstream-truthiness.mjs` กันไว้แล้ว */
+  const [zUpstreamOk, setZUpstreamOk] = useState<boolean | null | undefined>(undefined)
+  /** ลองใหม่แล้วมีโอกาสได้ของไหม — ท่อตัดสินให้ · `undefined` = ท่อรุ่นเก่า ⇒ ไม่แนะนำอะไร */
+  const [zRetryable, setZRetryable] = useState<boolean | undefined>(undefined)
   /** ยอดรวมที่ **ท่อคิดให้** · undefined = ท่อไม่ได้ส่งช่องนั้นมา ⇒ จอต้องไม่โชว์เลข */
   const [zTotals, setZTotals] = useState<Record<string, number | null>>({})
   /* 🔍 **ค้นหา + ค้นหาขั้นสูง — เฉพาะจอที่ต่อท่อแล้ว** (ใบ t_mu1i74cu · 15 ก.ย. 2569)
@@ -204,6 +220,7 @@ export default function LedgerScreen({
   const loadZort = useCallback(async () => {
     if (!zortList) return
     setZLoading(true); setZErr(''); setZUnknown(false); setZCode(''); setZDesc('')
+    setZUpstreamOk(undefined); setZRetryable(undefined)
     try {
       /* ⚠️ variations ห้ามส่ง from/to (ท่อตอบ 400) · เส้นอื่นไม่ส่งก็ได้ = เอาทั้งหมด */
       const qs = new URLSearchParams({ zortlist: zortList, limit: '200' })
@@ -215,7 +232,31 @@ export default function LedgerScreen({
       }
       const r = await fetch(`/api/web/core?${qs}`)
       const d = await r.json().catch(() => null)
-      if (d?.unknown || r.status === 502) {
+      /* 🔴 **เลิกฝังรหัสสถานะไว้ในจอ** (แก้ 4 ต.ค. 2569)
+         ของเดิมเขียน `r.status === 502` ⇒ พอท่อเปลี่ยนเป็น **503** เงื่อนไขนั้นก็ตาย
+         ⚠️ **จอไม่พังตอนนั้นเพราะ `d?.unknown` ยังมาอยู่** — คือ **รอดเพราะโครงสร้าง
+            ไม่ใช่เพราะเลือกไว้** ⇒ ถ้าวันหนึ่งท่อเลิกส่ง `unknown` แล้วให้ดูรหัสแทน
+            จอจะตกไปทางข้อความทั่วไปแบบเงียบ ๆ
+         ⇒ อ่านจาก **ฟิลด์** ที่ท่อส่งมาครบทุกทางออกแทน · เก็บ `d.unknown` ไว้เป็นทางสำรอง
+            ให้ท่อรุ่นเก่า (ซึ่งยังส่ง `unknown` แต่ไม่ส่ง `upstreamOk`) */
+      /* ⚠️ **ชื่อตัวแปรต้องมีคำว่า `upstreamOk`** — ห้ามย่อเป็นชื่ออื่น
+         ด่าน `check-upstream-truthiness.mjs` มองหาชื่อช่องในบรรทัด ⇒ ย่อชื่อแล้วด่านตาบอด
+         📏 พิสูจน์ด้วยการปลูก 4 ต.ค. 2569: ตั้งชื่อ `upstreamOkValue` แล้วเขียน `!upstreamOkValue` ⇒ **ด่านปล่อยผ่าน**
+            ⇒ จึงเพิ่มด่านย่อยที่ห้าม alias ช่องนี้ไปชื่อที่ไม่มีคำว่า upstreamOk/retryable */
+      /* 🔑 ใช้ตัวตัดสินร่วมที่ `lib/upstream-state.ts` — มีเทส 14 ข้อและด่านกัน truthiness
+         ⚠️ ห้ามตัดสินเองในจอ: ตรรกะนี้เลือกว่าจะ **โทษ ZORT หรือโทษคำขอของเรา**
+            เขียนผิดแล้วไม่มีอะไรแดง จอแค่พูดผิด */
+      const ฝั่ง = ฝั่งที่ติดจาก(d)
+      const upstreamOkจากท่อ = (typeof d?.upstreamOk === 'boolean' || d?.upstreamOk === null)
+        ? (d.upstreamOk as boolean | null) : undefined
+      setZUpstreamOk(upstreamOkจากท่อ)
+      setZRetryable(ควรลองใหม่(d) ?? undefined)
+      /* "ยังไม่รู้เรื่อง ZORT" = ถาม ZORT แล้วล้มเท่านั้น
+         ⚠️ `คำขอเราผิด` (upstreamOk === null) **ไม่เข้าทางนี้** — ZORT ไม่เคยถูกถาม
+            ⇒ ต้องไปทาง error ปกติ ไม่ใช่ทางที่เขียนว่า "ZORT ตอบผิดพลาด"
+         ⚠️ ท่อรุ่นเก่าที่ส่ง `unknown: true` แต่ไม่ส่ง `upstreamOk` ⇒ ยังเข้าทางนี้ได้
+            (รู้ว่าไม่รู้ แต่ข้อความจะเขียนกำกับว่าแยกฝั่งไม่ได้) */
+      if (ฝั่ง === 'ปลายทางล้ม' || (ฝั่ง === 'ยังไม่รู้ฝั่ง' && d?.unknown)) {
         setZUnknown(true)
         setZErr(String(d?.error ?? 'ถาม ZORT ไม่สำเร็จ'))
         setZCode(typeof d?.zortCode === 'string' ? d.zortCode : '')
@@ -475,7 +516,16 @@ export default function LedgerScreen({
                   {zUnknown
                     ? <><b>ถาม ZORT ไม่สำเร็จ</b> ({zErr}) — <b>ยังไม่รู้ว่ามีรายการไหม</b>
                       {' '}⚠️ <b>ไม่ได้แปลว่าไม่มีรายการ</b> และ<b>ไม่ได้แปลว่า ZORT ไม่มีเส้นนี้</b> —
-                      {' '}เส้นมีจริงแต่ ZORT ตอบผิดพลาดกลับมา ⇒ ลองรีเฟรชอีกครั้ง
+                      {' '}เส้นมีจริงแต่ ZORT ตอบผิดพลาดกลับมา
+                      {/* 🔴 **คำแนะนำต้องผูกกับช่อง `retryable` ที่ท่อตัดสิน ไม่ใช่เขียนตายตัว**
+                          ของเดิมเขียน "ลองรีเฟรชอีกครั้ง" ทุกกรณี ⇒ ในทางที่ลองใหม่ไม่ช่วย
+                          คนจะกดซ้ำอยู่นั่น และเชื่อว่าเป็นความผิดของตัวเอง
+                          ⚠️ `undefined` (ท่อรุ่นเก่า) ⇒ **ไม่แนะนำอะไรเลย** ดีกว่าแนะนำผิด */}
+                      {zRetryable === true
+                        ? <> ⇒ <b>ลองรีเฟรชอีกครั้งได้</b> (ท่อบอกว่าลองใหม่มีโอกาสได้ของ)</>
+                        : zRetryable === false
+                          ? <> ⇒ <b>รีเฟรชไม่ช่วย</b> — ต้องรอฝั่ง ZORT แก้</>
+                          : <> ⇒ ยังไม่รู้ว่าลองใหม่จะช่วยไหม</>}
                       {/* 🔴 ข้อความดิบของ ZORT — โชว์ตัวเล็กไว้ให้คนไล่ต่อได้ ไม่ต้องเปิด DevTools
                           (ฝั่งท่อส่งช่อง zortDesc มาให้ใช้ได้กับทุก kind ของ ?zortlist=) */}
                       {zDesc && (
@@ -484,7 +534,18 @@ export default function LedgerScreen({
                         </span></>
                       )} · </>
                     : zErr
-                      ? <><b>ดึงข้อมูลไม่สำเร็จ</b> ({zErr}) — ยังไม่รู้ว่ามีรายการไหม · </>
+                      /* 🔴 **แยก "ยังไม่ได้ถาม ZORT" ออกจาก "ถาม ZORT แล้วล้ม"** (4 ต.ค. 2569)
+                         `upstreamOk === null` = คำขอของเราถูกตีกลับ **ก่อน**ถึง ZORT
+                         ⇒ ของเดิมเขียนรวมว่า "ดึงข้อมูลไม่สำเร็จ" ซึ่งอ่านได้ว่าปลายทางมีปัญหา
+                           ⇒ คนจะไปรอ ZORT หรือแจ้ง ZORT ทั้งที่ต้องแก้ที่คำขอของเราเอง
+                         🔑 ช่องนี้เป็น **ช่องเดียว** ที่แยกสามทางได้ — `unknown` ไม่มาใน 2 จาก 3 ทาง
+                            และ `ok:false` แยก "คำขอผิด" จาก "ZORT ล้ม" ไม่ออก */
+                      ? zUpstreamOk === null
+                        ? <><b>คำขอของเราไม่ถูกต้อง</b> ({zErr}) — <b>ยังไม่ได้ถาม ZORT เลย</b>
+                          {' '}⚠️ ไม่ได้แปลว่า ZORT มีปัญหา และ<b>ไม่ได้แปลว่าไม่มีรายการ</b>
+                          {' '}· รีเฟรชไม่ช่วย ต้องแก้ที่ตัวกรองหรือชนิดข้อมูลที่จอส่งไป · </>
+                        : <><b>ดึงข้อมูลไม่สำเร็จ</b> ({zErr}) — ยังไม่รู้ว่ามีรายการไหม
+                          {zUpstreamOk === undefined && <>{' '}(ท่อรุ่นนี้ยังไม่บอกว่าติดฝั่งไหน)</>} · </>
                       : zortAnswered
                         ? <>ถาม ZORT สดตอนเปิดหน้านี้ — <b>ZORT ตอบเองว่ามี {zCount ?? rows!.length} รายการ</b>
                           {hadHandCheck && <>{' '}(ไม่ใช่คำบอกเล่าจากการเปิดจอดูเมื่อ {thaiDate(CHECKED_AT)} อีกแล้ว)</>} · </>

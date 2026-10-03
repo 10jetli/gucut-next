@@ -303,6 +303,30 @@ export const สูตร = [
     แก้: (s) => '/* ยังไม่ได้พิสูจน์ ZZPLANTZZ */\n' + s,
     ต้องเอ่ยถึง: 'เขียนว่า "ยังไม่ได้พิสูจน์" ได้',
   },
+  /* 🔑 **สองสูตรของ check-upstream-truthiness ตอบคนละคำถาม**
+     สัญญาร่วมใบ `t_mu1bkrdw` · `upstreamOk` มีสี่สถานะ (true/false/null/undefined)
+       ① เขียน `!x` ตรง ๆ ⇒ พิสูจน์ว่ากฎหลักยังทำงาน
+       ② **alias ไปชื่อสั้นก่อนแล้วค่อย `!x`** ⇒ พิสูจน์ว่าด่านย่อยกัน alias ทำงาน
+          📏 เหตุที่ต้องมีข้อ ② : ปลูกข้อนั้นวันแรก (4 ต.ค. 2569) **ด่านปล่อยผ่าน**
+             เพราะด่านมองหา "ชื่อช่อง" ในบรรทัด ⇒ ตั้งชื่อ `ok4` แล้วตาบอดสนิท */
+  {
+    ด่าน: 'scripts/check-upstream-truthiness.mjs',
+    เงื่อนไขเป้า: 'ต้องเป็นการใช้ truthiness กับ `upstreamOk`/`retryable` (`!x` · `x ?` · `x ||`) ในสาย app/ components/ lib/ — ไม่นับประกาศชนิดของ TS (`x?: boolean`)',
+    ไฟล์: 'lib/upstream-state.ts',
+    เล่า: 'เขียน `!d.upstreamOk` ⇒ ยุบ null+false+undefined เป็นทางเดียว ⇒ จอโทษ ZORT ตอนที่ ZORT ไม่เคยถูกถาม',
+    แก้: (s) => s.replace("if (d.upstreamOk === false) return 'ปลายทางล้ม'", "if (!d.upstreamOk) return 'ปลายทางล้ม'"),
+    ต้องมีในไฟล์: 'if (!d.upstreamOk)',
+    ต้องเอ่ยถึง: 'lib/upstream-state.ts',
+  },
+  {
+    ด่าน: 'scripts/check-upstream-truthiness.mjs',
+    เงื่อนไขเป้า: 'ต้องเป็นการ **alias** ค่าของช่องไปตัวแปรที่ชื่อไม่มีคำว่า upstreamOk/retryable — ด่านหลักมองหาชื่อช่องในบรรทัด จึงตาบอดถ้าย่อชื่อ',
+    ไฟล์: 'components/zort/LedgerScreen.tsx',
+    เล่า: 'ตั้งชื่อ `ok4` ให้ค่าของ `upstreamOk` แล้วเขียน `!ok4` — ท่าที่ด่านรุ่นแรกปล่อยผ่านจริง',
+    แก้: (s) => s.replace('const upstreamOkจากท่อ =', 'const ok4 = d?.upstreamOk\n      const upstreamOkจากท่อ ='),
+    ต้องมีในไฟล์: 'const ok4 = d?.upstreamOk',
+    ต้องเอ่ยถึง: 'LedgerScreen.tsx',
+  },
   {
     ด่าน: 'scripts/check-floating.mjs',
     /* 📏 พิสูจน์แล้ว 20 ก.ย. 2569 (ใบ S2): ปลูก `fetch()` ที่ไม่ await ท้ายไฟล์
