@@ -111,6 +111,27 @@
         "node scripts/tests/sale-link.test.mjs|ตกที่ from = วันก่อนหนึ่งวัน",
         "node scripts/tests/sale-link.test.mjs|ตกที่ วันที่ใช้ไม่ได้ ("
       ]
+    },
+    {
+      "เวลาไทย": "2026-10-04 04:08",
+      "commit": "98a5fc9",
+      "ผ่านตา": 9,
+      "จับได้": {
+        "ตรงฟรี": 0,
+        "ไม่มีสมอ": 0
+      },
+      "ตัดสินไม่ได้": 0,
+      "คีย์ใหม่": [
+        "node scripts/check-upstream-truthiness.mjs|LedgerScreen.tsx",
+        "node scripts/check-upstream-truthiness.mjs|lib/upstream-state.ts",
+        "node scripts/tests/api-cache.test.mjs|ตกที่ 🔑 GET ที่ไม่รู้จัก",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ รอบบิลนอกช่วง + ชื่อไฟล์มีเดือน",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ รอบบิลนอกช่วง + ชื่อไฟล์ไม่มีเดือน",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ รอบบิลเป็น ",
+        "node scripts/tests/bill-month-diff.test.mjs|ตกที่ 🔴 อ่านไม่ครบ",
+        "node scripts/tests/sale-link.test.mjs|ตกที่ from = วันก่อนหนึ่งวัน",
+        "node scripts/tests/sale-link.test.mjs|ตกที่ วันที่ใช้ไม่ได้ ("
+      ]
     }
   ]
 }
