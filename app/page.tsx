@@ -17,6 +17,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
+import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, เหตุเต็ม } from '@/components/zort/CostGate'
 
 interface CoreOrderRow {
   id: string; number: string; channel: string
@@ -82,6 +83,15 @@ const ป้ายช่วงเคลื่อนไหว = (วัน: numbe
 // ของเดิมใช้ toISOString() ตรง ๆ = ก่อนเจ็ดโมงเช้าจะไปถามยอดของ "เมื่อวาน"
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
+
+/** วันสุดท้ายของเดือน `YYYY-MM` — ใช้ทำ `to` ของช่วงกราฟ
+ *  ⚠️ ห้ามใช้ `-31` ตายตัว (ก.พ. จะเลยเดือน แล้วท่ออาจนับบรรทัดของเดือนถัดไปเข้ามา) */
+function เดือนสุดท้าย(ym: string): string {
+  const [y, m] = ym.split('-').map(Number)
+  if (!y || !m) return ym
+  const d = new Date(Date.UTC(y, m, 0))   // วันที่ 0 ของเดือนถัดไป = วันสุดท้ายของเดือนนี้
+  return `${ym}-${String(d.getUTCDate()).padStart(2, '0')}`
+}
 
 async function getJson(url: string) {
   const r = await fetch(url)
@@ -490,6 +500,14 @@ export default function DashboardPage() {
     return asc.slice(Math.max(0, end - 4), end)
   })()
 
+  /* 🔑 **ช่วงที่ส่งให้ `?costsince=1` ต้องเป็นช่วงที่กราฟกำลังโชว์จริง** ไม่ใช่ทั้งประวัติร้าน
+     (ฝั่งท่อถอนเกณฑ์เดิมของตัวเองเพราะคิดจากทั้งกระจก 98,916 บรรทัด ⇒ เกณฑ์แบบนั้นไม่มีวันถึง)
+     คำถามของจอคือ "ช่วงที่ฉันกำลังโชว์ มีต้นทุนครอบพอไหม" */
+  const ช่วงกราฟ = trendWindow.length > 0
+    ? { from: `${trendWindow[0].ym}-01`, to: เดือนสุดท้าย(trendWindow[trendWindow.length - 1].ym) }
+    : { from: null, to: null }
+  const ประตูกำไร = useประตูกำไร(ช่วงกราฟ.from, ช่วงกราฟ.to)
+
   const skip = today?.skip || week?.skip || stock?.skip
   /** ชื่อร้านที่มีบิลในช่วงที่ดึงมา — อ่านจากท่อ ไม่นับเอง ไม่เขียนตายตัว */
   const storeNames = (() => {
@@ -613,8 +631,16 @@ export default function DashboardPage() {
                  ⇒ ต้องให้บัญชีของร้านตัดสินนิยามก่อน (ต้นทุนเฉลี่ย / FIFO / ราคาซื้อล่าสุด) */
               title="ท่อส่งราคาซื้อรายสินค้ามาแล้ว (ช่อง buy) แต่เป็นราคา ณ วันนี้ ไม่ใช่ต้นทุนตอนขาย และมาจากคนละแหล่งกับยอดขาย ⇒ ต้องให้บัญชีร้านตัดสินนิยามต้นทุนก่อน">
               <option value="sales">ยอดขายรวม</option>
-              <option value="gp" disabled>กำไรจากการขาย (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
-              <option value="np" disabled>กำไรรวม (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
+              {/* 🔑 **ธงมาจากท่อ จอไม่เทียบเกณฑ์เอง** (สัญญา `?costsince=1` · 5 ต.ค. 2569)
+                     ท่อส่ง `ถึงเกณฑ์ยอดรวมไหม` มาให้ ⇒ ถ้าวันหน้าเปลี่ยนเกณฑ์
+                     สองจอของเราจะไม่บอกคนละอย่าง (ฝั่งท่อมีด่านกันไว้ว่า core.mjs ห้ามมี `>= 95`)
+                  ⚠️ ปิดอยู่มีได้ **หกเหตุ** และต้องอ่านออกว่าเหตุไหน ⇒ ป้ายสร้างจากสภาพ ไม่เขียนตาย */}
+              <option value="gp" disabled={!เปิดยอดรวมได้(ประตูกำไร)}>
+                กำไรจากการขาย{เปิดยอดรวมได้(ประตูกำไร) ? '' : ` (${ป้ายสั้น(ประตูกำไร)})`}
+              </option>
+              <option value="np" disabled={!เปิดยอดรวมได้(ประตูกำไร)}>
+                กำไรรวม{เปิดยอดรวมได้(ประตูกำไร) ? '' : ` (${ป้ายสั้น(ประตูกำไร)})`}
+              </option>
             </select>
             <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
               value="total" onChange={() => { /* มีชนิดเดียวที่ทำได้จริง */ }}
@@ -624,6 +650,10 @@ export default function DashboardPage() {
               <option value="cat" disabled>ยอดขายตามหมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
             </select>
           </div>
+          {/* บรรทัดเหตุที่ **มองเห็น** — ตัวเลือกที่ปิดไว้ hover ยาก และบนมือถือ hover ไม่ได้เลย
+              ⇒ ถ้าเหตุอยู่แต่ใน title คนจะอ่านว่า "ระบบเราทำกำไรไม่ได้" ซึ่งไม่จริง */}
+          <CostStateNote ประตู={ประตูกำไร}
+            ช่วง={ช่วงกราฟ.from ? `${thaiDate(ช่วงกราฟ.from)} – ${thaiDate(ช่วงกราฟ.to!)}` : undefined} />
           {/* 🔴 ไม่มีข้อมูล ⇒ **วาดกรอบไว้** พร้อมข้อความ ห้ามซ่อนกราฟ (กติกาในใบ) */}
           {trendWindow.length > 0
             ? <MonthTrend data={trendWindow} kind={trendKind} />

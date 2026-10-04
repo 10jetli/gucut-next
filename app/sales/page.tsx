@@ -11,8 +11,9 @@ import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ }
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
+import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, type ประตูกำไร } from '@/components/zort/CostGate'
 import {
-  PageHead, BtnGhost, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag,
+  PageHead, BtnGhost, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag, thaiDate,
 } from '@/components/zort'
 
 interface Report {
@@ -387,7 +388,7 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
       ห้ามใส่ตัวเลือกที่เลือกแล้วไม่มีอะไรเกิดขึ้น (กติกาในใบ: ห้ามปุ่มหลอก)
    📌 ตัวเลือกของ ZORT ที่เห็นในจอเดียวกัน: ยอดขายรวม · ยอดขายตามหมวดหมู่
       (ตามหมวดหมู่ยังทำไม่ได้ เพราะยอดขายรายสินค้าที่ท่อส่งมา **ไม่มีหมวดหมู่ติดมาด้วย**) */
-function ReportKindSelect() {
+function ReportKindSelect({ ประตู }: { ประตู: ประตูกำไร }) {
   return (
     <select
       value="total"
@@ -416,8 +417,17 @@ function ReportKindSelect() {
                 ⚠️ เหตุผลสำคัญกว่าผล: ไม่ใช่ "Shopee ไม่ส่ง" (ถ้าเข้าใจแบบนั้นจะไปไล่ผิดที่)
                 ⇒ **ทางนี้เปิดไว้ได้ ไม่ใช่ทางตาย** — วันที่ท่านประธานกรอกต้นทุนใน Shopee ช่องนี้ใช้ได้ทันที
                    (ฝั่งท่อเก็บ `cogs` ไว้แล้วแต่ยังไม่เอาไปคิด จนกว่าจะเจอใบที่ค่าต่างจากราคาขายจริง) */}
-      <option value="profit-sale" disabled>กำไรจากการขาย (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
-      <option value="profit-all" disabled>กำไรรวม (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
+      {/* 🔑 **ธงมาจากท่อ จอไม่เทียบเกณฑ์เอง** (สัญญา `?costsince=1` · 5 ต.ค. 2569)
+             ⚠️ ปิดอยู่มีได้ **หกเหตุ** ⇒ ป้ายสร้างจากสภาพ ไม่เขียนตาย
+                (ท่อรุ่นเก่า · ยังไม่เริ่มตรึง · ช่วงไม่มีบรรทัดขาย · แปลไม่ได้ · ยังไม่ถึงเกณฑ์ · ถามไม่สำเร็จ)
+             🔴 **ยอดรวม ≠ รายบรรทัด** — ธงนี้คุมแค่ยอดรวม เพราะการบวกข้ามบรรทัดที่ขาดต้นทุน
+                ทำให้ต้นทุนรวมต่ำเกินจริง ⇒ กำไรรวมสูงเกินจริง · ความจริงรายบรรทัดไม่เกี่ยวกัน */}
+      <option value="profit-sale" disabled={!เปิดยอดรวมได้(ประตู)}>
+        กำไรจากการขาย{เปิดยอดรวมได้(ประตู) ? '' : ` (${ป้ายสั้น(ประตู)})`}
+      </option>
+      <option value="profit-all" disabled={!เปิดยอดรวมได้(ประตู)}>
+        กำไรรวม{เปิดยอดรวมได้(ประตู) ? '' : ` (${ป้ายสั้น(ประตู)})`}
+      </option>
     </select>
   )
 }
@@ -572,6 +582,9 @@ export default function SalesReportPage() {
   }, [])
 
   useEffect(() => { load(days) }, [load, days])
+  /* 🔑 ส่ง **ช่วงวันที่จอกำลังโชว์** ให้ `?costsince=1` ไม่ใช่ทั้งประวัติร้าน
+     (สัญญากำกับไว้: ไม่ส่ง from/to = ได้แต่เลขทั้งกระจกซึ่งตัดสินใจไม่ได้) */
+  const ประตูกำไร = useประตูกำไร(report?.range.from ?? null, report?.range.to ?? null)
 
   /* 🏬 ยอดตามคลัง — **คำขอเดียว** `list=orderfacets&warehouses=1` (ท่อ gucut-web 01fbeb1)
      🔴 **เลิกยิงทีละคลังแล้ว และเลิกคิดกอง "ยังไม่รู้คลัง" ด้วยการลบ** (แก้ 15 ก.ย. 2569 · ฝั่งท่อจับได้)
@@ -673,7 +686,12 @@ export default function SalesReportPage() {
           {PERIODS.map((p) => <option key={p.days} value={p.days}>{p.label}</option>)}
         </select>
         <span className="text-[12.5px] text-gray-400" suppressHydrationWarning>
-          {report ? `${report.range.from} – ${report.range.to}` : ''} · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
+          {/* 🔴 **วันที่บนจอต้องผ่าน `thaiDate` เสมอ** — ของเดิมโชว์ `2026-07-08 – 2026-10-05` ดิบ ๆ
+                 (เจอ 5 ต.ค. 2569 ด้วยการ **อ่านข้อความบนจอจริง** ไม่ใช่จากด่าน)
+              ⚠️ `check-thai-date` บอกว่าสะอาดทั้งที่บรรทัดนี้อยู่บนจอ ⇒ ด่านมองไม่เห็นรูปนี้:
+                 วันที่อยู่ใน **template literal ที่ส่งลง JSX** ไม่ได้อยู่เป็นนิพจน์เดี่ยว
+                 ⇒ จดไว้เป็นจุดบอดของด่าน ไม่ได้แก้ด่านในใบนี้ (ต้องมีตัวควบคุมของตัวเอง) */}
+          {report ? `${thaiDate(report.range.from)} – ${thaiDate(report.range.to)}` : ''} · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
         </span>
         {/* ② ลิงก์ "ค้นหาขั้นสูง" — ZORT มีตรงนี้ (สเปกข้อ 2)
             🔴 **ห้ามเป็นลิงก์หลอก** ⇒ กดแล้วต้องได้คำตอบว่าตอนนี้กรองอะไรได้จริงบ้าง */}
@@ -723,8 +741,11 @@ export default function SalesReportPage() {
                       <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">💰</span>
                       สรุปยอดขายรวม
                     </p>
-                    <ReportKindSelect />
+                    <ReportKindSelect ประตู={ประตูกำไร} />
                   </div>
+                  {/* บรรทัดเหตุที่ **มองเห็น** — ตัวเลือกที่ปิดไว้ hover ยาก บนมือถือ hover ไม่ได้เลย */}
+                  <CostStateNote ประตู={ประตูกำไร}
+                    ช่วง={report ? `${thaiDate(report.range.from)} – ${thaiDate(report.range.to)}` : undefined} />
                   <div className="flex flex-col items-center justify-center py-8">
                     {/* 🔴 **ท่อไม่ส่งตัวเลขมา ≠ ยอดเป็นศูนย์** (เจอด้วยท่อปลอมโหมด partialgood 16 ก.ย. 2569)
                         เดิมจอเขียน "0 ใบ · เฉลี่ยใบละ 0 บาท" เมื่อ `totals` ขาดช่อง
@@ -838,8 +859,11 @@ export default function SalesReportPage() {
                       <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📈</span>
                       รายงาน
                     </p>
-                    <ReportKindSelect />
+                    <ReportKindSelect ประตู={ประตูกำไร} />
                   </div>
+                  {/* บรรทัดเหตุที่ **มองเห็น** — ตัวเลือกที่ปิดไว้ hover ยาก บนมือถือ hover ไม่ได้เลย */}
+                  <CostStateNote ประตู={ประตูกำไร}
+                    ช่วง={report ? `${thaiDate(report.range.from)} – ${thaiDate(report.range.to)}` : undefined} />
                   <TrendChart daily={grouped} kind={chartKind} />
                   {/* ⑤ ปุ่มสลับชนิดกราฟ (ซ้ายล่าง) + ปุ่มช่วงเวลา (ขวาล่าง) — ตำแหน่งเดียวกับ ZORT */}
                   <div className="flex items-center justify-between gap-2 mt-2">
