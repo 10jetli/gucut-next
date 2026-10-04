@@ -342,7 +342,7 @@ export default function WebOrdersPage() {
               <button key={k} onClick={() => setFilter(k as 'all' | Status)}
                 className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-150 ${
                   active ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'
-                }`}>
+                }`} aria-pressed={active}>
                 {label}{typeof n === 'number' && n > 0 ? <span className={`ml-1 ${active ? 'text-white/60' : 'text-gray-400'}`}>{n}</span> : null}
               </button>
             )

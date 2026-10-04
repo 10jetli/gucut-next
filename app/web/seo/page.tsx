@@ -87,7 +87,7 @@ export default function WebSeoPage() {
       <div className="grid grid-cols-3 gap-3">
         {CATS.map((c) => (
           <button key={c.key} onClick={() => setTab(c.key)}
-            className={`bg-white rounded-2xl border p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] transition-all ${tab === c.key ? 'border-blue-300 ring-4 ring-blue-50' : 'border-gray-100/80 hover:-translate-y-0.5'}`}>
+            className={`bg-white rounded-2xl border p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] transition-all ${tab === c.key ? 'border-blue-300 ring-4 ring-blue-50' : 'border-gray-100/80 hover:-translate-y-0.5'}`} aria-pressed={tab === c.key}>
             <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{c.t}</p>
             <p className={`text-[28px] font-black tabular-nums leading-none mt-1 ${audit ? scoreColor(audit.scores[c.key]) : 'text-gray-300'}`}>
               {audit ? audit.scores[c.key] : '—'}

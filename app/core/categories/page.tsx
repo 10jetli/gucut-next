@@ -298,7 +298,7 @@ export default function CoreCategoriesPage() {
                 onClick={() => setBasis('zort')}
                 className={`text-[12px] rounded-full px-3 py-1 border ${
                   basis === 'zort' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
-                }`}
+                }`} aria-pressed={basis === 'zort'}
               >
                 ต้นทุนเฉลี่ย (ตรงกับ ZORT)
               </button>
@@ -306,7 +306,7 @@ export default function CoreCategoriesPage() {
                 onClick={() => setBasis('cost')}
                 className={`text-[12px] rounded-full px-3 py-1 border ${
                   basis === 'cost' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
-                }`}
+                }`} aria-pressed={basis === 'cost'}
               >
                 ตามต้นทุน
               </button>
@@ -314,7 +314,7 @@ export default function CoreCategoriesPage() {
                 onClick={() => setBasis('sell')}
                 className={`text-[12px] rounded-full px-3 py-1 border ${
                   basis === 'sell' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
-                }`}
+                }`} aria-pressed={basis === 'sell'}
               >
                 ตามราคาขาย
               </button>

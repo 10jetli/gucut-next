@@ -870,7 +870,7 @@ export default function SalesReportPage() {
                         onClick={() => setBucket(b.id)}
                         className={`text-[12px] px-2.5 py-1 rounded ${
                           bucket === b.id ? 'text-blue-600 font-semibold underline' : 'text-gray-500 hover:text-gray-700'
-                        }`}
+                        }`} aria-pressed={bucket === b.id}
                       >
                         {b.label}
                       </button>

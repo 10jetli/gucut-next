@@ -147,7 +147,7 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
                     : zipping
                       ? 'bg-gray-50 border-gray-200 text-gray-300'
                       : 'bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100'
-                }`}>
+                }`} aria-busy={zipping === m}>
                 {zipping === m ? '⏳ กำลังรวมไฟล์…' : '⬇️ โหลดทั้งเดือน'}
               </button>
             </div>

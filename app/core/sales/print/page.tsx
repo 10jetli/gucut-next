@@ -169,7 +169,7 @@ export default function SalesPrintPage() {
                 <button key={k} type="button" onClick={() => setDoc(k)}
                   className={`text-[13px] rounded-full px-3.5 py-1.5 border ${k === doc
                     ? 'bg-[#4669e5] border-[#4669e5] text-white font-semibold'
-                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}>
+                    : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`} aria-pressed={doc === k}>
                   {DOCS[k].title}
                 </button>
               ))}

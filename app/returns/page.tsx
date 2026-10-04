@@ -275,7 +275,7 @@ export default function ReturnsPage() {
             <div className="mt-2 flex flex-wrap gap-2">
               <button
                 onClick={() => setCh('')}
-                className={`rounded-full px-3 py-1 text-xs font-medium ${!ch ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`}
+                className={`rounded-full px-3 py-1 text-xs font-medium ${!ch ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-700'}`} aria-pressed={!ch}
               >
                 ทั้งหมด
               </button>
@@ -285,7 +285,7 @@ export default function ReturnsPage() {
                   onClick={() => setCh(ch === name ? '' : name)}
                   className={`rounded-full px-3 py-1 text-xs font-medium ${
                     ch === name ? 'bg-gray-900 text-white' : CH_COLOR[name] || 'bg-gray-100 text-gray-700'
-                  }`}
+                  }`} aria-pressed={ch === name}
                 >
                   {name} · {v.orders} ใบ · {baht(v.amount)}
                 </button>
@@ -300,7 +300,7 @@ export default function ReturnsPage() {
                 onClick={() => setTab(t)}
                 className={`rounded-lg px-3 py-1.5 text-sm font-medium ${
                   tab === t ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 border border-gray-300'
-                }`}
+                }`} aria-pressed={tab === t}
               >
                 {t === 'sku' ? 'สินค้าที่ถูกคืนบ่อย' : 'รายการใบคืน'}
               </button>
@@ -320,7 +320,7 @@ export default function ReturnsPage() {
                   ['received', `🟢 รับแล้ว ${nRecv}`, 'bg-emerald-100 text-emerald-800'],
                 ] as const).map(([v, lb, tone]) => (
                   <button key={v} onClick={() => setRecvFilter(v)}
-                    className={`rounded-full px-3 py-1 text-xs font-semibold ${recvFilter === v ? 'bg-gray-900 text-white' : tone}`}>
+                    className={`rounded-full px-3 py-1 text-xs font-semibold ${recvFilter === v ? 'bg-gray-900 text-white' : tone}`} aria-pressed={recvFilter === v}>
                     {lb}
                   </button>
                 ))}

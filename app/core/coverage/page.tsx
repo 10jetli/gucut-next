@@ -306,7 +306,7 @@ export default function CoveragePage() {
       <div className="flex gap-2 mb-3 text-[12.5px]">
         {([['', 'ทั้ง 2 ร้าน'], ['z1', 'ร้านที่ 1'], ['z2', 'ร้านที่ 2']] as const).map(([v, label]) => (
           <button key={v} onClick={() => setStore(v)}
-            className={`px-3 py-1.5 rounded border ${store === v ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white border-gray-200 text-gray-600'}`}>
+            className={`px-3 py-1.5 rounded border ${store === v ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white border-gray-200 text-gray-600'}`} aria-pressed={store === v}>
             {label}
           </button>
         ))}

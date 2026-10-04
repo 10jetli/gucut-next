@@ -103,7 +103,7 @@ export default function Sidebar({
                     className={`w-full flex items-center gap-2.5 py-3 text-[15px] transition-colors ${
                       collapsed ? 'justify-center px-0' : 'px-3'
                     } ${open ? 'text-white font-bold' : 'text-white/80 hover:bg-white/10'}`}
-                    style={open ? { borderBottom: `2px solid ${GROUP_LINE}` } : undefined}
+                    style={open ? { borderBottom: `2px solid ${GROUP_LINE}` } : undefined} aria-expanded={open}
                   >
                     <span className="text-[16px] w-5 text-center shrink-0">{item.icon}</span>
                     {!collapsed && (

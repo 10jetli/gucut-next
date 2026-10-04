@@ -595,12 +595,12 @@ export default function ReturnReceivePage() {
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setVerdicts((m) => ({ ...m, [it.sku]: { ...v, verdict: 'return_in' } }))}
                       className={`py-2.5 rounded-md text-[13.5px] font-semibold border-2 ${v.verdict === 'return_in'
-                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-gray-200 text-gray-500'}`}>
+                        ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-gray-200 text-gray-500'}`} aria-pressed={v.verdict === 'return_in'}>
                       ✅ ขายต่อได้
                     </button>
                     <button onClick={() => setVerdicts((m) => ({ ...m, [it.sku]: { ...v, verdict: 'damage' } }))}
                       className={`py-2.5 rounded-md text-[13.5px] font-semibold border-2 ${v.verdict === 'damage'
-                        ? 'border-red-500 bg-red-50 text-red-800' : 'border-gray-200 text-gray-500'}`}>
+                        ? 'border-red-500 bg-red-50 text-red-800' : 'border-gray-200 text-gray-500'}`} aria-pressed={v.verdict === 'damage'}>
                       ❌ เสียหาย
                     </button>
                   </div>

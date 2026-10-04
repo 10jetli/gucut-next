@@ -54,6 +54,11 @@ export default function StorePicker({ value, onChange, disabled, note }: {
             key={v}
             type="button"
             disabled={disabled}
+            /* 🔴 **ร้านที่เลือกอยู่เคยบอกด้วยสีเท่านั้น** (4 ต.ค. 2569)
+               ตัวแปร `on` เปลี่ยนแค่ `className` ⇒ ไม่มีใครอ่านได้นอกจากตาที่เห็นสี
+               ⚠️ ตัวเลือกร้านเป็นของที่ **เปลี่ยนความหมายของทุกเลขบนจอ** (z1 กับ z2 คนละร้าน)
+                  ⇒ คนที่ใช้โปรแกรมอ่านหน้าจอไม่รู้ว่ากำลังดูเลขของร้านไหน */
+            aria-pressed={on}
             onClick={() => { if (value !== v) onChange(v) }}
             className={`text-[12.5px] rounded-full px-3 py-1 border disabled:opacity-50 ${
               on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'

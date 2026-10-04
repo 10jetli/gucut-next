@@ -261,7 +261,7 @@ function Inner() {
                   {(['สินค้า', 'หมวดหมู่'] as const).map((t) => (
                     <button key={t} type="button" onClick={() => setTab(t)}
                       className={`rounded-full px-2.5 py-0.5 text-[12px] ${tab === t
-                        ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}>
+                        ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} aria-pressed={tab === t}>
                       ราย{t}
                     </button>
                   ))}

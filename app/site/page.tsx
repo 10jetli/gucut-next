@@ -86,7 +86,7 @@ export default function SiteToolsPage() {
           <button key={c} onClick={() => setCat(c)}
             className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-150 ${
               cat === c ? 'bg-gray-900 text-white shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
-            }`}>
+            }`} aria-pressed={cat === c}>
             {c}
           </button>
         ))}

@@ -219,7 +219,7 @@ export default function CoreUsagePage() {
                 onClick={() => setWin(x.d)}
                 className={`text-[12.5px] rounded-full px-3 py-1.5 border transition-colors ${
                   win === x.d ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                }`}
+                }`} aria-pressed={win === x.d}
               >
                 {x.label}
               </button>

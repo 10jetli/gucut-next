@@ -79,6 +79,10 @@ export default function PageNav({ offset, perPage, total, rowsOnPage, onGo, onPe
           ? <span key={`gap${i}`} className="px-1 text-gray-400 select-none">…</span>
           : (
             <button key={p} type="button" className={p === cur ? HERE : PLAIN}
+              /* 🔴 **หน้าที่กำลังอยู่เคยบอกด้วยสี + `disabled` เท่านั้น** (4 ต.ค. 2569)
+                 `disabled` บอกได้แค่ว่า "กดไม่ได้" ไม่ได้บอกว่า "เพราะนี่คือหน้าปัจจุบัน"
+                 ⇒ `aria-current="page"` คือคำตอบมาตรฐานของคำถามนั้น */
+              aria-current={p === cur ? 'page' : undefined}
               disabled={disabled || p === cur} onClick={() => onGo((p - 1) * perPage)}>
               {p.toLocaleString('th-TH')}
             </button>

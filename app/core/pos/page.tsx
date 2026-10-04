@@ -801,7 +801,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                       payMethod === id
                         ? 'bg-[#4669e5] text-white border-[#4669e5]'
                         : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
-                    }`}
+                    }`} aria-pressed={payMethod === id}
                   >
                     {label}
                   </button>

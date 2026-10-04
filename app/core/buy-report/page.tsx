@@ -378,7 +378,7 @@ export default function BuyReportPage() {
                   onClick={() => { setFrom(f); setTo(t); void load(store, by, f, t) }}
                   className={`text-[12px] rounded-full px-2.5 py-1 border ${
                     on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
-                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                      : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`} aria-pressed={on}
                 >
                   {label}
                 </button>
@@ -462,7 +462,7 @@ export default function BuyReportPage() {
                   <button key={g.id} onClick={() => setGrain(g.id)}
                     className={`text-[12px] px-2.5 py-1 rounded border ${
                       grain === g.id ? 'border-gray-400 text-gray-900 font-semibold underline' : 'border-gray-200 text-gray-500'
-                    }`}>
+                    }`} aria-pressed={grain === g.id}>
                     {g.label}
                   </button>
                 ))}

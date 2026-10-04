@@ -242,7 +242,7 @@ export default function TrackerPage() {
       <div className="flex gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setFilter('all')}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`} aria-pressed={filter === 'all'}
         >
           ทั้งหมด ({tabCounts.all})
         </button>
@@ -250,7 +250,7 @@ export default function TrackerPage() {
           <button
             key={s}
             onClick={() => setFilter(s)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${filter === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${filter === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`} aria-pressed={filter === s}
           >
             {STATUS_LABEL[s]} ({tabCounts[s] ?? 0})
           </button>

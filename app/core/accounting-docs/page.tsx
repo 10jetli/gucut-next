@@ -350,7 +350,7 @@ export default function AccountingDocsPage() {
           <button key={t.v || 'all'} onClick={() => { setType(t.v); typeRef.current = t.v; void load(1, t.v) }}
             className={`text-[12.5px] rounded-full px-3 py-1 border ${
               type === t.v ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
-            }`}>
+            }`} aria-pressed={type === t.v}>
             {t.label}
             {t.seen !== null && <span className="ml-1 text-[11px] text-gray-400">({fmtNum(t.seen)})</span>}
           </button>

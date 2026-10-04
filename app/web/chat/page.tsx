@@ -140,7 +140,7 @@ export default function WebChatPage() {
             </div>
           ) : rooms.map((r) => (
             <button key={r.cid} onClick={() => setOpen(r.cid)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 transition-colors hover:bg-gray-50/80 ${open === r.cid ? 'bg-blue-50/60' : ''}`}>
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 transition-colors hover:bg-gray-50/80 ${open === r.cid ? 'bg-blue-50/60' : ''}`} aria-current={open === r.cid ? 'true' : undefined}>
               <span className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white text-[13px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
                 {(r.name || 'ล').charAt(0)}
               </span>

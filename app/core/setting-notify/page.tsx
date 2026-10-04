@@ -98,7 +98,7 @@ export default function SettingNotifyPage() {
             onClick={() => { setChan(c.id); setSel(c.items[0].id) }}
             className={`text-[13.5px] pb-2 -mb-px ${c.id === chan
               ? 'text-blue-600 border-b-2 border-blue-600 font-medium'
-              : 'text-gray-500 hover:text-gray-700'}`}>
+              : 'text-gray-500 hover:text-gray-700'}`} aria-pressed={chan === c.id}>
             {c.label}
           </button>
         ))}
@@ -112,7 +112,7 @@ export default function SettingNotifyPage() {
           {active.items.map((i) => (
             <button key={i.id} onClick={() => setSel(i.id)}
               className={`block w-full text-left px-4 py-3 text-[13px] border-b border-gray-100 last:border-0 ${
-                i.id === item.id ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-l-blue-600' : 'text-gray-700 hover:bg-gray-50'}`}>
+                i.id === item.id ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-l-blue-600' : 'text-gray-700 hover:bg-gray-50'}`} aria-current={sel === i.id ? 'true' : undefined}>
               {i.name}
             </button>
           ))}

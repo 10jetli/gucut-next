@@ -168,7 +168,7 @@ export default function NoImagePage() {
                 <button key={k} type="button" onClick={() => setเรียงแบบ(k)}
                   className={`rounded-full px-2.5 py-0.5 border text-[12px] ${เรียงแบบ === k
                     ? 'bg-[#4669e5] text-white border-[#4669e5]'
-                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`}>
+                    : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`} aria-pressed={เรียงแบบ === k}>
                   {k === 'รหัส' ? 'รหัส (เดินชั้นตามลำดับ)' : 'ควรถ่ายก่อน'}
                 </button>
               ))}

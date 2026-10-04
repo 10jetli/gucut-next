@@ -307,13 +307,13 @@ export default function ReorderPage() {
           <div className="flex items-center gap-2 mb-3">
             <button
               onClick={() => setOnlyChain(true)}
-              className={`text-[12.5px] rounded-full px-3 py-1.5 border ${onlyChain ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-600 border-gray-300'}`}
+              className={`text-[12.5px] rounded-full px-3 py-1.5 border ${onlyChain ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-600 border-gray-300'}`} aria-pressed={onlyChain}
             >
               เฉพาะม้วนโซ่ ({fmtNum(all.filter((r) => r.teethPerRoll).length)})
             </button>
             <button
               onClick={() => setOnlyChain(false)}
-              className={`text-[12.5px] rounded-full px-3 py-1.5 border ${!onlyChain ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-600 border-gray-300'}`}
+              className={`text-[12.5px] rounded-full px-3 py-1.5 border ${!onlyChain ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-600 border-gray-300'}`} aria-pressed={!onlyChain}
             >
               ทุกสินค้าที่ขายใน {days} วัน ({fmtNum(all.length)})
             </button>

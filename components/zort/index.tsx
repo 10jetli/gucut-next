@@ -198,13 +198,20 @@ export function Tabs({
        🔑 **ของเดิมไม่ได้พัง — มันโตข้ามเส้นเฉย ๆ** (คลาสเดียวกับ display-limits-cant-decide)
           และวันที่ ZORT เพิ่มสถานะใหม่ แท็บจะโผล่เองอีก ⇒ ต้องกันไว้ที่คอมโพเนนต์ ไม่ใช่รายจอ
        ⚠️ `overflow-x-auto` ต้องมากับ `flex-none` ที่ปุ่ม ไม่งั้น flex จะบีบปุ่มให้แคบแทนที่จะเลื่อน */
-    <div className="flex items-center gap-1 border-b border-gray-200 mb-0 overflow-x-auto">
+    <div role="tablist" className="flex items-center gap-1 border-b border-gray-200 mb-0 overflow-x-auto">
       {tabs.map((t) => (
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
           disabled={!!t.ปิดไว้}
           title={t.ปิดไว้ || undefined}
+          /* 🔴 **แท็บที่เลือกอยู่เคยบอกด้วยสีเท่านั้น** (เจอ 4 ต.ค. 2569 ตอนกวาดกดจริง)
+             `active === t.id` เปลี่ยนแค่ `className` ⇒ ตัวหนังสือบนจอไม่เปลี่ยนเลย
+             ⇒ **ทั้งตัวทดสอบและโปรแกรมอ่านหน้าจอไม่รู้ว่าตอนนี้อยู่แท็บไหน**
+             🔑 สถานะที่เห็นได้ด้วยสีเท่านั้น = สถานะที่ตรวจไม่ได้ และคนตาไม่ดีใช้ไม่ได้
+             ⇒ ใส่ `role="tab"` + `aria-selected` ที่ **คอมโพเนนต์** ⇒ ทุกจอที่ใช้ Tabs ได้มาฟรี */
+          role="tab"
+          aria-selected={active === t.id}
           className={`text-[13.5px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
             t.ปิดไว้
               ? 'border-transparent text-gray-300 cursor-not-allowed'
