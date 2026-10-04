@@ -139,8 +139,15 @@ export default function WebChatPage() {
               <p className="text-[13px] text-gray-400">ยังไม่มีลูกค้าทักเข้ามา</p>
             </div>
           ) : rooms.map((r) => (
+            /* 🔴 **ใช้ `aria-pressed` ไม่ใช่ `aria-current`** — วัดบนเว็บจริง 4 ต.ค. 2569 แล้วแก้ ปิดเรื่องแล้ว
+               `aria-current` เขียนเฉพาะตัวที่ถูกเลือก ⇒ ตอนยังไม่เลือกห้องไหน ไม่มีสักตัวที่มีแอตทริบิวต์
+               ⇒ ค้นด้วย `[aria-current]` **วัดได้ 0 แถว ทั้งที่มี 30 ปุ่มใน main** ⇒ ทั้งรายการมองไม่เห็นด้วยเครื่อง
+               `aria-pressed` เขียนทั้ง true และ false ⇒ อ่านสถานะได้ตลอดเวลา
+               ✅ ยิงซ้ำหลังแก้: `จอเรา-ยืนยัน-aria.py https://1.gucut.com/web/chat` ต้องเห็นห้องแชทเป็นแถว
+               ⚠️ `aria-current` ยังถูกที่ `PageNav` เพราะที่นั่น **มีหน้าปัจจุบันเสมอ** */
             <button key={r.cid} onClick={() => setOpen(r.cid)}
-              className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 transition-colors hover:bg-gray-50/80 ${open === r.cid ? 'bg-blue-50/60' : ''}`} aria-current={open === r.cid ? 'true' : undefined}>
+              className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 transition-colors hover:bg-gray-50/80 ${open === r.cid ? 'bg-blue-50/60' : ''}`}
+              aria-pressed={open === r.cid}>
               <span className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white text-[13px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
                 {(r.name || 'ล').charAt(0)}
               </span>
