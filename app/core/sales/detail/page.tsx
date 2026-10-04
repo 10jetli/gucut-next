@@ -16,6 +16,7 @@ import { SALE_DETAIL_PAY_STATUS, SALE_DETAIL_TRANSFER_STATUS, zortWord } from '@
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
+import { กำไรบรรทัด } from '@/lib/line-profit'
 import { reconcileOrder } from '@/lib/order-money'
 import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
@@ -57,6 +58,17 @@ interface Item {
    *     (0 คือคำกล่าวอ้างว่าไม่มีส่วนลด — ผิดคนละเรื่องกับยังไม่รู้)
    *  ⚠️ ไม่มีช่องนี้เลย = ท่อรุ่นก่อน ⇒ คนละเรื่องกับ null อีกที */
   discount?: number | null
+  /** ต้นทุน **ต่อหน่วย** ที่ตรึงไว้ตอนขาย — ท่อเปิดให้อ่าน 5 ต.ค. 2569 (ใบ t_muu0gaih ข้อ 6)
+   *  🔴 **ต่อหน่วย ไม่ใช่ต่อบรรทัด** ⇒ ต้นทุนบรรทัด = `unit_cost × qty`
+   *     ลืมคูณ ⇒ กำไรเกินจริงทุกบรรทัดที่ qty > 1 **และดูเหมือนเลขปกติ**
+   *  🔴 `null` = บรรทัดนี้ขายก่อนวันที่ระบบเริ่มตรึง ⇒ "ยังไม่รู้ต้นทุน" **ห้ามตีเป็น 0**
+   *     (0 ⇒ กำไรกลายเป็น 100% ของราคาขาย และดูเหมือนตัวเลขจริงทุกประการ)
+   *  ⚠️ ไม่มีช่องนี้เลย = ท่อรุ่นก่อน ⇒ คนละเรื่องกับ `null` อีกที
+   *  ⇒ ตรรกะทั้งหมดอยู่ที่ `lib/line-profit.ts` (เทส 24 ข้อ · ปลูกบั๊กพิสูจน์แล้วสองข้อ) */
+  unit_cost?: number | null
+  /** ที่มาของเลขต้นทุน — `zort` | `ใบซื้อ` | `ตั้งไว้` | `null`
+   *  🔴 **ห้ามโชว์ `unit_cost` โดยทิ้งช่องนี้** — เลขสองตัวหน้าตาเหมือนกันแต่เชื่อถือได้ไม่เท่ากัน */
+  cost_source?: string | null
 }
 
 const VAT_RATE = 0.07
@@ -361,11 +373,15 @@ function DetailInner() {
                     <th className={THR}>มูลค่าต่อหน่วย</th>
                     <th className={THR}>ส่วนลดต่อหน่วย</th>
                     <th className={THR}>รวม</th>
+                    {/* 🔴 **ต้นทุนกับที่มาอยู่คอลัมน์เดียวกันโดยตั้งใจ** — แยกคอลัมน์แล้วคนจะอ่านต้นทุน
+                        โดยไม่เห็นที่มา ซึ่งเป็นข้อห้ามของสัญญา (เลขเท่ากันแต่เชื่อถือได้ไม่เท่ากัน) */}
+                    <th className={THR}>ต้นทุนบรรทัด (ที่มา)</th>
+                    <th className={THR}>กำไร</th>
                   </tr>
                 </thead>
                 <tbody>
                   {items.length === 0 && (
-                    <tr><td colSpan={7} className="px-3 py-6 text-[13px] text-gray-400 text-center">
+                    <tr><td colSpan={9} className="px-3 py-6 text-[13px] text-gray-400 text-center">
                       ใบนี้ไม่มีรายการสินค้าในคลังเงา
                     </td></tr>
                   )}
@@ -399,6 +415,50 @@ function DetailInner() {
                             : <span className="text-gray-800">{fmtMoney(Number(it.discount))}</span>}
                       </td>
                       <td className={TDR}>{fmtMoney(it.amount)}</td>
+                      {/* ── ต้นทุนบรรทัด + กำไร ── ตรรกะอยู่ที่ `lib/line-profit.ts` ทั้งหมด
+                          🔑 จอทำหน้าที่ **แสดงสภาพที่ได้มา** ไม่ตัดสินเอง ⇒ สี่สภาพต้องอ่านแยกกันได้:
+                             ท่อยังไม่ส่งช่อง · ยังไม่รู้ต้นทุน · อ่านตัวเลขไม่ได้ · คิดได้ */}
+                      {(() => {
+                        const ผล = กำไรบรรทัด(it)
+                        if (ผล.ชนิด === 'ท่อยังไม่ส่งช่อง') return (
+                          <>
+                            <td className={TDR}><span className="text-gray-300" title="ท่อยังไม่ส่งช่อง unit_cost มา — คนละเรื่องกับบรรทัดที่ยังไม่ตรึงต้นทุน">—</span></td>
+                            <td className={TDR}><span className="text-gray-300">—</span></td>
+                          </>
+                        )
+                        if (ผล.ชนิด === 'ยังไม่รู้ต้นทุน') return (
+                          <>
+                            {/* 🔴 **ห้ามเขียน 0** — 0 คือคำกล่าวอ้างว่าของนี้ไม่มีต้นทุน
+                                ⇒ กำไรจะกลายเป็น 100% ของราคาขาย และดูเหมือนตัวเลขจริงทุกประการ */}
+                            <td className={TDR}><span className="text-gray-400" title="บรรทัดนี้ขายก่อนวันที่ระบบเริ่มตรึงต้นทุน ⇒ เติมย้อนหลังไม่ได้">ยังไม่รู้ต้นทุน</span></td>
+                            <td className={TDR}><span className="text-gray-400" title="ไม่รู้ต้นทุน ⇒ คิดกำไรของบรรทัดนี้ไม่ได้ · ไม่ใช่กำไร 0 และไม่ใช่กำไรเต็มราคา">คิดไม่ได้</span></td>
+                          </>
+                        )
+                        if (ผล.ชนิด === 'อ่านตัวเลขไม่ได้') return (
+                          <>
+                            <td className={TDR}><span className="text-amber-800" title={ผล.เหตุ}>อ่านไม่ได้</span></td>
+                            <td className={TDR}><span className="text-amber-800" title={ผล.เหตุ}>อ่านไม่ได้</span></td>
+                          </>
+                        )
+                        return (
+                          <>
+                            <td className={TDR}>
+                              {fmtMoney(ผล.ต้นทุนบรรทัด)}
+                              {/* ที่มาอยู่ติดกับเลขเสมอ — ท่อไม่บอกที่มา ⇒ เขียนว่าไม่บอก **ไม่ใช่เว้นว่าง** */}
+                              <span className="text-gray-400 text-[11px]"> ({ผล.ที่มา ?? 'ท่อไม่บอกที่มา'})</span>
+                            </td>
+                            <td className={TDR}>
+                              <span className={ผล.กำไร < 0 ? 'text-red-600 font-medium' : 'text-gray-800'}>
+                                {fmtMoney(ผล.กำไร)}
+                              </span>
+                              {/* รายได้ 0 ⇒ หารไม่ได้ ⇒ ไม่โชว์ % (ของแจกฟรีไม่ใช่ "กำไร 0%") */}
+                              {ผล.เปอร์เซ็นต์ !== null && (
+                                <span className="text-gray-400 text-[11px]"> ({ผล.เปอร์เซ็นต์.toFixed(1)}%)</span>
+                              )}
+                            </td>
+                          </>
+                        )
+                      })()}
                     </tr>
                   ))}
                 </tbody>
