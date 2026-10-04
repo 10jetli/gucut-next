@@ -57,6 +57,27 @@ interface PendingResp {
   dormantDays?: number
 }
 
+/* ── ช่วงเวลาของการ์ด "สินค้าเคลื่อนไหวย้อนหลัง …" ──────────────────────────────
+   🔴 **ลอกจาก ZORT ของจริง** — อ่าน DOM สด `/Dashboard/Main` 4 ต.ค. 2569:
+      select ชื่อ `movementtype` มีสี่ตัวเลือกเรียงนี้ **วันนี้ · 7 วัน · 1 เดือน · 3 เดือน**
+   ⚠️ ของเราเดิมเป็น `7 / 15 / 30 วัน` ⇒ **ไม่มี "วันนี้" และ "3 เดือน" เลย**
+      คนที่ชิน ZORT กดหาช่วงที่เคยใช้แล้วไม่เจอ แต่จอไม่มีอะไรฟ้อง (ไม่ error ไม่แดง)
+   ⚠️ `15 วัน` คือ **ของเราเกิน ZORT** ⇒ ย้ายไว้ท้ายรายการ **ห้ามลบ** (กฎของที่เรามีเกิน)
+   🔑 ป้ายกับจำนวนวันต้องมาจากตารางเดียวกัน ไม่งั้นหัวการ์ดเขียน "30 วัน" แต่ ZORT เรียก
+      "1 เดือน" แล้วสองจอเทียบกันไม่ได้ ([[ข้อความกับตรรกะต้องมาจากที่เดียวกัน]]) */
+const ช่วงเคลื่อนไหว = [
+  { วัน: 1, ป้าย: 'วันนี้' },
+  { วัน: 7, ป้าย: '7 วัน' },
+  { วัน: 30, ป้าย: '1 เดือน' },
+  { วัน: 90, ป้าย: '3 เดือน' },
+  { วัน: 15, ป้าย: '15 วัน (ของเราเพิ่ม)' },
+] as const
+
+/** ป้ายของช่วงที่เลือก — ถอยไปเขียน "N วัน" ถ้าวันหนึ่งมีค่าที่ไม่อยู่ในตาราง
+ *  (ถอยแบบนี้เพราะหัวการ์ดต้องอ่านออกเสมอ ห้ามว่างหรือขึ้น undefined) */
+const ป้ายช่วงเคลื่อนไหว = (วัน: number) =>
+  ช่วงเคลื่อนไหว.find((ช) => ช.วัน === วัน)?.ป้าย ?? `${วัน} วัน`
+
 // วันแบบไทย (UTC+7) — ต้องตรงกับฝั่งเซิร์ฟเวอร์ ไม่งั้น "วันนี้" ของสองฝั่งคนละวัน
 // ของเดิมใช้ toISOString() ตรง ๆ = ก่อนเจ็ดโมงเช้าจะไปถามยอดของ "เมื่อวาน"
 const thaiDay = (back = 0) =>
@@ -310,7 +331,7 @@ export default function DashboardPage() {
   const [cats, setCats] = useState<{ category: string; qty: number; amount: number; skus: number; orders: number }[] | null>(null)
   const [catsErr, setCatsErr] = useState('')
   const [moversErr, setMoversErr] = useState('')
-  /** จำนวนวันของการ์ด "สินค้าเคลื่อนไหว" — ZORT มี dropdown ตรงนี้ */
+  /** จำนวนวันของการ์ด "สินค้าเคลื่อนไหว" — ตัวเลือกอยู่ที่ `ช่วงเคลื่อนไหว` (ลอกจาก ZORT) */
   const [moverDays, setMoverDays] = useState(7)
   /** กราฟยอดขายรวม: ชนิด + หน้าต่าง 4 เดือนที่กำลังดู (0 = ล่าสุด · เพิ่มขึ้น = ถอยหลัง) */
   const [trendKind, setTrendKind] = useState<'line' | 'bar'>('line')
@@ -573,12 +594,34 @@ export default function DashboardPage() {
               <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📈</span>
               ยอดขายรวม
             </p>
+            {/* 🔴 **ZORT มีสอง dropdown ตรงนี้ ไม่ใช่หนึ่ง** — อ่าน DOM สด `/Dashboard/Main` 4 ต.ค. 2569
+                ① ชุดตัวเลข: **ยอดขายรวม · กำไรจากการขาย · กำไรรวม**
+                ② การแบ่ง:   **ยอดขายรวม · ยอดขายตามหมวดหมู่**
+                เดิมจอนี้มีแต่ ② ⇒ คนเทียบสองจอแล้วไม่เห็นเลยว่า ZORT ดู "กำไร" ได้
+                ⚠️ จอยอดขาย `/sales` ของเรามีครบสองอันอยู่แล้ว ⇒ จอภาพรวมต้องใช้ถ้อยคำเดียวกัน
+                   ไม่งั้นสองจอของเราเองเรียกของเดียวกันคนละชื่อ */}
+            <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
+              value="sales" onChange={() => { /* มีชุดเดียวที่ทำได้จริง */ }}
+              /* 🔴 **เหตุผลต้องเจาะจงว่าขาดอะไร ไม่ใช่ "ยังไม่มีต้นทุน" เฉย ๆ**
+                 ยิงท่อตรวจเอง 4 ต.ค. 2569: `list=stock` ส่งช่อง `buy` (ราคาซื้อ) มา**รายสินค้าจริง**
+                 ⇒ พูดว่า "ไม่มีต้นทุน" **ไม่ถูก** และทำให้คนเลิกหาทางทำ
+                 ที่ขาดจริงคือสองข้อ:
+                   ① `buy` เป็น **ราคาซื้อ ณ วันนี้** ไม่ใช่ต้นทุนตอนที่ขายใบนั้นไป
+                      ⇒ ของที่ราคาเปลี่ยนระหว่างปี กำไรจะเพี้ยนและไม่มีอะไรฟ้อง
+                   ② ยอดขายมาจาก `topproducts` · ต้นทุนมาจากภาพถ่าย `stock` = **คนละแหล่ง**
+                      ⇒ เอามาหารกันตรง ๆ คือเลขสองชุดมาวางคู่กัน (กฎข้อ 4 ใน CLAUDE.md)
+                 ⇒ ต้องให้บัญชีของร้านตัดสินนิยามก่อน (ต้นทุนเฉลี่ย / FIFO / ราคาซื้อล่าสุด) */
+              title="ท่อส่งราคาซื้อรายสินค้ามาแล้ว (ช่อง buy) แต่เป็นราคา ณ วันนี้ ไม่ใช่ต้นทุนตอนขาย และมาจากคนละแหล่งกับยอดขาย ⇒ ต้องให้บัญชีร้านตัดสินนิยามต้นทุนก่อน">
+              <option value="sales">ยอดขายรวม</option>
+              <option value="gp" disabled>กำไรจากการขาย (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
+              <option value="np" disabled>กำไรรวม (ยังคำนวณไม่ได้ — รอนิยามต้นทุน)</option>
+            </select>
             <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
               value="total" onChange={() => { /* มีชนิดเดียวที่ทำได้จริง */ }}
-              title="ZORT เลือกชุดข้อมูลได้หลายแบบ ของเรามีแบบเดียว">
+              title="ท่อรวมยอดตามหมวดให้ได้แล้ว แต่จอนี้ยังไม่ได้ทำมุมมองรายหมวด">
               <option value="total">ยอดขายรวม</option>
               {/* ท่อรวมตามหมวดได้แล้ว (b0a4aa3) — ที่ขาดคือกราฟรายหมวดบนจอ ⇒ เขียนตามจริง */}
-              <option value="cat" disabled>ตามหมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
+              <option value="cat" disabled>ยอดขายตามหมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
             </select>
           </div>
           {/* 🔴 ไม่มีข้อมูล ⇒ **วาดกรอบไว้** พร้อมข้อความ ห้ามซ่อนกราฟ (กติกาในใบ) */}
@@ -644,14 +687,18 @@ export default function DashboardPage() {
         <div className="flex flex-wrap items-center gap-2 px-4 md:px-5 pt-4">
           <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2 mr-auto">
             <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📊</span>
-            สินค้าเคลื่อนไหวย้อนหลัง {moverDays} วัน
+            สินค้าเคลื่อนไหวย้อนหลัง {ป้ายช่วงเคลื่อนไหว(moverDays)}
           </p>
           <select
             value={moverDays}
             onChange={(e) => setMoverDays(Number(e.target.value))}
             className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
           >
-            {[7, 15, 30].map((d) => <option key={d} value={d}>{d} วัน</option>)}
+            {/* 🔴 ตัวเลือกต้องตรง ZORT เป๊ะ — อ่าน DOM สด 4 ต.ค. 2569: select `movementtype`
+                   ของ /Dashboard/Main มี **วันนี้ · 7 วัน · 1 เดือน · 3 เดือน** (เรียงนี้)
+                   เดิมของเราเป็น 7/15/30 วัน ⇒ ไม่มี "วันนี้" และ "3 เดือน" เลย
+                   ⚠️ **15 วันเป็นของเราเกิน** — ย้ายไว้ท้ายรายการ ไม่ลบ (กฎของที่เรามีเกิน) */}
+            {ช่วงเคลื่อนไหว.map((ช) => <option key={ช.วัน} value={ช.วัน}>{ช.ป้าย}</option>)}
           </select>
         </div>
         {/* ⚠️ "เคลื่อนไหว" ของจอนี้ = **ขายออก** เท่านั้น (มาจากยอดขายรายสินค้า)
@@ -664,7 +711,7 @@ export default function DashboardPage() {
             <p className="text-[12.5px] text-amber-800">⚠️ <b>ยังดึงข้อมูลไม่ได้</b> — {moversErr}</p>
           )}
           {movers && movers.length === 0 && (
-            <p className="text-[12.5px] text-gray-500">ช่วง {moverDays} วันนี้ยังไม่มีสินค้าที่ขายออก</p>
+            <p className="text-[12.5px] text-gray-500">ช่วง{ป้ายช่วงเคลื่อนไหว(moverDays)}นี้ยังไม่มีสินค้าที่ขายออก</p>
           )}
           {movers && movers.length > 0 && (
             <table className="w-full text-[12.5px]">

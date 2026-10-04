@@ -183,11 +183,20 @@ function NewPurchaseOrderInner() {
       <TableWrap>
         <table className="w-full min-w-[640px]">
           <thead className="bg-white border-b border-gray-200">
+            {/* 🔴 **ลอกหัวคอลัมน์จาก ZORT ของจริง** — อ่าน DOM สด `/Buy/Add` 4 ต.ค. 2569 ได้
+                `รหัส` · `ชื่อสินค้า*` · `จำนวน*` · `มูลค่าต่อหน่วย*` · `ส่วนลดต่อหน่วย` · `รวม`
+                ⇒ ของเราเคยใช้ "ราคาต่อหน่วย" (คนละคำ) และ **ไม่มีคอลัมน์ "รวม" เลย**
+                🔄 เพิ่ม "รวม" แล้ว — คิดจาก จำนวน × มูลค่าต่อหน่วย ของบรรทัดนั้น (คำนวณบนจอ)
+                ⚠️ **ส่วนลดต่อหน่วย ยังไม่ทำ** — ท่อส่งใบเข้า ZORT ยังไม่มีช่องส่วนลดรายบรรทัด
+                   ใส่ช่องให้กรอกแล้วค่าไม่ถูกส่ง = ช่องหลอก ซึ่งแย่กว่าไม่มีช่อง
+                   ⇒ เขียนบอกใต้ตารางแทน (ดูบรรทัด "ที่ยังไม่มีเทียบกับ ZORT")
+                ⚠️ คงคำว่า "(SKU)" ต่อท้ายไว้ เพราะช่องนี้ต้องพิมพ์เอง — คนกรอกต้องรู้ว่าใส่อะไร */}
             <tr>
-              <th className={TH}>รหัสสินค้า (SKU)</th>
-              <th className={TH}>ชื่อสินค้า</th>
-              <th className={THR} style={{ width: 110 }}>จำนวน</th>
-              <th className={THR} style={{ width: 150 }}>ราคาต่อหน่วย</th>
+              <th className={TH}>รหัส (SKU)</th>
+              <th className={TH}>ชื่อสินค้า*</th>
+              <th className={THR} style={{ width: 110 }}>จำนวน*</th>
+              <th className={THR} style={{ width: 150 }}>มูลค่าต่อหน่วย*</th>
+              <th className={THR} style={{ width: 120 }}>รวม</th>
               <th className={TH} style={{ width: 52 }}></th>
             </tr>
           </thead>
@@ -210,6 +219,18 @@ function NewPurchaseOrderInner() {
                   <input value={l.price} inputMode="decimal" onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
                     className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px] text-right" placeholder="ไม่ใส่ = ZORT คิดเอง" />
                 </td>
+                {/* 🔴 **"รวม" ของบรรทัดที่กรอกไม่ครบต้องว่าง ห้ามเป็น 0**
+                    0 อ่านว่า "ของฟรี" ซึ่งพาไปตัดสินใจผิด · ว่างอ่านว่า "ยังไม่ได้กรอก"
+                    (กฎของโปรเจกต์: ไม่รู้ห้ามกลายเป็นศูนย์ที่ชั้นจอ) */}
+                <td className={TDR}>
+                  {(() => {
+                    const q = Number(l.qty); const p2 = Number(l.price)
+                    if (!l.qty.trim() || !l.price.trim() || !Number.isFinite(q) || !Number.isFinite(p2)) {
+                      return <span className="text-[12px] text-gray-300" title="ใส่ทั้งจำนวนและมูลค่าต่อหน่วยก่อน จึงคิดยอดรวมได้">—</span>
+                    }
+                    return <span className="text-[13px] text-gray-700">{fmtMoney(q * p2)}</span>
+                  })()}
+                </td>
                 <td className={TD}>
                   {lines.length > 1 && (
                     <button onClick={() => setLines((v) => v.filter((_, j) => j !== i))}
@@ -221,6 +242,22 @@ function NewPurchaseOrderInner() {
           </tbody>
         </table>
       </TableWrap>
+
+      {/* 🔴 **สี่ชิ้นที่ฟอร์ม ZORT มีแต่เรายังไม่มี — ต้องเขียน ไม่ใช่เงียบ**
+          อ่าน DOM สด `/Buy/Add` 4 ต.ค. 2569: นอกจากคอลัมน์ ส่วนลดต่อหน่วย ยังมี
+            · select `vattypeid` = ไม่มีภาษี · แยกภาษีมูลค่าเพิ่ม 7% · รวมภาษีมูลค่าเพิ่ม 7%
+            · select `shippingchannelid` = ไม่ระบุ · Flash (เก็บเงินปลายทาง COD) · Flash express · ลูกค้ารับเอง
+            · select `warehouseid0` = ไม่ระบุ · โกดัง · KLD · ANJ
+          ⚠️ **ห้ามใส่ช่องพวกนี้ก่อนท่อรับ** — กรอกแล้วค่าไม่ถูกส่งเข้า ZORT คือช่องหลอก
+             และเป็นช่องหลอกที่อันตราย เพราะคนจะเชื่อว่าตั้งภาษี/คลังไปแล้ว
+          🔑 เขียนบนจอว่า ZORT ตั้งค่าอะไรได้ที่เราตั้งไม่ได้ ⇒ คนรู้ว่าต้องไปตั้งที่ ZORT */}
+      <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
+        ℹ️ <b>ที่ฟอร์มนี้ยังตั้งไม่ได้เทียบกับ ZORT</b> (วัดจอ `/Buy/Add` เมื่อ 4 ต.ค. 2569) —
+        {' '}<b>ส่วนลดต่อหน่วย</b> (รายบรรทัด) · <b>ชนิดภาษี</b> (ไม่มีภาษี / แยก VAT 7% / รวม VAT 7%)
+        {' '}· <b>ช่องทางจัดส่ง</b> · <b>คลังที่รับของ</b>
+        {' '}⇒ ท่อส่งใบเข้า ZORT ยังไม่รับสี่ช่องนี้ · <b>ใส่ช่องให้กรอกแล้วค่าไม่ถูกส่ง = ช่องหลอก</b>
+        {' '}· ใบที่ต้องระบุค่าเหล่านี้ให้สร้างที่ ZORT โดยตรง
+      </p>
 
       <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
         <BtnGhost onClick={() => setLines((v) => [...v, { ...BLANK }])}>+ เพิ่มบรรทัด</BtnGhost>

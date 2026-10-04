@@ -663,9 +663,19 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
         actions={
           <div className="flex items-center gap-2">
             {branches.map((b) => (
+              /* 🔴 **`aria-pressed` ไม่ใช่ของประดับ — ไม่มีแล้ว "สาขาที่เลือกอยู่" มองไม่เห็นเลย**
+                 เจอ 4 ต.ค. 2569 ตอนกวาดกดจริง: ปุ่มสาขาถูกรายงานว่า
+                 "กดสองรอบในสองสถานะแล้วจอไม่เปลี่ยน" ⇒ เข้าข่ายปุ่มตาย
+                 ของจริงปุ่มทำงานปกติ (`pickBranch` → `setBranch` + จำลง localStorage)
+                 **แต่สถานะที่เปลี่ยนอยู่ใน `className` อย่างเดียว** ⇒ ไม่มีใครอ่านได้
+                 นอกจากตาคนที่เห็นสี · ทั้งตัวทดสอบและโปรแกรมอ่านหน้าจอมองไม่เห็น
+                 🔑 สถานะที่ "เห็นได้ด้วยสีเท่านั้น" = สถานะที่ตรวจไม่ได้ และคนที่ใช้
+                    โปรแกรมอ่านหน้าจอก็ไม่รู้ว่าตอนนี้อยู่สาขาไหน (จอนี้เขียนเข้าคลังจริง
+                    ⇒ เลือกสาขาผิดคือบันทึกขายผิดสาขา) */
               <button
                 key={b.code}
                 onClick={() => pickBranch(b.code)}
+                aria-pressed={branch === b.code}
                 className={`text-[14px] font-semibold rounded-lg px-4 py-2.5 border transition-colors ${
                   branch === b.code
                     ? 'bg-[#4669e5] text-white border-[#4669e5]'

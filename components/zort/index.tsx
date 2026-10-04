@@ -178,7 +178,14 @@ export function LinkText({ children, ...p }: React.ButtonHTMLAttributes<HTMLButt
 export function Tabs({
   tabs, active, onChange, right,
 }: {
-  tabs: { id: string; label: string; count?: number }[]
+  /* 🔴 **`ปิดไว้` มีเพราะแท็บที่กดได้แต่ไม่ทำอะไร อ่านไม่ออกว่าตั้งใจหรือพัง**
+     เจอของจริง 4 ต.ค. 2569 ตอนกวาดกดจริง: แท็บ `ลูกค้า` / `คู่ค้า` ของจอผู้ติดต่อ
+     ถูกกันไว้ด้วย `if (id && !hasType) return` ในตัวจอ ⇒ **กดได้ แต่ไม่มีอะไรเกิดขึ้น**
+     ⇒ ตัวกวาดรายงานว่า "กดสองรอบในสองสถานะแล้วจอไม่เปลี่ยน" = เข้าข่ายปุ่มตาย
+        และคนใช้ก็อ่านไม่ออกเหมือนกันว่าตั้งใจปิด (คำอธิบายอยู่ใต้แถบแท็บ ต้องกวาดตาลงไปอ่าน)
+     🔑 เจตนาต้องอยู่ใน **ตัวปุ่มเอง** ไม่ใช่ในย่อหน้าใต้แถบ ⇒ `disabled` + `title` บอกเหตุ
+        ⇒ ทั้งคนและเครื่องแยก "ปิดไว้" ออกจาก "ตาย" ได้ที่จุดเดียวกัน */
+  tabs: { id: string; label: string; count?: number; ปิดไว้?: string }[]
   active: string
   onChange: (id: string) => void
   right?: ReactNode
@@ -196,10 +203,14 @@ export function Tabs({
         <button
           key={t.id}
           onClick={() => onChange(t.id)}
+          disabled={!!t.ปิดไว้}
+          title={t.ปิดไว้ || undefined}
           className={`text-[13.5px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
-            active === t.id
-              ? 'border-blue-600 text-gray-900 font-semibold'
-              : 'border-transparent text-gray-500 hover:text-gray-700'
+            t.ปิดไว้
+              ? 'border-transparent text-gray-300 cursor-not-allowed'
+              : active === t.id
+                ? 'border-blue-600 text-gray-900 font-semibold'
+                : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
           {t.label}
