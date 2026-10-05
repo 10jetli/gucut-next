@@ -57,6 +57,55 @@ export default function WebPermitsPage() {
     setItems((cur) => (cur ?? []).map((x) => (x.phone === phone ? { ...x, stage } : x)))
   }
 
+  // ── 📮 รับใบ ลซ.๒ ที่ลูกค้าส่งมาทางไปรษณีย์ (5 ต.ค. 2569) ──
+  const [openAdd, setOpenAdd] = useState(false)
+  const [addPhone, setAddPhone] = useState('')
+  const [addName, setAddName] = useState('')
+  const [addFiles, setAddFiles] = useState<string[]>([])
+  const [sending, setSending] = useState(false)
+  const [addMsg, setAddMsg] = useState('')
+
+  /** ย่อรูปในเครื่องก่อนส่ง — กล้องมือถือให้ไฟล์ 4-8 MB ต่อใบ เกินเพดานเซิร์ฟเวอร์
+   *  1600px ยังอ่านตัวหนังสือบนใบ ลซ.๒ ออกสบาย */
+  async function ย่อรูป(f: File): Promise<string> {
+    const bmp = await createImageBitmap(f)
+    const กว้าง = Math.min(1600, bmp.width)
+    const สูง = Math.round((bmp.height * กว้าง) / bmp.width)
+    const cv = document.createElement('canvas')
+    cv.width = กว้าง; cv.height = สูง
+    cv.getContext('2d')!.drawImage(bmp, 0, 0, กว้าง, สูง)
+    return cv.toDataURL('image/jpeg', 0.82)
+  }
+
+  async function เลือกรูป(e: React.ChangeEvent<HTMLInputElement>) {
+    setAddMsg('')
+    const fs = Array.from(e.target.files || []).slice(0, 2)
+    if (!fs.length) return
+    try {
+      setAddFiles(await Promise.all(fs.map(ย่อรูป)))
+    } catch { setAddMsg('อ่านรูปไม่ได้ ลองถ่ายใหม่') }
+  }
+
+  async function ส่งใบ() {
+    setAddMsg('')
+    if (addPhone.replace(/[^0-9]/g, '').length < 9) { setAddMsg('ใส่เบอร์ลูกค้าให้ครบก่อน'); return }
+    if (!addFiles.length) { setAddMsg('ยังไม่ได้แนบรูปใบ ลซ.๒'); return }
+    setSending(true)
+    try {
+      const r = await fetch('/api/web/permit-doc?shop=1', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ phone: addPhone, name: addName, images: addFiles }),
+      })
+      const d = await r.json().catch(() => null)
+      if (!r.ok) { setAddMsg(d?.error || 'บันทึกไม่สำเร็จ'); return }
+      setAddMsg(d?.เรื่องใหม่ ? '✅ บันทึกแล้ว (ลูกค้ารายใหม่)' : '✅ บันทึกแล้ว')
+      setAddPhone(''); setAddName(''); setAddFiles([])
+      await load()
+      setTimeout(() => { setOpenAdd(false); setAddMsg('') }, 1200)
+    } catch { setAddMsg('ส่งไม่ถึงเซิร์ฟเวอร์') }
+    finally { setSending(false) }
+  }
+
   const waiting = (items ?? []).filter((x) => x.stage === 'lz2').length
 
   return (
@@ -68,6 +117,57 @@ export default function WebPermitsPage() {
           {waiting > 0 && <span className="ml-2 align-middle rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-black text-white">{waiting} รอร้านรับใบ</span>}
         </h1>
         <p className="text-[12px] text-gray-400 mt-0.5">รูปใช้แทนตัวจริงไม่ได้ — ต้องได้ ลซ.๒ ตอนกลางตัวจริงมาเก็บเป็นหลักฐานการจำหน่าย</p>
+      </div>
+
+      {/* 📮 รับใบที่ส่งมาทางไปรษณีย์ — ลูกค้าส่วนใหญ่ไม่เคยเข้าเว็บ ส่งใบตัวจริงมาเลย */}
+      <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
+        <button onClick={() => setOpenAdd((v) => !v)}
+          className="w-full flex items-center gap-3 px-4 md:px-5 py-3.5 text-left hover:bg-gray-50/70 transition-colors">
+          <span className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-[17px] flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">📮</span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-[13.5px] font-bold text-gray-900">รับใบ ลซ.๒ ที่ส่งมาทางไปรษณีย์</span>
+            <span className="block text-[11.5px] text-gray-400">ถ่ายรูปใบที่ได้รับ → เข้าระบบทันที (ลูกค้าไม่ต้องเคยเข้าเว็บ)</span>
+          </span>
+          <span className="shrink-0 text-gray-300 text-[18px]">{openAdd ? '−' : '+'}</span>
+        </button>
+        {openAdd && (
+          <div className="px-4 md:px-5 pb-5 pt-1 space-y-3 border-t border-gray-50">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <label className="block">
+                <span className="block text-[11.5px] font-semibold text-gray-500 mb-1">เบอร์ลูกค้า *</span>
+                <input value={addPhone} onChange={(e) => setAddPhone(e.target.value)}
+                  inputMode="numeric" placeholder="08xxxxxxxx"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[14px] outline-none focus:border-blue-400" />
+              </label>
+              <label className="block">
+                <span className="block text-[11.5px] font-semibold text-gray-500 mb-1">ชื่อลูกค้า</span>
+                <input value={addName} onChange={(e) => setAddName(e.target.value)}
+                  placeholder="ชื่อบนใบ ลซ.๒"
+                  className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[14px] outline-none focus:border-blue-400" />
+              </label>
+            </div>
+            <div>
+              <span className="block text-[11.5px] font-semibold text-gray-500 mb-1">รูปใบ ลซ.๒ (ตอนกลาง + ตอนปลาย)</span>
+              {/* capture="environment" = เปิดกล้องหลังทันทีบนมือถือ */}
+              <input type="file" accept="image/*" multiple capture="environment" onChange={เลือกรูป}
+                className="w-full text-[12.5px] file:mr-3 file:rounded-lg file:border-0 file:bg-gray-900 file:px-3 file:py-2 file:text-[12.5px] file:font-bold file:text-white" />
+              {addFiles.length > 0 && (
+                <div className="flex gap-2 mt-2">
+                  {addFiles.map((src, i) => (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img key={i} src={src} alt={`รูป ${i + 1}`} className="h-24 rounded-lg border border-gray-200" />
+                  ))}
+                </div>
+              )}
+            </div>
+            {addMsg && <p className={`text-[12.5px] font-semibold ${addMsg.startsWith('✅') ? 'text-emerald-600' : 'text-red-600'}`}>{addMsg}</p>}
+            <button onClick={ส่งใบ} disabled={sending}
+              className="rounded-xl bg-gray-900 px-5 py-2.5 text-[13.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
+              {sending ? 'กำลังบันทึก…' : 'บันทึกเข้าระบบ'}
+            </button>
+            <p className="text-[11px] text-gray-400">บันทึกแล้วขั้นจะขึ้นเป็น &ldquo;ร้านได้ใบตัวจริงแล้ว&rdquo; · ใบตัวจริงตอนกลางต้องเก็บไว้เป็นหลักฐานการจำหน่าย</p>
+          </div>
+        )}
       </div>
       {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
 
