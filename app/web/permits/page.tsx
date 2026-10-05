@@ -65,9 +65,11 @@ export default function WebPermitsPage() {
   const [sending, setSending] = useState(false)
   const [addMsg, setAddMsg] = useState('')
 
-  /** วาดลงผืนผ้าใบแล้วคืนเป็น JPEG ย่อแล้ว */
+  /** วาดลงผืนผ้าใบแล้วคืนเป็น JPEG ย่อแล้ว
+   *  🔴 2400px ไม่ใช่ 1600 — วัดด้วยใบจริง 5 ต.ค. 2569: 1500px AI อ่านเลขที่ใบ/ชื่อผิด
+   *     2400px อ่านถูก — ตัวหนังสือในใบ ลซ.๒ เล็กและเป็นลายมือเจ้าหน้าที่ */
   function วาดเป็นJPEG(src: CanvasImageSource, w: number, h: number): string {
-    const กว้าง = Math.min(1600, w)
+    const กว้าง = Math.min(2400, w)
     const สูง = Math.round((h * กว้าง) / w)
     const cv = document.createElement('canvas')
     cv.width = กว้าง; cv.height = สูง
@@ -81,7 +83,7 @@ export default function WebPermitsPage() {
    *     createImageBitmap รองรับแค่ jpeg/png/webp/gif — iPhone ถ่ายเป็น HEIC โดยปริยาย
    *  🔑 ไล่สามทาง ถูกที่สุดก่อน: bitmap → <img> (Safari ถอด HEIC ได้เอง) → heic2any
    *     คนถ่ายจากมือถือผ่านเว็บไม่ต้องโหลดอะไรเลย (iOS แปลงเป็น JPEG ให้ก่อนส่งอยู่แล้ว)
-   *  ⚠️ 1600px ยังอ่านตัวหนังสือบนใบ ลซ.๒ ออกสบาย · กล้องให้ไฟล์ 4-8 MB เกินเพดาน 4 MB
+   *  ⚠️ ความคมชัดดู วาดเป็นJPEG — กล้องให้ไฟล์ 4-8 MB เกินเพดาน 4 MB จึงยังต้องย่อ
    */
   async function ย่อรูป(f: File): Promise<string> {
     // ① เร็วสุด — ใช้ได้กับรูปส่วนใหญ่
