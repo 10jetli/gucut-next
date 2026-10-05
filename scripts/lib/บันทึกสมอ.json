@@ -154,6 +154,20 @@
         "node scripts/tests/sale-link.test.mjs|ตกที่ from = วันก่อนหนึ่งวัน",
         "node scripts/tests/sale-link.test.mjs|ตกที่ วันที่ใช้ไม่ได้ ("
       ]
+    },
+    {
+      "เวลาไทย": "2026-10-05 09:03",
+      "commit": "316e077",
+      "ผ่านตา": 2,
+      "จับได้": {
+        "ตรงฟรี": 0,
+        "ไม่มีสมอ": 0
+      },
+      "ตัดสินไม่ได้": 2,
+      "คีย์ใหม่": [
+        "node scripts/check-thai-date.mjs|components/ui/StatCard.tsx",
+        "node scripts/check-unknown-vs-zero.mjs|components/ui/StatCard.tsx"
+      ]
     }
   ]
 }

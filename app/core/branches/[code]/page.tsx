@@ -38,7 +38,14 @@ interface Warehouse {
   /** เวลาที่ตัวคัดไปอ่านจอ ZORT ล่าสุด — **UTC ดิบ** ⇒ ต้อง +7 และแสดงคู่กับตัวเลขเสมอ */
   valueCollectedAt?: string
 }
-interface ยอดคลัง { orders: number; amount: number }
+/** ⚠️ `null` = **ท่อส่งค่าที่อ่านเป็นตัวเลขไม่ได้** ซึ่งคนละเรื่องกับ `0` = ขายได้ศูนย์ใบจริง */
+interface ยอดคลัง { orders: number | null; amount: number | null }
+
+/** อ่านเป็นตัวเลข · อ่านไม่ออกคืน `null` **ไม่ใช่ 0** (`Number(x) || 0` ยุบสองกรณีนี้เป็นค่าเดียว) */
+const อ่านเลข = (v: unknown): number | null => {
+  const n = Number(v)
+  return Number.isFinite(n) ? n : null
+}
 
 /** วันไทยย้อนหลัง N วัน — ห้ามใช้ `toISOString()` ตรง ๆ (ก่อนเจ็ดโมงเช้าจะได้วันของเมื่อวาน) */
 const thaiDay = (back = 0) =>
@@ -103,10 +110,16 @@ export default function BranchDetailPage() {
       const c = await fetch(`/api/web/core?list=orderfacets&from=${thaiDay(30)}&to=${thaiDay(0)}&warehouses=1`)
         .then((r) => r.json())
       if (!Array.isArray(c?.byWarehouse)) throw new Error('ไม่มี byWarehouse')
-      const row = c.byWarehouse.find((x: { code?: string }) => String(x.code ?? '') === code)
+      const row = c.byWarehouse.find(
+        (x: { code?: string }) => String(x.code ?? '') === code) as
+        { orders?: unknown; amount?: unknown } | undefined
       /* 🔴 ไม่เจอแถวของคลังนี้ = **คลังนี้ไม่มีใบในช่วง 30 วัน** ซึ่งต่างจาก "ถามไม่ได้"
-         ⇒ ตั้งเป็น 0 ได้ที่นี่เท่านั้น เพราะท่อตอบสำเร็จและบอกครบทุกคลังที่มีใบ */
-      setยอด({ orders: Number(row?.orders) || 0, amount: Number(row?.amount) || 0 })
+         ⇒ ตั้งเป็น 0 ได้ **เฉพาะกรณีไม่มีแถว** เพราะท่อตอบสำเร็จและบอกครบทุกคลังที่มีใบ
+         ⚠️ แต่ถ้า **เจอแถวแล้วเลขอ่านไม่ออก** นั่นคือท่อส่งของแปลก ไม่ใช่ศูนย์
+            ของเดิมเขียน `Number(row?.orders) || 0` ⇒ ยุบสองกรณีเป็นเลขเดียวกันเงียบ ๆ */
+      setยอด(row
+        ? { orders: อ่านเลข(row.orders), amount: อ่านเลข(row.amount) }
+        : { orders: 0, amount: 0 })
     } catch { setยอดล้ม(true); setยอด(null) }
   }, [code])
   useEffect(() => { void load() }, [load])
@@ -155,7 +168,11 @@ export default function BranchDetailPage() {
               <div>
                 <p className="text-[11.5px] text-gray-500">เคลื่อนไหวล่าสุด</p>
                 <p className="text-[15px] font-semibold text-gray-900">
-                  {wh.movedAt ? thaiDate(wh.movedAt.slice(0, 10)) : <span className="text-gray-400 text-[13px]">ไม่รู้</span>}
+                  {/* ⚠️ **ห้าม `.slice(0, 10)` ก่อนส่งเข้า thaiDate** — ค่านี้มีโซน `+07:00` ติดมา
+                      thaiDate อ่านโซนเองถูกอยู่แล้ว · ตัดทิ้งก่อน = ถ้าท่อเปลี่ยนไปส่ง UTC
+                      วันบนจอเพี้ยนหนึ่งวันโดยไม่มีอะไรฟ้อง (จอรายการคลังเขียนเตือนไว้ตั้งแต่ 18 ก.ย. 2569
+                      — จอนี้เพิ่งเหยียบซ้ำ 5 ต.ค. 2569 ด่าน check-thai-date เป็นคนจับ ไม่ใช่คน) */}
+                  {wh.movedAt ? thaiDate(String(wh.movedAt)) : <span className="text-gray-400 text-[13px]">ไม่รู้</span>}
                 </p>
               </div>
             </div>
@@ -185,8 +202,15 @@ export default function BranchDetailPage() {
                 ? (
                   <>
                     <div className="flex items-baseline gap-5">
-                      <span className="text-[20px] font-black text-gray-900">{fmtMoney(ยอด.amount)}</span>
-                      <span className="text-[13px] text-gray-600">{fmtNum(ยอด.orders)} ใบ</span>
+                      {/* ⚠️ ท่อส่งค่าที่อ่านไม่ออก ⇒ เขียนว่าไม่รู้ ห้ามวาดเลข 0 ให้คนอ่านว่าขายไม่ได้ */}
+                      <span className="text-[20px] font-black text-gray-900">
+                        {ยอด.amount === null
+                          ? <span className="text-[14px] font-semibold text-amber-800">ยังไม่รู้ยอด — ท่อส่งค่าที่อ่านเป็นตัวเลขไม่ได้</span>
+                          : fmtMoney(ยอด.amount)}
+                      </span>
+                      <span className="text-[13px] text-gray-600">
+                        {ยอด.orders === null ? 'ยังไม่รู้จำนวนใบ' : `${fmtNum(ยอด.orders)} ใบ`}
+                      </span>
                     </div>
                     {/* 🔴 ZORT แยกรายสินค้า ของเราได้แค่ยอดรวมของคลัง ⇒ เขียนกำกับ
                            ห้ามปล่อยให้คนอ่านว่าเป็นรายสินค้า (ตารางที่ ②/④ ของ ZORT) */}

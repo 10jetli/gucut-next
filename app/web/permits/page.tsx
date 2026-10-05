@@ -205,7 +205,11 @@ export default function WebPermitsPage() {
   const waiting = (items ?? []).filter((x) => x.stage === 'lz2').length
 
   return (
-    <div className="space-y-4 max-w-3xl">
+    /* ⚠️ ผังนี้มาจากภาพร่างที่ท่านประธานวาดเอง (ย้ำสามรอบ 5 ต.ค. 2569):
+       เส้นแบ่งจอครึ่ง-ครึ่ง · **ซ้าย = กล่องรับใบ (แบบออโต้)** · **ขวา = แบบกรอกมือ**
+       ⇒ max-w-3xl เดิมแคบเกินไปจนสองกล่องถูกบีบให้ซ้อนบนล่าง ⇒ ขยายเป็น max-w-6xl
+       📱 มือถือซ้อนกันตามเดิม (grid-cols-1) — เคียงกันเฉพาะจอกว้าง (lg:) */
+    <div className="space-y-4 max-w-6xl">
       <div>
         <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">
@@ -215,7 +219,11 @@ export default function WebPermitsPage() {
         <p className="text-[12px] text-gray-400 mt-0.5">รูปใช้แทนตัวจริงไม่ได้ — ต้องได้ ลซ.๒ ตอนกลางตัวจริงมาเก็บเป็นหลักฐานการจำหน่าย</p>
       </div>
 
-      {/* 📮 รับใบที่ส่งมาทางไปรษณีย์ — ลูกค้าส่วนใหญ่ไม่เคยเข้าเว็บ ส่งใบตัวจริงมาเลย */}
+      <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
+      {/* ══ ฝั่งซ้าย: แบบออโต้ ══
+          📮 รับใบที่ส่งมาทางไปรษณีย์ — ลูกค้าส่วนใหญ่ไม่เคยเข้าเว็บ ส่งใบตัวจริงมาเลย */}
+      <div>
+      <p className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-red-600">แบบออโต้</p>
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
         <button onClick={() => setOpenAdd((v) => !v)}
           className="w-full flex items-center gap-3 px-4 md:px-5 py-3.5 text-left hover:bg-gray-50/70 transition-colors">
@@ -303,9 +311,13 @@ export default function WebPermitsPage() {
           </div>
         )}
       </div>
-      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+      </div>
 
+      {/* ══ ฝั่งขวา: แบบกรอกมือ (หัวข้อแดงอยู่ในคอมโพเนนต์เอง) ══ */}
       <Lz2BackPrint />
+      </div>
+
+      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
         {items === null ? (

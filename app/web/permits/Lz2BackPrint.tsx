@@ -1,11 +1,17 @@
 'use client'
-/* 🖨️ พิมพ์หลังใบ ลซ.๒ — "บันทึกการได้มาซึ่งเลื่อยโซ่ยนต์" (ตอนร้านโอนเครื่องให้ลูกค้า)
+/* 🖨️ แบบกรอกมือ — หลังใบ ลซ.๒ "บันทึกการได้มาซึ่งเลื่อยโซ่ยนต์" (ตอนร้านโอนเครื่องให้ลูกค้า)
  *
- * ท่านประธานสั่ง 5 ต.ค. 2569: "กรอกเหมือนเดิม อันที่ต้องเปลี่ยนคือ หมายเลขบนเลื่อยโซ่ยนต์
- * ที่ต้องไปดึงเอากับไดร์ และใบอนุญาตที่ · รุ่นกับแผ่นบังคับโซ่ผมจะเลือกเอง"
- * ⇒ ข้อมูลร้านคงที่ (คัดจากใบจริงตัวอย่าง ธนวัฒน์ 20 ก.ค. 2569 · บ้านเลขที่ 81 ท่านแก้เอง)
- * ⇒ หมายเลขเครื่อง/บาร์ ดึงจากทะเบียน (`?registryrows=1`) เฉพาะตัวที่ยังไม่ขาย
- * ⇒ รุ่นเลื่อยกับบาร์เป็น dropdown ให้ท่านเลือก · ใบอนุญาตที่เป็นช่องแก้ได้
+ * ── ท่านประธานสั่งทิศทางใหม่ 5 ต.ค. 2569 ~14:40 (ทับของเดิมที่เชื่อมทะเบียน) ──
+ * "ไม่ต้องเชื่อมหมายเลข" · "หมายเลขจะกรอกมือเอา" · "ขอใช้งานง่ายๆ"
+ * ⇒ **ถอด dropdown ทะเบียน (`?registryrows=1`) ออกหมด** — ไม่เลือกรุ่นจากทะเบียน
+ *    ไม่เลือกหมายเลขเครื่อง ไม่เลือกบาร์ · ทุกช่องพิมพ์เองล้วน
+ * ⇒ เหลือรายการช่วยพิมพ์อย่างเดียวคือ **ตารางรุ่น → แรงม้า** ที่ท่านส่งภาพมา (21 รุ่น)
+ *    เลือกรุ่นแล้วเติม **แรงม้า + ยี่ห้อ** ให้ · ทับได้ทั้งคู่
+ *
+ * 🔑 **หน้านี้ไม่ใช่ระบบจัดการข้อมูล** (เหตุผลที่ท่านให้ และสำคัญกว่าตัวข้อห้าม):
+ *    ไม่มีคลังข้อมูล · ไม่มีนำเข้า/ส่งออก · ไม่เก็บประวัติการกรอก · ไม่ผูกฐานข้อมูลใด ๆ
+ *    ทางเดินมีทางเดียว: **กรอก → กดปริ้นต์ → ได้ PDF จบในหน้าเดียว**
+ * ⛔ ตาราง 21 รุ่นเก็บเป็น const ในไฟล์นี้เท่านั้น — **ห้าม .xlsx/.csv ห้ามต่อ Google Sheets/Drive**
  *
  * 🔑 **PDF มีแต่ตัวหนังสือ พื้นใส ไม่มีเส้นฟอร์ม** — เอาใบจริงใส่เครื่องพิมพ์แล้วพิมพ์ทับ
  *    ⚠️ ต้องพิมพ์ 100% ไม่ย่อ ไม่ fit-to-page ไม่งั้นเลื่อนทั้งใบ (เขียนเตือนบนจอแล้ว)
@@ -13,14 +19,14 @@
  *    จะแก้พิกัดต้องพิมพ์ทาบใบจริงดูเท่านั้น ห้ามเดา
  * ⚠️ ฟอนต์ไทย (Sarabun) ไม่มีอักขระ ✓ — ใส่ไปก็หายเงียบ ไม่มี error
  *    (เจอจริง 5 ต.ค. 2569 ติ๊กหายทั้ง 11 ช่อง) ⇒ วาดเครื่องหมายถูกด้วยเส้นเอง
+ *
+ * ⚠️ **ช่องที่ใบจริงมี แต่จอนี้ยังไม่มี — รายงานท่านแล้ว ยังไม่เติมเอง**
+ *    ใบจริง (นายธนวัฒน์ 20 ก.ค. 2569) เขียนใบอนุญาต **สองบรรทัด คนละวันที่**
+ *    บรรทัดบน มห 00001/2567 ลงวันที่ 23/12/2567 · บรรทัดล่าง ลงวันที่ 8/1/2567
+ *    แต่โค้ดนี้พิมพ์ค่าชุดเดียวซ้ำสองบรรทัด ⇒ บรรทัดล่างจะได้วันผิดถ้าร้านมีสองใบจริง
+ *    🔑 ไม่เดาเติมเอง เพราะไม่รู้ว่าใบที่สองคือใบอะไร — รอท่านตัดสิน
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
-
-interface SerialRow {
-  lot: number; kind: string; serial: string; seq: number
-  model?: string; spec?: string; license?: string
-  sold_at?: string; buyer?: string
-}
+import { useCallback, useState } from 'react'
 
 /* ข้อมูลคงที่ — ท่านประธานยืนยันเอง 5 ต.ค. 2569: "อันที่กรอกเหมือนเดิมทุกครั้งคือ
  * นางศีตกาล บุญประกอบ · หจก.นิวเวฟ ซันไชน์ · 66 หมู่ที่ 11 ตำบลค่ายบกหวาน
@@ -37,66 +43,69 @@ const ร้าน = {
   ออกที่จังหวัด: 'มุกดาหาร',
 }
 
+/** ตารางรุ่น → แรงม้า · ท่านประธานส่งภาพตารางมาเอง 5 ต.ค. 2569
+ *
+ *  📏 **จุดยืนยัน**: ใบ ลซ.๒ จริงของลูกค้าระบุ ๗.๑ แรงม้า กับเครื่องรุ่น F660
+ *     ⇒ ตรงกับแถว F660 ในตารางนี้พอดี (เทียบแล้วด้วยตา 5 ต.ค. 2569)
+ *  ⚠️ ในภาพต้นฉบับมีไฮไลต์เหลือง/ขีดแดงบางแถว — **ยังไม่รู้ว่าหมายถึงอะไร**
+ *     ⇒ ห้ามเอามากรอง ซ่อน หรือจัดลำดับรุ่น · โชว์ครบ 21 รุ่นตามภาพเสมอ
+ *  ⛔ เก็บไว้ในโค้ดเท่านั้น — ห้ามย้ายไป .xlsx/.csv/Google Sheets (คำสั่งท่านประธาน)
+ */
+const รุ่นแรงม้า: [string, string][] = [
+  ['F180', '2'], ['F200T', '2.1'], ['F250', '3.1'], ['F260', '3.5'],
+  ['F360', '4.6'], ['F361', '4.6'], ['F038', '5.3'], ['F381', '5.3'],
+  ['F382', '5.3'], ['F440', '5.4'], ['F460', '6'], ['F660', '7.1'],
+  ['F070', '6.5'], ['F880', '8.6'], ['F090', '8.5'], ['F365', '4.6'],
+  ['F372XP', '5.3'], ['F272XP', '5.2'], ['F288XP', '6.1'], ['F395XP', '7.1'],
+  ['F3120XP', '8.3'],
+]
+
 const เดือนไทย = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน',
   'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม']
 
+/* ── ช่องกรอกหนึ่งช่อง ──
+ * ⚠️ ต้องประกาศ **นอก** คอมโพเนนต์หลัก — ถ้าประกาศข้างในจะถูกสร้างใหม่ทุกครั้งที่ setState
+ *    ⇒ React ถอด input เดิมทิ้งแล้วใส่ตัวใหม่ ⇒ เคอร์เซอร์หลุดทุกตัวอักษรที่พิมพ์
+ * ⚠️ ชื่อเป็น ASCII ตั้งใจ — แท็ก JSX ชื่อไทยเป็นทางที่ยังไม่มีใครเดินในรีโปนี้ */
+function ManualField({ label, unit, v, set, mono, ph }: {
+  label: string; unit?: string; v: string; set: (s: string) => void; mono?: boolean; ph?: string
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1 block text-[12px] font-semibold text-gray-600">{label}</span>
+      <span className="flex items-center gap-1.5">
+        <input value={v} onChange={(e) => set(e.target.value)} placeholder={ph}
+          className={`min-w-0 flex-1 rounded-lg border border-gray-300 px-2.5 py-2 text-[14px] outline-none placeholder:text-gray-300 focus:border-blue-500 ${mono ? 'font-mono' : ''}`} />
+        {unit && <span className="shrink-0 text-[12.5px] text-gray-500">{unit}</span>}
+      </span>
+    </label>
+  )
+}
+
 export default function Lz2BackPrint() {
-  const [เปิด, setเปิด] = useState(false)
-  const [rows, setRows] = useState<SerialRow[] | null>(null)
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(false)
 
-  // ── ตัวเลือกของท่าน ──
+  // ── 7 ช่องตามภาพร่างของท่าน + รุ่น (ตัวช่วยพิมพ์ ไม่ได้ลงใบ) ──
   const [รุ่น, setรุ่น] = useState('')
+  const [แรงม้า, setแรงม้า] = useState('')
+  const [เลขเครื่องยี่ห้อ, setเลขเครื่องยี่ห้อ] = useState('')
   const [เลขเลื่อย, setเลขเลื่อย] = useState('')
-  const [เลขบาร์, setเลขบาร์] = useState('')
-  // ── ช่องแก้ได้ (เติมให้อัตโนมัติ แต่ท่านทับได้) ──
   const [ใบอนุญาต, setใบอนุญาต] = useState('มห 00001/2567')
   const [ลงวันที่, setลงวันที่] = useState('23/12/2567')
-  const [เลขเครื่องยี่ห้อ, setเลขเครื่องยี่ห้อ] = useState('')
-  const [แรงม้า, setแรงม้า] = useState('')
   const [บาร์ยาว, setบาร์ยาว] = useState('')
   const [ยี่ห้อบาร์, setยี่ห้อบาร์] = useState('KINGKONG')
+  const [เลขบาร์, setเลขบาร์] = useState('')
 
-  const โหลด = useCallback(async () => {
-    setBusy(true); setErr('')
-    try {
-      const [s, b] = await Promise.all([
-        fetch('/api/web/core?registryrows=1&kind=saw&limit=500').then((r) => r.json()),
-        fetch('/api/web/core?registryrows=1&kind=bar&limit=500').then((r) => r.json()),
-      ])
-      const ทั้งหมด = [...(Array.isArray(s.rows) ? s.rows : []), ...(Array.isArray(b.rows) ? b.rows : [])]
-      if (!ทั้งหมด.length) setErr('ทะเบียนว่าง — ดึงจากหน้า "ทะเบียนเลื่อยโซ่ยนต์" ก่อน')
-      setRows(ทั้งหมด)
-    } catch { setErr('อ่านทะเบียนไม่สำเร็จ') } finally { setBusy(false) }
+  /** เลือกรุ่น = เติมแรงม้า + ยี่ห้อให้ · **ทับได้ทั้งคู่** (รุ่นเป็นตัวช่วยพิมพ์ ไม่ใช่เจ้าของค่า)
+   *  ⚠️ รูปที่ลงใบจริงคือ "NEWWAVE รุ่น F660" (ลอกจากใบจริง 20 ก.ค. 2569) ไม่ใช่ชื่อรุ่นเปล่า ๆ */
+  const เลือกรุ่น = useCallback((m: string) => {
+    setรุ่น(m)
+    if (!m) return
+    const แถว = รุ่นแรงม้า.find(([ชื่อ]) => ชื่อ === m)
+    if (แถว) setแรงม้า(แถว[1])
+    setเลขเครื่องยี่ห้อ(`NEWWAVE รุ่น ${m}`)
   }, [])
-  useEffect(() => { if (เปิด && !rows) void โหลด() }, [เปิด, rows, โหลด])
-
-  // เฉพาะตัวที่ยังไม่ขาย — ตัวที่ขายแล้วโอนไปแล้ว พิมพ์ซ้ำ = ทะเบียนเพี้ยน
-  const เลื่อยว่าง = useMemo(() => (rows || []).filter((r) => r.kind === 'saw' && !r.sold_at), [rows])
-  const บาร์ว่าง = useMemo(() => (rows || []).filter((r) => r.kind === 'bar' && !r.sold_at), [rows])
-  const รุ่นทั้งหมด = useMemo(() => Array.from(new Set(เลื่อยว่าง.map((r) => r.model || '?'))), [เลื่อยว่าง])
-  const เลขของรุ่น = useMemo(() => เลื่อยว่าง.filter((r) => (r.model || '?') === รุ่น), [เลื่อยว่าง, รุ่น])
-
-  // เลือกเลขเครื่องแล้ว เติมช่องที่เหลือให้ (ท่านทับได้เสมอ)
-  const เลือกเลื่อย = useCallback((serial: string) => {
-    setเลขเลื่อย(serial)
-    const r = เลขของรุ่น.find((x) => x.serial === serial)
-    if (!r) return
-    if (r.license && r.license !== '?') setใบอนุญาต(r.license)
-    setแรงม้า(r.spec || '')
-    setเลขเครื่องยี่ห้อ((r.model || '').replace('/', ' รุ่น '))
-  }, [เลขของรุ่น])
-
-  const เลือกบาร์ = useCallback((serial: string) => {
-    setเลขบาร์(serial)
-    const r = บาร์ว่าง.find((x) => x.serial === serial)
-    if (!r) return
-    // แถวบาร์ในทะเบียน: model = ขนาดนิ้ว ("30") · spec = ยี่ห้อ/รุ่น ("NEWWAVE/9800 SUPER RPO")
-    setบาร์ยาว(r.model || '')
-    const ยี่ห้อ = (r.spec || '').split('/')[0].trim()
-    if (ยี่ห้อ) setยี่ห้อบาร์(ยี่ห้อ)
-  }, [บาร์ว่าง])
 
   const สร้างPDF = useCallback(async () => {
     setBusy(true); setErr('')
@@ -186,82 +195,64 @@ export default function Lz2BackPrint() {
   }, [ใบอนุญาต, ลงวันที่, เลขเครื่องยี่ห้อ, แรงม้า, เลขเลื่อย, บาร์ยาว, ยี่ห้อบาร์, เลขบาร์])
 
   return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4">
-      <button onClick={() => setเปิด(!เปิด)} className="flex w-full items-center justify-between text-left">
-        <span className="text-[14px] font-bold text-gray-800">🖨️ พิมพ์หลังใบ ลซ.๒ (ตอนโอนเครื่องให้ลูกค้า)</span>
-        <span className="text-gray-400">{เปิด ? '▾' : '▸'}</span>
-      </button>
-      {เปิด && (
-        <div className="mt-3 space-y-3">
-          <p className="rounded-xl bg-amber-50 px-3 py-2 text-[11.5px] font-semibold text-amber-700">
-            ⚠️ เอาใบ ลซ.๒ ตัวจริงใส่เครื่องพิมพ์ แล้วพิมพ์ <b>100% ห้ามย่อ ห้าม fit-to-page</b> —
-            ใบจริงมีใบเดียว พิมพ์ลงกระดาษเปล่าทาบดูก่อนทุกครั้ง
-          </p>
-          {busy && !rows && <p className="text-[12.5px] text-gray-400">กำลังอ่านทะเบียน…</p>}
-          {err && <p className="text-[12.5px] font-semibold text-red-600">{err}</p>}
-          {rows && (
-            <>
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <label className="block">
-                  <span className="mb-0.5 block text-[10.5px] font-semibold text-gray-500">รุ่นเลื่อย (เลือกเอง)</span>
-                  <select value={รุ่น} onChange={(e) => { setรุ่น(e.target.value); setเลขเลื่อย('') }}
-                    className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-[13px]">
-                    <option value="">— เลือกรุ่น —</option>
-                    {รุ่นทั้งหมด.map((m) => <option key={m} value={m}>{m}</option>)}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-0.5 block text-[10.5px] font-semibold text-gray-500">
-                    หมายเลขบนเลื่อย (จากทะเบียน · เฉพาะที่ยังไม่ขาย {เลขของรุ่น.length} ตัว)
-                  </span>
-                  <select value={เลขเลื่อย} onChange={(e) => เลือกเลื่อย(e.target.value)} disabled={!รุ่น}
-                    className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 font-mono text-[13px] disabled:bg-gray-50">
-                    <option value="">— เลือกหมายเลข —</option>
-                    {เลขของรุ่น.map((r) => <option key={r.serial} value={r.serial}>{r.serial}</option>)}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-0.5 block text-[10.5px] font-semibold text-gray-500">
-                    แผ่นบังคับโซ่ (เลือกเอง · ยังไม่ขาย {บาร์ว่าง.length} แผ่น)
-                  </span>
-                  <select value={เลขบาร์} onChange={(e) => เลือกบาร์(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 font-mono text-[13px]">
-                    <option value="">— เลือกบาร์ —</option>
-                    {บาร์ว่าง.map((r) => <option key={r.serial} value={r.serial}>{r.serial} · {r.spec} {r.model}"</option>)}
-                  </select>
-                </label>
-                <label className="block">
-                  <span className="mb-0.5 block text-[10.5px] font-semibold text-gray-500">ใบอนุญาตที่</span>
-                  <input value={ใบอนุญาต} onChange={(e) => setใบอนุญาต(e.target.value)}
-                    className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-[13px]" />
-                </label>
-              </div>
-              <details className="rounded-xl border border-gray-100 bg-gray-50/50 p-2.5">
-                <summary className="cursor-pointer text-[11.5px] font-semibold text-gray-500">ช่องอื่น (เติมให้แล้ว · แก้ได้)</summary>
-                <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                  {([
-                    ['ลงวันที่ (ของใบอนุญาต)', ลงวันที่, setลงวันที่],
-                    ['ยี่ห้อ/รุ่นเครื่อง', เลขเครื่องยี่ห้อ, setเลขเครื่องยี่ห้อ],
-                    ['แรงม้า', แรงม้า, setแรงม้า],
-                    ['บาร์ยาว (นิ้ว)', บาร์ยาว, setบาร์ยาว],
-                    ['ยี่ห้อบาร์', ยี่ห้อบาร์, setยี่ห้อบาร์],
-                  ] as [string, string, (v: string) => void][]).map(([label, v, set]) => (
-                    <label key={label} className="block">
-                      <span className="mb-0.5 block text-[10.5px] font-semibold text-gray-500">{label}</span>
-                      <input value={v} onChange={(e) => set(e.target.value)}
-                        className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-[13px]" />
-                    </label>
-                  ))}
-                </div>
-              </details>
-              <button onClick={() => void สร้างPDF()} disabled={busy || !เลขเลื่อย}
-                className="rounded-xl bg-gray-900 px-4 py-2 text-[13px] font-bold text-white disabled:opacity-40">
-                {busy ? 'กำลังสร้าง…' : 'สร้าง PDF พิมพ์ทับใบจริง'}
-              </button>
-            </>
-          )}
+    /* ⚠️ กางอยู่แล้ว ไม่มีปุ่มกดเปิด — ท่านสั่ง "ไม่ต้องมีขั้นตอนซ้อน ไม่ต้องกดเปิดหลายชั้น" */
+    <div className="rounded-2xl border border-gray-100/80 bg-white p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
+      <p className="text-[11px] font-black uppercase tracking-wider text-red-600">แบบกรอกมือ</p>
+      <h2 className="text-[15px] font-bold text-gray-900">พิมพ์หลังใบ ลซ.๒ (ตอนโอนเครื่องให้ลูกค้า)</h2>
+      <p className="mt-0.5 text-[11.5px] text-gray-400">กรอกช่องที่ต้องการ แล้วกดปริ้นต์ — ไม่มีขั้นบันทึก ไม่เก็บประวัติ</p>
+
+      <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-[11.5px] font-semibold text-amber-700">
+        ⚠️ เอาใบ ลซ.๒ ตัวจริงใส่เครื่องพิมพ์ แล้วพิมพ์ <b>100% ห้ามย่อ ห้าม fit-to-page</b> —
+        ใบจริงมีใบเดียว พิมพ์ลงกระดาษเปล่าทาบดูก่อนทุกครั้ง
+      </p>
+
+      {/* ตัวช่วยพิมพ์ตัวเดียวที่เหลือ — เลือกรุ่นแล้วเติมแรงม้ากับยี่ห้อให้ (ทับได้) */}
+      <label className="mt-3 block">
+        <span className="mb-1 block text-[12px] font-semibold text-gray-600">
+          รุ่นเลื่อย <span className="font-normal text-gray-400">— เลือกแล้วเติมแรงม้ากับยี่ห้อให้เอง (แก้ทับได้)</span>
+        </span>
+        <select value={รุ่น} onChange={(e) => เลือกรุ่น(e.target.value)}
+          className="w-full rounded-lg border border-gray-300 bg-white px-2.5 py-2 text-[14px] outline-none focus:border-blue-500">
+          <option value="">— ไม่เลือก (พิมพ์เองทุกช่อง) —</option>
+          {รุ่นแรงม้า.map(([m, hp]) => <option key={m} value={m}>{m} · {hp} แรงม้า</option>)}
+        </select>
+      </label>
+
+      {/* ── 7 ช่อง สองคอลัมน์ตามภาพร่าง ── */}
+      <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-3 sm:grid-cols-2">
+        {/* คอลัมน์ซ้าย: ฝั่งตัวเครื่อง */}
+        <div className="space-y-3">
+          <ManualField label="แรงม้า" unit="แรงม้า" v={แรงม้า} set={setแรงม้า} ph="7.1" />
+          <ManualField label="ยี่ห้อ" v={เลขเครื่องยี่ห้อ} set={setเลขเครื่องยี่ห้อ} ph="NEWWAVE รุ่น F660" />
+          <ManualField label="หมายเลขบนเลื่อยโซ่" v={เลขเลื่อย} set={setเลขเลื่อย} mono ph="45-7-68-00005" />
         </div>
-      )}
+        {/* คอลัมน์ขวา: ใบอนุญาต + ฝั่งแผ่นบังคับโซ่ */}
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2">
+            <ManualField label="ใบอนุญาตที่" v={ใบอนุญาต} set={setใบอนุญาต} />
+            <ManualField label="ลงวันที่" v={ลงวันที่} set={setลงวันที่} />
+          </div>
+          <ManualField label="แผ่นบังคับความยาว" unit="นิ้ว" v={บาร์ยาว} set={setบาร์ยาว} ph="30" />
+          <ManualField label="ยี่ห้อ" v={ยี่ห้อบาร์} set={setยี่ห้อบาร์} ph="KINGKONG" />
+          <ManualField label="หมายเลขแผ่นบังคับ" v={เลขบาร์} set={setเลขบาร์} mono ph="45-7-67-00072" />
+        </div>
+      </div>
+
+      {err && <p className="mt-3 text-[12.5px] font-semibold text-red-600">{err}</p>}
+
+      {/* ── ปุ่มปริ้นต์ ล่างสุดของบล็อกนี้ (ท่านประธานสั่งตำแหน่งนี้เอง) ── */}
+      <div className="mt-4 border-t border-gray-100 pt-3">
+        {/* ⚠️ ปุ่มที่กดไม่ได้ต้องบอกเหตุ ไม่ใช่จางเฉย ๆ แล้วให้คนเดา */}
+        {!เลขเลื่อย && (
+          <p className="mb-1.5 text-[11.5px] font-semibold text-amber-700">
+            ยังปริ้นต์ไม่ได้ — ต้องมี &ldquo;หมายเลขบนเลื่อยโซ่&rdquo; ก่อน (เลขนี้คือตัวระบุเครื่องในใบ)
+          </p>
+        )}
+        <button onClick={() => void สร้างPDF()} disabled={busy || !เลขเลื่อย}
+          className="w-full rounded-xl bg-gray-900 px-4 py-3 text-[14px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.99] disabled:opacity-40">
+          {busy ? 'กำลังสร้าง…' : '🖨️ ปริ้นต์ — สร้าง PDF พิมพ์ทับใบจริง'}
+        </button>
+      </div>
     </div>
   )
 }
