@@ -2,6 +2,8 @@
 // ขอทะเบียนเลื่อยยนต์ (ใบ ลซ.๒) — ฉบับเนื้อเดียว · ท่อ /api/web/permit-doc
 import { useCallback, useEffect, useState } from 'react'
 
+import Lz2BackPrint from './Lz2BackPrint'
+
 interface Doc {
   phone: string; name: string; at: string; stage: string
   saw?: string; province?: string; images: number; updatedAt?: string
@@ -258,8 +260,8 @@ export default function WebPermitsPage() {
                   {([
                     ['เลขที่ใบ', 'เลขที่ใบรับรอง'],
                     ['จังหวัดที่ใช้เลื่อย', '📍 จังหวัดที่จะใช้เลื่อย'],
-                    ['วันออก', 'วันออกใบ'],
-                    ['วันสิ้นอายุ', '⏰ วันสิ้นอายุใบ'],
+                    ['วันออก', '✍️ วันออกใบ — ตรวจตัวเลขวันเอง'],
+                    ['วันสิ้นอายุ', '✍️⏰ วันสิ้นอายุ — ตรวจตัวเลขวันเอง'],
                     ['ชื่อ', 'ชื่อผู้รับ'],
                     ['ตอน', 'ตอน (กลาง/ปลาย)'],
                     ['ประเภทต้นกำลัง', 'ประเภทต้นกำลัง'],
@@ -269,8 +271,10 @@ export default function WebPermitsPage() {
                   ] as [string, string][]).map(([k, label]) => (
                     <label key={k} className="block">
                       <span className="block text-[10.5px] font-semibold text-gray-500 mb-0.5">{label}</span>
+                      {/* 🔴 ช่องวันที่กรอบเหลือง — เลขวันในใบเป็นลายมือ วัดแล้ว AI อ่าน "๑๕"
+                          เป็น "๑" ทุกโมเดล (5 ต.ค. 2569) · วันสิ้นอายุผูกนาฬิกา 180 วัน */}
                       <input value={lz2[k] || ''} onChange={(e) => setLz2({ ...lz2, [k]: e.target.value })}
-                        className="w-full rounded-lg border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400" />
+                        className={`w-full rounded-lg border px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400 ${k.startsWith('วัน') ? 'border-amber-300 bg-amber-50/50' : 'border-gray-200'}`} />
                     </label>
                   ))}
                 </div>
@@ -289,6 +293,8 @@ export default function WebPermitsPage() {
         )}
       </div>
       {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+
+      <Lz2BackPrint />
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
         {items === null ? (
