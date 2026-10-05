@@ -65,16 +65,52 @@ export default function WebPermitsPage() {
   const [sending, setSending] = useState(false)
   const [addMsg, setAddMsg] = useState('')
 
-  /** ย่อรูปในเครื่องก่อนส่ง — กล้องมือถือให้ไฟล์ 4-8 MB ต่อใบ เกินเพดานเซิร์ฟเวอร์
-   *  1600px ยังอ่านตัวหนังสือบนใบ ลซ.๒ ออกสบาย */
-  async function ย่อรูป(f: File): Promise<string> {
-    const bmp = await createImageBitmap(f)
-    const กว้าง = Math.min(1600, bmp.width)
-    const สูง = Math.round((bmp.height * กว้าง) / bmp.width)
+  /** วาดลงผืนผ้าใบแล้วคืนเป็น JPEG ย่อแล้ว */
+  function วาดเป็นJPEG(src: CanvasImageSource, w: number, h: number): string {
+    const กว้าง = Math.min(1600, w)
+    const สูง = Math.round((h * กว้าง) / w)
     const cv = document.createElement('canvas')
     cv.width = กว้าง; cv.height = สูง
-    cv.getContext('2d')!.drawImage(bmp, 0, 0, กว้าง, สูง)
+    cv.getContext('2d')!.drawImage(src, 0, 0, กว้าง, สูง)
     return cv.toDataURL('image/jpeg', 0.82)
+  }
+
+  /** ย่อรูปในเครื่องก่อนส่ง — รองรับ **ทุกชนิดไฟล์** รวม HEIC จาก iPhone
+   *
+   *  🔴 ท่านประธานเจอจริง 5 ต.ค. 2569: IMG_6095.HEIC อ่านไม่ได้
+   *     createImageBitmap รองรับแค่ jpeg/png/webp/gif — iPhone ถ่ายเป็น HEIC โดยปริยาย
+   *  🔑 ไล่สามทาง ถูกที่สุดก่อน: bitmap → <img> (Safari ถอด HEIC ได้เอง) → heic2any
+   *     คนถ่ายจากมือถือผ่านเว็บไม่ต้องโหลดอะไรเลย (iOS แปลงเป็น JPEG ให้ก่อนส่งอยู่แล้ว)
+   *  ⚠️ 1600px ยังอ่านตัวหนังสือบนใบ ลซ.๒ ออกสบาย · กล้องให้ไฟล์ 4-8 MB เกินเพดาน 4 MB
+   */
+  async function ย่อรูป(f: File): Promise<string> {
+    // ① เร็วสุด — ใช้ได้กับรูปส่วนใหญ่
+    try {
+      const bmp = await createImageBitmap(f)
+      return วาดเป็นJPEG(bmp, bmp.width, bmp.height)
+    } catch { /* ไปทางถัดไป */ }
+
+    // ② <img> — Safari/macOS ถอด HEIC ได้เองโดยไม่ต้องโหลดอะไร
+    try {
+      const url = URL.createObjectURL(f)
+      const im = await new Promise<HTMLImageElement>((ok, ng) => {
+        const el = new Image()
+        el.onload = () => ok(el)
+        el.onerror = () => ng(new Error('decode'))
+        el.src = url
+      })
+      const out = วาดเป็นJPEG(im, im.naturalWidth, im.naturalHeight)
+      URL.revokeObjectURL(url)
+      return out
+    } catch { /* ไปทางถัดไป */ }
+
+    // ③ ตัวแปลง HEIC — โหลดเฉพาะตอนจำเป็น (~1 MB) ไม่ถ่วงคนทั่วไป
+    const heic2any = (await import('heic2any')).default as
+      (o: { blob: Blob; toType?: string; quality?: number }) => Promise<Blob | Blob[]>
+    const ผล = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.85 })
+    const jpg = Array.isArray(ผล) ? ผล[0] : ผล
+    const bmp = await createImageBitmap(jpg)
+    return วาดเป็นJPEG(bmp, bmp.width, bmp.height)
   }
 
   // 🤖 ผลที่ AI อ่านได้จากใบ — โชว์ให้คนตรวจก่อนบันทึกเสมอ
@@ -103,12 +139,19 @@ export default function WebPermitsPage() {
     setAddMsg('')
     const fs = Array.from(e.target.files || []).slice(0, 2)
     if (!fs.length) return
+    // HEIC ต้องโหลดตัวแปลง ~1 MB แล้วถอดเอง — บอกให้รู้ว่ากำลังทำอะไรอยู่
+    const heic = fs.some((f) => /heic|heif/i.test(f.type) || /\.hei[cf]$/i.test(f.name))
+    setAddMsg(heic ? 'กำลังแปลงรูปจาก iPhone…' : 'กำลังเตรียมรูป…')
     try {
       const ย่อแล้ว = await Promise.all(fs.map(ย่อรูป))
       setAddFiles(ย่อแล้ว)
+      setAddMsg('')
       // 🤖 อ่านใบใบแรกทันที — ร้านจะได้ไม่ต้องกรอกอะไรนอกจากเบอร์
       if (ย่อแล้ว[0]) AIอ่าน(ย่อแล้ว[0])
-    } catch { setAddMsg('อ่านรูปไม่ได้ ลองถ่ายใหม่') }
+    } catch (e) {
+      // ⚠️ บอกชื่อไฟล์ด้วย — เลือกสองใบพร้อมกันแล้วขึ้นว่า "อ่านไม่ได้" เฉย ๆ จะงงว่าใบไหน
+      setAddMsg(`อ่านไฟล์ "${fs[0]?.name || '?'}" ไม่ได้ — ลองถ่ายใหม่ หรือบันทึกเป็น JPG ก่อน`)
+    }
   }
 
   async function ส่งใบ() {
