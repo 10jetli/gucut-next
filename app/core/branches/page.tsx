@@ -241,7 +241,14 @@ export default function CoreBranchesPage() {
                     <tr key={w.code} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={`${TD} text-gray-700 font-medium whitespace-nowrap`}>{w.code}</td>
-                      <td className={TD}><span className="text-gray-800">{w.name || w.code}</span></td>
+                      {/* 🔗 ทางเข้าจอรายละเอียด — ZORT มี `/Warehouse/Details?wid=` ของเราเพิ่งทำ 5 ต.ค. 2569
+                             ก่อนหน้านี้แถวนี้เป็น **ทางตัน** กดแล้วไม่ไปไหน (ใบเทียบ ZORT ข้อ 13)
+                          ⚠️ ของเราใช้ **รหัสคลัง** เป็นกุญแจ ไม่ใช่ `wid` ตัวเลขของ ZORT
+                             เพราะท่อส่ง `code` มา ไม่ได้ส่ง id ของ ZORT (ช่อง `id` อยู่ใน zortFields แต่ท่อไม่ส่งต่อ) */}
+                      <td className={TD}>
+                        <Link href={`/core/branches/${encodeURIComponent(w.code)}`}
+                          className="text-blue-600 hover:underline">{w.name || w.code}</Link>
+                      </td>
                       <td className={TD}>
                         <span className="text-gray-600">ทั่วไป</span>
                         {/* ⚠️ ธงนี้มาจากเซิร์ฟเวอร์ ไม่ได้เดาจากรหัส — โกดังเปิดบิลขายไม่ได้ */}
