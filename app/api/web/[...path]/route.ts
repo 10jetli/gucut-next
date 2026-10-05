@@ -7,6 +7,7 @@
 // ⚠️ middleware.ts คุมล็อกอินให้แล้ว (ทุกเส้นทางที่ไม่อยู่ใน PUBLIC_PATHS)
 // ⚠️ อนุญาตเฉพาะ API ที่หน้าเนทีฟใช้จริง — เพิ่มหน้าใหม่ต้องมาเพิ่มรายการที่นี่
 import { NextRequest, NextResponse } from 'next/server'
+import { หัวCORS } from '@/lib/origin-allow'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,7 +98,18 @@ async function forward(req: NextRequest, path: string[]) {
     if (v) out.set(safe, v)
   }
 
+  /* 🔒 เปิดให้เว็บของร้านเองเรียกข้ามโดเมนได้ — **เฉพาะชื่อในรายการ** (lib/origin-allow.ts)
+     ชื่ออื่นจะไม่ได้หัวนี้ ⇒ เบราว์เซอร์กันไม่ให้อ่านคำตอบ */
+  const หัว = หัวCORS(req.headers.get('origin'), process.env.NODE_ENV !== 'production')
+  if (หัว) for (const [k, v] of Object.entries(หัว)) out.set(k, v)
+
   return new NextResponse(body, { status: r.status, headers: out })
+}
+
+/** preflight ของเบราว์เซอร์ — ต้องตอบก่อน ไม่งั้นคำขอจริงไม่เคยถูกส่ง */
+export async function OPTIONS(req: NextRequest) {
+  const หัว = หัวCORS(req.headers.get('origin'), process.env.NODE_ENV !== 'production')
+  return new NextResponse(null, { status: หัว ? 204 : 403, headers: หัว ?? {} })
 }
 
 export async function GET(req: NextRequest, ctx: { params: { path: string[] } }) {

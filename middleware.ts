@@ -3,6 +3,7 @@ import { ค่าหัวที่ปลอดภัย } from '@/lib/หั�
 import { authToken, sameToken } from '@/lib/auth-token'
 import { isStaffToken, roleOf, verifyStaffToken } from '@/lib/staff-token'
 import { allowedBy } from '@/lib/route-allow'
+import { ต้องปฏิเสธเพราะข้ามเว็บ } from '@/lib/origin-allow'
 
 // ป้องกันทั้งเว็บด้วยรหัสผ่าน (ตั้งค่าใน env)
 // - SITE_PASSWORD  = แอดมิน เข้าได้ทุกหน้า
@@ -128,6 +129,22 @@ const หน้าแรกของโดเมน: Record<string, string> = {
 
 async function ตัดสินคำขอ(req: NextRequest): Promise<NextResponse> {
   const { pathname } = req.nextUrl
+
+  /* 🔒 ③ **ด่านกันสั่งงานข้ามเว็บ (CSRF)** — มาคู่กับการเปลี่ยนคุกกี้เป็น `SameSite=None`
+     เมื่อก่อนคุกกี้เป็น `lax` ⇒ เบราว์เซอร์กัน CSRF ให้เอง · ตอนนี้ไม่กันแล้ว ⇒ **เราต้องกันเอง**
+     🔑 ปฏิเสธเฉพาะคำขอที่ **เขียนข้อมูล** และ **มี `Origin` ที่ไม่ใช่ของเรา**
+        (ตรรกะอยู่ใน lib/origin-allow.ts และมีเทสยิงสองทิศ — ที่นี่แค่เรียกใช้)
+     ⚠️ อยู่บนทางเข้าทุกเส้น ⇒ ถ้าตัดสินผิดทางเดียว **ทั้งเว็บเขียนอะไรไม่ได้**
+        จึงออกแบบให้ "ไม่มี Origin = ผ่าน" (เครื่องมือหลังบ้านไม่ส่งหัวนี้ และไม่พกคุกกี้) */
+  if (ต้องปฏิเสธเพราะข้ามเว็บ(
+    req.method, req.headers.get('origin'), req.headers.get('host'),
+    process.env.NODE_ENV !== 'production',
+  )) {
+    return NextResponse.json(
+      { error: 'Forbidden', message: 'คำสั่งนี้ถูกส่งมาจากเว็บอื่น — หลังร้านรับคำสั่งเขียนข้อมูลจากเว็บของร้านเท่านั้น' },
+      { status: 403 },
+    )
+  }
 
   const โดเมน = (req.headers.get('host') || '').split(':')[0].toLowerCase()
   const หน้าแรก = หน้าแรกของโดเมน[โดเมน]
