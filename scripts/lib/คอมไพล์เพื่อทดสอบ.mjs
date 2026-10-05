@@ -18,7 +18,7 @@
  *    ไม่ยืนยัน ⇒ วันหน้ารูป import เปลี่ยน เทสจะพังด้วยข้อความที่อ่านว่า "เทสพัง" ไม่ใช่ "โค้ดผิด"
  */
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, readFileSync, readdirSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, readFileSync, readdirSync, realpathSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
@@ -31,7 +31,11 @@ import { join } from 'node:path'
  * @returns {{ ที่ออก: string, พาธของ: (tsRel: string) => string, ซอร์สของ: (tsRel: string) => string }}
  */
 export function คอมไพล์เพื่อทดสอบ({ ไฟล์, ปลอม = {}, ที่ออก }) {
-  const out = ที่ออก ?? mkdtempSync(join(tmpdir(), `ทดสอบ-${process.pid}-`))
+  /* 🔴 ต้อง realpath — บน macOS `tmpdir()` คืน /var/folders/... ซึ่งเป็น symlink
+     (ตัวจริงคือ /private/var/...) tsc จะ realpath บางขาแต่ไม่ทุกขา ⇒ คำนวณพาธร่วมเพี้ยน
+     แล้วพ่น TS5033 พาธซ้อนสองชั้น (/var/folders/9l/var/folders/9l/...)
+     บน g1 ไม่เจอเพราะ /tmp ของ Linux ไม่ใช่ symlink — เจอจริง 5 ต.ค. 2569 เทสตก 11 ไฟล์ทั้งที่โค้ดถูก */
+  const out = realpathSync(ที่ออก ?? mkdtempSync(join(tmpdir(), `ทดสอบ-${process.pid}-`)))
   const tsconfig = join(out, 'tsconfig.json')
   /* 🔴 **สืบจาก tsconfig ของรีโป ห้ามคิดค่าเอง** (แก้ 29 ก.ย. 2569 หลังเจอของจริง)
      รุ่นแรกผมตั้ง compilerOptions เองทั้งชุดและ **ลืม `strict: true`** ซึ่งรีโปตั้งไว้
@@ -49,6 +53,11 @@ export function คอมไพล์เพื่อทดสอบ({ ไฟล�
       baseUrl: process.cwd(), paths: { '@/*': ['./*'] },
       typeRoots: [join(process.cwd(), 'node_modules/@types')], types: ['node'],
       rootDir: process.cwd(), outDir: out,
+      /* 🔴 ปิด incremental ที่สืบมาจาก tsconfig ของรีโป — เทสคอมไพล์ครั้งเดียวทิ้ง ไม่ต้องมี cache
+         เปิดไว้ ⇒ tsc คำนวณที่เก็บ .tsbuildinfo เป็นพาธซ้อน (outDir + พาธเต็มของ config)
+         บน g1 พาธซ้อน /tmp/x/tmp/x เขียน "ได้" เลยผ่านเงียบ ๆ · บน Mac ติดสิทธิ์
+         mkdir /var/folders/9l/var ⇒ TS5033 ตก 11 ไฟล์ทั้งที่โค้ดถูก (เจอจริง 5 ต.ค. 2569) */
+      incremental: false,
     },
     files: ไฟล์.map((f) => join(process.cwd(), f)),
   }))
