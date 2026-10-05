@@ -64,6 +64,7 @@ export default function WebPermitsPage() {
   const [addPhone, setAddPhone] = useState('')
   const [addName, setAddName] = useState('')
   const [addFiles, setAddFiles] = useState<string[]>([])
+  const [converting, setConverting] = useState(false)
   const [sending, setSending] = useState(false)
   const [addMsg, setAddMsg] = useState('')
 
@@ -108,11 +109,13 @@ export default function WebPermitsPage() {
       return out
     } catch { /* ไปทางถัดไป */ }
 
-    // ③ ตัวแปลง HEIC — โหลดเฉพาะตอนจำเป็น (~1 MB) ไม่ถ่วงคนทั่วไป
-    const heic2any = (await import('heic2any')).default as
-      (o: { blob: Blob; toType?: string; quality?: number }) => Promise<Blob | Blob[]>
-    const ผล = await heic2any({ blob: f, toType: 'image/jpeg', quality: 0.85 })
-    const jpg = Array.isArray(ผล) ? ผล[0] : ผล
+    // ③ ตัวแปลง HEIC — โหลดเฉพาะตอนจำเป็น ไม่ถ่วงคนทั่วไป
+    //    🔴 ต้องเป็น heic-to ไม่ใช่ heic2any — พิสูจน์กับไฟล์จริง 5 ต.ค. 2569:
+    //    heic2any (libheif เก่า ค้างปี 2021) ตอบ "ERR_LIBHEIF format not supported"
+    //    กับรูปกล้อง iPhone รุ่นใหม่ 48MP · heic-to (libheif 1.19) แปลงผ่าน (10 วิ/ใบ
+    //    เพราะ 5712px — จึงต้องมีตัวล็อกปุ่มบันทึกระหว่างแปลงเสมอ)
+    const { heicTo } = await import('heic-to')
+    const jpg = await heicTo({ blob: f, type: 'image/jpeg', quality: 0.85 })
     const bmp = await createImageBitmap(jpg)
     return วาดเป็นJPEG(bmp, bmp.width, bmp.height)
   }
@@ -144,8 +147,12 @@ export default function WebPermitsPage() {
     const fs = Array.from(e.target.files || []).slice(0, 2)
     if (!fs.length) return
     // HEIC ต้องโหลดตัวแปลง ~1 MB แล้วถอดเอง — บอกให้รู้ว่ากำลังทำอะไรอยู่
+    // ⚠️ กล้อง iPhone รุ่นใหม่ให้ 48 ล้านพิกเซล (5712px) แปลงกินเวลาหลายวิ
+    //    ต้องล็อกปุ่มบันทึกจนเสร็จ — เจอจริง 5 ต.ค. 2569 ท่านกดก่อนเสร็จ เจอ "ยังไม่ได้แนบรูป"
+    //    ทั้งที่เลือกไฟล์แล้ว (ดูเหมือนระบบพัง จริง ๆ คือยังแปลงไม่เสร็จ)
     const heic = fs.some((f) => /heic|heif/i.test(f.type) || /\.hei[cf]$/i.test(f.name))
-    setAddMsg(heic ? 'กำลังแปลงรูปจาก iPhone…' : 'กำลังเตรียมรูป…')
+    setAddMsg(heic ? 'กำลังแปลงรูปจาก iPhone… (รูปใหญ่ใช้เวลาหลายวินาที)' : 'กำลังเตรียมรูป…')
+    setConverting(true)
     try {
       const ย่อแล้ว = await Promise.all(fs.map(ย่อรูป))
       setAddFiles(ย่อแล้ว)
@@ -154,13 +161,17 @@ export default function WebPermitsPage() {
       if (ย่อแล้ว[0]) AIอ่าน(ย่อแล้ว[0])
     } catch (e) {
       // ⚠️ บอกชื่อไฟล์ด้วย — เลือกสองใบพร้อมกันแล้วขึ้นว่า "อ่านไม่ได้" เฉย ๆ จะงงว่าใบไหน
-      setAddMsg(`อ่านไฟล์ "${fs[0]?.name || '?'}" ไม่ได้ — ลองถ่ายใหม่ หรือบันทึกเป็น JPG ก่อน`)
-    }
+      // บอกชื่อไฟล์ + สาเหตุจริง — "อ่านไม่ได้" เฉย ๆ ไล่ปัญหาไม่ได้
+      const เหตุ = e instanceof Error ? ` (${e.message.slice(0, 80)})` : ''
+      setAddMsg(`อ่านไฟล์ "${fs[0]?.name || '?'}" ไม่ได้${เหตุ} — ลองถ่ายใหม่ หรือบันทึกเป็น JPG ก่อน`)
+    } finally { setConverting(false) }
   }
 
   async function ส่งใบ() {
     setAddMsg('')
-    if (addPhone.replace(/[^0-9]/g, '').length < 9) { setAddMsg('ใส่เบอร์ลูกค้าให้ครบก่อน'); return }
+    // ท่านประธานสั่ง 5 ต.ค. 2569: ไม่บังคับเบอร์ — ใบมาทางไปรษณีย์ บางทียังไม่รู้เบอร์
+    const เบอร์ = addPhone.replace(/[^0-9]/g, '')
+    if (เบอร์ && เบอร์.length < 9) { setAddMsg('เบอร์ไม่ครบ — ใส่ให้ครบหรือเว้นว่างไว้'); return }
     if (!addFiles.length) { setAddMsg('ยังไม่ได้แนบรูปใบ ลซ.๒'); return }
     setSending(true)
     try {
@@ -219,7 +230,7 @@ export default function WebPermitsPage() {
           <div className="px-4 md:px-5 pb-5 pt-1 space-y-3 border-t border-gray-50">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
               <label className="block">
-                <span className="block text-[11.5px] font-semibold text-gray-500 mb-1">เบอร์ลูกค้า *</span>
+                <span className="block text-[11.5px] font-semibold text-gray-500 mb-1">เบอร์ลูกค้า (เว้นได้)</span>
                 <input value={addPhone} onChange={(e) => setAddPhone(e.target.value)}
                   inputMode="numeric" placeholder="08xxxxxxxx"
                   className="w-full rounded-xl border border-gray-200 px-3 py-2.5 text-[14px] outline-none focus:border-blue-400" />
@@ -284,9 +295,9 @@ export default function WebPermitsPage() {
               </div>
             )}
             {addMsg && <p className={`text-[12.5px] font-semibold ${addMsg.startsWith('✅') ? 'text-emerald-600' : 'text-red-600'}`}>{addMsg}</p>}
-            <button onClick={ส่งใบ} disabled={sending}
+            <button onClick={ส่งใบ} disabled={sending || converting}
               className="rounded-xl bg-gray-900 px-5 py-2.5 text-[13.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
-              {sending ? 'กำลังบันทึก…' : 'บันทึกเข้าระบบ'}
+              {converting ? 'กำลังแปลงรูป…' : sending ? 'กำลังบันทึก…' : 'บันทึกเข้าระบบ'}
             </button>
             <p className="text-[11px] text-gray-400">บันทึกแล้วขั้นจะขึ้นเป็น &ldquo;ร้านได้ใบตัวจริงแล้ว&rdquo; · ใบตัวจริงตอนกลางต้องเก็บไว้เป็นหลักฐานการจำหน่าย</p>
           </div>
