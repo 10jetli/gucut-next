@@ -106,6 +106,18 @@ export default function WebPermitsPage() {
     finally { setSending(false) }
   }
 
+  /** 🗑 ลบเรื่องที่บันทึกผิด — ถ่ายรูปผิดคน/ผิดใบต้องมีทางแก้
+   *  ⚠️ ถามยืนยันพร้อม "อ่านชื่อ" ไม่ใช่ถามแค่ "แน่ใจไหม" (กดพลาดแล้วเอาคืนไม่ได้) */
+  async function ลบเรื่อง(phone: string, name: string) {
+    if (!confirm(`ลบเรื่องของ "${name || phone}" ถาวร?\n\nรูปใบ ลซ.๒ ที่เก็บไว้จะถูกลบด้วย เอาคืนไม่ได้`)) return
+    const r = await fetch(`/api/web/permit-doc?shop=1&phone=${encodeURIComponent(phone)}&confirm=1`,
+      { method: 'DELETE' }).catch(() => null)
+    const d = await r?.json().catch(() => null)
+    if (!r?.ok) { setErr(d?.error || 'ลบไม่สำเร็จ'); return }
+    setItems((cur) => (cur ?? []).filter((x) => x.phone !== phone))
+    setOpenId('')
+  }
+
   const waiting = (items ?? []).filter((x) => x.stage === 'lz2').length
 
   return (
@@ -235,6 +247,11 @@ export default function WebPermitsPage() {
                       </button>
                     )}
                     <a href={`tel:${d.phone}`} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50">โทรหาลูกค้า</a>
+                    {/* 🗑 จางไว้และอยู่ท้ายแถว คนละฝั่งกับปุ่มที่กดบ่อย — นิ้วพลาดง่ายบนมือถือ */}
+                    <button onClick={() => ลบเรื่อง(d.phone, d.name)}
+                      className="ml-auto rounded-xl border border-gray-100 bg-white px-3 py-2 text-[12.5px] font-semibold text-gray-300 hover:text-red-600 hover:border-red-200">
+                      ลบเรื่องนี้
+                    </button>
                   </div>
                 </div>
               )}
