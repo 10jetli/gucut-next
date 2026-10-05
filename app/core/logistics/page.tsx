@@ -563,7 +563,11 @@ export default function LogisticsPage() {
                         : <span className="text-gray-400 text-[12px]">โอน/ชำระก่อน</span>}
                     </td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status ?? '')}>{statusTh(r.status)}</Pill></td>
-                    <td className={`${TD} text-gray-600 whitespace-nowrap`}>{r.number}</td>
+                    {/* กดเลขที่ใบ → จอรายละเอียด (ลอกจาก ZORT ที่กดแถวแล้วไป /Logistics/Details) */}
+                    <td className={`${TD} whitespace-nowrap`}>
+                      <Link href={`/core/logistics/${encodeURIComponent(r.number)}`}
+                        className="text-blue-600 hover:underline">{r.number}</Link>
+                    </td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[

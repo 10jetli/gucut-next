@@ -25,8 +25,19 @@ export default function SkuCodes({ sku }: { sku: string }) {
   useEffect(() => {
     let alive = true
     setState('loading'); setErr('')
+    /* ⚠️ **ห้าม `.then(r => r.json())` ตรง ๆ** — ท่อตอบหน้า HTML ได้ (502/กำแพงล็อกอิน)
+       แล้ว `json()` จะโยน `SyntaxError: Unexpected token '<'` ซึ่ง **ไม่ได้บอกอะไรกับคนขายของเลย**
+       และอ่านเหมือนจอเราพัง ทั้งที่ฝั่งที่ล้มคือท่อ (ของจริง 5 ต.ค. 2569: `?productlabels=` ตอบ 502
+       ทุกรูปของค่า 3 รอบติด ขณะที่ `list=bundles` ตอบ 200 JSON ⇒ ล้มเฉพาะเส้นนี้) */
     fetch(`/api/web/core?productlabels=${encodeURIComponent(sku)}`)
-      .then((r) => r.json())
+      .then(async (r) => {
+        const ชนิด = r.headers.get('content-type') || ''
+        if (!ชนิด.includes('json')) {
+          throw new Error(`ท่อตอบเป็นหน้าเว็บ ไม่ใช่ข้อมูล (HTTP ${r.status})`)
+        }
+        if (!r.ok) throw new Error(`ท่อตอบว่าไม่สำเร็จ (HTTP ${r.status})`)
+        return r.json()
+      })
       .then((d) => {
         if (!alive) return
         if (d?.error) { setState('error'); setErr(String(d.error)); return }
@@ -100,7 +111,17 @@ export default function SkuCodes({ sku }: { sku: string }) {
             {' '}— <b>ไม่ได้แปลว่าไม่มี</b> · รูปข้างบนวาดจากรหัสสินค้า
           </p>
         )}
-        {state === 'error' && <p className="text-[11.5px] text-red-700 mt-1">ถามเรื่องบาร์โค้ดไม่สำเร็จ: {err}</p>}
+        {/* 🔴 ล้มแล้วต้องบอก **ผลที่ตามมา** ไม่ใช่แค่ชื่อข้อผิดพลาด
+            รูปข้างบนยังวาดอยู่ (จากรหัสสินค้า) ⇒ ถ้าไม่เขียนตรงนี้ คนจะพิมพ์ฉลากไปติดของ
+            แล้วสแกนได้เลขที่ไม่ใช่บาร์โค้ด — คลาสเดียวกับสถานะ ② ในหัวไฟล์ */}
+        {state === 'error' && (
+          <p className="text-[11.5px] text-red-700 mt-1 leading-relaxed">
+            ⚠️ <b>ถามบาร์โค้ดจาก ZORT ไม่ได้</b> — {err}
+            {' '}⇒ <b>ยังไม่รู้ว่ามีบาร์โค้ดหรือไม่</b> (ไม่ได้แปลว่าไม่มี) ·
+            {' '}รูปข้างบนวาดจาก<b>รหัสสินค้า</b> สแกนแล้วได้ <span className="font-mono">{sku}</span>
+            {' '}⇒ <b>อย่าเพิ่งพิมพ์ฉลากจากรูปนี้</b>
+          </p>
+        )}
       </div>
     </div>
   )

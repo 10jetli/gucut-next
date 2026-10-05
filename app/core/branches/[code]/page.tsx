@@ -28,6 +28,7 @@ import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
+import PipeGapFrame from '@/components/zort/PipeGapFrame'
 import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
 
 interface Warehouse {
@@ -57,29 +58,6 @@ const thaiDay = (back = 0) =>
 const เวลาคัด = (raw?: string) => {
   const d = parseUtc(raw)
   return d ? thaiDayTime(d) : ''
-}
-
-/** กรอบของตารางที่ ZORT มีแต่เราเติมไม่ได้ — **ต้องบอกเหตุและคำขอ ไม่ใช่แค่ว่าไม่มี** */
-function PipeGapFrame({ หัว, คอลัมน์, เหตุ, คำขอ }: {
-  หัว: string; คอลัมน์: string; เหตุ: string; คำขอ: string
-}) {
-  return (
-    <Card>
-      <p className="text-[14px] font-semibold text-gray-900 mb-1">{หัว}</p>
-      <p className="text-[12px] text-gray-500 mb-2">คอลัมน์ของ ZORT: {คอลัมน์}</p>
-      <div className="border border-dashed border-gray-300 rounded-md px-4 py-5">
-        <p className="text-[12.5px] text-amber-800 leading-relaxed">
-          ⚠️ <b>ยังเติมตารางนี้ไม่ได้</b> — {เหตุ}
-        </p>
-        <p className="text-[12px] text-gray-600 mt-1.5 leading-relaxed">
-          🔧 ที่ต้องขอฝั่งท่อ: {คำขอ}
-        </p>
-        <p className="text-[11.5px] text-gray-400 mt-1.5">
-          กรอบนี้ค้างไว้ให้เห็นว่า ZORT มีตารางนี้ — ถ้าซ่อน จะไม่มีใครรู้ว่าต้องไปขอให้เปิด
-        </p>
-      </div>
-    </Card>
-  )
 }
 
 export default function BranchDetailPage() {
