@@ -23,6 +23,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import PipeGapFrame from '@/components/zort/PipeGapFrame'
 import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
+import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Row {
   id: string; number: string; trackingNo?: string; date?: string
@@ -41,6 +42,11 @@ function ช่อง({ ป้าย, ค่า }: { ป้าย: string; ค�
 }
 
 const ยังไม่มี = (ข้อความ: string) => <span className="text-[13px] text-gray-400">{ข้อความ}</span>
+
+/** ⚠️ **ห้ามเอา `status` ดิบขึ้นจอ** — ค่าจากท่อเป็นอังกฤษ (`Pending` · `Shipped`)
+ *  ต้องผ่านชุดคำเดียวกับจอรายการ ไม่งั้นค่าเดียวกันอ่านคนละอย่างสองจอ
+ *  (ด่าน `check-zort-words` ตีกลับ push ของจอนี้รอบแรกด้วยเหตุนี้ — 5 ต.ค. 2569) */
+const statusTh = (s?: string) => zortWord(SALE_STATUS, s).text || 'ไม่ระบุสถานะ'
 
 export default function LogisticsDetailPage() {
   const params = useParams<{ number: string }>()
@@ -95,7 +101,7 @@ export default function LogisticsDetailPage() {
                   : ยังไม่มี('ยังไม่มีเลขพัสดุ')} />
               {/* ⚠️ วันที่ต้องผ่าน thaiDate เสมอ — ค่าจากท่อเป็น YYYY-MM-DD ไม่มีเวลา/โซน */}
               <ช่อง ป้าย="วันที่" ค่า={row.date ? thaiDate(String(row.date)) : ยังไม่มี('ไม่รู้')} />
-              <ช่อง ป้าย="สถานะรายการ" ค่า={row.status || ยังไม่มี('ไม่รู้')} />
+              <ช่อง ป้าย="สถานะรายการ" ค่า={row.status ? statusTh(row.status) : ยังไม่มี('ไม่รู้')} />
               {/* 🔴 `isCod` ไม่ส่งมา = **ไม่รู้** ไม่ใช่ "ไม่ใช่ COD" — สองอันนี้ต่างกันเรื่องเงิน */}
               <ช่อง ป้าย="ชำระเงิน"
                 ค่า={typeof row.isCod === 'boolean'
