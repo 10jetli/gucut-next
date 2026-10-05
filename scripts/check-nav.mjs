@@ -166,6 +166,63 @@ if (orphan.length) {
   }
 }
 
+/* ══ dynamic route ใน /core ก็ต้องมีทางเข้า ════════════════════════════════════
+   🔴 **จุดบอดที่เจอตอนทำทะเบียนข้างบนเสร็จ (5 ต.ค. 2569)** — ตัวกรอง `orphan` ข้างบน
+      มีเงื่อนไข `!p.endsWith('/*')` ⇒ **เส้น dynamic ไม่เคยถูกตรวจเลยสักเส้น**
+      และ dynamic route คือ **จอรายละเอียด** ซึ่งเป็นชนิดที่เข้าถึงได้จากจออื่นเท่านั้น
+      ⇒ เป็นกองที่ "เข้าถึงไม่ได้" ได้ง่ายที่สุด แต่ด่านมองไม่เห็นที่สุด
+   🔑 **ที่นี่ไม่ต้องมีทะเบียน** — ต่างจากหน้า static ข้างบนที่ "ไม่มีเมนู" เป็นเจตนาที่คนต้องประกาศ
+      เส้น dynamic **ไม่มีทางอยู่ในเมนูได้เลย** (ต้องมีพารามิเตอร์) ⇒ ไม่มีอะไรให้ตัดสินรายเส้น
+      ⇒ กฎเดียวที่พอ: **ต้องมีไฟล์ไหนก็ได้ลิงก์ไปพาธฐานของมัน**  ⇒ ด่านคิดเองได้ทั้งหมด
+   📏 พื้นวันที่ตั้ง (วัดแล้ว 5 ต.ค. 2569): dynamic ใน `app/` ทั้งหมด 9 เส้น · ใน `/core` **4 เส้น**
+      และทั้ง 4 มีจอลิงก์มาจริง ⇒ ตั้งด่านนี้ได้โดยไม่ต้องยกเว้นอะไรเลย
+   ⚠️ ขอบเขต: ตรวจแค่ `/core` — เส้นใต้ `/api` ถูกเรียกด้วย URL ที่ **ประกอบตอนรัน**
+      ซึ่งตะแกรงข้อความมองไม่เห็นโดยธรรมชาติ (ใบ a-name-built-at-runtime-is-invisible-to-every-sieve)
+      ⇒ เอามารวมจะได้ลบลวงทุกรอบ */
+const dynมีทางเข้า = []
+const dynไม่มีทางเข้า = []
+{
+  const dyn = []
+  const เดินหา = (dir, url = '') => {
+    for (const n of readdirSync(dir)) {
+      const pth = join(dir, n)
+      if (!statSync(pth).isDirectory()) continue
+      if (n.startsWith('[')) { dyn.push({ url: `${url}/${n}`, dir: pth }); continue }
+      เดินหา(pth, `${url}/${n}`)
+    }
+  }
+  เดินหา('app')
+  const ไฟล์ = new Map()
+  const เก็บ = (dir) => {
+    for (const n of readdirSync(dir)) {
+      const pth = join(dir, n)
+      if (statSync(pth).isDirectory()) เก็บ(pth)
+      else if (n.endsWith('.tsx') || n.endsWith('.ts')) ไฟล์.set(pth, readFileSync(pth, 'utf8'))
+    }
+  }
+  เก็บ('app'); เก็บ('components')
+  for (const d of dyn.filter((x) => x.url.startsWith('/core'))) {
+    const ฐาน = d.url.replace(/\/\[[^\]]+\]$/, '')
+    /* ลิงก์ไปเส้น dynamic ต้องมี `/` ต่อท้ายฐาน (`/core/branches/` + ค่า) ⇒ กันไม่ให้
+       ลิงก์ไปหน้าแม่ (`/core/branches`) ถูกนับว่าเป็นทางเข้าของจอลูก */
+    const ใคร = [...ไฟล์].filter(([f, src]) => !f.startsWith(d.dir)
+      && (src.includes('`' + ฐาน + '/') || src.includes('"' + ฐาน + '/') || src.includes("'" + ฐาน + '/')))
+      .map(([f]) => f)
+    if (ใคร.length) dynมีทางเข้า.push(`${d.url} ← ${ใคร.slice(0, 2).join(' · ')}`)
+    else dynไม่มีทางเข้า.push(d.url)
+  }
+}
+if (dynไม่มีทางเข้า.length) {
+  console.log(`\n🔴 **เส้น dynamic ใน /core ที่ไม่มีจอไหนลิงก์มา** ${dynไม่มีทางเข้า.length} เส้น:`)
+  for (const d of dynไม่มีทางเข้า) console.log('   · ' + d)
+  console.log('   ⇒ เส้น dynamic อยู่ในเมนูไม่ได้ (ต้องมีพารามิเตอร์) ⇒ ทางเข้าเดียวคือลิงก์จากจออื่น')
+  console.log('   ⇒ ไม่มีใครลิงก์มา = **จอที่เปิดไม่ได้เลย** ไม่ใช่แค่หายาก')
+  ตก = true
+} else {
+  console.log(`✅ เส้น dynamic ใน /core ทั้ง ${dynมีทางเข้า.length} เส้น มีจอลิงก์มาจริง`)
+  for (const d of dynมีทางเข้า) console.log('   ' + d)
+}
+
 /* ── ตัดสิน: สามทิศ ───────────────────────────────────────────────────────── */
 const orphanใหม่ = orphan.filter((o) => !เปิดจากจออื่น.has(o))
 const ทะเบียนเน่า = [...เปิดจากจออื่น.keys()].filter((k) => !orphan.includes(k))
