@@ -94,10 +94,123 @@ if (missing.length) {
   ตก = true
 } else console.log('✅ ทุกลิงก์ในเมนูมีหน้าจริงรออยู่')
 
+/* ══ ทะเบียนหน้าที่ไม่มีเมนูโดยเจตนา ════════════════════════════════════════════
+   🔴 **ก่อนหน้านี้ส่วนนี้เป็นคำแนะนำล้วน ไม่เคยทำให้ตก** ⇒ เลข 22 โตได้เงียบ ๆ
+      และ **เลขเปล่าแยกไม่ออกว่า "ตั้งใจไม่มีเมนู" กับ "ลืมใส่เมนู"**
+      (คลาสเดียวกับที่ `check-aria-state` แก้ไปแล้ว: กองที่ถูกยกเว้นมีสองชนิดที่อ่านเหมือนกัน)
+   ⇒ เปลี่ยนเป็น **ทะเบียนรายหน้า** · ค่าในทะเบียนคือ **จอที่เปิดหน้านั้น**
+   🔑 **และด่านตรวจเหตุนั้นได้เอง** — ถ้าจอที่ประกาศไว้เลิกลิงก์มาแล้ว ด่านจะฟ้อง
+      ⇒ เหตุที่ตรวจไม่ได้จะเน่าเงียบ ๆ · เหตุที่ตรวจได้จะฟ้องตัวเองตอนเน่า
+   📏 ค่าทั้ง 22 รายการวัดมาจากของจริง (กวาด `app/` + `components/` หา `"<path>` / `'<path>` / `` `<path> ``
+      เมื่อ 5 ต.ค. 2569) **ไม่ได้เดา** — ทุกหน้ามีจอที่ลิงก์มาจริงทั้ง 22 หน้า
+      ⇒ ไม่มีหน้าไหน "หลุดโดยไม่ตั้งใจ" ในวันที่ตั้งทะเบียน ⇒ เลขนี้จึงเป็นพื้นที่เชื่อถือได้ */
+const เปิดจากจออื่น = new Map([
+  ['/core/branches/new', ['app/core/branches/page.tsx']],
+  ['/core/bundles/new', ['app/core/bundles/page.tsx']],
+  ['/core/categories/detail', ['app/core/categories/page.tsx']],
+  ['/core/customers/detail', ['app/core/customers/page.tsx']],
+  ['/core/customers/new', ['app/core/customers/page.tsx']],
+  ['/core/import', ['components/zort/ImportButton.tsx']],
+  ['/core/packing/pack', ['app/core/packing/page.tsx']],
+  ['/core/purchases/detail', ['app/core/purchases/page.tsx']],
+  ['/core/purchases/returns/new', ['app/core/purchases/returns/page.tsx']],
+  ['/core/quotations/detail', ['app/core/quotations/page.tsx']],
+  ['/core/quotations/new', ['app/core/quotations/page.tsx']],
+  ['/core/return-orders/detail', ['app/core/return-orders/page.tsx']],
+  ['/core/sales/detail', ['app/core/packing/page.tsx', 'app/core/logistics/page.tsx']],
+  ['/core/sales/new', ['app/core/sales/page.tsx']],
+  ['/core/sales/print', ['app/core/sales/page.tsx']],
+  ['/core/setting-sms', ['components/zort/SettingsNav.tsx']],
+  ['/core/setting-tracking', ['components/zort/SettingsNav.tsx']],
+  ['/core/settings-users/add', ['app/core/settings-users/page.tsx']],
+  ['/core/stock/cost', ['app/core/stock/page.tsx']],
+  ['/core/stock/no-image', ['app/core/stock/page.tsx']],
+  ['/core/stock/print', ['app/core/stock/page.tsx']],
+  ['/core/transfers/detail', ['app/core/transfers/page.tsx']],
+])
+
+/** ไฟล์นี้มีลิงก์ไปหน้านั้นไหม — ตรวจสามรูปที่โค้ดนี้ใช้จริง (`"` `'` `` ` ``)
+ *  ⚠️ ไม่ตัดคอมเมนต์ก่อนโดยตั้งใจ: คอมเมนต์ที่เอ่ยถึงพาธก็นับว่า "มีคนชี้ทางไว้"
+ *     ⇒ ถ้าตัด จะได้ลบลวงตอนทางเข้าอยู่ในคำอธิบาย · ขอบเขตนี้เขียนไว้เพราะมันเลือกได้สองทาง */
+export function ไฟล์ชี้ไปหน้า(ซอร์ส, หน้า) {
+  const s = String(ซอร์ส ?? '')
+  return s.includes('"' + หน้า) || s.includes("'" + หน้า) || s.includes('`' + หน้า)
+}
+
+/* ── ตัวควบคุมของตรรกะใหม่ · รันก่อนตัดสินทุกครั้ง ────────────────────────── */
+{
+  const คุม = [
+    ['<Link href="/core/stock/cost">x</Link>', '/core/stock/cost', true, 'ควรจับ: href ด้วยอัญประกาศคู่'],
+    ["router.push('/core/stock/cost')", '/core/stock/cost', true, 'ควรจับ: อัญประกาศเดี่ยว'],
+    ['`/core/stock/cost?x=1`', '/core/stock/cost', true, 'ควรจับ: เทมเพลตสตริง'],
+    ['<Link href="/core/stock">x</Link>', '/core/stock/cost', false, 'ต้องไม่จับ: หน้าแม่ไม่ใช่หน้าลูก'],
+    ['const s = "core/stock/cost"', '/core/stock/cost', false, 'ต้องไม่จับ: ไม่มีอัญประกาศนำหน้าสแลช'],
+  ]
+  let ตกคุม = 0
+  for (const [src, หน้า, ควร, ชื่อ] of คุม) {
+    if (ไฟล์ชี้ไปหน้า(src, หน้า) !== ควร) { console.log(`🔴 ตัวควบคุมตก — ${ชื่อ}`); ตกคุม++ }
+  }
+  if (ตกคุม) {
+    console.log('🔴 ตะแกรงหาทางเข้าแยกแยะไม่ได้แล้ว ⇒ เลขข้างล่างอ่านไม่ได้')
+    process.exit(1)
+  }
+  console.log(`✅ ตัวควบคุมตะแกรงทางเข้า ${คุม.length} เคสผ่านก่อนตัดสิน (จับ 3 · ไม่จับ 2)`)
+}
+
 if (orphan.length) {
   console.log(`\n⚠️ หน้าใน /core ที่ไม่มีทางเข้าจากเมนู ${orphan.length} หน้า`)
-  console.log('   (บางหน้าตั้งใจให้เปิดจากจออื่น — ตรวจด้วยตาว่าตัวไหนคือของที่ลืมใส่เมนู)')
-  for (const o of orphan) console.log('   ' + o)
+  console.log('   (ทุกหน้าต้องอยู่ในทะเบียน `เปิดจากจออื่น` พร้อมจอที่เปิดมัน)')
+  for (const o of orphan) {
+    const จอ = เปิดจากจออื่น.get(o)
+    console.log(`   ${o}${จอ ? `  ← ${จอ.join(' · ')}` : '  🔴 ไม่อยู่ในทะเบียน'}`)
+  }
+}
+
+/* ── ตัดสิน: สามทิศ ───────────────────────────────────────────────────────── */
+const orphanใหม่ = orphan.filter((o) => !เปิดจากจออื่น.has(o))
+const ทะเบียนเน่า = [...เปิดจากจออื่น.keys()].filter((k) => !orphan.includes(k))
+const เหตุเน่า = []
+{
+  const ไฟล์ทั้งหมด = new Map()
+  const เดิน = (dir) => {
+    for (const name of readdirSync(dir)) {
+      const pth = join(dir, name)
+      if (statSync(pth).isDirectory()) เดิน(pth)
+      else if (name.endsWith('.tsx') || name.endsWith('.ts')) ไฟล์ทั้งหมด.set(pth, readFileSync(pth, 'utf8'))
+    }
+  }
+  เดิน('app'); เดิน('components')
+  for (const [หน้า, จอ] of เปิดจากจออื่น) {
+    if (!orphan.includes(หน้า)) continue        // เน่าคนละแบบ จับที่ `ทะเบียนเน่า`
+    const ยังชี้ = จอ.filter((f) => ไฟล์ทั้งหมด.has(f) && ไฟล์ชี้ไปหน้า(ไฟล์ทั้งหมด.get(f), หน้า))
+    if (ยังชี้.length === 0) เหตุเน่า.push(`${หน้า} ← ประกาศว่าเปิดจาก ${จอ.join(' · ')} แต่ไม่มีไฟล์ไหนลิงก์มาแล้ว`)
+  }
+}
+
+if (orphanใหม่.length) {
+  console.log(`\n🔴 **หน้าใหม่ที่ไม่มีทางเข้าจากเมนู และไม่อยู่ในทะเบียน** ${orphanใหม่.length} หน้า:`)
+  for (const o of orphanใหม่) console.log('   · ' + o)
+  console.log('   ⇒ ใส่ลงเมนูที่ `lib/nav-config.ts` **หรือ** ถ้าตั้งใจให้เปิดจากจออื่น')
+  console.log('      ให้เพิ่มลงทะเบียน `เปิดจากจออื่น` ใน scripts/check-nav.mjs **พร้อมพาธไฟล์ของจอนั้น**')
+  console.log('   🔑 เลขรวมแยกไม่ออกว่า "ตั้งใจ" กับ "ลืม" ⇒ ทะเบียนบังคับให้ตัดสินรายหน้า')
+  ตก = true
+}
+if (ทะเบียนเน่า.length) {
+  console.log(`\n🔴 **รายการในทะเบียนที่ไม่ใช่ orphan อีกแล้ว** ${ทะเบียนเน่า.length} รายการ:`)
+  for (const k of ทะเบียนเน่า) console.log('   · ' + k)
+  console.log('   ⇒ หน้านั้นมีเมนูแล้ว หรือถูกลบไปแล้ว ⇒ ลบออกจากทะเบียน')
+  console.log('   🔑 ทะเบียนที่มีรายการผีจะปล่อยหน้าใหม่ผ่านฟรีเมื่อพาธเดิมกลับมา')
+  ตก = true
+}
+if (เหตุเน่า.length) {
+  console.log(`\n🔴 **เหตุในทะเบียนเน่าแล้ว** ${เหตุเน่า.length} รายการ:`)
+  for (const e of เหตุเน่า) console.log('   · ' + e)
+  console.log('   ⇒ หน้านั้นไม่มีทั้งเมนูและไม่มีจอไหนลิงก์มา = **เข้าไม่ถึงจริง**')
+  console.log('   🔑 นี่คือข้อที่เลขเปล่า 22 มองไม่เห็นตลอดกาล')
+  ตก = true
+}
+if (!orphanใหม่.length && !ทะเบียนเน่า.length && !เหตุเน่า.length) {
+  console.log(`\n✅ ทุกหน้าที่ไม่มีเมนู อยู่ในทะเบียนครบ ${เปิดจากจออื่น.size} หน้า และจอที่ประกาศยังลิงก์มาจริงทุกหน้า`)
 }
 
 /* ⛔ ตัดสินท้ายสุด — ต้องอยู่หลังจากพิมพ์ทุกอย่างแล้ว คนจะได้เห็นรายการครบก่อนตก */
