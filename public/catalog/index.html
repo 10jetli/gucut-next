@@ -118,7 +118,13 @@ font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;color:#1e3a
   <div class="brand" style="display:flex;align-items:center;gap:12px">
     <a href="/" title="กลับหน้าหลัก" style="display:inline-flex;align-items:center;gap:4px;font-size:13px;font-weight:600;color:#1a73e8;text-decoration:none;white-space:nowrap">← หน้าหลัก</a>
     <h1 style="margin:0">🔧 GUCUT — คลังอะไหล่</h1>
-    <span id="userBadge" style="margin-left:auto;font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer" title="แตะเพื่อออกจากระบบ"></span>
+    <!-- 🔄 ปุ่มอัปเดตสต็อกเอง — ท่านประธานสั่ง 6 ต.ค. 2569
+         "ทำปุ่มอัปเดตสต็อกทั้งหมดไว้ให้ผมกดด้วย ถ้าอยากอัปเดตผมกดเองได้ตลอดเวลา"
+         cron อัปให้วันละครั้ง 06:20 — ปุ่มนี้คือทางลัดเมื่ออยากได้เลขสดเดี๋ยวนั้น -->
+    <button class="btn" id="btnStockNow" style="margin-left:auto;font-weight:600;white-space:nowrap"
+            title="ดึงจำนวนคงเหลือล่าสุดจากคลังมาทับทุกรหัสในจอนี้ทันที&#10;(เห็นผลเฉพาะจอนี้ · รีเฟรชแล้วกลับไปใช้ชุดที่อัปอัตโนมัติวันละครั้ง 06:20)">🔄 อัปเดตสต็อกทั้งหมด</button>
+    <span id="stockNowMsg" style="font-size:12px;color:var(--muted);white-space:nowrap"></span>
+    <span id="userBadge" style="font-size:12px;color:var(--muted);white-space:nowrap;cursor:pointer" title="แตะเพื่อออกจากระบบ"></span>
   </div>
   <div style="display:none;gap:6px;padding:0 12px 6px">
     <button class="btn" id="navMain" style="font-weight:600">📦 ระบบสั่งของ</button>
@@ -1126,6 +1132,63 @@ function updateBulkBtns(){
 document.getElementById("pickIn").addEventListener("keydown",e=>{
   if(e.key==="Enter"){e.preventDefault();addPick(e.target.value);}
 });
+
+/* ── ปุ่ม "อัปเดตสต็อกทั้งหมด" (ท่านประธานสั่ง 6 ต.ค. 2569) ──
+   ดึงจำนวนคงเหลือสดจากกระจกคลังผ่านท่อกลาง /api/web/core ที่มีอยู่แล้ว
+   (รหัสหลังร้านอยู่ฝั่งเซิร์ฟเวอร์ ไม่เคยหลุดถึงเบราว์เซอร์)
+
+   🔴 สามข้อที่ยอมไม่ได้ — มาจากของจริงที่เคยพลาดในโปรเจกต์นี้
+   ① **ดึงไม่ครบ = ไม่ทับอะไรเลย** เทียบจำนวนที่ได้กับเลข total ที่ท่อบอกเอง
+      ทับด้วยข้อมูลครึ่งเดียว = รหัสที่ยังไม่ได้ดึงจะดูเหมือนไม่เปลี่ยน ทั้งที่จริงเปลี่ยน
+   ② **รหัสที่กระจกไม่มี ห้ามเขียน 0** คงค่าเดิมไว้ — "ไม่รู้" กับ "หมด" คนละเรื่อง
+   ④ **ไม่อ้างเกินที่มือทำ** ปุ่มนี้ทับเลขใน state ของจอนี้เท่านั้น ไม่ได้เขียนไฟล์กลางบน R2
+      ⇒ รีเฟรชแล้วกลับไปใช้ชุดที่ cron อัปวันละครั้ง · ต้องเขียนบนจอว่า "เฉพาะจอนี้"
+      (ถ้าไม่เขียน คนจะเชื่อว่ากดแล้วทุกคนเห็นเลขใหม่ — คลาสเดียวกับ "ป้ายที่อ้างเกินสิ่งที่มือเราทำ")
+   ③ **บอกผลเป็นตัวเลขเสมอ** เปลี่ยนกี่รหัส เท่าเดิมกี่รหัส ไม่รู้กี่รหัส
+      ปุ่มที่กดแล้วเงียบ คนจะกดซ้ำเพราะไม่รู้ว่าทำงานไหม */
+(function(){
+  var ปุ่ม = document.getElementById("btnStockNow"), ข้อความ = document.getElementById("stockNowMsg");
+  if (!ปุ่ม) return;
+  ปุ่ม.addEventListener("click", async function(){
+    ปุ่ม.disabled = true; var เดิม = ปุ่ม.textContent; ปุ่ม.textContent = "⏳ กำลังดึง…";
+    ข้อความ.textContent = ""; ข้อความ.style.color = "var(--muted)";
+    try {
+      var แถว = [], off = 0, ท่อบอก = null;
+      while (true) {
+        var r = await fetch("/api/web/core?list=stock&limit=200&offset=" + off, { cache: "no-store" });
+        if (!r.ok) throw new Error("ท่อตอบ " + r.status);
+        var j = await r.json();
+        if (ท่อบอก === null) ท่อบอก = j.total;
+        var ชุด = j.rows || [];
+        แถว = แถว.concat(ชุด);
+        ข้อความ.textContent = "ดึงแล้ว " + แถว.length + (ท่อบอก ? " / " + ท่อบอก : "") + " รหัส…";
+        if (ชุด.length < 200) break;
+        off += 200;
+        if (off > 20000) throw new Error("ไล่หน้าเกินกำหนด");
+      }
+      if (ท่อบอก != null && แถว.length !== ท่อบอก)
+        throw new Error("ดึงไม่ครบ (ท่อบอก " + ท่อบอก + " ได้ " + แถว.length + ") — ไม่ทับข้อมูลเดิม");
+      var m = {};
+      แถว.forEach(function(x){ m[String(x.sku)] = x; });
+      var เปลี่ยน = 0, เท่าเดิม = 0, ไม่รู้ = 0;
+      state.base.forEach(function(p){
+        var x = m[String(p.sku)];
+        if (!x || x.qty === null || x.qty === undefined) { ไม่รู้++; return; }  // ② คงค่าเดิม
+        if (p.inv !== x.qty) { p.inv = x.qty; เปลี่ยน++; } else { เท่าเดิม++; }
+      });
+      render();
+      ปุ่ม.textContent = เดิม;
+      ข้อความ.style.color = "#188038";
+      ข้อความ.textContent = "✅ อัปเดตแล้ว " + new Date().toLocaleTimeString("th-TH")
+        + " · เปลี่ยน " + เปลี่ยน + " · เท่าเดิม " + เท่าเดิม + (ไม่รู้ ? " · ไม่รู้ " + ไม่รู้ : "")
+        + " · เฉพาะจอนี้";   // ④ ปุ่มนี้ไม่เขียนไฟล์กลาง — รีเฟรชแล้วกลับไปใช้ชุดรอบวันละครั้ง
+    } catch (e) {
+      ปุ่ม.textContent = เดิม;
+      ข้อความ.style.color = "#c5221f";
+      ข้อความ.textContent = "🔴 " + e.message + " — ตัวเลขบนจอยังเป็นชุดเดิม";
+    } finally { ปุ่ม.disabled = false; }
+  });
+})();
 </script>
 </body>
 </html>
