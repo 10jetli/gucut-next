@@ -921,7 +921,43 @@ async function loadAnalysis(force){
   if(state.base.length) render();
 }
 
-fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
+/* 🔴 สต็อกต้องสด — ท่านประธานสั่ง 6 ต.ค. 2569 "ตรงนี้อัปเดตสต็อก วันละครั้ง"
+   ของเดิมอ่านไฟล์นิ่งในเว็บ ⇒ ตัวเลขค้างตั้งแต่ตอน build (วัดวันที่สั่ง: ผิด 415 จาก 2,265 รหัส)
+   ตอนนี้ cron ที่เครื่องร้านสร้างไฟล์ใหม่ทุกวันแล้วอัปขึ้น Cloudflare
+   💰 ตั้งใจไม่ให้ผ่าน Netlify — ถ้าย้ายกลับไป build ทุกวันคือ 365 build/ปี (เครดิตเคยหมดมาแล้ว 19 ก.ย. 2569)
+   🔑 **ถ้าดึงจาก Cloudflare ไม่ได้ ให้ถอยมาใช้ไฟล์เดิมในเว็บ และบอกบนจอว่าถอย**
+      ไฟล์เดิมยังอยู่ในรีโปโดยตั้งใจ — เป็นตาข่าย ไม่ใช่ของตกค้าง
+      เงียบ ๆ ถอยแล้วไม่บอก = คนอ่านตัวเลขเก่าโดยคิดว่าสด ซึ่งแย่กว่าจอว่าง */
+(async () => {
+  /* 🔴 **ต้องมีตัวกันแคช** — Cache Rule ของ video.gucut.com บังคับ max-age 7 วันที่ขอบ
+     (ยิงดูหัวตอบจริงแล้ว: cache-control: public, max-age=604800 ทั้งที่เราอัปมาแค่ 5 นาที)
+     `cache:"no-store"` กันได้แค่แคชในเบราว์เซอร์ **ไม่ได้กันแคชที่ขอบ Cloudflare**
+     ⇒ ถ้าไม่เติมพารามิเตอร์นี้ อัปสต็อกทุกชั่วโมงก็ไร้ผล คนยังเห็นเลขเก่าได้ถึง 7 วัน
+     เลขเปลี่ยนทุก 10 นาที ⇒ คีย์แคชใหม่ทุก 10 นาที ⇒ สดสุดช้า 10 นาที และยังได้ประโยชน์จากขอบ */
+  const สด = "https://video.gucut.com/catalog/products.json?t=" + Math.floor(Date.now() / 600000);
+  const สำรอง = "/catalog/products.json";
+  let data = null, ถอย = false;
+  try {
+    const r = await fetch(สด, { cache: "no-store" });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    const j = await r.json();
+    if (!j || !Array.isArray(j.products) || !j.products.length) throw new Error("ไฟล์ว่างหรือรูปไม่ถูก");
+    data = j;
+  } catch (e) {
+    ถอย = true;
+    data = await (await fetch(สำรอง)).json();
+    const ป้าย = document.createElement("div");
+    ป้าย.style.cssText = "background:#fff3cd;border:1px solid #ffe08a;padding:6px 10px;margin:6px 0;font-size:13px;border-radius:8px";
+    ป้าย.textContent = "⚠️ ดึงสต็อกสดไม่ได้ (" + e.message + ") — กำลังแสดงตัวเลขชุดเดิมที่ติดมากับเว็บ อาจไม่ตรงกับคลังจริง";
+    document.body.insertBefore(ป้าย, document.body.firstChild);
+  }
+  if (!ถอย && data._meta && data._meta.stockSyncedAt) {
+    const ป้าย = document.createElement("div");
+    ป้าย.style.cssText = "color:#5f6368;font-size:12px;margin:4px 0";
+    ป้าย.textContent = "สต็อกสด ณ " + new Date(data._meta.stockSyncedAt).toLocaleString("th-TH");
+    document.body.insertBefore(ป้าย, document.body.firstChild);
+  }
+  (data => {
   state.prefix=(data._meta&&data._meta.imgPrefix)||"";
   state.base=data.products.map(p=>({...p,model:model(p.title),pp:parseTags(p.tags)}));
   rebuildCatFilter();
@@ -946,7 +982,8 @@ fetch("/catalog/products.json").then(r=>r.json()).then(data=>{
   fetch("/api/transfer?op=status").then(r=>r.json()).then(j=>{TRF_SERVER=!!(j&&j.configured);}).catch(()=>{TRF_SERVER=false;}).then(()=>{
     if(location.hash==="#trf")showPage("trf");
   });
-}).catch(e=>{document.getElementById("app").innerHTML='<div class="empty">โหลดข้อมูลไม่สำเร็จ: '+e+'</div>';});
+  })(data);
+})().catch(e=>{document.getElementById("app").innerHTML='<div class="empty">โหลดข้อมูลไม่สำเร็จ: '+e+'</div>';});
 
 /* ➕ รายการที่เลือก — ท่านประธานสั่ง 16 ก.ย. 2569
    "เสิร์ชหาสินค้าแล้วเพิ่มได้อีกทาง ทีละรหัส"
