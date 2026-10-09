@@ -60,7 +60,19 @@ export default function หน้าหัวสมอง() {
   const สำรอง = (ประกาศ?.['สำรองสิงคโปร์'] ?? {}) as Record<string, unknown>
   const ssd = (ประกาศ?.['ssd'] ?? {}) as Record<string, unknown>
   const รุ่น = (ประกาศ?.['รุ่น'] ?? {}) as Record<string, unknown>
-  const ผู้เชื่อม = (ประกาศ?.['ผู้เชื่อม'] ?? {}) as Record<string, boolean | null>
+  const ผู้เชื่อมดิบ = (ประกาศ?.['ผู้เชื่อม'] ?? {}) as Record<string, unknown>
+  /* ช่องที่ขึ้นต้นด้วย _ เป็นรายละเอียดประกอบ ไม่ใช่รายชื่อคน */
+  const ผู้เชื่อม = Object.fromEntries(
+    Object.entries(ผู้เชื่อมดิบ)
+      .filter(([k]) => !k.startsWith('_'))
+      .map(([k, v]) => [k, (v === true || v === false) ? v : null]),
+  ) as Record<string, boolean | null>
+  const ชีพจร = (ผู้เชื่อมดิบ['_ชีพจร'] ?? {}) as Record<
+    string, { ใช้ล่าสุด?: string; จำนวนครั้ง?: number; ผ่าน?: string }>
+  const อัปรุ่น = (ประกาศ?.['อัปรุ่น'] ?? {}) as Record<string, unknown>
+  const งานตามเวลา = (ประกาศ?.['งานตามเวลารายตัว'] ?? {}) as Record<
+    string, { รอบถัดไป?: string | null; รอบล่าสุด?: string | null; กำลังนับถอยหลัง?: boolean }>
+  const อัปไม่ผ่าน = อัปรุ่น['ไม่ผ่าน'] === true
   const ปกติ = ผล.สถานะ === 'ปกติ'
   const ท่อน = ฐาน['ท่อน']
   const เลขท่อน = typeof ท่อน === 'number' ? fmtNum(ท่อน) : '—'
@@ -150,9 +162,29 @@ export default function หน้าหัวสมอง() {
             ))}
           </ul>
         )}
+        {Object.keys(ชีพจร).length > 0 && (
+          <div className="mt-2 rounded bg-gray-50 p-2 text-xs">
+            <b>ร่องรอยการใช้งานจริง</b> (ตัวค้นจดเองทุกครั้งที่มีคนเรียก)
+            <ul className="mt-1">
+              {Object.entries(ชีพจร).map(([ชื่อ, ว]) => (
+                <li key={ชื่อ}>
+                  · {ชื่อ} — ใช้ล่าสุด {ว?.ใช้ล่าสุด ?? '—'} · {ว?.จำนวนครั้ง ?? 0} ครั้ง
+                  {ว?.ผ่าน ? ` · ${ว.ผ่าน}` : ''}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         <div className="mt-2 text-xs text-gray-500">
-          ติ๊กถูกมาจาก<b>การตรวจไฟล์ตั้งค่าจริง</b> ไม่ใช่รายชื่อที่พิมพ์ไว้เอง —
-          ติ๊กที่พิมพ์เองคือคำกล่าวอ้าง ไม่ใช่สถานะ
+          ติ๊กถูกมาจาก<b>การตรวจไฟล์ตั้งค่าจริง</b> และ<b>ร่องรอยการใช้งานจริง</b> —
+          ไม่ใช่รายชื่อที่พิมพ์ไว้เอง · ติ๊กที่พิมพ์เองคือคำกล่าวอ้าง ไม่ใช่สถานะ
+          <br />
+          ❔ = <b>ยังไม่เคยเห็นการใช้งาน ซึ่งไม่เท่ากับยังไม่ได้เชื่อม</b> —
+          ผู้เรียกต้องตั้ง <code>GUCUT_BRAIN_CLIENT=&lt;ชื่อ&gt;</code> ตอนเรียกตัวค้น ถึงจะนับได้
+          <br />
+          🔴 <b>ขอบเขต</b>: ติ๊กเขียวพิสูจน์ว่า<b>มีคนเรียกโดยประกาศชื่อนั้น</b> —
+          ไม่ได้พิสูจน์ว่าเป็นคนนั้นจริง (ใครก็ตั้งชื่อเป็นอะไรก็ได้)
+          ⇒ ตอบได้ว่า &quot;ทางนี้เคยถูกเดินจริงไหม&quot; · ตอบไม่ได้ว่า &quot;ใครเดิน&quot;
         </div>
       </div>
 
@@ -173,6 +205,64 @@ export default function หน้าหัวสมอง() {
             ตัวฝัง <code>{(รุ่น['ตัวฝัง'] as string) ?? '—'}</code>
           </li>
         </ul>
+      </div>
+
+      {/* ── งานตามเวลา — ลิสต์รายตัว ไม่ใช่ค่าเดียวว่ามี/ไม่มี
+           🔴 ของจริง 9 ต.ค. 2569: ช่องสรุปรวมช่องเดียวทำให้ CEO อ่านว่า "ยังไม่มี timer เลยสักตัว"
+              ทั้งที่มีครบ 5 ตัวและวิ่งอยู่ ⇒ **ช่องที่สรุปรวม ปิดบังของที่มีอยู่จริง** */}
+      <div className="rounded border bg-white p-3 text-sm">
+        <h2 className="mb-2 font-semibold">งานตามเวลา (บน g1)</h2>
+        {Object.keys(งานตามเวลา).length === 0 ? (
+          <div className="text-gray-600">ยังไม่รู้ — ไฟล์ประกาศยังไม่มีข้อมูลส่วนนี้</div>
+        ) : (
+          <table className="w-full text-left">
+            <thead className="text-xs text-gray-500">
+              <tr><th className="py-1">งาน</th><th>รอบถัดไป</th><th>รอบล่าสุด</th></tr>
+            </thead>
+            <tbody>
+              {Object.entries(งานตามเวลา).map(([ชื่อ, ว]) => (
+                <tr key={ชื่อ} className="border-t">
+                  <td className="py-1">
+                    {ว?.กำลังนับถอยหลัง ? '🟢' : '⬜'} <code>{ชื่อ}</code>
+                  </td>
+                  <td>{ว?.รอบถัดไป ?? <span className="text-gray-500">— ยังไม่สตาร์ท</span>}</td>
+                  <td className="text-gray-600">{ว?.รอบล่าสุด ?? '—'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+        <div className="mt-2 text-xs text-gray-500">
+          อ่านจาก <code>systemctl --user list-timers</code> ของจริง —
+          <b>ไฟล์ตั้งค่ามีอยู่ ไม่ได้แปลว่ามันวิ่ง</b> ⇒ ช่องนี้ดูที่ &quot;รอบถัดไป&quot; ไม่ใช่ว่ามีไฟล์ไหม
+        </div>
+      </div>
+
+      {/* ── ⑤ การอัปรุ่น — ท่านสั่งว่า "อัปไม่ผ่านต้องขึ้นสีแดงค้างไว้ ไม่ใช่เงียบ" ── */}
+      <div className={`rounded border p-3 text-sm ${อัปไม่ผ่าน ? 'border-red-300 bg-red-50' : 'bg-white'}`}>
+        <h2 className="mb-2 font-semibold">{อัปไม่ผ่าน ? '🔴 ' : ''}การอัปรุ่น</h2>
+        <div className="grid gap-1 md:grid-cols-2">
+          <div>รุ่นที่รันอยู่: <b>{(อัปรุ่น['รุ่นที่รันอยู่'] as string) ?? (รุ่น['mem0ai'] as string) ?? '—'}</b></div>
+          <div>
+            รุ่นล่าสุดบน PyPI: <b>{(อัปรุ่น['รุ่นล่าสุดบนPyPI'] as string) ?? 'ยังไม่รู้'}</b>
+            {!อัปรุ่น['รุ่นล่าสุดบนPyPI'] && (
+              <span className="ml-1 text-gray-500">(ถาม PyPI ไม่ได้ — <b>ไม่รู้ ไม่ใช่ว่าไม่มีรุ่นใหม่</b>)</span>
+            )}
+          </div>
+          <div>ตรวจ/อัปล่าสุด: <b>{(อัปรุ่น['เมื่อ'] as string) ?? 'ยังไม่เคยตรวจ'}</b></div>
+          <div>ผลรอบล่าสุด: <b>{(อัปรุ่น['ผล'] as string) ?? 'ยังไม่เคยตรวจ'}</b></div>
+        </div>
+        {Array.isArray(อัปรุ่น['ข้อที่ตก']) && (อัปรุ่น['ข้อที่ตก'] as string[]).length > 0 && (
+          <ul className="mt-2 list-inside list-disc text-red-800">
+            {(อัปรุ่น['ข้อที่ตก'] as string[]).map((x, i) => <li key={i}>{x}</li>)}
+          </ul>
+        )}
+        <div className="mt-2 text-xs text-gray-600">
+          วิธีอัป: <b>ตั้งตัวใหม่ข้าง ๆ ตัวเก่า</b> — สร้างดัชนีใหม่<b>จากไฟล์ต้นทาง</b> (ไม่ย้ายข้อมูลข้ามรุ่น
+          เพราะย้ายแล้วเพี้ยนได้ สร้างใหม่เพี้ยนไม่ได้) แล้วยิงชุดคำถามที่รู้คำตอบ
+          พร้อม<b>ตัวควบคุมลบ</b> ⇒ ผ่านครบถึงสลับ · ตกข้อใดข้อหนึ่ง = ทิ้งตัวใหม่ ตัวเก่าวิ่งต่อ
+          <b> "ติดตั้งผ่าน" ไม่ใช่ "อัปสำเร็จ"</b>
+        </div>
       </div>
 
       <div className="rounded border bg-gray-50 p-3 text-xs text-gray-600">
