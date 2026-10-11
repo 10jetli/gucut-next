@@ -43,7 +43,7 @@ interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
 
 const inp = 'w-full border border-gray-300 rounded px-3 py-2 text-[14px]'
-const cell = 'w-full border border-gray-200 rounded px-2 py-1.5 text-[13px]'
+const cell = 'w-full border border-gray-200 rounded px-2 py-1.5 text-[12.5px]'
 
 /** ผลซ้อมที่ท่อคืนมา — มี linesTotal ไว้ให้จอเทียบว่าคิดตรงกันไหม
  *  ⚠️ **ต้องเป็น `number | null` ไม่ใช่ `number`** — null คือค่าจริงที่ท่อส่งมาได้
@@ -187,7 +187,7 @@ export default function NewPurchaseReturnPage() {
         title="คืนสินค้าให้ผู้ขาย"
         summary={<>สร้างใบคืนใน ZORT โดยตรง (ReturnPurchaseOrder){' | '}
           <span className="text-gray-400">เลขอ้างอิง: <b>{ref || '…'}</b> (กันการส่งซ้ำ)</span></>}
-        actions={<Link href="/core/purchases" className="text-[13px] text-blue-600 hover:underline">← กลับรายการซื้อ</Link>}
+        actions={<Link href="/core/purchases" className="text-[12.5px] text-blue-600 hover:underline">← กลับรายการซื้อ</Link>}
       />
 
       <div className="text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
@@ -226,7 +226,7 @@ export default function NewPurchaseReturnPage() {
                   <td className={TDR}>{sum === null ? <span className="text-gray-300">—</span> : fmtMoney(sum)}</td>
                   <td className={TD}>
                     <button type="button" onClick={() => setLines((o) => (o.length > 1 ? o.filter((_, j) => j !== i) : o))}
-                      disabled={lines.length <= 1} className="text-[12px] text-gray-400 hover:text-red-600 disabled:opacity-30">ลบ</button>
+                      disabled={lines.length <= 1} className="text-[12.5px] text-gray-400 hover:text-red-600 disabled:opacity-30">ลบ</button>
                   </td>
                 </tr>
               )
@@ -271,7 +271,7 @@ export default function NewPurchaseReturnPage() {
         <span className="text-[12.5px] font-semibold text-amber-900">สถานะใบคืน</span>
         <div className="flex flex-wrap gap-4 mt-2">
           {(['Pending', 'Success'] as const).map((s) => (
-            <label key={s} className="flex items-center gap-1.5 text-[13px] text-gray-800">
+            <label key={s} className="flex items-center gap-1.5 text-[12.5px] text-gray-800">
               <input type="radio" checked={status === s} onChange={() => setStatus(s)} />
               {/* 🔤 ใบ t_mu23dljn — "สำเร็จ" เป็นคำที่ ZORT ใช้ทุกจอ (พิสูจน์แล้ว) ⇒ ถอด (Success) ออก
                   ⚠️ **ตัวเลือก "รอดำเนินการ" ยังไม่ใช่คำของ ZORT** — ยังไม่รู้ว่าจอคืนของซื้อของ ZORT
@@ -281,7 +281,7 @@ export default function NewPurchaseReturnPage() {
             </label>
           ))}
         </div>
-        <p className="text-[12px] text-amber-900 mt-2 leading-relaxed">
+        <p className="text-[12.5px] text-amber-900 mt-2 leading-relaxed">
           🔴 <b>เอกสารของ ZORT ไม่ได้บอกว่าสถานะ “สำเร็จ” ตัดของออกจากคลังทันทีหรือเปล่า</b> —
           {' '}เรายังไม่เคยยิงจริง ⇒ ค่าเริ่มต้นจึงเป็น <b>รอดำเนินการ</b> ไว้ก่อน
           {' '}ถ้าจะใช้ “สำเร็จ” ใบแรก ให้จดจำนวนในคลังก่อน–หลัง แล้วดูว่าขยับไหม
@@ -298,15 +298,15 @@ export default function NewPurchaseReturnPage() {
       </div>
       <p className="text-[11.5px] text-gray-500 mt-1">ยอดกับวิธีชำระ <b>ต้องมาคู่กัน</b> — ใส่อย่างเดียวท่อจะตีกลับ</p>
 
-      {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+      {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         <button onClick={() => send(false)} disabled={busy || !ref}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
         <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
           style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
           ส่งเข้า ZORT จริง
         </button>
@@ -336,7 +336,7 @@ export default function NewPurchaseReturnPage() {
       {res?.dryRun && res.willSend != null && (
         <details className="mt-2 border border-gray-200 rounded">
           <summary className="text-[12.5px] text-gray-700 px-3 py-2 cursor-pointer">ดูของจริงที่จะถูกส่งเข้า ZORT</summary>
-          <pre className="text-[11px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
+          <pre className="text-[11.5px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
             {JSON.stringify(res.willSend, null, 1)}
           </pre>
         </details>

@@ -87,14 +87,14 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6">
-      <p className="text-[12px] mb-2"><Link href="/core/categories" className="text-blue-600 hover:underline">‹ หมวดหมู่</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/categories" className="text-blue-600 hover:underline">‹ หมวดหมู่</Link></p>
       <PageHead
         title={`หมวด: ${catName || '—'}`}
         summary={<span className="text-gray-400">ภาพรวมหมวด + สินค้าในหมวด (ประกอบจากเส้นที่มีอยู่ ไม่มีเส้นใหม่)</span>}
         actions={
           <div className="flex items-center gap-2">
             <Link href={`/core/stock?category=${encodeURIComponent(catName)}`}
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5" style={{ background: '#4669e5' }}>
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5" style={{ background: '#4669e5' }}>
               เปิดในจอสินค้า
             </Link>
             {/* รีเฟรช = โหลดหน้าที่กำลังดูซ้ำ ไม่ใช่กระโดดกลับหน้าแรก
@@ -113,7 +113,7 @@ function Inner() {
       {!loading && !error && (
         <>
           {cat?.zort === false && (
-            <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-3">
+            <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-3">
               หมวดนี้<b>ไม่ได้มาจาก ZORT</b> — เป็นกลุ่มที่ระบบเราเดาจากชื่อสินค้า/รวมของที่ยังไม่ได้จัดหมวด
             </p>
           )}
@@ -126,9 +126,9 @@ function Inner() {
               ['มูลค่าคงเหลือ (ราคาขาย)', NUM(cat?.onhand_value_sell), 'money'],
             ].map(([label, val, kind]) => (
               <div key={String(label)} className="bg-white border border-gray-200 rounded-md p-3">
-                <p className="text-[11px] text-gray-400">{String(label)}</p>
+                <p className="text-[11.5px] text-gray-400">{String(label)}</p>
                 <p className="text-[16px] font-semibold text-gray-900 tabular-nums">
-                  {val === null ? <span className="text-[13px] text-gray-300">ไม่รู้ (ท่อไม่ได้ส่งมา)</span>
+                  {val === null ? <span className="text-[12.5px] text-gray-300">ไม่รู้ (ท่อไม่ได้ส่งมา)</span>
                     : kind === 'money' ? fmtMoney(val as number) : fmtNum(val as number)}
                 </p>
               </div>
@@ -138,13 +138,13 @@ function Inner() {
           {/* ค่าที่คัดมือจาก ZORT — แยกกล่องและเขียนกำกับ ห้ามปนกับค่าที่คิดสด */}
           {(NUM(cat?.zortSkus) !== null || NUM(cat?.zortValue) !== null) && (
             <div className="bg-white border border-gray-200 rounded-md p-3 mb-4">
-              <p className="text-[12px] font-semibold text-gray-700 mb-1">ค่าที่คัดมาจากจอ ZORT (ไม่ใช่ค่าที่คิดสด)</p>
+              <p className="text-[12.5px] font-semibold text-gray-700 mb-1">ค่าที่คัดมาจากจอ ZORT (ไม่ใช่ค่าที่คิดสด)</p>
               <div className="flex flex-wrap gap-4 text-[12.5px]">
                 <span>SKU: <b>{NUM(cat?.zortSkus) === null ? '—' : fmtNum(cat!.zortSkus as number)}</b></span>
                 <span>มูลค่าคงเหลือ: <b>{NUM(cat?.zortValue) === null ? '—' : fmtMoney(cat!.zortValue as number)}</b></span>
                 <span>พร้อมขาย: <b>{NUM(cat?.zortAvailable) === null ? '—' : fmtMoney(cat!.zortAvailable as number)}</b></span>
               </div>
-              <p className="text-[11px] text-gray-400 mt-1">
+              <p className="text-[11.5px] text-gray-400 mt-1">
                 ต้นทุนเฉลี่ยถ่วงน้ำหนักที่ API ไม่เปิดให้ดึง — <b>ค่าคัดมือจึงเก่าได้</b> ซื้อของเข้าใหม่แล้วต้องคัดใหม่
               </p>
             </div>
@@ -184,7 +184,7 @@ function Inner() {
                 <tbody>
                   {items.map((it, i) => (
                     <tr key={it.sku ?? i} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                      <td className={`${TD} font-mono text-[12px]`}>
+                      <td className={`${TD} font-mono text-[12.5px]`}>
                         {it.sku
                           ? <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">{it.sku}</Link>
                           : '—'}

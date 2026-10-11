@@ -53,18 +53,18 @@ export default function WebVideoPickPage() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">เลือกคลิป</h1>
-          <p className="text-[12px] text-gray-400 mt-0.5">
+          <p className="text-[12.5px] text-gray-400 mt-0.5">
             แตะคลิปเพื่อซ่อน/โชว์ในหน้าวิดีโอของลูกค้า · โชว์อยู่ {showing} จาก {clips?.length ?? '—'} คลิป
           </p>
         </div>
         <button onClick={save} disabled={busy || !dirty}
-          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
+          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
           {busy ? 'กำลังบันทึก…' : dirty ? 'บันทึกการเลือก' : 'บันทึกแล้ว ✓'}
         </button>
       </div>
-      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[13px] text-blue-700">{msg}</p>}
+      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[12.5px] text-blue-700">{msg}</p>}
 
       {clips === null ? (
         <div className="grid grid-cols-3 md:grid-cols-6 gap-3 animate-pulse">
@@ -80,8 +80,8 @@ export default function WebVideoPickPage() {
                 className={`relative rounded-2xl overflow-hidden border-2 transition-all ${off ? 'border-transparent opacity-40 grayscale' : 'border-emerald-400 shadow-[0_8px_16px_-10px_rgba(16,185,129,0.5)]'}`}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={POSTER(id)} alt="" className="w-full aspect-[9/14] object-cover bg-gray-100" loading="lazy" />
-                <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[9px] text-white tabular-nums">{dur(c.v.dur)}</span>
-                <span className={`absolute top-1 right-1 rounded-full px-1.5 py-0.5 text-[9px] font-black ${off ? 'bg-gray-800/80 text-white' : 'bg-emerald-500 text-white'}`}>
+                <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white tabular-nums">{dur(c.v.dur)}</span>
+                <span className={`absolute top-1 right-1 rounded-full px-1.5 py-0.5 text-[10px] font-black ${off ? 'bg-gray-800/80 text-white' : 'bg-emerald-500 text-white'}`}>
                   {off ? 'ซ่อน' : 'โชว์'}
                 </span>
               </button>
@@ -89,7 +89,7 @@ export default function WebVideoPickPage() {
           })}
         </div>
       )}
-      <p className="text-center text-[11px] text-gray-300">เก็บที่เซิร์ฟเวอร์ — มีผลกับลูกค้าทุกคน (ของเดิมเก็บในเครื่องซึ่งไม่มีผลจริง)</p>
+      <p className="text-center text-[11.5px] text-gray-300">เก็บที่เซิร์ฟเวอร์ — มีผลกับลูกค้าทุกคน (ของเดิมเก็บในเครื่องซึ่งไม่มีผลจริง)</p>
     </div>
   )
 }

@@ -360,7 +360,7 @@ export default function LedgerScreen({
           <>
             {withImport && (
               <Link href={`/core/soon/${soonKey}`}
-                className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
                 นำเข้าไฟล์ (Excel)
               </Link>
             )}
@@ -368,7 +368,7 @@ export default function LedgerScreen({
               /* ✅ มีจอจริงแล้วต้องพาไปของจริง — ปล่อยให้ชี้หน้า soon ทั้งที่ของเสร็จแล้ว
                  คือโรคที่เคยเจอกับ /core/purchases/new (คนอ่านว่า "ยังไม่ได้ทำ" ทั้งที่มีมา 8 วัน) */
               <Link href={createHref ?? `/core/soon/${soonKey}`}
-                className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+                className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
                 style={{ background: '#4669e5' }}>
                 {createLabel}
               </Link>
@@ -389,24 +389,24 @@ export default function LedgerScreen({
           onKeyDown={(e) => { if (e.key === 'Enter') void loadZort() }}
           title={zortList ? 'พิมพ์แล้วกด Enter — ค้นที่เซิร์ฟเวอร์ ครอบทุกรายการ ไม่ใช่แค่หน้าที่เห็น'
             : 'จอนี้ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีอะไรให้ค้น'}
-          className={`w-full max-w-[400px] text-[13px] border border-gray-300 rounded-full px-4 py-2 ${
+          className={`w-full max-w-[400px] text-[12.5px] border border-gray-300 rounded-full px-4 py-2 ${
             zortList ? 'bg-white text-gray-800' : 'bg-gray-50 text-gray-400'}`}
         />
         {zortList
           ? (
             <>
               <button type="button" onClick={() => void loadZort()}
-                className="text-[13px] text-blue-600 hover:underline">ค้นหา</button>
+                className="text-[12.5px] text-blue-600 hover:underline">ค้นหา</button>
               {canDateFilter && (
                 <button type="button" onClick={() => setAdvOpen((v) => !v)}
-                  className="text-[13px] text-blue-600 hover:underline">
+                  className="text-[12.5px] text-blue-600 hover:underline">
                   {advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}
                 </button>
               )}
               {/* 🔴 `variations` ท่อไม่รับช่วงวันที่ ⇒ **ไม่โชว์ปุ่มเลย ดีกว่าโชว์แล้วเงียบ ๆ ไม่ส่ง**
                   และบอกด้วยว่าทำไมไม่มี ไม่ใช่หายไปเฉย ๆ */}
               {!canDateFilter && (
-                <span className="text-[13px] text-gray-300 cursor-help"
+                <span className="text-[12.5px] text-gray-300 cursor-help"
                   title="ชุดข้อมูลนี้ของ ZORT ไม่มีวันที่ให้กรอง (ท่อตอบ 400 ถ้าส่งช่วงวันไป) — ค้นด้วยคำค้นได้อย่างเดียว">
                   ค้นหาขั้นสูง (ไม่มีวันที่ให้กรอง)
                 </span>
@@ -415,7 +415,7 @@ export default function LedgerScreen({
           )
           : (
             /* ⚠️ เทาอ่อน = กดไม่ได้ แต่ **เทาเฉย ๆ ไม่ได้บอกว่าทำไม** ⇒ ใส่คำอธิบายตอนชี้ค้าง */
-            <span className="text-[13px] text-gray-300 cursor-help"
+            <span className="text-[12.5px] text-gray-300 cursor-help"
               title="จอนี้ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีข้อมูลให้ค้นหา">
               ค้นหาขั้นสูง
             </span>
@@ -457,7 +457,7 @@ export default function LedgerScreen({
               title={i === 0
                 ? 'แท็บนี้คือชุดที่กำลังแสดงอยู่'
                 : 'ลอกผังจาก ZORT มาแสดง แต่ยังเลือกไม่ได้ — ท่อยังไม่ส่งแถวของชุดนี้มา'}
-              className={`text-[13.5px] pb-2 ${i === 0 ? 'text-blue-600 border-b-2 border-blue-600 font-medium' : 'text-gray-400 cursor-not-allowed'}`}>
+              className={`text-[12.5px] pb-2 ${i === 0 ? 'text-blue-600 border-b-2 border-blue-600 font-medium' : 'text-gray-400 cursor-not-allowed'}`}>
               {t}
             </span>
           ))}
@@ -510,7 +510,7 @@ export default function LedgerScreen({
               )
             })}
             {zortAnswered && rows!.length > 0 && !(zortList && ROW_MAPS[zortList]) && (
-              <tr><td colSpan={cols.length + 1} className="px-3 py-2 text-[12px] text-amber-800 bg-amber-50">
+              <tr><td colSpan={cols.length + 1} className="px-3 py-2 text-[12.5px] text-amber-800 bg-amber-50">
                 ⚠️ ได้ข้อมูลมาแล้วแต่จอยังไม่รู้ว่าช่องไหนคืออะไร — ช่องที่ท่อส่งมา: {rowKeys.join(' · ') || '(ไม่ได้บอก)'}
               </td></tr>
             )}
@@ -519,7 +519,7 @@ export default function LedgerScreen({
                    ⇒ ถ้าไม่เขียนกำกับ คนจะอ่านว่าแถวที่เห็น = ทั้งหมด แล้วสรุปยอดผิด
                    (เคยพลาดมาแล้วสามเคสในวันเดียว: แท็บยกเลิก 44 · หมวดโซ่ · แท็บของหมด) */}
             {zortAnswered && rows!.length > 0 && zCount !== null && zCount > rows!.length && (
-              <tr><td colSpan={cols.length + 1} className="px-3 py-2 text-[12px] text-amber-800 bg-amber-50">
+              <tr><td colSpan={cols.length + 1} className="px-3 py-2 text-[12.5px] text-amber-800 bg-amber-50">
                 ⚠️ ZORT บอกว่ามีทั้งหมด <b>{zCount} รายการ</b> แต่จอนี้ดึงมาได้ <b>{rows!.length} แถว</b> (ครั้งละ 200)
                 — แถวที่เห็นยังไม่ใช่ทั้งหมด
               </td></tr>
@@ -628,7 +628,7 @@ export default function LedgerScreen({
                     คนอ่านไม่มีทางรู้ว่าใครตรวจ ตรวจเมื่อไหร่ ลองชื่อไหนบ้าง แล้วจะเชื่อหรือไม่เชื่อก็ได้ทั้งคู่
                     ⇒ ดึงข้อความจากทะเบียน (ซึ่งมีวันที่และชื่อเส้นที่ลองยิง) มาแสดงตรงนี้ */}
                 {impossible && (
-                  <p className="text-[12px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3 max-w-[520px] mx-auto leading-relaxed text-left">
+                  <p className="text-[12.5px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3 max-w-[520px] mx-auto leading-relaxed text-left">
                     <b>หลักฐาน:</b> {impossible}
                     {reg?.meanwhile && <><br /><span className="text-red-800">ระหว่างนี้: {reg.meanwhile}</span></>}
                   </p>
@@ -763,7 +763,7 @@ export default function LedgerScreen({
         )
       })()}
 
-      <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+      <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
         {/* 🔴 **ประโยค "ปุ่มยังทำงานไม่ได้" กลายเป็นเท็จทันทีที่จอสร้างเสร็จ** (14 ก.ย. 2569)
             จอคืนสินค้าให้ผู้ขายมีจอสร้างจริงแล้ว แต่ท้ายจอยังบอกว่ากดแล้วจะเจอหน้าบอกว่าติดอะไร
             ⇒ คนอ่านแล้วไม่กด · โรคเดิม: ของถูก แต่จอบอกผิด แล้วคนเลิกหา

@@ -279,7 +279,7 @@ export default function CoreBundlesPage() {
                 ⇒ ปุ่มที่กดแล้วเกิดอะไรขึ้นจริงแต่ไม่ใช่สิ่งที่คนตั้งใจ **หลอกกว่าปุ่มที่กดแล้วเงียบ**
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             <Link href="/core/bundles/new"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เพิ่มสินค้าเป็นชุดใหม่
             </Link>
@@ -404,7 +404,7 @@ export default function CoreBundlesPage() {
               ที่มา: จอเคยยืนยันคงเหลือ 41 พร้อมขาย 23 ขณะที่ ZORT เป็น 18 / -10
                      เพราะตาราง bundles ไม่มีอะไรซิงก์ให้เลย (ค้าง 187/360)
               ⇒ ตัวเลขที่ไม่บอกอายุ = คำยืนยันที่พิสูจน์ไม่ได้ · จัดชิดขวาให้อยู่แนวคอลัมน์สองอันนั้น */}
-          <div className={`flex justify-end text-[12px] leading-relaxed rounded-t-md px-3 py-1.5 border border-b-0 ${
+          <div className={`flex justify-end text-[12.5px] leading-relaxed rounded-t-md px-3 py-1.5 border border-b-0 ${
             stock.state === 'stale' ? 'text-amber-900 bg-amber-50 border-amber-300'
               : (stock.state === 'unknown' || stock.state === 'ไม่รู้รอบ') ? 'text-gray-600 bg-gray-50 border-gray-300'
                 : 'text-gray-600 bg-white border-gray-200'}`}>
@@ -480,7 +480,7 @@ export default function CoreBundlesPage() {
                           </Link>
                           {hoverSku === r.sku && (
                             <span className="absolute left-0 top-full z-20 mt-1 w-[420px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] p-3.5 block">
-                              <span className="block text-[13.5px] font-semibold text-gray-900">{r.name}</span>
+                              <span className="block text-[12.5px] font-semibold text-gray-900">{r.name}</span>
                               <span className="block text-[11.5px] text-gray-400 mt-0.5 mb-1.5">รายการ</span>
                               {items[r.sku] === 'loading' && <span className="block text-[12.5px] text-gray-400">กำลังโหลด…</span>}
                               {items[r.sku] === 'error' && <span className="block text-[12.5px] text-red-600">ดึงรายการในชุดไม่ได้</span>}
@@ -540,7 +540,7 @@ export default function CoreBundlesPage() {
                   ⚠️ ท่อรุ่นเก่าไม่ส่ง rowsMatched ⇒ ไม่รู้ ห้ามเดา · ถอยไปใช้ total เฉพาะตอนอยู่แท็บทั้งหมด */}
               {/* 🔴 ตอนแท็บว่าง ข้อความเดิมอ่านว่า "แสดง 1–0 จาก 0 รายการ" ซึ่งไม่ใช่ภาษาคน
                   (เจอตอนกดแท็บ "ปิดใช้งาน" ที่มี 0 ชุดจริง ๆ — เลขถูกแต่ประโยคพัง) */}
-              <span className="text-[12px] text-gray-500">
+              <span className="text-[12.5px] text-gray-500">
                 {rows.length === 0
                   ? 'ไม่มีชุดสินค้าในแท็บนี้'
                   : <>แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก{' '}
@@ -555,7 +555,7 @@ export default function CoreBundlesPage() {
             </div>
           </TableWrap>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
               at={data.marketplacesAt} />

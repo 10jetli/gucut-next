@@ -46,7 +46,7 @@ function LoginForm() {
         <span className="text-lg font-black text-white">G</span>
       </div>
       <div className="text-[24px] font-black tracking-tight text-gray-900 mb-1">gucut <span className="text-orange-600">Ai</span></div>
-      <div className="text-[13px] text-gray-400 mb-6">ใส่รหัสผ่านเพื่อเข้าใช้งานระบบหลังบ้าน</div>
+      <div className="text-[12.5px] text-gray-400 mb-6">ใส่รหัสผ่านเพื่อเข้าใช้งานระบบหลังบ้าน</div>
 
       <input
         type="password"
@@ -57,7 +57,7 @@ function LoginForm() {
         placeholder="รหัสผ่าน"
       />
 
-      {err && <div className="text-[12px] text-red-500 mb-3 bg-red-50 rounded-lg py-2">⚠️ {err}</div>}
+      {err && <div className="text-[12.5px] text-red-500 mb-3 bg-red-50 rounded-lg py-2">⚠️ {err}</div>}
 
       <button
         type="submit"
@@ -73,7 +73,7 @@ function LoginForm() {
 export default function LoginPage() {
   return (
     <div className="min-h-[80vh] flex items-center justify-center px-6">
-      <Suspense fallback={<div className="text-[13px] text-gray-400">กำลังโหลด…</div>}>
+      <Suspense fallback={<div className="text-[12.5px] text-gray-400">กำลังโหลด…</div>}>
         <LoginForm />
       </Suspense>
     </div>

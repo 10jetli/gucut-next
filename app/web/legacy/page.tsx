@@ -52,9 +52,9 @@ export default function WebLegacyPage() {
   return (
     <div className="space-y-4 max-w-3xl">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">ประวัติลูกค้าเก่า</h1>
-        {sum && <p className="text-[12px] text-gray-400 mt-0.5">สมัย Shopify · {sum.orders.toLocaleString('th-TH')} ออเดอร์ · {sum.customers.toLocaleString('th-TH')} ลูกค้า · ยอดรวม {baht(sum.revenue)}</p>}
+        {sum && <p className="text-[12.5px] text-gray-400 mt-0.5">สมัย Shopify · {sum.orders.toLocaleString('th-TH')} ออเดอร์ · {sum.customers.toLocaleString('th-TH')} ลูกค้า · ยอดรวม {baht(sum.revenue)}</p>}
       </div>
 
       <div className="flex gap-2">
@@ -63,14 +63,14 @@ export default function WebLegacyPage() {
           <input value={q} onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') search(q) }}
             placeholder="ค้นหาด้วย ชื่อ · เบอร์โทร · เลขออเดอร์เก่า"
-            className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-[13px] shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+            className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-[12.5px] shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
         </div>
         <button onClick={() => search(q)} disabled={busy || !q.trim()}
-          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
+          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
           {busy ? 'กำลังหา…' : 'ค้นหา'}
         </button>
       </div>
-      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">{err}</p>}
 
       {res && (
         <>
@@ -78,33 +78,33 @@ export default function WebLegacyPage() {
             <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
               {res.customers.map((p, i) => (
                 <div key={i} className="flex items-center gap-3.5 px-4 md:px-5 py-3.5">
-                  <span className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-400 to-gray-600 text-white text-[13px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
+                  <span className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-400 to-gray-600 text-white text-[12.5px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
                     {(p.name || '?').charAt(0)}
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13.5px] font-bold text-gray-900">{p.name}</span>
-                    <span className="block text-[12px] text-gray-400">{p.phone}{p.addr ? ` · ${p.addr}` : ''}</span>
+                    <span className="block text-[12.5px] font-bold text-gray-900">{p.name}</span>
+                    <span className="block text-[12.5px] text-gray-400">{p.phone}{p.addr ? ` · ${p.addr}` : ''}</span>
                   </span>
                   <span className="text-right shrink-0">
-                    <span className="block text-[13.5px] font-black text-gray-900 tabular-nums">{baht(p.spent)}</span>
-                    <span className="block text-[11px] text-gray-400">{p.orders} ออเดอร์</span>
+                    <span className="block text-[12.5px] font-black text-gray-900 tabular-nums">{baht(p.spent)}</span>
+                    <span className="block text-[11.5px] text-gray-400">{p.orders} ออเดอร์</span>
                   </span>
                 </div>
               ))}
             </div>
           )}
           {res.orders.length === 0 ? (
-            <p className="py-8 text-center text-[13px] text-gray-400">ไม่พบออเดอร์เก่าที่ตรงกับ &ldquo;{res.q}&rdquo;</p>
+            <p className="py-8 text-center text-[12.5px] text-gray-400">ไม่พบออเดอร์เก่าที่ตรงกับ &ldquo;{res.q}&rdquo;</p>
           ) : (
             <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
               {res.orders.map((o) => (
                 <details key={o.id} className="group">
                   <summary className="flex items-center gap-3 px-4 md:px-5 py-3 cursor-pointer list-none hover:bg-gray-50/80 transition-colors">
                     <span className="min-w-0 flex-1">
-                      <span className="block text-[13px] font-bold text-gray-900">{o.name} <span className="font-normal text-gray-400 text-[11.5px]">#{o.id}</span></span>
+                      <span className="block text-[12.5px] font-bold text-gray-900">{o.name} <span className="font-normal text-gray-400 text-[11.5px]">#{o.id}</span></span>
                       <span className="block text-[11.5px] text-gray-400">{day(o.at)} · {o.items.length} รายการ{o.paid ? ' · จ่ายแล้ว' : ''}{o.ship ? ' · ส่งแล้ว' : ''}</span>
                     </span>
-                    <span className="text-[13.5px] font-black text-gray-900 tabular-nums shrink-0">{baht(o.total)}</span>
+                    <span className="text-[12.5px] font-black text-gray-900 tabular-nums shrink-0">{baht(o.total)}</span>
                     <span className="text-gray-200 group-open:rotate-90 transition-transform"><I d="M9 6l6 6-6 6" className="w-3.5 h-3.5" /></span>
                   </summary>
                   <div className="px-4 md:px-5 pb-3.5 text-[12.5px] text-gray-600 space-y-0.5 bg-gray-50/50">
@@ -119,8 +119,8 @@ export default function WebLegacyPage() {
           )}
         </>
       )}
-      {!res && sum && <p className="text-[12px] text-gray-400 text-center py-6">{sum.note}</p>}
-      <p className="text-center text-[11px] text-gray-300">ชุดเดียวกับ gucut.com/admin/legacy/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      {!res && sum && <p className="text-[12.5px] text-gray-400 text-center py-6">{sum.note}</p>}
+      <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/legacy/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

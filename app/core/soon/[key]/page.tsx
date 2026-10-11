@@ -60,7 +60,7 @@ export default function SoonPage({ params }: { params: { key: string } }) {
                      ⇒ ตอนนี้แยกเป็นช่อง `exportByHand` ที่ต้องเขียนว่า **มีอะไรค้างอยู่เท่าไหร่**
                         ไม่มีของค้าง = ไม่มีประโยคนี้ */}
               {info.impossible && (
-                <p className="text-[13px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
+                <p className="text-[12.5px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
                   <b>{info.impossibleScope === 'write' ? 'สร้าง/แก้ไม่ได้เพราะ:' : 'ทำไม่ได้เพราะ:'}</b> {info.impossible}
                 </p>
               )}
@@ -72,20 +72,20 @@ export default function SoonPage({ params }: { params: { key: string } }) {
                      ของที่ยังต่อท่อไม่เสร็จก็ยังต้องเซฟมือก่อนปิดบัญชีอยู่ดี
                   ⚠️ นี่คือบั๊กตระกูลเดียวกับที่ใบนี้เกิดมาแก้ — และผมเพิ่งสร้างมันเองเมื่อกี้ */}
               {info.exportByHand && (
-                <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
+                <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
                   📤 <b>มีของค้างอยู่ใน ZORT: {info.exportByHand}</b>
                   {' '}⇒ ต้อง <b>กด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> ทำหลังปิดไม่ได้อีก
                 </p>
               )}
               {info.awaitingDecision && (
-                <p className="text-[13px] text-blue-900 bg-blue-50 border border-blue-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
+                <p className="text-[12.5px] text-blue-900 bg-blue-50 border border-blue-200 rounded-md px-3 py-2.5 mt-3 leading-relaxed">
                   <b>รอการตัดสิน:</b> {info.awaitingDecision}
                   <br />
                   ⇒ อันนี้ <b>ไม่ต้องไปหาทางทำเพิ่ม</b> — ของพร้อมแล้ว ติดที่ต้องมีคนตัดสินใจ
                 </p>
               )}
               {info.meanwhile && (
-                <p className="text-[13px] text-gray-600 mt-3 leading-relaxed">
+                <p className="text-[12.5px] text-gray-600 mt-3 leading-relaxed">
                   <b>ระหว่างนี้:</b> {info.meanwhile}
                 </p>
               )}
@@ -105,14 +105,14 @@ export default function SoonPage({ params }: { params: { key: string } }) {
         <div className="mt-4 flex flex-wrap gap-2">
           <Link
             href="/"
-            className="text-[13px] font-semibold text-white rounded-full px-5 py-2"
+            className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2"
             style={{ background: '#4669e5' }}
           >
             กลับหน้าภาพรวม
           </Link>
           <Link
             href="/core"
-            className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50"
+            className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50"
           >
             ดูความคืบหน้าโครงการแก่น
           </Link>

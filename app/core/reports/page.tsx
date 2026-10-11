@@ -180,7 +180,7 @@ export default function CoreProductReportPage() {
                 {/* 🟢 เลขที่ตรงกับ ZORT — ขึ้นก่อนเพราะเป็นตัวที่เอาไปใช้กับบัญชีจริง
                     ⚠️ เป็นค่า "คัดมา" ต้องมีวันที่คัดกำกับเสมอ */}
                 {catErr && (
-                  <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+                  <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
                     ⚠️ ดึงมูลค่าตามต้นทุนเฉลี่ยไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าไม่มีข้อมูล</b> ({catErr})
                   </p>
                 )}
@@ -200,7 +200,7 @@ export default function CoreProductReportPage() {
                     {/* 🔴 เดิมโชว์ค่าดิบปี ค.ศ. + เวลา ⇒ แสดงวันที่แบบ พ.ศ. · ไม่แปลงเวลาเพราะไม่รู้โซน
                         (ชื่อฟิลด์ไม่ลงท้าย `Utc` — ขอฝั่งท่อแก้ชื่อไว้แล้ว) ค่าดิบอยู่ใน tooltip */}
                     {cat.zortCollectedAt && (
-                      <p className="text-[11px] text-gray-400 mt-0.5"
+                      <p className="text-[11.5px] text-gray-400 mt-0.5"
                         title={`ค่าที่ท่อส่งมา: ${cat.zortCollectedAt} (ยังไม่ระบุโซนเวลา)`}>
                         คัดมาเมื่อ {thaiDate(cat.zortCollectedAt)}
                       </p>
@@ -215,7 +215,7 @@ export default function CoreProductReportPage() {
                 <p className="text-[11.5px] text-gray-500 mt-4">คิดจากราคาทุนในทะเบียนสินค้า</p>
                 <p className="text-[22px] font-semibold text-gray-700 leading-none mt-0.5">
                   {typeof stock.valueCost === 'number' ? fmtMoney(stock.valueCost) : '—'}
-                  <span className="text-[13px] text-gray-500 font-normal"> บาท</span>
+                  <span className="text-[12.5px] text-gray-500 font-normal"> บาท</span>
                 </p>
                 {Number(stock.noCostSkus) > 0 && (
                   <p className="text-[11.5px] text-amber-800 mt-1">
@@ -224,7 +224,7 @@ export default function CoreProductReportPage() {
                 )}
                 {stock.day && (
                   // ⚠️ ต้องบอกว่าเป็นภาพถ่ายวันไหน ไม่ใช่ยอดสดวินาทีนี้
-                  <p className="text-[12px] text-gray-500 mt-3">
+                  <p className="text-[12.5px] text-gray-500 mt-3">
                     จากภาพถ่ายสต็อกวันที่ {thaiDate(stock.day)} · {fmtNum(stock.total ?? 0)} รายการ
                   </p>
                 )}
@@ -237,7 +237,7 @@ export default function CoreProductReportPage() {
               </div>
 
               {/* 🔴 กล่องนี้ห้ามถอด — ไม่มีมันคือปล่อยให้คนเชื่อว่าเลขเราควรเท่ากับ ZORT */}
-              <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5 leading-relaxed">
+              <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2.5 leading-relaxed">
                 {typeof cat?.zortTotalValue === 'number'
                   ? <><b>ตอนนี้เลขบนสุดตรงกับ ZORT แล้ว</b> — สองเลขล่างเป็นวิธีคิดของเราเอง
                       เก็บไว้ดูเทียบ · <b>ราคาซื้อในทะเบียนต่ำกว่าต้นทุนจริง 2-3 เท่า</b>
@@ -378,24 +378,24 @@ export default function CoreProductReportPage() {
               <p className="text-[15px] font-semibold text-gray-900 mb-2">สต็อกที่ต้องดู</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="border border-gray-200 rounded-md px-3 py-2.5">
-                  <p className="text-[12px] text-gray-500">คงเหลือ 0 หรือติดลบ</p>
+                  <p className="text-[12.5px] text-gray-500">คงเหลือ 0 หรือติดลบ</p>
                   <p className="text-[22px] font-semibold text-red-500 leading-tight">{fmtNum(stockCounts.outOfStock ?? 0)}</p>
-                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                  <p className="text-[11.5px] text-gray-400 leading-relaxed">
                     รวมของที่<b>ติดลบ {fmtNum(stockCounts.negative ?? 0)} รหัส</b>ไว้ด้วย
                     {' '}· ZORT นับ &ldquo;สินค้าหมด&rdquo; เฉพาะ 0 พอดี ⇒ เลขนี้จะมากกว่าของ ZORT
                   </p>
                 </div>
                 <div className="border border-gray-200 rounded-md px-3 py-2.5">
-                  <p className="text-[12px] text-gray-500">คงเหลือ 1–3 ชิ้น</p>
+                  <p className="text-[12.5px] text-gray-500">คงเหลือ 1–3 ชิ้น</p>
                   <p className="text-[22px] font-semibold text-amber-600 leading-tight">{fmtNum(stockCounts.low ?? 0)}</p>
-                  <p className="text-[11px] text-gray-400 leading-relaxed">
+                  <p className="text-[11.5px] text-gray-400 leading-relaxed">
                     <b>เกณฑ์ของระบบเราเอง</b> — ไม่ใช่ &ldquo;ใกล้หมด&rdquo; แบบ ZORT
                   </p>
                 </div>
                 <div className="border border-gray-200 rounded-md px-3 py-2.5">
-                  <p className="text-[12px] text-gray-500">สินค้าทั้งหมดในทะเบียน</p>
+                  <p className="text-[12.5px] text-gray-500">สินค้าทั้งหมดในทะเบียน</p>
                   <p className="text-[22px] font-semibold text-gray-900 leading-tight">{fmtNum(stockCounts.total ?? 0)}</p>
-                  <p className="text-[11px] text-gray-400">ใช้เป็นตัวส่วนของสองช่องซ้าย</p>
+                  <p className="text-[11.5px] text-gray-400">ใช้เป็นตัวส่วนของสองช่องซ้าย</p>
                 </div>
               </div>
               <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 leading-relaxed">
@@ -470,7 +470,7 @@ export default function CoreProductReportPage() {
                         <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
                           {r.name || '—'}
                         </Link>
-                        {r.category && <span className="block text-[11px] text-gray-400">หมวดหมู่: {r.category}</span>}
+                        {r.category && <span className="block text-[11.5px] text-gray-400">หมวดหมู่: {r.category}</span>}
                       </td>
                       {/* ⚠️ ไม่เคยขายเลย ≠ ขายล่าสุดนานแล้ว — ต้องเขียนต่างกัน
                           ⚠️ และคำว่า "ไม่เคยขาย" แรงเกินกว่าที่เรารู้จริง — เรารู้แค่ว่า
@@ -497,7 +497,7 @@ export default function CoreProductReportPage() {
           </Card>
 
           {dead && (dead.total ?? 0) > 0 && (
-            <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+            <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
               สินค้าจมในช่วงที่เลือก <b>{fmtNum(dead.total ?? 0)}</b> รหัส
               {typeof dead.value === 'number' && <> · มูลค่ารวม <b>{fmtMoney(dead.value)}</b> บาท</>}
               {' '}(คิดจาก<b>ราคาขาย</b> ไม่ใช่ต้นทุน)
@@ -511,7 +511,7 @@ export default function CoreProductReportPage() {
             </div>
           )}
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             การวิเคราะห์ยอดขาย (ยอดรายเดือน · ช่องทางที่ทำเงิน · สินค้าขายดี) ย้ายไปอยู่ที่
             <b> รายงาน → ยอดขาย</b> ซึ่งตรงกับผังของ ZORT · จอนี้เป็นรายงาน<b>สินค้า</b> ตามชื่อเมนู
           </p>

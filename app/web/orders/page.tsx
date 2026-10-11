@@ -89,13 +89,13 @@ function Stat({ icon, tone, label, value, sub, subTone = 'text-gray-400' }: {
   return (
     <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_18px_32px_-16px_rgba(15,23,42,0.2)]">
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">{label}</p>
         <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${tone}`}>
           <I d={icon} className="w-[17px] h-[17px]" />
         </span>
       </div>
       <p className="text-[26px] md:text-[30px] font-black text-gray-900 mt-1 tracking-tight tabular-nums leading-none">{value}</p>
-      {sub && <p className={`text-[12px] mt-1.5 font-medium ${subTone}`}>{sub}</p>}
+      {sub && <p className={`text-[12.5px] mt-1.5 font-medium ${subTone}`}>{sub}</p>}
     </div>
   )
 }
@@ -250,23 +250,23 @@ export default function WebOrdersPage() {
       {/* ── หัวหน้า ── */}
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">ออเดอร์เว็บ</h1>
         </div>
         <div className="relative">
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-300"><I d={IC.search} /></span>
           <input value={q} onChange={(e) => setQ(e.target.value)}
             placeholder="ค้นหา ชื่อ · เบอร์ · เลขออเดอร์"
-            className="w-[220px] md:w-[260px] rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2 text-[13px] shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+            className="w-[220px] md:w-[260px] rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2 text-[12.5px] shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
         </div>
         <button onClick={load}
-          className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-blue-600">
+          className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-[12.5px] font-semibold text-gray-600 shadow-sm transition-colors hover:bg-gray-50 hover:text-blue-600">
           <I d={IC.refresh} className={`w-4 h-4 ${spin ? 'animate-spin' : ''}`} /> รีเฟรช
         </button>
       </div>
 
       {err && (
-        <div className="flex items-center gap-2.5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">
+        <div className="flex items-center gap-2.5 rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">
           <I d={IC.alert} className="w-4 h-4 shrink-0" /> {err}
         </div>
       )}
@@ -283,7 +283,7 @@ export default function WebOrdersPage() {
               : `ทั้งหมด ${orders?.length ?? 0} ใบในระบบ`} />
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">รายได้ 7 วัน</p>
+            <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">รายได้ 7 วัน</p>
             <span className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600">
               <I d={IC.coins} className="w-[17px] h-[17px]" />
             </span>
@@ -293,7 +293,7 @@ export default function WebOrdersPage() {
               {/* 🔴 โหลดไม่สำเร็จแล้วห้ามโชว์ ฿0 — อ่านเป็น "7 วันนี้ขายไม่ได้เลย" ซึ่งกลับหัวความจริง */}
               <p className="text-[26px] md:text-[30px] font-black text-gray-900 tracking-tight tabular-nums leading-none">{known ? baht(stat.last7) : '—'}</p>
               {stat.trend !== null && (
-                <p className={`text-[12px] mt-1.5 font-semibold ${stat.trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                <p className={`text-[12.5px] mt-1.5 font-semibold ${stat.trend >= 0 ? 'text-emerald-600' : 'text-red-500'}`}>
                   {stat.trend >= 0 ? '▲' : '▼'} {Math.abs(stat.trend)}% เทียบ 7 วันก่อน
                 </p>
               )}
@@ -340,7 +340,7 @@ export default function WebOrdersPage() {
             const n = k === 'all' ? orders?.length : stat.counts[k]
             return (
               <button key={k} onClick={() => setFilter(k as 'all' | Status)}
-                className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-150 ${
+                className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-all duration-150 ${
                   active ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:bg-gray-100'
                 }`} aria-pressed={active}>
                 {label}{typeof n === 'number' && n > 0 ? <span className={`ml-1 ${active ? 'text-white/60' : 'text-gray-400'}`}>{n}</span> : null}
@@ -349,7 +349,7 @@ export default function WebOrdersPage() {
           })}
         </div>
 
-        <div className="hidden md:grid grid-cols-[1fr_120px_110px_100px_140px_28px] items-center px-5 py-2 text-[10.5px] font-bold uppercase tracking-wider text-gray-300 border-b border-gray-50 sticky top-0 bg-white/90 backdrop-blur z-10">
+        <div className="hidden md:grid grid-cols-[1fr_120px_110px_100px_140px_28px] items-center px-5 py-2 text-[10px] font-bold uppercase tracking-wider text-gray-300 border-b border-gray-50 sticky top-0 bg-white/90 backdrop-blur z-10">
           <span>ลูกค้า / ออเดอร์</span><span>วันที่</span><span className="text-right">ยอดรวม</span>
           <span className="text-center">ชำระ</span><span className="text-right">สถานะ</span><span />
         </div>
@@ -363,7 +363,7 @@ export default function WebOrdersPage() {
                 เดิมกล่องแดงบอกว่าโหลดไม่สำเร็จ **แต่ในตารางเขียนว่า "ไม่มีออเดอร์ในหมวดนี้"**
                 ⇒ คนอ่านตารางแล้วสรุปว่าวันนี้ไม่มีออเดอร์ ทั้งที่ยังไม่รู้เลยว่ามีกี่ใบ
                 ⚠️ จอนี้คือจอที่ร้านใช้ดูออเดอร์เว็บทุกวัน — เข้าใจผิดตรงนี้ = ของไม่ถูกส่ง */}
-            <p className="text-[13px] text-gray-400">
+            <p className="text-[12.5px] text-gray-400">
               {err ? 'ยังดูไม่ได้ — โหลดรายการไม่สำเร็จ (ไม่ได้แปลว่าไม่มีออเดอร์)'
                 : q ? `ไม่พบออเดอร์ที่ตรงกับ "${q}"` : 'ไม่มีออเดอร์ในหมวดนี้'}
             </p>
@@ -379,28 +379,28 @@ export default function WebOrdersPage() {
                   <button onClick={() => openRow(o)}
                     className="group w-full px-4 md:px-5 py-3 md:grid md:grid-cols-[1fr_120px_110px_100px_140px_28px] md:items-center flex flex-wrap items-center gap-2 text-left transition-colors hover:bg-gray-50/70">
                     <span className="flex items-center gap-3 min-w-0">
-                      <span className={`w-9 h-9 rounded-full bg-gradient-to-br ${c.grad} text-white text-[13px] font-black flex items-center justify-center shrink-0 shadow-sm ring-2 ring-white`}>
+                      <span className={`w-9 h-9 rounded-full bg-gradient-to-br ${c.grad} text-white text-[12.5px] font-black flex items-center justify-center shrink-0 shadow-sm ring-2 ring-white`}>
                         {(o.customer?.name || '?').trim().charAt(0)}
                       </span>
                       <span className="min-w-0">
-                        <span className="block text-[13.5px] font-bold text-gray-900 truncate">{o.customer?.name || '-'}</span>
-                        <span className="block text-[11px] text-gray-400 truncate tabular-nums">
+                        <span className="block text-[12.5px] font-bold text-gray-900 truncate">{o.customer?.name || '-'}</span>
+                        <span className="block text-[11.5px] text-gray-400 truncate tabular-nums">
                           {/* ⚠️ แถวมาแต่ไม่มีช่อง items ⇒ .length พังทั้งหน้า (เจอด้วยโหมด partialgood 7 ก.ย. 2569) */}
                           #{o.id} · {Array.isArray(o.items) ? `${o.items.length} รายการ` : 'ไม่รู้จำนวนรายการ'}
                           {o.zort && !o.zort.ok && !o.zort.skipped && <span className="text-amber-500"> · ZORT ⚠</span>}
                         </span>
                       </span>
                     </span>
-                    <span className="text-[12px] text-gray-500 tabular-nums max-md:order-3">{fmtWhen(o.at)}</span>
-                    <span className="text-[13.5px] font-black text-gray-900 md:text-right tabular-nums max-md:ml-auto">{baht(o.total)}</span>
+                    <span className="text-[12.5px] text-gray-500 tabular-nums max-md:order-3">{fmtWhen(o.at)}</span>
+                    <span className="text-[12.5px] font-black text-gray-900 md:text-right tabular-nums max-md:ml-auto">{baht(o.total)}</span>
                     <span className="md:text-center">
-                      <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold ${paid ? 'text-emerald-600' : 'text-gray-400'}`}>
+                      <span className={`inline-flex items-center gap-1.5 text-[11.5px] font-semibold ${paid ? 'text-emerald-600' : 'text-gray-400'}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${paid ? 'bg-emerald-500' : 'bg-gray-300'}`} />
                         {paid ? 'จ่ายแล้ว' : 'ยังไม่จ่าย'}
                       </span>
                     </span>
                     <span className="md:text-right">
-                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-bold ${c.chip}`}>
+                      <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[11.5px] font-bold ${c.chip}`}>
                         <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />{c.t}
                       </span>
                     </span>
@@ -415,12 +415,12 @@ export default function WebOrdersPage() {
                       <div className="px-4 md:px-5 pb-5">
                         <div className="grid md:grid-cols-3 gap-3">
                           <div className="rounded-xl border border-gray-100 bg-white p-4">
-                            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5"><I d={IC.doc} className="w-3.5 h-3.5" /> รายการสินค้า</p>
+                            <p className="flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-wider text-gray-400 mb-2.5"><I d={IC.doc} className="w-3.5 h-3.5" /> รายการสินค้า</p>
                             {/* 🔴 บล็อกรายละเอียดถูกวาด **ทุกแถวแม้ยังพับอยู่** (grid-rows trick
                                 ใช้ CSS ซ่อน ไม่ใช่เงื่อนไข) ⇒ แถวที่ไม่มีช่อง items พังทั้งหน้า
                                 ทั้งที่ผู้ใช้ยังไม่ได้กดเปิดดูอะไรเลย (เจอด้วยโหมด partialgood 7 ก.ย. 2569) */}
                             {(Array.isArray(o.items) ? o.items : []).map((i, n) => (
-                              <p key={n} className="text-[13px] text-gray-700 flex justify-between gap-2 py-0.5">
+                              <p key={n} className="text-[12.5px] text-gray-700 flex justify-between gap-2 py-0.5">
                                 <span className="truncate">{i.title}{i.variant && i.variant !== '-' ? ` (${i.variant})` : ''} ×{i.qty}</span>
                                 <span className="shrink-0 tabular-nums">{typeof i.price === 'number' && typeof i.qty === 'number' ? baht(i.price * i.qty) : '—'}</span>
                               </p>
@@ -428,14 +428,14 @@ export default function WebOrdersPage() {
                             <div className="mt-2.5 pt-2.5 border-t border-dashed border-gray-200 text-[12.5px] text-gray-500 space-y-1">
                               {o.discount > 0 && <p className="flex justify-between"><span>ส่วนลด</span><span className="text-emerald-600 tabular-nums">-{baht(o.discount)}</span></p>}
                               <p className="flex justify-between"><span>ค่าส่ง</span><span className="tabular-nums">{baht(o.shipping)}</span></p>
-                              <p className="flex justify-between text-[14.5px] font-black text-gray-900"><span>รวมทั้งสิ้น</span><span className="tabular-nums">{baht(o.total)}</span></p>
+                              <p className="flex justify-between text-[14px] font-black text-gray-900"><span>รวมทั้งสิ้น</span><span className="tabular-nums">{baht(o.total)}</span></p>
                               <p className="text-gray-400">{o.paymentLabel}{o.priceAdjusted ? ' · ราคาปรับตามคลัง ZORT' : ''}</p>
                             </div>
                           </div>
 
                           <div className="rounded-xl border border-gray-100 bg-white p-4">
-                            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5"><I d={IC.pin} className="w-3.5 h-3.5" /> ผู้รับ</p>
-                            <p className="text-[13.5px] font-bold text-gray-900">{o.customer?.name}</p>
+                            <p className="flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-wider text-gray-400 mb-2.5"><I d={IC.pin} className="w-3.5 h-3.5" /> ผู้รับ</p>
+                            <p className="text-[12.5px] font-bold text-gray-900">{o.customer?.name}</p>
                             <a href={`tel:${o.customer?.phone}`}
                                className="mt-1.5 inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-1.5 text-[12.5px] font-semibold text-blue-600 transition-colors hover:bg-blue-100">
                               <I d={IC.phone} className="w-3.5 h-3.5" /> {o.customer?.phone}
@@ -446,7 +446,7 @@ export default function WebOrdersPage() {
                           </div>
 
                           <div className="rounded-xl border border-gray-100 bg-white p-4">
-                            <p className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-2.5"><I d={IC.clock} className="w-3.5 h-3.5" /> เส้นทางออเดอร์</p>
+                            <p className="flex items-center gap-1.5 text-[11.5px] font-bold uppercase tracking-wider text-gray-400 mb-2.5"><I d={IC.clock} className="w-3.5 h-3.5" /> เส้นทางออเดอร์</p>
                             <ol className="relative border-l-2 border-gray-100 ml-1.5 space-y-3 text-[12.5px]">
                               <li className="pl-3.5 relative">
                                 <span className="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-blue-500 ring-4 ring-blue-50" />
@@ -480,14 +480,14 @@ export default function WebOrdersPage() {
                             </ol>
                             {o.hasSlip && (
                               <div className="mt-3">
-                                <p className="text-[11px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">สลิปโอนเงิน</p>
+                                <p className="text-[11.5px] font-bold uppercase tracking-wider text-gray-400 mb-1.5">สลิปโอนเงิน</p>
                                 {slips[o.id] === undefined ? (
                                   <div className="h-32 w-24 rounded-xl bg-gray-50 animate-pulse" />
                                 ) : slips[o.id] ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img src={slips[o.id] as string} alt="สลิป" className="max-h-52 rounded-xl border border-gray-200 shadow-sm" />
                                 ) : (
-                                  <p className="text-[12px] text-gray-400">เปิดสลิปไม่ได้</p>
+                                  <p className="text-[12.5px] text-gray-400">เปิดสลิปไม่ได้</p>
                                 )}
                               </div>
                             )}
@@ -498,7 +498,7 @@ export default function WebOrdersPage() {
                           {(NEXT[o.status] ?? []).map((b) => (
                             <button key={b.to} disabled={busyId === o.id}
                               onClick={() => patch(o, { status: b.to })}
-                              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[13px] font-bold transition-all disabled:opacity-50 ${
+                              className={`inline-flex items-center gap-1.5 rounded-xl px-4 py-2 text-[12.5px] font-bold transition-all disabled:opacity-50 ${
                                 b.to === 'cancelled'
                                   ? 'bg-white border border-red-200 text-red-500 hover:bg-red-50'
                                   : 'bg-gray-900 text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98]'
@@ -509,12 +509,12 @@ export default function WebOrdersPage() {
                           ))}
                           {o.zort && !o.zort.ok && !o.zort.skipped && (
                             <button disabled={busyId === o.id} onClick={() => patch(o, { action: 'zort' })}
-                              className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-amber-300 px-4 py-2 text-[13px] font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50">
+                              className="inline-flex items-center gap-1.5 rounded-xl bg-white border border-amber-300 px-4 py-2 text-[12.5px] font-bold text-amber-600 transition-colors hover:bg-amber-50 disabled:opacity-50">
                               <I d={IC.send} className="w-3.5 h-3.5" /> ส่งเข้า ZORT ซ้ำ
                             </button>
                           )}
                           {o.zort?.ok && (
-                            <span className="inline-flex items-center gap-1.5 text-[12px] text-emerald-600 font-semibold">
+                            <span className="inline-flex items-center gap-1.5 text-[12.5px] text-emerald-600 font-semibold">
                               <I d={IC.check} className="w-3.5 h-3.5" /> เข้า ZORT แล้ว
                             </span>
                           )}
@@ -529,7 +529,7 @@ export default function WebOrdersPage() {
         )}
       </div>
 
-      <p className="text-center text-[11px] text-gray-300">
+      <p className="text-center text-[11.5px] text-gray-300">
         ข้อมูลชุดเดียวกับ gucut.com/admin/orders/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง
       </p>
     </div>

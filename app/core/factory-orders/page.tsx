@@ -140,7 +140,7 @@ export default function CorePurchasesPage() {
         advanced={q ? <LinkText onClick={() => setQ('')}>ล้างคำค้น</LinkText> : undefined}
         right={
           importCount !== null ? (
-            <Link href="/import" className="text-[13px] text-blue-600 hover:underline">
+            <Link href="/import" className="text-[12.5px] text-blue-600 hover:underline">
               ดรอปชิปปิ้ง ({importCount.toLocaleString('th-TH')} รายการที่กำลังดู) →
             </Link>
           ) : undefined
@@ -197,10 +197,10 @@ export default function CorePurchasesPage() {
               </tbody>
             </table>
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
-              <span className="text-[12px] text-gray-500">
+              <span className="text-[12.5px] text-gray-500">
                 แสดง {shown.length.toLocaleString('th-TH')} จาก {orders.length.toLocaleString('th-TH')} รายการ
               </span>
-              <Link href="/tracker" className="text-[12px] text-blue-600 hover:underline">
+              <Link href="/tracker" className="text-[12.5px] text-blue-600 hover:underline">
                 แก้ไข / อัปรูป / เปลี่ยนสถานะ ที่หน้าติดตามสินค้าจากจีน →
               </Link>
             </div>

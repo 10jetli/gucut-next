@@ -122,13 +122,13 @@ export default function DormantInShipPile({ from, to }: { from: string; to: stri
 
   if (state === 'idle') {
     return (
-      <p className="text-[12px] text-gray-500 mb-3">
+      <p className="text-[12.5px] text-gray-500 mb-3">
         กอง <b>รอจัดส่ง</b> อาจมีใบของช่องทางที่ปิดไปแล้วปนอยู่ (ใบพวกนี้จะไม่มีวันถูกส่ง){' '}
         <BtnGhost onClick={check}>ตรวจช่องทางที่ปิดแล้ว</BtnGhost>
       </p>
     )
   }
-  if (state === 'loading') return <p className="text-[12px] text-gray-500 mb-3">กำลังถามท่อว่าช่องทางไหนเงียบ…</p>
+  if (state === 'loading') return <p className="text-[12.5px] text-gray-500 mb-3">กำลังถามท่อว่าช่องทางไหนเงียบ…</p>
   if (state === 'error') {
     return (
       <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">

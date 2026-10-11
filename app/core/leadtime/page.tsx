@@ -81,7 +81,7 @@ export default function LeadTimeGroupPage() {
           // ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร
           <Link
             href="/core/soon/leadtime"
-            className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+            className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
             style={{ background: '#4669e5' }}
           >
             เพิ่มกลุ่มใหม่
@@ -137,7 +137,7 @@ export default function LeadTimeGroupPage() {
                     ⇒ ได้หน้าข้อผิดพลาดของ ZORT ("มีปัญหาบางประการ, กรุณาลองใหม่อีกครั้ง") ไม่มีตารางเลย
                     ⇒ ประโยคข้างบนที่บอกว่า "ร้านยังไม่ได้ตั้งกลุ่ม (0 รายการ)" เป็นของที่เห็นเมื่อ 4 ก.ย. 2569
                        **วันนี้ยืนยันซ้ำไม่ได้** และยังไม่รู้ว่าเพราะแพ็คเกจ หรือฝั่ง ZORT ขัดข้อง ⇒ ไม่เดา */}
-                <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mt-3 max-w-[560px] mx-auto leading-relaxed text-left">
+                <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mt-3 max-w-[560px] mx-auto leading-relaxed text-left">
                   ⚠️ <b>16 ก.ย. 2569: จอ &ldquo;กลุ่ม Lead Time&rdquo; ของ ZORT เองเปิดไม่ขึ้น</b> —
                   เปิดจากลิงก์ที่เมนู ZORT ใช้เอง ยิงซ้ำ 3 รอบ ได้หน้าข้อผิดพลาดของ ZORT ทุกรอบ (ไม่มีตาราง)
                   {' '}⇒ ประโยคด้านบนที่ว่า &ldquo;ร้านยังไม่ได้ตั้งกลุ่ม 0 รายการ&rdquo; คือสิ่งที่เห็นเมื่อ 4 ก.ย. 2569 ·
@@ -145,7 +145,7 @@ export default function LeadTimeGroupPage() {
                 </p>
                 {/* หลักฐานต้องอยู่บนจอ ไม่ใช่แค่ในทะเบียน — คนอ่านต้องรู้ว่าใครตรวจ เมื่อไหร่ ลองชื่อไหน */}
                 {REG?.impossible && (
-                  <p className="text-[12px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3 max-w-[560px] mx-auto leading-relaxed text-left">
+                  <p className="text-[12.5px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3 max-w-[560px] mx-auto leading-relaxed text-left">
                     <b>หลักฐาน:</b> {REG.impossible}
                   </p>
                 )}
@@ -154,7 +154,7 @@ export default function LeadTimeGroupPage() {
                     "แล้วตอนนี้ร้านใช้ค่าอะไรคำนวณ" — ตารางว่างอย่างเดียวตอบไม่ได้ */}
                 <div className="text-[12.5px] text-gray-700 bg-[#edf6fe] border border-[#cfe3f7] rounded-md px-4 py-3 mt-4 max-w-[560px] mx-auto text-left leading-relaxed">
                   <b>ระบบสั่งของอัตโนมัติของเราใช้ค่าอะไรอยู่ตอนนี้</b>
-                  <span className="ml-1 text-[10.5px] text-blue-600">+เรา</span>
+                  <span className="ml-1 text-[10px] text-blue-600">+เรา</span>
                   <br />
                   · Lead Time <b>{OUR_LEAD_DAYS} วัน</b> — เจ้าของร้านยืนยันเองว่ารอของจากโรงงาน 45 วัน
                   <br />
@@ -188,7 +188,7 @@ export default function LeadTimeGroupPage() {
         </span>
       </div>
 
-      <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+      <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
         ผังลอกจาก ZORT ของจริง · ปุ่ม <b>เพิ่มกลุ่มใหม่</b> ยังทำงานไม่ได้ กดแล้วจะบอกว่าติดอะไรอยู่ ·
         ZORT มี<b>ช่องติ๊กหน้าแถว</b> ของเราไม่ทำ เพราะยังไม่มีคำสั่งหมู่ที่ทำงานจริง —
         ช่องติ๊กที่ติ๊กแล้วทำอะไรไม่ได้คือของหลอก

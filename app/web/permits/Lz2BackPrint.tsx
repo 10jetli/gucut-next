@@ -72,7 +72,7 @@ function ManualField({ label, unit, v, set, mono, ph }: {
 }) {
   return (
     <label className="block">
-      <span className="mb-1 block text-[12px] font-semibold text-gray-600">{label}</span>
+      <span className="mb-1 block text-[12.5px] font-semibold text-gray-600">{label}</span>
       <span className="flex items-center gap-1.5">
         <input value={v} onChange={(e) => set(e.target.value)} placeholder={ph}
           className={`min-w-0 flex-1 rounded-lg border border-gray-300 px-2.5 py-2 text-[14px] outline-none placeholder:text-gray-300 focus:border-blue-500 ${mono ? 'font-mono' : ''}`} />
@@ -208,7 +208,7 @@ export default function Lz2BackPrint() {
   return (
     /* ⚠️ กางอยู่แล้ว ไม่มีปุ่มกดเปิด — ท่านสั่ง "ไม่ต้องมีขั้นตอนซ้อน ไม่ต้องกดเปิดหลายชั้น" */
     <div className="rounded-2xl border border-gray-100/80 bg-white p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
-      <p className="text-[11px] font-black uppercase tracking-wider text-red-600">แบบกรอกมือ</p>
+      <p className="text-[11.5px] font-black uppercase tracking-wider text-red-600">แบบกรอกมือ</p>
       <h2 className="text-[15px] font-bold text-gray-900">พิมพ์หลังใบ ลซ.๒ (ตอนโอนเครื่องให้ลูกค้า)</h2>
       <p className="mt-0.5 text-[11.5px] text-gray-400">กรอกช่องที่ต้องการ แล้วกดปริ้นต์ — ไม่มีขั้นบันทึก ไม่เก็บประวัติ</p>
 
@@ -219,7 +219,7 @@ export default function Lz2BackPrint() {
 
       {/* ตัวช่วยพิมพ์ตัวเดียวที่เหลือ — เลือกรุ่นแล้วเติมแรงม้ากับยี่ห้อให้ (ทับได้) */}
       <label className="mt-3 block">
-        <span className="mb-1 block text-[12px] font-semibold text-gray-600">
+        <span className="mb-1 block text-[12.5px] font-semibold text-gray-600">
           รุ่นเลื่อย <span className="font-normal text-gray-400">— เลือกแล้วเติมแรงม้ากับยี่ห้อให้เอง (แก้ทับได้)</span>
         </span>
         <select value={รุ่น} onChange={(e) => เลือกรุ่น(e.target.value)}

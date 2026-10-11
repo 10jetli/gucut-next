@@ -119,7 +119,7 @@ function TokenExpiry({ at, expired }: { at?: string | null; expired?: boolean | 
 
   return (
     <span
-      className={`block text-[11px] mt-0.5 ${gone ? 'text-red-700 font-medium' : soon ? 'text-amber-700' : 'text-gray-400'}`}
+      className={`block text-[11.5px] mt-0.5 ${gone ? 'text-red-700 font-medium' : soon ? 'text-amber-700' : 'text-gray-400'}`}
       title={'ต่ออายุอัตโนมัติวิ่งทุกวันตี 3 ครึ่ง — เลขนี้บอกว่าถ้าตัวต่ออายุหยุดทำงาน จะเหลือเวลาอีกเท่าไหร่'}
     >
       🔑 token {gone ? <b>หมดอายุแล้ว</b> : left}
@@ -221,7 +221,7 @@ export default function ConnectionsRegistryPage() {
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังตรวจ…' : 'ตรวจอีกครั้ง'}</BtnGhost>
             <Link href="/core/soon/connection-add"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เพิ่มการเชื่อมต่อ
             </Link>
@@ -404,7 +404,7 @@ export default function ConnectionsRegistryPage() {
                             <StatusPill c={c} />
                             {/* ⚠️ ช้าไม่ใช่พัง — โชว์เวลาไว้ให้เห็น แต่ไม่เปลี่ยนสถานะเป็นแดง */}
                             {typeof c.ms === 'number' && (
-                              <span className={`block text-[11px] mt-0.5 ${c.ms >= SLOW_MS ? 'text-amber-700' : 'text-gray-400'}`}>
+                              <span className={`block text-[11.5px] mt-0.5 ${c.ms >= SLOW_MS ? 'text-amber-700' : 'text-gray-400'}`}>
                                 {c.ms >= SLOW_MS ? `ช้า ${(c.ms / 1000).toFixed(1)} วินาที` : `${c.ms} ms`}
                               </span>
                             )}
@@ -418,7 +418,7 @@ export default function ConnectionsRegistryPage() {
             )
           })}
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             ⚠️ คอลัมน์ <b>การกระจายสินค้า</b> ของ ZORT เขียน 100% ทุกแถว (เขามีระบบแบ่งสต็อกไปรายช่องทาง)
             — ของเรา<b>ยังไม่มีระบบนั้น</b> จึงเป็นขีด · ใส่ 100% ตามเขาก็ได้ แต่นั่นคือการบอกว่ามีระบบที่ไม่มีอยู่
             <br />

@@ -104,7 +104,7 @@ export default function AddUserPage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[760px]">
-      <p className="text-[12px] mb-2">
+      <p className="text-[12.5px] mb-2">
         <Link href="/core/settings-users" className="text-blue-600 hover:underline">‹ ผู้ใช้งาน</Link>
       </p>
       <PageHead
@@ -115,7 +115,7 @@ export default function AddUserPage() {
 
       {/* 🔴 ทางถอยต้องประกาศตัวเมื่อถูกใช้ — ไม่งั้นมันกลายเป็นทางหลักโดยไม่มีใครรู้ */}
       {storeError && (
-        <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-900 leading-relaxed">
+        <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3.5 py-2.5 text-[12.5px] text-amber-900 leading-relaxed">
           ⚠️ <b>อ่านรายชื่อผู้ใช้จากที่เก็บไม่ได้ตอนนี้</b> — {storeError}
           <div className="mt-1 text-amber-800">
             ⇒ <b>เพิ่มผู้ใช้ใหม่ยังไม่ได้</b> และการล็อกอินกำลังใช้ <b>ช่อง env แบบเดิม</b> เป็นทางถอย
@@ -131,17 +131,17 @@ export default function AddUserPage() {
           <label className="text-[12.5px] text-gray-700">
             ชื่อผู้ใช้ (ไว้ดูว่าใครล็อกอิน)
             <input value={name} onChange={(e) => setName(e.target.value)} maxLength={40}
-              className="mt-1 w-full rounded border border-gray-300 px-2.5 py-1.5 text-[13px]" placeholder="เช่น สมชาย (คลังหน้าร้าน)" />
+              className="mt-1 w-full rounded border border-gray-300 px-2.5 py-1.5 text-[12.5px]" placeholder="เช่น สมชาย (คลังหน้าร้าน)" />
           </label>
           <label className="text-[12.5px] text-gray-700">
             รหัสผ่าน (อย่างน้อย 6 ตัว)
             <input value={pass} onChange={(e) => setPass(e.target.value)} type="password" autoComplete="new-password"
-              className="mt-1 w-full rounded border border-gray-300 px-2.5 py-1.5 text-[13px]" />
+              className="mt-1 w-full rounded border border-gray-300 px-2.5 py-1.5 text-[12.5px]" />
           </label>
           <label className="text-[12.5px] text-gray-700 sm:col-start-2">
             พิมพ์รหัสผ่านอีกครั้ง
             <input value={pass2} onChange={(e) => setPass2(e.target.value)} type="password" autoComplete="new-password"
-              className="mt-1 w-full rounded border border-gray-300 px-2.5 py-1.5 text-[13px]" />
+              className="mt-1 w-full rounded border border-gray-300 px-2.5 py-1.5 text-[12.5px]" />
           </label>
         </div>
 
@@ -149,7 +149,7 @@ export default function AddUserPage() {
             ไม่ใช่แค่ชื่อชั้น · ค่าเริ่มต้นเป็นพนักงานเสมอ (สิทธิ์ต่ำสุด) */}
         <fieldset className="mt-4 rounded border border-gray-200 p-3">
           <legend className="px-1 text-[12.5px] font-semibold text-gray-700">ชั้นสิทธิ์</legend>
-          <label className="flex items-start gap-2 text-[13px] text-gray-800">
+          <label className="flex items-start gap-2 text-[12.5px] text-gray-800">
             <input type="radio" checked={role === 'staff'} onChange={() => setRole('staff')} className="mt-0.5" />
             <span>
               <b>พนักงาน</b>
@@ -158,7 +158,7 @@ export default function AddUserPage() {
               </span>
             </span>
           </label>
-          <label className="flex items-start gap-2 text-[13px] text-gray-800 mt-2.5">
+          <label className="flex items-start gap-2 text-[12.5px] text-gray-800 mt-2.5">
             <input type="radio" checked={role === 'account'} onChange={() => setRole('account')} className="mt-0.5" />
             <span>
               <b>บัญชี</b>
@@ -175,10 +175,10 @@ export default function AddUserPage() {
 
         <div className="mt-3 flex items-center gap-3">
           <button onClick={add} disabled={busy || !name.trim() || pass.length < 6 || full || !!storeError}
-            className="rounded bg-[#4669e5] px-4 py-2 text-[13px] font-semibold text-white disabled:opacity-40">
+            className="rounded bg-[#4669e5] px-4 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40">
             {busy ? 'กำลังบันทึก…' : 'บันทึก'}
           </button>
-          {full && <span className="text-[12px] text-amber-800">เต็มเพดาน {max} คนแล้ว — ปิดหรือลบคนที่ไม่ใช้ก่อน</span>}
+          {full && <span className="text-[12.5px] text-amber-800">เต็มเพดาน {max} คนแล้ว — ปิดหรือลบคนที่ไม่ใช้ก่อน</span>}
         </div>
         {formErr && <p className="mt-2 text-[12.5px] text-red-700">⚠️ {formErr}</p>}
         {msg && <p className="mt-2 text-[12.5px] text-green-700">✓ {msg}</p>}
@@ -196,10 +196,10 @@ export default function AddUserPage() {
           บัญชีเห็นแค่หน้าการเงินและ<b>แก้อะไรไม่ได้เลย</b>
         </p>
         {loading && !users ? <LoadingState /> : users === null ? null : users.length === 0 ? (
-          <p className="text-[13px] text-gray-500">ยังไม่มีใคร — เพิ่มจากกล่องข้างบนได้เลย</p>
+          <p className="text-[12.5px] text-gray-500">ยังไม่มีใคร — เพิ่มจากกล่องข้างบนได้เลย</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[460px] text-[13px]">
+            <table className="w-full min-w-[460px] text-[12.5px]">
               <thead className="border-b border-gray-200 text-gray-500">
                 <tr><th className="py-1.5 text-left font-medium">ชื่อ</th><th className="py-1.5 text-left font-medium">สิทธิ์</th><th className="py-1.5 text-left font-medium">สถานะ</th><th className="py-1.5 text-left font-medium">เพิ่มเมื่อ</th><th /></tr>
               </thead>
@@ -218,8 +218,8 @@ export default function AddUserPage() {
                     </td>
                     <td className="py-2 pr-2">
                       {u.active
-                        ? <span className="rounded-full bg-green-50 px-2 py-0.5 text-[12px] text-green-700">ใช้งานได้</span>
-                        : <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[12px] text-gray-600">ปิดอยู่</span>}
+                        ? <span className="rounded-full bg-green-50 px-2 py-0.5 text-[12.5px] text-green-700">ใช้งานได้</span>
+                        : <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[12.5px] text-gray-600">ปิดอยู่</span>}
                     </td>
                     <td className="py-2 pr-2 text-gray-500">{String(u.createdAt).slice(0, 10)}</td>
                     <td className="py-2 text-right whitespace-nowrap">
@@ -242,7 +242,7 @@ export default function AddUserPage() {
         </p>
       </section>
 
-      <section className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-[12px] text-gray-600 leading-relaxed">
+      <section className="mt-4 rounded-md border border-gray-200 bg-gray-50 p-4 text-[12.5px] text-gray-600 leading-relaxed">
         <b>ช่องแบบเดิมยังใช้ได้</b> — คนที่ตั้งไว้ใน <code>STAFF_NAME_1..8</code> / <code>STAFF_PASS_1..8</code>
         ที่ Netlify ล็อกอินได้เหมือนเดิมทุกคน (งานนี้เพิ่มทางใหม่ ไม่ได้ถอดทางเดิม)
         วิธีนั้นยังต้อง deploy ใหม่ทุกครั้ง ⇒ ใช้ฟอร์มข้างบนสะดวกกว่า

@@ -89,7 +89,7 @@ const ดูเหมือนZORTล่ม = (r?: SaleResp | null) => {
   return /HTTP\s*5\d\d/.test(String(r.error ?? ''))
 }
 
-const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
+const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
 const PAY = ['เงินสด', 'โอนเงิน', 'บัตรเครดิต', 'เก็บปลายทาง']
 
 export default function NewSalePage() {
@@ -233,21 +233,21 @@ export default function NewSalePage() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-3 mt-4">
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">ชื่อลูกค้า *</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ชื่อลูกค้า *</span>
           <input className={inp} value={customer} onChange={(e) => setCustomer(e.target.value)} /></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">เบอร์โทร</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">เบอร์โทร</span>
           <input className={inp} value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">ช่องทางขาย</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ช่องทางขาย</span>
           <input className={inp} value={channel} onChange={(e) => setChannel(e.target.value)} placeholder="เช่น หน้าร้าน" /></label>
-        <label className="block md:col-span-2"><span className="block text-[11px] font-semibold text-gray-400 mb-1">ที่อยู่จัดส่ง</span>
+        <label className="block md:col-span-2"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ที่อยู่จัดส่ง</span>
           <input className={inp} value={address} onChange={(e) => setAddress(e.target.value)} /></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">คลัง</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">คลัง</span>
           <input className={inp} value={warehouse} onChange={(e) => setWarehouse(e.target.value)} placeholder="เช่น KLD" /></label>
         {/* 🔤 **คำอังกฤษบนจอที่คนขายต้องอ่าน** — เดิมช่องนี้ขึ้น "Pending — ยังไม่จบ" / "Success — จบแล้ว"
             ⇒ โรคเดียวกับที่ท่านประธานทักเรื่องคอลัมน์ชำระเงิน · คำใหม่ลอกจากจอ ZORT `/Sell/Add` จอเดียวกัน
             (ที่นั่นเป็นปุ่มวิทยุคู่ `warehousetype0/1` ใต้หัวข้อ "คลังสินค้า/สาขา") ⇒ ป้ายช่องจึงเปลี่ยนตามเรื่องที่มันทำ
             ค่าดิบที่ส่งให้ท่ออยู่ใน title ของช่อง — ห้ามลบ คนตรวจต้องรู้ว่าจอนี้ส่งอะไรออกไป */}
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">การโอนสินค้า</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">การโอนสินค้า</span>
           <select
             className={inp}
             value={status}
@@ -256,27 +256,27 @@ export default function NewSalePage() {
             <option value="Pending">{zortWord(SALE_CREATE_TRANSFER_CHOICE, 'Pending').text}</option>
             <option value="Success">{zortWord(SALE_CREATE_TRANSFER_CHOICE, 'Success').text}</option>
           </select></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">ส่วนลด (บาท)</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ส่วนลด (บาท)</span>
           <input className={inp} value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" /></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">ค่าส่ง (บาท)</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ค่าส่ง (บาท)</span>
           <input className={inp} value={shipping} onChange={(e) => setShipping(e.target.value)} inputMode="decimal" /></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">รับชำระแล้ว (บาท)</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">รับชำระแล้ว (บาท)</span>
           <input className={inp} value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="decimal" /></label>
-        <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">วิธีชำระเงิน</span>
+        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">วิธีชำระเงิน</span>
           <select className={inp} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
             <option value="">— ยังไม่ระบุ —</option>
             {PAY.map((p) => <option key={p} value={p}>{p}</option>)}
           </select></label>
         <label className="flex items-center gap-2 self-end pb-2">
           <input type="checkbox" checked={cod} onChange={(e) => setCod(e.target.checked)} className="w-4 h-4" />
-          <span className="text-[13px] text-gray-700">เก็บเงินปลายทาง</span>
+          <span className="text-[12.5px] text-gray-700">เก็บเงินปลายทาง</span>
         </label>
-        <label className="block md:col-span-3"><span className="block text-[11px] font-semibold text-gray-400 mb-1">หมายเหตุ</span>
+        <label className="block md:col-span-3"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">หมายเหตุ</span>
           <input className={inp} value={note} onChange={(e) => setNote(e.target.value)} /></label>
       </div>
 
       {/* ⚠️ ท่อบังคับครบทั้งสี่ช่อง ⇒ หัวตารางต้องบอกว่าบังคับ ไม่ใช่ให้คนรู้เอาเองตอนโดนปฏิเสธ */}
-      <p className="text-[12px] text-gray-500 mt-4 mb-1">รายการสินค้า — <b>ต้องกรอกครบทั้งสี่ช่องทุกบรรทัด</b> (ท่อบังคับ)</p>
+      <p className="text-[12.5px] text-gray-500 mt-4 mb-1">รายการสินค้า — <b>ต้องกรอกครบทั้งสี่ช่องทุกบรรทัด</b> (ท่อบังคับ)</p>
       <TableWrap>
         <table className="w-full min-w-[620px]">
           <thead className="bg-gray-50 border-y border-gray-200">
@@ -297,7 +297,7 @@ export default function NewSalePage() {
                   <td className={TD}>
                     {lines.length > 1 && (
                       <button onClick={() => setLines((cur) => cur.filter((_, j) => j !== i))}
-                        className="text-[12px] text-red-500 hover:underline">ลบ</button>
+                        className="text-[12.5px] text-red-500 hover:underline">ลบ</button>
                     )}
                   </td>
                 </tr>
@@ -309,7 +309,7 @@ export default function NewSalePage() {
 
       <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
         <BtnGhost onClick={() => setLines((v) => [...v, { ...BLANK }])}>+ เพิ่มบรรทัด</BtnGhost>
-        <span className="text-[13px] text-gray-600">
+        <span className="text-[12.5px] text-gray-600">
           {ready.length === 0
             ? <span className="text-gray-400">ยังไม่มีบรรทัดที่กรอกครบ</span>
             : <>ยอดสินค้าที่จอคิด <b>{fmtMoney(ourLinesTotal)}</b> ({ready.length} บรรทัด)
@@ -319,7 +319,7 @@ export default function NewSalePage() {
 
       {/* บรรทัดที่กรอกไม่ครบ — ท่อปฏิเสธทั้งใบ ไม่ใช่ข้ามเฉพาะบรรทัดนั้น ⇒ ต้องบอกก่อนกด */}
       {incomplete > 0 && (
-        <div className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3">
           ⚠️ มี <b>{incomplete} บรรทัด</b>ที่กรอกไม่ครบทั้งสี่ช่อง — เส้นนี้<b>บังคับครบทุกช่อง</b>
           {' '}ลบบรรทัดนั้นทิ้งหรือกรอกให้ครบก่อน
         </div>
@@ -336,22 +336,22 @@ export default function NewSalePage() {
           จอนี้บังคับราคาครบทุกบรรทัด ⇒ ส่ง requiresPrice (null = ราคาไม่ถึงท่อ ต้องขึ้นแดง) */}
       <LinesTotalCheck res={res} ourTotal={ourLinesTotal} requiresPrice />
 
-      {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+      {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         <button onClick={() => send(false)} disabled={busy || !ref || locked}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
         {/* 🔴 ส่งจริงไปแล้ว ⇒ **ไม่มีปุ่มให้กดอีก** ไม่ใช่ปุ่มจาง ๆ ที่ยังเล็งกดได้
             ใบขายตัดสต็อกจริง ⇒ กดซ้ำ = สต็อกหายสองรอบ ยอดขายเบิ้ล */}
         {locked ? (
-          <span className="rounded-full px-5 py-2 text-[13px] font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300">
+          <span className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300">
             ส่งใบนี้ไปแล้ว — ปิดการส่งซ้ำของใบนี้ถาวร
           </span>
         ) : (
           <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-            className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+            className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
             style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
             ส่งเข้า ZORT จริง
           </button>
@@ -373,10 +373,10 @@ export default function NewSalePage() {
       {/* 🔴 **ZORT ตอบไม่ได้ ≠ ข้อมูลผิด ≠ โค้ดเราพัง** — กล่องนี้ต้องมาก่อน WriteResult
           ไม่งั้นคนจะอ่านกล่องแดง "ไม่สำเร็จ ไม่มีอะไรถูกสร้าง" ซึ่ง **ยืนยันแบบนั้นไม่ได้** */}
       {locked && res && !res.dryRun && ดูเหมือนZORTล่ม(res) && (
-        <div className="text-[13px] text-amber-900 bg-amber-50 border-2 border-amber-400 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border-2 border-amber-400 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
           <b>⚠️ ระบบ ZORT ตอบไม่ได้ตอนนี้ — ไม่ใช่ความผิดของข้อมูลที่กรอก และไม่ใช่โค้ดฝั่งเรา</b>
           <br />
-          ข้อความจากปลายทาง: <span className="font-mono text-[12px]">{res.error}</span>
+          ข้อความจากปลายทาง: <span className="font-mono text-[12.5px]">{res.error}</span>
           <br />
           🔴 <b>ก่อนกดส่งใหม่ ให้เปิด ZORT ดูก่อนว่ามีใบนี้แล้วหรือยัง</b> — ZORT อาจบันทึกไปแล้วแต่ตอบ error กลับมา
           {' '}(อ้างอิง <code>{res.ref || ref}</code>) · ตัวกันซ้ำของระบบจดเฉพาะตอนสำเร็จ
@@ -389,7 +389,7 @@ export default function NewSalePage() {
 
       {/* ℹ️ เคยส่งใบนี้ไปแล้ว — **ห้ามขึ้นเขียวเหมือนสร้างใหม่** และต้องบอกเลขที่ใบเดิม */}
       {locked && res && !res.dryRun && res.duplicate && (
-        <div className="text-[13px] text-blue-900 bg-blue-50 border border-blue-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-blue-900 bg-blue-50 border border-blue-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
           <b>ℹ️ ใบนี้เคยบันทึกเข้า ZORT ไปแล้ว — รอบนี้ไม่ได้สร้างใบใหม่</b>
           {res.first?.number ? <> · ใบเดิมคือเลขที่ <b className="font-mono">{res.first.number}</b></> : null}
           {typeof res.first?.amount === 'number' ? <> ยอด ฿{res.first.amount.toLocaleString('th-TH')}</> : null}
@@ -401,7 +401,7 @@ export default function NewSalePage() {
 
       {/* ✅ ส่งสำเร็จ — ต้องบอกสามเรื่องที่ไม่มีอยู่ในกล่องผลลัพธ์กลาง */}
       {locked && res && !res.dryRun && res.ok && !res.duplicate && (
-        <div className="text-[13px] text-emerald-950 bg-emerald-50 border border-emerald-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-emerald-950 bg-emerald-50 border border-emerald-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
           <b>✅ ใบนี้เข้า ZORT แล้ว</b>
           {res.number ? <> · เลขที่ใบ <b className="font-mono">{res.number}</b></> : null}
           {typeof res.amount === 'number' ? <> · ยอดสุทธิที่ท่อคิด <b>฿{res.amount.toLocaleString('th-TH')}</b></> : null}
@@ -427,7 +427,7 @@ export default function NewSalePage() {
       {res?.dryRun && res.willSend != null && (
         <details className="mt-2 border border-gray-200 rounded">
           <summary className="text-[12.5px] text-gray-700 px-3 py-2 cursor-pointer">ดูของจริงที่จะถูกส่งเข้า ZORT</summary>
-          <pre className="text-[11px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
+          <pre className="text-[11.5px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
             {JSON.stringify(res.willSend, null, 1)}
           </pre>
         </details>

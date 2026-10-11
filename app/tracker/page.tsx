@@ -212,7 +212,7 @@ export default function TrackerPage() {
         </div>
         <button
           onClick={openAdd}
-          className="text-[13px] font-semibold text-white bg-[#17386b] rounded-xl px-4 py-2 hover:opacity-90 transition-opacity shadow-[0_6px_16px_-6px_rgba(23,56,107,0.5)]"
+          className="text-[12.5px] font-semibold text-white bg-[#17386b] rounded-xl px-4 py-2 hover:opacity-90 transition-opacity shadow-[0_6px_16px_-6px_rgba(23,56,107,0.5)]"
         >
           + เพิ่มบิล
         </button>
@@ -222,19 +222,19 @@ export default function TrackerPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-sm p-4">
           <p className="text-2xl font-black text-gray-900">{stats.total}</p>
-          <p className="text-[11px] text-gray-400 mt-0.5">บิลทั้งหมด</p>
+          <p className="text-[11.5px] text-gray-400 mt-0.5">บิลทั้งหมด</p>
         </div>
         <div className="bg-blue-50 rounded-2xl p-4">
           <p className="text-2xl font-black text-blue-600">{stats.ongoing}</p>
-          <p className="text-[11px] text-blue-500 mt-0.5">กำลังดำเนินการ</p>
+          <p className="text-[11.5px] text-blue-500 mt-0.5">กำลังดำเนินการ</p>
         </div>
         <div className="bg-red-50 rounded-2xl p-4">
           <p className="text-2xl font-black text-red-600">{stats.overdue}</p>
-          <p className="text-[11px] text-red-500 mt-0.5">เกินกำหนด</p>
+          <p className="text-[11.5px] text-red-500 mt-0.5">เกินกำหนด</p>
         </div>
         <div className="bg-amber-50 rounded-2xl p-4">
           <p className="text-2xl font-black text-amber-600">{stats.factories}</p>
-          <p className="text-[11px] text-amber-600 mt-0.5">โรงงาน</p>
+          <p className="text-[11.5px] text-amber-600 mt-0.5">โรงงาน</p>
         </div>
       </div>
 
@@ -242,7 +242,7 @@ export default function TrackerPage() {
       <div className="flex gap-2 overflow-x-auto pb-1">
         <button
           onClick={() => setFilter('all')}
-          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`} aria-pressed={filter === 'all'}
+          className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12.5px] font-semibold transition-colors ${filter === 'all' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`} aria-pressed={filter === 'all'}
         >
           ทั้งหมด ({tabCounts.all})
         </button>
@@ -250,7 +250,7 @@ export default function TrackerPage() {
           <button
             key={s}
             onClick={() => setFilter(s)}
-            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12px] font-semibold transition-colors ${filter === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`} aria-pressed={filter === s}
+            className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[12.5px] font-semibold transition-colors ${filter === s ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'}`} aria-pressed={filter === s}
           >
             {STATUS_LABEL[s]} ({tabCounts[s] ?? 0})
           </button>
@@ -262,7 +262,7 @@ export default function TrackerPage() {
       {error && (
         <div className="bg-red-50 rounded-2xl p-4 text-sm text-red-600">
           <p className="font-semibold">โหลดไม่ได้</p>
-          <p className="text-[11px] mt-1 break-all">{error}</p>
+          <p className="text-[11.5px] mt-1 break-all">{error}</p>
         </div>
       )}
 
@@ -280,26 +280,26 @@ export default function TrackerPage() {
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <p className="text-[14px] font-bold text-gray-900 leading-tight">{o.product}</p>
-                    {o.factory && <p className="text-[12px] text-gray-500 mt-0.5">🏭 {o.factory}</p>}
+                    {o.factory && <p className="text-[12.5px] text-gray-500 mt-0.5">🏭 {o.factory}</p>}
                   </div>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_COLOR[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
+                  <span className={`text-[11.5px] font-semibold px-2 py-0.5 rounded-full flex-shrink-0 ${STATUS_COLOR[o.status] ?? 'bg-gray-100 text-gray-600'}`}>
                     {STATUS_LABEL[o.status] ?? o.status}
                   </span>
                 </div>
 
-                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[12px] text-gray-600">
+                <div className="flex flex-wrap gap-x-4 gap-y-1 mt-2 text-[12.5px] text-gray-600">
                   {o.qty ? <span>จำนวน: <strong>{o.qty}</strong></span> : null}
                   {o.deposit ? <span>มัดจำ: <strong className="text-orange-600">{o.deposit}</strong></span> : null}
                   {o.total ? <span>รวม: <strong className="text-gray-900">{o.total}</strong></span> : null}
                 </div>
 
                 {o.due && (
-                  <p className={`text-[11px] mt-1 ${overdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
+                  <p className={`text-[11.5px] mt-1 ${overdue ? 'text-red-500 font-semibold' : 'text-gray-400'}`}>
                     📅 กำหนด: {fmtDate(o.due)}{overdue ? ' (เกินกำหนด)' : ''}
                   </p>
                 )}
 
-                {o.note && <p className="text-[11px] text-gray-500 mt-1 leading-relaxed">{o.note}</p>}
+                {o.note && <p className="text-[11.5px] text-gray-500 mt-1 leading-relaxed">{o.note}</p>}
 
                 {o.images?.length > 0 && (
                   <div className="flex gap-2 mt-2 overflow-x-auto">
@@ -343,54 +343,54 @@ export default function TrackerPage() {
             <h2 className="text-[15px] font-bold text-gray-900">{form.id ? 'แก้ไขบิล' : 'เพิ่มบิลใหม่'}</h2>
 
             <div>
-              <label className="text-[12px] font-medium text-gray-600">ชื่อสินค้า *</label>
-              <input value={form.product} onChange={e => setForm(f => ({ ...f, product: e.target.value }))} placeholder="เช่น Gasoline Chainsaw ZMC5803" className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+              <label className="text-[12.5px] font-medium text-gray-600">ชื่อสินค้า *</label>
+              <input value={form.product} onChange={e => setForm(f => ({ ...f, product: e.target.value }))} placeholder="เช่น Gasoline Chainsaw ZMC5803" className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
             </div>
 
             <div>
-              <label className="text-[12px] font-medium text-gray-600">โรงงาน / ซัพพลายเออร์</label>
-              <input value={form.factory} onChange={e => setForm(f => ({ ...f, factory: e.target.value }))} placeholder="เช่น Zomax Garden Machinery" className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+              <label className="text-[12.5px] font-medium text-gray-600">โรงงาน / ซัพพลายเออร์</label>
+              <input value={form.factory} onChange={e => setForm(f => ({ ...f, factory: e.target.value }))} placeholder="เช่น Zomax Garden Machinery" className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[12px] font-medium text-gray-600">จำนวน (ชิ้น)</label>
-                <input type="number" value={form.qty} onChange={e => setForm(f => ({ ...f, qty: e.target.value }))} placeholder="200" className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <label className="text-[12.5px] font-medium text-gray-600">จำนวน (ชิ้น)</label>
+                <input type="number" value={form.qty} onChange={e => setForm(f => ({ ...f, qty: e.target.value }))} placeholder="200" className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-gray-600">วันครบกำหนดผลิต</label>
-                <input type="date" value={form.due} onChange={e => setForm(f => ({ ...f, due: e.target.value }))} className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <label className="text-[12.5px] font-medium text-gray-600">วันครบกำหนดผลิต</label>
+                <input type="date" value={form.due} onChange={e => setForm(f => ({ ...f, due: e.target.value }))} className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-[12px] font-medium text-gray-600">มัดจำ</label>
-                <input value={form.deposit} onChange={e => setForm(f => ({ ...f, deposit: e.target.value }))} placeholder="41,460" className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <label className="text-[12.5px] font-medium text-gray-600">มัดจำ</label>
+                <input value={form.deposit} onChange={e => setForm(f => ({ ...f, deposit: e.target.value }))} placeholder="41,460" className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
               <div>
-                <label className="text-[12px] font-medium text-gray-600">ยอดรวม</label>
-                <input value={form.total} onChange={e => setForm(f => ({ ...f, total: e.target.value }))} placeholder="138,200" className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+                <label className="text-[12.5px] font-medium text-gray-600">ยอดรวม</label>
+                <input value={form.total} onChange={e => setForm(f => ({ ...f, total: e.target.value }))} placeholder="138,200" className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
               </div>
             </div>
 
             <div>
-              <label className="text-[12px] font-medium text-gray-600">สถานะ</label>
-              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as TrackerStatus }))} className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
+              <label className="text-[12.5px] font-medium text-gray-600">สถานะ</label>
+              <select value={form.status} onChange={e => setForm(f => ({ ...f, status: e.target.value as TrackerStatus }))} className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400">
                 {STATUS_ORDER.map(s => <option key={s} value={s}>{STATUS_FORM_LABEL[s]}</option>)}
               </select>
             </div>
 
             <div>
-              <label className="text-[12px] font-medium text-gray-600">หมายเหตุ</label>
-              <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="เลข Invoice, Tracking, รายละเอียดเพิ่มเติม" rows={2} className="w-full mt-1 text-[13px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
+              <label className="text-[12.5px] font-medium text-gray-600">หมายเหตุ</label>
+              <textarea value={form.note} onChange={e => setForm(f => ({ ...f, note: e.target.value }))} placeholder="เลข Invoice, Tracking, รายละเอียดเพิ่มเติม" rows={2} className="w-full mt-1 text-[12.5px] border border-gray-200 rounded-lg px-3 py-2 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400" />
             </div>
 
             <div>
-              <label className="text-[12px] font-medium text-gray-600">รูปภาพ (Invoice / WeChat)</label>
+              <label className="text-[12.5px] font-medium text-gray-600">รูปภาพ (Invoice / WeChat)</label>
               <label className="mt-1 flex flex-col items-center justify-center gap-1 border border-dashed border-gray-300 rounded-xl py-4 cursor-pointer hover:bg-gray-50 transition-colors">
                 <span className="text-xl">📷</span>
-                <span className="text-[12px] text-gray-500">{uploading ? 'กำลังอัพโหลด...' : 'กดเพื่อเลือกรูป (เลือกได้หลายรูป)'}</span>
+                <span className="text-[12.5px] text-gray-500">{uploading ? 'กำลังอัพโหลด...' : 'กดเพื่อเลือกรูป (เลือกได้หลายรูป)'}</span>
                 <input type="file" accept="image/*" multiple className="hidden" disabled={uploading} onChange={e => handleFiles(e.target.files)} />
               </label>
               {form.images.length > 0 && (
@@ -399,7 +399,7 @@ export default function TrackerPage() {
                     <div key={i} className="relative flex-shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img.thumb} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-100" />
-                      <button onClick={() => removeImage(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[11px] flex items-center justify-center">✕</button>
+                      <button onClick={() => removeImage(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[11.5px] flex items-center justify-center">✕</button>
                     </div>
                   ))}
                 </div>
@@ -407,10 +407,10 @@ export default function TrackerPage() {
             </div>
 
             <div className="flex gap-2 items-center pt-2">
-              <button onClick={save} disabled={saving || uploading} className="text-[13px] font-semibold text-white bg-[#17386b] rounded-xl px-4 py-2 hover:opacity-90 transition-opacity disabled:opacity-50 shadow-[0_6px_16px_-6px_rgba(23,56,107,0.5)]">
+              <button onClick={save} disabled={saving || uploading} className="text-[12.5px] font-semibold text-white bg-[#17386b] rounded-xl px-4 py-2 hover:opacity-90 transition-opacity disabled:opacity-50 shadow-[0_6px_16px_-6px_rgba(23,56,107,0.5)]">
                 {saving ? 'กำลังบันทึก...' : 'บันทึก'}
               </button>
-              <button onClick={() => setShowForm(false)} className="text-[13px] text-gray-500 px-3 py-2 hover:text-gray-700 transition-colors">ยกเลิก</button>
+              <button onClick={() => setShowForm(false)} className="text-[12.5px] text-gray-500 px-3 py-2 hover:text-gray-700 transition-colors">ยกเลิก</button>
             </div>
           </div>
         </div>

@@ -193,48 +193,48 @@ function MovesInner() {
         summary="รับของเข้า · โอน · ของเสีย · ปรับยอดจากการนับ — สิ่งที่ออเดอร์บอกไม่ได้"
       />
 
-      <p className="text-[12px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
+      <p className="text-[12.5px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
         ℹ️ คลังเงาคิดสต็อกจาก <b>ภาพถ่ายวันฐาน − ที่ขายไป</b> ซึ่งไม่รู้จักของที่ซื้อเข้ามาใหม่
         หรือโอนระหว่างสาขาเลย · ใบที่บันทึกวันนี้จะไปมีผลใน<b>รอบเทียบของพรุ่งนี้</b>
         (ภาพถ่ายสต็อกของวันนี้ถ่ายไปตั้งแต่ตี 1 ของที่รับเข้าตอนสายจึงยังไม่มีทางอยู่ในภาพนั้น)
       </p>
 
       <Card>
-        <p className="text-[13px] font-semibold text-gray-700 mb-3">บันทึกรายการใหม่</p>
+        <p className="text-[12.5px] font-semibold text-gray-700 mb-3">บันทึกรายการใหม่</p>
         <div className="grid grid-cols-1 md:grid-cols-5 gap-2.5 items-end">
-          <label className="text-[12px] text-gray-500">
+          <label className="text-[12.5px] text-gray-500">
             SKU
             <input value={sku} onChange={(e) => setSku(e.target.value)}
               placeholder="เช่น NW-5200-BAR"
-              className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              className="mt-1 w-full text-[12.5px] border border-gray-200 rounded-lg px-2.5 py-1.5" />
           </label>
-          <label className="text-[12px] text-gray-500">
+          <label className="text-[12.5px] text-gray-500">
             เหตุผล
             <select value={reason} onChange={(e) => setReason(e.target.value)}
-              className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+              className="mt-1 w-full text-[12.5px] border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
               {REASONS.map((r) => (
                 <option key={r.id} value={r.id}>{r.label} ({r.dir === 'in' ? 'เข้า' : 'ออก'})</option>
               ))}
             </select>
           </label>
-          <label className="text-[12px] text-gray-500">
+          <label className="text-[12.5px] text-gray-500">
             จำนวน (ชิ้น)
             <input value={qty} onChange={(e) => setQty(e.target.value)} inputMode="numeric"
               placeholder="กรอกจำนวนบวกเสมอ"
-              className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              className="mt-1 w-full text-[12.5px] border border-gray-200 rounded-lg px-2.5 py-1.5" />
           </label>
-          <label className="text-[12px] text-gray-500">
+          <label className="text-[12.5px] text-gray-500">
             เลขอ้างอิง <span className="text-red-500">*</span>
             <input value={ref} onChange={(e) => setRef(e.target.value)}
               placeholder="เลขใบสั่งซื้อ / ใบโอน / รอบนับ"
-              className="mt-1 w-full text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5" />
+              className="mt-1 w-full text-[12.5px] border border-gray-200 rounded-lg px-2.5 py-1.5" />
           </label>
           <button onClick={save} disabled={saving}
-            className="text-[13px] font-semibold text-white bg-blue-600 rounded-lg px-3.5 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50">
+            className="text-[12.5px] font-semibold text-white bg-blue-600 rounded-lg px-3.5 py-2 hover:bg-blue-700 transition-colors disabled:opacity-50">
             {saving ? '⏳ กำลังบันทึก…' : '💾 บันทึก'}
           </button>
         </div>
-        <p className="text-[11px] text-gray-400 mt-2.5">
+        <p className="text-[11.5px] text-gray-400 mt-2.5">
           กรอกจำนวนเป็น<b>เลขบวกเสมอ</b> — เลือก &quot;โอนออก&quot; หรือ &quot;ของเสีย&quot; แล้วระบบใส่เครื่องหมายลบให้เอง ·
           <b> เลขอ้างอิงต้องกรอก</b> เพราะระบบใช้กันการบันทึกซ้ำ กดสองครั้งของจะไม่เข้าสองรอบ
         </p>
@@ -260,7 +260,7 @@ function MovesInner() {
 
       <Card padded={false} className="overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-3 border-b border-gray-100">
-          <p className="text-[13px] font-semibold text-gray-700">
+          <p className="text-[12.5px] font-semibold text-gray-700">
             ประวัติการปรับสต็อก{' '}
             {total === null
               ? <span className="text-amber-700 font-normal">(ยังไม่รู้ว่ามีกี่ใบ — ท่อไม่ได้บอกจำนวน)</span>
@@ -281,7 +281,7 @@ function MovesInner() {
             และคนที่อ่านแต่บรรทัดล่างจะนึกว่าใบที่เพิ่งบันทึกหายไป แล้วกรอกใหม่
             (เจอด้วยท่อปลอม 6 ก.ย. 2569 — จอนี้ขึ้นทั้ง "ดึงประวัติไม่ได้" และ "ยังไม่มีการปรับสต็อก" พร้อมกัน) */}
         {!loading && !error && moves.length === 0 && (
-          <p className="text-[13px] text-gray-400 p-4">ยังไม่มีการปรับสต็อก</p>
+          <p className="text-[12.5px] text-gray-400 p-4">ยังไม่มีการปรับสต็อก</p>
         )}
         {moves.length > 0 && (
           <div className="overflow-x-auto">
@@ -308,7 +308,7 @@ function MovesInner() {
                     </td>
                     <td className="px-4 py-2.5 text-right">
                       <button onClick={() => remove(m.id)}
-                        className="text-[11px] font-semibold text-red-500 hover:text-red-600 hover:underline">
+                        className="text-[11.5px] font-semibold text-red-500 hover:text-red-600 hover:underline">
                         ลบ
                       </button>
                     </td>
@@ -318,7 +318,7 @@ function MovesInner() {
             </table>
           </div>
         )}
-        <p className="text-[11px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
+        <p className="text-[11.5px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
           ลบได้ทีละใบเท่านั้นโดยตั้งใจ — บัญชีสต็อกที่ลบเป็นชุดได้ พลาดครั้งเดียวประวัติหายเป็นสิบใบ
           โดยไม่มีอะไรเตือน · ใบที่ลบแล้วจะหายจากการคำนวณสต็อกรอบถัดไปทันที
         </p>

@@ -55,7 +55,7 @@ export default function DupSkuNote() {
   if (จำนวนคู่ === null || จำนวนคู่ <= 0) return null
 
   return (
-    <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+    <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
       ⚠️ ตอนนี้มีสินค้า <b>{fmtNum(จำนวนคู่)} รหัส</b> ที่อยู่ในทะเบียน <b>สองแถว</b> —
       แถวเก่าที่รหัสถูกตัดสั้น กับแถวใหม่ที่รหัสเต็ม (เกิดจากรอบซิงก์ก่อนหน้าตัดรหัสที่ 60 ตัวอักษร)
       <br />

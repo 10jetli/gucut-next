@@ -146,7 +146,7 @@ function SkipBucket({ label, count, sample }: { label: string; count?: number; s
       </summary>
       <div className="px-2 py-1.5">
         {skus.length ? (
-          <p className="text-[11px] font-mono text-gray-600 break-all leading-relaxed">{skus.join(' · ')}</p>
+          <p className="text-[11.5px] font-mono text-gray-600 break-all leading-relaxed">{skus.join(' · ')}</p>
         ) : (
           <p className="text-[11.5px] text-amber-800">
             ⚠️ ท่อบอกว่ามี <b>{numText(count)}</b> รหัสในกองนี้ แต่<b>ไม่ได้ส่งรายการมาด้วย</b>
@@ -291,7 +291,7 @@ export default function StockPushPage() {
       <StuckPushList />
 
       {/* 🔴 ไม่มีปุ่มยิงจริง — บอกทางที่ถูกแทน */}
-      <p className="text-[12px] text-blue-900 bg-blue-50 border border-blue-100 rounded-md px-3.5 py-2 mb-4 leading-relaxed">
+      <p className="text-[12.5px] text-blue-900 bg-blue-50 border border-blue-100 rounded-md px-3.5 py-2 mb-4 leading-relaxed">
         จอนี้<b>ดูอย่างเดียวโดยตั้งใจ</b> — การดันรอบใหม่เป็นการอนุมัติรายครั้งของเจ้าของร้าน
         ผ่าน AI ที่กางแผนสดให้ดูก่อน ไม่ใช่ปุ่มบนจอ · อยากดันรอบใหม่: กด{' '}
         <a href="https://2.gucut.com" target="_blank" rel="noreferrer" className="underline font-semibold">ติ๊กสั่งงานบนกระดานที่ 2.gucut.com</a>
@@ -330,16 +330,16 @@ export default function StockPushPage() {
                 if (!p || typeof p !== 'object') {
                   return (
                     <div key={key} className="border border-gray-200 rounded-md p-3">
-                      <p className="text-[13px] font-semibold text-gray-800">{label}</p>
-                      <p className="text-[12px] text-gray-400 mt-1">ท่อไม่ได้ส่งแผนของเจ้านี้มา — ยังบอกไม่ได้ว่าต้องดันอะไร</p>
+                      <p className="text-[12.5px] font-semibold text-gray-800">{label}</p>
+                      <p className="text-[12.5px] text-gray-400 mt-1">ท่อไม่ได้ส่งแผนของเจ้านี้มา — ยังบอกไม่ได้ว่าต้องดันอะไร</p>
                     </div>
                   )
                 }
                 if (typeof p.skip === 'string') {
                   return (
                     <div key={key} className="border border-amber-200 bg-amber-50 rounded-md p-3">
-                      <p className="text-[13px] font-semibold text-amber-900">{label}</p>
-                      <p className="text-[12px] text-amber-800 mt-1">⏳ {p.skip}</p>
+                      <p className="text-[12.5px] font-semibold text-amber-900">{label}</p>
+                      <p className="text-[12.5px] text-amber-800 mt-1">⏳ {p.skip}</p>
                     </div>
                   )
                 }
@@ -355,17 +355,17 @@ export default function StockPushPage() {
                       </p>
                     )}
                     <div className="flex items-baseline justify-between gap-2">
-                      <p className="text-[13px] font-semibold text-gray-800">{label}</p>
+                      <p className="text-[12.5px] font-semibold text-gray-800">{label}</p>
                       {/* 🗓️ วันที่บนจอเป็น พ.ศ. ทั้งระบบ — ค่าดิบเก็บใน title */}
-                      <p className="text-[11px] text-gray-400" title={p.day ? `ค่าที่ท่อส่งมา: ${p.day}` : undefined}>
+                      <p className="text-[11.5px] text-gray-400" title={p.day ? `ค่าที่ท่อส่งมา: ${p.day}` : undefined}>
                         {p.day ? `ข้อมูลวันที่ ${thaiDate(p.day)}` : ''}</p>
                     </div>
                     <p className="text-[22px] font-black text-gray-900 tabular-nums leading-tight mt-1">
                       {numText(p.wouldPush)}
-                      <span className="text-[12px] font-normal text-gray-500 ml-1.5">รหัสที่จะถูกดัน</span>
+                      <span className="text-[12.5px] font-normal text-gray-500 ml-1.5">รหัสที่จะถูกดัน</span>
                     </p>
                     {/* 🔴 reopen กับ close ผลตรงข้ามกัน — ท่อเขียนกำกับมาเอง (readNote) ห้ามรวมเป็นเลขเดียว */}
-                    <div className="flex flex-wrap gap-1.5 mt-1.5 text-[11px]">
+                    <div className="flex flex-wrap gap-1.5 mt-1.5 text-[11.5px]">
                       <span className="bg-blue-50 text-blue-800 border border-blue-200 rounded px-1.5 py-0.5">เปิดขายอีกครั้ง {numText(p.reopen)}</span>
                       <span className="bg-emerald-50 text-emerald-800 border border-emerald-200 rounded px-1.5 py-0.5">เพิ่ม {numText(p.up)}</span>
                       <span className="bg-orange-50 text-orange-800 border border-orange-200 rounded px-1.5 py-0.5">ลด {numText(p.down)}</span>
@@ -398,9 +398,9 @@ export default function StockPushPage() {
                         🔴 <b>ตัวเลขย่อยบวกกันไม่ได้ยอดรวม</b> — ห้ามใช้แผนรอบนี้ตัดสินใจ แจ้งฝั่งท่อก่อน
                       </p>
                     ) : p.bucketsAddUp === true ? (
-                      <p className="text-[11px] text-gray-400 mt-2">✓ ท่อเช็คแล้วว่ากองย่อยบวกกันได้ยอดรวม</p>
+                      <p className="text-[11.5px] text-gray-400 mt-2">✓ ท่อเช็คแล้วว่ากองย่อยบวกกันได้ยอดรวม</p>
                     ) : (
-                      <p className="text-[11px] text-amber-700 mt-2">ท่อรุ่นนี้ยังไม่ได้บอกว่ากองย่อยบวกกันครบไหม</p>
+                      <p className="text-[11.5px] text-amber-700 mt-2">ท่อรุ่นนี้ยังไม่ได้บอกว่ากองย่อยบวกกันครบไหม</p>
                     )}
                     {/* 🔴 **ครบหรือยัง ต้องมาจากท่อ ไม่ใช่จอเดาจากจำนวนแถว** (สัญญาท่อ-จอ 14 ก.ย. 2569)
                         สามสถานะ ห้ามยุบเหลือสอง:
@@ -430,7 +430,7 @@ export default function StockPushPage() {
                     <SkipBucket label="ข้าม — คลังเราติดลบ" count={p.skipNegative} sample={p.skipNegativeSample} />
                     <SkipBucket label="ข้าม — คลังเราไม่รู้จักรหัสนี้" count={p.skipUnknown} sample={p.skipUnknownSample} />
                     <SkipBucket label="ข้าม — ข้อมูลขัดกัน" count={p.skipConflict} sample={p.skipConflictSample} />
-                    {would === 0 && <p className="text-[12px] text-emerald-700 mt-1.5">ไม่มีอะไรต้องดันสำหรับเจ้านี้</p>}
+                    {would === 0 && <p className="text-[12.5px] text-emerald-700 mt-1.5">ไม่มีอะไรต้องดันสำหรับเจ้านี้</p>}
                   </div>
                 )
               })}
@@ -451,7 +451,7 @@ export default function StockPushPage() {
                     </span>
                   </summary>
                   <div className="overflow-x-auto">
-                    <table className="w-full min-w-[560px] text-[12px]">
+                    <table className="w-full min-w-[560px] text-[12.5px]">
                       <thead className="bg-gray-50 border-y border-gray-200 text-gray-500">
                         <tr>
                           <th className="text-left px-3 py-1.5 font-medium">รหัส</th>
@@ -499,7 +499,7 @@ export default function StockPushPage() {
 
       {!loading && !error && log && (
         log.length === 0 ? (
-          <p className="text-[13px] text-gray-400 bg-white border border-gray-200 rounded-md px-4 py-8 text-center">
+          <p className="text-[12.5px] text-gray-400 bg-white border border-gray-200 rounded-md px-4 py-8 text-center">
             ยังไม่เคยมีการดันสต็อก — ประวัติรอบแรกจะโผล่ที่นี่
           </p>
         ) : (
@@ -511,14 +511,14 @@ export default function StockPushPage() {
               return (
                 <div key={key} className={`bg-white border rounded-md p-4 ${bad ? 'border-red-300' : 'border-gray-200'}`}>
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="text-[13px] font-semibold text-gray-900">{thaiTime(round.at)}</span>
+                    <span className="text-[12.5px] font-semibold text-gray-900">{thaiTime(round.at)}</span>
                     <Pill tone="blue">{round.platform ?? '?'}</Pill>
-                    <span className="text-[12px] text-gray-500">
+                    <span className="text-[12.5px] text-gray-500">
                       ยิง {round.fired ?? '?'} · สำเร็จ {round.pushed ?? '?'}
                     </span>
                     {bad && <Pill tone="red">ถูกปฏิเสธ {round.rejected}</Pill>}
                     <button onClick={() => runVerify(round)} disabled={v === 'busy' || !(round.rows ?? []).length}
-                      className="ml-auto text-[12px] text-blue-600 hover:underline disabled:opacity-40">
+                      className="ml-auto text-[12.5px] text-blue-600 hover:underline disabled:opacity-40">
                       {v === 'busy' ? 'กำลังเทียบสด…' : 'ตรวจว่าถึงหน้าร้านจริง'}
                     </button>
                   </div>
@@ -548,9 +548,9 @@ export default function StockPushPage() {
 
                   {v && v !== 'busy' && (
                     v.error ? (
-                      <p className="text-[12px] text-red-700 mt-2">ตรวจไม่สำเร็จ: {v.error} (ตรวจไม่ได้ ≠ ไม่ถึง — ลองใหม่ได้)</p>
+                      <p className="text-[12.5px] text-red-700 mt-2">ตรวจไม่สำเร็จ: {v.error} (ตรวจไม่ได้ ≠ ไม่ถึง — ลองใหม่ได้)</p>
                     ) : (
-                      <div className="text-[12px] mt-2 border-t border-gray-100 pt-2">
+                      <div className="text-[12.5px] mt-2 border-t border-gray-100 pt-2">
                         {/* 🔴 **ติ๊กเขียวห้ามขึ้นตอนที่ยังไม่ได้ตรวจ — และคำเตือนต้องอยู่บนสุด**
                             (เจอของจริง 19 ก.ย. 2569) ยิง `stockpushverify` แล้วท่อตอบ
                             `inconclusive:true` + note **"ตรวจไม่ได้ — ห้ามอ่านว่าผ่าน"**

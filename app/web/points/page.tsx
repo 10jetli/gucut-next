@@ -6,12 +6,12 @@ interface Cfg { on: boolean; earnPer: number; redeemValue: number; minRedeem: nu
 function I({ d, className = 'w-4 h-4' }: { d: string; className?: string }) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" className={className} aria-hidden><path d={d} /></svg>
 }
-const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
+const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[12.5px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
 
 /** ป้ายกำกับช่องกรอก — ระดับโมดูลเท่านั้น (ห้ามย้ายเข้าไปในคอมโพเนนต์) */
 function F({ l, children }: { l: string; children: React.ReactNode }) {
   return (
-    <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
+    <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
   )
 }
 
@@ -63,14 +63,14 @@ export default function WebPointsPage() {
   return (
     <div className="space-y-4 max-w-2xl">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">แต้มสะสม</h1>
       </div>
-      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[13px] text-blue-700">{msg}</p>}
+      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[12.5px] text-blue-700">{msg}</p>}
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] p-4 md:p-5 space-y-4">
         <div className="flex items-center justify-between">
-          <p className="text-[13px] font-black text-gray-900">กติกาแต้ม</p>
+          <p className="text-[12.5px] font-black text-gray-900">กติกาแต้ม</p>
           {cfg && (
             <button onClick={() => setCfg({ ...cfg, on: !cfg.on })}
               className={`relative w-11 h-6 rounded-full transition-colors ${cfg.on ? 'bg-emerald-500' : 'bg-gray-200'}`}>
@@ -97,7 +97,7 @@ export default function WebPointsPage() {
               <F l="ลดได้สูงสุดกี่ % ของยอด"><input type="number" className={inputCls} value={cfg.maxPercent || ''} onChange={(e) => setCfg({ ...cfg, maxPercent: Number(e.target.value) })} /></F>
             </div>
             <button onClick={() => post({ action: 'settings', ...cfg }, 'บันทึกกติกาแล้ว ✓')} disabled={busy}
-              className="rounded-xl bg-gray-900 px-5 py-2 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
+              className="rounded-xl bg-gray-900 px-5 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
               {busy ? 'กำลังบันทึก…' : 'บันทึกกติกา'}
             </button>
           </>
@@ -105,7 +105,7 @@ export default function WebPointsPage() {
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] p-4 md:p-5 space-y-3">
-        <p className="text-[13px] font-black text-gray-900">ปรับแต้มให้ลูกค้ารายคน</p>
+        <p className="text-[12.5px] font-black text-gray-900">ปรับแต้มให้ลูกค้ารายคน</p>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <F l="เบอร์โทรลูกค้า"><input className={inputCls} value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="08x-xxx-xxxx" /></F>
           <F l="แต้ม (+เพิ่ม / -หัก)"><input type="number" className={inputCls} value={n} onChange={(e) => setN(e.target.value)} placeholder="เช่น 100 หรือ -50" /></F>
@@ -113,11 +113,11 @@ export default function WebPointsPage() {
         </div>
         <button onClick={() => post({ action: 'adjust', phone, n: Number(n), note }, 'ปรับแต้มแล้ว ✓')}
           disabled={busy || !phone.trim() || !n}
-          className="rounded-xl bg-blue-600 px-5 py-2 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)] hover:bg-blue-700 active:scale-[0.98] disabled:opacity-40">
+          className="rounded-xl bg-blue-600 px-5 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)] hover:bg-blue-700 active:scale-[0.98] disabled:opacity-40">
           {busy ? 'กำลังบันทึก…' : 'ปรับแต้ม'}
         </button>
       </div>
-      <p className="text-center text-[11px] text-gray-300">ชุดเดียวกับ gucut.com/admin/points/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/points/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

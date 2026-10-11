@@ -78,7 +78,7 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12px] mb-2"><Link href="/core/transfers" className="text-blue-600 hover:underline">‹ รายการโอนสินค้า</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/transfers" className="text-blue-600 hover:underline">‹ รายการโอนสินค้า</Link></p>
       <PageHead title={`ใบโอน ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
@@ -89,7 +89,7 @@ function Inner() {
       {error && why && (
         <ErrorBox title={why.title}>
           {why.text}
-          <br /><span className="text-[12px] text-gray-700">⇒ {why.next}</span>
+          <br /><span className="text-[12.5px] text-gray-700">⇒ {why.next}</span>
           {why.raw && why.raw !== why.text && (
             <><br /><span className="text-[11.5px] text-gray-500">ข้อความจากระบบ: {why.raw}</span></>
           )}
@@ -125,22 +125,22 @@ function Inner() {
       {!loading && !error && d && !wrongLevel && (
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
-            <div><p className="text-gray-400 text-[11px]">สถานะ</p>{/* เดิมโชว์ค่าดิบจากท่อ (Success/Pending) = อังกฤษบนจอ · ใบ t_mu23dljn
+            <div><p className="text-gray-400 text-[11.5px]">สถานะ</p>{/* เดิมโชว์ค่าดิบจากท่อ (Success/Pending) = อังกฤษบนจอ · ใบ t_mu23dljn
                   คำมาจาก lib/zort-words.ts ที่เดียว · ไม่รู้จัก = คืนค่าดิบ ไม่เดา */}
               <Pill tone={d.status === 'Success' ? 'green' : 'orange'}>
                 {zortWord(TRANSFER_STATUS, d.status).text || '—'}
               </Pill></div>
-            <div><p className="text-gray-400 text-[11px]">วันที่โอน</p>{thaiDate(d.date)}</div>
+            <div><p className="text-gray-400 text-[11.5px]">วันที่โอน</p>{thaiDate(d.date)}</div>
             <div>
-              <p className="text-gray-400 text-[11px]">จากคลัง → ไปคลัง</p>
+              <p className="text-gray-400 text-[11.5px]">จากคลัง → ไปคลัง</p>
               {wh(d.from, names)} → {wh(d.to, names)}
               {whErr && (d.from || d.to) && (
-                <span className="block text-[10.5px] text-amber-700 mt-0.5">
+                <span className="block text-[10px] text-amber-700 mt-0.5">
                   ⚠️ ดึงชื่อคลังไม่ได้ — ที่เห็นคือ<b>รหัสคลัง</b> ไม่ใช่ชื่อ
                 </span>
               )}
             </div>
-            <div><p className="text-gray-400 text-[11px]">เลขพัสดุ</p>
+            <div><p className="text-gray-400 text-[11.5px]">เลขพัสดุ</p>
               {d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>}</div>
           </div>
 
@@ -159,7 +159,7 @@ function Inner() {
                 <tbody>
                   {d.lines.map((l, i) => (
                     <tr key={`${l.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0">
-                      <td className={`${TD} font-mono text-[12px]`}>{l.sku || '—'}</td>
+                      <td className={`${TD} font-mono text-[12.5px]`}>{l.sku || '—'}</td>
                       <td className={TD}>{l.name || '—'}</td>
                       <td className={`${TD} text-right tabular-nums`}>{typeof l.qty === 'number' ? l.qty.toLocaleString('th-TH') : '—'}</td>
                     </tr>

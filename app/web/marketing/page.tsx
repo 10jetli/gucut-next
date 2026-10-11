@@ -11,7 +11,7 @@ interface Cfg {
   line: { on: boolean; tagId: string }
   cf: { on: boolean; token: string }
 }
-const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
+const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[12.5px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
 
 function Toggle({ on, set }: { on: boolean; set: (b: boolean) => void }) {
   return (
@@ -28,7 +28,7 @@ function Section({ title, sub, on, set, children }: {
     <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] p-4 md:p-5">
       <div className="flex items-center gap-3">
         <span className="min-w-0 flex-1">
-          <span className="block text-[13.5px] font-black text-gray-900">{title}</span>
+          <span className="block text-[12.5px] font-black text-gray-900">{title}</span>
           <span className="block text-[11.5px] text-gray-400 mt-0.5">{sub}</span>
         </span>
         <Toggle on={on} set={set} />
@@ -38,7 +38,7 @@ function Section({ title, sub, on, set, children }: {
   )
 }
 const F = ({ l, children }: { l: string; children: React.ReactNode }) => (
-  <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
+  <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
 )
 
 export default function WebMarketingPage() {
@@ -85,7 +85,7 @@ export default function WebMarketingPage() {
     <div className="max-w-2xl space-y-3">
       {msg
         ? (
-          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+          <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800">
             ⚠️ {msg} · <b>ไม่ได้แปลว่ายังไม่ได้ตั้งค่า</b> — อย่าเพิ่งกรอกใหม่ ลองรีเฟรชหน้าก่อน
           </p>
         )
@@ -96,11 +96,11 @@ export default function WebMarketingPage() {
   return (
     <div className="space-y-4 max-w-2xl">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">พิกเซลการตลาด</h1>
-        <p className="text-[12px] text-gray-400 mt-0.5">ยิง ViewContent · AddToCart · InitiateCheckout · Purchase อัตโนมัติ ทั้งฝั่งเบราว์เซอร์และเซิร์ฟเวอร์ (CAPI)</p>
+        <p className="text-[12.5px] text-gray-400 mt-0.5">ยิง ViewContent · AddToCart · InitiateCheckout · Purchase อัตโนมัติ ทั้งฝั่งเบราว์เซอร์และเซิร์ฟเวอร์ (CAPI)</p>
       </div>
-      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[13px] text-blue-700">{msg}</p>}
+      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[12.5px] text-blue-700">{msg}</p>}
 
       <Section title="Meta (Facebook/Instagram)" sub="Pixel + Conversions API" on={cfg.meta.on} set={(b) => setCfg({ ...cfg, meta: { ...cfg.meta, on: b } })}>
         <F l="Pixel ID"><input className={inputCls} inputMode="numeric" value={cfg.meta.pixelId} onChange={(e) => setCfg({ ...cfg, meta: { ...cfg.meta, pixelId: e.target.value } })} /></F>
@@ -127,7 +127,7 @@ export default function WebMarketingPage() {
         className="w-full rounded-xl bg-gray-900 py-3 text-[14px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.99] disabled:opacity-50">
         {busy ? 'กำลังบันทึก…' : 'บันทึกทั้งหมด — มีผลทันที'}
       </button>
-      <p className="text-center text-[11px] text-gray-300">ชุดเดียวกับ gucut.com/admin/marketing/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/marketing/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

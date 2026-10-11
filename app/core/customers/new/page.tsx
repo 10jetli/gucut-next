@@ -28,7 +28,7 @@ import { เลขอ้างอิงเอกสาร } from '@/lib/format'
    เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
    (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
 const REAL_SEND_ENABLED = ส่งจริงได้('customers/new')
-const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
+const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
 
 type Resp = WriteResp & { willSend?: Record<string, unknown> }
 
@@ -36,7 +36,7 @@ type Resp = WriteResp & { willSend?: Record<string, unknown> }
 function F({ l, children, req: rq }: { l: string; children: React.ReactNode; req?: boolean }) {
   return (
     <label className="block">
-      <span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}{rq && <span className="text-red-500"> *</span>}</span>
+      <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">{l}{rq && <span className="text-red-500"> *</span>}</span>
       {children}
     </label>
   )
@@ -140,15 +140,15 @@ export default function NewContactPage() {
         <div className="md:col-span-3"><F l="ที่อยู่"><input className={inp} value={address} onChange={(e) => setAddress(e.target.value)} /></F></div>
       </div>
 
-      {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+      {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         <button onClick={() => send(false)} disabled={busy || !ref}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
         <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
           style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
           ส่งเข้า ZORT จริง
         </button>
@@ -167,7 +167,7 @@ export default function NewContactPage() {
       {res?.dryRun && res.willSend != null && (
         <details className="mt-2 border border-gray-200 rounded">
           <summary className="text-[12.5px] text-gray-700 px-3 py-2 cursor-pointer">ดูของจริงที่จะถูกส่งเข้า ZORT</summary>
-          <pre className="text-[11px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
+          <pre className="text-[11.5px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
             {JSON.stringify(res.willSend, null, 1)}
           </pre>
         </details>

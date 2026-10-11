@@ -100,13 +100,13 @@ export default function ShipStatusCard(
             ไม่ได้บอกว่าของออกจากร้านหรือยัง (พิสูจน์แล้ว: ใบ Lazada ที่ค้าง confirmed
             มีเลขพัสดุครบทุกใบ) ⇒ ชื่อเดิมทำให้คนอ่านตอบผิดคำถาม
             ของที่ตอบเรื่องการจัดส่งจริงคือ tracking_no · ship_date · คอลัมน์บริการขนส่ง */}
-        <h2 className="text-[13.5px] font-semibold text-gray-800">สถานะออเดอร์ฝั่งแพลตฟอร์ม</h2>
-        <span className="text-[12px] text-gray-500">
+        <h2 className="text-[12.5px] font-semibold text-gray-800">สถานะออเดอร์ฝั่งแพลตฟอร์ม</h2>
+        <span className="text-[12.5px] text-gray-500">
           {wholeRange
             ? `ทั้งช่วงที่กรอง ${all.toLocaleString('th-TH')} ใบ`
             : `เฉพาะหน้านี้ ${sum.toLocaleString('th-TH')} ใบ${all ? ` จากทั้งหมด ${all.toLocaleString('th-TH')} ใบ` : ''}`}
         </span>
-        <span className="text-[12px] text-gray-400">
+        <span className="text-[12.5px] text-gray-400">
           · Shopee/Lazada/TikTok เป็นคนบอก ไม่ใช่สถานะใบของเรา ·{' '}
           <b>ไม่ได้บอกว่าของออกจากร้านหรือยัง</b> เรื่องนั้นดูที่เลขพัสดุกับวันส่ง
         </span>
@@ -134,7 +134,7 @@ export default function ShipStatusCard(
 
       {/* ⚠️ ป้ายผิดขอบเขตคือของอันตราย — บอกตรง ๆ ว่าเลขนี้นับจากไหน */}
       {!wholeRange && !scopeLies && (
-        <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2.5 leading-relaxed">
+        <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2.5 leading-relaxed">
           เลขในการ์ดนี้ครอบคลุมแค่ {sum.toLocaleString('th-TH')} ใบ
           {all ? <> จากทั้งช่วง {all.toLocaleString('th-TH')} ใบ</> : null} —
           {' '}ยังไม่ใช่ภาพรวมทั้งช่วงที่กรองอยู่ · เกณฑ์ที่ถือว่าครบคือผลรวมทุกกองเท่ากับจำนวนใบของช่วงนั้น
@@ -143,7 +143,7 @@ export default function ShipStatusCard(
 
       {/* ⚠️ ท่อบอกขอบเขตมาอย่างหนึ่ง แต่ตัวเลขบอกอีกอย่าง — ต้องฟ้อง ห้ามเลือกเชื่อข้างใดข้างหนึ่งเงียบ ๆ */}
       {scopeLies && (
-        <p className="text-[12px] text-red-800 bg-red-50 border border-red-300 rounded px-3 py-2 mt-2.5 leading-relaxed">
+        <p className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded px-3 py-2 mt-2.5 leading-relaxed">
           🔴 <b>ป้ายขอบเขตกับตัวเลขไม่ตรงกัน</b> — ท่อแจ้งว่า &quot;{scopeText}&quot;
           {' '}แต่ผลรวมทุกกองได้ {sum.toLocaleString('th-TH')} ใบ ไม่เท่ากับ {all.toLocaleString('th-TH')} ใบของช่วงนี้
           {' '}⇒ <b>อย่าเพิ่งใช้เลขในการ์ดนี้ตัดสินใจ</b> จนกว่าจะรู้ว่าฝั่งไหนผิด
@@ -160,7 +160,7 @@ export default function ShipStatusCard(
              เหตุผลเดียวกับกฎบนหัวไฟล์: จอไม่รู้จักรหัสดิบเลยสักตัว ⇒ จออย่าเดาว่าเป็นของใคร
              ของที่บอกได้ว่าเป็นของใครคือ `raws` ซึ่งท่อส่งมาให้แล้ว (ชี้เมาส์ที่กองเพื่อดู) */}
       {anyUnverified && (
-        <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+        <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
           ⚠️ กองที่มีจุด <span className="text-amber-600">•</span> คือกองที่ท่อแจ้งว่า
           {' '}<b>มีรหัสที่ยังไม่ได้เทียบกับคู่มือทางการของแพลตฟอร์มปนอยู่</b>
           {' '}(ตรงกับค่าที่พบจริงในข้อมูล แต่ยังไม่ได้ยืนยันกับเอกสารของเขา) —

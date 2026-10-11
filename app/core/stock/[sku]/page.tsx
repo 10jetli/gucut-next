@@ -137,7 +137,7 @@ function SalesBars({ points, mode }: { points: MonthPoint[]; mode: 'amount' | 'q
               </rect>
             )}
             {v > 0 && (
-              <text x={x(i)} y={H - BOTTOM - h - 5} textAnchor="middle" className="fill-gray-500 text-[9px]">
+              <text x={x(i)} y={H - BOTTOM - h - 5} textAnchor="middle" className="fill-gray-500 text-[10px]">
                 {mode === 'amount'
                   ? (v >= 1000 ? `${Math.round(v / 1000)}K` : Math.round(v))
                   : Math.round(v)}
@@ -350,7 +350,7 @@ export default function ProductDetailPage() {
       {loading && !row && <LoadingState />}
 
       {!loading && !row && !error && (
-        <div className="bg-white border border-gray-200 rounded-md p-6 mt-3 text-[13px] text-gray-500">
+        <div className="bg-white border border-gray-200 rounded-md p-6 mt-3 text-[12.5px] text-gray-500">
           ไม่พบรหัส <b>{sku}</b> ในคลังเงา — อาจเป็นสินค้าที่ <b>ไม่มีรหัสใน ZORT</b> (มี 226 ตัว
           ซึ่งเก็บเข้ากระจกไม่ได้เลย) หรือรหัสพิมพ์ผิด
         </div>
@@ -424,7 +424,7 @@ export default function ProductDetailPage() {
           {/* การ์ด 3 ใบแบบ ZORT — ค่าว่างแสดงเป็น "-" ตามจอเขา */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
-              <p className="text-[12px] text-gray-500 text-right">สินค้าคงเหลือ</p>
+              <p className="text-[12.5px] text-gray-500 text-right">สินค้าคงเหลือ</p>
               <p className={`text-[28px] font-semibold text-right leading-none mt-1 ${
                 Number(row.qty) < 0 ? 'text-red-500' : 'text-gray-900'
               }`}>
@@ -432,7 +432,7 @@ export default function ProductDetailPage() {
               </p>
             </Card>
             <Card>
-              <p className="text-[12px] text-gray-500 text-right">สินค้าพร้อมขาย</p>
+              <p className="text-[12.5px] text-gray-500 text-right">สินค้าพร้อมขาย</p>
               <p className="text-[28px] font-semibold text-right leading-none mt-1 text-gray-900">
                 {/* ⚠️ null = ยังไม่มีในทะเบียน **ห้ามเดาว่าเท่ากับคงเหลือ** */}
                 {row.available == null ? <span className="text-gray-300">-</span> : fmtNum(Number(row.available))}
@@ -443,7 +443,7 @@ export default function ProductDetailPage() {
               <ClampedNote resp={คำตอบสต็อก} ขอ={{ limit: 20, q: sku }} />
             </Card>
             <Card>
-              <p className="text-[12px] text-gray-500 text-right">ยอดขายเดือนนี้ (บาท)</p>
+              <p className="text-[12.5px] text-gray-500 text-right">ยอดขายเดือนนี้ (บาท)</p>
               {/* ⚠️ ห้ามเอา sold (จำนวนที่ขายได้ 30 วัน) มาคูณราคาขายแล้วบอกว่าเป็นยอดเงิน
                   ราคาที่ขายจริงต่างจากราคาป้ายได้ (ส่วนลด · โปรมาร์เก็ตเพลส)
                   🔴 บรรทัดล่างเคยเขียนว่า "ยังไม่มีท่อยอดขายรายสินค้าเป็นเดือน" แล้วค้าง
@@ -454,7 +454,7 @@ export default function ProductDetailPage() {
               {thisMonth == null ? (
                 <>
                   <p className="text-[28px] font-semibold text-right leading-none mt-1 text-gray-300">-</p>
-                  <p className="text-[11px] text-gray-400 text-right mt-1">
+                  <p className="text-[11.5px] text-gray-400 text-right mt-1">
                     กด &quot;ดูกราฟยอดขาย&quot; ด้านล่าง แล้วเลขนี้จะขึ้นเอง
                   </p>
                 </>
@@ -463,7 +463,7 @@ export default function ProductDetailPage() {
                   <p className="text-[28px] font-semibold text-right leading-none mt-1 text-gray-900">
                     {fmtMoney(thisMonth)}
                   </p>
-                  <p className="text-[11px] text-gray-400 text-right mt-1">จากใบขายจริงในคลังเงา</p>
+                  <p className="text-[11.5px] text-gray-400 text-right mt-1">จากใบขายจริงในคลังเงา</p>
                 </>
               )}
             </Card>
@@ -501,43 +501,43 @@ export default function ProductDetailPage() {
               <p className="text-[15px] font-semibold text-gray-900">{row.name || sku}</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 mt-4 max-w-[640px]">
                 <div>
-                  <p className="text-[12px] text-gray-500">รหัสสินค้า</p>
+                  <p className="text-[12.5px] text-gray-500">รหัสสินค้า</p>
                   <p className="text-[15px] text-gray-900">{row.sku}</p>
                 </div>
                 <div>
-                  <p className="text-[12px] text-gray-500">ราคาขาย</p>
+                  <p className="text-[12.5px] text-gray-500">ราคาขาย</p>
                   <p className="text-[15px] text-gray-900">
                     {typeof row.price === 'number' ? `${fmtMoney(row.price)} บาท` : '-'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[12px] text-gray-500">ต้นทุนคงเหลือเฉลี่ย</p>
+                  <p className="text-[12.5px] text-gray-500">ต้นทุนคงเหลือเฉลี่ย</p>
                   {/* 🔴 ต้นทุนเฉลี่ยเรามีแค่ **ระดับหมวด** (คัดจากจอ ZORT) ไม่มีระดับสินค้า
                       ⇒ ขึ้นขีด + บอกว่าไปดูที่ไหนได้ · ห้ามเอาราคาซื้อในทะเบียนมาแสดงแทน
                       เพราะพิสูจน์แล้วว่ามันต่ำกว่าต้นทุนจริง 2-3 เท่า */}
                   <p className="text-[15px] text-gray-300">-</p>
-                  <p className="text-[11px] text-gray-400">
+                  <p className="text-[11.5px] text-gray-400">
                     มีเฉพาะระดับหมวด · ดูที่ <Link href="/core/categories" className="text-blue-600 hover:underline">หมวดหมู่</Link>
                   </p>
                 </div>
                 <div>
-                  <p className="text-[12px] text-gray-500">ราคาซื้อ</p>
+                  <p className="text-[12.5px] text-gray-500">ราคาซื้อ</p>
                   <p className="text-[15px] text-gray-900">
                     {/* ⚠️ null = ยังไม่ได้กรอก ไม่ใช่ 0 */}
                     {row.buy == null ? <span className="text-gray-300">-</span> : `${fmtMoney(row.buy)} บาท`}
                   </p>
                 </div>
                 <div className="sm:col-span-2">
-                  <p className="text-[12px] text-gray-500">สินค้าในสินค้าเป็นชุด</p>
+                  <p className="text-[12.5px] text-gray-500">สินค้าในสินค้าเป็นชุด</p>
                   {(() => {
                     const list = inBundles?.rows ?? []
                     // ⚠️ ไม่มีคำตอบจากท่อ ≠ ไม่อยู่ในชุดไหน — ต้องเขียนต่างกัน
-                    if (!inBundles) return <p className="text-[13px] text-gray-400">ยังดูย้อนไม่ได้รอบนี้</p>
+                    if (!inBundles) return <p className="text-[12.5px] text-gray-400">ยังดูย้อนไม่ได้รอบนี้</p>
                     if (list.length === 0) return <p className="text-[15px] text-gray-500">ไม่มีข้อมูล</p>
                     const show = showAllBundles ? list : list.slice(0, 5)
                     return (
                       <>
-                        <p className="text-[13.5px] leading-relaxed">
+                        <p className="text-[12.5px] leading-relaxed">
                           {show.map((b, i) => (
                             <span key={b.bundleSku}>
                               {i > 0 && ', '}
@@ -561,7 +561,7 @@ export default function ProductDetailPage() {
                             ⚠️ และ collectedAt คือ "สูตรเปลี่ยนล่าสุด" ไม่ใช่ "ตรวจล่าสุด"
                                ⇒ ชุดที่ไม่มีใครแก้จะค้างที่ 3 ก.ย. ตลอดไป ห้ามเอาไปสื่อว่าข้อมูลเก่า */}
                         {(inBundles.collectedDayTH || inBundles.collectedAt) && (
-                          <p className="text-[11px] text-gray-400 mt-0.5">
+                          <p className="text-[11.5px] text-gray-400 mt-0.5">
                             {/* 🔴 เดิมโชว์ `collectedAt.slice(0, 10)` ⇒ **เป็นวัน UTC และเป็นปี ค.ศ. ดิบ** สองเรื่องในจุดเดียว
                                 (`collectedAt` = MAX ของ `bundle_items.at` ซึ่งเขียนด้วย `datetime('now')` = UTC · แก้ 18 ก.ย. 2569) */}
                             อยู่ใน {list.length} ชุด · สูตรชุด<b>เปลี่ยนล่าสุด</b> {inBundles.collectedDayTH ? thaiDate(inBundles.collectedDayTH) : thaiDateUtc(inBundles.collectedAt)}
@@ -574,7 +574,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 <div>
-                  <p className="text-[12px] text-gray-500">น้ำหนัก (กรัม)</p>
+                  <p className="text-[12.5px] text-gray-500">น้ำหนัก (กรัม)</p>
                   {/* ⚠️ null = ยังไม่ได้กรอกใน ZORT · 0 = ของไม่มีน้ำหนักจริง ๆ — ห้ามยุบรวมกัน
                       ทั้งคลังมีน้ำหนักจริงแค่ 23% ⇒ ช่องนี้ขึ้นขีดเป็นเรื่องปกติ ไม่ใช่ท่อพัง */}
                   <p className="text-[15px] text-gray-900">
@@ -583,11 +583,11 @@ export default function ProductDetailPage() {
                       : `${fmtNum(Number(row.weight))} กรัม`}
                   </p>
                   {row.weight == null && (
-                    <p className="text-[11px] text-gray-400">ยังไม่ได้กรอกน้ำหนักที่ ZORT</p>
+                    <p className="text-[11.5px] text-gray-400">ยังไม่ได้กรอกน้ำหนักที่ ZORT</p>
                   )}
                 </div>
                 <div>
-                  <p className="text-[12px] text-gray-500">ลงขายที่</p>
+                  <p className="text-[12.5px] text-gray-500">ลงขายที่</p>
                   <div className="text-[15px]"><MarketLogos list={row.marketplaces} by={row.marketplacesBy} from={row.marketplacesFrom} /></div>
                 </div>
               </div>
@@ -635,13 +635,13 @@ export default function ProductDetailPage() {
               )
               : (
                 <div className="py-10 text-center">
-                  <p className="text-[13px] text-gray-600">กดปุ่ม <b>แสดงกราฟ</b> เพื่อคิดยอดขายรายเดือน</p>
+                  <p className="text-[12.5px] text-gray-600">กดปุ่ม <b>แสดงกราฟ</b> เพื่อคิดยอดขายรายเดือน</p>
                   {/* ⚠️ บอกด้วยว่าทำไมไม่โหลดเอง — ไม่งั้นดูเหมือนจอโหลดไม่ขึ้น */}
                   <p className="text-[11.5px] text-gray-400 mt-1">
                     ยิงครั้งเดียวได้ครบ 12 เดือน — แต่ไม่โหลดเองตอนเปิดหน้า
                     เพราะคนเปิดหน้าสินค้าบ่อยกว่าดูกราฟมาก
                   </p>
-                  {chartErr && <p className="text-[12px] text-amber-800 mt-2">⚠️ {chartErr}</p>}
+                  {chartErr && <p className="text-[12.5px] text-amber-800 mt-2">⚠️ {chartErr}</p>}
                 </div>
               )}
 
@@ -664,8 +664,8 @@ export default function ProductDetailPage() {
             <p className="text-[15px] font-semibold text-gray-900 mb-2">จำนวนสินค้าคงเหลือ รายคลัง</p>
             <div className="flex flex-col items-center justify-center py-8 text-center">
               <span className="text-[30px] opacity-60">🏬</span>
-              <p className="text-[13px] text-gray-700 mt-2">ยังไม่มีข้อมูลแยกรายคลัง</p>
-              <p className="text-[12px] text-gray-500 mt-1 max-w-[440px] leading-relaxed">
+              <p className="text-[12.5px] text-gray-700 mt-2">ยังไม่มีข้อมูลแยกรายคลัง</p>
+              <p className="text-[12.5px] text-gray-500 mt-1 max-w-[440px] leading-relaxed">
                 {/* เดิมเขียนว่า "ยังไม่ได้ลองระดับพารามิเตอร์" — ค้างแล้ว: ท่อลองให้แล้ว (?zortwarehouse=)
                     ผลยิงจริง 10 ก.ย. 2569: ใส่ warehouseid แล้ว **เลขไม่เปลี่ยน** = ZORT เมินพารามิเตอร์ */}
                 ตรวจระดับพารามิเตอร์แล้ว (10 ก.ย. 2569): ส่ง warehouseid ให้ ZORT
@@ -676,14 +676,14 @@ export default function ProductDetailPage() {
                   (กติกา nets-expire-silently: ข้อจำกัดของต้นทางก็หมดอายุได้ ต้องมีทางตรวจใหม่) */}
               <div className="mt-3">
                 <button type="button" onClick={probeWarehouse} disabled={whAsking}
-                  className="text-[12px] text-blue-600 hover:underline disabled:opacity-50">
+                  className="text-[12.5px] text-blue-600 hover:underline disabled:opacity-50">
                   {whAsking ? 'กำลังถาม ZORT…' : 'ตรวจกับ ZORT อีกครั้ง (รหัสนี้)'}
                 </button>
                 {whProbe?.verdict && (
-                  <p className="text-[12px] text-gray-700 mt-1 max-w-[440px]">ผลสด: {whProbe.verdict}</p>
+                  <p className="text-[12.5px] text-gray-700 mt-1 max-w-[440px]">ผลสด: {whProbe.verdict}</p>
                 )}
                 {whProbe?.error && (
-                  <p className="text-[12px] text-amber-700 mt-1">⏳ ถามไม่ได้: {whProbe.error}</p>
+                  <p className="text-[12.5px] text-amber-700 mt-1">⏳ ถามไม่ได้: {whProbe.error}</p>
                 )}
               </div>
             </div>
@@ -790,7 +790,7 @@ export default function ProductDetailPage() {
                             `refErr?.ref === m.ref` กลายเป็น undefined === undefined = true
                             เมื่อแถวไม่มี ref ⇒ ต้องเช็คว่ามี refErr จริงก่อนเสมอ */}
                         {refErr && refErr.ref === m.ref && (
-                          <span className="ml-2 text-[11px] text-red-700">{refErr.msg}</span>
+                          <span className="ml-2 text-[11.5px] text-red-700">{refErr.msg}</span>
                         )}
                       </td>
                       <td className={`${TDR} ${Number(m.qty) < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
@@ -817,7 +817,7 @@ export default function ProductDetailPage() {
                 ⚠️ แต่ยังต้องมีทางถอย เผื่อจอใหม่เจอท่อเก่าตอน deploy เหลื่อม */}
             {typeof card?.total === 'number' ? (
               (card.truncated || card.total !== (card.rowsReturned ?? card.shown ?? cardRows.length)) && (
-                <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
+                <p className="text-[12.5px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
                   แสดง <b>{fmtNum(card.rowsReturned ?? card.shown ?? cardRows.length)}</b> จาก{' '}
                   <b>{fmtNum(card.total)}</b> รายการ
                   {card.counts && (
@@ -830,17 +830,17 @@ export default function ProductDetailPage() {
                 </p>
               )
             ) : cardRows.length >= CARD_LIMIT && (
-              <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
+              <p className="text-[12.5px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
                 แสดง <b>{CARD_LIMIT} รายการล่าสุด</b> เท่านั้น — ของจริงอาจมีมากกว่านี้
                 (ท่อรุ่นนี้ยังไม่ส่งจำนวนจริงมา) · รายการที่เก่ากว่านี้ถูกตัดออก
                 <b> รวมถึงประเภทอื่นที่เก่ากว่า</b> ⇒ ถ้าจะดูใบซื้อ ให้เลือกตัวกรอง
                 <b> รายการซื้อเท่านั้น</b>
               </p>
             )}
-            <p className="text-[12px] text-amber-800 bg-amber-50 border-t border-amber-200 px-4 py-2.5 leading-relaxed">
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border-t border-amber-200 px-4 py-2.5 leading-relaxed">
               ⚠️ {card?.coverage ?? 'ยังไม่ได้รับคำอธิบายความครอบคลุมจากเซิร์ฟเวอร์'}
             </p>
-            <p className="text-[12px] text-gray-500 border-t border-gray-100 px-4 py-2.5 leading-relaxed">
+            <p className="text-[12.5px] text-gray-500 border-t border-gray-100 px-4 py-2.5 leading-relaxed">
               คอลัมน์ <b>จาก · ไป · คงเหลือ</b> ขีดไว้ทุกแถว — <b>จาก/ไป</b> ต้องใช้ข้อมูลรายคลัง
               ซึ่งไม่มี · <b>คงเหลือ</b> เป็นยอดสะสมที่ต้องนับจากความเคลื่อนไหว<b>ทุกใบ</b>
               ตารางนี้ยังขาดใบ &quot;ปรับ&quot; และ &quot;ยกมา&quot; ของ ZORT ⇒ <b>ใส่ตัวเลขไปก็ผิด</b> ·
@@ -862,7 +862,7 @@ export default function ProductDetailPage() {
           {/* 📇 บัตรสต็อก — ZORT มี ExportStockCard() ในจอรายการสินค้า ของเราไม่เคยมี (ใบ t_mu1i74cu) */}
           <StockCard sku={sku} />
 
-          <p className="text-[12px] text-gray-500 mt-4 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-4 leading-relaxed">
             {/* 🔴 บรรทัดนี้เคยเขียนว่า "น้ำหนักคลังเงายังไม่ได้เก็บช่องนี้มา" แล้วค้างอยู่
                 หลังท่อเก็บน้ำหนักเสร็จ (3 ก.ย. 2569) — ช่องน้ำหนักโชว์อยู่ข้างบนนี้แล้ว
                 ⇒ ข้อความ "ทำไม่ได้" ที่ค้าง อันตรายกว่าตัวตรวจที่เขียวทั้งที่พัง

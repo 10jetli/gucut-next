@@ -177,18 +177,18 @@ export default function EditProductPage() {
         summary={product
           ? <>แก้ใน ZORT โดยตรง · id ใน ZORT <b>{product.id}</b>{' | '}<span className="text-gray-400">เลขอ้างอิง: <b>{editRef}</b> (กันการส่งซ้ำ)</span></>
           : loading ? 'กำลังถาม ZORT…' : ''}
-        actions={<Link href={`/core/stock/${encodeURIComponent(sku)}`} className="text-[13px] text-blue-600 hover:underline">← กลับหน้าสินค้า</Link>}
+        actions={<Link href={`/core/stock/${encodeURIComponent(sku)}`} className="text-[12.5px] text-blue-600 hover:underline">← กลับหน้าสินค้า</Link>}
       />
 
-      {loading && <div className="text-[13px] text-gray-500">กำลังถาม ZORT ว่าสินค้านี้คือ id ไหน…</div>}
+      {loading && <div className="text-[12.5px] text-gray-500">กำลังถาม ZORT ว่าสินค้านี้คือ id ไหน…</div>}
       {loadErr && (
-        <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5">
+        <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5">
           ถาม ZORT ไม่สำเร็จ — <b>ยังไม่รู้ว่ามีสินค้านี้ไหม</b> (ไม่ได้แปลว่าไม่มี) · {loadErr}{' '}
           <button onClick={load} className="underline">ลองใหม่</button>
         </div>
       )}
       {notFound && (
-        <div className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5">
           ZORT ตอบว่า<b>ไม่มีสินค้ารหัส {sku} ตรงตัว</b> — แก้หรือลบจากจอนี้ไม่ได้ ·
           {' '}<Link href="/core/stock/new" className="underline">เพิ่มเป็นสินค้าใหม่</Link>
         </div>
@@ -214,12 +214,12 @@ export default function EditProductPage() {
             <Field label="บาร์โค้ด" value={f.barcode} onChange={set('barcode')} />
           </div>
 
-          <div className="text-[12px] text-gray-500 mt-2">
+          <div className="text-[12.5px] text-gray-500 mt-2">
             ช่องที่จะส่ง: {Object.keys(changed).length ? <b>{Object.keys(changed).join(' · ')}</b> : 'ยังไม่มี'}
             {cleared.length > 0 && <span className="text-amber-700"> · ช่องที่ลบให้ว่าง (ไม่ถูกส่ง): {cleared.join(' · ')}</span>}
           </div>
 
-          {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+          {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
           <WriteResult r={res} />
 
           <div className="flex flex-wrap items-center gap-3 mt-4">

@@ -278,14 +278,14 @@ export default function CorePurchasesPage() {
                    ⇒ ย้ายสถานะไปที่ `lib/real-send.ts` ที่เดียว (ใบ S4 · 19 ก.ย. 2569)
                    ⚠️ หน้านั้น **ส่งจริงเข้า ZORT ได้แล้ว** (เฉพาะใบปกติ · โหมด ?quick=1 ยังปิด) */}
             <Link href="/core/purchases/new"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้าง
             </Link>
             {/* ✅ แก้ 14 ก.ย. 2569 (t_mu0tx40g): เดิมชี้ /core/soon/buy-create-quick
                 ZORT ไม่มีเส้นแยกสำหรับแบบง่าย ⇒ ใช้หน้าเดียวกับ "สร้าง" โหมด ?quick=1 (สถานะสำเร็จ + จ่ายเงินในใบเดียว) */}
             <Link href="/core/purchases/new?quick=1"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้างอย่างง่าย
             </Link>
@@ -331,7 +331,7 @@ export default function CorePurchasesPage() {
         const พศ = [data?.applied?.from, data?.applied?.to].filter((x) => ปี(x) > 2400)
         if (!พศ.length) return null
         return (
-          <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+          <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
             ⚠️ <b>วันที่ที่ส่งไปเป็นปี พ.ศ.</b> ({พศ.join(' · ')}) — ท่อคิดเป็นปี ค.ศ. ⇒ มักได้ <b>0 ใบ</b>
             {' '}ทั้งที่ช่วงนั้นมีใบอยู่ · ใส่เป็นปี ค.ศ. (เช่น 2023) แทน
           </p>
@@ -369,7 +369,7 @@ export default function CorePurchasesPage() {
             (typeof data.applied.limit === 'number' && data.applied.limit !== perPage) ||
             (typeof data.applied.offset === 'number' && data.applied.offset !== offset)
           ) && (
-            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
               ⚠️ <b>ท่อใช้เงื่อนไขไม่ตรงกับที่จอส่งไป</b> — จอขอ: คำค้น “{q.trim() || '(ไม่ได้ค้น)'}” ·
               ครั้งละ {fmtNum(perPage)} · เริ่มที่แถว {fmtNum(offset)}
               {' '}· ท่อใช้จริง: คำค้น “{data.applied.q || '(ไม่ได้ค้น)'}” ·
@@ -469,12 +469,12 @@ export default function CorePurchasesPage() {
                     <td className={TD}>
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
                       {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
-                      {r.warehouse && <span className="block text-[11px] text-gray-400 mt-0.5">{r.warehouse}</span>}
+                      {r.warehouse && <span className="block text-[11.5px] text-gray-400 mt-0.5">{r.warehouse}</span>}
                       {/* ZORT มีลิงก์ "โน้ต" ใต้สถานะทุกแถว (ภาพ 27) — ของเราขึ้นเฉพาะใบที่มีโน้ตจริง
                           ⚠️ ใบที่ไม่มีโน้ตไม่ขึ้นคำว่าโน้ต — ลิงก์ที่กดแล้วว่างเปล่าคือลิงก์หลอก
                              (ZORT ขึ้นทุกแถวเพราะกดแล้วพิมพ์เพิ่มได้ แต่ของเราอ่านอย่างเดียว) */}
                       {typeof r.note === 'string' && r.note.trim() && (
-                        <span className="block text-[11px] text-gray-500 mt-0.5 max-w-[260px] truncate"
+                        <span className="block text-[11.5px] text-gray-500 mt-0.5 max-w-[260px] truncate"
                           title={r.note}>📝 {r.note}</span>
                       )}
                     </td>
@@ -494,7 +494,7 @@ export default function CorePurchasesPage() {
             </table>
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
-              <span className="text-[12px] text-gray-500">
+              <span className="text-[12.5px] text-gray-500">
                 แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
               </span>
               <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
@@ -525,12 +525,12 @@ export default function CorePurchasesPage() {
 
           {/* ขอบเขตช่วงวัน — อ่านจากท่อ ห้ามจอเขียนเอง (ท่อเปลี่ยนกติกาเมื่อไหร่ จอจะโกหกทันที) */}
           {data.dateScope && (
-            <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-2">
+            <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-2">
               🗓 ขอบเขตของชุดนี้: <b>{data.dateScope}</b>
             </p>
           )}
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {/* 🔴 **คำอ้างนี้ไม่มีวันที่กำกับมาก่อน — เติมแล้ว 18 ก.ย. 2569 (งาน S5)**
                 "ตรงกับ ZORT ทุกบาท" เน่าเร็วกว่าคำอ้างว่าทำไม่ได้ เพราะข้อมูลสองฝั่งขยับทุกวัน
                 และอันตรายกว่าในทางปฏิบัติ: คนอ่านแล้ว **เลิกตรวจ** เพราะจอบอกว่าตรงแล้ว

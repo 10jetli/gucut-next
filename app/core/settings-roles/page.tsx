@@ -14,7 +14,7 @@
 import Link from 'next/link'
 import { PageHead } from '@/components/zort'
 
-const TH = 'text-left font-normal text-[12px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
+const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
 const TD = 'px-3 py-3 text-[12.5px] align-top'
 
 /** สิทธิ์จริงของระบบ — ต้องตรงกับ middleware.ts เสมอ (แก้ที่โน่นต้องมาแก้ที่นี่)
@@ -55,7 +55,7 @@ export default function SettingsRolesPage() {
         actions={
           /* ผัง ZORT: ปุ่ม "เพิ่มสิทธิ์การใช้งานใหม่" — ของเราพาไปหน้าที่บอกตรง ๆ ว่าต้องแก้โค้ด */
           <Link href="/core/soon/role-add"
-            className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+            className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
             style={{ background: '#4669e5' }}>
             เพิ่มสิทธิ์การใช้งานใหม่
           </Link>
@@ -90,7 +90,7 @@ export default function SettingsRolesPage() {
         </table>
       </div>
 
-      <div className="flex items-center justify-between mt-2 text-[12px] text-gray-500">
+      <div className="flex items-center justify-between mt-2 text-[12.5px] text-gray-500">
         <span className="inline-block border border-gray-300 rounded px-2 py-0.5 bg-white">1</span>
         <span>จำนวน {ROLES.length} รายการ | จำนวนต่อหน้า 20</span>
       </div>

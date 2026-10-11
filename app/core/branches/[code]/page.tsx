@@ -114,7 +114,7 @@ export default function BranchDetailPage() {
       {loading && <LoadingState />}
       {!loading && err && <ErrorBox title="ดึงรายละเอียดคลังไม่ได้">{err}</ErrorBox>}
       {!loading && !err && ไม่เจอ && (
-        <Card><p className="text-[13px] text-amber-800">
+        <Card><p className="text-[12.5px] text-amber-800">
           ⚠️ <b>ไม่พบคลังรหัส “{code}”</b> ในรายการที่ท่อส่งมา — ตรวจรหัสที่หน้ารายการคลังอีกครั้ง
           <br /><span className="text-gray-500">(ท่อส่งรายการคลังทั้งชุด ไม่ได้แบ่งหน้า ⇒ ไม่เจอที่นี่คือไม่มีจริง)</span>
         </p></Card>
@@ -139,7 +139,7 @@ export default function BranchDetailPage() {
                     ⚠️ ไม่ส่งธงมา = **ยังไม่รู้** ไม่ใช่ "ไม่ใช่จุดขาย" */}
                 <p className="text-[15px] font-semibold text-gray-900">
                   {wh.isPos === undefined
-                    ? <span className="text-gray-400 text-[13px]">ยังไม่รู้ (ท่อไม่ส่งธง isPos)</span>
+                    ? <span className="text-gray-400 text-[12.5px]">ยังไม่รู้ (ท่อไม่ส่งธง isPos)</span>
                     : wh.isPos ? 'จุดขาย (เปิดบิลได้)' : 'คลัง (ไม่ใช่จุดขาย)'}
                 </p>
               </div>
@@ -150,7 +150,7 @@ export default function BranchDetailPage() {
                       thaiDate อ่านโซนเองถูกอยู่แล้ว · ตัดทิ้งก่อน = ถ้าท่อเปลี่ยนไปส่ง UTC
                       วันบนจอเพี้ยนหนึ่งวันโดยไม่มีอะไรฟ้อง (จอรายการคลังเขียนเตือนไว้ตั้งแต่ 18 ก.ย. 2569
                       — จอนี้เพิ่งเหยียบซ้ำ 5 ต.ค. 2569 ด่าน check-thai-date เป็นคนจับ ไม่ใช่คน) */}
-                  {wh.movedAt ? thaiDate(String(wh.movedAt)) : <span className="text-gray-400 text-[13px]">ไม่รู้</span>}
+                  {wh.movedAt ? thaiDate(String(wh.movedAt)) : <span className="text-gray-400 text-[12.5px]">ไม่รู้</span>}
                 </p>
               </div>
             </div>
@@ -186,7 +186,7 @@ export default function BranchDetailPage() {
                           ? <span className="text-[14px] font-semibold text-amber-800">ยังไม่รู้ยอด — ท่อส่งค่าที่อ่านเป็นตัวเลขไม่ได้</span>
                           : fmtMoney(ยอด.amount)}
                       </span>
-                      <span className="text-[13px] text-gray-600">
+                      <span className="text-[12.5px] text-gray-600">
                         {ยอด.orders === null ? 'ยังไม่รู้จำนวนใบ' : `${fmtNum(ยอด.orders)} ใบ`}
                       </span>
                     </div>

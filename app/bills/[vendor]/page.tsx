@@ -69,7 +69,7 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
 
   return (
     <div className="max-w-[430px] lg:max-w-[1000px] mx-auto px-4 py-4">
-      <Link href="/bills" className="text-[13px] text-blue-600 font-medium hover:text-blue-700">← กลับหน้าบิล</Link>
+      <Link href="/bills" className="text-[12.5px] text-blue-600 font-medium hover:text-blue-700">← กลับหน้าบิล</Link>
       {/* 🔗 ลิงก์ต้นทาง — ท่านประธานสั่ง 15 ก.ย. 2569 "ใส่ลิงก์ไว้ด้วย"
           🔴 รอบแรกทำเป็นตัวหนังสือเล็กสีจาง ⇒ ท่านเปิดหน้าแล้วบอก "ยังไม่เจอลิ้งค์เลย"
              ทั้งที่มันอยู่บนจอจริง ⇒ **ของที่มองไม่เห็น เท่ากับไม่มี**
@@ -81,22 +81,22 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
         {info.portal && (
           <a href={info.portal} target="_blank" rel="noreferrer"
              title={`เปิดหน้าบิลของ ${info.name} ที่ต้นทาง — ใช้เทียบว่าคลังเราครบไหม`}
-             className="shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11px] font-medium
+             className="shrink-0 inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-[11.5px] font-medium
                         bg-blue-600 text-white hover:bg-blue-700 transition shadow-sm">
             🔗 เปิดหน้าบิลต้นทาง ↗
           </a>
         )}
       </div>
-      {info.note && <div className="text-[11px] text-gray-400 mb-3">{info.note}</div>}
+      {info.note && <div className="text-[11.5px] text-gray-400 mb-3">{info.note}</div>}
 
       {!data && !err && (
-        <Card className="p-6 text-center text-gray-400 text-[13px]">
+        <Card className="p-6 text-center text-gray-400 text-[12.5px]">
           กำลังสแกนบิลย้อนหลัง 1 ปี และอ่านวันที่บนหัวบิลทุกใบ…<br />อาจใช้เวลา 20–40 วินาที
         </Card>
       )}
 
       {err && (
-        <div className="rounded-2xl p-4 border border-red-200 bg-red-50 text-red-600 text-[13px]">⚠️ {err}</div>
+        <div className="rounded-2xl p-4 border border-red-200 bg-red-50 text-red-600 text-[12.5px]">⚠️ {err}</div>
       )}
 
       {/* 🔴 15 ก.ย. 2569 — ก่อนหน้านี้ Gmail โควตาเต็มแล้วจอขึ้น error แดงเต็มหน้า ไม่โชว์บิลเลย
@@ -104,7 +104,7 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
           ตอนนี้โชว์บิลเก่าตามปกติ + ป้ายเหลืองบอกตรง ๆ ว่ายังไม่ได้สแกนใหม่เพราะอะไร
           ⚠️ ป้ายต้องอยู่ **เหนือรายการ** — ถ้าต้องเลื่อนจอถึงเห็น เท่ากับไม่มี */}
       {data?.staleReason && (
-        <div className="rounded-2xl p-3 border border-amber-200 bg-amber-50 text-amber-800 text-[12px] mb-3">
+        <div className="rounded-2xl p-3 border border-amber-200 bg-amber-50 text-amber-800 text-[12.5px] mb-3">
           <div className="font-medium">⚠️ กำลังแสดงรายการที่เก็บไว้ล่าสุด — ยังไม่ได้สแกนอีเมลรอบใหม่</div>
           {data.lastScan && (
             <div className="mt-1 opacity-80">
@@ -120,9 +120,9 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
       )}
 
       {data && !months.length && (
-        <Card className="p-6 text-center text-gray-400 text-[13px]">
+        <Card className="p-6 text-center text-gray-400 text-[12.5px]">
           ยังไม่พบบิลของเจ้านี้ในเมล 10jetli@gmail.com<br />
-          <span className="text-[11px]">(ถ้าบิลอยู่อีเม෥อื่น ให้ forward มาที่เมลหลักก่อน)</span>
+          <span className="text-[11.5px]">(ถ้าบิลอยู่อีเม෥อื่น ให้ forward มาที่เมลหลักก่อน)</span>
         </Card>
       )}
 
@@ -135,13 +135,13 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
                 📅 <span className="text-red-600">{mo} ({EN_MONTHS[mo - 1]}) {y}</span>
                 <span className="mx-1 text-gray-300">·</span>
                 {TH_MONTHS[mo - 1]} {y + 543}
-                <span className="ml-2 text-[11px] font-normal text-gray-400">{data!.months[m].length} ใบ</span>
+                <span className="ml-2 text-[11.5px] font-normal text-gray-400">{data!.months[m].length} ใบ</span>
               </div>
               <button
                 onClick={() => โหลดทั้งเดือน(m)}
                 disabled={!!zipping}
                 title={`รวมบิลทั้ง ${data!.months[m].length} ใบของเดือนนี้เป็นไฟล์ ZIP ไฟล์เดียว`}
-                className={`shrink-0 rounded-lg px-2.5 py-1 text-[11px] font-medium border transition ${
+                className={`shrink-0 rounded-lg px-2.5 py-1 text-[11.5px] font-medium border transition ${
                   zipping === m
                     ? 'bg-amber-50 border-amber-200 text-amber-700'
                     : zipping
@@ -177,20 +177,20 @@ export default function VendorPage({ params }: { params: { vendor: string } }) {
               </div>
             )}
             {zipping === m && (
-              <div className="text-[11px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mb-1">
+              <div className="text-[11.5px] text-amber-700 bg-amber-50 rounded-lg px-2 py-1 mb-1">
                 กำลังดึงบิลทีละใบจากอีเมล อาจใช้เวลา 20–40 วินาที — ยังไม่ต้องกดซ้ำ
               </div>
             )}
             {data!.months[m].map((f, i) => (
               <div key={i} className="flex items-center justify-between border-t border-gray-100 py-2 gap-2">
-                <div className="text-[12px] lg:text-[13px] text-gray-700 break-all flex-1">
+                <div className="text-[12.5px] lg:text-[12.5px] text-gray-700 break-all flex-1">
                   📎 {f.filename}
                   {f.size > 0 && <span className="text-[10px] text-gray-400 ml-1">({Math.max(1, Math.round(f.size / 1024))} KB)</span>}
                 </div>
                 {f.attachmentId && (
                   <a
                     href={`/api/bills/file?messageId=${f.messageId}&attachmentId=${encodeURIComponent(f.attachmentId)}&name=${encodeURIComponent(m + '_' + f.filename)}`}
-                    className="text-[12px] bg-emerald-50 text-emerald-600 rounded-full px-3 py-1 font-bold whitespace-nowrap transition-colors hover:bg-emerald-100"
+                    className="text-[12.5px] bg-emerald-50 text-emerald-600 rounded-full px-3 py-1 font-bold whitespace-nowrap transition-colors hover:bg-emerald-100"
                   >
                     ⬇️ โหลด
                   </a>

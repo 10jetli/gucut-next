@@ -204,7 +204,7 @@ export default function Page() {
 
       {sum?.รวม && (
         <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
-          <div className="flex flex-wrap gap-x-8 gap-y-2 text-[13.5px]">
+          <div className="flex flex-wrap gap-x-8 gap-y-2 text-[12.5px]">
             <div><span className="text-gray-500">เลื่อยคงเหลือ </span>
               <b className="text-[17px]">{sum.รวม.เลื่อยเหลือ}</b> <span className="text-gray-500">เครื่อง</span></div>
             <div><span className="text-gray-500">บาร์คงเหลือ </span>
@@ -466,7 +466,7 @@ export default function Page() {
         ))}
 
       {!busy && !err && รายการ.length === 0 && (
-        <div className="bg-white border border-gray-200 rounded-md p-4 mt-3 text-[13px] text-gray-600">
+        <div className="bg-white border border-gray-200 rounded-md p-4 mt-3 text-[12.5px] text-gray-600">
           ยังไม่มีข้อมูลทะเบียนในระบบ — นำเข้าด้วย <code>POST /api/core?registryimport=1</code>
         </div>
       )}

@@ -70,7 +70,7 @@ export default function AdvancedSearch({
           <span className="block mb-1">{f.label}</span>
           <select value={String(f.value)}
             onChange={(e) => f.onChange(e.target.value as string & boolean)}
-            className="text-[13px] border border-gray-300 rounded px-2 py-1.5 bg-white"
+            className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white"
             style={f.width ? { width: f.width } : undefined}>
             {(f.options ?? []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>
@@ -83,7 +83,7 @@ export default function AdvancedSearch({
             value={String(f.value)}
             placeholder={f.placeholder}
             onChange={(e) => f.onChange(e.target.value as string & boolean)}
-            className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+            className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             style={{ width: f.width ?? 150 }}
           />
         </label>
@@ -92,10 +92,10 @@ export default function AdvancedSearch({
           <span className="block mb-1">{f.label}</span>
           <input type="date" value={String(f.value)}
             onChange={(e) => f.onChange(e.target.value as string & boolean)}
-            className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
+            className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white" />
         </label>
       ) : (
-        <label key={f.label} className="text-[13px] text-gray-700 flex items-center gap-2 cursor-pointer pb-1.5">
+        <label key={f.label} className="text-[12.5px] text-gray-700 flex items-center gap-2 cursor-pointer pb-1.5">
           <input type="checkbox" checked={!!f.value}
             onChange={(e) => f.onChange(e.target.checked as string & boolean)} />
           {f.label}

@@ -18,7 +18,7 @@ export default function ClampedNote(
   if (!บรรทัด.length) return null
 
   return (
-    <div className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-2 text-[11px] leading-relaxed text-sky-900">
+    <div className="mt-2 rounded-lg border border-sky-300 bg-sky-50 px-2.5 py-2 text-[11.5px] leading-relaxed text-sky-900">
       <b>ค่าที่ท่อใช้จริงไม่ตรงกับที่จอขอ {บรรทัด.length} ช่อง</b> — เลขบนจอเป็นผลของค่าที่ท่อใช้
       <ul className="mt-1 list-disc pl-4">
         {บรรทัด.map((b) => (

@@ -87,7 +87,7 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
 
   if (err) {
     return (
-      <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2 mb-3">
+      <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2 mb-3">
         ⚠️ ตรวจข้อต่อไม่สำเร็จ — <b>ไม่ได้แปลว่าข้อต่อพอ</b> ({err})
       </p>
     )
@@ -101,7 +101,7 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
   return (
     <div className="bg-white border border-gray-200 rounded-md mb-3 overflow-hidden">
       <div className="px-3.5 py-2.5 border-b border-gray-200">
-        <p className="text-[13px] font-semibold text-gray-800">
+        <p className="text-[12.5px] font-semibold text-gray-800">
           ข้อต่อจะหมดก่อนโซ่ไหม
           {bad > 0 && <span className="ml-2 text-red-700">— ตัดขายไม่ได้แล้ว {fmtNum(bad)} กอง</span>}
         </p>
@@ -113,12 +113,12 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
       <table className="w-full min-w-[860px]">
         <thead className="bg-white border-b border-gray-200">
           <tr>
-            <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2">เบอร์ · ยี่ห้อ</th>
-            <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2">รหัสข้อต่อ</th>
-            <th className="text-right font-normal text-[12px] text-gray-500 px-3 py-2">ข้อต่อคงเหลือ</th>
-            <th className="text-right font-normal text-[12px] text-gray-500 px-3 py-2">ต้องใช้ (คู่)</th>
-            <th className="text-right font-normal text-[12px] text-gray-500 px-3 py-2">พอขายอีก</th>
-            <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2">สรุป · ต้องทำอะไรต่อ</th>
+            <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2">เบอร์ · ยี่ห้อ</th>
+            <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2">รหัสข้อต่อ</th>
+            <th className="text-right font-normal text-[12.5px] text-gray-500 px-3 py-2">ข้อต่อคงเหลือ</th>
+            <th className="text-right font-normal text-[12.5px] text-gray-500 px-3 py-2">ต้องใช้ (คู่)</th>
+            <th className="text-right font-normal text-[12.5px] text-gray-500 px-3 py-2">พอขายอีก</th>
+            <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2">สรุป · ต้องทำอะไรต่อ</th>
           </tr>
         </thead>
         <tbody>
@@ -126,7 +126,7 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
             <tr key={`${r.pitch}-${r.brand}`} className="border-b border-gray-100 last:border-0">
               <td className="px-3 py-2.5 text-[12.5px] text-gray-800">
                 {r.pitch} · {r.brand}
-                <span className="block text-[11px] text-gray-400">
+                <span className="block text-[11.5px] text-gray-400">
                   ม้วนที่ใช้ข้อต่อนี้ {fmtNum((r.rollSkus ?? []).length)} รหัส · {fmtNum(Number(r.rollTeeth ?? 0))} ฟัน
                 </span>
               </td>
@@ -164,7 +164,7 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
               <td className="px-3 py-2.5">
                 <Pill tone={verdictTone(r.verdict, r.reason)}>{r.verdict || 'ไม่มีคำตัดสินจากท่อ'}</Pill>
                 {/* ประโยคสั่งงานมาจากท่อ — จอแค่แสดง ไม่คิดเอง */}
-                {r.nextStep && <span className="block text-[11px] text-gray-500 mt-1 leading-relaxed">{r.nextStep}</span>}
+                {r.nextStep && <span className="block text-[11.5px] text-gray-500 mt-1 leading-relaxed">{r.nextStep}</span>}
               </td>
             </tr>
           ))}
@@ -172,8 +172,8 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
       </table>
 
       <div className="px-3.5 py-2.5 border-t border-gray-200 bg-gray-50 space-y-1">
-        {d.compatNote && <p className="text-[11px] text-gray-600 leading-relaxed">{d.compatNote}</p>}
-        {d.scope && <p className="text-[11px] text-gray-500 leading-relaxed">{d.scope}</p>}
+        {d.compatNote && <p className="text-[11.5px] text-gray-600 leading-relaxed">{d.compatNote}</p>}
+        {d.scope && <p className="text-[11.5px] text-gray-500 leading-relaxed">{d.scope}</p>}
         {Array.isArray(d.crossBrand) && d.crossBrand.length > 0 && (
           <>
             <button onClick={() => setShowCross((v) => !v)} className="text-[11.5px] text-blue-600 underline underline-offset-2">
@@ -182,7 +182,7 @@ export default function LinkStock({ days = 90 }: { days?: number }) {
             {showCross && (
               <div className="mt-1">
                 {/* 🔴 ห้ามเอาไปตัดสินแทนยอดรายยี่ห้อ — ยังไม่รู้ว่าใส่แทนกันได้ไหม */}
-                <p className="text-[11px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-1 leading-relaxed">
+                <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mb-1 leading-relaxed">
                   ⚠️ {d.crossBrandNote}
                 </p>
                 {d.crossBrand.map((c) => (

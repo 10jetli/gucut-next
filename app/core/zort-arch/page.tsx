@@ -129,7 +129,7 @@ export default function ZortArchPage() {
 
       {/* 🔴 ด่านกันผังโกหกของฝั่งท่อ — ตกเมื่อไหร่ต้องขึ้นบนสุด ห้ามซ่อนไว้ท้ายหน้า */}
       {d?.selfCheck && d.selfCheck.ok === false && (
-        <div className="mb-4 rounded-md border border-red-300 bg-red-50 p-4 text-[13px] text-red-900">
+        <div className="mb-4 rounded-md border border-red-300 bg-red-50 p-4 text-[12.5px] text-red-900">
           <p className="font-semibold">🔴 ตัวตรวจของผังเองบอกว่าผังนี้มีปัญหา — อย่าเพิ่งเชื่อผังข้างล่าง</p>
           {(d.selfCheck.problems ?? []).map((p, i) => <p key={i} className="mt-1">· {p}</p>)}
         </div>
@@ -137,7 +137,7 @@ export default function ZortArchPage() {
 
       {/* ⚠️ ท่อยังไม่มีเส้นนี้ ≠ ไม่มีข้อมูล — ต้องบอกให้ตรงว่าติดอะไรอยู่ */}
       {d?.fallthrough && (
-        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-900 leading-relaxed">
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-[12.5px] text-amber-900 leading-relaxed">
           ⚠️ <b>ท่อยังไม่มีเส้น <code>?zortarch=1</code></b> — คำตอบที่ได้เป็นก้อนสำรอง
           {d.endpoint ? <> (<code>endpoint: {d.endpoint}</code>)</> : null}
           <br />แปลว่า <b>โค้ดฝั่งท่อยังไม่ได้ขึ้นเว็บ</b> ไม่ใช่ว่าไม่มีข้อมูล —
@@ -145,7 +145,7 @@ export default function ZortArchPage() {
         </div>
       )}
       {d?.skip && (
-        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-900">⚠️ {d.skip}</div>
+        <div className="mb-4 rounded-md border border-amber-200 bg-amber-50 p-4 text-[12.5px] text-amber-900">⚠️ {d.skip}</div>
       )}
 
       {d && !d.fallthrough && nodes.length > 0 && (
@@ -222,7 +222,7 @@ export default function ZortArchPage() {
 
           {/* ตารางเส้น — ผังบอก "รูปร่าง" ตารางบอก "รายละเอียด" · 14 ป้ายบนลูกศรอ่านครบไม่ไหว */}
           <div className="rounded-md border border-gray-200 bg-white mb-4 overflow-x-auto">
-            <p className="text-[14.5px] font-semibold text-gray-900 px-4 pt-3">เส้นเชื่อมทั้งหมด</p>
+            <p className="text-[14px] font-semibold text-gray-900 px-4 pt-3">เส้นเชื่อมทั้งหมด</p>
             <table className="w-full min-w-[640px] text-[12.5px]">
               <thead>
                 <tr className="text-gray-500 text-left">
@@ -254,7 +254,7 @@ export default function ZortArchPage() {
           {/* ใครใช้ ZORT อยู่จริง — ผังที่ไม่มีคนอยู่ในนั้น ตอบไม่ได้ว่าเลิกใช้ได้ไหม */}
           {Array.isArray(d.manual?.roles) && d.manual!.roles!.length > 0 && (
             <div className="rounded-md border border-gray-200 bg-white mb-4 overflow-x-auto">
-              <p className="text-[14.5px] font-semibold text-gray-900 px-4 pt-3">ใครใช้ ZORT อยู่ และติดอะไร</p>
+              <p className="text-[14px] font-semibold text-gray-900 px-4 pt-3">ใครใช้ ZORT อยู่ และติดอะไร</p>
               <table className="w-full min-w-[640px] text-[12.5px]">
                 <thead>
                   <tr className="text-gray-500 text-left">
@@ -281,7 +281,7 @@ export default function ZortArchPage() {
           {/* ส่วนที่สแกนจากซอร์สจริง — ตัวเลขทุกตัวมาจากท่อ ไม่มีใครพิมพ์เอง */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <div className="rounded-md border border-gray-200 bg-white p-4">
-              <p className="text-[12px] text-gray-500">เส้น ZORT ที่ซอร์สเราเรียกจริง</p>
+              <p className="text-[12.5px] text-gray-500">เส้น ZORT ที่ซอร์สเราเรียกจริง</p>
               <p className="text-[26px] font-semibold text-gray-900 leading-tight">
                 {Array.isArray(d.calls) ? d.calls.length : 'ไม่ทราบ'}
               </p>
@@ -290,7 +290,7 @@ export default function ZortArchPage() {
               </p>
             </div>
             <div className="rounded-md border border-gray-200 bg-white p-4">
-              <p className="text-[12px] text-gray-500">งานตามเวลาที่แตะ ZORT</p>
+              <p className="text-[12.5px] text-gray-500">งานตามเวลาที่แตะ ZORT</p>
               <p className="text-[26px] font-semibold text-gray-900 leading-tight">
                 {Array.isArray(d.jobs) ? d.jobs.filter((j) => j.zort).length : 'ไม่ทราบ'}
               </p>
@@ -299,7 +299,7 @@ export default function ZortArchPage() {
               </p>
             </div>
             <div className="rounded-md border border-gray-200 bg-white p-4">
-              <p className="text-[12px] text-gray-500">ไฟล์ที่ตัวสแกนมองไม่เห็น</p>
+              <p className="text-[12.5px] text-gray-500">ไฟล์ที่ตัวสแกนมองไม่เห็น</p>
               <p className="text-[26px] font-semibold leading-tight" style={{ color: '#E03500' }}>
                 {Array.isArray(d.blindSpots) ? d.blindSpots.length : 'ไม่ทราบ'}
               </p>

@@ -93,7 +93,7 @@ export default function AdminLogPage() {
               <button
                 key={h}
                 onClick={() => setชั่วโมง(h)}
-                className={`text-[13px] rounded-lg px-3 py-1.5 border ${
+                className={`text-[12.5px] rounded-lg px-3 py-1.5 border ${
                   ชั่วโมง === h ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-700 border-gray-300'
                 }`} aria-pressed={ชั่วโมง === h}
               >
@@ -119,7 +119,7 @@ export default function AdminLogPage() {
       {d?.fallthrough && (
         <ErrorBox>
           เส้นสมุดยังไม่ขึ้นบนของจริง (ท่อรุ่นที่ให้บริการอยู่ยังไม่รู้จัก <code>?adminlog=1</code>)
-          <span className="block mt-0.5 text-[12px]">
+          <span className="block mt-0.5 text-[12.5px]">
             ⇒ <b>ยังไม่รู้ว่ามีคำสั่งอะไรถูกจดบ้าง</b> — ไม่ใช่ว่าไม่มีคำสั่งเลย
           </span>
         </ErrorBox>
@@ -131,7 +131,7 @@ export default function AdminLogPage() {
 
       {d && !d.fallthrough && !d['อ่านสมุดไม่ได้'] && (
         <>
-          <div className="text-[12px] text-gray-600 mb-2 leading-relaxed">
+          <div className="text-[12.5px] text-gray-600 mb-2 leading-relaxed">
             ย้อนหลัง <b>{d['ชั่วโมงย้อนหลัง'] ?? '—'}</b> ชม. · เห็น <b>{d['แถวที่มี'] ?? รายการ.length}</b> แถว
             {typeof d['ทั้งหมดที่ตรงเงื่อนไข'] === 'number' && <> จากทั้งหมด <b>{d['ทั้งหมดที่ตรงเงื่อนไข']}</b></>}
             {typeof d['เก็บกี่วัน'] === 'number' && <> · เก็บย้อนหลัง <b>{d['เก็บกี่วัน']}</b> วัน (เก่ากว่านั้นถูกลบ)</>}
@@ -150,7 +150,7 @@ export default function AdminLogPage() {
           </div>
 
           {รายการ.length === 0 ? (
-            <div className="text-[13px] text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-3">
+            <div className="text-[12.5px] text-gray-500 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-3">
               ยังไม่มีคำสั่งไหนถูกจดในช่วงนี้ — สมุดอ่านได้ปกติ
             </div>
           ) : (

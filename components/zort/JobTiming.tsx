@@ -97,7 +97,7 @@ export default function JobTiming() {
   if (ท่อรุ่นเก่า) return null
   if (err) {
     return (
-      <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mb-3">
+      <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mb-3">
         ⚠️ อ่านเวลางานตามเวลาไม่ได้ — <b>ยังไม่รู้</b> ไม่ใช่ว่าไม่มีปัญหา ({err})
       </p>
     )
@@ -107,7 +107,7 @@ export default function JobTiming() {
   /* 🔴 `inconclusive` มาก่อน `ok` เสมอ — ตอนอ่านสมุดไม่ได้จะไม่มีคีย์ ok เลย */
   if (d.inconclusive) {
     return (
-      <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mb-3">
+      <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mb-3">
         ⚠️ <b>อ่านสมุดเวลางานไม่ได้รอบนี้</b> — {d['อ่านสมุดไม่ได้'] ?? 'ท่อไม่ได้บอกเหตุ'}
         <span className="block text-amber-800">⇒ ตัวเลขข้างล่างไม่มี ไม่ใช่เพราะทุกอย่างปกติ</span>
       </div>
@@ -144,7 +144,7 @@ export default function JobTiming() {
 
   return (
     <div className="bg-white border border-gray-200 rounded-md p-4 mb-3">
-      <p className="text-[14.5px] font-semibold text-gray-900 mb-1">
+      <p className="text-[14px] font-semibold text-gray-900 mb-1">
         เวลาที่งานตามเวลาใช้จริง
         <span className="font-normal text-gray-500 text-[12.5px]">
           {' · จากสมุดที่ท่อจด ย้อน '}{d['ชั่วโมงย้อนหลัง'] ?? 24}{' ชม. — ไม่ได้ยิงอะไรใหม่'}
@@ -153,7 +153,7 @@ export default function JobTiming() {
 
       {/* 🔴 ของที่จะพังต้องอยู่บนสุด */}
       {ใกล้เพดาน.length > 0 && (
-        <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mb-2">
+        <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mb-2">
           ⚠️ <b>มีงานที่ชนหรือเกือบชนเพดานเวลาแล้ว</b> —{' '}
           {ใกล้เพดาน.map((x) => `${ชื่องาน(x)} (ช้าสุด ${วิ(x['ช้าสุด_ms'])} วิ${(x['เกินเพดาน'] ?? 0) > 0 ? ` · เกินเพดาน ${x['เกินเพดาน']} รอบ` : ` · เกือบชน ${x['เกือบชนเพดาน']} รอบ`})`).join(' · ')}
           {typeof เพดาน === 'number' && (
@@ -167,7 +167,7 @@ export default function JobTiming() {
            ของจริงที่ทำให้ต้องมี: beam-sweep ถาม ZORT ไม่สำเร็จ = ลูกค้าไม่ได้รับแจ้งว่าพัสดุออกแล้ว
            แต่ตัวงานยังตอบ 200 และสมุดยังจดว่า ok ⇒ ไม่มีอะไรฟ้องเลย */}
       {รอบล่าสุดไม่ครบ.length > 0 && (
-        <p className="text-[12px] text-red-900 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
+        <p className="text-[12.5px] text-red-900 bg-red-50 border border-red-200 rounded px-3 py-2 mb-2">
           🔴 <b>รอบล่าสุดทำไม่ครบ {รอบล่าสุดไม่ครบ.length} งาน</b> —{' '}
           {รอบล่าสุดไม่ครบ.map((x) => `${ชื่องาน(x)} (สำเร็จ ${ผลย่อย(x)!.ok} · ล้ม ${ผลย่อย(x)!.fail})`).join(' · ')}
           <span className="block text-red-800">
@@ -188,7 +188,7 @@ export default function JobTiming() {
            🔑 **แดงลวงพาคนไปรื้อของที่ทำงานดี** ⇒ ไม่มีตัวหาร = ตัดสินไม่ได้ **ห้ามร้อง** */}
       {จดได้น้อยกว่าตาราง.length > 0 && (
         ตัวหารเชื่อได้ ? (
-          <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
+          <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
             ⚠️ <b>รอบที่จดได้น้อยกว่าที่ตารางบอก</b> — {จดได้น้อยกว่าตาราง.map((x) => `${ชื่องาน(x)} (${Math.round((x['ครอบคลุม'] ?? 0) * 100)}%)`).join(' · ')}
             <span className="block text-amber-800">
               อาจถูกตัดตายที่เพดาน หรือ deploy ทับกลางช่วง
@@ -206,7 +206,7 @@ export default function JobTiming() {
             </span>
           </p>
         ) : (
-          <p className="text-[12px] text-gray-700 bg-gray-50 border border-gray-300 rounded px-3 py-2 mb-2">
+          <p className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-300 rounded px-3 py-2 mb-2">
             ℹ️ <b>ยังบอกไม่ได้ว่ามีจดได้น้อยกว่าตารางไหม</b> — ท่อไม่ได้ส่ง <code>ชั่วโมงที่สมุดเปิดรับจริง</code> มา
             <span className="block text-gray-600">
               ความครอบคลุมที่ท่อส่งมา ({จดได้น้อยกว่าตาราง.map((x) => `${ชื่องาน(x)} ${Math.round((x['ครอบคลุม'] ?? 0) * 100)}%`).join(' · ')})
@@ -253,7 +253,7 @@ export default function JobTiming() {
                     ⚠️ โชว์ข้อความของท่อตรงตัว **ห้ามจอแปลหรือจับคำเพื่อตัดสิน** — ถ้าเริ่มอ่านคำ
                        เพื่อตัดสินว่า "ถูกตัดไหม" เท่ากับจอเดาถ้อยคำของท่อ ซึ่งเปลี่ยนได้ทุกเมื่อ */}
                 {x['ล่าสุด']?.note && (
-                  <span className="block text-[11px] text-gray-400 max-w-[18rem] truncate"
+                  <span className="block text-[11.5px] text-gray-400 max-w-[18rem] truncate"
                     title={x['ล่าสุด']!.note}>{x['ล่าสุด']!.note}</span>
                 )}
               </td>
@@ -285,7 +285,7 @@ export default function JobTiming() {
         {typeof เพดาน === 'number' && <> · ⚠️ ค่ากลางนี้ <b>ไม่รวม cold start</b> ⇒ ต่ำกว่าที่ถูกคิดเงินเสมอ</>}
       </p>
 
-      <p className="text-[12px] text-gray-600 mt-2 leading-relaxed">
+      <p className="text-[12.5px] text-gray-600 mt-2 leading-relaxed">
         {รวมนาทีตามตาราง !== null
           ? <>รวม <b>{รวมนาทีตามตาราง.toFixed(2)}</b> นาที/วัน (ตาราง×ค่ากลาง) จาก <b>{เรียง.length}</b> งานที่มีสมุดเวลา · จากแถวที่จดได้จริง {รวมนาที.toFixed(2)} นาที</>
           : <>รวมจากแถวที่จดได้จริง <b>{รวมนาที.toFixed(2)}</b> นาที/วัน จาก <b>{เรียง.length}</b> งานที่มีสมุดเวลา · <b>ยอดตามตารางบวกไม่ครบ</b> (มีงานที่ท่อไม่ได้ส่ง cron มา)</>}

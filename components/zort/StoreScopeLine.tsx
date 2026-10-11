@@ -21,7 +21,7 @@ export default function StoreScopeLine({ scope }: { scope?: string | null }) {
   const text = String(scope ?? '').trim()
   if (!text) return null
   return (
-    <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mb-2 leading-relaxed">
+    <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mb-2 leading-relaxed">
       🏬 <b>ขอบเขตข้อมูล:</b> {text}
     </p>
   )

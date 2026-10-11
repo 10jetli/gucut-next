@@ -126,7 +126,7 @@ function PermitBadge({ permit }: { permit: Permit }) {
   const b = permit ? PERMIT_BADGE[permit] : undefined
   if (!b) return null
   return (
-    <span className={`ml-1.5 text-[10.5px] font-semibold rounded px-1.5 py-0.5 ${b.cls}`}>{b.text}</span>
+    <span className={`ml-1.5 text-[10px] font-semibold rounded px-1.5 py-0.5 ${b.cls}`}>{b.text}</span>
   )
 }
 
@@ -694,7 +694,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
           ของจริง: `POS_BRANCHES` ไม่ได้ถูกตั้ง ⇒ เป็น **ค่าตั้งต้นในโค้ดฝั่งท่อ**
           ⇒ ถ้าไม่เขียนไว้ วันที่ร้านเปิดสาขาที่สาม จะไม่มีอะไรบอกว่าต้องไปตั้งค่า */}
       {branches.length > 0 && (
-        <div className="text-[12px] text-gray-600 mb-3 leading-relaxed">
+        <div className="text-[12.5px] text-gray-600 mb-3 leading-relaxed">
           รายชื่อสาขา {branches.length} สาขา —{' '}
           {ที่มาสาขา
             ? <span>ที่มา: <b>{ที่มาสาขา}</b></span>
@@ -712,7 +712,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
       {/* กล่องแจ้งข้อมูล — **ไม่ใช่ความผิดพลาด** สินค้าเข้าบิลเรียบร้อยแล้ว */}
       {notice && (
         <div
-          className={`rounded px-3 py-2.5 mb-3 text-[13px] border leading-relaxed ${
+          className={`rounded px-3 py-2.5 mb-3 text-[12.5px] border leading-relaxed ${
             notice.tone === 'good'
               ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
               : notice.tone === 'warn'
@@ -731,7 +731,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
 
       {done && (
         <div
-          className={`rounded px-3 py-2.5 mb-3 text-[13px] border ${
+          className={`rounded px-3 py-2.5 mb-3 text-[12.5px] border ${
             done.duplicate
               ? 'bg-amber-50 border-amber-200 text-amber-800'
               : 'bg-emerald-50 border-emerald-200 text-emerald-800'
@@ -748,7 +748,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
           บล็อก = ขายของไม่ได้ ซึ่งแย่กว่าบิลซ้ำที่ยกเลิกได้ ⇒ ให้คนตัดสิน ไม่ใช่ระบบเดา
           แต่ก็ต้องไม่เงียบ — ถามตรง ๆ พร้อมปุ่มยกเลิกใบที่เพิ่งออก */}
       {done?.maybe && (
-        <div className="rounded px-3 py-2.5 mb-3 text-[13px] border bg-amber-50 border-amber-200 text-amber-900">
+        <div className="rounded px-3 py-2.5 mb-3 text-[12.5px] border bg-amber-50 border-amber-200 text-amber-900">
           <p className="leading-relaxed">
             ⚠️ ใบ <b>{done.maybe.number}</b> ยอด {fmtBaht(done.maybe.amount)} เพิ่งออกไปเมื่อ{' '}
             <b>{agoText(done.maybe.secondsAgo)}</b> รายการเหมือนกันเป๊ะ —
@@ -784,7 +784,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
             {step === 'pay' && (
               <button onClick={() => setStep('cart')} className="text-[15px] text-gray-500 hover:text-gray-800" title="กลับไปแก้บิล">←</button>
             )}
-            <p className="text-[13.5px] font-bold text-gray-800">
+            <p className="text-[12.5px] font-bold text-gray-800">
               {step === 'cart' ? '1. เลือกสินค้า' : '2. ชำระเงิน'}
             </p>
           </div>
@@ -797,7 +797,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   <button
                     key={id}
                     onClick={() => setPayMethod(id)}
-                    className={`flex-1 text-[13px] font-semibold py-2.5 border transition-colors ${
+                    className={`flex-1 text-[12.5px] font-semibold py-2.5 border transition-colors ${
                       payMethod === id
                         ? 'bg-[#4669e5] text-white border-[#4669e5]'
                         : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
@@ -817,7 +817,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
 
               {/* เงินทอน — คำนวณให้เลย แคชเชียร์จะได้ไม่ต้องคิดในหัวตอนลูกค้ารอ */}
               <div className="mt-2 flex items-baseline justify-between px-1">
-                <span className="text-[13px] text-gray-600">เงินทอน</span>
+                <span className="text-[12.5px] text-gray-600">เงินทอน</span>
                 <span className={`text-[20px] font-bold ${change < 0 ? 'text-red-500' : 'text-emerald-600'}`}>
                   {change < 0 ? `ขาดอีก ${fmtBaht(-change)}` : fmtBaht(change)}
                 </span>
@@ -846,7 +846,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   <button
                     key={`${v}-${i}`}
                     onClick={() => setTendered(String(Math.round(v)))}
-                    className="flex-1 h-11 rounded-lg border border-gray-300 text-[13px] font-semibold text-gray-700 hover:bg-gray-50"
+                    className="flex-1 h-11 rounded-lg border border-gray-300 text-[12.5px] font-semibold text-gray-700 hover:bg-gray-50"
                   >
                     {i === 0 ? 'พอดี' : v.toLocaleString('th-TH')}
                   </button>
@@ -870,9 +870,9 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
               placeholder="สแกนบาร์โค้ด / พิมพ์รหัสหรือชื่อสินค้า แล้วกด Enter"
               className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#4669e5]"
             />
-            {looking && <p className="text-[12px] text-gray-400 mt-1">กำลังค้น…</p>}
+            {looking && <p className="text-[12.5px] text-gray-400 mt-1">กำลังค้น…</p>}
             {!looking && q.trim() !== '' && (
-              <p className="text-[12px] mt-1">
+              <p className="text-[12.5px] mt-1">
                 {/* 🔴 ค้นไม่สำเร็จต้องไม่เขียนว่า "ไม่พบสินค้า" — ดูเหตุผลที่ประกาศ searchErr */}
                 {searchErr
                   ? (
@@ -934,7 +934,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                       onClick={() => openCat(c.code, { buttonItems: typeof c.items === 'number' ? c.items : null })}
                       className="w-full flex items-center justify-between gap-2 text-left border border-gray-300 rounded-lg px-3 py-3 hover:bg-blue-50 transition-colors"
                     >
-                      <span className="text-[13.5px] text-gray-800 truncate">
+                      <span className="text-[12.5px] text-gray-800 truncate">
                         {c.name}
                         {/* จุดส้ม = หมวดที่จัดจากชื่อสินค้าให้ ไม่ได้มาจากทะเบียน ZORT */}
                         {c.zort === false && (
@@ -942,7 +942,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                         )}
                       </span>
                       {/* ⚠️ ท่อไม่ส่งจำนวนของหมวดมา ≠ หมวดนี้ไม่มีของ — และห้ามพังทั้งจอเพราะช่องเดียว */}
-                      <span className="text-[12px] text-gray-400 shrink-0">{typeof c.items === 'number' ? c.items.toLocaleString('th-TH') : '—'}</span>
+                      <span className="text-[12.5px] text-gray-400 shrink-0">{typeof c.items === 'number' ? c.items.toLocaleString('th-TH') : '—'}</span>
                     </button>
                   ))}
                 </div>
@@ -966,14 +966,14 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   )}
                   {/* ทางสำรอง (หมวดที่เดาจากชื่อ) ต้องประกาศตัวเมื่อถูกใช้ */}
                   {typeof catGuessed === 'number' && catGuessed > 0 && (
-                    <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5">
+                    <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-2.5 py-1.5">
                       ในรายการนี้มี <b>{catGuessed.toLocaleString('th-TH')}</b> ตัวที่ <b>จัดหมวดให้จากชื่อสินค้า</b>
                       {' '}(ไม่ได้มาจากทะเบียนสินค้าใน ZORT)
                     </p>
                   )}
                   {catTotal !== null && catTotal > found.length && (
                     <div className="flex items-center gap-2 flex-wrap">
-                      <p className="text-[12px] text-gray-700">
+                      <p className="text-[12.5px] text-gray-700">
                         หมวดนี้มี <b>{catTotal.toLocaleString('th-TH')}</b> ตัว · แสดงแล้ว {found.length.toLocaleString('th-TH')} ตัว
                       </p>
                       <button
@@ -987,10 +987,10 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   )}
                   {catTotal === null && found.length > 0 && (
                     /* 🔴 ไม่รู้จำนวนทั้งหมด ⇒ ต้องบอก ไม่ใช่ปล่อยให้คนเดาว่าที่เห็นคือครบ */
-                    <p className="text-[12px] text-amber-800">แสดง {found.length.toLocaleString('th-TH')} ตัว — ท่อไม่ได้บอกว่าหมวดนี้มีทั้งหมดกี่ตัว</p>
+                    <p className="text-[12.5px] text-amber-800">แสดง {found.length.toLocaleString('th-TH')} ตัว — ท่อไม่ได้บอกว่าหมวดนี้มีทั้งหมดกี่ตัว</p>
                   )}
                   {catTotal !== null && catTotal > 0 && catTotal === found.length && found.length > 200 && (
-                    <p className="text-[12px] text-gray-500">ครบทั้งหมด {catTotal.toLocaleString('th-TH')} ตัวแล้ว</p>
+                    <p className="text-[12.5px] text-gray-500">ครบทั้งหมด {catTotal.toLocaleString('th-TH')} ตัวแล้ว</p>
                   )}
                 </div>
               )}
@@ -1024,7 +1024,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   {f.name || f.sku}
                   <PermitBadge permit={f.permit} />
                 </p>
-                <p className="text-[12px] text-gray-400">
+                <p className="text-[12.5px] text-gray-400">
                   {f.sku}
                   {/* 🔴 คงเหลือเป็นตัวช่วยดูเท่านั้น ห้ามเอาไปบล็อกการขาย */}
                   {' · '}คงเหลือ (ณ ตี 1) {Number(f.qty).toLocaleString('th-TH')}
@@ -1045,7 +1045,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                 return (
                 <div key={h.id} className={`flex items-center gap-2 px-3 py-2.5 ${w.stale ? 'bg-amber-50' : ''}`}>
                   <div className="min-w-0 flex-1">
-                    <p className="text-[13px] text-gray-800 truncate">
+                    <p className="text-[12.5px] text-gray-800 truncate">
                       {h.customer || 'ไม่ระบุชื่อ'} · {h.lines.length} รายการ
                     </p>
                     {/* ⚠️ บิลพักข้ามวันต้องเห็นทันทีว่าไม่ใช่ของวันนี้
@@ -1064,14 +1064,14 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   </button>
                   <button
                     onClick={() => saveHeld(held.filter((x) => x.id !== h.id))}
-                    className="text-[12px] text-red-500 hover:underline shrink-0"
+                    className="text-[12.5px] text-red-500 hover:underline shrink-0"
                   >
                     ทิ้ง
                   </button>
                 </div>
                 )
               })}
-              <p className="text-[11px] text-gray-400 px-3 pb-3">
+              <p className="text-[11.5px] text-gray-400 px-3 pb-3">
                 ⚠️ บิลที่พักไว้เก็บใน<b>เครื่องนี้เท่านั้น</b> เปลี่ยนเครื่องแล้วจะไม่ตามไป
               </p>
             </div>
@@ -1083,7 +1083,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
         {/* แผงขวา */}
         <div className="bg-white border border-gray-200 rounded-md overflow-hidden">
           <div className="px-3 py-2.5 border-b border-gray-100 flex items-center justify-between gap-2">
-            <p className="text-[13.5px] font-bold text-gray-800">บิลปัจจุบัน</p>
+            <p className="text-[12.5px] font-bold text-gray-800">บิลปัจจุบัน</p>
             <div className="flex items-center gap-2">
               {cart.length > 0 && (
                 <>
@@ -1102,7 +1102,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
           </div>
 
           {cart.length === 0 && (
-            <p className="text-[13px] text-gray-400 px-4 py-10 text-center">กรุณาเลือกสินค้า</p>
+            <p className="text-[12.5px] text-gray-400 px-4 py-10 text-center">กรุณาเลือกสินค้า</p>
           )}
 
           {cart.map((c) => (
@@ -1112,7 +1112,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   {c.name || c.sku}
                   <PermitBadge permit={c.permit} />
                 </p>
-                <p className={`text-[12px] ${(Number(c.price) || 0) <= 0 ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
+                <p className={`text-[12.5px] ${(Number(c.price) || 0) <= 0 ? 'text-red-600 font-semibold' : 'text-gray-400'}`}>
                   {c.sku} · {fmtBaht(c.price)}/ชิ้น
                   {(Number(c.price) || 0) <= 0 && ' — ยังไม่ได้ตั้งราคา'}
                 </p>
@@ -1152,21 +1152,21 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
 
           {/* บล็อกสรุปแบบเครื่องจริง */}
           <div className="bg-blue-50/60 border-t border-gray-200 px-4 py-3">
-            <div className="flex justify-between text-[13px] py-0.5">
+            <div className="flex justify-between text-[12.5px] py-0.5">
               <span className="text-gray-600">สินค้ารวม</span>
               <span className="text-gray-800">{count.toLocaleString('th-TH')} ชิ้น</span>
             </div>
-            <div className="flex justify-between text-[13px] py-0.5">
+            <div className="flex justify-between text-[12.5px] py-0.5">
               <span className="text-gray-600">ราคารวม</span>
               <span className="text-gray-800">{fmtBaht(subtotal + lineDiscount)}</span>
             </div>
-            <div className="flex justify-between text-[13px] py-0.5">
+            <div className="flex justify-between text-[12.5px] py-0.5">
               <span className="text-gray-600">ส่วนลดรายชิ้น</span>
               <span className={lineDiscount > 0 ? 'text-red-600' : 'text-gray-400'}>
                 {lineDiscount > 0 ? `− ${fmtBaht(lineDiscount)}` : '—'}
               </span>
             </div>
-            <div className="flex items-center justify-between text-[13px] py-0.5">
+            <div className="flex items-center justify-between text-[12.5px] py-0.5">
               <span className="text-gray-600">ส่วนลดท้ายบิล</span>
               <span className="flex items-center gap-1.5">
                 <span className="text-red-600">−</span>
@@ -1192,7 +1192,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                 value={customer}
                 onChange={(e) => setCustomer(e.target.value)}
                 placeholder="ชื่อลูกค้า (ไม่บังคับ)"
-                className="w-full text-[13px] border border-gray-300 rounded-lg px-3 py-2"
+                className="w-full text-[12.5px] border border-gray-300 rounded-lg px-3 py-2"
               />
             </div>
           )}
@@ -1241,7 +1241,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-px bg-gray-100">
             {byPay.map((r) => (
               <div key={r.method} className="bg-white px-4 py-3">
-                <p className="text-[12px] text-gray-500">{payNames[r.method] || r.method}</p>
+                <p className="text-[12.5px] text-gray-500">{payNames[r.method] || r.method}</p>
                 <p className="text-[20px] font-black text-gray-900 leading-tight">{fmtBaht(r.amount)}</p>
                 <p className="text-[11.5px] text-gray-400">{typeof r.orders === 'number' ? `${r.orders.toLocaleString('th-TH')} ใบ` : '— ใบ'}</p>
               </div>
@@ -1286,26 +1286,26 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
         )}
         {salesErr
           ? (
-            <p className="text-[13px] text-amber-900 bg-amber-50 border-t border-amber-200 px-4 py-3 leading-relaxed">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border-t border-amber-200 px-4 py-3 leading-relaxed">
               ⚠️ <b>ดึงบิลของวันนี้ไม่ได้</b> — {salesErr}
               <br />
               <b>อย่าเพิ่งสรุปว่าวันนี้ยังไม่มีบิล</b> และอย่าเปิดใบซ้ำ · ขายต่อได้ตามปกติ
               {' '}กด <b>รีเฟรช</b> อีกครั้งเมื่อระบบกลับมา
             </p>
           )
-          : sales.length === 0 && <p className="text-[13px] text-gray-400 px-4 py-5">ยังไม่มีบิลวันนี้</p>}
+          : sales.length === 0 && <p className="text-[12.5px] text-gray-400 px-4 py-5">ยังไม่มีบิลวันนี้</p>}
         {sales.map((s) => {
           const voided = isVoid(s.status)
           return (
             <div key={s.number}
               className={`flex items-center gap-3 px-4 py-3 border-b border-gray-100 last:border-0 ${voided ? 'opacity-50' : ''}`}>
-              <span className="text-[13px] font-medium text-gray-800 w-[170px] shrink-0 truncate">{s.number}</span>
+              <span className="text-[12.5px] font-medium text-gray-800 w-[170px] shrink-0 truncate">{s.number}</span>
               <span className="text-[12.5px] text-gray-500 flex-1 truncate">{s.channel} · {s.customer || 'ไม่ระบุชื่อ'}</span>
               {voided && <Pill tone="red">ยกเลิกแล้ว</Pill>}
               <span className="text-[14px] font-bold text-gray-900 shrink-0">{fmtBaht(s.amount)}</span>
               {!voided && (
                 <button onClick={() => voidSale(s.number)}
-                  className="text-[12px] font-semibold text-red-500 hover:underline shrink-0">ยกเลิก</button>
+                  className="text-[12.5px] font-semibold text-red-500 hover:underline shrink-0">ยกเลิก</button>
               )}
             </div>
           )
@@ -1318,7 +1318,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
 export default function CorePosPage() {
   // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (idiom เดียวกับจอ moves)
   return (
-    <Suspense fallback={<div className="p-6 text-[13px] text-gray-500">กำลังโหลด...</div>}>
+    <Suspense fallback={<div className="p-6 text-[12.5px] text-gray-500">กำลังโหลด...</div>}>
       <CorePosInner />
     </Suspense>
   )

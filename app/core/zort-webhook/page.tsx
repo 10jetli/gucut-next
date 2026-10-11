@@ -96,10 +96,10 @@ export default function ZortWebhookPage() {
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-3">
             <div className="flex flex-wrap items-center gap-3">
-              <span className={`text-[13px] font-semibold ${d.ok ? 'text-emerald-700' : 'text-amber-800'}`}>
+              <span className={`text-[12.5px] font-semibold ${d.ok ? 'text-emerald-700' : 'text-amber-800'}`}>
                 {d.ok ? '● ZORT ตอบกลับสำเร็จ' : '● ZORT ไม่ได้ตอบว่าสำเร็จ'}
               </span>
-              {d.resCode && <span className="text-[12px] text-gray-500">resCode {d.resCode}</span>}
+              {d.resCode && <span className="text-[12.5px] text-gray-500">resCode {d.resCode}</span>}
             </div>
             {!d.ok && (
               /* ⚠️ ไม่สำเร็จ ≠ ไม่มี webhook — ห้ามเขียนแทนกันเด็ดขาด (ดูเหตุผลหัวไฟล์) */
@@ -113,15 +113,15 @@ export default function ZortWebhookPage() {
 
           {Array.isArray(d.fields) && d.fields.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-md p-4 mb-3">
-              <p className="text-[13px] font-semibold text-gray-800 mb-1">ช่องที่ ZORT ส่งกลับมาจริง</p>
-              <p className="text-[12px] text-gray-600 font-mono break-words">{d.fields.join(' · ')}</p>
+              <p className="text-[12.5px] font-semibold text-gray-800 mb-1">ช่องที่ ZORT ส่งกลับมาจริง</p>
+              <p className="text-[12.5px] text-gray-600 font-mono break-words">{d.fields.join(' · ')}</p>
             </div>
           )}
 
           {/* 🔴 โชว์ของดิบทั้งก้อน — เพราะยังไม่มีใครรู้ว่ารูปคำตอบหน้าตายังไง
               วันที่มีคนมาแกะฟิลด์ จะได้แกะจากของจริงที่เห็นกับตา ไม่ใช่จากที่เดา */}
           <div className="bg-white border border-gray-200 rounded-md p-4">
-            <p className="text-[13px] font-semibold text-gray-800 mb-1.5">คำตอบดิบจาก ZORT</p>
+            <p className="text-[12.5px] font-semibold text-gray-800 mb-1.5">คำตอบดิบจาก ZORT</p>
             <pre className="text-[11.5px] text-gray-700 bg-gray-50 border border-gray-200 rounded p-3 overflow-x-auto whitespace-pre-wrap break-words">
               {d.data != null ? JSON.stringify(d.data, null, 2) : (d.rawHead || '(ว่าง)')}
             </pre>

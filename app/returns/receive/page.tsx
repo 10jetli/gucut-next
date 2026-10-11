@@ -46,7 +46,7 @@ function StepHead({ step }: { step: number }) {
         <div key={label} className="flex items-center">
           {i > 0 && <div className={`w-8 md:w-16 h-px ${i <= step ? 'bg-blue-500' : 'bg-gray-300'}`} />}
           <div className="flex flex-col items-center px-1.5">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px]
+            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12.5px]
               ${i === step ? 'bg-blue-600 text-white' : i < step ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
               {['🔍', '📷', '⚖️', '✅'][i]}
             </div>
@@ -298,7 +298,7 @@ export default function ReturnReceivePage() {
     <div className="p-4 md:p-6 max-w-[720px] mx-auto">
       <StepHead step={step} />
       {/* ป้ายตามร่าง v2 ข้อ 5: ช่วงเงาไม่ยิง CN- เข้า ZORT — ใครทำใบคืนใน ZORT ทำต่อแบบเดิม */}
-      <p className="text-[11px] text-center text-gray-400 -mt-3 mb-4">
+      <p className="text-[11.5px] text-center text-gray-400 -mt-3 mb-4">
         ช่วงเดินคู่ขนาน: ใบคืนใน <b>ZORT ยังทำมือตามเดิม</b> — จอนี้บันทึกฝั่งเรา แล้ว recon รายวันเทียบสองฝั่ง
       </p>
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดำเนินการต่อไม่ได้'}>{error}</ErrorBox>}
@@ -306,7 +306,7 @@ export default function ReturnReceivePage() {
       {/* ── ขอคืนเกินโควตาสะสม — เซิร์ฟเวอร์ไม่สร้างใบ (กันใบทางตัน) จอเสนอทางออก ── */}
       {overQ && (
         <div className="bg-amber-50 border border-amber-300 rounded-md p-4 mb-4">
-          <p className="text-[13px] font-semibold text-amber-900 mb-1">คืนเกินจำนวนที่คืนได้ — ยังไม่ได้บันทึกอะไร</p>
+          <p className="text-[12.5px] font-semibold text-amber-900 mb-1">คืนเกินจำนวนที่คืนได้ — ยังไม่ได้บันทึกอะไร</p>
           <div className="text-[12.5px] text-amber-900 mb-2">
             {overQ.over.map((o) => (
               <span key={o.sku} className="block">
@@ -336,10 +336,10 @@ export default function ReturnReceivePage() {
         <div className="bg-white border border-gray-300 rounded-md p-5 mb-4 text-center">
           <div className="text-[32px] mb-1">🗑️</div>
           <p className="text-[14px] font-bold text-gray-900">ยกเลิกใบ {cancelledDoc.returnId} แล้ว</p>
-          <p className="text-[12px] text-gray-500 mb-3">
+          <p className="text-[12.5px] text-gray-500 mb-3">
             เหตุผล: {cancelledDoc.cancelReason || '—'} · ล็อกใบขายปลดแล้ว เปิดใบใหม่ได้ทันที
           </p>
-          <button onClick={reset} className="text-[13px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4669e5' }}>
+          <button onClick={reset} className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4669e5' }}>
             รับใบถัดไป
           </button>
         </div>
@@ -348,10 +348,10 @@ export default function ReturnReceivePage() {
       {/* ── ใบถูกคนอื่นถือ — อ่านได้ กดไม่ได้ + รับช่วงต้องเลือกเหตุผล (เวที #2) ── */}
       {locked && (
         <div className="bg-amber-50 border border-amber-300 rounded-md p-4 mb-4">
-          <p className="text-[13.5px] text-amber-900 font-semibold">
+          <p className="text-[12.5px] text-amber-900 font-semibold">
             🔒 {locked.by} กำลังทำใบนี้อยู่{locked.since ? ` (ตั้งแต่ ${thaiDate(locked.since)})` : ''}
           </p>
-          <p className="text-[12px] text-amber-800 mt-1 leading-relaxed">
+          <p className="text-[12.5px] text-amber-800 mt-1 leading-relaxed">
             ดูสถานะได้ แต่แก้ไม่ได้ — ถ้าต้องทำแทนจริง เลือกเหตุผลแล้วกดรับช่วง
             (ทุกการรับช่วงขึ้นจอแอดมินเป็นรายการแยก ไม่มีการแย่งเงียบ ๆ)
           </p>
@@ -388,19 +388,19 @@ export default function ReturnReceivePage() {
           {!order && !unmatched && (
             <>
               <h1 className="text-[17px] font-bold text-gray-900 text-center mb-1">รับคืนสินค้า</h1>
-              <p className="text-[12px] text-gray-500 text-center mb-2">กรอกเลขที่ใบขาย หรือเลขพัสดุจากกล่อง</p>
+              <p className="text-[12.5px] text-gray-500 text-center mb-2">กรอกเลขที่ใบขาย หรือเลขพัสดุจากกล่อง</p>
               {/* ตัวตนพนักงาน: PIN ลงเวลา → header x-staff-pin เซิร์ฟเวอร์แปลงเป็นชื่อเอง
                   ห้ามส่งชื่อจาก body (ตกลงกับท่อ) — ตอนนี้ยังไม่บังคับ รอท่อเปิดด่าน */}
               <p className="text-center mb-4">
                 <input type="password" inputMode="numeric" maxLength={6} placeholder="PIN พนักงาน"
                   onChange={(e) => setStaffPin(e.target.value)}
-                  className="w-[120px] text-center text-[13px] border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-400" />
+                  className="w-[120px] text-center text-[12.5px] border border-gray-200 rounded px-2 py-1.5 outline-none focus:border-blue-400" />
               </p>
               <form onSubmit={(e) => { e.preventDefault(); search() }} className="flex justify-center gap-2 mb-3">
                 <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="เลขที่ใบ หรือเลขพัสดุ"
                   className="w-[240px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500" />
                 <button type="submit" disabled={busy || !q.trim()}
-                  className="text-[13px] font-semibold text-white rounded-full px-5 disabled:opacity-50" style={{ background: '#4669e5' }}>
+                  className="text-[12.5px] font-semibold text-white rounded-full px-5 disabled:opacity-50" style={{ background: '#4669e5' }}>
                   {busy ? 'กำลังหา…' : 'ค้นหา'}
                 </button>
               </form>
@@ -412,7 +412,7 @@ export default function ReturnReceivePage() {
                       className="w-full text-left px-3 py-2.5 hover:bg-blue-50/50 flex items-center gap-3 disabled:opacity-40">
                       <span className="font-mono text-[12.5px] text-gray-900">{r.number || '—'}</span>
                       <ChannelTag name={r.channel || ''} />
-                      <span className="text-[12px] text-gray-600 flex-1 truncate">{r.customer || ''}</span>
+                      <span className="text-[12.5px] text-gray-600 flex-1 truncate">{r.customer || ''}</span>
                       <span className="text-[11.5px] text-gray-400">{thaiDate(r.order_date)}</span>
                     </button>
                   ))}
@@ -434,12 +434,12 @@ export default function ReturnReceivePage() {
                 <div className="flex items-center gap-2 flex-wrap mb-1">
                   <span className="font-mono text-[14px] font-semibold">{order.number}</span>
                   <ChannelTag name={order.channel || ''} />
-                  <span className="text-[12px] text-gray-500">{order.customer || ''}</span>
+                  <span className="text-[12.5px] text-gray-500">{order.customer || ''}</span>
                   <button onClick={() => { setOrder(null); setPick([]); setPendingDoc(null) }} className="text-[11.5px] text-gray-400 hover:underline ml-auto">เปลี่ยนใบ</button>
                 </div>
               )}
               {unmatched && (
-                <div className="bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3 text-[12px] text-amber-800">
+                <div className="bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3 text-[12.5px] text-amber-800">
                   🚩 <b>ใบไม่ผูกใบขาย (unmatched)</b> — รับของ+ถ่ายรูปได้ปกติ แต่<b>ไม่เข้าสต็อก</b>
                   จนกว่าแอดมินผูกใบ/อนุมัติ · ระบุที่มาเท่าที่รู้:
                   <input value={unmatchedNote} onChange={(e) => setUnmatchedNote(e.target.value)}
@@ -477,13 +477,13 @@ export default function ReturnReceivePage() {
                       <>
                         <span className="font-mono text-[11.5px] text-gray-500 w-[96px] shrink-0 truncate">{it.sku || '—'}</span>
                         <span className="text-[12.5px] text-gray-800 flex-1">{it.name}</span>
-                        <span className="text-[11px] text-gray-400 whitespace-nowrap">ซื้อ {it.sold}</span>
+                        <span className="text-[11.5px] text-gray-400 whitespace-nowrap">ซื้อ {it.sold}</span>
                       </>
                     )}
                     <div className="flex items-center gap-1">
                       <button onClick={() => setPick((p) => p.map((x, j) => j === i ? { ...x, qty: Math.max(0, x.qty - 1) } : x))}
                         className="w-7 h-7 rounded border border-gray-300 text-gray-600">−</button>
-                      <span className={`w-7 text-center text-[13.5px] font-bold ${it.qty > 0 ? 'text-blue-700' : 'text-gray-300'}`}>{it.qty}</span>
+                      <span className={`w-7 text-center text-[12.5px] font-bold ${it.qty > 0 ? 'text-blue-700' : 'text-gray-300'}`}>{it.qty}</span>
                       <button onClick={() => setPick((p) => p.map((x, j) => j === i ? { ...x, qty: x.qty + 1 } : x))}
                         className="w-7 h-7 rounded border border-gray-300 text-gray-600">＋</button>
                     </div>
@@ -492,11 +492,11 @@ export default function ReturnReceivePage() {
               </div>
               {unmatched && (
                 <button onClick={() => setPick((p) => [...p, { sku: '', name: '', sold: 0, qty: 1 }])}
-                  className="text-[12px] text-blue-600 hover:underline mb-3">+ เพิ่มรายการ</button>
+                  className="text-[12.5px] text-blue-600 hover:underline mb-3">+ เพิ่มรายการ</button>
               )}
               {/* จำนวนเกินที่ซื้อ: จอเตือนได้ แต่คนตัดสินจริงคือเซิร์ฟเวอร์ (คงเหลือสะสมทุกใบ) */}
               {!unmatched && pick.some((p) => p.qty > p.sold) && (
-                <p className="text-[12px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5 mb-3">
+                <p className="text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5 mb-3">
                   ⚠️ บางชิ้นเลือกเกินจำนวนที่ซื้อ — เซิร์ฟเวอร์จะตีกลับ (และนับรวมใบคืนก่อนหน้าด้วย)
                 </p>
               )}
@@ -513,7 +513,7 @@ export default function ReturnReceivePage() {
       {/* ══ ขั้น ② รูป ══ */}
       {step === 1 && !locked && (
         <div className="bg-white border border-gray-200 rounded-md p-4 md:p-6">
-          <p className="text-[13.5px] font-semibold text-gray-800 mb-1">ถ่ายรูปของที่รับ (สภาพกล่อง + ตัวสินค้า)</p>
+          <p className="text-[12.5px] font-semibold text-gray-800 mb-1">ถ่ายรูปของที่รับ (สภาพกล่อง + ตัวสินค้า)</p>
           <p className="text-[11.5px] text-gray-400 mb-3">อย่างน้อย 1 รูป — รูปคือหลักฐานสภาพ ณ วินาทีรับ แก้ทีหลังไม่ได้</p>
           <input ref={fileRef} type="file" accept="image/*" capture="environment" multiple hidden
             onChange={(e) => { addPhotos(e.target.files); e.target.value = '' }} />
@@ -535,7 +535,7 @@ export default function ReturnReceivePage() {
               className="w-20 h-20 rounded border-2 border-dashed border-gray-300 text-gray-400 text-[24px]">📷</button>
           </div>
           {doc && (
-            <p className="text-[12px] text-blue-900 bg-blue-50 border border-blue-200 rounded px-2.5 py-1.5 mb-3">
+            <p className="text-[12.5px] text-blue-900 bg-blue-50 border border-blue-200 rounded px-2.5 py-1.5 mb-3">
               📌 ใบ <span className="font-mono">{doc.returnId}</span> ถูกรับไว้แล้วแต่<b>ยังไม่มีรูป</b> —
               เซิร์ฟเวอร์ไม่ให้ประเมินจนกว่าจะมีรูป · ถ่ายแล้วกดส่งเข้าใบเดิมได้เลย
               (ทางแจ้งเหตุผลแทนรูปใช้ได้เฉพาะตอนรับครั้งแรก — ใบนี้เลยจุดนั้นแล้ว)
@@ -544,7 +544,7 @@ export default function ReturnReceivePage() {
           {/* escape ตามข้อยุติเวที #1 ข้อ 3 — กล้องพังต้องไปต่อได้ แต่เหตุผลบังคับ
               (โหมด resume ไม่มี escape — เหตุผลบันทึกได้ตอน receive เท่านั้น) */}
           {photos.length === 0 && !doc && (
-            <label className="flex items-start gap-2 text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mb-3">
+            <label className="flex items-start gap-2 text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mb-3">
               <input type="checkbox" checked={noPhoto} onChange={(e) => setNoPhoto(e.target.checked)} className="mt-0.5" />
               <span>ถ่ายไม่ได้ (กล้องพัง/ไม่มีสิทธิ์) — ต้องพิมพ์เหตุผลติดใบไว้ให้แอดมินเห็น
                 {noPhoto && (
@@ -580,26 +580,26 @@ export default function ReturnReceivePage() {
       {/* ══ ขั้น ③ ประเมินทีละชิ้น ══ */}
       {step === 2 && doc && !locked && !cancelledDoc && (
         <div className="bg-white border border-gray-200 rounded-md p-4 md:p-6">
-          <p className="text-[12px] text-gray-500 mb-0.5">ใบคืน <span className="font-mono">{doc.returnId}</span>
+          <p className="text-[12.5px] text-gray-500 mb-0.5">ใบคืน <span className="font-mono">{doc.returnId}</span>
             {doc.unmatched && <> · 🚩 unmatched{doc.quarantineNo && <> · เลขกัก <b className="font-mono">{doc.quarantineNo}</b> (เขียนติดของ)</>}</>}</p>
-          <p className="text-[13.5px] font-semibold text-gray-800 mb-3">ดูของจริงทีละชิ้น แล้วตอบ: ขายต่อได้ไหม</p>
+          <p className="text-[12.5px] font-semibold text-gray-800 mb-3">ดูของจริงทีละชิ้น แล้วตอบ: ขายต่อได้ไหม</p>
           <div className="space-y-3 mb-4">
             {doc.items.map((it) => {
               const v = verdicts[it.sku] ?? { note: '' }
               return (
                 <div key={it.sku || it.name} className="border border-gray-200 rounded-md p-3">
                   <p className="text-[12.5px] text-gray-800 mb-2">
-                    <span className="font-mono text-[11px] text-gray-400 mr-1.5">{it.sku || '—'}</span>
+                    <span className="font-mono text-[11.5px] text-gray-400 mr-1.5">{it.sku || '—'}</span>
                     {it.name || '—'} <b>× {it.qty}</b>
                   </p>
                   <div className="grid grid-cols-2 gap-2">
                     <button onClick={() => setVerdicts((m) => ({ ...m, [it.sku]: { ...v, verdict: 'return_in' } }))}
-                      className={`py-2.5 rounded-md text-[13.5px] font-semibold border-2 ${v.verdict === 'return_in'
+                      className={`py-2.5 rounded-md text-[12.5px] font-semibold border-2 ${v.verdict === 'return_in'
                         ? 'border-emerald-500 bg-emerald-50 text-emerald-800' : 'border-gray-200 text-gray-500'}`} aria-pressed={v.verdict === 'return_in'}>
                       ✅ ขายต่อได้
                     </button>
                     <button onClick={() => setVerdicts((m) => ({ ...m, [it.sku]: { ...v, verdict: 'damage' } }))}
-                      className={`py-2.5 rounded-md text-[13.5px] font-semibold border-2 ${v.verdict === 'damage'
+                      className={`py-2.5 rounded-md text-[12.5px] font-semibold border-2 ${v.verdict === 'damage'
                         ? 'border-red-500 bg-red-50 text-red-800' : 'border-gray-200 text-gray-500'}`} aria-pressed={v.verdict === 'damage'}>
                       ❌ เสียหาย
                     </button>
@@ -642,7 +642,7 @@ export default function ReturnReceivePage() {
                   className="text-[12.5px] font-semibold text-white rounded px-3 py-1.5 disabled:opacity-40" style={{ background: '#b91c1c' }}>
                   ยืนยันยกเลิก
                 </button>
-                <button onClick={() => { setCancelOpen(false); setCancelReason('') }} className="text-[12px] text-gray-500">ไม่ยกเลิก</button>
+                <button onClick={() => { setCancelOpen(false); setCancelReason('') }} className="text-[12.5px] text-gray-500">ไม่ยกเลิก</button>
               </div>
             )}
           </div>
@@ -661,7 +661,7 @@ export default function ReturnReceivePage() {
                 เซิร์ฟเวอร์อาจบันทึกไปแล้วก็ได้ กดซ้ำเสี่ยงซ้ำซ้อน · กดปุ่มเดียวนี้เพื่อดูสถานะจริง
               </p>
               <button onClick={() => resume(doc.returnId)} disabled={busy}
-                className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4669e5' }}>
+                className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4669e5' }}>
                 {busy ? 'กำลังเช็ค…' : 'เช็คสถานะจริงของใบนี้'}
               </button>
             </div>
@@ -669,7 +669,7 @@ export default function ReturnReceivePage() {
             <div className="text-center">
               <div className="text-[36px] mb-1">⚠️</div>
               <p className="text-[15px] font-bold text-red-800 mb-1">บันทึกแล้ว แต่เข้าสต็อกไม่ครบ — ใบ {doc.returnId}</p>
-              <p className="text-[12px] text-gray-600 mb-3">
+              <p className="text-[12.5px] text-gray-600 mb-3">
                 คำตัดสินถูกบันทึกครบ · ชิ้นที่ขึ้น <b>&ldquo;ยังไม่ลงสต็อก&rdquo;</b> ยิงซ้ำได้ปลอดภัย
                 (ชิ้นที่ลงแล้วระบบไม่บวกซ้ำ) — <b>ห้ามเริ่มใบใหม่</b>
               </p>
@@ -686,7 +686,7 @@ export default function ReturnReceivePage() {
                 ))}
               </div>
               <button onClick={confirm} disabled={busy}
-                className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#b91c1c' }}>
+                className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#b91c1c' }}>
                 {busy ? 'กำลังยิงซ้ำ…' : 'ลองส่งเข้าสต็อกอีกครั้ง'}
               </button>
             </div>
@@ -708,18 +708,18 @@ export default function ReturnReceivePage() {
                 ))}
               </div>
               {doc.unmatched && (
-                <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
+                <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
                   🚩 ใบ unmatched — <b>ยังไม่เข้าสต็อก</b> จนกว่าแอดมินผูกใบ/อนุมัติ
                   {doc.quarantineNo && <> · เขียนเลขกัก <b className="font-mono">{doc.quarantineNo}</b> ติดของแล้ววางกองกักเท่านั้น</>}
                 </p>
               )}
-              <button onClick={reset} className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4669e5' }}>
+              <button onClick={reset} className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4669e5' }}>
                 รับใบถัดไป
               </button>
             </div>
           ) : (
             <>
-              <p className="text-[13.5px] font-semibold text-gray-800 mb-2">อ่านทวนกับลูกค้าก่อนกดยืนยัน</p>
+              <p className="text-[12.5px] font-semibold text-gray-800 mb-2">อ่านทวนกับลูกค้าก่อนกดยืนยัน</p>
               <div className="border border-gray-200 rounded-md divide-y divide-gray-100 mb-3">
                 {doc.items.map((it) => {
                   const v = verdicts[it.sku]
@@ -729,7 +729,7 @@ export default function ReturnReceivePage() {
                       <Pill tone={v?.verdict === 'return_in' ? 'green' : 'red'}>
                         {v?.verdict === 'return_in' ? 'ขายต่อได้' : 'เสียหาย'}
                       </Pill>
-                      {v?.note && <span className="text-[11px] text-gray-400">({v.note})</span>}
+                      {v?.note && <span className="text-[11.5px] text-gray-400">({v.note})</span>}
                     </div>
                   )
                 })}

@@ -49,7 +49,7 @@ function passInfo(k: string) {
   return { set: v.length > 0, len: v.length }
 }
 
-const TH = 'text-left font-normal text-[12px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
+const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
 const TD = 'px-3 py-3 text-[12.5px] align-top'
 
 /** แถวในตาราง — มาจากสองแหล่ง และ **ต้องรู้ว่าแถวไหนมาจากไหน** */
@@ -141,7 +141,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
              8 ก.ย. 2569: เลิกพาไป /core/soon/user-add (หน้า "ยังไม่ได้ทำ" กลาง ๆ)
              ไปหน้าจริงที่บอกช่องว่างถัดไป + ลิงก์ตรง + ข้อ "ต้อง deploy ใหม่" ที่พิสูจน์แล้ว */
           <Link href="/core/settings-users/add"
-            className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+            className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
             style={{ background: '#4669e5' }}>
             เพิ่มผู้ใช้งาน
           </Link>
@@ -151,12 +151,12 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
       {/* ช่องค้นหาตามผัง — ฟอร์ม GET ให้เซิร์ฟเวอร์กรอง (จอนี้เป็น server component) */}
       <form method="get" className="flex items-center gap-3 mb-4">
         <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-3.5 py-1.5 w-[280px]">
-          <span className="text-gray-400 text-[13px]">🔍</span>
+          <span className="text-gray-400 text-[12.5px]">🔍</span>
           <input name="q" defaultValue={searchParams?.q ?? ''} placeholder="ค้นหาผู้ใช้งาน"
-            className="flex-1 text-[13px] outline-none bg-transparent" />
+            className="flex-1 text-[12.5px] outline-none bg-transparent" />
         </div>
-        <button type="submit" className="text-[13px] text-blue-600 hover:underline">ค้นหา</button>
-        {q && <Link href="/core/settings-users" className="text-[13px] text-gray-500 hover:underline">ล้างคำค้น</Link>}
+        <button type="submit" className="text-[12.5px] text-blue-600 hover:underline">ค้นหา</button>
+        {q && <Link href="/core/settings-users" className="text-[12.5px] text-gray-500 hover:underline">ล้างคำค้น</Link>}
       </form>
 
       {/* 🔴 อ่านแหล่งใดแหล่งหนึ่งไม่ได้ **ต้องประกาศ** ไม่ใช่แสดงตารางที่ขาดคนไปเงียบ ๆ */}
@@ -218,7 +218,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
                   <td className={`${TD} text-gray-900 font-medium`}>
                     {r.name}
                     {dupNames.includes(r.name) && (
-                      <span className="ml-1.5 text-[11px] text-amber-700" title="ชื่อนี้มีมากกว่าหนึ่งบัญชี — คนละบัญชีจริง ๆ">⚠️ ชื่อซ้ำ</span>
+                      <span className="ml-1.5 text-[11.5px] text-amber-700" title="ชื่อนี้มีมากกว่าหนึ่งบัญชี — คนละบัญชีจริง ๆ">⚠️ ชื่อซ้ำ</span>
                     )}
                   </td>
                   <td className={TD}>
@@ -243,7 +243,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={6} className="px-3 py-6 text-center text-[13px] text-gray-400">
+                <tr><td colSpan={6} className="px-3 py-6 text-center text-[12.5px] text-gray-400">
                   {q ? `ไม่พบผู้ใช้ที่ชื่อตรงกับ "${searchParams?.q}"` : 'ยังไม่ได้ตั้งผู้ใช้'}
                 </td></tr>
               )}
@@ -253,7 +253,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
       </div>
 
       {/* แถบล่างตามผัง — เลขหน้าล็อกไว้เพราะผู้ใช้มีไม่ถึงหน้าเดียว (โชว์ตามผัง ไม่แกล้งกดได้) */}
-      <div className="flex items-center justify-between mt-2 text-[12px] text-gray-500">
+      <div className="flex items-center justify-between mt-2 text-[12.5px] text-gray-500">
         <span className="inline-block border border-gray-300 rounded px-2 py-0.5 bg-white">1</span>
         <span>จำนวน {rows.length} รายการ | จำนวนต่อหน้า 20</span>
       </div>

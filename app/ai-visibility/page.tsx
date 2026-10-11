@@ -78,14 +78,14 @@ export default function AiVisibilityPage() {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h1 className="text-xl md:text-2xl font-black text-gray-900 tracking-tight">AI Visibility</h1>
-          <p className="text-[13px] text-gray-400 mt-0.5">
+          <p className="text-[12.5px] text-gray-400 mt-0.5">
             เวลาลูกค้าถามผู้ช่วย AI ว่า “ซื้อเลื่อยยนต์ที่ไหนดี” — เขาเอ่ยถึงเราไหม
           </p>
         </div>
         <button
           onClick={runCheck}
           disabled={running || !hasKey}
-          className="px-4 py-2 rounded-full text-[13px] font-semibold bg-blue-600 text-white shadow-[0_4px_10px_-4px_rgba(37,99,235,0.6)] disabled:opacity-40 disabled:shadow-none transition"
+          className="px-4 py-2 rounded-full text-[12.5px] font-semibold bg-blue-600 text-white shadow-[0_4px_10px_-4px_rgba(37,99,235,0.6)] disabled:opacity-40 disabled:shadow-none transition"
         >
           {running ? 'กำลังตรวจ...' : 'ตรวจรอบใหม่'}
         </button>
@@ -149,9 +149,9 @@ export default function AiVisibilityPage() {
           </div>
 
           <Card>
-            <p className="text-[13px] font-bold text-gray-900 mb-3">ส่วนแบ่งการถูกพูดถึง</p>
+            <p className="text-[12.5px] font-bold text-gray-900 mb-3">ส่วนแบ่งการถูกพูดถึง</p>
             {summary.length === 0 || summary.every(s => s.checks === 0) ? (
-              <p className="text-[13px] text-gray-400 py-4 text-center">
+              <p className="text-[12.5px] text-gray-400 py-4 text-center">
                 ยังไม่มีข้อมูล — กด “ตรวจรอบใหม่” เพื่อเริ่มเก็บผล
               </p>
             ) : (
@@ -163,9 +163,9 @@ export default function AiVisibilityPage() {
                       s.isUs ? 'bg-emerald-50/70 border border-emerald-100' : 'bg-gray-50'
                     }`}
                   >
-                    <span className="text-[12px] font-bold text-gray-400 w-4">{i + 1}</span>
+                    <span className="text-[12.5px] font-bold text-gray-400 w-4">{i + 1}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-[13px] font-semibold text-gray-900 truncate">
+                      <p className="text-[12.5px] font-semibold text-gray-900 truncate">
                         {s.name}
                         {s.isUs && (
                           <span className="ml-2 text-[10px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded">
@@ -181,8 +181,8 @@ export default function AiVisibilityPage() {
                       </div>
                     </div>
                     <div className="text-right shrink-0">
-                      <p className="text-[13px] font-black text-gray-900">{s.sharePct}%</p>
-                      <p className="text-[11px] text-gray-400">
+                      <p className="text-[12.5px] font-black text-gray-900">{s.sharePct}%</p>
+                      <p className="text-[11.5px] text-gray-400">
                         {s.avgPosition ? `อันดับ ${s.avgPosition}` : 'ไม่ถูกเอ่ย'}
                       </p>
                     </div>
@@ -194,7 +194,7 @@ export default function AiVisibilityPage() {
 
           {lastRun && (
             <Card>
-              <p className="text-[13px] font-bold text-gray-900 mb-3">
+              <p className="text-[12.5px] font-bold text-gray-900 mb-3">
                 ผลรอบล่าสุด · {fmtDate(lastRun.runAt)}
               </p>
               <div className="space-y-2">
@@ -211,11 +211,11 @@ export default function AiVisibilityPage() {
                         <span className="text-[15px] shrink-0">
                           {r.error ? '⚠️' : usHit?.mentioned ? '✅' : '❌'}
                         </span>
-                        <span className="text-[13px] text-gray-700 flex-1 min-w-0 truncate">{r.prompt}</span>
-                        <span className="text-[11px] text-gray-400 shrink-0">{open ? 'ซ่อน' : 'ดูคำตอบ'}</span>
+                        <span className="text-[12.5px] text-gray-700 flex-1 min-w-0 truncate">{r.prompt}</span>
+                        <span className="text-[11.5px] text-gray-400 shrink-0">{open ? 'ซ่อน' : 'ดูคำตอบ'}</span>
                       </button>
                       {open && (
-                        <div className="px-3 pb-3 pt-1 text-[12px] text-gray-600 whitespace-pre-wrap border-t border-gray-100 bg-gray-50/60 leading-relaxed">
+                        <div className="px-3 pb-3 pt-1 text-[12.5px] text-gray-600 whitespace-pre-wrap border-t border-gray-100 bg-gray-50/60 leading-relaxed">
                           {r.error ? <span className="text-red-500">{r.error}</span> : r.answer}
                         </div>
                       )}

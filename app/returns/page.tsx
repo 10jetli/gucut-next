@@ -362,14 +362,14 @@ export default function ReturnsPage() {
                 const max = Math.max(...months.map(([, n]) => n))
                 return (
                   <div className="mt-4 border-t pt-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ใบคืนรายเดือน (เทียบ {months.length} เดือน)</p>
+                    <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">ใบคืนรายเดือน (เทียบ {months.length} เดือน)</p>
                     <div className="mt-2 flex h-24 items-end gap-1.5">
                       {months.map(([m, n]) => (
                         <div key={m} className="flex min-w-0 flex-1 flex-col items-center gap-1">
                           <span className="text-[10px] font-semibold tabular-nums text-gray-600">{n}</span>
                           <div className={`w-full rounded-t ${n === max ? 'bg-red-400' : 'bg-blue-300'}`}
                             style={{ height: `${Math.max(6, (n / max) * 64)}px` }} />
-                          <span className="truncate text-[9.5px] text-gray-400">{m.slice(2).replace('-', '/')}</span>
+                          <span className="truncate text-[10px] text-gray-400">{m.slice(2).replace('-', '/')}</span>
                         </div>
                       ))}
                     </div>
@@ -412,7 +412,7 @@ export default function ReturnsPage() {
                 </table>
               </div>
               {skus.length === 0 && <p className="py-6 text-center text-sm text-gray-500">ไม่พบข้อมูล</p>}
-              <p className="mt-3 text-[11px] leading-relaxed text-gray-500">
+              <p className="mt-3 text-[11.5px] leading-relaxed text-gray-500">
                 💡 ตัวที่ถูกคืนซ้ำ ๆ มักมีสาเหตุจริง — รูปไม่ตรงของ · สเปกกำกวม · ใส่ไม่ได้กับรุ่นที่ลูกค้ามี ·
                 ของเสียบ่อย เช็คหน้าสินค้าตัวนั้นก่อนสั่งของเข้ามาเพิ่ม
               </p>
@@ -443,7 +443,7 @@ export default function ReturnsPage() {
                 const bx = o.ref ? buyer[o.ref] : undefined   // ชื่อ/เบอร์ตัวจริงที่กดเปิดไว้แล้ว
                 return (
                 <div key={o.number} className={`rounded-2xl border border-l-4 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04)] ${tone}`}>
-                  <span className={`float-right ml-2 rounded-full px-2.5 py-1 text-[11px] font-bold text-white ${bigChip[1]}`}>{bigChip[0]}</span>
+                  <span className={`float-right ml-2 rounded-full px-2.5 py-1 text-[11.5px] font-bold text-white ${bigChip[1]}`}>{bigChip[0]}</span>
                   <div className="flex flex-wrap items-baseline justify-between gap-2">
                     <span className="font-medium text-gray-900">{o.number}</span>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${CH_COLOR[o.channel] || 'bg-gray-100 text-gray-700'}`}>
@@ -472,15 +472,15 @@ export default function ReturnsPage() {
                     <span className="ml-auto flex gap-1.5">
                       {!st.delivered && !st.received && (
                         <button onClick={() => void markRecv(o.number, 'delivered')}
-                          className="rounded-md bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white">ขนส่งส่งถึงแล้ว</button>
+                          className="rounded-md bg-blue-600 px-2.5 py-1 text-[11.5px] font-semibold text-white">ขนส่งส่งถึงแล้ว</button>
                       )}
                       {!st.received && (
                         <button onClick={() => void markRecv(o.number, 'received')}
-                          className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11px] font-semibold text-white">ร้านรับแล้ว</button>
+                          className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11.5px] font-semibold text-white">ร้านรับแล้ว</button>
                       )}
                       {(st.delivered || st.received) && (
                         <button onClick={() => void markRecv(o.number, 'clear')}
-                          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-400">ล้าง</button>
+                          className="rounded-md border border-gray-200 bg-white px-2 py-1 text-[11.5px] text-gray-400">ล้าง</button>
                       )}
                     </span>
                   </div>
@@ -492,7 +492,7 @@ export default function ReturnsPage() {
                       {o.phone && <span className="text-gray-600"> · โทร {o.phone}</span>}
                       {o.channel === 'Shopee' && o.ref && !bx && (
                         <button onClick={() => void openBuyer(o.ref)}
-                          className="ml-1.5 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11px] text-gray-600 hover:bg-gray-50">เปิดตัวจริง</button>
+                          className="ml-1.5 rounded border border-gray-300 bg-white px-1.5 py-0.5 text-[11.5px] text-gray-600 hover:bg-gray-50">เปิดตัวจริง</button>
                       )}
                       {bx?.loading && <span className="ml-1.5 text-gray-400">กำลังถาม Shopee…</span>}
                       {bx?.err && <span className="ml-1.5 text-red-600">{bx.err}</span>}
@@ -534,7 +534,7 @@ export default function ReturnsPage() {
                   <ul className="mt-2 space-y-0.5 border-t pt-2">
                     {o.lines.map((l, i) => (
                       <li key={i} className="flex gap-2 text-sm">
-                        <span className="min-w-0 flex-1 text-gray-800">{l.name}<span className="ml-1.5 text-[11px] text-gray-400">{l.sku}</span></span>
+                        <span className="min-w-0 flex-1 text-gray-800">{l.name}<span className="ml-1.5 text-[11.5px] text-gray-400">{l.sku}</span></span>
                         <span className="shrink-0 tabular-nums text-gray-400">×{l.qty}</span>
                         <span className="shrink-0 tabular-nums text-gray-600">{baht(l.total)}</span>
                       </li>

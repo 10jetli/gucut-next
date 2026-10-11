@@ -33,13 +33,13 @@ export default function ZortReadyBar() {
         ก่อนเจอ "ใช้แทน ZORT ได้เลย" · ลำดับที่กลับกันคือเหตุที่สองบรรทัดอ่านขัดกัน
         ③ และต้องเด่นกว่าป้าย ⇒ พื้นแดงเข้ม ไม่ใช่เขียวอ่อน */}
     {พัง > 0 && (
-      <div className="px-4 md:px-6 py-1.5 text-[12px] bg-red-600 text-white border-b border-red-700">
+      <div className="px-4 md:px-6 py-1.5 text-[12.5px] bg-red-600 text-white border-b border-red-700">
         ⛔ <b>ตอนนี้จอนี้อ่านข้อมูลไม่ได้</b> — ดูกล่องแดงข้างล่าง
         <span className="text-red-100"> · ป้ายข้างล่างบอก<b>ความสามารถของจอ</b> ไม่ได้บอกว่าข้อมูลรอบนี้มาครบ</span>
       </div>
     )}
     <div
-      className={`px-4 md:px-6 py-1.5 text-[12px] border-b ${
+      className={`px-4 md:px-6 py-1.5 text-[12.5px] border-b ${
         b.tone === 'green'
           ? 'bg-emerald-50 text-emerald-800 border-emerald-100'
           : 'bg-amber-50 text-amber-800 border-amber-100'

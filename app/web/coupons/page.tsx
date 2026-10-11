@@ -26,7 +26,7 @@ const label = (c: Coupon) =>
 /** ป้ายกำกับช่องกรอก — ระดับโมดูลเท่านั้น (ห้ามย้ายเข้าไปในคอมโพเนนต์) */
 function Field({ l, children }: { l: string; children: React.ReactNode }) {
   return (
-    <label className="block"><span className="block text-[11px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
+    <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">{l}</span>{children}</label>
   )
 }
 
@@ -82,25 +82,25 @@ export default function WebCouponsPage() {
   /* 🔴 ย้ายตัวห่อช่องกรอกออกไประดับโมดูลแล้ว 18 ก.ย. 2569 — **ห้ามย้ายกลับ**
      ตัวห่อที่รับ `children` ก็ทำให้ `<input>` ข้างในถูกสร้างใหม่ทุกครั้งที่ state เปลี่ยน
      ⇒ พิมพ์ได้ตัวอักษรเดียวแล้วโฟกัสหลุด (เจอของจริงที่จอเพิ่มผู้ติดต่อ 18 ก.ย. 2569) */
-  const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
+  const inputCls = 'w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-[12.5px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100'
 
   return (
     <div className="space-y-4 max-w-3xl">
       <div className="flex items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">โค้ดส่วนลด</h1>
         </div>
         <button onClick={() => setForm(form ? null : { ...EMPTY })}
-          className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] transition-all hover:bg-gray-800 active:scale-[0.98]">
+          className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] transition-all hover:bg-gray-800 active:scale-[0.98]">
           <I d={IC.plus} className="w-3.5 h-3.5" /> สร้างโค้ดใหม่
         </button>
       </div>
-      {msg && <p className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-[13px] text-amber-700">{msg}</p>}
+      {msg && <p className="rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-[12.5px] text-amber-700">{msg}</p>}
 
       {form && (
         <div className="bg-white rounded-2xl border border-blue-100 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(37,99,235,0.25)] p-4 md:p-5 space-y-3">
-          <p className="text-[13px] font-black text-gray-900">{form.code && list?.some((c) => c.code === form.code) ? `แก้โค้ด ${form.code}` : 'สร้างโค้ดใหม่'}</p>
+          <p className="text-[12.5px] font-black text-gray-900">{form.code && list?.some((c) => c.code === form.code) ? `แก้โค้ด ${form.code}` : 'สร้างโค้ดใหม่'}</p>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <Field l="ชื่อโค้ด (ลูกค้าพิมพ์)"><input className={inputCls + ' uppercase'} value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value.toUpperCase() })} placeholder="GUCUT50" /></Field>
             <Field l="คำโปรย (โชว์ลูกค้า)"><input className={inputCls} value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="ลดต้อนรับ" /></Field>
@@ -123,10 +123,10 @@ export default function WebCouponsPage() {
           </div>
           <div className="flex gap-2">
             <button onClick={save} disabled={busy}
-              className="rounded-xl bg-blue-600 px-5 py-2 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)] hover:bg-blue-700 disabled:opacity-50">
+              className="rounded-xl bg-blue-600 px-5 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)] hover:bg-blue-700 disabled:opacity-50">
               {busy ? 'กำลังบันทึก…' : 'บันทึกโค้ด'}
             </button>
-            <button onClick={() => setForm(null)} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-[13px] font-semibold text-gray-500 hover:bg-gray-50">ยกเลิก</button>
+            <button onClick={() => setForm(null)} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-[12.5px] font-semibold text-gray-500 hover:bg-gray-50">ยกเลิก</button>
           </div>
         </div>
       )}
@@ -140,7 +140,7 @@ export default function WebCouponsPage() {
             {/* 🔴 **โหลดไม่สำเร็จ ≠ ยังไม่มีโค้ด** (แก้ 6 ก.ย. 2569)
                 ตอนโหลดล้ม โค้ดเดิมทำ setList([]) ⇒ จอเขียนว่า "ยังไม่มีโค้ด — กดสร้างใหม่ได้เลย"
                 ⇒ **ชวนให้สร้างโค้ดซ้ำกับที่มีอยู่แล้ว** ซึ่งอาจชนกับโค้ดเดิมที่ลูกค้าถืออยู่ */}
-            <p className="text-[13px] text-gray-400">
+            <p className="text-[12.5px] text-gray-400">
               {msg ? 'ยังดูไม่ได้ — โหลดรายการไม่สำเร็จ (ไม่ได้แปลว่าไม่มีโค้ด อย่าเพิ่งสร้างใหม่)'
                 : 'ยังไม่มีโค้ด — กด “สร้างโค้ดใหม่” ได้เลย'}
             </p>
@@ -155,12 +155,12 @@ export default function WebCouponsPage() {
               <span className="min-w-0 flex-1">
                 <span className="flex items-center gap-1.5 flex-wrap">
                   <span className="text-[14px] font-black text-gray-900 tracking-wide">{c.code}</span>
-                  {c.fromEnv && <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9.5px] font-bold text-gray-400">โค้ดลับ (env)</span>}
-                  {c.off && <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9.5px] font-bold text-gray-400">ปิดอยู่</span>}
-                  {expired && <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[9.5px] font-bold text-red-400">หมดอายุ</span>}
-                  {!c.visible && !c.fromEnv && <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[9.5px] font-bold text-gray-400">ไม่โชว์หน้าเว็บ</span>}
+                  {c.fromEnv && <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-400">โค้ดลับ (env)</span>}
+                  {c.off && <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-400">ปิดอยู่</span>}
+                  {expired && <span className="rounded-full bg-red-50 px-1.5 py-0.5 text-[10px] font-bold text-red-400">หมดอายุ</span>}
+                  {!c.visible && !c.fromEnv && <span className="rounded-full bg-gray-100 px-1.5 py-0.5 text-[10px] font-bold text-gray-400">ไม่โชว์หน้าเว็บ</span>}
                 </span>
-                <span className="block text-[12px] text-gray-500 mt-0.5 truncate">
+                <span className="block text-[12.5px] text-gray-500 mt-0.5 truncate">
                   {label(c)}{c.min ? ` · ขั้นต่ำ ฿${c.min.toLocaleString('th-TH')}` : ''}
                   {c.quota ? ` · ใช้แล้ว ${c.used || 0}/${c.quota}` : c.used ? ` · ใช้แล้ว ${c.used}` : ''}
                   {/* 🔴 **โควตาเต็ม = โค้ดตายเหมือนหมดอายุ แต่ของเดิมบอกแค่วันหมดอายุ** (แก้ 18 ก.ย. 2569)
@@ -185,7 +185,7 @@ export default function WebCouponsPage() {
           )
         })}
       </div>
-      <p className="text-center text-[11px] text-gray-300">ข้อมูลชุดเดียวกับ gucut.com/admin/coupons/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      <p className="text-center text-[11.5px] text-gray-300">ข้อมูลชุดเดียวกับ gucut.com/admin/coupons/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

@@ -175,7 +175,7 @@ export default function PackingPage() {
           <div className="flex items-center gap-2">
             {/* ผัง ZORT: เมนูแพ็คสินค้าเปิด wizard แพ็คทีละใบ — ของเราแยกไว้ที่ /pack */}
             <Link href="/core/packing/pack"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เริ่มแพ็คสินค้า
             </Link>
@@ -207,19 +207,19 @@ export default function PackingPage() {
           {(d.counts?.['รอจ่ายอยู่'] || d.counts?.['ใบผี']) && (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-3">
               <div className="bg-white border border-gray-200 rounded-md px-3.5 py-2.5">
-                <p className="text-[12px] text-gray-500">รอจ่ายอยู่ — ยังไม่จ่าย แต่ช่องทางยังขายอยู่</p>
+                <p className="text-[12.5px] text-gray-500">รอจ่ายอยู่ — ยังไม่จ่าย แต่ช่องทางยังขายอยู่</p>
                 <p className="text-[14px] text-gray-800 mt-0.5">
                   {/* 🔴 กองที่ท่อ **ไม่ได้ส่งมา** ต้องเป็นขีด ไม่ใช่ 0 (18 ก.ย. 2569 · ตัวตรวจ check-honesty ชี้)
                       กล่องนี้โผล่เมื่อกองใดกองหนึ่งมีค่า ⇒ อีกกองที่หายไปจะเขียนว่า "0 ใบ · ฿0" ทั้งที่ยังไม่รู้ */}
                   <b>{ค่าหรือขีด(d.counts?.['รอจ่ายอยู่'], fmtNum)}</b> ใบ · {ค่าหรือขีด(d.amounts?.['รอจ่ายอยู่'], fmtMoney)}
-                  <span className="text-gray-400 text-[12px]"> — ยังมีโอกาสได้เงิน</span>
+                  <span className="text-gray-400 text-[12.5px]"> — ยังมีโอกาสได้เงิน</span>
                 </p>
               </div>
               <div className="bg-white border border-amber-200 rounded-md px-3.5 py-2.5">
-                <p className="text-[12px] text-amber-800">ใบผี — ยังไม่จ่าย และช่องทางเงียบไปแล้ว</p>
+                <p className="text-[12.5px] text-amber-800">ใบผี — ยังไม่จ่าย และช่องทางเงียบไปแล้ว</p>
                 <p className="text-[14px] text-gray-800 mt-0.5">
                   <b>{ค่าหรือขีด(d.counts?.['ใบผี'], fmtNum)}</b> ใบ · {ค่าหรือขีด(d.amounts?.['ใบผี'], fmtMoney)}
-                  <span className="text-amber-700 text-[12px]"> — ไม่มีวันได้เงิน</span>
+                  <span className="text-amber-700 text-[12.5px]"> — ไม่มีวันได้เงิน</span>
                 </p>
                 <p className="text-[11.5px] text-gray-500 mt-1 leading-relaxed">
                   ยังไม่ได้ลบหรือยกเลิก ⇒ <b>ยังถูกนับรวมอยู่ในยอดค้างจ่าย</b>
@@ -232,7 +232,7 @@ export default function PackingPage() {
           {late.length > 0 && (
             /* 🔴 ค้างเกิน 3 วันคือของที่ต้องรีบ — ต้องเห็นก่อนตาราง ไม่ใช่ซ่อนในแท็บ
                (กฎ warning-placement: คำเตือนที่ต้องกดถึงเห็น คือวางผิดที่) */
-            <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+            <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
               🔴 <b>ค้างเกิน 3 วัน {fmtNum(late.length)} ใบ</b> — ลูกค้าจ่ายเงินแล้วและยังไม่ได้ของ
               {' '}(ใบเก่าสุดค้างมา <b>{fmtNum(Math.max(...late.map((j) => ageDays(j.day) ?? 0)))} วัน</b>)
             </div>
@@ -333,7 +333,7 @@ export default function PackingPage() {
                                เพราะชนิดข้อมูลบอกว่า j.number เป็น string เสมอ
                             ⇒ ต้องเช็คว่ามี openErr จริงก่อน แล้วค่อยเทียบ */}
                         {openErr && openErr.number === j.number && (
-                          <span className="ml-2 text-[11px] text-red-700">{openErr.msg}</span>
+                          <span className="ml-2 text-[11.5px] text-red-700">{openErr.msg}</span>
                         )}
                       </td>
                       <td className={TD}><ChannelTag name={j.channel} /></td>

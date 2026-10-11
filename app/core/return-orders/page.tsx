@@ -363,7 +363,7 @@ export default function ReturnOrdersPage() {
           {/* 🔴 **ผลค้นมาจากกระจก ไม่ใช่ ZORT สด — ต้องบอก** (ท่อกำชับ 15 ก.ย. 2569)
               ไม่บอก = คนอ่านว่าเป็นของสดเสมอ แล้วใบที่เพิ่งออกเมื่อครู่จะหายไปโดยไม่มีคำอธิบาย */}
           {d?.applied?.source === 'mirror' && (
-            <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mb-3 leading-relaxed">
+            <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 mb-3 leading-relaxed">
               🔍 ผลค้นนี้มาจาก<b>กระจกของเรา</b> ไม่ใช่การถาม ZORT สด
               {d.syncedAtUtc
                 ? <> — ซิงก์ล่าสุด <b>{thaiMoment(toThai(d.syncedAtUtc))}</b></>
@@ -383,7 +383,7 @@ export default function ReturnOrdersPage() {
               ⚠️ วัดแล้ววันเดียวกัน: ท่อกรองทั้งสามจริง ⇒ ก้อนนี้เป็นตาข่ายเผื่ออนาคต ปกติไม่ขึ้น
               ⚠️ เทียบเฉพาะตอนผู้ใช้ใส่ค่านั้นจริง — ไม่ใส่แล้วท่อคืน null เป็นเรื่องปกติ */}
           {ตัวกรองที่ท่อไม่ได้ใช้.length > 0 && (
-            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-3 leading-relaxed">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-3 leading-relaxed">
               ⚠️ <b>ตัวกรองที่จอส่งกับที่ท่อใช้จริงไม่ตรงกัน</b> — {ตัวกรองที่ท่อไม่ได้ใช้.join(' · ')}
               <span className="block mt-0.5">
                 แถวที่เห็น<b>ไม่ได้ถูกกรองด้วยค่านั้น</b> ⇒ อาจมีของที่ไม่ตรงเงื่อนไขปนอยู่
@@ -478,7 +478,7 @@ export default function ReturnOrdersPage() {
           {/* ✅ ด่านเทียบหน้าที่จอขอ กับหน้าที่ท่อใช้จริง — เส้นนี้ส่ง `page` กลับมาให้
               (เคยเจอมาแล้วว่าส่งพารามิเตอร์ไปแล้วท่อเมินเงียบ ๆ ⇒ แถวที่เห็นคือชุดเดิม) */}
           {typeof d?.page === 'number' && d.page !== page && (
-            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2">
               ⚠️ จอขอหน้า <b>{page}</b> แต่ท่อใช้หน้า <b>{d.page}</b> — แถวที่เห็นไม่ใช่หน้าที่กด
             </p>
           )}

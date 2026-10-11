@@ -436,7 +436,7 @@ export default function จอสต็อกค้าง() {
           🔴 ผมเองพลาดข้อนี้ 27 ก.ย. 2569: เอา `planned` ไปบวกกับ `skipped` แล้วสรุปว่า "หายไป 1 รายการ"
              ทั้งที่สองก้อนนั้นไม่ใช่ส่วนของกันและกันเลย ⇒ ผมสร้างคำถามที่ไม่มีอยู่แล้วส่งให้คนอื่นไปไล่
           ⇒ จอนี้จึงต้องเขียน **โซ่ที่ปิดบัญชีได้** ออกมาตรง ๆ ไม่ให้ใครบวกผิดซ้ำ */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 text-[13px] space-y-1">
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 text-[12.5px] space-y-1">
         <div className="font-semibold">รอบกวาดล่าสุดของแต่ละเจ้า — ปิดบัญชีได้ครบไหม</div>
         {รอบรายเจ้า === null ? (
           <div className="text-gray-500">
@@ -576,7 +576,7 @@ export default function จอสต็อกค้าง() {
         )}
       </div>
 
-      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[13px] text-amber-900 space-y-1">
+      <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-[12.5px] text-amber-900 space-y-1">
         <div className="font-semibold">อ่านจอนี้อย่างไร — ตัวเลขมาจากสองแหล่ง</div>
         <div>· <b>ช่อง เหตุ/ค้างกี่วัน/streak</b> มาจากสมุดข้ามของท่อ (<code>push_state</code>)</div>
         <div>· <b>ช่อง มีในกระจก/สต็อกในกระจก</b> มาจากกระจกสต็อกของเรา (<code>list=stock</code>) — คนละแหล่ง</div>
@@ -597,7 +597,7 @@ export default function จอสต็อกค้าง() {
              ⇒ ถ้าเอา `skip_reason` ไปค้นในทะเบียนตรง ๆ แล้วอะไรที่ไม่เจอขึ้นว่า "ยังไม่รู้จัก"
                 จอจะ **พูดผิดกับแถวส่วนใหญ่** ⇒ จึงแยกเป็นกองที่สาม และเขียนกำกับว่าทำไม */}
       {Object.keys(นับเหตุ).length > 0 && (
-        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-[13px]">
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-4 text-[12.5px]">
           {(() => {
             /* 🔴 **แก้ 28 ก.ย. 2569 — เดิมจัดกองจาก `skip_reason` อย่างเดียว แล้วพลาดของจริง**
                เช้านี้ `03386-33.5T` มี `last_error` ว่า "รหัสนี้อยู่ 2 ที่บนแพลตฟอร์ม — ต้องให้คนตัดสิน"
@@ -639,10 +639,10 @@ export default function จอสต็อกค้าง() {
             const กล่อง = (สี: string, หัว: string, ks: string[], อธิบาย: React.ReactNode) => (
               <div className={`rounded-xl border p-3 ${สี}`}>
                 <div className="font-semibold">{หัว} <b>{fmtNum(รวม(ks))}</b> รหัส</div>
-                <div className="text-[12px] mt-1">
+                <div className="text-[12.5px] mt-1">
                   {ks.length ? ks.join(' · ') : '— ไม่มีในหน้านี้ —'}
                 </div>
-                <div className="text-[11px] mt-1 opacity-80">{อธิบาย}</div>
+                <div className="text-[11.5px] mt-1 opacity-80">{อธิบาย}</div>
               </div>
             )
             return (
@@ -667,10 +667,10 @@ export default function จอสต็อกค้าง() {
                 {กองแถว.สำเร็จแล้ว.length > 0 && (
                   <div className="rounded-xl border border-green-200 bg-green-50 p-3 text-green-900">
                     <div className="font-semibold">🟢 สำเร็จแล้ว (ข้อความผิดพลาดค้างจากรอบเก่า) <b>{fmtNum(กองแถว.สำเร็จแล้ว.length)}</b> รหัส</div>
-                    <div className="text-[12px] mt-1 break-words">
+                    <div className="text-[12.5px] mt-1 break-words">
                       {กองแถว.สำเร็จแล้ว.map((r) => `${r.sku} (${r.channel})`).join(' · ')}
                     </div>
-                    <div className="text-[11px] mt-1 opacity-80">
+                    <div className="text-[11.5px] mt-1 opacity-80">
                       ยิงครบตามแผนและปลายทางยืนยันแล้ว (<b>ดันสำเร็จ = วางแผน = ยืนยัน</b>)
                       {' '}⇒ <b>ไม่ใช่ปัญหา</b> · ข้อความที่ค้างอยู่เป็นของรอบก่อน
                     </div>
@@ -699,7 +699,7 @@ export default function จอสต็อกค้าง() {
           ⚠️ จอนี้เขียนได้แค่ **สูตรชุดที่วัดมา** — ไม่ได้ยืนยันว่าส่วนประกอบติดลบเท่าไหร่
              (คนละเส้น) ⇒ เขียนว่า "เป็นชุดที่ใช้ X × n" ไม่เขียนว่า "X ติดลบ" */}
       {(นับเหตุ['negative'] ?? 0) > 0 && (
-        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-[13px] text-rose-900 space-y-2">
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-[12.5px] text-rose-900 space-y-2">
           {/* 🔴 **แก้หลังเปิดดูด้วยตา 27 ก.ย. 2569 — ผมวางเลขสองชุดที่นับคนละหน่วยไว้คู่กัน**
               ของเดิมเขียน "ถามสูตรชุดแล้ว 29 จาก 59 รหัส" ⇒ อ่านเหมือนยังเหลืออีก 30 รหัสที่ไม่ได้ถาม
               ของจริง: **59 คือจำนวนแถว** (รหัสเดียวโผล่ได้หลายช่อง) · **29 คือรหัสไม่ซ้ำ** ⇒ ถามครบแล้ว
@@ -712,7 +712,7 @@ export default function จอสต็อกค้าง() {
             {กำลังถามสูตร > 0 && <span className="font-normal"> · กำลังถามอีก {fmtNum(กำลังถามสูตร)} รหัส…</span>}
           </div>
           {ชนเพดานสูตร && (
-            <div className="text-[12px]">
+            <div className="text-[12.5px]">
               ⚠️ <b>ถามแค่ {fmtNum(เพดานถามสูตรชุด)} รหัสแรก</b> (เส้นสูตรชุดใช้ ~2.5 วิ/รหัส)
               {' '}⇒ กลุ่มข้างล่างคือ<b>ของเท่าที่ถามไปแล้ว ไม่ใช่ทั้งกอง</b>
             </div>
@@ -770,14 +770,14 @@ export default function จอสต็อกค้าง() {
                       🎯 <b className="font-mono">{ราก}</b> — ลากชุดติดลบตามไป <b>{fmtNum(ชุด.length)}</b> รหัส
                       {' '}· กระทบช่อง <b>{ช่องกระทบ.length ? ช่องกระทบ.join(' · ') : 'ยังไม่รู้'}</b>
                     </div>
-                    <div className="text-[11px] text-gray-600 mt-0.5 break-words">{ชุด.join(' · ')}</div>
+                    <div className="text-[11.5px] text-gray-600 mt-0.5 break-words">{ชุด.join(' · ')}</div>
                   </div>
                   )
                 })}
                 {เป็นต้นเหตุเอง.length > 0 && (
                   <div className="rounded-lg bg-white border border-rose-200 p-2">
                     <div>🎯 <b>ไม่ใช่ชุด ⇒ เป็นรหัสต้นเหตุเอง</b> {fmtNum(เป็นต้นเหตุเอง.length)} รหัส</div>
-                    <div className="text-[11px] text-gray-600 mt-0.5 break-words">
+                    <div className="text-[11.5px] text-gray-600 mt-0.5 break-words">
                       {เป็นต้นเหตุเอง.map((k) => (
                         <span key={k} className="inline-block mr-3">
                           <span className="font-mono">{k}</span>
@@ -810,7 +810,7 @@ export default function จอสต็อกค้าง() {
       {พัง && <ErrorBox title="อ่านรายการรหัสค้างไม่ได้">{พัง}</ErrorBox>}
       {กำลังโหลด && <LoadingState text="กำลังอ่านสมุดข้ามของท่อ..." />}
       {!กำลังโหลด && กำลังตรวจกระจก > 0 && (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-[13px] text-blue-900">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-[12.5px] text-blue-900">
           กำลังตรวจกระจกทีละรหัส {fmtNum(Object.keys(กระจก).length)} / {fmtNum(กำลังตรวจกระจก)}
           {' — '}ช่องที่ยังไม่ขึ้นค่าคือ <b>ยังไม่ได้ตรวจ</b> ไม่ใช่ไม่มี
           {' · '}เส้นกระจกตอบช้า ~2.8 วินาทีต่อรหัส (วัดเมื่อ 27 ก.ย. 2569)
@@ -819,7 +819,7 @@ export default function จอสต็อกค้าง() {
 
       {!กำลังโหลด && !พัง && (
         <>
-          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-[13px] space-y-1">
+          <div className="rounded-2xl border border-gray-200 bg-white p-4 text-[12.5px] space-y-1">
             <div>
               ทั้งหมดที่ตรงเงื่อนไข <b>{ทั้งหมด === null ? 'ยังไม่รู้' : fmtNum(ทั้งหมด)}</b> รหัส
               {' · '}โหลดมาแสดง <b>{fmtNum(แถว.length)}</b>
@@ -857,7 +857,7 @@ export default function จอสต็อกค้าง() {
           </div>
 
           <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
-            <table className="min-w-full text-[13px]">
+            <table className="min-w-full text-[12.5px]">
               <thead className="bg-gray-50 text-gray-600">
                 <tr>
                   <th className="px-3 py-2 text-left">รหัส</th>
@@ -882,13 +882,13 @@ export default function จอสต็อกค้าง() {
                       <td className="px-3 py-2 text-right whitespace-nowrap">
                         {วัน === null ? <span className="text-gray-400">ยังไม่รู้</span> : <b>{fmtNum(วัน)} วัน</b>}
                         <span className="text-gray-400"> · {fmtNum(x.skip_streak)}</span>
-                        <div className="text-[11px] text-gray-400">ตั้งแต่ {thaiDateUtc(x.skip_first_at) || '—'}</div>
+                        <div className="text-[11.5px] text-gray-400">ตั้งแต่ {thaiDateUtc(x.skip_first_at) || '—'}</div>
                       </td>
                       <td className="px-3 py-2">
                         {!ก ? <span className="text-gray-400">⚪ ยังไม่ได้ตรวจ</span>
                           : ก.มี ? <span className="text-green-700">✅ มี{ก.service && <b> (บริการ)</b>}{!ก.active && ' · ปิดขาย'}</span>
                             : <span className="text-red-700">🔴 ไม่มีในกระจก</span>}
-                        {ก?.มี && ก.name && <div className="text-[11px] text-gray-400 max-w-[22rem] truncate">{ก.name}</div>}
+                        {ก?.มี && ก.name && <div className="text-[11.5px] text-gray-400 max-w-[22rem] truncate">{ก.name}</div>}
                       </td>
                       <td className="px-3 py-2 text-right">
                         {!ก ? <span className="text-gray-400">—</span>
@@ -921,7 +921,7 @@ export default function จอสต็อกค้าง() {
                                         {typeof ท.gap === 'number' && ท.gap !== 0
                                           ? <b className="text-red-700">{ท.gap > 0 ? 'คลังสูงกว่าแพลตฟอร์ม ' : 'คลังต่ำกว่าแพลตฟอร์ม '}{fmtNum(Math.abs(ท.gap))}</b>
                                           : <span className="text-gray-400">ไม่ต่าง</span>}{' '}
-                                        <span className="text-[11px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                                        <span className="text-[11.5px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
                                           {ท.via || 'ไม่บอกวิธี'}
                                         </span>
                                       </div>
@@ -930,12 +930,12 @@ export default function จอสต็อกค้าง() {
                                           ⇒ ทั้งคู่จริงตามแหล่งของมัน: `core` ในผลเทียบ **คิดจากสูตรชุด**
                                              ไม่ใช่แถวในกระจก ⇒ ถ้าไม่เขียนกำกับ คนอ่านต้องเดาเอง */}
                                       {ก && !ก.มี && ท.via === 'สูตรชุด' && (
-                                        <div className="text-[11px] text-blue-700">
+                                        <div className="text-[11.5px] text-blue-700">
                                           ℹ️ เลข “คลัง” นี้คิดจาก<b>สูตรชุด</b> ไม่ใช่แถวในกระจก ⇒ ไม่ขัดกับช่อง “ไม่มีในกระจก”
                                         </div>
                                       )}
                                       {ท.directQty !== null && ท.directQty !== ท.core && (
-                                        <div className="text-[11px] text-amber-700">
+                                        <div className="text-[11.5px] text-amber-700">
                                           ⚠️ รหัสตรงบอก {fmtNum(ท.directQty)} — คนละเลขกับสูตรชุด
                                         </div>
                                       )}

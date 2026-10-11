@@ -27,7 +27,7 @@ import { WriteResult, type WriteResp } from './WriteResult'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 
-const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
+const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
 
 export interface FieldSpec {
   /** ชื่อช่องที่จะส่งไปท่อ — **ต้องตรงกับสัญญาช่องที่ฝั่งท่อให้มา ห้ามเดา** */
@@ -168,7 +168,7 @@ export function ShortAddForm({
         {fields.map((f) => (
           <div key={f.k} className={f.wide ? 'md:col-span-3' : ''}>
             <label className="block">
-              <span className="block text-[11px] font-semibold text-gray-400 mb-1">
+              <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">
                 {f.label}{f.required && <span className="text-red-500"> *</span>}
               </span>
               {f.options ? (
@@ -193,15 +193,15 @@ export function ShortAddForm({
 
       {extra}
 
-      {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+      {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         <button onClick={() => send(false)} disabled={busy || !ref}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
         <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !realSendEnabled}
-          className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
           style={{ background: dryOk && realSendEnabled ? '#c0392b' : '#9aa0a6' }}>
           ส่งเข้า ZORT จริง
         </button>
@@ -221,7 +221,7 @@ export function ShortAddForm({
       {res?.dryRun && res.willSend != null && (
         <details className="mt-2 border border-gray-200 rounded">
           <summary className="text-[12.5px] text-gray-700 px-3 py-2 cursor-pointer">ดูของจริงที่จะถูกส่งเข้า ZORT</summary>
-          <pre className="text-[11px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
+          <pre className="text-[11.5px] text-gray-700 px-3 py-2 overflow-x-auto whitespace-pre-wrap break-all">
             {JSON.stringify(res.willSend, null, 1)}
           </pre>
         </details>

@@ -64,7 +64,7 @@ export default function SettingsProfilePage() {
       {!loading && !error && (
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
-            <p className="text-[12px] text-gray-400 mb-1">ตอนนี้เข้าระบบเป็น</p>
+            <p className="text-[12.5px] text-gray-400 mb-1">ตอนนี้เข้าระบบเป็น</p>
             {role === 'admin' && (
               <>
                 <p className="text-[17px] font-semibold text-gray-900 flex items-center gap-2">
@@ -115,7 +115,7 @@ export default function SettingsProfilePage() {
 
           {/* ── ผังตามภาพ 103: การ์ดฟอร์มโปรไฟล์ของ ZORT — แถวไหนเราไม่มี บอกเหตุผลแทน ── */}
           <div className="bg-white border border-gray-200 rounded-md p-4 md:p-5 mb-4">
-            <p className="text-[13.5px] font-semibold text-gray-800 mb-3">👤 ข้อมูลส่วนตัว <span className="text-[11px] font-normal text-gray-400">(ผังตาม ZORT)</span></p>
+            <p className="text-[12.5px] font-semibold text-gray-800 mb-3">👤 ข้อมูลส่วนตัว <span className="text-[11.5px] font-normal text-gray-400">(ผังตาม ZORT)</span></p>
             {([
               ['ชื่อผู้ใช้งาน',
                 role === 'admin' ? 'แอดมิน (เจ้าของร้าน)'
@@ -128,10 +128,10 @@ export default function SettingsProfilePage() {
               ['ภาษา', 'ภาษาไทย', ''],
             ] as Array<[string, string, string]>).map(([label, value, why]) => (
               <div key={label} className="flex items-start gap-3 mb-2.5">
-                <span className="w-[170px] shrink-0 text-[12px] text-gray-500 pt-1.5">{label}</span>
+                <span className="w-[170px] shrink-0 text-[12.5px] text-gray-500 pt-1.5">{label}</span>
                 {value
                   ? <span className="flex-1 max-w-[420px] text-[12.5px] text-gray-800 bg-gray-50 border border-gray-200 rounded px-3 py-1.5">{value}</span>
-                  : <span className="flex-1 max-w-[420px] text-[12px] text-gray-400 bg-gray-50/60 border border-dashed border-gray-200 rounded px-3 py-1.5">{why}</span>}
+                  : <span className="flex-1 max-w-[420px] text-[12.5px] text-gray-400 bg-gray-50/60 border border-dashed border-gray-200 rounded px-3 py-1.5">{why}</span>}
               </div>
             ))}
             <p className="text-[11.5px] text-gray-400 mt-3">
@@ -185,7 +185,7 @@ export default function SettingsProfilePage() {
                 ฟอร์มบนเว็บเปลี่ยนไม่ได้จริง ปุ่มที่กดแล้วไม่มีอะไรเกิดขึ้นอันตรายกว่าไม่มีปุ่ม
                 เพราะคนจะเชื่อว่าเปลี่ยนแล้ว ทั้งที่รหัสเดิมยังใช้ได้อยู่
               </p>
-              <p className="text-[12px] mt-2.5">
+              <p className="text-[12.5px] mt-2.5">
                 <Link href="/core/settings-users" className="text-blue-600 hover:underline">
                   ดูรายชื่อผู้ใช้ทั้งหมดและสิทธิ์ →
                 </Link>

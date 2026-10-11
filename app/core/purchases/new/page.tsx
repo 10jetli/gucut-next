@@ -122,7 +122,7 @@ function NewPurchaseOrderInner() {
       <PageHead
         title={quick ? 'สร้างใบสั่งซื้ออย่างง่าย' : 'สร้างใบสั่งซื้อ'}
         summary={<>สร้างใบใน ZORT โดยตรง{' | '}<span className="text-gray-400">เลขอ้างอิงใบนี้: <b>{ref}</b> (กันการส่งซ้ำ)</span></>}
-        actions={<Link href="/core/purchases" className="text-[13px] text-blue-600 hover:underline">← กลับรายการซื้อ</Link>}
+        actions={<Link href="/core/purchases" className="text-[12.5px] text-blue-600 hover:underline">← กลับรายการซื้อ</Link>}
       />
 
       <div className="text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-4 leading-relaxed">
@@ -161,7 +161,7 @@ function NewPurchaseOrderInner() {
           </div>
         </div>
       ) : (
-        <p className="text-[12px] text-gray-500 mb-3">
+        <p className="text-[12.5px] text-gray-500 mb-3">
           อยากบันทึกว่าได้ของและจ่ายเงินแล้วในใบเดียว ใช้{' '}
           <Link href="/core/purchases/new?quick=1" className="text-blue-600 hover:underline">สร้างอย่างง่าย</Link>
         </p>
@@ -205,19 +205,19 @@ function NewPurchaseOrderInner() {
               <tr key={i} className="border-b border-[#e8ecf8] last:border-0">
                 <td className={TD}>
                   <input value={l.sku} onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, sku: e.target.value } : x))}
-                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px]" placeholder="รหัสสินค้า" />
+                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px]" placeholder="รหัสสินค้า" />
                 </td>
                 <td className={TD}>
                   <input value={l.name} onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, name: e.target.value } : x))}
-                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px]" placeholder="ไม่ใส่ = ใช้ชื่อใน ZORT" />
+                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px]" placeholder="ไม่ใส่ = ใช้ชื่อใน ZORT" />
                 </td>
                 <td className={TDR}>
                   <input value={l.qty} inputMode="numeric" onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, qty: e.target.value } : x))}
-                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px] text-right" placeholder="0" />
+                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px] text-right" placeholder="0" />
                 </td>
                 <td className={TDR}>
                   <input value={l.price} inputMode="decimal" onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
-                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px] text-right" placeholder="ไม่ใส่ = ZORT คิดเอง" />
+                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px] text-right" placeholder="ไม่ใส่ = ZORT คิดเอง" />
                 </td>
                 {/* 🔴 **"รวม" ของบรรทัดที่กรอกไม่ครบต้องว่าง ห้ามเป็น 0**
                     0 อ่านว่า "ของฟรี" ซึ่งพาไปตัดสินใจผิด · ว่างอ่านว่า "ยังไม่ได้กรอก"
@@ -226,15 +226,15 @@ function NewPurchaseOrderInner() {
                   {(() => {
                     const q = Number(l.qty); const p2 = Number(l.price)
                     if (!l.qty.trim() || !l.price.trim() || !Number.isFinite(q) || !Number.isFinite(p2)) {
-                      return <span className="text-[12px] text-gray-300" title="ใส่ทั้งจำนวนและมูลค่าต่อหน่วยก่อน จึงคิดยอดรวมได้">—</span>
+                      return <span className="text-[12.5px] text-gray-300" title="ใส่ทั้งจำนวนและมูลค่าต่อหน่วยก่อน จึงคิดยอดรวมได้">—</span>
                     }
-                    return <span className="text-[13px] text-gray-700">{fmtMoney(q * p2)}</span>
+                    return <span className="text-[12.5px] text-gray-700">{fmtMoney(q * p2)}</span>
                   })()}
                 </td>
                 <td className={TD}>
                   {lines.length > 1 && (
                     <button onClick={() => setLines((v) => v.filter((_, j) => j !== i))}
-                      className="text-[12px] text-gray-400 hover:text-red-600">ลบ</button>
+                      className="text-[12.5px] text-gray-400 hover:text-red-600">ลบ</button>
                   )}
                 </td>
               </tr>
@@ -262,7 +262,7 @@ function NewPurchaseOrderInner() {
       <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
         <BtnGhost onClick={() => setLines((v) => [...v, { ...BLANK }])}>+ เพิ่มบรรทัด</BtnGhost>
         {/* ⚠️ ยอดรวมประกาศขอบเขต — บรรทัดที่ไม่ใส่ราคาไม่ถูกนับ */}
-        <span className="text-[13px] text-gray-600">
+        <span className="text-[12.5px] text-gray-600">
           {clean.length === 0 ? <span className="text-gray-400">ยังไม่มีบรรทัดที่ใช้ได้</span>
             : priced === clean.length ? <>รวม <b>{fmtMoney(total)}</b> ({clean.length} บรรทัด)</>
               : <>รวมเฉพาะ <b>{priced}</b> บรรทัดที่ใส่ราคา = <b>{fmtMoney(total)}</b></>}
@@ -277,14 +277,14 @@ function NewPurchaseOrderInner() {
           ⚠️ ปุ่มส่งจริงเปิดแล้ว (14 ก.ย. 2569) ⇒ คำเตือนนี้คือด่านสุดท้ายก่อนส่งใบ 0 บาทเข้า ZORT
              ใบที่ส่งแล้วแก้ไม่ได้ ต้องยกเลิกทั้งใบ */}
       {clean.length > 0 && priced < clean.length && (
-        <div className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
           ⚠️ <b>มี {clean.length - priced} บรรทัดที่ยังไม่ใส่ราคา</b> — <b>ZORT ไม่คิดราคาให้เอง</b>
           {' '}ถ้าส่งจริง บรรทัดพวกนั้นจะกลายเป็น <b>0 บาท</b> และใบนี้จะ<b>ไม่มียอดรวมหัวใบ</b>
           {' '}· ZORT <b>ไม่มีเส้นแก้ใบสั่งซื้อ</b> ใบที่ผิดต้องยกเลิกทั้งใบแล้วทำใหม่
         </div>
       )}
 
-      {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+      {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
       {/* 🔴 เทียบยอดที่ท่อคิดกับยอดที่จอคิด — ZORT ไม่คิดเงินให้สักชั้น
           จอนี้ปล่อยให้บรรทัดไม่มีราคาได้ ⇒ linesTotal:null เป็นเรื่องปกติ **ไม่ใช่ความผิด**
           จึงไม่ส่ง requiresPrice (ต่างจากจอขาย/จอคืนของที่บังคับราคาทุกบรรทัด) */}
@@ -324,7 +324,7 @@ function NewPurchaseOrderInner() {
 export default function NewPurchaseOrderPage() {
   // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (กติกาเดียวกับจอ moves)
   return (
-    <Suspense fallback={<div className="p-6 text-[13px] text-gray-500">กำลังโหลด...</div>}>
+    <Suspense fallback={<div className="p-6 text-[12.5px] text-gray-500">กำลังโหลด...</div>}>
       <NewPurchaseOrderInner />
     </Suspense>
   )

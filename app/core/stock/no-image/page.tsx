@@ -126,7 +126,7 @@ export default function NoImagePage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
-      <p className="text-[12px] mb-2"><Link href="/core/stock" className="text-blue-600 hover:underline">‹ สินค้า</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/stock" className="text-blue-600 hover:underline">‹ สินค้า</Link></p>
       <PageHead
         title="รหัสที่ยังไม่มีรูป"
         summary={<span className="text-gray-500">
@@ -166,7 +166,7 @@ export default function NoImagePage() {
               <span className="text-gray-500">เรียงตาม:</span>
               {(['ควรถ่ายก่อน', 'รหัส'] as const).map((k) => (
                 <button key={k} type="button" onClick={() => setเรียงแบบ(k)}
-                  className={`rounded-full px-2.5 py-0.5 border text-[12px] ${เรียงแบบ === k
+                  className={`rounded-full px-2.5 py-0.5 border text-[12.5px] ${เรียงแบบ === k
                     ? 'bg-[#4669e5] text-white border-[#4669e5]'
                     : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'}`} aria-pressed={เรียงแบบ === k}>
                   {k === 'รหัส' ? 'รหัส (เดินชั้นตามลำดับ)' : 'ควรถ่ายก่อน'}
@@ -185,17 +185,17 @@ export default function NoImagePage() {
       {ครบแล้ว && (
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
           <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-            <div className="text-[12px] text-gray-500">จอขึ้นรูปได้แล้ว</div>
+            <div className="text-[12.5px] text-gray-500">จอขึ้นรูปได้แล้ว</div>
             <div className="text-[20px] font-semibold text-emerald-700">{fmtNum(มีรูป.length)}</div>
             <div className="text-[11.5px] text-gray-400">รูปย่อในถังเรา (แผนที่รูป หรือไฟล์ที่ย่อแล้ว)</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-            <div className="text-[12px] text-gray-500">ZORT มีรูป แต่ยังไม่ย่อ</div>
+            <div className="text-[12.5px] text-gray-500">ZORT มีรูป แต่ยังไม่ย่อ</div>
             <div className="text-[20px] font-semibold text-amber-700">{fmtNum(ZORTมีแต่ยังไม่ย่อ.length)}</div>
             <div className="text-[11.5px] text-gray-400">จอย่อให้เองตอนแสดง — ไม่ต้องถ่ายเพิ่ม</div>
           </div>
           <div className="bg-white border border-gray-200 rounded-lg px-4 py-3">
-            <div className="text-[12px] text-gray-500">ไม่มีรูปเลย — ต้องถ่าย</div>
+            <div className="text-[12.5px] text-gray-500">ไม่มีรูปเลย — ต้องถ่าย</div>
             <div className="text-[20px] font-semibold text-red-700">{fmtNum(ไม่มีรูปเลย.length)}</div>
             <div className="text-[11.5px] text-gray-400">นี่คืองานที่เหลือจริงของใบนี้</div>
           </div>
@@ -249,8 +249,8 @@ export default function NoImagePage() {
                   <td className={TD} style={{ textAlign: 'right' }}>{typeof r.sold === 'number' ? fmtNum(r.sold) : <span className="text-gray-300" title="ท่อไม่ได้ส่งยอดขายมา — ไม่ใช่ 0">—</span>}</td>
                   <td className={TD}>
                     {r.active === false
-                      ? <span className="text-[11px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">ปิดใช้งาน</span>
-                      : <span className="text-[11px] text-gray-400">ใช้งาน</span>}
+                      ? <span className="text-[11.5px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">ปิดใช้งาน</span>
+                      : <span className="text-[11.5px] text-gray-400">ใช้งาน</span>}
                   </td>
                 </tr>
               ))}

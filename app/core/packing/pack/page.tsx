@@ -43,10 +43,10 @@ function StepHead({ step }: { step: number }) {
               ${i === step ? 'bg-blue-600 text-white' : i < step ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-400'}`}>
               {i === 0 ? '🔍' : i === 1 ? '📦' : '✅'}
             </div>
-            <span className={`text-[11px] mt-1 ${i === step ? 'text-gray-800 font-semibold' : 'text-gray-400'}`}>
+            <span className={`text-[11.5px] mt-1 ${i === step ? 'text-gray-800 font-semibold' : 'text-gray-400'}`}>
               ขั้นตอนที่ {i + 1}
             </span>
-            <span className={`text-[11px] ${i === step ? 'text-gray-600' : 'text-gray-400'}`}>{label}</span>
+            <span className={`text-[11.5px] ${i === step ? 'text-gray-600' : 'text-gray-400'}`}>{label}</span>
           </div>
         </div>
       ))}
@@ -119,7 +119,7 @@ export default function PackWizardPage() {
 
       {step === 0 && (
         <div className="bg-white border border-gray-200 rounded-md p-6 md:p-10 text-center">
-          <h1 className="text-[19px] font-bold text-gray-900 mb-2">เริ่มต้นการแพ็คสินค้า</h1>
+          <h1 className="text-[20px] font-bold text-gray-900 mb-2">เริ่มต้นการแพ็คสินค้า</h1>
           <p className="text-[12.5px] text-gray-500 mb-1">กรอกหมายเลขรายการ หรือ Tracking No. แล้วกด &ldquo;แพ็คสินค้า&rdquo;</p>
           <p className="text-[11.5px] text-gray-400 mb-2">
             ยิงเลขพัสดุจากใบปะหน้าได้เลย — ใบขายออนไลน์มีเลขพัสดุในคลังเงาครบ
@@ -140,7 +140,7 @@ export default function PackWizardPage() {
               placeholder="เลขที่ใบ หรือเลขพัสดุ"
               className="w-[260px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500" />
             <button type="submit" disabled={busy || !q.trim()}
-              className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
+              className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
               style={{ background: '#4669e5' }}>
               {busy ? 'กำลังค้นหา…' : 'แพ็คสินค้า'}
             </button>
@@ -166,13 +166,13 @@ export default function PackWizardPage() {
                         ⇒ ป้ายสาขาคือตัวชี้ขาด ไม่ใช่ของประดับ
                         ⚠️ สามสถานะ: ท่อไม่ส่ง source (หรือค่าอื่น) ⇒ **ไม่ติดป้าย** ห้ามเดาว่าเป็นสาขา 1 */}
                     {(r.source === 'z1' || r.source === 'z2') && (
-                      <span className="shrink-0 text-[10.5px] text-gray-600 border border-gray-300
+                      <span className="shrink-0 text-[10px] text-gray-600 border border-gray-300
                         bg-gray-50 rounded px-1 py-[1px]">
                         {r.source === 'z1' ? 'สาขา 1' : 'สาขา 2'}
                       </span>
                     )}
                     <ChannelTag name={r.channel || ''} />
-                    <span className="text-[12px] text-gray-600 flex-1 truncate">{r.customer || ''}</span>
+                    <span className="text-[12.5px] text-gray-600 flex-1 truncate">{r.customer || ''}</span>
                     <span className="text-[11.5px] text-gray-400">{thaiDate(r.order_date)}</span>
                   </button>
                 ))}
@@ -189,7 +189,7 @@ export default function PackWizardPage() {
             {/* ใบที่เลือกมาแพ็คแล้ว — ต้องบอกสาขาด้วย เพราะเลขเดียวกันมีได้สองร้าน
                 (ถ้าเลือกผิดจากหน้าค้น หน้านี้เป็นที่สุดท้ายที่ยังทันเห็น) */}
             {(order.source === 'z1' || order.source === 'z2') && (
-              <span className="text-[11px] text-gray-600 border border-gray-300 bg-gray-50 rounded px-1.5 py-[1px]">
+              <span className="text-[11.5px] text-gray-600 border border-gray-300 bg-gray-50 rounded px-1.5 py-[1px]">
                 {order.source === 'z1' ? 'สาขา 1' : 'สาขา 2'}
               </span>
             )}
@@ -217,9 +217,9 @@ export default function PackWizardPage() {
                 <input type="checkbox" checked={!!picked[i]}
                   onChange={(e) => setPicked((p) => ({ ...p, [i]: e.target.checked }))}
                   className="w-4 h-4" />
-                <span className="font-mono text-[12px] text-gray-500 w-[110px] shrink-0 truncate">{it.sku || '—'}</span>
+                <span className="font-mono text-[12.5px] text-gray-500 w-[110px] shrink-0 truncate">{it.sku || '—'}</span>
                 <span className="text-[12.5px] text-gray-800 flex-1">{it.name || '—'}</span>
-                <span className={`text-[13px] font-bold ${(it.qty ?? 0) > 1 ? 'text-red-600' : 'text-gray-700'}`}>
+                <span className={`text-[12.5px] font-bold ${(it.qty ?? 0) > 1 ? 'text-red-600' : 'text-gray-700'}`}>
                   × {typeof it.qty === 'number' ? it.qty.toLocaleString('th-TH') : '?'}
                 </span>
               </label>
@@ -233,7 +233,7 @@ export default function PackWizardPage() {
 
           <div className="flex items-center gap-3">
             <button onClick={() => setStep(2)} disabled={!allPicked}
-              className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
+              className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
               style={{ background: '#4669e5' }}>
               แพ็คสำเร็จ
             </button>
@@ -255,13 +255,13 @@ export default function PackWizardPage() {
             {items.length.toLocaleString('th-TH')} รายการ · ยอดใบ {typeof order.amount === 'number' ? fmtMoney(order.amount) : '—'}
           </p>
           {/* 🔴 ความจริงที่ต้องบอก: จอนี้ไม่ได้เขียนสถานะไปที่ไหน */}
-          <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 inline-block mb-4">
+          <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 inline-block mb-4">
             ⚠️ จอนี้ช่วย<b>เช็คของก่อนปิดกล่อง</b>เท่านั้น — ไม่ได้บันทึกสถานะ &ldquo;แพ็คแล้ว&rdquo;
             ลงระบบไหน สถานะจริงของใบยังอยู่ที่ ZORT ตามเดิม
           </p>
           <div>
             <button onClick={reset}
-              className="text-[13.5px] font-semibold text-white rounded-full px-6 py-2"
+              className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2"
               style={{ background: '#4669e5' }}>
               แพ็คใบถัดไป
             </button>
@@ -273,7 +273,7 @@ export default function PackWizardPage() {
           เก็บโครงไว้ที่ `~/zort-export-private/zort-แพ็คสินค้า-จอรายละเอียด.json` (ไม่เข้า repo)
           ของเขาเป็นจอ **เขียนข้อมูล** (บันทึกสถานะแพ็ค · Tracking · วันส่ง) ของเราเป็นจอ **เช็คของ** อย่างเดียว
           ⇒ เขียนรายการให้ครบว่าอะไรต้องไปทำที่ ZORT ไม่ใช่ปล่อยให้คนหาในจอเราแล้วไม่เจอ */}
-      <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-4 leading-relaxed">
+      <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-4 leading-relaxed">
         <b>จอแพ็คของ ZORT ทำอะไรได้มากกว่าจอนี้</b> (เทียบของจริง 16 ก.ย. 2569) —
         {' '}แยกเป็นสองกอง <b>สินค้าที่ยังไม่ได้แพ็ค / สินค้าที่แพ็คแล้ว</b> ·
         {' '}เลือก <b>คลัง/สาขา</b> ที่ตัดของ · ติ๊ก <b>บันทึกอัตโนมัติเมื่อแพ็คครบ</b> ·

@@ -23,7 +23,7 @@ import { ส่งจริงได้ } from '@/lib/real-send'
    เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
    (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
 const REAL_SEND_ENABLED = ส่งจริงได้('bundles/new')
-const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400'
+const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
 
 interface Line { sku: string; qty: string }
 
@@ -125,7 +125,7 @@ export default function NewBundlePage() {
         <div className="mt-5">
           <div className="flex items-end justify-between gap-3 mb-2">
             <div>
-              <p className="text-[13px] font-semibold text-gray-700">สินค้าในชุด <span className="text-red-500">*</span></p>
+              <p className="text-[12.5px] font-semibold text-gray-700">สินค้าในชุด <span className="text-red-500">*</span></p>
               <p className="text-[11.5px] text-gray-500">ใส่รหัสสินค้าที่มีอยู่แล้วใน ZORT · จำนวนต้องมากกว่า 0</p>
             </div>
             <button type="button" onClick={() => setLines((o) => [...o, { sku: '', qty: '1' }])}
@@ -137,14 +137,14 @@ export default function NewBundlePage() {
           <div className="border border-gray-200 rounded overflow-hidden">
             {lines.map((l, i) => (
               <div key={i} className="flex items-center gap-2 px-3 py-2 border-b border-gray-100 last:border-b-0">
-                <span className="text-[12px] text-gray-400 w-5 shrink-0">{i + 1}</span>
+                <span className="text-[12.5px] text-gray-400 w-5 shrink-0">{i + 1}</span>
                 <input className={inp} value={l.sku} placeholder="รหัสสินค้า"
                   onChange={(e) => setLine(i, 'sku', e.target.value)} />
                 <input className={`${inp} !w-24 shrink-0 text-right`} value={l.qty} inputMode="decimal"
                   onChange={(e) => setLine(i, 'qty', e.target.value)} />
                 <button type="button" onClick={() => setLines((o) => (o.length > 1 ? o.filter((_, j) => j !== i) : o))}
                   disabled={lines.length <= 1}
-                  className="text-[12px] text-gray-400 hover:text-red-600 disabled:opacity-30 shrink-0 px-1">
+                  className="text-[12.5px] text-gray-400 hover:text-red-600 disabled:opacity-30 shrink-0 px-1">
                   ลบ
                 </button>
               </div>
@@ -152,7 +152,7 @@ export default function NewBundlePage() {
           </div>
 
           <label className="block mt-3">
-            <span className="block text-[11px] font-semibold text-gray-400 mb-1">
+            <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">
               ยืนยันรหัสชุดอีกครั้ง (ไว้กันใส่ตัวเองเป็นส่วนประกอบ)
             </span>
             <input className={inp} value={ownSku} onChange={(e) => setOwnSku(e.target.value)}
@@ -164,7 +164,7 @@ export default function NewBundlePage() {
           </p>
 
           {filled.length > 0 && (
-            <p className="text-[12px] text-gray-500 mt-2">
+            <p className="text-[12.5px] text-gray-500 mt-2">
               จะส่งไป {extraBody.items.length} รายการ
               {extraBody.items.length !== filled.length
                 && ` (มี ${filled.length - extraBody.items.length} แถวที่ยังไม่ใส่รหัส จะไม่ถูกส่ง)`}

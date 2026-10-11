@@ -83,12 +83,12 @@ export default function WalletPage() {
             แต่เหตุผลคนละอย่าง และคนอ่านรอบหน้าต้องได้เหตุผลที่ถูก ไม่ใช่เหตุผลที่สะดวก
             ⚠️ นี่คือคลาส stale-claim: ข้อความที่เคยจริง แล้วกลายเป็นเท็จเมื่อความรู้เปลี่ยน
                และ **ไม่มีอะไรฟ้องเลย** ถ้าไม่มีใครกลับมาอ่าน */}
-        <p className="text-[13px] text-red-900 mt-2 leading-relaxed">
+        <p className="text-[12.5px] text-red-900 mt-2 leading-relaxed">
           <b>ZORT ไม่เปิดเส้นดึง &ldquo;รายการชำระเงินทั้งหมด&rdquo;</b> — กวาดชื่อทั้งแผงแล้ว
           {' '}(6 ก.ย. 2569) เจอแต่ <code>Payment/GetPaymentDetail</code> ซึ่งดูได้<b>ทีละใบ</b>
           {' '}จากเลขที่ใบที่รู้อยู่แล้ว ⇒ <b>ไล่ออกมาทำเป็นตารางไม่ได้</b>
         </p>
-        <p className="text-[12px] text-red-800 mt-1.5 leading-relaxed">
+        <p className="text-[12.5px] text-red-800 mt-1.5 leading-relaxed">
           ⚠️ <b>ขอบเขต:</b> &ldquo;ไม่พบภายใต้ชื่อที่กวาด&rdquo; ไม่ใช่ &ldquo;ไม่มีแน่นอน&rdquo; ·
           ดูรายการเส้นที่ยิงตรวจแล้วทั้งหมดได้ที่{' '}
           <Link href="/core/zort-noapi" className="underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>
@@ -97,12 +97,12 @@ export default function WalletPage() {
         {/* ✅ 6 ก.ย. 2569 — ของชุดนี้ถูกคัดออกมาเก็บแล้ว (ฝั่งท่ออ่านจากหน้าจอ ZORT)
             ⇒ ต้องมีทางเข้าไปดูจากจอนี้ ไม่งั้นคนหาไม่เจอแล้วนึกว่ายังไม่มีใครทำ
             ⚠️ **ยังเป็นภาพถ่าย ไม่ใช่ยอดสด** — จอปลายทางเขียนกำกับไว้ทุกตาราง */}
-        <p className="text-[13px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mt-2 leading-relaxed">
+        <p className="text-[12.5px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded px-3 py-2 mt-2 leading-relaxed">
           ✅ <b>คัดออกมาเก็บไว้แล้ว</b> — เปิดดูได้ที่{' '}
           <Link href="/core/zort-archive" className="underline font-semibold">ของที่คัดจาก ZORT</Link>
           {' '}(เลือกหัวข้อ &ldquo;กระเป๋าเงิน&rdquo;) · <b>เป็นภาพถ่าย ณ เวลาที่เก็บ ไม่ใช่ยอดปัจจุบัน</b>
         </p>
-        <p className="text-[13px] text-red-900 mt-2 leading-relaxed">
+        <p className="text-[12.5px] text-red-900 mt-2 leading-relaxed">
           ⚠️ <b>ต้องกด Export Excel ด้วยมือก่อนวันปิดบัญชี ZORT</b> — กดหลังปิดไม่ได้อีก
           เพราะเข้าหน้าจอนั้นไม่ได้แล้ว · ดูรายการที่ต้องกดทั้งหมดใน{' '}
           <Link href="/core/arch" className="underline">หน้าสถาปัตยกรรม</Link>
@@ -139,11 +139,11 @@ export default function WalletPage() {
              มีตารางมาคั่น = คำเตือนถูกดันลงล่าง ผิดกฎ warning-placement
           ⇒ เก็บผังไว้แบบพับ ให้คนทำต่อในอนาคตเปิดดูได้ แต่ไม่เห็นตอนเปิดหน้า */}
       <details className="bg-white border border-gray-200 rounded-md">
-        <summary className="text-[13px] text-gray-600 px-4 py-3 cursor-pointer select-none">
+        <summary className="text-[12.5px] text-gray-600 px-4 py-3 cursor-pointer select-none">
           ผังที่ตั้งใจไว้ (ยังทำไม่ได้) — ลำดับคอลัมน์ที่ลอกมาจากจอ ZORT
         </summary>
         <div className="px-4 pb-4">
-          <p className="text-[12px] text-gray-500 mb-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mb-2 leading-relaxed">
             {/* ผังนี้คัดจากภาพจอเมื่อ 3 ก.ย. 2569 จริง ๆ (คนละวันกับตัวเลขข้างบนที่อ่านใหม่ 18 ก.ย.)
                 ⇒ **คงวันที่นี้ไว้ และเขียนกำกับว่าคนละวันกัน** ห้ามรวมเป็นวันเดียวเพื่อความสวย */}
             คัดจากภาพจอจริงเมื่อ <b>3 ก.ย. 2569</b> — <b>คนละวันกับตัวเลขข้างบน</b> (อ่านใหม่ {thaiDate(CHECKED_AT)})

@@ -164,7 +164,7 @@ export default function CoreFinancePage() {
           = 404 ครบ 150 คู่ · คุมบวก Finance/GetIncomes 200 · คุมลบ 404
           ⇒ เราไม่รู้ว่าจอ ZORT รวมตัวเลขจากอะไร (ไม่มีภาพจอ /Fin/Report เก็บไว้) ⇒ **ห้ามเขียนว่าตัวเลขนี้เท่ากับของ ZORT**
           ⇒ บอกที่มาของทุกตัวเลขบนจอแทน · ห้ามถอดกล่องนี้ */}
-      <div className="text-[12px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
+      <div className="text-[12.5px] text-blue-800 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2 leading-relaxed">
         ℹ️ <b>ตัวเลขชุดนี้คนละชุดกับหน้า &quot;ภาพรวมการเงิน&quot; ของ ZORT โดยตั้งใจ</b> — เทียบกันตรง ๆ ไม่ได้
         <br />
         ที่มาของตัวเลขที่นี่: รายรับ = ยอดขายในคลังเงาของเรา (ออเดอร์ที่ซิงก์จาก ZORT + Shopee + TikTok) ·
@@ -201,8 +201,8 @@ export default function CoreFinancePage() {
           </div>
 
           <Card>
-            <p className="text-[13px] font-semibold text-gray-700 mb-3">รายรับรายเดือน (6 เดือนล่าสุด)</p>
-            {months.length === 0 && <p className="text-[13px] text-gray-400">ยังไม่มีข้อมูล</p>}
+            <p className="text-[12.5px] font-semibold text-gray-700 mb-3">รายรับรายเดือน (6 เดือนล่าสุด)</p>
+            {months.length === 0 && <p className="text-[12.5px] text-gray-400">ยังไม่มีข้อมูล</p>}
             <div className="space-y-2.5">
               {months.map((m) => (
                 <div key={m.ym}>
@@ -219,7 +219,7 @@ export default function CoreFinancePage() {
                 </div>
               ))}
             </div>
-            <p className="text-[11px] text-gray-400 mt-3">
+            <p className="text-[11.5px] text-gray-400 mt-3">
               ยอดนี้คือ<b>มูลค่าขาย</b>ตามที่บันทึกในออเดอร์ ยังไม่ได้หักค่าธรรมเนียมมาร์เก็ตเพลส
               ค่าส่ง หรือส่วนลดที่แพลตฟอร์มออกให้ — ตัวเลขที่หักครบต้องดูที่ PEAK
             </p>
@@ -227,13 +227,13 @@ export default function CoreFinancePage() {
 
           <Card>
             <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-              <p className="text-[13px] font-semibold text-gray-700">🧾 บิลค่าใช้จ่ายเดือนนี้</p>
+              <p className="text-[12.5px] font-semibold text-gray-700">🧾 บิลค่าใช้จ่ายเดือนนี้</p>
               <div className="flex items-center gap-2">
                 <button onClick={loadBills} disabled={billLoading}
                   className="text-[12.5px] font-semibold text-gray-700 bg-white border border-gray-200 rounded-xl px-3.5 py-2 hover:bg-gray-50 transition-colors disabled:opacity-50">
                   {billLoading ? '⏳ กำลังดึง…' : '📥 ดึงบิลเดือนนี้'}
                 </button>
-                <Link href="/bills" className="text-[11px] text-blue-600 font-medium hover:text-blue-700">
+                <Link href="/bills" className="text-[11.5px] text-blue-600 font-medium hover:text-blue-700">
                   หน้ารวมบิล →
                 </Link>
               </div>
@@ -246,20 +246,20 @@ export default function CoreFinancePage() {
             )}
             {bills !== null && (
               <>
-                <p className="text-[13px] text-gray-700 mb-2">
+                <p className="text-[12.5px] text-gray-700 mb-2">
                   ได้รับบิล <b>{fmtNum(bills.length)}</b> ใบในเดือน {monthLabel(thisMonth())}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   {Array.from(
                     bills.reduce((m, b) => m.set(b.vendorName, (m.get(b.vendorName) ?? 0) + 1), new Map<string, number>())
                   ).map(([name, n]) => (
-                    <span key={name} className="text-[12px] border border-gray-200 rounded-xl px-3 py-1.5">
+                    <span key={name} className="text-[12.5px] border border-gray-200 rounded-xl px-3 py-1.5">
                       <b className="text-gray-800">{name}</b>
                       <span className="text-gray-500"> · {fmtNum(n)} ใบ</span>
                     </span>
                   ))}
                 </div>
-                <p className="text-[11px] text-gray-400 mt-3">
+                <p className="text-[11.5px] text-gray-400 mt-3">
                   ⚠️ นับ<b>จำนวนใบ</b>อย่างเดียว ไม่รวมยอดเงิน — ยอดในบิลถูกเดาจากเนื้อความอีเมล
                   ยังเชื่อเป็นตัวเลขการเงินไม่ได้ ต้องเปิดไฟล์แนบดูเอง
                 </p>

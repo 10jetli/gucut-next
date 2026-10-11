@@ -41,7 +41,7 @@ export default function ProductsPage() {
       <Card padded={false} className="overflow-hidden">
         {loading && <LoadingState />}
         {!loading && err && (
-          <p className="text-center py-8 text-red-600 text-sm">ดึงรายการสินค้าไม่สำเร็จ — ยังไม่รู้ว่ามีสินค้าอะไรบ้าง<br /><span className="text-gray-400 text-[12px]">{err}</span></p>
+          <p className="text-center py-8 text-red-600 text-sm">ดึงรายการสินค้าไม่สำเร็จ — ยังไม่รู้ว่ามีสินค้าอะไรบ้าง<br /><span className="text-gray-400 text-[12.5px]">{err}</span></p>
         )}
         {!loading && !err && products.length === 0 && (
           <p className="text-center py-8 text-gray-400 text-sm">ไม่มีสินค้าในรายการ</p>
@@ -50,12 +50,12 @@ export default function ProductsPage() {
           <div key={p.sku} className="px-4 py-3 border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/70">
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-gray-800 truncate">{p.name}</p>
-                <p className="text-[11px] text-gray-400 mt-0.5">SKU: {p.sku}</p>
+                <p className="text-[12.5px] font-semibold text-gray-800 truncate">{p.name}</p>
+                <p className="text-[11.5px] text-gray-400 mt-0.5">SKU: {p.sku}</p>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-[13px] font-bold text-gray-900">{fmtMoney(parseFloat(p.sellprice ?? '0'))}</p>
-                <p className={`text-[11px] font-semibold mt-0.5 ${
+                <p className="text-[12.5px] font-bold text-gray-900">{fmtMoney(parseFloat(p.sellprice ?? '0'))}</p>
+                <p className={`text-[11.5px] font-semibold mt-0.5 ${
                   parseFloat(p.stock ?? '0') <= 0 ? 'text-red-500' : 'text-emerald-600'
                 }`}>
                   คลัง: {p.stock ?? '0'}

@@ -151,7 +151,7 @@ export default function CoreBranchesPage() {
                 ⇒ ปุ่มที่กดแล้วเกิดอะไรขึ้นจริงแต่ไม่ใช่สิ่งที่คนตั้งใจ **หลอกกว่าปุ่มที่กดแล้วเงียบ**
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             <Link href="/core/branches/new"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เพิ่มคลังสินค้า/สาขา
             </Link>
@@ -164,7 +164,7 @@ export default function CoreBranchesPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="ค้นหา"
-          className="w-full max-w-[320px] text-[13px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+          className="w-full max-w-[320px] text-[12.5px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
         />
       </div>
 
@@ -252,7 +252,7 @@ export default function CoreBranchesPage() {
                       <td className={TD}>
                         <span className="text-gray-600">ทั่วไป</span>
                         {/* ⚠️ ธงนี้มาจากเซิร์ฟเวอร์ ไม่ได้เดาจากรหัส — โกดังเปิดบิลขายไม่ได้ */}
-                        <span className={`ml-1.5 text-[10.5px] rounded px-1.5 py-0.5 ${
+                        <span className={`ml-1.5 text-[10px] rounded px-1.5 py-0.5 ${
                           w.isPos ? 'text-emerald-800 bg-emerald-100' : 'text-gray-600 bg-gray-100'
                         }`}>
                           {w.isPos ? 'จุดขาย' : 'โกดัง — เปิดบิลไม่ได้'}
@@ -306,7 +306,7 @@ export default function CoreBranchesPage() {
             </table>
           </TableWrap>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {note || 'คลังสินค้าดึงมาจาก ZORT ทั้งหมด'} ·
             {/* ⚠️ ข้อความของท่อ (note) บอกว่าโกดัง "ไม่มียอดขาย" — หมายถึงขายหน้าร้าน (POS) ไม่ได้
                 แต่คอลัมน์นี้นับใบที่ **ตัดของจากคลังนั้น** รวมออนไลน์ ⇒ โกดังจึงมียอด · ต้องเขียนบอก ไม่งั้นสองประโยคขัดกัน */}

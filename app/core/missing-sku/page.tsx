@@ -110,7 +110,7 @@ export default function CoreMissingSkuPage() {
         actions={<BtnPrimary onClick={load} disabled={loading}>{loading ? 'กำลังตรวจ…' : 'ตรวจเดี๋ยวนี้'}</BtnPrimary>}
       />
 
-      <p className="text-[12px] text-red-800 bg-red-50 border border-red-100 rounded-lg px-3 py-2 leading-relaxed">
+      <p className="text-[12.5px] text-red-800 bg-red-50 border border-red-100 rounded-lg px-3 py-2 leading-relaxed">
         ⚠️ SKU ที่คลังไม่รู้จัก = <b>ไม่มีใครคุมสต็อกตัวนั้น</b> ขายเกินได้โดยไม่มีอะไรเตือน
         และวันที่เราดันสต็อกเอง ตัวพวกนี้จะถูกข้ามไปเงียบ ๆ
       </p>
@@ -119,14 +119,14 @@ export default function CoreMissingSkuPage() {
       {loading && !data && <LoadingState />}
       {!data && !loading && !error && (
         <Card>
-          <p className="text-[13px] text-gray-500">
+          <p className="text-[12.5px] text-gray-500">
             กดปุ่ม &quot;ตรวจเดี๋ยวนี้&quot; เพื่อเทียบรหัสสินค้าบน Shopee กับภาพถ่ายสต็อกล่าสุดของเรา —
             ต้องยิงไป Shopee จริงจึงใช้เวลาสักครู่ และไม่ดึงเองตอนเปิดหน้า
           </p>
         </Card>
       )}
 
-      {data?.skip && <Card><p className="text-[13px] text-gray-500">⏳ {data.skip}</p></Card>}
+      {data?.skip && <Card><p className="text-[12.5px] text-gray-500">⏳ {data.skip}</p></Card>}
       {/* 🔴 **`note` คือคำอธิบายประกอบ ไม่ใช่สัญญาณว่ามีปัญหา** (แก้ 6 ก.ย. 2569)
           เดิมเขียน `!data.note` ในเงื่อนไขแสดงตาราง ⇒ วันที่ฝั่งท่อเติม note
           อธิบายผลที่สำเร็จเข้ามา (เช่น "เทียบกับภาพถ่ายวันที่ …") **ตารางจะหายทั้งจอ**
@@ -134,7 +134,7 @@ export default function CoreMissingSkuPage() {
           ⚠️ ฝั่งท่อเพิ่งโดนคลาสนี้กับตัวเองวันนี้ (`if (c.skip || c.note) return skip`
              ทำให้แผนดันสต็อก Lazada ไม่เคยถูกคำนวณเลยสักครั้ง โดยจอขึ้นเหตุผลสวยงาม)
           ⇒ ตอนนี้ note แสดงเป็นข้อมูลประกอบ **ไม่มีอำนาจซ่อนอะไร** · มีแต่ `skip` ที่ซ่อนได้ */}
-      {data?.note && <Card><p className="text-[13px] text-gray-500">{data.note}</p></Card>}
+      {data?.note && <Card><p className="text-[12.5px] text-gray-500">{data.note}</p></Card>}
 
       {data && !data.skip && (
         <>
@@ -175,7 +175,7 @@ export default function CoreMissingSkuPage() {
                 คิดจากสูตรชุดได้ ({fmtNum(buildableCount)})
               </button>
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ค้นรหัสหรือชื่อสินค้า"
-                className="text-[13px] border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-[180px]" />
+                className="text-[12.5px] border border-gray-200 rounded-lg px-2.5 py-1.5 flex-1 min-w-[180px]" />
             </div>
           </Card>
 
@@ -190,7 +190,7 @@ export default function CoreMissingSkuPage() {
 
           <Card padded={false} className="overflow-hidden">
             {shown.length === 0 && (
-              <p className="text-[13px] text-gray-400 p-4">
+              <p className="text-[12.5px] text-gray-400 p-4">
                 {view === 'unknown' ? 'ไม่มีรหัสที่หาต้นตอไม่ได้ — ดีมาก' : 'ไม่มีรหัสในกองนี้'}
               </p>
             )}
@@ -227,7 +227,7 @@ export default function CoreMissingSkuPage() {
                           <>
                             <td className="px-3 py-2.5 text-gray-600">
                               <div className="font-medium">{r.baseSku}</div>
-                              {r.baseName && <div className="text-[11px] text-gray-400 truncate max-w-[200px]">{r.baseName}</div>}
+                              {r.baseName && <div className="text-[11.5px] text-gray-400 truncate max-w-[200px]">{r.baseName}</div>}
                             </td>
                             <td className="px-4 py-2.5 text-right text-gray-700">
                               {r.baseQty === null ? '—' : fmtNum(r.baseQty)}
@@ -255,7 +255,7 @@ export default function CoreMissingSkuPage() {
                                   ? <button onClick={() => setOpenParts(openParts === r.sku ? null : r.sku)}
                                       className="text-blue-600 hover:underline text-left">
                                       {label}
-                                      <span className="ml-1 text-[11px] text-gray-400">{openParts === r.sku ? '▲' : '▼'}</span>
+                                      <span className="ml-1 text-[11.5px] text-gray-400">{openParts === r.sku ? '▲' : '▼'}</span>
                                     </button>
                                   : <span className="text-gray-300">—</span>
                               })()}
@@ -276,14 +276,14 @@ export default function CoreMissingSkuPage() {
                   </tbody>
                 </table>
                 {shown.length > 300 && (
-                  <p className="text-[12px] text-gray-400 px-4 py-3 border-t border-gray-50">
+                  <p className="text-[12.5px] text-gray-400 px-4 py-3 border-t border-gray-50">
                     แสดง 300 แถวแรกจาก {fmtNum(shown.length)} — ใช้ช่องค้นหาเพื่อหาตัวที่ต้องการ
                   </p>
                 )}
               </div>
             )}
             {view === 'buildable' && (
-              <p className="text-[12px] text-amber-800 bg-amber-50 border-t border-amber-100 px-4 py-3 leading-relaxed">
+              <p className="text-[12.5px] text-amber-800 bg-amber-50 border-t border-amber-100 px-4 py-3 leading-relaxed">
                 ⚠️ <b>&quot;ประกอบได้&quot; กับเลขบน Shopee เป็นคนละคำถาม</b> —
                 ประกอบได้ = ของในคลังทำได้กี่ชุด · Shopee = <b>ร้านเลือกโชว์กี่ชิ้น</b>
                 {mismatchCount > 0 && <> · ตอนนี้ต่างกัน <b>{fmtNum(mismatchCount)}</b> รหัส</>}
@@ -318,7 +318,7 @@ export default function CoreMissingSkuPage() {
                 })()}
               </p>
             )}
-            <p className="text-[11px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
+            <p className="text-[11.5px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
               &quot;พอเดารหัสฐานได้&quot; เป็นการ<b>เดา</b>จากรูปแบบรหัส ไม่ใช่การจับคู่ที่ยืนยันแล้ว —
               ก่อนเอาไปใช้ดันสต็อกจริงต้องมีตารางจับคู่ที่คนยืนยันแล้วเท่านั้น
             </p>

@@ -47,7 +47,7 @@ export default function StoreEcho({ ขอ, ได้, ท่อเลือก�
   }
   if (ได้ === undefined || ได้ === null || ได้ === '') {
     return (
-      <p className="text-[12px] text-gray-500 mb-2">
+      <p className="text-[12.5px] text-gray-500 mb-2">
         ⏳ ท่อไม่ได้บอกว่าข้อมูลชุดนี้เป็นของร้านไหน — <b>ยืนยันไม่ได้</b>ว่าตรงกับร้านที่เลือก
       </p>
     )

@@ -176,7 +176,7 @@ export default function ZortArchivePage() {
       {loading && !list && <LoadingState />}
 
       {list && list.length === 0 && (
-        <p className="text-[13px] text-gray-500">ยังไม่มีจอไหนถูกเก็บ</p>
+        <p className="text-[12.5px] text-gray-500">ยังไม่มีจอไหนถูกเก็บ</p>
       )}
 
       {/* 🔴 **"ยังไม่ได้เก็บ" สำคัญกว่า "เก็บแล้ว"** — ของที่จะหายตอนเลิกจ่าย ZORT คือกองนี้
@@ -226,7 +226,7 @@ export default function ZortArchivePage() {
                     {s.complete === true ? (
                       <span className="inline-flex flex-col gap-0.5">
                         <Pill tone="green">ครบ</Pill>
-                        <span className="text-[10.5px] text-gray-500 leading-tight">
+                        <span className="text-[10px] text-gray-500 leading-tight">
                           {s.expectedFrom === 'ยืนยันว่าจอว่าง' ? 'ยืนยันว่าจอว่างจริง'
                             : s.expectedFrom === 'คนกรอก' ? 'ตามเลขที่คนกรอก ไม่ใช่ระบบนับเอง'
                               : 'ไม่รู้ว่าเทียบกับเลขของใคร'}
@@ -265,14 +265,14 @@ export default function ZortArchivePage() {
           {one && (
             <>
               {/* 🔴 สองบรรทัดนี้คือหัวใจของจอ — เก็บเมื่อไหร่ และเก็บด้วยช่วงไหน */}
-              <p className="text-[12px] text-gray-500 mb-2 leading-relaxed">
+              <p className="text-[12.5px] text-gray-500 mb-2 leading-relaxed">
                 📸 เก็บเมื่อ <b>{thaiTime(one.at) ?? 'ไม่รู้'}</b>
                 {one.source ? <> · ที่มา/ช่วงที่ใช้เก็บ: <b>{one.source}</b></>
                   : <> · <span className="text-amber-700">ไม่ได้บอกว่าเก็บด้วยช่วงไหน — ตัวเลขนี้เทียบกับอะไรไม่ได้</span></>}
               </p>
 
               {one.emptyVerified === true && rows.length === 0 && (
-                <p className="text-[13px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5">
+                <p className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5">
                   ✅ <b>ตรวจแล้วว่างจริง</b> — เปิดช่วงวันกว้างแล้วยังไม่มีรายการ
                   {one.source ? <> ({one.source})</> : null}
                   <br />
@@ -281,7 +281,7 @@ export default function ZortArchivePage() {
               )}
 
               {one.emptyVerified !== true && rows.length === 0 && (
-                <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5">
+                <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5">
                   ⚠️ ไม่มีแถวในภาพถ่ายนี้ และ<b>ยังไม่ได้ยืนยันว่าว่างจริง</b> —
                   อาจเก็บด้วยช่วงวันที่แคบเกินไป <b>อย่าเพิ่งสรุปว่าไม่มีข้อมูล</b>
                 </p>

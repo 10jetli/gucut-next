@@ -72,7 +72,7 @@ export default function CronFromPipe({ jobs }: { jobs: Array<{ src: string; cron
       red: 'text-red-900 bg-red-50 border-red-200',
       green: 'text-emerald-800 bg-emerald-50 border-emerald-200',
     }[tone]
-    return <div className={`text-[12px] border rounded-md px-3.5 py-2.5 mb-4 leading-relaxed ${สี}`}>{ใน}</div>
+    return <div className={`text-[12.5px] border rounded-md px-3.5 py-2.5 mb-4 leading-relaxed ${สี}`}>{ใน}</div>
   }
 
   if (st === 'กำลังถาม') return กล่อง('gray', <>⏳ กำลังถามท่อว่าตารางจริงเป็นยังไง…</>)

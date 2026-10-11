@@ -168,7 +168,7 @@ export default function StockCard({ sku }: { sku: string }) {
       {/* 🔴 สิ่งที่ "ไม่มีในบัตรใบนี้" ต้องอยู่เหนือตาราง ไม่ใช่ท้ายจอ
           ตารางประวัติที่ไม่บอกว่าขาดอะไร จะถูกอ่านว่าเป็นประวัติทั้งหมดของสินค้าตัวนั้น */}
       {data && (
-        <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-2 leading-relaxed">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-2 leading-relaxed">
           ⚠️ <b>บัตรนี้ยังไม่ใช่ประวัติทั้งหมดของสินค้า</b>
           {data.missingKinds?.length ? <> — ยังไม่รวม <b>{data.missingKinds.join(' · ')}</b></> : null}
           <br />
@@ -228,7 +228,7 @@ export default function StockCard({ sku }: { sku: string }) {
         </table>
       </TableWrap>
 
-      <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+      <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
         {/* 🔴 บอกให้ชัดว่าที่เห็นคือหน้าแรก ไม่ใช่ทั้งหมด — CLAUDE.md กฎตัวนับกับตัวแถว */}
         {total !== null
           ? <>มีทั้งหมด <b>{fmtNum(total)} รายการ</b>{shown < total && <> — จอนี้แสดง <b>{fmtNum(shown)} รายการแรก</b> · กด &ldquo;ส่งออกบัตรสต็อก&rdquo; เพื่อได้ครบทุกแถว</>}</>

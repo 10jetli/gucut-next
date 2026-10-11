@@ -20,7 +20,7 @@ function ChannelBadge({ channel }: { channel: string }) {
   const key = Object.keys(colors).find((k) => channel.includes(k)) ?? ''
   const cls = colors[key] ?? 'bg-gray-100 text-gray-600'
   return (
-    <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${cls}`}>
+    <span className={`text-[11.5px] font-semibold px-1.5 py-0.5 rounded-full flex-shrink-0 ${cls}`}>
       {channel.split(' ')[0]}
     </span>
   )
@@ -33,25 +33,25 @@ export default function OrderCard({ order }: { order: Order }) {
   return (
     <div className="px-4 py-3 border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/70">
       <div className="flex items-start justify-between gap-2">
-        <span className="text-[13px] font-semibold text-blue-600 truncate">
+        <span className="text-[12.5px] font-semibold text-blue-600 truncate">
           #{order.number}
         </span>
         <ChannelBadge channel={order.saleschannel ?? 'Direct'} />
       </div>
       <div className="flex items-center justify-between mt-1">
-        <span className="text-[13px] text-gray-600 truncate">{order.customername}</span>
+        <span className="text-[12.5px] text-gray-600 truncate">{order.customername}</span>
         <span className="text-[14px] font-bold text-gray-900 flex-shrink-0">
           {fmtBaht(order.amount ?? 0)}
         </span>
       </div>
       <div className="flex items-center justify-between mt-0.5">
-        <span className={`text-[12px] font-semibold ${statusColor(order.status)}`}>
+        <span className={`text-[12.5px] font-semibold ${statusColor(order.status)}`}>
           {/* เดิมโชว์ค่าดิบ (Pending/Paid/Complete) = อังกฤษบนจอ · ใบ t_mu23dljn
               ⚠️ การ์ดนี้ใช้กับออเดอร์ของเว็บเราเอง ไม่ใช่ ZORT ⇒ ค่าที่ไม่อยู่ในแผนที่ ZORT
                  จะคืนค่าดิบตามเดิม **ไม่เดาคำแทน** (คำที่ระบบไม่มีสถานะรองรับ = จอโกหก) */}
           {zortWord(SALE_STATUS, order.status).text || zortWord(PAY_STATUS, order.status).text}
         </span>
-        <span className="text-[11px] text-gray-400">
+        <span className="text-[11.5px] text-gray-400">
           {date} {time}
         </span>
       </div>

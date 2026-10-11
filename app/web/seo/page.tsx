@@ -77,22 +77,22 @@ export default function WebSeoPage() {
   return (
     <div className="space-y-4 max-w-3xl">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">ตรวจสุขภาพ SEO GEO AEO</h1>
-        {audit && <p className="text-[12px] text-gray-400 mt-0.5">ตรวจจากข้อมูลจริงตอน build ล่าสุด · อัปเดตทุกครั้งที่ deploy</p>}
+        {audit && <p className="text-[12.5px] text-gray-400 mt-0.5">ตรวจจากข้อมูลจริงตอน build ล่าสุด · อัปเดตทุกครั้งที่ deploy</p>}
       </div>
-      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[13px] text-blue-700">{msg}</p>}
+      {msg && <p className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-[12.5px] text-blue-700">{msg}</p>}
 
       {/* คะแนน 3 ด้าน */}
       <div className="grid grid-cols-3 gap-3">
         {CATS.map((c) => (
           <button key={c.key} onClick={() => setTab(c.key)}
             className={`bg-white rounded-2xl border p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] transition-all ${tab === c.key ? 'border-blue-300 ring-4 ring-blue-50' : 'border-gray-100/80 hover:-translate-y-0.5'}`} aria-pressed={tab === c.key}>
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">{c.t}</p>
+            <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">{c.t}</p>
             <p className={`text-[28px] font-black tabular-nums leading-none mt-1 ${audit ? scoreColor(audit.scores[c.key]) : 'text-gray-300'}`}>
               {audit ? audit.scores[c.key] : '—'}
             </p>
-            <p className="text-[10.5px] text-gray-400 mt-1">{c.sub}</p>
+            <p className="text-[10px] text-gray-400 mt-1">{c.sub}</p>
           </button>
         ))}
       </div>
@@ -104,17 +104,17 @@ export default function WebSeoPage() {
             ข้าง ๆ ข้อความ "โหลดผลตรวจไม่สำเร็จ" ⇒ จอบอกสองอย่างพร้อมกัน: พังแล้ว แต่ยังโหลดอยู่
             (เจอด้วยตัวกวาดสามสถานะ 7 ก.ย. 2569 — มันรอ "โหลดจบ" แล้วไม่จบสักที) */}
         {audit === null && msg ? (
-          <p className="py-12 text-center text-[13px] text-gray-400">ยังดูรายการงานไม่ได้ — โหลดผลตรวจไม่สำเร็จ</p>
+          <p className="py-12 text-center text-[12.5px] text-gray-400">ยังดูรายการงานไม่ได้ — โหลดผลตรวจไม่สำเร็จ</p>
         ) : audit === null ? (
           <div className="p-4 space-y-3 animate-pulse">{[...Array(4)].map((_, i) => <div key={i} className="h-14 rounded-xl bg-gray-50" />)}</div>
         ) : shown.length === 0 ? (
-          <p className="py-12 text-center text-[13px] text-emerald-600 font-semibold">ด้านนี้ไม่มีงานค้าง ✓</p>
+          <p className="py-12 text-center text-[12.5px] text-emerald-600 font-semibold">ด้านนี้ไม่มีงานค้าง ✓</p>
         ) : shown.map((f, i) => (
           <details key={i} className="group">
             <summary className="flex items-center gap-3 px-4 md:px-5 py-3 cursor-pointer list-none hover:bg-gray-50/80 transition-colors">
               <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${f.level === 'fix' ? 'bg-red-500 ring-4 ring-red-50' : f.level === 'improve' ? 'bg-amber-500 ring-4 ring-amber-50' : 'bg-emerald-500 ring-4 ring-emerald-50'}`} />
               <span className="min-w-0 flex-1">
-                <span className="block text-[13.5px] font-bold text-gray-900">{f.title}</span>
+                <span className="block text-[12.5px] font-bold text-gray-900">{f.title}</span>
                 <span className="block text-[11.5px] text-gray-400">{f.count.toLocaleString('th-TH')} {f.unit || 'รายการ'} · {f.level === 'fix' ? 'ควรแก้ก่อน' : f.level === 'improve' ? 'แก้แล้วดีขึ้น' : 'เรียบร้อย'}</span>
               </span>
               <span className="text-gray-200 group-open:rotate-90 transition-transform">›</span>
@@ -132,7 +132,7 @@ export default function WebSeoPage() {
 
       {/* บอต AI มาจริงไหม */}
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
-        <p className="px-4 md:px-5 pt-4 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">บอต AI มาเก็บข้อมูลหรือยัง (7 วัน)</p>
+        <p className="px-4 md:px-5 pt-4 pb-2 text-[11.5px] font-bold uppercase tracking-wider text-gray-400">บอต AI มาเก็บข้อมูลหรือยัง (7 วัน)</p>
         <div className="divide-y divide-gray-50">
           {bots === null ? (
             <p className="px-5 py-6 text-[12.5px] text-gray-400">กำลังโหลด…</p>
@@ -146,9 +146,9 @@ export default function WebSeoPage() {
             </p>
           ) : bots.filter((b) => b.week > 0).sort((a, b) => b.week - a.week).slice(0, 10).map((b) => (
             <div key={b.bot} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
-              <span className="flex-1 text-[13px] font-semibold text-gray-800">{b.bot}</span>
-              <span className="text-[12px] text-gray-400 tabular-nums">วันนี้ {b.today}</span>
-              <span className="text-[13px] font-black text-gray-900 tabular-nums w-16 text-right">{b.week.toLocaleString('th-TH')} หน้า</span>
+              <span className="flex-1 text-[12.5px] font-semibold text-gray-800">{b.bot}</span>
+              <span className="text-[12.5px] text-gray-400 tabular-nums">วันนี้ {b.today}</span>
+              <span className="text-[12.5px] font-black text-gray-900 tabular-nums w-16 text-right">{b.week.toLocaleString('th-TH')} หน้า</span>
             </div>
           ))}
         </div>
@@ -157,16 +157,16 @@ export default function WebSeoPage() {
       {/* สวิตช์คุมบอต — เขียว = อนุญาตให้เก็บ */}
       {blockable && blockable.length > 0 && (
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
-          <p className="px-4 md:px-5 pt-4 pb-1 text-[11px] font-bold uppercase tracking-wider text-gray-400">อนุญาตให้ AI เจ้าไหนเก็บข้อมูล</p>
-          <p className="px-4 md:px-5 pb-2 text-[11px] text-gray-400">ปิดได้เฉพาะบอต AI — Googlebot/บอตโซเชียลไม่มีในรายการโดยตั้งใจ · เปลี่ยนแล้วมีผลใน ~5 นาที</p>
+          <p className="px-4 md:px-5 pt-4 pb-1 text-[11.5px] font-bold uppercase tracking-wider text-gray-400">อนุญาตให้ AI เจ้าไหนเก็บข้อมูล</p>
+          <p className="px-4 md:px-5 pb-2 text-[11.5px] text-gray-400">ปิดได้เฉพาะบอต AI — Googlebot/บอตโซเชียลไม่มีในรายการโดยตั้งใจ · เปลี่ยนแล้วมีผลใน ~5 นาที</p>
           <div className="divide-y divide-gray-50">
             {blockable.map((b) => {
               const on = !blocked.has(b.name)
               return (
                 <div key={b.name} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
                   <span className="min-w-0 flex-1">
-                    <span className="block text-[13px] font-semibold text-gray-800">{b.name}</span>
-                    <span className="block text-[11px] text-gray-400 truncate">{b.note}</span>
+                    <span className="block text-[12.5px] font-semibold text-gray-800">{b.name}</span>
+                    <span className="block text-[11.5px] text-gray-400 truncate">{b.note}</span>
                   </span>
                   <button onClick={() => toggleBot(b.name)}
                     className={`relative w-10 h-[22px] rounded-full transition-colors shrink-0 ${on ? 'bg-emerald-500' : 'bg-gray-200'}`}>
@@ -178,7 +178,7 @@ export default function WebSeoPage() {
           </div>
         </div>
       )}
-      <p className="text-center text-[11px] text-gray-300">ชุดเดียวกับ gucut.com/admin/seo/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/seo/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

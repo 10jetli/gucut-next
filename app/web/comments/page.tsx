@@ -57,13 +57,13 @@ export default function WebCommentsPage() {
   return (
     <div className="space-y-4 max-w-2xl">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">
           คอมเมนต์ใต้คลิป
-          {clips !== null && <span className="ml-2 align-middle text-[13px] font-semibold text-gray-400">{total} ข้อความ</span>}
+          {clips !== null && <span className="ml-2 align-middle text-[12.5px] font-semibold text-gray-400">{total} ข้อความ</span>}
         </h1>
       </div>
-      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">{err}</p>}
 
       {clips === null ? (
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 space-y-3 animate-pulse">
@@ -72,7 +72,7 @@ export default function WebCommentsPage() {
       ) : clips.length === 0 ? (
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-sm py-16 text-center">
           {/* ⚠️ โหลดไม่สำเร็จ ห้ามพูดว่า "ยังไม่มีคอมเมนต์" — กล่องแดงข้างบนบอกไปแล้วว่าดึงไม่ได้ */}
-          <p className="text-[13px] text-gray-400">
+          <p className="text-[12.5px] text-gray-400">
             {err ? 'ยังดูไม่ได้ — โหลดไม่สำเร็จ' : 'ยังไม่มีคอมเมนต์ใต้คลิปไหนเลย'}
           </p>
         </div>
@@ -89,15 +89,15 @@ export default function WebCommentsPage() {
           <div className="divide-y divide-gray-50">
             {c.comments.map((m) => (
               <div key={m.i} className="group flex items-start gap-3 px-4 md:px-5 py-3">
-                <span className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 text-[12px] font-black flex items-center justify-center shrink-0">
+                <span className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 text-[12.5px] font-black flex items-center justify-center shrink-0">
                   {(m.n || '?').charAt(0)}
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="text-[12.5px] font-bold text-gray-800">{m.n || 'ไม่ระบุชื่อ'}</span>
-                    <span className="text-[10.5px] text-gray-300">{ago(m.at)}</span>
+                    <span className="text-[10px] text-gray-300">{ago(m.at)}</span>
                   </span>
-                  <span className="block text-[13px] text-gray-600 mt-0.5 break-words">{m.t}</span>
+                  <span className="block text-[12.5px] text-gray-600 mt-0.5 break-words">{m.t}</span>
                 </span>
                 <button onClick={() => remove(c.id, m.i)}
                   className="shrink-0 p-1.5 text-gray-300 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-all" title="ลบ">
@@ -108,7 +108,7 @@ export default function WebCommentsPage() {
           </div>
         </div>
       ))}
-      <p className="text-center text-[11px] text-gray-300">ชุดเดียวกับ gucut.com/admin/comments/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/comments/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

@@ -222,9 +222,9 @@ export default function ChatCommercePage() {
         {/* ───────── ซ้าย: ช่องทาง + รายชื่อห้อง ───────── */}
         <div className={`border-r border-gray-200 flex flex-col min-w-0 ${open ? 'hidden md:flex' : 'flex'}`}>
           <div className="px-3.5 py-3 border-b border-gray-100 flex items-center justify-between">
-            <p className="text-[14.5px] font-semibold text-gray-900">รวมแชท</p>
+            <p className="text-[14px] font-semibold text-gray-900">รวมแชท</p>
             {webUnread > 0 && (
-              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-bold text-white">{webUnread}</span>
+              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[11.5px] font-bold text-white">{webUnread}</span>
             )}
           </div>
 
@@ -281,7 +281,7 @@ export default function ChatCommercePage() {
                   }`}
                 >
                   <span className="relative shrink-0">
-                    <span className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 text-[13px] font-bold flex items-center justify-center">
+                    <span className="w-9 h-9 rounded-full bg-gray-100 text-gray-500 text-[12.5px] font-bold flex items-center justify-center">
                       {(r.name || 'ล').charAt(0)}
                     </span>
                     {/* ป้ายช่องทางมุมล่างซ้ายของรูป — เหมือน ZORT ที่ติดไอคอน f / LINE ไว้ */}
@@ -291,8 +291,8 @@ export default function ChatCommercePage() {
                   </span>
                   <span className="min-w-0 flex-1">
                     <span className="flex items-center justify-between gap-2">
-                      <span className="text-[13px] font-semibold text-gray-900 truncate">{r.name || 'ลูกค้า'}</span>
-                      {r.last && <span className="text-[10.5px] text-gray-400 shrink-0 tabular-nums">{when(r.last.at)}</span>}
+                      <span className="text-[12.5px] font-semibold text-gray-900 truncate">{r.name || 'ลูกค้า'}</span>
+                      {r.last && <span className="text-[10px] text-gray-400 shrink-0 tabular-nums">{when(r.last.at)}</span>}
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="block text-[11.5px] text-gray-500 truncate flex-1">
@@ -316,7 +316,7 @@ export default function ChatCommercePage() {
                   <ChannelIcon ch={notLiveCh} size={26} dim />
                   <div>
                     <p className="text-[16px] font-semibold text-gray-900">{notLiveCh.name}</p>
-                    <p className="text-[12px] text-gray-500">{notLiveCh.account}</p>
+                    <p className="text-[12.5px] text-gray-500">{notLiveCh.account}</p>
                   </div>
                   <span className="ml-auto text-[11.5px] font-semibold text-amber-800 bg-amber-100 rounded px-2 py-0.5">
                     ยังไม่ได้เชื่อม
@@ -324,11 +324,11 @@ export default function ChatCommercePage() {
                 </div>
 
                 <div className="bg-white border border-gray-200 rounded-md p-4">
-                  <p className="text-[13px] font-semibold text-gray-800 mb-1.5">ติดอะไรอยู่</p>
-                  <p className="text-[13px] text-gray-700 leading-relaxed">{notLive.blocker}</p>
+                  <p className="text-[12.5px] font-semibold text-gray-800 mb-1.5">ติดอะไรอยู่</p>
+                  <p className="text-[12.5px] text-gray-700 leading-relaxed">{notLive.blocker}</p>
 
-                  <p className="text-[13px] font-semibold text-gray-800 mt-4 mb-1.5">ต้องทำอะไรถึงจะเปิดได้</p>
-                  <ol className="text-[13px] text-gray-700 leading-relaxed list-decimal pl-5 space-y-1">
+                  <p className="text-[12.5px] font-semibold text-gray-800 mt-4 mb-1.5">ต้องทำอะไรถึงจะเปิดได้</p>
+                  <ol className="text-[12.5px] text-gray-700 leading-relaxed list-decimal pl-5 space-y-1">
                     {notLive.steps.map((s, i) => <li key={i}>{s}</li>)}
                   </ol>
 
@@ -337,7 +337,7 @@ export default function ChatCommercePage() {
                   </p>
                 </div>
 
-                <p className="text-[12px] text-gray-400 leading-relaxed mt-3">
+                <p className="text-[12.5px] text-gray-400 leading-relaxed mt-3">
                   ส่วนแชทของ Shopee · Lazada · TikTok ต้องได้สิทธิ์ Chat API ของแต่ละเจ้าก่อน
                   ซึ่งเป็นสิทธิ์ที่ขอยากที่สุดในสามอย่างที่ยื่นไป — ระหว่างนี้ยังตอบที่ Duoke
                 </p>
@@ -363,11 +363,11 @@ export default function ChatCommercePage() {
                 <button onClick={() => setOpen(null)} className="md:hidden text-gray-400 text-lg leading-none">‹</button>
                 <ChannelIcon ch={CHANNELS[0]} size={18} />
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-semibold text-gray-900 truncate">{room.name || 'ลูกค้า'}</span>
-                  {room.product && <span className="block text-[11px] text-gray-500 truncate">สนใจ: {room.product.t}</span>}
+                  <span className="block text-[12.5px] font-semibold text-gray-900 truncate">{room.name || 'ลูกค้า'}</span>
+                  {room.product && <span className="block text-[11.5px] text-gray-500 truncate">สนใจ: {room.product.t}</span>}
                 </span>
                 {room.phone && (
-                  <a href={`tel:${room.phone}`} className="text-[12px] font-semibold text-blue-600 hover:underline">
+                  <a href={`tel:${room.phone}`} className="text-[12.5px] font-semibold text-blue-600 hover:underline">
                     {room.phone}
                   </a>
                 )}
@@ -376,7 +376,7 @@ export default function ChatCommercePage() {
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-gray-50">
                 {msgs.map((m, i) => (
                   <div key={i} className={`flex ${m.from === 's' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[72%] rounded-xl px-3.5 py-2 text-[13px] leading-relaxed ${
+                    <div className={`max-w-[72%] rounded-xl px-3.5 py-2 text-[12.5px] leading-relaxed ${
                       m.from === 's' ? 'bg-[#4669e5] text-white' : 'bg-white text-gray-800 border border-gray-200'
                     }`}>
                       <p className="whitespace-pre-wrap break-words">{m.text}</p>
@@ -390,7 +390,7 @@ export default function ChatCommercePage() {
               </div>
 
               {sendErr && (
-                <p className="text-[12px] text-red-700 bg-red-50 border-t border-red-100 px-3 py-2">{sendErr}</p>
+                <p className="text-[12.5px] text-red-700 bg-red-50 border-t border-red-100 px-3 py-2">{sendErr}</p>
               )}
               <div className="flex items-center gap-2 border-t border-gray-200 px-3 py-2.5">
                 <input
@@ -398,12 +398,12 @@ export default function ChatCommercePage() {
                   onChange={(e) => setReply(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
                   placeholder="พิมพ์ข้อความตอบลูกค้า…"
-                  className="flex-1 rounded border border-gray-200 px-3 py-2 text-[13px] outline-none focus:border-blue-400"
+                  className="flex-1 rounded border border-gray-200 px-3 py-2 text-[12.5px] outline-none focus:border-blue-400"
                 />
                 <button
                   onClick={send}
                   disabled={!reply.trim()}
-                  className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40"
+                  className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
                   style={{ background: '#4669e5' }}
                 >
                   ส่ง

@@ -211,25 +211,25 @@ export default function WebPermitsPage() {
        📱 มือถือซ้อนกันตามเดิม (grid-cols-1) — เคียงกันเฉพาะจอกว้าง (lg:) */
     <div className="space-y-4 max-w-6xl">
       <div>
-        <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+        <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">
           ขอทะเบียนเลื่อยยนต์
-          {waiting > 0 && <span className="ml-2 align-middle rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-black text-white">{waiting} รอร้านรับใบ</span>}
+          {waiting > 0 && <span className="ml-2 align-middle rounded-full bg-orange-500 px-2 py-0.5 text-[11.5px] font-black text-white">{waiting} รอร้านรับใบ</span>}
         </h1>
-        <p className="text-[12px] text-gray-400 mt-0.5">รูปใช้แทนตัวจริงไม่ได้ — ต้องได้ ลซ.๒ ตอนกลางตัวจริงมาเก็บเป็นหลักฐานการจำหน่าย</p>
+        <p className="text-[12.5px] text-gray-400 mt-0.5">รูปใช้แทนตัวจริงไม่ได้ — ต้องได้ ลซ.๒ ตอนกลางตัวจริงมาเก็บเป็นหลักฐานการจำหน่าย</p>
       </div>
 
       <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2">
       {/* ══ ฝั่งซ้าย: แบบออโต้ ══
           📮 รับใบที่ส่งมาทางไปรษณีย์ — ลูกค้าส่วนใหญ่ไม่เคยเข้าเว็บ ส่งใบตัวจริงมาเลย */}
       <div>
-      <p className="mb-1.5 text-[11px] font-black uppercase tracking-wider text-red-600">แบบออโต้</p>
+      <p className="mb-1.5 text-[11.5px] font-black uppercase tracking-wider text-red-600">แบบออโต้</p>
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
         <button onClick={() => setOpenAdd((v) => !v)}
           className="w-full flex items-center gap-3 px-4 md:px-5 py-3.5 text-left hover:bg-gray-50/70 transition-colors">
           <span className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-[17px] flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">📮</span>
           <span className="min-w-0 flex-1">
-            <span className="block text-[13.5px] font-bold text-gray-900">รับใบ ลซ.๒ ที่ส่งมาทางไปรษณีย์</span>
+            <span className="block text-[12.5px] font-bold text-gray-900">รับใบ ลซ.๒ ที่ส่งมาทางไปรษณีย์</span>
             <span className="block text-[11.5px] text-gray-400">ถ่ายรูปใบที่ได้รับ → เข้าระบบทันที (ลูกค้าไม่ต้องเคยเข้าเว็บ)</span>
           </span>
           <span className="shrink-0 text-gray-300 text-[18px]">{openAdd ? '−' : '+'}</span>
@@ -289,25 +289,25 @@ export default function WebPermitsPage() {
                     ['จังหวัดภูมิลำเนา', 'จังหวัดตามทะเบียนบ้าน'],
                   ] as [string, string][]).map(([k, label]) => (
                     <label key={k} className="block">
-                      <span className="block text-[10.5px] font-semibold text-gray-500 mb-0.5">{label}</span>
+                      <span className="block text-[10px] font-semibold text-gray-500 mb-0.5">{label}</span>
                       {/* 🔴 ช่องวันที่กรอบเหลือง — เลขวันในใบเป็นลายมือ วัดแล้ว AI อ่าน "๑๕"
                           เป็น "๑" ทุกโมเดล (5 ต.ค. 2569) · วันสิ้นอายุผูกนาฬิกา 180 วัน */}
                       <input value={lz2[k] || ''} onChange={(e) => setLz2({ ...lz2, [k]: e.target.value })}
-                        className={`w-full rounded-lg border px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400 ${k.startsWith('วัน') ? 'border-amber-300 bg-amber-50/50' : 'border-gray-200'}`} />
+                        className={`w-full rounded-lg border px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400 ${k.startsWith('วัน') ? 'border-amber-300 bg-amber-50/50' : 'border-gray-200'}`} />
                     </label>
                   ))}
                 </div>
-                <p className="text-[10.5px] text-gray-400 mt-2">
+                <p className="text-[10px] text-gray-400 mt-2">
                   ⚠️ &ldquo;จังหวัดที่จะใช้เลื่อย&rdquo; มาจากช่องสถานที่ออกใบ — คนละอย่างกับทะเบียนบ้านลูกค้า
                 </p>
               </div>
             )}
             {addMsg && <p className={`text-[12.5px] font-semibold ${addMsg.startsWith('✅') ? 'text-emerald-600' : 'text-red-600'}`}>{addMsg}</p>}
             <button onClick={ส่งใบ} disabled={sending || converting}
-              className="rounded-xl bg-gray-900 px-5 py-2.5 text-[13.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
+              className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
               {converting ? 'กำลังแปลงรูป…' : sending ? 'กำลังบันทึก…' : 'บันทึกเข้าระบบ'}
             </button>
-            <p className="text-[11px] text-gray-400">บันทึกแล้วขั้นจะขึ้นเป็น &ldquo;ร้านได้ใบตัวจริงแล้ว&rdquo; · ใบตัวจริงตอนกลางต้องเก็บไว้เป็นหลักฐานการจำหน่าย</p>
+            <p className="text-[11.5px] text-gray-400">บันทึกแล้วขั้นจะขึ้นเป็น &ldquo;ร้านได้ใบตัวจริงแล้ว&rdquo; · ใบตัวจริงตอนกลางต้องเก็บไว้เป็นหลักฐานการจำหน่าย</p>
           </div>
         )}
       </div>
@@ -317,7 +317,7 @@ export default function WebPermitsPage() {
       <Lz2BackPrint />
       </div>
 
-      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">{err}</p>}
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
         {items === null ? (
@@ -325,7 +325,7 @@ export default function WebPermitsPage() {
         ) : items.length === 0 ? (
           /* ⚠️ โหลดไม่สำเร็จ ห้ามพูดว่า "ยังไม่มีลูกค้าทำเรื่องเข้ามา" — ขัดกับกล่องแดงข้างบน
              และเรื่องนี้คือ ลซ.๒ ที่ลูกค้าส่งมาแล้วรอร้านส่งเครื่องให้ · พลาดแล้วลูกค้ารอเก้อ */
-          <p className="py-14 text-center text-[13px] text-gray-400">
+          <p className="py-14 text-center text-[12.5px] text-gray-400">
             {err ? 'ยังดูไม่ได้ — โหลดรายการไม่สำเร็จ (ไม่ได้แปลว่าไม่มีใครส่งมา)' : 'ยังไม่มีลูกค้าทำเรื่องเข้ามา'}
           </p>
         ) : items.map((d) => {
@@ -334,16 +334,16 @@ export default function WebPermitsPage() {
           return (
             <div key={d.phone} className={open_ ? 'bg-blue-50/30' : ''}>
               <button onClick={() => open(d.phone)} className="w-full flex items-center gap-3.5 px-4 md:px-5 py-3.5 text-left hover:bg-gray-50/70 transition-colors">
-                <span className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-white text-[13px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
+                <span className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-red-500 text-white text-[12.5px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
                   {(d.name || '?').charAt(0)}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-bold text-gray-900">{d.name || d.phone}</span>
+                  <span className="block text-[12.5px] font-bold text-gray-900">{d.name || d.phone}</span>
                   <span className="block text-[11.5px] text-gray-400 truncate">
                     {d.phone}{d.saw ? ` · ${d.saw}` : ''}{d.province ? ` · ยื่นที่ ${d.province}` : ''}{d.images ? ` · รูป ${d.images} ใบ` : ''}
                   </span>
                 </span>
-                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold ${d.stage === 'lz2' ? 'bg-orange-50 text-orange-600' : d.stage === 'done' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
+                <span className={`shrink-0 rounded-full px-2.5 py-1 text-[11.5px] font-bold ${d.stage === 'lz2' ? 'bg-orange-50 text-orange-600' : d.stage === 'done' ? 'bg-emerald-50 text-emerald-600' : 'bg-blue-50 text-blue-600'}`}>
                   {labelOf(d.stage)}
                 </span>
               </button>
@@ -352,7 +352,7 @@ export default function WebPermitsPage() {
                   {/* เส้นเรื่อง */}
                   <div className="flex flex-wrap gap-1.5">
                     {STAGES.map((s, i) => (
-                      <span key={s.key} className={`rounded-full px-2.5 py-1 text-[10.5px] font-semibold ${i <= idx ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-300'}`}>
+                      <span key={s.key} className={`rounded-full px-2.5 py-1 text-[10px] font-semibold ${i <= idx ? 'bg-emerald-50 text-emerald-600' : 'bg-gray-50 text-gray-300'}`}>
                         {i + 1}. {s.label}
                       </span>
                     ))}
@@ -372,17 +372,17 @@ export default function WebPermitsPage() {
                   <div className="flex flex-wrap gap-2">
                     {d.stage === 'lz2' && (
                       <button onClick={() => setStage(d.phone, 'got')}
-                        className="rounded-xl bg-gray-900 px-4 py-2 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98]">
+                        className="rounded-xl bg-gray-900 px-4 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98]">
                         ✓ ร้านได้ใบตัวจริงแล้ว
                       </button>
                     )}
                     {d.stage === 'got' && (
                       <button onClick={() => setStage(d.phone, 'shipped')}
-                        className="rounded-xl bg-gray-900 px-4 py-2 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98]">
+                        className="rounded-xl bg-gray-900 px-4 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98]">
                         🚚 ร้านส่งเลื่อยแล้ว
                       </button>
                     )}
-                    <a href={`tel:${d.phone}`} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-[13px] font-semibold text-blue-600 hover:bg-blue-50">โทรหาลูกค้า</a>
+                    <a href={`tel:${d.phone}`} className="rounded-xl border border-gray-200 bg-white px-4 py-2 text-[12.5px] font-semibold text-blue-600 hover:bg-blue-50">โทรหาลูกค้า</a>
                     {/* 🗑 จางไว้และอยู่ท้ายแถว คนละฝั่งกับปุ่มที่กดบ่อย — นิ้วพลาดง่ายบนมือถือ */}
                     <button onClick={() => ลบเรื่อง(d.phone, d.name)}
                       className="ml-auto rounded-xl border border-gray-100 bg-white px-3 py-2 text-[12.5px] font-semibold text-gray-300 hover:text-red-600 hover:border-red-200">
@@ -395,7 +395,7 @@ export default function WebPermitsPage() {
           )
         })}
       </div>
-      <p className="text-center text-[11px] text-gray-300">ชุดเดียวกับ gucut.com/admin/permits/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/permits/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

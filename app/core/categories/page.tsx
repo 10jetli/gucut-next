@@ -238,7 +238,7 @@ export default function CoreCategoriesPage() {
                 ⇒ ปุ่มที่กดแล้วเกิดอะไรขึ้นจริงแต่ไม่ใช่สิ่งที่คนตั้งใจ **หลอกกว่าปุ่มที่กดแล้วเงียบ**
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             <Link href="/core/soon/category-add"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เพิ่มหมวดหมู่
             </Link>
@@ -251,7 +251,7 @@ export default function CoreCategoriesPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="ค้นหา"
-          className="w-full max-w-[320px] text-[13px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+          className="w-full max-w-[320px] text-[12.5px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
         />
       </div>
 
@@ -296,7 +296,7 @@ export default function CoreCategoriesPage() {
             <div className="flex items-center gap-1.5 shrink-0">
               <button
                 onClick={() => setBasis('zort')}
-                className={`text-[12px] rounded-full px-3 py-1 border ${
+                className={`text-[12.5px] rounded-full px-3 py-1 border ${
                   basis === 'zort' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
                 }`} aria-pressed={basis === 'zort'}
               >
@@ -304,7 +304,7 @@ export default function CoreCategoriesPage() {
               </button>
               <button
                 onClick={() => setBasis('cost')}
-                className={`text-[12px] rounded-full px-3 py-1 border ${
+                className={`text-[12.5px] rounded-full px-3 py-1 border ${
                   basis === 'cost' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
                 }`} aria-pressed={basis === 'cost'}
               >
@@ -312,7 +312,7 @@ export default function CoreCategoriesPage() {
               </button>
               <button
                 onClick={() => setBasis('sell')}
-                className={`text-[12px] rounded-full px-3 py-1 border ${
+                className={`text-[12.5px] rounded-full px-3 py-1 border ${
                   basis === 'sell' ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
                 }`} aria-pressed={basis === 'sell'}
               >
@@ -383,12 +383,12 @@ export default function CoreCategoriesPage() {
                         className="text-blue-600 hover:underline">{r.name}</Link>
                       {/* ⚠️ หมวดที่ยัง "เดาจากชื่อสินค้า" ต้องดูออก — ไม่งั้นเข้าใจว่าทุกหมวดมาจาก ZORT */}
                       {r.zort === false && (
-                        <span className="ml-1.5 text-[10.5px] text-gray-600 bg-gray-100 rounded px-1.5 py-0.5">
+                        <span className="ml-1.5 text-[10px] text-gray-600 bg-gray-100 rounded px-1.5 py-0.5">
                           เดาจากชื่อสินค้า
                         </span>
                       )}
                       {Number(r.no_cost) > 0 && (
-                        <span className="ml-1.5 text-[10.5px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">
+                        <span className="ml-1.5 text-[10px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">
                           ไม่มีราคาซื้อ {fmtNum(Number(r.no_cost) || 0)}
                         </span>
                       )}
@@ -399,7 +399,7 @@ export default function CoreCategoriesPage() {
                     <td className={TDR} style={{ color: ZORT_GREEN }}>
                       {fmtNum(r.skus)}
                       {typeof r.zortSkus === 'number' && r.zortSkus !== r.skus && (
-                        <span className="block text-[10.5px] text-amber-700" title="จำนวนใน ZORT ไม่ตรงกับคลังเงา">
+                        <span className="block text-[10px] text-amber-700" title="จำนวนใน ZORT ไม่ตรงกับคลังเงา">
                           ZORT {fmtNum(r.zortSkus)}
                         </span>
                       )}
@@ -433,7 +433,7 @@ export default function CoreCategoriesPage() {
               </tbody>
             </table>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12.5px] text-gray-600">
               <span>
                 {/* 🔴 **หัวจอกับท้ายจอต้องไม่พูดเรื่องเดียวกันคนละอย่าง** (เจอตอนกวาดจริง 14 ก.ย. 2569)
                     หัวจอขึ้นว่า "จำนวน ไม่รู้ (ท่อไม่ได้ส่งมา) หมวด" แต่ท้ายจอขึ้น "รวม 1 หมวด"
@@ -500,7 +500,7 @@ export default function CoreCategoriesPage() {
               ⇒ ดาว = หมวดที่ปักหมุด และนั่นคือเหตุผลที่ ZORT เรียง โซ่ → บาร์ → เลื่อยยนต์ → อะไหล่
                  ไม่ใช่ลำดับที่ตั้งเอง · ข้อมูลนี้ไม่มีใน API (ไม่มี Category endpoint เลยสักตัว)
               ⇒ **ห้ามใส่ดาวมั่ว และห้ามเดาลำดับให้เหมือน** */}
-          <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+          <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
             <b>ทำไมลำดับไม่ตรงกับ ZORT</b> — ที่ ZORT เรียง โซ่ → บาร์ → เลื่อยยนต์ แล้วค่อยอะไหล่
             เพราะ 12 หมวดแรกถูก <b>ปักหมุดไว้บนสุด</b> (ดาวเหลืองหน้าชื่อ) ไม่ใช่ลำดับที่ตั้งค่าไว้ ·
             การปักหมุดเป็นข้อมูลที่ <b>API ไม่เปิดให้ดึง</b> (ZORT ไม่มี endpoint หมวดหมู่เลยสักตัว)
@@ -508,7 +508,7 @@ export default function CoreCategoriesPage() {
             เพราะใส่โดยไม่รู้ว่าหมวดไหนถูกปักหมุดจริงคือการเดา
           </div>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             หมวดหมู่ชุดนี้<b>ดึงมาจาก ZORT ของจริง</b> ไม่ใช่หมวดที่เดาจากชื่อสินค้าเหมือนก่อน ·
             {typeof d.uncategorised === 'number' && (
               <> สินค้าที่ ZORT ยังไม่ได้จัดหมวด <b>{fmtNum(d.uncategorised)}</b> ตัว

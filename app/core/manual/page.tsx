@@ -10,7 +10,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="bg-white border border-gray-200 rounded-md p-5 mb-3">
       <h2 className="text-[15px] font-semibold text-gray-900 mb-2.5">{title}</h2>
-      <div className="text-[13.5px] text-gray-700 leading-[1.85] space-y-2">{children}</div>
+      <div className="text-[12.5px] text-gray-700 leading-[1.85] space-y-2">{children}</div>
     </section>
   )
 }
@@ -25,7 +25,7 @@ export default function ManualPage() {
     <div className="p-4 md:p-6">
       <div className="max-w-[760px]">
         <h1 className="text-[26px] leading-tight font-semibold text-gray-900">คู่มือการใช้งาน</h1>
-        <p className="text-[13px] text-gray-500 mt-1 mb-4">
+        <p className="text-[12.5px] text-gray-500 mt-1 mb-4">
           ระบบหลังร้าน gucut Ai · เขียนจากสิ่งที่ระบบทำได้จริงตอนนี้ ไม่ใช่สิ่งที่ตั้งใจจะทำ
         </p>
 
@@ -128,10 +128,10 @@ export default function ManualPage() {
         </Section>
 
         <div className="flex flex-wrap gap-2 mt-4">
-          <Link href="/core/pos" className="text-[13px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4669e5' }}>
+          <Link href="/core/pos" className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4669e5' }}>
             เปิดจอขายหน้าร้าน
           </Link>
-          <Link href="/core" className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50">
+          <Link href="/core" className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50">
             ดูความคืบหน้าโครงการแก่น
           </Link>
         </div>

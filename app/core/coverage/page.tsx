@@ -326,7 +326,7 @@ export default function CoveragePage() {
               </p>
               <button type="button" onClick={() => askSuspects(gaps.map((g) => g.ym))}
                 disabled={!!asking}
-                className="mt-2 px-3 py-1.5 rounded bg-[#4669e5] text-white text-[12px] disabled:opacity-50">
+                className="mt-2 px-3 py-1.5 rounded bg-[#4669e5] text-white text-[12.5px] disabled:opacity-50">
                 {asking ? `กำลังถาม ${thaiYm(asking)}…` : `ถาม ZORT ให้ครบทั้ง ${gaps.length} เดือน (ทีละเดือน)`}
               </button>
             </div>
@@ -366,7 +366,7 @@ export default function CoveragePage() {
                   const z = zort[r.ym]
                   return (
                   <tr key={r.ym} className={`border-b border-[#e8ecf8] last:border-0 ${r.missing ? 'bg-red-50' : lowSet.has(r.ym) ? 'bg-amber-50' : ''}`}>
-                    <td className={`${TD} whitespace-nowrap`}>{thaiYm(r.ym)} <span className="text-gray-300 font-mono text-[11px]">{r.ym}</span></td>
+                    <td className={`${TD} whitespace-nowrap`}>{thaiYm(r.ym)} <span className="text-gray-300 font-mono text-[11.5px]">{r.ym}</span></td>
                     <td className={TDR}>{r.missing ? <span className="text-gray-300">—</span> : r.orders.toLocaleString('th-TH')}</td>
                     <td className={TDR}>{r.missing ? <span className="text-gray-300">—</span> : `฿${Math.round(r.sales).toLocaleString('th-TH')}`}</td>
                     <td className={TD}>

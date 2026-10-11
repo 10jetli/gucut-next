@@ -54,7 +54,7 @@ export default function OrdersPage() {
         <Card padded={false} className="overflow-hidden">
           {loading && <LoadingState />}
           {!loading && err && (
-            <p className="text-center py-8 text-red-600 text-sm">ดึงรายการไม่สำเร็จ — ยังไม่รู้ว่ามีออเดอร์ไหม<br /><span className="text-gray-400 text-[12px]">{err}</span></p>
+            <p className="text-center py-8 text-red-600 text-sm">ดึงรายการไม่สำเร็จ — ยังไม่รู้ว่ามีออเดอร์ไหม<br /><span className="text-gray-400 text-[12.5px]">{err}</span></p>
           )}
           {!loading && !err && orders.length === 0 && (
             <p className="text-center py-8 text-gray-400 text-sm">ไม่มี orders</p>

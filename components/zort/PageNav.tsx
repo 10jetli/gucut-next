@@ -39,7 +39,7 @@ export const PAGE_CHOICES = [10, 20, 50, 100]
 /* 📏 วัดของจริง 16 ก.ย. 2569 บนแท็บเล็ต 820px: ปุ่มเลขหน้าเดิมสูง **27px**
    ร้านกดจากแท็บเล็ตที่เคาน์เตอร์ ⇒ เป้ากดควรใกล้ 40px (นิ้วคนกว้างกว่าเมาส์)
    ⚠️ ขยายด้วย padding ไม่ใช่ตัวอักษร — ตัวเลขใหญ่ขึ้นจะไม่เหมือน ZORT */
-const BTN = 'px-3 py-2.5 rounded border text-[13px] leading-none disabled:opacity-40 disabled:cursor-not-allowed'
+const BTN = 'px-3 py-2.5 rounded border text-[12.5px] leading-none disabled:opacity-40 disabled:cursor-not-allowed'
 const PLAIN = `${BTN} bg-white border-gray-300 text-gray-700 hover:bg-gray-50`
 const HERE = `${BTN} bg-[#4669e5] border-[#4669e5] text-white font-semibold`
 
@@ -65,7 +65,7 @@ export default function PageNav({ offset, perPage, total, rowsOnPage, onGo, onPe
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
-      <span className="text-[12px] text-gray-500 mr-1">
+      <span className="text-[12.5px] text-gray-500 mr-1">
         {รู้จำนวนทั้งชุด
           ? <>หน้า {cur.toLocaleString('th-TH')} จาก {(last as number).toLocaleString('th-TH')}</>
           : <span className="text-amber-800">หน้า {cur.toLocaleString('th-TH')} · ยังไม่รู้ว่าทั้งชุดมีกี่หน้า (ท่อไม่ได้บอกจำนวนทั้งหมด)</span>}
@@ -94,10 +94,10 @@ export default function PageNav({ offset, perPage, total, rowsOnPage, onGo, onPe
 
       {onPerPage && (
         <>
-          <span className="text-[12px] text-gray-500 ml-1">จำนวนต่อหน้า</span>
+          <span className="text-[12.5px] text-gray-500 ml-1">จำนวนต่อหน้า</span>
           <select value={perPage} disabled={disabled}
             onChange={(e) => onPerPage(Number(e.target.value))}
-            className="text-[13px] border border-gray-300 rounded px-2 py-1.5 bg-white">
+            className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white">
             {PAGE_CHOICES.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </>

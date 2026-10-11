@@ -240,7 +240,7 @@ export default function StockMapPage() {
       {/* ── เลือกหมวด = เลือกแร็ค ── */}
       <Card>
         <label className="block">
-          <span className="mb-1 block text-[12px] font-semibold text-gray-600">
+          <span className="mb-1 block text-[12.5px] font-semibold text-gray-600">
             หมวด (= แร็คหนึ่งตัว){cats === null && <span className="ml-1 font-normal text-gray-400">กำลังอ่านรายชื่อหมวด…</span>}
             {cats?.length === 0 && <span className="ml-1 font-normal text-amber-700">อ่านรายชื่อหมวดไม่สำเร็จ — เลือกหมวดอื่นยังไม่ได้ แต่แร็คนี้ยังวาดได้</span>}
           </span>
@@ -269,7 +269,7 @@ export default function StockMapPage() {
           </p>
           {/* 🔴 ตัวเลขสองตัวมาคนละเส้น ⇒ ต้องเขียนว่าต่างกันตรงไหน ห้ามวางคู่กันเฉย ๆ */}
           {แถวในหมวด && รวมในหมวด !== null && แถวในหมวด.skus !== รวมในหมวด && (
-            <p className="mt-1 text-[11px] font-semibold text-amber-700">
+            <p className="mt-1 text-[11.5px] font-semibold text-amber-700">
               ⚠️ ตารางหมวดบอก {fmtNum(แถวในหมวด.skus)} — คนละกติกากับเส้นที่ดึงแถวมา
             </p>
           )}
@@ -281,24 +281,24 @@ export default function StockMapPage() {
               ? fmtMoney(แถวในหมวด.onhand_value)
               : <span className="text-[14px] text-gray-400">ยังไม่รู้</span>}
           </p>
-          <p className="mt-1 text-[11px] text-gray-400">จากตารางหมวด (ต้นทุนเฉลี่ยที่คัดจาก ZORT)</p>
+          <p className="mt-1 text-[11.5px] text-gray-400">จากตารางหมวด (ต้นทุนเฉลี่ยที่คัดจาก ZORT)</p>
         </Card>
         <Card>
           <p className="text-[11.5px] text-gray-500">ของหมด (ช่องว่างบนชั้น)</p>
           <p className="text-[22px] font-black text-gray-900">{rows ? fmtNum(นับ.หมด) : <span className="text-[14px] text-gray-400">—</span>}</p>
-          {นับ.ติดลบ > 0 && <p className="mt-1 text-[11px] font-semibold text-red-600">ติดลบอีก {fmtNum(นับ.ติดลบ)} รหัส</p>}
+          {นับ.ติดลบ > 0 && <p className="mt-1 text-[11.5px] font-semibold text-red-600">ติดลบอีก {fmtNum(นับ.ติดลบ)} รหัส</p>}
         </Card>
         <Card>
           <p className="text-[11.5px] text-gray-500">ท่อไม่ได้บอกจำนวน</p>
           <p className="text-[22px] font-black text-gray-900">{rows ? fmtNum(นับ.ไม่รู้) : <span className="text-[14px] text-gray-400">—</span>}</p>
-          <p className="mt-1 text-[11px] text-gray-400">นับแยกจาก &ldquo;ของหมด&rdquo; เสมอ — ไม่รู้ ≠ 0</p>
+          <p className="mt-1 text-[11.5px] text-gray-400">นับแยกจาก &ldquo;ของหมด&rdquo; เสมอ — ไม่รู้ ≠ 0</p>
         </Card>
       </div>
 
       {loading && <LoadingState />}
       {!loading && err && <ErrorBox title="ดึงของในหมวดนี้ไม่ได้">{err}</ErrorBox>}
       {!loading && !err && rows?.length === 0 && (
-        <Card><p className="text-[13px] text-amber-800">
+        <Card><p className="text-[12.5px] text-amber-800">
           หมวด <b>{หมวด}</b> ไม่มีรหัสสินค้าเลยในชุดที่ท่อตอบกลับมา — <b>ไม่ได้แปลว่าหมวดนี้ไม่มีอยู่</b>
         </p></Card>
       )}
@@ -309,7 +309,7 @@ export default function StockMapPage() {
             {/* ══ ฉากโกดัง ══ */}
             <Card>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <p className="text-[13px] font-semibold text-gray-900">ข้างในโกดัง · แร็คของหมวด {หมวด}</p>
+                <p className="text-[12.5px] font-semibold text-gray-900">ข้างในโกดัง · แร็คของหมวด {หมวด}</p>
                 <div className="flex items-center gap-1">
                   {([
                     ['↺', 'หมุนซ้าย', () => setหมุน((v) => v - 12)],
@@ -321,7 +321,7 @@ export default function StockMapPage() {
                     ['⌂', 'กลับมุมเริ่มต้น', กลับมุมเริ่มต้น],
                   ] as [string, string, () => void][]).map(([ตัว, ชื่อ, ทำ]) => (
                     <button key={ชื่อ} onClick={ทำ} title={ชื่อ} aria-label={ชื่อ}
-                      className="h-7 w-7 rounded-lg border border-gray-200 bg-white text-[13px] text-gray-700 hover:bg-gray-50 active:scale-95">
+                      className="h-7 w-7 rounded-lg border border-gray-200 bg-white text-[12.5px] text-gray-700 hover:bg-gray-50 active:scale-95">
                       {ตัว}
                     </button>
                   ))}
@@ -491,7 +491,7 @@ export default function StockMapPage() {
                     ...วาง(0, พื้นY + 58, ลึกชั้น / 2 + 2, กว้างชั้น, 26, `rotateY(${-หมุน}deg)`),
                     textAlign: 'center',
                   }}>
-                    <span className="inline-block rounded bg-[#28333f] px-3 py-1 text-[12px] font-bold text-white">
+                    <span className="inline-block rounded bg-[#28333f] px-3 py-1 text-[12.5px] font-bold text-white">
                       {หมวด}
                     </span>
                   </div>
@@ -519,7 +519,7 @@ export default function StockMapPage() {
                   <span className="text-[11.5px] text-gray-500">แร็คข้างเคียง:</span>
                   {แร็คข้าง.map(({ c }) => (
                     <button key={c.cat_name} onClick={() => { setเลือกเอง(true); setหมวด(c.cat_name) }}
-                      className="rounded-full border border-gray-200 bg-white px-3 py-1 text-[12px] font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700">
+                      className="rounded-full border border-gray-200 bg-white px-3 py-1 text-[12.5px] font-medium text-gray-700 hover:border-blue-300 hover:text-blue-700">
                       {c.cat_name} · {fmtNum(c.skus)} รหัส
                     </button>
                   ))}
@@ -537,7 +537,7 @@ export default function StockMapPage() {
 
             {/* ══ แผงขวา ══ */}
             <Card>
-              <p className="text-[13px] font-semibold text-gray-900 mb-2">รายละเอียดช่องที่เลือก</p>
+              <p className="text-[12.5px] font-semibold text-gray-900 mb-2">รายละเอียดช่องที่เลือก</p>
               {!เลือก && <p className="text-[12.5px] text-gray-400">คลิกกล่องในฉากเพื่อดูรหัสนั้น</p>}
               {เลือก && (
                 <div className="space-y-2">
@@ -549,22 +549,22 @@ export default function StockMapPage() {
                       ['พร้อมขาย', เลือก.available],
                     ] as [string, number | null | undefined][]).map(([ป้าย, v]) => (
                       <div key={ป้าย}>
-                        <p className="text-[11px] text-gray-500">{ป้าย}</p>
+                        <p className="text-[11.5px] text-gray-500">{ป้าย}</p>
                         <p className="text-[15px] font-semibold text-gray-900">
                           {v === null || v === undefined || !Number.isFinite(Number(v))
                             ? <span className="text-[12.5px] text-gray-400">ท่อไม่ได้บอก</span>
-                            : <>{fmtNum(Number(v))} <span className="text-[12px] font-normal text-gray-500">{เลือก.unit || ''}</span></>}
+                            : <>{fmtNum(Number(v))} <span className="text-[12.5px] font-normal text-gray-500">{เลือก.unit || ''}</span></>}
                         </p>
                       </div>
                     ))}
                     <div>
-                      <p className="text-[11px] text-gray-500">ราคาทุน (ราคาซื้อที่ตั้งไว้)</p>
+                      <p className="text-[11.5px] text-gray-500">ราคาทุน (ราคาซื้อที่ตั้งไว้)</p>
                       <p className="text-[15px] font-semibold text-gray-900">
                         {typeof เลือก.buy === 'number' ? fmtMoney(เลือก.buy) : <span className="text-[12.5px] text-gray-400">ท่อไม่ได้บอก</span>}
                       </p>
                     </div>
                     <div>
-                      <p className="text-[11px] text-gray-500">ราคาขาย</p>
+                      <p className="text-[11.5px] text-gray-500">ราคาขาย</p>
                       <p className="text-[15px] font-semibold text-gray-900">
                         {typeof เลือก.price === 'number' ? fmtMoney(เลือก.price) : <span className="text-[12.5px] text-gray-400">ท่อไม่ได้บอก</span>}
                       </p>
@@ -576,7 +576,7 @@ export default function StockMapPage() {
                     <Link href={`/core/stock?q=${encodeURIComponent(เลือก.sku)}`}
                       className="text-[12.5px] text-blue-600 hover:underline">ดูในตารางคลัง →</Link>
                   </div>
-                  <p className="pt-1 text-[11px] text-gray-400 leading-relaxed">
+                  <p className="pt-1 text-[11.5px] text-gray-400 leading-relaxed">
                     ⚠️ &ldquo;ราคาทุน&rdquo; ตรงนี้คือ <b>ราคาซื้อที่ตั้งไว้</b> ไม่ใช่ต้นทุนเฉลี่ย —
                     มูลค่าบนการ์ดข้างบนใช้ต้นทุนเฉลี่ยที่คัดจาก ZORT ⇒ <b>คนละฐาน อย่าเอามาคูณเทียบกัน</b>
                   </p>
@@ -586,7 +586,7 @@ export default function StockMapPage() {
           </div>
 
           <Card>
-            <p className="text-[12px] text-gray-600 leading-relaxed">
+            <p className="text-[12.5px] text-gray-600 leading-relaxed">
               🧭 <b>ขั้นแรกทำทีละหมวดตามที่ท่านประธานสั่ง</b> — ตอนนี้วาดแร็คของหมวดที่เลือกตัวเดียว
               {' '}เปลี่ยนหมวดได้จากช่องด้านบน · ขั้นถัดไปคือเรียงหลายแร็คในโกดังเดียวให้เดินดูได้
               {' '}แล้วค่อยปักหมุดเตือนของหมด และแยกตามสาขา

@@ -193,17 +193,17 @@ export default function CoreChannelsPage() {
                 **ออเดอร์ที่ท่อดึงตรงจาก API ของแพลตฟอร์มเข้ามาเอง**
                 ⇒ กฎของโปรเจกต์: เลขจากสองแหล่งวางคู่กันได้ **แต่ต้องเขียนว่าต่างกันตรงไหน**
                    ไม่งั้นคนอ่านจะเชื่อว่ามันคือชุดเดียวกัน แล้วสรุปว่าจอพัง */}
-            <p className="text-[13px] font-semibold text-gray-700">ยอดขายรายช่องทาง (30 วันล่าสุด)</p>
-            <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+            <p className="text-[12.5px] font-semibold text-gray-700">ยอดขายรายช่องทาง (30 วันล่าสุด)</p>
+            <p className="text-[11.5px] text-gray-400 mb-3 leading-relaxed">
               นับจาก<b>กระจกออเดอร์</b> (ของที่ผ่าน ZORT มา) — <b>คนละกอง</b>กับการ์ด
               {' '}“ท่อดึงออเดอร์ตรงจาก API” ข้างล่าง ที่นับเฉพาะออเดอร์ซึ่งท่อดึงเข้ามาเอง
               {' '}⇒ ช่องทางหนึ่งมียอดตรงนี้ แต่ท่อตรงยัง “ยังไม่เดิน” ได้ตามปกติ
             </p>
             {recentLoading
-              ? <p className="text-[13px] text-gray-400">กำลังโหลดยอด 30 วัน…</p>
+              ? <p className="text-[12.5px] text-gray-400">กำลังโหลดยอด 30 วัน…</p>
               : recentFailed
-                ? <p className="text-[13px] text-red-600">ดึงยอด 30 วันไม่สำเร็จ — <b>ไม่ได้แปลว่าไม่มียอด</b> กดรีเฟรชอีกครั้ง</p>
-                : recent.length === 0 && <p className="text-[13px] text-gray-400">ยังไม่มียอดใน 30 วันล่าสุด</p>}
+                ? <p className="text-[12.5px] text-red-600">ดึงยอด 30 วันไม่สำเร็จ — <b>ไม่ได้แปลว่าไม่มียอด</b> กดรีเฟรชอีกครั้ง</p>
+                : recent.length === 0 && <p className="text-[12.5px] text-gray-400">ยังไม่มียอดใน 30 วันล่าสุด</p>}
             <div className="space-y-2.5">
               {recent.map((c) => (
                 <div key={c.channel}>
@@ -225,8 +225,8 @@ export default function CoreChannelsPage() {
           {/* ท่อดึงตรงจาก API */}
           <Card padded={false} className="overflow-hidden">
             <div className="px-4 md:px-5 py-3 border-b border-gray-100">
-              <p className="text-[13px] font-semibold text-gray-700">🔌 ท่อดึงออเดอร์ตรงจาก API ของแพลตฟอร์ม</p>
-              <p className="text-[11px] text-gray-400 mt-0.5">
+              <p className="text-[12.5px] font-semibold text-gray-700">🔌 ท่อดึงออเดอร์ตรงจาก API ของแพลตฟอร์ม</p>
+              <p className="text-[11.5px] text-gray-400 mt-0.5">
                 นี่คือทางที่ทำให้เราเลิกพึ่ง ZORT ได้ — สถานะข้างล่างคิดจาก<b>ออเดอร์ที่ท่อดึงตรงเข้ามาเอง</b>
                 {' '}<b>ไม่นับ</b>ออเดอร์ที่มาทางกระจก ZORT ⇒ ตัวเลขจึงไม่ตรงกับการ์ดยอดขายข้างบน และนั่นถูกต้อง
               </p>
@@ -246,8 +246,8 @@ export default function CoreChannelsPage() {
                 <div key={p.id} className="flex items-center gap-3 px-4 md:px-5 py-3 border-b border-gray-50 last:border-0">
                   <span className="text-[18px] shrink-0">{p.emoji}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-[13px] font-semibold text-gray-800">{p.name}</p>
-                    <p className="text-[12px] text-gray-500">
+                    <p className="text-[12.5px] font-semibold text-gray-800">{p.name}</p>
+                    <p className="text-[12.5px] text-gray-500">
                       {fail
                         ? <span className="text-red-700">ดึงไม่สำเร็จ — {fail}</span>
                         : live
@@ -255,7 +255,7 @@ export default function CoreChannelsPage() {
                           : 'ยังไม่เห็นออเดอร์จากท่อนี้ในฐานของเรา'}
                     </p>
                   </div>
-                  <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
+                  <span className={`text-[11.5px] font-semibold px-2 py-0.5 rounded-full shrink-0 ${
                     fail ? 'bg-red-100 text-red-700'
                       : live ? 'bg-emerald-100 text-emerald-700' : 'bg-gray-100 text-gray-500'
                   }`}>
@@ -264,7 +264,7 @@ export default function CoreChannelsPage() {
                 </div>
               )
             })}
-            <p className="text-[11px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
+            <p className="text-[11.5px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
               &quot;ยังไม่เดิน&quot; หมายถึงยังไม่เห็นข้อมูลจากท่อนั้นในฐานของเรา
               ไม่ได้แปลว่าถูกปฏิเสธ — สถานะการอนุมัติ API ต้องไปดูที่คอนโซลของเจ้านั้นหรืออีเมล
               จอนี้จงใจไม่จำสถานะพวกนั้นไว้ เพราะมันเปลี่ยนได้โดยไม่มีใครมาแก้จอ
@@ -274,15 +274,15 @@ export default function CoreChannelsPage() {
           {/* ยอดสะสมทุกช่องทาง */}
           <Card>
             <div className="flex items-center justify-between gap-2 mb-3">
-              <p className="text-[13px] font-semibold text-gray-700">ยอดสะสมทั้งหมดในคลังเงา (ทุกช่วงเวลา)</p>
-              <Link href="/core/reports" className="text-[11px] text-blue-600 font-medium hover:text-blue-700">
+              <p className="text-[12.5px] font-semibold text-gray-700">ยอดสะสมทั้งหมดในคลังเงา (ทุกช่วงเวลา)</p>
+              <Link href="/core/reports" className="text-[11.5px] text-blue-600 font-medium hover:text-blue-700">
                 ดูรายงานเต็ม →
               </Link>
             </div>
-            {all.length === 0 && <p className="text-[13px] text-gray-400">ยังไม่มีข้อมูล</p>}
+            {all.length === 0 && <p className="text-[12.5px] text-gray-400">ยังไม่มีข้อมูล</p>}
             <div className="flex flex-wrap gap-2">
               {all.map((c) => (
-                <span key={c.channel} className="text-[12px] border border-gray-200 rounded-xl px-3 py-1.5">
+                <span key={c.channel} className="text-[12.5px] border border-gray-200 rounded-xl px-3 py-1.5">
                   <b className="text-gray-800">{c.channel}</b>
                   <span className="text-gray-500"> · {fmtNum(c.orders)} ใบ · {fmtMoney(c.amount)}</span>
                 </span>

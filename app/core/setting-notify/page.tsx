@@ -96,7 +96,7 @@ export default function SettingNotifyPage() {
         {CHANNELS.map((c) => (
           <button key={c.id}
             onClick={() => { setChan(c.id); setSel(c.items[0].id) }}
-            className={`text-[13.5px] pb-2 -mb-px ${c.id === chan
+            className={`text-[12.5px] pb-2 -mb-px ${c.id === chan
               ? 'text-blue-600 border-b-2 border-blue-600 font-medium'
               : 'text-gray-500 hover:text-gray-700'}`} aria-pressed={chan === c.id}>
             {c.label}
@@ -111,7 +111,7 @@ export default function SettingNotifyPage() {
         <div className="border-b md:border-b-0 md:border-r border-gray-200">
           {active.items.map((i) => (
             <button key={i.id} onClick={() => setSel(i.id)}
-              className={`block w-full text-left px-4 py-3 text-[13px] border-b border-gray-100 last:border-0 ${
+              className={`block w-full text-left px-4 py-3 text-[12.5px] border-b border-gray-100 last:border-0 ${
                 i.id === item.id ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-l-blue-600' : 'text-gray-700 hover:bg-gray-50'}`} aria-current={sel === i.id ? 'true' : undefined}>
               {i.name}
             </button>
@@ -119,13 +119,13 @@ export default function SettingNotifyPage() {
         </div>
         <div className="p-5">
           <p className="text-[15px] font-semibold text-gray-900 mb-3">{item.name}</p>
-          <dl className="text-[13px] space-y-2.5">
+          <dl className="text-[12.5px] space-y-2.5">
             <div><dt className="text-gray-400 text-[11.5px]">ยิงเมื่อ</dt><dd className="text-gray-800">{item.when}</dd></div>
             <div><dt className="text-gray-400 text-[11.5px]">ใครได้รับ</dt><dd className="text-gray-800">{item.who}</dd></div>
             <div><dt className="text-gray-400 text-[11.5px]">โค้ดที่ยิง (ตรวจได้)</dt>
-              <dd className="text-gray-600 font-mono text-[12px]">{item.src}</dd></div>
+              <dd className="text-gray-600 font-mono text-[12.5px]">{item.src}</dd></div>
             {item.note && (
-              <div className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 leading-relaxed">
+              <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 leading-relaxed">
                 ⚠️ {item.note}
               </div>
             )}
@@ -133,7 +133,7 @@ export default function SettingNotifyPage() {
         </div>
       </div>
 
-      <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+      <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
         ⚠️ รายการนี้คัดจากโค้ดด้วยมือ (ตรวจล่าสุด {CHECKED_AT}) — เพิ่ม/ลบตัวแจ้งเตือนแล้วต้องกลับมาแก้จอนี้ ·
         แต่ละรายการชี้ไฟล์ต้นทางไว้ให้ตรวจย้อนได้
       </p>
@@ -145,7 +145,7 @@ export default function SettingNotifyPage() {
           🔴 เขียนเป็นตารางเทียบ **เพราะคนที่ชิน ZORT จะหาของพวกนี้** ถ้าไม่บอกจะคิดว่าเราลืม
              และต้องบอกด้วยว่าอันไหน "ยังไม่ได้ทำ" อันไหน "ทำไม่ได้เพราะต้นทางไม่มีข้อมูล" */}
       <div className="bg-white border border-gray-200 rounded-md p-4 mt-4">
-        <p className="text-[13.5px] font-semibold text-gray-800 mb-1">📋 แจ้งเตือนที่ ZORT มีในจอนี้ — ของเราอยู่ตรงไหน</p>
+        <p className="text-[12.5px] font-semibold text-gray-800 mb-1">📋 แจ้งเตือนที่ ZORT มีในจอนี้ — ของเราอยู่ตรงไหน</p>
         <p className="text-[11.5px] text-gray-500 mb-2.5">
           อ่านจากจอ ZORT จริง 16 ก.ย. 2569 · ช่องทางของเขาคือ <b>โปรแกรม · อีเมล · แอปพลิเคชันมือถือ</b>
           {' '}(ของเราคือ Telegram · Web Push · LINE) · เขาตั้งผู้รับได้ 5 แบบ

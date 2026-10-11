@@ -152,7 +152,7 @@ export default function SalesPrintPage() {
       `}</style>
 
       <div className="no-print">
-        <p className="text-[12px] mb-2">
+        <p className="text-[12.5px] mb-2">
           <Link href="/core/sales" className="text-blue-600 hover:underline">‹ รายการขาย</Link>
         </p>
         <PageHead
@@ -167,7 +167,7 @@ export default function SalesPrintPage() {
             <>
               {(Object.keys(DOCS) as DocKey[]).map((k) => (
                 <button key={k} type="button" onClick={() => setDoc(k)}
-                  className={`text-[13px] rounded-full px-3.5 py-1.5 border ${k === doc
+                  className={`text-[12.5px] rounded-full px-3.5 py-1.5 border ${k === doc
                     ? 'bg-[#4669e5] border-[#4669e5] text-white font-semibold'
                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`} aria-pressed={doc === k}>
                   {DOCS[k].title}
@@ -178,7 +178,7 @@ export default function SalesPrintPage() {
               </BtnGhost>
               <button type="button" onClick={() => window.print()}
                 disabled={reading > 0 || ok.length === 0}
-                className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5 disabled:opacity-40"
+                className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 disabled:opacity-40"
                 style={{ background: '#4669e5' }}>
                 🖨 พิมพ์ {ok.length.toLocaleString('th-TH')} ใบ
               </button>
@@ -236,7 +236,7 @@ export default function SalesPrintPage() {
               )}
             </p>
           </div>
-          <table className="w-full text-[13px]">
+          <table className="w-full text-[12.5px]">
             <thead>
               <tr className="border-b border-gray-300 text-left">
                 <th className="py-1.5 w-8">#</th>
@@ -271,7 +271,7 @@ export default function SalesPrintPage() {
           <div className="flex justify-between items-start border-b border-gray-200 pb-3 mb-3">
             <div>
               <h2 className="text-[17px] font-semibold">{DOCS[doc].title}</h2>
-              <p className="text-[13px] text-gray-600">
+              <p className="text-[12.5px] text-gray-600">
                 เลขที่ใบ <b>{s.order?.number || s.id}</b>
                 {/* ค่าใน `order_date` ฝั่งท่อแกะเป็น **วันไทยล้วน** (`YYYY-MM-DD`) มาแล้วตั้งแต่ตอนซิงก์ (core-sync.mjs · orderDay)
                     ⇒ ส่งค่าเต็มเข้า thaiDate ได้เลย · การ .slice(0, 10) ทับอีกชั้นไม่ได้ช่วยอะไร แต่ถ้าวันหลังท่อเปลี่ยนไปส่งเวลาติดมาด้วย
@@ -295,7 +295,7 @@ export default function SalesPrintPage() {
               🔴 **ใบที่ยังไม่มีเลขพัสดุ ห้ามพิมพ์เป็นใบยืนยัน** — เท่ากับยืนยันสิ่งที่ยังไม่เกิด
                  ⇒ เขียนบนใบนั้นตรง ๆ ว่ายังไม่มีเลขพัสดุ (ไม่ใช่เว้นว่างให้คนเติมเอง) */}
           {DOCS[doc].title === 'ใบยืนยันการจัดส่ง' && (
-            <div className="mb-3 rounded border border-gray-300 px-3 py-2 text-[13px]">
+            <div className="mb-3 rounded border border-gray-300 px-3 py-2 text-[12.5px]">
               <div className="flex justify-between"><span>ขนส่ง</span>
                 <b>{s.order?.ship_channel || <span className="text-red-700">ท่อไม่ได้ส่งชื่อขนส่งมา</span>}</b></div>
               <div className="flex justify-between"><span>เลขพัสดุ</span>
@@ -308,11 +308,11 @@ export default function SalesPrintPage() {
           )}
 
           {(s.items?.length ?? 0) === 0 ? (
-            <p className="text-[13px] text-red-700 border border-red-200 bg-red-50 rounded px-3 py-2">
+            <p className="text-[12.5px] text-red-700 border border-red-200 bg-red-50 rounded px-3 py-2">
               🔴 ท่อไม่ได้ส่งรายการสินค้าของใบนี้มา — <b>ห้ามใช้ใบนี้แพ็ก</b> ให้เปิดดูใบจริงก่อน
             </p>
           ) : (
-            <table className="w-full text-[13px]">
+            <table className="w-full text-[12.5px]">
               <thead>
                 <tr className="border-b border-gray-300 text-left">
                   <th className="py-1.5 w-8">#</th>
@@ -374,7 +374,7 @@ export default function SalesPrintPage() {
             const คิดได้ = รวมบรรทัด - (ส่วนลด ?? 0) + (ค่าส่ง ?? 0)
             const ตรงกัน = เทียบได้ && Math.abs(คิดได้ - (ยอดบนใบ as number)) < 0.51
             return (
-              <div className="mt-3 pt-3 border-t border-gray-300 text-[13px]">
+              <div className="mt-3 pt-3 border-t border-gray-300 text-[12.5px]">
                 <div className="flex justify-between"><span>รวมบรรทัดสินค้า</span><span>{fmtMoney(รวมบรรทัด)}</span></div>
                 {ส่วนลด !== null && ส่วนลด > 0 && <div className="flex justify-between"><span>ส่วนลดท้ายบิล</span><span>−{fmtMoney(ส่วนลด)}</span></div>}
                 {ค่าส่ง !== null && ค่าส่ง > 0 && <div className="flex justify-between"><span>ค่าจัดส่ง</span><span>{fmtMoney(ค่าส่ง)}</span></div>}
@@ -409,7 +409,7 @@ export default function SalesPrintPage() {
             )
           })()}
 
-          <p className="text-[11px] text-gray-400 mt-3">
+          <p className="text-[11.5px] text-gray-400 mt-3">
             พิมพ์จากกระจกข้อมูลของร้าน{เวลาพิมพ์ && <> เมื่อ <b className="text-gray-500">{เวลาพิมพ์}</b></>} ·
             ตัวเลขอ่านจากท่อ ณ เวลาที่พิมพ์ · ใบนี้ไม่ใช่เอกสารทางบัญชี
             {DOCS[doc].money && <> · ท่อไม่ได้ส่ง<b>ราคาต่อหน่วย</b>มา จึงมีแต่ยอดรวมของแต่ละบรรทัด</>}

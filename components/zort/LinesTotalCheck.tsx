@@ -42,7 +42,7 @@ export function LinesTotalCheck({ res, ourTotal, requiresPrice }: {
     /* 1 สตางค์ — ต่างกว่านี้ไม่ใช่เรื่องปัดเศษแล้ว */
     if (Math.abs(pipe - ourTotal) > 0.009) {
       return (
-        <div className="text-[13px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
           🔴 <b>ยอดที่ท่อคิดไม่ตรงกับยอดบนจอ</b> — ท่อได้ <b>{fmtMoney(pipe)}</b> จอได้ <b>{fmtMoney(ourTotal)}</b>
           <br />
           ⇒ <b>ไม่ใช่เรื่องปัดเศษ</b> แต่แปลว่าสองฝั่งเข้าใจช่องเงินไม่ตรงกัน ·
@@ -50,14 +50,14 @@ export function LinesTotalCheck({ res, ourTotal, requiresPrice }: {
         </div>
       )
     }
-    return <p className="text-[12px] text-gray-500 mt-2">✓ ยอดสินค้าที่ท่อคิดตรงกับที่จอคิด ({fmtMoney(pipe)})</p>
+    return <p className="text-[12.5px] text-gray-500 mt-2">✓ ยอดสินค้าที่ท่อคิดตรงกับที่จอคิด ({fmtMoney(pipe)})</p>
   }
 
   if (isNull) {
     /* จอที่บังคับราคา: ได้ null = ราคาที่ส่งไปไม่ถึงท่อ ⇒ เรื่องใหญ่ ไม่ใช่เรื่องปกติ */
     if (requiresPrice) {
       return (
-        <div className="text-[13px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
           🔴 <b>ท่อบอกว่ามีบรรทัดที่ไม่มีราคา จึงไม่คิดยอดให้</b> — แต่จอนี้บังคับราคาครบทุกบรรทัดอยู่แล้ว
           {' '}⇒ แปลว่า <b>ราคาที่ส่งไปไม่ถึงท่อ</b> · <b>อย่าส่งจริง</b> และแจ้งฝั่งท่อ
           <br />
@@ -78,7 +78,7 @@ export function LinesTotalCheck({ res, ourTotal, requiresPrice }: {
 
   if (missing) {
     return (
-      <p className="text-[12px] text-amber-800 mt-2 leading-relaxed">
+      <p className="text-[12.5px] text-amber-800 mt-2 leading-relaxed">
         ⚠️ ท่อไม่ได้ส่งยอดรวมกลับมาให้เทียบ (ท่อรุ่นก่อน) — <b>เทียบไม่ได้ ไม่ใช่ตรงกัน</b>
         {' '}· ยอดบนจอคือ {fmtMoney(ourTotal)}
       </p>

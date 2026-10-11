@@ -264,12 +264,12 @@ function DetailInner() {
       {/* หัวจอ */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
-          <Link href={backHref} className="text-[12px] text-blue-600 hover:underline">‹ รายการขาย</Link>
+          <Link href={backHref} className="text-[12.5px] text-blue-600 hover:underline">‹ รายการขาย</Link>
           <h1 className="text-[26px] leading-tight font-bold text-gray-900 tracking-tight mt-0.5">
             รายละเอียดรายการขาย
           </h1>
           {order && (
-            <span className="inline-block mt-1 text-[11px] text-gray-500 border border-gray-300 rounded px-1.5 py-0.5">
+            <span className="inline-block mt-1 text-[11.5px] text-gray-500 border border-gray-300 rounded px-1.5 py-0.5">
               {order.source === 'z2' ? 'สาขา 2' : 'สาขา 1'}
             </span>
           )}
@@ -381,7 +381,7 @@ function DetailInner() {
                 </thead>
                 <tbody>
                   {items.length === 0 && (
-                    <tr><td colSpan={9} className="px-3 py-6 text-[13px] text-gray-400 text-center">
+                    <tr><td colSpan={9} className="px-3 py-6 text-[12.5px] text-gray-400 text-center">
                       ใบนี้ไม่มีรายการสินค้าในคลังเงา
                     </td></tr>
                   )}
@@ -445,7 +445,7 @@ function DetailInner() {
                             <td className={TDR}>
                               {fmtMoney(ผล.ต้นทุนบรรทัด)}
                               {/* ที่มาอยู่ติดกับเลขเสมอ — ท่อไม่บอกที่มา ⇒ เขียนว่าไม่บอก **ไม่ใช่เว้นว่าง** */}
-                              <span className="text-gray-400 text-[11px]"> ({ผล.ที่มา ?? 'ท่อไม่บอกที่มา'})</span>
+                              <span className="text-gray-400 text-[11.5px]"> ({ผล.ที่มา ?? 'ท่อไม่บอกที่มา'})</span>
                             </td>
                             <td className={TDR}>
                               <span className={ผล.กำไร < 0 ? 'text-red-600 font-medium' : 'text-gray-800'}>
@@ -453,7 +453,7 @@ function DetailInner() {
                               </span>
                               {/* รายได้ 0 ⇒ หารไม่ได้ ⇒ ไม่โชว์ % (ของแจกฟรีไม่ใช่ "กำไร 0%") */}
                               {ผล.เปอร์เซ็นต์ !== null && (
-                                <span className="text-gray-400 text-[11px]"> ({ผล.เปอร์เซ็นต์.toFixed(1)}%)</span>
+                                <span className="text-gray-400 text-[11.5px]"> ({ผล.เปอร์เซ็นต์.toFixed(1)}%)</span>
                               )}
                             </td>
                           </>
@@ -537,11 +537,11 @@ function DetailInner() {
                   <span className="text-gray-800">{fmtMoney(vat)}</span>
                 </div>
                 <div className="flex justify-between py-2.5 px-3 mt-1 bg-gray-100 rounded">
-                  <span className="text-[13px] font-bold text-gray-800">มูลค่ารวมสุทธิ</span>
-                  <span className="text-[13px] font-bold text-gray-900">{fmtMoney(total)}</span>
+                  <span className="text-[12.5px] font-bold text-gray-800">มูลค่ารวมสุทธิ</span>
+                  <span className="text-[12.5px] font-bold text-gray-900">{fmtMoney(total)}</span>
                 </div>
                 {!canExplain && hasGap && (
-                  <p className="text-[11px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mt-2 leading-relaxed">
+                  <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-2 mt-2 leading-relaxed">
                     ⚠️ <b>บรรทัดสินค้ารวมได้ {fmtMoney(linesTotal)} แต่ยอดใบคือ {fmtMoney(total)}</b>
                     {' '}— ต่างกัน {fmtMoney(Math.abs(gap))}
                     <br />
@@ -552,14 +552,14 @@ function DetailInner() {
                   </p>
                 )}
                 {canExplain && !explained && (
-                  <p className="text-[11px] text-red-900 bg-red-50 border border-red-300 rounded px-2.5 py-2 mt-2 leading-relaxed">
+                  <p className="text-[11.5px] text-red-900 bg-red-50 border border-red-300 rounded px-2.5 py-2 mt-2 leading-relaxed">
                     🔴 <b>รู้ค่าส่งกับส่วนลดครบแล้ว แต่ยอดยังไม่ลงตัว</b> — เหลือ {fmtMoney(Math.abs(leftover ?? 0))}
                     <br />
                     สูตรที่ฝั่งท่อใช้คือ ผลรวมบรรทัด − ส่วนลด + ค่าส่ง ⇒ <b>ถ้ายังไม่ลงตัวแปลว่ามีช่องที่เรายังไม่รู้จัก</b>
                     {' '}· แจ้งฝั่งท่อ อย่าเดาเอง
                   </p>
                 )}
-                <p className="text-[10.5px] text-gray-400 mt-2 leading-relaxed">
+                <p className="text-[10px] text-gray-400 mt-2 leading-relaxed">
                   ⚠️ ยอดก่อนภาษีกับภาษีเป็น<b>ค่าที่คำนวณจากยอดรวม</b> โดยถือว่าราคารวมภาษีแล้ว
                   ไม่ใช่ตัวเลขที่เก็บไว้ในระบบ — ใบกำกับภาษีตัวจริงออกจาก PEAK
                 </p>
@@ -629,7 +629,7 @@ function DetailInner() {
               🔑 **แปลว่าสะพาน PEAK ของ ZORT มีสองทาง: รอบกลางคืน + สั่งรายใบจากจอนี้**
                  ⇒ มีผลกับแผนสับสวิตช์ตัด ZORT โดยตรง (สับกลางวันแล้วสองระบบอาจส่งใบชุดเดียวกัน)
               ⚠️ **ไม่ได้กดปุ่มนั้น** — เป็นการเขียนเข้าสมุดบัญชีจริง (กฎ `zort-readonly`) */}
-          <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2">
             ⚠️ <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — กล่อง <b>ค่าใช้จ่ายอื่น</b> · <b>รายได้อื่น</b> ·
             <b> ประวัติการโอนสินค้า</b> · ช่อง <b>พูดคุย</b>
             {' '}· และปุ่ม <b>พิมพ์เอกสาร</b> · <b>บริการส่งสินค้า</b> (จองขนส่งด้วยพอยท์) ·
@@ -648,7 +648,7 @@ function DetailInner() {
           <div className="pt-1">
             <Link
               href={backHref}
-              className="inline-block text-[13px] font-semibold text-white rounded-full px-5 py-2"
+              className="inline-block text-[12.5px] font-semibold text-white rounded-full px-5 py-2"
               style={{ background: ZORT_BLUE }}
             >
               ‹ กลับไปรายการขาย

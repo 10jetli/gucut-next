@@ -183,7 +183,7 @@ export default function StuckPushList() {
         <>
           <p className="text-[22px] font-black text-gray-900 tabular-nums leading-tight mt-1">
             {numText(total)}
-            <span className="text-[12px] font-normal text-gray-500 ml-1.5">รหัสค้างอยู่ตอนนี้</span>
+            <span className="text-[12.5px] font-normal text-gray-500 ml-1.5">รหัสค้างอยู่ตอนนี้</span>
           </p>
 
           {/* 🔴 เลขรวมมาจากท่อ (ทั้งชุด) แต่แถวที่กองอยู่ข้างล่างมาจากหน้านี้
@@ -208,7 +208,7 @@ export default function StuckPushList() {
                     <Pill tone={g.tone}>{list.length.toLocaleString('th-TH')}</Pill>
                     <span className="text-[12.5px] font-semibold text-gray-800">{g.title}</span>
                   </span>
-                  <span className="block text-[11px] text-gray-500 mt-1 leading-relaxed">{g.why}</span>
+                  <span className="block text-[11.5px] text-gray-500 mt-1 leading-relaxed">{g.why}</span>
                 </button>
               )
             })}
@@ -251,7 +251,7 @@ export default function StuckPushList() {
                 )}
                 <div className="mt-1.5 space-y-0.5">
                   {เรียง.map(([sku, n]) => (
-                    <div key={sku} className="flex flex-wrap items-baseline gap-2 text-[12px]">
+                    <div key={sku} className="flex flex-wrap items-baseline gap-2 text-[12.5px]">
                       <span className="font-mono font-semibold text-red-900">{sku}</span>
                       <span className="text-red-700 tabular-nums">คงเหลือ {numText(neg.get(sku))}</span>
                       <span className="text-red-800">⇒ ปลดได้ <b>{n}</b> แถว</span>
@@ -288,7 +288,7 @@ export default function StuckPushList() {
                 <p className="text-[12.5px] font-semibold text-gray-800 px-3 py-2 bg-gray-50 border-b border-gray-200">
                   {g.title} — {list.length.toLocaleString('th-TH')} รหัส
                 </p>
-                <table className="w-full min-w-[620px] text-[12px]">
+                <table className="w-full min-w-[620px] text-[12.5px]">
                   <thead className="bg-white border-b border-gray-200 text-gray-500">
                     <tr>
                       <th className="text-left px-3 py-1.5 font-medium">รหัส</th>

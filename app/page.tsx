@@ -125,20 +125,20 @@ function AgeLine({ กอง, ages }: { กอง: keyof typeof เส้นอ�
   const a = ages?.[กอง]
   const เส้น = เส้นอายุ[กอง]
   if (!a || typeof a.ใบ !== 'number') {
-    return <span className="block text-[11px] text-gray-300 mt-0.5" title="ท่อรุ่นนี้ยังไม่ส่งอายุใบมา — ไม่ได้แปลว่าไม่มีใบค้างเก่า">ยังไม่รู้อายุของใบค้าง</span>
+    return <span className="block text-[11.5px] text-gray-300 mt-0.5" title="ท่อรุ่นนี้ยังไม่ส่งอายุใบมา — ไม่ได้แปลว่าไม่มีใบค้างเก่า">ยังไม่รู้อายุของใบค้าง</span>
   }
   const เกิน = Number(a[เส้น.ช่อง] ?? 0)
   const แก่สุด = typeof a.แก่สุดกี่วัน === 'number' ? a.แก่สุดกี่วัน : null
   const ไม่มีวันที่ = Number(a.ไม่มีวันที่ ?? 0)
   if (!เกิน && !ไม่มีวันที่) {
     return (
-      <span className="block text-[11px] text-gray-400 mt-0.5">
+      <span className="block text-[11.5px] text-gray-400 mt-0.5">
         ไม่มีใบไหนค้างเกิน {เส้น.วัน} วัน{แก่สุด !== null && <> · แก่สุด {แก่สุด} วัน</>}
       </span>
     )
   }
   return (
-    <span className="block text-[11px] text-amber-800 font-semibold mt-0.5">
+    <span className="block text-[11.5px] text-amber-800 font-semibold mt-0.5">
       {เกิน > 0 && <>⚠️ {fmtNum(เกิน)} ใบค้างเกิน {เส้น.วัน} วัน ({เส้น.ทำไม}){แก่สุด !== null && <> · แก่สุด {แก่สุด} วัน</>}</>}
       {ไม่มีวันที่ > 0 && (
         <span className="block font-normal text-amber-700">
@@ -181,11 +181,11 @@ function ZortStat({
         {icon}
       </span>
       <span className="min-w-0 flex-1 text-right">
-        <span className="block text-[12px] text-gray-500 truncate">{label}</span>
+        <span className="block text-[12.5px] text-gray-500 truncate">{label}</span>
         <span className="block text-[24px] leading-tight font-semibold text-gray-800">
           {value}
         </span>
-        {note && <span className="block text-[11px] text-gray-400 mt-0.5">{note}</span>}
+        {note && <span className="block text-[11.5px] text-gray-400 mt-0.5">{note}</span>}
         {age}
       </span>
     </div>
@@ -198,7 +198,7 @@ function Shortcut({ href, icon, label, soon }: { href: string; icon: string; lab
     <Link href={href}
       className="bg-white border border-gray-200 rounded-md py-7 flex flex-col items-center gap-3 hover:border-gray-300 hover:shadow-sm transition-all">
       <span className={`text-[38px] leading-none ${soon ? 'opacity-40 grayscale' : ''}`}>{icon}</span>
-      <span className={`text-[13px] ${soon ? 'text-gray-400' : 'text-gray-700'}`}>
+      <span className={`text-[12.5px] ${soon ? 'text-gray-400' : 'text-gray-700'}`}>
         {label}{soon ? ' ◦' : ''}
       </span>
     </Link>
@@ -219,7 +219,7 @@ function ZortBigCard({ icon, label, value, unknown, tone }: {
       <div className="flex items-start gap-3">
         <span className="w-9 h-9 shrink-0 rounded-full bg-violet-50 flex items-center justify-center text-[16px]">{icon}</span>
         <div className="ml-auto text-right">
-          <p className="text-[12px] text-gray-500">{label}</p>
+          <p className="text-[12.5px] text-gray-500">{label}</p>
           {unknown
             ? <p className="text-[12.5px] text-amber-800 mt-1 leading-snug max-w-[260px]">⚠️ {unknown}</p>
             : <p className={`text-[26px] font-semibold leading-tight ${
@@ -254,13 +254,13 @@ function MonthTrend({ data, kind }: { data: { ym: string; sales: number }[]; kin
               className="fill-violet-400" />
           )}
           {kind === 'line' && <circle cx={x(i)} cy={y(d.sales)} r={3} className="fill-violet-500" />}
-          <text x={x(i)} y={y(d.sales) - 6} textAnchor="middle" className="fill-gray-500 text-[9px]">
+          <text x={x(i)} y={y(d.sales) - 6} textAnchor="middle" className="fill-gray-500 text-[10px]">
             {d.sales >= 1000 ? `${Math.round(d.sales / 1000)}K` : Math.round(d.sales)}
           </text>
           <text x={x(i)} y={H - 12} textAnchor="middle" className="fill-gray-400 text-[10px]">{thai(d.ym)}</text>
         </g>
       ))}
-      <text x={W / 2} y={H - 1} textAnchor="middle" className="fill-gray-400 text-[9px]">ช่วงเวลา</text>
+      <text x={W / 2} y={H - 1} textAnchor="middle" className="fill-gray-400 text-[10px]">ช่วงเวลา</text>
     </svg>
   )
 }
@@ -542,16 +542,16 @@ export default function DashboardPage() {
       {coreError && (
         <ErrorBox title="ดึงตัวเลขจากคลังของเราไม่ได้">
           {coreError}
-          <span className="block mt-1 text-[12px]">
+          <span className="block mt-1 text-[12.5px]">
             ตัวเลขด้านล่างจึงยังไม่ใช่ของจริง — อย่าเพิ่งเอาไปตัดสินใจ
           </span>
         </ErrorBox>
       )}
       {!coreError && skip && (
-        <Card><p className="text-[13px] text-gray-500">⏳ {skip}</p></Card>
+        <Card><p className="text-[12.5px] text-gray-500">⏳ {skip}</p></Card>
       )}
       {sideNote && (
-        <p className="text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+        <p className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
           ⚠️ {sideNote}
         </p>
       )}
@@ -669,7 +669,7 @@ export default function DashboardPage() {
             <div className="flex items-center gap-1">
               {([['line', '📈'], ['bar', '📊']] as const).map(([k, icon]) => (
                 <button key={k} type="button" onClick={() => setTrendKind(k)} aria-pressed={trendKind === k}
-                  className={`text-[13px] w-7 h-7 rounded border ${
+                  className={`text-[12.5px] w-7 h-7 rounded border ${
                     trendKind === k ? 'bg-violet-50 border-violet-400' : 'bg-white border-gray-300 hover:bg-gray-50'}`}>
                   {icon}
                 </button>
@@ -864,28 +864,28 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
         <Card className="xl:col-span-1 h-fit">
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[12px] md:text-[13px] font-semibold text-gray-600">🏭 การสั่งของกับโรงงาน</p>
-            <Link href="/factory" className="text-[11px] text-blue-600 font-medium hover:text-blue-700">ดูทั้งหมด →</Link>
+            <p className="text-[12.5px] md:text-[12.5px] font-semibold text-gray-600">🏭 การสั่งของกับโรงงาน</p>
+            <Link href="/factory" className="text-[11.5px] text-blue-600 font-medium hover:text-blue-700">ดูทั้งหมด →</Link>
           </div>
           <div className="flex gap-8">
             <div>
               <p className="text-2xl font-black text-orange-500 tracking-tight">{factory.pending}</p>
-              <p className="text-[11px] text-gray-400">ยังไม่มัดจำ</p>
+              <p className="text-[11.5px] text-gray-400">ยังไม่มัดจำ</p>
             </div>
             <div>
               <p className="text-2xl font-black text-blue-600 tracking-tight">{factory.production}</p>
-              <p className="text-[11px] text-gray-400">กำลังผลิต</p>
+              <p className="text-[11.5px] text-gray-400">กำลังผลิต</p>
             </div>
           </div>
         </Card>
 
         <Card padded={false} className="xl:col-span-2 overflow-hidden">
           <div className="flex items-center justify-between px-4 md:px-5 py-3 border-b border-gray-100">
-            <p className="text-[13px] font-semibold text-gray-700">📋 ออเดอร์ล่าสุด</p>
-            <Link href="/core/sales" className="text-[11px] text-blue-600 font-medium hover:text-blue-700">ดูทั้งหมด →</Link>
+            <p className="text-[12.5px] font-semibold text-gray-700">📋 ออเดอร์ล่าสุด</p>
+            <Link href="/core/sales" className="text-[11.5px] text-blue-600 font-medium hover:text-blue-700">ดูทั้งหมด →</Link>
           </div>
           {!loading && recent.length === 0 && (
-            <p className="text-[13px] text-gray-400 px-4 py-4">
+            <p className="text-[12.5px] text-gray-400 px-4 py-4">
               {coreError ? 'ดึงข้อมูลไม่ได้' : 'ยังไม่มีออเดอร์ใน 30 วันล่าสุด'}
             </p>
           )}
@@ -894,16 +894,16 @@ export default function DashboardPage() {
               <div className="flex items-start justify-between gap-2">
                 {/* สีฟ้า = สัญญาว่ากดได้ (กวาดคลาส 8 ก.ย. 2569) — เข้าใบจริงได้เลย */}
                 <Link href={`/core/sales/detail?id=${encodeURIComponent(o.id)}`}
-                  className="text-[13px] font-semibold text-blue-600 truncate hover:underline">#{o.number}</Link>
-                <span className="text-[11px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 shrink-0">
+                  className="text-[12.5px] font-semibold text-blue-600 truncate hover:underline">#{o.number}</Link>
+                <span className="text-[11.5px] font-semibold px-1.5 py-0.5 rounded-full bg-gray-100 text-gray-600 shrink-0">
                   {o.channel || 'ไม่ระบุ'}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-2 mt-1">
-                <span className="text-[12px] text-gray-500 truncate">
+                <span className="text-[12.5px] text-gray-500 truncate">
                   {thaiDate(o.order_date)} · {o.customer || 'ไม่ระบุชื่อ'}
                 </span>
-                <span className="text-[13px] font-bold text-gray-900 shrink-0">{fmtMoney(o.amount)}</span>
+                <span className="text-[12.5px] font-bold text-gray-900 shrink-0">{fmtMoney(o.amount)}</span>
               </div>
             </div>
           ))}

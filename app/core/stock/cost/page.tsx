@@ -157,7 +157,7 @@ export default function ProductCostPage() {
       <PageHead
         title="ปรับต้นทุนสินค้า"
         summary={<>แก้ราคาซื้อที่ตั้งไว้ใน ZORT หลายรายการพร้อมกัน{' | '}<span className="text-gray-400">ครั้งละไม่เกิน {MAX_ROWS} รายการ</span></>}
-        actions={<Link href="/core/stock" className="text-[13px] text-blue-600 hover:underline">← กลับหน้าคลังสินค้า</Link>}
+        actions={<Link href="/core/stock" className="text-[12.5px] text-blue-600 hover:underline">← กลับหน้าคลังสินค้า</Link>}
       />
 
       <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
@@ -178,7 +178,7 @@ export default function ProductCostPage() {
                พร้อม `stockmovementids` ⇒ **ต้นทุนเฉลี่ยของเขาคำนวณจากการเคลื่อนไหวสต็อก**
              ⇒ ท่อของเราเขียน `purchaseprice` ของตัวสินค้า ⇒ **คนละการกระทำกับจอ ZORT แน่นอนแล้ว**
                 ไม่ใช่ "ยังไม่รู้" อีกต่อไป · เหตุผลที่ยังปิดปุ่มส่งจริงจึงหนักแน่นขึ้น ต้องให้ท่านประธานตัดสินว่าต้องการอันไหน */}
-      <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+      <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
         <b>จอนี้ทำงานไม่เหมือนจอ ZORT — ตั้งใจให้ต่าง</b> (เทียบของจริง 16 ก.ย. 2569)
         <ul className="list-disc ml-5 mt-1 space-y-0.5">
           <li>ZORT: ตาราง <b>100 แถว</b> แก้ราคาทีละช่องในแถว + ช่องค้นหาเร็ว — <b>วางจาก Excel ไม่ได้</b></li>
@@ -195,10 +195,10 @@ export default function ProductCostPage() {
 
       <div className="bg-white border border-gray-200 rounded-md p-4 mb-3">
         <label className="block">
-          <span className="text-[13px] text-gray-700">วางจาก Excel ได้เลย — <b>คอลัมน์แรกรหัสสินค้า · คอลัมน์สุดท้ายต้นทุน</b> บรรทัดละ 1 รายการ</span>
+          <span className="text-[12.5px] text-gray-700">วางจาก Excel ได้เลย — <b>คอลัมน์แรกรหัสสินค้า · คอลัมน์สุดท้ายต้นทุน</b> บรรทัดละ 1 รายการ</span>
           <textarea value={text} onChange={(e) => setText(e.target.value)} rows={8}
             placeholder={'00313\t450\n00627\t1290.50\n02779, 85'}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-[13px] font-mono mt-2" />
+            className="w-full border border-gray-300 rounded px-3 py-2 text-[12.5px] font-mono mt-2" />
         </label>
         <p className="text-[12.5px] text-gray-600 mt-1">
           อ่านได้ <b>{parsed.lines.length}</b> รายการ
@@ -229,11 +229,11 @@ export default function ProductCostPage() {
           </span>}
       </div>
 
-      {runErr && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">หยุดกลางทาง — {runErr} · รายการที่ขึ้นว่า &ldquo;ยังไม่ได้ตรวจ&rdquo; ยังไม่ถูกส่ง</div>}
+      {runErr && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">หยุดกลางทาง — {runErr} · รายการที่ขึ้นว่า &ldquo;ยังไม่ได้ตรวจ&rdquo; ยังไม่ถูกส่ง</div>}
 
       {rows.length > 0 && (
         <>
-          <p className="text-[13px] text-gray-700 mb-2">
+          <p className="text-[12.5px] text-gray-700 mb-2">
             ผ่าน <b className="text-emerald-700">{count('dry-ok') + count('sent')}</b> · เท่าเดิม <b>{count('same')}</b>
             {' · '}ไม่มีใน ZORT <b className="text-amber-700">{count('not-found')}</b> · ไม่รู้ผล <b className="text-amber-700">{count('unknown')}</b>
             {' · '}ไม่ผ่าน <b className="text-red-700">{count('failed')}</b>{count('duplicate') > 0 && <> · เคยบันทึกแล้ว <b>{count('duplicate')}</b></>}

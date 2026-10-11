@@ -460,7 +460,7 @@ export default function MarketplaceProductsPage() {
             </table>
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
-              <span className="text-[12px] text-gray-500">
+              <span className="text-[12.5px] text-gray-500">
                 แสดง {totalInTab === 0 ? 0 : fmtNum(page * PAGE + 1)}–{fmtNum(Math.min(page * PAGE + shown.length, totalInTab))}
                 {' '}จาก {fmtNum(totalInTab)} รหัส
                 {' '}· <MarketCoverage checked={meta?.checkedMarketplaces}

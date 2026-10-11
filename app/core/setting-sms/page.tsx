@@ -29,7 +29,7 @@ export default function SettingSmsPage() {
         <div className="flex-1 min-w-0">
           {/* แถบเครดิตตามผัง — ค่า ณ วันถ่ายภาพ กำกับวันที่เสมอ */}
           <div className="flex items-center justify-between bg-blue-50 border border-blue-200 rounded-md px-4 py-2.5 mb-4">
-            <span className="text-[13px] text-blue-900 font-semibold">
+            <span className="text-[12.5px] text-blue-900 font-semibold">
               SMS Credit : 0 ข้อความ <span className="font-normal text-blue-700/70 text-[11.5px]">(ณ 7 ก.ย. 2569 — ไม่เคยเติมเลย)</span>
             </span>
             <span className="text-[11.5px] text-gray-400" title="ปุ่มเติมเครดิตของ ZORT — ของเราไม่มีระบบ SMS จึงไม่มีปุ่มจริง">
@@ -38,13 +38,13 @@ export default function SettingSmsPage() {
           </div>
 
           <div className="bg-white border border-gray-200 rounded-md p-4 md:p-5">
-            <p className="text-[13.5px] font-semibold text-gray-800 mb-3">💬 ข้อความ SMS</p>
+            <p className="text-[12.5px] font-semibold text-gray-800 mb-3">💬 ข้อความ SMS</p>
             <div className="flex items-start gap-3 mb-4">
-              <span className="w-[150px] shrink-0 text-[12px] text-gray-500 pt-1.5">ชื่อผู้ส่ง</span>
+              <span className="w-[150px] shrink-0 text-[12.5px] text-gray-500 pt-1.5">ชื่อผู้ส่ง</span>
               <span className="text-[12.5px] text-gray-500 bg-gray-50 border border-gray-200 rounded px-3 py-1.5">ZORT</span>
             </div>
 
-            <p className="text-[12px] text-gray-500 mb-2">ประเภทข้อความ — ของจริงไม่ติ๊กสักช่อง</p>
+            <p className="text-[12.5px] text-gray-500 mb-2">ประเภทข้อความ — ของจริงไม่ติ๊กสักช่อง</p>
             {KINDS.map(([title, template]) => (
               <div key={title} className="mb-3 pl-1">
                 <label className="flex items-center gap-2 text-[12.5px] text-gray-700">
@@ -57,7 +57,7 @@ export default function SettingSmsPage() {
               </div>
             ))}
 
-            <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-4 leading-relaxed">
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-4 leading-relaxed">
               🟡 <b>ZORT ของร้านก็ไม่ได้ใช้</b> — เครดิต 0 · ไม่เปิดสักประเภท (ตรวจจากจอจริง 7 ก.ย. 2569)
               ⇒ ไม่มีอะไรต้องย้ายตอนเลิก ZORT · จอนี้ลอกผังไว้ให้ครบตามคำสั่ง ไม่ต่อระบบจริง
             </p>

@@ -102,12 +102,12 @@ export default function ZortNoApiPage() {
           <p className="text-[15px] font-semibold text-gray-800 mb-1">
             ZORT ไม่เปิดให้ทำผ่าน API <span className="text-gray-400 font-normal">({noApi.length} เรื่อง)</span>
           </p>
-          <p className="text-[12px] text-gray-500 mb-2.5 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mb-2.5 leading-relaxed">
             รอไปก็ไม่มา — จนกว่า ZORT จะเปิดเส้นเพิ่ม · <b>ไม่ใช่ของที่เรายังไม่ได้ทำ</b>
           </p>
           <div className="space-y-2.5 mb-6">
             {noApi.length === 0 && (
-              <p className="text-[13px] text-gray-400 bg-white border border-gray-200 rounded-md px-3.5 py-3">
+              <p className="text-[12.5px] text-gray-400 bg-white border border-gray-200 rounded-md px-3.5 py-3">
                 ไม่มีเรื่องไหนอยู่ในกองนี้
               </p>
             )}
@@ -124,7 +124,7 @@ export default function ZortNoApiPage() {
                 {it.probe && (
                   <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{it.probe}</p>
                 )}
-                {it.note && <p className="text-[12px] text-gray-600 mt-1.5 leading-relaxed">{it.note}</p>}
+                {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{it.note}</p>}
               </div>
             ))}
           </div>
@@ -133,13 +133,13 @@ export default function ZortNoApiPage() {
           <p className="text-[15px] font-semibold text-gray-800 mb-1">
             ทำได้ แต่เรายังไม่ได้ทำ <span className="text-gray-400 font-normal">({can.length} เรื่อง)</span>
           </p>
-          <p className="text-[12px] text-gray-500 mb-2.5 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mb-2.5 leading-relaxed">
             เส้นมีอยู่จริง สั่งได้ทุกเมื่อ — คนละเรื่องกับกองบน <b>อย่ายุบรวมกัน</b>
             {' '}(ยุบรวม = คนอ่านจะนั่งรอของที่ไม่มีวันมา)
           </p>
           <div className="space-y-2.5 mb-6">
             {can.length === 0 && (
-              <p className="text-[13px] text-gray-400 bg-white border border-gray-200 rounded-md px-3.5 py-3">
+              <p className="text-[12.5px] text-gray-400 bg-white border border-gray-200 rounded-md px-3.5 py-3">
                 ไม่มีเรื่องไหนค้างอยู่ในกองนี้
               </p>
             )}
@@ -160,7 +160,7 @@ export default function ZortNoApiPage() {
                 {it.probe && (
                   <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{it.probe}</p>
                 )}
-                {it.note && <p className="text-[12px] text-gray-600 mt-1.5 leading-relaxed">{it.note}</p>}
+                {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{it.note}</p>}
               </div>
             ))}
           </div>
@@ -171,7 +171,7 @@ export default function ZortNoApiPage() {
               <p className="text-[14px] font-semibold text-gray-800 mb-2">ผลข้างบนพิสูจน์มายังไง</p>
               {m.how && <p className="text-[12.5px] text-gray-700 leading-relaxed">{m.how}</p>}
               {m.read && (
-                <ul className="text-[12px] text-gray-600 mt-2 space-y-1">
+                <ul className="text-[12.5px] text-gray-600 mt-2 space-y-1">
                   {Object.entries(m.read).map(([k, v]) => (
                     <li key={k}><code className="text-[11.5px] text-gray-500">{k}</code> = {v}</li>
                   ))}
@@ -180,19 +180,19 @@ export default function ZortNoApiPage() {
               {Array.isArray(m.control) && m.control.length > 0 && (
                 /* 🔴 ตัวคุมกลุ่มคือสิ่งที่ทำให้ผล 404 มีน้ำหนัก — ถ้าไม่มีตัวนี้
                    404 อาจแปลว่า "คีย์ผิด/ยิงผิดวิธี" ไม่ใช่ "ไม่มีเส้น" */
-                <p className="text-[12px] text-gray-700 mt-2 leading-relaxed">
+                <p className="text-[12.5px] text-gray-700 mt-2 leading-relaxed">
                   <b>ตัวคุมกลุ่ม</b> (เส้นที่รู้ว่ามีจริง ยิงด้วยวิธีเดียวกันแล้วตอบต่างออกไป):{' '}
                   <span className="font-mono text-[11.5px] text-gray-600">{m.control.join(' · ')}</span>
                 </p>
               )}
               {Array.isArray(m.nameShapes) && m.nameShapes.length > 0 && (
-                <p className="text-[12px] text-gray-700 mt-2 leading-relaxed">
+                <p className="text-[12.5px] text-gray-700 mt-2 leading-relaxed">
                   <b>รูปชื่อที่ลองแล้ว</b>:{' '}
                   <span className="font-mono text-[11.5px] text-gray-600">{m.nameShapes.join(' · ')}</span>
                 </p>
               )}
               {m.caveat && (
-                <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mt-2.5 leading-relaxed">
+                <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mt-2.5 leading-relaxed">
                   ⚠️ <b>ขอบเขตของข้อสรุป:</b> {m.caveat}
                 </p>
               )}

@@ -152,7 +152,7 @@ export default function CoreUsagePage() {
               ⚠️ ไม่รู้ ≠ 0 · ค่าค้าง (stale) ต้องเขียนกำกับ · ไม่มีเพดานยืนยัน ต้องบอก */}
           {cred && (
             <Card className="mb-4">
-              <p className="text-[14.5px] font-semibold text-gray-900 mb-1">อะไรเผาเครดิตรอบบิลนี้</p>
+              <p className="text-[14px] font-semibold text-gray-900 mb-1">อะไรเผาเครดิตรอบบิลนี้</p>
               {cred.off ? (
                 <p className="text-[12.5px] text-gray-500">ยังไม่ได้ตั้งคีย์อ่านเครดิต — จอนี้ยังไม่ได้เฝ้าอะไรเลย</p>
               ) : cred.unknown || typeof cred.used !== 'number' ? (
@@ -161,7 +161,7 @@ export default function CoreUsagePage() {
                 </p>
               ) : (
                 <>
-                  <p className="text-[13px] text-gray-700">
+                  <p className="text-[12.5px] text-gray-700">
                     ใช้ไป <b>{fmtNum(Math.round(cred.used))}</b>
                     {typeof cred.plan === 'number' && <> จาก {fmtNum(cred.plan)} เครดิต</>}
                     {typeof cred.left === 'number' && <> · เหลือ <b>{fmtNum(Math.round(cred.left))}</b></>}
@@ -185,7 +185,7 @@ export default function CoreUsagePage() {
                     </table>
                   ) : (
                     /* ⚠️ ไม่มีรายละเอียด ≠ ไม่มีการใช้งาน */
-                    <p className="text-[12px] text-gray-400 mt-1">ท่อไม่ได้ส่งรายละเอียดแยกประเภทมารอบนี้</p>
+                    <p className="text-[12.5px] text-gray-400 mt-1">ท่อไม่ได้ส่งรายละเอียดแยกประเภทมารอบนี้</p>
                   )}
                   <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
                     📏 <b>ราคาของ deploy วัดจริงแล้ว 18 ก.ย. 2569: ~15 เครดิตต่อครั้ง</b>
@@ -205,7 +205,7 @@ export default function CoreUsagePage() {
 
       {/* ⚠️ ยังไม่ได้ตั้งคีย์ = ต้องบอกวิธีตรง ๆ **ห้ามขึ้นจอว่าง** ให้เดาเอาเองว่าพังหรือไม่มีข้อมูล */}
       {d?.skip && (
-        <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-[13px] text-amber-900 leading-relaxed">
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4 text-[12.5px] text-amber-900 leading-relaxed">
           ⚠️ {d.skip}
         </div>
       )}
@@ -233,19 +233,19 @@ export default function CoreUsagePage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
             <Card>
-              <p className="text-[12px] text-gray-500">จำนวน deploy</p>
+              <p className="text-[12.5px] text-gray-500">จำนวน deploy</p>
               <p className="text-[26px] font-semibold text-gray-900 leading-tight">{fmtNum(Number(w.builds) || 0)}</p>
               <p className="text-[11.5px] text-gray-400">ครั้ง ในช่วงที่เลือก</p>
             </Card>
             <Card>
-              <p className="text-[12px] text-gray-500">เวลา build รวม</p>
+              <p className="text-[12.5px] text-gray-500">เวลา build รวม</p>
               <p className="text-[26px] font-semibold leading-tight" style={{ color: '#E03500' }}>
                 {mins(w.minutes)}
               </p>
               <p className="text-[11.5px] text-gray-400">นี่คือตัวที่กินเครดิตหลัก</p>
             </Card>
             <Card>
-              <p className="text-[12px] text-gray-500">เฉลี่ยต่อครั้ง</p>
+              <p className="text-[12.5px] text-gray-500">เฉลี่ยต่อครั้ง</p>
               <p className="text-[26px] font-semibold text-gray-900 leading-tight">
                 {avg !== null ? `${avg.toFixed(1)} นาที` : '—'}
               </p>
@@ -255,7 +255,7 @@ export default function CoreUsagePage() {
           </div>
 
           <Card padded={false} className="mb-4">
-            <p className="text-[14.5px] font-semibold text-gray-900 px-4 md:px-5 pt-4">แยกตามไซต์</p>
+            <p className="text-[14px] font-semibold text-gray-900 px-4 md:px-5 pt-4">แยกตามไซต์</p>
             <TableWrap>
               <table className="w-full min-w-[520px]">
                 <thead className="bg-white border-b border-gray-200">
@@ -268,7 +268,7 @@ export default function CoreUsagePage() {
                 </thead>
                 <tbody>
                   {rowsBySite.length === 0 && (
-                    <tr><td colSpan={4} className="px-3 py-6 text-[13px] text-gray-400 text-center">
+                    <tr><td colSpan={4} className="px-3 py-6 text-[12.5px] text-gray-400 text-center">
                       ไม่มี deploy ในช่วงที่เลือก
                     </td></tr>
                   )}
@@ -291,7 +291,7 @@ export default function CoreUsagePage() {
           {dailyInWin.length > 0 && (
             <Card className="mb-4">
               <div className="flex flex-wrap items-baseline gap-2 mb-1">
-                <p className="text-[14.5px] font-semibold text-gray-900">เวลา build รายวัน</p>
+                <p className="text-[14px] font-semibold text-gray-900">เวลา build รายวัน</p>
                 <p className="text-[11.5px] text-gray-400">แท่งแดง = วันที่ใช้เกิน 60 นาที · เอาเมาส์ชี้เพื่อดูตัวเลข</p>
                 {/* 🔴 **ห้ามคิดเปอร์เซ็นต์กับนาที build** — Netlify ไม่เปิดเพดานนาทีมาให้
                     ถ้าเราตั้งตัวหารเอง จะได้ % ที่ดูน่าเชื่อแต่ไม่มีใครตรวจได้ และกลายเป็นเกณฑ์ที่ร้องผิดเวลา
@@ -321,8 +321,8 @@ export default function CoreUsagePage() {
 
           {typeof d.bandwidth === 'object' && d.bandwidth && (
             <Card className="mt-3">
-              <p className="text-[14.5px] font-semibold text-gray-900 mb-1">แบนด์วิดท์ (รอบบิลปัจจุบัน)</p>
-              <p className="text-[13px] text-gray-700">
+              <p className="text-[14px] font-semibold text-gray-900 mb-1">แบนด์วิดท์ (รอบบิลปัจจุบัน)</p>
+              <p className="text-[12.5px] text-gray-700">
                 {/* ⚠️ ห้ามใช้ `|| 0` กับค่าที่อาจไม่มา — 0 GB แปลว่า "ไม่ได้ใช้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
                 ใช้ไป {typeof d.bandwidth.usedGB === 'number'
                   ? <b>{fmtNum(d.bandwidth.usedGB)} GB</b>
@@ -348,7 +348,7 @@ export default function CoreUsagePage() {
                 return (
                   <p className={`mt-2 text-[12.5px] border rounded-md px-3 py-2 leading-relaxed ${สี}`}>
                     {นำหน้า} <b>{a.ข้อความ}</b>
-                    <span className="block text-[11px] opacity-75 mt-0.5">
+                    <span className="block text-[11.5px] opacity-75 mt-0.5">
                       เกณฑ์: จับตา {เกณฑ์.watch}% · เตือน {เกณฑ์.warn}% · เกินโควตา {เกณฑ์.over}%
                       {' '}(แบนด์วิดท์เป็นตัวขับเคลื่อนเครดิตตัวหนึ่ง ไม่ใช่ยอดเครดิตทั้งหมด — ดูข้อความข้างบน)
                     </span>

@@ -45,7 +45,7 @@ export default function TopBar({ mainMl, anim }: TopBarProps) {
     >
       <div className="flex items-center gap-2 min-w-0">
         <StMark size={17} />
-        <p className="text-[13.5px] font-bold text-gray-800 truncate">{company}</p>
+        <p className="text-[12.5px] font-bold text-gray-800 truncate">{company}</p>
       </div>
 
       <div className="flex items-center gap-1.5">

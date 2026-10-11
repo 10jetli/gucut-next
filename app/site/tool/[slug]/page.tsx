@@ -33,7 +33,7 @@ export default function SiteToolPage() {
           className="inline-flex items-center gap-2 rounded-xl bg-gray-900 px-6 py-3 text-[14px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98]">
           เปิด {tool.title} ↗
         </a>
-        <p><Link href="/site" className="text-[12px] text-gray-400 hover:text-blue-600">‹ กลับหน้าเครื่องมือ</Link></p>
+        <p><Link href="/site" className="text-[12.5px] text-gray-400 hover:text-blue-600">‹ กลับหน้าเครื่องมือ</Link></p>
       </div>
     )
   }
@@ -46,7 +46,7 @@ export default function SiteToolPage() {
         </Link>
         <h1 className="text-[16px] font-black tracking-tight text-gray-900">{tool.title}</h1>
         <a href={src} target="_blank" rel="noreferrer"
-          className="ml-auto text-[12px] font-semibold text-gray-400 hover:text-blue-600">
+          className="ml-auto text-[12.5px] font-semibold text-gray-400 hover:text-blue-600">
           เปิดหน้าเต็ม ↗
         </a>
       </div>

@@ -173,7 +173,7 @@ export default function MarketplaceDashboardPage() {
                     {/* ZORT มีปุ่ม "จัดการร้าน" ต่อแพลตฟอร์ม — ของเราไม่มีจอจัดการรายร้าน
                         ⇒ โชว์ตามผังแต่ล็อกไว้พร้อมเหตุผล ปุ่มที่กดแล้วไม่เกิดอะไรคือปุ่มหลอก */}
                     <span title="ZORT มีจอจัดการรายร้าน — ของเรายังไม่มี (ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้)"
-                      className="text-[11px] px-2 py-0.5 rounded border border-gray-300 bg-gray-100 text-gray-500 shrink-0">
+                      className="text-[11.5px] px-2 py-0.5 rounded border border-gray-300 bg-gray-100 text-gray-500 shrink-0">
                       จัดการร้าน
                     </span>
                   </div>
@@ -185,7 +185,7 @@ export default function MarketplaceDashboardPage() {
                   <div className="flex items-end justify-between gap-2 mt-3 pt-3 border-t border-gray-100">
                     <span className="text-[12.5px] text-gray-600 leading-snug">
                       ลงขายอยู่ตอนนี้
-                      <span className="block text-[11px] text-gray-400">
+                      <span className="block text-[11.5px] text-gray-400">
                         นับเฉพาะที่เปิดขายจริง — ZORT นับ &ldquo;ที่เชื่อมต่อไว้&rdquo; จึงมากกว่า
                       </span>
                     </span>
@@ -232,7 +232,7 @@ export default function MarketplaceDashboardPage() {
               เขียนตามกติกาสามข้อของฝั่งท่อ: หน่วยกำกับทุกเลข · "ยังไม่รู้" แยกกอง · โชว์อายุข้อมูล */}
           {d_unlisted && (
             <Card>
-              <p className="text-[13px] font-semibold text-gray-700 mb-1">
+              <p className="text-[12.5px] font-semibold text-gray-700 mb-1">
                 Shopee · ถอดจากหน้าร้านแล้ว แต่คลังเรายังมีของ
               </p>
               {/* 🔴 **ประตูต้องถามทีละกอง ไม่ใช่กองแรกกองเดียว** — ของเดิมคุมทั้งใบด้วย `itemsWithStock`
@@ -242,11 +242,11 @@ export default function MarketplaceDashboardPage() {
               {typeof d_unlisted.itemsWithStock === 'number' && (
                 <>
                   <p className="text-[12.5px] text-gray-700 leading-relaxed">
-                    <b className="text-[19px] text-amber-700">{fmtNum(d_unlisted.itemsWithStock)}</b>
+                    <b className="text-[20px] text-amber-700">{fmtNum(d_unlisted.itemsWithStock)}</b>
                     {' '}<b>สินค้า</b> ที่ Shopee ถอดจากหน้าร้านแล้ว แต่<b>คลังเรายังมีของ</b>
                     {typeof d_unlisted.items === 'number' && <> · จากที่ถูกถอดทั้งหมด <b>{fmtNum(d_unlisted.items)}</b> สินค้า</>}
                   </p>
-                  <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
+                  <p className="text-[12.5px] text-gray-500 mt-1 leading-relaxed">
                     ไม่มีของในคลัง <b>{fmtNum(d_unlisted.itemsNoStock)}</b> สินค้า ·
                     {' '}<b className="text-amber-700">ยังไม่รู้ว่ามีของไหม {fmtNum(d_unlisted.itemsUnknown)}</b> สินค้า
                     {' '}<span className="text-gray-400">(ส่วนใหญ่เพราะไม่ได้กรอกรหัสสินค้าไว้บน Shopee — “ยังไม่รู้” ไม่ใช่ “ไม่มี”)</span>
@@ -256,7 +256,7 @@ export default function MarketplaceDashboardPage() {
 
               {/* หน่วยที่สองต้องเขียนแยกให้ชัด ห้ามเอาไปปนกับเลขสินค้า · และมีประตูของตัวเอง */}
               {typeof d_unlisted.skus === 'number' && (
-                    <p className="text-[12px] text-gray-500 mt-1 leading-relaxed">
+                    <p className="text-[12.5px] text-gray-500 mt-1 leading-relaxed">
                       นับเป็น<b>ตัวเลือก</b> (คนละหน่วยกับ “สินค้า” ข้างบน): ทั้งหมด {fmtNum(d_unlisted.skus)} ·
                       {' '}มีของ {fmtNum(d_unlisted.skusWithStock)} · ไม่มีของ {fmtNum(d_unlisted.skusNoStock)} ·
                       {' '}ยังไม่รู้ {fmtNum(d_unlisted.skusUnknown)}
@@ -298,8 +298,8 @@ export default function MarketplaceDashboardPage() {
                   })()}
                   {Array.isArray(d_unlisted.withStock) && d_unlisted.withStock.length > 0 && (
                     <details className="mt-2">
-                      <summary className="text-[12px] text-blue-600 cursor-pointer">ดูรายชื่อสินค้าที่ยังมีของ</summary>
-                      <ul className="mt-1 text-[12px] text-gray-600 list-disc pl-5 space-y-0.5">
+                      <summary className="text-[12.5px] text-blue-600 cursor-pointer">ดูรายชื่อสินค้าที่ยังมีของ</summary>
+                      <ul className="mt-1 text-[12.5px] text-gray-600 list-disc pl-5 space-y-0.5">
                         {d_unlisted.withStock.slice(0, 12).map((x, i) => (
                           <li key={`${x.itemId ?? i}`}>{x.name ?? '—'}</li>
                         ))}
@@ -338,7 +338,7 @@ export default function MarketplaceDashboardPage() {
           )}
 
           <Card>
-            <p className="text-[13px] font-semibold text-gray-700 mb-2">เลขบนจอนี้มาจากไหน</p>
+            <p className="text-[12.5px] font-semibold text-gray-700 mb-2">เลขบนจอนี้มาจากไหน</p>
             <ul className="text-[12.5px] text-gray-600 space-y-1.5 leading-relaxed list-disc pl-4">
               <li>
                 ถามจาก <b>API ของแต่ละแพลตฟอร์มโดยตรง</b> (ด้วยรหัสของร้านเราเอง) ⇒ คือ

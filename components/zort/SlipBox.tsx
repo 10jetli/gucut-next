@@ -158,7 +158,7 @@ export default function SlipBox({ docno }: { docno?: string | null }) {
             <div key={f.fileid} className="border border-gray-200 rounded-md p-3">
               <div className="flex flex-wrap items-center gap-2 justify-between">
                 {/* 🔒 ป้ายของเราเอง — ท่อไม่ส่งชื่อไฟล์เดิมมา (อาจมีชื่อลูกค้า) */}
-                <span className="text-[13px] text-gray-800 font-medium">
+                <span className="text-[12.5px] text-gray-800 font-medium">
                   สลิป {i + 1}
                   <span className="text-[11.5px] text-gray-400 font-normal">
                     {f.kind ? ` · ${f.kind}` : ''}{sizeText(f.bytes) ? ` · ${sizeText(f.bytes)}` : ''}
@@ -176,7 +176,7 @@ export default function SlipBox({ docno }: { docno?: string | null }) {
                 )}
               </div>
               {fileErr[f.fileid] && (
-                <p className="text-[12px] text-red-700 mt-2 leading-relaxed">
+                <p className="text-[12.5px] text-red-700 mt-2 leading-relaxed">
                   ⚠️ {fileErr[f.fileid]}
                   <br /><span className="text-gray-600">⇒ เปิดไฟล์นี้ไม่ได้ — <b>ไม่ได้แปลว่าไม่มีสลิป</b></span>
                 </p>

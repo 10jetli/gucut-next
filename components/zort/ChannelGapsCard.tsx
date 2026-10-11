@@ -99,7 +99,7 @@ export default function ChannelGapsCard() {
         💤 <b>{fmtNum(total)} รหัส</b> เคยขายได้บนช่องทางนั้น <b>แล้วเงียบ</b> ทั้งที่ยังมีของในคลัง
         <span className="text-amber-700/80"> — กดเพื่อดูรายการ</span>
       </summary>
-      <div className="px-3.5 pb-3 text-[12px] text-gray-700 leading-relaxed">
+      <div className="px-3.5 pb-3 text-[12.5px] text-gray-700 leading-relaxed">
         {กำลังโหลด && <p className="text-gray-400">กำลังโหลดรายการ…</p>}
         {เต็ม && (
           <>

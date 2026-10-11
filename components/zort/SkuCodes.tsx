@@ -72,18 +72,18 @@ export default function SkuCodes({ sku }: { sku: string }) {
             </svg>
           )
           : (
-            <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 max-w-[180px] leading-relaxed">
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1.5 max-w-[180px] leading-relaxed">
               รหัสนี้ยาวเกินกว่าจะทำ QR ได้ (เกิน 62 ไบต์) — ไม่วาดรูปหลอก
             </p>
           )}
-        <p className="text-[11px] text-gray-400 mt-1 max-w-[110px] break-all">{sku}</p>
+        <p className="text-[11.5px] text-gray-400 mt-1 max-w-[110px] break-all">{sku}</p>
       </div>
 
       <div className="min-w-[240px]">
         <p className="text-[11.5px] text-gray-500 mb-1">บาร์โค้ด (Code 128)</p>
         {bc.error
           ? (
-            <p className="text-[12px] text-red-800 bg-red-50 border border-red-200 rounded px-2 py-1.5 leading-relaxed">
+            <p className="text-[12.5px] text-red-800 bg-red-50 border border-red-200 rounded px-2 py-1.5 leading-relaxed">
               วาดบาร์โค้ดไม่ได้: {bc.error} — <b>ห้ามพิมพ์ฉลากใบนี้</b>
             </p>
           )
@@ -92,7 +92,7 @@ export default function SkuCodes({ sku }: { sku: string }) {
               <div className="w-[240px] h-[52px] bg-white border border-gray-200 rounded px-1"
                 // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: code128Svg(bc, 30) }} />
-              <p className="text-[12px] text-gray-700 mt-1 font-mono break-all">{value}</p>
+              <p className="text-[12.5px] text-gray-700 mt-1 font-mono break-all">{value}</p>
             </>
           )}
 

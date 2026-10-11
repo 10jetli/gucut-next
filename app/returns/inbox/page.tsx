@@ -148,7 +148,7 @@ export default function ReturnsInboxPage() {
           )}
 
           {rows.length === 0 ? (
-            <p className="text-[13px] text-gray-400 bg-white border border-gray-200 rounded-md px-4 py-8 text-center">
+            <p className="text-[12.5px] text-gray-400 bg-white border border-gray-200 rounded-md px-4 py-8 text-center">
               ยังไม่มีใบคืนในระบบ — ใบแรกจะโผล่ที่นี่ทันทีที่พนักงานกดรับที่จอมือถือ
             </p>
           ) : (
@@ -167,20 +167,20 @@ export default function ReturnsInboxPage() {
                       <tr key={d.returnId} className={`border-b border-[#e8ecf8] last:border-0 ${late.late ? 'bg-red-50/40' : ''}`}>
                         <td className={TD}><span className="whitespace-nowrap">{thaiTime(d.createdAt)}</span></td>
                         <td className={TD}>
-                          <span className="font-mono text-[12px]">{d.returnId}</span>
-                          <span className="block font-mono text-[10.5px] text-gray-400">{d.ref}</span>
+                          <span className="font-mono text-[12.5px]">{d.returnId}</span>
+                          <span className="block font-mono text-[10px] text-gray-400">{d.ref}</span>
                         </td>
                         <td className={TD}>
                           {d.unmatched
                             ? <span className="text-amber-700">🚩 unmatched{d.quarantineNo && <span className="font-mono"> · {d.quarantineNo}</span>}</span>
-                            : <span className="font-mono text-[12px]">{d.orderNumber ?? '—'}</span>}
+                            : <span className="font-mono text-[12.5px]">{d.orderNumber ?? '—'}</span>}
                         </td>
                         <td className={TD}>{d.staff ?? <span className="text-gray-300">—</span>}
-                          {d.lockedBy && d.lockedBy !== d.staff && <span className="block text-[10.5px] text-amber-700">ถือโดย {d.lockedBy}</span>}
+                          {d.lockedBy && d.lockedBy !== d.staff && <span className="block text-[10px] text-amber-700">ถือโดย {d.lockedBy}</span>}
                         </td>
                         <td className={TD}>
                           {d.items.map((it) => (
-                            <span key={it.sku || it.name} className="block text-[12px]">
+                            <span key={it.sku || it.name} className="block text-[12.5px]">
                               {it.name || it.sku} ×{it.qty}
                               {it.verdict && (
                                 <span className={it.verdict === 'return_in' ? 'text-emerald-700' : 'text-red-700'}>
@@ -215,7 +215,7 @@ export default function ReturnsInboxPage() {
             <div className="bg-white border border-gray-300 rounded-md p-3 mt-4">
               <div className="flex items-center justify-between mb-2">
                 <p className="text-[12.5px] font-semibold text-gray-800">รูปใบ <span className="font-mono">{photoView.returnId}</span></p>
-                <button onClick={() => setPhotoView(null)} className="text-[12px] text-gray-500 hover:underline">ปิด</button>
+                <button onClick={() => setPhotoView(null)} className="text-[12.5px] text-gray-500 hover:underline">ปิด</button>
               </div>
               {photoView.urls.length === 0 && photoView.failed === 0 && <LoadingState />}
               <div className="flex flex-wrap gap-2">
@@ -225,7 +225,7 @@ export default function ReturnsInboxPage() {
                 ))}
               </div>
               {photoView.failed > 0 && (
-                <p className="text-[12px] text-red-700 mt-2">ดึงรูปไม่สำเร็จ {photoView.failed} ใบ — ลองกดดูใหม่ (ดึงไม่ได้ ≠ ไม่มีรูป)</p>
+                <p className="text-[12.5px] text-red-700 mt-2">ดึงรูปไม่สำเร็จ {photoView.failed} ใบ — ลองกดดูใหม่ (ดึงไม่ได้ ≠ ไม่มีรูป)</p>
               )}
             </div>
           )}

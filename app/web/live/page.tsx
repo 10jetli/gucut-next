@@ -51,28 +51,28 @@ export default function WebLivePage() {
     <div className="space-y-4 max-w-4xl">
       <div className="flex items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">คนเข้าเว็บ</h1>
         </div>
         <button onClick={load}
-          className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-[13px] font-semibold text-gray-600 shadow-sm hover:bg-gray-50 hover:text-blue-600 transition-colors">
+          className="flex items-center gap-1.5 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-[12.5px] font-semibold text-gray-600 shadow-sm hover:bg-gray-50 hover:text-blue-600 transition-colors">
           <I d={IC.refresh} className={`w-4 h-4 ${spin ? 'animate-spin' : ''}`} /> รีเฟรช
         </button>
       </div>
-      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">{err}</p>}
 
       {/* แถวตัวเลขหลัก */}
       <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
           <div className="flex items-start justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ออนไลน์ตอนนี้</p>
+            <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">ออนไลน์ตอนนี้</p>
             <span className="relative flex w-2.5 h-2.5 mt-1"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-60" /><span className="relative inline-flex rounded-full w-2.5 h-2.5 bg-emerald-500" /></span>
           </div>
           <p className="text-[30px] font-black text-gray-900 mt-1 tabular-nums leading-none">{typeof s?.online === 'number' ? s.online : '—'}</p>
           <p className="text-[11.5px] text-gray-400 mt-1.5">เคลื่อนไหวใน {s?.onlineWindowMin ?? 5} นาทีล่าสุด</p>
         </div>
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">วันนี้</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">วันนี้</p>
           <div className="flex items-end justify-between gap-2 mt-1">
             <p className="text-[30px] font-black text-gray-900 tabular-nums leading-none">{typeof s?.today === 'number' ? s.today.toLocaleString('th-TH') : '—'}</p>
             <div className="flex items-end gap-[3px] h-10 pb-0.5">
@@ -87,7 +87,7 @@ export default function WebLivePage() {
         </div>
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
           <div className="flex items-start justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">สมาชิก</p>
+            <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">สมาชิก</p>
             <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-violet-50 text-violet-600"><I d={IC.users} className="w-[17px] h-[17px]" /></span>
           </div>
           {/* ⚠️ **`members` เป็น null ได้โดยตั้งใจ** (ฝั่งท่อ `.catch(() => null)` เพื่อไม่ให้
@@ -102,7 +102,7 @@ export default function WebLivePage() {
         </div>
         <div className="bg-white rounded-2xl border border-gray-100/80 p-4 md:p-5 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
           <div className="flex items-start justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เปิดจากแอป (PWA)</p>
+            <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เปิดจากแอป (PWA)</p>
             <span className="w-8 h-8 rounded-xl flex items-center justify-center bg-sky-50 text-sky-600"><I d={IC.phone2} className="w-[17px] h-[17px]" /></span>
           </div>
           {/* ⚠️ `pwa` เป็น null ได้โดยตั้งใจเหมือน members — null = นับไม่ได้ ไม่ใช่ศูนย์คน */}
@@ -119,7 +119,7 @@ export default function WebLivePage() {
       <div className="grid md:grid-cols-2 gap-4">
         {/* หน้า + ช่องทาง */}
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
-          <p className="px-4 md:px-5 pt-4 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">กำลังดูหน้าไหนอยู่</p>
+          <p className="px-4 md:px-5 pt-4 pb-2 text-[11.5px] font-bold uppercase tracking-wider text-gray-400">กำลังดูหน้าไหนอยู่</p>
           <div className="divide-y divide-gray-50">
             {(s?.pages ?? []).slice(0, 8).map((p) => (
               <div key={p.p} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
@@ -136,7 +136,7 @@ export default function WebLivePage() {
               <p className="px-5 py-6 text-[12.5px] text-amber-700 text-center">เซิร์ฟเวอร์ไม่ได้ส่งรายการหน้ามา — ยังบอกไม่ได้ว่ามีใครดูอะไรอยู่</p>
             )}
           </div>
-          <p className="px-4 md:px-5 pt-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 border-t border-gray-100">มาจากช่องทางไหน (วันนี้)</p>
+          <p className="px-4 md:px-5 pt-3 pb-2 text-[11.5px] font-bold uppercase tracking-wider text-gray-400 border-t border-gray-100">มาจากช่องทางไหน (วันนี้)</p>
           <div className="px-4 md:px-5 pb-4 flex flex-wrap gap-1.5">
             {(s?.channelsToday ?? []).map((c) => (
               <span key={c.ch} className="inline-flex items-center gap-1.5 rounded-full bg-gray-50 border border-gray-100 px-2.5 py-1 text-[11.5px] text-gray-600">
@@ -147,7 +147,7 @@ export default function WebLivePage() {
         </div>
         {/* ประเทศ + สมาชิกล่าสุด */}
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
-          <p className="px-4 md:px-5 pt-4 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">มาจากประเทศไหน (วันนี้)</p>
+          <p className="px-4 md:px-5 pt-4 pb-2 text-[11.5px] font-bold uppercase tracking-wider text-gray-400">มาจากประเทศไหน (วันนี้)</p>
           <div className="divide-y divide-gray-50">
             {(s?.countries ?? []).slice(0, 6).map((c) => (
               <div key={c.cc} className="flex items-center gap-3 px-4 md:px-5 py-2.5">
@@ -160,7 +160,7 @@ export default function WebLivePage() {
           </div>
           {s?.members?.recent && s.members.recent.length > 0 && (
             <>
-              <p className="px-4 md:px-5 pt-3 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400 border-t border-gray-100">สมาชิกล่าสุด</p>
+              <p className="px-4 md:px-5 pt-3 pb-2 text-[11.5px] font-bold uppercase tracking-wider text-gray-400 border-t border-gray-100">สมาชิกล่าสุด</p>
               <div className="px-4 md:px-5 pb-4 space-y-1.5">
                 {s.members.recent.map((m, i) => (
                   <p key={i} className="flex justify-between text-[12.5px]">
@@ -173,7 +173,7 @@ export default function WebLivePage() {
           )}
         </div>
       </div>
-      <p className="text-center text-[11px] text-gray-300">นับที่เซิร์ฟเวอร์ ตัวบล็อกโฆษณาหลบไม่ได้ · รีเฟรชด้วยการกดเอง (กติการ้าน)</p>
+      <p className="text-center text-[11.5px] text-gray-300">นับที่เซิร์ฟเวอร์ ตัวบล็อกโฆษณาหลบไม่ได้ · รีเฟรชด้วยการกดเอง (กติการ้าน)</p>
     </div>
   )
 }

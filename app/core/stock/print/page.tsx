@@ -232,32 +232,32 @@ export default function PrintLabelsPage() {
 
         <div className="mt-4 bg-white border border-gray-200 rounded-md p-4">
           <label className="block">
-            <span className="block text-[11px] font-semibold text-gray-400 mb-1">รหัสสินค้า (บรรทัดละรหัส หรือคั่นด้วยลูกน้ำ)</span>
+            <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">รหัสสินค้า (บรรทัดละรหัส หรือคั่นด้วยลูกน้ำ)</span>
             <textarea
-              className="w-full rounded border border-gray-200 px-2.5 py-1.5 text-[13px] outline-none focus:border-blue-400 h-20"
+              className="w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400 h-20"
               value={raw} onChange={(e) => setRaw(e.target.value)}
               placeholder={'ใส่บรรทัดละรหัส เช่น\n00414\n00747\nBar NW 24-7800'}
             />
           </label>
           <div className="flex flex-wrap items-end gap-3 mt-3">
             <label className="block">
-              <span className="block text-[11px] font-semibold text-gray-400 mb-1">ขนาดฉลาก</span>
-              <select className="rounded border border-gray-200 px-2 py-1.5 text-[13px]" value={size} onChange={(e) => setSize(e.target.value)}>
+              <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ขนาดฉลาก</span>
+              <select className="rounded border border-gray-200 px-2 py-1.5 text-[12.5px]" value={size} onChange={(e) => setSize(e.target.value)}>
                 {SIZES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
             </label>
             <label className="block">
-              <span className="block text-[11px] font-semibold text-gray-400 mb-1">กี่ดวงต่อรหัส</span>
-              <input className="w-20 rounded border border-gray-200 px-2 py-1.5 text-[13px] text-right"
+              <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">กี่ดวงต่อรหัส</span>
+              <input className="w-20 rounded border border-gray-200 px-2 py-1.5 text-[12.5px] text-right"
                 value={copies} inputMode="numeric" onChange={(e) => setCopies(e.target.value)} />
             </label>
             {/* 🔴 ตำแหน่งเริ่มพิมพ์ — มีเฉพาะฉลากแบบแผ่น A4 · ม้วนไม่มีเรื่องนี้ */}
             {sz.perSheet > 0 ? (
               <label className="block">
-                <span className="block text-[11px] font-semibold text-gray-400 mb-1">
+                <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">
                   เริ่มที่ดวงที่ (1–{sz.perSheet})
                 </span>
-                <input className="w-20 rounded border border-gray-200 px-2 py-1.5 text-[13px] text-right"
+                <input className="w-20 rounded border border-gray-200 px-2 py-1.5 text-[12.5px] text-right"
                   value={startAt} inputMode="numeric"
                   onChange={(e) => {
                     const n = Number(e.target.value.replace(/[^0-9]/g, '')) || 1
@@ -277,12 +277,12 @@ export default function PrintLabelsPage() {
               <input type="checkbox" checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} /> ใส่ราคา
             </label>
             <button onClick={() => void load(skus)} disabled={loading || !skus.length}
-              className="rounded-full px-5 py-2 text-[13px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
+              className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
               {loading ? 'กำลังถาม ZORT…' : `ถามบาร์โค้ด ${skus.length} รหัส`}
             </button>
           </div>
           {Number(copies) !== nCopies && (
-            <p className="text-[12px] text-amber-800 mt-2">ใช้ค่า {nCopies} ดวงต่อรหัส (รับได้ 1–50 เป็นจำนวนเต็ม)</p>
+            <p className="text-[12.5px] text-amber-800 mt-2">ใช้ค่า {nCopies} ดวงต่อรหัส (รับได้ 1–50 เป็นจำนวนเต็ม)</p>
           )}
         </div>
 
@@ -292,19 +292,19 @@ export default function PrintLabelsPage() {
               effect="ยังพิมพ์ฉลากไม่ได้ — ไม่ใช่ว่ารหัสที่กรอกผิด" />
           </div>
         )}
-        {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+        {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
         {loading && <div className="mt-3"><LoadingState /></div>}
 
         {asked && (
           <div className="mt-4 grid gap-2">
             {/* 🔴 ต้องบอกก่อนทุกอย่างว่า "ที่เห็นนี่ครบหรือไม่ครบ" — ok:true ไม่ได้แปลว่าครบ */}
             {complete === false ? (
-              <div className="text-[13px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+              <div className="text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 leading-relaxed">
                 🔴 <b>รายการนี้ยังไม่ครบ</b> — ถาม ZORT ไม่สำเร็จบางรหัส ({failed.length} รหัส)
                 {' '}⇒ รหัสในกองนั้นคือ <b>“ยังไม่รู้”</b> ไม่ใช่ “ไม่มีบาร์โค้ด” · <b>อย่าพิมพ์แล้วเชื่อว่าครบ</b> ให้กดถามใหม่
               </div>
             ) : (
-              <div className="text-[13px] text-emerald-900 bg-emerald-50 border border-emerald-300 rounded-md px-3.5 py-2.5">
+              <div className="text-[12.5px] text-emerald-900 bg-emerald-50 border border-emerald-300 rounded-md px-3.5 py-2.5">
                 ✅ ถามครบทุกรหัสที่กรอก ({skus.length} รหัส)
               </div>
             )}
@@ -362,7 +362,7 @@ export default function PrintLabelsPage() {
               </div>
             )}
 
-            <p className="text-[12px] text-gray-400 leading-relaxed">
+            <p className="text-[12.5px] text-gray-400 leading-relaxed">
               ฉลากสร้างในเครื่องด้วยตัวเข้ารหัส Code 128 ของโปรเจกต์เอง (ไม่ส่งข้อมูลออกไปที่ไหน)
               {' '}· ตารางลายมีตัวตรวจอยู่ใน prebuild กันพิมพ์ผิด เพราะพิมพ์ผิดหลักเดียวจะได้ฉลากที่สแกนออกแต่ได้ค่าผิด
             </p>
@@ -370,7 +370,7 @@ export default function PrintLabelsPage() {
         )}
 
         {!asked && !loading && (
-          <p className="text-[13px] text-gray-500 mt-4">
+          <p className="text-[12.5px] text-gray-500 mt-4">
             ใส่รหัสสินค้าแล้วกดถามบาร์โค้ด · มาจากจอสินค้าได้เลยด้วยปุ่ม “พิมพ์เอกสาร”
             {' '}(<Link href="/core/stock" className="underline">ไปหน้าสินค้า</Link>)
           </p>

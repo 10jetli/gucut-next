@@ -223,7 +223,7 @@ export default function QuotationsPage() {
             {/* ✅ ต่อของจริงแล้ว 6 ก.ย. 2569 — เจ้าของร้านอนุมัติ **เฉพาะใบเสนอราคา**
                 (ไม่รวมเพิ่มสินค้า/ใบสั่งซื้อ) · จอปลายทางบังคับซ้อมก่อนส่งจริง */}
             <Link href="/core/quotations/new"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้าง
             </Link>
@@ -447,7 +447,7 @@ export default function QuotationsPage() {
               ⇒ คำเตือนที่ตั้งใจเขียนไว้ **ไม่มีใครเห็นเลย** จนกว่าจะกดเปิดแผง
               (โรคเดิมที่ CLAUDE.md จดไว้: "เมนูที่ผมทำไว้หายไปไหน" — ของอยู่ครบ แค่พับปิด) */}
           {(cut > 0 || !รู้ทั้งชุด) && (
-            <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
+            <p className="text-[12.5px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
               {รู้ทั้งชุด ? (
                 <>
                   ตารางนี้แสดง <b>{all.length}</b> จาก <b>{Number(data!.total)}</b> ใบ
@@ -472,7 +472,7 @@ export default function QuotationsPage() {
           <div className="flex flex-wrap items-center gap-3 mt-3">
             <span
               title="จอนี้ดึงใบเสนอราคาครั้งเดียวทั้งหมด จึงมีหน้าเดียวเสมอ"
-              className="text-[13px] text-gray-400 bg-gray-50 border border-gray-200 rounded px-2.5 py-1 cursor-not-allowed"
+              className="text-[12.5px] text-gray-400 bg-gray-50 border border-gray-200 rounded px-2.5 py-1 cursor-not-allowed"
             >
               1
             </span>
@@ -489,7 +489,7 @@ export default function QuotationsPage() {
             </select>
           </div>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {/* 🔴 **ประโยคนี้กลายเป็นเท็จตั้งแต่ 733055e** (เจอ 15 ก.ย. 2569 · ใบ t_mu1wvgcw)
                 เขียนว่า "ZORT มีปุ่ม Export to Excel — ยังไม่ได้ทำ" ทั้งที่ปุ่มส่งออกของจอนี้
                 อยู่บนหัวจอเดียวกันนี้แล้ว และใช้งานได้จริง (ยิงจริงได้ไฟล์ 6 แถว)

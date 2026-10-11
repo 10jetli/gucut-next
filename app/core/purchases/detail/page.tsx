@@ -163,9 +163,9 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
         {!REAL_SEND_ENABLED && <> · <b>ตอนนี้ยังรับจริงไม่ได้</b> — {เหตุที่ยังไม่เปิด('purchases/detail')} (ทดลองใช้ได้)</>}
       </p>
 
-      {poLoading && <p className="mt-2 text-[13px] text-gray-500">กำลังถาม ZORT ว่าใบนี้คือ id ไหน…</p>}
+      {poLoading && <p className="mt-2 text-[12.5px] text-gray-500">กำลังถาม ZORT ว่าใบนี้คือ id ไหน…</p>}
       {poErr && (
-        <p className="mt-2 text-[13px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">
+        <p className="mt-2 text-[12.5px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">
           {poErr} <button onClick={findPo} className="underline">ลองใหม่</button>
         </p>
       )}
@@ -175,7 +175,7 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
             ใบนี้ใน ZORT: id <b>{po.id}</b> · สถานะการโอนสินค้า <b>{po.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, po.status).text : '—'}</b> · คลัง <b>{po.warehousecode ?? 'ค่าเริ่มต้นของร้าน'}</b>
             {' '}<span className="text-gray-400">(ถามสดจาก ZORT · ไม่ใช่กระจก)</span>
           </p>
-          <div className="mt-2 flex flex-wrap gap-4 text-[13px]">
+          <div className="mt-2 flex flex-wrap gap-4 text-[12.5px]">
             <label className="flex items-center gap-1.5">
               <input type="radio" checked={mode === 'partial'} onChange={() => setMode('partial')} /> รับตามจำนวนที่นับได้
             </label>
@@ -184,12 +184,12 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
             </label>
             <label className="flex items-center gap-1.5">
               วันที่รับ <input value={date} onChange={(e) => setDate(e.target.value)} placeholder="ปปปป-ดด-วว (ไม่ใส่ = วันนี้)"
-                className="border border-gray-300 rounded px-2 py-1 text-[13px] w-[190px]" />
+                className="border border-gray-300 rounded px-2 py-1 text-[12.5px] w-[190px]" />
             </label>
           </div>
           {mode === 'partial' && (
             <div className="mt-2 overflow-x-auto">
-              <table className="w-full text-[13px]">
+              <table className="w-full text-[12.5px]">
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-gray-500">
                     <th className="py-1 pr-2 font-medium">รหัส</th>
@@ -201,13 +201,13 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
                 <tbody>
                   {lines.filter((l) => l.sku).map((l) => (
                     <tr key={String(l.sku)} className="border-b border-gray-100 last:border-0">
-                      <td className="py-1 pr-2 font-mono text-[12px]">{l.sku}</td>
+                      <td className="py-1 pr-2 font-mono text-[12.5px]">{l.sku}</td>
                       <td className="py-1 pr-2">{l.name || '—'}</td>
                       <td className="py-1 pr-2 text-right tabular-nums">{baht(l.qty)}</td>
                       <td className="py-1 text-right">
                         <input value={counts[String(l.sku)] ?? ''} inputMode="decimal"
                           onChange={(e) => setCounts((c) => ({ ...c, [String(l.sku)]: e.target.value }))}
-                          className="w-full border border-gray-300 rounded px-2 py-1 text-[13px] text-right" placeholder="0" />
+                          className="w-full border border-gray-300 rounded px-2 py-1 text-[12.5px] text-right" placeholder="0" />
                       </td>
                     </tr>
                   ))}
@@ -215,7 +215,7 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
               </table>
             </div>
           )}
-          {err && <p className="mt-2 text-[13px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">{err}</p>}
+          {err && <p className="mt-2 text-[12.5px] text-red-800 bg-red-50 border border-red-200 rounded px-3 py-2">{err}</p>}
           <WriteResult r={res} />
           <div className="mt-3 flex flex-wrap items-center gap-3">
             <button onClick={() => send(false)} disabled={busy || !ref}
@@ -298,7 +298,7 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
-      <p className="text-[12px] mb-2">
+      <p className="text-[12.5px] mb-2">
         <Link href="/core/purchases" className="text-blue-600 hover:underline">‹ รายการซื้อ</Link>
       </p>
       <PageHead title={`ใบสั่งซื้อ ${d?.number || no}`}
@@ -343,7 +343,7 @@ function Inner() {
         <>
           <div className="mb-4 grid gap-3 md:grid-cols-2">
             <section className="rounded border border-gray-200 bg-white p-3">
-              <h2 className="mb-2 text-[13px] font-semibold">หัวใบ</h2>
+              <h2 className="mb-2 text-[12.5px] font-semibold">หัวใบ</h2>
               <div className="grid gap-1">
                 <Field k="ผู้ขาย" v={d.vendor} />
                 {/* 🔴 เดิมโชว์ค่าดิบ "2026-03-10" — ทั้งร้านอ่านปี พ.ศ. และจออื่นแปลงหมดแล้ว
@@ -369,9 +369,9 @@ function Inner() {
             </section>
 
             <section className="rounded border border-gray-200 bg-white p-3">
-              <h2 className="mb-2 text-[13px] font-semibold">ยอดเงิน</h2>
+              <h2 className="mb-2 text-[12.5px] font-semibold">ยอดเงิน</h2>
               {/* 🔴 สองยอดคู่กันเสมอ — ท่อส่งมาทั้งคู่โดยตั้งใจ */}
-              <div className="grid gap-1 text-[13px]">
+              <div className="grid gap-1 text-[12.5px]">
                 <div className="flex justify-between">
                   <span className="text-gray-500">ยอดหัวใบ (ตาม ZORT)</span>
                   <b className="tabular-nums">{baht(d.amount)}</b>
@@ -383,7 +383,7 @@ function Inner() {
               </div>
               {diff !== null && diff !== 0 && (
                 /* ⚠️ ไม่ใช่กล่องแดง — ส่วนต่างเป็นเรื่องปกติ ไม่ใช่ข้อผิดพลาด */
-                <p className="mt-2 rounded bg-gray-50 p-2 text-[12px] text-gray-600">
+                <p className="mt-2 rounded bg-gray-50 p-2 text-[12.5px] text-gray-600">
                   ต่างกัน <b className="tabular-nums">{baht(diff)}</b> บาท{' — '}
                   {/* 🔴 **คำอธิบายเดิมครอบไม่ถึงส่วนต่างที่เป็นลบ** (เจอกับใบจริง 14 ก.ย. 2569)
                       ส่วนลดทำให้หัวใบ**น้อยกว่า** · ค่าส่งกับภาษีทำให้**มากกว่า**
@@ -403,7 +403,7 @@ function Inner() {
           </div>
 
           <section className="rounded border border-gray-200 bg-white p-3">
-            <h2 className="mb-2 text-[13px] font-semibold">
+            <h2 className="mb-2 text-[12.5px] font-semibold">
               รายการสินค้า {d.lines?.length ? `(${d.lines.length} บรรทัด)` : ''}
             </h2>
             {/* 🔬 เทียบกับจอ `/Buy/Details` ของ ZORT ทีละชิ้น 16 ก.ย. 2569 (อ่านอย่างเดียว)
@@ -420,7 +420,7 @@ function Inner() {
                 ⚠️ **ไม่ได้กด** — เขียนเข้าสมุดบัญชีจริง (กฎ `zort-readonly`)
                 🔑 มีผลกับแผนตัด ZORT: ของเราไม่มีทางส่งรายใบ ⇒ ถ้าสับสวิตช์กลางวัน
                    ใบที่ถูกกดส่งไปแล้วด้วยมือจะถูกส่งซ้ำโดยสะพานของเรา */}
-            <p className="mb-2 text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
+            <p className="mb-2 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
               ⚠️ <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — คอลัมน์ <b>ส่วนลดต่อหน่วย</b> ·
               กล่อง <b>ค่าใช้จ่ายอื่น</b> · <b>สถานะการโอนสินค้า</b> · ช่อง <b>พูดคุย</b> ·
               ปุ่ม <b>Accounting</b> (ส่งใบนี้เข้า PEAK รายใบ — วัดจอเขา 4 ต.ค. 2569)
@@ -433,12 +433,12 @@ function Inner() {
             </p>
             {!d.lines?.length ? (
               /* สามสถานะ: ใบนี้ไม่มีบรรทัดจริง ≠ ดึงไม่สำเร็จ (ถ้าดึงพลาดจะไปที่ ErrorBox แล้ว) */
-              <p className="text-[13px] text-gray-500">
+              <p className="text-[12.5px] text-gray-500">
                 ใบนี้ไม่มีบรรทัดสินค้าในกระจก — ใบเก่าบางใบ ZORT ไม่ได้ส่งบรรทัดมาให้
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-[13px]">
+                <table className="w-full text-[12.5px]">
                   <thead>
                     <tr className="border-b border-gray-200 text-left text-gray-500">
                       <th className="py-1 pr-2 font-medium">#</th>
@@ -453,7 +453,7 @@ function Inner() {
                     {d.lines.map((l, i) => (
                       <tr key={`${l.sku ?? i}-${l.line ?? i}`} className="border-b border-gray-100 last:border-0">
                         <td className="py-1 pr-2 text-gray-400">{l.line ?? i + 1}</td>
-                        <td className="py-1 pr-2 font-mono text-[12px]">
+                        <td className="py-1 pr-2 font-mono text-[12.5px]">
                           {/* เลขรหัสสินค้าเข้าจอสินค้าได้ — แบบแผน "ทุกตัวระบุตัวตนต้องกดได้" */}
                           {l.sku
                             ? <Link href={`/core/stock?q=${encodeURIComponent(l.sku)}`} className="text-blue-600 hover:underline">{l.sku}</Link>
@@ -487,7 +487,7 @@ function Inner() {
 function Field({ k, v }: { k: string; v?: string | null }) {
   if (!v) return null
   return (
-    <div className="flex gap-2 text-[13px]">
+    <div className="flex gap-2 text-[12.5px]">
       <span className="min-w-[92px] text-gray-500">{k}</span>
       <span className="break-words">{v}</span>
     </div>

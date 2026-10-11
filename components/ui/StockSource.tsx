@@ -32,7 +32,7 @@ export default function StockSource(
   /* ① ท่อยังไม่ส่งช่องนี้ — ต่างจาก "มาจากทางปกติ" ⇒ ต้องเขียนออกมา ไม่ใช่เงียบ */
   if (ผล.แบบ === 'ท่อไม่ส่ง') {
     return (
-      <div className="text-[11px] text-gray-400">
+      <div className="text-[11.5px] text-gray-400">
         ที่มาของเลข: <b>ท่อรุ่นนี้ยังไม่ส่งช่องนี้</b>
         {!สั้น && ' — ไม่ใช่ว่าเลขนี้ไม่มีที่มา'}
       </div>
@@ -42,7 +42,7 @@ export default function StockSource(
   /* ② มีคำอธิบายจากท่อ ⇒ ใช้ข้อความของท่อตรง ๆ */
   if (ผล.แบบ === 'มีคำอธิบายจากท่อ') {
     return (
-      <div className="text-[11px] leading-relaxed text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1">
+      <div className="text-[11.5px] leading-relaxed text-amber-800 bg-amber-50 border border-amber-200 rounded px-2 py-1">
         ที่มาของเลข: <code className="text-[10px]">{ผล.src}</code>
         <div>{ผล.note}</div>
         {ผล['ทะเบียนว่า'] !== null && (
@@ -57,7 +57,7 @@ export default function StockSource(
 
   /* ③ ค่าดิบที่ท่อไม่ได้ส่งคำอธิบายมา */
   return (
-    <div className="text-[11px] text-gray-500">
+    <div className="text-[11.5px] text-gray-500">
       ที่มาของเลข: <code className="text-[10px]">{ผล.src}</code>
       {!สั้น && <span className="text-gray-400"> · ท่อไม่ได้ส่งคำอธิบายของที่มานี้ (จอไม่แปลเอง)</span>}
     </div>

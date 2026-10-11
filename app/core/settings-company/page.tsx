@@ -109,13 +109,13 @@ function FormRow({ label, value, muted, mutedWhy }: {
 }) {
   return (
     <div className="flex items-start gap-3 mb-2.5">
-      <span className="w-[150px] shrink-0 text-[12px] text-gray-500 pt-1.5">{label}</span>
+      <span className="w-[150px] shrink-0 text-[12.5px] text-gray-500 pt-1.5">{label}</span>
       {typeof value === 'string' && value ? (
         <span className="flex-1 max-w-[420px] text-[12.5px] text-gray-800 bg-gray-50 border border-gray-200 rounded px-3 py-1.5">
           {value}
         </span>
       ) : (
-        <span className="flex-1 max-w-[420px] text-[12px] text-gray-400 bg-gray-50/60 border border-dashed border-gray-200 rounded px-3 py-1.5"
+        <span className="flex-1 max-w-[420px] text-[12.5px] text-gray-400 bg-gray-50/60 border border-dashed border-gray-200 rounded px-3 py-1.5"
           title={mutedWhy}>
           {muted ?? '—'}
         </span>
@@ -130,7 +130,7 @@ function PartyCard({ title, role, p, warn }: { title: string; role: string; p?: 
       <p className="text-[11.5px] text-gray-400">{role}</p>
       <p className="text-[15px] font-semibold text-gray-900">{title}</p>
       {p ? (
-        <dl className="text-[13px] mt-2 space-y-1.5">
+        <dl className="text-[12.5px] mt-2 space-y-1.5">
           <div><dt className="text-gray-400 text-[11.5px]">ชื่อตามทะเบียน</dt><dd className="text-gray-800">{p.name || '—'}</dd></div>
           {p.nameEn && <div><dt className="text-gray-400 text-[11.5px]">ชื่ออังกฤษ</dt><dd className="text-gray-700">{p.nameEn}</dd></div>}
           <div><dt className="text-gray-400 text-[11.5px]">เลขประจำตัวผู้เสียภาษี</dt>
@@ -154,7 +154,7 @@ function DocTable({ title, rows, empty }: { title: string; rows?: Doc[]; empty: 
   const list = Array.isArray(rows) ? rows : []
   return (
     <div className="mb-5">
-      <p className="text-[15px] font-semibold text-gray-800 mb-2">{title} {list.length > 0 && <span className="text-gray-400 text-[13px]">({list.length})</span>}</p>
+      <p className="text-[15px] font-semibold text-gray-800 mb-2">{title} {list.length > 0 && <span className="text-gray-400 text-[12.5px]">({list.length})</span>}</p>
       {list.length === 0
         ? <p className="text-[12.5px] text-gray-400">{empty}</p>
         : (
@@ -162,11 +162,11 @@ function DocTable({ title, rows, empty }: { title: string; rows?: Doc[]; empty: 
             <table className="w-full min-w-[640px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">เลขที่</th>
-                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">ชนิด / ขอบเขต</th>
-                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">ออกโดย</th>
-                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">ออกเมื่อ</th>
-                  <th className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5">สถานะ</th>
+                  <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5">เลขที่</th>
+                  <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5">ชนิด / ขอบเขต</th>
+                  <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5">ออกโดย</th>
+                  <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5">ออกเมื่อ</th>
+                  <th className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5">สถานะ</th>
                 </tr>
               </thead>
               <tbody>
@@ -180,7 +180,7 @@ function DocTable({ title, rows, empty }: { title: string; rows?: Doc[]; empty: 
                       <td className="px-3 py-3 text-[12.5px] text-gray-600 whitespace-nowrap">{thai(d.issuedAt)}</td>
                       <td className="px-3 py-3 text-[12.5px] whitespace-nowrap">
                         <Pill tone={e.tone}>{e.text}</Pill>
-                        {d.expiresAt && <span className="block text-[11px] text-gray-400 mt-0.5">ถึง {thai(d.expiresAt)}</span>}
+                        {d.expiresAt && <span className="block text-[11.5px] text-gray-400 mt-0.5">ถึง {thai(d.expiresAt)}</span>}
                       </td>
                     </tr>
                   )
@@ -281,7 +281,7 @@ export default function SettingsCompanyPage() {
                  (สาขา/เบอร์/อีเมล เห็นในภาพ 84 แต่แหล่งความจริงคือไฟล์ต้นทางฝั่งหน้าร้าน)
               ⚠️ ไม่มีปุ่ม "บันทึก" ของ ZORT โดยตั้งใจ — จอนี้อ่านอย่างเดียว (ดูท้ายหน้า) */}
           <div className="bg-white border border-gray-200 rounded-md p-4 md:p-5 mb-4">
-            <p className="text-[13.5px] font-semibold text-gray-800 mb-3">🏢 ข้อมูลบริษัท/ร้านค้า</p>
+            <p className="text-[12.5px] font-semibold text-gray-800 mb-3">🏢 ข้อมูลบริษัท/ร้านค้า</p>
             <FormRow label="บริษัท/ร้านค้า" value={d?.seller?.name} />
             <FormRow label="เลขผู้เสียภาษี" value={d?.seller?.taxId} />
             <FormRow label="ชื่อสาขาหลัก" muted="ท่อยังไม่ส่งช่องนี้มา"
@@ -295,7 +295,7 @@ export default function SettingsCompanyPage() {
             <div className="h-2" />
             <FormRow label="บริษัท/ร้านค้า (English)" value={d?.seller?.nameEn} />
 
-            <p className="text-[13.5px] font-semibold text-gray-800 mt-5 mb-3">📞 ข้อมูลติดต่อ</p>
+            <p className="text-[12.5px] font-semibold text-gray-800 mt-5 mb-3">📞 ข้อมูลติดต่อ</p>
             <FormRow label="เบอร์โทรศัพท์" value={d?.seller?.phone} muted="ท่อยังไม่ส่งช่องนี้มา"
               mutedWhy="ปกติท่อส่งช่องนี้มาให้ (ยืนยัน 14 ก.ย. 2569) — เห็นข้อความนี้แปลว่ารอบนี้ไม่ได้มา ลองกดดึงใหม่ก่อน ถ้ายังไม่มาค่อยแจ้ง" />
             <FormRow label="อีเมล" value={d?.seller?.email} muted="ท่อยังไม่ส่งช่องนี้มา"
@@ -337,7 +337,7 @@ export default function SettingsCompanyPage() {
                 </p>
               )}
               <TableWrap>
-                <table className="w-full text-[13px]">
+                <table className="w-full text-[12.5px]">
                   <thead><tr>
                     <th className={THR}>ลำดับ</th><th className={TH}>จังหวัด</th>
                     <th className={TH}>ชื่อผู้ประกอบการ</th><th className={TH}>สถานะ</th>

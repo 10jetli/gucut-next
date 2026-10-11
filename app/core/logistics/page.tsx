@@ -304,11 +304,11 @@ export default function LogisticsPage() {
               }}
             />
             <Link href="/core/soon/shipping"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               นำเข้ารายการไฟล์ Excel
             </Link>
             <Link href="/core/soon/shipping"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               ขนส่ง
             </Link>
@@ -545,7 +545,7 @@ export default function LogisticsPage() {
                         className={r.trackingNo ? 'text-blue-600 hover:underline font-medium' : 'text-gray-400 hover:underline'}>
                         {r.trackingNo || 'ยังไม่มีเลขพัสดุ'}
                       </Link>
-                      <span className="flex items-center gap-1 text-[11px] text-gray-400 mt-0.5">
+                      <span className="flex items-center gap-1 text-[11.5px] text-gray-400 mt-0.5">
                         <CarrierMark name={r.carrier} />
                         {r.carrier || 'ไม่ระบุขนส่ง'}
                       </span>
@@ -559,8 +559,8 @@ export default function LogisticsPage() {
                     <td className={TD}>
                       {/* ⚠️ COD = เก็บเงินปลายทาง (ยังไม่ได้เงิน) ไม่ใช่ "จ่ายแล้ว" — ห้ามใช้สีเขียว */}
                       {r.isCod
-                        ? <span className="text-[11px] font-semibold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">COD</span>
-                        : <span className="text-gray-400 text-[12px]">โอน/ชำระก่อน</span>}
+                        ? <span className="text-[11.5px] font-semibold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">COD</span>
+                        : <span className="text-gray-400 text-[12.5px]">โอน/ชำระก่อน</span>}
                     </td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status ?? '')}>{statusTh(r.status)}</Pill></td>
                     {/* กดเลขที่ใบ → จอรายละเอียด (ลอกจาก ZORT ที่กดแถวแล้วไป /Logistics/Details) */}
@@ -593,7 +593,7 @@ export default function LogisticsPage() {
               </tbody>
             </table>
 
-            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12.5px] text-gray-600">
               <span>
                 แสดง {fmtNum(offset + rows.length)} จาก{' '}
                 {รู้จำนวน ? <>{fmtNum(tabTotal)} รายการ</> : <span className="text-amber-700">ยังไม่รู้ว่าทั้งชุดมีกี่รายการ (ท่อไม่ได้บอกจำนวนมา)</span>}
@@ -612,7 +612,7 @@ export default function LogisticsPage() {
             </div>
           </TableWrap>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {/* 🔴 ข้อความเดิมตรงนี้เขียนว่า "สะกดหลายแบบ จึงยังจับคู่โลโก้ไม่ได้"
                 ซึ่งค้างข้ามวันที่ฝั่งท่อรวมชื่อให้แล้ว (4 ก.ย. 2569) — เขียนใหม่ตามสภาพจริง
                 กฎ stale-state-comments แต่เป็นข้อความบนจอ ไม่ใช่คอมเมนต์ */}
@@ -625,7 +625,7 @@ export default function LogisticsPage() {
 
           {/* 🔎 ของที่ ZORT มีในจอนี้แต่เรายังไม่มี — กดอ่านแผงจริงของเขา 16 ก.ย. 2569
               เขียนไว้บนจอเพราะคนที่ชิน ZORT จะไล่หา แล้วถ้าไม่บอกจะคิดว่าเราลืม */}
-          {!canAdv && <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          {!canAdv && <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             <b>ค้นหาขั้นสูงของ ZORT ในจอนี้มี</b> รายการ · ชื่อผู้รับ · ช่วงวันที่ ·
             ติ๊กเลือก<b>ขนส่ง 9 เจ้า</b> · ติ๊กเลือก<b>สถานะการส่ง 5 ค่า</b>
             (สำเร็จ · รอชำระ · รอส่ง · กำลังส่ง · ถูกยกเลิก) —

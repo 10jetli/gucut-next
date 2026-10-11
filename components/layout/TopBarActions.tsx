@@ -172,7 +172,7 @@ function BellButton() {
       {open && (
         <div className="absolute right-0 top-full mt-2 w-[320px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] z-30 overflow-hidden">
           <div className="px-3.5 py-2.5 border-b border-gray-100 flex items-center justify-between">
-            <p className="text-[13px] font-semibold text-gray-800">เรื่องที่ควรมาดู</p>
+            <p className="text-[12.5px] font-semibold text-gray-800">เรื่องที่ควรมาดู</p>
             <button
               onClick={check}
               disabled={loading}
@@ -192,7 +192,7 @@ function BellButton() {
               <p className="px-3.5 py-4 text-[12.5px] text-gray-400">กำลังตรวจจากคลังเงา…</p>
             )}
             {!error && stale && (
-              <p className="px-3.5 py-2.5 text-[12px] text-amber-800 bg-amber-50 border-b border-amber-100 leading-relaxed">
+              <p className="px-3.5 py-2.5 text-[12.5px] text-amber-800 bg-amber-50 border-b border-amber-100 leading-relaxed">
                 ผลนี้ตรวจไว้นานแล้ว — เรื่องที่เห็นอาจถูกแก้ไปแล้ว หรือมีเรื่องใหม่ที่ยังไม่รู้
                 กด &quot;ตรวจใหม่&quot; ก่อนใช้ตัดสินใจ
               </p>
@@ -216,7 +216,7 @@ function BellButton() {
           </div>
 
           {/* บอกเวลาที่ตรวจเสมอ — ไม่งั้นคนใช้เข้าใจว่าตัวเลขสดตลอดเวลา */}
-          <p className="px-3.5 py-2 text-[11px] text-gray-400 border-t border-gray-100 leading-relaxed">
+          <p className="px-3.5 py-2 text-[11.5px] text-gray-400 border-t border-gray-100 leading-relaxed">
             {checked
               ? `${stale ? '⏱ ผลนี้เก่าแล้ว — ' : ''}ตรวจเมื่อ ${new Date(checked.at).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น. · ระบบไม่ตรวจเอง ต้องกดปุ่มตรวจใหม่`
               : 'ระบบไม่ตรวจเอง — กด "ตรวจใหม่" เพื่อดูสถานะล่าสุด'}
@@ -241,14 +241,14 @@ function HelpButton() {
         aria-label="ช่วยเหลือ"
         className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
       >
-        <span className="w-[19px] h-[19px] rounded-full bg-gray-400 text-white text-[12px] font-bold flex items-center justify-center leading-none">
+        <span className="w-[19px] h-[19px] rounded-full bg-gray-400 text-white text-[12.5px] font-bold flex items-center justify-center leading-none">
           ?
         </span>
       </button>
 
       {open && (
         <div className="absolute right-0 top-full mt-2 w-[300px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] z-30 p-3.5">
-          <p className="text-[13px] font-semibold text-gray-800 mb-2">ข้อมูลในหน้าจอมาจากไหน</p>
+          <p className="text-[12.5px] font-semibold text-gray-800 mb-2">ข้อมูลในหน้าจอมาจากไหน</p>
           <p className="text-[12.5px] text-gray-600 leading-relaxed">
             ตัวเลขทั้งหมดอ่านจาก <b>คลังของเราเอง</b> ไม่ได้ดึงสดจาก ZORT
             — คลังเราเก็บออเดอร์และภาพถ่ายสต็อกไว้เอง แล้วเทียบกับ ZORT ทุกวันเพื่อพิสูจน์ว่าตรงกัน
@@ -374,7 +374,7 @@ function AppsButton() {
             ))}
           </div>
           {/* ⚠️ ต้องเขียนบอกขอบเขตจริงของแผ่นแชท ไม่งั้นเข้าใจว่าย้าย Facebook/LINE มาแล้ว */}
-          <p className="text-[11px] text-gray-400 leading-relaxed px-1.5 pt-2 pb-0.5 border-t border-gray-100 mt-1">
+          <p className="text-[11.5px] text-gray-400 leading-relaxed px-1.5 pt-2 pb-0.5 border-t border-gray-100 mt-1">
             แชทคอมเมิร์ซรับข้อความจากหน้าเว็บร้านได้แล้ว · Facebook กับ LINE ยังตอบที่แอป
             ZORT Social Commerce · แชทมาร์เก็ตเพลสยังอยู่ที่ Duoke
           </p>

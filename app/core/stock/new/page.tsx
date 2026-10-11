@@ -183,7 +183,7 @@ export default function NewProductPage() {
       <PageHead
         title="เพิ่มสินค้า"
         summary={<>สร้างสินค้าใน ZORT โดยตรง{' | '}<span className="text-gray-400">เลขอ้างอิง: <b>{ref}</b> (กันการส่งซ้ำ)</span></>}
-        actions={<Link href="/core/stock" className="text-[13px] text-blue-600 hover:underline">← กลับรายการสินค้า</Link>}
+        actions={<Link href="/core/stock" className="text-[12.5px] text-blue-600 hover:underline">← กลับรายการสินค้า</Link>}
       />
 
       {/* 🔴 คำเตือนที่ต่างจากจออื่น — จอนี้มีทางที่ของหลุดออกไปถึงลูกค้า */}
@@ -224,7 +224,7 @@ export default function NewProductPage() {
           ZORT แบ่งเป็น 6 กล่อง: รายละเอียดสินค้า · ราคาสินค้า · ข้อมูลขนส่ง · ตั้งค่า · สินค้าหลากคุณสมบัติ · คลังสินค้า
           ⚠️ **ห้ามแปะช่องพวกนี้ไปก่อนแล้วเงียบ** — ยังไม่ได้ยิงตรวจว่าท่อ addproduct รับช่องไหนได้
              และ ZORT **เมินช่องที่ไม่รู้จักแบบไม่บอก** ⇒ เขียนไว้ว่ายังไม่มี ตรงกว่าใส่ช่องที่ส่งไปแล้วหาย */}
-      <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+      <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
         <b>ช่องที่จอ ZORT มี แต่จอนี้ยังไม่มี</b> (เทียบของจริง 16 ก.ย. 2569)
         <ul className="list-disc ml-5 mt-1 space-y-0.5">
           <li><b>ประเภท: สินค้า / บริการ</b> — ของเราสร้างได้แบบเดียว ยังไม่รู้ว่าท่อส่งประเภทได้ไหม</li>
@@ -250,13 +250,13 @@ export default function NewProductPage() {
         </div>
       </div>
 
-      {err && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
+      {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
       <WriteResult r={res} />
 
       {/* 📦 **ข้อความหลังส่งสำเร็จ — เป็นส่วนหนึ่งของความถูกต้อง ไม่ใช่คำอธิบายประกอบ**
           ถ้าไม่มีกล่องนี้ คนจะกลับไปจอสินค้า ไม่เห็นของที่เพิ่งสร้าง แล้วกดสร้างซ้ำ */}
       {locked && res && !res.dryRun && (res.ok || res.duplicate || res.unknown) && (
-        <div className="text-[13px] text-emerald-950 bg-emerald-50 border border-emerald-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-emerald-950 bg-emerald-50 border border-emerald-300 rounded-md px-3.5 py-3 mt-3 leading-relaxed">
           <b>📦 สินค้าที่เพิ่งสร้าง จะขึ้นในจอ &ldquo;สินค้า&rdquo; หลัง <u>ภาพถ่ายสต็อกรอบถัดไป</u> — ไม่ใช่ว่าสร้างไม่สำเร็จ</b>
           <br />
           จอสินค้าของเราอ่านจาก <b>ภาพถ่ายสต็อกของวัน</b> ไม่ได้อ่านทะเบียนสินค้าตรง ๆ
@@ -285,10 +285,10 @@ export default function NewProductPage() {
                 }
               }}
               disabled={snap === 'กำลังถ่ายภาพสต็อกรอบใหม่…'}
-              className="text-[13px] font-semibold text-emerald-900 bg-white border border-emerald-400 rounded-full px-4 py-1.5 disabled:opacity-50">
+              className="text-[12.5px] font-semibold text-emerald-900 bg-white border border-emerald-400 rounded-full px-4 py-1.5 disabled:opacity-50">
               📸 ถ่ายภาพสต็อกเดี๋ยวนี้
             </button>
-            {snap && <span className="text-[12px] text-emerald-900">{snap}</span>}
+            {snap && <span className="text-[12.5px] text-emerald-900">{snap}</span>}
           </div>
         </div>
       )}
@@ -300,7 +300,7 @@ export default function NewProductPage() {
         </button>
         {/* 🔴 ส่งจริงไปแล้ว ⇒ **ไม่มีปุ่มให้กดอีก** ไม่ใช่แค่ปุ่มจาง ๆ ที่ยังเล็งกดได้ */}
         {locked ? (
-          <span className="text-[13px] font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300 rounded-full px-5 py-2">
+          <span className="text-[12.5px] font-semibold text-emerald-900 bg-emerald-100 border border-emerald-300 rounded-full px-5 py-2">
             ส่งใบนี้ไปแล้ว — ปิดการส่งซ้ำไว้
           </span>
         ) : (

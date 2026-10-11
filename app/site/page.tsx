@@ -29,13 +29,13 @@ function ToolRow({ t }: { t: WebTool }) {
         <span className="flex items-center gap-1.5">
           <span className="text-[14px] font-bold text-gray-900 truncate">{t.title}</span>
           {t.isNew && (
-            <span className="shrink-0 rounded-full bg-blue-600 px-1.5 py-0.5 text-[9px] font-black text-white uppercase tracking-wide">ใหม่</span>
+            <span className="shrink-0 rounded-full bg-blue-600 px-1.5 py-0.5 text-[10px] font-black text-white uppercase tracking-wide">ใหม่</span>
           )}
           {t.native && (
-            <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[9.5px] font-bold text-emerald-600">เนื้อเดียวแล้ว</span>
+            <span className="shrink-0 rounded-full bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-600">เนื้อเดียวแล้ว</span>
           )}
         </span>
-        <span className="block text-[12px] text-gray-500 mt-0.5 truncate">{t.desc}</span>
+        <span className="block text-[12.5px] text-gray-500 mt-0.5 truncate">{t.desc}</span>
       </span>
       <span className="shrink-0 text-gray-200 transition-all duration-200 group-hover:text-blue-500 group-hover:translate-x-0.5">
         <I d="M9 6l6 6-6 6" className="w-4 h-4" />
@@ -69,7 +69,7 @@ export default function SiteToolsPage() {
     <div className="p-4 md:p-6 space-y-5 max-w-3xl">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">เครื่องมือเว็บไซต์</h1>
         </div>
         <div className="relative">
@@ -77,14 +77,14 @@ export default function SiteToolsPage() {
             <I d="M11 5a6 6 0 100 12 6 6 0 000-12zM20 20l-4.2-4.2" className="w-4 h-4" />
           </span>
           <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ค้นหาเครื่องมือ…"
-            className="w-[200px] md:w-[240px] rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2 text-[13px] shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+            className="w-[200px] md:w-[240px] rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2 text-[12.5px] shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
         </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-1.5">
         {CATS.map((c) => (
           <button key={c} onClick={() => setCat(c)}
-            className={`rounded-lg px-3 py-1.5 text-[12px] font-semibold transition-all duration-150 ${
+            className={`rounded-lg px-3 py-1.5 text-[12.5px] font-semibold transition-all duration-150 ${
               cat === c ? 'bg-gray-900 text-white shadow-sm' : 'bg-white text-gray-500 border border-gray-200 hover:bg-gray-50'
             }`} aria-pressed={cat === c}>
             {c}
@@ -94,7 +94,7 @@ export default function SiteToolsPage() {
 
       {groups.map(([catName, list]) => (
         <div key={catName}>
-          <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-wider text-gray-400">{catName}</p>
+          <p className="px-1 pb-2 text-[11.5px] font-bold uppercase tracking-wider text-gray-400">{catName}</p>
           <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden divide-y divide-gray-50">
             {list.map((t) => <ToolRow key={t.slug} t={t} />)}
           </div>
@@ -102,7 +102,7 @@ export default function SiteToolsPage() {
       ))}
 
       {shown.length === 0 && (
-        <p className="py-14 text-center text-[13px] text-gray-400">ไม่พบเครื่องมือที่ตรงกับ &ldquo;{q}&rdquo;</p>
+        <p className="py-14 text-center text-[12.5px] text-gray-400">ไม่พบเครื่องมือที่ตรงกับ &ldquo;{q}&rdquo;</p>
       )}
     </div>
   )

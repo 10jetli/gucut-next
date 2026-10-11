@@ -688,12 +688,12 @@ export default function CoreSalesPage() {
             {/* ชี้หน้าจริงตั้งแต่ 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิดอยู่ แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/sales/new"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้าง
             </Link>
             <Link href="/core/pos"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้างอย่างง่าย
             </Link>
@@ -717,7 +717,7 @@ export default function CoreSalesPage() {
             <select
               value={store}
               onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               <option value="">ทุกร้าน (2 ร้าน)</option>
               {/* 🔴 ห้ามพิมพ์ชื่อนิติบุคคลในไฟล์จอ — ถูกอบเข้า chunk สาธารณะ /_next/static
@@ -729,7 +729,7 @@ export default function CoreSalesPage() {
             <select
               value={channel}
               onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               <option value="">ทุกช่องทาง</option>
               {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
@@ -739,11 +739,11 @@ export default function CoreSalesPage() {
               {(data?.channels ?? []).filter((c) => typeof c === 'string')
                 .map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
-            <span className="text-[13px] text-gray-500">แสดง</span>
+            <span className="text-[12.5px] text-gray-500">แสดง</span>
             <select
               value={days}
               onChange={(e) => { const d = Number(e.target.value); setDays(d); load(0, { days: d }) }}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
             </select>
@@ -971,7 +971,7 @@ export default function CoreSalesPage() {
               ไม่งั้นไม่มีใครรู้ว่ามีตัวตรวจนี้อยู่ แล้ววันที่มันเงียบเพราะพัง ก็ดูเหมือนเดิมเป๊ะ
               (กติกาเดียวกับถัง "ไม่รู้จัก" ในการ์ด — ต้องเห็นแม้เป็น 0) */}
           {rows.length > 0 && (
-            <p className="text-[12px] text-gray-500 mb-3">
+            <p className="text-[12.5px] text-gray-500 mb-3">
               ตรวจใบที่ <b>ปิดแล้วแต่ยังไม่มีเลขพัสดุ</b>:{' '}
               {rows.filter(isMismatch).length === 0
                 ? <span>ไม่พบในหน้านี้ ({rows.length.toLocaleString('th-TH')} ใบ)</span>
@@ -1103,7 +1103,7 @@ export default function CoreSalesPage() {
                           ⇒ ติดป้ายสาขาเมื่อ **ยังไม่ได้เลือกร้าน** เท่านั้น — เลือกแล้วป้ายจะซ้ำกับตัวกรอง
                           ⚠️ สามสถานะ: ไม่ใช่ z1/z2 ⇒ **ไม่ติดป้าย** ห้ามเดาว่าเป็นสาขา 1 */}
                       {!store && (r.source === 'z1' || r.source === 'z2') && (
-                        <span className="ml-1.5 align-middle text-[10.5px] text-gray-500
+                        <span className="ml-1.5 align-middle text-[10px] text-gray-500
                           border border-gray-200 bg-gray-50 rounded px-1 py-[1px]">
                           {r.source === 'z1' ? 'สาขา 1' : 'สาขา 2'}
                         </span>
@@ -1119,7 +1119,7 @@ export default function CoreSalesPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>
                       {r.ship_date ? thaiDate(r.ship_date) : <span className="text-gray-300">—</span>}
                       {(r.is_cod === 1 || r.is_cod === true) && (
-                        <span className="block text-[10.5px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 mt-0.5 w-fit">COD</span>
+                        <span className="block text-[10px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 mt-0.5 w-fit">COD</span>
                       )}
                     </td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
@@ -1133,7 +1133,7 @@ export default function CoreSalesPage() {
                           คำแปลมาจากท่อล้วน ๆ จอไม่รู้จักรหัสดิบเลย */}
                       {r.shipStatus && r.shipStatus !== '—' && (
                         <span
-                          className="block text-[11px] text-gray-500 mt-1"
+                          className="block text-[11.5px] text-gray-500 mt-1"
                           title={[
                             `สถานะฝั่งแพลตฟอร์ม${r.shipStatusFrom ? ` (${r.shipStatusFrom})` : ''}`,
                             r.integrationStatus ? `ค่าดิบ: ${r.integrationStatus}` : '',
@@ -1150,7 +1150,7 @@ export default function CoreSalesPage() {
                           จะกลายเป็นเสียงหอนที่คนเลิกฟัง แล้ววันที่มันจริงก็ไม่มีใครดู */}
                       {isMismatch(r) && (
                         <span
-                          className="block w-fit text-[10.5px] rounded px-1.5 py-0.5 mt-1 bg-amber-100 text-amber-800 font-medium"
+                          className="block w-fit text-[10px] rounded px-1.5 py-0.5 mt-1 bg-amber-100 text-amber-800 font-medium"
                           title={[
                             `ใบนี้ปิดแล้ว (${statusTh(r.status)}) แต่ยังไม่มีทั้งเลขพัสดุและวันส่งสินค้า`,
                             `สถานะฝั่งแพลตฟอร์ม${r.shipStatusFrom ? ` (${r.shipStatusFrom})` : ''}: ${r.shipStatus ?? '—'}`,
@@ -1199,7 +1199,7 @@ export default function CoreSalesPage() {
 
             {data.total > PAGE && (
               <div className="flex items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
-                <span className="text-[12px] text-gray-500">
+                <span className="text-[12.5px] text-gray-500">
                   แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {data.total.toLocaleString('th-TH')} รายการ
                 </span>
                 <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
@@ -1247,7 +1247,7 @@ export default function CoreSalesPage() {
           {/* ⚠️ สามคอลัมน์ที่เพิ่งเพิ่มยังไม่มีค่ามา — ต้องบอกว่า "ยังไม่ส่งมา" ไม่ใช่ปล่อยให้
               เห็นขีดยาวทั้งคอลัมน์แล้วเข้าใจว่าออเดอร์พวกนี้ไม่มีขนส่ง/ยังไม่จ่ายเงิน */}
           {rows.length > 0 && rows.every((r) => !r.ship_channel && !r.ship_date && !r.pay_status) && (
-            <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
               คอลัมน์ <b>บริการขนส่ง · วันส่งสินค้า · ชำระเงิน</b> ยังขึ้นเป็นขีดทุกแถว —
               <b> ไม่ได้แปลว่าออเดอร์ไม่มีขนส่งหรือยังไม่จ่ายเงิน</b> · ค่าพวกนี้<b>มีอยู่ในคลังเงาแล้ว</b>
               {' '}(ตาราง orders เก็บ ship_channel · ship_date · tracking_no · is_cod ครบ)

@@ -95,10 +95,10 @@ function TrendChart({ rows }: { rows: MonthlyRow[] }) {
         <path d={line((r) => Number(r.newCustomers) || 0, yP)} fill="none" stroke="#8ea8f8" strokeWidth="2" />
         <path d={line((r) => Number(r.repeatCustomers) || 0, yP)} fill="none" stroke="#f2938c" strokeWidth="2" />
         {rows.map((r, i) => (
-          <text key={r.month} x={x(i)} y={H - 6} textAnchor="middle" className="fill-gray-400 text-[9px]">{mLabel(r.month)}</text>
+          <text key={r.month} x={x(i)} y={H - 6} textAnchor="middle" className="fill-gray-400 text-[10px]">{mLabel(r.month)}</text>
         ))}
-        <text x={2} y={yP(maxP) + 4} className="fill-gray-400 text-[9px]">{maxP} คน</text>
-        <text x={W - 2} y={yU(maxU) + 4} textAnchor="end" className="fill-gray-400 text-[9px]">{maxU} ใบ</text>
+        <text x={2} y={yP(maxP) + 4} className="fill-gray-400 text-[10px]">{maxP} คน</text>
+        <text x={W - 2} y={yU(maxU) + 4} textAnchor="end" className="fill-gray-400 text-[10px]">{maxU} ใบ</text>
       </svg>
     </div>
   )
@@ -283,11 +283,11 @@ export default function CoreCustomersPage() {
         advanced={<LinkText onClick={() => setPage(0)}>ค้นหา</LinkText>}
         right={
           <>
-            <span className="text-[13px] text-gray-500">แสดง</span>
+            <span className="text-[12.5px] text-gray-500">แสดง</span>
             <select
               value={days}
               onChange={(e) => load(Number(e.target.value))}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
             </select>
@@ -360,7 +360,7 @@ export default function CoreCustomersPage() {
                 </p>
               )}
               {named.length === 0
-                ? <p className="text-[13px] text-gray-400">ยังไม่มีลูกค้าที่ระบุชื่อในช่วงนี้</p>
+                ? <p className="text-[12.5px] text-gray-400">ยังไม่มีลูกค้าที่ระบุชื่อในช่วงนี้</p>
                 : (() => {
                   const total = newC.length + repC.length || 1
                   const pctNew = Math.round((newC.length / total) * 1000) / 10
@@ -390,7 +390,7 @@ export default function CoreCustomersPage() {
                         style={{ background: color, width: `${totalSales ? Math.max(2, (v / totalSales) * 160) : 2}px` }} />
                     )
                     return (
-                      <div className="text-[13px] space-y-2">
+                      <div className="text-[12.5px] space-y-2">
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
                           {LAB_A} <b>{fmtMoney(salesNew)}</b> บาท {bar(salesNew, '#8ea8f8')}</p>
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
@@ -410,7 +410,7 @@ export default function CoreCustomersPage() {
                         )}
                         {/* ⚠️ ก้อน "อยู่นอก 500 รายแรก" คือ **ส่วนที่เหลือ** (ยอดทั้งช่วง ลบก้อนที่รู้)
                             ⇒ มันบวกครบเพราะวิธีคิด ไม่ใช่เพราะเราไปตรวจมา — เขียนให้ตรงตามนั้น */}
-                        <p className="text-[11px] text-gray-400 leading-relaxed max-w-[330px] pt-1">
+                        <p className="text-[11.5px] text-gray-400 leading-relaxed max-w-[330px] pt-1">
                           {totalSales !== null
                             ? <>ยอดทั้งช่วงที่ท่อนับให้ <b>{fmtMoney(totalSales)}</b> บาท ·
                               ก้อนสุดท้ายคือ<b>ส่วนที่เหลือ</b>จากยอดนั้น (ไม่ใช่เลขที่แยกกลุ่มมาแล้ว)</>
@@ -428,7 +428,7 @@ export default function CoreCustomersPage() {
                         <circle cx="50" cy="50" r="42" fill="none" stroke="#f2938c" strokeWidth="16"
                           strokeDasharray={`${(repC.length / total) * C} ${C}`} />
                       </svg>
-                      <div className="text-[13px] space-y-1.5">
+                      <div className="text-[12.5px] space-y-1.5">
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
                           {LAB_A}{' '}
                           <b>{newC.length.toLocaleString('th-TH')}</b> ราย ({pctNew}%)</p>
@@ -436,7 +436,7 @@ export default function CoreCustomersPage() {
                           {LAB_B}{' '}
                           <b>{repC.length.toLocaleString('th-TH')}</b> ราย ({pctRep}%)</p>
                         {unkC.length > 0 && (
-                          <p className="text-[12px] text-gray-500">
+                          <p className="text-[12.5px] text-gray-500">
                             <span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-300" />
                             ไม่ทราบสถานะ <b>{unkC.length.toLocaleString('th-TH')}</b> ราย
                             <span className="text-gray-400"> (หา firstDay ไม่ได้ — ไม่ได้อยู่ในวงกลม)</span>
@@ -452,7 +452,7 @@ export default function CoreCustomersPage() {
                           </p>
                         )}
                         {hasZortDef ? (
-                          <p className="text-[11px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
+                          <p className="text-[11.5px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
                             นิยามแบบ ZORT: &ldquo;ใหม่&rdquo; = ซื้อครั้งแรก(ทั้งประวัติ)อยู่ในช่วงที่เลือก
                             {historyFrom && (
                               <> · <b className="text-amber-700">ข้อมูลย้อนได้ถึง {thaiDate(historyFrom)}</b> —
@@ -460,7 +460,7 @@ export default function CoreCustomersPage() {
                             )}
                           </p>
                         ) : (
-                          <p className="text-[11px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
+                          <p className="text-[11.5px] text-gray-400 leading-relaxed max-w-[300px] pt-1">
                             นับเฉพาะช่วงที่เลือก — ZORT นับ &ldquo;ใหม่/ซื้อซ้ำ&rdquo; จากประวัติทั้งหมด
                             จึงเทียบตัวเลขกันตรง ๆ ไม่ได้ (นิยามคนละช่วงเวลา)
                           </p>
@@ -478,7 +478,7 @@ export default function CoreCustomersPage() {
               {monthly.length > 0
                 ? <TrendChart rows={monthly} />
                 : (
-                  <p className="text-[13px] text-gray-500 leading-relaxed">
+                  <p className="text-[12.5px] text-gray-500 leading-relaxed">
                     ZORT วาดกราฟลูกค้าใหม่/ซื้อซ้ำรายเดือน — ท่อยังไม่ส่งข้อมูลรายเดือนมา
                     {/* 🔴 ข้อความเดิมบอกให้ "รอ deploy รอบ 21:00" ซึ่งเป็นกฎที่ยกเลิกไปแล้ว (14 ก.ย. 2569)
                         ⚠️ **และรอบแรกผมแก้ผิดทาง** — เขียนว่า "ท่อยังไม่ส่ง ต้องไปถามฝั่งท่อ"
@@ -531,7 +531,7 @@ export default function CoreCustomersPage() {
             active={tab}
             onChange={(id) => { setTab(id as 'all' | 'a' | 'b'); setPage(0) }}
           />
-          <p className="text-[11px] text-gray-400 mt-1">
+          <p className="text-[11.5px] text-gray-400 mt-1">
             แท็บ &ldquo;ทั้งหมด&rdquo; รวมใบที่ไม่ระบุชื่อ
             {unkC.length > 0 && <> และคนที่ยังไม่ทราบสถานะอีก {unkC.length.toLocaleString('th-TH')} ราย</>}
             {' '}⇒ สองแท็บขวาบวกกันไม่เท่าแท็บแรก ·
@@ -546,7 +546,7 @@ export default function CoreCustomersPage() {
               ② **ปุ่มความละเอียดกราฟ วัน / เดือน / ไตรมาส / ปี** (ZORT มี 4 ปุ่มนี้ในจอนี้)
                  ของเราใช้ dropdown "ย้อนหลัง N" แทน ⇒ เลือก**ช่วง**ได้ แต่เปลี่ยน**ความละเอียด**ไม่ได้
               🔑 เขียนไว้เพราะของที่ไม่ถูกเอ่ยถึงจะถูกอ่านว่า "เทียบแล้วตรงกัน" */}
-          <p className="text-[11px] text-gray-500 mt-1.5 leading-relaxed">
+          <p className="text-[11.5px] text-gray-500 mt-1.5 leading-relaxed">
             ℹ️ <b>อีกสองชิ้นที่ ZORT มีในจอนี้แต่เรายังไม่มี</b> (วัด 4 ต.ค. 2569) —
             {' '}① ตาราง <b>&ldquo;จังหวัด / จำนวนลูกค้า&rdquo;</b> (เลือกดูเป็นจำนวนลูกค้า · จำนวนรายการ · มูลค่ารายการ)
             {' '}⇒ ท่อส่งที่อยู่ลูกค้ามาเป็นค่าว่างแทบทุกแถวและปิดบังไว้บางส่วน <b>จึงยังแยกจังหวัดไม่ได้</b>
@@ -591,7 +591,7 @@ export default function CoreCustomersPage() {
                       ) : p.name === NO_NAME ? (
                         <>
                           <span className="text-gray-900 font-medium">{p.name}</span>
-                          <span className="ml-1.5 text-[11px] text-gray-400">(หลายคนรวมกัน — เปิดดูรายคนไม่ได้)</span>
+                          <span className="ml-1.5 text-[11.5px] text-gray-400">(หลายคนรวมกัน — เปิดดูรายคนไม่ได้)</span>
                         </>
                       ) : (
                         <Link href={`/core/customers/detail?name=${encodeURIComponent(p.name)}`}
@@ -619,7 +619,7 @@ export default function CoreCustomersPage() {
 
             {/* แถบล่างแบบ ZORT: ซ้ายบอกจำนวน ขวาเลื่อนหน้า */}
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
-              <span className="text-[12px] text-gray-500">
+              <span className="text-[12.5px] text-gray-500">
                 แสดง {filtered.length === 0 ? 0 : (page * PER_PAGE + 1).toLocaleString('th-TH')}–
                 {Math.min((page + 1) * PER_PAGE, filtered.length).toLocaleString('th-TH')} จาก{' '}
                 {filtered.length.toLocaleString('th-TH')} ราย
@@ -634,7 +634,7 @@ export default function CoreCustomersPage() {
             </div>
           </TableWrap>
 
-          <p className="text-[11px] text-gray-400 mt-3 leading-relaxed">
+          <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
             ⚠️ ZORT มีคอลัมน์ <b>เลขประจำตัวผู้เสียภาษี · เบอร์โทรศัพท์ · อีเมล</b> แต่คลังเงาของเรา
             <b> ไม่ได้เก็บสามอย่างนี้ไว้</b> จึงไม่ใส่คอลัมน์เปล่าให้ดูเหมือนมีข้อมูล ·
             และจับลูกค้าด้วย<b>ชื่อที่บันทึกในออเดอร์</b> ไม่ใช่เบอร์โทร — ชื่อสะกดต่างกันจะนับเป็นคนละคน

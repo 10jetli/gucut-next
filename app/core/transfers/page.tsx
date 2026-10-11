@@ -322,7 +322,7 @@ export default function CoreTransfersPage() {
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             {/* โอนสินค้าจริงร้านทำที่เครื่องมือเดิมอยู่แล้ว ⇒ ปุ่มนี้พาไปของจริง ไม่ใช่หน้า soon */}
             <Link href="/catalog/index.html#trf"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               สร้างรายการโอนสินค้า
             </Link>
@@ -423,7 +423,7 @@ export default function CoreTransfersPage() {
                  ⚠️ วัดแล้ววันเดียวกัน: ท่อกรองทั้งสามจริง ⇒ ก้อนนี้เป็น **ตาข่ายเผื่ออนาคต**
                     ปกติจะไม่ขึ้นเลย · ขึ้นเมื่อไหร่แปลว่าท่อเปลี่ยนพฤติกรรม */}
           {ตัวกรองที่ท่อไม่ได้ใช้.length > 0 && (
-            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mt-1 leading-relaxed">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 mt-1 leading-relaxed">
               ⚠️ <b>ตัวกรองที่จอส่งกับที่ท่อใช้จริงไม่ตรงกัน</b> — {ตัวกรองที่ท่อไม่ได้ใช้.join(' · ')}
               <span className="block mt-0.5">
                 แถวที่เห็น<b>ไม่ได้ถูกกรองด้วยค่านั้น</b> ⇒ อาจมีของที่ไม่ตรงเงื่อนไขปนอยู่
@@ -435,7 +435,7 @@ export default function CoreTransfersPage() {
                  ตัวเลขบนแท็บมาจาก `byStatus` = ทั้งชุด (Success 11,975 · Voided 28 · Pending 2)
                  แต่แถวมาจากหน้าที่โหลดมา 50 ใบ ⇒ **ต้องเขียนว่าต่างกันตรงไหน ห้ามปล่อยเงียบ** */}
           {tab !== 'all' && !loadedAll && !ท่อกรองสถานะให้ && (
-            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-1 leading-relaxed">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-1 leading-relaxed">
               ⚠️ <b>ตัวเลขบนแท็บเป็นของทั้งชุด แต่แถวที่กรองได้มาจากหน้านี้เท่านั้น</b> —
               {/* 🔴 **ถ้อยคำหมดอายุ — แก้ 18 ก.ย. 2569 (งาน S4)**
                   เดิมเขียนตายว่า "ท่อยังไม่รับตัวกรองสถานะ (ยิงตรวจ 16 ก.ย.)" ⇒ วันที่ท่อเปิดให้ มันกลายเป็นเท็จ
@@ -461,7 +461,7 @@ export default function CoreTransfersPage() {
             const v = byStatus.find((x) => x.status === 'Voided')?.c
             if (typeof v !== 'number' || v === 0) return null
             return (
-              <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-1 leading-relaxed">
+              <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-1 leading-relaxed">
                 🗑 ในชุดนี้มี<b>ใบยกเลิก {v.toLocaleString('th-TH')} ใบ</b> รวมอยู่ในแท็บ &ldquo;ทั้งหมด&rdquo; ด้วย —
                 {' '}<b>ยังแยกดูเฉพาะใบยกเลิกไม่ได้</b> เพราะ<b>ท่อรุ่นที่วิ่งอยู่ตอนนี้</b>ยังไม่รับตัวกรองสถานะ
                 {' '}(ZORT มีตัวกรองนี้ · ขอไว้แล้ว) · ค้นด้วยเลขที่ใบจะตรงกว่า
@@ -551,7 +551,7 @@ export default function CoreTransfersPage() {
             </table>
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
-              <span className="text-[12px] text-gray-500">
+              <span className="text-[12.5px] text-gray-500">
                 แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
               </span>
               <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
@@ -578,7 +578,7 @@ export default function CoreTransfersPage() {
                  ⇒ สาเหตุ **ยังไม่ยืนยัน** · คำอธิบายย้ายไปอยู่ที่ `note` ของท่อ ซึ่งเป็นเจ้าของหลักฐาน
                  ⚠️ ห้ามเขียนสาเหตุฝังในจออีก — หลักฐานอยู่คนละที่กับข้อความ = วันหมดอายุมาถึงโดยไม่มีใครรู้
               ⚠️ ห้ามเขียนเลขของจอ ZORT (12,199) เป็นของเรา เพราะเรายังไม่มี 194 ใบนั้นจริง ๆ */}
-          <div className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
+          <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
             เก็บจาก API ของ ZORT ได้ <b>{fmtNum(data.total)}</b> ใบ
             {data.oldest && <> ({thaiDate(data.oldest)} – ปัจจุบัน)</>} ·
             จอ ZORT เองแสดงมากกว่านี้ <b>194 ใบ</b> (วัดซ้ำ 18 ก.ย. 2569 — ส่วนต่างเท่าเดิม ไม่ได้โตขึ้น)

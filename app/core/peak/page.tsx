@@ -127,7 +127,7 @@ export default function CorePeakPage() {
           <p className="text-[14px] font-bold text-gray-800">สถานะการเชื่อมต่อ</p>
         </div>
         <div className="px-4 py-4">
-          {!status && <p className="text-[13px] text-gray-500">กดปุ่ม &quot;ตรวจการเชื่อมต่อ&quot; ด้านบน — ไม่สร้างเอกสารอะไรทั้งนั้น</p>}
+          {!status && <p className="text-[12.5px] text-gray-500">กดปุ่ม &quot;ตรวจการเชื่อมต่อ&quot; ด้านบน — ไม่สร้างเอกสารอะไรทั้งนั้น</p>}
           {status && (
             <div className="space-y-2">
               <div className="flex items-center gap-3">
@@ -208,7 +208,7 @@ export default function CorePeakPage() {
           <div className="flex items-center gap-2">
             <input
               type="date" value={day} onChange={(e) => setDay(e.target.value)}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5"
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5"
             />
             <BtnPrimary onClick={runDry} disabled={!!busy}>
               {busy === 'dry' ? 'กำลังซ้อม…' : 'ซ้อมวันนี้'}
@@ -219,12 +219,12 @@ export default function CorePeakPage() {
         <div className="px-4 py-4">
           {busy === 'dry' && !dry && <LoadingState />}
           {!dry && busy !== 'dry' && (
-            <p className="text-[13px] text-gray-500">
+            <p className="text-[12.5px] text-gray-500">
               เลือกวันแล้วกดซ้อม — ระบบจะแปลงออเดอร์ของวันนั้นเป็นใบแจ้งหนี้แล้วบอกว่าแปลงได้กี่ใบ
               ข้อมูลไม่ครบกี่ใบ <b>โดยไม่ส่งอะไรเข้า PEAK</b> · ซ้อมได้แม้ยังไม่มีคีย์
             </p>
           )}
-          {peak?.skip && <p className="text-[13px] text-gray-500">{peak.skip}</p>}
+          {peak?.skip && <p className="text-[12.5px] text-gray-500">{peak.skip}</p>}
 
           {/* ⚠️ ขอบเขตต้องอยู่ **เหนือ**ตัวเลข ไม่ใช่เชิงอรรถใต้ตาราง — คนอ่านเลขก่อนเสมอ */}
           {dry?.scopeNote && (
@@ -245,16 +245,16 @@ export default function CorePeakPage() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
                 <div className="border border-gray-200 rounded px-3 py-2.5">
                   <p className="text-[11.5px] text-gray-400">ออเดอร์วันที่ {thaiDate(dry?.day)}</p>
-                  <p className="text-[18px] font-bold text-gray-900">{fmtNum(dry?.orders ?? 0)} <span className="text-[12px] font-normal text-gray-400">ใบ</span></p>
+                  <p className="text-[18px] font-bold text-gray-900">{fmtNum(dry?.orders ?? 0)} <span className="text-[12.5px] font-normal text-gray-400">ใบ</span></p>
                 </div>
                 <div className="border border-gray-200 rounded px-3 py-2.5">
                   <p className="text-[11.5px] text-gray-400">แปลงเป็นใบแจ้งหนี้ได้</p>
-                  <p className="text-[18px] font-bold text-emerald-600">{fmtNum(peak.count ?? 0)} <span className="text-[12px] font-normal text-gray-400">ใบ</span></p>
+                  <p className="text-[18px] font-bold text-emerald-600">{fmtNum(peak.count ?? 0)} <span className="text-[12.5px] font-normal text-gray-400">ใบ</span></p>
                 </div>
                 <div className="border border-gray-200 rounded px-3 py-2.5">
                   <p className="text-[11.5px] text-gray-400">ข้อมูลไม่ครบ</p>
                   <p className={`text-[18px] font-bold ${(peak.incomplete ?? 0) > 0 ? 'text-red-500' : 'text-gray-900'}`}>
-                    {fmtNum(peak.incomplete ?? 0)} <span className="text-[12px] font-normal text-gray-400">ใบ</span>
+                    {fmtNum(peak.incomplete ?? 0)} <span className="text-[12.5px] font-normal text-gray-400">ใบ</span>
                   </p>
                 </div>
               </div>
@@ -268,7 +268,7 @@ export default function CorePeakPage() {
 
               {sample && (
                 <>
-                  <p className="text-[13px] font-semibold text-gray-700 mb-2">ตัวอย่างใบแรกที่แปลงได้</p>
+                  <p className="text-[12.5px] font-semibold text-gray-700 mb-2">ตัวอย่างใบแรกที่แปลงได้</p>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 mb-3">
                     <div className="flex gap-3 py-1">
                       <span className="text-[12.5px] text-gray-500 w-[110px] shrink-0">วันที่</span>
@@ -322,7 +322,7 @@ export default function CorePeakPage() {
                           </tr>
                         ))}
                         {(sample.products ?? []).length === 0 && (
-                          <tr><td colSpan={4} className="px-3 py-5 text-[13px] text-gray-400 text-center">ใบตัวอย่างไม่มีรายการสินค้า</td></tr>
+                          <tr><td colSpan={4} className="px-3 py-5 text-[12.5px] text-gray-400 text-center">ใบตัวอย่างไม่มีรายการสินค้า</td></tr>
                         )}
                       </tbody>
                     </table>

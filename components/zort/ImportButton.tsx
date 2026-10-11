@@ -28,7 +28,7 @@ export default function ImportButton({ kind }: { kind: string }) {
   if (!(SUPPORTED as readonly string[]).includes(kind)) return null
   return (
     <Link href={`/core/import?kind=${kind}`}
-      className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+      className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
       นำเข้าไฟล์ (Excel)
     </Link>
   )

@@ -127,7 +127,7 @@ function ขอบเขต({ s }: { s: LiveSide }) {
 
 function ตารางแถว({ rows }: { rows: Row[] }) {
   if (!rows.length) {
-    return <p className="text-[12px] text-gray-500">ท่อไม่ได้ส่งแถวมาในรอบนี้ — <b>ไม่ได้แปลว่าไม่มีรายการ</b></p>
+    return <p className="text-[12.5px] text-gray-500">ท่อไม่ได้ส่งแถวมาในรอบนี้ — <b>ไม่ได้แปลว่าไม่มีรายการ</b></p>
   }
   /* คอลัมน์มาจากคีย์ที่ **มีจริงในแถว** ไม่ใช่รายการที่เราพิมพ์ไว้
      ⇒ ท่อเพิ่มช่องใหม่แล้วจอเห็นทันที (คลาสเดียวกับ "รายชื่อของที่จะตรวจต้องถูกสร้าง ไม่ใช่พิมพ์") */
@@ -227,29 +227,29 @@ export default function MkpFinancePage() {
         <div className="space-y-4">
           {/* 🚫 ประโยคของท่อเอง — ขึ้นบนสุดก่อนตัวเลขทุกตัว */}
           {ห้ามบวก && (
-            <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 leading-relaxed">
+            <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 leading-relaxed">
               🚫 <b>ห้ามบวกยอดข้ามตาราง</b> — {ห้ามบวก}
             </div>
           )}
 
           {/* ── แหล่งที่ 1: กระจกในฐาน ── */}
           <section>
-            <h2 className="text-[13px] font-semibold text-gray-700 mb-1">
+            <h2 className="text-[12.5px] font-semibold text-gray-700 mb-1">
               ① เก็บลงฐานแล้วเท่าไหร่ <span className="font-normal text-gray-500">(กระจก D1 · นับได้ทั้งกอง)</span>
             </h2>
             {!mirror ? (
-              <p className="text-[12px] text-gray-500">อ่านกระจกไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าฐานว่าง</b></p>
+              <p className="text-[12.5px] text-gray-500">อ่านกระจกไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าฐานว่าง</b></p>
             ) : (
               <div className="grid gap-2 md:grid-cols-3">
                 {ตารางกระจก.map(([ชื่อ, t]) => (
-                  <div key={ชื่อ} className="border border-gray-200 rounded-md px-3 py-2.5 text-[12px] leading-relaxed">
+                  <div key={ชื่อ} className="border border-gray-200 rounded-md px-3 py-2.5 text-[12.5px] leading-relaxed">
                     <p className="font-semibold text-gray-800">{t?.platform ?? '—'}</p>
-                    <p className="text-[11px] font-mono text-gray-400">{ชื่อ}</p>
+                    <p className="text-[11.5px] font-mono text-gray-400">{ชื่อ}</p>
                     {/* 🔑 ระดับข้อมูลต้องติดทุกใบ — เป็นคำที่ตัดสินว่ายอดเอาไปบวกกันได้ไหม */}
                     <p className="text-gray-600 mt-1">
                       ระดับข้อมูล: <b>{t?.grain ?? '—'}</b>
                       {t?.grain && GRAIN_TH[t.grain] && (
-                        <span className="block text-[11px] text-gray-500">{GRAIN_TH[t.grain]}</span>
+                        <span className="block text-[11.5px] text-gray-500">{GRAIN_TH[t.grain]}</span>
                       )}
                     </p>
                     <p className="text-gray-700 mt-1">
@@ -258,10 +258,10 @@ export default function MkpFinancePage() {
                     <p className="text-gray-600">
                       ช่วงวัน {t?.['วันแรก'] ? thaiDate(t['วันแรก']!) : '—'} – {t?.['วันล่าสุด'] ? thaiDate(t['วันล่าสุด']!) : '—'}
                     </p>
-                    <p className="text-gray-500 text-[11px]">
+                    <p className="text-gray-500 text-[11.5px]">
                       กุญแจกันซ้ำ: {t?.['กุญแจ']?.length ? t['กุญแจ']!.join(' + ') : '—'}
                     </p>
-                    <p className="text-gray-500 text-[11px]">
+                    <p className="text-gray-500 text-[11.5px]">
                       ซิงก์ล่าสุด {t?.['ซิงก์ล่าสุด'] ? new Date(t['ซิงก์ล่าสุด']!).toLocaleString('th-TH') : '—'}
                     </p>
                   </div>
@@ -272,12 +272,12 @@ export default function MkpFinancePage() {
 
           {/* ── แหล่งที่ 2: อ่านสด ── */}
           <section>
-            <h2 className="text-[13px] font-semibold text-gray-700 mb-1">
+            <h2 className="text-[12.5px] font-semibold text-gray-700 mb-1">
               ② อ่านสดจากแพลตฟอร์มเดี๋ยวนี้{' '}
               <span className="font-normal text-gray-500">(ยังไม่ได้เขียนลงฐาน — เลขไม่ตรงกับ ① ได้ และไม่ใช่บั๊ก)</span>
             </h2>
             {!live ? (
-              <p className="text-[12px] text-gray-500">อ่านสดไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าไม่มีรายการ</b></p>
+              <p className="text-[12.5px] text-gray-500">อ่านสดไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าไม่มีรายการ</b></p>
             ) : (
               <>
                 {/* ข้อจำกัดของ "การไล่หน้า" ต้องขึ้นก่อนตาราง ไม่ใช่ใต้ตาราง */}
@@ -306,7 +306,7 @@ export default function MkpFinancePage() {
                         </span>
                       </p>
                       {s.error ? (
-                        <p className="text-[12px] text-red-700 mt-1">อ่านเจ้านี้ไม่ได้: {s.error} <b>(อ่านไม่ได้ ≠ ไม่มีรายการ)</b></p>
+                        <p className="text-[12.5px] text-red-700 mt-1">อ่านเจ้านี้ไม่ได้: {s.error} <b>(อ่านไม่ได้ ≠ ไม่มีรายการ)</b></p>
                       ) : (
                         <div className="mt-1.5">
                           <ขอบเขต s={s} />
@@ -320,7 +320,7 @@ export default function MkpFinancePage() {
             )}
           </section>
 
-          <p className="text-[11px] text-gray-400 leading-relaxed">
+          <p className="text-[11.5px] text-gray-400 leading-relaxed">
             จอนี้ดูอย่างเดียว — การดึงข้อมูลรอบใหม่ (`mkpfinancesync`) เป็นเส้นที่ <b>เขียนลงฐาน</b>{' '}
             จึงไม่มีปุ่มบนจอโดยตั้งใจ · ท่อประกาศเองว่าเส้นไหนอ่าน เส้นไหนเขียนที่ <code>?endpoints=1</code>
           </p>

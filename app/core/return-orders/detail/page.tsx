@@ -66,7 +66,7 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12px] mb-2"><Link href="/core/return-orders" className="text-blue-600 hover:underline">‹ รับคืนสินค้า</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/return-orders" className="text-blue-600 hover:underline">‹ รับคืนสินค้า</Link></p>
       <PageHead title={`ใบคืนสินค้า ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก</span>}
         actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
@@ -77,7 +77,7 @@ function Inner() {
       {error && why && (
         <ErrorBox title={why.title}>
           {why.text}
-          <br /><span className="text-[12px] text-gray-700">⇒ {why.next}</span>
+          <br /><span className="text-[12.5px] text-gray-700">⇒ {why.next}</span>
           {why.raw && why.raw !== why.text && (
             <><br /><span className="text-[11.5px] text-gray-500">ข้อความจากระบบ: {why.raw}</span></>
           )}
@@ -112,18 +112,18 @@ function Inner() {
       {!loading && !error && d && !wrongLevel && (
         <>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
-            <div><p className="text-gray-400 text-[11px]">สถานะ</p>
+            <div><p className="text-gray-400 text-[11.5px]">สถานะ</p>
               {d.status ? <Pill tone={toneOfStatus(d.status)}>{zortWord(RETURN_ORDER_STATUS, d.status).text}</Pill> : <span className="text-gray-300">—</span>}</div>
-            <div><p className="text-gray-400 text-[11px]">วันที่คืน</p>
+            <div><p className="text-gray-400 text-[11.5px]">วันที่คืน</p>
               {d.date ? thaiDate(d.date) : <span className="text-gray-300">—</span>}</div>
-            <div><p className="text-gray-400 text-[11px]">ลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
-            <div><p className="text-gray-400 text-[11px]">อ้างอิง (ใบขายเดิม)</p>
-              {d.reference ? <span className="font-mono text-[12px]">{d.reference}</span> : <span className="text-gray-300">—</span>}</div>
+            <div><p className="text-gray-400 text-[11.5px]">ลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
+            <div><p className="text-gray-400 text-[11.5px]">อ้างอิง (ใบขายเดิม)</p>
+              {d.reference ? <span className="font-mono text-[12.5px]">{d.reference}</span> : <span className="text-gray-300">—</span>}</div>
           </div>
 
           {/* ⚠️ ยอดใบ: ท่อยังไม่ตั้งชื่อช่องให้ ⇒ แสดงทุกช่องที่มีค่าและเขียนบอกตรง ๆ ว่าจอไม่เดา */}
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
-            <p className="text-[13px] font-semibold text-gray-800 mb-1">ช่องเงินที่ ZORT เก็บไว้ (ทุกช่องที่มีค่า)</p>
+            <p className="text-[12.5px] font-semibold text-gray-800 mb-1">ช่องเงินที่ ZORT เก็บไว้ (ทุกช่องที่มีค่า)</p>
             <p className="text-[11.5px] text-gray-400 mb-2">
               {/* 🔴 **จอรายการกับจอนี้เคยตอบคนละอย่างเรื่องเดียวกัน** (เจอกับของจริง 14 ก.ย. 2569)
                   จอรายการโชว์คอลัมน์ "มูลค่า" อย่างมั่นใจ (ใช้ช่อง amount) และบวกเป็นยอดรวมด้วย
@@ -142,12 +142,12 @@ function Inner() {
             {money && Object.keys(money).length > 0 ? (
               <dl className="grid grid-cols-2 md:grid-cols-3 gap-2 text-[12.5px]">
                 {Object.entries(money).map(([k, v]) => (
-                  <div key={k}><dt className="text-gray-400 text-[11px] font-mono">{k}</dt>
+                  <div key={k}><dt className="text-gray-400 text-[11.5px] font-mono">{k}</dt>
                     <dd className="tabular-nums">{fmtVal(v)}</dd></div>
                 ))}
               </dl>
             ) : (
-              <p className="text-[12px] text-gray-400">ไม่มีช่องเงินที่มีค่าติดมากับใบนี้</p>
+              <p className="text-[12.5px] text-gray-400">ไม่มีช่องเงินที่มีค่าติดมากับใบนี้</p>
             )}
           </div>
 
@@ -159,7 +159,7 @@ function Inner() {
             <p className="text-[12.5px] text-gray-400">ใบนี้ไม่มีบรรทัดสินค้า</p>
           ) : (
             <>
-              <p className="text-[13px] font-semibold text-gray-800 mb-2">สินค้าที่คืน ({d.lines.length})</p>
+              <p className="text-[12.5px] font-semibold text-gray-800 mb-2">สินค้าที่คืน ({d.lines.length})</p>
               <TableWrap>
                 <table className="w-full min-w-[480px]">
                   <thead className="bg-white border-b border-gray-200">
@@ -172,7 +172,7 @@ function Inner() {
                     {d.lines.map((l, i) => (
                       <tr key={`${l.sku ?? ''}-${i}`} className="border-b border-[#e8ecf8] last:border-0">
                         {/* รหัสสินค้ากดเข้าหน้าสินค้าได้ — ปลายทางรับ sku ตรง ๆ (ไม่ต้องหา id) */}
-                        <td className={`${TD} font-mono text-[12px]`}>
+                        <td className={`${TD} font-mono text-[12.5px]`}>
                           {l.sku
                             ? <Link href={`/core/stock/${encodeURIComponent(l.sku)}`}
                                 className="text-blue-600 hover:underline">{l.sku}</Link>
@@ -188,13 +188,13 @@ function Inner() {
               </TableWrap>
 
               <details className="mt-3">
-                <summary className="text-[12px] text-gray-500 cursor-pointer">ดูทุกช่องดิบที่ ZORT ส่งมา (ไว้ไล่ปัญหา)</summary>
+                <summary className="text-[12.5px] text-gray-500 cursor-pointer">ดูทุกช่องดิบที่ ZORT ส่งมา (ไว้ไล่ปัญหา)</summary>
                 <div className="mt-2 space-y-2">
                   {d.lines.map((l, i) => (
                     <div key={i} className="bg-white border border-gray-200 rounded-md p-3">
-                      <dl className="flex flex-wrap gap-x-4 gap-y-1 text-[12px]">
+                      <dl className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
                         {Object.entries(l['ทุกช่องในบรรทัด'] ?? {}).map(([k, v]) => (
-                          <div key={k}><dt className="inline text-gray-400 font-mono text-[10.5px]">{k}:</dt>{' '}
+                          <div key={k}><dt className="inline text-gray-400 font-mono text-[10px]">{k}:</dt>{' '}
                             <dd className="inline text-gray-800">{fmtVal(v)}</dd></div>
                         ))}
                       </dl>
@@ -205,7 +205,7 @@ function Inner() {
             </>
           )}
 
-          <p className="text-[11px] text-gray-400 mt-3">
+          <p className="text-[11.5px] text-gray-400 mt-3">
             ช่องทั้งหมดที่ ZORT ส่งมากับหัวใบ: <span className="font-mono">{(d.fields ?? []).join(', ') || 'ไม่ทราบ'}</span>
           </p>
         </>

@@ -106,11 +106,11 @@ export default function ZortClaimsPage() {
 
       {!loading && !error && d?.inconclusive && (
         /* 🔴 กล่องนี้ต้องกินทั้งจอ ห้ามมีอะไรที่ดูเหมือน "ผ่าน" อยู่ข้าง ๆ */
-        <div className="text-[13px] text-amber-900 bg-amber-50 border-2 border-amber-400 rounded-md px-4 py-3 leading-relaxed">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border-2 border-amber-400 rounded-md px-4 py-3 leading-relaxed">
           ⚠️ <b>ตรวจไม่ได้รอบนี้ — ผลทั้งชุดแปลไม่ได้</b>
           <p className="mt-1.5">{d.why}</p>
           {d.controls && (
-            <p className="mt-1.5 text-[12px] font-mono text-amber-800">
+            <p className="mt-1.5 text-[12.5px] font-mono text-amber-800">
               ตัวควบคุม: {Object.entries(d.controls).map(([k, v]) => `${k} → ${v}`).join(' · ')}
             </p>
           )}
@@ -123,7 +123,7 @@ export default function ZortClaimsPage() {
 
       {!loading && !error && d && !d.inconclusive && (
         <>
-          <div className={`text-[13px] rounded-md px-4 py-3 mb-3 leading-relaxed border ${
+          <div className={`text-[12.5px] rounded-md px-4 py-3 mb-3 leading-relaxed border ${
             broke.length || gone.length
               ? 'text-red-900 bg-red-50 border-red-300'
               : 'text-emerald-900 bg-emerald-50 border-emerald-300'
@@ -148,14 +148,14 @@ export default function ZortClaimsPage() {
               <p className="text-[14px] font-semibold text-gray-800 mb-1.5">
                 เคยเขียนว่า &ldquo;ไม่มี&rdquo; แต่ตอนนี้มีแล้ว ({broke.length})
               </p>
-              <p className="text-[12px] text-gray-600 mb-2">
+              <p className="text-[12.5px] text-gray-600 mb-2">
                 🔴 <b>ข้อความในโค้ดกลายเป็นเท็จ</b> — และมันไม่พังอะไรเลย จึงไม่มีอะไรฟ้อง
                 ถ้าไม่มีจอนี้
               </p>
               {broke.map((c, i) => (
                 <div key={i} className="bg-white border border-red-200 rounded-md p-3 mb-2">
-                  <p className="text-[13.5px] font-medium text-gray-900">{c.what}</p>
-                  <p className="text-[12px] text-gray-600 font-mono mt-0.5">{c.endpoint}</p>
+                  <p className="text-[12.5px] font-medium text-gray-900">{c.what}</p>
+                  <p className="text-[12.5px] text-gray-600 font-mono mt-0.5">{c.endpoint}</p>
                   {c.at && <p className="text-[11.5px] text-gray-400 mt-0.5">เขียนไว้เมื่อ {thaiDate(c.at)}</p>}
                 </div>
               ))}
@@ -167,13 +167,13 @@ export default function ZortClaimsPage() {
               <p className="text-[14px] font-semibold text-gray-800 mb-1.5">
                 เคยเขียนว่า &ldquo;มี&rdquo; แต่ตอนนี้หายไป ({gone.length})
               </p>
-              <p className="text-[12px] text-gray-600 mb-2">
+              <p className="text-[12.5px] text-gray-600 mb-2">
                 ⚠️ ของที่เราวางแผนจะใช้หายไป — <b>ต้องรู้ก่อนเริ่มทำ</b> ไม่ใช่รู้ตอนต่อท่อแล้วพัง
               </p>
               {gone.map((c, i) => (
                 <div key={i} className="bg-white border border-amber-200 rounded-md p-3 mb-2">
-                  <p className="text-[13.5px] font-medium text-gray-900">{c.what}</p>
-                  <p className="text-[12px] text-gray-600 font-mono mt-0.5">{c.endpoint}</p>
+                  <p className="text-[12.5px] font-medium text-gray-900">{c.what}</p>
+                  <p className="text-[12.5px] text-gray-600 font-mono mt-0.5">{c.endpoint}</p>
                   {c.at && <p className="text-[11.5px] text-gray-400 mt-0.5">เขียนไว้เมื่อ {thaiDate(c.at)}</p>}
                 </div>
               ))}
@@ -184,7 +184,7 @@ export default function ZortClaimsPage() {
             /* 🔴 ต้องขึ้นเสมอ — เส้นที่ยิงไม่ถึงคือเส้นที่ "ยังไม่รู้" ไม่ใช่เส้นที่ผ่าน
                กลืนทิ้งเมื่อไหร่ จอจะบอกว่าตรวจครบทั้งที่ตรวจไม่ครบ */
             <div className="bg-gray-50 border border-gray-200 rounded-md p-3.5">
-              <p className="text-[13px] font-semibold text-gray-700 mb-1">
+              <p className="text-[12.5px] font-semibold text-gray-700 mb-1">
                 ยิงไม่ถึง {unknown.length} เส้น — <b>ยังไม่รู้ผล ไม่ใช่ผ่าน</b>
               </p>
               <p className="text-[11.5px] text-gray-500 font-mono break-words">{unknown.join(' · ')}</p>
@@ -195,8 +195,8 @@ export default function ZortClaimsPage() {
 
       {!loading && !d && !notDeployed && !error && (
         <div className="bg-white border border-gray-200 rounded-md px-4 py-6 text-center">
-          <p className="text-[13.5px] text-gray-600">กด <b>ตรวจเดี๋ยวนี้</b> เพื่อยิงของจริงไปเทียบ</p>
-          <p className="text-[12px] text-gray-400 mt-1">
+          <p className="text-[12.5px] text-gray-600">กด <b>ตรวจเดี๋ยวนี้</b> เพื่อยิงของจริงไปเทียบ</p>
+          <p className="text-[12.5px] text-gray-400 mt-1">
             ใช้เวลาหลายวินาที เพราะยิงทีละเส้นจริง ๆ · ไม่สร้างข้อมูลอะไรใน ZORT
           </p>
         </div>

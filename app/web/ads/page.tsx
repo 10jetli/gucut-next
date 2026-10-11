@@ -71,11 +71,11 @@ function SrcBlock({ title, s }: { title: string; s: Src }) {
   return (
     <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
       <div className="flex items-center gap-2 px-4 md:px-5 pt-4 pb-2">
-        <p className="text-[13px] font-black text-gray-900">{title}</p>
+        <p className="text-[12.5px] font-black text-gray-900">{title}</p>
         {s.off ? <span className="rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-400">ยังไม่เปิด</span>
           : s.ok ? <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-bold text-emerald-600">ต่อได้</span>
           : <span className="rounded-full bg-red-50 px-2 py-0.5 text-[10px] font-bold text-red-500">มีปัญหา</span>}
-        {s.via && <span className="text-[10.5px] text-gray-300">ผ่าน{s.via === 'script' ? 'สคริปต์' : s.via}{s.pushedAt ? ` · ${when(s.pushedAt)}` : ''}</span>}
+        {s.via && <span className="text-[10px] text-gray-300">ผ่าน{s.via === 'script' ? 'สคริปต์' : s.via}{s.pushedAt ? ` · ${when(s.pushedAt)}` : ''}</span>}
       </div>
       {s.error && <p className="px-5 pb-2 text-[11.5px] text-red-500">{s.error}</p>}
       {(s.rows || []).length > 0 && (
@@ -88,9 +88,9 @@ function SrcBlock({ title, s }: { title: string; s: Src }) {
               <div key={i} className="md:grid md:grid-cols-[1fr_90px_70px_90px_60px] flex flex-wrap items-center gap-x-2 px-4 md:px-5 py-2">
                 <span className="text-[12.5px] text-gray-700 truncate">{r.name}</span>
                 <span className="text-[12.5px] font-bold text-gray-900 md:text-right tabular-nums">{baht(r.spend)}</span>
-                <span className="text-[12px] text-gray-400 md:text-right tabular-nums">{r.clicks.toLocaleString('th-TH')}</span>
+                <span className="text-[12.5px] text-gray-400 md:text-right tabular-nums">{r.clicks.toLocaleString('th-TH')}</span>
                 <span className="text-[12.5px] text-emerald-600 font-semibold md:text-right tabular-nums">{r.revenue ? baht(r.revenue) : '—'}</span>
-                <span className={`text-[12px] font-bold md:text-right tabular-nums ${r.spend && r.revenue / r.spend >= 1 ? 'text-emerald-600' : 'text-gray-400'}`}>
+                <span className={`text-[12.5px] font-bold md:text-right tabular-nums ${r.spend && r.revenue / r.spend >= 1 ? 'text-emerald-600' : 'text-gray-400'}`}>
                   {r.spend ? (r.revenue / r.spend).toFixed(1) : '—'}
                 </span>
               </div>
@@ -98,9 +98,9 @@ function SrcBlock({ title, s }: { title: string; s: Src }) {
             <div className="md:grid md:grid-cols-[1fr_90px_70px_90px_60px] flex flex-wrap items-center gap-x-2 px-4 md:px-5 py-2 bg-gray-50/60">
               <span className="text-[12.5px] font-black text-gray-900">รวม</span>
               <span className="text-[12.5px] font-black text-gray-900 md:text-right tabular-nums">{baht(total.spend)}</span>
-              <span className="text-[12px] text-gray-500 md:text-right tabular-nums">{total.clicks.toLocaleString('th-TH')}</span>
+              <span className="text-[12.5px] text-gray-500 md:text-right tabular-nums">{total.clicks.toLocaleString('th-TH')}</span>
               <span className="text-[12.5px] font-black text-emerald-600 md:text-right tabular-nums">{baht(total.revenue)}</span>
-              <span className="text-[12px] font-black md:text-right tabular-nums">{total.spend ? (total.revenue / total.spend).toFixed(1) : '—'}</span>
+              <span className="text-[12.5px] font-black md:text-right tabular-nums">{total.spend ? (total.revenue / total.spend).toFixed(1) : '—'}</span>
             </div>
           </div>
         </>
@@ -155,49 +155,49 @@ export default function WebAdsPage() {
     <div className="space-y-4 max-w-3xl">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">ค่าโฆษณา vs ยอดขายจริง</h1>
         </div>
         <select value={days} onChange={(e) => setDays(Number(e.target.value))}
-          className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-[13px] shadow-sm outline-none">
+          className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-[12.5px] shadow-sm outline-none">
           <option value={7}>7 วันล่าสุด</option><option value={14}>14 วัน</option><option value={30}>30 วัน</option>
         </select>
         <button onClick={() => run()} disabled={busy}
-          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
+          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-50">
           {busy ? 'กำลังดึงข้อมูล…' : 'ดึงรายงาน'}
         </button>
       </div>
-      {msg && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{msg}</p>}
+      {msg && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">{msg}</p>}
 
       {rep && (
         <>
           <div className="grid grid-cols-2 xl:grid-cols-4 gap-4">
             <div className="bg-white rounded-2xl border border-gray-100/80 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">จ่ายค่าโฆษณา</p>
+              <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">จ่ายค่าโฆษณา</p>
               <p className="text-[26px] font-black text-gray-900 mt-1 tabular-nums leading-none">{baht(rep.spend)}</p>
-              <p className="text-[11px] text-gray-400 mt-1.5">FB {baht(rep.spendBy.fb)} · Google {baht(rep.spendBy.google)}</p>
+              <p className="text-[11.5px] text-gray-400 mt-1.5">FB {baht(rep.spendBy.fb)} · Google {baht(rep.spendBy.google)}</p>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100/80 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ยอดขายเว็บจริง</p>
+              <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">ยอดขายเว็บจริง</p>
               <p className="text-[26px] font-black text-emerald-600 mt-1 tabular-nums leading-none">{rep.sales ? baht(rep.sales.revenue) : '—'}</p>
-              <p className="text-[11px] text-gray-400 mt-1.5">{rep.sales ? `${rep.sales.orders} ออเดอร์ · ค้างจ่าย ${rep.sales.pending}` : ''}</p>
+              <p className="text-[11.5px] text-gray-400 mt-1.5">{rep.sales ? `${rep.sales.orders} ออเดอร์ · ค้างจ่าย ${rep.sales.pending}` : ''}</p>
             </div>
             <div className="bg-white rounded-2xl border border-gray-100/80 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ROAS รวม</p>
+              <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">ROAS รวม</p>
               <p className={`text-[26px] font-black mt-1 tabular-nums leading-none ${rep.roas !== null && rep.roas >= 1 ? 'text-emerald-600' : 'text-red-500'}`}>
                 {rep.roas !== null ? rep.roas.toFixed(2) : '—'}
               </p>
-              <p className="text-[11px] text-gray-400 mt-1.5">ยอดขาย ÷ ค่าโฆษณา (เกิน 1 = คุ้ม)</p>
+              <p className="text-[11.5px] text-gray-400 mt-1.5">ยอดขาย ÷ ค่าโฆษณา (เกิน 1 = คุ้ม)</p>
               {/* คำเตือนต้องอยู่**ติดกับตัวเลขที่มันเตือน** ไม่ใช่ในกล่องอื่นที่ต้องเลื่อนไปหา
                   (บทเรียน 18 ก.ย. 2569: คำเตือนที่ต้องไปหาถึงจะเห็น เท่ากับไม่มีสำหรับคนที่กำลังอ่านตัวเลข) */}
               {(() => {
                 const ชม = scriptSilentHours(cfg?.google?.pushedAt)
                 if (ชม === null || ชม <= SCRIPT_GRACE_HOURS) return null
-                return <p className="text-[11px] text-amber-800 mt-1 font-semibold">⚠️ ตัวหารไม่ครบ — ค่าโฆษณาหยุดอัปเดตมา {ชม} ชม.</p>
+                return <p className="text-[11.5px] text-amber-800 mt-1 font-semibold">⚠️ ตัวหารไม่ครบ — ค่าโฆษณาหยุดอัปเดตมา {ชม} ชม.</p>
               })()}
             </div>
             <div className="bg-white rounded-2xl border border-gray-100/80 p-4 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]">
-              <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">ช่วงเวลา</p>
+              <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">ช่วงเวลา</p>
               <p className="text-[15px] font-black text-gray-900 mt-1 leading-tight">{rep.range.since}<br />→ {rep.range.until}</p>
             </div>
           </div>
@@ -210,8 +210,8 @@ export default function WebAdsPage() {
       {cfg && (
         <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] p-4 md:p-5">
           <div className="flex items-center gap-2">
-            <p className="flex-1 text-[13px] font-black text-gray-900">สคริปต์ส่งตัวเลขจาก Google Ads</p>
-            <button onClick={() => setShowScript(!showScript)} className="text-[12px] font-semibold text-blue-600">{showScript ? 'ซ่อน' : 'ดูสคริปต์'}</button>
+            <p className="flex-1 text-[12.5px] font-black text-gray-900">สคริปต์ส่งตัวเลขจาก Google Ads</p>
+            <button onClick={() => setShowScript(!showScript)} className="text-[12.5px] font-semibold text-blue-600">{showScript ? 'ซ่อน' : 'ดูสคริปต์'}</button>
           </div>
           <p className="text-[11.5px] text-gray-400 mt-1">
             Google ส่งล่าสุด {cfg.google.pushedAt ? `${when(cfg.google.pushedAt)} · ${cfg.google.pushRows} แถว ${cfg.google.pushDays} วัน` : 'ยังไม่เคยส่งเข้ามา'}
@@ -224,7 +224,7 @@ export default function WebAdsPage() {
             const ชม = scriptSilentHours(cfg.google.pushedAt)
             if (ชม === null || ชม <= SCRIPT_GRACE_HOURS) return null
             return (
-              <p className="mt-2 text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2 leading-relaxed">
+              <p className="mt-2 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-xl px-3 py-2 leading-relaxed">
                 ⚠️ <b>ไม่มีข้อมูลเข้ามา {ชม} ชั่วโมงแล้ว</b> — สคริปต์ใน Google Ads อาจถูกปิดหรือหมดสิทธิ์
                 <span className="block mt-0.5">
                   ⇒ ค่าโฆษณาที่ใช้คิดข้างบน<b>ต่ำกว่าจริง</b> ⇒ <b>ROAS จะดูดีเกินจริง</b> อย่าเพิ่งเอาไปตัดสินใจเพิ่มงบ
@@ -234,7 +234,7 @@ export default function WebAdsPage() {
           })()}
           {showScript && (
             <>
-              <pre className="mt-3 max-h-64 overflow-auto rounded-xl bg-gray-900 p-3 text-[10.5px] leading-relaxed text-emerald-200"><code>{adsScript(cfg.google.pushKey)}</code></pre>
+              <pre className="mt-3 max-h-64 overflow-auto rounded-xl bg-gray-900 p-3 text-[10px] leading-relaxed text-emerald-200"><code>{adsScript(cfg.google.pushKey)}</code></pre>
               <button onClick={() => { navigator.clipboard?.writeText(adsScript(cfg.google.pushKey)).then(() => { setCopied(true); setTimeout(() => setCopied(false), 2000) }).catch(() => {}) }}
                 className="mt-2 rounded-xl border border-gray-200 bg-white px-4 py-2 text-[12.5px] font-semibold text-gray-600 hover:bg-gray-50">
                 {copied ? 'คัดลอกแล้ว ✓' : 'คัดลอกสคริปต์'}
@@ -243,7 +243,7 @@ export default function WebAdsPage() {
           )}
         </div>
       )}
-      <p className="text-center text-[11px] text-gray-300">ตั้งค่า Facebook token / Google เพิ่มเติมได้ที่หน้าเดิม gucut.com/admin/ads/ — ดึงรายงานต้องกดเอง (กติการ้าน)</p>
+      <p className="text-center text-[11.5px] text-gray-300">ตั้งค่า Facebook token / Google เพิ่มเติมได้ที่หน้าเดิม gucut.com/admin/ads/ — ดึงรายงานต้องกดเอง (กติการ้าน)</p>
     </div>
   )
 }

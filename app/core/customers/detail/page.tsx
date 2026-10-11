@@ -113,7 +113,7 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 max-w-[980px]">
-      <p className="text-[12px] mb-2">
+      <p className="text-[12.5px] mb-2">
         <Link href="/core/customers" className="text-blue-600 hover:underline">‹ ผู้ติดต่อ</Link>
       </p>
       <PageHead title={d?.name || key || 'ลูกค้า'}
@@ -127,7 +127,7 @@ function Inner() {
       {/* 🔴 **"อาจเป็นคนละคน" ต้องดังกว่า "ข้อจำกัดการจับคู่"** — อันนี้บอกว่าของที่เห็นอาจไม่ใช่ของคนนี้เลย
           และต้องอยู่**เหนือ**ทุกอย่าง เพราะมันกำกับทั้งจอ (บทเรียนเดิม: คำเตือนท้ายจอ = อ่านจบแล้วค่อยรู้) */}
       {ป้าย === 'ซ้ำ' ? (
-          <p className="mb-3 text-[13px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+          <p className="mb-3 text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 leading-relaxed">
             🔴 <b>ชื่อนี้ตรงกับผู้ติดต่อมากกว่าหนึ่งราย</b> — ท่อคืน<b>รายแรกที่เจอ</b>
             <span className="block">
               ⇒ ยอดขายและประวัติข้างล่างนี้ <b>อาจเป็นของอีกคนที่ชื่อเหมือนกัน</b>
@@ -151,7 +151,7 @@ function Inner() {
 
       {/* 🔴 ชื่อถูกปิดบัง — ต้องบอกก่อนที่ผู้ใช้จะเห็นเลข 0 แล้วเข้าใจผิด */}
       {masked && (
-        <div className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-[13px] text-amber-900">
+        <div className="mb-3 rounded border border-amber-300 bg-amber-50 p-3 text-[12.5px] text-amber-900">
           <b>แพลตฟอร์มปิดบังชื่อลูกค้ารายนี้</b> (มีเครื่องหมาย <code>*</code>) —
           ระบบจับคู่ประวัติการซื้อ<b>ไม่ได้</b> เพราะออเดอร์เก็บชื่อที่ถูกปิดบังมาแล้ว
           <div className="mt-1 text-amber-800">
@@ -168,9 +168,9 @@ function Inner() {
         <div className="grid gap-4 md:grid-cols-[320px_1fr]">
           {/* ── ข้อมูลติดต่อ ── */}
           <section className="rounded border border-gray-200 bg-white p-3">
-            <h2 className="mb-2 text-[13px] font-semibold">ข้อมูลติดต่อ</h2>
+            <h2 className="mb-2 text-[12.5px] font-semibold">ข้อมูลติดต่อ</h2>
             {c ? (
-              <table className="w-full text-[13px]">
+              <table className="w-full text-[12.5px]">
                 <tbody>
                   {Object.entries(LABEL).map(([k, label]) =>
                     c[k] ? (
@@ -193,7 +193,7 @@ function Inner() {
               </table>
             ) : (
               /* ⚠️ ไม่ใช่ error — ต้องอ่านออกว่าเป็นสภาพปกติของลูกค้ามาร์เก็ตเพลส */
-              <p className="text-[13px] text-gray-500">
+              <p className="text-[12.5px] text-gray-500">
                 <b>ไม่อยู่ในทะเบียนผู้ติดต่อ</b> — เป็นเรื่องปกติของลูกค้าที่ซื้อผ่านมาร์เก็ตเพลส
                 (มีออเดอร์จริง แต่ไม่เคยถูกสร้างเป็นผู้ติดต่อในระบบ)
               </p>
@@ -202,8 +202,8 @@ function Inner() {
 
           {/* ── ประวัติการซื้อ ── */}
           <section className="rounded border border-gray-200 bg-white p-3">
-            <h2 className="mb-2 text-[13px] font-semibold">ประวัติการซื้อ</h2>
-            <div className="mb-3 flex flex-wrap gap-4 text-[13px]">
+            <h2 className="mb-2 text-[12.5px] font-semibold">ประวัติการซื้อ</h2>
+            <div className="mb-3 flex flex-wrap gap-4 text-[12.5px]">
               <div><span className="text-gray-500">จำนวนใบ </span><b>{o?.count ?? 0}</b></div>
               <div><span className="text-gray-500">ยอดรวม </span><b>{baht(o?.total)}</b> บาท</div>
               {/* 🗓️ ช่องชื่อ `firstDay`/`lastDay` ก็เป็นวันที่ — เดิมโชว์ปี ค.ศ. ดิบ (เจอด้วยตา 16 ก.ย. 2569)
@@ -225,20 +225,20 @@ function Inner() {
                 { t: 'ยอดขายปีนี้ (บาท)', v: d?.money?.thisYear, sub: d?.money?.year },
               ].map((c) => (
                 <div key={c.t} className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                  <div className="text-[12px] text-gray-500">{c.t}</div>
+                  <div className="text-[12.5px] text-gray-500">{c.t}</div>
                   {typeof c.v === 'number' ? (
                     <div className="text-[17px] font-semibold tabular-nums">{baht(c.v)}</div>
                   ) : (
                     /* ท่อยังไม่ส่งช่องนี้มา = ยังไม่รู้ ⇒ ขีด ไม่ใช่ 0 */
                     <div className="text-[17px] font-semibold text-gray-400" title="ท่อรุ่นนี้ยังไม่ส่งช่องนี้มา">—</div>
                   )}
-                  <div className="text-[11px] text-gray-400">{c.sub ? `ช่วง ${c.sub}` : 'ยังไม่รู้ช่วงที่ตัด'}</div>
+                  <div className="text-[11.5px] text-gray-400">{c.sub ? `ช่วง ${c.sub}` : 'ยังไม่รู้ช่วงที่ตัด'}</div>
                 </div>
               ))}
               <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2">
-                <div className="text-[12px] text-amber-900">ยอดค้างชำระ (บาท)</div>
+                <div className="text-[12.5px] text-amber-900">ยอดค้างชำระ (บาท)</div>
                 <div className="text-[17px] font-semibold text-amber-700">ยังคิดไม่ได้</div>
-                <div className="text-[11px] text-amber-800 leading-snug">
+                <div className="text-[11.5px] text-amber-800 leading-snug">
                   {d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'}
                 </div>
               </div>
@@ -257,10 +257,10 @@ function Inner() {
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
                   {/* แท็บเดียวกับ ZORT (รายสินค้า · รายหมวดหมู่) — ทั้งสองแท็บมาจากชุดข้อมูลเดียวกัน
                       ⇒ ตัวเลขสองแท็บบวกได้เท่ากัน ไม่ใช่คนละกติกา (กฎเรื่องแท็บข้อ 4) */}
-                  <h3 className="text-[13px] font-semibold">ยอดขาย ·</h3>
+                  <h3 className="text-[12.5px] font-semibold">ยอดขาย ·</h3>
                   {(['สินค้า', 'หมวดหมู่'] as const).map((t) => (
                     <button key={t} type="button" onClick={() => setTab(t)}
-                      className={`rounded-full px-2.5 py-0.5 text-[12px] ${tab === t
+                      className={`rounded-full px-2.5 py-0.5 text-[12.5px] ${tab === t
                         ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} aria-pressed={tab === t}>
                       ราย{t}
                     </button>
@@ -301,7 +301,7 @@ function Inner() {
                         <tr key={`${r.sku ?? i}`} className="border-b border-gray-100 last:border-0">
                           <td className="py-1 pr-2">
                             {r.name ?? '—'}
-                            {r.sku && <span className="ml-1 text-[11px] text-gray-400">{r.sku}</span>}
+                            {r.sku && <span className="ml-1 text-[11.5px] text-gray-400">{r.sku}</span>}
                           </td>
                           <td className="py-1 pr-2 text-right tabular-nums">{baht(r.qty)}</td>
                           <td className="py-1 text-right tabular-nums">{baht(r.amount)}</td>
@@ -327,7 +327,7 @@ function Inner() {
                           {/* 🔴 หมวดว่าง = SKU ไม่อยู่ในคลังสินค้าของเรา ⇒ เขียนว่า "ยังไม่รู้หมวด"
                               ห้ามเขียนว่า "อื่น ๆ" ซึ่งฟังเหมือนหมวดจริงที่ตั้งใจจัดไว้ */}
                           <td className="py-1 pr-2">
-                            {r.category ?? <span className="text-gray-500">ยังไม่รู้หมวด <span className="text-[11px] text-gray-400">(SKU ไม่อยู่ในคลังสินค้า)</span></span>}
+                            {r.category ?? <span className="text-gray-500">ยังไม่รู้หมวด <span className="text-[11.5px] text-gray-400">(SKU ไม่อยู่ในคลังสินค้า)</span></span>}
                           </td>
                           <td className="py-1 pr-2 text-right tabular-nums">{r.skus ?? '—'}</td>
                           <td className="py-1 text-right tabular-nums">{baht(r.amount)}</td>
@@ -336,7 +336,7 @@ function Inner() {
                     </tbody>
                   </table>
                 )}
-                {d.products.scope && <p className="mt-1.5 text-[11px] text-gray-400">{d.products.scope}</p>}
+                {d.products.scope && <p className="mt-1.5 text-[11.5px] text-gray-400">{d.products.scope}</p>}
               </div>
             )}
 
@@ -347,7 +347,7 @@ function Inner() {
                    (เจอลูกค้าที่มี 54 ใบ แต่ได้มา 20) ⇒ ถ้าคำนวณยอดเดือนนี้/ปีนี้/ค้างชำระจากตารางนี้
                    จะได้เลขที่ **ดูสมเหตุสมผลแต่ผิด** สำหรับคนที่ซื้อเกิน 20 ใบ ⇒ ขอท่อเพิ่มช่อง ไม่คำนวณเอง
                    (คลาสเดียวกับบทเรียน "เลขจากลิสต์ที่ถูก cap ห้ามเอาไปใช้") */}
-            <div className="mb-3 text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 leading-relaxed">
+            <div className="mb-3 text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 leading-relaxed">
               <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — ยอดขาย<b>รายหมวดหมู่</b> · ตัวกรองช่วงวันของกล่องยอดขาย
               {' '}· <b>Download Excel</b> · ตารางของ ZORT มีคอลัมน์ <b>ประเภท</b> (รวมใบซื้อเข้า/ขายออกในตารางเดียว)
               {' '}ส่วนตารางนี้เป็นใบขายอย่างเดียว
@@ -361,13 +361,13 @@ function Inner() {
                 "ยังไม่มีออเดอร์ที่จับคู่กับชื่อนี้" ทั้งที่จอ ZORT โชว์ใบซื้อใบนั้นอยู่
                 ⇒ ตารางต้องขึ้นเมื่อ **มีใบชนิดใดชนิดหนึ่ง** ไม่ใช่เฉพาะตอนมีใบขาย */}
             {!o?.recent?.length && !buys.length ? (
-              <p className="text-[13px] text-gray-500">
+              <p className="text-[12.5px] text-gray-500">
                 {masked ? 'ดูประวัติไม่ได้เพราะชื่อถูกปิดบัง' : 'ยังไม่มีออเดอร์ที่จับคู่กับชื่อนี้'}
                 {d?.purchases === null && ' · และอ่านตารางใบซื้อไม่ได้ ⇒ ยังไม่รู้ว่ามีใบซื้อหรือไม่'}
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-[13px]">
+                <table className="w-full text-[12.5px]">
                   <thead>
                     <tr className="border-b border-gray-200 text-left text-gray-500">
                       {/* คอลัมน์ ประเภท แบบ ZORT — ตารางเดียวมีทั้งขายออกและซื้อเข้า
@@ -423,11 +423,11 @@ function Inner() {
                 </table>
                 {/* 🧾 ใบซื้อ: บอกให้ชัดว่าเป็นคนละกองที่ถูกตัดคนละ 20 ใบ · null = อ่านไม่ได้ ต้องพูด ไม่ใช่เงียบ */}
                 {d?.purchases === null ? (
-                  <p className="mt-2 text-[12px] text-amber-800">
+                  <p className="mt-2 text-[12.5px] text-amber-800">
                     ⚠️ <b>อ่านตารางใบซื้อไม่ได้</b> — ตารางนี้จึงมีแต่ใบขาย ไม่ได้แปลว่าผู้ติดต่อรายนี้ไม่มีใบซื้อ
                   </p>
                 ) : buys.length > 0 && (
-                  <p className="mt-2 text-[12px] text-gray-500">
+                  <p className="mt-2 text-[12.5px] text-gray-500">
                     รวมใบซื้อเข้า <b>{buys.length}</b> ใบ
                     {typeof d?.purchases?.count === 'number' && d.purchases.count > buys.length
                       ? ` จากทั้งหมด ${d.purchases.count} ใบ` : ''}
@@ -435,7 +435,7 @@ function Inner() {
                     {d?.purchases?.scope ? ` · ${d.purchases.scope}` : ''}
                   </p>
                 )}
-                <p className="mt-2 text-[12px] text-gray-400">
+                <p className="mt-2 text-[12.5px] text-gray-400">
                   {(o?.recent?.length ?? 0) === 0
                     ? 'ไม่มีใบขายที่จับคู่กับชื่อนี้ (ตารางนี้จึงมีแต่ใบซื้อ)'
                     : `แสดงใบขาย ${o?.recent?.length ?? 0} ใบล่าสุด`}{typeof o?.count === 'number' && o.count > (o.recent?.length ?? 0) ? ` จากทั้งหมด ${o.count} ใบ` : ''}

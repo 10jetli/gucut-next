@@ -63,7 +63,7 @@ export default function StoreProductsPage() {
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-100 text-red-600 text-[13px] rounded-xl px-4 py-3 mb-4">{error}</div>
+        <div className="bg-red-50 border border-red-100 text-red-600 text-[12.5px] rounded-xl px-4 py-3 mb-4">{error}</div>
       )}
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
@@ -87,14 +87,14 @@ export default function StoreProductsPage() {
                 )}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-gray-800 truncate">{p.title}</p>
+                <p className="text-[12.5px] font-semibold text-gray-800 truncate">{p.title}</p>
                 <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1 ${st.cls}`}>
                   {st.text}
                 </span>
               </div>
               <div className="text-right flex-shrink-0">
-                <p className="text-[13px] font-bold text-gray-900">{priceText}</p>
-                <p className={`text-[11px] font-semibold mt-0.5 ${p.totalInventory <= 0 ? 'text-red-500' : 'text-green-600'}`}>
+                <p className="text-[12.5px] font-bold text-gray-900">{priceText}</p>
+                <p className={`text-[11.5px] font-semibold mt-0.5 ${p.totalInventory <= 0 ? 'text-red-500' : 'text-green-600'}`}>
                   คลัง: {p.totalInventory}
                 </p>
               </div>
@@ -108,7 +108,7 @@ export default function StoreProductsPage() {
           <button
             onClick={() => endCursor && load(endCursor)}
             disabled={loading}
-            className="text-[13px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full px-4 py-2 disabled:opacity-50"
+            className="text-[12.5px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 rounded-full px-4 py-2 disabled:opacity-50"
           >
             {loading ? 'กำลังโหลด...' : 'โหลดเพิ่มเติม'}
           </button>

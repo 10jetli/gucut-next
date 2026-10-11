@@ -36,7 +36,7 @@ export default function StatCard({
   return (
     <Card hover className={className}>
       <div className="flex items-start justify-between gap-2">
-        <p className="text-[12px] text-gray-400">{label}</p>
+        <p className="text-[12.5px] text-gray-400">{label}</p>
         <span className={`w-8 h-8 rounded-lg flex items-center justify-center text-[15px] shrink-0 ${TONE[tone].chip}`}>
           {icon}
         </span>
@@ -44,7 +44,7 @@ export default function StatCard({
       <p className="text-2xl md:text-3xl font-black text-gray-900 mt-1.5 tracking-tight">
         {value} {unit && <span className="text-sm font-normal text-gray-500">{unit}</span>}
       </p>
-      {note && <p className={`text-[12px] mt-1 font-medium ${TONE[noteTone].text}`}>{note}</p>}
+      {note && <p className={`text-[12.5px] mt-1 font-medium ${TONE[noteTone].text}`}>{note}</p>}
     </Card>
   )
 }

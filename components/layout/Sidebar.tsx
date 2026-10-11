@@ -58,7 +58,7 @@ export default function Sidebar({
       {/* โลโก้ + ปุ่มพับเมนู — ZORT วางโลโก้ซ้าย ปุ่มพับขวา */}
       <div className="h-14 px-3 flex items-center gap-2 shrink-0">
         <div className="w-7 h-7 rounded-md bg-white/15 flex items-center justify-center shrink-0">
-          <span className="text-[13px] font-black text-white leading-none">G</span>
+          <span className="text-[12.5px] font-black text-white leading-none">G</span>
         </div>
         {!collapsed && (
           <>
@@ -76,7 +76,7 @@ export default function Sidebar({
           <button
             onClick={toggleCollapse}
             title="ขยายเมนู"
-            className="absolute left-1/2 -translate-x-1/2 top-11 w-6 h-6 rounded-md flex items-center justify-center text-[11px] text-white/60 hover:bg-white/10"
+            className="absolute left-1/2 -translate-x-1/2 top-11 w-6 h-6 rounded-md flex items-center justify-center text-[11.5px] text-white/60 hover:bg-white/10"
           >
             »
           </button>
@@ -110,7 +110,7 @@ export default function Sidebar({
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
                         {/* ZORT ใช้ลูกศรชี้ขึ้นตอนกาง ชี้ลงตอนพับ */}
-                        <span className={`text-[9px] ${open ? 'text-white/70' : 'text-white/50'}`}>{open ? '⌃' : '⌄'}</span>
+                        <span className={`text-[10px] ${open ? 'text-white/70' : 'text-white/50'}`}>{open ? '⌃' : '⌄'}</span>
                       </>
                     )}
                   </button>
@@ -138,9 +138,9 @@ export default function Sidebar({
                             <span className="truncate">{c.label}</span>
                             {/* จุดสถานะ "ใช้แทน ZORT ได้หรือยัง" — อ่านจากทะเบียนเดียว lib/zort-ready.ts */}
                             {(() => { const r = ป้ายของเส้นทาง(c.href); return r
-                              ? <span className="text-[7px] shrink-0" title={r.หัว}>{r.dot}</span>
+                              ? <span className="text-[10px] shrink-0" title={r.หัว}>{r.dot}</span>
                               : null })()}
-                            {c.soon && !active && <span className="text-[9px] shrink-0">◦</span>}
+                            {c.soon && !active && <span className="text-[10px] shrink-0">◦</span>}
                           </>
                         )
                         return isStaticLink(c.href) ? (
@@ -157,7 +157,7 @@ export default function Sidebar({
           ) : (
             (() => {
               const active = isActive(item.href!)
-              const cls = `flex items-center gap-2.5 py-2.5 text-[13px] transition-colors ${
+              const cls = `flex items-center gap-2.5 py-2.5 text-[12.5px] transition-colors ${
                 collapsed ? 'justify-center px-0' : 'px-3'
               } ${active ? 'text-white font-semibold' : 'text-white/80 hover:bg-white/10'}`
               const style = active ? { background: ITEM_ACTIVE } : undefined
@@ -191,7 +191,7 @@ export default function Sidebar({
             href="/web/status"
             className="block rounded-lg bg-white px-3 py-2.5 hover:bg-gray-50 transition-colors shadow-sm"
           >
-            <p className="text-[12px] font-semibold text-gray-700">สถานะระบบ</p>
+            <p className="text-[12.5px] font-semibold text-gray-700">สถานะระบบ</p>
             {/* 🔴 **ห้ามเขียนจำนวนเรื่องที่ตรวจตายตัวตรงนี้** (แก้ 6 ก.ย. 2569)
                 เดิมเขียน "24 เรื่อง" · ของจริงตอนนี้ 33 (นับ `check(` ใน status.mjs ฝั่งท่อ)
                 เลขนี้เพิ่มทุกครั้งที่ฝั่งท่อเพิ่มตัวตรวจ **โดยไม่มีใครมาแก้ตรงนี้**
@@ -199,7 +199,7 @@ export default function Sidebar({
                 ⚠️ CLAUDE.md เตือนเรื่องนี้ไว้ตรง ๆ แล้วว่าเคยค้างที่ 24 ทั้งที่ของจริง 30
                    ⇒ ตัดตัวเลขทิ้ง ดีกว่าใส่เลขที่ต้องมีคนคอยตามแก้
                    (จอสถานะระบบนับเองจากผลจริงอยู่แล้วตอนกดเข้าไป) */}
-            <p className="text-[11px] text-gray-400 leading-snug mt-0.5">
+            <p className="text-[11.5px] text-gray-400 leading-snug mt-0.5">
               กดเพื่อตรวจของจริง
             </p>
           </Link>

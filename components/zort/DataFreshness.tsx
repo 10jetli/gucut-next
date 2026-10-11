@@ -71,7 +71,7 @@ export default function DataFreshness(
   // ⚠️ ไม่รู้เวลา ≠ ข้อมูลสด — ต้องเขียนบอก ไม่ใช่เงียบไปเฉย ๆ
   if (!synced) {
     return (
-      <p className="text-[12px] text-gray-400 mb-2">
+      <p className="text-[12.5px] text-gray-400 mb-2">
         ⏱ ไม่รู้ว่าซิงก์ล่าสุดเมื่อไหร่ — ตัวเลขบนจอนี้อาจเก่าโดยไม่มีอะไรฟ้อง
       </p>
     )
@@ -96,7 +96,7 @@ export default function DataFreshness(
 
   return (
     <p
-      className={`text-[12px] mb-2 ${stale ? 'text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2' : 'text-gray-500'}`}
+      className={`text-[12.5px] mb-2 ${stale ? 'text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2' : 'text-gray-500'}`}
       title={tip}
     >
       ⏱ ข้อมูล ณ <b>{thaiClock(synced)}</b> (เวลาไทย)
@@ -139,7 +139,7 @@ export function MarketStaleBar({ stale, staleMs, at }: {
         : `${Math.floor(mins / 60)} ชม. ${mins % 60} นาที`
 
   return (
-    <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+    <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
       🕰 <b>คอลัมน์ Marketplace เป็นภาพเก่า{age ? ` ${age}` : ''}</b>
       {atDate && <> (กวาดจริงล่าสุด {thaiDayTime(atDate)} เวลาไทย)</>}
       {age === null && <> — เก่าแค่ไหนไม่รู้ (เซิร์ฟเวอร์ไม่ได้บอกอายุ)</>}

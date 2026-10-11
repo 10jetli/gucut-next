@@ -117,16 +117,16 @@ export default function WebChatPage() {
     <div className="space-y-4">
       <div className="flex items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">
             แชทลูกค้า
-            {totalUnread > 0 && <span className="ml-2 align-middle rounded-full bg-red-500 px-2 py-0.5 text-[11px] font-black text-white">{totalUnread}</span>}
+            {totalUnread > 0 && <span className="ml-2 align-middle rounded-full bg-red-500 px-2 py-0.5 text-[11.5px] font-black text-white">{totalUnread}</span>}
           </h1>
         </div>
       </div>
-      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{err}</p>}
+      {err && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">{err}</p>}
       {/* คำเตือนของการกระทำ — อยู่คนละก้อนกับคำเตือนการโหลด และไม่ถูกล้างตอนรีเฟรช */}
-      {actErr && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700">{actErr}</p>}
+      {actErr && <p className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[12.5px] font-medium text-red-700">{actErr}</p>}
 
       <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden grid md:grid-cols-[300px_1fr] h-[calc(100vh-14rem)] min-h-[420px]">
         {/* รายชื่อห้อง */}
@@ -136,7 +136,7 @@ export default function WebChatPage() {
           ) : rooms.length === 0 ? (
             <div className="py-16 text-center text-gray-300">
               <I d={IC.chat} className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-[13px] text-gray-400">ยังไม่มีลูกค้าทักเข้ามา</p>
+              <p className="text-[12.5px] text-gray-400">ยังไม่มีลูกค้าทักเข้ามา</p>
             </div>
           ) : rooms.map((r) => (
             /* 🔴 **ใช้ `aria-pressed` ไม่ใช่ `aria-current`** — วัดบนเว็บจริง 4 ต.ค. 2569 แล้วแก้ ปิดเรื่องแล้ว
@@ -148,13 +148,13 @@ export default function WebChatPage() {
             <button key={r.cid} onClick={() => setOpen(r.cid)}
               className={`w-full flex items-center gap-3 px-4 py-3 text-left border-b border-gray-50 transition-colors hover:bg-gray-50/80 ${open === r.cid ? 'bg-blue-50/60' : ''}`}
               aria-pressed={open === r.cid}>
-              <span className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white text-[13px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
+              <span className="w-9 h-9 rounded-full bg-gradient-to-br from-emerald-400 to-teal-600 text-white text-[12.5px] font-black flex items-center justify-center shrink-0 ring-2 ring-white shadow-sm">
                 {(r.name || 'ล').charAt(0)}
               </span>
               <span className="min-w-0 flex-1">
                 <span className="flex items-center justify-between gap-2">
-                  <span className="text-[13px] font-bold text-gray-900 truncate">{r.name || 'ลูกค้า'}</span>
-                  {r.last && <span className="text-[10.5px] text-gray-300 shrink-0 tabular-nums">{when(r.last.at)}</span>}
+                  <span className="text-[12.5px] font-bold text-gray-900 truncate">{r.name || 'ลูกค้า'}</span>
+                  {r.last && <span className="text-[10px] text-gray-300 shrink-0 tabular-nums">{when(r.last.at)}</span>}
                 </span>
                 <span className="block text-[11.5px] text-gray-400 truncate">
                   {r.last ? `${r.last.from === 's' ? 'ร้าน: ' : ''}${r.last.text}` : '—'}
@@ -170,18 +170,18 @@ export default function WebChatPage() {
           {!room ? (
             <div className="flex-1 flex flex-col items-center justify-center text-gray-300">
               <I d={IC.chat} className="w-10 h-10 mb-2" />
-              <p className="text-[13px] text-gray-400">เลือกห้องแชทจากด้านซ้าย</p>
+              <p className="text-[12.5px] text-gray-400">เลือกห้องแชทจากด้านซ้าย</p>
             </div>
           ) : (
             <>
               <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-100">
                 <button onClick={() => setOpen(null)} className="md:hidden text-gray-400 text-lg">‹</button>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[13.5px] font-bold text-gray-900 truncate">{room.name || 'ลูกค้า'}</span>
-                  {room.product && <span className="block text-[11px] text-gray-400 truncate">สนใจ: {room.product.t}</span>}
+                  <span className="block text-[12.5px] font-bold text-gray-900 truncate">{room.name || 'ลูกค้า'}</span>
+                  {room.product && <span className="block text-[11.5px] text-gray-400 truncate">สนใจ: {room.product.t}</span>}
                 </span>
                 {room.phone && (
-                  <a href={`tel:${room.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-1.5 text-[12px] font-semibold text-blue-600">
+                  <a href={`tel:${room.phone}`} className="inline-flex items-center gap-1.5 rounded-lg bg-blue-50 px-2.5 py-1.5 text-[12.5px] font-semibold text-blue-600">
                     <I d={IC.phone} className="w-3.5 h-3.5" /> {room.phone}
                   </a>
                 )}
@@ -192,7 +192,7 @@ export default function WebChatPage() {
               <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2 bg-gray-50/50">
                 {msgs.map((m, i) => (
                   <div key={i} className={`flex ${m.from === 's' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-[13px] leading-relaxed shadow-sm ${
+                    <div className={`max-w-[75%] rounded-2xl px-3.5 py-2 text-[12.5px] leading-relaxed shadow-sm ${
                       m.from === 's' ? 'bg-blue-600 text-white rounded-br-md' : 'bg-white text-gray-800 rounded-bl-md border border-gray-100'
                     }`}>
                       <p className="whitespace-pre-wrap break-words">{m.text}</p>
@@ -206,9 +206,9 @@ export default function WebChatPage() {
                 <input value={reply} onChange={(e) => setReply(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
                   placeholder="พิมพ์ข้อความตอบลูกค้า…"
-                  className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-[13px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
+                  className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-[12.5px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
                 <button onClick={send} disabled={!reply.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2.5 text-[13px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] transition-all hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] transition-all hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
                   <I d={IC.send} className="w-3.5 h-3.5" /> ส่ง
                 </button>
               </div>
@@ -216,7 +216,7 @@ export default function WebChatPage() {
           )}
         </div>
       </div>
-      <p className="text-center text-[11px] text-gray-300">ข้อความชุดเดียวกับ gucut.com/admin/chat/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      <p className="text-center text-[11.5px] text-gray-300">ข้อความชุดเดียวกับ gucut.com/admin/chat/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

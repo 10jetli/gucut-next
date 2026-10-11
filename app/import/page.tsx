@@ -115,7 +115,7 @@ export default function ImportPage() {
           บันทึกค่า
         </button>
         {ไม่รับ.length > 0 && (
-          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-relaxed text-amber-900">
+          <div className="mt-2 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11.5px] leading-relaxed text-amber-900">
             <b>บันทึกค่าอื่นแล้ว · แต่มี {ไม่รับ.length} ช่องที่ระบบไม่รับ</b> — ช่องเหล่านี้
             <b> ยังใช้ค่าเดิม</b> ไม่ใช่ค่าที่พิมพ์ไป
             <ul className="mt-1 list-disc pl-4">
@@ -128,7 +128,7 @@ export default function ImportPage() {
             </ul>
           </div>
         )}
-        <p className="mt-2 text-[11px] leading-relaxed text-gray-500">
+        <p className="mt-2 text-[11.5px] leading-relaxed text-gray-500">
           ⚠️ <b>ใช้เรทที่ชิปปิ้งคิดจริง ไม่ใช่เรทธนาคาร</b> — ชิปปิ้งมักคิดสูงกว่าเรทกลาง 0.1-0.3 บาท
           ใส่เรทธนาคารจะได้ตัวเลขสวยกว่าความจริงทุกครั้ง<br />
           ⚠️ ค่าขนส่งคิดแบบ <b>น้ำหนักหรือปริมาตร อันไหนแพงกว่าเอาอันนั้น</b> ไม่ใช่บวกกัน —
@@ -201,7 +201,7 @@ export default function ImportPage() {
                   ['ต้นทุนรวมทั้งล็อต', baht(c.total)],
                 ].map(([k, v]) => (
                   <div key={k} className="rounded-lg bg-gray-50 p-2">
-                    <p className="text-[11px] text-gray-500">{k}</p>
+                    <p className="text-[11.5px] text-gray-500">{k}</p>
                     <p className="text-sm font-semibold text-gray-900">{v}</p>
                   </div>
                 ))}
@@ -229,7 +229,7 @@ export default function ImportPage() {
                 </div>
               )}
               {it.sku && !st && (
-                <p className="mt-2 text-[11px] text-gray-400">
+                <p className="mt-2 text-[11.5px] text-gray-400">
                   ยังไม่มีข้อมูลคลังของ SKU นี้ — เปิดหน้า &ldquo;คลังอะไหล่&rdquo; ให้คำนวณสักครั้งก่อน
                 </p>
               )}

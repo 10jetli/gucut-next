@@ -44,7 +44,7 @@ export function PageHead({
         {/* ⚠️ ZORT ใช้ฟอนต์ Prompt เหมือนเรา (ตรวจจาก zortout.com แล้ว) แต่หัวจอเขาน้ำหนัก 600
             ไม่ใช่ 700 และไม่บีบตัวอักษร — ของเดิมหนาและแน่นกว่าต้นแบบ */}
         <h1 className="text-[26px] leading-tight font-semibold text-gray-900">{title}</h1>
-        {summary && <div className="text-[13px] text-gray-500 mt-1">{summary}</div>}
+        {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
       </div>
       {/* 🔴 **`shrink-0` ทำให้แถวปุ่มล้นจอบนมือถือ/แท็บเล็ต** (วัดจริง 16 ก.ย. 2569)
           flex-wrap ห่อได้ก็จริง แต่ `shrink-0` ห้ามกล่องหดลงต่ำกว่าความกว้างของเนื้อใน
@@ -118,7 +118,7 @@ export function BtnPrimary({ children, ...p }: React.ButtonHTMLAttributes<HTMLBu
   return (
     <button
       {...p}
-      className="text-[13px] font-semibold text-white rounded-full px-5 py-2 transition-opacity hover:opacity-90 disabled:opacity-50"
+      className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2 transition-opacity hover:opacity-90 disabled:opacity-50"
       style={{ background: ZORT_BLUE }}
     >
       {children}
@@ -129,7 +129,7 @@ export function BtnGhost({ children, ...p }: React.ButtonHTMLAttributes<HTMLButt
   return (
     <button
       {...p}
-      className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+      className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
     >
       {children}
     </button>
@@ -152,13 +152,13 @@ export function SearchRow({
   return (
     <div className="flex flex-wrap items-center gap-3 mb-4">
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[13px]">🔍</span>
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[12.5px]">🔍</span>
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') onSubmit() }}
           placeholder={placeholder}
-          className="w-[330px] max-w-full text-[13px] border border-gray-300 rounded-full pl-9 pr-3 py-2 focus:outline-none focus:border-gray-400"
+          className="w-[330px] max-w-full text-[12.5px] border border-gray-300 rounded-full pl-9 pr-3 py-2 focus:outline-none focus:border-gray-400"
         />
       </div>
       {advanced}
@@ -170,7 +170,7 @@ export function SearchRow({
 /** ลิงก์ข้อความสีน้ำเงินแบบที่ ZORT ใช้ ("ค้นหาขั้นสูง" · "แพ็คสินค้า") */
 export function LinkText({ children, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <button {...p} className="text-[13px] text-blue-600 hover:underline">{children}</button>
+    <button {...p} className="text-[12.5px] text-blue-600 hover:underline">{children}</button>
   )
 }
 
@@ -212,7 +212,7 @@ export function Tabs({
              ⇒ ใส่ `role="tab"` + `aria-selected` ที่ **คอมโพเนนต์** ⇒ ทุกจอที่ใช้ Tabs ได้มาฟรี */
           role="tab"
           aria-selected={active === t.id}
-          className={`text-[13.5px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
+          className={`text-[12.5px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
             t.ปิดไว้
               ? 'border-transparent text-gray-300 cursor-not-allowed'
               : active === t.id
@@ -281,8 +281,8 @@ export function TableWrap({ children }: { children: ReactNode }) {
     </div>
   )
 }
-export const TH = 'text-left font-normal text-[12px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
-export const THR = 'text-right font-normal text-[12px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
+export const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
+export const THR = 'text-right font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
 export const TD = 'px-3 py-3 text-[12.5px] text-gray-700 align-top'
 export const TDR = 'px-3 py-3 text-[12.5px] text-gray-800 align-top text-right whitespace-nowrap'
 
@@ -457,7 +457,7 @@ export function RowMenu({ items }: { items: RowMenuItem[] }) {
             ))}
             {/* รายการสีเทาคือของที่ ZORT มีแต่เรายังทำไม่ได้ — ชี้ค้างเพื่อดูเหตุผล */}
             {items.some((it) => it.disabled) && (
-              <span className="block text-[11px] text-gray-400 px-3 py-1.5 border-t border-gray-100">
+              <span className="block text-[11.5px] text-gray-400 px-3 py-1.5 border-t border-gray-100">
                 รายการสีเทายังทำไม่ได้ — ชี้ค้างเพื่อดูเหตุผล
               </span>
             )}
@@ -509,8 +509,8 @@ export function EmptyState({
       <td colSpan={cols} className="px-3 py-12 text-center">
         <span className="block text-[40px] leading-none mb-2 opacity-70">{icon}</span>
         {href
-          ? <Link href={href} className="block text-[13.5px] text-blue-600 hover:underline">{title}</Link>
-          : <span className="block text-[13.5px] text-blue-600">{title}</span>}
+          ? <Link href={href} className="block text-[12.5px] text-blue-600 hover:underline">{title}</Link>
+          : <span className="block text-[12.5px] text-blue-600">{title}</span>}
         {detail && <span className="block text-[12.5px] text-gray-500 mt-1 max-w-[520px] mx-auto leading-relaxed">{detail}</span>}
         {action && <span className="block mt-2.5">{action}</span>}
       </td>
@@ -548,7 +548,7 @@ export function CarrierMark({ name }: { name?: string | null }) {
     <span
       title={n}
       aria-label={n}
-      className="inline-flex items-center justify-center w-4 h-4 rounded-[3px] bg-slate-200 text-slate-600 text-[9px] font-bold leading-none shrink-0"
+      className="inline-flex items-center justify-center w-4 h-4 rounded-[3px] bg-slate-200 text-slate-600 text-[10px] font-bold leading-none shrink-0"
     >
       {ch}
     </span>
@@ -586,7 +586,7 @@ export function MarketLogos(
               // eslint-disable-next-line @next/next/no-img-element
               ? <img src={hit.src} alt={hit.label} width={16} height={16}
                   className="w-4 h-4 rounded-[3px] object-contain" />
-              : <span className="text-[10.5px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{name}</span>}
+              : <span className="text-[10px] text-gray-500 bg-gray-100 rounded px-1 py-0.5">{name}</span>}
             {guessed && (
               <span aria-label="จับคู่จากการเดารหัสฐาน"
                 className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 rounded-full bg-amber-500 ring-1 ring-white" />
@@ -795,7 +795,7 @@ export function EndpointMissing(
   { known, what, effect }: { known: boolean; what: string; effect: string },
 ) {
   return (
-    <div className={`text-[13px] rounded-md px-3.5 py-2.5 leading-relaxed border ${
+    <div className={`text-[12.5px] rounded-md px-3.5 py-2.5 leading-relaxed border ${
       known ? 'text-red-900 bg-red-50 border-red-300' : 'text-amber-800 bg-amber-50 border-amber-300'
     }`}>
       {known ? (

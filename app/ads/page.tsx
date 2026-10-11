@@ -50,7 +50,7 @@ function PlatformCard({ title, logo, color, bgColor, data }: {
       <div className={`${bgColor} px-4 py-3 flex items-center gap-2`}>
         <span className="text-xl">{logo}</span>
         <div>
-          <p className={`text-[13px] font-bold ${color}`}>{title}</p>
+          <p className={`text-[12.5px] font-bold ${color}`}>{title}</p>
           <p className="text-[10px] text-gray-500">{data.account} · {periodLabel}</p>
         </div>
       </div>
@@ -70,8 +70,8 @@ function PlatformCard({ title, logo, color, bgColor, data }: {
       </div>
       {campaigns.map((c, i) => (
         <div key={i} className="px-4 py-3 border-b border-gray-50 last:border-0 transition-colors hover:bg-gray-50/70">
-          <p className="text-[12px] font-semibold text-gray-800 truncate">{c.name}</p>
-          <div className="flex flex-wrap gap-x-3 mt-1 text-[11px] text-gray-500">
+          <p className="text-[12.5px] font-semibold text-gray-800 truncate">{c.name}</p>
+          <div className="flex flex-wrap gap-x-3 mt-1 text-[11.5px] text-gray-500">
             <span>{fmtBaht(c.cost)}</span>
             <span>{fmtNum(c.clicks)} คลิก</span>
             <span>CTR {ctr(c.clicks, c.impressions)}</span>
@@ -107,7 +107,7 @@ export default function AdsPage() {
   if (error) return (
     <div className="p-4">
       <ErrorBox>
-        <p className="text-[11px] mt-1">{error}</p>
+        <p className="text-[11.5px] mt-1">{error}</p>
       </ErrorBox>
     </div>
   )
@@ -121,7 +121,7 @@ export default function AdsPage() {
   return (
     <div className="p-4 space-y-4">
       <div className="bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-2xl p-4 text-white shadow-[0_16px_32px_-16px_rgba(37,99,235,0.5)]">
-        <p className="text-[11px] opacity-80">ค่าโฆษณารวม (Google + Facebook)</p>
+        <p className="text-[11.5px] opacity-80">ค่าโฆษณารวม (Google + Facebook)</p>
         <p className="text-3xl font-black mt-1 tracking-tight">{fmtBaht(totalCost)}</p>
         {/* 🔴 **ของเดิมพิมพ์วันที่เป็นตัวเล็กสีจางที่สุดในกล่อง แล้วจบ** (แก้ 18 ก.ย. 2569)
             จอนี้อ่านจากไฟล์นิ่ง `data/ads.json` ซึ่งไม่มีอะไรมาอัปเดตเอง

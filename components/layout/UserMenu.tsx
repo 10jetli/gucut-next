@@ -75,7 +75,7 @@ export default function UserMenu() {
       >
         <StMark size={15} />
         <span className={`text-[12.5px] font-medium ${อ่านไม่ได้ ? 'text-amber-600' : 'text-gray-400'}`}>{label}</span>
-        <span className={`text-[9px] text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
+        <span className={`text-[10px] text-gray-400 transition-transform ${open ? 'rotate-180' : ''}`}>▾</span>
       </button>
 
       {open && (

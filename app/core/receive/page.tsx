@@ -84,7 +84,7 @@ function Stepper({ at }: { at: number }) {
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center">
-              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[13px] font-semibold
+              <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12.5px] font-semibold
                 ${i < at ? 'bg-emerald-500 text-white' : i === at ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
                 style={i === at ? { background: '#4669e5' } : undefined}>
                 {i < at ? '✓' : i + 1}
@@ -92,7 +92,7 @@ function Stepper({ at }: { at: number }) {
               <p className={`text-[11.5px] mt-1 whitespace-nowrap ${i === at ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
                 ขั้นตอนที่ {i + 1}
               </p>
-              <p className={`text-[11px] whitespace-nowrap ${i === at ? 'text-gray-600' : 'text-gray-300'}`}>{s}</p>
+              <p className={`text-[11.5px] whitespace-nowrap ${i === at ? 'text-gray-600' : 'text-gray-300'}`}>{s}</p>
             </div>
             {i < STEPS.length - 1 && <div className={`flex-1 h-px mx-2 ${i < at ? 'bg-emerald-400' : 'bg-gray-200'}`} />}
           </div>
@@ -272,7 +272,7 @@ export default function ReceivePage() {
       <Stepper at={step} />
 
       {err && (
-        <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">
+        <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">
           {err}
         </div>
       )}
@@ -281,7 +281,7 @@ export default function ReceivePage() {
       {step === 0 && (
         <div className="bg-white border border-gray-200 rounded-md p-6 text-center">
           <p className="text-[17px] font-semibold text-gray-900 mb-1">เริ่มต้นการรับสินค้าเข้า</p>
-          <p className="text-[13px] text-gray-600">กรอกหมายเลขใบโอน หรือเลขอ้างอิง</p>
+          <p className="text-[12.5px] text-gray-600">กรอกหมายเลขใบโอน หรือเลขอ้างอิง</p>
           {/* 🔴 ต้องบอกตั้งแต่ก่อนกรอก ว่าเลขพัสดุใช้ไม่ได้ — ไม่ใช่ปล่อยให้ค้นแล้วขึ้น "ไม่พบ"
               ซึ่งจะทำให้คนสรุปผิดว่า "ไม่มีใบนี้ในระบบ" ทั้งที่ระบบแค่ค้นด้วยเลขนั้นไม่เป็น */}
           <p className="text-[11.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 mt-2.5 inline-block leading-relaxed">
@@ -377,7 +377,7 @@ export default function ReceivePage() {
                 </Pill>
               )}
             </div>
-            {doc.note && <p className="text-[12px] text-gray-500 mt-2">{doc.note}</p>}
+            {doc.note && <p className="text-[12.5px] text-gray-500 mt-2">{doc.note}</p>}
             {/* 🔴 บอกแหล่งข้อมูลเสมอ — ของสดกับกระจกให้รายละเอียดไม่เท่ากัน
                 คนต้องรู้ว่าที่ไม่มีรายการสินค้ามาให้ เป็นเพราะอะไร */}
             <p className="text-[11.5px] mt-2">
@@ -456,7 +456,7 @@ export default function ReceivePage() {
                           value={l.sku}
                           onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, sku: e.target.value } : x))}
                           placeholder="รหัสสินค้า"
-                          className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px]"
+                          className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px]"
                         />
                       </td>
                       <td className={TDR}>
@@ -465,13 +465,13 @@ export default function ReceivePage() {
                           onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, qty: e.target.value } : x))}
                           inputMode="numeric"
                           placeholder="0"
-                          className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px] text-right"
+                          className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px] text-right"
                         />
                       </td>
                       <td className={TD}>
                         {lines.length > 1 && (
                           <button onClick={() => setLines((v) => v.filter((_, j) => j !== i))}
-                            className="text-[12px] text-gray-400 hover:text-red-600">ลบ</button>
+                            className="text-[12.5px] text-gray-400 hover:text-red-600">ลบ</button>
                         )}
                       </td>
                     </tr>
@@ -510,14 +510,14 @@ export default function ReceivePage() {
               ซึ่งอ่านแล้วขัดกันเอง และคนจะไปกรอกซ้ำเพราะคิดว่าไม่เข้า
               ⇒ ไม่รู้ต้องเขียนว่าไม่รู้ พร้อมบอกว่าไปดูของจริงได้ที่ไหน */}
           {typeof result.added === 'number' ? (
-            <p className="text-[13px] text-gray-700 leading-relaxed">
+            <p className="text-[12.5px] text-gray-700 leading-relaxed">
               ส่งไป <b>{fmtNum(result.sent ?? 0)}</b> บรรทัด ·
               บันทึกใหม่ <b>{fmtNum(result.added)}</b> ·
               {/* 🔴 ของซ้ำไม่ใช่ความผิดพลาด — ต้องอธิบาย ไม่ใช่โชว์เลขเฉย ๆ ให้คนตกใจ */}
               {' '}เป็นของที่เคยบันทึกไว้แล้ว <b>{fmtNum(result.duplicate ?? 0)}</b>
             </p>
           ) : (
-            <p className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 leading-relaxed">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 leading-relaxed">
               ⚠️ ท่อรับเรื่องแล้วแต่ <b>ไม่ได้บอกจำนวนบรรทัดที่บันทึก</b> —
               {' '}<b>ยังไม่ต้องกรอกซ้ำ</b> ให้เปิด{' '}
               <Link href="/core/moves" className="text-blue-600 hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
@@ -525,7 +525,7 @@ export default function ReceivePage() {
             </p>
           )}
           {!!result.duplicate && (
-            <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-2.5 leading-relaxed">
+            <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-2.5 leading-relaxed">
               บรรทัดที่ซ้ำ <b>ไม่ได้ทำให้ของเข้าคลังสองรอบ</b> — ระบบกันไว้ให้แล้วจากเลขใบเดียวกัน
               {' '}(ถ้าตั้งใจรับเพิ่มจากใบเดิม เช่นของทยอยมา ต้องบันทึกที่{' '}
               <Link href="/core/moves" className="text-blue-600 hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
@@ -547,13 +547,13 @@ export default function ReceivePage() {
           <div className="mt-4 flex gap-2">
             <button
               onClick={() => { setStep(0); setQ(''); setDoc(null); setLines([{ sku: '', qty: '' }]); setResult(null) }}
-              className="text-[13.5px] font-semibold text-white rounded-full px-5 py-2"
+              className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2"
               style={{ background: '#4669e5' }}
             >
               รับใบถัดไป
             </button>
             <Link href="/core/moves"
-              className="text-[13.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50">
+              className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50">
               ดูประวัติทั้งหมด
             </Link>
           </div>

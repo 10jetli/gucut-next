@@ -130,7 +130,7 @@ export default function ReorderPage() {
             <select
               value={days}
               onChange={(e) => load(Number(e.target.value))}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               {DAYS.map((n) => <option key={n} value={n}>คิดยอดใช้จาก {n} วันล่าสุด</option>)}
             </select>
@@ -188,7 +188,7 @@ export default function ReorderPage() {
 
       {error && <ErrorBox title="ดึงข้อมูลวางแผนสั่งซื้อไม่ได้">{error}</ErrorBox>}
       {loading && !d && <LoadingState />}
-      {d?.skip && <p className="text-[13px] text-gray-500">⏳ {d.skip}</p>}
+      {d?.skip && <p className="text-[12.5px] text-gray-500">⏳ {d.skip}</p>}
 
       {d && !d.skip && (
         <>
@@ -196,7 +196,7 @@ export default function ReorderPage() {
               ⚠️ ข้อความในขั้นตอนเขียนตามที่ **ระบบเราทำได้จริง** ไม่ได้ลอกคำของ ZORT ทั้งดุ้น
                  ZORT ขั้นแรกคือ "ตั้งค่า Lead Time" ซึ่งร้านไม่เคยตั้ง ⇒ เขียนตรง ๆ ว่ายังไม่มี */}
           <div className="bg-white border border-gray-200 rounded-md px-4 py-3.5 mb-3">
-            <p className="text-center text-[13px] font-semibold text-gray-700 mb-3">ขั้นตอนวางแผนซื้อซ้ำ</p>
+            <p className="text-center text-[12.5px] font-semibold text-gray-700 mb-3">ขั้นตอนวางแผนซื้อซ้ำ</p>
             <div className="flex items-start justify-center gap-4 flex-wrap">
               {[
                 { i: '⏱', t: 'ตั้งค่า Lead Time', n: 'ยังไม่ได้ตั้ง — จอนี้จึงคิดจากยอดขายจริงแทน' },
@@ -208,7 +208,7 @@ export default function ReorderPage() {
                   <div className="text-center w-[170px]">
                     <span className="inline-flex w-9 h-9 rounded-full bg-[#eef1fa] items-center justify-center text-[16px]">{s2.i}</span>
                     <p className="text-[12.5px] text-gray-700 mt-1.5">{s2.t}</p>
-                    <p className="text-[11px] text-gray-400 leading-relaxed">{s2.n}</p>
+                    <p className="text-[11.5px] text-gray-400 leading-relaxed">{s2.n}</p>
                   </div>
                 </div>
               ))}
@@ -257,7 +257,7 @@ export default function ReorderPage() {
 
           <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-3 flex items-center justify-between gap-3 flex-wrap">
             <p className="text-[14px] font-semibold text-gray-800">โกดัง</p>
-            <p className="text-[12px] text-gray-500">
+            <p className="text-[12.5px] text-gray-500">
               คลังสินค้า/สาขา: <b className="text-gray-700">ทุกคลังรวมกัน</b>
               {/* 🔴 **แก้คำ 6 ก.ย. 2569 — ข้อสรุปเดิมถูก แต่คำเดิมกว้างเกินหลักฐาน**
                   เดิมเขียนว่า "ZORT ไม่เปิดช่องทาง...(ยิงมาแล้วไม่ผ่านทุกทาง)"
@@ -281,18 +281,18 @@ export default function ReorderPage() {
           {/* ── ผัง ZORT ③: แถบวันที่คั่นก่อนตาราง ── */}
           <div className="bg-white border border-gray-200 border-b-0 rounded-t-md px-4 py-2.5 flex items-center gap-2">
             <span className="text-[15px]">📅</span>
-            <span className="text-[13.5px] font-semibold text-gray-800">{todayThai()}</span>
+            <span className="text-[12.5px] font-semibold text-gray-800">{todayThai()}</span>
           </div>
 
           {/* 🔴 ขอบเขตของตัวเลขต้องอยู่บนจอ ไม่ใช่ในคอมเมนต์ */}
           {d.scope && (
-            <p className="text-[12px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+            <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
               {d.scope}
             </p>
           )}
 
           {/* 🔴 ข้อจำกัดถาวรของระบบ — ต้องเขียนบอก ไม่ใช่ปล่อยให้คนเข้าใจว่าตัวเลขนับได้ครบ */}
-          <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+          <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
             ⚠️ <b>ช่อง “ตัดไปกี่เส้น” เป็นช่วง ไม่ใช่เลขเดียว และจะเป็นแบบนี้ตลอดไป</b> —
             ร้านคีย์ขายโซ่ตัดด้วย<b>รหัสม้วนกับจำนวนฟัน</b> ไม่ได้คีย์รหัสความยาว
             {' '}⇒ ใบขายรู้แค่ว่า<b>ตัดฟันไปเท่าไหร่</b> ไม่รู้ว่าแตกเป็นกี่เส้น
@@ -353,10 +353,10 @@ export default function ReorderPage() {
                     <td className={TD}>
                       {/* ⚠️ ห้ามตัดชื่อสั้นจนส่วนที่ต่างกันหาย — "(แบบตัด)" กับ "(แบบซอย)" อยู่ท้ายชื่อ
                           และเป็นคนละสินค้ากันคนละกองฟัน (ฝั่งท่อเกือบสรุปผิดเพราะเรื่องนี้) */}
-                      <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-[13px] text-[#457ab2] hover:underline">
+                      <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-[12.5px] text-[#457ab2] hover:underline">
                         {r.name || r.sku}
                       </Link>
-                      <span className="block text-[11px] text-gray-400">
+                      <span className="block text-[11.5px] text-gray-400">
                         {r.sku}
                         {typeof r.listings === 'number' && r.listings > 0 && <> · ลงขาย {fmtNum(r.listings)} ความยาว</>}
                         {r.ladderTeethMin && r.ladderTeethMax && <> ({fmtNum(r.ladderTeethMin)}–{fmtNum(r.ladderTeethMax)} ฟัน)</>}
@@ -369,7 +369,7 @@ export default function ReorderPage() {
                       {/* ⚠️ ท่อไม่ส่งจำนวนฟันมา ≠ เหลือศูนย์ฟัน — คอลัมน์นี้คือตัวตัดสินว่าต้องสั่งของ
                           เขียน 0 ทั้งที่ไม่รู้ = ชวนให้สั่งของที่ยังไม่ต้องสั่ง (หรือกลับกัน) */}
                       {typeof r.teeth === 'number' ? fmtNum(r.teeth) : <span className="text-gray-300">—</span>}
-                      <span className="block text-[11px] text-gray-400">
+                      <span className="block text-[11.5px] text-gray-400">
                         {/* หน่วยคือ "ฟัน" ไม่ใช่ม้วน — ม้วนเป็นค่าที่หารมาให้ดูเฉย ๆ */}
                         ฟัน{r.teethPerRoll ? ` · ≈ ${Number(r.rolls ?? 0).toFixed(2)} ม้วน` : ''}
                       </span>
@@ -378,7 +378,7 @@ export default function ReorderPage() {
                     <td className={`${TD} text-gray-300`} title="ท่อใบซื้อยังไม่ส่งวันสั่งล่าสุดรายสินค้ามา">—</td>
                     <td className={TDR}>
                       <DaysPill d={r.daysLeft} />
-                      <span className="block text-[11px] text-gray-400 mt-0.5">
+                      <span className="block text-[11.5px] text-gray-400 mt-0.5">
                         {typeof r.teethPerDay === 'number'
                           ? <>ใช้ {r.teethPerDay.toFixed(2)} ฟัน/วัน</>
                           : <>ไม่รู้อัตราการใช้</>}
@@ -401,7 +401,7 @@ export default function ReorderPage() {
           </TableWrap>
 
           {typeof d.neverSold === 'number' && d.neverSold > 0 && (
-            <p className="text-[12px] text-gray-500 mt-2">
+            <p className="text-[12.5px] text-gray-500 mt-2">
               มีอีก {fmtNum(d.neverSold)} รายการที่ไม่มีการขายเลยในช่วงนี้ — คำนวณ “พอขายอีกกี่วัน” ไม่ได้
               {' '}<b>ไม่ได้แปลว่าของหมดหรือขายไม่ออก</b> แปลว่ายังไม่มียอดให้คิด
             </p>

@@ -265,7 +265,7 @@ export default function CoreContactsPage() {
             {/* ชี้หน้าจริง 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิด แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/customers/new"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เพิ่มผู้ติดต่อใหม่
             </Link>
@@ -303,7 +303,7 @@ export default function CoreContactsPage() {
             const sweep = parseUtc(data.sync?.fullSweepAtUtc)
             if (sweep) {
               return (
-                <p className="text-[12px] text-gray-500 mb-2">
+                <p className="text-[12.5px] text-gray-500 mb-2">
                   🧹 กวาดครบทั้งฐานล่าสุด <b>{thaiDayTime(sweep)}</b> (เวลาไทย) — การแก้ชื่อ/เบอร์ของรายเก่าตามมาถึงรอบนั้น
                 </p>
               )
@@ -311,13 +311,13 @@ export default function CoreContactsPage() {
             // ไม่มี sync ทั้งก้อน = ท่ออ่านชีพจรไม่ได้ ⇒ บอกว่าไม่รู้ · ห้ามเขียนว่ายังไม่เสร็จ
             if (!data.sync) {
               return (
-                <p className="text-[12px] text-gray-400 mb-2">
+                <p className="text-[12.5px] text-gray-400 mb-2">
                   🧹 ไม่รู้ว่ากวาดครบทั้งฐานล่าสุดเมื่อไหร่ — เซิร์ฟเวอร์ไม่ได้บอก
                 </p>
               )
             }
             return (
-              <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+              <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
                 🧹 <b>รอบกวาดครบทั้งฐานยังไม่เสร็จ</b> (รอบแรกใช้เวลาราววัน)
                 {' '}⇒ <b>รายใหม่ขึ้นแล้ว แต่รายเก่าที่ถูกแก้ทีหลังอาจยังเป็นของเดิม</b>
                 {' '}— ถ้าจะยืนยันชื่อ/เบอร์ของลูกค้าเก่า ให้ดูที่ ZORT อีกรอบ
@@ -411,7 +411,7 @@ export default function CoreContactsPage() {
         withEmail !== !!data.applied.withEmail ||
         (q.trim() ? (data.applied.q ?? '') !== q.trim() : !!(data.applied.q ?? ''))
       ) && (
-        <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-3">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3 py-2 mb-3">
           ⚠️ <b>ตัวกรองที่จอเลือกกับที่ท่อใช้จริงไม่ตรงกัน</b>
           <span className="block mt-0.5">
             จอขอ: คำค้น “{q.trim() || '(ไม่ได้ค้น)'}” · มีเบอร์ {withPhone ? 'ใช่' : 'ไม่'} · มีอีเมล {withEmail ? 'ใช่' : 'ไม่'}
@@ -456,7 +456,7 @@ export default function CoreContactsPage() {
           />
 
           {!hasType && (
-            <p className="text-[12px] text-amber-800 bg-amber-50 border-x border-b border-amber-200 px-3.5 py-2 leading-relaxed">
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border-x border-b border-amber-200 px-3.5 py-2 leading-relaxed">
               แท็บ <b>ลูกค้า</b> กับ <b>คู่ค้า</b> ยังกดไม่ได้ — ชนิดผู้ติดต่อที่ ZORT ส่งมาเป็น
               <b> Undefined เกือบทั้งฐาน</b>: เดิมสุ่มตรวจ 1,000 ราย (5 ช่วงคนละหน้า · 3 ก.ย. 2569)
               {' '}<b>ตอนนี้ท่อนับให้ทั้งฐานแล้ว — Undefined 28,334 ราย · มีชนิดจริงแค่ 1 ราย (Individual)
@@ -473,7 +473,7 @@ export default function CoreContactsPage() {
 
           {/* 🔴 ตาข่ายกันไล่ดึงทั้งฐานทีละหน้า — ต้องอธิบาย ไม่ใช่โชว์ตารางว่าง */}
           {data.needQuery && (
-            <div className="text-[13px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3 mt-3 leading-relaxed">
+            <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-4 py-3 mt-3 leading-relaxed">
               <b>ดูลึกกว่านี้ต้องพิมพ์คำค้นก่อน</b> — {data.note}
               <br />
               เป็นตาข่ายที่ตั้งใจใส่ไว้ กันการไล่เปิดทีละหน้าจนได้รายชื่อลูกค้าครบทั้งฐาน
@@ -523,7 +523,7 @@ export default function CoreContactsPage() {
                             แสดงตามที่ต้นทางให้มา ไม่แต่งเอง แล้วอธิบายไว้ท้ายตาราง */}
                         {r.branchName && <span className="text-gray-400"> ({r.branchName})</span>}
                       </td>
-                      <td className={`${TD} whitespace-nowrap font-mono text-[12px]`}>{r.taxId || DASH}</td>
+                      <td className={`${TD} whitespace-nowrap font-mono text-[12.5px]`}>{r.taxId || DASH}</td>
                       <td className={`${TD} whitespace-nowrap`}>{r.phone || DASH}</td>
                       <td className={`${TD} max-w-[220px] truncate`}>{r.email || DASH}</td>
                       <td className={`${TD} text-right`}>
@@ -569,7 +569,7 @@ export default function CoreContactsPage() {
                 </tbody>
               </table>
 
-              <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12px] text-gray-600">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white text-[12.5px] text-gray-600">
                 <span>
                   แสดงแถวที่ {fmtNum(offset + 1)}–{fmtNum(offset + rows.length)}
                   {typeof data.total === 'number' && <> จาก {fmtNum(data.total)}</>}
@@ -584,7 +584,7 @@ export default function CoreContactsPage() {
             </TableWrap>
           )}
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             เลขประจำตัวผู้เสียภาษี<b>ถูกปิดบางส่วนมาจากเซิร์ฟเวอร์</b> (เห็น 4 ตัวท้าย) —
             จอนี้เห็นเลขเต็มไม่ได้เลยแม้แต่ในหน่วยความจำของเบราว์เซอร์ ·
             ชื่อในวงเล็บคือ<b>ชื่อสาขา</b>ตามที่ ZORT ส่งมา บางรายเป็นรหัสดิบอย่าง (1)

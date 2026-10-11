@@ -259,7 +259,7 @@ export default function BackupPage() {
       />
 
       {msg && (
-        <p className={`text-[13px] rounded px-3 py-2 mb-3 border ${
+        <p className={`text-[12.5px] rounded px-3 py-2 mb-3 border ${
           msg.startsWith('✅') ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
             : msg.startsWith('⚠️') ? 'bg-amber-50 border-amber-200 text-amber-800'
               : 'bg-red-50 border-red-200 text-red-700'
@@ -271,7 +271,7 @@ export default function BackupPage() {
 
       {/* ระบบยังไม่พร้อม — ต้องบอกเหตุผลตรง ๆ ไม่ใช่โชว์ตาราง 0 คีย์แล้วปล่อยให้เดา */}
       {st && st.ready === false && (
-        <div className="text-[13px] text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2.5 mb-3 leading-relaxed">
+        <div className="text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded px-3 py-2.5 mb-3 leading-relaxed">
           🔴 <b>ระบบสำรองยังไม่พร้อมใช้งาน</b>{st.why ? ` — ${st.why}` : ''}
           <br />
           <span className="text-[12.5px]">แปลว่าตอนนี้<b>ยังไม่มีสำเนา</b> ข้อมูลหายแล้วเรียกคืนไม่ได้</span>
@@ -280,7 +280,7 @@ export default function BackupPage() {
 
       {st && st.ready !== false && (
         <>
-          <div className={`rounded px-3 py-2.5 mb-3 text-[13px] border leading-relaxed ${
+          <div className={`rounded px-3 py-2.5 mb-3 text-[12.5px] border leading-relaxed ${
             unconfirmed ? 'bg-red-50 border-red-300 text-red-900'
               : stale ? 'bg-amber-50 border-amber-200 text-amber-800'
                 : 'bg-emerald-50 border-emerald-200 text-emerald-800'
@@ -320,7 +320,7 @@ export default function BackupPage() {
               </thead>
               <tbody>
                 {stores.length === 0 && (
-                  <tr><td colSpan={5} className="px-3 py-6 text-[13px] text-gray-400 text-center">ยังไม่มีสำเนาสักถัง</td></tr>
+                  <tr><td colSpan={5} className="px-3 py-6 text-[12.5px] text-gray-400 text-center">ยังไม่มีสำเนาสักถัง</td></tr>
                 )}
                 {stores.map((s) => (
                   <tr key={s.store} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
@@ -344,14 +344,14 @@ export default function BackupPage() {
                     <td className={TDR}><span className="text-gray-300">0</span></td>
                     <td className={TDR}><span className="text-gray-300">—</span></td>
                     <td className={TDR}><span className="text-gray-300">0</span></td>
-                    <td className={`${TD} text-gray-400 text-[12px]`}>คุ้มครองแล้ว แต่ยังไม่มีข้อมูลให้สำรอง</td>
+                    <td className={`${TD} text-gray-400 text-[12.5px]`}>คุ้มครองแล้ว แต่ยังไม่มีข้อมูลให้สำรอง</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </TableWrap>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             &quot;เก็บต่อแม้ต้นทางลบ&quot; รวม <b>{num(totalGone)}</b> คีย์ — <b>ไม่ใช่ข้อผิดพลาด</b>
             สำเนาตั้งใจไม่ลบตามต้นทาง จึงยังกู้ของที่ถูกลบไปแล้วได้ ·
             แต่ถ้าเลขนี้พุ่งขึ้นผิดปกติ แปลว่ามีอะไรกำลังลบข้อมูลอยู่ ควรมาดู
@@ -383,10 +383,10 @@ export default function BackupPage() {
           {/* ⚠️ ต้องโชว์เสมอ ไม่งั้นเข้าใจว่าสำรองครบทุกถัง */}
           {nevers.length > 0 && (
             <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
-              <p className="text-[13.5px] font-semibold text-gray-900 mb-1">
+              <p className="text-[12.5px] font-semibold text-gray-900 mb-1">
                 ถังที่ <span className="text-gray-600">ตั้งใจไม่สำรอง</span> ({nevers.length})
               </p>
-              <p className="text-[12px] text-gray-500 mb-2">
+              <p className="text-[12.5px] text-gray-500 mb-2">
                 ไม่ใช่ของตกหล่น — เป็นข้อมูลที่เราประกาศกับลูกค้าว่าจะลบทิ้งตามกำหนด การเก็บสำเนาไว้จะขัดกับที่ประกาศไว้
               </p>
               <div className="space-y-1.5">
@@ -405,7 +405,7 @@ export default function BackupPage() {
       {/* ───────── ผลการสั่งสำรองเดี๋ยวนี้ ───────── */}
       {run && (
         <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
-          <p className="text-[13.5px] font-semibold text-gray-900 mb-2">ผลรอบที่เพิ่งสั่ง</p>
+          <p className="text-[12.5px] font-semibold text-gray-900 mb-2">ผลรอบที่เพิ่งสั่ง</p>
           {run.totals && (
             <p className="text-[12.5px] text-gray-600 mb-2">
               เขียนใหม่ {num(run.totals.saved)} · รวมคีย์ {num(run.totals.keys)} · {fmtBytes(run.totals.bytes)}
@@ -437,7 +437,7 @@ export default function BackupPage() {
 
       {/* ───────── กู้คืน ───────── */}
       <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
-        <p className="text-[14.5px] font-semibold text-gray-900">กู้คืนข้อมูล</p>
+        <p className="text-[14px] font-semibold text-gray-900">กู้คืนข้อมูล</p>
         <p className="text-[12.5px] text-gray-600 leading-relaxed mt-1">
           การกู้คืนคือการ<b>เขียนข้อมูลจริงของร้าน</b> — หน้านี้จึงบังคับให้<b>ซ้อมก่อนเสมอ</b>
           แล้วดูว่าจะเขียนกี่คีย์ ถึงจะกดจริงได้
@@ -449,7 +449,7 @@ export default function BackupPage() {
             value={bucket}
             onChange={(e) => { setBucket(e.target.value); setDry(null); setDryFor(''); setDryAt(0); setReal(null) }}
             placeholder="ชื่อถัง เช่น gucut-orders"
-            className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
+            className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
           />
           <datalist id="backup-stores">
             {stores.map((s) => <option key={s.store} value={s.store} />)}
@@ -459,7 +459,7 @@ export default function BackupPage() {
             value={oneKey}
             onChange={(e) => { setOneKey(e.target.value); setDry(null); setDryFor(''); setDryAt(0); setReal(null) }}
             placeholder="เฉพาะคีย์เดียว (ไม่ใส่ = ทั้งถัง)"
-            className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
+            className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[230px]"
           />
           <BtnGhost onClick={rehearse} disabled={!bucket.trim() || !!busy}>
             {busy === 'dry' ? 'กำลังซ้อม…' : 'ซ้อมกู้คืน (ไม่เขียนอะไร)'}
@@ -468,10 +468,10 @@ export default function BackupPage() {
 
         {dry && (
           <div className="mt-3 border border-blue-100 bg-blue-50 rounded p-3">
-            <p className="text-[13px] font-semibold text-blue-900">
+            <p className="text-[12.5px] font-semibold text-blue-900">
               ผลการซ้อมถัง “{dry.store ?? bucket}” — ยังไม่มีอะไรถูกเขียน
             </p>
-            <p className="text-[13px] text-blue-900 mt-1.5">
+            <p className="text-[12.5px] text-blue-900 mt-1.5">
               จะเขียนเพิ่ม <b>{num(dry.willWrite)}</b> คีย์ · หายไปจากต้นทาง {num(dry.missing)} ·
               ยังอยู่ครบ {num(dry.alreadyThere)}
             </p>
@@ -482,7 +482,7 @@ export default function BackupPage() {
             )}
             {Array.isArray(dry.sample) && dry.sample.length > 0 && (
               <div className="mt-2">
-                <p className="text-[12px] text-blue-800 mb-1">ตัวอย่างคีย์ (สูงสุด 10)</p>
+                <p className="text-[12.5px] text-blue-800 mb-1">ตัวอย่างคีย์ (สูงสุด 10)</p>
                 <div className="space-y-0.5">
                   {dry.sample.map((s) => (
                     <div key={s.key} className="flex flex-wrap gap-2 text-[11.5px] text-blue-900">
@@ -511,7 +511,7 @@ export default function BackupPage() {
               <button
                 onClick={() => restoreReal(true)}
                 disabled={!canRestore || !!busy}
-                className="rounded-full border border-red-300 bg-white px-4 py-1.5 text-[13px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"
+                className="rounded-full border border-red-300 bg-white px-4 py-1.5 text-[12.5px] font-semibold text-red-700 hover:bg-red-50 disabled:opacity-40"
               >
                 {busy === 'over' ? 'กำลังทับ…' : 'กู้คืนแล้วทับของเดิม'}
               </button>
@@ -525,8 +525,8 @@ export default function BackupPage() {
 
         {real && (
           <div className="mt-3 border border-emerald-200 bg-emerald-50 rounded p-3">
-            <p className="text-[13px] font-semibold text-emerald-900">ผลการกู้คืนถัง “{real.store ?? bucket}”</p>
-            <p className="text-[13px] text-emerald-900 mt-1">
+            <p className="text-[12.5px] font-semibold text-emerald-900">ผลการกู้คืนถัง “{real.store ?? bucket}”</p>
+            <p className="text-[12.5px] text-emerald-900 mt-1">
               เขียนไป <b>{num(real.written)}</b> คีย์ · ข้ามเพราะยังมีอยู่ {num(real.skippedExisting)}
             </p>
             {Array.isArray(real.failed) && real.failed.length > 0 && (
@@ -541,7 +541,7 @@ export default function BackupPage() {
                 </div>
               </div>
             )}
-            <p className="text-[12px] text-emerald-800 mt-2">ต้องซ้อมใหม่ก่อนกู้คืนรอบถัดไป</p>
+            <p className="text-[12.5px] text-emerald-800 mt-2">ต้องซ้อมใหม่ก่อนกู้คืนรอบถัดไป</p>
           </div>
         )}
       </div>

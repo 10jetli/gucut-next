@@ -348,7 +348,7 @@ function skipBar(key: PlatformKey, st: (PushStateResp & { แยกรายช�
               {ของช่องทางนี้.length < จำนวน && ` (ท่อส่งมาแค่ ${ของช่องทางนี้.length} จาก ${n(จำนวน)})`}</summary>
             <ul className="mt-1 space-y-0.5">
               {ของช่องทางนี้.map((x) => (
-                <li key={`${x.sku}-${x.skip_first_at}`} className="font-mono text-[11px]">
+                <li key={`${x.sku}-${x.skip_first_at}`} className="font-mono text-[11.5px]">
                   {x.sku} · {เหตุข้าม[String(x.skip_reason)] ?? `เหตุที่จอยังไม่รู้จัก (${x.skip_reason})`}
                   {' '}· ข้ามติดกัน {n(x.skip_streak)} รอบ · ตั้งแต่ {thaiDateTime(x.skip_first_at)}
                 </li>
@@ -364,7 +364,7 @@ function skipBar(key: PlatformKey, st: (PushStateResp & { แยกรายช�
 function BarRow({ icon, name, bar }: { icon: string; name: string; bar: Bar }) {
   const t = TONE[bar.tone]
   return (
-    <div className={`border rounded px-2.5 py-1.5 text-[12px] leading-relaxed ${t.box}`}>
+    <div className={`border rounded px-2.5 py-1.5 text-[12.5px] leading-relaxed ${t.box}`}>
       <span className="font-semibold">{icon} {name}</span>{' '}
       <span className="whitespace-nowrap">{t.dot} {t.word}</span>
       <span className="block">{bar.text}</span>
@@ -413,10 +413,10 @@ export default function PushStatusBoard(props: {
           const สวิตช์ = state?.byChannel?.[key]?.autoOn
           return (
             <div key={key} className="border border-gray-200 rounded-md p-2.5 space-y-1.5">
-              <p className="text-[13px] font-semibold text-gray-900">{label}</p>
+              <p className="text-[12.5px] font-semibold text-gray-900">{label}</p>
               {/* 🔴 ช่องทางที่ยิงไม่ออก: "แผนจะดัน" มีจริง แต่กดยังไงก็ไม่ออก ⇒ ต้องบอกคู่กับตัวเลข (CEO ชี้ 17 ก.ย. 2569) */}
               {writer === false && (
-                <p className="text-[12px] font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2.5 py-1.5">
+                <p className="text-[12.5px] font-semibold text-gray-700 bg-gray-100 border border-gray-300 rounded px-2.5 py-1.5">
                   ⬜ ยังดันไม่ได้ — ไม่มีตัวยิง
                   <span className="block font-normal text-gray-600">ตัวเลขข้างล่างคือแผนที่คิดได้ ไม่ใช่ของที่จะถูกดัน</span>
                 </p>

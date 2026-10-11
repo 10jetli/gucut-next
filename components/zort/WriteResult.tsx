@@ -52,7 +52,7 @@ function Box({ tone, title, children }: {
     blue: 'text-blue-900 bg-blue-50 border-blue-300',
   }[tone]
   return (
-    <div className={`text-[13px] border rounded-md px-3.5 py-2.5 leading-relaxed ${c}`}>
+    <div className={`text-[12.5px] border rounded-md px-3.5 py-2.5 leading-relaxed ${c}`}>
       <b>{title}</b>
       {children}
     </div>
@@ -91,7 +91,7 @@ export function WriteResult({ r }: { r: WriteResp | null }) {
           {r.willSend && typeof r.willSend === 'object' && Object.keys(r.willSend).length > 0 && (
             <div className="mt-2 bg-white/70 border border-blue-200 rounded px-2.5 py-2">
               <b className="text-[12.5px]">สิ่งที่จะถูกส่งเข้า ZORT จริง</b>
-              <table className="mt-1 text-[12px]">
+              <table className="mt-1 text-[12.5px]">
                 <tbody>
                   {Object.entries(r.willSend).map(([k, v]) => (
                     <tr key={k}>
@@ -147,7 +147,7 @@ export function WriteResult({ r }: { r: WriteResp | null }) {
           </p>
           {/* ของเดิมคือใบไหน — ถ้าท่อบอกมา ต้องโชว์ ไม่ใช่ให้ไปหาเอง */}
           {r.detail != null && (
-            <p className="mt-1 text-[12px] font-mono break-all">
+            <p className="mt-1 text-[12.5px] font-mono break-all">
               ของเดิม: {typeof r.detail === 'object' ? JSON.stringify(r.detail) : String(r.detail)}
             </p>
           )}

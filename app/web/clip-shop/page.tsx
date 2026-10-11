@@ -97,9 +97,9 @@ export default function WebClipShopPage() {
     <div className="space-y-4 max-w-3xl">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <p className="text-[11px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
+          <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">ผูกสินค้ากับคลิป</h1>
-          <p className="text-[12px] text-gray-400 mt-0.5">
+          <p className="text-[12.5px] text-gray-400 mt-0.5">
             ผูกแล้วคลิปในฟีดจะมีปุ่มกดซื้อ · ผูกแล้ว{' '}
             {mapKnown ? `${Object.keys(map).length} คลิป` : 'ยังไม่รู้ (โหลดไม่สำเร็จ)'}
           </p>
@@ -109,10 +109,10 @@ export default function WebClipShopPage() {
           โชว์เฉพาะที่ยังไม่ผูก
         </label>
       </div>
-      {msg && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[13px] text-red-600">{msg}</p>}
+      {msg && <p className="rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-[12.5px] text-red-600">{msg}</p>}
       {/* 🔴 โหลดของตั้งต้นไม่สำเร็จต้องขึ้นจอ — ไม่งั้นจอดูเหมือน "ไม่มีคลิป/ไม่มีสินค้า" */}
       {loadErr && (
-        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[13px] text-amber-800">
+        <p className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-[12.5px] text-amber-800">
           ⚠️ {loadErr} · <b>ไม่ได้แปลว่าไม่มีของ</b> — ลองรีเฟรชหน้า
         </p>
       )}
@@ -130,8 +130,8 @@ export default function WebClipShopPage() {
                 {linked ? (
                   <>
                     <p className="text-[11.5px] font-bold text-gray-800 line-clamp-2 leading-snug">{linked.t}</p>
-                    <p className="text-[11px] text-emerald-600 font-semibold mt-0.5">฿{Number(linked.p).toLocaleString('th-TH')}</p>
-                    <button onClick={() => save(id, null)} className="mt-1.5 w-full rounded-lg border border-red-200 py-1.5 text-[11px] font-bold text-red-500 hover:bg-red-50">ถอดสินค้าออก</button>
+                    <p className="text-[11.5px] text-emerald-600 font-semibold mt-0.5">฿{Number(linked.p).toLocaleString('th-TH')}</p>
+                    <button onClick={() => save(id, null)} className="mt-1.5 w-full rounded-lg border border-red-200 py-1.5 text-[11.5px] font-bold text-red-500 hover:bg-red-50">ถอดสินค้าออก</button>
                   </>
                 ) : open ? (
                   <div className="space-y-1.5">
@@ -140,29 +140,29 @@ export default function WebClipShopPage() {
                     <div className="max-h-40 overflow-y-auto space-y-1">
                       {results.map((x) => (
                         <button key={x.h} onClick={() => save(id, { h: x.h, t: x.t, p: x.p, img: x.i || null })}
-                          className="w-full text-left rounded-lg bg-gray-50 px-2 py-1.5 text-[11px] text-gray-700 hover:bg-blue-50">
+                          className="w-full text-left rounded-lg bg-gray-50 px-2 py-1.5 text-[11.5px] text-gray-700 hover:bg-blue-50">
                           {x.t} <span className="text-gray-400">฿{Number(x.p).toLocaleString('th-TH')}</span>
                         </button>
                       ))}
                       {/* 🔴 ดัชนีโหลดไม่ได้ = ค้นไม่ได้ **ไม่ใช่ไม่มีสินค้า** */}
                       {q.trim().length >= 2 && results.length === 0 && (
-                        <p className={`text-[10.5px] px-1 ${index.length === 0 ? 'text-red-500' : 'text-gray-400'}`}>
+                        <p className={`text-[10px] px-1 ${index.length === 0 ? 'text-red-500' : 'text-gray-400'}`}>
                           {index.length === 0 ? 'ค้นไม่ได้ — ยังโหลดรายชื่อสินค้าไม่สำเร็จ' : 'ไม่พบสินค้า'}
                         </p>
                       )}
                     </div>
-                    <button onClick={() => { setOpenFor(null); setQ('') }} className="w-full rounded-lg border border-gray-200 py-1 text-[10.5px] text-gray-400">ปิด</button>
+                    <button onClick={() => { setOpenFor(null); setQ('') }} className="w-full rounded-lg border border-gray-200 py-1 text-[10px] text-gray-400">ปิด</button>
                   </div>
                 ) : (
-                  <button onClick={() => setOpenFor(id)} className="w-full rounded-lg bg-gray-900 py-1.5 text-[11px] font-bold text-white hover:bg-gray-800">+ ผูกสินค้า</button>
+                  <button onClick={() => setOpenFor(id)} className="w-full rounded-lg bg-gray-900 py-1.5 text-[11.5px] font-bold text-white hover:bg-gray-800">+ ผูกสินค้า</button>
                 )}
               </div>
             </div>
           )
         })}
       </div>
-      {clips.length > 0 && shown.length === 0 && <p className="py-10 text-center text-[13px] text-gray-400">ผูกครบทุกคลิปแล้ว 🎉</p>}
-      <p className="text-center text-[11px] text-gray-300">ชุดเดียวกับ gucut.com/admin/clip-shop/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
+      {clips.length > 0 && shown.length === 0 && <p className="py-10 text-center text-[12.5px] text-gray-400">ผูกครบทุกคลิปแล้ว 🎉</p>}
+      <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/clip-shop/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
 }

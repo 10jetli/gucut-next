@@ -313,7 +313,7 @@ function PctBadge({ cur, prev }: { cur: number; prev: number }) {
   const { text, tone } = pct(cur, prev)
   const cls =
     tone === 'up' ? 'text-emerald-600 bg-emerald-50' : tone === 'down' ? 'text-red-500 bg-red-50' : 'text-gray-400 bg-gray-50'
-  return <span className={`text-[11px] font-semibold px-1.5 py-0.5 rounded-md ${cls}`}>{text}</span>
+  return <span className={`text-[11.5px] font-semibold px-1.5 py-0.5 rounded-md ${cls}`}>{text}</span>
 }
 
 /* กราฟยอดขาย — SVG ล้วน ไม่พึ่งไลบรารี
@@ -362,7 +362,7 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
               {parseInt(String(d.date ?? '').slice(8), 10) || ''}
             </text>
             {d.sales > 0 && (
-              <text x={x(i)} y={H - 30 - h} textAnchor="middle" className="fill-gray-500 text-[9px] font-medium">
+              <text x={x(i)} y={H - 30 - h} textAnchor="middle" className="fill-gray-500 text-[10px] font-medium">
                 {d.sales >= 1000 ? `${(d.sales / 1000).toFixed(d.sales >= 10000 ? 0 : 1)}K` : Math.round(d.sales)}
               </text>
             )}
@@ -378,7 +378,7 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
         </>
       )}
       {/* ⑩ ป้ายแกน x — ZORT มี ของเราไม่มี (สเปกข้อ 10) */}
-      <text x={W / 2} y={H - 1} textAnchor="middle" className="fill-gray-400 text-[9px]">ช่วงเวลา</text>
+      <text x={W / 2} y={H - 1} textAnchor="middle" className="fill-gray-400 text-[10px]">ช่วงเวลา</text>
     </svg>
   )
 }
@@ -446,7 +446,7 @@ function ReturnsFreshness({ utc }: { utc: string | null }) {
   const at = `${p(th.getUTCDate())}/${p(th.getUTCMonth() + 1)} ${p(th.getUTCHours())}:${p(th.getUTCMinutes())} น.`
   const stale = ageMin > 120
   return (
-    <p className={`text-[11px] mt-2 text-center ${stale ? 'text-amber-800' : 'text-gray-400'}`}>
+    <p className={`text-[11.5px] mt-2 text-center ${stale ? 'text-amber-800' : 'text-gray-400'}`}>
       {stale ? '🔴 ' : '🕰 '}ตารางใบคืนซิงก์ล่าสุด <b>{at}</b> ({ageMin < 60 ? `${ageMin} นาที` : `${Math.floor(ageMin / 60)} ชม.`}ที่แล้ว)
       {stale && <> — ควรซิงก์ทุกชั่วโมง <b>ตัวซิงก์น่าจะหยุด</b> ยอดที่หักอาจไม่ครบ</>}
     </p>
@@ -773,20 +773,20 @@ export default function SalesReportPage() {
                            ใบคืนที่ออกเดือนนี้อาจเป็นของที่ขายเดือนก่อน ⇒ เขียนให้ตรงตามนั้น
                         ⚠️ ดึงไม่สำเร็จ = "ยังไม่รู้" **ห้ามแสดง 0** เพราะ 0 แปลว่าไม่มีใครคืนของ */}
                     {report.returns === null ? (
-                      <p className="text-[12px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mt-3 max-w-[320px] text-center leading-relaxed">
+                      <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5 mt-3 max-w-[320px] text-center leading-relaxed">
                         ⚠️ <b>ยังไม่รู้ว่ามีใบคืนเท่าไหร่</b> — ดึงรายการใบคืนไม่สำเร็จ
                         {report.returnsError ? ` (${report.returnsError})` : ''}
                         <br />ยอดข้างบน<b>ยังไม่ได้หักของที่ลูกค้าคืน</b> และตอนนี้บอกไม่ได้ว่าเท่าไหร่
                       </p>
                     ) : report.returns.count === 0 ? (
-                      <p className="text-[12px] text-gray-400 mt-3 text-center">
+                      <p className="text-[12.5px] text-gray-400 mt-3 text-center">
                         ไม่มีใบขายในช่วงนี้ที่ถูกคืน · ยอดข้างบนจึงเท่ากับยอดสุทธิ
                       </p>
                     ) : (
                       /* ✅ **เลิกเขียนว่า "ราว" แล้ว** (15 ก.ย. 2569) — ท่อจับคู่ใบคืนกับใบขาย
                          ด้วย reference = orders.number และผูกขอบเขตกับ **วันที่ขาย** ตัวเดียวกับตัวกรองนี้
                          ⇒ totalAmount − returnedAmount เป็นยอดสุทธิจริง ไม่ใช่ค่าประมาณอีกต่อไป */
-                      <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 max-w-[360px] leading-relaxed">
+                      <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 max-w-[360px] leading-relaxed">
                         🔴 <b>ยอดข้างบนยังไม่ได้หักของที่ลูกค้าคืน</b>
                         <br />
                         ใบขายในช่วงนี้ที่ถูกคืน <b>{fmtNum(report.returns.count)} ใบ</b>
@@ -798,7 +798,7 @@ export default function SalesReportPage() {
                         {/* 🔴 ใบคืนที่หาใบขายต้นทางไม่เจอ = **ไม่ได้ถูกหักออก** ⇒ ต้องบอก ห้ามเงียบ
                             และมันไม่ผูกกับตัวกรองร้าน/ช่องทาง ⇒ เอาไปรวมเองไม่ได้ */}
                         {report.unmatchedReturns && report.unmatchedReturns.count > 0 && (
-                          <span className="block text-[11px] text-amber-800 mt-1">
+                          <span className="block text-[11.5px] text-amber-800 mt-1">
                             ⚠️ และมีใบคืนอีก <b>{fmtNum(report.unmatchedReturns.count)} ใบ</b>
                             {' '}({fmtMoney(report.unmatchedReturns.amount)} บาท) ที่<b>หาใบขายต้นทางไม่เจอ</b>
                             {' '}⇒ <b>ยังไม่ได้ถูกหักออก</b> และนับรวมทุกร้าน/ทุกช่องทาง ไม่ผูกกับตัวกรองนี้
@@ -806,11 +806,11 @@ export default function SalesReportPage() {
                         )}
                         {/* 🔴 ใบคืนซิงก์ยังไม่ครบ ⇒ ห้ามเขียนว่าหักครบแล้ว */}
                         {report.returnsSyncComplete === false && (
-                          <span className="block text-[11px] text-red-800 mt-1">
+                          <span className="block text-[11.5px] text-red-800 mt-1">
                             🔴 <b>ตารางใบคืนยังซิงก์ไม่ครบ</b> — ยอดสุทธิข้างบนจึงยัง<b>หักไม่ครบ</b>
                           </span>
                         )}
-                        <span className="block text-[11px] text-amber-800 mt-1">
+                        <span className="block text-[11.5px] text-amber-800 mt-1">
                           <Link href="/core/return-orders" className="underline">ดูใบคืนทั้งหมด</Link>
                         </span>
                       </div>
@@ -876,7 +876,7 @@ export default function SalesReportPage() {
                             onClick={() => setChartKind(k)}
                             title={title}
                             aria-pressed={chartKind === k}
-                            className={`text-[13px] w-7 h-7 rounded border ${
+                            className={`text-[12.5px] w-7 h-7 rounded border ${
                               chartKind === k ? 'bg-violet-50 border-violet-400' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
                           >
                             {icon}
@@ -892,7 +892,7 @@ export default function SalesReportPage() {
                       <button
                         key={b.id}
                         onClick={() => setBucket(b.id)}
-                        className={`text-[12px] px-2.5 py-1 rounded ${
+                        className={`text-[12.5px] px-2.5 py-1 rounded ${
                           bucket === b.id ? 'text-blue-600 font-semibold underline' : 'text-gray-500 hover:text-gray-700'
                         }`} aria-pressed={bucket === b.id}
                       >
@@ -1002,7 +1002,7 @@ export default function SalesReportPage() {
                               {/* ⑦ บรรทัดหมวดหมู่ใต้ชื่อ — ตำแหน่งเดียวกับ ZORT
                                      🔴 สามสถานะ: มีหมวด · ZORT ยังไม่จัดหมวด · ท่อรุ่นเก่าไม่ส่งช่องมา (เงียบ) */}
                               {typeof p.category === 'string' && (
-                                <span className="block text-[11px] text-gray-400">
+                                <span className="block text-[11.5px] text-gray-400">
                                   หมวดหมู่: {p.category || '(ยังไม่ได้จัดหมวดใน ZORT)'}
                                 </span>
                               )}
@@ -1071,7 +1071,7 @@ export default function SalesReportPage() {
                             {unknown
                               ? (<>
                                 <b>ยังไม่รู้คลัง</b>
-                                <span className="block text-[11px] text-gray-500">ใบที่ยังกวาดย้อนหลังไม่ถึง — ท่อส่งมาเป็นแถวของตัวเอง</span>
+                                <span className="block text-[11.5px] text-gray-500">ใบที่ยังกวาดย้อนหลังไม่ถึง — ท่อส่งมาเป็นแถวของตัวเอง</span>
                               </>)
                               : <>{w.name} <span className="text-gray-400">({w.code})</span></>}
                           </td>
@@ -1087,7 +1087,7 @@ export default function SalesReportPage() {
                             <td className={TDR}>
                               {fmtNum(w.returns)}
                               {typeof w.returnsAmount === 'number' && w.returns > 0 && (
-                                <span className="block text-[11px] text-gray-400">{fmtMoney(w.returnsAmount)}</span>
+                                <span className="block text-[11.5px] text-gray-400">{fmtMoney(w.returnsAmount)}</span>
                               )}
                             </td>
                           )}
@@ -1121,7 +1121,7 @@ export default function SalesReportPage() {
                 </select>
               </div>
               {whItemsErr && (
-                <p className="text-[12px] text-red-700 px-4 md:px-5 pt-2">⚠️ ดึงยอดรายสินค้าไม่สำเร็จ: {whItemsErr}</p>
+                <p className="text-[12.5px] text-red-700 px-4 md:px-5 pt-2">⚠️ ดึงยอดรายสินค้าไม่สำเร็จ: {whItemsErr}</p>
               )}
               {whItems && whItems.length === 0 && !whItemsErr && (
                 <p className="text-[12.5px] text-gray-500 px-4 md:px-5 pt-2">

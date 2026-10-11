@@ -394,7 +394,7 @@ function CoreStockInner() {
               {/* 🔴 ท่อไม่ส่ง total มา = undefined ⇒ .toLocaleString โยน error ⇒ **จอขาวทั้งหน้า**
                   (เจอจริงด้วยท่อปลอมโหมดตอบ {} เปล่า ๆ 6 ก.ย. 2569 — 200 ทุกคำขอ ไม่มีกล่องแดงให้เห็นด้วย) */}
               {ตัวกรองที่ท่อไม่ได้ใช้.length > 0 && (
-                <span className="block text-[12px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-2 py-1 mb-1">
+                <span className="block text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-2 py-1 mb-1">
                   ⚠️ <b>ตัวกรองที่จอส่งกับที่ท่อใช้จริงไม่ตรงกัน</b> — {ตัวกรองที่ท่อไม่ได้ใช้.join(' · ')}
                   {' '}⇒ แถวที่เห็น<b>ไม่ได้ถูกกรองด้วยค่านั้น</b>
                 </span>
@@ -457,7 +457,7 @@ function CoreStockInner() {
               )}
               {/* 🔴 มีของแต่ไม่มีรหัส = **สต็อกที่ระบบเราตามไม่ได้เลย** ต้องเห็นชัด ไม่ใช่ในวงเล็บสีเทา */}
               {Number(data.noSkuWithStock) > 0 && (
-                <span className="block mt-1 text-[12px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
+                <span className="block mt-1 text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
                   🔴 <b>มีสินค้าไม่มีรหัสที่ยังมีของเหลืออยู่ {Number(data.noSkuWithStock).toLocaleString('th-TH')} ตัว</b> —
                   คลังเงาใช้รหัสสินค้าเป็นกุญแจ ⇒ <b>ของพวกนี้ระบบเราตามไม่ได้เลย</b>
                   {' '}ต้องไปใส่รหัสให้มันที่ ZORT ก่อน
@@ -547,17 +547,17 @@ function CoreStockInner() {
                    ถ้าเขียนแค่ "พิมพ์ฉลาก" คนจะนึกว่าได้ทั้งคลัง 2,672 รหัส */}
             {rows.length > 0 && (
               <Link href={`/core/stock/print?sku=${encodeURIComponent(rows.map((r) => r.sku).join(','))}`}
-                className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
                 🖨 พิมพ์ฉลาก {rows.length} รหัสในหน้านี้
               </Link>
             )}
             {/* 🖼️ ทางเข้าจอ "รหัสที่ยังไม่มีรูป" (ใบ t_mu2u6eg6) — ทำจอไว้แล้วไม่มีทางเข้า = ไม่มีใครใช้ */}
             <Link href="/core/stock/no-image"
-              className="text-[13px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
               🖼️ รหัสที่ยังไม่มีรูป
             </Link>
             <Link href="/core/stock/new"
-              className="text-[13px] font-semibold text-white rounded-full px-4 py-1.5"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
               เพิ่มสินค้าใหม่
             </Link>
@@ -573,11 +573,11 @@ function CoreStockInner() {
         advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
         right={
           <>
-            <span className="text-[13px] text-gray-500">เรียง</span>
+            <span className="text-[12.5px] text-gray-500">เรียง</span>
             <select
               value={sort}
               onChange={(e) => { setSort(e.target.value); load(0, e.target.value) }}
-              className="text-[13px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
               {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -670,9 +670,9 @@ function CoreStockInner() {
                 ⇒ โชว์ตามผังแต่ล็อกไว้พร้อมเหตุผล · ทำปุ่มที่กดแล้วไม่เปลี่ยนอะไรคือปุ่มหลอก
                    และซ่อนทิ้งก็ไม่ได้ เพราะคนที่ชิน ZORT จะหาแล้วไม่เจอ แล้วนึกว่าระบบเราทำไม่ได้ */}
             <span title="มุมมองรายการ — จอนี้มีมุมมองเดียว"
-              className="text-[13px] leading-none px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-600">☰</span>
+              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-600">☰</span>
             <span title="มุมมองตารางรูป — ยังไม่ได้ทำ (ไม่ใช่ทำไม่ได้) · ตอนนี้ดูรูปได้ในหน้ารายละเอียดสินค้า"
-              className="text-[13px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">▦</span>
+              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">▦</span>
           </div>
 
           {/* 🔴 วางไว้เหนือแท็บ — ของที่ลูกค้าซื้อไม่ได้ ต้องเห็นก่อนตัวเลขอื่นทั้งหมด */}
@@ -909,7 +909,7 @@ function CoreStockInner() {
                       </Link>
                       {รหัสผิดรูป(r.sku) && (
                         <span
-                          className="ml-1.5 text-[10.5px] font-semibold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1 py-0.5"
+                          className="ml-1.5 text-[10px] font-semibold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1 py-0.5"
                           title="รหัสนี้ไม่ใช่รหัสสินค้า — หน้าตาเป็นสตริงตัวเลือกของมาร์เก็ตเพลสต่อกัน (วัดเจอ 1 แถวจาก 2,672 เมื่อ 16 ก.ย. 2569) · จำนวนของแถวนี้ยังไม่ควรนับรวมคลัง และกดเข้าไปจะไม่มีข้อมูลสินค้า · แจ้งฝั่งท่อแล้ว"
                         >
                           รหัสผิดรูป
@@ -917,7 +917,7 @@ function CoreStockInner() {
                       )}
                       {!ตรงที่เห็นบนจอ(r) && (
                         <span
-                          className="ml-1.5 text-[10.5px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 rounded px-1 py-0.5"
+                          className="ml-1.5 text-[10px] font-semibold text-gray-600 bg-gray-100 border border-gray-200 rounded px-1 py-0.5"
                           title="แถวนี้ไม่มีคำค้นอยู่ในรหัสหรือชื่อปัจจุบัน — แต่ตรงกับ **ชื่อสินค้าที่พิมพ์ไว้ในใบขายเก่า** (ท่อค้นชื่อในบรรทัดใบขายด้วย) · จอ ZORT ค้นคำเดียวกันจะไม่เจอแถวนี้ · ไม่ใช่ความผิดพลาด — มีประโยชน์ตอนลูกค้าเรียกชื่อเก่าของสินค้า"
                         >
                           ตรงที่ช่องอื่น
@@ -925,12 +925,12 @@ function CoreStockInner() {
                       )}
                       {r.service && (
                         // ติดป้ายเฉพาะตอนแสดงบริการด้วย จะได้รู้ทันทีว่าทำไมแถวนี้ติดลบ
-                        <span className="ml-1.5 text-[10.5px] font-semibold text-gray-600 bg-gray-100 rounded px-1 py-0.5">
+                        <span className="ml-1.5 text-[10px] font-semibold text-gray-600 bg-gray-100 rounded px-1 py-0.5">
                           บริการ
                         </span>
                       )}
                       {r.active === false && (
-                        <span className="ml-1.5 text-[10.5px] font-semibold text-gray-500 bg-gray-100 rounded px-1 py-0.5">
+                        <span className="ml-1.5 text-[10px] font-semibold text-gray-500 bg-gray-100 rounded px-1 py-0.5">
                           ปิดใช้งาน
                         </span>
                       )}
@@ -946,9 +946,9 @@ function CoreStockInner() {
                     <td className={TDR}>{r.price ? fmtMoney(r.price) : '0'}</td>
                     <td className={TDR}>
                       <Num v={r.qty} zeroRed />
-                      {r.unit && <span className="ml-1 text-[11px] text-gray-400">{r.unit}</span>}
+                      {r.unit && <span className="ml-1 text-[11.5px] text-gray-400">{r.unit}</span>}
                       {r.qty < 0 && (
-                        <span className="ml-1.5 text-[10.5px] font-semibold text-red-600 bg-red-50 rounded px-1 py-0.5">
+                        <span className="ml-1.5 text-[10px] font-semibold text-red-600 bg-red-50 rounded px-1 py-0.5">
                           ติดลบ
                         </span>
                       )}
@@ -972,7 +972,7 @@ function CoreStockInner() {
             </table>
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
-              <span className="text-[12px] text-gray-500">
+              <span className="text-[12.5px] text-gray-500">
                 แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
                 {' '}· <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}

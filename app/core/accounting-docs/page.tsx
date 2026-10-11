@@ -352,7 +352,7 @@ export default function AccountingDocsPage() {
               type === t.v ? 'bg-white border-gray-400 text-gray-800 font-semibold' : 'border-transparent text-gray-500'
             }`} aria-pressed={type === t.v}>
             {t.label}
-            {t.seen !== null && <span className="ml-1 text-[11px] text-gray-400">({fmtNum(t.seen)})</span>}
+            {t.seen !== null && <span className="ml-1 text-[11.5px] text-gray-400">({fmtNum(t.seen)})</span>}
           </button>
         ))}
         <span className="text-[11.5px] text-gray-400 ml-1">ตัวเลขในวงเล็บวัดไว้ 15 ก.ย. 2569 — ไม่ใช่ค่าสด</span>
@@ -380,7 +380,7 @@ export default function AccountingDocsPage() {
         <ErrorBox>{error}</ErrorBox>
       ) : (
         <ErrorBox title="อ่านเอกสารไม่สำเร็จ">{error}
-          <span className="block mt-1 text-[12px]">⚠️ อ่านไม่ได้ <b>ไม่ได้แปลว่าไม่มีเอกสาร</b> — ลองรีเฟรชอีกครั้ง</span>
+          <span className="block mt-1 text-[12.5px]">⚠️ อ่านไม่ได้ <b>ไม่ได้แปลว่าไม่มีเอกสาร</b> — ลองรีเฟรชอีกครั้ง</span>
         </ErrorBox>
       ))}
       {loading && !data && <LoadingState />}
@@ -477,7 +477,7 @@ export default function AccountingDocsPage() {
                     <td className={TD}>
                       {r.referencenumber || <span className="text-gray-300">—</span>}
                       {r.referencetype !== undefined && r.referencetype !== null && (
-                        <span className="ml-1 text-[11px] text-gray-400">(ชนิด {String(r.referencetype)})</span>
+                        <span className="ml-1 text-[11.5px] text-gray-400">(ชนิด {String(r.referencetype)})</span>
                       )}
                     </td>
                     <td className={TD}>

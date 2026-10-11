@@ -369,7 +369,7 @@ export default function ArchPage() {
           <div className="grid md:grid-cols-2 gap-3 mt-3">
             {scheduled.length > 0 && (
               <div className="rounded-lg border p-3.5" style={{ background: C.surface, borderColor: C.line }}>
-                <p className="text-[13.5px] font-semibold mb-1.5" style={{ color: C.ink }}>
+                <p className="text-[12.5px] font-semibold mb-1.5" style={{ color: C.ink }}>
                   งานที่ทำเองตามเวลา · {scheduled.length} ตัว
                 </p>
                 <div className="space-y-1">
@@ -377,9 +377,9 @@ export default function ArchPage() {
                     const gloss = cronThai(s.cron)
                     return (
                       <div key={s.name} className="flex flex-wrap items-baseline gap-2">
-                        <span className="text-[11px] font-mono rounded px-1.5 py-0.5" style={{ background: C.surface2, color: C.muted }}>{s.name}</span>
-                        <span className="text-[12px]" style={{ color: C.ink }}>{gloss ?? s.cron}</span>
-                        {gloss && <span className="text-[10.5px] font-mono" style={{ color: C.muted }}>{s.cron}</span>}
+                        <span className="text-[11.5px] font-mono rounded px-1.5 py-0.5" style={{ background: C.surface2, color: C.muted }}>{s.name}</span>
+                        <span className="text-[12.5px]" style={{ color: C.ink }}>{gloss ?? s.cron}</span>
+                        {gloss && <span className="text-[10px] font-mono" style={{ color: C.muted }}>{s.cron}</span>}
                       </div>
                     )
                   })}
@@ -388,7 +388,7 @@ export default function ArchPage() {
             )}
             {adminInts.length > 0 && (
               <div className="rounded-lg border p-3.5" style={{ background: C.surface, borderColor: C.line }}>
-                <p className="text-[13.5px] font-semibold mb-0.5" style={{ color: C.ink }}>
+                <p className="text-[12.5px] font-semibold mb-0.5" style={{ color: C.ink }}>
                   ของนอกบ้านที่ฝั่งหลังร้านเรียกใช้ · {adminInts.length} เจ้า
                 </p>
                 {/* ⚠️ ฝั่งนี้บอกได้แค่ว่า "โค้ดเรียกอยู่" ไม่ได้บอกว่าตั้งคีย์ครบแล้ว
@@ -403,7 +403,7 @@ export default function ArchPage() {
                       <span className="text-[12.5px] font-medium" style={{ color: C.ink }}>{it.name}</span>
                       <span className="text-[11.5px]" style={{ color: C.muted }}>{it.what}</span>
                       {!it.inCode && (
-                        <span className="text-[10.5px] rounded px-1.5 py-0.5" style={{ background: C.surface2, color: C.muted }}>
+                        <span className="text-[10px] rounded px-1.5 py-0.5" style={{ background: C.surface2, color: C.muted }}>
                           ไม่พบการเรียกใช้ในโค้ด
                         </span>
                       )}
@@ -420,7 +420,7 @@ export default function ArchPage() {
                 ⚠️ นี่คือคำถามที่ตอบผิดแล้วอันตรายที่สุดในระบบนี้ (เปิด = เขียนของจริงเข้า ZORT ได้) */}
             {realSend.length > 0 && (
               <div className="rounded-lg border p-3.5" style={{ background: C.surface, borderColor: C.line }}>
-                <p className="text-[13.5px] font-semibold mb-1" style={{ color: C.ink }}>
+                <p className="text-[12.5px] font-semibold mb-1" style={{ color: C.ink }}>
                   ปุ่มส่งจริง — เปิด {realSend.filter((r) => r.open).length} จาก {realSend.length} จอ
                 </p>
                 <p className="text-[11.5px] mb-2" style={{ color: C.muted }}>
@@ -430,7 +430,7 @@ export default function ArchPage() {
                 <div className="space-y-1">
                   {realSend.map((r) => (
                     <div key={r.path} className="flex flex-wrap items-baseline gap-2">
-                      <span className="text-[10.5px] rounded px-1.5 py-0.5"
+                      <span className="text-[10px] rounded px-1.5 py-0.5"
                         style={r.open
                           ? { background: '#FEE2E2', color: '#991B1B' }
                           : { background: C.surface2, color: C.muted }}>
@@ -444,8 +444,8 @@ export default function ArchPage() {
             )}
 
             <div className="rounded-lg border p-3.5" style={{ background: C.surface, borderColor: C.line }}>
-              <p className="text-[13.5px] font-semibold mb-1.5" style={{ color: C.ink }}>รายละเอียดที่ผังย่อไว้</p>
-              <div className="space-y-1.5 text-[12px]" style={{ color: C.muted }}>
+              <p className="text-[12.5px] font-semibold mb-1.5" style={{ color: C.ink }}>รายละเอียดที่ผังย่อไว้</p>
+              <div className="space-y-1.5 text-[12.5px]" style={{ color: C.muted }}>
                 {logins.length > 0 && <p>เข้าสู่ระบบด้วย: <b style={{ color: C.ink }}>{logins.join(' · ')}</b></p>}
                 {edge.length > 0 && <p>ตัวดักที่ขอบเครือข่าย: <b style={{ color: C.ink }}>{edge.join(' · ')}</b> (ใช้กับบอตของ AI)</p>}
                 <p>

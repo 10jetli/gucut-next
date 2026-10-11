@@ -137,7 +137,7 @@ export default function SweepTiming() {
   return (
     <div className="bg-white border border-gray-200 rounded-md p-4 mb-3">
       <div className="flex flex-wrap items-baseline justify-between gap-2 mb-1">
-        <p className="text-[14.5px] font-semibold text-gray-900">
+        <p className="text-[14px] font-semibold text-gray-900">
           เวลาที่ตัวกวาดดันสต็อกใช้จริง
           <span className="font-normal text-gray-500 text-[12.5px]">
             {' · วัดจากสมุดที่ท่อจดไว้ ย้อน '}{d?.['ชั่วโมงย้อนหลัง'] ?? 24}{' ชม. — ไม่ได้ยิงอะไรใหม่'}
@@ -171,7 +171,7 @@ export default function SweepTiming() {
           {/* 🔑 **ใช้ประโยคของท่อ ไม่เขียนคำของจอคู่ขนาน** — ท่อหารด้วยช่วงจริงแล้ว (fda062e)
               จอเคยเขียนคำเตือนเองตอนที่ท่อยังหารผิด · พอท่อแก้แล้วยังเก็บไว้ = คำเท็จค้างบนจอ */}
           {ครอบไม่ถึง && (
-            <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+            <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
               ⚠️ <PipeNote>{ครอบไม่ถึง}</PipeNote>
             </div>
           )}
@@ -186,7 +186,7 @@ export default function SweepTiming() {
           {/* 🔑 ไม่มีเกณฑ์จากท่อ ⇒ **บอกว่าตัดสินไม่ได้ ไม่ใช่เงียบ**
               เงียบจะถูกอ่านว่า "ไม่มีรอบไหนใกล้เพดาน" ซึ่งเราไม่รู้ */}
           {ตัดสินใกล้เพดานไม่ได้ && (
-            <div className="text-[12px] text-gray-700 bg-gray-50 border border-gray-300 rounded px-3 py-2 mb-2 leading-relaxed">
+            <div className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-300 rounded px-3 py-2 mb-2 leading-relaxed">
               ℹ️ <b>ยังบอกไม่ได้ว่ามีรอบไหนใกล้เพดานเวลา</b> — ท่อรุ่นที่ปล่อยอยู่ไม่ได้ส่งเกณฑ์มา
               <span className="block text-gray-600">
                 ⇒ จอ<b>ไม่คิดเกณฑ์เอง</b> · เกณฑ์ที่คิดจากเปอร์เซ็นต์ของ “เพดาน” ใช้ไม่ได้
@@ -197,7 +197,7 @@ export default function SweepTiming() {
 
           {/* 🔴 ของที่จะพังต้องอยู่บนสุด ไม่ใช่ต่อท้ายตาราง */}
           {ใกล้เพดาน.length > 0 && (
-            <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
+            <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
               ⚠️ <b>มีรอบที่เข้าใกล้เพดานเวลาแล้ว</b> —{' '}
               {ใกล้เพดาน.map((r) => {
                 const n = r['รอบที่เกือบชนเพดาน']
@@ -242,7 +242,7 @@ export default function SweepTiming() {
           )}
 
           <div className="overflow-x-auto border border-gray-200 rounded">
-            <table className="w-full text-[12px]">
+            <table className="w-full text-[12.5px]">
               <thead className="bg-gray-50">
                 <tr>
                   {['ช่องทาง', 'โหมด', 'รอบ (24 ชม.)', 'ค่ากลาง', 'ช้าสุด', 'นาที/วัน'].map((h, i) => (

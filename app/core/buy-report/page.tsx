@@ -336,22 +336,22 @@ export default function BuyReportPage() {
         <p className="text-[17px] font-semibold text-gray-800">
           {thaiShort(from)} – {thaiShort(to)}
         </p>
-        <button onClick={() => setAdv((v) => !v)} className="text-[13px] text-blue-600 hover:underline">
+        <button onClick={() => setAdv((v) => !v)} className="text-[12.5px] text-blue-600 hover:underline">
           ค้นหาขั้นสูง
         </button>
       </div>
 
       {adv && (
         <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-4 flex flex-wrap items-end gap-4">
-          <label className="text-[12px] text-gray-600">
+          <label className="text-[12.5px] text-gray-600">
             ตั้งแต่
             <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); if (วันครบ(e.target.value)) void load(store, by, e.target.value, to) }}
-              className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
+              className="block mt-1 text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
-          <label className="text-[12px] text-gray-600">
+          <label className="text-[12.5px] text-gray-600">
             ถึง
             <input type="date" value={to} onChange={(e) => { setTo(e.target.value); if (วันครบ(e.target.value)) void load(store, by, from, e.target.value) }}
-              className="block mt-1 text-[13px] border border-gray-300 rounded px-2.5 py-1.5" />
+              className="block mt-1 text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5" />
           </label>
           {/* 🗓️ ช่วงสำเร็จรูปให้ครบตามที่ ZORT มี (กดดูจอ ZORT เอง 16 ก.ย. 2569:
                  1/3/6 เดือน · 1 ปี · วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว)
@@ -376,7 +376,7 @@ export default function BuyReportPage() {
                   /* 🔴 เปลี่ยนช่วงวันแล้ว **ต้องยิงใหม่** เพราะตารางรายสินค้ากรองที่เซิร์ฟเวอร์แล้ว
                      (ของเดิมกรองในเครื่องอย่างเดียวจึงไม่ต้องยิง — ลืมข้อนี้จะได้ตารางของช่วงก่อน) */
                   onClick={() => { setFrom(f); setTo(t); void load(store, by, f, t) }}
-                  className={`text-[12px] rounded-full px-2.5 py-1 border ${
+                  className={`text-[12.5px] rounded-full px-2.5 py-1 border ${
                     on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`} aria-pressed={on}
                 >
@@ -414,7 +414,7 @@ export default function BuyReportPage() {
                     </p>
                   )
                   : <p className="text-[30px] font-bold text-blue-600 leading-none">ไม่มียอดซื้อ</p>}
-                <p className="text-[12px] text-gray-500 mt-2">
+                <p className="text-[12.5px] text-gray-500 mt-2">
                   {fmtNum(จำนวนใบทั้งช่วง ?? inRange.length)} ใบ ในช่วงที่เลือก
                   {cutRows && <span className="block text-amber-800">⚠️ กราฟและตารางข้างล่างคิดจาก {fmtNum(inRange.length)} ใบที่โหลดมาเท่านั้น</span>}
                 </p>
@@ -452,7 +452,7 @@ export default function BuyReportPage() {
               </div>
               <BuyChart points={points} />
               {กราฟ.โครงขาด && (
-                <p className="text-[12px] text-amber-800 mt-1">
+                <p className="text-[12.5px] text-amber-800 mt-1">
                   ⚠️ <b>ช่วงวันที่เลือกยาวเกินที่กราฟไล่ได้</b> — โครงเวลาถูกตัดที่ 400 ช่อง
                   {' '}⇒ <b>กราฟนี้ไม่ครบทั้งช่วง</b> ให้ย่อช่วงวัน หรือเปลี่ยนความละเอียดเป็นเดือน/ปี
                 </p>
@@ -460,7 +460,7 @@ export default function BuyReportPage() {
               <div className="flex items-center justify-end gap-1 mt-2">
                 {GRAINS.map((g) => (
                   <button key={g.id} onClick={() => setGrain(g.id)}
-                    className={`text-[12px] px-2.5 py-1 rounded border ${
+                    className={`text-[12.5px] px-2.5 py-1 rounded border ${
                       grain === g.id ? 'border-gray-400 text-gray-900 font-semibold underline' : 'border-gray-200 text-gray-500'
                     }`} aria-pressed={grain === g.id}>
                     {g.label}
@@ -605,7 +605,7 @@ export default function BuyReportPage() {
                             </span>
                           )}
                         {r.lastDate && (
-                          <span className="block text-[11px] text-gray-400">
+                          <span className="block text-[11.5px] text-gray-400">
                             ซื้อล่าสุด {thaiDate(r.lastDate)}{r.orders ? ` · ${fmtNum(r.orders)} ใบ` : ''}
                           </span>
                         )}
@@ -631,7 +631,7 @@ export default function BuyReportPage() {
                 ซึ่งอันตรายกว่าตัวเลขผิดตรง ๆ เพราะไม่มีอะไรดูขัดตา
                 ✅ ตอนนี้ท่อส่ง `truncated` มาเองแล้ว ⇒ อ่านจากท่อก่อน แล้วค่อยถอยไปเทียบ `skus` */}
             {itemsCut > 0 && (
-              <p className="text-[12px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
+              <p className="text-[12.5px] text-gray-600 bg-gray-50 border-t border-gray-200 px-4 py-2.5 leading-relaxed">
                 ตารางนี้แสดง <b>{fmtNum(itemAll.length)}</b> จาก <b>{fmtNum(Number(items?.skus ?? 0))}</b> รหัส
                 — ขาดอีก <b>{fmtNum(itemsCut)}</b> รหัส เป็นเงิน{' '}
                 <b>{fmtMoney(Math.max(0, Number(items?.amount ?? 0) - itemsTotal))}</b> บาท
@@ -664,7 +664,7 @@ export default function BuyReportPage() {
                    ⇒ ผลต่างระหว่างสองตาราง = ยอดของใบยกเลิกพอดี · ไม่เขียนไว้ คนจะนึกว่าตัวใดตัวหนึ่งผิด
                    (กติกาข้อ 4 เรื่องแท็บใน CLAUDE.md: เลขจากคนละแหล่งห้ามวางคู่กันโดยไม่บอกว่าต่างตรงไหน) */}
             {voided.length > 0 && (
-              <p className="mx-4 md:mx-5 mb-2 text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 leading-relaxed">
+              <p className="mx-4 md:mx-5 mb-2 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 leading-relaxed">
                 ⚠️ ตารางนี้ <b>รวมใบซื้อที่ยกเลิกไว้ {fmtNum(voided.length)} ใบ</b> (รวม {fmtMoney(voidedSum)} บาท)
                 {' '}— ตามแท็บของ ZORT ที่รวมใบยกเลิกไว้เหมือนกัน
                 {items?.excludesCancelled
@@ -705,7 +705,7 @@ export default function BuyReportPage() {
             </TableWrap>
           </Card>
 
-          <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             ZORT มีเฉพาะตาราง<b>รายสินค้า</b> · ตาราง<b>รายใบ</b> เป็นของเพิ่มของเราเอง
             เพราะช่วงเวลาที่เลือกด้านบนมีผลกับตารางนั้นจริง (ตารางรายสินค้ายังไม่ขยับตามช่วงเวลา)
           </p>

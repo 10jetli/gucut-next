@@ -55,14 +55,14 @@ export default function ConnectionsPage() {
         <button
           onClick={load}
           disabled={loading}
-          className="text-[13px] font-medium text-blue-600 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors disabled:opacity-50"
+          className="text-[12.5px] font-medium text-blue-600 bg-white border border-gray-200 rounded-xl px-3 py-1.5 shadow-sm hover:bg-blue-50 transition-colors disabled:opacity-50"
         >
           {loading ? 'กำลังตรวจ...' : '🔄 ตรวจสอบอีกครั้ง'}
         </button>
       </div>
 
       {!loading && !error && (
-        <div className={'rounded-2xl border p-4 text-[13px] ' + (okCount === conns.length ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700')}>
+        <div className={'rounded-2xl border p-4 text-[12.5px] ' + (okCount === conns.length ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700')}>
           {okCount === conns.length
             ? '✅ ทุกการเชื่อมต่อใช้งานได้ปกติ (' + okCount + '/' + conns.length + ')'
             : '⚠️ มีการเชื่อมต่อที่มีปัญหา ' + (conns.length - okCount) + ' รายการ — ดูรายละเอียดด้านล่าง'}
@@ -70,7 +70,7 @@ export default function ConnectionsPage() {
       )}
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-[13px] text-red-700">เกิดข้อผิดพลาด: {error}</div>
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-[12.5px] text-red-700">เกิดข้อผิดพลาด: {error}</div>
       )}
 
       {loading && <LoadingState />}
@@ -82,14 +82,14 @@ export default function ConnectionsPage() {
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <p className="text-[14px] font-semibold text-gray-800">{c.name}</p>
-                <span className={'text-[10.5px] px-2 py-0.5 rounded-full font-semibold ' + (c.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
+                <span className={'text-[10px] px-2 py-0.5 rounded-full font-semibold ' + (c.ok ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700')}>
                   {c.ok ? 'เชื่อมต่อแล้ว' : 'มีปัญหา'}
                 </span>
               </div>
-              <p className="text-[12px] text-gray-400 mt-0.5">{c.detail}</p>
+              <p className="text-[12.5px] text-gray-400 mt-0.5">{c.detail}</p>
               <p className={'text-[12.5px] mt-1.5 break-words ' + (c.ok ? 'text-gray-600' : 'text-red-600')}>{c.message}</p>
             </div>
-            <span className="text-[11px] text-gray-300 shrink-0">{c.latencyMs} ms</span>
+            <span className="text-[11.5px] text-gray-300 shrink-0">{c.latencyMs} ms</span>
           </div>
         ))}
       </div>

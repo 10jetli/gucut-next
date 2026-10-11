@@ -76,16 +76,16 @@ function Card({ label, value, unknown, note, tone }: {
 }) {
   return (
     <div className="bg-white border border-gray-200 rounded-md px-4 py-3 min-w-[190px] flex-1">
-      <p className="text-[12px] text-gray-500">{label}</p>
+      <p className="text-[12.5px] text-gray-500">{label}</p>
       {unknown
-        ? <p className="text-[13px] text-amber-800 mt-1 leading-snug">⚠️ {unknown}</p>
+        ? <p className="text-[12.5px] text-amber-800 mt-1 leading-snug">⚠️ {unknown}</p>
         : (
           <p className={`text-[22px] font-semibold mt-0.5 ${
             tone === 'red' ? 'text-red-500' : tone === 'amber' ? 'text-amber-600' : 'text-gray-900'}`}>
             {value}
           </p>
         )}
-      {note && <p className="text-[11px] text-gray-400 mt-1 leading-relaxed">{note}</p>}
+      {note && <p className="text-[11.5px] text-gray-400 mt-1 leading-relaxed">{note}</p>}
     </div>
   )
 }
@@ -267,7 +267,7 @@ export default function BundleDetailPage() {
       {loading && !bundle && <LoadingState />}
 
       {!loading && !bundle && !error && (
-        <div className="bg-white border border-gray-200 rounded-md p-6 mt-3 text-[13px] text-gray-500">
+        <div className="bg-white border border-gray-200 rounded-md p-6 mt-3 text-[12.5px] text-gray-500">
           ไม่พบชุดรหัส <b>{sku}</b> ในคลังของเรา — อาจถูกลบที่ ZORT หรือรหัสพิมพ์ผิด
         </div>
       )}
@@ -278,39 +278,39 @@ export default function BundleDetailPage() {
               🔴 ทุกปุ่มต้อง "ทำอะไรจริง" หรือ "พาไปหน้าที่บอกว่าติดอะไร"
                  ห้ามมีปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง */}
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            <Link href="/core/soon/bundle-edit" className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">แก้ไข</Link>
-            <Link href="/core/soon/bundle-delete" className="text-[13px] font-medium text-red-700 bg-white border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50">ลบ</Link>
+            <Link href="/core/soon/bundle-edit" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">แก้ไข</Link>
+            <Link href="/core/soon/bundle-delete" className="text-[12.5px] font-medium text-red-700 bg-white border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50">ลบ</Link>
 
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'cmd' ? '' : 'cmd')}
-                className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
                 คำสั่ง ▾
               </button>
               {menu === 'cmd' && (
                 <span className="absolute left-0 top-full mt-1 z-20 w-[230px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] py-1 block">
                   {/* ✅ ZORT มี doSell() เปิดบิลขายจากหน้านี้ — ของเราพาไปเครื่องคิดเงินพร้อมเติมรหัสให้ */}
-                  <Link href={`/core/pos?sku=${encodeURIComponent(sku)}`} className="block px-3.5 py-2 text-[13px] text-gray-800 hover:bg-gray-50">ขายสินค้า (เปิดบิล)</Link>
-                  <Link href={`/core/stock?q=${encodeURIComponent(sku)}`} className="block px-3.5 py-2 text-[13px] text-gray-800 hover:bg-gray-50">ดูในจอคลังสินค้า</Link>
+                  <Link href={`/core/pos?sku=${encodeURIComponent(sku)}`} className="block px-3.5 py-2 text-[12.5px] text-gray-800 hover:bg-gray-50">ขายสินค้า (เปิดบิล)</Link>
+                  <Link href={`/core/stock?q=${encodeURIComponent(sku)}`} className="block px-3.5 py-2 text-[12.5px] text-gray-800 hover:bg-gray-50">ดูในจอคลังสินค้า</Link>
                   <button type="button" onClick={() => { navigator.clipboard?.writeText(sku).catch(() => {}); setMenu('') }}
-                    className="block w-full text-left px-3.5 py-2 text-[13px] text-gray-800 hover:bg-gray-50">คัดลอกรหัสชุด</button>
+                    className="block w-full text-left px-3.5 py-2 text-[12.5px] text-gray-800 hover:bg-gray-50">คัดลอกรหัสชุด</button>
                 </span>
               )}
             </span>
 
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'print' ? '' : 'print')}
-                className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
                 พิมพ์เอกสาร ▾
               </button>
               {menu === 'print' && (
                 <span className="absolute left-0 top-full mt-1 z-20 w-[230px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] py-1 block">
-                  <Link href={`/core/stock/print?sku=${encodeURIComponent(sku)}`} className="block px-3.5 py-2 text-[13px] text-gray-800 hover:bg-gray-50">พิมพ์ฉลากบาร์โค้ด</Link>
+                  <Link href={`/core/stock/print?sku=${encodeURIComponent(sku)}`} className="block px-3.5 py-2 text-[12.5px] text-gray-800 hover:bg-gray-50">พิมพ์ฉลากบาร์โค้ด</Link>
                 </span>
               )}
             </span>
 
-            <Link href="/core/soon/bundle-push-marketplace" className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">อัพเดทช่องทางอื่น ▾</Link>
-            <Link href="/core/soon/bundle-activity" className="text-[13px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">ดูกิจกรรมของรายการ</Link>
+            <Link href="/core/soon/bundle-push-marketplace" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">อัพเดทช่องทางอื่น ▾</Link>
+            <Link href="/core/soon/bundle-activity" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">ดูกิจกรรมของรายการ</Link>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
           </div>
 
@@ -334,17 +334,17 @@ export default function BundleDetailPage() {
 
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3 mt-4 max-w-[560px]">
                 <div>
-                  <p className="text-[12px] text-gray-500">รหัสสินค้า</p>
+                  <p className="text-[12.5px] text-gray-500">รหัสสินค้า</p>
                   <p className="text-[15px] text-gray-900">{bundle.sku}</p>
                 </div>
                 <div>
-                  <p className="text-[12px] text-gray-500">ราคาขาย</p>
+                  <p className="text-[12.5px] text-gray-500">ราคาขาย</p>
                   <p className="text-[15px] text-gray-900">
                     {typeof bundle.sellprice === 'number' ? `${fmtMoney(bundle.sellprice)} บาท` : '—'}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[12px] text-gray-500">วันหมดอายุรายการ</p>
+                  <p className="text-[12.5px] text-gray-500">วันหมดอายุรายการ</p>
                   <p className="text-[15px] text-gray-400">-</p>
                 </div>
               </div>
@@ -398,7 +398,7 @@ export default function BundleDetailPage() {
             </div>
           )}
           {monthSum.amount === 0 && sales && sales.length > 0 && lastSold && (
-            <p className="text-[12px] text-gray-500 mt-2 leading-relaxed">
+            <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
               เดือนนี้ยังไม่มีการขาย — ขายล่าสุดเมื่อ <b>{thaiDate(lastSold)}</b> (มีประวัติขายรวม {fmtNum(sales.length)} แถว)
             </p>
           )}
@@ -476,7 +476,7 @@ export default function BundleDetailPage() {
                          ⇒ **เส้นชุดเองบอกเหตุผลของรอบนั้น** ⇒ เอาข้อความจริงไปติดข้างแถวคลังนั้น
                  ⚠️ บทเรียน: คำว่า "น่าจะ" ที่เขียนไว้เพราะหลักฐานมาจากเส้นข้างเคียง
                     **ต้องถอดทิ้งทันทีที่เส้นตรงตอบได้** ไม่งั้นจอจะค้างอยู่กับคำคาดเดาตลอดไป */}
-          <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-2 leading-relaxed">
+          <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-2 leading-relaxed">
             ⚠️ <b>ขีด (—) = ZORT ไม่ส่งตัวเลขของคลังนั้นมา ไม่ใช่ &ldquo;คลังนั้นมี 0&rdquo;</b>
             {' '}เหตุผลของแต่ละคลัง<b>อยู่ข้างชื่อคลังในตาราง</b> — เป็นข้อความที่ ZORT ตอบในรอบนี้เอง<br />
             ⚠️ และคลัง <b>NEW</b> คืนเลข<b>เท่ากับตอนไม่ระบุคลังเป๊ะ</b> ⇒ ยังแยกไม่ได้ว่าเป็นของคลัง NEW
@@ -509,17 +509,17 @@ export default function BundleDetailPage() {
                         )
                         : (
                           <>
-                            <span className="text-[10.5px] text-gray-500 mb-0.5">{fmtMoney(s.amount)}</span>
+                            <span className="text-[10px] text-gray-500 mb-0.5">{fmtMoney(s.amount)}</span>
                             <span className="w-full rounded-t bg-[#4669e5]"
                               style={{ height: `${Math.max(3, (s.amount / chartMax) * 110)}px` }} />
                           </>
                         )}
-                      <span className="text-[11px] text-gray-500 mt-1 whitespace-nowrap">{s.label}</span>
-                      {s.amount === null && <span className="text-[10.5px] text-gray-400">ยังไม่รู้</span>}
+                      <span className="text-[11.5px] text-gray-500 mt-1 whitespace-nowrap">{s.label}</span>
+                      {s.amount === null && <span className="text-[10px] text-gray-400">ยังไม่รู้</span>}
                     </div>
                   ))}
                 </div>
-                <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
+                <p className="text-[12.5px] text-gray-500 mt-3 leading-relaxed">
                   {chartKnown === 0
                     ? <>⚠️ <b>ทั้ง 6 เดือนยังไม่รู้ยอด</b> — แถบลายเทาคือ &ldquo;ยังไม่รู้&rdquo; <b>ไม่ใช่ 0 บาท</b>{salesUnknownWhy ? ` (${salesUnknownWhy})` : ''}</>
                     : <>แท่งเตี้ยสุด = เดือนนั้น<b>ไม่มีการขายจริง</b> · แถบลายเทา = <b>ยังไม่รู้ยอด ไม่ใช่ 0 บาท</b></>}
@@ -644,21 +644,21 @@ export default function BundleDetailPage() {
               และถ้าท่อล้มบางแหล่ง (`failed` ไม่ว่าง) ตารางจะดูครบทั้งที่ไม่ครบ
               ⚠️ วันนี้ยังไม่ออกอาการ (มากสุด 6 แถว) — ใส่ไว้ก่อนที่จะออกอาการ */}
           {salesMeta && (salesMeta.hasMore || salesMeta.truncated) && (
-            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mt-2">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mt-2">
               ⚠️ <b>ตารางนี้ยังไม่ครบ</b> — แสดง <b>{fmtNum(salesMeta.shown)}</b>
               {salesMeta.total !== null ? <> จากทั้งหมด <b>{fmtNum(salesMeta.total)}</b> รายการ</> : <> รายการ (ท่อไม่ได้บอกยอดรวม)</>}
               {' '}· ท่อตัดมาให้เพราะชนเพดานต่อคำขอ
             </p>
           )}
           {salesMeta && salesMeta.failed.length > 0 && (
-            <p className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mt-2">
+            <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mt-2">
               ⚠️ <b>ท่ออ่านข้อมูลบางแหล่งไม่สำเร็จ</b> ({salesMeta.failed.join(' · ')})
               {' '}⇒ รายการที่เห็น <b>อาจไม่ใช่ทั้งหมด</b> — ไม่ใช่ว่าไม่มีรายการอื่น
             </p>
           )}
 
           {/* ── ความสดของข้อมูลสองชุด (สูตร vs ตัวเลขสต็อก) ───────────────── */}
-          <p className="text-[12px] text-gray-500 mt-3 leading-relaxed">
+          <p className="text-[12.5px] text-gray-500 mt-3 leading-relaxed">
             {fresh.state === 'ok' && (
               <>✅ สูตรชุดนี้<b>ซิงก์จาก ZORT อัตโนมัติ{รอบ && ` ${รอบ}`}</b> — ตรวจล่าสุด <b>{thaiMoment(fresh.checkedThai)}</b>
                 {fresh.ageHours !== null && <> ({fresh.ageHours} ชม.ที่แล้ว)</>}</>

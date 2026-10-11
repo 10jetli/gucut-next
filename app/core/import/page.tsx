@@ -134,7 +134,7 @@ function ImportInner() {
       <div className="flex flex-wrap gap-2 mb-4">
         {KINDS.map((k) => (
           <button key={k.kind} onClick={() => { setKind(k.kind); reset() }}
-            className={`text-[13px] rounded-full px-4 py-1.5 border ${k.kind === kind ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`} aria-pressed={kind === k.kind}>
+            className={`text-[12.5px] rounded-full px-4 py-1.5 border ${k.kind === kind ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`} aria-pressed={kind === k.kind}>
             {k.label}
           </button>
         ))}
@@ -147,7 +147,7 @@ function ImportInner() {
       )}
 
       <div className="bg-white border border-gray-200 rounded-md p-4 mb-3">
-        <p className="text-[13px] text-gray-700"><b>หัวคอลัมน์แถวแรก</b> ({meta.label}): {meta.columns}</p>
+        <p className="text-[12.5px] text-gray-700"><b>หัวคอลัมน์แถวแรก</b> ({meta.label}): {meta.columns}</p>
         <p className="text-[11.5px] text-gray-400 mt-1">ใช้หัวคอลัมน์ภาษาไทยหรืออังกฤษก็ได้ · ไม่ใส่เลขอ้างอิง ระบบสร้างจากเนื้อหาแถวให้ (อัปไฟล์เดิมซ้ำจะไม่ได้ของซ้ำ) · อ่านเฉพาะชีตแรก</p>
         <input ref={fileRef} type="file" accept=".csv,.xlsx" hidden
           onChange={(e) => { onFile(e.target.files?.[0]); e.target.value = '' }} />
@@ -159,11 +159,11 @@ function ImportInner() {
         </div>
       </div>
 
-      {parseErr && <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">{parseErr}</div>}
+      {parseErr && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">{parseErr}</div>}
 
       {parsed && (
         <>
-          <div className="text-[13px] text-gray-700 mb-2">
+          <div className="text-[12.5px] text-gray-700 mb-2">
             อ่านได้ <b>{parsed.rows.length}</b> {kind === 'sale' || kind === 'po' ? 'ใบ' : 'รายการ'}
             {' · '}แถวผิด <b className={parsed.errors.length ? 'text-red-700' : ''}>{parsed.errors.length}</b>
             {parsed.warnings.length > 0 && <> · คำเตือน <b className="text-amber-700">{parsed.warnings.length}</b></>}
@@ -207,13 +207,13 @@ function ImportInner() {
               </div>
 
               {sendErr && (
-                <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">
+                <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3">
                   ส่งหยุดกลางทาง — {sendErr} · แถวที่ยังไม่ได้ส่งจะขึ้นว่า &ldquo;ยังไม่ได้ส่ง&rdquo; (ไม่ใช่ &ldquo;ไม่ผ่าน&rdquo;)
                 </div>
               )}
 
               {outcomes && (
-                <p className="text-[13px] text-gray-700 mb-2">
+                <p className="text-[12.5px] text-gray-700 mb-2">
                   ผลทดลอง: ผ่าน <b className="text-emerald-700">{count('ok')}</b> · ไม่ผ่าน <b className="text-red-700">{count('failed')}</b>
                   {' · '}เคยบันทึกแล้ว <b>{count('duplicate')}</b> · ไม่รู้ผล <b className="text-amber-700">{count('unknown')}</b>
                   {' · '}ยังไม่ได้ส่ง <b>{count('notSent')}</b>
@@ -257,7 +257,7 @@ function ImportInner() {
             </>
           )}
           {parsed.rows.length === 0 && parsed.errors.length === 0 && (
-            <p className="text-[13px] text-gray-500">ไฟล์นี้ไม่มีแถวข้อมูล (มีแต่หัวคอลัมน์หรือว่างทั้งไฟล์)</p>
+            <p className="text-[12.5px] text-gray-500">ไฟล์นี้ไม่มีแถวข้อมูล (มีแต่หัวคอลัมน์หรือว่างทั้งไฟล์)</p>
           )}
         </>
       )}
@@ -272,7 +272,7 @@ function ImportInner() {
 
 export default function ImportPage() {
   return (
-    <Suspense fallback={<div className="p-6 text-[13px] text-gray-500">กำลังโหลด...</div>}>
+    <Suspense fallback={<div className="p-6 text-[12.5px] text-gray-500">กำลังโหลด...</div>}>
       <ImportInner />
     </Suspense>
   )

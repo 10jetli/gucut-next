@@ -154,7 +154,7 @@ export default function CorePage() {
   const failedNote = (key: string) => {
     if (!(st?.failed ?? []).includes(key)) return null
     return (
-      <p className="text-[13px] text-red-700 bg-red-50 p-4 leading-relaxed">
+      <p className="text-[12.5px] text-red-700 bg-red-50 p-4 leading-relaxed">
         ⚠️ <b>ดึงส่วนนี้ไม่สำเร็จรอบนี้</b> — <b>ไม่ได้แปลว่าไม่มีข้อมูล</b>
         {st?.failedWhy?.[key] && <> · <b>{st.failedWhy[key]}</b></>}
         {' '}ลองรีเฟรชอีกครั้ง · <b>กดปุ่มสั่งงานด้านล่างตอนนี้ไม่ช่วย</b>
@@ -172,7 +172,7 @@ export default function CorePage() {
               ที่เขียนว่าดึงข้อมูลไม่ได้ — สองข้อความขัดกันเอง และคนจะเชื่อบรรทัดบน
               (เจอด้วยการทำให้ท่อล่มจริงแล้วเปิดดู 6 ก.ย. 2569 · อ่านโค้ดเฉย ๆ ไม่เห็น
                เพราะแต่ละข้อความถูกของมันเอง — ผิดตอนอยู่ด้วยกันเท่านั้น) */}
-          <span className="text-[11px] text-gray-400" suppressHydrationWarning>
+          <span className="text-[11.5px] text-gray-400" suppressHydrationWarning>
             กระจกออเดอร์ทุกช่องทางลงฐานของเราเอง วิ่งคู่ ZORT
             {st ? <> · อัพเดต {refreshed.toLocaleTimeString('th-TH')}</> : null}
           </span>
@@ -180,7 +180,7 @@ export default function CorePage() {
         <button
           onClick={load}
           disabled={loading}
-          className="text-[12px] md:text-[13px] font-semibold text-blue-600 bg-white border border-gray-200 rounded-xl px-3.5 py-2 shadow-sm flex items-center gap-1.5 hover:bg-blue-50 transition-colors disabled:opacity-50"
+          className="text-[12.5px] md:text-[12.5px] font-semibold text-blue-600 bg-white border border-gray-200 rounded-xl px-3.5 py-2 shadow-sm flex items-center gap-1.5 hover:bg-blue-50 transition-colors disabled:opacity-50"
         >
           <span className={loading ? 'spinner inline-block' : ''}>🔄</span> รีเฟรช
         </button>
@@ -192,9 +192,9 @@ export default function CorePage() {
       {st && !st.ready && (
         <Card>
           <p className="text-[14px] font-semibold text-gray-800 mb-1">⏳ คลังเงายังไม่เริ่มเดิน</p>
-          <p className="text-[13px] text-gray-500">{st.note}</p>
-          <p className="text-[13px] text-gray-500 mt-2">
-            ต้องตั้ง env ที่ Netlify โปรเจกต์ <code className="text-[12px] bg-gray-100 px-1.5 py-0.5 rounded">gucut-storefront</code>:
+          <p className="text-[12.5px] text-gray-500">{st.note}</p>
+          <p className="text-[12.5px] text-gray-500 mt-2">
+            ต้องตั้ง env ที่ Netlify โปรเจกต์ <code className="text-[12.5px] bg-gray-100 px-1.5 py-0.5 rounded">gucut-storefront</code>:
             <b> CLOUDFLARE_D1_TOKEN</b> (สร้างที่ Cloudflare → API Tokens → สิทธิ์ D1 Edit)
             และ <b>ZORT_STORENAME_2 / ZORT_APIKEY_2 / ZORT_APISECRET_2</b> (คัดลอกจาก env ของ gucut-admin)
             — ใส่แล้วกลับมากดปุ่ม backfill ที่หน้านี้ได้เลย
@@ -207,10 +207,10 @@ export default function CorePage() {
           {/* นับถอยหลัง 30 วัน — ประตูระยะ 2 */}
           <Card>
             <div className="flex flex-wrap items-baseline justify-between gap-2 mb-2">
-              <p className="text-[13px] font-semibold text-gray-700">🚪 ประตูระยะ 2 — ยอดตรงติดต่อกัน {GOAL_DAYS} วัน</p>
+              <p className="text-[12.5px] font-semibold text-gray-700">🚪 ประตูระยะ 2 — ยอดตรงติดต่อกัน {GOAL_DAYS} วัน</p>
               {/* ⚠️ ไม่มีผลเทียบยอดเลย ≠ "ตรงกัน 0 วัน" — อันแรกคือยังไม่รู้ อันหลังคือรู้แล้วว่าไม่ผ่าน
                   เขียน 0 ทั้งที่ยังไม่มีข้อมูล = ดูเหมือนเราสอบตกทุกวัน ทั้งที่ยังไม่ได้สอบ */}
-              <p className="text-[13px] font-bold text-gray-900">
+              <p className="text-[12.5px] font-bold text-gray-900">
                 {recon.length === 0 ? '—' : streak} / {GOAL_DAYS} วัน
               </p>
             </div>
@@ -220,7 +220,7 @@ export default function CorePage() {
                 style={{ width: `${Math.min((streak / GOAL_DAYS) * 100, 100)}%` }}
               />
             </div>
-            <p className="text-[11px] text-gray-400 mt-1.5">
+            <p className="text-[11.5px] text-gray-400 mt-1.5">
               {streak >= GOAL_DAYS
                 ? '✅ ผ่านประตูแล้ว — พร้อมคุยเรื่องให้ Core เป็นตัวจริง'
                 : recon.length === 0
@@ -249,19 +249,19 @@ export default function CorePage() {
             {/* ผลเทียบยอด 7 วัน */}
             <Card padded={false} className="overflow-hidden">
               <div className="px-4 md:px-5 py-3 border-b border-gray-100">
-                <p className="text-[13px] font-semibold text-gray-700">🪞 ผลเทียบยอดรายวัน (ZORT vs Core)</p>
+                <p className="text-[12.5px] font-semibold text-gray-700">🪞 ผลเทียบยอดรายวัน (ZORT vs Core)</p>
               </div>
-              {recon.length === 0 && (failedNote('recon') ?? <p className="text-[13px] text-gray-400 p-4">ยังไม่มีข้อมูล</p>)}
+              {recon.length === 0 && (failedNote('recon') ?? <p className="text-[12.5px] text-gray-400 p-4">ยังไม่มีข้อมูล</p>)}
               {recon.map((r) => {
                 const ok = r.diff_notes === 'ตรงกัน'
                 return (
                   <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
                     <span className="text-[15px] shrink-0">{ok ? '✅' : '⚠️'}</span>
-                    <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
-                    <span className="text-[12px] text-gray-500 flex-1">
+                    <span className="text-[12.5px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
+                    <span className="text-[12.5px] text-gray-500 flex-1">
                       ZORT {fmtNum(r.zort_orders)} ใบ · {fmtMoney(r.zort_amount)} — Core {fmtNum(r.core_orders)} ใบ · {fmtMoney(r.core_amount)}
                     </span>
-                    {!ok && <span className="text-[11px] font-semibold text-red-500 shrink-0">{r.diff_notes}</span>}
+                    {!ok && <span className="text-[11.5px] font-semibold text-red-500 shrink-0">{r.diff_notes}</span>}
                   </div>
                 )
               })}
@@ -270,14 +270,14 @@ export default function CorePage() {
             {/* เทียบ 3 ทางฝั่ง Shopee — แผนลับขั้น 3 (ระยะรันคู่) */}
             <Card padded={false} className="overflow-hidden">
               <div className="px-4 md:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
-                <p className="text-[13px] font-semibold text-gray-700">🛒 Shopee ตรงจาก API vs ZORT (ขั้น 3 — รันคู่)</p>
-                <span className="text-[11px] text-gray-400">ต้องตรง 14 วันติดก่อนขยับ</span>
+                <p className="text-[12.5px] font-semibold text-gray-700">🛒 Shopee ตรงจาก API vs ZORT (ขั้น 3 — รันคู่)</p>
+                <span className="text-[11.5px] text-gray-400">ต้องตรง 14 วันติดก่อนขยับ</span>
               </div>
               {/* 🔴 **สองสถานะ ไม่ใช่หนึ่ง** — "ดึงไม่ได้" กับ "ยังไม่มีข้อมูล" เขียนต่างกัน
                   และคำแนะนำก็ต้องต่างกัน: ดึงไม่ได้ ⇒ กดปุ่มดึงซ้ำก็ไม่ช่วย */}
               {(st.shopee ?? []).length === 0 && (
                 (st.failed ?? []).includes('shopee') ? (
-                  <p className="text-[13px] text-red-700 bg-red-50 p-4 leading-relaxed">
+                  <p className="text-[12.5px] text-red-700 bg-red-50 p-4 leading-relaxed">
                     ⚠️ <b>ดึงข้อมูลเทียบ Shopee ไม่สำเร็จรอบนี้</b> — <b>ไม่ได้แปลว่าไม่มีข้อมูล</b>
                     {/* เหตุผลจริงจากท่อถ้ามี — ไม่มีก็ยังต้องอ่านรู้เรื่อง (ท่อรุ่นเก่าไม่ส่งคีย์นี้) */}
                     {st.failedWhy?.shopee && <> · <b>{st.failedWhy.shopee}</b></>}
@@ -285,18 +285,18 @@ export default function CorePage() {
                     {' '}(กดปุ่ม &ldquo;ดึงออเดอร์ Shopee&rdquo; ตอนนี้ก็ไม่ช่วย)
                   </p>
                 ) : (
-                  <p className="text-[13px] text-gray-400 p-4">ยังไม่มีข้อมูล — กด &ldquo;ดึงออเดอร์ Shopee&rdquo; ด้านล่าง</p>
+                  <p className="text-[12.5px] text-gray-400 p-4">ยังไม่มีข้อมูล — กด &ldquo;ดึงออเดอร์ Shopee&rdquo; ด้านล่าง</p>
                 )
               )}
               {(st.shopee ?? []).map((r) => (
                 <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
                   <span className="text-[15px] shrink-0">{r.match ? '✅' : '⚠️'}</span>
-                  <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
-                  <span className="text-[12px] text-gray-500 flex-1">
+                  <span className="text-[12.5px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
+                  <span className="text-[12.5px] text-gray-500 flex-1">
                     API {fmtNum(r.api_orders)} ใบ · {fmtMoney(r.api_amount)} — ZORT {fmtNum(r.zort_orders)} ใบ · {fmtMoney(r.zort_amount)}
                   </span>
                   {!r.match && (
-                    <span className="text-[11px] font-semibold text-red-500 shrink-0">
+                    <span className="text-[11.5px] font-semibold text-red-500 shrink-0">
                       ต่าง {fmtNum(Math.abs(r.api_orders - r.zort_orders))} ใบ
                     </span>
                   )}
@@ -307,11 +307,11 @@ export default function CorePage() {
             {/* สต็อกที่เราคำนวณเอง vs ZORT — แผนลับขั้น 1 (คลังเงา) */}
             <Card padded={false} className="overflow-hidden">
               <div className="px-4 md:px-5 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
-                <p className="text-[13px] font-semibold text-gray-700">📦 สต็อกที่เราคำนวณเอง vs ZORT (ขั้น 1)</p>
-                <span className="text-[11px] text-gray-400">ยังไม่ตัดสต็อกจริงที่ไหน</span>
+                <p className="text-[12.5px] font-semibold text-gray-700">📦 สต็อกที่เราคำนวณเอง vs ZORT (ขั้น 1)</p>
+                <span className="text-[11.5px] text-gray-400">ยังไม่ตัดสต็อกจริงที่ไหน</span>
               </div>
               {(st.stock ?? []).length === 0 && (failedNote('stock') ?? (
-                <p className="text-[13px] text-gray-400 p-4">
+                <p className="text-[12.5px] text-gray-400 p-4">
                   ยังไม่มีข้อมูล — ต้องมีภาพถ่ายสต็อกอย่างน้อยสองวันก่อน ยามตี 1 เป็นคนเทียบและจดให้เอง
                 </p>
               ))}
@@ -319,12 +319,12 @@ export default function CorePage() {
                 <div key={r.day} className="flex items-center gap-3 px-4 md:px-5 py-2.5 border-b border-gray-50 last:border-0">
                   {/* ศูนย์ SKU = ไม่มีอะไรให้เทียบ ห้ามขึ้นเขียวเด็ดขาด */}
                   <span className="text-[15px] shrink-0">{r.skus === 0 ? '❓' : r.mismatched === 0 ? '✅' : '⚠️'}</span>
-                  <span className="text-[13px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
-                  <span className="text-[12px] text-gray-500 flex-1">
+                  <span className="text-[12.5px] font-medium text-gray-800 w-24 shrink-0">{thaiDate(r.day)}</span>
+                  <span className="text-[12.5px] text-gray-500 flex-1">
                     {r.skus === 0 ? r.notes : `เทียบ ${fmtNum(r.skus)} SKU · ตรง ${fmtNum(r.matched)}`}
                   </span>
                   {r.mismatched > 0 && (
-                    <span className="text-[11px] font-semibold text-red-500 shrink-0">
+                    <span className="text-[11.5px] font-semibold text-red-500 shrink-0">
                       ต่าง {fmtNum(r.mismatched)} SKU
                     </span>
                   )}
@@ -334,8 +334,8 @@ export default function CorePage() {
 
             {/* ช่องทางในคลังเงา */}
             <Card>
-              <p className="text-[13px] font-semibold text-gray-700 mb-3">🏪 ช่องทางที่กระจกเข้ามาแล้ว (ยอดสะสม)</p>
-              {(st.channels ?? []).length === 0 && (failedNote('channels') ?? <p className="text-[13px] text-gray-400">ยังไม่มีข้อมูล — กด backfill ด้านล่าง</p>)}
+              <p className="text-[12.5px] font-semibold text-gray-700 mb-3">🏪 ช่องทางที่กระจกเข้ามาแล้ว (ยอดสะสม)</p>
+              {(st.channels ?? []).length === 0 && (failedNote('channels') ?? <p className="text-[12.5px] text-gray-400">ยังไม่มีข้อมูล — กด backfill ด้านล่าง</p>)}
               <div className="space-y-2.5">
                 {(st.channels ?? []).map((c) => (
                   <div key={c.channel}>
@@ -354,7 +354,7 @@ export default function CorePage() {
 
           {/* ปุ่มสั่งงาน */}
           <Card>
-            <p className="text-[13px] font-semibold text-gray-700 mb-3">🎛 สั่งงาน (กดเองเท่านั้น — ปกติระบบวิ่งเองชั่วโมงละครั้ง · ตารางเวลาจริงทุกงานดูที่หน้า “งานตามเวลา”)</p>
+            <p className="text-[12.5px] font-semibold text-gray-700 mb-3">🎛 สั่งงาน (กดเองเท่านั้น — ปกติระบบวิ่งเองชั่วโมงละครั้ง · ตารางเวลาจริงทุกงานดูที่หน้า “งานตามเวลา”)</p>
             <div className="flex flex-wrap gap-2">
               {[
                 { label: 'กระจก 3 วันล่าสุด', qs: 'sync=1&days=3' },
@@ -393,20 +393,20 @@ export default function CorePage() {
           {stockDetail && (
             <Card padded={false} className="overflow-hidden">
               <div className="px-4 md:px-5 py-3 border-b border-gray-100">
-                <p className="text-[13px] font-semibold text-gray-700">
+                <p className="text-[12.5px] font-semibold text-gray-700">
                   📦 ส่วนต่างสต็อกรายตัว {stockDetail.baseDay && `(${thaiDate(stockDetail.baseDay)} → ${thaiDate(stockDetail.curDay)})`}
                 </p>
                 {stockDetail.skip ? (
-                  <p className="text-[12px] text-gray-500 mt-1">{stockDetail.skip}</p>
+                  <p className="text-[12.5px] text-gray-500 mt-1">{stockDetail.skip}</p>
                 ) : (
                   <>
-                    <p className="text-[12px] text-gray-500 mt-1">
+                    <p className="text-[12.5px] text-gray-500 mt-1">
                       เทียบ {fmtNum(stockDetail.skus ?? 0)} SKU · ตรง {fmtNum(stockDetail.matched ?? 0)} ·
                       ต่าง {fmtNum(stockDetail.mismatched ?? 0)} · ขายไปในช่วงนี้ {fmtNum(stockDetail.soldTotal ?? 0)} ชิ้น
                     </p>
                     {stockDetail.moveWindow && (
                       // บอกช่วงที่นับใบปรับสต็อกมือ ไม่งั้นคนกรอกเช้านี้จะงงว่าทำไมยังไม่ขึ้น
-                      <p className="text-[11px] text-gray-400 mt-0.5">
+                      <p className="text-[11.5px] text-gray-400 mt-0.5">
                         นับใบปรับสต็อกมือช่วง {stockDetail.moveWindow} — ใบที่กรอกวันนี้จะขึ้นรอบพรุ่งนี้
                       </p>
                     )}
@@ -414,11 +414,11 @@ export default function CorePage() {
                 )}
               </div>
               {!stockDetail.skip && (stockDetail.items ?? []).length === 0 && (
-                <p className="text-[13px] text-emerald-600 p-4">✅ ตรงกันทุก SKU</p>
+                <p className="text-[12.5px] text-emerald-600 p-4">✅ ตรงกันทุก SKU</p>
               )}
               {(stockDetail.items ?? []).length > 0 && (
                 <div className="overflow-x-auto">
-                  <table className="w-full text-[12px] min-w-[640px]">
+                  <table className="w-full text-[12.5px] min-w-[640px]">
                     <thead className="bg-gray-50 text-gray-500">
                       <tr>
                         <th className="text-left font-medium px-4 py-2">SKU / ชื่อ</th>
@@ -435,7 +435,7 @@ export default function CorePage() {
                         <tr key={it.sku} className="border-t border-gray-50">
                           <td className="px-4 py-2">
                             <div className="font-medium text-gray-800">{it.sku}</div>
-                            {it.name && <div className="text-[11px] text-gray-400 truncate max-w-[260px]">{it.name}</div>}
+                            {it.name && <div className="text-[11.5px] text-gray-400 truncate max-w-[260px]">{it.name}</div>}
                           </td>
                           <td className="text-right px-3 py-2 text-gray-500">{fmtNum(it.baseQty)}</td>
                           <td className="text-right px-3 py-2 text-gray-500">{fmtNum(it.soldQty)}</td>
@@ -451,7 +451,7 @@ export default function CorePage() {
                   </table>
                 </div>
               )}
-              <p className="text-[11px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
+              <p className="text-[11.5px] text-gray-400 px-4 py-3 border-t border-gray-50 leading-relaxed">
                 <b className="text-amber-600">ต่างเป็นบวก</b> = เราคิดว่าควรเหลือมากกว่าที่ ZORT บอก (มีของออกที่คลังเงายังไม่เห็น เช่น ขายหน้าร้าน โอนของ) ·
                 <b className="text-blue-600"> ต่างเป็นลบ</b> = ZORT มีมากกว่า (น่าจะรับของเข้า)
                 <br />

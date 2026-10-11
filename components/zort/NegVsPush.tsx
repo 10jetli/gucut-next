@@ -61,7 +61,7 @@ export default function NegVsPush() {
   if (!ผล || ผล.ไม่โผล่ === 0) return null
 
   return (
-    <div className="text-[12px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+    <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
       ⚠️ <b>จอนี้กับจอดันสต็อกนับคนละอย่าง — ห้ามอ่านว่าเป็นชุดเดียวกัน</b>
       <br />
       จอนี้ตอบว่า <b>สต็อกในคลังเราติดลบตัวไหน</b> ·

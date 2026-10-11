@@ -36,7 +36,7 @@ export function MobileHeader({ onMenu }: { onMenu: () => void }) {
           </svg>
         </button>
         <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-blue-500 to-[#17386b] flex items-center justify-center shadow-[0_3px_8px_-2px_rgba(37,99,235,0.5)]">
-          <span className="text-[12px] font-black text-white">G</span>
+          <span className="text-[12.5px] font-black text-white">G</span>
         </div>
         <span className="text-lg font-black tracking-tight text-gray-900">gucut <span className="text-orange-600">Ai</span></span>
       </div>
@@ -84,11 +84,11 @@ export function MobileDrawer({ navItems, open, onClose }: {
         <div className="sticky top-0 bg-[#132a52]/95 backdrop-blur px-4 py-3.5 flex items-center justify-between border-b border-white/10 z-10">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
-              <span className="text-[13px] font-black text-white">G</span>
+              <span className="text-[12.5px] font-black text-white">G</span>
             </div>
             <div>
               <p className="text-white font-black leading-none tracking-tight">gucut <span className="text-orange-400">Ai</span></p>
-              <p className="text-blue-200/60 text-[9.5px] font-semibold tracking-widest uppercase mt-0.5">Back Office</p>
+              <p className="text-blue-200/60 text-[10px] font-semibold tracking-widest uppercase mt-0.5">Back Office</p>
             </div>
           </div>
           <button onClick={onClose} aria-label="ปิดเมนู"
@@ -112,11 +112,11 @@ export function MobileDrawer({ navItems, open, onClose }: {
                   <div className={`pb-1 ${item.label === 'เว็บไซต์' ? 'bg-[#4B5563]' : 'bg-black/20'}`}>
                     {item.children.map((c) => (
                       <NavAnchor key={c.href} href={c.href} onClick={onClose}
-                        className={`block py-2.5 pl-[52px] pr-4 text-[13.5px] border-l-2 ${isActive(c.href) ? 'border-white bg-black/25 text-white font-semibold' : 'border-transparent text-white/85 active:bg-black/15'}`}>
+                        className={`block py-2.5 pl-[52px] pr-4 text-[12.5px] border-l-2 ${isActive(c.href) ? 'border-white bg-black/25 text-white font-semibold' : 'border-transparent text-white/85 active:bg-black/15'}`}>
                         {c.label}
                         {/* จุดสถานะแทน ZORT — ทะเบียนเดียวกับ Sidebar (lib/zort-ready.ts) */}
                         {(() => { const r = ป้ายของเส้นทาง(c.href); return r
-                          ? <span className="ml-1.5 text-[7px]" title={r.หัว}>{r.dot}</span>
+                          ? <span className="ml-1.5 text-[10px]" title={r.หัว}>{r.dot}</span>
                           : null })()}
                       </NavAnchor>
                     ))}

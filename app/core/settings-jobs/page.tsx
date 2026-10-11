@@ -346,7 +346,7 @@ export default function SettingsJobsPage() {
                     </span>
                   )}
                   {กวาด > 0 && (
-                    <span className="block text-amber-800 text-[12px]">
+                    <span className="block text-amber-800 text-[12.5px]">
                       ⚠️ ในนั้นเป็นตัวกวาดดันสต็อก <b>{กวาด}</b> รอบ/วัน
                       {' '}({Math.round((กวาด / รวม) * 100)}% ของรอบที่นับได้)
                       {' '}— Netlify คิดเงินตาม<b>เวลารันฟังก์ชัน</b> ⇒ ตรงนี้คือจุดที่ควรดูก่อน
@@ -368,7 +368,7 @@ export default function SettingsJobsPage() {
             <thead className="bg-white border-b border-gray-200">
               <tr>
                 {['#', 'ประเภทรายงาน', 'ข้อมูลรายงาน', 'ช่วงข้อมูล', 'ครั้งล่าสุด', 'รอบส่ง', 'รอบถัดไป', 'สถานะ'].map((h) => (
-                  <th key={h} className="text-left font-normal text-[12px] text-gray-500 px-3 py-2.5 whitespace-nowrap">{h}</th>
+                  <th key={h} className="text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap">{h}</th>
                 ))}
               </tr>
             </thead>
@@ -383,10 +383,10 @@ export default function SettingsJobsPage() {
           </table>
         </div>
       </div>
-      <p className="text-[12px] text-gray-500 mb-3">จำนวน 0 รายการ | จำนวนต่อหน้า 20</p>
+      <p className="text-[12.5px] text-gray-500 mb-3">จำนวน 0 รายการ | จำนวนต่อหน้า 20</p>
 
       {/* 🚫 ทำไม่ได้จริงฝั่ง API — หลักฐานต้องอยู่บนจอ ไม่ใช่แค่ในคอมเมนต์ (งานกระดาน t_mu1bks0u) */}
-      <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-5 text-[12px] text-gray-600 leading-relaxed">
+      <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-5 text-[12.5px] text-gray-600 leading-relaxed">
         🚫 <b>ตั้ง/ดูรายงานอัตโนมัติของ ZORT จากที่นี่ไม่ได้</b> — ZORT ไม่เปิด API ให้ ·
         หลักฐาน: เอกสาร ZORT V4 ทั้ง 14 โมดูลไม่มีเส้น Export/Scheduler/Report ·
         ยิงตรวจชื่อเส้น 11 โมดูล × 14 ชื่อ (เช่น <code>Setting/GetSchedulerExportReports</code> ·
@@ -414,7 +414,7 @@ export default function SettingsJobsPage() {
         {JOBS.map((j) => (
           <div key={j.src} className="bg-white border border-gray-200 rounded-md p-4">
             <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
-              <p className="text-[14.5px] font-semibold text-gray-900">{j.name}</p>
+              <p className="text-[14px] font-semibold text-gray-900">{j.name}</p>
               <span className="flex items-center gap-2 shrink-0">
                 {j.alert && <Pill tone="orange">มีแจ้งเตือนเมื่อล้ม</Pill>}
                 <span className="text-[12.5px] text-gray-700 bg-gray-100 rounded px-2 py-0.5">{j.when}</span>
@@ -428,24 +428,24 @@ export default function SettingsJobsPage() {
                 </span>
               </span>
             </div>
-            <p className="text-[13px] text-gray-700 leading-relaxed">{j.what}</p>
-            <dl className="text-[12px] mt-2.5 space-y-1.5">
+            <p className="text-[12.5px] text-gray-700 leading-relaxed">{j.what}</p>
+            <dl className="text-[12.5px] mt-2.5 space-y-1.5">
               <div>
-                <dt className="text-gray-400 text-[11px]">รู้ได้ยังไงว่ายังวิ่งอยู่</dt>
+                <dt className="text-gray-400 text-[11.5px]">รู้ได้ยังไงว่ายังวิ่งอยู่</dt>
                 <dd className="text-gray-700">{j.howToTell}</dd>
               </div>
               <div>
                 {/* 🔴 ข้อนี้สำคัญที่สุด — งานตามเวลาที่ตายเงียบ คือของที่ไม่มีใครรู้ว่าตาย
                     (เกิดจริง 5 ก.ย.: ซิงก์ตายเพราะ await ไม่มี catch แล้วจอโชว์เลขเดิมสวยงาม) */}
-                <dt className="text-gray-400 text-[11px]">ถ้ามันตายเงียบจะเกิดอะไร</dt>
+                <dt className="text-gray-400 text-[11.5px]">ถ้ามันตายเงียบจะเกิดอะไร</dt>
                 <dd className="text-amber-800">{j.ifDead}</dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-[11px]">ไฟล์ (ตรวจย้อนได้)</dt>
+                <dt className="text-gray-400 text-[11.5px]">ไฟล์ (ตรวจย้อนได้)</dt>
                 <dd className="text-gray-500 font-mono text-[11.5px]">{j.src}</dd>
               </div>
               <div>
-                <dt className="text-gray-400 text-[11px]">ตารางเวลา (UTC ที่ Netlify)</dt>
+                <dt className="text-gray-400 text-[11.5px]">ตารางเวลา (UTC ที่ Netlify)</dt>
                 <dd className="text-gray-500 font-mono text-[11.5px]">{j.cron}</dd>
               </div>
             </dl>

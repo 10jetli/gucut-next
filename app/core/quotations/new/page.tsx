@@ -142,7 +142,7 @@ export default function NewQuotationPage() {
             <span className="text-gray-400">เลขอ้างอิงใบนี้: <b>{ref}</b> (กันการส่งซ้ำ)</span>
           </>
         }
-        actions={<Link href="/core/quotations" className="text-[13px] text-blue-600 hover:underline">← กลับรายการใบเสนอราคา</Link>}
+        actions={<Link href="/core/quotations" className="text-[12.5px] text-blue-600 hover:underline">← กลับรายการใบเสนอราคา</Link>}
       />
 
       {/* 🔴 คำเตือนอยู่เหนือฟอร์ม ไม่ใช่ใต้ปุ่ม — คนอ่านก่อนกรอก ไม่ใช่หลังกด */}
@@ -203,22 +203,22 @@ export default function NewQuotationPage() {
               <tr key={i} className="border-b border-[#e8ecf8] last:border-0">
                 <td className={TD}>
                   <input value={l.sku} onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, sku: e.target.value } : x))}
-                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px]" placeholder="รหัสสินค้า" />
+                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px]" placeholder="รหัสสินค้า" />
                 </td>
                 <td className={TDR}>
                   <input value={l.qty} inputMode="numeric"
                     onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, qty: e.target.value } : x))}
-                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px] text-right" placeholder="0" />
+                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px] text-right" placeholder="0" />
                 </td>
                 <td className={TDR}>
                   <input value={l.price} inputMode="decimal"
                     onChange={(e) => setLines((v) => v.map((x, j) => j === i ? { ...x, price: e.target.value } : x))}
-                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[13px] text-right" placeholder="ไม่ใส่ = ให้ ZORT คิดเอง" />
+                    className="w-full border border-gray-300 rounded px-2.5 py-1.5 text-[12.5px] text-right" placeholder="ไม่ใส่ = ให้ ZORT คิดเอง" />
                 </td>
                 <td className={TD}>
                   {lines.length > 1 && (
                     <button onClick={() => setLines((v) => v.filter((_, j) => j !== i))}
-                      className="text-[12px] text-gray-400 hover:text-red-600">ลบ</button>
+                      className="text-[12.5px] text-gray-400 hover:text-red-600">ลบ</button>
                   )}
                 </td>
               </tr>
@@ -231,7 +231,7 @@ export default function NewQuotationPage() {
         <BtnGhost onClick={() => setLines((v) => [...v, { ...BLANK }])}>+ เพิ่มบรรทัด</BtnGhost>
         {/* ⚠️ ยอดรวมต้องประกาศขอบเขตตัวเอง — บรรทัดที่ไม่ใส่ราคาไม่ได้ถูกนับ
             ถ้าเขียนแค่ "รวม ฿X" คนจะนึกว่านั่นคือยอดทั้งใบ */}
-        <span className="text-[13px] text-gray-600">
+        <span className="text-[12.5px] text-gray-600">
           {clean.length === 0
             ? <span className="text-gray-400">ยังไม่มีบรรทัดที่ใช้ได้</span>
             : priced === clean.length
@@ -250,7 +250,7 @@ export default function NewQuotationPage() {
           ⇒ ใบที่ออกมาจะมีบรรทัดราคา 0 และยอดหัวใบหาย — ส่งให้ลูกค้าไม่ได้
           🔴 หน้านี้ **เขียนเข้า ZORT จริง** และ ZORT **ลบใบผ่าน API ไม่ได้** ⇒ ต้องเตือนก่อนกด ไม่ใช่หลังกด */}
       {clean.length > 0 && priced < clean.length && (
-        <div className="text-[13px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
+        <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mt-3 leading-relaxed">
           ⚠️ <b>มี {clean.length - priced} บรรทัดที่ยังไม่ใส่ราคา</b> — <b>ZORT ไม่คิดราคาให้เอง</b>
           {' '}ถ้าส่งตอนนี้ บรรทัดพวกนั้นจะกลายเป็น <b>0 บาท</b> และใบนี้จะ<b>ไม่มียอดรวมหัวใบ</b>
           {' '}· ใบที่ส่งผิดแล้ว <b>ลบผ่าน API ไม่ได้</b> ต้องเข้าไปจัดการใน ZORT เอง
@@ -258,7 +258,7 @@ export default function NewQuotationPage() {
       )}
 
       {err && (
-        <div className="text-[13px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>
+        <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>
       )}
 
       {/* 🔴 เทียบยอดที่ท่อคิดกับยอดที่จอคิด — ZORT ไม่คิดเงินให้สักชั้น

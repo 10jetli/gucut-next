@@ -41,7 +41,7 @@ function ช่อง({ ป้าย, ค่า }: { ป้าย: string; ค�
   )
 }
 
-const ยังไม่มี = (ข้อความ: string) => <span className="text-[13px] text-gray-400">{ข้อความ}</span>
+const ยังไม่มี = (ข้อความ: string) => <span className="text-[12.5px] text-gray-400">{ข้อความ}</span>
 
 /** ⚠️ **ห้ามเอา `status` ดิบขึ้นจอ** — ค่าจากท่อเป็นอังกฤษ (`Pending` · `Shipped`)
  *  ต้องผ่านชุดคำเดียวกับจอรายการ ไม่งั้นค่าเดียวกันอ่านคนละอย่างสองจอ
@@ -83,7 +83,7 @@ export default function LogisticsDetailPage() {
       {loading && <LoadingState />}
       {!loading && err && <ErrorBox title="ดึงรายละเอียดใบส่งไม่ได้">{err}</ErrorBox>}
       {!loading && !err && ไม่เจอ && (
-        <Card><p className="text-[13px] text-amber-800">
+        <Card><p className="text-[12.5px] text-amber-800">
           ไม่พบใบส่งเลขที่ <b>{number}</b> ในชุดที่ท่อตอบกลับมา —
           <b> ไม่ได้แปลว่าใบนี้ไม่มีอยู่</b> อาจอยู่นอกช่วงที่กระจกเก็บไว้
         </p></Card>
