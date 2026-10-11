@@ -11,7 +11,12 @@ import { หัวCORS } from '@/lib/origin-allow'
 
 export const dynamic = 'force-dynamic'
 
-const ALLOW = new Set(['orders', 'live', 'chat', 'social', 'coupon', 'points', 'marketing', 'permit-doc', 'time', 'read-id', 'ai-bots', 'netlify-credits', 'status', 'legacy', 'clip-shop', 'clip-stats', 'seo-audit', 'video-pick', 'ad-stats', 'bot-rules', 'core', 'feed-health', 'reviews-ingest', 'shopee', 'zort-archive', 'office', 'payroll'])
+const ALLOW = new Set(['orders', 'live', 'chat', 'social', 'coupon', 'points', 'marketing', 'permit-doc', 'time', 'read-id', 'ai-bots', 'netlify-credits', 'status', 'legacy', 'clip-shop', 'clip-stats', 'seo-audit', 'video-pick', 'ad-stats', 'bot-rules', 'core', 'feed-health', 'reviews-ingest', 'shopee', 'zort-archive', 'office', 'payroll',
+  /* จับคู่รหัสอะไหล่ — จอ /core/parts-map เรียกทั้ง GET (อ่านแมป) และ POST (บันทึกทีละชิ้น)
+     🔑 เติมที่นี่เพราะ `parts-map` คือ **`path[0]` ของเส้นจริง** (`/api/parts-map`)
+        ไม่ใช่พารามิเตอร์ของเส้น `core` ⇒ ต่างจากกรณี `zortarch` ที่อธิบายไว้ข้างล่าง
+     ⚠️ POST ต้องผ่านพร็อกซีตัวนี้เพราะคีย์แอดมินอยู่ฝั่งเซิร์ฟเวอร์ ไม่ส่งลงเบราว์เซอร์ */
+  'parts-map'])
 /* ℹ️ `?zortarch=1` ไม่ต้องเติมที่นี่ — มันเป็น **พารามิเตอร์ของเส้น `core`** ไม่ใช่เส้นใหม่
    (ใบงานเขียนว่าให้เติม allowlist · ตรวจแล้วรายการนี้คุมที่ `path[0]` ซึ่งคือ `core` อยู่แล้ว
     ⇒ เติมคำว่า `zortarch` ลงไปจะกลายเป็นของที่ไม่มีวันถูกใช้ และทำให้คนหลังอ่านว่ามีเส้นนั้นจริง) */
