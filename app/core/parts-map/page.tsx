@@ -115,7 +115,9 @@ export default function Page() {
           {รุ่นทั้งหมด.map((m) => (
             <button
               key={m.id}
+              type="button"
               onClick={() => setรุ่น(m.id)}
+              aria-pressed={รุ่น === m.id}
               className={`px-3 py-2 rounded-md border text-[12.5px] min-h-[40px] ${
                 รุ่น === m.id ? 'bg-gray-900 text-white border-gray-900' : 'bg-white border-gray-300'
               }`}
