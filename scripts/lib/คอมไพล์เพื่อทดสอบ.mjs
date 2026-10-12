@@ -61,7 +61,18 @@ export function คอมไพล์เพื่อทดสอบ({ ไฟล�
     },
     files: ไฟล์.map((f) => join(process.cwd(), f)),
   }))
-  execFileSync('npx', ['tsc', '-p', tsconfig], { stdio: 'pipe' })
+  /* 🔴 **ห้ามเรียกผ่าน `npx`** — แก้ 12 ต.ค. 2569 หลังมันบล็อก push ของทั้งทีมทั้งเช้า
+     ด่าน pre-push รันด้วย PATH ที่ไม่มี `npx` ⇒ `spawnSync ENOENT`
+     ⇒ เทส **16 ตัว** ที่ใช้ตัวช่วยนี้ล้มพร้อมกัน ด้วยข้อความ `testCodeFailure`
+        ซึ่ง **อ่านเหมือนโค้ดของเส้นที่ถูกทดสอบผิด** ทั้งที่รันตรง ๆ ผ่านหมดทุกข้อ
+     ⇒ ของจริง: คุณส้มมี 3 commit ค้างทั้งเช้า · ท่านประธานถามว่าทำไมนาน ·
+        CEO เข้าใจผิดว่าเธอไม่หยิบใบสั่ง — ที่จริง **ด่านตีกลับด้วยเหตุที่ไม่เกี่ยวกับโค้ดเลย**
+     🔑 `process.execPath` = node ตัวที่กำลังรันอยู่ **ไม่ขึ้นกับ PATH**
+        + เรียก tsc จาก node_modules ตรง ๆ แทนให้ npx ไปหา
+     ⚠️ ด่านที่ล้มด้วยเหตุนอกขอบเขตของมัน คือด่านที่คนจะเริ่มข้าม (วันนี้ทีมใช้ SKIP_PREPUSH ไปแล้ว) */
+  execFileSync(process.execPath,
+    [join(process.cwd(), 'node_modules/typescript/bin/tsc'), '-p', tsconfig],
+    { stdio: 'pipe' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
 
   const ชื่อปลอมของ = {}
