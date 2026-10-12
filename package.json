@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "node scripts/gen-arch.mjs && next dev -p 3001",
-    "prebuild": "node scripts/เพดานเวลาด่าน.mjs เริ่ม ; node scripts/gen-arch.mjs && node scripts/check-node-version.mjs && node scripts/check-syntax.mjs && node scripts/check-button-readable.mjs && node scripts/check-lib-loads.mjs && node scripts/check-compiled-beside-source.mjs && node scripts/check-floating.mjs ; S=$? ; node scripts/เพดานเวลาด่าน.mjs จบ ; exit $S",
+    "prebuild": "node scripts/เพดานเวลาด่าน.mjs เริ่ม ; node scripts/gen-arch.mjs && node scripts/check-node-version.mjs && node scripts/check-syntax.mjs && node scripts/check-button-readable.mjs && node scripts/check-wip-tests.mjs && node scripts/check-lib-loads.mjs && node scripts/check-compiled-beside-source.mjs && node scripts/check-floating.mjs ; S=$? ; node scripts/เพดานเวลาด่าน.mjs จบ ; exit $S",
     "build": "next build",
     "start": "next start -p 3001",
     "lint": "next lint",
