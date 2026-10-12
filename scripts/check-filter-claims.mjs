@@ -17,6 +17,7 @@
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs'
 import { join } from 'node:path'
+import { บอกอายุสารบัญ } from './lib/อายุสารบัญ.mjs'
 import { ต้องมีของให้ตรวจ } from './lib/ต้องมีของให้ตรวจ.mjs'
 
 const ROOT = process.cwd()
@@ -26,7 +27,9 @@ if (!existsSync(SNAP)) {
   console.error('   ⇒ ถือว่าไม่ผ่าน · ดึงใหม่: node scripts/ดึงสารบัญท่อ.mjs')
   process.exit(1)
 }
-const ตาราง = JSON.parse(readFileSync(SNAP, 'utf8')).ตัวกรองที่รับรายเส้น ?? {}
+const _snap = JSON.parse(readFileSync(SNAP, 'utf8'))
+บอกอายุสารบัญ(_snap)   // เงื่อนไข ① ของ CEO — พูดวันที่ทุกครั้ง
+const ตาราง = _snap.ตัวกรองที่รับรายเส้น ?? {}
 const เส้นทั้งหมด = Object.keys(ตาราง)
 if (!เส้นทั้งหมด.length) {
   console.error('🔴 สแนปช็อตไม่มี `ตัวกรองที่รับรายเส้น` — ท่ออาจยังไม่ประกาศ หรือเราอ่านชื่อคีย์ผิด')

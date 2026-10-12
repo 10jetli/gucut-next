@@ -35,6 +35,7 @@ import { execSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
+import { บอกอายุสารบัญ } from './lib/อายุสารบัญ.mjs'
 import { อยู่ปลายกิ่งไหม, บอกว่าไม่ตัดสิน } from './lib/กำลังเล่นประวัติซ้ำไหม.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
@@ -189,6 +190,7 @@ let เหตุที่ไม่มีคีย์ที่ประกาศ 
 const คีย์ที่ประกาศ = new Set((() => {
   try {
     const snap = JSON.parse(readFileSync(join(ROOT, 'lib/pipe-snapshot.json'), 'utf8'))
+    บอกอายุสารบัญ(snap)   // เงื่อนไข ① ของ CEO — พูดวันที่ทุกครั้ง
     const c = snap?.endpoints?.composedKeys
     if (Array.isArray(c)) return c
     if (c && typeof c === 'object') return Object.values(c).flat()
