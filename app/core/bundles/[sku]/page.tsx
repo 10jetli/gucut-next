@@ -278,7 +278,10 @@ export default function BundleDetailPage() {
               🔴 ทุกปุ่มต้อง "ทำอะไรจริง" หรือ "พาไปหน้าที่บอกว่าติดอะไร"
                  ห้ามมีปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง */}
           <div className="flex flex-wrap items-center gap-2 mt-3">
-            <Link href="/core/soon/bundle-edit" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">แก้ไข</Link>
+            {/* 🔑 ปุ่มแก้ไขชี้หน้าจริงแล้ว (ใบงาน t_mv4hthvf) — เส้น `?updatebundle=1` ตอบ 405
+                บน production แล้ว ยืนยันด้วยตัวควบคุมลบ `updatebundlezzz=1` ที่ตอบ fallthrough
+                ⚠️ ปุ่มลบยังชี้ `/core/soon/` อยู่โดยตั้งใจ — จอลบยังไม่ได้ทำ (คนละใบ) */}
+            <Link href={`/core/bundles/${encodeURIComponent(sku)}/edit`} className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">แก้ไข</Link>
             <Link href="/core/soon/bundle-delete" className="text-[12.5px] font-medium text-red-700 bg-white border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50">ลบ</Link>
 
             <span className="relative">
