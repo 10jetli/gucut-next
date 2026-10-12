@@ -28,7 +28,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 const วันก่อน = (n) => new Date(Date.now() - n * 86400_000).toISOString().slice(0, 10)
 
 try {
-  execFileSync('npx', ['tsc', 'lib/reorder.ts', '--outDir', out,
+  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/reorder.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
   /* tsc พิมพ์เส้นทางแบบไม่มีนามสกุล ('./format') ซึ่ง node ESM หาไม่เจอ ⇒ เติม .js ให้ก่อน

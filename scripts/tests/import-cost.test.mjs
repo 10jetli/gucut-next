@@ -27,7 +27,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 }
 
 try {
-  execFileSync('npx', ['tsc', 'lib/import-cost.ts', '--outDir', out,
+  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/import-cost.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
   const { costOf, DEFAULT_SETTINGS, applySettings, SETTING_RANGE } = await import(join(out, 'import-cost.js'))

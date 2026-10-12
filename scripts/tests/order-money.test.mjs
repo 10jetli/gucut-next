@@ -22,7 +22,7 @@ try {
   /* 🔴 28 ก.ย. 2569: `order-money.ts` เลิกมีตัวแปลงเลขของตัวเอง แล้วหันไปใช้ของกลางใน `format.ts`
      ⇒ ต้องแปลง format.ts มาด้วย และต้องเติม `.js` ให้เส้นทางที่ tsc พิมพ์ออกมาแบบไม่มีนามสกุล
      (เทสตัวนี้ฟ้องทันทีที่ผมรวมสำเนา — ถ้าไม่มีเทส ตัวนี้จะพังเฉพาะตอนรันจริง) */
-  execFileSync('npx', ['tsc', 'lib/order-money.ts', 'lib/format.ts', '--outDir', out,
+  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/order-money.ts', 'lib/format.ts', '--outDir', out,
     '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
     '--lib', 'es2020', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })

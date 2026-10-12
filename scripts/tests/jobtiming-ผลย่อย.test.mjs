@@ -30,7 +30,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 }
 
 try {
-  execFileSync('npx', ['tsc', 'lib/job-subresult.ts', '--outDir', out,
+  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/job-subresult.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
   const { อ่านผลย่อย, งานที่รอบล่าสุดไม่ครบ } = await import(join(out, 'job-subresult.js'))

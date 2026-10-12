@@ -17,7 +17,7 @@ try {
   /* ไฟล์ต้นทางเป็น component ฝั่งเบราว์เซอร์ ('use client' + React hook)
      ⇒ คัดเฉพาะส่วนที่เป็นตรรกะล้วนมาทดสอบไม่ได้ ต้องแปลงทั้งไฟล์แล้ว import เฉพาะฟังก์ชันที่ต้องการ
      (React ไม่ถูกเรียกเพราะเราไม่แตะ useSkuImages) */
-  execFileSync('npx', ['tsc', 'lib/sku-images.ts', '--outDir', out,
+  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/sku-images.ts', '--outDir', out,
     '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
     '--lib', 'es2020,dom', '--esModuleInterop', '--skipLibCheck', '--jsx', 'react-jsx'],
     { cwd: process.cwd(), stdio: 'inherit' })

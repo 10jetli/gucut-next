@@ -84,7 +84,7 @@ if (ด่าน.length === 0) {
 
 const รันทั้งชุด = () =>
   ด่าน.map((g) => {
-    const r = spawnSync('node', [g], { encoding: 'utf8' })
+    const r = spawnSync(process.execPath, [g], { encoding: 'utf8' })
     return { g, out: (r.stdout || '') + (r.stderr || ''), code: r.status }
   })
 const ต่างกัน = (a, b) => a.filter((x, i) => x.out !== b[i].out || x.code !== b[i].code).map((x) => x.g)

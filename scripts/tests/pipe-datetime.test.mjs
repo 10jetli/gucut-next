@@ -17,7 +17,7 @@ rmSync(out, { recursive: true, force: true })
 mkdirSync(out, { recursive: true })
 let fail = 0
 try {
-  execFileSync('npx', ['tsc', 'lib/format.ts', '--outDir', out,
+  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/format.ts', '--outDir', out,
     '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
     '--lib', 'es2020', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })

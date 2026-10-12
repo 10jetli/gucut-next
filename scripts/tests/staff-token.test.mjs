@@ -14,7 +14,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const out = mkdtempSync(join(tmpdir(), 'staff-token-'))
-execFileSync('npx', ['tsc', 'lib/staff-token.ts', '--outDir', out,
+execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/staff-token.ts', '--outDir', out,
   '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler', '--lib', 'es2020,dom'],
   { cwd: process.cwd(), stdio: 'inherit' })
 /* ไฟล์ที่ tsc แปลงออกมาเป็น ESM — ต้องบอก node ว่าโฟลเดอร์นี้เป็น module

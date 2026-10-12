@@ -26,7 +26,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 try {
   /* คอมไพล์ **ไฟล์ตรรกะล้วน** ⇒ ไม่ต้องหา react ⇒ คอมไพล์ลงที่ชั่วคราวนอกโปรเจกต์ได้
      (ถ้าคอมไพล์ .tsx จะต้องวางผลลัพธ์ในโปรเจกต์เพื่อให้หา react เจอ = ทิ้งของค้างไว้ในรีโป) */
-  execFileSync('npx', ['tsc', 'lib/stock-source.ts', '--outDir', out,
+  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/stock-source.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
   const { ตัดสินที่มา, อ่านที่มา } = await import(join(out, 'stock-source.js'))
