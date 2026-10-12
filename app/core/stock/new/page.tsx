@@ -100,8 +100,22 @@ export default function NewProductPage() {
      มาตั้งแต่ต้น (ยืนยันในซอร์สท่อ `zortAddProduct` + เอกสาร ZORT API V4)
      แต่จอนี้เขียนไว้เองว่า "ท่อเรายังไม่มีช่องนี้" ⇒ **คำกล่าวอ้างที่เป็นเท็จโดยไม่มีใครรู้**
      ⇒ ตรงกับกติกาที่ตกลงกันคืนนี้: **ก่อนบอกว่าอีกฝั่งไม่มี ให้ไปอ่านของอีกฝั่งก่อน** */
+  /* 🔴🔴 **ประตูรูปของท่อ — จอนี้ส่งจริงไม่ได้เลยมา 14 วันโดยไม่มีใครรู้** (เจอ 12 ต.ค. 2569)
+     ท่อเพิ่มกติกา "สินค้าใหม่ต้องมีรูป" เมื่อ 28 ก.ย. 2569 (ท่านประธานอนุมัติ)
+     ⇒ `zortAddProduct` **ตีกลับทุกใบ** ที่ไม่ส่ง `รูป` หรือ `ไม่มีรูปเพราะ`
+     ⇒ จอนี้ไม่เคยส่งทั้งสองช่อง ⇒ ทั้งโหมดซ้อมและส่งจริง **ได้ 400 ทุกครั้ง**
+     📏 ยิงพิสูจน์กับ production 12 ต.ค. 2569 ด้วยเนื้อที่จอนี้ส่งจริง:
+        ไม่มีช่องรูป ⇒ **HTTP 400** "สินค้าใหม่ต้องมีรูป…" · ใส่ `ไม่มีรูปเพราะ` ⇒ 200 dryRun ok
+     🔑 คลาส: ประตูถูกเพิ่มที่ท่อ แต่ผู้เรียกไม่ถูกตามไปแก้ ⇒ ปุ่มที่ "เปิดแล้ว" กดไม่สำเร็จ
+        และตารางเทียบเมนูยังเขียนว่า "ส่งจริงได้แล้ว 18 ก.ย." ซึ่งกลายเป็นเท็จเมื่อ 28 ก.ย.
+     ⚠️ **ZORT ไม่มีช่องรูปในเส้นสร้างสินค้า** ⇒ ค่านี้ถูกจดฝั่งเราเท่านั้น ไม่ได้ส่งไป ZORT
+        ⇒ ต้องเขียนบนจอให้ชัด ไม่งั้นคนกรอก URL แล้วรอรูปโผล่ใน ZORT ซึ่งไม่เกิดขึ้น */
   const [f, setF] = useState({ sku: '', name: '', price: '', cost: '', unit: '', barcode: '', category: '',
-    weight: '', width: '', length: '', height: '', tags: '' })
+    weight: '', width: '', length: '', height: '', tags: '',
+    /* ช่องที่ท่อรับได้อยู่แล้วแต่จอนี้ยังไม่มี — วัดจากซอร์ส `zortAddProduct` 12 ต.ค. 2569 */
+    description: '', vat: '', purchaseVat: '', productType: '',
+    /* ประตูรูป: กรอกอันใดอันหนึ่ง */
+    รูป: '', ไม่มีรูปเพราะ: '' })
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [res, setRes] = useState<WriteResp | null>(null)
@@ -129,6 +143,14 @@ export default function NewProductPage() {
   const send = useCallback(async (confirm: boolean) => {
     setErr(''); setRes(null)
     if (!f.sku.trim() || !f.name.trim()) { setErr('ต้องมีทั้งรหัสสินค้าและชื่อสินค้า'); return }
+    /* 🔑 บอกที่จอก่อน ไม่ปล่อยให้ท่อตีกลับ — ข้อความของท่อถูกแล้วแต่มาถึงหลังกดและอ่านยากกว่า
+       ⚠️ และห้ามใส่ค่าให้เองอัตโนมัติ (เช่นเติม "ยังไม่ได้ถ่าย") — นั่นคือการตอบแทนคนกรอก
+          ว่าสินค้านี้ไม่มีรูป ซึ่งเป็นหนี้ที่ร้านต้องรู้ตัวว่ากำลังก่อ */
+    if (!f.รูป.trim() && !f.ไม่มีรูปเพราะ.trim()) {
+      setErr('ต้องกรอก “รูป” (ลิงก์หรือคำยืนยันว่าถ่ายแล้ว) หรือ “ยังไม่มีรูปเพราะ” อย่างน้อยหนึ่งช่อง — '
+        + 'กติกาของท่อตั้งแต่ 28 ก.ย. 2569 ไม่ใช่กฎของจอนี้')
+      return
+    }
     /* ⚠️ ตัวเลขต้องเป็นตัวเลขจริง — ท่อจะตีกลับอยู่แล้ว แต่บอกที่จอเร็วกว่าและชัดกว่า */
     for (const [k, label] of [['price', 'ราคาขาย'], ['cost', 'ราคาซื้อ'],
       ['weight', 'น้ำหนัก'], ['width', 'กว้าง'], ['length', 'ยาว'], ['height', 'สูง']] as const) {
@@ -155,6 +177,14 @@ export default function NewProductPage() {
           ...(f.height.trim() ? { height: Number(f.height) } : {}),
           /* Tag: ท่อรับเป็นอาเรย์ (≤20 ตัว ตัวละ ≤40 ตัวอักษร) ⇒ จอรับเป็นคำคั่นด้วยจุลภาค */
           ...(f.tags.trim() ? { tags: f.tags.split(',').map((t) => t.trim()).filter(Boolean) } : {}),
+          ...(f.description.trim() ? { description: f.description.trim() } : {}),
+          /* vat / purchaseVat / productType — ท่อรับเป็นจำนวนเต็ม ช่องว่างไม่ส่ง */
+          ...(f.vat.trim() ? { vat: Number(f.vat) } : {}),
+          ...(f.purchaseVat.trim() ? { purchaseVat: Number(f.purchaseVat) } : {}),
+          ...(f.productType.trim() ? { productType: Number(f.productType) } : {}),
+          /* 🔴 ประตูรูปของท่อ — ไม่ส่ง = 400 ทุกใบ (ยิงพิสูจน์แล้ว 12 ต.ค. 2569) */
+          ...(f.รูป.trim() ? { 'รูป': f.รูป.trim() } : {}),
+          ...(f.ไม่มีรูปเพราะ.trim() ? { 'ไม่มีรูปเพราะ': f.ไม่มีรูปเพราะ.trim() } : {}),
           ...(confirm ? { confirm: true } : {}),
         }),
       }).then((x) => x.json())
@@ -217,6 +247,52 @@ export default function NewProductPage() {
         <Field label="สูง (ซม.)" value={f.height} onChange={set('height')} ph="ไม่ใส่ก็ได้" />
         <Field label="Tag สินค้า" value={f.tags} onChange={set('tags')} ph="คั่นด้วยจุลภาค เช่น โซ่, NEWWAVE" hint="ท่อรับได้ไม่เกิน 20 แท็ก แท็กละ 40 ตัวอักษร" />
         <Field label="หมวดหมู่" value={f.category} onChange={set('category')} ph="ไม่มีหมวดหมู่" hint="ต้องเป็นชื่อที่มีอยู่แล้วใน ZORT ไม่งั้นมันจะเมินช่องนี้เงียบ ๆ (จอ ZORT สร้างหมวดใหม่ได้ในจอเดียวกัน จอเรายังไม่ได้)" />
+        <Field label="คำอธิบาย" value={f.description} onChange={set('description')} ph="ไม่ใส่ก็ได้" hint="ท่อรับได้ไม่เกิน 500 ตัวอักษร" />
+
+        {/* 🔑 สามช่องนี้ท่อรับเป็น **จำนวนเต็ม** และตีกลับค่าที่แปลไม่ออก (ไม่เมินเงียบ)
+            ⇒ ใช้ดรอปดาวน์ ไม่ใช่ช่องพิมพ์ เพื่อให้พิมพ์ผิดไม่ได้ตั้งแต่ต้น
+            ⚠️ ค่าว่าง = ไม่ส่งช่องนั้น ⇒ ZORT ใช้ค่าปริยายของตัวเอง
+               (ห้ามยัด 0 ให้เอง — 0 มีความหมายว่า "สินค้า"/"ไม่มี VAT" ไม่ใช่ "ไม่ระบุ") */}
+        <label className="block">
+          <span className="text-[12.5px] text-gray-600">ประเภทสินค้า</span>
+          <select value={f.productType} onChange={(e) => setF((v) => ({ ...v, productType: e.target.value }))}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1 bg-white">
+            <option value="">ไม่ระบุ (ให้ ZORT ใช้ค่าปริยาย)</option>
+            <option value="0">0 — สินค้า</option>
+            <option value="1">1 — บริการ (ไม่มีสต็อก เช่น ค่าส่ง ค่าซ่อม)</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-[12.5px] text-gray-600">VAT ขาย</span>
+          <select value={f.vat} onChange={(e) => setF((v) => ({ ...v, vat: e.target.value }))}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1 bg-white">
+            <option value="">ไม่ระบุ</option>
+            <option value="0">0</option><option value="1">1</option>
+            <option value="2">2</option><option value="3">3</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className="text-[12.5px] text-gray-600">VAT ซื้อ</span>
+          <select value={f.purchaseVat} onChange={(e) => setF((v) => ({ ...v, purchaseVat: e.target.value }))}
+            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1 bg-white">
+            <option value="">ไม่ระบุ</option>
+            <option value="0">0</option><option value="1">1</option><option value="2">2</option>
+          </select>
+        </label>
+
+        {/* 🔴 ประตูรูป — ต้องกรอกอย่างน้อยหนึ่งช่อง ไม่งั้นท่อตีกลับ 400 */}
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-3 text-[12.5px] leading-relaxed text-amber-900">
+          <b>สินค้าใหม่ต้องมีรูป</b> — กติกาของท่อตั้งแต่ 28 ก.ย. 2569 (ท่านประธานอนุมัติ ·
+          ของค้างที่ไม่มีรูปมี 566 รหัส แก้ครั้งเดียวได้ แต่ของใหม่ต้องไม่ไหลเข้ามาเพิ่ม)
+          <div className="mt-1">
+            ⚠️ <b>ZORT ไม่มีช่องรูปในเส้นสร้างสินค้า</b> ⇒ ค่าที่กรอกนี้ <b>ถูกจดฝั่งเราเท่านั้น</b>
+            ไม่ได้ส่งไป ZORT — รูปต้องอัปในจอ ZORT อีกที
+          </div>
+        </div>
+        <Field label="รูป" value={f.รูป} onChange={set('รูป')} ph="ลิงก์รูป หรือ “ถ่ายแล้ว”"
+          hint="กรอกช่องนี้ หรือช่องล่างอย่างน้อยหนึ่งช่อง" />
+        <Field label="ยังไม่มีรูปเพราะ" value={f.ไม่มีรูปเพราะ} onChange={set('ไม่มีรูปเพราะ')}
+          ph="เช่น ของยังไม่เข้าคลัง" hint="กรอกช่องนี้แล้วผ่านได้ แต่สินค้านี้จะถูกนับเป็นหนี้ในกองที่ไม่มีรูป" />
       </div>
 
       {/* 🔬 **เทียบกับจอ ZORT จริงแล้วเขียนไว้บนจอ** — ใบงานยืน t_mu2u9mym
