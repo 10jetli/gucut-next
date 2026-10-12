@@ -224,7 +224,7 @@ export default function ChatCommercePage() {
           <div className="px-3.5 py-3 border-b border-gray-100 flex items-center justify-between">
             <p className="text-[14px] font-semibold text-gray-900">รวมแชท</p>
             {webUnread > 0 && (
-              <span className="rounded-full bg-red-500 px-2 py-0.5 text-[11.5px] font-bold text-white">{webUnread}</span>
+              <span className="rounded-full bg-red-600 px-2 py-0.5 text-[11.5px] font-bold text-white">{webUnread}</span>
             )}
           </div>
 

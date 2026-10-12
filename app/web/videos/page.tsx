@@ -81,7 +81,7 @@ export default function WebVideoPickPage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={POSTER(id)} alt="" className="w-full aspect-[9/14] object-cover bg-gray-100" loading="lazy" />
                 <span className="absolute bottom-1 left-1 rounded bg-black/60 px-1 py-0.5 text-[10px] text-white tabular-nums">{dur(c.v.dur)}</span>
-                <span className={`absolute top-1 right-1 rounded-full px-1.5 py-0.5 text-[10px] font-black ${off ? 'bg-gray-800/80 text-white' : 'bg-emerald-500 text-white'}`}>
+                <span className={`absolute top-1 right-1 rounded-full px-1.5 py-0.5 text-[10px] font-black ${off ? 'bg-gray-800/80 text-white' : 'bg-emerald-700 text-white'}`}>
                   {off ? 'ซ่อน' : 'โชว์'}
                 </span>
               </button>

@@ -241,7 +241,7 @@ function HelpButton() {
         aria-label="ช่วยเหลือ"
         className="w-8 h-8 flex items-center justify-center rounded hover:bg-gray-100 transition-colors"
       >
-        <span className="w-[19px] h-[19px] rounded-full bg-gray-400 text-white text-[12.5px] font-bold flex items-center justify-center leading-none">
+        <span className="w-[19px] h-[19px] rounded-full bg-gray-500 text-white text-[12.5px] font-bold flex items-center justify-center leading-none">
           ?
         </span>
       </button>

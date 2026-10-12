@@ -120,7 +120,7 @@ export default function WebChatPage() {
           <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
           <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">
             แชทลูกค้า
-            {totalUnread > 0 && <span className="ml-2 align-middle rounded-full bg-red-500 px-2 py-0.5 text-[11.5px] font-black text-white">{totalUnread}</span>}
+            {totalUnread > 0 && <span className="ml-2 align-middle rounded-full bg-red-600 px-2 py-0.5 text-[11.5px] font-black text-white">{totalUnread}</span>}
           </h1>
         </div>
       </div>
@@ -160,7 +160,7 @@ export default function WebChatPage() {
                   {r.last ? `${r.last.from === 's' ? 'ร้าน: ' : ''}${r.last.text}` : '—'}
                 </span>
               </span>
-              {r.unread > 0 && <span className="shrink-0 rounded-full bg-red-500 px-1.5 py-0.5 text-[10px] font-black text-white">{r.unread}</span>}
+              {r.unread > 0 && <span className="shrink-0 rounded-full bg-red-600 px-1.5 py-0.5 text-[10px] font-black text-white">{r.unread}</span>}
             </button>
           ))}
         </div>

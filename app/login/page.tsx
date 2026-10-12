@@ -62,7 +62,7 @@ function LoginForm() {
       <button
         type="submit"
         disabled={loading || !password}
-        className="w-full bg-gray-900 disabled:bg-gray-300 text-white font-bold rounded-xl py-3 text-[15px] transition-colors hover:bg-gray-800 disabled:hover:bg-gray-300 shadow-[0_8px_20px_-8px_rgba(15,23,42,0.4)]"
+        className="w-full bg-gray-900 disabled:bg-gray-200 disabled:text-[#596273] text-white font-bold rounded-xl py-3 text-[15px] transition-colors hover:bg-gray-800 disabled:hover:bg-gray-200 shadow-[0_8px_20px_-8px_rgba(15,23,42,0.4)]"
       >
         {loading ? 'กำลังตรวจสอบ…' : 'เข้าสู่ระบบ'}
       </button>

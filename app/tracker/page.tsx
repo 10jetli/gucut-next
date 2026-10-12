@@ -399,7 +399,7 @@ export default function TrackerPage() {
                     <div key={i} className="relative flex-shrink-0">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={img.thumb} alt="" className="w-16 h-16 rounded-lg object-cover border border-gray-100" />
-                      <button onClick={() => removeImage(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-500 text-white text-[11.5px] flex items-center justify-center">✕</button>
+                      <button onClick={() => removeImage(i)} className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-red-600 text-white text-[11.5px] flex items-center justify-center">✕</button>
                     </div>
                   ))}
                 </div>

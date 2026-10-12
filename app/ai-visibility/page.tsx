@@ -168,7 +168,7 @@ export default function AiVisibilityPage() {
                       <p className="text-[12.5px] font-semibold text-gray-900 truncate">
                         {s.name}
                         {s.isUs && (
-                          <span className="ml-2 text-[10px] font-bold bg-emerald-600 text-white px-1.5 py-0.5 rounded">
+                          <span className="ml-2 text-[10px] font-bold bg-emerald-700 text-white px-1.5 py-0.5 rounded">
                             เรา
                           </span>
                         )}

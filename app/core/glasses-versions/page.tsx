@@ -95,8 +95,12 @@ export default async function หน้าเวอร์ชันแว่น()
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-lg font-bold text-gray-900">v{v.เวอร์ชัน}</span>
+                  {/* 🔑 emerald-**700** ไม่ใช่ 600 — วัดแล้ว (12 ต.ค. 2569)
+                      ขาวบน emerald-600 (#059669) = **3.77:1** ⇒ ตก 4.5:1 ของ WCAG AA
+                      ขาวบน emerald-700 (#047857) = **5.48:1** ⇒ ผ่าน
+                      ⚠️ ป้ายนี้เป็น text-xs font-bold ⇒ **ไม่ใช่ตัวใหญ่** ⇒ เกณฑ์ยัง 4.5:1 ไม่ใช่ 3:1 */}
                   {v.ล่าสุด && (
-                    <span className="rounded bg-emerald-600 px-2 py-0.5 text-xs font-bold text-white">
+                    <span className="rounded bg-emerald-700 px-2 py-0.5 text-xs font-bold text-white">
                       ล่าสุด
                     </span>
                   )}

@@ -523,7 +523,7 @@ export default function ReturnReceivePage() {
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={p.dataUrl} alt={`รูป ${i + 1}`} className="w-20 h-20 object-cover rounded border border-gray-200" />
                 <span className={`absolute -top-1.5 -right-1.5 text-[10px] rounded-full px-1 ${
-                  p.status === 'uploaded' ? 'bg-emerald-500 text-white' : p.status === 'failed' ? 'bg-red-500 text-white' : 'bg-gray-300 text-gray-700'}`}
+                  p.status === 'uploaded' ? 'bg-emerald-700 text-white' : p.status === 'failed' ? 'bg-red-600 text-white' : 'bg-gray-300 text-gray-700'}`}
                   title={p.status === 'uploaded' ? 'ส่งแล้ว' : p.status === 'failed' ? 'ส่งไม่สำเร็จ — จะ retry ให้' : 'ยังไม่ส่ง'}>
                   {p.status === 'uploaded' ? '✓' : p.status === 'failed' ? '!' : '…'}
                 </span>

@@ -1006,8 +1006,13 @@ const srv = createServer(async (req, res) => {
     return res.end(JSON.stringify({
       ok: true, found: true, sku, id: 999999, warehousecode: w || null,
       /* 🔴 ท่อจริง **ส่งแค่ชื่อช่อง ไม่ส่งค่า** — วัด 12 ต.ค. 2569 ที่ `?zortbundle=00023-24NW`
-         วัดซ้ำ: ยิง `gucut.com/api/core?zortbundle=<sku>` + หัว `x-admin-key` **และหัว `User-Agent`**
-                 (ไม่ใส่ UA ⇒ Cloudflare ตอบ 403 `error code: 1010` ไม่ใช่ท่อพัง)
+         วัดซ้ำ: ยิง `gucut.com/api/core?zortbundle=<sku>` + หัว `x-admin-key`
+         ⚠️ **อาการที่จดครั้งแรกผิด** — ผมเขียนว่า "ไม่ส่ง UA ⇒ 403" · ฝั่งท่อยิงวัดแล้วแก้ให้:
+            urllib **ใส่ UA ให้เสมอ** ถ้าไม่สั่ง ⇒ ของจริงที่ถูกบล็อกคือ **UA ที่ขึ้นต้นว่า `Python-urllib`**
+            · ปล่อย urllib ใส่เอง = 403 `error code: 1010` · ตั้ง `Python-urllib/3.12` ตรง ๆ = 403
+            · ตั้งค่า **ว่าง** = 200 (ตัวควบคุม) · curl = 200
+            🔑 ถ้าปล่อยคำเดิมไว้ คนรอบหน้าจะลองตั้ง UA ว่าง ได้ 200 แล้วลบบันทึกนี้ทิ้ง
+               พร้อมหลักฐานของตัวเองว่าผมผิด ⇒ **อาการที่เราจด เป็นตัวกำหนดว่ารอบหน้าใครทดสอบอะไร**
          🔑 ท่อปลอมรุ่นก่อนแต่งช่อง `bundle` ที่ **ไม่มีในท่อจริง** ⇒ จอแก้ชุดสินค้าถูกเขียนทับสัญญาปลอม
             แล้วขึ้นว่า "ZORT ไม่พบชุดรหัสนี้" บน production ทั้งที่ของจริงตอบ found:true
             ⇒ **ท่อปลอมที่ใจดีกว่าท่อจริง คือเครื่องปลูกบั๊กที่ไม่มีด่านไหนจับได้**
@@ -1019,7 +1024,16 @@ const srv = createServer(async (req, res) => {
       summaryKeys: ['id', 'name', 'sku', 'sellprice', 'sell_vat_status', 'barcode', 'stock',
         'availablestock', 'unittext', 'imagepath', 'imageList', 'active', 'list'],
       ...(u.searchParams.get('withvalues') === '1' || process.env.FAKE_BUNDLE_VALUES === '1'
-        ? { name: 'ชุดทดสอบ พร้อมขายเป็นศูนย์', sellprice: '6700', sell_vat_status: 1, active: true }
+        ? {
+          name: 'ชุดทดสอบ พร้อมขายเป็นศูนย์', sellprice: '6700', sell_vat_status: 1, active: true,
+          /* 🔴 ท่อจริงส่ง `false` — ด่าน before เทียบแค่ name กับ price **ไม่เทียบ vat**
+             ⇒ ส่งมาด้วยเพื่อให้กิ่ง "VAT ไม่มีตัวกัน" บนจอถูกเดินในเครื่องได้จริง
+             (ไม่ส่ง = จอจะขึ้นแต่ "ท่อไม่ได้บอก" ตลอดกาล แล้วกิ่งเตือนไม่มีใครเห็น) */
+          /* 🔑 ปิดธงนี้ได้ด้วย `FAKE_BUNDLE_NO_VAT_FLAG=1` — ไม่ใช่เพื่อความสะดวก
+             แต่เพราะกิ่ง "ท่อไม่ได้บอก" บนจอ **ไม่มีทางถูกเดินเลย** ถ้าท่อปลอมส่งธงเสมอ
+             และกิ่งนั้นคือกิ่งที่ทำงานอยู่จริงบน production ตอนนี้ (ท่อยังไม่ push) */
+          ...(process.env.FAKE_BUNDLE_NO_VAT_FLAG === '1' ? {} : { 'vatมีด่านกันเขียนทับ': false }),
+        }
         : {}),
       summaryStock: { stock: '18', availablestock: '0' },
       detailStock: (denied || silent) ? { stock: null, availablestock: null } : { stock: '18', availablestock: '0' },

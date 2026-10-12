@@ -3,8 +3,13 @@
 // GET  /api/core?zortbundle=<sku> → หา id และค่าปัจจุบันจาก ZORT
 // POST /api/core?updatebundle=1   → Bundle/UpdateBundle?id=
 //
-// 🔴 ท่อเทียบ id+sku และค่าก่อนแก้ของทุกช่องกับ GetBundleDetail สดก่อน POST
+// 🔴 ท่อเทียบ id+sku และค่าก่อนแก้กับ GetBundleDetail สดก่อน POST
 //    ถ้ามีคนแก้ระหว่างเปิดจอกับกดยืนยันจะหยุด ไม่เขียนทับเงียบ ๆ
+// 🔴🔴 **แต่ไม่ครอบทุกช่อง** — ด่าน before เทียบแค่ `name` กับ `price` **ไม่เทียบ vat**
+//      (ฝั่งท่อวัดแล้วบอกมาเอง 12 ต.ค. 2569 · คำเดิมที่เขียนว่า "ทุกช่อง" เป็นเท็จ)
+//      ⇒ จอ **ห้ามเขียนให้คนเข้าใจว่า vat ถูกป้องกัน**
+//      🔑 และห้ามจำเอง — ท่อส่ง `vatมีด่านกันเขียนทับ` มาให้อ่านจากค่า
+//         ถ้าท่อไม่ส่งช่องนี้ ⇒ ขึ้นว่า **"ท่อไม่ได้บอก"** ไม่ใช่เดาว่าป้องกันอยู่
 // ⚠️ เอกสาร V4 ของ UpdateBundle มีแค่ name · sellprice · sell_vat_status ไม่มี list
 //    จอนี้จึงไม่สร้างช่องแก้ส่วนประกอบที่ API ไม่รองรับ
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -34,6 +39,8 @@ interface ZortBundle {
 interface ProbeResp extends Partial<ZortBundle> {
   ok?: boolean
   found?: boolean
+  /** ท่อบอกว่าด่านกันเขียนทับคาบเกี่ยวครอบช่อง vat หรือไม่ — `undefined` = ท่อไม่ได้บอก */
+  'vatมีด่านกันเขียนทับ'?: boolean
   bundle?: ZortBundle
   summaryKeys?: string[]
   error?: string
@@ -81,6 +88,8 @@ export default function EditBundlePage() {
   const [loadErr, setLoadErr] = useState('')
   const [notFound, setNotFound] = useState(false)
   const [ไม่มีค่า, setไม่มีค่า] = useState<ขาดค่า | null>(null)
+  /** `null` = ท่อไม่ได้บอก (คนละเรื่องกับ "ไม่มีด่าน") */
+  const [vatกัน, setVatกัน] = useState<boolean | null>(null)
   const [bundle, setBundle] = useState<ZortBundle | null>(null)
   const [orig, setOrig] = useState<Fields>(EMPTY)
   const [fields, setFields] = useState<Fields>(EMPTY)
@@ -93,7 +102,7 @@ export default function EditBundlePage() {
   useEffect(() => { setRef(newRef()) }, [])
 
   const load = useCallback(async () => {
-    setLoading(true); setLoadErr(''); setNotFound(false); setไม่มีค่า(null); setBundle(null); setDrySig('')
+    setLoading(true); setLoadErr(''); setNotFound(false); setไม่มีค่า(null); setVatกัน(null); setBundle(null); setDrySig('')
     try {
       const response = await fetch(`/api/web/core?zortbundle=${encodeURIComponent(sku)}`)
       const d = await response.json().catch(() => null) as ProbeResp | null
@@ -103,6 +112,8 @@ export default function EditBundlePage() {
       if (d.found !== true) { setNotFound(true); return }
       /* 🔑 `found:true` ⇒ **ZORT มีชุดนี้** · การไม่มีค่ามากรอก เป็นเรื่องของ *ท่อ* ไม่ใช่ของ ZORT
          ⇒ ห้ามยุบสองอย่างนี้เป็นข้อความเดียว (ครั้งก่อนยุบแล้วจอโกหกว่า ZORT ไม่มีของ) */
+      const ธง = d['vatมีด่านกันเขียนทับ']
+      setVatกัน(typeof ธง === 'boolean' ? ธง : null)
       const b = (d.bundle ?? d) as Partial<ZortBundle>
       const ต้องมี = ['name', 'sellprice', 'sell_vat_status'] as const
       const ขาด = ต้องมี.filter((k) => b[k] === undefined)
@@ -261,6 +272,19 @@ export default function EditBundlePage() {
               {VAT.map(([value, label]) => <option key={value} value={value}>{value} — {label}</option>)}
             </select>
             <span className="block text-[11.5px] text-gray-500 mt-1">ค่า 4 ใช้ได้เฉพาะร้านที่มีส่วนเสริม Advance Vat ตามเอกสาร ZORT</span>
+            {/* 🔴 ช่องนี้ไม่เหมือนอีกสองช่อง — เขียนออกมาตรง ๆ แทนที่จะให้คนเดาจากความเงียบ
+                (ใบ: ช่องที่เว้นว่างคือคำกล่าวอ้าง · ไม่รู้ห้ามกลายเป็นศูนย์ที่ชั้นจอ) */}
+            {vatกัน === false && (
+              <span className="mt-1 block rounded border border-amber-300 bg-amber-50 px-2 py-1.5 text-[11.5px] text-amber-900">
+                ⚠️ <b>ช่อง VAT ไม่มีตัวกันเขียนทับคาบเกี่ยว</b> — ต่างจากชื่อและราคา
+                ถ้ามีคนแก้ VAT อยู่พร้อมกัน ของคุณจะทับเขา <b>และท่อจะไม่ตีกลับ</b>
+              </span>
+            )}
+            {vatกัน === null && (
+              <span className="mt-1 block text-[11.5px] text-gray-500">
+                ท่อไม่ได้บอกว่าช่อง VAT มีตัวกันเขียนทับหรือไม่ — <b>ยังไม่รู้</b> (ไม่ใช่ว่ามี)
+              </span>
+            )}
           </label>
 
           <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3.5 py-2.5">

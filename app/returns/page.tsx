@@ -476,7 +476,7 @@ export default function ReturnsPage() {
                       )}
                       {!st.received && (
                         <button onClick={() => void markRecv(o.number, 'received')}
-                          className="rounded-md bg-emerald-600 px-2.5 py-1 text-[11.5px] font-semibold text-white">ร้านรับแล้ว</button>
+                          className="rounded-md bg-emerald-700 px-2.5 py-1 text-[11.5px] font-semibold text-white">ร้านรับแล้ว</button>
                       )}
                       {(st.delivered || st.received) && (
                         <button onClick={() => void markRecv(o.number, 'clear')}

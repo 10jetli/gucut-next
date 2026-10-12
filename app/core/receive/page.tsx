@@ -85,7 +85,7 @@ function Stepper({ at }: { at: number }) {
           <div key={s} className="flex items-center flex-1 last:flex-none">
             <div className="flex flex-col items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12.5px] font-semibold
-                ${i < at ? 'bg-emerald-500 text-white' : i === at ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
+                ${i < at ? 'bg-emerald-700 text-white' : i === at ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
                 style={i === at ? { background: '#4669e5' } : undefined}>
                 {i < at ? '✓' : i + 1}
               </div>

@@ -214,7 +214,7 @@ export default function WebPermitsPage() {
         <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">เว็บไซต์ · gucut.com</p>
         <h1 className="text-[22px] md:text-[26px] font-black tracking-tight text-gray-900 leading-tight">
           ขอทะเบียนเลื่อยยนต์
-          {waiting > 0 && <span className="ml-2 align-middle rounded-full bg-orange-500 px-2 py-0.5 text-[11.5px] font-black text-white">{waiting} รอร้านรับใบ</span>}
+          {waiting > 0 && <span className="ml-2 align-middle rounded-full bg-orange-700 px-2 py-0.5 text-[11.5px] font-black text-white">{waiting} รอร้านรับใบ</span>}
         </h1>
         <p className="text-[12.5px] text-gray-400 mt-0.5">รูปใช้แทนตัวจริงไม่ได้ — ต้องได้ ลซ.๒ ตอนกลางตัวจริงมาเก็บเป็นหลักฐานการจำหน่าย</p>
       </div>
