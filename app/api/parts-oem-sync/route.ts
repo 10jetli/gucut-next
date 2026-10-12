@@ -148,6 +148,28 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
   if (!state) return NextResponse.json({ error: 'อ่านคลังอะไหล่ไม่ได้ — ยังไม่ได้เขียนอะไรเลย' }, { status: 503 })
   const ovrMap = เลขOEMจากคลัง(state.ovr ?? {})
 
+  /* 🔎 โหมดส่อง — `?โครง=<รหัสหรือ sku>` บอกว่าของชิ้นนั้นอยู่ในคลังรูปไหน
+     🔑 มีเพราะของจริง 12 ต.ค. 2569: ท่านประธานกรอก 1128 029 0500 → 05619 ในหน้า /catalog
+        แต่ตัวซิงก์หาไม่เจอ ⇒ ต้องดูโครงข้อมูลจริง ไม่ใช่เดาว่าเก็บยังไง
+     ⚠️ อ่านอย่างเดียว · ต้องมีกุญแจเหมือนเส้นอื่น */
+  const ส่อง = req.nextUrl.searchParams.get('โครง')
+  if (ส่อง) {
+    const ovr = (state.ovr ?? {}) as Record<string, any>
+    const เลข = เลขล้วน(ส่อง)
+    const ตรงsku = ovr[ส่อง] ?? null
+    const ตรงเลข = Object.entries(ovr).filter(([, v]) =>
+      JSON.stringify(v ?? '').replace(/\D/g, '').includes(เลข)).slice(0, 5)
+    return NextResponse.json({
+      หาอะไร: ส่อง, เลขล้วน: เลข,
+      จำนวนรายการในคลัง: Object.keys(ovr).length,
+      เลขOEMที่อ่านได้: ovrMap.size,
+      เจอเป็นsku: ตรงsku,
+      เจอเลขนี้ในรายการ: ตรงเลข.map(([k, v]) => ({ sku: k, ค่า: v })),
+      ตัวอย่างโครง: Object.entries(ovr).slice(0, 3).map(([k, v]) => ({ sku: k, ช่อง: Object.keys(v ?? {}) })),
+      คีย์อื่นในสถานะ: Object.keys(state),
+    })
+  }
+
   const ผล: ผลรุ่น[] = []
   for (const ร of รุ่นที่ทำ) ผล.push(await ทำรุ่น(ร, ovrMap, เขียนจริง))
 
