@@ -49,7 +49,17 @@ try {
     },
     files: [join(process.cwd(), 'app/api/bills/report/route.ts')],
   }))
-  execFileSync('npx', ['tsc', '-p', tsconfig], { stdio: 'pipe' })
+  /* 🔴 **ห้ามเรียก `npx` ที่นี่** — แก้ 12 ต.ค. 2569 หลังมันบล็อก push ของทั้งทีม
+     ด่าน pre-push รันด้วย PATH ที่ไม่มี `npx`/`node` ⇒ `spawnSync ENOENT`
+     ⇒ เทสล้มด้วย `testCodeFailure` ซึ่ง **อ่านเหมือนโค้ดผิด** ทั้งที่รันตรง ๆ ผ่านหมดทุกข้อ
+     ⇒ คุณส้ม push ไม่ได้ทั้งเช้าโดยไม่มีใครรู้สาเหตุ (ค้าง 3 commit) และ CEO ก็เพิ่งโดนเหมือนกัน
+     🔑 `process.execPath` คือ node ตัวที่กำลังรันอยู่ — **ไม่ขึ้นกับ PATH เลย**
+        และเรียก tsc จาก node_modules ตรง ๆ แทนการพึ่ง npx หาให้
+     ⚠️ ด่านที่ล้มด้วยเหตุที่ไม่เกี่ยวกับสิ่งที่มันตรวจ = ด่านที่คนจะเริ่มข้าม
+        (เคยเห็นมาแล้ววันนี้: ทีมใช้ SKIP_PREPUSH เพราะด่านแดงด้วยเรื่อง node version) */
+  execFileSync(process.execPath,
+    [join(process.cwd(), 'node_modules/typescript/bin/tsc'), '-p', tsconfig],
+    { stdio: 'pipe' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
   /* ปลอม next/server เท่าที่เส้นนี้ใช้ — NextResponse.json กับ req.nextUrl.searchParams */
   writeFileSync(join(out, 'ปลอม-next-server.js'), `
