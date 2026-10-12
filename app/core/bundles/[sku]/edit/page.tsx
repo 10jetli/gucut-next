@@ -22,14 +22,26 @@ interface ZortBundle {
   sell_vat_status: string | number | null
   active: boolean | null
 }
-interface ProbeResp {
+/** คำตอบของ `?zortbundle=` — **วัดจากของจริงแล้ว ไม่ใช่เดาจากจดหมาย** (12 ต.ค. 2569)
+ *  วัดซ้ำ: `python3 -c` ยิง `gucut.com/api/core?zortbundle=00023-24NW` พร้อมหัว `x-admin-key`
+ *  🔴 ของจริงตอบ **แบน** และ **ไม่มีช่อง `bundle`**:
+ *     ok · found · sku · id · warehousecode · summaryKeys · summaryStock · detailStock · detail
+ *     ⇒ `summaryKeys` คือ **ชื่อช่อง** ที่ ZORT มี ไม่ใช่ค่า ⇒ กรอกฟอร์มยังไม่ได้
+ *  🔴 ช่อง `bundle` มีอยู่ที่เดียวในโลก: `scripts/fake-pipe.mjs` ⇒ จอรุ่นแรกเชื่อท่อปลอม
+ *     แล้วขึ้นว่า "ZORT ไม่พบชุดรหัสนี้" ทั้งที่ของจริงตอบ `found:true id:804372`
+ *     (ใบ: จอที่เขียนจากสัญญาในจดหมายต้องยิงก่อนเชื่อ)
+ *  ⇒ อ่านค่าจาก `d.bundle ?? d` เพื่อให้ **ทำงานทันทีที่ท่อเริ่มส่งค่ามา** ไม่ต้องแก้จออีก */
+interface ProbeResp extends Partial<ZortBundle> {
   ok?: boolean
   found?: boolean
   bundle?: ZortBundle
+  summaryKeys?: string[]
   error?: string
   unknown?: boolean
   fallthrough?: boolean
 }
+/** ท่อยืนยันว่ามีชุดนี้ แต่ไม่ได้ส่งค่าที่ฟอร์มต้องใช้ — **คนละเรื่องกับ "ไม่พบ"** */
+type ขาดค่า = { ขาด: string[]; ส่งมา: string[]; id: unknown }
 /** คำตอบของเส้นเขียนชุดสินค้า — **ช่องพวกนี้มาจากสัญญาที่ฝั่งท่อประกาศไว้ 12 ต.ค. 2569**
  *  ⚠️ ไม่ใช่ช่องที่เราคิดเอง ⇒ ถ้าท่อเปลี่ยนชื่อช่อง จอจะอ่านไม่เจอและ **เงียบ**
  *     จึงต้องมีกิ่งที่เขียนว่า "ท่อไม่ได้บอก" ทุกช่องที่ใช้ตัดสินใจ */
@@ -68,6 +80,7 @@ export default function EditBundlePage() {
   const [loading, setLoading] = useState(true)
   const [loadErr, setLoadErr] = useState('')
   const [notFound, setNotFound] = useState(false)
+  const [ไม่มีค่า, setไม่มีค่า] = useState<ขาดค่า | null>(null)
   const [bundle, setBundle] = useState<ZortBundle | null>(null)
   const [orig, setOrig] = useState<Fields>(EMPTY)
   const [fields, setFields] = useState<Fields>(EMPTY)
@@ -80,15 +93,23 @@ export default function EditBundlePage() {
   useEffect(() => { setRef(newRef()) }, [])
 
   const load = useCallback(async () => {
-    setLoading(true); setLoadErr(''); setNotFound(false); setBundle(null); setDrySig('')
+    setLoading(true); setLoadErr(''); setNotFound(false); setไม่มีค่า(null); setBundle(null); setDrySig('')
     try {
       const response = await fetch(`/api/web/core?zortbundle=${encodeURIComponent(sku)}`)
       const d = await response.json().catch(() => null) as ProbeResp | null
       if (!d) { setLoadErr(`ท่อตอบไม่ใช่ JSON (HTTP ${response.status})`); return }
       if (d.fallthrough) { setLoadErr('ท่อยังไม่มีข้อมูล bundle สำหรับหน้าแก้ — รอขึ้นระบบ'); return }
       if (!response.ok || d.ok === false || d.unknown) { setLoadErr(d.error || `ถาม ZORT ไม่สำเร็จ (HTTP ${response.status})`); return }
-      if (d.found !== true || !d.bundle) { setNotFound(true); return }
-      const b = d.bundle
+      if (d.found !== true) { setNotFound(true); return }
+      /* 🔑 `found:true` ⇒ **ZORT มีชุดนี้** · การไม่มีค่ามากรอก เป็นเรื่องของ *ท่อ* ไม่ใช่ของ ZORT
+         ⇒ ห้ามยุบสองอย่างนี้เป็นข้อความเดียว (ครั้งก่อนยุบแล้วจอโกหกว่า ZORT ไม่มีของ) */
+      const b = (d.bundle ?? d) as Partial<ZortBundle>
+      const ต้องมี = ['name', 'sellprice', 'sell_vat_status'] as const
+      const ขาด = ต้องมี.filter((k) => b[k] === undefined)
+      if (ขาด.length > 0) {
+        setไม่มีค่า({ ขาด: [...ขาด], ส่งมา: d.summaryKeys ?? Object.keys(d), id: d.id })
+        return
+      }
       if (!Number.isInteger(Number(b.id)) || Number(b.id) <= 0 || String(b.sku).trim() !== sku) {
         setLoadErr('ZORT คืน id หรือ sku ไม่ตรงกับหน้าที่เปิด — ยังแก้ไม่ได้')
         return
@@ -98,7 +119,16 @@ export default function EditBundlePage() {
         price: b.sellprice === null || b.sellprice === undefined ? '' : String(b.sellprice),
         vat: b.sell_vat_status === null || b.sell_vat_status === undefined ? '' : String(b.sell_vat_status),
       }
-      setBundle({ ...b, id: Number(b.id), sku: String(b.sku).trim() })
+      /* 🔑 ประกอบทีละช่องจากค่าที่ **ผ่านด่าน `ขาด` มาแล้ว** — ห้าม `...b` แล้ว cast ทับ
+         เพราะ cast จะกลืนวันที่ท่อหยุดส่งช่องใดช่องหนึ่ง (tsc จับให้เมื่อ 12 ต.ค. 2569) */
+      setBundle({
+        id: Number(b.id),
+        sku: String(b.sku).trim(),
+        name: String(b.name ?? ''),
+        sellprice: b.sellprice ?? null,
+        sell_vat_status: b.sell_vat_status ?? null,
+        active: b.active ?? null,
+      })
       setOrig(f); setFields(f)
     } catch (e) {
       setLoadErr(String(e instanceof Error ? e.message : e))
@@ -186,6 +216,23 @@ export default function EditBundlePage() {
         <div className="text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded px-3.5 py-2.5">
           ถาม ZORT ไม่สำเร็จ — <b>ยังไม่ได้แก้อะไร</b> · {loadErr}{' '}
           <button type="button" onClick={() => void load()} className="underline">ลองใหม่</button>
+        </div>
+      )}
+      {/* 🔑 ข้อความนี้ต้องบอกสามอย่าง: ของมีจริงไหม · ติดที่ไหน · ต้องได้อะไรมา
+          (ใบ: ระบบทำงานถูก แต่สื่อสารผิด — จอที่บอกว่า "ไม่พบ" ทำให้คนไปหาของที่ไม่ได้หาย) */}
+      {ไม่มีค่า && (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-[13px] leading-relaxed text-amber-900">
+          <b>ZORT มีชุดนี้อยู่จริง</b> (id {String(ไม่มีค่า.id ?? '—')}) — แต่ <b>ท่อยังไม่ส่งค่าปัจจุบันมา</b> ⇒ กรอกฟอร์มยังไม่ได้
+          <div className="mt-2">
+            ขาด: <code className="rounded bg-amber-100 px-1">{ไม่มีค่า.ขาด.join(' · ')}</code>
+          </div>
+          <div className="mt-1 text-amber-800">
+            ท่อส่งมาแต่ <b>ชื่อช่อง</b>: <code className="rounded bg-amber-100 px-1">{ไม่มีค่า.ส่งมา.join(' · ')}</code>
+          </div>
+          <div className="mt-2 text-amber-800">
+            <code>summaryKeys</code> คือ <b>ชื่อช่อง</b> ที่ ZORT มี ไม่ใช่ค่า — จอต้องได้ <b>ค่า</b> ของสามช่องนั้น
+            มาด้วย ถึงจะเทียบ &quot;ค่าก่อนแก้&quot; ก่อนเขียนทับได้ · แจ้งฝั่งท่อแล้ว
+          </div>
         </div>
       )}
       {notFound && (

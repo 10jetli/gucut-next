@@ -1005,7 +1005,22 @@ const srv = createServer(async (req, res) => {
     res.writeHead(200, { 'content-type': 'application/json' })
     return res.end(JSON.stringify({
       ok: true, found: true, sku, id: 999999, warehousecode: w || null,
-      bundle: { id: 999999, sku, name: 'ชุดทดสอบ พร้อมขายเป็นศูนย์', sellprice: '6700', sell_vat_status: 1, active: true },
+      /* 🔴 ท่อจริง **ส่งแค่ชื่อช่อง ไม่ส่งค่า** — วัด 12 ต.ค. 2569 ที่ `?zortbundle=00023-24NW`
+         วัดซ้ำ: ยิง `gucut.com/api/core?zortbundle=<sku>` + หัว `x-admin-key` **และหัว `User-Agent`**
+                 (ไม่ใส่ UA ⇒ Cloudflare ตอบ 403 `error code: 1010` ไม่ใช่ท่อพัง)
+         🔑 ท่อปลอมรุ่นก่อนแต่งช่อง `bundle` ที่ **ไม่มีในท่อจริง** ⇒ จอแก้ชุดสินค้าถูกเขียนทับสัญญาปลอม
+            แล้วขึ้นว่า "ZORT ไม่พบชุดรหัสนี้" บน production ทั้งที่ของจริงตอบ found:true
+            ⇒ **ท่อปลอมที่ใจดีกว่าท่อจริง คือเครื่องปลูกบั๊กที่ไม่มีด่านไหนจับได้**
+         ⇒ ค่าเต็มอยู่หลังธง `&withvalues=1` เท่านั้น (ใช้ทดสอบ "วันที่ท่อส่งค่ามาแล้ว")
+         ⚠️ ชื่อธงเป็น **อังกฤษ** ตั้งใจ — ชื่อพารามิเตอร์ภาษาไทยผ่าน curl/เชลล์แล้วเพี้ยนเงียบ
+            (ลองแล้ว 12 ต.ค. 2569: `&ค่าครบ=1` ⇒ เซิร์ฟเวอร์ไม่เห็นธง ไม่มี error)
+         🔑 ตั้ง `FAKE_BUNDLE_VALUES=1` ได้ด้วย — ใช้ตอนให้ **จอ** เรียกผ่าน `GUCUT_WEB_BASE`
+            เพราะจอไม่ได้ต่อธงในลิงก์ที่มันยิง ⇒ ไม่มีทางอื่นให้เดินกิ่งฟอร์มเลย */
+      summaryKeys: ['id', 'name', 'sku', 'sellprice', 'sell_vat_status', 'barcode', 'stock',
+        'availablestock', 'unittext', 'imagepath', 'imageList', 'active', 'list'],
+      ...(u.searchParams.get('withvalues') === '1' || process.env.FAKE_BUNDLE_VALUES === '1'
+        ? { name: 'ชุดทดสอบ พร้อมขายเป็นศูนย์', sellprice: '6700', sell_vat_status: 1, active: true }
+        : {}),
       summaryStock: { stock: '18', availablestock: '0' },
       detailStock: (denied || silent) ? { stock: null, availablestock: null } : { stock: '18', availablestock: '0' },
       detail: {
