@@ -32,6 +32,7 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import PillSend from '@/components/ui/PillSend'
 
 interface Line { sku: string; qty: string; price: string }
 
@@ -274,11 +275,8 @@ export default function NewQuotationPage() {
           className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-          className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-          style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
-          ส่งจริงเข้า ZORT
-        </button>
+        <PillSend พร้อมส่งจริง={!!ref && dryOk && REAL_SEND_ENABLED} กำลังส่ง={busy}
+          onClick={() => send(true)}>ส่งจริงเข้า ZORT</PillSend>
         {!REAL_SEND_ENABLED ? (
           <span className="text-[12.5px] text-amber-800">
             {/* 🔴 เดิมพิมพ์เหตุด้วยมือว่า "รอผลยิงใบทดสอบใบแรกแบบควบคุมก่อน" ⇒ เป็นเท็จตั้งแต่

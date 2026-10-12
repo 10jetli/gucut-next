@@ -32,6 +32,7 @@ import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { SALE_CREATE_TRANSFER_CHOICE, zortWord } from '@/lib/zort-words'
 import { ส่งจริงได้ } from '@/lib/real-send'
+import PillSend from '@/components/ui/PillSend'
 
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
@@ -350,11 +351,8 @@ export default function NewSalePage() {
             ส่งใบนี้ไปแล้ว — ปิดการส่งซ้ำของใบนี้ถาวร
           </span>
         ) : (
-          <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-            className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
-            style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
-            ส่งเข้า ZORT จริง
-          </button>
+          <PillSend เล็ก พร้อมส่งจริง={!!ref && dryOk && REAL_SEND_ENABLED} กำลังส่ง={busy}
+            onClick={() => send(true)}>ส่งเข้า ZORT จริง</PillSend>
         )}
         {locked && (
           <button onClick={() => window.location.reload()} className="text-[12.5px] text-blue-600 hover:underline">

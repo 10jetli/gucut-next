@@ -32,6 +32,7 @@ import type { WriteResp } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import PillSend from '@/components/ui/PillSend'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติ "ใบคืนของให้ผู้ขาย" โดยเฉพาะ
  *  เหตุผลที่ต้องแยกอนุมัติ: ใบนี้ **ตัดของออกจากคลังจริง** และไม่มีเส้นยกเลิก */
@@ -305,11 +306,8 @@ export default function NewPurchaseReturnPage() {
           className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
-          style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
-          ส่งเข้า ZORT จริง
-        </button>
+        <PillSend เล็ก พร้อมส่งจริง={!!ref && dryOk && REAL_SEND_ENABLED} กำลังส่ง={busy}
+          onClick={() => send(true)}>ส่งเข้า ZORT จริง</PillSend>
       </div>
 
       {!REAL_SEND_ENABLED ? (

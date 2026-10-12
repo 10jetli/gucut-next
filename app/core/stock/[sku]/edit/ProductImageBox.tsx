@@ -14,6 +14,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
+import PillSend from '@/components/ui/PillSend'
 
 const MAX_BYTES = 4 * 1024 * 1024
 const MIN_BYTES = 1024
@@ -104,11 +105,8 @@ export default function ProductImageBox({ id, sku, imagepath, realSendEnabled }:
           className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่งรูป (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !dryOk || !realSendEnabled}
-          className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-          style={{ background: dryOk && realSendEnabled ? '#c0392b' : '#9aa0a6' }}>
-          ส่งรูปเข้า ZORT
-        </button>
+        <PillSend พร้อมส่งจริง={dryOk && realSendEnabled} กำลังส่ง={busy}
+          onClick={() => send(true)}>ส่งรูปเข้า ZORT</PillSend>
         {!realSendEnabled
           ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ส่งจริง</b> — รอท่านประธานอนุมัติจอนี้</span>
           : data && !dryOk && <span className="text-[12.5px] text-gray-500">ต้องกดทดลองส่งรูปนี้ให้ผ่านก่อน</span>}

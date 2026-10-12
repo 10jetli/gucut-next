@@ -58,6 +58,7 @@ import { PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
+import PillSend from '@/components/ui/PillSend'
 
 /** ✅ **เปิดแล้ว 18 ก.ย. 2569 — ท่านประธานอนุมัติเอง** (ใบกระดาน t_mu6i5c5k)
  *
@@ -304,11 +305,8 @@ export default function NewProductPage() {
             ส่งใบนี้ไปแล้ว — ปิดการส่งซ้ำไว้
           </span>
         ) : (
-          <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-            className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-            style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
-            ส่งจริงเข้า ZORT
-          </button>
+          <PillSend พร้อมส่งจริง={!!ref && dryOk && REAL_SEND_ENABLED} กำลังส่ง={busy}
+            onClick={() => send(true)}>ส่งจริงเข้า ZORT</PillSend>
         )}
         {locked
           ? (

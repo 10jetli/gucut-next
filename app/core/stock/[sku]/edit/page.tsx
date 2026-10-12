@@ -19,6 +19,7 @@ import type { WriteResp } from '@/components/zort'
 import ProductImageBox from './ProductImageBox'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
+import PillSend from '@/components/ui/PillSend'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติจอนี้โดยเฉพาะ (แก้/ลบของจริงใน ZORT) */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -227,11 +228,8 @@ export default function EditProductPage() {
               className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
               {busy ? 'กำลังส่ง…' : '🧪 ทดลองแก้ (ยังไม่เข้า ZORT)'}
             </button>
-            <button onClick={() => sendEdit(true)} disabled={busy || !editRef || !dryOk || !REAL_SEND_ENABLED}
-              className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-              style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
-              บันทึกการแก้เข้า ZORT
-            </button>
+            <PillSend พร้อมส่งจริง={!!editRef && dryOk && REAL_SEND_ENABLED} กำลังส่ง={busy}
+              onClick={() => sendEdit(true)}>บันทึกการแก้เข้า ZORT</PillSend>
             {!REAL_SEND_ENABLED
               ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้แก้จริง</b> — {เหตุที่ยังไม่เปิด('stock/[sku]/edit')}</span>
               : !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองแก้ให้ผ่านก่อน' : 'เนื้อหาเปลี่ยนหลังทดลอง — ต้องทดลองใหม่'}</span>}

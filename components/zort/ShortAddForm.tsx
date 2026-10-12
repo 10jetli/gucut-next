@@ -26,6 +26,7 @@ import { PageHead } from './index'
 import { WriteResult, type WriteResp } from './WriteResult'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
+import PillSend from '@/components/ui/PillSend'
 
 const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
 
@@ -200,11 +201,8 @@ export function ShortAddForm({
           className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
-        <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !realSendEnabled}
-          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
-          style={{ background: dryOk && realSendEnabled ? '#c0392b' : '#9aa0a6' }}>
-          ส่งเข้า ZORT จริง
-        </button>
+        <PillSend เล็ก พร้อมส่งจริง={!!ref && dryOk && realSendEnabled} กำลังส่ง={busy}
+          onClick={() => send(true)}>ส่งเข้า ZORT จริง</PillSend>
       </div>
 
       {!realSendEnabled ? (

@@ -18,6 +18,7 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import PillSend from '@/components/ui/PillSend'
 
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
@@ -299,11 +300,8 @@ function NewPurchaseOrderInner() {
         </button>
         {/* 🔴 ส่งจริงได้เฉพาะใบปกติ (Pending) — โหมดอย่างง่าย (?quick=1) ส่ง status Success = รับของเข้าคลังทันที
             ยังไม่เคยยิงจริงและยกเลิกใบที่รับของแล้วผ่านท่อไม่ได้ ⇒ ปิดไว้แยก (งานกระดาน t_mu1bh3s7 · 14 ก.ย. 2569) */}
-        <button onClick={() => send(true)} disabled={busy || !dryOk || !(REAL_SEND_ENABLED && !quick)}
-          className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-          style={{ background: dryOk && REAL_SEND_ENABLED && !quick ? '#c0392b' : '#9aa0a6' }}>
-          ส่งจริงเข้า ZORT
-        </button>
+        <PillSend พร้อมส่งจริง={dryOk && REAL_SEND_ENABLED && !quick} กำลังส่ง={busy}
+          onClick={() => send(true)}>ส่งจริงเข้า ZORT</PillSend>
         {!REAL_SEND_ENABLED
           ? <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้ส่งจริง</b> — {เหตุที่ยังไม่เปิด('purchases/new')}</span>
           : quick

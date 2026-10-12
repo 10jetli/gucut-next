@@ -17,6 +17,7 @@ import { PageHead, BtnGhost } from '@/components/zort'
 import { readImportFile } from '@/lib/excel-rows'
 import type { ImportKind, ParseResult } from '@/lib/excel-rows'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
+import PillSend from '@/components/ui/PillSend'
 
 /** 🔴 ห้ามเปิดจนกว่าท่านประธานอนุมัติการนำเข้าจริงเข้า ZORT */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -199,10 +200,10 @@ function ImportInner() {
                   className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50 hover:bg-gray-50">
                   {sending ? 'กำลังส่ง…' : `🧪 ทดลองส่ง ${parsed.rows.length} รายการ (ยังไม่เข้า ZORT)`}
                 </button>
-                <button disabled title={REAL_SEND_ENABLED ? '' : 'ยังไม่เปิด — รอท่านประธานอนุมัติ'}
-                  className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40" style={{ background: '#9aa0a6' }}>
+                <PillSend พร้อมส่งจริง={false}
+                  title={REAL_SEND_ENABLED ? '' : 'ยังไม่เปิด — รอท่านประธานอนุมัติ'}>
                   นำเข้าจริงเข้า ZORT
-                </button>
+                </PillSend>
                 {!REAL_SEND_ENABLED && <span className="text-[12.5px] text-amber-800"><b>ยังไม่เปิดให้นำเข้าจริง</b> — {เหตุที่ยังไม่เปิด('import')}</span>}
               </div>
 

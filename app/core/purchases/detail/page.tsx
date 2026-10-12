@@ -25,6 +25,7 @@ import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
+import PillSend from '@/components/ui/PillSend'
 
 /* ── รับของ / ตรวจนับสินค้าเข้า (soon: stock-count · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
    ท่อ (gucut-web): GET ?zortpo=<เลขที่ใบ> → id ของ ZORT (กระจกไม่มี id · เลขที่ใบซ้ำได้ ท่อไม่เดา)
@@ -222,11 +223,8 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
               className="text-[14px] font-semibold text-gray-800 bg-white border-2 border-gray-300 rounded-full px-6 py-2 disabled:opacity-50">
               {busy ? 'กำลังส่ง…' : '🧪 ทดลองรับของ (ยังไม่เข้า ZORT)'}
             </button>
-            <button onClick={() => send(true)} disabled={busy || !ref || !dryOk || !REAL_SEND_ENABLED}
-              className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
-              style={{ background: dryOk && REAL_SEND_ENABLED ? '#c0392b' : '#9aa0a6' }}>
-              รับของเข้า ZORT จริง
-            </button>
+            <PillSend พร้อมส่งจริง={!!ref && dryOk && REAL_SEND_ENABLED} กำลังส่ง={busy}
+              onClick={() => send(true)}>รับของเข้า ZORT จริง</PillSend>
             {REAL_SEND_ENABLED && !dryOk && <span className="text-[12.5px] text-gray-500">{okDry === '' ? 'ต้องกดทดลองให้ผ่านก่อน' : 'จำนวนเปลี่ยนหลังทดลอง — ต้องทดลองใหม่'}</span>}
           </div>
         </>
