@@ -26,7 +26,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 const คำขอ = (หัว = {}, ip) => ({ headers: new Headers(หัว), ...(ip === undefined ? {} : { ip }) })
 
 try {
-  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/client-ip.ts', '--outDir', out,
+  execFileSync('npx', ['tsc', 'lib/client-ip.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
   const { clientIp, ipSources } = await import(join(out, 'client-ip.js'))

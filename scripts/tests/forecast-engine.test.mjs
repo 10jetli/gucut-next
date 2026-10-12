@@ -21,7 +21,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 }
 
 try {
-  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/forecast.ts', '--outDir', out,
+  execFileSync('npx', ['tsc', 'lib/forecast.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
   const { forecast, seasonalIndex, abcClass } = await import(join(out, 'forecast.js'))

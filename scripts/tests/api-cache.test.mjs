@@ -23,7 +23,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 }
 
 try {
-  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/api-cache.ts', '--outDir', out,
+  execFileSync('npx', ['tsc', 'lib/api-cache.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
 

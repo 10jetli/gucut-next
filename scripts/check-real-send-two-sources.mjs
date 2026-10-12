@@ -120,7 +120,7 @@ if (process.argv.includes('--self-test')) {
       ไม่ได้มีไว้ใช้ใน prebuild — ในลูกโซ่ gen-arch รันอยู่ก่อนแล้ว */
 const สร้างผังใหม่ = process.argv.includes('--regen')
 if (สร้างผังใหม่) {
-  const r = spawnSync(process.execPath, [join(ROOT, 'scripts/gen-arch.mjs')], { cwd: ROOT, encoding: 'utf8' })
+  const r = spawnSync('node', [join(ROOT, 'scripts/gen-arch.mjs')], { cwd: ROOT, encoding: 'utf8' })
   if (r.status !== 0) {
     console.error('🔴 สั่ง --regen แล้วสร้างผังไม่สำเร็จ ⇒ **ตก** (ไม่ถอยไปอ่านผังเก่า)')
     console.error(`   ${(r.stderr || r.stdout || '').trim().split('\n').slice(-3).join(' · ').slice(0, 300)}`)

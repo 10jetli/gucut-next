@@ -24,7 +24,7 @@ const ok = (ชื่อ, เงื่อนไข, เหตุ = '') => {
 }
 
 try {
-  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/line-profit.ts', '--outDir', out,
+  execFileSync('npx', ['tsc', 'lib/line-profit.ts', '--outDir', out,
     '--module', 'es2022', '--target', 'es2022', '--moduleResolution', 'bundler', '--skipLibCheck'],
     { stdio: 'pipe' })
   const { กำไรบรรทัด } = await import(join(out, 'line-profit.js'))

@@ -43,7 +43,7 @@ try {
     },
     files: [join(process.cwd(), 'lib/billreport.ts')],
   }))
-  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', '-p', tsconfig], { stdio: 'pipe' })
+  execFileSync('npx', ['tsc', '-p', tsconfig], { stdio: 'pipe' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
 
   /* ที่เก็บบิลปลอม — อ่านคำสั่งจากไฟล์ JSON ที่เทสเขียนใหม่ก่อนทุกรอบ

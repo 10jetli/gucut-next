@@ -122,7 +122,7 @@ for (const f of เทส) {
   ต่อเทส.set(f, new Set())
   const cov = join(งาน, 'cov', f)
   const man = join(งาน, `${f}.map.jsonl`)
-  const r = spawnSync(process.execPath, [join('scripts/tests', f)], {
+  const r = spawnSync('node', [join('scripts/tests', f)], {
     env: { ...process.env, PATH: `${SHIM}:${process.env.PATH}`,
       GUCUT_REAL_NPX: npxจริง, GUCUT_TSC_MANIFEST: man, NODE_V8_COVERAGE: cov },
     encoding: 'utf8', timeout: 300_000,

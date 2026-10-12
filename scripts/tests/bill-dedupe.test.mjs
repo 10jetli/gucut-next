@@ -24,7 +24,7 @@ const ok = (cond, name, extra = '') => {
 const f = (filename, attachmentId = 'A1', invoiceNo = undefined) => ({ filename, attachmentId, invoiceNo })
 
 try {
-  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/bill-dedupe.ts', '--outDir', out,
+  execFileSync('npx', ['tsc', 'lib/bill-dedupe.ts', '--outDir', out,
     '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
     '--lib', 'es2020', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })

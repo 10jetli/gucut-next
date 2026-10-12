@@ -29,7 +29,7 @@ if (!dir) {
 /* คอมไพล์ตัวอ่านตัวตนใบจาก TypeScript ที่ใช้ของจริง — ไม่เขียนตรรกะซ้ำในสคริปต์นี้
    (ตรรกะซ้ำสองที่ = วันหนึ่งสองที่ตอบไม่เหมือนกัน แล้วไม่มีใครรู้ว่าอันไหนถูก) */
 const out = mkdtempSync(join(tmpdir(), 'bill-id-'))
-execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/bill-identity.ts', 'lib/bill-text.ts', '--outDir', out,
+execFileSync('npx', ['tsc', 'lib/bill-identity.ts', 'lib/bill-text.ts', '--outDir', out,
   '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
   '--lib', 'es2020', '--esModuleInterop', '--skipLibCheck'], { stdio: 'inherit' })
 writeFileSync(join(out, 'package.json'), '{"type":"module"}')

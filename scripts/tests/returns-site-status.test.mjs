@@ -26,7 +26,7 @@ const ok = (name, cond, extra = '') => {
 
 try {
   /* เรียกฟังก์ชันตัวจริงที่จอใช้ ไม่ได้เลียนแบบตรรกะ */
-  execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/returns.ts', '--outDir', out,
+  execFileSync('npx', ['tsc', 'lib/returns.ts', '--outDir', out,
     '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
     '--lib', 'es2020,dom', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })

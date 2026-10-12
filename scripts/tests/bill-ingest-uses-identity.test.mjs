@@ -33,7 +33,7 @@ if (!pdf) {
   const out = join(ROOT, 'scripts', 'tests', '.out-bill-ingest')
   rmSync(out, { recursive: true, force: true }); mkdirSync(out, { recursive: true })
   try {
-    execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/bill-ingest.ts', 'lib/bill-identity.ts', 'lib/bill-text.ts', 'lib/billdate.ts',
+    execFileSync('npx', ['tsc', 'lib/bill-ingest.ts', 'lib/bill-identity.ts', 'lib/bill-text.ts', 'lib/billdate.ts',
       '--outDir', out, '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler',
       '--lib', 'es2020,dom', '--esModuleInterop', '--skipLibCheck'], { cwd: ROOT, stdio: 'inherit' })
     for (const f of ['bill-ingest.js', 'bill-identity.js', 'billdate.js']) {

@@ -15,7 +15,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 
 const out = mkdtempSync(join(tmpdir(), 'tally-'))
-execFileSync(process.execPath, [process.cwd() + '/node_modules/typescript/bin/tsc', 'lib/bill-tally.ts', '--outDir', out,
+execFileSync('npx', ['tsc', 'lib/bill-tally.ts', '--outDir', out,
   '--target', 'es2020', '--module', 'esnext', '--moduleResolution', 'bundler', '--lib', 'es2020,dom'],
   { cwd: process.cwd(), stdio: 'inherit' })
 writeFileSync(join(out, 'package.json'), '{"type":"module"}')
