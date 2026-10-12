@@ -17,23 +17,17 @@
  * วิธีใช้
  *   GET  /api/parts-oem-sync?model=f440            ← ดูเฉย ๆ ไม่เขียน (รอบซ้อม)
  *   POST /api/parts-oem-sync?model=f440            ← เขียนจริง
- *   POST /api/parts-oem-sync                       ← ทุกรุ่นใน รุ่นที่รองรับ
+ *   POST /api/parts-oem-sync                       ← ทุกรุ่น **ที่หน้าร้านประกาศ**
+ *                                                     (`/parts/models.json` · ดู lib/parts-models.ts)
  *   ต้องมีหัว `x-admin-key` ตรงกับ GUCUT_WEB_ADMIN_KEY ทั้ง GET และ POST
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { loadCatalogStateBlobs } from '@/lib/catalogstate'
+import { รุ่นจากหน้าร้าน, ล้างรุ่น } from '@/lib/parts-models'
 
 export const dynamic = 'force-dynamic'
 
-/** รุ่นที่มีไฟล์อะไหล่บนหน้าร้าน — เพิ่มรุ่นใหม่ที่นี่ที่เดียว */
-const รุ่นที่รองรับ = ['f250', 'f381', 'f440', 'f660', 'f070', 'f090']
-
 const ฐานหน้าร้าน = process.env.GUCUT_WEB_BASE || 'https://gucut.com'
-
-/** ล้างชื่อรุ่น — ต้องตรงกับ `ล้างรุ่น` ของฝั่งท่อ (`parts-map.mjs`) เป๊ะ
- *  ไม่ตรง = เขียนลงคีย์คนละใบ แล้วหน้าร้านอ่านไม่เจอ โดยไม่มีอะไรฟ้อง */
-const ล้างรุ่น = (v: string | null) =>
-  String(v || '').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 12)
 
 /** 🔑 เทียบเลขแบบ "ถอดทุกอย่างที่ไม่ใช่ตัวเลขออก"
  *  คู่มือเขียน `1128 029 0500` · คลังอาจเขียน `1128-029-0500` หรือ `11280290500`
@@ -140,7 +134,10 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
     return NextResponse.json({ error: 'ต้องมี x-admin-key' }, { status: 401 })
 
   const ขอ = ล้างรุ่น(req.nextUrl.searchParams.get('model'))
-  const รุ่นที่ทำ = ขอ ? [ขอ] : รุ่นที่รองรับ
+  const แหล่ง = ขอ
+    ? { รุ่น: [ขอ], ที่มา: 'พารามิเตอร์ ?model=', ถามได้: true }
+    : await รุ่นจากหน้าร้าน(ฐานหน้าร้าน)
+  const รุ่นที่ทำ = แหล่ง.รุ่น
 
   const state = await loadCatalogStateBlobs()
   /* 🔴 อ่านคลังไม่ได้ **ห้ามตีความว่า "คลังว่าง"** แล้วเดินต่อ
@@ -155,6 +152,7 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
     ok: true,
     โหมด: เขียนจริง ? 'เขียนจริง' : 'รอบซ้อม (ไม่เขียน)',
     เลขOEMในคลัง: ovrMap.size,
+    'รายชื่อรุ่นมาจาก': แหล่ง.ที่มา,
     รวมจับคู่ใหม่: ผล.reduce((s, x) => s + x.จับคู่ใหม่, 0),
     รุ่น: ผล,
     'ℹ️ อ่านยังไง':
