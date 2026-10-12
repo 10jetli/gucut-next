@@ -303,7 +303,7 @@ export default function NewPurchaseReturnPage() {
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         <button onClick={() => send(false)} disabled={busy || !ref}
-          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40" style={{ background: '#4669e5' }}>
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled-readable" style={{ background: '#4669e5' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
         <PillSend เล็ก พร้อมส่งจริง={!!ref && dryOk && REAL_SEND_ENABLED} กำลังส่ง={busy}

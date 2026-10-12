@@ -66,7 +66,7 @@ export default function WebLegacyPage() {
             className="w-full rounded-xl border border-gray-200 bg-white pl-9 pr-3 py-2.5 text-[12.5px] shadow-sm outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
         </div>
         <button onClick={() => search(q)} disabled={busy || !q.trim()}
-          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
+          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled-readable">
           {busy ? 'กำลังหา…' : 'ค้นหา'}
         </button>
       </div>

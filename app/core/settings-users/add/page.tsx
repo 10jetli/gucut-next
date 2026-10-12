@@ -175,7 +175,7 @@ export default function AddUserPage() {
 
         <div className="mt-3 flex items-center gap-3">
           <button onClick={add} disabled={busy || !name.trim() || pass.length < 6 || full || !!storeError}
-            className="rounded bg-[#4669e5] px-4 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40">
+            className="rounded bg-[#4669e5] px-4 py-2 text-[12.5px] font-semibold text-white disabled-readable">
             {busy ? 'กำลังบันทึก…' : 'บันทึก'}
           </button>
           {full && <span className="text-[12.5px] text-amber-800">เต็มเพดาน {max} คนแล้ว — ปิดหรือลบคนที่ไม่ใช้ก่อน</span>}

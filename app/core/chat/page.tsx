@@ -403,7 +403,7 @@ export default function ChatCommercePage() {
                 <button
                   onClick={send}
                   disabled={!reply.trim()}
-                  className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled:opacity-40"
+                  className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled-readable"
                   style={{ background: '#4669e5' }}
                 >
                   ส่ง

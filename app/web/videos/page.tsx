@@ -60,7 +60,7 @@ export default function WebVideoPickPage() {
           </p>
         </div>
         <button onClick={save} disabled={busy || !dirty}
-          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
+          className="rounded-xl bg-gray-900 px-5 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.98] disabled-readable">
           {busy ? 'กำลังบันทึก…' : dirty ? 'บันทึกการเลือก' : 'บันทึกแล้ว ✓'}
         </button>
       </div>

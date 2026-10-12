@@ -178,7 +178,7 @@ export default function SalesPrintPage() {
               </BtnGhost>
               <button type="button" onClick={() => window.print()}
                 disabled={reading > 0 || ok.length === 0}
-                className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 disabled:opacity-40"
+                className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 disabled-readable"
                 style={{ background: '#4669e5' }}>
                 🖨 พิมพ์ {ok.length.toLocaleString('th-TH')} ใบ
               </button>

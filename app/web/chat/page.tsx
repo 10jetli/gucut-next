@@ -208,7 +208,7 @@ export default function WebChatPage() {
                   placeholder="พิมพ์ข้อความตอบลูกค้า…"
                   className="flex-1 rounded-xl border border-gray-200 bg-white px-3.5 py-2.5 text-[12.5px] outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-100" />
                 <button onClick={send} disabled={!reply.trim()}
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] transition-all hover:bg-gray-800 active:scale-[0.98] disabled:opacity-40">
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-gray-900 px-4 py-2.5 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] transition-all hover:bg-gray-800 active:scale-[0.98] disabled-readable">
                   <I d={IC.send} className="w-3.5 h-3.5" /> ส่ง
                 </button>
               </div>

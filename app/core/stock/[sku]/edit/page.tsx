@@ -260,7 +260,7 @@ export default function EditProductPage() {
               </button>
               <button onClick={() => sendDelete(true)}
                 disabled={delBusy || !delRef || !delDryOk || delConfirmSku.trim() !== product.sku || !stockZero || !REAL_SEND_ENABLED}
-                className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
+                className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled-readable"
                 style={{ background: '#c0392b' }}>
                 ลบจริงใน ZORT
               </button>

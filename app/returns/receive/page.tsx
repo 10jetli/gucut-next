@@ -374,7 +374,7 @@ export default function ReturnReceivePage() {
                   setLocked(null); await resume(d.doc.returnId)
                 } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
               }}
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 disabled:opacity-40"
+              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 disabled-readable"
               style={{ background: '#b45309' }}>
               รับช่วงใบนี้
             </button>
@@ -502,7 +502,7 @@ export default function ReturnReceivePage() {
               )}
               <button disabled={pickedCount === 0 || busy || (unmatched && pick.some((p) => p.qty > 0 && !p.name.trim()))}
                 onClick={() => setStep(1)}
-                className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#4669e5' }}>
+                className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
                 ถัดไป: ถ่ายรูปตอนรับ ({pickedCount} รายการ)
               </button>
             </>
@@ -559,17 +559,17 @@ export default function ReturnReceivePage() {
             <button onClick={() => setStep(0)} className="text-[12.5px] text-gray-500 px-3">← กลับ</button>
             {doc ? (
               <button onClick={retryPhotos} disabled={photos.length === 0 || busy}
-                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#4669e5' }}>
+                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
                 {busy ? 'กำลังส่ง…' : `ส่งรูปเข้าใบ ${doc.returnId}`}
               </button>
             ) : photos.some((p) => p.status === 'failed') ? (
               <button onClick={retryPhotos} disabled={busy}
-                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#b45309' }}>
+                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#b45309' }}>
                 {busy ? 'กำลังส่ง…' : 'ส่งรูปซ้ำ (ใบคืนสร้างแล้ว ไม่หาย)'}
               </button>
             ) : (
               <button onClick={submitReceive} disabled={!photosOk || busy}
-                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#4669e5' }}>
+                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
                 {busy ? 'กำลังบันทึก…' : 'บันทึกรับของ + ส่งรูป'}
               </button>
             )}
@@ -615,7 +615,7 @@ export default function ReturnReceivePage() {
             })}
           </div>
           <button onClick={() => setStep(3)} disabled={!allGraded}
-            className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#4669e5' }}>
+            className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
             ถัดไป: สรุปทวนกับลูกค้า
           </button>
           {/* ยกเลิกใบ — คนถือเท่านั้น · ใบที่ moved แล้วเซิร์ฟเวอร์ไม่ให้ (ไม่ยื่นปุ่มตอนนั้นอยู่แล้ว) */}
@@ -639,7 +639,7 @@ export default function ReturnReceivePage() {
                       setCancelledDoc(r.doc)
                     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setBusy(false) }
                   }}
-                  className="text-[12.5px] font-semibold text-white rounded px-3 py-1.5 disabled:opacity-40" style={{ background: '#b91c1c' }}>
+                  className="text-[12.5px] font-semibold text-white rounded px-3 py-1.5 disabled-readable" style={{ background: '#b91c1c' }}>
                   ยืนยันยกเลิก
                 </button>
                 <button onClick={() => { setCancelOpen(false); setCancelReason('') }} className="text-[12.5px] text-gray-500">ไม่ยกเลิก</button>
@@ -740,7 +740,7 @@ export default function ReturnReceivePage() {
               <div className="flex gap-2">
                 <button onClick={() => setStep(2)} className="text-[12.5px] text-gray-500 px-3">← แก้คำตัดสิน</button>
                 <button onClick={confirm} disabled={busy}
-                  className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled:opacity-40" style={{ background: '#4669e5' }}>
+                  className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
                   {busy ? 'กำลังบันทึก…' : 'ยืนยัน — บันทึกจริง'}
                 </button>
               </div>

@@ -233,7 +233,7 @@ export default function PackWizardPage() {
 
           <div className="flex items-center gap-3">
             <button onClick={() => setStep(2)} disabled={!allPicked}
-              className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-40"
+              className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2 disabled-readable"
               style={{ background: '#4669e5' }}>
               แพ็คสำเร็จ
             </button>

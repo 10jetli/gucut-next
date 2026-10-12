@@ -113,7 +113,7 @@ export default function WebPointsPage() {
         </div>
         <button onClick={() => post({ action: 'adjust', phone, n: Number(n), note }, 'ปรับแต้มแล้ว ✓')}
           disabled={busy || !phone.trim() || !n}
-          className="rounded-xl bg-blue-600 px-5 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)] hover:bg-blue-700 active:scale-[0.98] disabled:opacity-40">
+          className="rounded-xl bg-blue-600 px-5 py-2 text-[12.5px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(37,99,235,0.7)] hover:bg-blue-700 active:scale-[0.98] disabled-readable">
           {busy ? 'กำลังบันทึก…' : 'ปรับแต้ม'}
         </button>
       </div>

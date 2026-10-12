@@ -40,27 +40,9 @@ const ยกเว้นโดยเจตนา = new Map([
 
 const พื้นประชากร = 150   // กวาดได้น้อยกว่านี้ = ตะแกรงพัง ไม่ใช่ "รีโปสะอาด"
 
-/** ดึงแท็กเปิดของ JSX ทั้งก้อน โดย **เดินอักขระ** หาคู่ `>` ที่ความลึกวงเล็บ/คำพูด 0
- *  🔴 ห้ามใช้ regex ตัดที่ `>` — `=>` และ generic `<T>` ทำให้ขาดกลางทาง
- *     (เหยียบจริง 4 ต.ค. 2569: ตะแกรง `[^<>]` ให้ 3 จุด ทั้งที่ของจริง 63) */
-export function แท็กเปิด(src, ชื่อ = 'button') {
-  const out = []
-  const re = new RegExp(`<${ชื่อ}(?=[\\s/>])`, 'g')
-  let m
-  while ((m = re.exec(src))) {
-    let i = m.index + m[0].length, ลึก = 0, q = null
-    for (; i < src.length; i++) {
-      const c = src[i]
-      if (q) { if (c === q && src[i - 1] !== '\\') q = null; continue }
-      if (c === '"' || c === "'" || c === '`') { q = c; continue }
-      if (c === '{') ลึก++
-      else if (c === '}') ลึก--
-      else if (c === '>' && ลึก === 0) break
-    }
-    out.push(src.slice(m.index, i + 1))
-  }
-  return out
-}
+export { แท็กเปิด } from './lib/แท็กเปิด.mjs'
+import { แท็กเปิด } from './lib/แท็กเปิด.mjs'
+
 
 const คลาสเลือก = /(?:bg-(?:blue|indigo|sky|slate-800|gray-900|black)|text-white|border-blue|font-(?:semibold|bold|medium)|ring-)/
 const ARIA = /aria-(?:pressed|selected|current|checked)\s*=/

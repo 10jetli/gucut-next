@@ -260,7 +260,7 @@ export default function Lz2BackPrint() {
           </p>
         )}
         <button onClick={() => void สร้างPDF()} disabled={busy || !เลขเลื่อย}
-          className="w-full rounded-xl bg-gray-900 px-4 py-3 text-[14px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.99] disabled:opacity-40">
+          className="w-full rounded-xl bg-gray-900 px-4 py-3 text-[14px] font-bold text-white shadow-[0_6px_14px_-6px_rgba(15,23,42,0.5)] hover:bg-gray-800 active:scale-[0.99] disabled-readable">
           {busy ? 'กำลังสร้าง…' : '🖨️ ปริ้นต์ — สร้าง PDF พิมพ์ทับใบจริง'}
         </button>
       </div>

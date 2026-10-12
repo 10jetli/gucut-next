@@ -19,10 +19,24 @@
  * 🔑 **พิมพ์ระยะห่างออกมาเสมอ ไม่ใช่แค่ผ่าน/ไม่ผ่าน** — ระยะห่างตอนนี้บางมาก (0.48)
  *    เลขที่ด่านพิมพ์ตอนรัน **ไม่เน่า** ต่างจากเลขที่พิมพ์ค้างไว้ในคอมเมนต์
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync, statSync } from 'node:fs'
+import { join } from 'node:path'
+import { แท็กเปิด } from './lib/แท็กเปิด.mjs'
 import { fileURLToPath } from 'node:url'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
+
+/** ไล่ .tsx ทั้งรีโป — เดินโฟลเดอร์จริง ไม่พึ่ง grep ของเชลล์
+ *  (บทเรียน 12 ต.ค.: กวาดแค่ `app/` แล้วตก `components/` ไป 1 จุด) */
+function ไฟล์ทั้งหมด(dir = ROOT, out = []) {
+  for (const name of readdirSync(dir)) {
+    if (name === 'node_modules' || name.startsWith('.next') || name === '.git') continue
+    const p = join(dir, name)
+    if (statSync(p).isDirectory()) ไฟล์ทั้งหมด(p, out)
+    else if (p.endsWith('.tsx')) out.push(p)
+  }
+  return out
+}
 
 export function ความสว่าง(hex) {
   const h = String(hex).replace('#', '')
@@ -102,4 +116,49 @@ if (!ผล.ผ่าน) {
 }
 if (ผล.ระยะห่าง < 1) {
   console.log(`   ⚠️ ระยะห่างบาง (${ผล.ระยะห่าง}) — แก้สีข้างใดข้างหนึ่งต้องคิดใหม่ทั้งคู่`)
+}
+
+// ── ข้อสอง: ห้ามกลับไปใช้ `text-white` + `disabled:opacity-40` ────────────────
+//    🔴 **ต้นเหตุจริงของเรื่องนี้ไม่ใช่สีพื้นเทา มันคือชั้น opacity** (วัดแล้ว 12 ต.ค. 2569)
+//       25 ปุ่มใน 18 ไฟล์ พื้นมีทั้งน้ำเงิน #4669e5 ส้ม #b45309 แดง #c0392b/#b91c1c
+//       ตอนเปิดอ่านได้หมด (4.76–6.47) ตอนปิด **1.75–2.10** ⇒ อ่านไม่ออกทุกตัว
+//       ⇒ ถ้าจำบทเรียนว่า "อย่าใช้ขาวบนเทา" จะไปแก้ผิดจุดทั้งกอง เพราะไม่มีตัวไหนใช้เทาเลย
+//    ⚠️ ใช้ตัวแยกแท็กของ `check-aria-state.mjs` **ไม่ใช่ regex ตัดที่ `>`**
+//       (ผมเหยียบกับดักนี้เองตอนแก้: `=>` และ `=== 0` ในแท็กทำให้ regex ขาดกลางทาง
+//        ⇒ ได้ 9 จาก 25 แล้วดูเหมือนทำครบ — กับดักนี้เขียนเตือนไว้ในไฟล์นั้นอยู่แล้ว)
+const หาปุ่มจาง = (ซอร์ส) =>
+  แท็กเปิด(ซอร์ส, 'button').filter((t) => t.includes('text-white') && t.includes('disabled:opacity-40'))
+
+const เคสจาง = [
+  { ควรเจอ: 1, ชื่อ: 'ควรจับ: ขาว + opacity-40 ⇒ ตอนปิดอ่านไม่ออก',
+    src: '<button className="bg-blue-600 text-white disabled:opacity-40">ส่ง</button>' },
+  { ควรเจอ: 1, ชื่อ: 'ควรจับ: แท็กที่มี => อยู่ข้างใน (regex ตัดที่ > จะพลาด)',
+    src: '<button onClick={() => go()} disabled={n === 0} className="text-white disabled:opacity-40">ส่ง</button>' },
+  { ควรเจอ: 0, ชื่อ: 'ต้องไม่จับ: ใช้คลาสกลางแล้ว',
+    src: '<button className="bg-blue-600 text-white disabled-readable">ส่ง</button>' },
+  { ควรเจอ: 0, ชื่อ: 'ต้องไม่จับ: opacity-50 บนตัวหนังสือเข้ม (ปุ่มทดลองส่ง) ยังอ่านออก',
+    src: '<button className="text-gray-800 bg-white disabled:opacity-50">ทดลองส่ง</button>' },
+]
+let จางตก = 0
+for (const ก of เคสจาง) {
+  const ตรง = หาปุ่มจาง(ก.src).length === ก.ควรเจอ
+  if (!ตรง) จางตก++
+  console.log(`  ${ตรง ? '✅' : '❌'} ${ก.ชื่อ}`)
+}
+if (จางตก) {
+  console.error(`🔴 ตัวควบคุมข้อสองตก ${จางตก} เคส ⇒ ตะแกรงใช้ไม่ได้`)
+  process.exit(1)
+}
+
+const จาง = []
+for (const f of ไฟล์ทั้งหมด()) {
+  const n = หาปุ่มจาง(readFileSync(f, 'utf8')).length
+  if (n) จาง.push(`${f.slice(ROOT.length)} (${n} ปุ่ม)`)
+}
+console.log(`ปุ่มขาวที่จางตอนปิด: ${จาง.length} ไฟล์`)
+if (จาง.length) {
+  console.error('🔴 `text-white` + `disabled:opacity-40` ⇒ ตอนปิดวัดได้ 1.75–2.10:1 (เกณฑ์ 4.5)')
+  for (const x of จาง) console.error(`   · ${x}`)
+  console.error('   ⇒ ใช้คลาส `disabled-readable` แทน (กติกาอยู่ที่ app/globals.css ที่เดียว)')
+  process.exit(1)
 }

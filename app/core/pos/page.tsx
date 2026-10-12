@@ -1217,7 +1217,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
           <button
             onClick={() => (step === 'cart' ? setStep('pay') : checkout())}
             disabled={saving || !branch || cart.length === 0 || (hasZero && !allowZero)}
-            className="w-full text-[18px] font-bold text-white py-4 disabled:opacity-40"
+            className="w-full text-[18px] font-bold text-white py-4 disabled-readable"
             style={{ background: '#4669e5' }}
           >
             {saving

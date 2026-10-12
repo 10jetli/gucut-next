@@ -85,7 +85,7 @@ export default function AiVisibilityPage() {
         <button
           onClick={runCheck}
           disabled={running || !hasKey}
-          className="px-4 py-2 rounded-full text-[12.5px] font-semibold bg-blue-600 text-white shadow-[0_4px_10px_-4px_rgba(37,99,235,0.6)] disabled:opacity-40 disabled:shadow-none transition"
+          className="px-4 py-2 rounded-full text-[12.5px] font-semibold bg-blue-600 text-white shadow-[0_4px_10px_-4px_rgba(37,99,235,0.6)] disabled-readable disabled:shadow-none transition"
         >
           {running ? 'กำลังตรวจ...' : 'ตรวจรอบใหม่'}
         </button>
