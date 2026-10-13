@@ -43,6 +43,8 @@
   td.sku{background:var(--green);font-weight:700;text-align:center;white-space:nowrap}
   td.name{min-width:170px;font-weight:600}
   td.oem,td.hh{white-space:nowrap;color:var(--muted);font-size:11.5px}
+  /* 🟢 เม็ดเขียว = ชิ้นนี้เชื่อมกับหน้าอะไหล่ gucut.com/parts แล้ว (ท่านประธานสั่ง 12 ต.ค. 2569) */
+  .ปุ่มเชื่อม{display:inline-block;width:9px;height:9px;border-radius:50%;background:#19a34a;margin-left:6px;vertical-align:middle;box-shadow:0 0 0 2px rgba(25,163,74,.18)}
   td.cn{min-width:90px;color:#444}
   td.factory,td.wechat{min-width:90px;font-size:12px}
   td.num{text-align:center;white-space:nowrap}
@@ -267,6 +269,17 @@ font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;color:#1e3a
 </div>
 <script src="/catalog/sync.js"></script>
 <script>
+/* 🟢 ดึงรายชื่อเลข OEM ที่เชื่อมกับหน้าอะไหล่แล้ว — ท่านประธานสั่ง 12 ต.ค. 2569
+   ⚠️ ยิงที่โดเมนตัวเอง ไม่ยิง gucut.com ตรง ๆ (CORS บล็อก — เจอจริงมาแล้ว)
+   ⚠️ อ่านไม่ได้ = ไม่ตั้งตัวแปร ⇒ ไม่มีเม็ดขึ้นเลย **ไม่ใช่ขึ้นว่ายังไม่เชื่อม** */
+fetch("/api/parts-linked",{cache:"no-store"}).then(function(r){return r.ok?r.json():null;})
+ .then(function(j){
+   if(!j||!j.เลข)return;
+   window.เลขที่เชื่อมแล้ว=new Set(j.เลข);
+   if(typeof render==="function")render();
+ }).catch(function(){});
+</script>
+<script>
 const LS_OVR="gucut_overrides_v1", LS_COL="gucut_cols_v1", LS_CAT="gucut_catmap_v1", LS_CATNEW="gucut_catnew_v1", LS_FAC="gucut_factories_v1", LS_CATDONE="gucut_catdone_v1";
 const state={base:[], prefix:"", ana:{}, anaInfo:null, ovr:load(LS_OVR,{}), catMap:load(LS_CAT,{}), catNew:load(LS_CATNEW,[]), facs:load(LS_FAC,[]), catDone:load(LS_CATDONE,[]), facEdit:null, sort:{key:"stock",dir:1}, editing:null};
 const THRESHOLD=5;
@@ -426,7 +439,18 @@ function cell(r,key,q){
     case"sku":return '<td class="sku">'+hl(r.sku,q)+(r.edited?'<span class="badge-edited" title="แก้ไขแล้ว"></span>':'')+'</td>';
     case"name":return '<td class="name">'+hl(r.name,q)+'</td>';
     case"nameEn":return '<td class="name" style="font-weight:500">'+hl(r.nameEn,q)+'</td>';
-    case"oem":return '<td class="oem">'+hl(r.oem,q)+'</td>';
+    case"oem":{
+      /* 🟢 เม็ดเขียวบอกว่า "เชื่อมกับหน้าอะไหล่แล้ว" — ท่านประธานสั่ง 12 ต.ค. 2569
+         🔑 ยังไม่รู้ (เส้นอ่านไม่ได้) ⇒ **ไม่ขึ้นเม็ด และไม่ขึ้นอะไรเลย**
+            ห้ามขึ้นเม็ดสีเทาหรือกากบาท — "ไม่รู้" ไม่ใช่ "ยังไม่เชื่อม" */
+      var จุด="";
+      if(window.เลขที่เชื่อมแล้ว && r.oem){
+        var มี=String(r.oem).split("/").some(function(x){
+          return window.เลขที่เชื่อมแล้ว.has(x.replace(/\D/g,""));});
+        if(มี)จุด='<span class="ปุ่มเชื่อม" title="เชื่อมกับหน้าอะไหล่แล้ว"></span>';
+      }
+      return '<td class="oem">'+hl(r.oem,q)+จุด+'</td>';
+    }
     case"hh":return '<td class="hh">'+esc(r.hh)+'</td>';
     case"tags":return '<td>'+hl(r.tagsName,q)+'</td>';
     case"cn":return '<td class="cn">'+esc(r.cn)+'</td>';

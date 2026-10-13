@@ -145,6 +145,60 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
   if (!state) return NextResponse.json({ error: 'อ่านคลังอะไหล่ไม่ได้ — ยังไม่ได้เขียนอะไรเลย' }, { status: 503 })
   const ovrMap = เลขOEMจากคลัง(state.ovr ?? {})
 
+  /* ➕ **แหล่งที่สอง: เลข OEM ที่ซ่อนอยู่ใน tags ของสินค้า** (แก้ 12 ต.ค. 2569)
+     🔴 ของจริง: หน้า /catalog แสดง OEM จาก **สองแหล่ง** — `o.oem ?? p.pp.oem`
+        ① ที่คนกรอกเอง (state.ovr) ② ที่แกะจาก tags ของสินค้าเอง
+        ผมอ่านแต่แหล่งแรก ⇒ ได้ 122 เลข แล้วสรุปผิดว่า "ของที่ท่านกรอกหายไป"
+        ทั้งที่ของอยู่ครบ — **ผมหาไม่เจอเอง** (ตัวอย่าง 05619 มี tag "A20- 1128 029 0500")
+     ⇒ อ่านแหล่งที่สองด้วย ได้เพิ่มเป็น ~629 เลข (มากกว่าเดิม 5 เท่า)
+     🔑 บทเรียน: จอแสดงค่าจากหลายแหล่งต่อกันด้วย `??` — อ่านแค่แหล่งแรกแล้วสรุป
+        จะได้ผลที่ **ดูเหมือนข้อมูลหาย** ทั้งที่เราอ่านไม่ครบ */
+  try {
+    const r = await fetch('https://video.gucut.com/catalog/products.json', {
+      cache: 'no-store', signal: AbortSignal.timeout(20000),
+    })
+    if (r.ok) {
+      const j = await r.json()
+      /* ชุดเดียวกับ OEM_RE ในหน้า /catalog — คัดเฉพาะรูปที่เป็นเลขอะไหล่จริง
+         (ตัดรูป [A-Z]{2,}\d{2,} ออกโดยตั้งใจ — มันจับชื่อรุ่นอย่าง MS440 ติดมาด้วย) */
+      const รูปเลข = /(?:\d{4} \d{3} \d{4}|\d{3,4}-\d{2,5}|\d\.\d{3}\.\d{4}\.\d{2})/g
+      for (const p2 of (j?.products ?? [])) {
+        const sku = String(p2?.sku ?? '')
+        if (!sku) continue
+        for (const t of (p2?.tags ?? [])) {
+          for (const o of String(t).match(รูปเลข) ?? []) {
+            const เลข = เลขล้วน(o)
+            if (เลข.length < 8) continue
+            /* ⚠️ ของที่คนกรอกเองชนะเสมอ — ไม่ทับด้วยของที่แกะจาก tags */
+            if (!ovrMap.has(เลข)) ovrMap.set(เลข, [sku])
+          }
+        }
+      }
+    }
+  } catch { /* อ่านไม่ได้ = ใช้เฉพาะแหล่งแรก ไม่ล้มทั้งเส้น */ }
+
+  /* 🔎 โหมดส่อง — `?โครง=<รหัสหรือ sku>` บอกว่าของชิ้นนั้นอยู่ในคลังรูปไหน
+     🔑 มีเพราะของจริง 12 ต.ค. 2569: ท่านประธานกรอก 1128 029 0500 → 05619 ในหน้า /catalog
+        แต่ตัวซิงก์หาไม่เจอ ⇒ ต้องดูโครงข้อมูลจริง ไม่ใช่เดาว่าเก็บยังไง
+     ⚠️ อ่านอย่างเดียว · ต้องมีกุญแจเหมือนเส้นอื่น */
+  const ส่อง = req.nextUrl.searchParams.get('โครง')
+  if (ส่อง) {
+    const ovr = (state.ovr ?? {}) as Record<string, any>
+    const เลข = เลขล้วน(ส่อง)
+    const ตรงsku = ovr[ส่อง] ?? null
+    const ตรงเลข = Object.entries(ovr).filter(([, v]) =>
+      JSON.stringify(v ?? '').replace(/\D/g, '').includes(เลข)).slice(0, 5)
+    return NextResponse.json({
+      หาอะไร: ส่อง, เลขล้วน: เลข,
+      จำนวนรายการในคลัง: Object.keys(ovr).length,
+      เลขOEMที่อ่านได้: ovrMap.size,
+      เจอเป็นsku: ตรงsku,
+      เจอเลขนี้ในรายการ: ตรงเลข.map(([k, v]) => ({ sku: k, ค่า: v })),
+      ตัวอย่างโครง: Object.entries(ovr).slice(0, 3).map(([k, v]) => ({ sku: k, ช่อง: Object.keys(v ?? {}) })),
+      คีย์อื่นในสถานะ: Object.keys(state),
+    })
+  }
+
   const ผล: ผลรุ่น[] = []
   for (const ร of รุ่นที่ทำ) ผล.push(await ทำรุ่น(ร, ovrMap, เขียนจริง))
 
