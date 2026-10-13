@@ -23,7 +23,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { loadCatalogStateBlobs } from '@/lib/catalogstate'
-import { รุ่นจากหน้าร้าน, ล้างรุ่น, จับคู่ที่ยังว่าง, สร้างดัชนีเลขOEM } from '@/lib/parts-models'
+import { รุ่นจากหน้าร้าน, ล้างรุ่น, จับคู่ที่ยังว่าง, สร้างดัชนีเลขOEM, เลขจากป้าย } from '@/lib/parts-models'
 
 export const dynamic = 'force-dynamic'
 
@@ -128,7 +128,6 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
      ① state.ovr = ที่ท่านประธานกรอกเอง (ชนะเสมอ) ② tags ของสินค้าใน /catalog
      🔴 แหล่งที่สองต้อง **สะสมทุก sku ที่แปะเลขเดียวกัน** ไม่ใช่เก็บตัวแรก
         ไม่งั้นของที่กำกวมจริงจะดูชัดเจน แล้วตัวกันเดาชั้นหลังมองไม่เห็น */
-  const รูปเลข = /(?:\d{4} \d{3} \d{4}|\d{3,4}-\d{2,5}|\d\.\d{3}\.\d{4}\.\d{2})/g
   let สินค้า: { sku?: unknown; tags?: unknown[] }[] = []
   let อ่านคลังสินค้าได้ = true
   try {
@@ -145,7 +144,7 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
   const ovrMap = สร้างดัชนีเลขOEM(
     (state.ovr ?? {}) as Record<string, unknown>,
     สินค้า,
-    (t) => (t.match(รูปเลข) ?? []).map(เลขล้วน),
+    เลขจากป้าย,
   )
 
   /* 🔎 โหมดส่อง — `?โครง=<รหัสหรือ sku>` บอกว่าของชิ้นนั้นอยู่ในคลังรูปไหน
