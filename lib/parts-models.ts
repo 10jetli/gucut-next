@@ -99,3 +99,40 @@ export function จับคู่ที่ยังว่าง(
   }
   return { เพิ่ม, ข้าม, กำกวม }
 }
+
+/* ── ดัชนี "เลข OEM → รหัสสินค้าในร้าน" จากคลังสองแหล่ง ────────────────────────
+ * 🔴 **บั๊กที่เจอ 13 ต.ค. 2569 ตอนจะยิงรอบเขียนจริง** (ท่อวัดกำกวมได้ 28 คู่ · เส้นนี้เห็นแค่ 8)
+ *    ของเดิมเติมแหล่ง tags ด้วย `if (!ovrMap.has(เลข)) ovrMap.set(เลข, [sku])`
+ *    ⇒ เลขที่สินค้า **หลายตัว** แปะ tag เดียวกัน จะถูกเก็บแค่ตัวแรก ตัวที่เหลือ **หายเงียบ**
+ *    ⇒ ของที่กำกวมจริงกลายเป็น "ชัดเจน" ตั้งแต่ชั้นก่อนหน้า ⇒ ด่านกันเดาที่เพิ่งใส่ไว้ **มองไม่เห็น**
+ *      แล้วเราจะเขียนคู่ที่เดาเอาลงไปโดยที่ทุกชั้นรายงานว่าไม่มีอะไรกำกวม
+ * 🔑 คลาส: **ของที่ถูกทำให้ดูไม่กำกวมที่ชั้นก่อนหน้า** — ตัวกรองชั้นหลังไม่มีทางรู้
+ * ⚠️ เจตนาเดิมที่ต้องคงไว้: "ของที่คนกรอกเองชนะเสมอ" ⇒ เลขที่มีใน ovr แล้ว **ไม่รับของจาก tags เพิ่ม**
+ *    (ovr = ท่านประธานกรอกเอง · tags = เราแกะจากชื่อสินค้า) */
+export function สร้างดัชนีเลขOEM(
+  ovr: Record<string, unknown>,
+  products: { sku?: unknown; tags?: unknown[] }[],
+  เลขจากข้อความ: (s: string) => string[],
+): Map<string, string[]> {
+  const m = new Map<string, string[]>()
+  const มาจากคนกรอก = new Set<string>()
+  for (const [sku, v] of Object.entries(ovr || {})) {
+    const เลข = เลขล้วน(typeof v === 'object' && v ? (v as { oem?: unknown }).oem : v)
+    if (!เลข || เลข.length < 8) continue
+    มาจากคนกรอก.add(เลข)
+    const เดิม = m.get(เลข)
+    if (เดิม) { if (!เดิม.includes(sku)) เดิม.push(sku) } else m.set(เลข, [sku])
+  }
+  for (const p of products || []) {
+    const sku = String(p?.sku ?? '')
+    if (!sku) continue
+    for (const t of (p?.tags ?? [])) {
+      for (const เลข of เลขจากข้อความ(String(t))) {
+        if (เลข.length < 8 || มาจากคนกรอก.has(เลข)) continue
+        const เดิม = m.get(เลข)
+        if (เดิม) { if (!เดิม.includes(sku)) เดิม.push(sku) } else m.set(เลข, [sku])
+      }
+    }
+  }
+  return m
+}

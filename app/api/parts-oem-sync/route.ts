@@ -23,7 +23,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { loadCatalogStateBlobs } from '@/lib/catalogstate'
-import { รุ่นจากหน้าร้าน, ล้างรุ่น, จับคู่ที่ยังว่าง } from '@/lib/parts-models'
+import { รุ่นจากหน้าร้าน, ล้างรุ่น, จับคู่ที่ยังว่าง, สร้างดัชนีเลขOEM } from '@/lib/parts-models'
 
 export const dynamic = 'force-dynamic'
 
@@ -44,21 +44,6 @@ type ผลรุ่น = {
   รายการกำกวม?: { รหัส: string; sku: string[] }[]
   เขียนแล้ว: boolean
   เหตุ?: string
-}
-
-/** ดึง sku → เลข OEM จากคลัง (อ่านอย่างเดียว) */
-function เลขOEMจากคลัง(ovr: Record<string, any>): Map<string, string[]> {
-  const m = new Map<string, string[]>()
-  for (const [sku, v] of Object.entries(ovr || {})) {
-    /* ⚠️ ช่อง oem อาจเป็นสตริง หรือเป็นอ็อบเจกต์ที่ sync.js เคยยัดผิดไว้ (คอมเมนต์เตือนไว้ในไฟล์นั้น)
-       ⇒ รับเฉพาะที่ถอดเป็นตัวเลขได้จริง ที่เหลือข้าม **ไม่เดา** */
-    const เลข = เลขล้วน(typeof v === 'object' && v ? (v as any).oem : v)
-    if (!เลข || เลข.length < 8) continue
-    const เดิม = m.get(เลข)
-    if (เดิม) เดิม.push(sku)
-    else m.set(เลข, [sku])
-  }
-  return m
 }
 
 async function ทำรุ่น(รุ่น: string, ovrMap: Map<string, string[]>, เขียนจริง: boolean): Promise<ผลรุ่น> {
@@ -139,39 +124,29 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
   /* 🔴 อ่านคลังไม่ได้ **ห้ามตีความว่า "คลังว่าง"** แล้วเดินต่อ
      ไม่งั้นจะได้ผล "จับคู่ใหม่ 0" ซึ่งหน้าตาเหมือนทำงานสำเร็จแต่ไม่มีอะไรให้จับ */
   if (!state) return NextResponse.json({ error: 'อ่านคลังอะไหล่ไม่ได้ — ยังไม่ได้เขียนอะไรเลย' }, { status: 503 })
-  const ovrMap = เลขOEMจากคลัง(state.ovr ?? {})
-
-  /* ➕ **แหล่งที่สอง: เลข OEM ที่ซ่อนอยู่ใน tags ของสินค้า** (แก้ 12 ต.ค. 2569)
-     🔴 ของจริง: หน้า /catalog แสดง OEM จาก **สองแหล่ง** — `o.oem ?? p.pp.oem`
-        ① ที่คนกรอกเอง (state.ovr) ② ที่แกะจาก tags ของสินค้าเอง
-        ผมอ่านแต่แหล่งแรก ⇒ ได้ 122 เลข แล้วสรุปผิดว่า "ของที่ท่านกรอกหายไป"
-        ทั้งที่ของอยู่ครบ — **ผมหาไม่เจอเอง** (ตัวอย่าง 05619 มี tag "A20- 1128 029 0500")
-     ⇒ อ่านแหล่งที่สองด้วย ได้เพิ่มเป็น ~629 เลข (มากกว่าเดิม 5 เท่า)
-     🔑 บทเรียน: จอแสดงค่าจากหลายแหล่งต่อกันด้วย `??` — อ่านแค่แหล่งแรกแล้วสรุป
-        จะได้ผลที่ **ดูเหมือนข้อมูลหาย** ทั้งที่เราอ่านไม่ครบ */
+  /* 🔑 ดัชนีเลข OEM จาก **สองแหล่ง** — ตรรกะอยู่ใน lib/parts-models.ts (เทสเรียกได้)
+     ① state.ovr = ที่ท่านประธานกรอกเอง (ชนะเสมอ) ② tags ของสินค้าใน /catalog
+     🔴 แหล่งที่สองต้อง **สะสมทุก sku ที่แปะเลขเดียวกัน** ไม่ใช่เก็บตัวแรก
+        ไม่งั้นของที่กำกวมจริงจะดูชัดเจน แล้วตัวกันเดาชั้นหลังมองไม่เห็น */
+  const รูปเลข = /(?:\d{4} \d{3} \d{4}|\d{3,4}-\d{2,5}|\d\.\d{3}\.\d{4}\.\d{2})/g
+  let สินค้า: { sku?: unknown; tags?: unknown[] }[] = []
+  let อ่านคลังสินค้าได้ = true
   try {
     const r = await fetch('https://video.gucut.com/catalog/products.json', {
       cache: 'no-store', signal: AbortSignal.timeout(20000),
     })
-    if (r.ok) {
-      const j = await r.json()
-      /* ชุดเดียวกับ OEM_RE ในหน้า /catalog — คัดเฉพาะรูปที่เป็นเลขอะไหล่จริง
-         (ตัดรูป [A-Z]{2,}\d{2,} ออกโดยตั้งใจ — มันจับชื่อรุ่นอย่าง MS440 ติดมาด้วย) */
-      const รูปเลข = /(?:\d{4} \d{3} \d{4}|\d{3,4}-\d{2,5}|\d\.\d{3}\.\d{4}\.\d{2})/g
-      for (const p2 of (j?.products ?? [])) {
-        const sku = String(p2?.sku ?? '')
-        if (!sku) continue
-        for (const t of (p2?.tags ?? [])) {
-          for (const o of String(t).match(รูปเลข) ?? []) {
-            const เลข = เลขล้วน(o)
-            if (เลข.length < 8) continue
-            /* ⚠️ ของที่คนกรอกเองชนะเสมอ — ไม่ทับด้วยของที่แกะจาก tags */
-            if (!ovrMap.has(เลข)) ovrMap.set(เลข, [sku])
-          }
-        }
-      }
-    }
-  } catch { /* อ่านไม่ได้ = ใช้เฉพาะแหล่งแรก ไม่ล้มทั้งเส้น */ }
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
+    สินค้า = ((await r.json())?.products ?? []) as typeof สินค้า
+  } catch {
+    /* อ่านไม่ได้ = ใช้เฉพาะแหล่งแรก ไม่ล้มทั้งเส้น **แต่ต้องบอกออกไป**
+       เพราะรอบนั้นจะจับคู่ได้น้อยลงมาก และเลขจะดูเหมือน "ของในร้านหายไป" */
+    อ่านคลังสินค้าได้ = false
+  }
+  const ovrMap = สร้างดัชนีเลขOEM(
+    (state.ovr ?? {}) as Record<string, unknown>,
+    สินค้า,
+    (t) => (t.match(รูปเลข) ?? []).map(เลขล้วน),
+  )
 
   /* 🔎 โหมดส่อง — `?โครง=<รหัสหรือ sku>` บอกว่าของชิ้นนั้นอยู่ในคลังรูปไหน
      🔑 มีเพราะของจริง 12 ต.ค. 2569: ท่านประธานกรอก 1128 029 0500 → 05619 ในหน้า /catalog
@@ -202,6 +177,7 @@ async function วิ่ง(req: NextRequest, เขียนจริง: boole
     ok: true,
     โหมด: เขียนจริง ? 'เขียนจริง' : 'รอบซ้อม (ไม่เขียน)',
     เลขOEMในคลัง: ovrMap.size,
+    อ่านคลังสินค้า: อ่านคลังสินค้าได้ ? 'ได้' : '⚠️ อ่าน products.json ไม่ได้ — รอบนี้เห็นเลขจาก state.ovr อย่างเดียว',
     'รายชื่อรุ่นมาจาก': แหล่ง.ที่มา,
     รวมจับคู่ใหม่: ผล.reduce((s, x) => s + x.จับคู่ใหม่, 0),
     รุ่น: ผล,
