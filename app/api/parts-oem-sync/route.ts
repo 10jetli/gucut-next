@@ -23,7 +23,7 @@
  */
 import { NextRequest, NextResponse } from 'next/server'
 import { loadCatalogStateBlobs } from '@/lib/catalogstate'
-import { รุ่นจากหน้าร้าน, ล้างรุ่น } from '@/lib/parts-models'
+import { รุ่นจากหน้าร้าน, ล้างรุ่น, จับคู่ที่ยังว่าง } from '@/lib/parts-models'
 
 export const dynamic = 'force-dynamic'
 
@@ -89,19 +89,9 @@ async function ทำรุ่น(รุ่น: string, ovrMap: Map<string, stri
     return { ...ว่าง, เหตุ: `อ่านตารางจับคู่เดิมไม่ได้: ${String(e?.message ?? e).slice(0, 80)}` }
   }
 
-  /* ③ จับคู่ */
-  const เพิ่ม: Record<string, string> = {}
-  let ข้าม = 0
-  for (const r of แถว) {
-    const รหัส = String(r?.รหัส ?? '')
-    if (!รหัส) continue
-    if (เดิม[รหัส]) { ข้าม++; continue }          // มีอยู่แล้ว — ของคนกรอก ห้ามแตะ
-    const skus = ovrMap.get(เลขล้วน(รหัส))
-    if (!skus?.length) continue
-    /* เลข OEM เดียวชี้ได้หลาย SKU (เจอจริง: 0000 350 0525 → 2 รหัส)
-       ⇒ เอาตัวแรกเรียงตามรหัส ให้ผลซ้ำได้ทุกรอบ · ตัวที่เหลือเป็นงานที่ท่านเลือกเอง */
-    เพิ่ม[รหัส] = [...skus].sort()[0]
-  }
+  /* ③ จับคู่ — ตรรกะอยู่ใน lib/parts-models.ts (เทสเรียกได้ตรง ๆ)
+     🔴 คีย์ต้องล้างให้ตรงกับฝั่งร้านก่อนเทียบ ไม่งั้นตัวกันทับไม่ทำงานเลยสักใบ */
+  const { เพิ่ม, ข้าม } = จับคู่ที่ยังว่าง(แถว, เดิม, ovrMap)
 
   const ผล: ผลรุ่น = {
     รุ่น, อะไหล่: แถว.length,
