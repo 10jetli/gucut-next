@@ -21,7 +21,9 @@
 
 /** แถวตัวนับที่ท่อส่งมา — ชื่อช่องตามสัญญาของ `list=orders` */
 export interface แถวสถานะ { status: string; orders: number }
-export interface แถวชำระเงิน { payStatus: string; orders: number }
+export interface แถวชำระเงิน { payStatus: string; orders: number
+  /** ยอดเงินของกองนี้ — ท่อส่งมาใน `byPayStatus`/`byPayStatusFiltered` (อาจไม่มีในรุ่นเก่า) */
+  amount?: number }
 
 export interface แท็บ {
   id: string
@@ -130,4 +132,85 @@ export function สร้างแถบแท็บขาย(o: {
     ไม่มีแท็บตรง: active !== '' && !tabs.some((t) => t.id === active),
     ตัวนับสถานะเชื่อได้,
   }
+}
+
+/* ══ 💵 เงิน "ได้เข้าจริง / ยังไม่เข้า" — ต้องมาจากคอลัมน์ `pay_status` ════════════
+   🔴 ที่มา 14 ต.ค. 2569 (ฝั่งท่อเจอเพราะตัวเลขที่จอวัดมา):
+      `totalPaidAmount` / `totalUnpaidAmount` ของเดิม **คิดจากคอลัมน์ `status`**
+      ⇒ นับเงินของ 23 ใบที่ `status=Pending` แต่ **จ่ายแล้ว** เป็น "ยังไม่จ่าย"
+      ⇒ และนับเงินของ 15 ใบที่ `status=Success` แต่ **ยังไม่ได้เงิน** เป็น "ได้เงินแล้ว"
+      ⇒ ทิศหลังอันตรายกว่า: ได้เงินแล้วทั้งที่ยังไม่ได้ = **ไม่มีใครไปตามเก็บ** (ข่าวดีปลอม)
+   🔑 ท่อส่ง **ก้อนแยกตามสถานะชำระเงินมาด้วย** ไม่ใช่ส่งแต่ยอดรวม — ด้วยเหตุผลของฝั่งท่อเอง:
+      ถ้าส่งแต่ตัวเลข **ท่อจะเป็นคนแปลชื่อค่า** ⇒ วันที่ ZORT ส่ง `Partial Payment` มา
+      มันจะไม่ถูกนับในทั้งสองช่องและ **ไม่มีอะไรฟ้อง** ⇒ จอจึงต้องเห็นชื่อค่าดิบเอง
+   ⇒ ฟังก์ชันนี้ **บอกค่าที่มันยังไม่รู้ว่าจัดกองไหน** ออกมาด้วย (`ค่าที่ยังไม่จัดกอง`)
+      จอมีหน้าที่พูดออกมา ไม่ใช่กลืนเงียบ ๆ */
+export const ค่าชำระครบ = 'Paid'
+export const ค่ารอชำระ = 'Pending'
+/** ค่าที่ "ไม่ใช่เงินของร้าน" — ไม่เข้าทั้งสองกอง และ **ไม่ใช่ค่าที่ไม่รู้จัก** */
+export const ค่ายกเลิกชำระ = 'Voided'
+
+export interface เงินตามการชำระ {
+  /** `undefined` = ท่อยังไม่ส่ง (ไม่รู้) · `null` = ท่อส่งมาว่าอ่านไม่ได้ — **ห้ามยุบเป็น 0** */
+  จ่ายแล้ว?: number | null
+  ยังไม่จ่าย?: number | null
+  /** `'pay_status'` = ของจริง · `'status'` = ของเก่าที่คิดผิดคอลัมน์ · `null` = ไม่รู้ */
+  ที่มา: 'pay_status' | 'status' | null
+  /** ค่าดิบในก้อนแยกที่จอยังไม่รู้ว่าควรอยู่กองไหน (เช่น `Partial Payment`) */
+  ค่าที่ยังไม่จัดกอง: string[]
+  /** ยอดจากก้อนแยกไม่ตรงกับยอดรวมที่ท่อส่ง (เกินค่าปัดเศษ) ⇒ สองแหล่งขัดกัน */
+  สองแหล่งไม่ตรง?: string
+}
+
+export function อ่านเงินตามการชำระ(o: {
+  byPayStatusFiltered?: แถวชำระเงิน[] | null
+  totalPaidAmountByPay?: number | null
+  totalUnpaidAmountByPay?: number | null
+  /** ของเก่าที่คิดจากคอลัมน์ `status` — ใช้ได้แต่ **ต้องติดป้ายว่ามาจากกติกาไหน** */
+  totalPaidAmount?: number
+  totalUnpaidAmount?: number
+}): เงินตามการชำระ {
+  const ก้อน = Array.isArray(o.byPayStatusFiltered) ? o.byPayStatusFiltered : null
+  const ค่าที่ยังไม่จัดกอง = (ก้อน ?? [])
+    .map((r) => String(r.payStatus ?? ''))
+    .filter((v) => v && v !== ค่าชำระครบ && v !== ค่ารอชำระ && v !== ค่ายกเลิกชำระ)
+
+  const มีช่องใหม่ = o.totalPaidAmountByPay !== undefined || o.totalUnpaidAmountByPay !== undefined
+  if (!มีช่องใหม่ && !ก้อน) {
+    /* ท่อรุ่นเก่า — ใช้ของเดิมได้ แต่ **ที่มาต้องติดไปด้วย** เพื่อให้จอเขียนกำกับได้
+       (ข้อความกับตรรกะต้องมาจากที่เดียวกัน ⇒ จอห้ามเดาเองว่าเลขนี้มาจากคอลัมน์ไหน) */
+    const เก่า = typeof o.totalPaidAmount === 'number' || typeof o.totalUnpaidAmount === 'number'
+    return {
+      จ่ายแล้ว: o.totalPaidAmount, ยังไม่จ่าย: o.totalUnpaidAmount,
+      ที่มา: เก่า ? 'status' : null, ค่าที่ยังไม่จัดกอง: [],
+    }
+  }
+
+  const รวมของ = (v: string) => (ก้อน ?? [])
+    .filter((r) => String(r.payStatus) === v)
+    .reduce((n, r) => n + Number(r.amount || 0), 0)
+
+  const out: เงินตามการชำระ = {
+    จ่ายแล้ว: o.totalPaidAmountByPay,
+    ยังไม่จ่าย: o.totalUnpaidAmountByPay,
+    ที่มา: 'pay_status',
+    ค่าที่ยังไม่จัดกอง,
+  }
+  /* 🔑 **ท่อส่งสองแหล่งมาให้ ⇒ เทียบกันได้ฟรี** — ไม่เทียบคือทิ้งตาข่ายที่มีอยู่แล้ว
+     ต่างกันเกิน 1 บาท = มีคนคิดคนละฐาน ⇒ จอต้องพูด ไม่ใช่เลือกเชื่อข้างหนึ่งเงียบ ๆ */
+  if (ก้อน) {
+    for (const [ชื่อ, ยอด, ค่า] of [
+      ['ยังไม่จ่าย', out.ยังไม่จ่าย, ค่ารอชำระ],
+      ['จ่ายแล้ว', out.จ่ายแล้ว, ค่าชำระครบ],
+    ] as const) {
+      if (typeof ยอด !== 'number') continue
+      const จากก้อน = รวมของ(ค่า)
+      if (Math.abs(จากก้อน - ยอด) > 1) {
+        out.สองแหล่งไม่ตรง = `${ชื่อ}: ยอดรวมที่ท่อส่ง ${Math.round(ยอด).toLocaleString('th-TH')}`
+          + ` แต่บวกจากก้อนแยกได้ ${Math.round(จากก้อน).toLocaleString('th-TH')}`
+        break
+      }
+    }
+  }
+  return out
 }

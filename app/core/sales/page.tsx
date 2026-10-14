@@ -8,7 +8,7 @@
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
 import { useCallback, useEffect, useState } from 'react'
 import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
-import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT } from '@/lib/sales-tabs'
+import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT, อ่านเงินตามการชำระ } from '@/lib/sales-tabs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
@@ -111,6 +111,15 @@ interface ListResp {
      ⚠️ ไม่มีคีย์พวกนี้ = ท่อรุ่นเก่า ⇒ ต้องยังอ่านรู้เรื่อง ห้ามพังและห้ามเงียบ */
   totalPaidAmount?: number
   totalUnpaidAmount?: number
+  /* ── 💵 สามช่องใหม่ (ฝั่งท่อ `6a22cd5e` · 14 ต.ค. 2569) — คิดจากคอลัมน์ `pay_status`
+     และ **คิดจากตัวกรองชุดเดียวกับ `rows`** (`w`) ⇒ วางคู่กับยอดรวมบนหัวจอได้โดยไม่ผิดกฎข้อ 4
+     🔑 ท่อส่ง **ก้อนแยก** มาด้วย ไม่ใช่ส่งแต่ยอดรวม — เหตุผลของฝั่งท่อเอง:
+        ส่งแต่ตัวเลข = ท่อเป็นคนแปลชื่อค่า ⇒ วันที่ ZORT ส่ง `Partial Payment` มา
+        มันจะไม่ถูกนับในทั้งสองช่องและ **ไม่มีอะไรฟ้อง** ⇒ จอต้องเห็นชื่อค่าดิบเอง
+     ⚠️ `null` = อ่านไม่ได้ · ไม่มีคีย์ = ท่อรุ่นเก่า — **ห้ามยุบเป็น 0 ทั้งสองกรณี** */
+  byPayStatusFiltered?: { payStatus: string; orders: number; amount?: number }[] | null
+  totalPaidAmountByPay?: number | null
+  totalUnpaidAmountByPay?: number | null
   /** 🔍 ตัวกรองขั้นสูงที่ **ท่อใช้กรองจริง** (null = ไม่ได้กรองช่องนั้น · ท่อรุ่นเก่าจะไม่มีคีย์นี้เลย)
    *  🔴 จอต้องอ่านตัวนี้ก่อนจะเขียนว่า "กรองแล้ว" — ไม่ใช่เชื่อว่าส่งไปแล้วต้องถูกใช้
    *     (ฝั่งท่อออกแบบช่องนี้มาเพื่อการนี้โดยตรง · สัญญา eb79ccc) */
@@ -583,6 +592,16 @@ export default function CoreSalesPage() {
         ⇒ ยกเกณฑ์ออกมาเป็นฟังก์ชันล้วน แล้วให้เทสเดินผ่าน **โค้ดตัวเดียวกับที่จอใช้**
         (ห้ามให้เทสเลียนแบบเกณฑ์เอง — ด่านที่ไม่เดินผ่านโค้ดจริงคือด่านไม่มีคม)
      📏 เหตุผลเรื่องสองคอลัมน์ (status vs pay_status) + ตัวเลขที่วัดมา อยู่หัวไฟล์ lib นั้น */
+  /* 💵 เงิน "ได้เข้าจริง / ยังไม่เข้า" — ตัวอ่านอยู่ที่ `lib/sales-tabs.ts` ที่เดียว
+     มันคืน `ที่มา` มาด้วย ⇒ **ข้อความบนจอสร้างจากตัวแปรเดียวกับตรรกะ** ไม่ใช่เขียนเดา
+     และคืน `ค่าที่ยังไม่จัดกอง` ⇒ วันที่ ZORT ส่งค่าใหม่ (เช่น Partial Payment) จอพูดเอง */
+  const เงิน = อ่านเงินตามการชำระ({
+    byPayStatusFiltered: data?.byPayStatusFiltered ?? null,
+    totalPaidAmountByPay: data?.totalPaidAmountByPay,
+    totalUnpaidAmountByPay: data?.totalUnpaidAmountByPay,
+    totalPaidAmount: data?.totalPaidAmount,
+    totalUnpaidAmount: data?.totalUnpaidAmount,
+  })
   const แถบแท็บ = สร้างแถบแท็บขาย({
     รายชื่อสถานะ,
     byStatus: data?.byStatus ?? null,
@@ -613,13 +632,19 @@ export default function CoreSalesPage() {
                 (คลาสเดียวกับ "จำนวน 0 รายการ" ที่เจอในจอใบคืนของเมื่อเช้า) */}
             {error ? 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง'
               : !data ? 'กำลังโหลด…'
-              : typeof data.totalPaidAmount === 'number'
+              : typeof เงิน.จ่ายแล้ว === 'number'
                 ? (
                   <>
-                    {summaryLine(data.total, data.totalPaidAmount).replace('มูลค่าทั้งหมด', 'จ่ายแล้ว')}
-                    {typeof data.totalUnpaidAmount === 'number' && data.totalUnpaidAmount > 0 && (
+                    {summaryLine(data.total, เงิน.จ่ายแล้ว).replace('มูลค่าทั้งหมด', 'จ่ายแล้ว')}
+                    {typeof เงิน.ยังไม่จ่าย === 'number' && เงิน.ยังไม่จ่าย > 0 && (
                       <span className="text-amber-700">
-                        {' '}· ยังไม่จ่ายอีก {data.totalUnpaidAmount.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท
+                        {' '}· ยังไม่จ่ายอีก {เงิน.ยังไม่จ่าย.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท
+                      </span>
+                    )}
+                    {/* 🔴 ป้ายที่มาต้องติดกับเลข ไม่ใช่อยู่ท้ายจอ — เลขสองกติกาหน้าตาเหมือนกันเป๊ะ */}
+                    {เงิน.ที่มา === 'status' && (
+                      <span className="text-gray-500">
+                        {' '}(นับจากคอลัมน์ <b>สถานะใบ</b> ไม่ใช่สถานะชำระเงิน — ท่อรุ่นนี้ยังไม่ส่งของที่ถูก)
                       </span>
                     )}
                   </>
@@ -1061,6 +1086,27 @@ export default function CoreSalesPage() {
               {status && fPay ? <> <b>สถานะ</b> และ <b>สถานะชำระเงิน</b> พร้อมกัน</>
                              : <> <b>สถานะชำระเงิน</b> ค่าที่ไม่มีแท็บของตัวเอง</>}
               {' '}— แถบแท็บเลือกได้ทีละมิติ · ดูตัวกรองที่ใช้อยู่จริงได้จากชิปด้านบน
+            </p>
+          )}
+
+          {/* 🔴 ของที่ตัวอ่านเงินคิดได้ **ต้องมีคนได้ยิน** — คิดแล้วไม่โชว์ = ข้อมูลตาย
+              (ใบ: ไม่มีใครพังไม่ได้แปลว่าปลอดภัย แปลว่าช่องนั้นตาย) */}
+          {เงิน.ค่าที่ยังไม่จัดกอง.length > 0 && (
+            <p className="mt-1 text-[11.5px] text-amber-800">
+              ⚠️ ท่อส่งสถานะชำระเงินที่จอ<b>ยังไม่รู้ว่าควรนับเป็นได้เงินหรือยังไม่ได้เงิน</b>:{' '}
+              <b>{เงิน.ค่าที่ยังไม่จัดกอง.join(' · ')}</b>
+              <span className="block text-amber-700/80">
+                ⇒ เงินของกองนี้<b>ไม่ได้อยู่ในทั้งสองตัวเลขข้างบน</b> · ต้องถาม ZORT ว่าหมายถึงอะไรก่อน
+                แล้วค่อยเติมกติกา (เดาแล้วใส่ = ตัวเลขเงินผิดโดยไม่มีอะไรฟ้อง)
+              </span>
+            </p>
+          )}
+          {เงิน.สองแหล่งไม่ตรง && (
+            <p className="mt-1 text-[11.5px] text-red-700">
+              🔴 <b>ยอดเงินจากสองแหล่งของท่อไม่ตรงกัน</b> — {เงิน.สองแหล่งไม่ตรง}
+              <span className="block text-red-600/80">
+                ⇒ อย่าเชื่อตัวเลขเงินบนหัวจอรอบนี้ · แจ้งฝั่งท่อ (ก้อนแยกกับยอดรวมต้องคิดจากฐานเดียวกัน)
+              </span>
             </p>
           )}
 

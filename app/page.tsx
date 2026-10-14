@@ -12,6 +12,7 @@
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
+import { อ่านเงินตามการชำระ } from '@/lib/sales-tabs'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
@@ -31,6 +32,14 @@ interface OrdersResp {
      ⚠️ ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ ตกกลับไปใช้ totalAmount แต่ต้องเขียนกำกับว่ารวมใบยังไม่จ่าย */
   totalPaidAmount?: number
   totalUnpaidAmount?: number
+  /* 💵 สามช่องใหม่จากท่อ (14 ต.ค. 2569) — คิดจากคอลัมน์ `pay_status` ไม่ใช่ `status`
+     🔴 ของเดิมคิดจาก `status` ⇒ **นับเงินของใบที่ปิดแล้วแต่ยังไม่ได้เงิน เป็น "ได้เงินแล้ว"**
+        (วัดจริง 14 ต.ค.: 15 ใบในหนึ่งปี) ⇒ การ์ดนี้เขียนว่า "ยอดขาย/เฉพาะที่จ่ายแล้ว" ⇒ **เงินเกินจริง**
+        และทิศนี้แพงกว่าอีกทิศ: ยังไม่จ่าย = มีคนไปตาม · ได้เงินแล้วทั้งที่ยังไม่ได้ = **ไม่มีใครไปตาม**
+     ⚠️ null = อ่านไม่ได้ · ไม่มีคีย์ = ท่อรุ่นเก่า — ห้ามยุบเป็น 0 */
+  byPayStatusFiltered?: { payStatus: string; orders: number; amount?: number }[] | null
+  totalPaidAmountByPay?: number | null
+  totalUnpaidAmountByPay?: number | null
   /** ร้านที่มีบิลจริง **ในช่วงที่กรองอยู่** — ห้ามเขียนจำนวนร้านตายตัว
    *  ช่วงที่ร้านไหนไม่มีบิลเลย จะไม่โผล่ในรายการนี้ ⇒ นับจากตรงนี้เท่านั้น */
   stores?: StoreRow[]
@@ -508,6 +517,22 @@ export default function DashboardPage() {
     : { from: null, to: null }
   const ประตูกำไร = useประตูกำไร(ช่วงกราฟ.from, ช่วงกราฟ.to)
 
+  /* 💵 เงิน "ได้เข้าจริง" ของสองการ์ด — ตัวอ่านอยู่ที่ `lib/sales-tabs.ts` ที่เดียว
+     (จอขายใช้ตัวเดียวกัน ⇒ สองจอจะไม่ตีความคำว่า "จ่ายแล้ว" คนละแบบ) */
+  const เงินวันนี้ = อ่านเงินตามการชำระ({
+    byPayStatusFiltered: today?.byPayStatusFiltered ?? null,
+    totalPaidAmountByPay: today?.totalPaidAmountByPay,
+    totalUnpaidAmountByPay: today?.totalUnpaidAmountByPay,
+    totalPaidAmount: today?.totalPaidAmount,
+    totalUnpaidAmount: today?.totalUnpaidAmount,
+  })
+  const เงิน7วัน = อ่านเงินตามการชำระ({
+    byPayStatusFiltered: week?.byPayStatusFiltered ?? null,
+    totalPaidAmountByPay: week?.totalPaidAmountByPay,
+    totalUnpaidAmountByPay: week?.totalUnpaidAmountByPay,
+    totalPaidAmount: week?.totalPaidAmount,
+    totalUnpaidAmount: week?.totalUnpaidAmount,
+  })
   const skip = today?.skip || week?.skip || stock?.skip
   /** ชื่อร้านที่มีบิลในช่วงที่ดึงมา — อ่านจากท่อ ไม่นับเอง ไม่เขียนตายตัว */
   const storeNames = (() => {
@@ -567,7 +592,7 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <ZortBigCard
           icon="🛒" label="ยอดขายวันนี้ (บาท)"
-          value={coreError ? undefined : fmtMoney(today?.totalPaidAmount ?? today?.totalAmount)}
+          value={coreError ? undefined : fmtMoney(เงินวันนี้.จ่ายแล้ว ?? today?.totalAmount)}
           unknown={coreError ? 'ดึงยอดวันนี้ไม่ได้ — ยังไม่รู้ว่าวันนี้ขายได้เท่าไหร่' : undefined}
         />
         <ZortBigCard
@@ -850,11 +875,14 @@ export default function DashboardPage() {
         />
         <StatCard
           icon="💰" tone="green" label="ยอดขาย (7 วัน)"
-          value={coreError ? '—' : fmtMoney(week?.totalPaidAmount ?? week?.totalAmount)}
+          value={coreError ? '—' : fmtMoney(เงิน7วัน.จ่ายแล้ว ?? week?.totalAmount)}
+          /* 🔑 คำบนป้ายมาจาก `ที่มา` ของตัวอ่าน **ไม่ใช่เขียนเดา** — เลขสองกติกาหน้าตาเหมือนกันเป๊ะ
+             `pay_status` = ของที่ถูก · `status` = ของเก่าที่นับใบปิดแล้วแต่เงินไม่เข้าเป็นได้เงิน */
           note={!coreError && week
-            ? typeof week.totalPaidAmount === 'number'
+            ? typeof เงิน7วัน.จ่ายแล้ว === 'number'
               ? `${fmtNum(week.total)} ใบ · เฉพาะที่จ่ายแล้ว`
-                + (week.totalUnpaidAmount ? ` · ยังไม่จ่าย ${fmtMoney(week.totalUnpaidAmount)}` : '')
+                + (เงิน7วัน.ที่มา === 'status' ? ' (นับจากสถานะใบ ไม่ใช่สถานะชำระเงิน)' : '')
+                + (เงิน7วัน.ยังไม่จ่าย ? ` · ยังไม่จ่าย ${fmtMoney(เงิน7วัน.ยังไม่จ่าย)}` : '')
               : `${fmtNum(week.total)} ใบ · รวมใบที่ยังไม่จ่าย`
             : undefined}
         />
