@@ -11,7 +11,7 @@ import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT, อ่านเงินตามการชำระ, รายชื่อสถานะของแท็บ } from '@/lib/sales-tabs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { fmtMoney } from '@/lib/format'
+import { fmtMoney, ช่วงปฏิทินไทย, type ชนิดช่วงปฏิทิน } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {
@@ -246,9 +246,22 @@ const RANGES = [
   { days: 365, label: 'ย้อนหลัง 1 ปี' },
 ]
 
+/* 🗓 ช่วงที่ผูกกับ **ปฏิทิน** — ลอกจากเมนูช่วงวันของ ZORT (กดอ่านของจริง 14 ต.ค. 2569:
+   `วันนี้ · สัปดาห์นี้ · เดือนนี้ · ย้อนหลัง 1 เดือน · ย้อนหลัง 3 เดือน · กำหนดเอง`)
+   🔑 คนละชนิดกับ RANGES ข้างบน: ย้อนหลัง N วัน เลื่อนตามเวลา · ปฏิทินยึดกับวันที่
+      ⇒ ถาม "เดือนนี้ขายได้เท่าไหร่" ด้วย "ย้อนหลัง 30 วัน" จะได้คนละคำตอบเสมอ และไม่มีอะไรฟ้อง
+   ⚠️ คิดเป็น **วันไทย** ที่ `lib/format.ts` ที่เดียว (เครื่องเป็น UTC) */
+const ช่วงปฏิทินทั้งหมด: { ค่า: ชนิดช่วงปฏิทิน; label: string }[] = [
+  { ค่า: 'วันนี้', label: 'วันนี้' },
+  { ค่า: 'สัปดาห์นี้', label: 'สัปดาห์นี้' },
+  { ค่า: 'เดือนนี้', label: 'เดือนนี้' },
+]
+
 export default function CoreSalesPage() {
   const router = useRouter()
   const [days, setDays] = useState(DEFAULT_DAYS)
+  /** ช่วงปฏิทินที่เลือกอยู่ (`''` = ใช้แบบย้อนหลัง N วันตามปกติ) — สองโหมดนี้ **ห้ามติดพร้อมกัน** */
+  const [ช่วงปฏิทิน, setช่วงปฏิทิน] = useState<ชนิดช่วงปฏิทิน | ''>('')
   /* 🔴 **ตัวกรองร้าน — ต้องมีคู่กับตัวกรองช่องทางเสมอ** (เพิ่ม 4 ก.ย. 2569)
      ชื่อช่องทางซ้ำกันข้ามร้านจริง: TIKTOK มีทั้งใน z1 (753 ใบ ยังขายอยู่)
      และ z2 (58 ใบ เลิกขาย 22 ก.พ. 69) ⇒ กรองแค่ช่องทางแล้วอ่านวันล่าสุด
@@ -831,10 +844,25 @@ export default function CoreSalesPage() {
             </select>
             <span className="text-[12.5px] text-gray-500">แสดง</span>
             <select
-              value={days}
-              onChange={(e) => { const d = Number(e.target.value); setDays(d); load(0, { days: d }) }}
+              value={ช่วงปฏิทิน || String(days)}
+              onChange={(e) => {
+                const v = e.target.value
+                const ช่วง = ช่วงปฏิทินไทย(v)
+                if (ช่วง) {
+                  /* 🔑 ช่วงปฏิทิน = ส่ง from/to ตรง ๆ · และต้อง **ล้างโหมดย้อนหลัง** ออกจากจอด้วย
+                     ไม่งั้นกล่องวันที่ข้างล่างจะยังโชว์ค่าของโหมดก่อนหน้า = จอบอกสองเรื่องพร้อมกัน */
+                  setช่วงปฏิทิน(v as ชนิดช่วงปฏิทิน)
+                  setAdvFrom(ช่วง.ตั้งแต่); setAdvTo(ช่วง.ถึง)
+                  load(0, { from: ช่วง.ตั้งแต่, to: ช่วง.ถึง })
+                  return
+                }
+                const d = Number(v)
+                setช่วงปฏิทิน(''); setAdvFrom(''); setAdvTo('')
+                setDays(d); load(0, { days: d, from: '', to: '' })
+              }}
               className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
             >
+              {ช่วงปฏิทินทั้งหมด.map((r) => <option key={r.ค่า} value={r.ค่า}>{r.label}</option>)}
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
             </select>
           </>
@@ -986,6 +1014,11 @@ export default function CoreSalesPage() {
         <div className="text-[12.5px] text-gray-500 mb-3">
           {/* ZORT เขียนวันแบบ 1/6/2569–2/9/2569 ไม่ใช่ ISO — ตรงนี้คือบรรทัดเดียวกันของเขา */}
           🔍 ค้นหา: วันที่ {thaiShort(data.from)} – {thaiShort(data.to)}
+          {/* 🔑 **เลขที่ขึ้นกับนิยาม ต้องพิมพ์นิยามไว้ข้างเลข** (กติกาฝั่งท่อ 14 ต.ค. 2569)
+                 ZORT ให้เลือกได้ว่าช่วงวันใช้กับวันไหน (วันที่ · วันที่ชำระเงิน · วันส่งสินค้า · วันที่โอนสินค้า)
+                 ของเรามีแบบเดียว ⇒ ถ้าไม่เขียนไว้ คนจะอ่านเลข "เดือนนี้" เป็น "เงินเข้าเดือนนี้" ซึ่งคนละเลข
+                 ⇒ วันที่ท่อรองรับหลายแบบ ป้ายนี้จะกลายเป็นตัวบอกค่าที่เลือกอยู่ โดยไม่ต้องรื้อ */}
+          {' · '}<span className="text-gray-400">คิดจาก <b className="text-gray-500">วันที่ของใบ</b> (ไม่ใช่วันที่ชำระเงิน)</span>
           {/* 🔴 **เขียนจากสิ่งที่ท่อบอกว่าใช้จริง ไม่ใช่จากสิ่งที่จอส่งไป**
                  ถ้าวันหนึ่งท่อเลิกรองรับช่องไหน จอจะเงียบทันทีแทนที่จะโกหกว่ากรองให้แล้ว */}
           {data.advancedFilters && Object.entries(data.advancedFilters).some(([, v]) => v) && (
