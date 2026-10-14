@@ -25,10 +25,10 @@ log_bypass_commit() {
   [ -f "$BL" ] || return 0
   WHY="${BYPASS_WHY:-}"
   if [ "${#WHY}" -lt 20 ]; then WHY="**ไม่ให้เหตุ** (BYPASS_WHY สั้นกว่า 20 อักขระ)"; fi
-  printf '| %s | %s | %s | %s |\n' "$(date '+%Y-%m-%d %H:%M:%S')" ALLOW_COMMIT_DURING_PUSH \
+  printf '| %s | %s | %s | %s |\n' "$(date '+%Y-%m-%d %H:%M:%S')" "${1:-ALLOW_COMMIT_DURING_PUSH}" \
     "$(git rev-parse --short HEAD 2>/dev/null)" "$WHY" >> "$BL"
 }
-[ "${ALLOW_COMMIT_DURING_PUSH:-}" = "1" ] && { log_bypass_commit; true; } && { echo "⚠️ commit ระหว่างด่าน push วิ่ง — ข้ามตามที่สั่ง"; exit 0; }
+[ "${ALLOW_COMMIT_DURING_PUSH:-}" = "1" ] && { log_bypass_commit ALLOW_COMMIT_DURING_PUSH; true; } && { echo "⚠️ commit ระหว่างด่าน push วิ่ง — ข้ามตามที่สั่ง"; exit 0; }
 
 FLAG_REPO="$(sed -n '1p' "$FLAG" 2>/dev/null)"
 FLAG_SHA="$(sed -n '2p' "$FLAG" 2>/dev/null)"
@@ -42,7 +42,9 @@ HERE="$(git rev-parse --show-toplevel 2>/dev/null)"
 #    (ด่านที่บล็อกด้วยของค้าง คือด่านที่คนจะถอด — และ trap EXIT ควรลบให้แล้ว)
 NOW="$(date +%s)"
 if [ -n "$FLAG_AT" ] && [ $((NOW - FLAG_AT)) -gt 7200 ]; then
-  echo "⚠️ เจอธง \"ด่านกำลังวิ่ง\" แต่เก่ากว่า 2 ชม. ⇒ ถือว่าเป็นธงค้าง **ไม่บล็อก**"
+  # 🔴 ทางนี้ปล่อยผ่านโดยอัตโนมัติ และเดิมไม่ถูกจด ⇒ ธงค้างทำให้ด่านเงียบได้เรื่อย ๆ
+  log_bypass_commit STALE_FLAG
+  echo "⚠️ เจอธง \"ด่านกำลังวิ่ง\" แต่เก่ากว่า 2 ชม. ⇒ ถือว่าเป็นธงค้าง **ไม่บล็อก** (จดแล้ว)"
   echo "   ⇒ ถ้าไม่มีด่านวิ่งอยู่จริง ลบทิ้งได้: rm $FLAG"
   exit 0
 fi
