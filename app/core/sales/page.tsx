@@ -1323,15 +1323,19 @@ export default function CoreSalesPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-500`} title={r.order_date}>
                       {relDay(r.order_date)}
                     </td>
-                    <td className={TD}>
+                    <td className={`${TD} max-w-[150px]`}>
                       {/* เลขที่ใบต้องกดได้ — ZORT กดเลขเข้ารายละเอียดตรง ๆ (เดิมเป็น span สีฟ้า
                           ที่กดไม่ได้ = ผิดสัญญาสีฟ้าที่จอหมวดหมู่จดไว้เอง · กวาดคลาส 8 ก.ย. 2569) */}
                       {/* 🔗 **ทำเป็นลิงก์จริง ไม่ใช่ปุ่ม** (18 ก.ย. 2569 · งานยืน "กดเข้าไปลึก ๆ")
                           ของเดิมเป็น `<button>` ⇒ กดได้แต่ **เปิดแท็บใหม่ไม่ได้**
                           ส่วน ZORT เป็นลิงก์ ⇒ คนแพ็กของเปิดหลายใบพร้อมกันได้
                           ⚠️ ต้อง `stopPropagation` ไม่งั้นลิงก์กับ onClick ของแถวจะทำงานซ้อนกัน */}
+                      {/* 📐 **ตัดบรรทัดกลางเลขได้ แบบ ZORT** — เลขใบของมาร์เก็ตเพลสยาวและไม่มีช่องว่าง
+                             ⇒ ถ้าไม่ยอมตัด คอลัมน์นี้จะดันตารางให้กว้าง (วัดแล้ว: คอลัมน์ `รายการ`
+                               กว้าง 194px เป็นคอลัมน์ที่กว้างที่สุดและ **ไม่มีเพดาน** ต่างจากคอลัมน์อื่น)
+                             ZORT ตัดเลขใบลงสองบรรทัดจริง (เห็นในภาพ `261014KU6JWHD`/`0`) */}
                       <Link href={detailHref(r.id, i)} onClick={(e) => e.stopPropagation()}
-                        className="text-blue-600 font-medium hover:underline">{r.number}</Link>
+                        className="text-blue-600 font-medium hover:underline break-all">{r.number}</Link>
                       {/* 🔴 **เลขที่ใบซ้ำกันข้ามร้านจริง** (ฝั่งท่อจับได้ 15 ก.ย. 2569)
                           z1 และ z2 เดินเลขคนละชุด ⇒ `SO-202503029` มีทั้งสองร้าน **คนละใบ คนละยอด**
                           (z1 ฿7,757 ค้างชำระ · z2 ฿450 จ่ายแล้ว) · ตัวกรองร้านตั้งต้นคือ "ทุกร้าน"
@@ -1346,10 +1350,10 @@ export default function CoreSalesPage() {
                         </span>
                       )}
                     </td>
-                    <td className={`${TD} max-w-[190px] truncate`}>{r.customer || '—'}</td>
-                    <td className={`${TD} max-w-[170px]`}><ChannelTag name={r.channel} /></td>
+                    <td className={`${TD} max-w-[120px] truncate`}>{r.customer || '—'}</td>
+                    <td className={`${TD} max-w-[120px]`}><ChannelTag name={r.channel} /></td>
                     {/* ⚠️ ไม่มีข้อมูลให้ขีด ห้ามเว้นว่าง — ช่องว่างอ่านได้ว่า "ไม่มีขนส่ง" */}
-                    <td className={`${TD} max-w-[150px] truncate`} title={r.tracking_no || ''}>
+                    <td className={`${TD} max-w-[110px] truncate`} title={r.tracking_no || ''}>
                       {/* 🔴 ไม่ fallback ไป ship_name (ชื่อผู้รับ) — ดูเหตุผลในไฟล์ส่งออกข้างบน */}
                       {r.ship_channel || <span className="text-gray-300">—</span>}
                     </td>
