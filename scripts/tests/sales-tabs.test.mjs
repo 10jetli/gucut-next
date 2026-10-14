@@ -66,7 +66,8 @@ test('🔴 กรองชำระเงินอยู่ + ท่อไม่
     ...ฐาน, fPay: 'Pending', byStatus: byStatusตอนกรองชำระเงิน,
     byPayStatus: [{ payStatus: 'Pending', orders: 168 }],
   })
-  assert.equal(r.ตัวนับสถานะเชื่อได้, false)
+  assert.equal(r.ตัวนับสถานะเชื่อได้, false,
+    'ตัวนับฝั่งสถานะต้องเป็นไม่รู้ เพราะท่อรุ่นนี้คิดตัวนับแท็บจากกองที่กรองแล้ว')
   // ของจริงถ้าปล่อยไว้: แท็บ "ยกเลิก" จะอ่านว่า (0) ทั้งที่ระบบมี 499 ใบ
   assert.equal(หา(r, 'Voided').count, undefined, 'ยกเลิกต้องไม่มีวงเล็บ ห้ามเป็น 0')
   assert.equal(หา(r, 'Waiting').count, undefined)
@@ -87,7 +88,8 @@ test('ท่อประกาศว่าฐานตัวนับไม่�
 
 test('ฐานที่ประกาศแต่ไม่ครอบ paystatus (เช่น ยกเว้นแค่ status) ⇒ ยังเชื่อไม่ได้', () => {
   const r = สร้างแถบแท็บขาย({ ...ฐาน, fPay: 'Pending', tabBase: { excludes: ['status'] } })
-  assert.equal(r.ตัวนับสถานะเชื่อได้, false)
+  assert.equal(r.ตัวนับสถานะเชื่อได้, false,
+    'ฐานที่ท่อประกาศไม่ครอบ paystatus ⇒ ยังเชื่อตัวนับฝั่งสถานะไม่ได้')
 })
 
 test('id ของสองมิติห้ามชนกัน — `Pending` มีอยู่ในทั้งสองคอลัมน์', () => {
