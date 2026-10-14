@@ -1350,10 +1350,13 @@ export default function CoreSalesPage() {
                         </span>
                       )}
                     </td>
-                    <td className={`${TD} max-w-[120px] truncate`}>{r.customer || '—'}</td>
+                    {/* 📐 **ตัดบรรทัด ไม่ตัดตัวอักษร** — วัด ZORT แล้ว: เซลล์เขา `white-space: normal`
+                           `overflow: visible` **ไม่มีจุดไข่ปลา** ⇒ ชื่อยาวเขาขึ้นบรรทัดใหม่ ไม่ได้ถูกตัดทิ้ง
+                           ของเดิมเราใช้ `truncate` ⇒ ชื่อลูกค้าที่ยาวกว่าช่อง **หายไปจากสายตาโดยไม่มีอะไรบอก** */}
+                    <td className={`${TD} max-w-[120px] break-words`}>{r.customer || '—'}</td>
                     <td className={`${TD} max-w-[120px]`}><ChannelTag name={r.channel} /></td>
                     {/* ⚠️ ไม่มีข้อมูลให้ขีด ห้ามเว้นว่าง — ช่องว่างอ่านได้ว่า "ไม่มีขนส่ง" */}
-                    <td className={`${TD} max-w-[110px] truncate`} title={r.tracking_no || ''}>
+                    <td className={`${TD} max-w-[110px] break-words`} title={r.tracking_no || ''}>
                       {/* 🔴 ไม่ fallback ไป ship_name (ชื่อผู้รับ) — ดูเหตุผลในไฟล์ส่งออกข้างบน */}
                       {r.ship_channel || <span className="text-gray-300">—</span>}
                     </td>

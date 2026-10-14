@@ -302,10 +302,17 @@ export function TableWrap({ children }: { children: ReactNode }) {
     </div>
   )
 }
-export const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
-export const THR = 'text-right font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
-export const TD = 'px-3 py-3 text-[12.5px] text-gray-700 align-top'
-export const TDR = 'px-3 py-3 text-[12.5px] text-gray-800 align-top text-right whitespace-nowrap'
+/* 📐 **ช่องว่างซ้าย/ขวาของเซลล์ = 8px (`px-2`) ตาม ZORT** — เปลี่ยนจาก `px-3` (12px) 15 ต.ค. 2569
+   📏 วัดค่าที่เบราว์เซอร์ใช้จริง (`getComputedStyle`) บนจอ ZORT **3 จอ**:
+      `/Contact/list` 8px/8px · `/Bundle/list` 8px/8px · `/Warehouse/list` 8px/8px
+      (ตัวอักษรของเขา 14px · `white-space: normal` · **ไม่มีจุดไข่ปลา** = เขาตัดบรรทัด ไม่ตัดตัวอักษร)
+   🔑 เหตุที่คุ้ม: 12⇒8 คืนความกว้าง **4px × 2 ด้าน × จำนวนคอลัมน์** โดย **ไม่ตัดข้อมูลแม้ตัวเดียว**
+      (ตารางจอขาย 11 คอลัมน์ ⇒ คืน ~88px) ⇒ ต่างจากการใส่เพดาน/ตัดคำซึ่งจ่ายด้วยข้อมูลที่คนอ่านไม่เห็น
+   ⚠️ เป็นของร่วมหลายจอ ⇒ ถ้าวันหนึ่งจะขยับอีก **ต้องวัดต้นแบบใหม่ ≥3 จอก่อน** และวัดผลหลังเปลี่ยนทุกครั้ง */
+export const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-2 py-2.5 whitespace-nowrap'
+export const THR = 'text-right font-normal text-[12.5px] text-gray-500 px-2 py-2.5 whitespace-nowrap'
+export const TD = 'px-2 py-3 text-[12.5px] text-gray-700 align-top'
+export const TDR = 'px-2 py-3 text-[12.5px] text-gray-800 align-top text-right whitespace-nowrap'
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
 /* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**
