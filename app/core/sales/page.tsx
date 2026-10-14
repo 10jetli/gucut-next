@@ -212,12 +212,28 @@ const ADV_TH: Record<string, string> = {
   payStatus: 'สถานะชำระเงิน', cod: 'เก็บเงินปลายทาง', product: 'สินค้า', shipChannel: 'ช่องทางจัดส่ง',
   shipFrom: 'ส่งตั้งแต่', shipTo: 'ส่งถึง', amountMin: 'มูลค่าตั้งแต่', amountMax: 'มูลค่าถึง',
   number: 'หมายเลขรายการ', customer: 'ชื่อลูกค้า', tag: 'Tag', createUser: 'ผู้สร้าง', warehouse: 'คลัง',
+  serial: 'Serial no', agent: 'ชื่อตัวแทน',
 }
 /** ชื่อพารามิเตอร์ที่จอส่ง → ชื่อคีย์ที่ท่อสะท้อนกลับ (คนละสะกด ⇒ ต้องมีตารางแปลง ไม่ใช่เดา) */
 const ADV_KEY: Record<string, string> = {
   paystatus: 'payStatus', cod: 'cod', product: 'product', shipchannel: 'shipChannel',
   shipfrom: 'shipFrom', shipto: 'shipTo', amountmin: 'amountMin', amountmax: 'amountMax', number: 'number',
   tag: 'tag', createuser: 'createUser', warehouse: 'warehouse', customer: 'customer',
+  /* 🔑 สองตัวนี้ **ท่อยังไม่ประกาศว่ารู้จัก** (ยิง /api/core 14 ต.ค. 2569: advancedFilters มี 13 ช่อง ไม่มีสองตัวนี้)
+     ⇒ ใส่ไว้ที่นี่เพื่อให้แถบเตือน "ส่งไปแล้วท่อไม่ได้ใช้กรอง" ข้างล่าง **ทำงานทันทีที่มีคนพิมพ์**
+     ⇒ ⇒ และวันที่ฝั่งท่อ deploy ช่องนี้ ป้ายเตือนจะ **หายไปเอง** ไม่มีคอมเมนต์ค้างให้ใครกลับมาลบ */
+  serial: 'serial', agent: 'agent',
+}
+
+/** 🔴 **เหตุที่ช่องนั้นยังกรองไม่ได้ — แยกรายช่อง เพราะเหตุคนละชนิดกัน**
+ *  (ฝั่งท่อกำชับ 14 ต.ค. 2569: ป้ายเดียวสำหรับสองเหตุ ⇒ คนจะรอของที่ไม่มีวันมา)
+ *    🟡 `serial` = **ยังไม่** — มีทางทำได้ แต่ยังไม่รู้ว่า ZORT ส่งช่องนี้มาในใบหรือเปล่า
+ *       (เราหยิบ 21 ช่องจากใบ ZORT ส่งมาราว 115 ⇒ อาจอยู่ในช่องที่เราทิ้ง · ฝั่งท่อจะไปวัด)
+ *    🔴 `agent`  = **ไม่ได้** — ZORT ไม่เปิดเส้น API ตัวแทนเลย (ยิงตรวจ 6 ก.ย. 2569: 404 ทุกชื่อ)
+ *  🔑 "ข้อมูลว่าง" กับ "ไม่มีเส้นให้ดึง" คนละเรื่อง — ป้ายเดียวกันทำให้คนรอผิดเรื่อง */
+const เหตุที่ท่อยังไม่กรอง: Record<string, string> = {
+  serial: '🟡 ยังไม่ได้ทำ — ฝั่งท่อกำลังตรวจว่า ZORT ส่งช่อง serial มาในใบหรือไม่ (ถ้ามี ต้องเพิ่มคอลัมน์ + กวาดย้อนหลังก่อน)',
+  agent: '🔴 ทำไม่ได้ ไม่ใช่ยังไม่ได้ทำ — ZORT ไม่เปิด API ตัวแทน (ยิงตรวจ 6 ก.ย. 2569 ได้ 404 ทุกชื่อ)',
 }
 
 const MEMO_KEY = 'gucut:core-sales:filter'
@@ -293,6 +309,13 @@ export default function CoreSalesPage() {
   const [fTag, setFTag] = useState('')
   const [fCreator, setFCreator] = useState('')
   const [fWh, setFWh] = useState('')
+  /* 🔵 **สองช่องที่ ZORT มี และเราเคยเลือก "ไม่ทำ" — คำตัดสินฝั่งท่อ 14 ต.ค. 2569 ให้ทำ**
+     เหตุผลที่เคยไม่ทำ (วัดจริง: serial ว่าง 940/940 บรรทัด · ตัวแทน 0 ใบ) **ยังจริงอยู่**
+     แต่มันตอบได้แค่ว่า "ช่องนี้จะว่าง" ไม่ได้ตอบว่า "ควรมีช่องนี้ไหม" — คนละคำถาม
+     ⇒ คนที่ย้ายมาจาก ZORT แล้วหาช่องที่เคยใช้ไม่เจอ จะกลับไปใช้ ZORT
+     📌 ค้นแล้วไม่เจอของ = **ไม่ใช่บั๊ก** (บันทึกไว้ที่ `เทียบ-zort.md` ด้วย) */
+  const [fSerial, setFSerial] = useState('')
+  const [fAgent, setFAgent] = useState('')
   /* 👤 ชื่อลูกค้า — ท่อแก้เส้นชนแล้ว (gucut-web 701aa59 · ขึ้น 17 ก.ย. 2569 23:0x)
      ยิงยืนยันของจริง: customer=a ⇒ 46 จาก 1,337 ใบ + สะท้อน advancedFilters.customer · ค้นแบบ "มีคำนี้อยู่" */
   const [fCustomer, setFCustomer] = useState(() =>
@@ -354,8 +377,10 @@ export default function CoreSalesPage() {
     if (fCreator.trim()) out.push(['createuser', fCreator.trim()])
     if (fWh) out.push(['warehouse', fWh])
     if (fCustomer.trim()) out.push(['customer', fCustomer.trim()])
+    if (fSerial.trim()) out.push(['serial', fSerial.trim()])
+    if (fAgent.trim()) out.push(['agent', fAgent.trim()])
     return out
-  }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber, fTag, fCreator, fWh, fCustomer])
+  }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber, fTag, fCreator, fWh, fCustomer, fSerial, fAgent])
 
   const load = useCallback(async (
     off = 0,
@@ -862,6 +887,8 @@ export default function CoreSalesPage() {
           { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
           { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
           { label: 'ผู้สร้าง', kind: 'text', value: fCreator, onChange: (v) => setFCreator(String(v)), placeholder: 'ชื่อผู้สร้างใบ', width: 130 },
+          { label: 'Serial no', kind: 'text', value: fSerial, onChange: (v) => setFSerial(String(v)), placeholder: 'เลขซีเรียลในใบ', width: 150 },
+          { label: 'ชื่อตัวแทน', kind: 'text', value: fAgent, onChange: (v) => setFAgent(String(v)), placeholder: 'ชื่อตัวแทนจำหน่าย', width: 150 },
           {
             label: 'คลัง',
             kind: 'select',
@@ -880,10 +907,6 @@ export default function CoreSalesPage() {
           {
             what: 'ใบที่ยังไม่รู้คลัง',
             why: 'ใบก่อน 1 ก.ย. 2569 ส่วนหนึ่งท่อยังไม่ได้เก็บรหัสคลัง ⇒ เลือกคลังไหนก็ไม่ขึ้น (วัด 17 ก.ย. 2569: ช่วง 1 ส.ค.–16 ก.ย. มี 40 ใบ) · ยังเลือก "ไม่รู้คลัง" ไม่ได้',
-          },
-          {
-            what: 'Serial no · ชื่อตัวแทน',
-            why: 'ZORT มีช่องให้ แต่ร้านไม่ได้ใช้เลย (ยิง ZORT จริง z1 30 วัน: serial ว่างทั้ง 940 บรรทัด · ตัวแทน 0 ใบ) ⇒ ทำช่องไปก็ไม่มีวันเจอของ',
           },
           {
             what: 'สถานะรายการ 10 ค่าแบบ ZORT',
@@ -975,11 +998,25 @@ export default function CoreSalesPage() {
             </span>
           )}
           {/* ส่งไปแล้วแต่ท่อไม่ได้ใช้ = ต้องฟ้อง ไม่ใช่ปล่อยให้คนเชื่อว่ากรองแล้ว */}
-          {data.advancedFilters && advParams().some(([k]) => !data.advancedFilters?.[ADV_KEY[k] ?? k]) && (
-            <span className="block text-amber-800 mt-0.5">
-              ⚠️ มีเงื่อนไขขั้นสูงที่ส่งไปแล้ว <b>ท่อไม่ได้ใช้กรอง</b> — ตัวเลขที่เห็นจึงกว้างกว่าที่ตั้งไว้
-            </span>
-          )}
+          {data.advancedFilters && (() => {
+            const ที่ท่อไม่ได้ใช้ = advParams()
+              .filter(([k]) => !data.advancedFilters?.[ADV_KEY[k] ?? k])
+              .map(([k]) => k)
+            if (!ที่ท่อไม่ได้ใช้.length) return null
+            return (
+              <span className="block text-amber-800 mt-0.5">
+                ⚠️ มีเงื่อนไขขั้นสูงที่ส่งไปแล้ว <b>ท่อไม่ได้ใช้กรอง</b> — ตัวเลขที่เห็นจึงกว้างกว่าที่ตั้งไว้
+                {/* 🔴 **เหตุต้องมาเป็นรายช่อง** — ป้ายรวมทำให้คนรอ `agent` ไปตลอดกาล
+                       ทั้งที่ของนั้นไม่มีเส้นให้ดึงตั้งแต่ต้น (ไม่ใช่คิวงานที่ยังไม่ถึง) */}
+                {ที่ท่อไม่ได้ใช้.map((k) => (
+                  <span key={k} className="block pl-5">
+                    · <b>{ADV_TH[ADV_KEY[k] ?? k] ?? k}</b>:{' '}
+                    {เหตุที่ท่อยังไม่กรอง[k] ?? 'ท่อรุ่นนี้ยังไม่ประกาศช่องนี้ — ยังไม่รู้เหตุ (ไม่เดาแทน)'}
+                  </span>
+                ))}
+              </span>
+            )
+          })()}
           {/* ⚠️ เลขทุกตัวบนจอนี้ต้องบอกว่ามาจากกี่ร้าน — ชื่อช่องทางซ้ำกันข้ามร้านได้ */}
           {' '}· ร้าน {store === 'z1' ? 'ร้านออนไลน์ (z1)' : store === 'z2' ? 'หน้าร้าน (z2)' : <b>รวมทั้ง 2 ร้าน</b>}
           {/* 🔴 ประโยคข้างบนพูดจาก **ตัวแปรของจอ** ไม่ใช่จากคำตอบของท่อ
