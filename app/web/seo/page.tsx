@@ -3,6 +3,7 @@
 // ผลตรวจสร้างตอน build ของเว็บ (ท่อ /api/web/seo-audit) + บอต AI ที่มาจริง (/api/web/ai-bots)
 // + สวิตช์คุมบอต (/api/web/bot-rules)
 import { useEffect, useState } from 'react'
+import aiแนะนำ from '@/data/ai-แนะนำร้านเรา.json'
 
 /* 📖 **คำศัพท์ชุดนี้เป็นของท่อ จอตามอย่างเดียว** (แก้ 14 ต.ค. 2569)
  * 🔴 ของเดิมจอนิยามเอง `cat: seo|speed|ai` · `level: fix|improve|ok`
@@ -203,6 +204,75 @@ export default function WebSeoPage() {
           </div>
         </div>
       )}
+      {/* ══ ③ AI แนะนำร้านเราไหม — **ยังไม่ได้วัด และต้องเขียนว่ายังไม่ได้วัด** ══════════
+          🔴 เหตุที่กล่องนี้ต้องมี (ท่านประธานสั่งเป็นข้อ ③ ของงานจอนี้ · 14 ต.ค. 2569):
+             จอนี้มี "บอต AI มาเก็บข้อมูล" กับ "คะแนน GEO" อยู่แล้ว ⇒ อ่านรวมกันแล้ว
+             **ชวนให้สรุปว่า AI ทำงานให้ร้านเราอยู่** ทั้งที่ทั้งสองอย่างนั้นไม่ได้ตอบคำถามนั้นเลย
+             · บอตมาเก็บ = เขา *อ่าน* เว็บเรา · คะแนน GEO = หน้าเรา *พร้อมให้อ่าน*
+             · **AI พูดถึงร้านเราเวลาลูกค้าถาม = ยังไม่มีใครวัด**
+             ⇒ นี่คือโรคประจำของเรา: ระบบทำงานถูก แต่สื่อสารผิด ⇒ ต้องแยกสามเรื่องนี้ให้เห็นบนจอ
+          🚫 **ไม่ทำตัวเลขปลอม** — ยังไม่มีคีย์ผู้ช่วยที่ค้นเว็บได้ และคำตอบต่างตามผู้ใช้/พื้นที่/รอบ
+             ⇒ ยิงครั้งเดียวไม่ใช่การวัด ⇒ ทำเป็น **ชุดคำถามคงที่ + สมุดบันทึก** ให้คนยิงเองได้
+             (ชุดคำถามอยู่ที่ `data/ai-แนะนำร้านเรา.json` — เพิ่มบันทึกแล้วจอขึ้นเอง) */}
+      <div className="bg-white rounded-2xl border border-gray-100/80 shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] overflow-hidden">
+        <p className="px-4 md:px-5 pt-4 pb-1 text-[11.5px] font-bold uppercase tracking-wider text-gray-400">
+          AI แนะนำร้านเราไหม
+        </p>
+        <div className="px-4 md:px-5 pb-4 space-y-3">
+          <p className="text-[12.5px] text-gray-700 leading-relaxed">
+            🔴 <b>สามเรื่องนี้ไม่ใช่เรื่องเดียวกัน</b> — จอนี้วัดได้แค่สองข้อแรก
+          </p>
+          <ul className="text-[12.5px] text-gray-700 space-y-1">
+            <li>① <b>บอต AI มาเก็บข้อมูลไหม</b> — ✅ วัดได้ (กล่องข้างบน) = เขา<b>อ่าน</b>เว็บเรา</li>
+            <li>② <b>หน้าเว็บพร้อมให้ AI อ่านไหม</b> — ✅ วัดได้ (คะแนน <b>ผู้ช่วย AI</b>) = เรา<b>พร้อมให้อ่าน</b></li>
+            <li>③ <b>AI พูดถึงร้านเราเวลาลูกค้าถามไหม</b> — <b className="text-amber-800">⚠️ ยังไม่มีใครวัด</b></li>
+          </ul>
+          <p className="text-[11.5px] text-gray-500 leading-relaxed">
+            ข้อ ① กับ ② ดีแล้วไม่ได้แปลว่าข้อ ③ ดี · และข้อ ③ คือข้อที่<b>เปลี่ยนยอดขายจริง</b>
+            <span className="block text-gray-400">
+              ที่ยังไม่ทำเป็นตัวเลขอัตโนมัติ: {(aiแนะนำ['ทำไมยังวัดอัตโนมัติไม่ได้'] as string[])[0]}
+            </span>
+          </p>
+
+          <div className="rounded-xl bg-gray-50 border border-gray-100 p-3">
+            <p className="text-[11.5px] font-bold text-gray-700 mb-1.5">
+              ชุดคำถามคงที่ ({(aiแนะนำ['ชุดคำถาม'] as { id: string }[]).length} ข้อ) — ถามในผู้ช่วย AI แล้วบันทึกคำตอบ
+            </p>
+            <ol className="text-[12.5px] text-gray-700 space-y-1 list-decimal pl-5">
+              {(aiแนะนำ['ชุดคำถาม'] as { id: string; คำถาม: string; เหตุที่เลือก: string }[]).map((q) => (
+                <li key={q.id}>
+                  <b>{q.คำถาม}</b>
+                  <span className="block text-[11px] text-gray-400">{q.เหตุที่เลือก}</span>
+                </li>
+              ))}
+            </ol>
+          </div>
+
+          {/* 🔴 **ยังไม่เคยบันทึก ≠ AI ไม่แนะนำเรา** — ต้องเขียนให้ขาด ไม่งั้นช่องว่างกลายเป็นคำยืนยัน */}
+          {(aiแนะนำ['บันทึกผล'] as unknown[]).length === 0 ? (
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2">
+              📒 <b>ยังไม่เคยบันทึกผลสักครั้ง</b> — อ่านว่า <b>ยังไม่ได้ถาม</b> เท่านั้น
+              <b> ไม่ได้แปลว่า AI ไม่แนะนำร้านเรา</b>
+              <span className="block text-amber-700/80">
+                ถามตามชุดข้างบนแล้วเพิ่มบันทึกที่ <code>data/ai-แนะนำร้านเรา.json</code> ⇒ จอจะขึ้นเอง ·
+                ลงคำตอบ<b>ตรงตัว</b> (ชื่อร้านที่ AI เอ่ยถึงทั้งแถว) ไม่ใช่สรุปว่าเจอ/ไม่เจอ
+              </span>
+            </p>
+          ) : (
+            <div className="space-y-1.5">
+              {(aiแนะนำ['บันทึกผล'] as { เมื่อ: string; ผู้ช่วย: string; โดย: string; คำถาม: string; คำตอบ: string }[])
+                .slice(-5).reverse().map((r, i) => (
+                  <div key={i} className="text-[12.5px] text-gray-700 border-l-2 border-gray-200 pl-2">
+                    <span className="text-gray-400">{r.เมื่อ} · {r.ผู้ช่วย} · โดย {r.โดย}</span>
+                    <span className="block"><b>{r.คำถาม}</b></span>
+                    <span className="block text-gray-600">{r.คำตอบ}</span>
+                  </div>
+                ))}
+            </div>
+          )}
+        </div>
+      </div>
+
       <p className="text-center text-[11.5px] text-gray-300">ชุดเดียวกับ gucut.com/admin/seo/ — หน้าเดิมยังใช้ได้เป็นทางสำรอง</p>
     </div>
   )
