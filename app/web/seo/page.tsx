@@ -4,8 +4,19 @@
 // + สวิตช์คุมบอต (/api/web/bot-rules)
 import { useEffect, useState } from 'react'
 
-type Cat = 'seo' | 'speed' | 'ai'
-interface Finding { cat: Cat; level: 'fix' | 'improve' | 'ok'; title: string; count: number; unit?: string; why: string; how: string; sample?: string[] }
+/* 📖 **คำศัพท์ชุดนี้เป็นของท่อ จอตามอย่างเดียว** (แก้ 14 ต.ค. 2569)
+ * 🔴 ของเดิมจอนิยามเอง `cat: seo|speed|ai` · `level: fix|improve|ok`
+ *    ของจริงที่ท่อส่งคือ `cat: seo|geo|speed` · `level: high|mid|low|ok` ⇒ **ไม่ตรงกันสักค่า**
+ *    และเพราะโค้ดเขียนเป็น ternary ที่ลงท้ายด้วย "เรียบร้อย/เขียว" ⇒ ทุกข้อที่ไม่รู้จักไหลไปกองที่นั่น
+ *    ผลของจริง: ปัญหาระดับ high 4 ข้อขึ้นจุดเขียวว่า **"เรียบร้อย"** · แท็บ ai ว่างตลอดกาล
+ *    · คะแนน GEO 89 มีใน API แต่จอไปอ่าน `scores.ai` ซึ่ง undefined ⇒ **หน้าที่ชื่อ GEO ไม่เคยโชว์ GEO**
+ * 🔑 กติกาที่ตั้งจากเคสนี้: **ค่าท้ายสุดของ ternary ห้ามแปลว่า "ปกติ"**
+ *    ของที่จอไม่รู้จักต้องขึ้น "ไม่รู้" (เทา) เสมอ — ดู `ระดับ` ข้างล่าง
+ * 🚫 เพิ่ม/แก้ค่าที่นี่เองไม่ได้ — ท่อประกาศใน `src/lib/audit.ts` (AUDIT_CATS/AUDIT_LEVELS)
+ *    แล้วส่งมาทางสารบัญ · ด่าน `scripts/check-คำศัพท์ผลตรวจ.mjs` เทียบให้ทุก build */
+type Cat = 'seo' | 'geo' | 'speed'
+type Level = 'high' | 'mid' | 'low' | 'ok'
+interface Finding { cat: Cat; level: Level; title: string; count: number; unit?: string; why: string; how: string; sample?: string[] }
 interface Audit { at: number; findings: Finding[]; scores: Record<Cat, number>; score: number; files: { path: string; label: string; kb: number }[] }
 interface BotDays { days?: Record<string, Record<string, number>> }
 interface BotRow { bot: string; today: number; week: number }
@@ -13,9 +24,21 @@ interface Blockable { name: string; note: string }
 
 const CATS: { key: Cat; t: string; sub: string }[] = [
   { key: 'seo', t: 'ค้นหา', sub: 'Google / Bing' },
+  // ท่อเรียกด้านนี้ว่า `geo` · ท่านประธานเรียกว่า "ผู้ช่วย AI" ⇒ ป้ายใช้คำของท่าน คีย์ใช้คำของท่อ
+  { key: 'geo', t: 'ผู้ช่วย AI', sub: 'GEO · ChatGPT / Gemini' },
   { key: 'speed', t: 'ความเร็ว', sub: 'โหลดไว ขึ้นอันดับ' },
-  { key: 'ai', t: 'ผู้ช่วย AI', sub: 'ChatGPT / Gemini' },
 ]
+
+/** ป้าย/สีของระดับความสำคัญ — **ตารางเดียว ไม่มี ternary ต่อกัน**
+ *  🔑 ค่าที่ไม่อยู่ในตารางนี้ต้องออกมาเป็น "ไม่รู้" (เทา) เสมอ ห้ามตกไปเป็นเขียว */
+const ระดับ: Record<Level, { จุด: string; คำ: string }> = {
+  high: { จุด: 'bg-red-500 ring-4 ring-red-50', คำ: 'ควรแก้ก่อน' },
+  mid: { จุด: 'bg-amber-500 ring-4 ring-amber-50', คำ: 'แก้แล้วดีขึ้น' },
+  low: { จุด: 'bg-sky-500 ring-4 ring-sky-50', คำ: 'เรื่องเล็ก' },
+  ok: { จุด: 'bg-emerald-500 ring-4 ring-emerald-50', คำ: 'เรียบร้อย' },
+}
+const ไม่รู้จัก = { จุด: 'bg-gray-300 ring-4 ring-gray-100', คำ: '⚠️ ค่าที่จอยังไม่รู้จัก' }
+const ป้ายระดับ = (lv: string) => ระดับ[lv as Level] ?? ไม่รู้จัก
 const scoreColor = (n: number) => (n >= 90 ? 'text-emerald-600' : n >= 70 ? 'text-amber-600' : 'text-red-500')
 
 export default function WebSeoPage() {
@@ -89,8 +112,10 @@ export default function WebSeoPage() {
           <button key={c.key} onClick={() => setTab(c.key)}
             className={`bg-white rounded-2xl border p-4 text-left shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)] transition-all ${tab === c.key ? 'border-blue-300 ring-4 ring-blue-50' : 'border-gray-100/80 hover:-translate-y-0.5'}`} aria-pressed={tab === c.key}>
             <p className="text-[11.5px] font-semibold uppercase tracking-wider text-gray-400">{c.t}</p>
-            <p className={`text-[28px] font-black tabular-nums leading-none mt-1 ${audit ? scoreColor(audit.scores[c.key]) : 'text-gray-300'}`}>
-              {audit ? audit.scores[c.key] : '—'}
+            {/* 🔴 คะแนนที่ท่อไม่ได้ส่งมา ต้องขึ้น "—" ไม่ใช่เลข 0 หรือค่าว่างที่อ่านเป็นคะแนนได้
+                (ของเดิมอ่าน scores.ai ซึ่งไม่มี ⇒ ได้ undefined แล้วลงสีเหมือนคะแนนจริง) */}
+            <p className={`text-[28px] font-black tabular-nums leading-none mt-1 ${typeof audit?.scores?.[c.key] === 'number' ? scoreColor(audit!.scores[c.key]) : 'text-gray-300'}`}>
+              {typeof audit?.scores?.[c.key] === 'number' ? audit!.scores[c.key] : '—'}
             </p>
             <p className="text-[10px] text-gray-400 mt-1">{c.sub}</p>
           </button>
@@ -112,10 +137,10 @@ export default function WebSeoPage() {
         ) : shown.map((f, i) => (
           <details key={i} className="group">
             <summary className="flex items-center gap-3 px-4 md:px-5 py-3 cursor-pointer list-none hover:bg-gray-50/80 transition-colors">
-              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${f.level === 'fix' ? 'bg-red-500 ring-4 ring-red-50' : f.level === 'improve' ? 'bg-amber-500 ring-4 ring-amber-50' : 'bg-emerald-500 ring-4 ring-emerald-50'}`} />
+              <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${ป้ายระดับ(f.level).จุด}`} />
               <span className="min-w-0 flex-1">
                 <span className="block text-[12.5px] font-bold text-gray-900">{f.title}</span>
-                <span className="block text-[11.5px] text-gray-400">{f.count.toLocaleString('th-TH')} {f.unit || 'รายการ'} · {f.level === 'fix' ? 'ควรแก้ก่อน' : f.level === 'improve' ? 'แก้แล้วดีขึ้น' : 'เรียบร้อย'}</span>
+                <span className="block text-[11.5px] text-gray-400">{f.count.toLocaleString('th-TH')} {f.unit || 'รายการ'} · {ป้ายระดับ(f.level).คำ}</span>
               </span>
               <span className="text-gray-200 group-open:rotate-90 transition-transform">›</span>
             </summary>
