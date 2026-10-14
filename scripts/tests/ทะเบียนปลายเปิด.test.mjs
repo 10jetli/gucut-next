@@ -134,7 +134,8 @@ test('ไฟล์ที่เข้าเกณฑ์หัก **ต้อง�
   mkdirSync(join(ราก, 'app', 'tests'), { recursive: true })
   writeFileSync(join(ราก, 'app', 'tests', 'ของเทส.tsx'), 'export const z = (d) => d.statusesAll\n')
   try {
-    const r = รัน('ตรง', { OPEN_ENDED_SCAN_ROOT: ราก })
+    const r = รัน('ตรง', { OPEN_ENDED_SCAN_ROOT: ราก,
+      OPEN_ENDED_EXCLUDE: join(ROOT, 'scripts', 'tests', 'fixtures', 'รายการหัก-ตัวอย่าง.mjs') })
     assert.equal(r.status, 1,
       'ไฟล์ในโฟลเดอร์เทสไม่ใช่ผู้อ่าน ⇒ ด่านต้องฟ้องว่าทะเบียนค้าง\n' + r.stdout + r.stderr)
     assert.match(r.stdout, /หักออก [1-9]/, 'และต้องเห็นว่ามีการหักเกิดขึ้นจริง')
