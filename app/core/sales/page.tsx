@@ -1323,7 +1323,7 @@ export default function CoreSalesPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-500`} title={r.order_date}>
                       {relDay(r.order_date)}
                     </td>
-                    <td className={`${TD} max-w-[150px]`}>
+                    <td className={TD}>
                       {/* เลขที่ใบต้องกดได้ — ZORT กดเลขเข้ารายละเอียดตรง ๆ (เดิมเป็น span สีฟ้า
                           ที่กดไม่ได้ = ผิดสัญญาสีฟ้าที่จอหมวดหมู่จดไว้เอง · กวาดคลาส 8 ก.ย. 2569) */}
                       {/* 🔗 **ทำเป็นลิงก์จริง ไม่ใช่ปุ่ม** (18 ก.ย. 2569 · งานยืน "กดเข้าไปลึก ๆ")
@@ -1353,10 +1353,10 @@ export default function CoreSalesPage() {
                     {/* 📐 **ตัดบรรทัด ไม่ตัดตัวอักษร** — วัด ZORT แล้ว: เซลล์เขา `white-space: normal`
                            `overflow: visible` **ไม่มีจุดไข่ปลา** ⇒ ชื่อยาวเขาขึ้นบรรทัดใหม่ ไม่ได้ถูกตัดทิ้ง
                            ของเดิมเราใช้ `truncate` ⇒ ชื่อลูกค้าที่ยาวกว่าช่อง **หายไปจากสายตาโดยไม่มีอะไรบอก** */}
-                    <td className={`${TD} max-w-[120px] break-words`}>{r.customer || '—'}</td>
+                    <td className={`${TD} break-words`}>{r.customer || '—'}</td>
                     <td className={`${TD} max-w-[120px]`}><ChannelTag name={r.channel} /></td>
                     {/* ⚠️ ไม่มีข้อมูลให้ขีด ห้ามเว้นว่าง — ช่องว่างอ่านได้ว่า "ไม่มีขนส่ง" */}
-                    <td className={`${TD} max-w-[110px] break-words`} title={r.tracking_no || ''}>
+                    <td className={`${TD} break-words`} title={r.tracking_no || ''}>
                       {/* 🔴 ไม่ fallback ไป ship_name (ชื่อผู้รับ) — ดูเหตุผลในไฟล์ส่งออกข้างบน */}
                       {r.ship_channel || <span className="text-gray-300">—</span>}
                     </td>
