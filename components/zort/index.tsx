@@ -31,13 +31,34 @@ export const ZORT_LINK = '#457ab2'        // ลิงก์ในตารา�
 
 /* ── หัวจอ ────────────────────────────────────────────────────────────── */
 export function PageHead({
-  title, summary, actions,
+  title, summary, actions, ปุ่มใต้หัวจอ = false,
 }: {
   title: string
   /** บรรทัดใต้ชื่อจอ เช่น "จำนวน 1,534 รายการ, มูลค่าทั้งหมด 1,804,130.3 บาท" */
   summary?: ReactNode
   actions?: ReactNode
+  /** วางแถวปุ่ม **ใต้หัวจอ ชิดซ้าย** แทนบรรทัดเดียวกับหัวจอ (ค่าตั้งต้น = แบบเดิม)
+   *
+   *  🔴 **ทำไมเป็นตัวเลือก ไม่ใช่เปลี่ยนให้ทุกจอ** — วัดตำแหน่งปุ่ม `นำเข้าไฟล์ (Excel)`
+   *     บนจอ ZORT 5 จอ ที่วิวพอร์ตเดียวกัน (15 ต.ค. 2569):
+   *       Product x=777 y=82 · Contact x=763 y=82 · Buy x=699 y=82 · Bundle x=733 y=82
+   *       **Sell x=230 y=164** ← จอเดียวที่ปุ่มอยู่ใต้หัวจอ
+   *     ⇒ ผังเดิมของเรา (ชิดขวาบรรทัดหัวจอ) **ตรงกับ ZORT 4 ใน 5 จอ**
+   *     ⇒ ⇒ ถ้าย้ายทุกจอตาม Sell เราจะตรงกับ **ข้อยกเว้นของเขา** และหลุดจากแบบที่เขาใช้ทั้งระบบ
+   *  🔑 เสียงข้างมากคือกฎ · เสียงข้างน้อยคือค่าเฉพาะจอ ⇒ เปิดเฉพาะจอที่วัดแล้วว่าเขาทำแบบนี้
+   *  📌 เหตุที่จอขายต้องลอกข้อยกเว้น: คนที่เปิด `/Sell/list` ทุกวันเห็นปุ่มอยู่ใต้หัวจอ
+   *     ⇒ ย้ายให้ตรงกันบนจอนั้น = ไม่ต้องเรียนใหม่ (เหตุผลของเจ้าของร้าน ไม่ใช่ตัวอักษรของคำสั่ง) */
+  ปุ่มใต้หัวจอ?: boolean
 }) {
+  if (ปุ่มใต้หัวจอ) {
+    return (
+      <div className="mb-4">
+        <h1 className="text-[26px] leading-tight font-semibold text-gray-900">{title}</h1>
+        {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
+        {actions && <div className="flex flex-wrap items-center gap-2 mt-3">{actions}</div>}
+      </div>
+    )
+  }
   return (
     <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
       <div className="min-w-0">
