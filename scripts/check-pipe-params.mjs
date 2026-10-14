@@ -23,6 +23,7 @@ import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { อยู่ปลายกิ่งไหม, บอกว่าไม่ตัดสิน } from './lib/กำลังเล่นประวัติซ้ำไหม.mjs'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
+import { บอกกองนอกรีโป, บอกไฟล์นอกรีโป } from './lib/ของนอกรีโป.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const PIPE = join(ROOT, '..', 'gucut-web')
@@ -69,6 +70,10 @@ if (!existsSync(CORE)) {
 /* ── แบ่งไฟล์ท่อเป็นบล็อกต่อเส้น ─────────────────────────────────
    หาจุดเริ่มของแต่ละเส้น แล้วถือว่าบล็อกจบตรงจุดเริ่มของเส้นถัดไป
    (หยาบแต่พอ — เราต้องการรู้แค่ว่า "ชื่อนี้ถูกอ่านในบริเวณของเส้นนี้ไหม") */
+/* 📂 **ที่มาของของนอกรีโป** — ด่านนี้อ่านอีกรีโปจากดิสก์ ⇒ เห็นของใหม่ตอนอีกฝั่งกด Save
+   ⇒ ต้องบอกเองทุกรอบว่าของที่อ่านถูกแก้เมื่อไหร่ (`scripts/lib/ของนอกรีโป.mjs`) */
+บอกไฟล์นอกรีโป(CORE, { ป้าย: 'ซอร์สท่อ core.mjs:' })
+
 const src = ตัดคอมเมนต์(readFileSync(CORE, 'utf8'))
 const จุดเริ่ม = []
 for (const m of src.matchAll(/searchParams\.get\("list"\)\s*===\s*"(\w+)"/g)) จุดเริ่ม.push([m[1], m.index])

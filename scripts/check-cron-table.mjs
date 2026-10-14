@@ -30,6 +30,7 @@ import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 import { อยู่ปลายกิ่งไหม, บอกว่าไม่ตัดสิน } from './lib/กำลังเล่นประวัติซ้ำไหม.mjs'
 import { ตัดคอมเมนต์ } from './lib/ตัดคอมเมนต์.mjs'
+import { บอกกองนอกรีโป, บอกไฟล์นอกรีโป } from './lib/ของนอกรีโป.mjs'
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url))
 const PIPE = join(ROOT, '..', 'gucut-web')
@@ -89,6 +90,13 @@ function จากสำเนา() {
       + ' ⇒ **นี่คือของเราพัง ไม่ใช่ของไม่มี**'
     return null
   }
+}
+
+/* 📂 **ที่มาของของนอกรีโป** — ด่านนี้อ่านอีกรีโปจากดิสก์ ⇒ เห็นของใหม่ตอนอีกฝั่งกด Save
+   ⇒ ต้องบอกเองทุกรอบว่าของที่อ่านถูกแก้เมื่อไหร่ (`scripts/lib/ของนอกรีโป.mjs`) */
+if (existsSync(FUNCS)) {
+  บอกกองนอกรีโป(readdirSync(FUNCS).filter((n) => /\.(mjs|js|json)$/.test(n)).map((n) => join(FUNCS, n)),
+    { ป้าย: 'ซอร์สท่อ netlify/functions:' })
 }
 
 let แหล่ง = 'ซอร์สท่อข้างบ้าน (../gucut-web)'
