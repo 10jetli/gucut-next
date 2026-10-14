@@ -13,6 +13,11 @@ const payฐานแท็บ = [{ payStatus: 'Paid', orders: 7257, amount: 7_0
 const payตามกรอง = (กรองstatus) => (กรองstatus
   ? [{ payStatus: 'Paid', orders: 1, amount: 500 }]
   : payฐานแท็บ)
+/** ก้อนแยกตาม `status` บนฐาน `w` — **ผลรวมเงินต้องเท่ากับ payตามกรอง** (แบ่งแถวชุดเดียวกัน) */
+const statusตามกรอง = (กรองstatus) => (กรองstatus
+  ? [{ status: 'Waiting', orders: 1, amount: 500 }]
+  : [{ status: 'Success', orders: 7000, amount: 7_100_000 },
+    { status: 'Pending', orders: 160, amount: 200_000 }])   // รวม 7,300,000 = payฐานแท็บ
 
 createServer((req, res) => {
   const u = new URL(req.url, 'http://x')
@@ -29,6 +34,7 @@ createServer((req, res) => {
     o.payStatusesAll = ['Paid', 'Pending', 'Voided']
     o.tabBase = { excludes: ['status', 'paystatus'] }
     o.byPayStatusFiltered = payตามกรอง(กรองstatus)
+    o.byStatusFiltered = statusตามกรอง(กรองstatus)
     o.totalPaidAmountByPay = 7_000_000
     o.totalUnpaidAmountByPay = 300_000
   }
@@ -43,6 +49,11 @@ createServer((req, res) => {
   if (โหมด === 'สองช่องฐานเดียวกัน') { ครบชุด(); o.byPayStatusFiltered = payฐานแท็บ }
   // 🔴 ก้อนแยกฐานแท็บผูกกับ status ⇒ กดแท็บชำระเงินแล้วตัวนับแท็บสถานะเพี้ยน
   if (โหมด === 'ฐานแท็บผูกกับstatus') { ครบชุด(); if (กรองstatus) o.byPayStatus = payตามกรอง(true) }
+  // 🔴 สองก้อนบนฐาน `w` คิดจากคนละฐาน ⇒ ผลรวมเงินไม่เท่ากัน ⇒ จอที่เอามาเทียบได้ส่วนต่างลวง
+  if (โหมด === 'สองก้อนคนละฐาน') {
+    ครบชุด()
+    o.byStatusFiltered = [{ status: 'Success', orders: 7000, amount: 9_999_999 }]
+  }
   res.writeHead(200, { 'content-type': 'application/json' })
   res.end(JSON.stringify(o))
 }).listen(8191, '127.0.0.1')
