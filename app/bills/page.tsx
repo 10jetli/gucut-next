@@ -1,10 +1,11 @@
 'use client'
 
 import Link from 'next/link'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { BILL_VENDORS } from '@/lib/vendors'
 import { TH_MONTHS } from '@/lib/format'
 import Card from '@/components/ui/Card'
+import RunAllBills from '@/components/bills/RunAllBills'
 
 // 7 เจ้าหลัก + Omise — กดช่องไหนเข้าไปดูบิลของเจ้านั้นเรียงเป็นเดือนๆ (ข้อมูลรวมอยู่ที่ lib/vendors.ts)
 // 🔴 15 ก.ย. 2569 — ท่านประธานกากบาท www (Shopify) กับ Lazada ออกจากหน้ารวม
@@ -12,7 +13,7 @@ import Card from '@/components/ui/Card'
 const VENDOR_LIST = [...BILL_VENDORS]
   .filter(v => !v.hiddenInGrid)
   .sort((a, b) => a.gridOrder - b.gridOrder)
-  .map(v => ({ id: v.id, name: v.gridName, emoji: v.emoji, logo: v.logo }))
+  .map(v => ({ id: v.id, name: v.gridName, emoji: v.emoji, logo: v.logo, portal: v.portal ?? null, วิธี: v.collect?.วิธี ?? null }))
 
 // รายการย้อนหลัง 12 เดือน สำหรับโหลด ZIP รวมทุกเจ้า
 function lastMonths(n: number): { value: string; label: string }[] {
@@ -28,7 +29,7 @@ function lastMonths(n: number): { value: string; label: string }[] {
 
 interface VendorStatus {
   id: string
-  สถานะ: 'ปกติ' | 'ควรมาดู' | 'อัปมือ' | 'ไม่รู้'
+  สถานะ: 'ปกติ' | 'ควรมาดู' | 'อัปมือ' | 'ต้องล็อกอิน' | 'ไม่รู้'
   เหตุ: string
   เก็บโดย: { วิธี: string; รายละเอียด: string; รอบ: string } | null
   สแกนล่าสุด: string | null
@@ -59,6 +60,8 @@ const สีสถานะ: Record<string, string> = {
   'ควรมาดู': 'bg-amber-50 text-amber-800 border-amber-200',
   'อัปมือ': 'bg-orange-50 text-orange-700 border-orange-200',
   'ไม่รู้': 'bg-gray-100 text-gray-500 border-gray-200',
+  /* 🔐 สีแยกจาก "ควรมาดู" — เป็นงานที่ **ท่านประธานต้องทำเอง** (ล็อกอิน) ไม่ใช่ระบบพัง */
+  'ต้องล็อกอิน': 'bg-violet-50 text-violet-700 border-violet-200',
 }
 const ไอคอนวิธี: Record<string, string> = {
   'เมล': '📧', 'สคริปต์บน g1': '🤖', 'อัปมือ': '✋',
@@ -68,8 +71,10 @@ export default function BillsPage() {
   const [st, setSt] = useState<Record<string, VendorStatus> | null>(null)
   const [stErr, setStErr] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch('/api/bills/status')
+  /* อ่านสถานะซ้ำได้ — ปุ่ม "ดึงบิลทั้งหมด" เรียกอีกรอบหลังกวาดจบ ป้ายบนการ์ดจะได้ตรงกับผลรอบใหม่ */
+  const โหลดสถานะ = useCallback(() => {
+    setStErr(null)
+    fetch('/api/bills/status', { cache: 'no-store' })
       .then(r => r.json())
       .then(j => {
         if (j.error) { setStErr(String(j.error)); return }
@@ -77,11 +82,18 @@ export default function BillsPage() {
       })
       .catch(e => setStErr(String(e)))
   }, [])
+  useEffect(() => { โหลดสถานะ() }, [โหลดสถานะ])
 
   return (
     <div className="max-w-[430px] lg:max-w-[1200px] mx-auto px-4 py-4">
 
-      <div className="text-[15px] font-bold text-gray-800 mb-3">🧾 บิลค่าโฆษณา / บริการ (ส่งบัญชีทำภาษี)</div>
+      {/* 🔄 ปุ่มมุมบนขวา — ท่านประธานสั่ง 15 ต.ค. 2569 "กดครั้งเดียวให้ดึงบิลทั้งหมด" */}
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-3">
+        <div className="text-[15px] font-bold text-gray-800 pt-2">🧾 บิลค่าโฆษณา / บริการ (ส่งบัญชีทำภาษี)</div>
+        <div className="ml-auto w-full sm:w-auto sm:max-w-[560px] flex flex-col items-end">
+          <RunAllBills เจ้า={VENDOR_LIST.map(v => ({ id: v.id, name: v.name, วิธี: v.วิธี, portal: v.portal }))} onDone={โหลดสถานะ} />
+        </div>
+      </div>
 
       {/* ช่องรายเจ้า — กดเข้าไปดูบิลเรียงเป็นเดือนๆ ของเจ้านั้น */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
@@ -114,6 +126,17 @@ export default function BillsPage() {
                   <div className="text-[10px] lg:text-[11.5px] text-amber-800 bg-amber-50 rounded px-1.5 py-1 mt-1 leading-snug text-left">
                     {st[v.id].เหตุ}
                   </div>
+                )}
+                {/* 🔐 ต้องล็อกอิน ⇒ ปุ่มพาไปหน้าล็อกอินของเจ้านั้นเลย
+                    การ์ดทั้งใบเป็น <Link> แล้ว ⇒ ซ้อน <a> ไม่ได้ ⇒ ใช้ปุ่ม + window.open และกันไม่ให้คลิกทะลุไปเปิดการ์ด */}
+                {st[v.id].สถานะ === 'ต้องล็อกอิน' && v.portal && (
+                  <button
+                    type="button"
+                    onClick={e => { e.preventDefault(); e.stopPropagation(); window.open(v.portal!, '_blank', 'noopener,noreferrer') }}
+                    className="mt-1 text-[11.5px] lg:text-[12.5px] font-bold rounded-full px-2.5 py-1 bg-violet-600 text-white hover:bg-violet-700"
+                  >
+                    เปิดหน้าล็อกอิน ↗
+                  </button>
                 )}
                 {st[v.id].เก็บโดย && (
                   <div className="text-[10px] lg:text-[11.5px] text-gray-500 mt-1 leading-snug" title={st[v.id].เก็บโดย!.รายละเอียด}>
