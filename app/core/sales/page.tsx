@@ -8,6 +8,7 @@
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
 import { useCallback, useEffect, useState } from 'react'
 import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
+import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT } from '@/lib/sales-tabs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { fmtMoney } from '@/lib/format'
@@ -70,6 +71,24 @@ interface ListResp {
    *  ⇒ ใช้ทำ "รายชื่อแท็บ" · ส่วน `byStatus` ใช้ทำ "จำนวนของแท็บนั้นในผลที่กรองแล้ว"
    *  ⚠️ **`null` = อ่านไม่ได้ ไม่ใช่ "ไม่มีสถานะ"** (ท่อเลือก null ไม่ใช่ [] ด้วยเหตุผลนี้) */
   statusesAll?: string[] | null
+  /* ── 💰 แท็บ "รอชำระ" ของ ZORT = คอลัมน์ **pay_status** ไม่ใช่ **status** ───────────
+     🔑 วัดเองก่อนออกแบบ (14 ต.ค. 2569 · z1 · 1 ต.ค. 2568–14 ต.ค. 2569 · 7,748 ใบ = `total` ของท่อเอง):
+        status=Pending 176 ใบ · pay_status=Pending 168 ใบ · **ซ้อนกันแค่ 153**
+        ⇒ ต่างกัน 2 ทิศ: **23 ใบ** status=Pending แต่ **จ่ายแล้ว** · **15 ใบ** status=Success แต่ **ยังไม่จ่าย**
+        ⇒ ทำแท็บ "รอชำระ" จากคอลัมน์ status จะ **โกหกสองทาง** และทิศที่แพงคือ 15 ใบที่ยังไม่ได้เงิน
+     ⇒ จึงต้องมีมิติที่สองจริง ๆ ไม่ใช่ยืม byStatus มาใช้ (ขอฝั่งท่อไว้แล้ว 14 ต.ค. 2569)
+     ⚠️ **ไม่มีคีย์ = ไม่รู้ ไม่ใช่ 0** ⇒ แท็บยังกดได้ (ท่อกรอง `paystatus=` ได้อยู่แล้ว) แต่ **ไม่มีวงเล็บ** */
+  byPayStatus?: { payStatus: string; orders: number; amount?: number }[] | null
+  /** สารบัญสถานะชำระเงินของร้านนี้ (กรองแค่ร้าน) — เหตุผลเดียวกับ `statusesAll`
+   *  ⚠️ `null` = อ่านไม่ได้ · ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ ทั้งสองกรณี **ห้ามอ่านว่า "ไม่มี"** */
+  payStatusesAll?: string[] | null
+  /** 🔑 ฐานที่ท่อใช้คิด **ตัวนับของแท็บ** — บอกเป็นรายชื่อตัวกรองที่ *ไม่* ถูกนับรวม
+   *  เหตุที่ต้องเป็นรายชื่อ ไม่ใช่ธง true/false: วันที่มิติที่สามมาเป็นแท็บ (เช่น จัดส่งด่วน)
+   *  จอจะรู้เองว่าฐานครอบถึงหรือยัง **โดยไม่ต้องรอใครมาเปลี่ยนชื่อธง**
+   *  ⚠️ ไม่มีคีย์นี้ = `byStatus` ยังถูกกรองด้วย `paystatus` ⇒ กดแท็บชำระเงินแล้วตัวนับแท็บอื่นเพี้ยน
+   *     (วัดจริง: ส่ง `paystatus=Pending` ⇒ byStatus เหลือ Pending 153 · Success 15
+   *      ⇒ แท็บ "ยกเลิก" จะอ่านว่า **0** ทั้งที่ระบบมี **499** ใบ) */
+  tabBase?: { excludes?: string[] } | null
   /** ✅ ท่อเติมให้ 19 ก.ย. 2569 (gucut-web b393950) — ค่าที่ท่อ **ใช้จริง** ในคำขอนี้
    *  🔴 เหตุ: เส้นนี้กรองด้วย `q` จริง (868 → 0) **แต่ไม่เคยบอกว่ากรอง** ⇒ จอเขียนได้แค่ "ไม่พบ"
    *  ⚠️ **ไม่มีคีย์ = ยังไม่ deploy** ⇒ จอไม่เขียนคำกำกับ (ไม่ใช่เดาว่ากรองแล้ว) */
@@ -327,7 +346,10 @@ export default function CoreSalesPage() {
 
   const load = useCallback(async (
     off = 0,
-    opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string; size?: number; q?: string; customer?: string },
+    opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string; size?: number; q?: string; customer?: string
+            /** ค่าแทนที่ของ `paystatus` — ต้องมีเพราะกดแท็บแล้ว `setFPay` ยังไม่สะท้อนใน closure รอบนี้
+             *  (`''` = ล้างตัวกรอง · ไม่ส่งคีย์ = ใช้ค่าจาก state ตามปกติ — สามสถานะ ห้ามยุบ) */
+            payStatus?: string },
   ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
@@ -351,6 +373,8 @@ export default function CoreSalesPage() {
       /* 🔍 ตัวกรองขั้นสูง — ส่งเฉพาะช่องที่กรอก · ว่าง = ไม่ส่ง (ท่อถือว่าไม่กรอง) */
       for (const [k, v] of advParams()) qs.set(k, v)
       if (opt?.customer !== undefined) { if (opt.customer.trim()) qs.set('customer', opt.customer.trim()); else qs.delete('customer') }
+      /* ⚠️ ต้องอยู่ **หลัง** ลูป advParams() เสมอ — ไม่งั้นค่าเก่าจาก state จะทับค่าที่แท็บเพิ่งสั่ง */
+      if (opt?.payStatus !== undefined) { if (opt.payStatus) qs.set('paystatus', opt.payStatus); else qs.delete('paystatus') }
       // ⚠️ **ส่ง cancelled=1 เสมอ** — ค่าเริ่มต้นของ API ตัดใบยกเลิกทิ้ง
       //    ถ้าไม่ส่ง byStatus จะไม่มี "Voided" เลย ⇒ ไม่มีแท็บยกเลิกให้กด
       //    และถ้าเผลอมีแท็บ กดแล้วจะได้ 0 ใบทั้งที่มี 44 ใบ (ฝั่งท่อหลังบ้านเตือนไว้)
@@ -502,9 +526,6 @@ export default function CoreSalesPage() {
   const สรุปเป็นของทั้งวัน = กรองอยู่ && typeof data?.rowsScope === 'string' && data.rowsScope !== ''
   const shown = offset + rows.length
 
-  // แท็บสถานะพร้อมจำนวนในวงเล็บ — ลอกจาก ZORT (ทั้งหมด · รอโอน (21) · รอชำระ (12) · สำเร็จ)
-  // byStatus จากเซิร์ฟเวอร์ไม่ถูกกรองด้วยสถานะที่เลือกอยู่ แท็บอื่นจึงยังบอกจำนวนได้เสมอ
-  const allCount = (data?.byStatus ?? []).reduce((s2, r) => s2 + Number(r.orders || 0), 0)
   // ยอดในบรรทัดสรุปรวมใบยกเลิกไว้ด้วย (เพราะเราส่ง cancelled=1 เสมอ)
   // ⚠️ ต้องบอกให้เห็นว่ารวมไว้เท่าไหร่ ไม่งั้นยอดขายดูพองโดยไม่มีใครรู้ว่าทำไม
   const voidedRows = (data?.byStatus ?? []).filter((r) => toneOfStatus(r.status) === 'red')
@@ -545,10 +566,6 @@ export default function CoreSalesPage() {
     ? (data!.statusesAll!.filter(Boolean) as string[])
     : สถานะที่เคยเห็น
 
-  const นับสถานะ = (st: string) => {
-    if (!Array.isArray(data?.byStatus)) return undefined          // ไม่รู้ ≠ 0
-    return Number(data!.byStatus!.find((r) => r.status === st)?.orders ?? 0)
-  }
   /* 🔴 **สถานะที่ท่อมี แต่เรายังไม่รู้ว่า ZORT เรียกเป็นไทยว่าอะไร** (เจอของจริง 18 ก.ย. 2569)
      พอท่อเริ่มส่ง `statusesAll` (สารบัญทั้งระบบ ไม่กรองวัน) แท็บ **`Returned`** ก็โผล่ขึ้นจอ
      เป็นภาษาอังกฤษดิบ — ซึ่งเป็นอาการเดียวกับที่ท่านประธานทักไว้ ("Pending" ในคอลัมน์สถานะ)
@@ -560,14 +577,25 @@ export default function CoreSalesPage() {
      ✅ บรรทัดคำอธิบาย **ผูกกับเงื่อนไขนี้** ⇒ วันที่เติมคำลง SALE_STATUS มันหายเอง
         (ข้อความที่ต้องรอคนมาถอด คือข้อความที่จะค้าง) */
   const สถานะที่ยังไม่มีคำไทย = รายชื่อสถานะ.filter((st) => !zortWord(SALE_STATUS, st).known)
-  const tabs = [
-    { id: '', label: 'ทั้งหมด', count: allCount || data?.total },
-    ...รายชื่อสถานะ.map((st) => ({
-      id: st,
-      label: zortWord(SALE_STATUS, st).known ? statusTh(st) : `${st} ⚠️`,
-      count: นับสถานะ(st),
-    })),
-  ]
+  /* ── 💰 แถบแท็บสองมิติ — ตัวตัดสินใจอยู่ที่ `lib/sales-tabs.ts` ที่เดียว ────────────
+     🔑 **ย้ายออกจาก JSX เพราะจอนี้อยู่หลังกำแพงล็อกอิน ⇒ ด่านมองไม่เห็น**
+        ของที่ตัดสินใจกลาง JSX ตรวจได้ทางเดียวคือเปิดดูด้วยตา ซึ่งเราทำเองไม่ได้
+        ⇒ ยกเกณฑ์ออกมาเป็นฟังก์ชันล้วน แล้วให้เทสเดินผ่าน **โค้ดตัวเดียวกับที่จอใช้**
+        (ห้ามให้เทสเลียนแบบเกณฑ์เอง — ด่านที่ไม่เดินผ่านโค้ดจริงคือด่านไม่มีคม)
+     📏 เหตุผลเรื่องสองคอลัมน์ (status vs pay_status) + ตัวเลขที่วัดมา อยู่หัวไฟล์ lib นั้น */
+  const แถบแท็บ = สร้างแถบแท็บขาย({
+    รายชื่อสถานะ,
+    byStatus: data?.byStatus ?? null,
+    byPayStatus: data?.byPayStatus ?? null,
+    tabBase: data?.tabBase ?? null,
+    total: data?.total ?? null,
+    status,
+    fPay,
+    ป้ายสถานะ: (st) => (zortWord(SALE_STATUS, st).known ? statusTh(st) : `${st} ⚠️`),
+    ป้ายชำระเงิน: (v) => (zortWord(PAY_STATUS, v).known ? zortWord(PAY_STATUS, v).text : `${v} ⚠️`),
+  })
+  const { tabs, ตัวนับสถานะเชื่อได้, ไม่มีแท็บตรง } = แถบแท็บ
+  const แท็บที่เลือก = แถบแท็บ.active
 
   return (
     <div className="p-4 md:p-6">
@@ -986,8 +1014,18 @@ export default function CoreSalesPage() {
           <div className="flex items-end justify-between gap-3">
             <Tabs
               tabs={tabs}
-              active={status}
-              onChange={(id) => { setStatus(id); load(0, { status: id }) }}
+              active={แท็บที่เลือก}
+              /* 🔑 เลือกได้ทีละมิติ — กดแท็บไหนก็ล้างอีกมิติทิ้ง (ผังเดียวกับ ZORT)
+                 ⚠️ ส่งค่าแทนที่ไปกับ `load` ทั้งสองช่อง ไม่พึ่ง state ที่เพิ่ง set
+                    (`setFPay` มีผลรอบเรนเดอร์ถัดไป ⇒ ถ้าพึ่ง state จะยิงด้วยตัวกรองของรอบก่อน) */
+              onChange={(id) => {
+                if (id.startsWith('pay:')) {
+                  const v = id.slice(4)
+                  setStatus(''); setFPay(v); load(0, { status: '', payStatus: v })
+                } else {
+                  setFPay(''); setStatus(id); load(0, { status: id, payStatus: '' })
+                }
+              }}
             />
             <button onClick={() => load(0)} disabled={loading} aria-label="โหลดใหม่" title="โหลดใหม่"
               className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
@@ -995,6 +1033,36 @@ export default function CoreSalesPage() {
               {loading ? '⏳' : '⟳'}
             </button>
           </div>
+
+          {/* 🔴 **สามเรื่องที่ต้องพูดออกมาที่แถบแท็บ ไม่ใช่ปล่อยให้คนอ่านเอาเอง**
+              ทุกบรรทัดผูกกับเงื่อนไขของตัวเอง ⇒ วันที่ท่อส่งของมาครบ บรรทัดนั้นหายไปเอง
+              (ข้อความที่ต้องรอคนมาถอด คือข้อความที่จะค้าง) */}
+          {!ตัวนับสถานะเชื่อได้ && (
+            <p className="mt-1 text-[11.5px] text-amber-800">
+              ⚠️ <b>ซ่อนตัวเลขในวงเล็บของแท็บสถานะไว้</b> เพราะกำลังกรองด้วย<b>สถานะชำระเงิน</b> อยู่
+              และท่อรุ่นที่วิ่งตอนนี้คิดตัวนับแท็บ<b>จากกองที่กรองแล้ว</b>
+              <span className="block text-amber-700/80">
+                ⇒ ถ้าโชว์ไว้ แท็บอย่าง “ยกเลิก” จะอ่านว่า <b>(0)</b> ทั้งที่มีของอยู่จริง ·
+                เลขในวงเล็บคือคำสัญญา จึงเลือก<b>ไม่รู้</b> แทนเลขที่ชวนให้เชื่อผิด ·
+                ขอ <code>byPayStatus</code> + <code>tabBase</code> จากฝั่งท่อไว้แล้ว (14 ต.ค. 2569)
+              </span>
+            </p>
+          )}
+          {typeof tabs.find((t) => t.id === `${คำนำหน้าแท็บชำระเงิน}${แท็บชำระเงินของZORT}`)?.count !== 'number' && (
+            <p className="mt-1 text-[11.5px] text-gray-600">
+              📌 แท็บ <b>{zortWord(PAY_STATUS, แท็บชำระเงินของZORT).text}</b> ยัง<b>ไม่มีตัวเลขในวงเล็บ</b> —
+              ท่อยังไม่ส่ง <code>byPayStatus</code> ⇒ <b>กดได้ปกติ</b> (กรองด้วย <code>paystatus</code> ซึ่งท่อรับอยู่แล้ว)
+              แต่เรายัง<b>บอกจำนวนไม่ได้</b> · <b>ไม่รู้ ≠ 0</b>
+            </p>
+          )}
+          {ไม่มีแท็บตรง && (
+            <p className="mt-1 text-[11.5px] text-gray-600">
+              📌 <b>ไม่มีแท็บไหนไฮไลต์</b> เพราะตอนนี้กรองด้วย
+              {status && fPay ? <> <b>สถานะ</b> และ <b>สถานะชำระเงิน</b> พร้อมกัน</>
+                             : <> <b>สถานะชำระเงิน</b> ค่าที่ไม่มีแท็บของตัวเอง</>}
+              {' '}— แถบแท็บเลือกได้ทีละมิติ · ดูตัวกรองที่ใช้อยู่จริงได้จากชิปด้านบน
+            </p>
+          )}
 
           {/* คำดิบที่ยังไม่มีคำไทยยืนยัน — บรรทัดนี้หายเองวันที่เติมคำลง `lib/zort-words.ts` */}
           {สถานะที่ยังไม่มีคำไทย.length > 0 && (
@@ -1036,13 +1104,18 @@ export default function CoreSalesPage() {
                   ⚠️ ลอกไปใช้จออื่นได้เฉพาะคอลัมน์ที่ **ไปวัดจอ ZORT มาแล้วจริง ๆ** ห้ามเดา */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
+                  {/* 🔢 **ลำดับคอลัมน์ `#` มาก่อนช่องติ๊ก — ตามผัง ZORT** (บันทึก `เทียบ-zort.md` 5 ต.ค. 2569
+                      ข้อที่เขียนว่า "ลำดับช่องติ๊ก/# สลับกัน" คือข้อนี้ · สลับให้ตรงต้นแบบ 14 ต.ค. 2569)
+                      ⚠️ หลักฐานเป็น **การอ่านจอ ZORT เมื่อ 5 ต.ค.** ยังไม่ได้เปิดดูซ้ำรอบนี้
+                         (จอ ZORT เข้าไม่ได้ — ยังไม่มีโปรไฟล์ที่ล็อกอินบัญชีหลัก)
+                         ⇒ เป็นของที่ต้องยืนยันด้วยตาอีกครั้งตอนเปิด ZORT ได้ ไม่ใช่ของที่ปิดจบแล้ว */}
+                  <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
                       indeterminate={picked.length > 0 && picked.length < rows.length}
                       onChange={(v) => setPicked(v ? rows.map((r) => r.id) : [])} />
                   </th>
-                  <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ลูกค้า</span></th>
@@ -1074,6 +1147,8 @@ export default function CoreSalesPage() {
                     onClick={() => openDetail(r.id, i)}
                     className="border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50"
                   >
+                    {/* 🔢 ลำดับต้องตรงกับหัวตารางข้างบน (`#` ก่อน ช่องติ๊ก) — ผัง ZORT */}
+                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     {/* ⚠️ ทั้งแถวกดแล้วเปิดรายละเอียด ⇒ ช่องติ๊กต้อง stopPropagation
                         ไม่งั้นติ๊กทีเดียวได้ทั้งติ๊กและเด้งเข้าใบ (ผู้ใช้จะงงว่าทำไมจอเปลี่ยน) */}
                     <td className={TD} onClick={(e) => e.stopPropagation()}>
@@ -1081,7 +1156,6 @@ export default function CoreSalesPage() {
                         checked={picked.includes(r.id)}
                         onChange={(v) => setPicked((old) => (v ? [...old, r.id] : old.filter((x) => x !== r.id)))} />
                     </td>
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     {/* ZORT เขียน "วันนี้/เมื่อวานนี้" ไม่ใช่วันที่ดิบ — อ่านเร็วกว่าตอนกวาดตา */}
                     <td className={`${TD} whitespace-nowrap text-gray-500`} title={r.order_date}>
                       {relDay(r.order_date)}
