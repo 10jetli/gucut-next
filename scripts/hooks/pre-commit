@@ -14,7 +14,16 @@
 set -u
 FLAG="${GUCUT_PREPUSH_FLAG:-$HOME/.gucut-prepush-running}"
 [ -f "$FLAG" ] || exit 0
-[ "${ALLOW_COMMIT_DURING_PUSH:-}" = "1" ] && { echo "⚠️ commit ระหว่างด่าน push วิ่ง — ข้ามตามที่สั่ง"; exit 0; }
+# 🚪 ช่องนี้เดิมไม่เหลือร่องรอยเลย ⇒ จดลงตารางใน git (เกณฑ์ "ใครตรวจแทน" ของผมเอง)
+log_bypass_commit() {
+  BL="$(git rev-parse --show-toplevel 2>/dev/null)/scripts/lib/บันทึกการข้ามด่าน.md"
+  [ -f "$BL" ] || return 0
+  WHY="${BYPASS_WHY:-}"
+  if [ "${#WHY}" -lt 20 ]; then WHY="**ไม่ให้เหตุ** (BYPASS_WHY สั้นกว่า 20 อักขระ)"; fi
+  printf '| %s | %s | %s | %s |\n' "$(date '+%Y-%m-%d %H:%M:%S')" ALLOW_COMMIT_DURING_PUSH \
+    "$(git rev-parse --short HEAD 2>/dev/null)" "$WHY" >> "$BL"
+}
+[ "${ALLOW_COMMIT_DURING_PUSH:-}" = "1" ] && { log_bypass_commit; true; } && { echo "⚠️ commit ระหว่างด่าน push วิ่ง — ข้ามตามที่สั่ง"; exit 0; }
 
 FLAG_REPO="$(sed -n '1p' "$FLAG" 2>/dev/null)"
 FLAG_SHA="$(sed -n '2p' "$FLAG" 2>/dev/null)"
