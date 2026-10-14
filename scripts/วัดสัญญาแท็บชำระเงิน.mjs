@@ -54,8 +54,14 @@ try {
   process.exit(0)
 }
 
+/* 🔴 **ขอบเขตต้องติดไปกับทุกบรรทัดที่มีเลข ไม่ใช่เขียนหัวรายงานครั้งเดียว** (ฝั่งท่อขอ 14 ต.ค. 2569)
+   เหตุของจริงในวันเดียวกัน: ผมรายงาน 10,502,110 · เขาวัดได้ 10,856,297
+   ⇒ เขาไล่หาจนเจอว่า **เราอยู่สองขอบเขต** (ผม 365 วันจากวันนี้ · เขา 1 ต.ค. 2568 ตายตัว)
+   ⇒ ถ้าไม่ไล่ เราจะได้ "ต่าง 354,187" แล้วไปหากติกาที่สามที่ไม่มีอยู่ (รอบที่สองของวัน)
+   🔑 **คนคัดเลขไปใช้ จะคัดแค่บรรทัดที่มีเลข** ⇒ ขอบเขตที่อยู่หัวรายงานไม่ได้ไปด้วย */
+const ขอบเขต = `[${ร้าน} · ${จาก}→${ถึง} · cancelled=1]`
 console.log(`ขอบเขต: ร้าน ${ร้าน} · ${จาก}–${ถึง} · รวมใบยกเลิก · paystatus ทดสอบ = ${ค่าทดสอบ}`)
-console.log(`   ทั้งชุด total=${ไม่กรอง.total} · กรองแล้ว total=${กรอง.total}`)
+console.log(`   ${ขอบเขต} ทั้งชุด total=${ไม่กรอง.total} · กรองแล้ว total=${กรอง.total}`)
 
 const มี = (o, k) => Object.prototype.hasOwnProperty.call(o, k)
 const ขาด = ช่องสัญญาแท็บชำระเงิน.filter((k) => !มี(ไม่กรอง, k))
@@ -68,18 +74,20 @@ const กัด = Number(กรอง.total) !== Number(ไม่กรอง.to
 const เท่ากัน = เรียง(ไม่กรอง.byStatus) === เรียง(กรอง.byStatus)
 const ฐานตามพฤติกรรม = !กัด ? null : เท่ากัน      // null = ตัดสินไม่ได้
 
-console.log(`   byStatus ไม่กรอง : ${เรียง(ไม่กรอง.byStatus) || '(ไม่มี)'}`)
-console.log(`   byStatus กรองแล้ว: ${เรียง(กรอง.byStatus) || '(ไม่มี)'}`)
+console.log(`   ${ขอบเขต} byStatus ไม่กรอง : ${เรียง(ไม่กรอง.byStatus) || '(ไม่มี)'}`)
+console.log(`   ${ขอบเขต} byStatus กรองแล้ว(+paystatus=${ค่าทดสอบ}): ${เรียง(กรอง.byStatus) || '(ไม่มี)'}`)
 console.log(`   ตัวกรองกัดจริง: ${กัด ? 'ใช่' : 'ไม่ ⇒ ตัดสินฐานไม่ได้'}`
   + ` · ฐานตามพฤติกรรม: ${ฐานตามพฤติกรรม === null ? 'ไม่รู้' : ฐานตามพฤติกรรม ? 'ไม่ผูกกับ paystatus' : 'ยังผูกอยู่'}`)
 console.log(`   ช่องที่ขาด: ${ขาด.length ? ขาด.join(' · ') : '(ไม่ขาด)'}`
   + ` · tabBase ประกาศว่าไม่ผูกกับ paystatus: ${ฐานประกาศแล้ว ? 'ใช่' : 'ไม่'}`)
 if (มี(ไม่กรอง, 'payStatusesAll')) {
   const v = ไม่กรอง.payStatusesAll
-  console.log(`   payStatusesAll = ${v === null ? 'null (อ่านไม่ได้ — ถูกตามสัญญา)' : JSON.stringify(v)}`)
+  /* ⚠️ ขอบเขตของช่องนี้ **คนละอย่างกับบรรทัดอื่น** — กรองแค่ร้าน ไม่กรองวัน
+     ⇒ ต้องเขียนให้ต่าง ไม่ใช่แปะขอบเขตเดียวกันทุกบรรทัดแบบไม่ดูความหมาย */
+  console.log(`   [${ร้าน} · ทั้งฐาน ไม่กรองวัน] payStatusesAll = ` + `${v === null ? 'null (อ่านไม่ได้ — ถูกตามสัญญา)' : JSON.stringify(v)}`)
 }
 if (Array.isArray(ไม่กรอง.byPayStatus)) {
-  console.log('   byPayStatus = ' + ไม่กรอง.byPayStatus
+  console.log(`   ${ขอบเขต} byPayStatus = ` + ไม่กรอง.byPayStatus
     .map((x) => `${x.payStatus}=${Number(x.orders || 0)}`).sort().join(' · '))
 }
 
@@ -106,7 +114,7 @@ if (เลือกสถานะ && Array.isArray(ไม่กรอง.byPayS
     if (กัดสถานะ) {
       ฐานPayไม่ขยับ = เรียงPay(กรองสถานะ.byPayStatus) === เรียงPay(ไม่กรอง.byPayStatus)
       สองช่องต่างกัน = เรียงPay(กรองสถานะ.byPayStatusFiltered) !== เรียงPay(ไม่กรอง.byPayStatusFiltered)
-      console.log(`   กรอง status=${สถานะทดสอบ} (${เลือกสถานะ.n} ใบ) ⇒ total=${กรองสถานะ.total}`)
+      console.log(`   ${ขอบเขต} กรอง status=${สถานะทดสอบ} (${เลือกสถานะ.n} ใบ) ⇒ total=${กรองสถานะ.total}`)
       console.log(`      byPayStatus         ${ฐานPayไม่ขยับ ? 'ไม่ขยับ (ถูก)' : '**ขยับ** ⇒ ฐานผูกกับ status'}`)
       console.log(`      byPayStatusFiltered ${สองช่องต่างกัน ? 'ขยับ (ถูก)' : '**ไม่ขยับ** ⇒ น่าจะใช้ฐานเดียวกับช่องบน'}`)
     } else {
@@ -131,7 +139,7 @@ if (มีทั้งสองก้อน) {
   const a = รวมเงิน(ไม่กรอง.byStatusFiltered)
   const b = รวมเงิน(ไม่กรอง.byPayStatusFiltered)
   สองก้อนฐานเดียวกัน = Math.abs(a - b) <= 1          // เผื่อปัดเศษหนึ่งบาท
-  console.log(`   ผลรวมเงิน byStatusFiltered=${a.toLocaleString('th-TH')}`
+  console.log(`   ${ขอบเขต} ผลรวมเงิน byStatusFiltered=${a.toLocaleString('th-TH')}`
     + ` · byPayStatusFiltered=${b.toLocaleString('th-TH')}`
     + ` ⇒ ${สองก้อนฐานเดียวกัน ? 'เท่ากัน (ฐานเดียวกัน)' : '**ไม่เท่ากัน ⇒ คนละฐาน**'}`)
 } else {
@@ -149,7 +157,7 @@ if (มีทั้งสองก้อน) {
     const เงินจากstatus = Number(ชำระครบ.totalPaidAmount || 0)
     const ต่าง = Math.abs(เงินจากpay - เงินจากstatus)
     const ฐาน = Math.max(1, เงินจากpay)
-    console.log(`   [ตัวควบคุมลบ] paystatus=Paid (${ชำระครบ.total} ใบ):`
+    console.log(`   ${ขอบเขต} [ตัวควบคุมลบ] paystatus=Paid (${ชำระครบ.total} ใบ):`
       + ` จ่ายแล้วตามกติกา pay=${Math.round(เงินจากpay).toLocaleString('th-TH')}`
       + ` · ตามกติกา status=${Math.round(เงินจากstatus).toLocaleString('th-TH')}`
       + ` ⇒ ต่าง ${Math.round(ต่าง).toLocaleString('th-TH')} (${(ต่าง / ฐาน * 100).toFixed(2)}%)`)

@@ -597,6 +597,7 @@ export default function CoreSalesPage() {
      และคืน `ค่าที่ยังไม่จัดกอง` ⇒ วันที่ ZORT ส่งค่าใหม่ (เช่น Partial Payment) จอพูดเอง */
   const เงิน = อ่านเงินตามการชำระ({
     byPayStatusFiltered: data?.byPayStatusFiltered ?? null,
+    payStatusesAll: data?.payStatusesAll ?? null,
     totalPaidAmountByPay: data?.totalPaidAmountByPay,
     totalUnpaidAmountByPay: data?.totalUnpaidAmountByPay,
     totalPaidAmount: data?.totalPaidAmount,
@@ -1099,6 +1100,17 @@ export default function CoreSalesPage() {
                 ⇒ เงินของกองนี้<b>ไม่ได้อยู่ในทั้งสองตัวเลขข้างบน</b> · ต้องถาม ZORT ว่าหมายถึงอะไรก่อน
                 แล้วค่อยเติมกติกา (เดาแล้วใส่ = ตัวเลขเงินผิดโดยไม่มีอะไรฟ้อง)
               </span>
+            </p>
+          )}
+          {/* ℹ️ ค่าที่จัดกองไม่ได้ซึ่ง **อยู่นอกช่วงที่เลือก** — เทา ไม่ใช่คำเตือน
+              ⇒ ตอบคำถาม "ขยายช่วงวันแล้วจะเจอไหม" · โชว์เฉพาะตอนในช่วงนี้ไม่มี
+                 (ถ้าในช่วงมีอยู่แล้ว กล่องเหลืองข้างบนพูดไปแล้ว ⇒ พูดซ้ำ = เสียงหอน) */}
+          {เงิน.ค่าที่ยังไม่จัดกอง.length === 0
+            && (เงิน.ค่าที่ยังไม่จัดกองทั้งฐาน?.length ?? 0) > 0 && (
+            <p className="mt-1 text-[11.5px] text-gray-500">
+              ℹ️ ฐานข้อมูลมีสถานะชำระเงินที่จอยังจัดกองไม่ได้อยู่{' '}
+              <b>{เงิน.ค่าที่ยังไม่จัดกองทั้งฐาน!.join(' · ')}</b>{' '}
+              แต่<b>ไม่มีในช่วงวันที่เลือก</b> ⇒ ขยายช่วงวันแล้วตัวเลขเงินจะมีกองที่ไม่ถูกนับ
             </p>
           )}
           {เงิน.สองแหล่งไม่ตรง && (
