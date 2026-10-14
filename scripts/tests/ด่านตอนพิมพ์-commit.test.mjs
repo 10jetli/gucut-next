@@ -11,7 +11,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync, execFileSync } from 'node:child_process'
-import { mkdtempSync, writeFileSync, rmSync } from 'node:fs'
+import { mkdtempSync, writeFileSync, rmSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
@@ -26,9 +26,20 @@ const เขียนธง = (บรรทัด) => {
   writeFileSync(f, บรรทัด.join('\n') + '\n')
   return { f, ลบ: () => rmSync(d, { recursive: true, force: true }) }
 }
-const รัน = (f, env = {}) => spawnSync('bash', [hook], {
-  cwd: ROOT, encoding: 'utf8', env: { ...process.env, GUCUT_PREPUSH_FLAG: f, ...env },
-})
+/* 🔴 **ของจริง 14 ต.ค. 2569 — รอบที่สอง**: ผมเคยแก้เรื่องนี้แล้ว แต่แก้ **เฉพาะจุดที่มองอยู่**
+   ⇒ จุดเรียกอื่นยังไม่ได้ชี้ `BYPASS_LOG` ⇒ เทสเขียนลง **ตารางร่องรอยจริง** ต่ออีก 4 แถว
+     (21:36:27 · 21:51:31 และอีกสองแถวก่อนหน้า — ทุกแถวตรงกับ **ช่วงที่ด่าน push รัน npm test**)
+   ⇒ ⇒ ตาราง 4/4 แถวกลายเป็นของเทส ⇒ **อ่านไม่ได้ว่าใครข้ามด่านจริง**
+   🔑 แก้ที่ **กลไก ไม่ใช่ที่จุด**: ให้ตัวรันฉีดไฟล์ชั่วคราวให้เองทุกครั้ง
+      จุดเรียกที่อยากได้ไฟล์ของตัวเองค่อยส่ง `BYPASS_LOG` ทับ — **ลืมไม่ได้อีก เพราะค่าตั้งต้นปลอดภัย** */
+const รัน = (f, env = {}) => {
+  const ล็อกชั่วคราว = join(mkdtempSync(join(tmpdir(), 'ร่องรอยเทส-')), 'bypass.md')
+  writeFileSync(ล็อกชั่วคราว, '| เวลา | ช่อง | HEAD | เหตุ |\n|---|---|---|---|\n')
+  return spawnSync('bash', [hook], {
+    cwd: ROOT, encoding: 'utf8',
+    env: { ...process.env, GUCUT_PREPUSH_FLAG: f, BYPASS_LOG: ล็อกชั่วคราว, ...env },
+  })
+}
 const เมื่อกี้ = () => String(Math.floor(Date.now() / 1000) - 30)
 
 test('ไม่มีธง ⇒ ผ่าน (ด่านต้องไม่ขวางงานปกติ)', () => {
@@ -75,4 +86,21 @@ test('ทางออกที่ประกาศไว้ต้องใช�
     const r = รัน(f, { ALLOW_COMMIT_DURING_PUSH: '1', BYPASS_LOG: ล็อกปลอม })
     assert.equal(r.status, 0, 'ทางออกที่เขียนไว้แต่ใช้ไม่ได้ = ทางที่ไม่เคยถูกเดิน')
   } finally { ลบ() }
+})
+
+/* 🔑 **เทสของกลไก ไม่ใช่ของจุด** — ข้อนี้ต้องแดงถ้ามีใครเพิ่มจุดเรียกใหม่แล้วลืมฉีดไฟล์ชั่วคราว
+   (ก่อนแก้ 14 ต.ค. 2569 ข้อนี้แดง: ตารางจริงถูกเติม 4 แถวจากเทสนี้เอง)
+   ⚠️ ต้องเดินทางที่ **เคยรั่วจริง** คือทางธงค้าง — ทางที่ไม่เคยถูกเดินไม่ได้พิสูจน์อะไร */
+test('🔴 เทสนี้ต้องไม่เขียนลง **ตารางร่องรอยจริง** ไม่ว่าทางไหน', () => {
+  const ตารางจริง = join(ROOT, 'scripts', 'lib', 'บันทึกการข้ามด่าน.md')
+  const ก่อน = readFileSync(ตารางจริง, 'utf8')
+  const เก่าเกินสองชั่วโมง = String(Math.floor(Date.now() / 1000) - 10000)
+  const { f, ลบ } = เขียนธง([ที่นี่, 'abcdef1234567890', เก่าเกินสองชั่วโมง])
+  try {
+    const r = รัน(f)
+    assert.equal(r.status, 0, 'ทางธงค้างต้องผ่าน (ไม่งั้นเทสนี้ไม่ได้เดินทางที่เคยรั่ว)')
+    assert.ok(/ธงค้าง/.test(r.stdout), 'ต้องเดินกิ่งธงค้างจริง ๆ')
+  } finally { ลบ() }
+  assert.equal(readFileSync(ตารางจริง, 'utf8'), ก่อน,
+    'เทสเขียนลงตารางจริง ⇒ ตารางตอบไม่ได้อีกว่า **ใครข้ามด่านจริง** (ของที่พลาดมาแล้วสองรอบ)')
 })
