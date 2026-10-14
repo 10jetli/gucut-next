@@ -14,8 +14,15 @@
 set -euo pipefail
 cd "$(git rev-parse --show-toplevel)"
 
-SRC="scripts/hooks/pre-push"
-DST=".git/hooks/pre-push"
+# 🔴 **ของเดิมติดตั้งแค่ `pre-push` — `pre-commit` ไม่เคยถูกติดตั้งเลย** (เจอ 14 ต.ค. 2569)
+#    ⇒ ผมแก้ `scripts/hooks/pre-commit` ไปหลายรอบวันนี้ **แต่ของที่รันจริงเป็นสำเนาเก่า**
+#    ⇒ ⇒ และ `check-hook-installed` เทียบแต่ `pre-push` ⇒ **ไม่มีอะไรฟ้องว่าอีกตัวค้าง**
+#    🔑 คลาสเดียวกับที่ไฟล์นี้เกิดมาปิด (ด่านอยู่ใน .git ซึ่ง git ไม่เก็บ) —
+#       แค่รอบนี้ของที่หายไปคือ **ฮุคตัวที่สอง** ไม่ใช่ทั้งโฟลเดอร์
+HOOKS="pre-push pre-commit"
+for H in $HOOKS; do
+SRC="scripts/hooks/$H"
+DST=".git/hooks/$H"
 
 [ -f "$SRC" ] || { echo "🛑 ไม่มี $SRC — ติดตั้งไม่ได้"; exit 1; }
 
@@ -36,9 +43,10 @@ fi
 #    ⚠️ ไฟล์ชั่วคราวต้องอยู่ **โฟลเดอร์เดียวกับปลายทาง** — `mv` ข้ามพาร์ติชันไม่ atomic
 #       (กลายเป็น copy+unlink) ⇒ จะได้ `mv` ที่ดูปลอดภัยแต่ไม่ปลอดภัย
 #       ซึ่ง **แย่กว่า `cp` ที่เรารู้อยู่แล้วว่าไม่ปลอดภัย**
-_tmp="$(dirname "$DST")/.pre-push.tmp.$$"
+_tmp="$(dirname "$DST")/.$H.tmp.$$"
 install -m 755 "$SRC" "$_tmp"
 mv -f "$_tmp" "$DST"
-echo "✅ ติดตั้งด่านก่อน push แล้ว: $DST"
-echo "   ตรวจว่าตรงกับในรีโป: cmp $SRC $DST && echo ตรงกัน"
-echo "   ⚠️ ด่านนี้ไม่ได้อยู่ใน prebuild ⇒ **build ผ่านไม่ได้แปลว่าด่านติดตั้งอยู่**"
+echo "✅ ติดตั้งแล้ว: $DST"
+done
+echo "   ตรวจว่าตรงกับในรีโป: for h in $HOOKS; do cmp scripts/hooks/\$h .git/hooks/\$h; done"
+echo "   ⚠️ ด่านพวกนี้ไม่ได้อยู่ใน prebuild ⇒ **build ผ่านไม่ได้แปลว่าด่านติดตั้งอยู่**"

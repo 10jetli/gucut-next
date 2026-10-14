@@ -16,7 +16,12 @@ FLAG="${GUCUT_PREPUSH_FLAG:-$HOME/.gucut-prepush-running}"
 [ -f "$FLAG" ] || exit 0
 # 🚪 ช่องนี้เดิมไม่เหลือร่องรอยเลย ⇒ จดลงตารางใน git (เกณฑ์ "ใครตรวจแทน" ของผมเอง)
 log_bypass_commit() {
-  BL="$(git rev-parse --show-toplevel 2>/dev/null)/scripts/lib/บันทึกการข้ามด่าน.md"
+  # 🔴 **เทสของผมเขียนลงตารางจริงมาแล้ว** (แถว 19:05:37 ของ ALLOW_COMMIT_DURING_PUSH)
+  #    เทส `ด่านตอนพิมพ์-commit` ยิงฮุคนี้ด้วยช่องยกเว้นเพื่อพิสูจน์ว่าทางออกเดินได้
+  #    ⇒ `--show-toplevel` ชี้กลับมาที่รีโปจริงแม้เทสรันจากที่ทดลอง ⇒ **เทสปนของจริง**
+  #    🔑 คลาสเดียวกับที่ฝั่งท่อเจอ: เคสร่วมเขียนทับไฟล์พื้นจริง ⇒ **เทสทำลายของที่มันตรวจ**
+  #    ⇒ แก้ด้วยช่องฉีดพาธ (ท่าเดียวกับ TEST_FLOOR_FILE / CHAIN_FLOOR_FILE)
+  BL="${BYPASS_LOG:-$(git rev-parse --show-toplevel 2>/dev/null)/scripts/lib/บันทึกการข้ามด่าน.md}"
   [ -f "$BL" ] || return 0
   WHY="${BYPASS_WHY:-}"
   if [ "${#WHY}" -lt 20 ]; then WHY="**ไม่ให้เหตุ** (BYPASS_WHY สั้นกว่า 20 อักขระ)"; fi

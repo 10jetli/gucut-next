@@ -23,51 +23,65 @@ import { spawnSync } from 'node:child_process'
 import { join, isAbsolute } from 'node:path'
 
 const ROOT = process.cwd()
-const ในรีโป = join(ROOT, 'scripts/hooks/pre-push')
+/* 🔴 **ของเดิมตรวจแค่ `pre-push`** ⇒ `pre-commit` ค้างเป็นสำเนาเก่าได้เงียบ ๆ
+   เจอของจริง 14 ต.ค. 2569: ผมแก้ `scripts/hooks/pre-commit` หลายรอบ
+   แต่ `.git/hooks/pre-commit` เป็นของเก่า **และตัวติดตั้งก็ติดตั้งแค่ pre-push**
+   ⇒ ⇒ ด่านตอนพิมพ์ที่ผมนับว่า "มี" จริง ๆ รันโค้ดคนละชุดกับที่ผมอ่าน
+   🔑 ตัวตรวจที่ตรวจของชิ้นเดียวในกองที่มีหลายชิ้น **รายงานว่ากองนั้นเรียบร้อย** */
+const ฮุคที่ต้องตรวจ = ['pre-push', 'pre-commit']
 /* 🔴 **`.git` เป็น "ไฟล์" ได้ ไม่ใช่โฟลเดอร์เสมอ** — ในรีโปที่ถูก `git worktree add`
    `.git` คือไฟล์ที่ชี้ไปโฟลเดอร์จริง ⇒ `join(ROOT, '.git/hooks/pre-push')` ไม่มีทางมีอยู่
    ⇒ **ด่านนี้แดงลวงทุกครั้งที่มีคน build ใน worktree** (เจอจริง 20 ก.ย. 2569 ตอนใช้ worktree
      ไปตรวจย้อนหลังว่าคำกล่าวอ้าง "build ผ่าน" ในคอมมิตเก่าจริงไหม — ตัววัดตกเพราะสภาพแวดล้อม
      ไม่ใช่เพราะโค้ด ⇒ ถ้าอ่านไม่ระวังจะสรุปว่า build เคยแดง)
    ⇒ ถามตำแหน่งจริงจาก git แทนการต่อพาธเอง · ถาม git ไม่ได้ก็ถอยไปใช้พาธเดิม */
-let ติดตั้ง = join(ROOT, '.git/hooks/pre-push')
+/** โฟลเดอร์ฮุคจริง — ถาม git แทนการต่อพาธเอง (worktree ทำให้ `.git` เป็นไฟล์) */
+let โฟลเดอร์ฮุค = join(ROOT, '.git/hooks')
 try {
   const r = spawnSync('git', ['rev-parse', '--git-path', 'hooks'], { encoding: 'utf8' })
   const dir = (r.stdout || '').trim()
-  /* ⚠️ git คืน **พาธเต็ม** ในรีโป worktree (เช่น `/…/gucut-next/.git/hooks`)
-     ⇒ `join(ROOT, dir)` จะเอาไปต่อท้าย ROOT แล้วพัง ⇒ ต้องเช็ค absolute ก่อน
-     (รอบแรกผมแก้แล้วยัง **แดงลวงเหมือนเดิม** เพราะข้อนี้ — ต่างกันแค่เหตุ) */
-  if (r.status === 0 && dir) ติดตั้ง = isAbsolute(dir) ? join(dir, 'pre-push') : join(ROOT, dir, 'pre-push')
+  /* ⚠️ git คืน **พาธเต็ม** ในรีโป worktree ⇒ `join(ROOT, dir)` จะต่อท้าย ROOT แล้วพัง
+     (รอบแรกผมแก้แล้วยังแดงลวงเหมือนเดิมเพราะข้อนี้ — ต่างกันแค่เหตุ) */
+  if (r.status === 0 && dir) โฟลเดอร์ฮุค = isAbsolute(dir) ? dir : join(ROOT, dir)
 } catch { /* ไม่มี git ⇒ ใช้พาธเดิม */ }
 
 const md5 = (p) => createHash('md5').update(readFileSync(p)).digest('hex').slice(0, 12)
 
-if (!existsSync(ในรีโป)) {
-  console.error('🔴 ไม่มี scripts/hooks/pre-push ในรีโป — ด่านนี้ไม่มีอะไรให้เทียบ')
-  console.error('   ⇒ ถือว่าไม่ผ่าน: "ไม่มีของให้ตรวจ" ไม่ใช่ "ตรวจแล้วเรียบร้อย"')
-  process.exit(1)
-}
-
 /* บนเซิร์ฟเวอร์ build: ด่านก่อน push ไม่มีความหมาย ⇒ ข้ามได้ แต่ต้องบอกว่าข้าม */
 if (process.env.NETLIFY === 'true' || process.env.CI === 'true' || !existsSync(join(ROOT, '.git'))) {
-  console.log('⏭️  ข้ามการตรวจ hook: ที่นี่ไม่ใช่เครื่องนักพัฒนา (ไม่มี .git/hooks หรือเป็นเซิร์ฟเวอร์ build)')
-  console.log('   ⚠️ รอบนี้ **ไม่ได้ตรวจ**ว่าด่านก่อน push ติดตั้งอยู่หรือเปล่า — ไม่ได้แปลว่าติดตั้งแล้ว')
+  console.log('⏭️  ข้ามการตรวจ hook: ที่นี่ไม่ใช่เครื่องนักพัฒนา')
+  console.log('   ⚠️ รอบนี้ **ไม่ได้ตรวจ**ว่าฮุคติดตั้งอยู่หรือเปล่า — ไม่ได้แปลว่าติดตั้งแล้ว')
   process.exit(0)
 }
 
-if (!existsSync(ติดตั้ง)) {
-  console.error('🔴 ยังไม่ได้ติดตั้งด่านก่อน push บนเครื่องนี้ (.git/hooks/pre-push ไม่มี)')
-  console.error('   ⇒ push ถี่/ข้ามวันหยุด deploy จะไม่มีอะไรกัน · แก้: bash scripts/install-pre-push.sh')
-  process.exit(1)
+const ปัญหา = []
+const ผล = []
+for (const ชื่อ of ฮุคที่ต้องตรวจ) {
+  const ในรีโป = join(ROOT, 'scripts', 'hooks', ชื่อ)
+  const ติดตั้ง = join(โฟลเดอร์ฮุค, ชื่อ)
+  if (!existsSync(ในรีโป)) {
+    ปัญหา.push(`ไม่มี scripts/hooks/${ชื่อ} ในรีโป — ไม่มีอะไรให้เทียบ`
+      + ' ⇒ "ไม่มีของให้ตรวจ" ไม่ใช่ "ตรวจแล้วเรียบร้อย"')
+    continue
+  }
+  if (!existsSync(ติดตั้ง)) {
+    ปัญหา.push(`**ยังไม่ได้ติดตั้ง ${ชื่อ}** บนเครื่องนี้ ⇒ กฎในรีโปไม่ได้ทำงานจริง`)
+    continue
+  }
+  const ก = md5(ในรีโป), ข = md5(ติดตั้ง)
+  if (ก !== ข) {
+    ปัญหา.push(`**${ชื่อ} ที่ติดตั้งอยู่ไม่ใช่ตัวเดียวกับในรีโป** (รีโป ${ก} · ติดตั้ง ${ข})`)
+    continue
+  }
+  ผล.push(`${ชื่อ} md5 ${ก}`)
 }
 
-const ก = md5(ในรีโป), ข = md5(ติดตั้ง)
-if (ก !== ข) {
-  console.error('🔴 ด่านก่อน push ที่ติดตั้งอยู่ **ไม่ใช่ตัวเดียวกับในรีโป**')
-  console.error(`   ในรีโป md5 ${ก} · ที่ติดตั้ง md5 ${ข}`)
-  console.error('   ⇒ กฎที่เขียนไว้ในรีโป อาจไม่ได้ทำงานจริงบนเครื่องนี้')
-  console.error('      (19 ก.ย. 2569 เกิดจริง: รีโปห้าม push ถี่ แต่ตัวที่ติดตั้งแค่เตือน ⇒ push ผ่านที่ 44 นาที)')
-  console.error('   แก้: bash scripts/install-pre-push.sh   (ของเดิมจะถูกสำรองเป็น .bak ให้)')
+console.log(`🪝 ตรวจฮุค ${ฮุคที่ต้องตรวจ.length} ตัว: ตรงกับรีโป ${ผล.length} · มีปัญหา ${ปัญหา.length}`)
+for (const x of ผล) console.log(`   ✅ ${x}`)
+if (ปัญหา.length) {
+  for (const x of ปัญหา) console.error(`   🔴 ${x}`)
+  console.error('   ⇒ แก้: bash scripts/install-pre-push.sh   (ของเดิมถูกสำรองเป็น .bak)')
+  console.error('   📌 ของจริง 19 ก.ย. 2569: รีโปห้าม push ถี่ แต่ตัวที่ติดตั้งแค่เตือน ⇒ push ผ่านที่ 44 นาที')
+  console.error('   📌 ของจริง 14 ต.ค. 2569: ตัวติดตั้งติดตั้งแค่ pre-push ⇒ **pre-commit ค้างเป็นของเก่า**')
   process.exit(1)
 }
-console.log(`✅ ด่านก่อน push ที่ติดตั้งอยู่ ตรงกับในรีโป (md5 ${ก})`)
