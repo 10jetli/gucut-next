@@ -12,6 +12,8 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs'
+import { tmpdir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
 
@@ -19,9 +21,9 @@ const ROOT = fileURLToPath(new URL('../..', import.meta.url))
 const ด่าน = join(ROOT, 'scripts', 'check-ทะเบียนปลายเปิด.mjs')
 const ทะเบียน = join(ROOT, 'scripts', 'tests', 'fixtures', 'ทะเบียนปลายเปิด-ตัวอย่าง.mjs')
 
-const รัน = (โหมด) => spawnSync(process.execPath, [ด่าน], {
+const รัน = (โหมด, เพิ่ม = {}) => spawnSync(process.execPath, [ด่าน], {
   encoding: 'utf8',
-  env: { ...process.env, OPEN_ENDED_REGISTRY: ทะเบียน, REGISTRY_MODE: โหมด },
+  env: { ...process.env, OPEN_ENDED_REGISTRY: ทะเบียน, REGISTRY_MODE: โหมด, ...เพิ่ม },
 })
 
 test('ทะเบียนตรงกับโค้ด ⇒ เขียว (rc=0) และไม่พิมพ์คำว่าไม่ตรงกัน', () => {
@@ -80,4 +82,34 @@ test('🔴 ชนิด "lib ที่จอเรียก" แต่ไม่�
   const r = รัน('libไม่ตรง')
   assert.equal(r.status, 1, 'ด่านต้องแดงเมื่อชนิดกับที่อยู่จริงไม่ตรงกัน')
   assert.ok(/ชนิดไม่ตรงกับโค้ด/.test(r.stderr))
+})
+
+/* ══ 🔴 **ขอบคำ: ชื่อสั้นห้ามกินชื่อยาว** (ฝั่งท่อยิงตรวจแล้วส่งมาเตือน 14 ต.ค. 2569) ═══
+   วัดได้: `byStatusFiltered`.includes(`byStatus`) = true ⇒ ถ้าด่านใช้ `includes`
+   ไฟล์ที่เอ่ยเฉพาะ `byStatusFiltered` จะถูกนับว่าเอ่ย `byStatus` ⇒ **แดงลวง**
+   🔑 และเขาขอให้ **ปลูกไฟล์จริงพิสูจน์ ไม่ใช่เชื่อว่า regex ถูกเพราะอ่านแล้วดูถูก**
+      ⇒ ปลูกในไดเรกทอรีที่เทสคุมเอง (`OPEN_ENDED_SCAN_ROOT`) ไม่ใช่ในต้นไม้จริง */
+test('🔴 ไฟล์ที่เอ่ยเฉพาะ `byStatusFiltered` **ต้องไม่ถูกนับว่าเอ่ย** `byStatus`', () => {
+  const ราก = mkdtempSync(join(tmpdir(), 'กวาดจอ-'))
+  mkdirSync(join(ราก, 'app'), { recursive: true })
+  mkdirSync(join(ราก, 'components'), { recursive: true })
+  writeFileSync(join(ราก, 'app', 'จอปลูก.tsx'),
+    'export const x = (d) => d.byStatusFiltered?.length ?? 0\n')
+  /* ⚠️ ช่องที่ทะเบียนตัวอย่าง "มีทุกโหมด" ต้องมีผู้อ่านในรากที่กวาดด้วย
+     ไม่งั้นเทสนี้จะล้มด้วย **เหตุอื่น** แล้วเราจะอ่านว่าขอบคำพัง (ของจริงเกิดกับผมรอบแรก) */
+  writeFileSync(join(ราก, 'components', 'จออื่น.tsx'),
+    'export const y = (d) => d.statusesAll ?? []\n')
+  try {
+    const r = รัน('ขอบคำ', { OPEN_ENDED_SCAN_ROOT: ราก })
+    assert.equal(r.status, 0,
+      'เอ่ยแต่ `byStatusFiltered` แล้วด่านฟ้อง `byStatus` = **แดงลวง** ⇒ คนจะถอดด่านทิ้ง\n'
+      + r.stdout + r.stderr)
+  } finally { rmSync(ราก, { recursive: true, force: true }) }
+})
+
+test('🔴 ทะเบียนขัดกันเอง (ใครอ่าน=ไม่มี แต่ระบุชนิดผู้อ่าน) ⇒ แดง พร้อมบอกว่าให้แก้ทะเบียน', () => {
+  const r = รัน('ขัดกันเอง')
+  assert.equal(r.status, 1, 'สองช่องที่เป็นไปไม่ได้พร้อมกัน ต้องถูกฟ้อง')
+  assert.ok(/ขัดกันในตัวเอง/.test(r.stderr),
+    'ข้อความต้องบอกว่าทะเบียนขัดกันเอง ไม่ใช่ "ค้างกับด่านที่เลิกอ่าน" — คนละที่ที่ต้องไปแก้')
 })
