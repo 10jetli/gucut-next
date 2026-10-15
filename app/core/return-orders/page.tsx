@@ -27,6 +27,7 @@
 //    บวกเองจาก N แถวแรกแล้วเขียนว่า "ทั้งหมด" = เลขที่ต่ำกว่าความจริงเสมอ โดยไม่มีอะไรฟ้อง
 //    (คลาสเดียวกับ "หน้าแรกไม่ใช่ตัวแทน" ที่เจอมาแล้วสามครั้ง) ⇒ เขียนกำกับว่าเป็นยอดของกี่ใบ
 import { useCallback, useEffect, useState } from 'react'
+import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import AdvancedSearch from '@/components/zort/AdvancedSearch'
 import PageNav from '@/components/zort/PageNav'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
@@ -100,6 +101,12 @@ function tone(s?: string): 'green' | 'orange' | 'red' | 'gray' {
 export default function ReturnOrdersPage() {
   const [d, setD] = useState<Resp | null>(null)
   const [q, setQ] = useState('')
+  /* 🏬 ชื่อคลังแทนรหัสดิบ (`NEW` ⇒ `โกดัง`) — ตัวแปลงเดียวกับจอขาย/จอซื้อ (15 ต.ค. 2569: 50/50 แถวเป็น NEW) */
+  const [ชื่อคลัง, setชื่อคลัง] = useState<{ names: Record<string, string>; อ่านไม่ได้: boolean } | null>(null)
+  useEffect(() => {
+    fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null)
+      .then((j) => setชื่อคลัง(ชื่อคลังจากคำตอบ(j)))
+  }, [])
   /* 🏬 **ร้านที่กำลังดู** (ท่อ gucut-web e546240 · 15 ก.ย. 2569)
      ยิงจริง 15 ก.ย.: ไม่ระบุ ⇒ z1 689 ใบ · z2 239 ใบ · `store=all` ⇒ **400**
      ⇒ เส้นนี้ตอบทีละร้าน ⇒ **ไม่มีตัวเลือก "ทุกร้าน"** */
@@ -453,7 +460,12 @@ export default function ReturnOrdersPage() {
                              (ดูที่มาใน lib/zort-words.ts — เจอแถว CN เมื่อไหร่ต้องกลับมาแก้) */}
                       {r.status ? <Pill tone={tone(r.status)}>{zortWord(RETURN_ORDER_STATUS, r.status).text}</Pill> : DASH}
                       {/* ZORT โชว์ชื่อโกดังเป็นบรรทัดย่อยใต้สถานะ */}
-                      {r.warehouse && <div className="text-[11.5px] text-gray-400 mt-0.5">{r.warehouse}</div>}
+                      {r.warehouse && (ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[r.warehouse]
+                        ? <div className="text-[11.5px] text-gray-500 mt-0.5">{ชื่อคลัง.names[r.warehouse]}</div>
+                        : <div className="text-[11.5px] text-gray-400 mt-0.5"
+                            title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
+                            รหัสคลัง {r.warehouse}
+                          </div>)}
                     </td>
                     <td className={TD}>{r.paid ? <Pill tone={tone(r.paid)}>{r.paid}</Pill> : DASH}</td>
                   </tr>
