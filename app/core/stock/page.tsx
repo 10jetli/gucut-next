@@ -730,8 +730,10 @@ function CoreStockInner() {
           {/* แถบเหนือแท็บตามผัง ZORT (`zort-ui/35-zort-สินค้า-รายการ.jpg`)
               ขวามือมี ปุ่ม "Marketplace Dashboard" + ไอคอนสลับมุมมอง (รายการ / ตาราง) */}
           <div className="flex flex-wrap items-center justify-end gap-2 mb-1">
-            {/* ✅ ปุ่มนี้มีปลายทางจริง — จอช่องทางขายของเราคือจอเดียวกับ Marketplace Dashboard ของ ZORT */}
-            <Link href="/core/channels"
+            {/* ✅ ปลายทางเดียวกับ ZORT (`href="/Marketplace"` อ่านจริง 15 ต.ค. 2569) = เมนู Marketplace Dashboard ของเรา
+                🔴 เดิมชี้ /core/channels (เขียนไว้ก่อนมีจอ /core/marketplace) ⇒ ชื่อเดียวกับเมนูซ้ายแต่พาไปคนละหน้า
+                ⇒ ปลายทางต้องตรงกับเมนูที่ใช้ชื่อเดียวกัน (lib/nav-config.ts) */}
+            <Link href="/core/marketplace"
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-2.5 py-1 hover:bg-gray-50">
               Marketplace Dashboard
             </Link>
@@ -835,6 +837,8 @@ function CoreStockInner() {
                        ⇒ เลิกพิมพ์ "ท่อยังทำไม่ได้" ค้างไว้ · ให้จออ่าน **คำประกาศของรอบนั้น** แทน
                        ⇒ ⇒ วันที่ท่อถอดคีย์ไหนออก ปุ่มนั้นจะกลายเป็นข้อความอธิบายเองโดยไม่มีใครต้องกลับมาแก้ */}
                 <tr>
+                  {/* 📐 ลำดับ `#` ก่อนช่องติ๊ก — ตาม ZORT (`th.index` แล้ว `th.chk` · อ่าน thead จริง 15 ต.ค. 2569) */}
+                  <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     {/* ติ๊กทั้งหน้า — **ทั้งหน้าเท่านั้น ไม่ใช่ทั้งคลัง** (ZORT ก็เลือกได้แค่หน้าที่เห็น) */}
                     <RowCheck label="เลือกทั้งหน้า"
@@ -842,7 +846,6 @@ function CoreStockInner() {
                       indeterminate={picked.length > 0 && picked.length < rows.length}
                       onChange={(v) => setPicked(v ? rows.map((r) => r.sku) : [])} />
                   </th>
-                  <th className={TH} style={{ width: 44 }}>#</th>
                   {(['รหัส', 'ชื่อสินค้า'] as const).map((ชื่อ) => (
                     <th key={ชื่อ} className={TH}><หัวเรียง ชื่อ={ชื่อ} /></th>
                   ))}
@@ -874,12 +877,12 @@ function CoreStockInner() {
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.sku} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(r.sku) ? 'bg-[#eef1fa]' : ''}`}>
+                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={TD}>
                       <RowCheck label={`เลือก ${r.sku}`}
                         checked={picked.includes(r.sku)}
                         onChange={(v) => setPicked((old) => (v ? [...old, r.sku] : old.filter((x) => x !== r.sku)))} />
                     </td>
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     {/* 📐 **ย้ายความกว้างจากช่องที่ใช้ไม่หมด ไปช่องที่ไม่พอ** (15 ต.ค. 2569)
                            วัดแล้ว: คอลัมน์ `รหัส` ของเรากว้าง 141px แต่รหัสยาวสุดในร้าน ~17 ตัว (~133px)
                            ⇒ ช่องนี้ **ใช้ไม่หมด** ขณะที่ `ชื่อสินค้า` ต้องตัดบรรทัดเกินครึ่งของแถว
@@ -947,6 +950,9 @@ function CoreStockInner() {
                       <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
                         {r.name || <span className="text-gray-400">— ท่อไม่ส่งชื่อมา</span>}
                       </Link>
+                      {/* 📐 ZORT เขียนบรรทัดเล็กใต้ชื่อ `หมวดหมู่: …` (อ่านแถวจริง 15 ต.ค. 2569) — **ของเรายังไม่มี**
+                          แถว list=stock **ไม่มีช่องหมวดหมู่** ⇒ รอท่อส่งช่องมา ห้ามเดาจากชื่อสินค้า
+                          (ส่วน `บริการ` ZORT ก็เขียนใต้ชื่อ — ของเรามีอยู่แล้วเป็นชิปข้างชื่อด้านล่าง) */}
                       {รหัสผิดรูป(r.sku) && (
                         <span
                           className="ml-1.5 text-[10px] font-semibold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1 py-0.5"
