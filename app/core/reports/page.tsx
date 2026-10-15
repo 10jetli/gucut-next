@@ -77,7 +77,19 @@ export default function CoreProductReportPage() {
   const [catErr, setCatErr] = useState('')
   const [deadDays, setDeadDays] = useState(90)
   /** 🏬 มูลค่าคงเหลือรายคลัง (ZORT มีการ์ดนี้) · `stockValue: null` = ยังไม่รู้ ห้ามนับเป็น 0 */
-  const [whs, setWhs] = useState<{ code: string; name?: string; stockValue?: number | null }[] | null>(null)
+  const [whs, setWhs] = useState<{ code: string; name?: string; stockValue?: number | null; collectedDayTH?: string | null }[] | null>(null)
+  /* 💰 **มูลค่าทั้งร้านที่ ZORT แสดง = ผลรวมมูลค่ารายคลังที่ ZORT ตอบ** (16 ต.ค. 2569: 16,179,086.88 + 1,562.32 + 0
+     = 16,180,649.2 ตรงกับ "มูลค่าสินค้าทั้งหมด" บน /Dashboard/ProductReport เป๊ะ)
+     🔴 เดิมใช้เลข ZORT_STOCK_VALUE ที่พิมพ์ค้างไว้ตั้งแต่ 3 ก.ย. แล้วจอเขียนว่า "เท่ากับที่ ZORT แสดงทั้งร้าน" ทุกวัน
+        ทั้งที่ ZORT วันนี้ขึ้น 16,180,649.2 ไม่ใช่ 16,424,587.22 ⇒ คำกล่าวอ้างเน่าเงียบ (ใบ: เลขที่วัดได้ห้ามพิมพ์ค้างไว้)
+     ⇒ ใช้ค่าสดเมื่อทุกคลังมีตัวเลข · คลังไหน null = ยังไม่รู้ ⇒ ไม่บวก ถอยไปใช้เลขเก่าพร้อมวันที่ */
+  const ยอดZORTสด = Array.isArray(whs) && whs.length > 0 && whs.every((w) => typeof w.stockValue === 'number')
+    ? Math.round(whs.reduce((a, w) => a + (w.stockValue as number), 0) * 100) / 100
+    : null
+  const ยอดZORT = ยอดZORTสด ?? ZORT_STOCK_VALUE
+  const ยอดZORTเมื่อ = ยอดZORTสด !== null
+    ? `ผลรวมรายคลังที่ ZORT ตอบ${whs?.[0]?.collectedDayTH ? ` (${thaiDate(whs[0].collectedDayTH)})` : ''}`
+    : `ตรวจ ${ZORT_CHECKED_AT} — ดึงรายคลังรอบนี้ไม่ได้`
   const [whErr, setWhErr] = useState('')
   /** มุมมองการ์ดมูลค่าคงเหลือ — ผังเดียวกับ dropdown `typeoption` ของ ZORT */
   const [valueBy, setValueBy] = useState<'warehouse' | 'category'>('warehouse')
@@ -142,7 +154,8 @@ export default function CoreProductReportPage() {
       ['มูลค่ารวม คิดจากราคาขาย (บาท)', String(stock.value ?? '')],
       ['มูลค่ารวม คิดจากราคาทุนในทะเบียนสินค้า (บาท)', String(stock.valueCost ?? '')],
       ['รหัสที่ยังไม่ได้กรอกราคาทุน', String(stock.noCostSkus ?? '')],
-      ['ZORT แสดงเท่าไหร่ (ต้นทุนเฉลี่ยถ่วงน้ำหนัก · API ไม่เปิดให้ดึง)', String(ZORT_STOCK_VALUE)],
+      ['ZORT แสดงเท่าไหร่ (ต้นทุนเฉลี่ยถ่วงน้ำหนัก)', String(ยอดZORT)],
+      ['ที่มาของเลข ZORT', ยอดZORTเมื่อ],
     ]
     const csv = rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(',')).join('\n')
     const url = URL.createObjectURL(new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' }))
@@ -194,8 +207,10 @@ export default function CoreProductReportPage() {
                       <span className="text-[15px] text-gray-500 font-normal"> บาท</span>
                     </p>
                     <p className="text-[11.5px] text-gray-500 mt-1">
-                      + สินค้าที่ยังไม่ได้จัดหมวด {fmtMoney(ZORT_STOCK_VALUE - cat.zortTotalValue)} บาท
-                      {' '}= <b>{fmtMoney(ZORT_STOCK_VALUE)}</b> เท่ากับที่ ZORT แสดงทั้งร้าน
+                      ZORT แสดงมูลค่าสินค้าทั้งหมด <b>{fmtMoney(ยอดZORT)}</b> บาท ({ยอดZORTเมื่อ})
+                      {' '}· ส่วนที่ไม่อยู่ใน {cat.zortCategories ?? 0} หมวด ≈ {fmtMoney(Math.round((ยอดZORT - cat.zortTotalValue) * 100) / 100)} บาท
+                      {/* ⚠️ สองเลขนี้คัดคนละเวลา (หมวด vs รายคลัง) ⇒ ส่วนต่างเป็น "ประมาณ" ไม่ใช่ยอดหมวดว่าง */}
+                      <span className="block text-gray-400">หมวดกับรายคลังคัดมาคนละเวลา ⇒ ส่วนต่างเป็นค่าประมาณ</span>
                     </p>
                     {/* 🔴 เดิมโชว์ค่าดิบปี ค.ศ. + เวลา ⇒ แสดงวันที่แบบ พ.ศ. · ไม่แปลงเวลาเพราะไม่รู้โซน
                         (ชื่อฟิลด์ไม่ลงท้าย `Utc` — ขอฝั่งท่อแก้ชื่อไว้แล้ว) ค่าดิบอยู่ใน tooltip */}
@@ -243,8 +258,8 @@ export default function CoreProductReportPage() {
                       เก็บไว้ดูเทียบ · <b>ราคาซื้อในทะเบียนต่ำกว่าต้นทุนจริง 2-3 เท่า</b>
                       (พิสูจน์รายหมวดแล้ว) ⇒ <b>อย่าเอาไปใช้กับบัญชี</b> · </>
                   : null}
-                <b>ทำไมสองเลขล่างไม่ตรงกับ ZORT</b> — จอเดียวกันของ ZORT แสดง <b>{fmtMoney(ZORT_STOCK_VALUE)} บาท</b>
-                {' '}(ตรวจ {ZORT_CHECKED_AT}) เพราะ ZORT ใช้ <b>ต้นทุนเฉลี่ยถ่วงน้ำหนัก</b>
+                <b>ทำไมสองเลขล่างไม่ตรงกับ ZORT</b> — ZORT แสดง <b>{fmtMoney(ยอดZORT)} บาท</b>
+                {' '}({ยอดZORTเมื่อ}) เพราะ ZORT ใช้ <b>ต้นทุนเฉลี่ยถ่วงน้ำหนัก</b>
                 {' '}ที่คิดใหม่ทุกครั้งที่ซื้อของเข้า ซึ่ง <b>API ไม่เปิดให้ดึง</b> ⇒ เราคิดแบบเดียวกันไม่ได้
                 {' '}· ตัวเลขทั้งสองแบบข้างบนจึงคร่อมเลขของ ZORT อยู่ (ราคาขายสูงกว่า · ราคาทุนต่ำกว่า)
                 {' '}<b>ห้ามเอาไปเทียบทีละบาท</b> ใช้ดูแนวโน้มและสัดส่วนได้
