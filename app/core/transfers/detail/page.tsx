@@ -3,6 +3,7 @@
 // เส้น: ?transfer=<id ZORT ไม่ใช่เลขที่ใบ> → {live, number, status, date, from, to, tracking,
 //   lines:[{sku,name,qty}]|null, fields} — โครงจากซอร์สท่อจริง getTransferDetail
 // ⚠️ สามสถานะบรรทัดสินค้า: null = ZORT ไม่ส่งช่องบรรทัดมา · [] = ใบนี้ไม่มีของ — คนละคำ
+import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import { useSearchParams } from 'next/navigation'
@@ -61,12 +62,9 @@ function Inner() {
       }
       setD(j)
       const w = await fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null)
-      const map: Record<string, string> = {}
-      for (const x of (Array.isArray(w?.warehouses) ? w.warehouses : [])) {
-        if (x?.code) map[String(x.code)] = String(x.name || x.code)
-      }
-      setNames(map)
-      setWhErr(!w || !Array.isArray(w?.warehouses))
+      const ชื่อ = ชื่อคลังจากคำตอบ(w)
+      setNames(ชื่อ.names)
+      setWhErr(ชื่อ.อ่านไม่ได้)
     } catch (e) { setError(String(e instanceof Error ? e.message : e)) } finally { setLoading(false) }
   }, [id])
   useEffect(() => { load() }, [load])

@@ -6,6 +6,7 @@
 // ผังที่ลอกมา: ชื่อจอ → บรรทัด "จำนวน N รายการ, มูลค่าทั้งหมด X บาท" → ปุ่มขวาบน
 //              → แถวค้นหา + ตัวเลือกช่วงเวลา → แท็บสถานะมีจำนวนในวงเล็บ
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
+import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { useCallback, useEffect, useState } from 'react'
 import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT, อ่านเงินตามการชำระ, รายชื่อสถานะของแท็บ } from '@/lib/sales-tabs'
@@ -38,6 +39,8 @@ interface Row {
   //    ⇒ ข้อมูลมีแต่มองไม่เห็น · จอจึงเตรียมช่องไว้ พอฝั่งเซิร์ฟเวอร์ส่งมาก็ขึ้นเอง
   ship_channel?: string
   ship_name?: string
+  /** รหัสคลังที่ตัดสต็อก (เช่น `NEW`) — แปลงเป็นชื่อด้วย list=warehouses ก่อนแสดง */
+  warehouse_code?: string | null
   ship_date?: string
   tracking_no?: string
   is_cod?: number | boolean
@@ -352,6 +355,14 @@ export default function CoreSalesPage() {
      🔴 ล้างที่เลือกทุกครั้งที่โหลดใหม่ — ไม่งั้นใบที่มองไม่เห็นบนจอค้างอยู่ในคำสั่ง */
   const [picked, setPicked] = useState<string[]>([])
   const [copyMsg, setCopyMsg] = useState('')
+  /* 🏬 ชื่อคลังใต้สถานะ — ZORT เขียนชื่อคลัง (เช่น `โกดัง`) ใต้ป้ายสถานะทุกแถว (อ่านแถวจริง 15 ต.ค. 2569)
+     แถวจากท่อมี `warehouse_code` อยู่แล้ว (580/580 ใบ ส.ค. = NEW) แต่จอไม่เคยใช้
+     ⇒ แปลงด้วย list=warehouses ครั้งเดียวตอนเปิดจอ · อ่านไม่ได้ ⇒ โชว์รหัสพร้อมบอก ไม่ปล่อยให้อ่านรหัสเป็นชื่อ */
+  const [ชื่อคลัง, setชื่อคลัง] = useState<{ names: Record<string, string>; อ่านไม่ได้: boolean } | null>(null)
+  useEffect(() => {
+    fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null)
+      .then((j) => setชื่อคลัง(ชื่อคลังจากคำตอบ(j)))
+  }, [])
   const copyNumbers = async (list: string[]) => {
     const nums = list.map((id) => rows.find((r) => r.id === id)?.number ?? id)
     try {
@@ -1369,6 +1380,14 @@ export default function CoreSalesPage() {
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}>
                       <Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill>
+                      {r.warehouse_code && (
+                        ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[r.warehouse_code]
+                          ? <span className="block text-[11.5px] text-gray-500 mt-1">{ชื่อคลัง.names[r.warehouse_code]}</span>
+                          : <span className="block text-[11.5px] text-gray-400 mt-1"
+                              title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
+                              รหัสคลัง {r.warehouse_code}
+                            </span>
+                      )}
                       {/* ⚠️ **สองสถานะนี้คนละเรื่องกัน ห้ามเอามาแทนกัน**
                           ป้ายบน = สถานะใบในระบบเรา/ZORT (สำเร็จ · รอ · ยกเลิก)
                           บรรทัดล่าง = สถานะฝั่งแพลตฟอร์ม (รอจัดส่ง · กำลังส่ง · ส่งถึงแล้ว)

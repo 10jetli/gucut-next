@@ -12,6 +12,7 @@
 //    ⇒ แสดง "-" เหมือน ZORT ไม่ใช่เขียนว่าข้อมูลหาย
 // ⚠️ **ห้ามเอาไปรวมกับ stock_moves** — ตารางนั้นคือของที่ "เราปรับเอง"
 //    ส่วนจอนี้คือกระจกของ ZORT · รวมกันเมื่อไหร่ = ตัดสต็อกสองรอบ
+import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { useCallback, useEffect, useState } from 'react'
 import AdvancedSearch from '@/components/zort/AdvancedSearch'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
@@ -164,13 +165,10 @@ export default function CoreTransfersPage() {
       // จำยอด "ตอนไม่ได้ค้น" ไว้เป็นฐานเทียบ (อัปเดตทุกครั้งที่โหลดโดยไม่มีคำค้น)
       if (!q.trim() && typeof tRes?.total === 'number') setTotalNoQuery(tRes.total)
       setOffset(off)
-      const map: Record<string, string> = {}
-      for (const w of (Array.isArray(wRes?.warehouses) ? wRes.warehouses : [])) {
-        if (w?.code) map[String(w.code)] = String(w.name || w.code)
-      }
-      setNames(map)
       // ⚠️ ดึงชื่อคลังไม่ได้ = จอโชว์รหัสคลังดิบ ต้องบอก ไม่ใช่ปล่อยให้อ่านเป็นชื่อจริง
-      setWErr(!wRes || !Array.isArray(wRes?.warehouses))
+      const ชื่อ = ชื่อคลังจากคำตอบ(wRes)
+      setNames(ชื่อ.names)
+      setWErr(ชื่อ.อ่านไม่ได้)
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
     } finally {
