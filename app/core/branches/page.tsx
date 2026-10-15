@@ -15,6 +15,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
+import { thaiDateTime } from '@/components/zort/PushStatusBoard'
 import {
   PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
@@ -281,7 +282,9 @@ export default function CoreBranchesPage() {
                           /* ⚠️ **ห้ามตัด 10 ตัวแรกก่อนส่งเข้า thaiDate** — ค่านี้มีโซน `+07:00` ติดมา
                              thaiDate อ่านโซนเองได้ถูกอยู่แล้ว · การตัดทิ้งไปก่อนแปลว่าถ้าท่อเปลี่ยนไปส่งแบบ UTC
                              วันบนจอจะเพี้ยนหนึ่งวันโดยไม่มีอะไรฟ้อง (18 ก.ย. 2569 — เจอท่านี้พังจริงแล้ว 3 จอ) */
-                          ? thaiDate(String(w.movedAt))
+                          /* 🕐 ZORT เขียนวันพร้อมเวลา `15 ต.ค. 2569 22:48` (อ่าน /Warehouse/list 16 ต.ค. 2569) ⇒ ใส่เวลาให้ตรง
+                             ใช้ตัวแปลงกลาง (อ่านโซน +07:00 / UTC ได้ถูก) — ไม่ตัดสตริงเอง */
+                          ? thaiDateTime(String(w.movedAt))
                           : <span className="text-gray-300" title="ท่อยังไม่ได้ส่งวันเคลื่อนไหวของคลังนี้มา">—</span>}
                       </td>
                       {/* ⚠️ ระหว่างรอ ห้ามโชว์ 0 — 0 แปลว่า "ขายไม่ได้เลย" ซึ่งคนละเรื่องกับ "ยังไม่รู้" */}
