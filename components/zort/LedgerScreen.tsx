@@ -355,7 +355,8 @@ export default function LedgerScreen({
                     {sumLabel ? <> · เปิดจอ ZORT ดูเองเมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)}: {sumLabel}</> : null}
                   </span>
                 )
-                : <span>ถาม ZORT สดรอบนี้ — <b>{zCount ?? rows?.length ?? 0} รายการ</b></span>}
+                /* 📐 ขึ้นต้นด้วยคำของ ZORT `จำนวน N รายการ` (หัวจอทุกหน้ารายการของเขา) แล้วค่อยบอกแหล่ง (15 ต.ค. 2569) */
+                : <span>จำนวน <b>{(zCount ?? rows?.length ?? 0).toLocaleString('th-TH')} รายการ</b> · ถาม ZORT สดรอบนี้</span>}
         actions={
           <>
             {withImport && (
