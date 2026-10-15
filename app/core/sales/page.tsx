@@ -12,7 +12,7 @@ import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT, อ่านเงินตามการชำระ, รายชื่อสถานะของแท็บ } from '@/lib/sales-tabs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { fmtMoney, ช่วงปฏิทินไทย, type ชนิดช่วงปฏิทิน } from '@/lib/format'
+import { fmtMoney, ช่วงปฏิทินไทย, ต้นเดือนย้อนหลังแบบZORT, type ชนิดช่วงปฏิทิน } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {
@@ -242,12 +242,23 @@ const เหตุที่ท่อยังไม่กรอง: Record<strin
 const MEMO_KEY = 'gucut:core-sales:filter'
 const DEFAULT_DAYS = 90
 
-const RANGES = [
+/* 🗓 `เดือนแบบZORT` = ช่วงนี้นับแบบ ZORT (วันที่ 1 ของเดือนที่ถอยไป N เดือน) ไม่ใช่ N วันนับถอย
+   📏 ยืนยันแล้วเฉพาะ 3 เดือน (15 ต.ค. 2569: ZORT 1,995 ใบ 2,796,264.4 · กระจก z1 ช่วงเดียวกัน 1,994 ใบ 2,778,264.4
+      ⇒ ต่าง 1 ใบ 18,000 = ใบบนสุดของ ZORT ที่เพิ่งเปิด "วันนี้" หลังกระจกซิงก์ 17:13)
+   ⚠️ "ย้อนหลัง 1 เดือน" ของ ZORT ยังไม่ได้วัด ⇒ ยังเป็น 30 วันนับถอย (ช่วงจริงขึ้นจอทุกครั้งที่บรรทัด 🔍 ค้นหา)
+      วิธีตรวจ: คนที่กดใน ZORT ได้ เลือก "ย้อนหลัง 1 เดือน" บน /Sell/list แล้วอ่านบรรทัด `ค้นหา: วันที่:…` ⇒ ได้วันที่ 1 = ใส่ เดือนแบบZORT: 1
+   ⚠️ 7 วัน กับ 1 ปี ZORT ไม่มี — เป็นของที่เรามีเกิน เก็บไว้ (ร้านใช้) */
+const RANGES: { days: number; label: string; เดือนแบบZORT?: number }[] = [
   { days: 7, label: 'ย้อนหลัง 7 วัน' },
   { days: 30, label: 'ย้อนหลัง 1 เดือน' },
-  { days: 90, label: 'ย้อนหลัง 3 เดือน' },
+  { days: 90, label: 'ย้อนหลัง 3 เดือน', เดือนแบบZORT: 3 },
   { days: 365, label: 'ย้อนหลัง 1 ปี' },
 ]
+/** วันเริ่มของค่าสำเร็จรูป — ช่วงที่วัดแล้วว่า ZORT นับตามเดือน ใช้แบบ ZORT · ที่เหลือนับถอย N วัน */
+const วันเริ่มของช่วง = (d: number): string => {
+  const เดือน = RANGES.find((r) => r.days === d)?.เดือนแบบZORT
+  return (เดือน ? ต้นเดือนย้อนหลังแบบZORT(เดือน) : null) ?? thaiDay(d - 1)
+}
 
 /* 🗓 ช่วงที่ผูกกับ **ปฏิทิน** — ลอกจากเมนูช่วงวันของ ZORT (กดอ่านของจริง 14 ต.ค. 2569:
    `วันนี้ · สัปดาห์นี้ · เดือนนี้ · ย้อนหลัง 1 เดือน · ย้อนหลัง 3 เดือน · กำหนดเอง`)
@@ -421,7 +432,7 @@ export default function CoreSalesPage() {
     setError('')
     try {
       /* ช่วงวันที่กำหนดเองชนะค่าสำเร็จรูปเสมอ — และ `url` ที่ใช้เป็นคีย์แคชรวม from/to อยู่แล้ว */
-      const fromDay = (opt?.from ?? advFrom) || thaiDay(d - 1)
+      const fromDay = (opt?.from ?? advFrom) || วันเริ่มของช่วง(d)
       const toDay = (opt?.to ?? advTo) || thaiDay(0)
       const qs = new URLSearchParams({
         list: 'orders', from: fromDay, to: toDay,
@@ -537,7 +548,7 @@ export default function CoreSalesPage() {
   function detailHref(id: string, i: number) {
     const qs = new URLSearchParams({
       id, i: String(offset + i),
-      from: thaiDay(days - 1), to: thaiDay(0),
+      from: วันเริ่มของช่วง(days), to: thaiDay(0),
     })
     if (channel) qs.set('channel', channel)
     if (status) qs.set('status', status)
@@ -753,13 +764,13 @@ export default function CoreSalesPage() {
               disabled={loading}
               spec={{
                 filename: 'รายการขาย',
-                scope: `${advFrom || thaiDay(days - 1)} ถึง ${advTo || thaiDay(0)}`,
+                scope: `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`,
                 title: 'รายการขาย',
                 note: 'ไฟล์นี้รวมใบยกเลิกไว้ด้วย (เหมือนที่จอแสดง) — ดูคอลัมน์ "สถานะ" เพื่อคัดออกเอง',
                 filters: [
                   /* 🔴 ต้องเป็นช่วงเดียวกับที่จอกำลังกรองอยู่ — รวมช่วงที่ตั้งเองในค้นหาขั้นสูง
                      ไม่งั้นไฟล์กับจอคนละช่วง แล้วคนเทียบยอดไม่ตรงโดยไม่รู้ว่าทำไม */
-                  ['ช่วงวันที่', `${advFrom || thaiDay(days - 1)} ถึง ${advTo || thaiDay(0)}`
+                  ['ช่วงวันที่', `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`
                     + (advFrom || advTo ? ' (ตั้งเองในค้นหาขั้นสูง)' : ` (${days} วัน)`)],
                   ['ร้าน', store || '(ทุกร้าน)'],
                   ['ช่องทาง', channel || '(ทุกช่องทาง)'],
@@ -772,7 +783,7 @@ export default function CoreSalesPage() {
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({
-                    list: 'orders', from: advFrom || thaiDay(days - 1), to: advTo || thaiDay(0),
+                    list: 'orders', from: advFrom || วันเริ่มของช่วง(days), to: advTo || thaiDay(0),
                     limit: String(limit), offset: String(offsetAt), cancelled: '1',
                   })
                   if (channel) qs.set('channel', channel)
@@ -1116,7 +1127,7 @@ export default function CoreSalesPage() {
               (ท่านประธานสั่ง 13 ก.ย. 2569 · งานกระดาน t_mtxss3pf)
               ⚠️ ส่งช่วงวันชุดเดียวกับที่จอกำลังกรองอยู่ ไม่งั้นเลขในกล่องนี้จะพูดคนละช่วง
                  กับการ์ดสถานะจัดส่งที่อยู่ข้างบน แล้วคนอ่านจะเทียบกันเองโดยไม่รู้ว่าคนละขอบเขต */}
-          <DormantInShipPile from={thaiDay(days - 1)} to={thaiDay(0)} />
+          <DormantInShipPile from={วันเริ่มของช่วง(days)} to={thaiDay(0)} />
 
           {/* ⚠️ ตัวตรวจที่ไม่เจออะไรเลย ต้องบอกว่า "ตรวจแล้วไม่เจอ" ไม่ใช่เงียบหาย
               ไม่งั้นไม่มีใครรู้ว่ามีตัวตรวจนี้อยู่ แล้ววันที่มันเงียบเพราะพัง ก็ดูเหมือนเดิมเป๊ะ
