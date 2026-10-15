@@ -524,6 +524,17 @@ export default function CoreBundlesPage() {
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
+                          /* ⋮ ลำดับและคำตาม ZORT (อ่าน `<ul>` แถวจริงบน /Bundle/list 15 ต.ค. 2569 23:3x · อ่านอย่างเดียว) 5 รายการ
+                             · ขายสินค้า ⇒ เปิด POS ค้นรหัสชุดนี้ให้เลย (POS รับ ?sku= อยู่แล้ว) = กดได้จริง
+                             · อัพเดทจำนวนสินค้าไปช่องทางการขายอื่น = **ดันสต็อกขึ้นมาร์เก็ตเพลสจริง** (doupdateMainBundleStock
+                               อยู่ในรายการห้ามกดของ ZORT) ⇒ สีเทาพร้อมเหตุ · ของเรามีจอดันสต็อกแยกที่มีด่านของตัวเอง */
+                          { label: 'ขายสินค้า', onClick: () => { window.location.href = `/core/pos?sku=${encodeURIComponent(r.sku)}` } },
+                          ...([
+                            ['พิมพ์เอกสาร', 'ยังทำไม่ได้ — ยังไม่มีหน้าพิมพ์ของสินค้าเป็นชุด'],
+                            ['แก้ไข', 'ยังทำไม่ได้ — แก้สูตรชุดต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+                            ['ลบ', 'ยังทำไม่ได้ — ลบชุดต้องทำใน ZORT (ย้อนไม่ได้)'],
+                            ['อัพเดทจำนวนสินค้าไปช่องทางการขายอื่น', 'ไม่ทำจากจอนี้ — เป็นการดันสต็อกขึ้นมาร์เก็ตเพลสจริง · ใช้จอดันสต็อกของเราที่มีด่านกันพลาด'],
+                          ] as const).map(([label, disabled]) => ({ label, disabled })),
                           { label: 'คัดลอกรหัสชุด', onClick: () => { navigator.clipboard?.writeText(r.sku).catch(() => {}) } },
                           { label: 'ดูในจอสินค้า', onClick: () => { window.location.href = `/core/stock?q=${encodeURIComponent(r.sku)}` } },
                         ]}
