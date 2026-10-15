@@ -441,10 +441,11 @@ export default function CoreSalesPage() {
     const sr = opt?.store ?? store
     setLoading(true)
     setError('')
+    /* ช่วงวันที่กำหนดเองชนะค่าสำเร็จรูปเสมอ — และ `url` ที่ใช้เป็นคีย์แคชรวม from/to อยู่แล้ว
+       (อยู่นอก try เพราะ catch ต้องใช้บอกเหตุตอนช่วงกว้างเกิน) */
+    const fromDay = (opt?.from ?? advFrom) || วันเริ่มของช่วง(d)
+    const toDay = (opt?.to ?? advTo) || thaiDay(0)
     try {
-      /* ช่วงวันที่กำหนดเองชนะค่าสำเร็จรูปเสมอ — และ `url` ที่ใช้เป็นคีย์แคชรวม from/to อยู่แล้ว */
-      const fromDay = (opt?.from ?? advFrom) || วันเริ่มของช่วง(d)
-      const toDay = (opt?.to ?? advTo) || thaiDay(0)
       const qs = new URLSearchParams({
         list: 'orders', from: fromDay, to: toDay,
         limit: String(opt?.size ?? perPage), offset: String(off),
@@ -494,7 +495,15 @@ export default function CoreSalesPage() {
       setPicked([])
       setStaleAge(null)
     } catch (e) {
-      setError(String(e instanceof Error ? e.message : e))
+      /* 🔴 ช่วงวันกว้างหลายปี ท่อล้ม 500 ราว 16 วินาที ทำซ้ำได้ (CTO วัด 16 ต.ค. 2569 ยิงทีละนัดเว้น 8 วิ:
+         654 วัน ได้ใน 7.7 วิ · 1,750 วัน ล้มสองนัดติด) ⇒ คนเห็นแค่ HTTP 500 จะไม่รู้ว่าแก้ได้ด้วยการย่อช่วง
+         ⚠️ ระหว่าง 654–1,750 วันยังไม่มีใครวัด ⇒ บอกเลขที่วัดได้ตรง ๆ ห้ามแต่งเพดานเอง */
+      const วันในช่วง = Math.round((Date.parse(toDay) - Date.parse(fromDay)) / 86400000) + 1
+      const เหตุช่วงกว้าง = วันในช่วง > 654
+        ? ` · ช่วงที่ขอยาว ${วันในช่วง.toLocaleString('th-TH')} วัน — ระบบยังนับช่วงยาวหลายปีไม่ไหว`
+          + ' (วัด 16 ต.ค. 2569: 654 วันได้ · 1,750 วันล้ม) ลองแบ่งช่วงวันให้สั้นลงแล้วค้นทีละช่วง'
+        : ''
+      setError(String(e instanceof Error ? e.message : e) + เหตุช่วงกว้าง)
       // ⚠️ **ห้ามล้าง staleAge ตรงนี้** ของเก่ายังอยู่บนจอ ⇒ แถบต้องอยู่ต่อ แค่เปลี่ยนข้อความ
       setStaleFailed(true)
     } finally {
