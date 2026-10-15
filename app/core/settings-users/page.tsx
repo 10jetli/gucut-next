@@ -31,16 +31,18 @@
 import Link from 'next/link'
 import { PageHead } from '@/components/zort'
 import { listStaffUsers } from '@/lib/staff-users'
+import { thaiDate } from '@/lib/format'
 
 const env = (k: string) => (process.env[k] ?? '').trim()
 
-/** วันที่แบบไทยสั้น ๆ จาก ISO (UTC) — +7 ก่อนแสดง เหมือนทุกจอในโปรเจกต์ */
+/** วันที่สมัครแบบ ZORT `30 มิ.ย. 2565 09:36` (อ่าน /User/list 16 ต.ค. 2569) — เดิมเราเขียน `14/09/2569`
+ *  ส่วนวันใช้ตัวแปลงกลาง (thaiDate · อ่านโซนเวลาถูก) · เวลาบวก 7 ชม. จาก UTC */
 function thaiDay(iso: string) {
   const t = new Date(iso)
   if (Number.isNaN(t.getTime())) return '—'
   const th = new Date(t.getTime() + 7 * 3600_000)
   const p = (n: number) => String(n).padStart(2, '0')
-  return `${p(th.getUTCDate())}/${p(th.getUTCMonth() + 1)}/${th.getUTCFullYear() + 543}`
+  return `${thaiDate(iso)} ${p(th.getUTCHours())}:${p(th.getUTCMinutes())}`
 }
 
 /** ⚠️ คืนแค่ "ตั้งไว้ไหม" กับ "ยาวกี่ตัว" — **ห้ามคืนค่าจริง** */
