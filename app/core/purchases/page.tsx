@@ -27,7 +27,7 @@ import {
   BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
-import AdvancedSearch from '@/components/zort/AdvancedSearch'
+import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 
 interface Row {
   number: string
@@ -109,6 +109,12 @@ export default function CorePurchasesPage() {
   const [from, setFrom] = useState('')
   const [to, setTo] = useState('')
   const [advOpen, setAdvOpen] = useState(false)
+  /* 🖥️ ตัวกรองที่กรอง **ในเบราว์เซอร์** จากช่องที่แถวส่งมาแล้ว (15 ต.ค. 2569 · จอเหมือน ZORT /Buy/list)
+     แถว list=purchases มี number · amount · vendor · warehouse อยู่แล้ว แต่แผงเดิมมีแค่ช่วงวัน
+     ⇒ ไม่ต้องรอท่อ · ⚠️ ครอบทั้งชุดเฉพาะตอน `loadedAll` — ไม่ครบ ⇒ บรรทัดใต้แท็บบอกว่ากรองเฉพาะที่โหลดมา */
+  const ว่างเปล่า = { เลข: '', ตั้งแต่: '', ถึง: '', ผู้ติดต่อ: '', คลัง: '' }
+  const [ร่าง, setร่าง] = useState(ว่างเปล่า)
+  const [กรอง, setกรอง] = useState(ว่างเปล่า)
   const [data, setData] = useState<Resp | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -148,7 +154,19 @@ export default function CorePurchasesPage() {
 
   const allRows = data?.rows ?? []
   /* กรองตามแท็บในเครื่อง — ค่าดิบตรงกับที่ท่อส่งมา (Success · Voided · Waiting · WaitingPayment) */
-  const rows = tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)
+  const กรองอยู่ = Object.values(กรอง).some((v) => v.trim() !== '')
+  const ผ่านตัวกรอง = (r: Row) => {
+    const ม = Number(r.amount)
+    if (กรอง.เลข.trim() && !String(r.number ?? '').toLowerCase().includes(กรอง.เลข.trim().toLowerCase())) return false
+    if (กรอง.ผู้ติดต่อ.trim() && !String(r.vendor ?? '').toLowerCase().includes(กรอง.ผู้ติดต่อ.trim().toLowerCase())) return false
+    if (กรอง.คลัง && (r.warehouse ?? '') !== กรอง.คลัง) return false
+    /* มูลค่าที่ไม่ใช่ตัวเลข (ท่อไม่ส่ง) ⇒ ตัดสินไม่ได้ ⇒ ไม่ผ่านเมื่อมีเงื่อนไขมูลค่า (ห้ามเดาเป็น 0) */
+    if (กรอง.ตั้งแต่.trim() && !(Number.isFinite(ม) && ม >= Number(กรอง.ตั้งแต่))) return false
+    if (กรอง.ถึง.trim() && !(Number.isFinite(ม) && ม <= Number(กรอง.ถึง))) return false
+    return true
+  }
+  const rows = (tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)).filter(ผ่านตัวกรอง)
+  const คลังที่มี = Array.from(new Set(allRows.map((r) => r.warehouse).filter((w): w is string => !!w))).sort()
   /** โหลดมาครบทั้งชุดหรือยัง — ใช้ตัดสินว่าการกรองในเครื่องครอบทั้งชุดไหม */
   const loadedAll = typeof data?.total === 'number' ? offset + allRows.length >= data.total : false
   const shown = offset + rows.length
@@ -310,14 +328,29 @@ export default function CorePurchasesPage() {
       <AdvancedSearch
         open={advOpen}
         fields={[
+          { label: 'หมายเลขรายการ', kind: 'text', value: ร่าง.เลข, onChange: (v) => setร่าง({ ...ร่าง, เลข: v }), placeholder: 'หมายเลขรายการ', width: 150 },
+          { label: 'มูลค่าเริ่มต้น', kind: 'number', value: ร่าง.ตั้งแต่, onChange: (v) => setร่าง({ ...ร่าง, ตั้งแต่: v }), placeholder: '0', width: 120 },
+          { label: 'จนถึงมูลค่า', kind: 'number', value: ร่าง.ถึง, onChange: (v) => setร่าง({ ...ร่าง, ถึง: v }), placeholder: '999,999', width: 120 },
+          { label: 'ชื่อผู้ติดต่อ', kind: 'text', value: ร่าง.ผู้ติดต่อ, onChange: (v) => setร่าง({ ...ร่าง, ผู้ติดต่อ: v }), placeholder: 'ชื่อผู้ติดต่อ', width: 160 },
+          { label: 'คลัง / สาขา', kind: 'select', value: ร่าง.คลัง, onChange: (v) => setร่าง({ ...ร่าง, คลัง: v }),
+            options: [{ value: '', label: 'คลัง / สาขา - ทั้งหมด' }, ...คลังที่มี.map((w) => ({ value: w, label: w }))], width: 170 },
           { label: 'ตั้งแต่วันที่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
           { label: 'ถึงวันที่', kind: 'date', value: to, onChange: (v) => setTo(v) },
-        ]}
-        onApply={() => load(0, tab, store, perPage, from, to)}
-        onClear={() => { setFrom(''); setTo(''); load(0, tab, store, perPage, '', '') }}
-        canClear={!!(from || to)}
+        ] as AdvField[]}
+        onApply={() => { setกรอง(ร่าง); load(0, tab, store, perPage, from, to) }}
+        onClear={() => { setร่าง(ว่างเปล่า); setกรอง(ว่างเปล่า); setFrom(''); setTo(''); load(0, tab, store, perPage, '', '') }}
+        canClear={!!(from || to) || กรองอยู่ || Object.values(ร่าง).some((v) => v.trim() !== '')}
         serverFiltered="ช่วงวันที่ใบซื้อ · ร้าน · คำค้น"
+        clientFiltered={loadedAll
+          ? `หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง กรองในเบราว์เซอร์ — โหลดใบซื้อมาครบทั้ง ${fmtNum(allRows.length)} ใบแล้ว จึงเท่ากับกรองทั้งชุด`
+          : `หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง กรองในเบราว์เซอร์ เฉพาะ ${fmtNum(allRows.length)} ใบที่โหลดมา — ไม่ใช่ทั้งชุด`}
         notAvailable={[
+          /* 🔬 ตามหลัก "ดูของที่แถวส่งมาแล้วก่อนขอใหม่": แถว list=purchases มี 8 ช่อง (วัด 15 ต.ค. 2569)
+             amount id number payment_status po_date status vendor warehouse ⇒ ช่องข้างล่างไม่มีค่าในแถวเลย */
+          ...(['อ้างอิง', 'ผู้ใช้งาน (คนสร้างใบ)', 'Tag', 'สินค้า', 'Serial no', 'แสดงรายการที่ถูกซ่อน',
+            'เบอร์โทรศัพท์', 'อีเมลผู้ติดต่อ', 'วันที่ชำระเงิน', 'วันที่โอนสินค้า'].map((what) => ({
+            what, why: 'แถวที่ท่อส่งมาไม่มีช่องนี้ (วัด 15 ต.ค. 2569: มีแค่ เลขที่ · วันที่ · ผู้ติดต่อ · คลัง · มูลค่า · สถานะ · ชำระเงิน) — รอท่อ',
+          }))),
           { what: 'สถานะ (สำเร็จ · ยกเลิก · รอโอน)', why: 'ท่อยังไม่รับเป็นตัวกรอง — ยิงยืนยันซ้ำ 18 ก.ย. 2569 (ส่ง status= แล้ว total ค้าง 33) · แท็บด้านบนจึงกรองในเครื่อง' },
         ]}
       />
@@ -393,6 +426,13 @@ export default function CorePurchasesPage() {
             </p>
           )}
 
+          {กรองอยู่ && (
+            /* 🔴 กฎแท็บข้อ 4: เลขในแท็บ/บรรทัดสรุปเป็นของทั้งชุด แถวเป็นของที่กรองแล้ว ⇒ ต้องเขียนบอก */
+            <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-1">
+              กรองตามเงื่อนไขค้นหาขั้นสูงแล้ว เหลือ <b>{fmtNum(rows.length)}</b> ใบ
+              {' '}— <b>เลขในแท็บและบรรทัดสรุปด้านบนยังนับทั้งชุด</b> ไม่ได้กรองตามเงื่อนไขนี้
+            </p>
+          )}
           {tab !== 'all' && (
             <p className="text-[11.5px] text-gray-500 mb-1">
               {loadedAll
@@ -443,7 +483,11 @@ export default function CorePurchasesPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  q
+                  /* 🔴 กรองแล้วไม่เจอ ≠ ไม่มีใบ — ข้อความ "ยังไม่มีใบสั่งซื้อ" ทำให้คนเชื่อว่าร้านไม่มีใบเลย (เจอตอนพิมพ์ทดสอบ 15 ต.ค. 2569) */
+                  กรองอยู่
+                    ? <EmptyState cols={9} icon="🔍" title="ไม่มีใบที่ตรงเงื่อนไขค้นหาขั้นสูง"
+                        detail={`ทั้งหมด ${fmtNum(allRows.length)} ใบที่โหลดมา ไม่มีใบไหนตรง — กด "ล้างเงื่อนไข" เพื่อดูทั้งหมด`} />
+                  : q
                     ? <EmptyState cols={9} icon="🔍" title="ไม่พบใบสั่งซื้อที่ค้นหา" detail="ลองพิมพ์เลขที่ใบหรือชื่อผู้ขายให้สั้นลง" />
                     : <EmptyState cols={9} icon="🧾" title="ยังไม่มีใบสั่งซื้อในแท็บนี้"
                         detail="ใบสั่งซื้อดึงมาจาก ZORT — เปิดใบใหม่ที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
