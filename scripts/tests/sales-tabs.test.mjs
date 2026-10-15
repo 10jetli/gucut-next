@@ -179,3 +179,20 @@ test('ร้านที่ไม่มีสถานะ Pending ในสา�
   const r = สร้างแถบแท็บขาย({ ...ฐาน, รายชื่อสถานะ: ['Success', 'Voided'] })
   assert.deepEqual(r.tabs.map((t) => t.id), ['', idแท็บชำระเงิน, 'Success', 'Voided'])
 })
+
+test('ท่อรับหลายสถานะแล้ว ⇒ แท็บรอโอนแบบ ZORT = Pending+Waiting · ตัวนับ = ผลบวก · ไม่มีแท็บรอส่งแยก', () => {
+  const r = สร้างแถบแท็บขาย({ ...ฐาน, ท่อรับหลายสถานะ: true })
+  assert.deepEqual(r.tabs.map((t) => t.id), ['', 'Pending,Waiting', idแท็บชำระเงิน, 'Success', 'Returned', 'Voided'])
+  assert.equal(หา(r, 'Pending,Waiting').count, 176 + 1)
+  assert.equal(หา(r, 'Pending,Waiting').label, 'สถานะ:Pending')
+})
+
+test('ท่อรุ่นเก่า (ไม่ประกาศ) ⇒ ห้ามส่ง Pending,Waiting — แท็บแยกแบบเดิม', () => {
+  const r = สร้างแถบแท็บขาย(ฐาน)
+  assert.ok(!r.tabs.some((t) => t.id.includes(',')), 'ท่อเก่าตอบ 0 ใบกับค่าคั่นจุลภาค ⇒ แท็บที่ส่งแบบนั้นคือแท็บหลอก')
+})
+
+test('กำลังกรองชำระเงิน (ตัวนับสถานะไม่รู้) ⇒ แท็บรอโอนรวมก็ต้องไม่มีวงเล็บ ห้ามบวกเป็น 0', () => {
+  const r = สร้างแถบแท็บขาย({ ...ฐาน, ท่อรับหลายสถานะ: true, fPay: 'Pending' })
+  assert.equal(หา(r, 'Pending,Waiting').count, undefined)
+})

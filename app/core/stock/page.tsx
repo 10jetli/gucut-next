@@ -8,7 +8,7 @@
 // ⚠️ **คงเหลือติดลบต้องเป็นสีแดง** — ZORT ทำแบบนี้ (เห็นในภาพ -2 -3) เป็นสัญญาณว่าขายเกิน
 // ⚠️ ตัวเลขที่นี่คือ "ภาพถ่ายสต็อกตอนตี 1" ไม่ใช่ยอดสด — ต้องเขียนบอกบนจอเสมอ
 //    ปล่อยให้เข้าใจว่าสดจะกลายเป็นจอที่โกหกเงียบ ๆ ตอนของขยับระหว่างวัน
-import { Suspense, useCallback, useEffect, useState } from 'react'
+import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import NegVsPush from '@/components/zort/NegVsPush'
 import DupSkuNote from '@/components/zort/DupSkuNote'
 import { useSearchParams } from 'next/navigation'
@@ -27,6 +27,7 @@ import { productMenuItems } from '@/lib/product-menu'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
+import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
 
 interface Row {
@@ -41,6 +42,9 @@ interface Row {
   /** พร้อมขาย — **null = ยังไม่มีในทะเบียน ห้ามเดาว่าเท่ากับคงเหลือ** (ต่างจากคงเหลือจริง 155 ตัว) */
   available?: number | null
   unit?: string | null
+  /** หมวดหมู่ของรหัสนี้ตามทะเบียน ZORT (ท่อ gucut-web 361b9f5c · `products.category`)
+   *  `null` = ไม่มีหมวด · ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ ทั้งสองกรณี **ไม่เขียนบรรทัดหมวด** (ห้ามเดาจากชื่อ) */
+  category?: string | null
   service?: boolean
   active?: boolean | null
   /** ช่องทางที่สินค้าตัวนี้ลงขายอยู่จริง เช่น ["shopee","tiktok"]
@@ -101,6 +105,11 @@ interface Resp {
    *  ⚠️ ยังไม่ deploy ตอนที่เขียนจอนี้ ⇒ **ไม่มีคีย์ = ไม่เขียนคำกำกับ** (ไม่ใช่เดาว่ากรองแล้ว) */
   applied?: { q?: string | null; category?: string | null; sort?: string | null; only?: string | null; kind?: string | null } | null
   appliedNote?: string
+  /** 🔍 ช่องค้นหาขั้นสูงที่ท่อกรองได้จริง (gucut-web 5aca9686) — **จอเปิดช่องเฉพาะที่อยู่ในนี้**
+   *  ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ ไม่มีช่องเลย (ช่องที่กรอกแล้วไม่กรอง แย่กว่าไม่มีช่อง) */
+  advancedFiltersSupported?: string[] | null
+  /** ช่องที่ ZORT มีแต่ท่อบอกเองว่าไม่มีข้อมูล ⇒ จอโชว์เหตุตามคำของท่อ ไม่แต่งเอง */
+  advancedFiltersUnavailable?: Record<string, string> | null
   only?: string | null
   kind?: string | null
   limit: number; offset: number; rows: Row[]
@@ -204,6 +213,10 @@ function CoreStockInner() {
      ⇒ คนกดต้องพิมพ์รหัสค้นเองอีกรอบ = ลิงก์ที่สัญญาว่าจะพาไปหาของ แต่ไม่พาไปถึง */
   const [q, setQ] = useState(() => sp.get('q') ?? '')
   const [sort, setSort] = useState('qty')
+  /* 🔍 ค้นหาขั้นสูงแบบ ZORT (`#searchAdvance` ของ /Product/list อ่าน DOM 15 ต.ค. 2569: ช่วงราคาขาย · ช่วงราคาซื้อ …)
+     ⚠️ ส่งเฉพาะช่องที่กรอก และเฉพาะที่ท่อประกาศว่ารับ — ดู `advancedFiltersSupported` */
+  const [advOpen, setAdvOpen] = useState(false)
+  const [ช่วงราคา, setช่วงราคา] = useState({ sellmin: '', sellmax: '', buymin: '', buymax: '' })
   const [tab, setTab] = useState<'all' | 'out' | 'low' | 'active' | 'inactive'>('all')
   // ⚠️ ค่าตั้งต้นซ่อน "บริการ" (ค่าส่ง · ค่าซ่อม · ค่าน้ำมัน ฯลฯ) ออกจากจอสินค้า
   //    เพราะของพวกนี้ไม่มีสต็อกจริง แต่ติดลบหนัก (-712 · -200) เลยยึดสองแถวบนสุด
@@ -265,6 +278,7 @@ function CoreStockInner() {
       if (kindId === 'goods') qs.set('kind', 'goods')
       if (qText.trim()) qs.set('q', qText.trim())
       if (category) qs.set('category', category)
+      for (const [k, v] of Object.entries(ช่วงราคา)) if (v.trim()) qs.set(k, v.trim())
       /* ⚡ **กดเมนูกลับมาแล้วเห็นของเดิมทันที แล้วค่อยอัปเดตเบื้องหลัง**
          ฝั่งท่อวัดแล้ว: เวลา = 1.1 วิคงที่ + 0.27 วิต่อการยิงฐาน 1 รอบ
          1.1 วินาทีนั้นลบไม่ได้ถ้ายังยิงอยู่ ⇒ ทางเดียวที่เร็วกว่านั้นคือ **ไม่ยิง**
@@ -311,11 +325,19 @@ function CoreStockInner() {
        กดเลือกหมวด → จอยิงใหม่จริง แต่ closure เก่าไม่มีค่าหมวด ⇒ คำขอไม่มี `category=`
        ⇒ จอโชว์ป้าย "กรองหมวด: X" แต่แถวเป็นชุดเดิมทั้งชุด = **คนอ่านเชื่อว่ากรองแล้ว**
      (โรคเดียวกับตัวกรองเงียบที่ไล่กวาดอยู่ ต่างกันแค่ว่ารอบนี้เงียบที่ฝั่งจอ ไม่ใช่ฝั่งท่อ) */
-  }, [q, sort, tab, kind, perPage, category])
+  }, [q, sort, tab, kind, perPage, category, ช่วงราคา])
 
   /* โหลดครั้งแรก + เมื่อหมวดเปลี่ยน — `q` ตั้งต้นจาก URL ถูกส่งไปด้วยเพราะ `load` อ่านค่าจาก state ปัจจุบัน
      ⚠️ ห้ามใส่ `q` ใน deps — ไม่งั้นจอจะยิงท่อทุกตัวอักษรที่พิมพ์ (ช่องค้นหาต้องกด Enter เท่านั้น) */
   useEffect(() => { load(0) }, [category]) // eslint-disable-line react-hooks/exhaustive-deps
+  /* ⚠️ กดล้างช่วงราคาแล้วต้องยิงใหม่ด้วยค่าว่าง — `load` ในรอบที่กดยังถือค่าเก่า ⇒ รอให้ state เปลี่ยนจริงก่อน
+     (ไม่ยิงตอนพิมพ์ทีละตัว: ยิงเฉพาะเมื่อปุ่มล้างตั้งธงไว้) */
+  const รอโหลดหลังล้าง = useRef(false)
+  useEffect(() => {
+    if (!รอโหลดหลังล้าง.current) return
+    รอโหลดหลังล้าง.current = false
+    load(0)
+  }, [ช่วงราคา]) // eslint-disable-line react-hooks/exhaustive-deps
 
   /* ── 📤 ส่งออก Excel ตามตัวกรองที่เลือกอยู่ ───────────────────────────────
      🔴 **ย้ายมาใช้ปุ่มร่วม `<ExportButton>` แล้ว** (15 ก.ย. 2569)
@@ -656,7 +678,12 @@ function CoreStockInner() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="ค้นหา รหัสสินค้า หรือชื่อสินค้า"
-        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
+        advanced={<>
+          <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
+          {Array.isArray(data?.advancedFiltersSupported) && (
+            <>{' · '}<LinkText onClick={() => setAdvOpen((v) => !v)}>{advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}</LinkText></>
+          )}
+        </>}
         right={
           <>
             <span className="text-[12.5px] text-gray-500">เรียง</span>
@@ -670,6 +697,35 @@ function CoreStockInner() {
           </>
         }
       />
+
+      {/* 🔍 ช่องที่ขึ้น = ช่องที่ท่อประกาศว่ากรองได้จริง · ช่องที่ ZORT มีแต่ท่อไม่มีข้อมูล เขียนเหตุตามคำของท่อ */}
+      {Array.isArray(data?.advancedFiltersSupported) && (() => {
+        const รับ = data!.advancedFiltersSupported!
+        const ช่อง = (k: keyof typeof ช่วงราคา, label: string): AdvField => ({
+          label, kind: 'number', value: ช่วงราคา[k], width: 110,
+          onChange: (v: string) => setช่วงราคา((o) => ({ ...o, [k]: String(v) })),
+        } as AdvField)
+        const fields: AdvField[] = [
+          ...(รับ.includes('sellmin') ? [ช่อง('sellmin', 'ราคาขาย ตั้งแต่')] : []),
+          ...(รับ.includes('sellmax') ? [ช่อง('sellmax', 'ราคาขาย ถึง')] : []),
+          ...(รับ.includes('buymin') ? [ช่อง('buymin', 'ราคาซื้อ ตั้งแต่')] : []),
+          ...(รับ.includes('buymax') ? [ช่อง('buymax', 'ราคาซื้อ ถึง')] : []),
+        ]
+        const ไม่มี = Object.entries(data?.advancedFiltersUnavailable ?? {})
+          .filter(([, why]) => typeof why === 'string')
+          .map(([k, why]) => ({ what: k === 'warehouse' ? 'คลัง/สาขา' : k === 'tag' ? 'Tag' : k === 'archived' ? 'แสดงสินค้าที่ถูกลบ' : k, why: String(why) }))
+        return (
+          <AdvancedSearch
+            open={advOpen}
+            fields={fields}
+            onApply={() => load(0)}
+            onClear={() => { รอโหลดหลังล้าง.current = true; setช่วงราคา({ sellmin: '', sellmax: '', buymin: '', buymax: '' }) }}
+            canClear={Object.values(ช่วงราคา).some((v) => v.trim() !== '')}
+            serverFiltered="กรองที่เซิร์ฟเวอร์ทั้งคลัง ก่อนนับและแบ่งหน้า"
+            notAvailable={ไม่มี}
+          />
+        )
+      })()}
 
       {/* 🔎 พิมพ์หลายคำแล้วผลไม่เหมือน ZORT — เขียนบอกพร้อมทางออกที่กดได้ทันที
           (เหตุผลและตัวเลขที่วัดได้ อยู่ในคอมเมนต์ตรงที่คำนวณ `หลายคำ`) */}
@@ -967,9 +1023,12 @@ function CoreStockInner() {
                       <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
                         {r.name || <span className="text-gray-400">— ท่อไม่ส่งชื่อมา</span>}
                       </Link>
-                      {/* 📐 ZORT เขียนบรรทัดเล็กใต้ชื่อ `หมวดหมู่: …` (อ่านแถวจริง 15 ต.ค. 2569) — **ของเรายังไม่มี**
-                          แถว list=stock **ไม่มีช่องหมวดหมู่** ⇒ รอท่อส่งช่องมา ห้ามเดาจากชื่อสินค้า
+                      {/* 📐 ZORT เขียนบรรทัดเล็กใต้ชื่อ `หมวดหมู่: …` (อ่านแถวจริง 15 ต.ค. 2569)
+                          ⇒ ขึ้นเฉพาะเมื่อท่อส่ง `category` มาเป็นข้อความ · ห้ามเดาจากชื่อสินค้า
                           (ส่วน `บริการ` ZORT ก็เขียนใต้ชื่อ — ของเรามีอยู่แล้วเป็นชิปข้างชื่อด้านล่าง) */}
+                      {typeof r.category === 'string' && r.category.trim() !== '' && (
+                        <span className="block text-[11.5px] text-gray-500">หมวดหมู่: {r.category}</span>
+                      )}
                       {รหัสผิดรูป(r.sku) && (
                         <span
                           className="ml-1.5 text-[10px] font-semibold text-amber-900 bg-amber-100 border border-amber-300 rounded px-1 py-0.5"

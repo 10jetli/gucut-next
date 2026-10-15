@@ -78,6 +78,9 @@ interface ListResp {
    *  🔴 ทั้งรีโปนี้ **ไม่มีใครอ่านช่องนี้เลยจนถึง 14 ต.ค. 2569** (ฝั่งท่อ grep เจอ 0 ที่)
    *     ⇒ ทางสำรองของแท็บเดินเงียบมาตลอด · ตอนนี้ใช้ประกาศบนจอแล้ว */
   statusesAllError?: string | null
+  /** 🔑 ท่อรุ่นที่รับ `status=` หลายค่า (gucut-web 361b9f5c) ส่งคีย์นี้มาพร้อมกัน ⇒ ใช้เป็น **ลายน้ำของรุ่น**
+   *  (คีย์ใหม่มา = รุ่นใหม่ขึ้นแล้ว · ไม่มา = ยังไม่ขึ้น ไม่ใช่ "ไม่รองรับวันส่ง") */
+  dateTypesSupported?: string[] | null
   /* ── 💰 แท็บ "รอชำระ" ของ ZORT = คอลัมน์ **pay_status** ไม่ใช่ **status** ───────────
      🔑 วัดเองก่อนออกแบบ (14 ต.ค. 2569 · z1 · 1 ต.ค. 2568–14 ต.ค. 2569 · 7,748 ใบ = `total` ของท่อเอง):
         status=Pending 176 ใบ · pay_status=Pending 168 ใบ · **ซ้อนกันแค่ 153**
@@ -684,6 +687,10 @@ export default function CoreSalesPage() {
     fPay,
     ป้ายสถานะ: (st) => (zortWord(SALE_STATUS, st).known ? statusTh(st) : `${st} ⚠️`),
     ป้ายชำระเงิน: (v) => (zortWord(PAY_STATUS, v).known ? zortWord(PAY_STATUS, v).text : `${v} ⚠️`),
+    /* 🗂 รวม Waiting เข้าแท็บรอโอนแบบ ZORT ได้ก็ต่อเมื่อท่อรุ่นนี้รับหลายค่าจริง
+       สัญญาณ: คีย์ใหม่ `dateTypesSupported` (มากับคอมมิตเดียวกัน) หรือ `applied.status` เป็นอาร์เรย์
+       ⚠️ ห้ามเดาจากรุ่นของจอ — ท่อเก่าตอบ 0 ใบกับ `Pending,Waiting` ⇒ แท็บบอก 27 กดได้ 0 */
+    ท่อรับหลายสถานะ: Array.isArray(data?.dateTypesSupported) || Array.isArray((data?.applied as { status?: unknown } | null | undefined)?.status),
   })
   const { tabs, ตัวนับสถานะเชื่อได้, ไม่มีแท็บตรง } = แถบแท็บ
   const แท็บที่เลือก = แถบแท็บ.active
