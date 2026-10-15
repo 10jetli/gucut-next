@@ -115,6 +115,43 @@ console.log('③ ขอบ 20%: ลดพอดีผ่าน · เกิน�
   ok('ลด 21% ถูกปฏิเสธ', code === 'TOO_FEW_SKUS')
 }
 
+console.log('③.1 เพดานจำนวนจริง: 1,801 → 1,441 ห้ามผ่านด้วยสัดส่วนอย่างเดียว')
+{
+  const s = fakeStore(); s.data.set('state', { ...state(1801), updatedAt: 'ก่อน' })
+  let error
+  try { await lib.replaceCatalogState(s, state(1441)) } catch (e) { error = e }
+  ok('ลด 360 SKU ถูกปฏิเสธ แม้ยังไม่เกิน 20%',
+    error?.code === 'TOO_FEW_SKUS' && error.details.droppedSkuCount === 360 && error.details.maxUnconfirmedSkuDrop === 50,
+    String(error?.message))
+  error = null
+  try {
+    await lib.replaceCatalogState(s, state(1441), {
+      confirmSkuReduction: { oldSkuCount: 1801, newSkuCount: 1440, reason: 'เลขยืนยันไม่ตรง' },
+    })
+  } catch (e) { error = e }
+  ok('เลขยืนยันคลาดหนึ่งตัวก็ยังถูกปฏิเสธ', error?.code === 'TOO_FEW_SKUS')
+  const accepted = await lib.replaceCatalogState(s, state(1441), {
+    confirmSkuReduction: { oldSkuCount: 1801, newSkuCount: 1441, reason: 'ผู้มีสิทธิ์ยืนยันการลดชุดทดสอบ' },
+    makeId: () => 'confirmed',
+  })
+  ok('ยอดเดิม/ใหม่ตรงและมีเหตุผล ⇒ ยอมให้ลดจริง', accepted.skuCount === 1441)
+  ok('เหตุผลติดอยู่กับ snapshot', accepted.backup?.reason.includes('ผู้มีสิทธิ์ยืนยัน') === true, JSON.stringify(accepted.backup))
+}
+
+console.log('③.2 state เดิมมี 0 SKU ⇒ ไม่มีฐานให้วัด ต้อง fail closed')
+{
+  const s = fakeStore(); s.data.set('state', { ...state(0), updatedAt: 'ก่อน' })
+  let error
+  try { await lib.replaceCatalogState(s, state(10)) } catch (e) { error = e }
+  ok('ฐาน 0 โดยไม่ยืนยัน ⇒ EMPTY_CURRENT_STATE', error?.code === 'EMPTY_CURRENT_STATE', String(error?.message))
+  ok('ยังไม่มีการเขียน', !s.ops.some((x) => x.startsWith('set:')), s.ops.join(' → '))
+  const accepted = await lib.replaceCatalogState(s, state(10), {
+    confirmSkuReduction: { oldSkuCount: 0, newSkuCount: 10, reason: 'ยืนยันกู้ฐานว่างในการทดสอบ' },
+    makeId: () => 'empty-confirmed',
+  })
+  ok('ฐาน 0 ต้องระบุทั้งสองยอดและเหตุผลจึงเขียนได้', accepted.skuCount === 10)
+}
+
 console.log('④ ป้อนของเสีย: ทำให้สำรองล้ม ⇒ ปฏิเสธการเขียนจริง')
 {
   const s = fakeStore(); s.data.set('state', { ...state(100, 'เดิม'), updatedAt: 'ก่อน' }); s.fail.snapshotSet = true
@@ -164,6 +201,19 @@ console.log('⑦ กู้คืน: สำรองก้อนปัจจุ�
   ok('สำรองก้อนปัจจุบัน 100 SKU ก่อนกู้', r.backup?.skuCount === 100 && r.backup.reason === 'restore:target', JSON.stringify(r.backup))
   const backupKey = [...s.data.keys()].find((x) => x.endsWith('-before-restore'))
   ok('รุ่นก่อนกู้เก็บ state 100 SKU จริง', Object.keys(s.data.get(backupKey).state.ovr).length === 100)
+
+  const snapshotCount = [...s.data.keys()].filter((x) => x.startsWith('state-snapshots/')).length
+  const updatedAt = s.data.get('state').updatedAt
+  s.ops.length = 0
+  let allNoChange = true
+  for (let i = 0; i < 31; i++) {
+    const again = await lib.restoreCatalogStateSnapshot('target', s)
+    if (again.changed !== false || again.backup !== null) allNoChange = false
+  }
+  ok('restore เป้าหมายเดิมซ้ำ 31 ครั้ง ⇒ changed=false ทุกครั้ง', allNoChange)
+  ok('ไม่สร้าง snapshot มาเบียดของเดิม',
+    [...s.data.keys()].filter((x) => x.startsWith('state-snapshots/')).length === snapshotCount)
+  ok('ไม่เขียน state และไม่ขยับ updatedAt', !s.ops.includes('set:state') && s.data.get('state').updatedAt === updatedAt, s.ops.join(' → '))
 }
 
 console.log('⑧ เส้น API: error มีตัวเลข และรายการ/กู้คืนต้องมี x-admin-key')
@@ -172,6 +222,15 @@ console.log('⑧ เส้น API: error มีตัวเลข และร�
   s.data.set('state', { ...state(100), updatedAt: 'ก่อน' })
   let r = await stateRoute.POST(req(null, state(50))); let j = await r.json()
   ok('POST ก้อนครึ่งเดียวตอบ 409 พร้อม 100/50', r.status === 409 && j.oldSkuCount === 100 && j.newSkuCount === 50, JSON.stringify(j))
+
+  s.data.set('state', { ...state(1801), updatedAt: 'ก่อน' })
+  r = await stateRoute.POST(req(null, {
+    ...state(1441),
+    confirmSkuReduction: { oldSkuCount: 1801, newSkuCount: 1441, reason: 'ยืนยันผ่านเส้น API ในเทส' },
+  })); j = await r.json()
+  ok('เส้น POST ส่งคำยืนยันตรง ⇒ 200', r.status === 200 && j.skuCount === 1441, JSON.stringify(j))
+  ok('ช่องยืนยันเป็นคำสั่ง ไม่ถูกเก็บปนใน state', !('confirmSkuReduction' in s.data.get('state')))
+  s.data.set('state', { ...state(100), updatedAt: 'ก่อน' })
 
   const เดิม = process.env.GUCUT_WEB_ADMIN_KEY
   try {

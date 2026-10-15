@@ -1,5 +1,6 @@
 import { getStore } from '@netlify/blobs'
 import { randomUUID } from 'node:crypto'
+import { isDeepStrictEqual } from 'node:util'
 
 export interface CatalogState {
   ovr: Record<string, any>
@@ -21,6 +22,12 @@ export interface CatalogState {
 }
 
 export type CatalogStateInput = Omit<CatalogState, 'updatedAt'>
+
+export interface CatalogSkuReductionConfirmation {
+  oldSkuCount: number
+  newSkuCount: number
+  reason: string
+}
 
 export interface CatalogSnapshot {
   version: 1
@@ -48,6 +55,7 @@ type CatalogStore = {
 type CatalogStateErrorCode =
   | 'READ_FAILED'
   | 'TOO_FEW_SKUS'
+  | 'EMPTY_CURRENT_STATE'
   | 'BACKUP_FAILED'
   | 'WRITE_FAILED'
   | 'SNAPSHOT_NOT_FOUND'
@@ -70,6 +78,9 @@ const STORE = 'gucut-catalog'
 const KEY = 'state'
 const SNAPSHOT_PREFIX = 'state-snapshots/'
 const KEEP_SNAPSHOTS = 30
+/* ยังไม่มีประวัติจำนวน SKU ย้อนหลังให้หาค่าปกติจากของจริง จึงตั้งเพดานเล็กไว้ก่อน
+   ของจริงปัจจุบัน 1,801 SKU: ด่าน 20% อย่างเดียวปล่อยให้หายได้ถึง 360 SKU ซึ่งมากเกินรับได้ */
+const MAX_UNCONFIRMED_SKU_DROP = 50
 
 /** ใช้ strong consistency กับเส้นเขียน/กู้คืน — อ่านค่าก่อนหน้าเก่าแล้วสำรองผิดรุ่น = ตาข่ายปลอม */
 const store = (): CatalogStore => getStore({ name: STORE, consistency: 'strong' }) as unknown as CatalogStore
@@ -117,17 +128,53 @@ export async function loadCatalogStateBlobs(): Promise<CatalogState | null> {
   }
 }
 
-function assertNotDangerouslySmaller(current: CatalogState | null, next: CatalogStateInput): void {
+function matchingConfirmation(
+  confirmation: CatalogSkuReductionConfirmation | undefined,
+  oldCount: number,
+  nextCount: number,
+): string | null {
+  if (!confirmation || confirmation.oldSkuCount !== oldCount || confirmation.newSkuCount !== nextCount) return null
+  const reason = typeof confirmation.reason === 'string' ? confirmation.reason.trim() : ''
+  return reason ? reason.slice(0, 500) : null
+}
+
+function assertNotDangerouslySmaller(
+  current: CatalogState | null,
+  next: CatalogStateInput,
+  confirmation?: CatalogSkuReductionConfirmation,
+): string | null {
   const oldCount = countCatalogStateSkus(current)
   const nextCount = countCatalogStateSkus(next)
-  // "เกิน 20%" = ต่ำกว่า 80% อย่างเคร่งครัด; ลดพอดี 20% ยังผ่านตามถ้อยคำของใบงาน
-  if (oldCount > 0 && nextCount * 100 < oldCount * 80) {
+  const confirmedReason = matchingConfirmation(confirmation, oldCount, nextCount)
+
+  /* state มีอยู่แต่เหลือ 0 = ไม่มีฐานที่เชื่อถือได้ให้คำนวณ 20%/50 SKU
+     ห้ามปล่อยผ่านเพราะ oldCount > 0 เป็น false; ต้องยืนยันยอด 0 และยอดใหม่พร้อมเหตุผลตรงทั้งหมด */
+  if (current && oldCount === 0 && !confirmedReason) {
     throw new CatalogStateError(
-      'TOO_FEW_SKUS',
-      `ปฏิเสธการเขียน: ของเดิม ${oldCount} SKU แต่ก้อนใหม่มี ${nextCount} SKU (ลดลงเกิน 20%)`,
-      { oldSkuCount: oldCount, newSkuCount: nextCount },
+      'EMPTY_CURRENT_STATE',
+      `ปฏิเสธการเขียน: state เดิมมี 0 SKU จึงใช้เป็นฐานตรวจความครบไม่ได้ ต้องยืนยันยอดเดิม 0 / ยอดใหม่ ${nextCount} พร้อมเหตุผล`,
+      { oldSkuCount: oldCount, newSkuCount: nextCount, confirmationRequired: true },
     )
   }
+
+  const drop = oldCount - nextCount
+  // ใช้สองเพดานคู่กัน: เกิน 20% หรือเกิน 50 SKU อย่างใดอย่างหนึ่งต้องยืนยันตรงทั้งสองยอด
+  const overPercent = oldCount > 0 && nextCount * 100 < oldCount * 80
+  const overAbsolute = drop > MAX_UNCONFIRMED_SKU_DROP
+  if ((overPercent || overAbsolute) && !confirmedReason) {
+    throw new CatalogStateError(
+      'TOO_FEW_SKUS',
+      `ปฏิเสธการเขียน: ของเดิม ${oldCount} SKU แต่ก้อนใหม่มี ${nextCount} SKU (ลด ${drop} SKU${overPercent ? ' และเกิน 20%' : ''}) ต้องยืนยันยอดเดิม/ใหม่พร้อมเหตุผล`,
+      {
+        oldSkuCount: oldCount,
+        newSkuCount: nextCount,
+        droppedSkuCount: drop,
+        maxUnconfirmedSkuDrop: MAX_UNCONFIRMED_SKU_DROP,
+        confirmationRequired: true,
+      },
+    )
+  }
+  return confirmedReason
 }
 
 async function trimSnapshots(s: CatalogStore): Promise<void> {
@@ -146,12 +193,15 @@ export async function replaceCatalogState(
   options: {
     reason?: string
     enforceShrinkGuard?: boolean
+    confirmSkuReduction?: CatalogSkuReductionConfirmation
     now?: () => Date
     makeId?: () => string
   } = {},
 ): Promise<{ updatedAt: string; skuCount: number; backup: CatalogSnapshotSummary | null }> {
   const current = await loadStrict(s)
-  if (options.enforceShrinkGuard !== false) assertNotDangerouslySmaller(current, next)
+  const confirmedReason = options.enforceShrinkGuard !== false
+    ? assertNotDangerouslySmaller(current, next, options.confirmSkuReduction)
+    : null
 
   const now = options.now ?? (() => new Date())
   let backup: CatalogSnapshotSummary | null = null
@@ -163,7 +213,7 @@ export async function replaceCatalogState(
       id,
       createdAt,
       skuCount: countCatalogStateSkus(current),
-      reason: options.reason ?? 'overwrite',
+      reason: options.reason ?? (confirmedReason ? `confirmed-reduction:${confirmedReason}` : 'overwrite'),
       state: current,
     }
     try {
@@ -191,8 +241,11 @@ export async function replaceCatalogState(
   return { updatedAt, skuCount: countCatalogStateSkus(next), backup }
 }
 
-export async function saveCatalogStateBlobs(state: CatalogStateInput) {
-  return replaceCatalogState(store(), state)
+export async function saveCatalogStateBlobs(
+  state: CatalogStateInput,
+  options: { confirmSkuReduction?: CatalogSkuReductionConfirmation } = {},
+) {
+  return replaceCatalogState(store(), state, options)
 }
 
 async function readSnapshot(s: CatalogStore, id: string): Promise<CatalogSnapshot> {
@@ -241,11 +294,25 @@ export async function restoreCatalogStateSnapshot(
   options: { now?: () => Date; makeId?: () => string } = {},
 ) {
   const snapshot = await readSnapshot(s, id)
+  const target = stateWithoutUpdatedAt(snapshot.state)
+  const current = await loadStrict(s)
+  /* ผู้มีสิทธิ์กดซ้ำเพราะไม่แน่ใจได้: ถ้าก้อนเท่ากัน ห้ามสร้าง snapshot ใหม่มาเบียด 30 รุ่นเดิม
+     และห้ามขยับ updatedAt ให้หน้าตาเหมือนมีการกู้คืนรอบใหม่ */
+  if (current && isDeepStrictEqual(stateWithoutUpdatedAt(current), target)) {
+    return {
+      changed: false,
+      message: 'ไม่มีอะไรเปลี่ยน — สถานะปัจจุบันตรงกับรุ่นสำรองนี้อยู่แล้ว',
+      restored: { id: snapshot.id, createdAt: snapshot.createdAt, skuCount: snapshot.skuCount },
+      updatedAt: current.updatedAt ?? null,
+      skuCount: countCatalogStateSkus(current),
+      backup: null,
+    }
+  }
   // กู้คืนจงใจข้ามด่าน 20% เพราะรุ่นเก่าอาจเล็กกว่า แต่ยังสำรองก้อนปัจจุบันก่อนเสมอ
-  const result = await replaceCatalogState(s, stateWithoutUpdatedAt(snapshot.state), {
+  const result = await replaceCatalogState(s, target, {
     reason: `restore:${id}`,
     enforceShrinkGuard: false,
     ...options,
   })
-  return { restored: { id: snapshot.id, createdAt: snapshot.createdAt, skuCount: snapshot.skuCount }, ...result }
+  return { changed: true, restored: { id: snapshot.id, createdAt: snapshot.createdAt, skuCount: snapshot.skuCount }, ...result }
 }

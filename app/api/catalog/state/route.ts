@@ -67,11 +67,13 @@ export async function POST(req: NextRequest) {
         ? body.added.filter((x: unknown) => !!x && typeof (x as { sku?: unknown }).sku === 'string')
         : [],
     }
-    const result = await saveCatalogStateBlobs(state)
+    const result = await saveCatalogStateBlobs(state, {
+      confirmSkuReduction: body?.confirmSkuReduction,
+    })
     return NextResponse.json({ ok: true, ...result })
   } catch (e: any) {
     if (e instanceof CatalogStateError) {
-      const status = e.code === 'TOO_FEW_SKUS' ? 409 : 503
+      const status = e.code === 'TOO_FEW_SKUS' || e.code === 'EMPTY_CURRENT_STATE' ? 409 : 503
       return NextResponse.json({ ok: false, code: e.code, error: e.message, ...e.details }, { status })
     }
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 })
