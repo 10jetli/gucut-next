@@ -18,7 +18,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  Pill, toneOfStatus, EmptyState, thaiDate,
+  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu,
 } from '@/components/zort'
 import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/zort/AdvancedSearch'
 import ImportButton from '@/components/zort/ImportButton'
@@ -412,15 +412,25 @@ export default function QuotationsPage() {
                     </td>
                     <td className={TDR}>{fmtMoney(Number(r.amount) || 0)}</td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status ?? '')}>{statusTh(r.status)}</Pill></td>
-                    {/* ⚠️ ZORT มีเมนู ⋮ ท้ายแถว (ยืนยันจากภาพจอจริง zort-ui/51 · ตรวจสองคนแล้ว 5 ก.ย. 2569)
-                        ของเราไม่มีคำสั่งอะไรให้ทำกับใบเสนอราคาเลย — จอนี้ดึงสดจาก ZORT อ่านอย่างเดียว
-                        แก้/ลบ/อนุมัติ ต้องทำใน ZORT ⇒ เมนูที่กดแล้วว่างเปล่าคือเมนูหลอก
-                        **แต่ซ่อนทิ้งก็ไม่ได้** คนที่ชิน ZORT จะกวาดตาหาช่องขวาสุดแล้วไม่เจอ
-                        แล้วนึกว่าจอเราโหลดไม่ครบ ⇒ โชว์ตามผังแต่ล็อกไว้พร้อมเหตุผล
-                        (ท่าเดียวกับไอคอนสลับมุมมองในจอสินค้า และปุ่ม "จัดการร้าน" ในจอ Marketplace) */}
+                    {/* ⋮ เมนูท้ายแถว — ลำดับและคำตาม ZORT (อ่าน `<ul>` แถวจริงบน /Quotation/list 15 ต.ค. 2569 23:1x · อ่านอย่างเดียว) 8 รายการ
+                        เดิมเป็น ⋮ ล็อกเฉย ๆ (เปิดไม่ได้) ⇒ คนที่ชิน ZORT เปิดไม่เจอว่ามีอะไร และไม่รู้ว่าทำไมทำไม่ได้
+                        ⇒ ตอนนี้: ของที่ทำได้จริง (คัดลอกเลขที่ใบ) + ของ ZORT ครบเป็นสีเทาพร้อมเหตุ · จอนี้ดึงสดจาก ZORT อ่านอย่างเดียว */}
                     <td className={`${TD} text-right`}>
-                      <span title="ZORT มีเมนูคำสั่งท้ายแถว — จอนี้อ่านอย่างเดียว ดึงสดจาก ZORT ทุกครั้ง แก้ไขต้องทำใน ZORT"
-                        className="text-gray-300 cursor-not-allowed select-none">⋮</span>
+                      <RowMenu
+                        items={[
+                          { label: 'คัดลอกเลขที่ใบ', onClick: () => { navigator.clipboard?.writeText(String(r.number ?? '')).catch(() => {}) } },
+                          ...([
+                            ['ปักหมุดไว้บนสุด', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+                            ['คัดลอก', 'ยังทำไม่ได้ — สร้างใบเสนอราคาใหม่ใน ZORT = เขียนกลับ (จอนี้อ่านอย่างเดียว)'],
+                            ['แก้ไข', 'ยังทำไม่ได้ — แก้ใบต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+                            ['พิมพ์เอกสาร', 'ยังทำไม่ได้ — ยังไม่มีหน้าพิมพ์ใบเสนอราคาของเรา'],
+                            ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+                            ['ซ่อน', 'ยังทำไม่ได้ — ซ่อนใบต้องเขียนกลับ ZORT'],
+                            ['ยกเลิกรายการ', 'ยังทำไม่ได้ — ยกเลิกใบต้องทำใน ZORT (ย้อนไม่ได้)'],
+                            ['ลบรายการ', 'ยังทำไม่ได้ — ลบใบต้องทำใน ZORT (ย้อนไม่ได้)'],
+                          ] as const).map(([label, disabled]) => ({ label, disabled })),
+                        ]}
+                      />
                     </td>
                   </tr>
                 ))}
