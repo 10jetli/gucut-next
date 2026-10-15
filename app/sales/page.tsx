@@ -9,6 +9,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ } from '@/lib/format'
 import Card from '@/components/ui/Card'
+import { ยอดขายแบบZORT, type ผลยอดแบบZORT, type แถวใบคืน } from '@/lib/zort-sales-total'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, type ประตูกำไร } from '@/components/zort/CostGate'
@@ -435,6 +436,47 @@ function ReportKindSelect({ ประตู }: { ประตู: ประต�
 /** 🕰 บอกอายุของตารางใบคืน — ท่อซิงก์ทุกชั่วโมงนาทีที่ :07
  *  🔴 **null = ไม่รู้ ห้ามเขียนว่าซิงก์หยุด** (ท่อรุ่นเก่าอาจไม่ส่งช่องนี้)
  *  ⚠️ เวลาจากท่อเป็น UTC ⇒ +7 ก่อนแสดง (บทเรียนเดิมทั้งโปรเจกต์) */
+/* 🧾 **ยอดขายรวมแบบ ZORT** (ร้าน z1) — ตัวเลขบนหัวรายงานยอดขายของ ZORT ที่จะส่ง PEAK
+   สูตรอยู่ที่ `lib/zort-sales-total.ts` (พิสูจน์ ส.ค. 2569 ตรง 8/8 ช่องทาง)
+   ⚠️ ไม่แทนยอดรวมเดิมของจอนี้ — ตอบคนละคำถาม (ของเดิม: ทุกร้าน · ทุกสถานะชำระ · หักคืนตามวันขาย)
+   ⚠️ ดึงสองชิ้น: ใบชำระครบร้าน z1 (ยอดรวมจากท่อ) + ใบคืนร้าน z1 ตามวันที่ใบคืน (ไล่ทุกหน้า) · ชิ้นไหนพลาด = ไม่รู้ ไม่ใช่ 0 */
+function ZortSalesTotal({ from, to }: { from: string; to: string }) {
+  const [ผล, setผล] = useState<ผลยอดแบบZORT | null>(null)
+  useEffect(() => {
+    let ยกเลิก = false
+    setผล(null)
+    ;(async () => {
+      const ขาย = await fetch(`/api/web/core?${new URLSearchParams({ list: 'orders', from, to, store: 'z1', paystatus: 'Paid', limit: '1' })}`)
+        .then((r) => r.json()).then((j) => (j && !j.error ? j.totalAmount : null)).catch(() => null)
+      let คืน: แถวใบคืน[] | null = []
+      for (let page = 1; page <= 20 && คืน; page++) {
+        const j = await fetch(`/api/web/core?${new URLSearchParams({ list: 'returnorders', from, to, store: 'z1', limit: '200', page: String(page) })}`)
+          .then((r) => r.json()).catch(() => null)
+        if (!j || j.error || !Array.isArray(j.rows)) { คืน = null; break }
+        คืน.push(...j.rows)
+        if (!(typeof j.pages === 'number' && page < j.pages)) break
+      }
+      if (!ยกเลิก) setผล(ยอดขายแบบZORT({ ขายชำระแล้ว: ขาย, ใบคืน: คืน, ตั้งแต่: from, ถึง: to }))
+    })()
+    return () => { ยกเลิก = true }
+  }, [from, to])
+  return (
+    <div className="text-[12.5px] text-gray-700 bg-blue-50/60 border border-blue-100 rounded px-3 py-2 mt-3 max-w-[360px] leading-relaxed">
+      <b>ยอดขายรวมแบบ ZORT</b> (ร้านออนไลน์ z1 · ตัวเลขบนรายงานยอดขายของ ZORT)
+      <br />
+      {ผล === null ? <span className="text-gray-400">กำลังคิด…</span>
+        : ผล.ยอด === null ? <span className="text-amber-800">ยังไม่รู้ — {ผล.เหตุไม่รู้}</span>
+        : <>
+            <b className="text-[15px] text-blue-700">{fmtMoney(ผล.ยอด)}</b> บาท
+            <span className="block text-[11.5px] text-gray-500">
+              = ใบชำระครบ {fmtMoney(ผล.ขายชำระแล้ว ?? 0)} − ใบคืนที่ออกในช่วงนี้ {fmtNum(ผล.คืนในช่วง?.ใบ ?? 0)} ใบ {fmtMoney(ผล.คืนในช่วง?.บาท ?? 0)}
+              {' '}· หักตาม<b>วันที่ใบคืน</b> แบบ ZORT (ไม่ใช่วันขาย) · ไม่รวมร้าน z2
+            </span>
+          </>}
+    </div>
+  )
+}
+
 function ReturnsFreshness({ utc }: { utc: string | null }) {
   if (!utc) return null
   /* 🔑 แปลงที่เดียวทั้งระบบ — ท่อส่งเวลามา 3 รูปแบบ (ดู `มิลลิวินาทีจากท่อ` ใน lib/format.ts) */
@@ -820,6 +862,7 @@ export default function SalesReportPage() {
                     {report.returns !== null && (
                       <ReturnsFreshness utc={report.returnsSyncedAtUtc ?? null} />
                     )}
+                    <ZortSalesTotal from={report.range.from} to={report.range.to} />
                     <div className="mt-5 flex flex-wrap gap-2 justify-center">
                       <button
                         onClick={() => downloadSummary(report)}
