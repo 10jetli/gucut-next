@@ -25,7 +25,7 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
@@ -586,77 +586,12 @@ function CoreStockInner() {
         }
         actions={
           <>
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>
-              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-            </BtnGhost>
-            {/* 📤 Export to Excel — ZORT มีทุกหน้ารายการ ของเราเพิ่งมี (ใบ t_mu1i74cu · 15 ก.ย. 2569)
-                🔴 **ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า ไม่ใช่แค่ 200 แถวที่เห็น**
-                   ท่อให้ครั้งละ 200 ⇒ ตัวช่วยวนหน้าให้เอง แล้วเขียนลงไฟล์ว่าได้กี่แถวจากกี่แถว */}
-            <ExportButton
-              disabled={loading}
-              onDone={(c) => { if (c.stoppedBecause) setError(`ส่งออกแล้วแต่ได้ไม่ครบ — ${coverageText(c)} (เขียนไว้ในไฟล์แล้ว)`) }}
-              spec={{
-                filename: 'คลังสินค้า',
-                scope: `ภาพถ่ายสต็อกวันที่ ${data?.day ?? '(ไม่รู้)'}`,
-                title: 'คลังสินค้า',
-                /* 🔴 **ขอบเขตต้องอยู่ในหัวไฟล์ด้วย** — ไฟล์ที่ออกไปแล้วไม่มีใครตามไปอธิบายให้
-                   (CTO กำชับข้อ 5 · 18 ก.ย. 2569) และ **อ่านจำนวนจากท่อทุกครั้ง ห้ามเขียนเลขตายตัว** */
-                note: `${skuScopeNote(data?.noSkuInZort)}`
-                  + ' · ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ',
-                filters: [
-                  ['วันที่ของภาพถ่ายสต็อก', data?.day ?? '(ไม่รู้)'],
-                  ['แท็บ', tab === 'all' ? 'ทั้งหมด' : tab],
-                  ['ชนิด', kind === 'goods' ? 'เฉพาะสินค้า (ไม่รวมบริการ)' : 'ทั้งหมด'],
-                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
-                  ['หมวดหมู่', category || '(ทุกหมวด)'],
-                ],
-                fetchPage: async (offsetAt, limit) => {
-                  const qs = new URLSearchParams({ list: 'stock', sort, limit: String(limit), offset: String(offsetAt) })
-                  if (tab !== 'all') qs.set('only', tab)
-                  if (kind === 'goods') qs.set('kind', 'goods')
-                  if (q.trim()) qs.set('q', q.trim())
-                  if (category) qs.set('category', category)
-                  const r = await fetch(`/api/web/core?${qs}`)
-                  const d = await r.json()
-                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                  return {
-                    rows: (Array.isArray(d.rows) ? d.rows : []) as Row[],
-                    /* `rowsMatched` = จำนวนที่ตรงตัวกรองทั้งชุด (ไม่ใช่ total ทั้งคลัง) */
-                    total: typeof d.rowsMatched === 'number' ? d.rowsMatched
-                      : typeof d.total === 'number' ? d.total : null,
-                  }
-                },
-                header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ', 'พร้อมขาย', 'หน่วย', 'ราคาขาย', 'ราคาทุน', `ขายได้ ${data?.soldDays ?? ''} วัน`, 'สถานะ'],
-                /* 🔴 ราคาทุน/พร้อมขาย เป็น null ได้ ⇒ เว้นว่าง **ห้ามใส่ 0**
-                   (281 ตัวยังไม่กรอกราคาทุน · 155 ตัวไม่มีพร้อมขายในทะเบียน) */
-                toRow: (r: Row) => [
-                  r.sku, r.name, r.qty, r.available ?? null, r.unit ?? null,
-                  r.price, r.buy ?? null, r.sold,
-                  r.service ? 'บริการ' : r.active === false ? 'ปิดใช้งาน' : 'ใช้งาน',
-                ],
-              }}
-            />
+            {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT จอสินค้าไม่มี (อ่านปุ่มทั้งหน้า: นำเข้าไฟล์ · เพิ่มสินค้าใหม่ · Export to Excel) */}
             {/* ⚠️ ปุ่มสองอันนี้มีใน ZORT — ทำให้ผังเหมือน แต่ **กดแล้วต้องไม่โกหก**
                 จึงพาไปหน้าที่บอกตรง ๆ ว่ายังไม่ได้ทำ และตอนนี้ให้ไปทำที่ไหน
                 ✅ แก้ 14 ก.ย. 2569 (t_mu0tx2wj): "เพิ่มสินค้าใหม่" เดิมพาไปหน้า "ยังไม่ได้ทำ" ทั้งที่จอจริง /core/stock/new มีแล้ว
                    (บั๊กคลาสเดียวกับปุ่มสร้างรายการซื้อที่ลิงก์ผิดมา 8 วัน) · นำเข้า Excel ยังพาไปหน้า soon เพราะจอยังไม่มี */}
             <ImportButton kind="product" />
-            {/* 🖨 พิมพ์ฉลากของ **รหัสที่แสดงอยู่บนหน้านี้** — ZORT มีปุ่มพิมพ์เอกสารในจอรายการ
-                🔴 **ต้องติดรหัสไปด้วย** (ฝั่งท่อกำชับ) ไม่งั้นไปถึงจอพิมพ์แล้วต้องพิมพ์รหัสใหม่เอง
-                   = ปุ่มที่กดแล้วเหมือนไม่เกิดอะไร
-                ⚠️ ส่งเฉพาะ **หน้านี้** ไม่ใช่ทั้งคลัง — ป้ายบนปุ่มจึงบอกจำนวนตรง ๆ
-                   ถ้าเขียนแค่ "พิมพ์ฉลาก" คนจะนึกว่าได้ทั้งคลัง 2,672 รหัส */}
-            {rows.length > 0 && (
-              <Link href={`/core/stock/print?sku=${encodeURIComponent(rows.map((r) => r.sku).join(','))}`}
-                className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-                🖨 พิมพ์ฉลาก {rows.length} รหัสในหน้านี้
-              </Link>
-            )}
-            {/* 🖼️ ทางเข้าจอ "รหัสที่ยังไม่มีรูป" (ใบ t_mu2u6eg6) — ทำจอไว้แล้วไม่มีทางเข้า = ไม่มีใครใช้ */}
-            <Link href="/core/stock/no-image"
-              className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              🖼️ รหัสที่ยังไม่มีรูป
-            </Link>
             <Link href="/core/stock/new"
               className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
               style={{ background: '#4669e5' }}>
@@ -682,12 +617,10 @@ function CoreStockInner() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="ค้นหา รหัสสินค้า หรือชื่อสินค้า"
-        advanced={<>
-          <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
-          {Array.isArray(data?.advancedFiltersSupported) && (
-            <>{' · '}<LinkText onClick={() => setAdvOpen((v) => !v)}>{advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}</LinkText></>
-          )}
-        </>}
+        /* ผัง ZORT ข้างช่องค้นมีแค่ลิงก์ "ค้นหาขั้นสูง" (ลิงก์ "ค้นหา ·" ของเราเอาออก 16 ต.ค. 2569 — กด Enter ในช่องค้นแทน) */
+        advanced={Array.isArray(data?.advancedFiltersSupported)
+          ? <LinkText onClick={() => setAdvOpen((v) => !v)}>{advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}</LinkText>
+          : undefined}
         right={
           <>
             <span className="text-[12.5px] text-gray-500">เรียง</span>
@@ -828,16 +761,6 @@ function CoreStockInner() {
             <span title="มุมมองตารางรูป — ยังไม่ได้ทำ (ไม่ใช่ทำไม่ได้) · ตอนนี้ดูรูปได้ในหน้ารายละเอียดสินค้า"
               className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">▦</span>
           </div>
-
-          {/* 🔴 วางไว้เหนือแท็บ — ของที่ลูกค้าซื้อไม่ได้ ต้องเห็นก่อนตัวเลขอื่นทั้งหมด */}
-          <BlockedStock />
-
-          {/* 🔗 จอนี้กับจอดันสต็อกนับคนละอย่าง — ขึ้นเฉพาะตอนที่มีตัวขวางที่จอนี้ไม่มีวันแสดง
-              (เลขสองแหล่งวางคู่กันเฉย ๆ = กฎข้อ 4 ของ CLAUDE.md · ที่นี่เป็นข้ามจอ) */}
-          <NegVsPush />
-
-          {/* ⚠️ ข้อความชั่วคราวเรื่องแถวซ้ำจากรอบซิงก์ — ผูกกับเงื่อนไขของท่อ ⇒ หายเองเมื่อฝั่งท่อลบแถวเก่า */}
-          <DupSkuNote />
 
           <Tabs
             // ⚠️ **ลอกจาก ZORT ทั้งชุด** (ภาพ 02-สินค้า.jpg) — สามแท็บ **ไม่มีเลขในวงเล็บ**
@@ -1148,6 +1071,91 @@ function CoreStockInner() {
               </div>
             </div>
           </TableWrap>
+
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (พิกัด y≈1,888 หลังแถวที่ 20 · อ่าน 16 ต.ค. 2569)
+              ปุ่มพิมพ์ฉลาก/รหัสที่ยังไม่มีรูป ZORT ไม่มี ⇒ วางต่อท้ายแถวเดียวกัน ไม่ขึ้นไปแย่งที่หัวจอ */}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            {/* 📤 Export to Excel — ZORT มีทุกหน้ารายการ ของเราเพิ่งมี (ใบ t_mu1i74cu · 15 ก.ย. 2569)
+                🔴 **ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า ไม่ใช่แค่ 200 แถวที่เห็น**
+                   ท่อให้ครั้งละ 200 ⇒ ตัวช่วยวนหน้าให้เอง แล้วเขียนลงไฟล์ว่าได้กี่แถวจากกี่แถว */}
+            <ExportButton
+              disabled={loading}
+              label="📗 Export to Excel"
+              onDone={(c) => { if (c.stoppedBecause) setError(`ส่งออกแล้วแต่ได้ไม่ครบ — ${coverageText(c)} (เขียนไว้ในไฟล์แล้ว)`) }}
+              spec={{
+                filename: 'คลังสินค้า',
+                scope: `ภาพถ่ายสต็อกวันที่ ${data?.day ?? '(ไม่รู้)'}`,
+                title: 'คลังสินค้า',
+                /* 🔴 **ขอบเขตต้องอยู่ในหัวไฟล์ด้วย** — ไฟล์ที่ออกไปแล้วไม่มีใครตามไปอธิบายให้
+                   (CTO กำชับข้อ 5 · 18 ก.ย. 2569) และ **อ่านจำนวนจากท่อทุกครั้ง ห้ามเขียนเลขตายตัว** */
+                note: `${skuScopeNote(data?.noSkuInZort)}`
+                  + ' · ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ',
+                filters: [
+                  ['วันที่ของภาพถ่ายสต็อก', data?.day ?? '(ไม่รู้)'],
+                  ['แท็บ', tab === 'all' ? 'ทั้งหมด' : tab],
+                  ['ชนิด', kind === 'goods' ? 'เฉพาะสินค้า (ไม่รวมบริการ)' : 'ทั้งหมด'],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                  ['หมวดหมู่', category || '(ทุกหมวด)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'stock', sort, limit: String(limit), offset: String(offsetAt) })
+                  if (tab !== 'all') qs.set('only', tab)
+                  if (kind === 'goods') qs.set('kind', 'goods')
+                  if (q.trim()) qs.set('q', q.trim())
+                  if (category) qs.set('category', category)
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return {
+                    rows: (Array.isArray(d.rows) ? d.rows : []) as Row[],
+                    /* `rowsMatched` = จำนวนที่ตรงตัวกรองทั้งชุด (ไม่ใช่ total ทั้งคลัง) */
+                    total: typeof d.rowsMatched === 'number' ? d.rowsMatched
+                      : typeof d.total === 'number' ? d.total : null,
+                  }
+                },
+                header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ', 'พร้อมขาย', 'หน่วย', 'ราคาขาย', 'ราคาทุน', `ขายได้ ${data?.soldDays ?? ''} วัน`, 'สถานะ'],
+                /* 🔴 ราคาทุน/พร้อมขาย เป็น null ได้ ⇒ เว้นว่าง **ห้ามใส่ 0**
+                   (281 ตัวยังไม่กรอกราคาทุน · 155 ตัวไม่มีพร้อมขายในทะเบียน) */
+                toRow: (r: Row) => [
+                  r.sku, r.name, r.qty, r.available ?? null, r.unit ?? null,
+                  r.price, r.buy ?? null, r.sold,
+                  r.service ? 'บริการ' : r.active === false ? 'ปิดใช้งาน' : 'ใช้งาน',
+                ],
+              }}
+            />
+            {/* 🖨 พิมพ์ฉลากของ **รหัสที่แสดงอยู่บนหน้านี้** — ZORT มีปุ่มพิมพ์เอกสารในจอรายการ
+                🔴 **ต้องติดรหัสไปด้วย** (ฝั่งท่อกำชับ) ไม่งั้นไปถึงจอพิมพ์แล้วต้องพิมพ์รหัสใหม่เอง
+                   = ปุ่มที่กดแล้วเหมือนไม่เกิดอะไร
+                ⚠️ ส่งเฉพาะ **หน้านี้** ไม่ใช่ทั้งคลัง — ป้ายบนปุ่มจึงบอกจำนวนตรง ๆ
+                   ถ้าเขียนแค่ "พิมพ์ฉลาก" คนจะนึกว่าได้ทั้งคลัง 2,672 รหัส */}
+            {rows.length > 0 && (
+              <Link href={`/core/stock/print?sku=${encodeURIComponent(rows.map((r) => r.sku).join(','))}`}
+                className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                🖨 พิมพ์ฉลาก {rows.length} รหัสในหน้านี้
+              </Link>
+            )}
+            {/* 🖼️ ทางเข้าจอ "รหัสที่ยังไม่มีรูป" (ใบ t_mu2u6eg6) — ทำจอไว้แล้วไม่มีทางเข้า = ไม่มีใครใช้ */}
+            <Link href="/core/stock/no-image"
+              className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              🖼️ รหัสที่ยังไม่มีรูป
+            </Link>
+          </div>
+
+          {/* 📎 ของที่ ZORT ไม่มี — รวมไว้ใต้ตารางพร้อมหัวบอกว่าเป็นของเพิ่ม */}
+          <div className="mt-6">
+            <p className="text-[12.5px] font-semibold text-gray-500 mb-2">ข้อมูลเพิ่มเติม (ZORT ไม่มีส่วนนี้)</p>
+          {/* 🔴 ของที่ลูกค้าซื้อไม่ได้ — เดิมวางเหนือแท็บ · ย้ายลงใต้ตาราง 16 ต.ค. 2569 ตามผัง ZORT (Marketplace Dashboard → แท็บทันที)
+              ⚠️ ยังอยู่ในหน้าเดียวกัน ไม่ได้ซ่อน · ถ้าต้องการให้เห็นก่อน ให้ย้ายกลับพร้อมเหตุ */}
+          <BlockedStock />
+
+          {/* 🔗 จอนี้กับจอดันสต็อกนับคนละอย่าง — ขึ้นเฉพาะตอนที่มีตัวขวางที่จอนี้ไม่มีวันแสดง
+              (เลขสองแหล่งวางคู่กันเฉย ๆ = กฎข้อ 4 ของ CLAUDE.md · ที่นี่เป็นข้ามจอ) */}
+          <NegVsPush />
+
+          {/* ⚠️ ข้อความชั่วคราวเรื่องแถวซ้ำจากรอบซิงก์ — ผูกกับเงื่อนไขของท่อ ⇒ หายเองเมื่อฝั่งท่อลบแถวเก่า */}
+          <DupSkuNote />
+
+          </div>
 
           {picked.length > 0 && (
             <BulkBar>
