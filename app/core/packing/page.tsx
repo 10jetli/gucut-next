@@ -275,13 +275,15 @@ export default function PackingPage() {
             <table className="w-full min-w-[720px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
+                  {/* 📐 `#` ก่อนช่องติ๊ก — **กติกาของเราเอง** ไม่ใช่ของ ZORT (จอแพ็คของ ZORT ไม่มีตาราง)
+                      ให้ตรงกับจอขาย/คลัง/ซื้อของเรา · ที่มาเขียนไว้ใน scripts/lib/จับคู่จอ-zort.json หมวด ลำดับเลขก่อนติ๊ก */}
+                  <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={เลือกได้.length > 0 && picked.length === เลือกได้.length}
                       indeterminate={picked.length > 0 && picked.length < เลือกได้.length}
                       onChange={(v) => setPicked(v ? เลือกได้.map((j) => j.id as string) : [])} />
                   </th>
-                  <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}>เลขที่ใบ</th>
                   <th className={TH}>ช่องทาง</th>
                   <th className={TH}>วันที่สั่ง</th>
@@ -301,6 +303,7 @@ export default function PackingPage() {
                   const a = ageDays(j.day)
                   return (
                     <tr key={j.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                      <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={TD}>
                         <RowCheck label={`เลือก ${j.number}`}
                           disabled={!j.id}
@@ -308,7 +311,6 @@ export default function PackingPage() {
                           checked={!!j.id && picked.includes(j.id)}
                           onChange={(v) => setPicked((old) => (v ? [...old, j.id as string] : old.filter((x) => x !== j.id)))} />
                       </td>
-                      <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={TD}>
                         {/* ท่อส่ง `id` มาแล้วตั้งแต่ 9 ก.ย. 2569 (2d6bfea) ⇒ ลิงก์ตรง ๆ ได้ เร็วกว่าและไม่ต้องยิงเพิ่ม
                             ⚠️ **ทางถอยยังอยู่โดยตั้งใจ** — deploy สองฝั่งเหลื่อมกันเสมอ และ rollback ก็เกิดได้
