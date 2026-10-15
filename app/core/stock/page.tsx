@@ -842,7 +842,16 @@ function CoreStockInner() {
                     <th key={ชื่อ} className={THR}><หัวเรียง ชื่อ={ชื่อ} /></th>
                   ))}
                   <th className={TH}>Marketplace</th>
-                  <th className={TH} style={{ width: 40 }}></th>
+                  <th className={TH} style={{ width: 40 }}>
+                    {/* ผัง ZORT: ปุ่ม "รีเซ็ตการเรียงลำดับข้อมูล" ที่หัวคอลัมน์สุดท้าย (อ่าน th.action 16 ต.ค. 2569)
+                        กลับไปลำดับตั้งต้นของ ZORT = พร้อมขายน้อยก่อน · ช่อง "เรียง" ข้างช่องค้นยังเก็บไว้เพราะมี "ขายดีก่อน" ที่ร้านใช้ (ZORT ไม่มี) */}
+                    <button type="button" title="รีเซ็ตการเรียงลำดับข้อมูล" aria-label="รีเซ็ตการเรียงลำดับข้อมูล"
+                      disabled={sort === 'availablelow'}
+                      onClick={() => { setSort('availablelow'); load(0, 'availablelow') }}
+                      className="text-[11px] leading-none px-1.5 py-1 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40">
+                      ⇅✕
+                    </button>
+                  </th>
                 </tr>
               </thead>
               <tbody>
