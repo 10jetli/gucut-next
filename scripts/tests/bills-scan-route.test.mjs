@@ -30,6 +30,7 @@ export async function GET(req) {
   if (mode === 'โยน') throw new Error('boom')
   if (mode === 'พัง') return { status: 500, ok: false, async json() { return { error: 'gmail 401' } } }
   if (mode === 'เก่า') return { status: 200, ok: true, async json() { return { months: { '2026-09': [1] }, staleReason: 'token หมด' } } }
+  if (mode === 'ไม่มีใหม่') return { status: 200, ok: true, async json() { return { months: {}, newMessages: false } } }
   globalThis.__vendorที่ถูกเรียก = req.nextUrl.searchParams.get('vendor')
   return { status: 200, ok: true, async json() { return { months: { '2026-09': [{ ลับ: 'ข้อมูลบิล' }] }, newMessages: true } } }
 }
@@ -65,6 +66,10 @@ console.log('③ คืนแค่สถานะ ไม่คืนราย�
 globalThis.__โหมดสแกน = 'ปกติ'
 const ปกติ = await ยิง('google', S)
 ok('status OK', ปกติ.j.status === 'OK', JSON.stringify(ปกติ.j))
+ok('เจอบิลใหม่ = true (ช่อง boolean ไม่ใช่ข้อความ)', ปกติ.j.เจอบิลใหม่ === true, JSON.stringify(ปกติ.j))
+globalThis.__โหมดสแกน = 'ไม่มีใหม่'
+ok('ไม่มีบิลใหม่ ⇒ เจอบิลใหม่ = false', (await ยิง('google', S)).j.เจอบิลใหม่ === false)
+globalThis.__โหมดสแกน = 'ปกติ'
 ok('ไม่มี months ในคำตอบ', !('months' in ปกติ.j) && !JSON.stringify(ปกติ.j).includes('ข้อมูลบิล'))
 
 console.log('④ สามผลไม่ยุบ · ล้ม = 503')

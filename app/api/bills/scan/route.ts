@@ -49,7 +49,10 @@ export async function POST(req: NextRequest) {
     if (j?.staleReason) {
       return NextResponse.json({ vendor: id, status: 'STALE', detail: `สแกนใหม่ไม่ได้ ใช้ของเก่าแทน: ${String(j.staleReason)}` }, { status: 503 })
     }
-    return NextResponse.json({ vendor: id, status: 'OK', detail: j?.newMessages ? 'สแกนแล้ว เจอบิลใหม่' : 'สแกนแล้ว ไม่มีบิลใหม่' })
+    /* 🔑 `เจอบิลใหม่` = ช่อง boolean ความหมายเดียว — ฝั่ง g1 ใช้ขยับ lastBill (ห้ามให้ g1 อ่านจากข้อความ detail)
+       แยกจาก "ตัวเก็บถูกเรียก" ซึ่งเป็นเรื่องของ at (CEO ชี้ 15 ต.ค. 2569: บิลรายเดือน ⇒ ห้ามเอา lastBill ไปวัด 24 ชม.) */
+    const เจอบิลใหม่ = j?.newMessages === true
+    return NextResponse.json({ vendor: id, status: 'OK', เจอบิลใหม่, detail: เจอบิลใหม่ ? 'สแกนแล้ว เจอบิลใหม่' : 'สแกนแล้ว ไม่มีบิลใหม่' })
   } catch (e) {
     return NextResponse.json({ vendor: id, status: 'ERROR', detail: e instanceof Error ? e.message : String(e) }, { status: 503 })
   }
