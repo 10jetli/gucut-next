@@ -242,7 +242,7 @@ export default function WebSeoPage() {
               {(aiแนะนำ['ชุดคำถาม'] as { id: string; คำถาม: string; เหตุที่เลือก: string }[]).map((q) => (
                 <li key={q.id}>
                   <b>{q.คำถาม}</b>
-                  <span className="block text-[11px] text-gray-400">{q.เหตุที่เลือก}</span>
+                  <span className="block text-[11.5px] text-gray-400">{q.เหตุที่เลือก}</span>
                 </li>
               ))}
             </ol>

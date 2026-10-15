@@ -40,17 +40,27 @@ function คีย์(): string | null {
   return process.env.GUCUT_WEB_ADMIN_KEY || null
 }
 
+/* 🔑 "ไม่มีคีย์" กับ "คีย์ไม่ตรง" ต้องเป็นคนละข้อความ (CEO ขอ 15 ต.ค. 2569)
+      ไม่มีคีย์ = env ของเว็บนี้ไม่ได้ตั้ง (แก้ที่ Netlify) · คีย์ไม่ตรง = g1 ตอบ 401/403 (แก้ที่ค่าของคีย์สองฝั่ง)
+      ⚠️ 403 ยังอาจมาจากด่านหน้าเว็บที่บล็อก User-Agent ได้ด้วย ⇒ เขียนไว้ทั้งสองทาง ไม่ฟันธง */
+export function เหตุจากรหัสg1(status: number): string {
+  if (status === 401 || status === 403) {
+    return `g1 ปฏิเสธคีย์ (HTTP ${status}) — เว็บนี้มีคีย์ แต่ค่าไม่ตรงกับที่ g1 รู้จัก (หรือด่านหน้าเว็บบล็อกคำขอ)`
+  }
+  return `g1 ตอบ HTTP ${status}`
+}
+
 /** อ่านช่อง "บิล" จาก ping.gucut.com · ล้มเหลว ⇒ คืนเหตุ ไม่โยนทิ้ง */
 export async function อ่านสถานะบิลบนg1(): Promise<ผลอ่านg1> {
   const k = คีย์()
-  if (!k) return { ok: false, เหตุ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับถาม g1 (GUCUT_WEB_ADMIN_KEY)' }
+  if (!k) return { ok: false, เหตุ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับถาม g1 (ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY)' }
   try {
     const r = await fetch(`${PING}/`, {
       headers: { 'x-admin-key': k, 'user-agent': UA },
       cache: 'no-store',
       signal: AbortSignal.timeout(15000),
     })
-    if (!r.ok) return { ok: false, เหตุ: `g1 ตอบ HTTP ${r.status}` }
+    if (!r.ok) return { ok: false, เหตุ: เหตุจากรหัสg1(r.status) }
     const j = await r.json()
     const บิล = j?.['บิล']
     /* 🔑 ไม่มีช่อง "บิล" = ได้คำตอบแบบตัดทอน (ไม่มีคีย์หรือคีย์ไม่ผ่าน) ⇒ "ไม่รู้" ไม่ใช่ "ไม่มีเจ้า" */
@@ -64,7 +74,7 @@ export async function อ่านสถานะบิลบนg1(): Promise<�
 /** สั่งกวาดบิล 6 เจ้าบน g1 — g1 ตอบทันทีแล้วทำต่อเบื้องหลัง (ทีละเจ้า โดยตั้งใจ) */
 export async function สั่งกวาดบิลบนg1(): Promise<{ ok: boolean; ข้อความ: string; สถานะ: number }> {
   const k = คีย์()
-  if (!k) return { ok: false, ข้อความ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับสั่ง g1', สถานะ: 0 }
+  if (!k) return { ok: false, ข้อความ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับสั่ง g1 (ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY)', สถานะ: 0 }
   try {
     const r = await fetch(`${PING}/bills-run`, {
       method: 'POST',
@@ -73,7 +83,8 @@ export async function สั่งกวาดบิลบนg1(): Promise<{ ok:
       signal: AbortSignal.timeout(20000),
     })
     const j = await r.json().catch(() => ({}))
-    return { ok: r.ok && j?.ok !== false, ข้อความ: String(j?.msg ?? j?.error ?? `HTTP ${r.status}`), สถานะ: r.status }
+    const ok = r.ok && j?.ok !== false
+    return { ok, ข้อความ: ok ? String(j?.msg ?? 'เริ่มแล้ว') : (r.ok ? String(j?.msg ?? j?.error ?? 'g1 ปฏิเสธ') : เหตุจากรหัสg1(r.status)), สถานะ: r.status }
   } catch (e) {
     return { ok: false, ข้อความ: `สั่ง g1 ไม่ได้: ${e instanceof Error ? e.message : String(e)}`, สถานะ: 0 }
   }

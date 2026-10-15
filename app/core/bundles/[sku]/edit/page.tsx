@@ -232,7 +232,7 @@ export default function EditBundlePage() {
       {/* 🔑 ข้อความนี้ต้องบอกสามอย่าง: ของมีจริงไหม · ติดที่ไหน · ต้องได้อะไรมา
           (ใบ: ระบบทำงานถูก แต่สื่อสารผิด — จอที่บอกว่า "ไม่พบ" ทำให้คนไปหาของที่ไม่ได้หาย) */}
       {ไม่มีค่า && (
-        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-[13px] leading-relaxed text-amber-900">
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-[12.5px] leading-relaxed text-amber-900">
           <b>ZORT มีชุดนี้อยู่จริง</b> (id {String(ไม่มีค่า.id ?? '—')}) — แต่ <b>ท่อยังไม่ส่งค่าปัจจุบันมา</b> ⇒ กรอกฟอร์มยังไม่ได้
           <div className="mt-2">
             ขาด: <code className="rounded bg-amber-100 px-1">{ไม่มีค่า.ขาด.join(' · ')}</code>
