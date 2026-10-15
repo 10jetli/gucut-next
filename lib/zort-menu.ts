@@ -406,6 +406,8 @@ export const SOON: Record<string, SoonPage> = {
       + '× GetTierPrices · GetPriceLevels · GetCustomerGroups · GetGroups ฯลฯ ได้ 404 ครบ '
       + 'และไม่มีในเอกสาร ZORT V4 ทั้ง 14 โมดูล (ฝั่งท่อกวาด 323 คู่บน production จริง 14 ก.ย. 2569 '
       + '· คุมบวก Contact/GetContacts · Warehouse/GetWarehouses 200 · คุมลบ 404) '
+      + '· ยิงยืนยันซ้ำ 15 ต.ค. 2569: TierPrice/GetTierPrices · GetTierPrice · PriceTier/GetPriceTiers · '
+      + 'Contact/GetContactGroups · ContactGroup/GetContactGroups · CustomerGroup/GetCustomerGroups ไม่พบทั้ง 6 '
       + '⇒ "ไม่พบในชื่อที่กวาด" ไม่ใช่ "ไม่มีแน่นอน"',
     /* 📏 อ่านจอ ZORT เองแบบอ่านอย่างเดียว 15 ก.ย. 2569 (ใบ t_mu1z61u6): `/TierPrice/list` = **0 กลุ่ม**
        ⇒ เติมข้อนี้เพราะ "ต้องตั้งที่ ZORT" เฉย ๆ ทำให้คนไปเปิดแล้วงงว่าทำไมว่าง
@@ -421,7 +423,8 @@ export const SOON: Record<string, SoonPage> = {
       + '⇒ กวาด Agent · Agents · Dealer · Dealers · Contact · Customer '
       + '× GetAgents · GetAgentList · GetDealers ฯลฯ ได้ 404 ครบ และเอกสาร ZORT V4 โมดูล Contact '
       + 'มีแค่ GetContacts/Detail/Add/Update (ฝั่งท่อกวาด 323 คู่บน production จริง 14 ก.ย. 2569 '
-      + '· คุมบวก Contact/GetContacts 200) ⇒ "ไม่พบในชื่อที่กวาด" ไม่ใช่ "ไม่มีแน่นอน"',
+      + '· คุมบวก Contact/GetContacts 200) · ยิงยืนยันซ้ำ 15 ต.ค. 2569: Dealer/GetDealers · Agent/GetAgents ไม่พบ '
+      + '⇒ "ไม่พบในชื่อที่กวาด" ไม่ใช่ "ไม่มีแน่นอน"',
     /* 📏 อ่านจอ `/Contact/Agentlist` เอง 15 ก.ย. 2569: **0 ราย** · และมีฟังก์ชันที่เราไม่มีเลยคือ
        `doGenerateCommission`/`doGenerateCommissionList` = ออกบิลคอมมิชชั่นตามแม่แบบ+ช่วงวัน
        ⚠️ กับดัก: จอนั้นมี 40 แถวใน `<tbody>` แต่ทั้ง 40 คือช่องเลือกวันที่ของกล่องคอมมิชชั่น ไม่ใช่ตัวแทน */
@@ -519,6 +522,7 @@ export const SOON: Record<string, SoonPage> = {
          "ไม่พบใน 63 ชื่อที่กวาด" ตรวจย้อนได้ · "ไม่มี API" ลอย ๆ ตรวจย้อนไม่ได้เลย */
       'ยิงตรวจแล้วไม่พบเส้นรายการรับเงิน COD — กวาด COD · Cod · Finance · Order · Shipping · Logistics · Payment '
       + '× 9 คำกริยา = 63 ชื่อ ไม่เจอสักตัว (ฝั่งท่อกวาดซ้ำ 15 ก.ย. 2569 · คุมบวก Product/GetProducts · Order/GetOrders 200) '
+      + '· ยิงยืนยันซ้ำ 15 ต.ค. 2569: COD/GetCODs · Logistic/GetCODs · Finance/GetCODs · Logistic/GetLogistics ไม่พบ '
       + '⇒ ยอดโอนคืน ค่าธรรมเนียม และ VAT อยู่ในระบบ ZORT เอง ยังไม่มีช่องทางดึงออก',
     /* 🔴 **เดิมเขียน "25 รอบ" — ผิด เลข 25 คือขนาดหน้าของจอ ZORT ไม่ใช่ยอดรวม** (แก้ 17 ก.ย. 2569 · ใบ t_mu2u9mym)
        หัวจอ `/Logistics/CODReport` เขียนว่า "สรุปยอดเก็บเงินปลายทาง จำนวน N รายการ"
