@@ -424,13 +424,14 @@ export default function CorePurchasesPage() {
                   ⚠️ ลอกไปใช้จออื่นได้เฉพาะคอลัมน์ที่ **ไปวัดจอ ZORT มาแล้วจริง ๆ** ห้ามเดา */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
+                  {/* 📐 `#` ก่อนช่องติ๊ก — ตาม ZORT /Buy/list (หัวตาราง `#`,`` วัด 15 ต.ค. 2569) */}
+                  <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
                       indeterminate={picked.length > 0 && picked.length < rows.length}
                       onChange={(v) => setPicked(v ? rows.map((r) => String(r.number)) : [])} />
                   </th>
-                  <th className={TH} style={{ width: 44 }}>#</th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ผู้ติดต่อ</span></th>
@@ -449,12 +450,12 @@ export default function CorePurchasesPage() {
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.number} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(String(r.number)) ? 'bg-[#eef1fa]' : ''}`}>
+                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={TD}>
                       <RowCheck label={`เลือก ${r.number}`}
                         checked={picked.includes(String(r.number))}
                         onChange={(v) => setPicked((old) => (v ? [...old, String(r.number)] : old.filter((x) => x !== String(r.number))))} />
                     </td>
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
                     {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
                     <td className={TD}>
