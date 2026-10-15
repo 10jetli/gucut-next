@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { loadCatalogStateBlobs, saveCatalogStateBlobs } from '@/lib/catalogstate'
+import {
+  CatalogStateError,
+  loadCatalogStateBlobsStrict,
+  saveCatalogStateBlobs,
+} from '@/lib/catalogstate'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,7 +11,7 @@ export const dynamic = 'force-dynamic'
 // ให้หน้า /catalog ทุกเครื่อง/เบราว์เซอร์เห็นข้อมูลตรงกัน แทนที่จะต่างคนต่าง localStorage
 export async function GET() {
   try {
-    const state = await loadCatalogStateBlobs()
+    const state = await loadCatalogStateBlobsStrict()
     if (!state) return NextResponse.json({ exists: false })
     return NextResponse.json({
       exists: true,
@@ -39,10 +43,18 @@ export async function GET() {
 
 // POST /api/catalog/state — บันทึกสถานะทั้งก้อน (เขียนทับ) ทุกครั้งที่มีการแก้ไขในหน้า /catalog
 export async function POST(req: NextRequest) {
+  let body: any
   try {
-    const body = await req.json().catch(() => ({}))
+    body = await req.json()
+  } catch {
+    return NextResponse.json({ ok: false, error: 'JSON อ่านไม่ได้ — ยังไม่ได้เขียนอะไร' }, { status: 400 })
+  }
+  if (!body?.ovr || typeof body.ovr !== 'object' || Array.isArray(body.ovr)) {
+    return NextResponse.json({ ok: false, error: 'ก้อนที่ส่งมาต้องมี ovr เป็น object — ยังไม่ได้เขียนอะไร' }, { status: 400 })
+  }
+  try {
     const state = {
-      ovr: body?.ovr && typeof body.ovr === 'object' ? body.ovr : {},
+      ovr: body.ovr,
       catMap: body?.catMap && typeof body.catMap === 'object' ? body.catMap : {},
       catNew: Array.isArray(body?.catNew) ? body.catNew : [],
       facs: Array.isArray(body?.facs) ? body.facs : [],
@@ -55,9 +67,13 @@ export async function POST(req: NextRequest) {
         ? body.added.filter((x: unknown) => !!x && typeof (x as { sku?: unknown }).sku === 'string')
         : [],
     }
-    await saveCatalogStateBlobs(state)
-    return NextResponse.json({ ok: true })
+    const result = await saveCatalogStateBlobs(state)
+    return NextResponse.json({ ok: true, ...result })
   } catch (e: any) {
+    if (e instanceof CatalogStateError) {
+      const status = e.code === 'TOO_FEW_SKUS' ? 409 : 503
+      return NextResponse.json({ ok: false, code: e.code, error: e.message, ...e.details }, { status })
+    }
     return NextResponse.json({ ok: false, error: String(e?.message ?? e) }, { status: 500 })
   }
 }
