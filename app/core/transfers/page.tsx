@@ -25,7 +25,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, TD,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PageNav,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import PipeNote from '@/components/ui/PipeNote'
 
@@ -265,60 +265,7 @@ export default function CoreTransfersPage() {
         }
         actions={
           <>
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>
-              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-            </BtnGhost>
-            {/* 📤 ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า
-                ⚠️ ไฟล์ใส่ **ทั้งรหัสคลังและชื่อคลัง** — ท่อส่งรหัส (NEW · KLD · ANJ)
-                   ถ้าใส่แต่ชื่อ แล้ววันไหนดึงชื่อไม่ได้ ไฟล์จะมีแต่รหัสดิบโดยไม่มีใครรู้
-                   ถ้าใส่แต่รหัส คนอ่านไฟล์นอกทีมก็ไม่รู้ว่าคืออะไร ⇒ ใส่ทั้งคู่ */}
-            <ExportButton
-              disabled={loading}
-              spec={{
-                filename: 'รายการโอนสินค้า',
-                /* ✅ พอท่อกรองสถานะได้ ไฟล์ก็กรองตามแท็บได้จริง ⇒ ขอบเขตต้องพูดตามความจริงของรอบนั้น
-                   (เดิมเขียนตายว่า "ทุกสถานะ" เพราะท่อยังไม่รองรับ — ปล่อยไว้จะกลายเป็นคำเท็จวันที่ท่ออัปเดต) */
-                scope: `${storeLabel(store)} · ${ท่อรับสถานะ && tab !== 'all' ? zortWord(TRANSFER_STATUS, tab).text : 'ทุกสถานะ'}`
-                  + `${from || to ? ` · ${from || '…'} ถึง ${to || '…'}` : ''}${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
-                title: 'รายการโอนสินค้า',
-                note: wErr ? 'รอบนี้ดึงชื่อคลังไม่ได้ — คอลัมน์ชื่อคลังจึงเว้นว่าง (รหัสคลังยังอยู่ครบ)' : undefined,
-                /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอกำลังโชว์** — ฝั่งท่อกำชับตรง ๆ
-                   ถ้าลืมส่ง `store` ไฟล์จะกลายเป็นของ z1 ทั้งที่จอโชว์ z2 อยู่
-                   ⇒ ผิดแบบที่ไม่มีอะไรฟ้อง เพราะไฟล์ก็ดูปกติทุกประการ */
-                filters: [
-                  ['ร้าน', storeLabel(store)],
-                  /* 🔴 ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ⇒ เขียนให้ตรง ไม่ใช่ใส่ชื่อแท็บเฉย ๆ */
-                  ['สถานะ', tab === 'all' ? 'ทั้งหมด'
-                    : ท่อรับสถานะ
-                      ? zortWord(TRANSFER_STATUS, tab).text
-                      : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อรุ่นนี้ยังไม่รองรับ) ได้ทุกสถานะ`],
-                  ['ช่วงวันที่เอกสาร', from || to ? `${from || '(ไม่กำหนด)'} ถึง ${to || '(ไม่กำหนด)'}` : '(ทั้งหมด)'],
-                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
-                ],
-                fetchPage: async (offsetAt, limit) => {
-                  const qs = new URLSearchParams({ list: 'transfers', limit: String(limit), offset: String(offsetAt) })
-                  /* ✅ ส่งตัวกรองเดียวกับที่จอกำลังโชว์ — ไฟล์ต้องเป็นของชุดเดียวกับที่คนเห็น
-                     🔴 ส่ง `status` **ก็ต่อเมื่อท่อรับจริง** ไม่งั้นท่อรุ่นเก่าจะเมินเงียบ
-                        แล้วไฟล์จะได้ทุกสถานะทั้งที่หัวไฟล์เขียนว่ากรองแล้ว */
-                  if (ท่อรับสถานะ && tab !== 'all') qs.set('status', tab)
-                  if (from) qs.set('from', from)
-                  if (to) qs.set('to', to)
-                  if (store) qs.set('store', store)
-                  if (q.trim()) qs.set('q', q.trim())
-                  const r = await fetch(`/api/web/core?${qs}`)
-                  const d = await r.json()
-                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
-                },
-                header: ['เลขที่ใบโอน', 'วันที่', 'ประเภท', 'รหัสคลังต้นทาง', 'ชื่อคลังต้นทาง', 'รหัสคลังปลายทาง', 'ชื่อคลังปลายทาง', 'สถานะ', 'อ้างอิง', 'หมายเหตุ'],
-                toRow: (r: Row) => [
-                  r.number, r.transfer_date ?? null, r.kind ?? null,
-                  r.from_wh ?? null, r.from_wh ? (names[String(r.from_wh)] ?? null) : null,
-                  r.to_wh ?? null, r.to_wh ? (names[String(r.to_wh)] ?? null) : null,
-                  r.status ?? null, r.reference ?? null, r.note ?? null,
-                ],
-              }}
-            />
+            {/* 🔁 ปุ่ม "รีเฟรช" บนหัวจอเอาออก 16 ต.ค. 2569 — ZORT ไม่มี (อ่านจอ ZORT รายการนี้) */}
             {/* 🔴 **ถอดปุ่ม "นำเข้าไฟล์ (Excel)" ออก** (15 ก.ย. 2569)
                 เดิมชี้ไป `?kind=product` ทั้งที่จอนี้แสดงใบโอนสินค้า ไม่ใช่สินค้า
                 ⇒ คนกดเพราะอยากนำเข้าใบโอนสินค้า แต่ไปโผล่หน้านำเข้า**สินค้า** ซึ่งคอลัมน์คนละชุด
@@ -588,6 +535,62 @@ export default function CoreTransfersPage() {
                   onPerPage={(n) => { setPerPage(n); load(0, undefined, undefined, n) }} />
             </div>
           </TableWrap>
+
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* 📤 ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า
+                ⚠️ ไฟล์ใส่ **ทั้งรหัสคลังและชื่อคลัง** — ท่อส่งรหัส (NEW · KLD · ANJ)
+                   ถ้าใส่แต่ชื่อ แล้ววันไหนดึงชื่อไม่ได้ ไฟล์จะมีแต่รหัสดิบโดยไม่มีใครรู้
+                   ถ้าใส่แต่รหัส คนอ่านไฟล์นอกทีมก็ไม่รู้ว่าคืออะไร ⇒ ใส่ทั้งคู่ */}
+            <ExportButton
+              label="📗 Export to Excel"
+              disabled={loading}
+              spec={{
+                filename: 'รายการโอนสินค้า',
+                /* ✅ พอท่อกรองสถานะได้ ไฟล์ก็กรองตามแท็บได้จริง ⇒ ขอบเขตต้องพูดตามความจริงของรอบนั้น
+                   (เดิมเขียนตายว่า "ทุกสถานะ" เพราะท่อยังไม่รองรับ — ปล่อยไว้จะกลายเป็นคำเท็จวันที่ท่ออัปเดต) */
+                scope: `${storeLabel(store)} · ${ท่อรับสถานะ && tab !== 'all' ? zortWord(TRANSFER_STATUS, tab).text : 'ทุกสถานะ'}`
+                  + `${from || to ? ` · ${from || '…'} ถึง ${to || '…'}` : ''}${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
+                title: 'รายการโอนสินค้า',
+                note: wErr ? 'รอบนี้ดึงชื่อคลังไม่ได้ — คอลัมน์ชื่อคลังจึงเว้นว่าง (รหัสคลังยังอยู่ครบ)' : undefined,
+                /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอกำลังโชว์** — ฝั่งท่อกำชับตรง ๆ
+                   ถ้าลืมส่ง `store` ไฟล์จะกลายเป็นของ z1 ทั้งที่จอโชว์ z2 อยู่
+                   ⇒ ผิดแบบที่ไม่มีอะไรฟ้อง เพราะไฟล์ก็ดูปกติทุกประการ */
+                filters: [
+                  ['ร้าน', storeLabel(store)],
+                  /* 🔴 ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ⇒ เขียนให้ตรง ไม่ใช่ใส่ชื่อแท็บเฉย ๆ */
+                  ['สถานะ', tab === 'all' ? 'ทั้งหมด'
+                    : ท่อรับสถานะ
+                      ? zortWord(TRANSFER_STATUS, tab).text
+                      : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อรุ่นนี้ยังไม่รองรับ) ได้ทุกสถานะ`],
+                  ['ช่วงวันที่เอกสาร', from || to ? `${from || '(ไม่กำหนด)'} ถึง ${to || '(ไม่กำหนด)'}` : '(ทั้งหมด)'],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'transfers', limit: String(limit), offset: String(offsetAt) })
+                  /* ✅ ส่งตัวกรองเดียวกับที่จอกำลังโชว์ — ไฟล์ต้องเป็นของชุดเดียวกับที่คนเห็น
+                     🔴 ส่ง `status` **ก็ต่อเมื่อท่อรับจริง** ไม่งั้นท่อรุ่นเก่าจะเมินเงียบ
+                        แล้วไฟล์จะได้ทุกสถานะทั้งที่หัวไฟล์เขียนว่ากรองแล้ว */
+                  if (ท่อรับสถานะ && tab !== 'all') qs.set('status', tab)
+                  if (from) qs.set('from', from)
+                  if (to) qs.set('to', to)
+                  if (store) qs.set('store', store)
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['เลขที่ใบโอน', 'วันที่', 'ประเภท', 'รหัสคลังต้นทาง', 'ชื่อคลังต้นทาง', 'รหัสคลังปลายทาง', 'ชื่อคลังปลายทาง', 'สถานะ', 'อ้างอิง', 'หมายเหตุ'],
+                toRow: (r: Row) => [
+                  r.number, r.transfer_date ?? null, r.kind ?? null,
+                  r.from_wh ?? null, r.from_wh ? (names[String(r.from_wh)] ?? null) : null,
+                  r.to_wh ?? null, r.to_wh ? (names[String(r.to_wh)] ?? null) : null,
+                  r.status ?? null, r.reference ?? null, r.note ?? null,
+                ],
+              }}
+            />
+          </div>
 
           {/* ⚠️ **ตัวเลขบนจอนี้น้อยกว่าที่ ZORT แสดง และต้องบอกว่าทำไม**
               🔴 **ข้อความเดิมชี้ผิดทาง — แก้ 18 ก.ย. 2569**: เคยเขียนว่า "API ของ ZORT ไม่ส่งใบปรับมาครบ"

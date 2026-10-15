@@ -45,7 +45,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState, RowMenu, PageNav} from '@/components/zort'
+import { PageHead, TableWrap, TH, TD, EmptyState, RowMenu, PageNav} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 
 interface DocRow {
@@ -227,39 +227,7 @@ export default function AccountingDocsPage() {
         }
         actions={
           <>
-            <BtnGhost onClick={() => load(page)} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
-            {/* 📤 Export — ไล่ **ทุกหน้าด้วย `page=`** แล้วกันของซ้ำด้วย id
-                🔴 ถ้าไล่ด้วย offset จะได้ของซ้ำเต็มไฟล์แต่จำนวนตรง count พอดี ⇒ ต้องนับ id ไม่ซ้ำ */}
-            <ExportButton
-              disabled={loading || !data}
-              spec={{
-                filename: 'เอกสารบัญชี',
-                scope: data?.applied?.typeLabel || (type ? `ชนิด ${type}` : 'ทุกชนิดเอกสาร'),
-                title: 'เอกสารบัญชีจาก ZORT (จัดการเอกสาร)',
-                filters: [
-                  ['ชนิดเอกสาร', data?.applied?.typeLabel || (type ? `ชนิด ${type}` : 'ทั้งหมด')],
-                  ['จำนวนที่ท่อบอกว่ามีทั้งชุด', typeof count === 'number' ? String(count) : 'ท่อไม่ได้บอก'],
-                ],
-                note: 'ไฟล์นี้ไม่มีลิงก์ไฟล์เอกสาร เพราะ linkurl ของ ZORT เปิดไม่ได้ทั้งด้วยรหัส API และด้วยเบราว์เซอร์ที่ล็อกอิน (ทดสอบ 7 ก.ย. 2569 ได้ HTML ไม่ใช่ PDF) ⇒ ตัวไฟล์ยังต้องโหลดจากหน้า ZORT เอง · ตัวกรองชนิด 1–5 ของท่อครอบเพียง 63 ใบจาก 694 (วัด 15 ก.ย. 2569) ⇒ ไฟล์ที่กรองชนิดจะไม่ใช่ทั้งกอง',
-                header: ['ประเภทเอกสาร', 'เลขที่เอกสาร', 'วันที่เอกสาร', 'สร้างเมื่อ', 'เลขที่อ้างอิง', 'ชนิดอ้างอิง'],
-                toRow: (r: DocRow) => [
-                  r.header ?? null, r.documentnumber ?? null, r.documentdateString ?? null,
-                  r.createdatetimeString ?? null, r.referencenumber ?? null,
-                  r.referencetype === undefined || r.referencetype === null ? null : String(r.referencetype),
-                ],
-                limit: 200,
-                fetchPage: async (offset, limit) => {
-                  /* แปลง offset ของตัวส่งออกกลาง → `page` ของท่อ (ท่อไม่รับ offset) */
-                  const p = Math.floor(offset / limit) + 1
-                  const qs = new URLSearchParams({ zortdocrows: '1', limit: String(limit), page: String(p) })
-                  if (type) qs.set('type', type)
-                  const res = await fetch(`/api/web/core?${qs}`)
-                  const j = await res.json()
-                  if (!res.ok || j?.error) throw new Error(j?.error ?? `ท่อตอบ ${res.status}`)
-                  return { rows: Array.isArray(j?.rows) ? j.rows : [], total: typeof j?.count === 'number' ? j.count : null }
-                },
-              }}
-            />
+            {/* 🔁 ปุ่ม "รีเฟรช" บนหัวจอเอาออก 16 ต.ค. 2569 — ZORT ไม่มี (อ่านจอ ZORT รายการนี้) */}
           </>
         }
       />
@@ -495,6 +463,43 @@ export default function AccountingDocsPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* 📤 Export — ไล่ **ทุกหน้าด้วย `page=`** แล้วกันของซ้ำด้วย id
+                🔴 ถ้าไล่ด้วย offset จะได้ของซ้ำเต็มไฟล์แต่จำนวนตรง count พอดี ⇒ ต้องนับ id ไม่ซ้ำ */}
+            <ExportButton
+              label="📗 Export to Excel"
+              disabled={loading || !data}
+              spec={{
+                filename: 'เอกสารบัญชี',
+                scope: data?.applied?.typeLabel || (type ? `ชนิด ${type}` : 'ทุกชนิดเอกสาร'),
+                title: 'เอกสารบัญชีจาก ZORT (จัดการเอกสาร)',
+                filters: [
+                  ['ชนิดเอกสาร', data?.applied?.typeLabel || (type ? `ชนิด ${type}` : 'ทั้งหมด')],
+                  ['จำนวนที่ท่อบอกว่ามีทั้งชุด', typeof count === 'number' ? String(count) : 'ท่อไม่ได้บอก'],
+                ],
+                note: 'ไฟล์นี้ไม่มีลิงก์ไฟล์เอกสาร เพราะ linkurl ของ ZORT เปิดไม่ได้ทั้งด้วยรหัส API และด้วยเบราว์เซอร์ที่ล็อกอิน (ทดสอบ 7 ก.ย. 2569 ได้ HTML ไม่ใช่ PDF) ⇒ ตัวไฟล์ยังต้องโหลดจากหน้า ZORT เอง · ตัวกรองชนิด 1–5 ของท่อครอบเพียง 63 ใบจาก 694 (วัด 15 ก.ย. 2569) ⇒ ไฟล์ที่กรองชนิดจะไม่ใช่ทั้งกอง',
+                header: ['ประเภทเอกสาร', 'เลขที่เอกสาร', 'วันที่เอกสาร', 'สร้างเมื่อ', 'เลขที่อ้างอิง', 'ชนิดอ้างอิง'],
+                toRow: (r: DocRow) => [
+                  r.header ?? null, r.documentnumber ?? null, r.documentdateString ?? null,
+                  r.createdatetimeString ?? null, r.referencenumber ?? null,
+                  r.referencetype === undefined || r.referencetype === null ? null : String(r.referencetype),
+                ],
+                limit: 200,
+                fetchPage: async (offset, limit) => {
+                  /* แปลง offset ของตัวส่งออกกลาง → `page` ของท่อ (ท่อไม่รับ offset) */
+                  const p = Math.floor(offset / limit) + 1
+                  const qs = new URLSearchParams({ zortdocrows: '1', limit: String(limit), page: String(p) })
+                  if (type) qs.set('type', type)
+                  const res = await fetch(`/api/web/core?${qs}`)
+                  const j = await res.json()
+                  if (!res.ok || j?.error) throw new Error(j?.error ?? `ท่อตอบ ${res.status}`)
+                  return { rows: Array.isArray(j?.rows) ? j.rows : [], total: typeof j?.count === 'number' ? j.count : null }
+                },
+              }}
+            />
+          </div>
 
           {/* แบ่งหน้า — ใช้ `page` ของท่อตรง ๆ และโชว์ว่ากำลังอยู่หน้าไหนจาก applied ไม่ใช่จากตัวแปรจอ
               (ถ้าท่อตีความหน้าไม่เหมือนที่จอส่งไป จะเห็นได้ทันที) */}

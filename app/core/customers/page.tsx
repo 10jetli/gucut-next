@@ -40,7 +40,7 @@ import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, TD, BtnGhost, LinkText, EmptyState, RowMenu, PageNav,} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, TD, LinkText, EmptyState, RowMenu, PageNav,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
@@ -211,73 +211,8 @@ export default function CoreContactsPage() {
         }
         actions={
           <>
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>
-              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-            </BtnGhost>
+            {/* 🔁 ปุ่ม "รีเฟรช" บนหัวจอเอาออก 16 ต.ค. 2569 — ZORT ไม่มี (อ่านจอ ZORT รายการนี้) */}
             <ImportButton kind="contact" />
-            {/* 📤 **ส่งออกได้เมื่อไหร่ — และทำไมบางทีกดไม่ได้**
-                ท่อมีตาข่ายกันไล่ดึงทั้งฐาน: เดินลึกเกินแถวที่ 500 โดยไม่ค้นหา ⇒ ตอบ `needQuery`
-                ⇒ ชุดที่ใหญ่กว่า 500 แถวและไม่ได้ค้นอะไรเลย **ไล่ให้ครบไม่ได้จริง ๆ**
-                🔴 ถ้าปล่อยให้กดได้ จะได้ 500 แถวแล้วด่าน exportBlocked ปัดไฟล์ทิ้งทุกครั้ง
-                   = ปุ่มที่กดแล้วไม่เคยได้อะไร ซึ่งคือ "ปุ่มหลอก" ที่ทั้งโปรเจกต์เลี่ยงมาตลอด
-                ⇒ ปิดปุ่มไว้ **พร้อมบอกเหตุผลและบอกว่าต้องทำอะไรถึงจะกดได้** */}
-            {(() => {
-              const เกิน500 = typeof data?.total === 'number' && data.total > 500
-              const พร้อม = !!q.trim() || !เกิน500
-              return (
-                <span className="inline-flex flex-col items-start">
-                  <ExportButton
-                    disabled={loading || !data || !!data?.skip || !พร้อม}
-                    spec={{
-                      filename: 'ผู้ติดต่อ',
-                      scope: [q.trim() ? `ค้นหา "${q.trim()}"` : 'ทุกราย',
-                        withPhone ? 'เฉพาะที่มีเบอร์' : '', withEmail ? 'เฉพาะที่มีอีเมล' : '']
-                        .filter(Boolean).join(' · '),
-                      title: 'ผู้ติดต่อ (ลูกค้า/คู่ค้า)',
-                      /* 🔒 ต้องเขียนในไฟล์ว่าเลขภาษีถูกปิดมาแล้ว — ไม่งั้นฝ่ายบัญชีจะคิดว่า
-                         ข้อมูลในฐานมีแค่ 4 ตัวท้าย แล้วไปตามแก้กับลูกค้าทั้งที่ ZORT มีเลขเต็มอยู่ */
-                      note: 'เลขประจำตัวผู้เสียภาษีถูกปิดบางส่วนมาจากเซิร์ฟเวอร์ (เห็น 4 ตัวท้าย) — เลขเต็มดูได้ที่ ZORT เท่านั้น'
-                        + ' · ไฟล์นี้มีข้อมูลส่วนบุคคลของลูกค้า โปรดเก็บเท่าที่จำเป็นและอย่าส่งต่อโดยไม่จำเป็น'
-                        + ' · ไม่รวมผู้ติดต่อที่ถูกลบ (ZORT เรียกว่า archive) เพราะกระจกไม่ได้เก็บไว้',
-                      filters: [
-                        ['คำค้นหา', q.trim() || '(ไม่ได้ค้น — ทุกราย)'],
-                        ['เฉพาะที่มีเบอร์โทร', withPhone ? 'ใช่' : 'ไม่'],
-                        ['เฉพาะที่มีอีเมล', withEmail ? 'ใช่' : 'ไม่'],
-                      ],
-                      fetchPage: async (off, limit) => {
-                        const qs = new URLSearchParams({ list: 'contacts', limit: String(limit), offset: String(off) })
-                        if (q.trim()) qs.set('q', q.trim())
-                        if (withPhone) qs.set('withphone', '1')
-                        if (withEmail) qs.set('withemail', '1')
-                        const res = await fetch(`/api/web/core?${qs}`)
-                        const j: Resp = await res.json()
-                        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-                        /* 🔴 ชนตาข่ายกลางทาง ⇒ **โยนออกไปให้ด่านปัดไฟล์ทิ้ง** ห้ามคืนแถวว่างเฉย ๆ
-                           คืนว่างเงียบ ๆ = ไฟล์จะจบลงตรงแถวที่ 500 โดยดูเหมือนหมดพอดี */
-                        if (j?.needQuery) {
-                          throw new Error('ท่อไม่ยอมให้ไล่ลึกเกิน 500 แถวถ้าไม่ได้ค้นหา (ตาข่ายกันดึงทั้งฐาน) — พิมพ์คำค้นแล้วส่งออกทีละชุด')
-                        }
-                        return { rows: j?.rows ?? [], total: typeof j?.total === 'number' ? j.total : null }
-                      },
-                      header: ['รหัส', 'ชื่อ', 'เลขประจำตัวผู้เสียภาษี (ปิดบางส่วน)', 'เบอร์โทรศัพท์', 'อีเมล', 'สาขา', 'ที่อยู่'],
-                      /* 🔴 ช่องที่ท่อไม่ส่ง ⇒ null (เว้นว่าง) ห้ามใส่ '-' ที่เห็นบนจอ
-                         ขีดบนจอคือการตกแต่ง แต่ขีดในไฟล์จะกลายเป็นข้อมูลที่ Excel เอาไปนับ */
-                      toRow: (r: Contact) => [r.code ?? null, r.name ?? null, r.taxId ?? null,
-                        r.phone ?? null, r.email ?? null, r.branchName ?? null, r.address ?? null],
-                    }}
-                  />
-                  {!พร้อม && (
-                    <span className="text-[11.5px] text-gray-500 mt-1 max-w-[300px] leading-snug">
-                      {/* 🔴 เดิมเขียน `?? 0` ⇒ ตอนท่อยังไม่ส่ง total จอจะอ่านว่า
-                          "ส่งออกทั้ง 0 รายไม่ได้" ซึ่งอ่านแล้วงงกว่าไม่บอกเลย
-                          ⇒ ไม่รู้จำนวน ให้พูดโดยไม่มีตัวเลข ไม่ใช่เดาเป็นศูนย์ (19 ก.ย. 2569) */}
-                      ส่งออก{data?.total == null ? 'ทั้งหมด' : `ทั้ง ${fmtNum(data.total)} ราย`}ไม่ได้ — เซิร์ฟเวอร์กันไม่ให้ไล่ดึงทั้งฐาน
-                      (ลึกเกิน 500 แถวต้องมีคำค้น) · พิมพ์คำค้นก่อนแล้วส่งออกทีละชุด
-                    </span>
-                  )}
-                </span>
-              )
-            })()}
             {/* ชี้หน้าจริง 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิด แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/customers/new"
@@ -608,6 +543,74 @@ export default function CoreContactsPage() {
               </div>
             </TableWrap>
           )}
+
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* 📤 **ส่งออกได้เมื่อไหร่ — และทำไมบางทีกดไม่ได้**
+                ท่อมีตาข่ายกันไล่ดึงทั้งฐาน: เดินลึกเกินแถวที่ 500 โดยไม่ค้นหา ⇒ ตอบ `needQuery`
+                ⇒ ชุดที่ใหญ่กว่า 500 แถวและไม่ได้ค้นอะไรเลย **ไล่ให้ครบไม่ได้จริง ๆ**
+                🔴 ถ้าปล่อยให้กดได้ จะได้ 500 แถวแล้วด่าน exportBlocked ปัดไฟล์ทิ้งทุกครั้ง
+                   = ปุ่มที่กดแล้วไม่เคยได้อะไร ซึ่งคือ "ปุ่มหลอก" ที่ทั้งโปรเจกต์เลี่ยงมาตลอด
+                ⇒ ปิดปุ่มไว้ **พร้อมบอกเหตุผลและบอกว่าต้องทำอะไรถึงจะกดได้** */}
+            {(() => {
+              const เกิน500 = typeof data?.total === 'number' && data.total > 500
+              const พร้อม = !!q.trim() || !เกิน500
+              return (
+                <span className="inline-flex flex-col items-start">
+                  <ExportButton
+                    label="📗 Export to Excel"
+                    disabled={loading || !data || !!data?.skip || !พร้อม}
+                    spec={{
+                      filename: 'ผู้ติดต่อ',
+                      scope: [q.trim() ? `ค้นหา "${q.trim()}"` : 'ทุกราย',
+                        withPhone ? 'เฉพาะที่มีเบอร์' : '', withEmail ? 'เฉพาะที่มีอีเมล' : '']
+                        .filter(Boolean).join(' · '),
+                      title: 'ผู้ติดต่อ (ลูกค้า/คู่ค้า)',
+                      /* 🔒 ต้องเขียนในไฟล์ว่าเลขภาษีถูกปิดมาแล้ว — ไม่งั้นฝ่ายบัญชีจะคิดว่า
+                         ข้อมูลในฐานมีแค่ 4 ตัวท้าย แล้วไปตามแก้กับลูกค้าทั้งที่ ZORT มีเลขเต็มอยู่ */
+                      note: 'เลขประจำตัวผู้เสียภาษีถูกปิดบางส่วนมาจากเซิร์ฟเวอร์ (เห็น 4 ตัวท้าย) — เลขเต็มดูได้ที่ ZORT เท่านั้น'
+                        + ' · ไฟล์นี้มีข้อมูลส่วนบุคคลของลูกค้า โปรดเก็บเท่าที่จำเป็นและอย่าส่งต่อโดยไม่จำเป็น'
+                        + ' · ไม่รวมผู้ติดต่อที่ถูกลบ (ZORT เรียกว่า archive) เพราะกระจกไม่ได้เก็บไว้',
+                      filters: [
+                        ['คำค้นหา', q.trim() || '(ไม่ได้ค้น — ทุกราย)'],
+                        ['เฉพาะที่มีเบอร์โทร', withPhone ? 'ใช่' : 'ไม่'],
+                        ['เฉพาะที่มีอีเมล', withEmail ? 'ใช่' : 'ไม่'],
+                      ],
+                      fetchPage: async (off, limit) => {
+                        const qs = new URLSearchParams({ list: 'contacts', limit: String(limit), offset: String(off) })
+                        if (q.trim()) qs.set('q', q.trim())
+                        if (withPhone) qs.set('withphone', '1')
+                        if (withEmail) qs.set('withemail', '1')
+                        const res = await fetch(`/api/web/core?${qs}`)
+                        const j: Resp = await res.json()
+                        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+                        /* 🔴 ชนตาข่ายกลางทาง ⇒ **โยนออกไปให้ด่านปัดไฟล์ทิ้ง** ห้ามคืนแถวว่างเฉย ๆ
+                           คืนว่างเงียบ ๆ = ไฟล์จะจบลงตรงแถวที่ 500 โดยดูเหมือนหมดพอดี */
+                        if (j?.needQuery) {
+                          throw new Error('ท่อไม่ยอมให้ไล่ลึกเกิน 500 แถวถ้าไม่ได้ค้นหา (ตาข่ายกันดึงทั้งฐาน) — พิมพ์คำค้นแล้วส่งออกทีละชุด')
+                        }
+                        return { rows: j?.rows ?? [], total: typeof j?.total === 'number' ? j.total : null }
+                      },
+                      header: ['รหัส', 'ชื่อ', 'เลขประจำตัวผู้เสียภาษี (ปิดบางส่วน)', 'เบอร์โทรศัพท์', 'อีเมล', 'สาขา', 'ที่อยู่'],
+                      /* 🔴 ช่องที่ท่อไม่ส่ง ⇒ null (เว้นว่าง) ห้ามใส่ '-' ที่เห็นบนจอ
+                         ขีดบนจอคือการตกแต่ง แต่ขีดในไฟล์จะกลายเป็นข้อมูลที่ Excel เอาไปนับ */
+                      toRow: (r: Contact) => [r.code ?? null, r.name ?? null, r.taxId ?? null,
+                        r.phone ?? null, r.email ?? null, r.branchName ?? null, r.address ?? null],
+                    }}
+                  />
+                  {!พร้อม && (
+                    <span className="text-[11.5px] text-gray-500 mt-1 max-w-[300px] leading-snug">
+                      {/* 🔴 เดิมเขียน `?? 0` ⇒ ตอนท่อยังไม่ส่ง total จอจะอ่านว่า
+                          "ส่งออกทั้ง 0 รายไม่ได้" ซึ่งอ่านแล้วงงกว่าไม่บอกเลย
+                          ⇒ ไม่รู้จำนวน ให้พูดโดยไม่มีตัวเลข ไม่ใช่เดาเป็นศูนย์ (19 ก.ย. 2569) */}
+                      ส่งออก{data?.total == null ? 'ทั้งหมด' : `ทั้ง ${fmtNum(data.total)} ราย`}ไม่ได้ — เซิร์ฟเวอร์กันไม่ให้ไล่ดึงทั้งฐาน
+                      (ลึกเกิน 500 แถวต้องมีคำค้น) · พิมพ์คำค้นก่อนแล้วส่งออกทีละชุด
+                    </span>
+                  )}
+                </span>
+              )
+            })()}
+          </div>
 
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             เลขประจำตัวผู้เสียภาษี<b>ถูกปิดบางส่วนมาจากเซิร์ฟเวอร์</b> (เห็น 4 ตัวท้าย) —

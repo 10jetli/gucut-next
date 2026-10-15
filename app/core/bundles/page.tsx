@@ -26,7 +26,7 @@ import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
 import {
   PageHead, SearchRow, TableWrap, Tabs, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 
 interface Row {
@@ -234,45 +234,7 @@ export default function CoreBundlesPage() {
           : data ? `จำนวน ${fmtNum(data.total)} รายการ` : 'กำลังโหลด…'}
         actions={
           <>
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>
-              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-            </BtnGhost>
-            {/* 📤 ส่งออกสินค้าเป็นชุด ครบทุกหน้า
-                ⚠️ **ไม่ส่ง marketplaces=1 ตอนส่งออก** — คอลัมน์ช่องทางต้องยิงถามรายตัวและช้ามาก
-                   ⇒ ไฟล์ไม่มีคอลัมน์นั้น และ **เขียนบอกไว้ในหัวไฟล์** ไม่ใช่หายไปเงียบ ๆ
-                ⚠️ ราคาสินค้ารวม (itemsValue) เป็น null ได้ = มีชิ้นส่วนที่ยังไม่ได้ตั้งราคา
-                   ⇒ ปล่อยให้เว้นว่าง **ห้ามคิดเป็น 0** ไม่งั้นราคารวมต่ำกว่าจริงแบบดูสมเหตุสมผล */}
-            <ExportButton
-              disabled={loading}
-              spec={{
-                filename: 'สินค้าเป็นชุด',
-                scope: q.trim() ? `ค้นหา "${q.trim()}"` : 'ทุกชุด',
-                title: 'สินค้าเป็นชุด',
-                note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ'
-                  + ` · คงเหลือ/พร้อมขาย ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''} · พร้อมขายที่เป็น 0 อาจหมายถึงติดลบ`
-                  + ' (ZORT API ไม่ส่งค่าติดลบของช่องนี้)',
-                filters: [['คำค้นหา', q.trim() || '(ไม่ได้ค้น)']],
-                fetchPage: async (offsetAt, limit) => {
-                  const qs = new URLSearchParams({ list: 'bundles', limit: String(limit), offset: String(offsetAt) })
-                  if (q.trim()) qs.set('q', q.trim())
-                  const r = await fetch(`/api/web/core?${qs}`)
-                  const d = await r.json()
-                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
-                },
-                header: ['รหัสชุด', 'ชื่อชุด', 'ราคาสินค้ารวม (บาท)', 'ราคาขาย (บาท)', 'คงเหลือ', 'พร้อมขาย', 'หน่วย', 'จำนวนชิ้นส่วน', 'สถานะ'],
-                toRow: (r: Row) => [
-                  r.sku, r.name ?? null,
-                  typeof r.itemsValue === 'number' ? r.itemsValue : null,
-                  typeof r.sellprice === 'number' ? r.sellprice : null,
-                  typeof r.onhand === 'number' ? r.onhand : null,
-                  typeof r.available === 'number' ? r.available : null,
-                  r.unit || null,
-                  typeof r.itemCount === 'number' ? r.itemCount : null,
-                  r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน',
-                ],
-              }}
-            />
+            {/* 🔁 ปุ่ม "รีเฟรช" บนหัวจอเอาออก 16 ต.ค. 2569 — ZORT ไม่มี (อ่านจอ ZORT รายการนี้) */}
             {/* 🔴 **ถอดปุ่ม "นำเข้าไฟล์ (Excel)" ออก** (15 ก.ย. 2569)
                 เดิมชี้ไป `?kind=product` ทั้งที่จอนี้แสดงสินค้าเป็นชุด ไม่ใช่สินค้า
                 ⇒ คนกดเพราะอยากนำเข้าสินค้าเป็นชุด แต่ไปโผล่หน้านำเข้า**สินค้า** ซึ่งคอลัมน์คนละชุด
@@ -292,7 +254,7 @@ export default function CoreBundlesPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="ค้นหา รหัสชุด หรือชื่อชุด"
-        advanced={<LinkText onClick={() => load(0)}>ค้นหา</LinkText>}
+        /* ลิงก์ "ค้นหา" เอาออก 16 ต.ค. 2569 — ZORT ไม่มี · กด Enter ในช่องค้นแทน */
       />
 
       {/* แท็บ เปิด/ปิดใช้งาน — ผังเดียวกับจอสินค้า (ลอก ZORT มาอีกที)
@@ -565,6 +527,47 @@ export default function CoreBundlesPage() {
                 onPerPage={(n) => { setPerPage(n); load(0, n) }} />
             </div>
           </TableWrap>
+
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* 📤 ส่งออกสินค้าเป็นชุด ครบทุกหน้า
+                ⚠️ **ไม่ส่ง marketplaces=1 ตอนส่งออก** — คอลัมน์ช่องทางต้องยิงถามรายตัวและช้ามาก
+                   ⇒ ไฟล์ไม่มีคอลัมน์นั้น และ **เขียนบอกไว้ในหัวไฟล์** ไม่ใช่หายไปเงียบ ๆ
+                ⚠️ ราคาสินค้ารวม (itemsValue) เป็น null ได้ = มีชิ้นส่วนที่ยังไม่ได้ตั้งราคา
+                   ⇒ ปล่อยให้เว้นว่าง **ห้ามคิดเป็น 0** ไม่งั้นราคารวมต่ำกว่าจริงแบบดูสมเหตุสมผล */}
+            <ExportButton
+              label="📗 Export to Excel"
+              disabled={loading}
+              spec={{
+                filename: 'สินค้าเป็นชุด',
+                scope: q.trim() ? `ค้นหา "${q.trim()}"` : 'ทุกชุด',
+                title: 'สินค้าเป็นชุด',
+                note: 'ไฟล์นี้ไม่มีคอลัมน์ช่องทางขาย (Marketplace) เพราะต้องยิงถามรายตัว — ดูได้บนจอ'
+                  + ` · คงเหลือ/พร้อมขาย ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''} · พร้อมขายที่เป็น 0 อาจหมายถึงติดลบ`
+                  + ' (ZORT API ไม่ส่งค่าติดลบของช่องนี้)',
+                filters: [['คำค้นหา', q.trim() || '(ไม่ได้ค้น)']],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'bundles', limit: String(limit), offset: String(offsetAt) })
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['รหัสชุด', 'ชื่อชุด', 'ราคาสินค้ารวม (บาท)', 'ราคาขาย (บาท)', 'คงเหลือ', 'พร้อมขาย', 'หน่วย', 'จำนวนชิ้นส่วน', 'สถานะ'],
+                toRow: (r: Row) => [
+                  r.sku, r.name ?? null,
+                  typeof r.itemsValue === 'number' ? r.itemsValue : null,
+                  typeof r.sellprice === 'number' ? r.sellprice : null,
+                  typeof r.onhand === 'number' ? r.onhand : null,
+                  typeof r.available === 'number' ? r.available : null,
+                  r.unit || null,
+                  typeof r.itemCount === 'number' ? r.itemCount : null,
+                  r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน',
+                ],
+              }}
+            />
+          </div>
 
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             <MarketCoverage checked={data.checkedMarketplaces}
