@@ -24,7 +24,7 @@ import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
-import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
+import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า, ช่วงลิงก์ใบของลูกค้า, ช่วงยาวที่วัดว่ารอด } from '@/lib/sale-link'
 
 interface Order {
   id?: string; source?: string; number?: string; channel?: string; status?: string
@@ -449,6 +449,15 @@ function Inner() {
                       <span className="block text-[11.5px] text-gray-400">
                         จอรายการขายค้นชื่อแบบ &ldquo;มีคำนี้อยู่&rdquo; และนับใบยกเลิกด้วย ⇒ จำนวนอาจมากกว่า {o.count} ใบที่นี่
                         (ที่นี่จับชื่อตรงตัว ไม่นับใบยกเลิก)
+                        {ช่วงลิงก์ใบของลูกค้า(o.firstDay, o.lastDay).ตัด && (
+                          /* 🔴 ห้ามตัดเงียบ — ลูกค้าเก่าหลายปีขอช่วงเต็มแล้วท่อล้ม 500 (วัด 16 ต.ค. 2569) จึงต้องตัดช่วง */
+                          <span className="block text-amber-700">
+                            ⚠️ ลิงก์นี้แสดงเฉพาะ {ช่วงยาวที่วัดว่ารอด.toLocaleString('th-TH')} วันล่าสุด
+                            (ตั้งแต่ {thaiDate(ช่วงลิงก์ใบของลูกค้า(o.firstDay, o.lastDay).from)})
+                            — ลูกค้าซื้อมาตั้งแต่ {thaiDate(String(o.firstDay))} แต่ระบบยังค้นช่วงยาวหลายปีไม่ไหว
+                            ใบเก่ากว่านั้นต้องตั้งช่วงวันเองในค้นหาขั้นสูงทีละช่วง
+                          </span>
+                        )}
                       </span>
                     </>
                   )}

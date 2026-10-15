@@ -12,6 +12,7 @@ import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT, อ่านเงินตามการชำระ, รายชื่อสถานะของแท็บ } from '@/lib/sales-tabs'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { ช่วงยาวที่วัดว่ารอด, ช่วงยาวที่วัดว่าล้ม } from '@/lib/sale-link'
 import { fmtMoney, ช่วงปฏิทินไทย, ต้นเดือนย้อนหลังแบบZORT, type ชนิดช่วงปฏิทิน } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
@@ -270,11 +271,6 @@ const วันเริ่มของช่วง = (d: number): string => {
    🔑 คนละชนิดกับ RANGES ข้างบน: ย้อนหลัง N วัน เลื่อนตามเวลา · ปฏิทินยึดกับวันที่
       ⇒ ถาม "เดือนนี้ขายได้เท่าไหร่" ด้วย "ย้อนหลัง 30 วัน" จะได้คนละคำตอบเสมอ และไม่มีอะไรฟ้อง
    ⚠️ คิดเป็น **วันไทย** ที่ `lib/format.ts` ที่เดียว (เครื่องเป็น UTC) */
-/* 📏 ผลวัดช่วงวันของ list=orders (CTO 16 ต.ค. 2569 ยิงทีละนัดเว้น 8 วิ) — **ผลวัด ไม่ใช่เพดานที่ท่อประกาศ**
-   ใช้ทั้งเกณฑ์และข้อความใน catch ของ load ⇒ เลขอยู่ที่เดียว · ระหว่างสองเลขนี้ยังไม่มีใครวัด */
-const ช่วงยาวที่วัดว่ารอด = 654
-const ช่วงยาวที่วัดว่าล้ม = 1750
-
 const ช่วงปฏิทินทั้งหมด: { ค่า: ชนิดช่วงปฏิทิน; label: string }[] = [
   { ค่า: 'วันนี้', label: 'วันนี้' },
   { ค่า: 'สัปดาห์นี้', label: 'สัปดาห์นี้' },
