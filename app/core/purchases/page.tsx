@@ -29,6 +29,7 @@ import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import { ขอบเขตกรองในเครื่อง } from '@/lib/client-filter-scope'
+import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 
 interface Row {
   number: string
@@ -96,6 +97,15 @@ export default function CorePurchasesPage() {
         ⇒ ใส่เท่าที่ทำได้จริง + เขียนบอกที่เหลือ **ห้ามทำปุ่มหลอก** */
   const [picked, setPicked] = useState<string[]>([])
   const [copyMsg, setCopyMsg] = useState('')
+  /* 🏬 ชื่อคลังใต้สถานะ — ZORT เขียน `โกดัง` ใต้ป้ายสถานะ (อ่าน /Buy/list 15 ต.ค. 2569 20:5x)
+     ของเราเคยโชว์รหัสดิบ `NEW` ⇒ แปลงด้วยตัวเดียวกับจอขาย (lib/warehouse-names) · อ่านไม่ได้ ⇒ บอกว่าเป็นรหัส */
+  const [ชื่อคลัง, setชื่อคลัง] = useState<{ names: Record<string, string>; อ่านไม่ได้: boolean } | null>(null)
+  useEffect(() => {
+    fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null)
+      .then((j) => setชื่อคลัง(ชื่อคลังจากคำตอบ(j)))
+  }, [])
+  const ป้ายคลัง = (code: string) =>
+    ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[code] ? ชื่อคลัง.names[code] : null
   const copyNumbers = async (list: string[]) => {
     try {
       await navigator.clipboard.writeText(list.join(','))
@@ -337,7 +347,7 @@ export default function CorePurchasesPage() {
           { label: 'จนถึงมูลค่า', kind: 'number', value: ร่าง.ถึง, onChange: (v) => setร่าง({ ...ร่าง, ถึง: v }), placeholder: '999,999', width: 120 },
           { label: 'ชื่อผู้ติดต่อ', kind: 'text', value: ร่าง.ผู้ติดต่อ, onChange: (v) => setร่าง({ ...ร่าง, ผู้ติดต่อ: v }), placeholder: 'ชื่อผู้ติดต่อ', width: 160 },
           { label: 'คลัง / สาขา', kind: 'select', value: ร่าง.คลัง, onChange: (v) => setร่าง({ ...ร่าง, คลัง: v }),
-            options: [{ value: '', label: 'คลัง / สาขา - ทั้งหมด' }, ...คลังที่มี.map((w) => ({ value: w, label: w }))], width: 170 },
+            options: [{ value: '', label: 'คลัง / สาขา - ทั้งหมด' }, ...คลังที่มี.map((w) => ({ value: w, label: ป้ายคลัง(w) ?? `รหัสคลัง ${w}` }))], width: 170 },
           { label: 'ตั้งแต่วันที่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
           { label: 'ถึงวันที่', kind: 'date', value: to, onChange: (v) => setTo(v) },
         ] as AdvField[]}
@@ -517,7 +527,12 @@ export default function CorePurchasesPage() {
                     <td className={TD}>
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
                       {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
-                      {r.warehouse && <span className="block text-[11.5px] text-gray-400 mt-0.5">{r.warehouse}</span>}
+                      {r.warehouse && (ป้ายคลัง(r.warehouse)
+                        ? <span className="block text-[11.5px] text-gray-500 mt-0.5">{ป้ายคลัง(r.warehouse)}</span>
+                        : <span className="block text-[11.5px] text-gray-400 mt-0.5"
+                            title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
+                            รหัสคลัง {r.warehouse}
+                          </span>)}
                       {/* ZORT มีลิงก์ "โน้ต" ใต้สถานะทุกแถว (ภาพ 27) — ของเราขึ้นเฉพาะใบที่มีโน้ตจริง
                           ⚠️ ใบที่ไม่มีโน้ตไม่ขึ้นคำว่าโน้ต — ลิงก์ที่กดแล้วว่างเปล่าคือลิงก์หลอก
                              (ZORT ขึ้นทุกแถวเพราะกดแล้วพิมพ์เพิ่มได้ แต่ของเราอ่านอย่างเดียว) */}
@@ -533,6 +548,16 @@ export default function CorePurchasesPage() {
                       <RowMenu
                         items={[
                           { label: 'คัดลอกเลขที่ใบ', onClick: () => { navigator.clipboard?.writeText(r.number).catch(() => {}) } },
+                          /* ⛔ เมนู ⋮ ของ ZORT จอซื้อ (อ่าน `<ul>` แถวจริงบน /Buy/list 15 ต.ค. 2569 21:0x · อ่านอย่างเดียว) — 6 รายการ
+                             โชว์ครบตามลำดับและคำของเขา เป็นสีเทาพร้อมเหตุ ⇒ คนที่ย้ายมาจาก ZORT หาเจอ และรู้ว่าทำไมยังกดไม่ได้ */
+                          ...([
+                            ['ปักหมุดไว้บนสุด', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+                            ['คัดลอก', 'ยังทำไม่ได้ — สร้างใบสั่งซื้อใหม่ใน ZORT = เขียนกลับ (จอนี้อ่านอย่างเดียว)'],
+                            ['พิมพ์เอกสาร', 'ยังทำไม่ได้ — ยังไม่มีหน้าพิมพ์ใบสั่งซื้อของเรา'],
+                            ['พิมพ์ใบแปะจดหมาย/กล่อง', 'ยังทำไม่ได้ — ต้องใช้ที่อยู่ผู้ขาย ซึ่งท่อยังไม่ส่งมา'],
+                            ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+                            ['ซ่อน', 'ยังทำไม่ได้ — ซ่อนใบต้องเขียนกลับ ZORT'],
+                          ] as const).map(([label, disabled]) => ({ label, disabled })),
                         ]}
                       />
                     </td>
