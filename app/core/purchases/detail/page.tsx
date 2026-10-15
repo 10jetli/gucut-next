@@ -26,6 +26,7 @@ import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 import PillSend from '@/components/ui/PillSend'
+import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 
 /* ── รับของ / ตรวจนับสินค้าเข้า (soon: stock-count · งานกระดาน t_mu0tx40g · 14 ก.ย. 2569) ──
    ท่อ (gucut-web): GET ?zortpo=<เลขที่ใบ> → id ของ ZORT (กระจกไม่มี id · เลขที่ใบซ้ำได้ ท่อไม่เดา)
@@ -268,6 +269,13 @@ function Inner() {
      ⇒ จอรายการซื้อแนบ `&store=` มาให้ · ถ้าไม่มีก็ไม่ส่ง (ท่อคืน z1 และบอกว่า storeDefaulted) */
   const store = (() => { const v = sp.get('store') ?? ''; return v === 'z1' || v === 'z2' ? v : '' })()
   const [d, setD] = useState<Resp | null>(null)
+  /* 🏬 ชื่อคลังแทนรหัสดิบ (`NEW` ⇒ `โกดัง`) — ZORT `/Buy/Details` เขียน "โอนเข้า โกดัง" (อ่าน 16 ต.ค. 2569)
+     ตัวแปลงเดียวกับจอรายการซื้อ/ขาย/รับคืน · อ่านไม่ได้ ⇒ เขียนว่าเป็นรหัส ไม่ปล่อยให้อ่านเป็นชื่อ */
+  const [ชื่อคลัง, setชื่อคลัง] = useState<{ names: Record<string, string>; อ่านไม่ได้: boolean } | null>(null)
+  useEffect(() => {
+    fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null)
+      .then((j) => setชื่อคลัง(ชื่อคลังจากคำตอบ(j)))
+  }, [])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -343,6 +351,8 @@ function Inner() {
             <section className="rounded border border-gray-200 bg-white p-3">
               <h2 className="mb-2 text-[12.5px] font-semibold">หัวใบ</h2>
               <div className="grid gap-1">
+                {/* 📐 ZORT `/Buy/Details`: ประเภทรายการ = ซื้อสินค้าเข้า (อ่าน 16 ต.ค. 2569) */}
+                <Field k="ประเภทรายการ" v="ซื้อสินค้าเข้า" />
                 <Field k="ผู้ขาย" v={d.vendor} />
                 {/* 🔴 เดิมโชว์ค่าดิบ "2026-03-10" — ทั้งร้านอ่านปี พ.ศ. และจออื่นแปลงหมดแล้ว
                     จอเดียวที่ไม่แปลง = คนเทียบข้ามจอแล้วสะดุด และเสี่ยงอ่านปีผิดไป 543 ปี
@@ -358,7 +368,9 @@ function Inner() {
                     และค่า Voided ของใบซื้อคือ "ถูกยกเลิก" / "ยกเลิก" — **ไม่เหมือนจอใบขาย** */}
                 <Field k="สถานะการโอนสินค้า" v={d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : d.status} />
                 <Field k="สถานะการชำระเงิน" v={d.paymentStatus ? zortWord(PURCHASE_DETAIL_PAY_STATUS, d.paymentStatus).text : d.paymentStatus} />
-                <Field k="คลังปลายทาง" v={d.warehouse} />
+                <Field k="คลังปลายทาง" v={d.warehouse
+                  ? (ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[d.warehouse] ? ชื่อคลัง.names[d.warehouse] : `รหัสคลัง ${d.warehouse}`)
+                  : d.warehouse} />
                 <Field k="โน้ต" v={d.note} />
                 {/* ⚠️ ค่านี้เป็น "เวลา" ไม่ใช่ "วันที่" ⇒ แปลงเฉพาะส่วนวัน แล้วคงเวลาไว้
                     ห้ามตัดเวลาทิ้ง — คนใช้ดูว่ากระจกอัปเดตล่าสุดกี่โมงเพื่อตัดสินว่าข้อมูลเก่าไหม */}
