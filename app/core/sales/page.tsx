@@ -18,7 +18,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
+  LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
@@ -779,66 +779,7 @@ export default function CoreSalesPage() {
         }
         actions={
           <>
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>
-              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-            </BtnGhost>
-            {/* 📤 ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า (ใบ t_mu1i74cu)
-                🔴 **ต้องส่ง cancelled=1 เหมือนที่จอส่ง** ไม่งั้นไฟล์จะไม่มีใบยกเลิก
-                   แล้วยอดรวมในไฟล์กับยอดบนจอจะต่างกัน โดยคนอ่านไฟล์ไม่มีทางรู้ว่าทำไม
-                   (CLAUDE.md กฎแท็บข้อ 4 — ตัวเลขคนละกติกาห้ามวางคู่กันเฉย ๆ)
-                ⚠️ ไฟล์มีคอลัมน์ "ยกเลิกหรือไม่" เพื่อให้คนกรองออกเองได้ในภายหลัง */}
-            <ExportButton
-              disabled={loading}
-              spec={{
-                filename: 'รายการขาย',
-                scope: `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`,
-                title: 'รายการขาย',
-                note: 'ไฟล์นี้รวมใบยกเลิกไว้ด้วย (เหมือนที่จอแสดง) — ดูคอลัมน์ "สถานะ" เพื่อคัดออกเอง',
-                filters: [
-                  /* 🔴 ต้องเป็นช่วงเดียวกับที่จอกำลังกรองอยู่ — รวมช่วงที่ตั้งเองในค้นหาขั้นสูง
-                     ไม่งั้นไฟล์กับจอคนละช่วง แล้วคนเทียบยอดไม่ตรงโดยไม่รู้ว่าทำไม */
-                  [ชนิดวัน === 'ship' ? 'ช่วงวันส่งสินค้า' : 'ช่วงวันที่', `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`
-                    + (advFrom || advTo ? ' (ตั้งเองในค้นหาขั้นสูง)' : ` (${days} วัน)`)],
-                  ['ร้าน', store || '(ทุกร้าน)'],
-                  ['ช่องทาง', channel || '(ทุกช่องทาง)'],
-                  ['สถานะ', status || '(ทุกสถานะ)'],
-                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
-                  /* 🔴 หัวไฟล์ต้องบอกด้วยว่ากรองขั้นสูงอะไรไว้ ไม่งั้นคนเปิดไฟล์ทีหลังไม่รู้ว่าทำไมแถวน้อย */
-                  ...(advParams().length
-                    ? [['ค้นหาขั้นสูง', advParams().map(([k, v]) => `${k}=${v}`).join(' · ')] as [string, string]]
-                    : [['ค้นหาขั้นสูง', '(ไม่ได้ใช้)'] as [string, string]]),
-                ],
-                fetchPage: async (offsetAt, limit) => {
-                  const qs = new URLSearchParams({
-                    list: 'orders', from: advFrom || วันเริ่มของช่วง(days), to: advTo || thaiDay(0),
-                    limit: String(limit), offset: String(offsetAt), cancelled: '1',
-                  })
-                  if (channel) qs.set('channel', channel)
-                  if (status) qs.set('status', status)
-                  if (store) qs.set('store', store)
-                  if (q.trim()) qs.set('q', q.trim())
-                  if (ชนิดวัน === 'ship') qs.set('datetype', 'ship')   // ไฟล์ต้องเป็นช่วงเดียวกับจอ
-                  /* 🔴 **ตัวกรองขั้นสูงต้องไปกับไฟล์ด้วย** — ลืมส่งแล้วไฟล์จะเป็นของทั้งช่วง
-                     ทั้งที่ตารางบนจอกรองอยู่ ⇒ ผิดแบบไม่มีอะไรฟ้อง (ฝั่งท่อกำชับข้อนี้) */
-                  for (const [k, v] of advParams()) qs.set(k, v)
-                  const r = await fetch(`/api/web/core?${qs}`)
-                  const d = await r.json()
-                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
-                },
-                header: ['เลขที่', 'วันที่', 'ลูกค้า', 'ช่องทาง', 'ที่มา', 'ยอด (บาท)', 'สถานะ', 'การชำระเงิน', 'ขนส่ง', 'เลขพัสดุ', 'วันที่ส่ง', 'เก็บปลายทาง'],
-                toRow: (r: Row) => [
-                  r.number, r.order_date ?? null, r.customer ?? null, r.channel ?? null, r.source ?? null,
-                  typeof r.amount === 'number' ? r.amount : null,
-                  r.status ?? null, r.pay_status ?? null,
-                  /* 🔴 **ห้ามใส่ `ship_name` ลงคอลัมน์ "ขนส่ง"** — ช่องนั้นคือชื่อผู้รับ (พิสูจน์ 16 ก.ย. 2569)
-                     ไฟล์ที่ส่งออกไปจะมีชื่อลูกค้าอยู่ในคอลัมน์ขนส่ง ⇒ ทั้งผิดความหมายและเป็นข้อมูลส่วนตัวผิดที่ */
-                  r.ship_channel ?? null, r.tracking_no ?? null, r.ship_date ?? null,
-                  /* 🔴 is_cod เป็น 0/1 หรือ boolean · **ไม่ส่งมา = ไม่รู้ ⇒ เว้นว่าง ห้ามเขียน "ไม่ใช่"** */
-                  r.is_cod === undefined || r.is_cod === null ? null : (r.is_cod ? 'ใช่' : 'ไม่ใช่'),
-                ],
-              }}
-            />
+            {/* 🔁 ปุ่ม "รีเฟรช" ตรงนี้เอาออก 16 ต.ค. 2569 — ZORT ไม่มี (มีแค่ปุ่มวงกลมมุมขวาแถบแท็บ ซึ่งเรามีแล้ว) */}
             {/* ⚠️ สามปุ่มนี้ลอกจาก ZORT — "สร้างอย่างง่าย" ของเขาคือเปิดบิลเร็ว
                 ซึ่งตรงกับจอขายหน้าร้านของเราพอดี จึงพาไปที่นั่นจริง ๆ
                 ส่วนอีกสองปุ่มพาไปหน้าที่บอกว่ายังไม่ได้ทำ — เหมือนในผัง แต่กดแล้วไม่โกหก */}
@@ -866,37 +807,10 @@ export default function CoreSalesPage() {
         placeholder="เลขรายการขาย ชื่อลูกค้า ช่องทางการขาย และอื่นๆ"
         /* 🔴 เดิมลิงก์ตรงนี้เขียนว่า "ค้นหา" และกดแล้วแค่โหลดซ้ำ — ผัง ZORT ตรงนี้คือ "ค้นหาขั้นสูง"
            ⇒ ตอนนี้กดแล้วกางแผงช่วงวันที่จริง (ท่อรับ from/to) ไม่ใช่ลิงก์ประดับ */
-        advanced={<AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} />}
+        /* 🔴 ผัง ZORT จอนี้ไม่มีลิงก์ "ค้นหาขั้นสูง" ข้างช่องค้น — มีปุ่ม "ตัวกรอง" ต่อท้ายตัวเลือกช่วงวัน
+           (แถว: แสดง [วันที่] [ย้อนหลัง 3 เดือน] [ตัวกรอง] · อ่านปุ่ม+พิกัด 16 ต.ค. 2569) ⇒ ย้ายไปท้ายแถวขวา */
         right={
           <>
-            {/* ⚠️ ชื่อร้านมาจากบัญชี ZORT สองบัญชีของร้าน — z1 คือบริษัทที่ขายบนเว็บ
-                z2 คือบัญชีที่สอง ซึ่งตอนนี้เป็นเครื่องคิดเงินหน้าร้านล้วน
-                (เลิกขายออนไลน์ 22 ก.พ. 2569 — ฝั่งท่อไล่วันจริงยืนยันแล้ว) */}
-            <select
-              value={store}
-              onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
-              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
-            >
-              <option value="">ทุกร้าน (2 ร้าน)</option>
-              {/* 🔴 ห้ามพิมพ์ชื่อนิติบุคคลในไฟล์จอ — ถูกอบเข้า chunk สาธารณะ /_next/static
-                  (เจ้าของร้านจับได้ 8 ก.ย. 2569 ที่หน้า /login · ไล่ทั้งคลาสแล้วเจอที่นี่ด้วย)
-                  ใช้ชื่อหน้าที่ของร้านแทน — คนใช้แยกออกอยู่แล้วว่า z1=ออนไลน์ z2=หน้าร้าน */}
-              <option value="z1">ร้านออนไลน์ (z1)</option>
-              <option value="z2">หน้าร้าน (z2)</option>
-            </select>
-            <select
-              value={channel}
-              onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
-              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
-            >
-              <option value="">ทุกช่องทาง</option>
-              {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
-                  React จะโยน "Objects are not valid as a React child" แล้ว **ทิ้งทั้งหน้าเป็นจอขาว**
-                  (เจอจริงตอนป้อนข้อมูลปลอมที่ชนิดไม่ตรง 6 ก.ย. 2569 — ชนิดผิดช่องเดียว ล้มทั้งจอ)
-                  ⇒ ชนิดไม่ตรงก็แค่ตัวเลือกนั้นหาย ดีกว่าทั้งจอหาย */}
-              {(data?.channels ?? []).filter((c) => typeof c === 'string')
-                .map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
             <span className="text-[12.5px] text-gray-500">แสดง</span>
             {/* 📅 ชนิดวันที่ — โชว์เมื่อท่อประกาศ dateTypesSupported เท่านั้น (ท่อเก่า ⇒ ไม่มี dropdown · คิดจากวันที่ของใบ)
                 ยิงดู 16 ต.ค. 2569: order/ship ตอบ 200 · payment ตอบ 400 พร้อมเหตุ ⇒ ตัวเลือกปิด เหตุจาก dateTypesUnavailable */}
@@ -937,6 +851,37 @@ export default function CoreSalesPage() {
             >
               {ช่วงปฏิทินทั้งหมด.map((r) => <option key={r.ค่า} value={r.ค่า}>{r.label}</option>)}
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
+            </select>
+            <AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} แบบ="ปุ่มตัวกรอง" />
+            {/* ร้าน/ช่องทาง ZORT ไม่มีในแถวนี้ (บัญชีเดียว · ช่องทางอยู่ในตัวกรอง) — ของเรารวมสองบัญชี จึงต้องมี
+                วางต่อท้ายหลังปุ่มตัวกรอง ให้ลำดับต้นแถวตรงกับ ZORT */}
+            {/* ⚠️ ชื่อร้านมาจากบัญชี ZORT สองบัญชีของร้าน — z1 คือบริษัทที่ขายบนเว็บ
+                z2 คือบัญชีที่สอง ซึ่งตอนนี้เป็นเครื่องคิดเงินหน้าร้านล้วน
+                (เลิกขายออนไลน์ 22 ก.พ. 2569 — ฝั่งท่อไล่วันจริงยืนยันแล้ว) */}
+            <select
+              value={store}
+              onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+            >
+              <option value="">ทุกร้าน (2 ร้าน)</option>
+              {/* 🔴 ห้ามพิมพ์ชื่อนิติบุคคลในไฟล์จอ — ถูกอบเข้า chunk สาธารณะ /_next/static
+                  (เจ้าของร้านจับได้ 8 ก.ย. 2569 ที่หน้า /login · ไล่ทั้งคลาสแล้วเจอที่นี่ด้วย)
+                  ใช้ชื่อหน้าที่ของร้านแทน — คนใช้แยกออกอยู่แล้วว่า z1=ออนไลน์ z2=หน้าร้าน */}
+              <option value="z1">ร้านออนไลน์ (z1)</option>
+              <option value="z2">หน้าร้าน (z2)</option>
+            </select>
+            <select
+              value={channel}
+              onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
+              className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+            >
+              <option value="">ทุกช่องทาง</option>
+              {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
+                  React จะโยน "Objects are not valid as a React child" แล้ว **ทิ้งทั้งหน้าเป็นจอขาว**
+                  (เจอจริงตอนป้อนข้อมูลปลอมที่ชนิดไม่ตรง 6 ก.ย. 2569 — ชนิดผิดช่องเดียว ล้มทั้งจอ)
+                  ⇒ ชนิดไม่ตรงก็แค่ตัวเลือกนั้นหาย ดีกว่าทั้งจอหาย */}
+              {(data?.channels ?? []).filter((c) => typeof c === 'string')
+                .map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </>
         }
@@ -1163,36 +1108,6 @@ export default function CoreSalesPage() {
 
       {data && !data.skip && (
         <>
-          {/* การ์ดสถานะจัดส่ง — วางเหนือแท็บ เพราะเป็นภาพรวมของชุดที่กรองอยู่
-              ⚠️ คนละเรื่องกับแท็บด้านล่าง: แท็บคือ "สถานะใบ" ที่ ZORT ใช้ (สำเร็จ · รอ · ยกเลิก)
-                 การ์ดนี้คือ "สถานะจัดส่ง" ที่มาจากแพลตฟอร์ม ⇒ ใบเดียวมีได้ทั้งสองอย่างพร้อมกัน */}
-          <ShipStatusCard
-            groups={data.shipStatusGroups}
-            total={data.total}
-            scope={data.shipStatusScope}
-          />
-
-          {/* ใบของร้านที่ปิดแล้วยังพองอยู่ในกอง "รอจัดส่ง" — แยกให้เห็น ห้ามกรองทิ้งเงียบ
-              (ท่านประธานสั่ง 13 ก.ย. 2569 · งานกระดาน t_mtxss3pf)
-              ⚠️ ส่งช่วงวันชุดเดียวกับที่จอกำลังกรองอยู่ ไม่งั้นเลขในกล่องนี้จะพูดคนละช่วง
-                 กับการ์ดสถานะจัดส่งที่อยู่ข้างบน แล้วคนอ่านจะเทียบกันเองโดยไม่รู้ว่าคนละขอบเขต */}
-          <DormantInShipPile from={วันเริ่มของช่วง(days)} to={thaiDay(0)} />
-
-          {/* ⚠️ ตัวตรวจที่ไม่เจออะไรเลย ต้องบอกว่า "ตรวจแล้วไม่เจอ" ไม่ใช่เงียบหาย
-              ไม่งั้นไม่มีใครรู้ว่ามีตัวตรวจนี้อยู่ แล้ววันที่มันเงียบเพราะพัง ก็ดูเหมือนเดิมเป๊ะ
-              (กติกาเดียวกับถัง "ไม่รู้จัก" ในการ์ด — ต้องเห็นแม้เป็น 0) */}
-          {rows.length > 0 && (
-            <p className="text-[12.5px] text-gray-500 mb-3">
-              ตรวจใบที่ <b>ปิดแล้วแต่ยังไม่มีเลขพัสดุ</b>:{' '}
-              {rows.filter(isMismatch).length === 0
-                ? <span>ไม่พบในหน้านี้ ({rows.length.toLocaleString('th-TH')} ใบ)</span>
-                : <span className="text-amber-800 font-medium">
-                    พบ {rows.filter(isMismatch).length.toLocaleString('th-TH')} ใบในหน้านี้ — ดูป้ายสีส้มในคอลัมน์สถานะ
-                  </span>}
-              <span className="text-gray-400"> · นับเฉพาะหน้าที่เปิดอยู่ ไม่ใช่ทั้งช่วง</span>
-            </p>
-          )}
-
           {/* ผัง ZORT (ภาพ 01): ปุ่มรีเฟรชวงกลมมุมขวาแถบแท็บ — ชั้นแถบแท็บ จุดบอดประจำ (จอที่ 5) */}
           <div className="flex items-end justify-between gap-3">
             <Tabs
@@ -1567,6 +1482,106 @@ export default function CoreSalesPage() {
               </div>
             )}
           </TableWrap>
+
+          {/* 📤 ผัง ZORT: ปุ่ม "Export to Excel ▾" อยู่ **ใต้ตาราง ชิดซ้าย** (ส่องปุ่ม #Exportload 16 ต.ค. 2569 — y≈6,663 หลังแถวสุดท้าย)
+              เดิมเราวางไว้บนหัวจอคู่กับปุ่มสร้าง ⇒ ย้ายลงมาให้ตำแหน่งตรงกัน · ข้อความคงตามที่ ZORT เขียน */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* 📤 ส่งออกตามตัวกรองที่เลือกอยู่ ครบทุกหน้า (ใบ t_mu1i74cu)
+                🔴 **ต้องส่ง cancelled=1 เหมือนที่จอส่ง** ไม่งั้นไฟล์จะไม่มีใบยกเลิก
+                   แล้วยอดรวมในไฟล์กับยอดบนจอจะต่างกัน โดยคนอ่านไฟล์ไม่มีทางรู้ว่าทำไม
+                   (CLAUDE.md กฎแท็บข้อ 4 — ตัวเลขคนละกติกาห้ามวางคู่กันเฉย ๆ)
+                ⚠️ ไฟล์มีคอลัมน์ "ยกเลิกหรือไม่" เพื่อให้คนกรองออกเองได้ในภายหลัง */}
+            <ExportButton
+              disabled={loading}
+              label="📗 Export to Excel"
+              spec={{
+                filename: 'รายการขาย',
+                scope: `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`,
+                title: 'รายการขาย',
+                note: 'ไฟล์นี้รวมใบยกเลิกไว้ด้วย (เหมือนที่จอแสดง) — ดูคอลัมน์ "สถานะ" เพื่อคัดออกเอง',
+                filters: [
+                  /* 🔴 ต้องเป็นช่วงเดียวกับที่จอกำลังกรองอยู่ — รวมช่วงที่ตั้งเองในค้นหาขั้นสูง
+                     ไม่งั้นไฟล์กับจอคนละช่วง แล้วคนเทียบยอดไม่ตรงโดยไม่รู้ว่าทำไม */
+                  [ชนิดวัน === 'ship' ? 'ช่วงวันส่งสินค้า' : 'ช่วงวันที่', `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`
+                    + (advFrom || advTo ? ' (ตั้งเองในตัวกรอง)' : ` (${days} วัน)`)],
+                  ['ร้าน', store || '(ทุกร้าน)'],
+                  ['ช่องทาง', channel || '(ทุกช่องทาง)'],
+                  ['สถานะ', status || '(ทุกสถานะ)'],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                  /* 🔴 หัวไฟล์ต้องบอกด้วยว่ากรองขั้นสูงอะไรไว้ ไม่งั้นคนเปิดไฟล์ทีหลังไม่รู้ว่าทำไมแถวน้อย */
+                  ...(advParams().length
+                    ? [['ตัวกรอง', advParams().map(([k, v]) => `${k}=${v}`).join(' · ')] as [string, string]]
+                    : [['ตัวกรอง', '(ไม่ได้ใช้)'] as [string, string]]),
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({
+                    list: 'orders', from: advFrom || วันเริ่มของช่วง(days), to: advTo || thaiDay(0),
+                    limit: String(limit), offset: String(offsetAt), cancelled: '1',
+                  })
+                  if (channel) qs.set('channel', channel)
+                  if (status) qs.set('status', status)
+                  if (store) qs.set('store', store)
+                  if (q.trim()) qs.set('q', q.trim())
+                  if (ชนิดวัน === 'ship') qs.set('datetype', 'ship')   // ไฟล์ต้องเป็นช่วงเดียวกับจอ
+                  /* 🔴 **ตัวกรองขั้นสูงต้องไปกับไฟล์ด้วย** — ลืมส่งแล้วไฟล์จะเป็นของทั้งช่วง
+                     ทั้งที่ตารางบนจอกรองอยู่ ⇒ ผิดแบบไม่มีอะไรฟ้อง (ฝั่งท่อกำชับข้อนี้) */
+                  for (const [k, v] of advParams()) qs.set(k, v)
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['เลขที่', 'วันที่', 'ลูกค้า', 'ช่องทาง', 'ที่มา', 'ยอด (บาท)', 'สถานะ', 'การชำระเงิน', 'ขนส่ง', 'เลขพัสดุ', 'วันที่ส่ง', 'เก็บปลายทาง'],
+                toRow: (r: Row) => [
+                  r.number, r.order_date ?? null, r.customer ?? null, r.channel ?? null, r.source ?? null,
+                  typeof r.amount === 'number' ? r.amount : null,
+                  r.status ?? null, r.pay_status ?? null,
+                  /* 🔴 **ห้ามใส่ `ship_name` ลงคอลัมน์ "ขนส่ง"** — ช่องนั้นคือชื่อผู้รับ (พิสูจน์ 16 ก.ย. 2569)
+                     ไฟล์ที่ส่งออกไปจะมีชื่อลูกค้าอยู่ในคอลัมน์ขนส่ง ⇒ ทั้งผิดความหมายและเป็นข้อมูลส่วนตัวผิดที่ */
+                  r.ship_channel ?? null, r.tracking_no ?? null, r.ship_date ?? null,
+                  /* 🔴 is_cod เป็น 0/1 หรือ boolean · **ไม่ส่งมา = ไม่รู้ ⇒ เว้นว่าง ห้ามเขียน "ไม่ใช่"** */
+                  r.is_cod === undefined || r.is_cod === null ? null : (r.is_cod ? 'ใช่' : 'ไม่ใช่'),
+                ],
+              }}
+            />
+          </div>
+
+          {/* 📎 ของที่ ZORT ไม่มี — รวมไว้ใต้ตารางพร้อมหัวบอกว่าเป็นของเพิ่ม (คนเทียบกับ ZORT จะได้ไม่งงว่ามาจากไหน) */}
+          <div className="mt-6">
+            <p className="text-[12.5px] font-semibold text-gray-500 mb-2">ข้อมูลเพิ่มเติม (ZORT ไม่มีส่วนนี้)</p>
+          {/* การ์ดสถานะจัดส่ง — ภาพรวมของชุดที่กรองอยู่
+              📐 ย้ายจากเหนือแท็บลงมาใต้ตาราง 16 ต.ค. 2569 — ผัง ZORT จากบรรทัด "ค้นหา:" ไปแท็บทันที ไม่มีแผงคั่น
+                 (ท่านประธาน: เหมือน ZORT 100% ทั้งหน้าตา) · ของยังอยู่ครบในหน้าเดียวกัน ไม่ได้ซ่อน
+              ⚠️ คนละเรื่องกับแท็บด้านล่าง: แท็บคือ "สถานะใบ" ที่ ZORT ใช้ (สำเร็จ · รอ · ยกเลิก)
+                 การ์ดนี้คือ "สถานะจัดส่ง" ที่มาจากแพลตฟอร์ม ⇒ ใบเดียวมีได้ทั้งสองอย่างพร้อมกัน */}
+          <ShipStatusCard
+            groups={data.shipStatusGroups}
+            total={data.total}
+            scope={data.shipStatusScope}
+          />
+
+          {/* ใบของร้านที่ปิดแล้วยังพองอยู่ในกอง "รอจัดส่ง" — แยกให้เห็น ห้ามกรองทิ้งเงียบ
+              (ท่านประธานสั่ง 13 ก.ย. 2569 · งานกระดาน t_mtxss3pf)
+              ⚠️ ส่งช่วงวันชุดเดียวกับที่จอกำลังกรองอยู่ ไม่งั้นเลขในกล่องนี้จะพูดคนละช่วง
+                 กับการ์ดสถานะจัดส่งที่อยู่ข้างบน แล้วคนอ่านจะเทียบกันเองโดยไม่รู้ว่าคนละขอบเขต */}
+          <DormantInShipPile from={วันเริ่มของช่วง(days)} to={thaiDay(0)} />
+
+          {/* ⚠️ ตัวตรวจที่ไม่เจออะไรเลย ต้องบอกว่า "ตรวจแล้วไม่เจอ" ไม่ใช่เงียบหาย
+              ไม่งั้นไม่มีใครรู้ว่ามีตัวตรวจนี้อยู่ แล้ววันที่มันเงียบเพราะพัง ก็ดูเหมือนเดิมเป๊ะ
+              (กติกาเดียวกับถัง "ไม่รู้จัก" ในการ์ด — ต้องเห็นแม้เป็น 0) */}
+          {rows.length > 0 && (
+            <p className="text-[12.5px] text-gray-500 mb-3">
+              ตรวจใบที่ <b>ปิดแล้วแต่ยังไม่มีเลขพัสดุ</b>:{' '}
+              {rows.filter(isMismatch).length === 0
+                ? <span>ไม่พบในหน้านี้ ({rows.length.toLocaleString('th-TH')} ใบ)</span>
+                : <span className="text-amber-800 font-medium">
+                    พบ {rows.filter(isMismatch).length.toLocaleString('th-TH')} ใบในหน้านี้ — ดูป้ายสีส้มในคอลัมน์สถานะ
+                  </span>}
+              <span className="text-gray-400"> · นับเฉพาะหน้าที่เปิดอยู่ ไม่ใช่ทั้งช่วง</span>
+            </p>
+          )}
+
+          </div>
 
           {picked.length > 0 && (
             <BulkBar>

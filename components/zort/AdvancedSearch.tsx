@@ -35,7 +35,20 @@ export interface AdvField {
 }
 
 /** ลิงก์เปิด/ปิดแผง — วางไว้ข้างช่องค้นหา (ตำแหน่งเดียวกับ ZORT) */
-export function AdvancedSearchLink({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+export function AdvancedSearchLink({ open, onToggle, แบบ = 'ลิงก์' }: {
+  open: boolean
+  onToggle: () => void
+  /** 'ปุ่มตัวกรอง' = ปุ่มกรอบมีรูปกรวยแบบจอรายการขายของ ZORT (คำว่า "ตัวกรอง") · ค่าตั้งต้นคือลิงก์ "ค้นหาขั้นสูง" แบบจออื่น */
+  แบบ?: 'ลิงก์' | 'ปุ่มตัวกรอง'
+}) {
+  if (แบบ === 'ปุ่มตัวกรอง') {
+    return (
+      <button type="button" onClick={onToggle} aria-expanded={open}
+        className={`text-[12.5px] border rounded px-3 py-1.5 bg-white hover:bg-gray-50 ${open ? 'border-blue-500 text-blue-600' : 'border-gray-300 text-gray-700'}`}>
+        ⏷ ตัวกรอง
+      </button>
+    )
+  }
   return <LinkText onClick={onToggle}>{open ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}</LinkText>
 }
 
