@@ -219,7 +219,8 @@ function CoreStockInner() {
   /* 🔍 ค้นหาขั้นสูงแบบ ZORT (`#searchAdvance` ของ /Product/list อ่าน DOM 15 ต.ค. 2569: ช่วงราคาขาย · ช่วงราคาซื้อ …)
      ⚠️ ส่งเฉพาะช่องที่กรอก และเฉพาะที่ท่อประกาศว่ารับ — ดู `advancedFiltersSupported` */
   const [advOpen, setAdvOpen] = useState(false)
-  const [ช่วงราคา, setช่วงราคา] = useState({ sellmin: '', sellmax: '', buymin: '', buymax: '' })
+  /* ➕ code · name แยกจากช่องค้นหารวม แบบ ZORT (searchcode · searchname) — ท่อ 5aca9686 ประกาศรับแล้ว */
+  const [ช่วงราคา, setช่วงราคา] = useState({ code: '', name: '', sellmin: '', sellmax: '', buymin: '', buymax: '' })
   const [tab, setTab] = useState<'all' | 'out' | 'low' | 'active' | 'inactive'>('all')
   // ⚠️ ค่าตั้งต้นซ่อน "บริการ" (ค่าส่ง · ค่าซ่อม · ค่าน้ำมัน ฯลฯ) ออกจากจอสินค้า
   //    เพราะของพวกนี้ไม่มีสต็อกจริง แต่ติดลบหนัก (-712 · -200) เลยยึดสองแถวบนสุด
@@ -708,7 +709,13 @@ function CoreStockInner() {
           label, kind: 'number', value: ช่วงราคา[k], width: 110,
           onChange: (v: string) => setช่วงราคา((o) => ({ ...o, [k]: String(v) })),
         } as AdvField)
+        const ช่องคำ = (k: 'code' | 'name', label: string, placeholder: string): AdvField => ({
+          label, kind: 'text', value: ช่วงราคา[k], width: 150, placeholder,
+          onChange: (v: string) => setช่วงราคา((o) => ({ ...o, [k]: String(v) })),
+        } as AdvField)
         const fields: AdvField[] = [
+          ...(รับ.includes('code') ? [ช่องคำ('code', 'รหัสสินค้า', 'รหัสสินค้า')] : []),
+          ...(รับ.includes('name') ? [ช่องคำ('name', 'ชื่อสินค้า', 'ชื่อสินค้า')] : []),
           ...(รับ.includes('sellmin') ? [ช่อง('sellmin', 'ราคาขาย ตั้งแต่')] : []),
           ...(รับ.includes('sellmax') ? [ช่อง('sellmax', 'ราคาขาย ถึง')] : []),
           ...(รับ.includes('buymin') ? [ช่อง('buymin', 'ราคาซื้อ ตั้งแต่')] : []),
@@ -722,7 +729,7 @@ function CoreStockInner() {
             open={advOpen}
             fields={fields}
             onApply={() => load(0)}
-            onClear={() => { รอโหลดหลังล้าง.current = true; setช่วงราคา({ sellmin: '', sellmax: '', buymin: '', buymax: '' }) }}
+            onClear={() => { รอโหลดหลังล้าง.current = true; setช่วงราคา({ code: '', name: '', sellmin: '', sellmax: '', buymin: '', buymax: '' }) }}
             canClear={Object.values(ช่วงราคา).some((v) => v.trim() !== '')}
             serverFiltered="กรองที่เซิร์ฟเวอร์ทั้งคลัง ก่อนนับและแบ่งหน้า"
             notAvailable={ไม่มี}
