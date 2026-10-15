@@ -81,6 +81,8 @@ interface ListResp {
   /** 🔑 ท่อรุ่นที่รับ `status=` หลายค่า (gucut-web 361b9f5c) ส่งคีย์นี้มาพร้อมกัน ⇒ ใช้เป็น **ลายน้ำของรุ่น**
    *  (คีย์ใหม่มา = รุ่นใหม่ขึ้นแล้ว · ไม่มา = ยังไม่ขึ้น ไม่ใช่ "ไม่รองรับวันส่ง") */
   dateTypesSupported?: string[] | null
+  /** ชนิดวันที่ท่อยังทำไม่ได้ พร้อมเหตุ (เช่น `payment`: ยังไม่มีคอลัมน์วันชำระเงิน) — จอโชว์เหตุตามคำของท่อ */
+  dateTypesUnavailable?: Record<string, string> | null
   /* ── 💰 แท็บ "รอชำระ" ของ ZORT = คอลัมน์ **pay_status** ไม่ใช่ **status** ───────────
      🔑 วัดเองก่อนออกแบบ (14 ต.ค. 2569 · z1 · 1 ต.ค. 2568–14 ต.ค. 2569 · 7,748 ใบ = `total` ของท่อเอง):
         status=Pending 176 ใบ · pay_status=Pending 168 ใบ · **ซ้อนกันแค่ 153**
@@ -277,6 +279,10 @@ const ช่วงปฏิทินทั้งหมด: { ค่า: ชน�
 export default function CoreSalesPage() {
   const router = useRouter()
   const [days, setDays] = useState(DEFAULT_DAYS)
+  /* 📅 **ชนิดวันที่ของช่วง** — ZORT มี dropdown `วันที่ · วันที่ชำระเงิน · วันส่งสินค้า` (dateSelect บน /Sell/list)
+     ท่อรับ `datetype=order|ship` (gucut-web 0fb974c3) · `payment` ตอบ 400 พร้อมเหตุ ⇒ โชว์เป็นตัวเลือกปิดพร้อมเหตุ
+     ⚠️ (จด 16 ต.ค. 2569) ส่ง `ship` เฉพาะเมื่อท่อประกาศ `dateTypesSupported` ว่ารับ ไม่งั้นท่อเก่าเมิน ⇒ จอบอกวันส่งแต่กรองวันใบ */
+  const [ชนิดวัน, setชนิดวัน] = useState<'order' | 'ship'>('order')
   /** ช่วงปฏิทินที่เลือกอยู่ (`''` = ใช้แบบย้อนหลัง N วันตามปกติ) — สองโหมดนี้ **ห้ามติดพร้อมกัน** */
   const [ช่วงปฏิทิน, setช่วงปฏิทิน] = useState<ชนิดช่วงปฏิทิน | ''>('')
   /* 🔴 **ตัวกรองร้าน — ต้องมีคู่กับตัวกรองช่องทางเสมอ** (เพิ่ม 4 ก.ย. 2569)
@@ -425,7 +431,9 @@ export default function CoreSalesPage() {
     opt?: { days?: number; channel?: string; status?: string; store?: string; from?: string; to?: string; size?: number; q?: string; customer?: string
             /** ค่าแทนที่ของ `paystatus` — ต้องมีเพราะกดแท็บแล้ว `setFPay` ยังไม่สะท้อนใน closure รอบนี้
              *  (`''` = ล้างตัวกรอง · ไม่ส่งคีย์ = ใช้ค่าจาก state ตามปกติ — สามสถานะ ห้ามยุบ) */
-            payStatus?: string },
+            payStatus?: string
+            /** ค่าแทนที่ของชนิดวันที่ — setState ยังไม่มีผลในรอบเดียวกัน */
+            dateType?: 'order' | 'ship' },
   ) => {
     const d = opt?.days ?? days
     const ch = opt?.channel ?? channel
@@ -444,6 +452,8 @@ export default function CoreSalesPage() {
       if (ch) qs.set('channel', ch)
       if (st) qs.set('status', st)
       if (sr) qs.set('store', sr)
+      const dtv = opt?.dateType ?? ชนิดวัน
+      if (dtv === 'ship') qs.set('datetype', 'ship')
       const qq = opt?.q ?? q
       if (qq.trim()) qs.set('q', qq.trim())
       /* 🔍 ตัวกรองขั้นสูง — ส่งเฉพาะช่องที่กรอก · ว่าง = ไม่ส่ง (ท่อถือว่าไม่กรอง) */
@@ -490,7 +500,7 @@ export default function CoreSalesPage() {
     } finally {
       setLoading(false)
     }
-  }, [days, channel, status, q, store, advFrom, advTo, advParams, perPage])
+  }, [days, channel, status, q, store, advFrom, advTo, advParams, perPage, ชนิดวัน])
 
   /* 💾 เปิดจอมา: ถ้ามีของที่จำไว้ ให้ใส่กลับ **แล้วประกาศ** · ไม่มีก็โหลดตามปกติ
      ⚠️ อ่าน localStorage ใน effect เท่านั้น (อ่านตอนวาดครั้งแรก = จอฝั่งเซิร์ฟเวอร์กับฝั่งเบราว์เซอร์ไม่ตรงกัน) */
@@ -777,7 +787,7 @@ export default function CoreSalesPage() {
                 filters: [
                   /* 🔴 ต้องเป็นช่วงเดียวกับที่จอกำลังกรองอยู่ — รวมช่วงที่ตั้งเองในค้นหาขั้นสูง
                      ไม่งั้นไฟล์กับจอคนละช่วง แล้วคนเทียบยอดไม่ตรงโดยไม่รู้ว่าทำไม */
-                  ['ช่วงวันที่', `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`
+                  [ชนิดวัน === 'ship' ? 'ช่วงวันส่งสินค้า' : 'ช่วงวันที่', `${advFrom || วันเริ่มของช่วง(days)} ถึง ${advTo || thaiDay(0)}`
                     + (advFrom || advTo ? ' (ตั้งเองในค้นหาขั้นสูง)' : ` (${days} วัน)`)],
                   ['ร้าน', store || '(ทุกร้าน)'],
                   ['ช่องทาง', channel || '(ทุกช่องทาง)'],
@@ -797,6 +807,7 @@ export default function CoreSalesPage() {
                   if (status) qs.set('status', status)
                   if (store) qs.set('store', store)
                   if (q.trim()) qs.set('q', q.trim())
+                  if (ชนิดวัน === 'ship') qs.set('datetype', 'ship')   // ไฟล์ต้องเป็นช่วงเดียวกับจอ
                   /* 🔴 **ตัวกรองขั้นสูงต้องไปกับไฟล์ด้วย** — ลืมส่งแล้วไฟล์จะเป็นของทั้งช่วง
                      ทั้งที่ตารางบนจอกรองอยู่ ⇒ ผิดแบบไม่มีอะไรฟ้อง (ฝั่งท่อกำชับข้อนี้) */
                   for (const [k, v] of advParams()) qs.set(k, v)
@@ -877,6 +888,24 @@ export default function CoreSalesPage() {
                 .map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
             <span className="text-[12.5px] text-gray-500">แสดง</span>
+            {/* 📅 ชนิดวันที่ — โชว์เมื่อท่อประกาศ dateTypesSupported เท่านั้น (ท่อเก่า ⇒ ไม่มี dropdown · คิดจากวันที่ของใบ)
+                ยิงดู 16 ต.ค. 2569: order/ship ตอบ 200 · payment ตอบ 400 พร้อมเหตุ ⇒ ตัวเลือกปิด เหตุจาก dateTypesUnavailable */}
+            {Array.isArray(data?.dateTypesSupported) && (
+              <select
+                value={ชนิดวัน}
+                onChange={(e) => {
+                  const v = e.target.value === 'ship' ? 'ship' : 'order'
+                  setชนิดวัน(v); load(0, { dateType: v })
+                }}
+                className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
+              >
+                <option value="order">วันที่</option>
+                <option value="payment" disabled title={data?.dateTypesUnavailable?.payment ?? 'ท่อยังไม่รองรับ (ยิงดู 16 ต.ค. 2569: ตอบ 400)'}>
+                  วันที่ชำระเงิน (ยังทำไม่ได้)
+                </option>
+                {data?.dateTypesSupported?.includes('ship') && <option value="ship">วันส่งสินค้า</option>}
+              </select>
+            )}
             <select
               value={ช่วงปฏิทิน || String(days)}
               onChange={(e) => {
@@ -1052,7 +1081,10 @@ export default function CoreSalesPage() {
                  ZORT ให้เลือกได้ว่าช่วงวันใช้กับวันไหน (วันที่ · วันที่ชำระเงิน · วันส่งสินค้า · วันที่โอนสินค้า)
                  ของเรามีแบบเดียว ⇒ ถ้าไม่เขียนไว้ คนจะอ่านเลข "เดือนนี้" เป็น "เงินเข้าเดือนนี้" ซึ่งคนละเลข
                  ⇒ วันที่ท่อรองรับหลายแบบ ป้ายนี้จะกลายเป็นตัวบอกค่าที่เลือกอยู่ โดยไม่ต้องรื้อ */}
-          {' · '}<span className="text-gray-400">คิดจาก <b className="text-gray-500">วันที่ของใบ</b> (ไม่ใช่วันที่ชำระเงิน)</span>
+          {/* 📅 อ่านจากสิ่งที่ท่อบอกว่าใช้จริง (`applied.dateType`) ไม่ใช่จากค่าที่จอส่งไป */}
+          {' · '}<span className="text-gray-400">คิดจาก <b className="text-gray-500">{
+            (data.applied as { dateType?: string } | null | undefined)?.dateType === 'ship' ? 'วันส่งสินค้า' : 'วันที่ของใบ'
+          }</b> (ไม่ใช่วันที่ชำระเงิน)</span>
           {/* 🔴 **เขียนจากสิ่งที่ท่อบอกว่าใช้จริง ไม่ใช่จากสิ่งที่จอส่งไป**
                  ถ้าวันหนึ่งท่อเลิกรองรับช่องไหน จอจะเงียบทันทีแทนที่จะโกหกว่ากรองให้แล้ว */}
           {data.advancedFilters && Object.entries(data.advancedFilters).some(([, v]) => v) && (
