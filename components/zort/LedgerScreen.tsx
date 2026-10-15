@@ -23,6 +23,7 @@
 //
 // ⚠️ ปุ่ม "สร้าง…" กับ "นำเข้าไฟล์" พาไปหน้าที่บอกตรง ๆ ว่ายังทำอะไรไม่ได้
 //    ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง
+import ExportButton from '@/components/zort/ExportButton'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SOON } from '@/lib/zort-menu'
@@ -668,6 +669,25 @@ export default function LedgerScreen({
         </table>
       </TableWrap>
 
+      {/* 📤 ผัง ZORT: "Export to Excel" ใต้ตาราง ชิดซ้าย — เพิ่ม 16 ต.ค. 2569 (ภาพ ZORT ที่เก็บไว้: Fin/Transferlist · walletlist · Variantlist มีปุ่มนี้)
+          ขึ้นเฉพาะตอนมีแถวจริง (ไม่มีแถว = ไฟล์เปล่า แย่กว่าไม่มีปุ่ม) · ส่งออกจากแถวที่ดึงมาแล้ว
+          🔴 total ส่งเลขทั้งชุดของ ZORT ⇒ ดึงได้ไม่ครบ ด่าน exportBlocked ไม่ให้ไฟล์ออก (ไม่ใช่ได้ไฟล์ครึ่งเดียวเงียบ ๆ) */}
+      {zortAnswered && rows!.length > 0 && zortList && ROW_MAPS[zortList] && (
+        <div className="mt-3 flex items-center gap-2">
+          <ExportButton
+            label="📗 Export to Excel"
+            spec={{
+              filename: title,
+              title,
+              scope: 'ทั้งชุดที่ ZORT ส่งมา',
+              fetchPage: async (off) => ({ rows: off === 0 ? rows! : [], total: zCount ?? rows!.length }),
+              header: cols.map((c) => c.label),
+              toRow: (r: Record<string, unknown>) => ROW_MAPS[zortList](r).map((v) => (v === '' ? null : v)),
+            }}
+          />
+        </div>
+      )}
+
       {/* แถบท้ายตารางตามผัง ZORT — ขวามือ "จำนวน N รายการ | จำนวนต่อหน้า [20]"
           ⚠️ ล็อกไว้ทั้งคู่ เพราะยังไม่มีข้อมูลให้แบ่งหน้า · โชว์ตามผังแต่ไม่แกล้งใช้ได้
              และ **ห้ามเขียนจำนวนเป็นเลข** เพราะเรายังไม่ได้นับอะไรเลย ศูนย์ของเรา = "ยังไม่รู้" */}
@@ -779,8 +799,9 @@ export default function LedgerScreen({
         {/* ⚠️ เหตุผล "ไม่มีข้อมูลให้ส่งออก" ใช้ได้เฉพาะตอนไม่มีแถวจริง ๆ
             พอต่อท่อแล้วมีแถว เหตุผลนี้กลายเป็นเท็จทันที ⇒ ต้องเปลี่ยนตามของจริง */}
         {zortAnswered && rows!.length > 0
-          ? <><b> ยังไม่มีปุ่ม Export to Excel</b> แบบ ZORT — <b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b>
-            {' '}(ตอนนี้มีข้อมูลให้ส่งออกแล้ว)</>
+          ? (zortList && ROW_MAPS[zortList]
+            ? <> ปุ่ม <b>Export to Excel</b> อยู่ใต้ตารางแบบ ZORT (ส่งออกแถวที่ดึงมา — ดึงไม่ครบทั้งชุดไฟล์จะไม่ออก)</>
+            : <><b> ยังไม่มีปุ่ม Export to Excel</b> — จอยังไม่รู้ว่าช่องไหนคืออะไร (ดูแถบเหลืองในตาราง)</>)
           : <><b> ไม่มีปุ่ม Export to Excel</b> แบบ ZORT เพราะไม่มีข้อมูลให้ส่งออก —
             {' '}ปุ่มที่กดแล้วได้ไฟล์เปล่าแย่กว่าไม่มีปุ่ม</>}
       </p>
