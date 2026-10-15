@@ -24,7 +24,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  BtnGhost, LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
@@ -260,45 +260,7 @@ export default function CorePurchasesPage() {
         }
         actions={
           <>
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>
-              {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-            </BtnGhost>
-            {/* 📤 ZORT มีปุ่มนี้ทุกหน้ารายการ — ส่งออก **ตามตัวกรองที่เลือกอยู่ ครบทุกหน้า** */}
-            <ExportButton
-              disabled={loading}
-              spec={{
-                filename: 'รายการซื้อ',
-                scope: storeLabel(store),
-                title: 'รายการซื้อ',
-                /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ — ลืมส่ง store แล้วไฟล์กลายเป็นของ z1 เงียบ ๆ */
-                filters: [
-                  ['ร้าน', storeLabel(store)],
-                  /* 🔴 **ไฟล์นี้ไม่ได้กรองตามแท็บ** — ท่อไม่รับตัวกรองสถานะ ⇒ เขียนให้ตรง
-                     เดิมเขียนชื่อแท็บลงไฟล์เฉย ๆ ⇒ คนเปิดไฟล์จะเชื่อว่ากรองแล้ว (ไฟล์โกหกขอบเขตตัวเอง) */
-                  ['แท็บสถานะบนจอ', tab === 'all' ? 'ทั้งหมด'
-                    : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ได้ทุกสถานะ`],
-                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
-                ],
-                fetchPage: async (offsetAt, limit) => {
-                  const qs = new URLSearchParams({ list: 'purchases', limit: String(limit), offset: String(offsetAt) })
-                  /* 🔴 ท่อเมิน `status` (ยิงพิสูจน์ 16 ก.ย. 2569) ⇒ ไม่ส่งไป และเขียนในไฟล์ว่าไฟล์นี้ได้ทุกสถานะ */
-                  if (store) qs.set('store', store)
-                  if (q.trim()) qs.set('q', q.trim())
-                  const r = await fetch(`/api/web/core?${qs}`)
-                  const d = await r.json()
-                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
-                },
-                header: ['เลขที่ใบซื้อ', 'วันที่', 'ผู้ขาย', 'คลัง', 'ยอดซื้อ (บาท)', 'สถานะ', 'การชำระเงิน', 'หมายเหตุ'],
-                /* 🔴 ช่องที่ท่อไม่ส่ง คืน null ให้เว้นว่าง **ห้ามแทนด้วย 0 หรือ "-"**
-                   ในไฟล์ Excel ขีดกลางจะกลายเป็นข้อความ ทำให้คอลัมน์ตัวเลขคำนวณไม่ได้ทั้งคอลัมน์ */
-                toRow: (r: Row) => [
-                  r.number, r.po_date ?? null, r.vendor ?? null, r.warehouse ?? null,
-                  typeof r.amount === 'number' ? r.amount : null,
-                  r.status ?? null, r.payment_status ?? null, r.note ?? null,
-                ],
-              }}
-            />
+            {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT ไม่มี (มีปุ่มวงกลมมุมขวาแถบแท็บ ซึ่งเรามีแล้ว) */}
             {/* ปุ่มตามภาพ ZORT — พาไปหน้าที่บอกว่ายังไม่ได้ทำ ไม่ทำปุ่มหลอก */}
             <ImportButton kind="po" />
             {/* 🔴 เคยชี้ไป /core/soon/buy-create ทั้งที่หน้าจริงมีตั้งแต่ 6 ก.ย. 2569 (แก้ 14 ก.ย.)
@@ -330,12 +292,8 @@ export default function CorePurchasesPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขที่ใบสั่งซื้อ หรือชื่อผู้ขาย"
-        advanced={
-          <>
-            <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
-            {' '}· <LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>
-          </>
-        }
+        /* ผัง ZORT ข้างช่องค้นมีแค่ "ค้นหาขั้นสูง" (ลิงก์ "ค้นหา ·" เอาออก 16 ต.ค. 2569 — กด Enter ในช่องค้นแทน) */
+        advanced={<LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
       />
 
       {/* 🔎 ช่วงวันที่ใบซื้อ — ท่อรับจริง (ยิงยืนยัน 18 ก.ย. 2569) */}
@@ -583,6 +541,47 @@ export default function CorePurchasesPage() {
                   onPerPage={(n) => { setPerPage(n); load(0, undefined, undefined, n) }} />
             </div>
           </TableWrap>
+
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (พิกัดจอ /Buy/list 16 ต.ค. 2569 — หลังแถวสุดท้าย) */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* 📤 ZORT มีปุ่มนี้ทุกหน้ารายการ — ส่งออก **ตามตัวกรองที่เลือกอยู่ ครบทุกหน้า** */}
+            <ExportButton
+              disabled={loading}
+              label="📗 Export to Excel"
+              spec={{
+                filename: 'รายการซื้อ',
+                scope: storeLabel(store),
+                title: 'รายการซื้อ',
+                /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ — ลืมส่ง store แล้วไฟล์กลายเป็นของ z1 เงียบ ๆ */
+                filters: [
+                  ['ร้าน', storeLabel(store)],
+                  /* 🔴 **ไฟล์นี้ไม่ได้กรองตามแท็บ** — ท่อไม่รับตัวกรองสถานะ ⇒ เขียนให้ตรง
+                     เดิมเขียนชื่อแท็บลงไฟล์เฉย ๆ ⇒ คนเปิดไฟล์จะเชื่อว่ากรองแล้ว (ไฟล์โกหกขอบเขตตัวเอง) */
+                  ['แท็บสถานะบนจอ', tab === 'all' ? 'ทั้งหมด'
+                    : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ได้ทุกสถานะ`],
+                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const qs = new URLSearchParams({ list: 'purchases', limit: String(limit), offset: String(offsetAt) })
+                  /* 🔴 ท่อเมิน `status` (ยิงพิสูจน์ 16 ก.ย. 2569) ⇒ ไม่ส่งไป และเขียนในไฟล์ว่าไฟล์นี้ได้ทุกสถานะ */
+                  if (store) qs.set('store', store)
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                header: ['เลขที่ใบซื้อ', 'วันที่', 'ผู้ขาย', 'คลัง', 'ยอดซื้อ (บาท)', 'สถานะ', 'การชำระเงิน', 'หมายเหตุ'],
+                /* 🔴 ช่องที่ท่อไม่ส่ง คืน null ให้เว้นว่าง **ห้ามแทนด้วย 0 หรือ "-"**
+                   ในไฟล์ Excel ขีดกลางจะกลายเป็นข้อความ ทำให้คอลัมน์ตัวเลขคำนวณไม่ได้ทั้งคอลัมน์ */
+                toRow: (r: Row) => [
+                  r.number, r.po_date ?? null, r.vendor ?? null, r.warehouse ?? null,
+                  typeof r.amount === 'number' ? r.amount : null,
+                  r.status ?? null, r.payment_status ?? null, r.note ?? null,
+                ],
+              }}
+            />
+          </div>
 
           {picked.length > 0 && (
             <BulkBar>
