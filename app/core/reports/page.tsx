@@ -14,7 +14,7 @@ import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
-  PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate,
+  PageHead, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate,
 } from '@/components/zort'
 
 interface StockResp {
@@ -175,7 +175,7 @@ export default function CoreProductReportPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="สินค้า"
-        actions={<BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — จอ ZORT /Dashboard/ProductReport ไม่มี (ภาพที่เก็บไว้) */
       />
 
       {error && <ErrorBox title="ดึงรายงานไม่ได้">{error}</ErrorBox>}

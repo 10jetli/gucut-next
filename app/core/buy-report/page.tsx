@@ -20,7 +20,7 @@ import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, thaiShort } from '@/components/zort'
+import { PageHead, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, thaiShort } from '@/components/zort'
 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
 interface Resp { total?: number; amount?: number; rows?: Po[]
@@ -328,7 +328,7 @@ export default function BuyReportPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="ยอดซื้อ"
-        actions={<BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — จอ ZORT /Dashboard/BuyReport ไม่มี (ภาพที่เก็บไว้) */
       />
 
       {/* 🏬 เลือกร้าน — ส่งให้ทั้งตารางรายใบและตารางรายสินค้า (ยิงทั้งสองเส้นด้วย store เดียวกัน) */}

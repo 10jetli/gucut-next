@@ -14,7 +14,7 @@ import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
+import { PageHead, thaiDate } from '@/components/zort'
 
 interface StockResp { total: number; value: number; outOfStock: number; day: string }
 interface Bill { vendorId: string; vendorName: string; emoji: string; subject: string; date: string }
@@ -152,7 +152,7 @@ export default function CoreFinancePage() {
       <PageHead
         title="การเงิน"
         summary="รายรับจากการขายและมูลค่าของในคลัง — อ่านจากคลังของเราเอง"
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — จอ ZORT /Fin/Report ไม่มี (ภาพที่เก็บไว้) */
       />
 
       {error && <ErrorBox title="ดึงข้อมูลการเงินไม่ได้">{error}</ErrorBox>}
