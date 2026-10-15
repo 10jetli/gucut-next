@@ -212,7 +212,10 @@ function CoreStockInner() {
      เดิมจอนี้อ่านแต่ `category` ⇒ กดลิงก์แล้วได้ **รายการทั้งคลัง 2,666 ตัว** ช่องค้นหาว่างเปล่า
      ⇒ คนกดต้องพิมพ์รหัสค้นเองอีกรอบ = ลิงก์ที่สัญญาว่าจะพาไปหาของ แต่ไม่พาไปถึง */
   const [q, setQ] = useState(() => sp.get('q') ?? '')
-  const [sort, setSort] = useState('qty')
+  /* 🗂 **ลำดับตั้งต้นตาม ZORT = พร้อมขาย น้อยก่อน** (อ่าน 10 แถวแรกของ /Product/list 16 ต.ค. 2569:
+     พร้อมขาย −468.5 · −249 · −176 · −75 · −20 · −8 · −4 เรียงขึ้น · แถว N/A คือสินค้าบริการ)
+     เดิมเราใช้ `qty` (คงเหลือน้อยก่อน) ⇒ ลำดับไม่ตรง ZORT · คีย์ `availablelow` ท่อรองรับอยู่แล้ว (sortsSupported) */
+  const [sort, setSort] = useState('availablelow')
   /* 🔍 ค้นหาขั้นสูงแบบ ZORT (`#searchAdvance` ของ /Product/list อ่าน DOM 15 ต.ค. 2569: ช่วงราคาขาย · ช่วงราคาซื้อ …)
      ⚠️ ส่งเฉพาะช่องที่กรอก และเฉพาะที่ท่อประกาศว่ารับ — ดู `advancedFiltersSupported` */
   const [advOpen, setAdvOpen] = useState(false)
