@@ -19,6 +19,8 @@ export const maxDuration = 60
  * 🔒 สิทธิ์: header `x-drivesync-secret` ต้องตรง DRIVESYNC_SECRET (ตัวเดียวกับที่ g1 ใช้อัปบิลอยู่แล้ว)
  *    ส่งใน header ไม่ใช่ query ⇒ ไม่ติดใน log ของใคร · เทียบแบบ timing-safe
  *    เส้นนี้อยู่ใน PUBLIC_PATHS ของ middleware ⇒ **ไม่มี secret = 401 เสมอ** (คนล็อกอินบนเว็บก็ใช้เส้นนี้ไม่ได้ — ไม่จำเป็น)
+ * 🚦 ไม่ใส่ตัวกันยิงรัว (rate limit) **โดยตั้งใจ** — คืนแค่สถานะ + secret ยาว + ผู้เรียกเป็นเครื่อง (g1)
+ *    ⇒ **เส้นที่คืนข้อมูลจริงห้ามลอกข้อนี้** ("มี secret แล้วไม่ต้องมี limiter" ใช้ได้เฉพาะเส้นที่คืนแค่สถานะ)
  * ⚠️ ล้ม ⇒ 503 ไม่ใช่ 502 (502 เป็นรหัสเดียวที่ขอบ Netlify แทน body ทิ้ง — วัด 4 ต.ค. 2569)
  */
 const เจ้าทางเมล = () => BILL_VENDORS.filter((v) => v.collect?.วิธี === 'เมล' && !v.hiddenInGrid).map((v) => v.id)
