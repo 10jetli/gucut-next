@@ -1095,7 +1095,11 @@ function CoreStockInner() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12.5px] text-gray-500">
-                แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ
+                {/* 🔴 แท็บว่าง ⇒ เดิมขึ้น "แสดง 1–0 จาก 0 รายการ" (กดทดลองแท็บ ปิดใช้งาน 16 ต.ค. 2569) — เลขถูกแต่ประโยคพัง
+                    คลาสเดียวกับที่จอชุดสินค้าแก้ไปแล้ว */}
+                {inTab === 0 || rows.length === 0
+                  ? 'ไม่มีสินค้าในแท็บนี้'
+                  : <>แสดง {(offset + 1).toLocaleString('th-TH')}–{shown.toLocaleString('th-TH')} จาก {inTab.toLocaleString('th-TH')} รายการ</>}
                 {' '}· <MarketCoverage checked={data.checkedMarketplaces}
               failed={data.marketplacesFailed} notConnected={data.marketplacesNotConnected}
               at={data.marketplacesAt} />

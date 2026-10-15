@@ -568,7 +568,14 @@ export default function CorePurchasesPage() {
 
             <div className="flex flex-wrap items-center justify-between gap-3 px-3 py-2.5 border-t border-gray-200 bg-white">
               <span className="text-[12.5px] text-gray-500">
-                แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ
+                {/* 🔴 **อยู่แท็บ/กรองอยู่ ⇒ "จาก Y" ต้องเป็นจำนวนของสิ่งที่กรอง ไม่ใช่ทั้งชุด** (กดทดลอง 16 ต.ค. 2569:
+                    แท็บ ยกเลิก (1) ขึ้น "แสดง 1–1 จาก 33 รายการ" ⇒ อ่านเหมือนมี 33 ใบให้เลื่อนดู) — กฎแท็บข้อ 4
+                    กรองในเครื่องจากที่โหลดมา ⇒ ถ้าโหลดมาไม่ครบชุด ต้องบอกว่ากรองแค่ที่โหลด */}
+                {tab === 'all' && !กรองอยู่
+                  ? <>แสดง {fmtNum(offset + 1)}–{fmtNum(shown)} จาก {fmtNum(data.total)} รายการ</>
+                  : <>พบ {fmtNum(rows.length)} รายการที่ตรงแท็บ/ตัวกรอง · {loadedAll
+                      ? <>จากทั้งหมด {fmtNum(data.total)} รายการ</>
+                      : <>กรองเฉพาะ {fmtNum(allRows.length)} รายการที่โหลดมา (ทั้งหมด {fmtNum(data.total)})</>}</>}
               </span>
               <PageNav offset={offset} perPage={perPage} rowsOnPage={rows.length}
                 total={typeof data.total === 'number' ? data.total : null}
