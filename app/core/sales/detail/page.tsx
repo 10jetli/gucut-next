@@ -49,6 +49,9 @@ interface Order {
    *  ⚠️ วัดซ้ำได้ด้วยคำสั่งเดิม · เลขจะเปลี่ยนตามใบใหม่ที่ไหลเข้ามา ดูสัดส่วนไม่ใช่ตัวเลขเป๊ะ */
   tracking_no?: string | null
   ship_date?: string | null
+  /** ผู้สร้างรายการ — ท่อส่ง `create_user` มาในใบอยู่แล้ว (ยิงดู 16 ต.ค. 2569: ใบ Lazada = `""`)
+   *  `""` = ZORT ไม่มีชื่อผู้สร้าง (ZORT เองขึ้น `-`) · ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ ไม่โชว์บรรทัด */
+  create_user?: string | null
 }
 interface Item {
   line: number; sku: string; name: string; qty: number; amount: number
@@ -338,13 +341,18 @@ function DetailInner() {
             <Card title="ข้อมูล" icon="📄">
               <div className="px-4 py-3">
                 <Field label="รายการ" value={<span className="text-blue-600 font-medium">{order.number}</span>} />
-                <Field label="ประเภทรายการ" value="รายการขาย" />
+                {/* 📐 คำของ ZORT `/Sell/Details` (อ่าน 16 ต.ค. 2569): ประเภทรายการ = **ขายสินค้าออก** (เดิมเราเขียน "รายการขาย") */}
+                <Field label="ประเภทรายการ" value="ขายสินค้าออก" />
                 {/* 🗓️ เดิมโชว์ค่าดิบปี ค.ศ. — ทั้งร้านอ่าน พ.ศ. · thaiDate จะแปลงโซนเวลาให้เฉพาะค่าที่บอกโซนมา
                     (ค่าที่เป็นวันที่เปล่า ๆ อ่านตรง ๆ ไม่คิดโซน ไม่งั้นวันเลื่อน) · เก็บค่าดิบใน tooltip */}
                 <Field label="วันที่" value={order.order_date
                   ? <span title={`ค่าที่ท่อส่งมา: ${order.order_date}`}>{thaiDate(order.order_date)}</span>
                   : '—'} />
                 <Field label="ช่องทางการขาย" value={order.channel || '—'} />
+                {/* ZORT มีบรรทัด ผู้สร้างรายการ ต่อจากช่องทาง — ไม่มีชื่อ ZORT ขึ้น `-` เราขึ้นแบบเดียวกัน */}
+                {'create_user' in order && (
+                  <Field label="ผู้สร้างรายการ" value={order.create_user || '-'} />
+                )}
                 {/* 🔵 ZORT ไม่มีช่องนี้ — เราเพิ่มเอง เพราะร้านมี ZORT สองบัญชี ต้องรู้ว่าใบนี้มาจากร้านไหน
                     ย้ายลงมาจากการ์ดบนสุด เพื่อเอาที่ว่างให้การ์ดที่ ZORT ใช้จริง */}
                 <Field label="ที่มาของข้อมูล +เรา"
