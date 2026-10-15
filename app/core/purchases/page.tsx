@@ -28,6 +28,7 @@ import {
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
+import { ขอบเขตกรองในเครื่อง } from '@/lib/client-filter-scope'
 
 interface Row {
   number: string
@@ -168,7 +169,10 @@ export default function CorePurchasesPage() {
   const rows = (tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)).filter(ผ่านตัวกรอง)
   const คลังที่มี = Array.from(new Set(allRows.map((r) => r.warehouse).filter((w): w is string => !!w))).sort()
   /** โหลดมาครบทั้งชุดหรือยัง — ใช้ตัดสินว่าการกรองในเครื่องครอบทั้งชุดไหม */
-  const loadedAll = typeof data?.total === 'number' ? offset + allRows.length >= data.total : false
+  /* 🔴 ตัดสินจากฟังก์ชันกลางทุกครั้ง — เดิม `offset + โหลดมา >= ทั้งหมด` ได้ "ครบ" ตอนอยู่หน้าสุดท้าย
+     ทั้งที่ในเครื่องมีแค่แถวของหน้านั้น (เจอ 15 ต.ค. 2569 · เทส client-filter-scope ปลูกเคสนี้ไว้) */
+  const ขอบเขตกรอง = ขอบเขตกรองในเครื่อง({ โหลดมา: allRows.length, ทั้งหมด: data?.total, offset })
+  const loadedAll = ขอบเขตกรอง.ขอบเขต === 'ครบ'
   const shown = offset + rows.length
   const byStatus = Array.isArray(data?.byStatus) ? data!.byStatus! : []
   /* 🔴 **ท่อไม่ส่ง byStatus ≠ ทุกสถานะเป็นศูนย์** (เจอด้วยท่อปลอมโหมด partialgood 16 ก.ย. 2569)
@@ -341,9 +345,7 @@ export default function CorePurchasesPage() {
         onClear={() => { setร่าง(ว่างเปล่า); setกรอง(ว่างเปล่า); setFrom(''); setTo(''); load(0, tab, store, perPage, '', '') }}
         canClear={!!(from || to) || กรองอยู่ || Object.values(ร่าง).some((v) => v.trim() !== '')}
         serverFiltered="ช่วงวันที่ใบซื้อ · ร้าน · คำค้น"
-        clientFiltered={loadedAll
-          ? `หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง กรองในเบราว์เซอร์ — โหลดใบซื้อมาครบทั้ง ${fmtNum(allRows.length)} ใบแล้ว จึงเท่ากับกรองทั้งชุด`
-          : `หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง กรองในเบราว์เซอร์ เฉพาะ ${fmtNum(allRows.length)} ใบที่โหลดมา — ไม่ใช่ทั้งชุด`}
+        clientFiltered={`หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง: ${ขอบเขตกรอง.บรรทัด}`}
         notAvailable={[
           /* 🔬 ตามหลัก "ดูของที่แถวส่งมาแล้วก่อนขอใหม่": แถว list=purchases มี 8 ช่อง (วัด 15 ต.ค. 2569)
              amount id number payment_status po_date status vendor warehouse ⇒ ช่องข้างล่างไม่มีค่าในแถวเลย */
@@ -431,6 +433,7 @@ export default function CorePurchasesPage() {
             <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-1">
               กรองตามเงื่อนไขค้นหาขั้นสูงแล้ว เหลือ <b>{fmtNum(rows.length)}</b> ใบ
               {' '}— <b>เลขในแท็บและบรรทัดสรุปด้านบนยังนับทั้งชุด</b> ไม่ได้กรองตามเงื่อนไขนี้
+              {ขอบเขตกรอง.ขอบเขต !== 'ครบ' && <span className="block mt-0.5">{ขอบเขตกรอง.บรรทัด}</span>}
             </p>
           )}
           {tab !== 'all' && (
@@ -486,7 +489,7 @@ export default function CorePurchasesPage() {
                   /* 🔴 กรองแล้วไม่เจอ ≠ ไม่มีใบ — ข้อความ "ยังไม่มีใบสั่งซื้อ" ทำให้คนเชื่อว่าร้านไม่มีใบเลย (เจอตอนพิมพ์ทดสอบ 15 ต.ค. 2569) */
                   กรองอยู่
                     ? <EmptyState cols={9} icon="🔍" title="ไม่มีใบที่ตรงเงื่อนไขค้นหาขั้นสูง"
-                        detail={`ทั้งหมด ${fmtNum(allRows.length)} ใบที่โหลดมา ไม่มีใบไหนตรง — กด "ล้างเงื่อนไข" เพื่อดูทั้งหมด`} />
+                        detail={ขอบเขตกรอง.ไม่เจอ} />
                   : q
                     ? <EmptyState cols={9} icon="🔍" title="ไม่พบใบสั่งซื้อที่ค้นหา" detail="ลองพิมพ์เลขที่ใบหรือชื่อผู้ขายให้สั้นลง" />
                     : <EmptyState cols={9} icon="🧾" title="ยังไม่มีใบสั่งซื้อในแท็บนี้"
