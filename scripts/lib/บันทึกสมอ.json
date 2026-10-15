@@ -168,6 +168,23 @@
         "node scripts/check-thai-date.mjs|components/ui/StatCard.tsx",
         "node scripts/check-unknown-vs-zero.mjs|components/ui/StatCard.tsx"
       ]
+    },
+    {
+      "เวลาไทย": "2026-10-15 11:07",
+      "commit": "9e59b079",
+      "ผ่านตา": 5,
+      "จับได้": {
+        "ตรงฟรี": 0,
+        "ไม่มีสมอ": 0
+      },
+      "ตัดสินไม่ได้": 5,
+      "คีย์ใหม่": [
+        "node scripts/check-claims.mjs|เขียนว่า \"ยังไม่ได้พิสูจน์\" ได้",
+        "node scripts/check-guard-controls.mjs|check-dev-running.mjs",
+        "node scripts/check-stale-claim.mjs|stock/cost",
+        "node scripts/check-stale-claim.mjs|stock/page.tsx",
+        "node scripts/check-stale-state-load.mjs|app/core/stock/page.tsx"
+      ]
     }
   ]
 }
