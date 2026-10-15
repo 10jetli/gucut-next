@@ -32,9 +32,12 @@ export interface รอบกวาด {
   ทั้งหมด: number
   เมื่อ?: number
 }
+/* 🔑 ชนิดของเหตุ — **ช่องเดียว ความหมายเดียว** ให้จอตัดสินจากช่องนี้ ไม่ใช่จากรหัส HTTP หรือข้อความ
+      (502 ของ Netlify ถูกขอบแทน body ทิ้ง ⇒ ข้อความที่เราเขียนไม่เคยถึงจอ — วัดไว้ 4 ต.ค. 2569) */
+export type ชนิดเหตุg1 = 'ไม่มีคีย์' | 'คีย์ไม่ตรง' | 'g1ตอบผิดปกติ' | 'ติดต่อg1ไม่ได้' | 'คำตอบถูกตัดทอน'
 export type ผลอ่านg1 =
   | { ok: true; รอบกวาด: รอบกวาด | null; รายเจ้า: Record<string, รายงานจากg1> }
-  | { ok: false; เหตุ: string }
+  | { ok: false; เหตุ: string; ชนิด: ชนิดเหตุg1; upstreamStatus: number | null }
 
 function คีย์(): string | null {
   return process.env.GUCUT_WEB_ADMIN_KEY || null
@@ -43,6 +46,13 @@ function คีย์(): string | null {
 /* 🔑 "ไม่มีคีย์" กับ "คีย์ไม่ตรง" ต้องเป็นคนละข้อความ (CEO ขอ 15 ต.ค. 2569)
       ไม่มีคีย์ = env ของเว็บนี้ไม่ได้ตั้ง (แก้ที่ Netlify) · คีย์ไม่ตรง = g1 ตอบ 401/403 (แก้ที่ค่าของคีย์สองฝั่ง)
       ⚠️ 403 ยังอาจมาจากด่านหน้าเว็บที่บล็อก User-Agent ได้ด้วย ⇒ เขียนไว้ทั้งสองทาง ไม่ฟันธง */
+export function ชนิดจากรหัสg1(status: number): ชนิดเหตุg1 {
+  return status === 401 || status === 403 ? 'คีย์ไม่ตรง' : 'g1ตอบผิดปกติ'
+}
+/** ลองใหม่แล้วอาจหายไหม — คีย์ (ไม่มี/ไม่ตรง) ไม่หายเอง ต้องมีคนแก้ */
+export function ลองใหม่ได้(ชนิด: ชนิดเหตุg1): boolean {
+  return ชนิด === 'g1ตอบผิดปกติ' || ชนิด === 'ติดต่อg1ไม่ได้'
+}
 export function เหตุจากรหัสg1(status: number): string {
   if (status === 401 || status === 403) {
     return `g1 ปฏิเสธคีย์ (HTTP ${status}) — เว็บนี้มีคีย์ แต่ค่าไม่ตรงกับที่ g1 รู้จัก (หรือด่านหน้าเว็บบล็อกคำขอ)`
@@ -53,28 +63,31 @@ export function เหตุจากรหัสg1(status: number): string {
 /** อ่านช่อง "บิล" จาก ping.gucut.com · ล้มเหลว ⇒ คืนเหตุ ไม่โยนทิ้ง */
 export async function อ่านสถานะบิลบนg1(): Promise<ผลอ่านg1> {
   const k = คีย์()
-  if (!k) return { ok: false, เหตุ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับถาม g1 (ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY)' }
+  if (!k) return { ok: false, เหตุ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับถาม g1 (ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY)', ชนิด: 'ไม่มีคีย์', upstreamStatus: null }
   try {
     const r = await fetch(`${PING}/`, {
       headers: { 'x-admin-key': k, 'user-agent': UA },
       cache: 'no-store',
       signal: AbortSignal.timeout(15000),
     })
-    if (!r.ok) return { ok: false, เหตุ: เหตุจากรหัสg1(r.status) }
+    if (!r.ok) return { ok: false, เหตุ: เหตุจากรหัสg1(r.status), ชนิด: ชนิดจากรหัสg1(r.status), upstreamStatus: r.status }
     const j = await r.json()
     const บิล = j?.['บิล']
     /* 🔑 ไม่มีช่อง "บิล" = ได้คำตอบแบบตัดทอน (ไม่มีคีย์หรือคีย์ไม่ผ่าน) ⇒ "ไม่รู้" ไม่ใช่ "ไม่มีเจ้า" */
-    if (!บิล || typeof บิล !== 'object') return { ok: false, เหตุ: 'g1 ไม่ส่งช่อง "บิล" มา (คำตอบถูกตัดทอน)' }
+    if (!บิล || typeof บิล !== 'object') return { ok: false, เหตุ: 'g1 ไม่ส่งช่อง "บิล" มา (คำตอบถูกตัดทอน)', ชนิด: 'คำตอบถูกตัดทอน', upstreamStatus: r.status }
     return { ok: true, รอบกวาด: บิล['รอบกวาด'] ?? null, รายเจ้า: บิล['รายเจ้า'] ?? {} }
   } catch (e) {
-    return { ok: false, เหตุ: `ถาม g1 ไม่ได้: ${e instanceof Error ? e.message : String(e)}` }
+    return { ok: false, เหตุ: `ถาม g1 ไม่ได้: ${e instanceof Error ? e.message : String(e)}`, ชนิด: 'ติดต่อg1ไม่ได้', upstreamStatus: null }
   }
 }
 
 /** สั่งกวาดบิล 6 เจ้าบน g1 — g1 ตอบทันทีแล้วทำต่อเบื้องหลัง (ทีละเจ้า โดยตั้งใจ) */
-export async function สั่งกวาดบิลบนg1(): Promise<{ ok: boolean; ข้อความ: string; สถานะ: number }> {
+export type ผลสั่งg1 =
+  | { ok: true; ข้อความ: string; upstreamStatus: number }
+  | { ok: false; ข้อความ: string; ชนิด: ชนิดเหตุg1; upstreamStatus: number | null }
+export async function สั่งกวาดบิลบนg1(): Promise<ผลสั่งg1> {
   const k = คีย์()
-  if (!k) return { ok: false, ข้อความ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับสั่ง g1 (ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY)', สถานะ: 0 }
+  if (!k) return { ok: false, ข้อความ: 'เซิร์ฟเวอร์ไม่มีคีย์สำหรับสั่ง g1 (ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY)', ชนิด: 'ไม่มีคีย์', upstreamStatus: null }
   try {
     const r = await fetch(`${PING}/bills-run`, {
       method: 'POST',
@@ -83,10 +96,11 @@ export async function สั่งกวาดบิลบนg1(): Promise<{ ok:
       signal: AbortSignal.timeout(20000),
     })
     const j = await r.json().catch(() => ({}))
-    const ok = r.ok && j?.ok !== false
-    return { ok, ข้อความ: ok ? String(j?.msg ?? 'เริ่มแล้ว') : (r.ok ? String(j?.msg ?? j?.error ?? 'g1 ปฏิเสธ') : เหตุจากรหัสg1(r.status)), สถานะ: r.status }
+    if (!r.ok) return { ok: false, ข้อความ: เหตุจากรหัสg1(r.status), ชนิด: ชนิดจากรหัสg1(r.status), upstreamStatus: r.status }
+    if (j?.ok === false) return { ok: false, ข้อความ: String(j?.msg ?? j?.error ?? 'g1 ปฏิเสธคำสั่ง'), ชนิด: 'g1ตอบผิดปกติ', upstreamStatus: r.status }
+    return { ok: true, ข้อความ: String(j?.msg ?? 'เริ่มแล้ว'), upstreamStatus: r.status }
   } catch (e) {
-    return { ok: false, ข้อความ: `สั่ง g1 ไม่ได้: ${e instanceof Error ? e.message : String(e)}`, สถานะ: 0 }
+    return { ok: false, ข้อความ: `สั่ง g1 ไม่ได้: ${e instanceof Error ? e.message : String(e)}`, ชนิด: 'ติดต่อg1ไม่ได้', upstreamStatus: null }
   }
 }
 

@@ -80,7 +80,10 @@ export default function RunAllBills({ เจ้า, onDone }: { เจ้า: �
     try {
       const r = await fetch('/api/bills/run-all', { cache: 'no-store' })
       const j = await r.json().catch(() => ({}))
-      if (!j?.ok) { setข้อความบน(`อ่านความคืบหน้าจาก g1 ไม่ได้ — ${j?.เหตุ ?? `HTTP ${r.status}`} (ไม่ได้แปลว่าล้มเหลว)`); return false }
+      if (j?.upstreamOk !== true) {
+        setข้อความบน(`อ่านความคืบหน้าจาก g1 ไม่ได้ — ${j?.เหตุ ?? `HTTP ${r.status} ไม่มีคำอธิบาย`} (ไม่ได้แปลว่าการดึงบิลล้มเหลว)`)
+        return false
+      }
       const r0: สถานะรอบ | null = j.รอบกวาด ?? null
       setรอบ(r0)
       const จบรอบนี้ = r0?.สถานะ === 'เสร็จ' && r0.เมื่อ != null && r0.เมื่อ !== ก่อนกด.current.เมื่อ
@@ -128,11 +131,15 @@ export default function RunAllBills({ เจ้า, onDone }: { เจ้า: �
     try {
       const r = await fetch('/api/bills/run-all', { method: 'POST' })
       const j = await r.json().catch(() => ({}))
-      if (r.status === 403) {
+      /* 🔑 ตัดสินจากช่อง upstreamOk/ชนิด ที่เส้นเราเขียน — ไม่มีช่อง = body ไม่ใช่ของเรา (ขอบแทนทิ้ง/middleware) */
+      if (j?.upstreamOk === true) g1เริ่มได้ = true
+      else if (j?.upstreamOk === false) {
+        setข้อความบน(`สั่ง g1 ไม่สำเร็จ: ${j.ข้อความ ?? j.ชนิด}${j.retryable ? ' · ลองกดใหม่ได้' : ' · ต้องมีคนแก้ ลองใหม่ไม่หาย'} — เจ้าทางเมลยังสแกนต่อตามปกติ`)
+      } else if (r.status === 403) {
         setข้อความบน('บัญชีนี้สั่งดึงบิลไม่ได้ (สิทธิ์อ่านอย่างเดียว) — ให้แอดมินเป็นคนกด')
-      } else if (!r.ok || j?.ok === false) {
-        setข้อความบน(`สั่ง g1 ไม่สำเร็จ: ${j?.ข้อความ ?? `HTTP ${r.status}`} — เจ้าทางเมลยังสแกนต่อตามปกติ`)
-      } else g1เริ่มได้ = true
+      } else {
+        setข้อความบน(`สั่ง g1 ไม่สำเร็จ และไม่รู้ว่าเพราะอะไร (HTTP ${r.status} ไม่มีคำอธิบายจากเส้นของเรา) — เจ้าทางเมลยังสแกนต่อตามปกติ`)
+      }
     } catch (e) {
       setข้อความบน(`สั่ง g1 ไม่ได้: ${e instanceof Error ? e.message : String(e)}`)
     }
