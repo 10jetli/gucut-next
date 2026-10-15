@@ -16,8 +16,9 @@ import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { thaiDateTime } from '@/components/zort/PushStatusBoard'
+import ExportButton from '@/components/zort/ExportButton'
 import {
-  PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
+  PageHead, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
 
 interface Warehouse {
@@ -145,7 +146,7 @@ export default function CoreBranchesPage() {
         summary={error ? (isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้ — ดูเหตุผลข้างล่าง' : 'ดึงข้อมูลไม่สำเร็จ — ดูรายละเอียดข้างล่าง') : `จำนวน ${fmtNum(rows.length)} รายการ`}
         actions={
           <>
-            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 🔁 ปุ่ม "รีเฟรช" บนหัวจอเอาออก 16 ต.ค. 2569 — ZORT /Warehouse/list ไม่มี (ปุ่ม: นำเข้าไฟล์ · เพิ่มคลังสินค้า/สาขา · Export to Excel) */}
             {/* 🔴 **ถอดปุ่ม "นำเข้าไฟล์ (Excel)" ออก** (15 ก.ย. 2569)
                 เดิมชี้ไป `?kind=product` ทั้งที่จอนี้แสดงคลัง/สาขา ไม่ใช่สินค้า
                 ⇒ คนกดเพราะอยากนำเข้าคลัง/สาขา แต่ไปโผล่หน้านำเข้า**สินค้า** ซึ่งคอลัมน์คนละชุด
@@ -308,6 +309,29 @@ export default function CoreBranchesPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {/* 📤 ผัง ZORT /Warehouse/list: "Export to Excel" ใต้ตาราง (เดิมจอนี้ไม่มีปุ่มส่งออกเลย · เพิ่ม 16 ต.ค. 2569)
+              ⚠️ ส่งออกจากแถวที่ดึงมาแล้วทั้งชุด (ท่อส่งคลังมาครบในคำขอเดียว) · มูลค่าที่ยังไม่เคยคัด = เว้นว่าง ห้ามเป็น 0 */}
+          <div className="mt-3 flex items-center gap-2">
+            <ExportButton
+              disabled={loading || rows.length === 0}
+              label="📗 Export to Excel"
+              spec={{
+                filename: 'คลังสินค้า-สาขา',
+                title: 'คลังสินค้า/สาขา',
+                scope: 'ทุกคลัง',
+                fetchPage: async (off) => ({ rows: off === 0 ? rows : [], total: rows.length }),
+                header: ['รหัส', 'ชื่อคลัง/สาขา', 'จุดขาย', 'มูลค่าสินค้าคงเหลือ', 'เวลาที่คัดมูลค่า (เวลาไทย)', 'เคลื่อนไหวล่าสุด'],
+                toRow: (w: Warehouse) => [
+                  w.code, w.name || null,
+                  w.isPos === undefined ? null : (w.isPos ? 'ใช่' : 'ไม่ใช่ (โกดัง)'),
+                  typeof w.stockValue === 'number' ? w.stockValue : null,
+                  (() => { const d = parseUtc(w.valueCollectedAt); return d ? thaiDayTime(d) : null })(),
+                  w.movedAt ? thaiDateTime(w.movedAt) : null,
+                ],
+              }}
+            />
+          </div>
 
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {note || 'คลังสินค้าดึงมาจาก ZORT ทั้งหมด'} ·
