@@ -56,6 +56,10 @@ interface Resp {
   carrierUngroupedNames?: number
   limit: number; offset: number; only?: string | null
   coversFrom?: string; zortShows?: number; note?: string
+  /** 📅 คอลัมน์ "วันที่" ของแถวคือวันอะไร — ท่อประกาศเอง (ยิงดู 15 ต.ค. 2569: "วันส่งสินค้า ถ้าไม่มีใช้วันที่สั่ง")
+   *  🔴 ของจริง: ใบ TikTok สั่ง 15 ต.ค. แต่แถวขึ้น 17 ต.ค. (= กำหนดส่ง) · จอไม่เคยบอก ⇒ คนเห็นวันในอนาคตแล้วงง
+   *  และหัวคอลัมน์ "วันที่" ของ ZORT หน้านี้คือวันจองขนส่ง ⇒ คำเดียวกันคนละความหมาย ต้องเขียนกำกับ */
+  dateBasis?: string
   /** ค่าที่ท่อ **ใช้จริง** — `from`/`to`/`carrier` เพิ่มฝั่งท่อ (gucut-web 0585512 · 17 ก.ย. 2569)
    *  ⚠️ **ไม่มีคีย์ = ท่อรุ่นก่อนที่เมินตัวกรองเงียบ** ⇒ ห้ามโชว์ช่อง (null = มีคีย์แต่ไม่ได้กรอง ต่างกัน) */
   applied?: { only?: string | null; q?: string | null; from?: string | null; to?: string | null; carrier?: string | null }
@@ -448,6 +452,15 @@ export default function LogisticsPage() {
                 </span>
               </>
             )}
+            {/* 📅 คอลัมน์ "วันที่" ของเรา ≠ "วันที่" ของ ZORT หน้านี้ (ของเขา = วันจองขนส่ง) ⇒ ต้องเขียนออกจอ ไม่ใช่ซ่อนใน tooltip
+                (ท่านอ่านจากมือถือ ชี้ค้างไม่ได้) · ข้อความมาจาก `dateBasis` ของท่อ ไม่เขียนเดาเอง */}
+            {data.dateBasis && (
+              <>
+                <br />
+                📅 คอลัมน์ <b>วันที่</b> ของจอนี้ = <b>{data.dateBasis}</b>
+                {' '}⇒ วันที่เลยวันนี้ไป คือ<b>วันกำหนดส่ง</b> ไม่ใช่วันที่สั่ง · (คอลัมน์วันที่ของ ZORT หน้านี้คือวันจองขนส่ง)
+              </>
+            )}
           </div>
 
           {/* สรุปขนส่งรายเจ้า — ZORT มีคอลัมน์นี้เป็นโลโก้ ของเราเป็นชื่อที่ ZORT ส่งมา
@@ -511,7 +524,7 @@ export default function LogisticsPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH}>รายการ</th>
-                  <th className={TH}>วันที่</th>
+                  <th className={TH}><span title={data?.dateBasis ? `วันที่ในคอลัมน์นี้ = ${data.dateBasis}` : undefined}>วันที่</span></th>
                   <th className={TH}>ชื่อผู้รับ</th>
                   <th className={THR}>จำนวนรายการขาย</th>
                   <th className={TH}>ชำระเงิน</th>
