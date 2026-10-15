@@ -555,27 +555,29 @@ export default function CoreContactsPage() {
                             /* ลำดับตาม ZORT (⋮ ผู้ติดต่อ: ปักหมุด · ดูภาพรวม · ซื้อเข้า · ขายออก ·
                                แก้ไข · Tag · ลบ) — ของเราใส่เฉพาะที่กดแล้วได้ผลจริง
                                ที่เหลือเป็น disabled พร้อมเหตุผล ไม่ตัดทิ้ง (คนใช้ ZORT จะได้ไม่หาไม่เจอ) */
+                            { label: 'ปักหมุดไว้บนสุด', disabled: 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)' },
                             {
                               label: 'ดูภาพรวม',
                               onClick: () => router.push(`/core/customers/detail?name=${encodeURIComponent(r.name ?? '')}`),
                             },
-                            {
-                              label: 'ขายออก (เปิดบิลที่ POS)',
-                              // ส่งชื่อไปเติมช่องลูกค้าให้เลย — ถ้า POS มีบิลค้างอยู่ บิลค้างชนะ
-                              // และ POS จะเขียนบอกบนจอเองว่าชื่อจากลิงก์ยังไม่ถูกใส่
-                              onClick: () => router.push(`/core/pos?customer=${encodeURIComponent(r.name ?? '')}`),
-                            },
                             /* เดิม disabled "ยังไม่มีท่อเปิดใบซื้อ" — ค้างตั้งแต่มี ?addpo=1
                                และจอ /core/purchases/new (กวาดคลาส stale-state 11 ก.ย. 2569) */
                             {
-                              label: 'ซื้อเข้า',
+                              label: 'ซื้อสินค้าเข้า',
                               onClick: () => router.push(`/core/purchases/new?vendor=${encodeURIComponent(r.name ?? '')}`),
+                            },
+                            {
+                              label: 'ขายสินค้าออก',
+                              // ส่งชื่อไปเติมช่องลูกค้าให้เลย — ถ้า POS มีบิลค้างอยู่ บิลค้างชนะ
+                              // และ POS จะเขียนบอกบนจอเองว่าชื่อจากลิงก์ยังไม่ถูกใส่
+                              onClick: () => router.push(`/core/pos?customer=${encodeURIComponent(r.name ?? '')}`),
                             },
                             /* ⚠️ **แก้ไม่ได้ แต่ *เพิ่ม* ได้** — ท่อมี `?addcontact=1` (จอ /core/customers/new ใช้อยู่)
                                แต่ไม่มีเส้น updatecontact (ยิงตรวจ 15 ก.ย. 2569 ⇒ ตกลงบรรทัดท้ายสุด = ไม่รู้จัก)
                                ⇒ เขียนว่า "แก้ที่ ZORT เท่านั้น" ลอย ๆ อ่านได้ว่าเขียนอะไรไม่ได้เลย ซึ่งไม่จริง */
                             { label: 'แก้ไข', disabled: 'ยังไม่มีเส้นแก้ผู้ติดต่อในท่อ — แก้ที่ ZORT (เพิ่มผู้ติดต่อใหม่ทำที่จอเราได้)' },
                             { label: 'เพิ่ม Tag', disabled: 'คลังเงายังไม่ได้เก็บ Tag ของผู้ติดต่อ' },
+                            { label: 'ลบ', disabled: 'ยังทำไม่ได้ — ลบผู้ติดต่อต้องทำใน ZORT (ย้อนไม่ได้)' },
                             {
                               label: 'คัดลอกเบอร์โทร',
                               onClick: () => { navigator.clipboard?.writeText(r.phone ?? '').catch(() => {}) },
