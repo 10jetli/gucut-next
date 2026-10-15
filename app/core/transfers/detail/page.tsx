@@ -152,11 +152,13 @@ function Inner() {
             <TableWrap>
               <table className="w-full min-w-[480px]">
                 <thead className="bg-white border-b border-gray-200">
-                  <tr><th className={TH}>รหัส</th><th className={TH}>ชื่อสินค้า</th><th className={`${TH} text-right`}>จำนวน</th></tr>
+                  {/* 📐 ผัง ZORT `/Warehouse/TransferDetails` (อ่าน 16 ต.ค. 2569): # · รหัสสินค้า · ชื่อสินค้า · จำนวน + บรรทัด จำนวนทั้งหมด */}
+                  <tr><th className={TH}>#</th><th className={TH}>รหัสสินค้า</th><th className={TH}>ชื่อสินค้า</th><th className={`${TH} text-right`}>จำนวน</th></tr>
                 </thead>
                 <tbody>
                   {d.lines.map((l, i) => (
                     <tr key={`${l.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0">
+                      <td className={`${TD} text-gray-400`}>{i + 1}</td>
                       <td className={`${TD} font-mono text-[12.5px]`}>{l.sku || '—'}</td>
                       <td className={TD}>{l.name || '—'}</td>
                       <td className={`${TD} text-right tabular-nums`}>{typeof l.qty === 'number' ? l.qty.toLocaleString('th-TH') : '—'}</td>
@@ -164,6 +166,18 @@ function Inner() {
                   ))}
                 </tbody>
               </table>
+              {/* จำนวนทั้งหมด = ผลรวมบรรทัดที่เป็นตัวเลข · มีบรรทัดที่ไม่รู้จำนวน ⇒ บอกว่าไม่ครบ ห้ามบวกเป็น 0 เงียบ ๆ */}
+              {(() => {
+                const ไม่รู้ = d.lines.filter((l) => typeof l.qty !== 'number').length
+                const รวม = d.lines.reduce((a, l) => a + (typeof l.qty === 'number' ? l.qty : 0), 0)
+                return (
+                  <div className="flex justify-end gap-3 px-3 py-2.5 border-t border-gray-200 text-[12.5px]">
+                    <span className="text-gray-500">จำนวนทั้งหมด</span>
+                    <b className="tabular-nums">{รวม.toLocaleString('th-TH')}</b>
+                    {ไม่รู้ > 0 && <span className="text-amber-800">(ไม่รวม {ไม่รู้} บรรทัดที่ไม่รู้จำนวน)</span>}
+                  </div>
+                )
+              })()}
             </TableWrap>
           )}
         </>
