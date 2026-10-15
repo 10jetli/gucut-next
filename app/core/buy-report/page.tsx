@@ -243,8 +243,8 @@ export default function BuyReportPage() {
      📏 อ่านจอ ZORT เอง 15 ก.ย. 2569 (`/Dashboard/BuyReport` ช่วงตั้งต้น "ย้อนหลัง 3 เดือน"):
         จอขึ้นว่า **"ไม่มียอดซื้อ"** ทั้งที่ช่วงนั้นมีใบซื้ออยู่ 1 ใบในกระจกของเรา
         คือ PO ทดสอบสถานะ Voided ยอด ฿1 ⇒ ถ้า ZORT นับใบยกเลิก จอต้องขึ้น ฿1 ไม่ใช่ "ไม่มียอดซื้อ"
-     ⚠️ ที่ยังไม่ได้พิสูจน์: ช่วงที่มีทั้งใบยกเลิกและใบสำเร็จปนกัน (เปลี่ยนช่วงบนจอ ZORT ต้องกด ซึ่งห้ามกด)
-     ⇒ จอเราจึง **ไม่แอบหักออกเอง** แต่ต้องเขียนกำกับว่ารวมไว้เท่าไหร่
+     ✅ ช่วงที่มีใบยกเลิกปนกับใบสำเร็จ — **พิสูจน์แล้ว 16 ต.ค. 2569** ว่า ZORT ไม่นับเหมือนกัน (ดูที่ `หัวยอด` ข้างล่าง)
+     ⇒ หัวการ์ด **หักใบยกเลิกออก** แล้ว · ตารางรายใบยังแสดงใบยกเลิกพร้อมกำกับ (แท็บของ ZORT ก็แสดง)
         (กติกาเดียวกับใบยกเลิกในจอยอดขาย — ดู CLAUDE.md ข้อแท็บ) */
   const voided = inRange.filter((r) => String(r.status ?? '') === 'Voided')
   const voidedSum = voided.reduce((a, r) => a + (Number(r.amount) || 0), 0)
@@ -257,7 +257,14 @@ export default function BuyReportPage() {
      ⚠️ กราฟกับตารางยังคิดจากแถวที่โหลดมา ⇒ ตอนถูกตัดต้องมีคำเตือน (กล่องข้างบน) · ไม่มี `amount` = ท่อรุ่นเก่า ⇒ ถอยไปใช้ผลบวกแถว */
   const ยอดทั้งช่วง = typeof all?.amount === 'number' ? all.amount : null
   const จำนวนใบทั้งช่วง = typeof all?.total === 'number' ? all.total : null
-  const หัวยอด = ยอดทั้งช่วง ?? sum
+  /* ✅ **พิสูจน์แล้ว 16 ต.ค. 2569: ZORT ไม่นับใบซื้อที่ยกเลิก แม้ช่วงจะมีใบปนกัน**
+     /Dashboard/BuyReport ค้างช่วง 1/1/2566–18/9/2569 ขึ้น 6,001,652.2 · ท่อช่วงเดียวกัน 32 ใบ (สำเร็จ 31 + ยกเลิก 1)
+     รวมทุกใบ 6,001,653.2 · ไม่รวมใบยกเลิก 6,001,652.2 = ZORT เป๊ะ
+     ⇒ หัวการ์ดหักใบยกเลิกออกแบบ ZORT · แต่ทำได้เฉพาะตอนแถวโหลดครบ (รู้ยอดใบยกเลิกทั้งช่วง)
+     ⇒ ถูกตัดแถว ⇒ ไม่รู้ยอดใบยกเลิกครบ ⇒ คงยอดท่อไว้แล้วเขียนว่ายังรวมใบยกเลิก (ไม่เดาหัก) */
+  const หักยกเลิกได้ = !cutRows
+  const หัวยอด = (ยอดทั้งช่วง ?? sum) - (หักยกเลิกได้ ? voidedSum : 0)
+  const จำนวนใบหัว = (จำนวนใบทั้งช่วง ?? inRange.length) - (หักยกเลิกได้ ? voided.length : 0)
 
   const กราฟ = useMemo(() => {
     const m = new Map<string, { label: string; value: number }>()
@@ -415,7 +422,10 @@ export default function BuyReportPage() {
                   )
                   : <p className="text-[30px] font-bold text-blue-600 leading-none">ไม่มียอดซื้อ</p>}
                 <p className="text-[12.5px] text-gray-500 mt-2">
-                  {fmtNum(จำนวนใบทั้งช่วง ?? inRange.length)} ใบ ในช่วงที่เลือก
+                  {fmtNum(จำนวนใบหัว)} ใบ ในช่วงที่เลือก
+                  {voided.length > 0 && (หักยกเลิกได้
+                    ? <span className="block text-gray-400">ไม่นับใบยกเลิก {fmtNum(voided.length)} ใบ ({fmtMoney(voidedSum)} บาท) แบบ ZORT</span>
+                    : <span className="block text-amber-800">⚠️ ยอดนี้ยังรวมใบยกเลิก — โหลดแถวมาไม่ครบ จึงหักออกไม่ได้</span>)}
                   {cutRows && <span className="block text-amber-800">⚠️ กราฟและตารางข้างล่างคิดจาก {fmtNum(inRange.length)} ใบที่โหลดมาเท่านั้น</span>}
                 </p>
                 <button onClick={downloadExcel}
