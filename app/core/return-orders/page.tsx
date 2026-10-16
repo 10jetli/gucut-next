@@ -40,7 +40,7 @@ import { toThai, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
-  PageHead, BtnGhost, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
+  PageHead, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
   EmptyState, Pill, relDay, thaiDate, EndpointMissing,
 } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
@@ -246,7 +246,7 @@ export default function ReturnOrdersPage() {
         }
         actions={
           <>
-            <BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Sell/list?sttype=1 (รายการคืนสินค้า) ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า) */}
           </>
         }
       />
@@ -424,7 +424,7 @@ export default function ReturnOrdersPage() {
             </table>
           </TableWrap>
 
-          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (ผังเดียวกับจอรายการทุกจอของ ZORT ที่อ่านแล้ว — จอนี้ยังไม่ได้อ่านตรง) */}
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (ZORT /Sell/list?sttype=1 อ่านปุ่มแล้ว 16 ต.ค. 2569) */}
           <div className="mt-3 flex items-center gap-2">
             {/* 📤 ส่งออกใบคืนจากลูกค้า ครบทุกหน้า
                 🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** — กับดักเดิมที่ CLAUDE.md
