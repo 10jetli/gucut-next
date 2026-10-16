@@ -80,7 +80,8 @@ function Inner() {
     <div className="p-4 md:p-6 max-w-[860px]">
       <p className="text-[12.5px] mb-2"><Link href="/core/quotations" className="text-blue-600 hover:underline">‹ ใบเสนอราคา</Link></p>
       {/* ⚠️ ห้ามเอา number ขึ้นหัวเรื่องตอนท่อส่งผิดชั้น — มันคือจำนวนสินค้า ไม่ใช่เลขที่ใบ */}
-      <PageHead title={`ใบเสนอราคา ${wrongLevel ? '' : d?.number || ''}`}
+      {/* หัวจอตาม ZORT: "รายละเอียดใบเสนอราคา" · เลขที่ใบอยู่ในช่อง "รายการ" (อ่านจอจริง 16 ต.ค. 2569) */}
+      <PageHead title="รายละเอียดใบเสนอราคา"
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Quotation/Details ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
 
@@ -97,6 +98,10 @@ function Inner() {
             ['พิมพ์เอกสาร', 'ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบเสนอราคา'],
             ['พิมพ์เอกสาร + จัดเก็บ', 'ยังทำไม่ได้ — จัดเก็บไฟล์ไว้ในระบบไฟล์ของ ZORT = เขียนกลับ'],
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
+          <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
+          <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
+            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
         </div>
       )}
 
@@ -148,12 +153,13 @@ function Inner() {
               {/* 🔤 เดิมโชว์ค่าดิบ ("Voided") — เขียนเป็น `{d.status || …}` จึงรอดการกวาดสองรอบก่อน
                   คำ + ป้ายช่องลอกจากจอ ZORT จอเดียวกัน (`/Quotation/Details` ใช้ป้ายว่า "สถานะรายการ")
                   จับคู่ใบเดียวกันสองฝั่งแล้ว 16 ก.ย. 2569 ⇒ Voided = "ถูกยกเลิก" (ตารางของ ZORT ใช้ "ยกเลิก") */}
+              <div><p className="text-gray-400 text-[11.5px]">รายการ</p><span className="font-medium">{d.number || <span className="text-gray-300">—</span>}</span></div>
               <div><p className="text-gray-400 text-[11.5px]">สถานะรายการ</p>
                 {d.status
                   ? <span title={`ค่าที่ท่อส่งมา: ${d.status}`}>{zortWord(QUOTATION_DETAIL_STATUS, d.status).text}</span>
                   : <span className="text-gray-300">—</span>}</div>
               <div><p className="text-gray-400 text-[11.5px]">วันที่</p>{d.date ? thaiDate(d.date) : <span className="text-gray-300">—</span>}</div>
-              <div className="col-span-2"><p className="text-gray-400 text-[11.5px]">ลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
+              <div><p className="text-gray-400 text-[11.5px]">ชื่อลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
               <div><p className="text-gray-400 text-[11.5px]">ยอดใบ</p><span className="tabular-nums font-medium">{baht(d.amount)}</span></div>
               <div><p className="text-gray-400 text-[11.5px]">ภาษี</p><span className="tabular-nums">{baht(d.vatAmount)}</span></div>
               <div><p className="text-gray-400 text-[11.5px]">ส่วนลด</p><span className="tabular-nums">{baht(d.discountAmount)}</span></div>
@@ -184,9 +190,9 @@ function Inner() {
                  ⇒ ทำไม่ได้จนท่านประธานอนุมัติจอเขียน — ห้ามทำเงียบ ๆ */}
           <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
             <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> (เทียบของจริง 16 ก.ย. 2569) —
-            {' '}พูดคุย (คอมเมนต์ในใบ) · <b>Tag ผู้ใช้งาน</b> · แนบไฟล์ · พิมพ์เอกสาร (A4/A5) ·
+            {' '}พูดคุย (คอมเมนต์ในใบ) · <b>Tag ผู้ใช้งาน</b> ·
             {' '}<b>โอนสินค้าบางส่วน</b> (ระบุจำนวนที่โอนต่อรายการ) · ส่ง SMS ให้ลูกค้า · ช่อง <b>วันที่อนุมัติ</b>
-            {' '}· แก้ไข/คัดลอกใบ
+            {' '}· ส่วนปุ่มแถบบน (คำสั่ง · พิมพ์เอกสาร · ดูกิจกรรม · แนบไฟล์) <b>มีแล้วแต่เป็นสีเทา</b> — ชี้ค้างดูเหตุ
             <div className="mt-1 text-gray-500">
               ทั้งหมดเป็นการ<b>เขียนข้อมูลเข้า ZORT</b> ⇒ จอนี้เป็นจออ่านอย่างเดียวจนกว่าท่านประธานจะอนุมัติ ·
               ระหว่างนี้ทำได้ที่ ZORT ตามปกติ
@@ -206,19 +212,26 @@ function Inner() {
                 <table className="w-full min-w-[560px]">
                   <thead className="bg-white border-b border-gray-200">
                     <tr>
-                      <th className={TH}>รหัส</th><th className={TH}>ชื่อสินค้า</th>
-                      <th className={THR}>จำนวน</th><th className={TH}>หน่วย</th>
-                      <th className={THR}>ราคา/หน่วย</th><th className={THR}>รวม</th>
+                      {/* คอลัมน์ตาม ZORT: # · รหัส · ชื่อสินค้า · จำนวน (มีหน่วยต่อท้าย) · มูลค่าต่อหน่วย · ส่วนลดต่อหน่วย · รวม */}
+                      <th className={TH}>#</th><th className={TH}>รหัส</th><th className={TH}>ชื่อสินค้า</th>
+                      <th className={THR}>จำนวน</th>
+                      <th className={THR}>มูลค่าต่อหน่วย</th><th className={THR}>ส่วนลดต่อหน่วย</th><th className={THR}>รวม</th>
                     </tr>
                   </thead>
                   <tbody>
                     {d.lines.map((l, i) => (
                       <tr key={`${l.sku ?? ''}-${i}`} className="border-b border-[#e8ecf8] last:border-0">
+                        <td className={`${TD} text-gray-400`}>{i + 1}</td>
                         <td className={`${TD} font-mono text-[12.5px]`}>{l.sku || '—'}</td>
                         <td className={TD}>{l.name || '—'}</td>
-                        <td className={TDR}>{typeof l.qty === 'number' ? l.qty.toLocaleString('th-TH') : '—'}</td>
-                        <td className={TD}>{l.unit || <span className="text-gray-300">—</span>}</td>
+                        <td className={TDR}>{typeof l.qty === 'number' ? l.qty.toLocaleString('th-TH') : '—'}{l.unit ? <span className="text-gray-500"> {l.unit}</span> : null}</td>
                         <td className={TDR}>{baht(l.pricePerUnit)}</td>
+                        {/* ส่วนลดต่อหน่วย — ท่อยังไม่ตั้งชื่อช่องนี้ ⇒ อ่านจากก้อนดิบ `discount` · ว่าง/0 ⇒ "-" แบบจอ ZORT */}
+                        <td className={TDR}>{(() => {
+                          const raw = l['ทุกช่องในบรรทัด']?.discount
+                          const n = typeof raw === 'number' ? raw : typeof raw === 'string' && raw.trim() !== '' ? Number(raw) : NaN
+                          return Number.isFinite(n) && n !== 0 ? baht(n) : <span className="text-gray-400">-</span>
+                        })()}</td>
                         <td className={TDR}>{baht(l.total)}</td>
                       </tr>
                     ))}
