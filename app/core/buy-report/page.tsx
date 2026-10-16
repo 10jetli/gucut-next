@@ -15,6 +15,7 @@ import Link from 'next/link'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
+import CategorySeriesChart, { useCategorySeries } from '@/components/zort/CategorySeriesChart'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
 import Card from '@/components/ui/Card'
@@ -164,6 +165,10 @@ export default function BuyReportPage() {
      ไม่งั้นตารางรายใบกับตารางรายสินค้าจะเป็นคนละร้านโดยที่จอดูปกติทุกประการ
      (คลาสเดียวกับ "อย่าเอาตัวเลขจากแหล่งหนึ่งไปโชว์คู่กับของจากอีกแหล่ง" ใน CLAUDE.md) */
   const [store, setStore] = useState<StoreId>('')
+  /** กล่องกราฟ: ยอดซื้อรวม | ยอดซื้อตามหมวดหมู่ (ตัววาดร่วมกับจอยอดขาย) */
+  const [chartView, setChartView] = useState<'total' | 'cat'>('total')
+  /* 📈 ยอดซื้อตามหมวดหมู่ — ช่วงวันและร้านเดียวกับตารางของจอนี้ · โหลดเมื่อเลือกมุมนี้เท่านั้น */
+  const catSeries = useCategorySeries('buy', from, to, store, chartView === 'cat')
   /** 📦 จัดกลุ่มตารางรายสินค้า — ผังเดียวกับ dropdown `tableoption` ของ ZORT
    *  ⚠️ `user` (ผู้ใช้งาน) ท่อตอบ ok:false เพราะกระจกใบซื้อไม่มีผู้สร้างใบ ⇒ ปิดตัวเลือกไว้พร้อมเหตุผล */
   const [by, setBy] = useState<'sku' | 'category' | 'vendor' | 'warehouse'>('sku')
@@ -457,23 +462,25 @@ export default function BuyReportPage() {
                        เป็นเส้นหนึ่งเส้นต่อหมวด **ตามช่วงเวลา** ⇒ ต้องมียอดรายหมวด×ช่วงเวลา ซึ่งท่อยังไม่ส่ง (มีแต่ยอดรวมทั้งช่วง)
                        ⇒ ประโยค "ข้อมูลมีแล้ว" เป็นเท็จสำหรับกราฟนี้ · ขอท่อแล้ว (series=day|month) */}
                 <select
-                  value="total"
-                  onChange={() => { /* มีค่าเดียวที่เลือกได้จริง */ }}
-                  title="กราฟของ ZORT เป็นเส้นหนึ่งเส้นต่อหมวดตามช่วงเวลา — ยอดรวมรายหมวดมีแล้ว (ตารางข้างล่าง) แต่ยอดรายหมวดแยกตามช่วงเวลายังไม่มี (ขอระบบหลังบ้านแล้ว 16 ต.ค. 2569)"
+                  value={chartView}
+                  onChange={(e) => setChartView(e.target.value === 'cat' ? 'cat' : 'total')}
                   className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
                 >
                   <option value="total">ยอดซื้อรวม</option>
-                  <option value="cat" disabled>ยอดซื้อตามหมวดหมู่ (ต้องมียอดรายหมวดแยกตามช่วงเวลา · รอระบบหลังบ้าน)</option>
+                  <option value="cat">ยอดซื้อตามหมวดหมู่</option>
                 </select>
               </div>
-              <BuyChart points={points} />
-              {กราฟ.โครงขาด && (
+              {chartView === 'cat'
+                ? <CategorySeriesChart data={catSeries.data} err={catSeries.err} />
+                : <BuyChart points={points} />}
+              {chartView === 'total' && กราฟ.โครงขาด && (
                 <p className="text-[12.5px] text-amber-800 mt-1">
                   ⚠️ <b>ช่วงวันที่เลือกยาวเกินที่กราฟไล่ได้</b> — โครงเวลาถูกตัดที่ 400 ช่อง
                   {' '}⇒ <b>กราฟนี้ไม่ครบทั้งช่วง</b> ให้ย่อช่วงวัน หรือเปลี่ยนความละเอียดเป็นเดือน/ปี
                 </p>
               )}
-              <div className="flex items-center justify-end gap-1 mt-2">
+              {/* มุมรายหมวดยังมีแค่รายเดือน ⇒ ซ่อนปุ่มช่วงเวลา (กดแล้วไม่เกิดอะไร = ปุ่มหลอก) */}
+              {chartView === 'total' && <div className="flex items-center justify-end gap-1 mt-2">
                 {GRAINS.map((g) => (
                   <button key={g.id} onClick={() => setGrain(g.id)}
                     className={`text-[12.5px] px-2.5 py-1 rounded border ${
@@ -482,7 +489,7 @@ export default function BuyReportPage() {
                     {g.label}
                   </button>
                 ))}
-              </div>
+              </div>}
             </Card>
           </div>
 

@@ -12,6 +12,7 @@ import Card from '@/components/ui/Card'
 import { ยอดขายแบบZORT, type ผลยอดแบบZORT, type แถวใบคืน } from '@/lib/zort-sales-total'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
+import CategorySeriesChart, { useCategorySeries } from '@/components/zort/CategorySeriesChart'
 import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, type ประตูกำไร } from '@/components/zort/CostGate'
 import {
   PageHead, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag, thaiDate,
@@ -398,20 +399,25 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
       ห้ามใส่ตัวเลือกที่เลือกแล้วไม่มีอะไรเกิดขึ้น (กติกาในใบ: ห้ามปุ่มหลอก)
    📌 ตัวเลือกของ ZORT ที่เห็นในจอเดียวกัน: ยอดขายรวม · ยอดขายตามหมวดหมู่
       (ตามหมวดหมู่ยังทำไม่ได้ เพราะยอดขายรายสินค้าที่ท่อส่งมา **ไม่มีหมวดหมู่ติดมาด้วย**) */
-function ReportKindSelect({ ประตู }: { ประตู: ประตูกำไร }) {
+function ReportKindSelect({ ประตู, value = 'total', onChange, withCategory = false }: {
+  ประตู: ประตูกำไร
+  value?: 'total' | 'cat'
+  onChange?: (v: 'total' | 'cat') => void
+  /** ZORT มี "ยอดขายตามหมวดหมู่" เฉพาะ dropdown ของกล่องกราฟ (typeoption) — กล่องสรุป (salessummary) ไม่มี (อ่านจอจริง 16 ต.ค. 2569) */
+  withCategory?: boolean
+}) {
   return (
     <select
-      value="total"
-      onChange={() => { /* มีค่าเดียวที่เลือกได้จริง */ }}
+      value={value}
+      onChange={(e) => { const v = e.target.value; if (v === 'total' || v === 'cat') onChange?.(v) }}
       className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
       /* 🔄 **แก้ป้าย 15 ก.ย. 2569** — เดิมเขียนว่า "ยังไม่มี" เพราะท่อไม่ส่งหมวดมา
          ตอนนี้ท่อส่งแล้ว (b0a4aa3 · `by=category` รวมให้ฝั่งเซิร์ฟเวอร์ 36 หมวด)
          ⇒ ที่ยังขาดคือ **จอยังไม่ได้ทำ** ไม่ใช่ข้อมูลไม่มี · เขียนให้ตรงกับความจริงปัจจุบัน
          (ข้อความที่เคยถูกแล้วไม่มีใครกลับมาแก้ = โกหกเงียบ ๆ — บทเรียนเดิมของโปรเจกต์นี้) */
-      title="ท่อรวมยอดตามหมวดให้ได้แล้ว แต่จอนี้ยังไม่ได้ทำมุมมองรายหมวด"
     >
       <option value="total">ยอดขายรวม</option>
-      <option value="cat" disabled>ยอดขายตามหมวดหมู่ (ต้องมียอดรายหมวดแยกตามช่วงเวลา · รอระบบหลังบ้าน)</option>
+      {withCategory && <option value="cat">ยอดขายตามหมวดหมู่</option>}
       {/* 🔴 ZORT มีสองตัวนี้ในจอเดียวกัน — ของเรา **ยังคำนวณไม่ได้** ⇒ คงช่องไว้ให้ผังตรง **แต่ห้ามโชว์ 0**
              🔎 **แคบลงแล้ว 18 ก.ย. 2569** (อ่านโค้ดจอ "ปรับต้นทุนสินค้า" ของ ZORT · อ่านอย่างเดียว):
                 ZORT เก็บต้นทุนไว้ที่ **บรรทัดการเคลื่อนไหวสต็อก** (แก้เป็น `totalprice` ต่อบรรทัด)
@@ -550,6 +556,8 @@ export default function SalesReportPage() {
   const [refreshed, setRefreshed] = useState(new Date())
   const [tab, setTab] = useState<'all' | 'branch' | 'chan' | 'mkt'>('all')
   const [bucket, setBucket] = useState<Bucket>('day')
+  /** กล่องกราฟ: ยอดขายรวม | ยอดขายตามหมวดหมู่ (ตัววาดร่วมกับจอยอดซื้อ — CategorySeriesChart) */
+  const [chartView, setChartView] = useState<'total' | 'cat'>('total')
 
   const load = useCallback(async (เลือก: number) => {
     setLoading(true)
@@ -773,6 +781,8 @@ export default function SalesReportPage() {
 
 
   const grouped = report ? groupDaily(report.daily, bucket) : []
+  /* 📈 ยอดขายตามหมวดหมู่ — ขอบเขตร้านเดียวกับกราฟยอดขายรวม (ทุกร้าน) · โหลดเมื่อเลือกมุมนี้เท่านั้น */
+  const catSeries = useCategorySeries('sales', report?.range.from ?? '', report?.range.to ?? '', '', chartView === 'cat')
   // ⚠️ แยก "ช่องทางมาร์เก็ตเพลส" กับ "คลัง/สาขา" ด้วยชื่อช่องทางจริง ไม่ใช่เดาจากลำดับ
   const MKT = /shopee|lazada|tiktok/i
   const chans = report?.channels ?? []
@@ -973,13 +983,17 @@ export default function SalesReportPage() {
                       <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📈</span>
                       รายงาน
                     </p>
-                    <ReportKindSelect ประตู={ประตูกำไร} />
+                    <ReportKindSelect ประตู={ประตูกำไร} withCategory value={chartView} onChange={setChartView} />
                   </div>
                   {/* บรรทัดเหตุที่ **มองเห็น** — ตัวเลือกที่ปิดไว้ hover ยาก บนมือถือ hover ไม่ได้เลย */}
                   <CostStateNote ประตู={ประตูกำไร}
                     ช่วง={report ? `${thaiDate(report.range.from)} – ${thaiDate(report.range.to)}` : undefined} />
-                  <TrendChart daily={grouped} kind={chartKind} />
+                  {chartView === 'cat'
+                    ? <CategorySeriesChart data={catSeries.data} err={catSeries.err} />
+                    : <TrendChart daily={grouped} kind={chartKind} />}
                   {/* ⑤ ปุ่มสลับชนิดกราฟ (ซ้ายล่าง) + ปุ่มช่วงเวลา (ขวาล่าง) — ตำแหน่งเดียวกับ ZORT */}
+                  {/* มุมรายหมวดยังมีแค่รายเดือน ⇒ ซ่อนปุ่มชนิดกราฟ/ช่วงเวลา (กดแล้วไม่เกิดอะไร = ปุ่มหลอก) — คำอธิบายอยู่ใต้กราฟรายหมวด */}
+                  {chartView === 'total' && (
                   <div className="flex items-center justify-between gap-2 mt-2">
                     <div className="flex items-center gap-1">
                       {([['line', '📈', 'กราฟเส้น (ยอดขายอย่างเดียว)'], ['bar', '📊', 'กราฟแท่ง (ยอดขาย + เส้นจำนวนใบ)']] as const)
@@ -1015,6 +1029,7 @@ export default function SalesReportPage() {
                     ))}
                     </div>
                   </div>
+                  )}
                 </Card>
               </div>
 
