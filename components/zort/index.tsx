@@ -446,22 +446,36 @@ export function PaymentPill({ value }: { value?: string | null }) {
 import type { RowMenuItem } from '@/lib/types'
 export type { RowMenuItem }
 
-export function RowMenu({ items }: { items: RowMenuItem[] }) {
+export function RowMenu({ items, label }: {
+  items: RowMenuItem[]
+  /** ใส่ = ปุ่มกรอบมีข้อความ + ▾ แบบแถบปุ่มหัวจอรายละเอียดของ ZORT (คำสั่ง · พิมพ์เอกสาร) · ไม่ใส่ = ⋮ ท้ายแถว */
+  label?: string
+}) {
   const [open, setOpen] = useState(false)
   return (
     <span className="relative inline-block">
-      <button
-        onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
-        className="w-6 h-6 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 leading-none"
-        title="เมนูลัด"
-      >
-        ⋮
-      </button>
+      {label
+        ? (
+          <button type="button" aria-expanded={open}
+            onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
+            className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
+            {label} ▾
+          </button>
+        )
+        : (
+          <button
+            onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
+            className="w-6 h-6 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 leading-none"
+            title="เมนูลัด"
+          >
+            ⋮
+          </button>
+        )}
       {open && (
         <>
           {/* คลิกที่ไหนก็ได้เพื่อปิด — ไม่งั้นเมนูค้างจนกว่าจะกดปุ่มเดิมซ้ำ */}
           <span className="fixed inset-0 z-10" onClick={(e) => { e.stopPropagation(); setOpen(false) }} />
-          <span className="absolute right-0 top-7 z-20 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[150px] block">
+          <span className={`absolute ${label ? 'left-0 top-9' : 'right-0 top-7'} z-20 bg-white border border-gray-200 rounded-md shadow-lg py-1 min-w-[150px] block`}>
             {items.map((it) => (
               it.disabled
                 ? (

@@ -21,7 +21,7 @@ import { reconcileOrder } from '@/lib/order-money'
 import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE, thaiDate } from '@/components/zort'
+import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE, thaiDate, RowMenu } from '@/components/zort'
 
 interface Order {
   id: string; source: string; number: string; channel: string
@@ -290,6 +290,54 @@ function DetailInner() {
           </div>
         )}
       </div>
+
+      {/* 🧰 แถบปุ่มใต้ชื่อจอ — ลอกจาก ZORT /Sell/Details (อ่านปุ่ม+พิกัด+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
+          ลำดับ ZORT: คำสั่ง ▾ · พิมพ์เอกสาร ▾ · บริการส่งสินค้า · ส่ง SMS ให้ลูกค้า ▾ · ช่องทาง · Accounting ▾ · (ขวา) ดูกิจกรรมของรายการ
+          🔑 ของที่เราทำได้จริงกดได้ · ของที่ต้องเขียนกลับ ZORT เป็นสีเทาพร้อมเหตุ (คนย้ายมาจาก ZORT จะมองหาคำเหล่านี้)
+          ⚠️ เมนู "คำสั่ง" อ่านจากใบสถานะรอโอน — ใบสถานะอื่น ZORT อาจมีรายการต่างจากนี้ (ยังไม่ได้อ่านเทียบ) */}
+      {order && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <RowMenu label="คำสั่ง" items={[
+            { label: 'แพ็คสินค้า', onClick: () => { window.location.href = '/core/packing' } },
+            ...([
+              ['รับคืนสินค้าเข้า', 'ยังทำไม่ได้ — สร้างใบรับคืนต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+              ['คัดลอก', 'ยังทำไม่ได้ — สร้างใบขายใหม่ใน ZORT = เขียนกลับ (จอนี้อ่านอย่างเดียว)'],
+              ['แก้ไข', 'ยังทำไม่ได้ — แก้ใบต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+              ['รอส่งสินค้า', 'ยังทำไม่ได้ — เปลี่ยนสถานะใบต้องเขียนกลับ ZORT'],
+              ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT (จอนี้อ่านอย่างเดียว)'],
+              ['ซ่อน', 'ยังทำไม่ได้ — ซ่อนใบต้องเขียนกลับ ZORT · และกระจกไม่ได้เก็บธงซ่อนของ ZORT'],
+              ['ยกเลิกรายการ', 'ยังทำไม่ได้ — ยกเลิกใบต้องทำใน ZORT (เลขที่ใบหายจากระบบบัญชี ย้อนไม่ได้)'],
+              ['ยกเลิกรายการส่งสินค้า', 'ยังทำไม่ได้ — ต้องทำใน ZORT'],
+              ['ลบรายการ', 'ยังทำไม่ได้ — ลบใบต้องทำใน ZORT (ย้อนไม่ได้)'],
+            ] as const).map(([label, disabled]) => ({ label, disabled })),
+          ]} />
+          {/* 🖨 ZORT: พิมพ์เอกสาร · พิมพ์ใบจ่าหน้าจดหมาย/กล่อง · พิมพ์ฉลากจัดส่ง · พิมพ์เอกสาร + จัดเก็บ
+              ของเรา "พิมพ์เอกสาร" แตกเป็นเอกสารสามชนิดที่หน้าพิมพ์ทำได้จริง (หน้าเดียวกับเมนู ⋮ ของจอรายการ) */}
+          <RowMenu label="🖨 พิมพ์เอกสาร" items={[
+            ...([['pick', 'พิมพ์ใบจัดเตรียมสินค้า'], ['delivery', 'พิมพ์ใบส่งสินค้า'], ['shipconfirm', 'พิมพ์ใบยืนยันการจัดส่ง']] as const)
+              .map(([doc, label]) => ({
+                label,
+                onClick: () => { window.open(`/core/sales/print?${doc === 'pick' ? '' : `doc=${doc}&`}ids=${encodeURIComponent(id)}`, '_blank', 'noopener') },
+              })),
+            ...([
+              ['พิมพ์ใบจ่าหน้าจดหมาย/กล่อง', 'ยังทำไม่ได้ — ต้องใช้ที่อยู่เต็มของลูกค้า ซึ่งเราไม่ได้เก็บ (รอตัดสินเรื่องข้อมูลส่วนบุคคล)'],
+              ['พิมพ์ฉลากจัดส่ง', 'ยังทำไม่ได้ — ต้องใช้ที่อยู่เต็มของลูกค้า ซึ่งเราไม่ได้เก็บ (รอตัดสินเรื่องข้อมูลส่วนบุคคล)'],
+              ['พิมพ์เอกสาร + จัดเก็บ', 'ยังทำไม่ได้ — จัดเก็บไฟล์ไว้ในระบบไฟล์ของ ZORT = เขียนกลับ'],
+            ] as const).map(([label, disabled]) => ({ label, disabled })),
+          ]} />
+          <span title="ยังทำไม่ได้ — ZORT เปิดหน้าจองขนส่ง (มีค่าใช้จ่ายจริง) · ของเราจองผ่าน L Shipping Point ของ ZORT"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">บริการส่งสินค้า</span>
+          <span title="ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ) · จอนี้อ่านอย่างเดียว"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ส่ง SMS ให้ลูกค้า ▾</span>
+          {order.channel && (
+            <span className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5">{order.channel}</span>
+          )}
+          <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">Accounting ▾</span>
+          <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
+            className="ml-auto text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
+        </div>
+      )}
 
       {error && <ErrorBox title="เปิดใบนี้ไม่ได้">{error}</ErrorBox>}
       {loading && !order && <LoadingState />}
