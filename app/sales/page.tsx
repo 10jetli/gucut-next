@@ -537,11 +537,14 @@ export default function SalesReportPage() {
   const [whItemsErr, setWhItemsErr] = useState('')
   const [report, setReport] = useState<Report | null>(null)
   /** 📦 จัดกลุ่มตารางยอดขาย — `tableoption` ของ ZORT · ทำได้จริงตอนนี้: สินค้า · หมวดหมู่ (ท่อ `topproducts&by=category`) */
-  const [tableBy, setTableBy] = useState<'sku' | 'cat' | 'channel' | 'wh'>('sku')
+  const [tableBy, setTableBy] = useState<'sku' | 'cat' | 'channel' | 'wh' | 'customer'>('sku')
   type แถวหมวด = { category: string; qty?: number; amount?: number | null; skus?: number; orders?: number }
   const [catRows, setCatRows] = useState<แถวหมวด[] | null>(null)
   const [catErr, setCatErr] = useState('')
   const [catScope, setCatScope] = useState('')
+  /** 👤 มุมมองลูกค้า — bycustomer ช่วงเดียวกับรายงาน · rows = รายที่มีชื่อ (ใบไม่ระบุชื่อแยกกอง ไม่ใช่คน) */
+  const [custData, setCustData] = useState<{ rows: { name: string; sales: number }[]; namedTotal: number | null; truncated: boolean; unnamedSales: number | null } | null>(null)
+  const [custErr, setCustErr] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshed, setRefreshed] = useState(new Date())
@@ -645,6 +648,31 @@ export default function SalesReportPage() {
   }, [])
 
   useEffect(() => { load(days) }, [load, days])
+
+  /* 👤 ยอดขายตามลูกค้า แบบ ZORT (ลูกค้า · ยอดขาย(บาท) · ยอดขาย (%)) — ใช้ bycustomer ที่จอรายงานลูกค้าใช้อยู่แล้ว
+     ⚠️ % ของ ZORT หารด้วยอะไรยังไม่ได้วัด (แถวบน 24,509.2 = 8.66% ⇒ ฐาน ~283k ไม่ใช่ยอดรวมช่วง) ⇒ จอบอกฐานของเราเองบนจอ */
+  useEffect(() => {
+    if (tableBy !== 'customer' || !report) return
+    let ยกเลิก = false
+    setCustData(null); setCustErr('')
+    fetch(`/api/web/core?bycustomer=1&from=${report.range.from}&to=${report.range.to}`)
+      .then((x) => x.json())
+      .then((d) => {
+        if (ยกเลิก) return
+        if (!d || !Array.isArray(d.customers)) throw new Error(d?.error || 'ท่อไม่ส่งรายชื่อลูกค้ามา')
+        const gt = d.groupTotals
+        const named = gt && typeof gt.new?.sales === 'number' && typeof gt.repeat?.sales === 'number'
+          ? gt.new.sales + gt.repeat.sales + (typeof gt.unknownFirstDay?.sales === 'number' ? gt.unknownFirstDay.sales : 0) : null
+        setCustData({
+          rows: d.customers.map((c: { name: string; sales: number }) => ({ name: c.name, sales: Number(c.sales) || 0 })),
+          namedTotal: named,
+          truncated: d.truncated === true,
+          unnamedSales: typeof d.unnamed?.sales === 'number' ? d.unnamed.sales : null,
+        })
+      })
+      .catch((e) => { if (!ยกเลิก) setCustErr(String(e instanceof Error ? e.message : e)) })
+    return () => { ยกเลิก = true }
+  }, [tableBy, report])
 
   /* 📦 ยอดขายตามหมวด — ดึงครบทุกหน้าด้วย nextOffset ของท่อ (ไม่ส่ง limit เอง)
      ⚠️ ร้อยละต้องหารด้วยผลรวม **ทุกหมวด** ⇒ ต้องได้ครบก่อนถึงจะแสดง · ไม่ครบ = ไม่เขียน % (ไม่เดา)
@@ -1009,16 +1037,16 @@ export default function SalesReportPage() {
                          ไม่ใช่เขียน "ยังไม่มี" ทั้งที่มี (คนอ่านจะเลิกหา) */}
                   <select
                     value={tableBy}
-                    onChange={(e) => setTableBy(e.target.value as 'sku' | 'cat' | 'channel' | 'wh')}
+                    onChange={(e) => setTableBy(e.target.value as 'sku' | 'cat' | 'channel' | 'wh' | 'customer')}
                     className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0"
-                    title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้สี่แบบ (สินค้า · หมวดหมู่ · ช่องทางการขาย · คลัง/สาขา) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
+                    title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้ห้าแบบ (สินค้า · หมวดหมู่ · ช่องทางการขาย · ลูกค้า · คลัง/สาขา) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
                   >
                     <option value="sku">สินค้า</option>
                     <option value="cat">หมวดหมู่</option>
                     <option value="bundle" disabled>สินค้าเป็นชุด (ยังไม่มี — ท่อไม่รวมยอดขายรายชุด)</option>
                     <option value="channel">ช่องทางการขาย</option>
                     <option value="paych" disabled>ช่องทางการชำระเงิน (ยังไม่มี — ท่อไม่ส่งช่องทางชำระเงินรายใบ)</option>
-                    <option value="customer" disabled>ลูกค้า (มีแล้ว — ดูจอ รายงาน → ลูกค้า)</option>
+                    <option value="customer">ลูกค้า</option>
                     <option value="tier" disabled>กลุ่มลูกค้า (ยังไม่มี — ร้านยังไม่ได้ตั้งกลุ่มลูกค้าใน ZORT)</option>
                     <option value="agent" disabled>ตัวแทนจำหน่าย (ยังไม่มี — ร้านยังไม่มีตัวแทนจำหน่ายใน ZORT)</option>
                     <option value="user" disabled>ผู้ใช้งาน (ยังไม่มี — กระจกใบขายไม่เก็บผู้สร้างใบ)</option>
@@ -1035,7 +1063,7 @@ export default function SalesReportPage() {
                        ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์ ⇒ ไม่เขียน คนจะเชื่อว่าค้นครบทุกใบ
                        (คลาสเดียวกับ "ตัวนับกับตัวแถวมาคนละกติกา" ใน CLAUDE.md) */}
                 <p className="text-[11.5px] text-gray-400 px-4 md:px-5 pt-1">
-                  ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum(tableBy === 'cat' ? (catRows ?? []).length : tableBy === 'channel' ? new Set(report.channels.map((c) => c.name)).size : tableBy === 'wh' ? (whSales ?? []).length : (report.topProducts ?? []).length)} {tableBy === 'cat' ? 'หมวด' : tableBy === 'channel' ? 'ช่องทาง' : tableBy === 'wh' ? 'คลัง' : 'รายการ'})
+                  ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum(tableBy === 'cat' ? (catRows ?? []).length : tableBy === 'channel' ? new Set(report.channels.map((c) => c.name)).size : tableBy === 'wh' ? (whSales ?? []).length : tableBy === 'customer' ? (custData?.rows ?? []).length : (report.topProducts ?? []).length)} {tableBy === 'cat' ? 'หมวด' : tableBy === 'channel' ? 'ช่องทาง' : tableBy === 'wh' ? 'คลัง' : tableBy === 'customer' ? 'ราย' : 'รายการ'})
                   {' '}ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์
                   {/* ⑦ หมวดหมู่ใต้ชื่อสินค้า — ท่อส่งมาแล้ว (b0a4aa3) ⇒ ขึ้นจริงในตารางข้างล่าง */}
                 </p>
@@ -1047,7 +1075,44 @@ export default function SalesReportPage() {
                     📌 ขอบเขตของคอลัมน์ <b>ยอดขาย(บาท)</b> — {report.amountScope.replace(/\*\*/g, '')}
                   </p>
                 )}
-                {(tableBy === 'channel' || tableBy === 'wh') ? (() => {
+                {tableBy === 'customer' ? (
+                  <>
+                    <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
+                      📌 เฉพาะใบที่มีชื่อลูกค้า (ใบไม่ระบุชื่อ เช่นหน้าร้าน{custData?.unnamedSales != null ? ` ${fmtMoney(custData.unnamedSales)} บาท` : ''} แยกไว้ ไม่นับเป็นคน)
+                      {' '}· ร้อยละเทียบกับ{custData?.namedTotal != null ? <>ยอดขายลูกค้าที่มีชื่อทั้งช่วง <b>{fmtMoney(custData.namedTotal)}</b> บาท</> : 'ยอดรวมของรายที่แสดง'}
+                      {' '}· ยอดตัดใบยกเลิกแล้ว ยังรวมใบค้างจ่าย
+                    </p>
+                    <TableWrap>
+                      <table className="w-full min-w-[520px]">
+                        <thead className="bg-white border-b border-gray-200">
+                          <tr><th className={TH}>ลูกค้า</th><th className={THR}>ยอดขาย(บาท)</th><th className={THR}>ยอดขาย (%)</th></tr>
+                        </thead>
+                        <tbody>
+                          {custErr && <EmptyState cols={3} icon="⚠️" title="ดึงยอดขายตามลูกค้าไม่ได้" detail={`ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะไม่มีลูกค้า — ${custErr}`} />}
+                          {!custErr && !custData && <tr><td colSpan={3} className="py-6 text-center text-[12.5px] text-gray-400">กำลังรวมยอดตามลูกค้า…</td></tr>}
+                          {custData && (() => {
+                            const ฐาน = custData.namedTotal ?? custData.rows.reduce((a, r) => a + r.sales, 0)
+                            const t = tableQ.trim().toLowerCase()
+                            const rows = custData.rows.filter((r) => !t || r.name.toLowerCase().includes(t)).sort((a, b) => b.sales - a.sales)
+                            if (rows.length === 0) return <EmptyState cols={3} icon="📊" title="ไม่มีลูกค้าที่ตรงเงื่อนไข" detail="ลองขยายช่วงเวลาด้านบน หรือล้างคำค้น" />
+                            return rows.map((r) => (
+                              <tr key={r.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                <td className={TD}><Link href={`/core/customers/detail?name=${encodeURIComponent(r.name)}`} className="text-blue-600 hover:underline">{r.name}</Link></td>
+                                <td className={TDR}>{fmtMoney(r.sales)}</td>
+                                <td className={TDR}>{ฐาน > 0
+                                  ? <span className="text-[11.5px] font-semibold text-blue-700 bg-blue-50 rounded px-1.5 py-0.5">{((r.sales / ฐาน) * 100).toFixed(2)}%</span>
+                                  : <span className="text-gray-300">—</span>}</td>
+                              </tr>
+                            ))
+                          })()}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                    {custData?.truncated && (
+                      <p className="px-4 md:px-5 py-2 text-[11.5px] text-amber-800">⚠️ แสดงเฉพาะลูกค้าที่ยอดสูงสุดกลุ่มแรกที่ท่อส่งมา ไม่ใช่ทุกราย — ร้อยละยังเทียบกับยอดทั้งช่วง</p>
+                    )}
+                  </>
+                ) : (tableBy === 'channel' || tableBy === 'wh') ? (() => {
                   /* ช่องทาง/คลัง แบบ ZORT: ชื่อ · ยอดขาย(บาท) · ยอดขาย (%) — % หารผลรวมของแถวในตารางนี้เอง
                      ช่องทาง: report.channels (หัวใบ · ชื่อเดียวกันต่างร้านรวมเป็นแถวเดียว) · คลัง: orderfacets&warehouses=1
                      ⚠️ ยอดหัวใบ ≠ ยอดบรรทัดสินค้าในมุมมองสินค้า/หมวด (หัวใบรวมส่วนลดท้ายบิลกับค่าส่ง) */
