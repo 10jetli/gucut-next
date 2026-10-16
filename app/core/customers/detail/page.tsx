@@ -71,10 +71,11 @@ interface Resp {
 }
 
 const baht = (n?: number) => (typeof n === 'number' ? n.toLocaleString('th-TH', { maximumFractionDigits: 2 }) : '—')
+/* ลำดับและคำตาม ZORT /Contact/ContactDetail (อ่านจอจริง 16 ต.ค. 2569): ชื่อ · เบอร์โทรศัพท์ · อีเมล · ที่อยู่ ·
+   เลขผู้เสียภาษี · ชื่อสาขา · เลขที่สาขา — รหัสอยู่ในหัวจอ "(รหัส : …)" · ประเภท/อัปเดตล่าสุด เป็นของเราเพิ่ม ต่อท้าย */
 const LABEL: Record<string, string> = {
-  code: 'รหัส', type: 'ประเภท', tax_id: 'เลขผู้เสียภาษี', phone: 'เบอร์โทร',
-  email: 'อีเมล', address: 'ที่อยู่', branch_name: 'สาขา', branch_no: 'เลขที่สาขา',
-  updated_at: 'อัปเดตล่าสุด',
+  phone: 'เบอร์โทรศัพท์', email: 'อีเมล', address: 'ที่อยู่', tax_id: 'เลขผู้เสียภาษี',
+  branch_name: 'ชื่อสาขา', branch_no: 'เลขที่สาขา', type: 'ประเภท', updated_at: 'อัปเดตล่าสุด',
 }
 
 function Inner() {
@@ -116,7 +117,9 @@ function Inner() {
       <p className="text-[12.5px] mb-2">
         <Link href="/core/customers" className="text-blue-600 hover:underline">‹ ผู้ติดต่อ</Link>
       </p>
-      <PageHead title={d?.name || key || 'ลูกค้า'}
+      {/* หัวจอแบบ ZORT: "รายละเอียดผู้ติดต่อ (รหัส : C…)" · ชื่อย้ายไปแถวแรกของกล่องข้อมูล
+          ลูกค้ามาร์เก็ตเพลสไม่มีรหัส (ไม่อยู่ในทะเบียน) ⇒ ใส่ชื่อในวงเล็บแทน ไม่ปล่อยหัวจอไม่บอกว่าเป็นใคร */}
+      <PageHead title={c?.code ? `รายละเอียดผู้ติดต่อ (รหัส : ${String(c.code)})` : `รายละเอียดผู้ติดต่อ (${d?.name || key || 'ลูกค้า'})`}
         summary={<span className="text-gray-400">ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Contact/ContactDetail ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า) */ />
 
@@ -165,6 +168,42 @@ function Inner() {
       {loading && <LoadingState />}
 
       {!loading && !error && d && (
+        <>
+        {/* 💰 **การ์ดเงิน 3 ใบแบบเดียวกับ ZORT** (เติม 18 ก.ย. 2569 · ย้ายขึ้นมาเหนือกล่องข้อมูล 16 ต.ค. 2569 ตามลำดับจอ ZORT)
+            🔬 กติกาการนับ **วัดจากจอ ZORT จริง 3 ราย ไม่ได้เดา** — ZORT นับที่ "การชำระเงิน = ชำระครบ"
+               ไม่ใช่สถานะเอกสาร (ใบ "รอโอนสินค้า" ที่ชำระครบแล้ว ZORT ก็นับ)
+            ⚠️ ใบที่สามของ ZORT (ยอดค้างชำระ) **จงใจไม่ใส่เลข** — วัดแล้วพบว่า ZORT ไม่ได้เอา
+               ผลรวมใบที่ยังไม่ชำระมาใส่ ⇒ ถ้าเราคิดเองจะได้เลขที่ดูดีแต่ตอบคนละคำถามกับจอที่คนเชื่ออยู่ */}
+        <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {[
+            { t: 'ยอดขายเดือนนี้ (บาท)', v: d?.money?.thisMonth, sub: d?.money?.month },
+            { t: 'ยอดขายปีนี้ (บาท)', v: d?.money?.thisYear, sub: d?.money?.year },
+          ].map((c) => (
+            <div key={c.t} className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
+              <div className="text-[12.5px] text-gray-500">{c.t}</div>
+              {typeof c.v === 'number' ? (
+                <div className="text-[17px] font-semibold tabular-nums">{baht(c.v)}</div>
+              ) : (
+                /* ท่อยังไม่ส่งช่องนี้มา = ยังไม่รู้ ⇒ ขีด ไม่ใช่ 0 */
+                <div className="text-[17px] font-semibold text-gray-400" title="ท่อรุ่นนี้ยังไม่ส่งช่องนี้มา">—</div>
+              )}
+              <div className="text-[11.5px] text-gray-400">{c.sub ? `ช่วง ${c.sub}` : 'ยังไม่รู้ช่วงที่ตัด'}</div>
+            </div>
+          ))}
+          <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2">
+            <div className="text-[12.5px] text-amber-900">ยอดค้างชำระ (บาท)</div>
+            <div className="text-[17px] font-semibold text-amber-700">ยังคิดไม่ได้</div>
+            <div className="text-[11.5px] text-amber-800 leading-snug">
+              {d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'}
+            </div>
+          </div>
+        </div>
+        {d?.money?.scope && (
+          <p className="mb-3 text-[11.5px] text-gray-500">
+            กติกาของสองการ์ดแรก: {d.money.scope}
+            {' · '}จอ ZORT เขียน “-” เมื่อไม่มียอด ส่วนจอนี้เขียนเลข 0 (ขีดของเราแปลว่า “ยังไม่รู้”)
+          </p>
+        )}
         <div className="grid gap-4 md:grid-cols-[320px_1fr]">
           {/* ── ข้อมูลติดต่อ ── */}
           <section className="rounded border border-gray-200 bg-white p-3">
@@ -172,6 +211,10 @@ function Inner() {
             {c ? (
               <table className="w-full text-[12.5px]">
                 <tbody>
+                  <tr className="border-b border-gray-100">
+                    <td className="py-1 pr-2 align-top text-gray-500 whitespace-nowrap">ชื่อ</td>
+                    <td className="py-1 break-words">{d?.name || key}</td>
+                  </tr>
                   {Object.entries(LABEL).map(([k, label]) =>
                     c[k] ? (
                       <tr key={k} className="border-b border-gray-100 last:border-0">
@@ -214,41 +257,6 @@ function Inner() {
                 <span title={`ค่าที่ท่อส่งมา: ${o.lastDay}`}>{thaiDate(o.lastDay)}</span></div>}
             </div>
 
-            {/* 💰 **การ์ดเงิน 3 ใบแบบเดียวกับ ZORT** (เติม 18 ก.ย. 2569)
-                🔬 กติกาการนับ **วัดจากจอ ZORT จริง 3 ราย ไม่ได้เดา** — ZORT นับที่ "การชำระเงิน = ชำระครบ"
-                   ไม่ใช่สถานะเอกสาร (ใบ "รอโอนสินค้า" ที่ชำระครบแล้ว ZORT ก็นับ)
-                ⚠️ ใบที่สามของ ZORT (ยอดค้างชำระ) **จงใจไม่ใส่เลข** — วัดแล้วพบว่า ZORT ไม่ได้เอา
-                   ผลรวมใบที่ยังไม่ชำระมาใส่ ⇒ ถ้าเราคิดเองจะได้เลขที่ดูดีแต่ตอบคนละคำถามกับจอที่คนเชื่ออยู่ */}
-            <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
-              {[
-                { t: 'ยอดขายเดือนนี้ (บาท)', v: d?.money?.thisMonth, sub: d?.money?.month },
-                { t: 'ยอดขายปีนี้ (บาท)', v: d?.money?.thisYear, sub: d?.money?.year },
-              ].map((c) => (
-                <div key={c.t} className="rounded border border-gray-200 bg-gray-50 px-3 py-2">
-                  <div className="text-[12.5px] text-gray-500">{c.t}</div>
-                  {typeof c.v === 'number' ? (
-                    <div className="text-[17px] font-semibold tabular-nums">{baht(c.v)}</div>
-                  ) : (
-                    /* ท่อยังไม่ส่งช่องนี้มา = ยังไม่รู้ ⇒ ขีด ไม่ใช่ 0 */
-                    <div className="text-[17px] font-semibold text-gray-400" title="ท่อรุ่นนี้ยังไม่ส่งช่องนี้มา">—</div>
-                  )}
-                  <div className="text-[11.5px] text-gray-400">{c.sub ? `ช่วง ${c.sub}` : 'ยังไม่รู้ช่วงที่ตัด'}</div>
-                </div>
-              ))}
-              <div className="rounded border border-amber-200 bg-amber-50 px-3 py-2">
-                <div className="text-[12.5px] text-amber-900">ยอดค้างชำระ (บาท)</div>
-                <div className="text-[17px] font-semibold text-amber-700">ยังคิดไม่ได้</div>
-                <div className="text-[11.5px] text-amber-800 leading-snug">
-                  {d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'}
-                </div>
-              </div>
-            </div>
-            {d?.money?.scope && (
-              <p className="mb-3 text-[11.5px] text-gray-500">
-                กติกาของสองการ์ดแรก: {d.money.scope}
-                {' · '}จอ ZORT เขียน “-” เมื่อไม่มียอด ส่วนจอนี้เขียนเลข 0 (ขีดของเราแปลว่า “ยังไม่รู้”)
-              </p>
-            )}
 
             {/* 🧺 ยอดขายรายสินค้า — กล่องเดียวกับ "ยอดขาย · รายสินค้า" ของ ZORT
                 ⚠️ ท่อส่งมา 20 อันดับแรก ⇒ ต้องเขียนกำกับว่าทั้งหมดมีกี่รายการ ไม่งั้นคนอ่านนึกว่าเท่านี้ */}
@@ -458,6 +466,7 @@ function Inner() {
 
           </section>
         </div>
+        </>
       )}
     </div>
   )
