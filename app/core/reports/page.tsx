@@ -197,7 +197,28 @@ export default function CoreProductReportPage() {
                     ⚠️ ดึงมูลค่าตามต้นทุนเฉลี่ยไม่ได้รอบนี้ — <b>ไม่ได้แปลว่าไม่มีข้อมูล</b> ({catErr})
                   </p>
                 )}
-                {typeof cat?.zortTotalValue === 'number' && (
+                {/* 🟢 หัวการ์ดแบบ ZORT: "มูลค่าสินค้าทั้งหมด" = ผลรวมมูลค่ารายคลังที่ ZORT ตอบ (16 ต.ค. 2569 จอ ZORT ขึ้น 16,177,397.29
+                    · เดิมหัวการ์ดเราเป็นยอด 42 หมวดที่คัดมา ต่ำกว่า ZORT ราว 3.5 แสน ⇒ คนเทียบสองจอแล้วเห็นเลขคนละตัว)
+                    ⇒ มีค่าสดครบทุกคลัง ⇒ ขึ้นเป็นเลขหลัก · ยอดรายหมวดลดเป็นบรรทัดรอง · ไม่มีค่าสด ⇒ ใช้ผังเดิม (ยอดหมวดเป็นหลัก) */}
+                {ยอดZORTสด !== null && (
+                  <div className="text-center mb-5">
+                    <p className="text-[11.5px] text-gray-500">มูลค่าสินค้าทั้งหมด · {ยอดZORTเมื่อ}</p>
+                    <p className="text-[30px] font-semibold leading-none mt-0.5" style={{ color: 'rgb(19,175,130)' }}>
+                      {/* ทศนิยม 2 ตำแหน่งแบบจอ ZORT (16,177,397.29) — fmtMoney ปัดเหลือ 1 ตำแหน่ง ⇒ เลขดูไม่ตรงกันทั้งที่ค่าเดียวกัน */}
+                      {ยอดZORTสด.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                      <span className="text-[15px] text-gray-500 font-normal"> บาท</span>
+                    </p>
+                    {typeof cat?.zortTotalValue === 'number' && (
+                      <p className="text-[11.5px] text-gray-500 mt-1">
+                        รวมเฉพาะ {cat.zortCategories ?? 0} หมวดที่คัดมาจากจอ ZORT <b>{fmtMoney(cat.zortTotalValue)}</b> บาท
+                        {cat.zortCollectedAt && <> (คัดเมื่อ {thaiDate(cat.zortCollectedAt)})</>}
+                        {' '}· ส่วนที่ไม่อยู่ในหมวด ≈ {fmtMoney(Math.round((ยอดZORTสด - cat.zortTotalValue) * 100) / 100)} บาท
+                        <span className="block text-gray-400">หมวดกับรายคลังคัดมาคนละเวลา ⇒ ส่วนต่างเป็นค่าประมาณ</span>
+                      </p>
+                    )}
+                  </div>
+                )}
+                {ยอดZORTสด === null && typeof cat?.zortTotalValue === 'number' && (
                   <div className="text-center mb-5">
                     <p className="text-[11.5px] text-gray-500">
                       ต้นทุนเฉลี่ยถ่วงน้ำหนัก · คัดมาจากจอ ZORT {cat.zortCategories ?? 0} หมวด
