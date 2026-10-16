@@ -523,7 +523,9 @@ export const SOON: Record<string, SoonPage> = {
       'ยิงตรวจแล้วไม่พบเส้นรายการรับเงิน COD — กวาด COD · Cod · Finance · Order · Shipping · Logistics · Payment '
       + '× 9 คำกริยา = 63 ชื่อ ไม่เจอสักตัว (ฝั่งท่อกวาดซ้ำ 15 ก.ย. 2569 · คุมบวก Product/GetProducts · Order/GetOrders 200) '
       + '· ยิงยืนยันซ้ำ 15 ต.ค. 2569: COD/GetCODs · Logistic/GetCODs · Finance/GetCODs · Logistic/GetLogistics ไม่พบ '
-      + '⇒ ยอดโอนคืน ค่าธรรมเนียม และ VAT อยู่ในระบบ ZORT เอง ยังไม่มีช่องทางดึงออก',
+      + '· กวาดคู่ชื่อโมดูล×คำกริยาซ้ำ 16 ต.ค. 2569 ครอบ COD · Logistics · Logistic · Shipping · ShippingLabel · Delivery · Transport · Courier · LogisticPoint · Payment · Finance (คุมบวก/ลบผ่าน) ไม่พบเส้น COD '
+      + '⇒ ยอดโอนคืน ค่าธรรมเนียม และ VAT อยู่บนจอ ZORT เท่านั้น (ฟีเจอร์ L Shipping Point ของเขา) ยังไม่มีช่องทางดึงออก '
+      + '· ทางที่เหลือมีสองทาง — คัดจากจอ ZORT (ได้เลขจริงแต่ล้าสมัยเงียบได้) หรือรอต่อ API ขนส่งเอง — รอท่านประธานเลือก',
     /* 🔴 **เดิมเขียน "25 รอบ" — ผิด เลข 25 คือขนาดหน้าของจอ ZORT ไม่ใช่ยอดรวม** (แก้ 17 ก.ย. 2569 · ใบ t_mu2u9mym)
        หัวจอ `/Logistics/CODReport` เขียนว่า "สรุปยอดเก็บเงินปลายทาง จำนวน N รายการ"
        ⇒ ทดสอบแล้ว: ขอหน้าละ 25 หัวจอขึ้น 25 · ขอหน้าละ 100 หัวจอขึ้น 100 ⇒ **N = แถวในหน้าที่เปิดอยู่**
