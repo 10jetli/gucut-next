@@ -575,7 +575,7 @@ function DetailInner() {
                 </div>
                 {/* ── ค่าส่ง ── */}
                 <div className="flex justify-between py-1.5 text-[12.5px]">
-                  <span className="text-gray-500">ค่าส่ง</span>
+                  <span className="text-gray-500">ค่าส่ง (ที่เรียกเก็บจากลูกค้า)</span>
                   {shipAmount === undefined
                     ? <span className="text-gray-300">คลังเงายังไม่ส่งช่องนี้มา</span>
                     : shipAmount === null
@@ -597,7 +597,7 @@ function DetailInner() {
                   </div>
                 )}
                 <div className="flex justify-between py-1.5 text-[12.5px]">
-                  <span className="text-gray-500">มูลค่าสุทธิก่อนภาษี</span>
+                  <span className="text-gray-500">มูลค่ารวมก่อนภาษี</span>
                   <span className="text-gray-800">{fmtMoney(net)}</span>
                 </div>
                 <div className="flex justify-between py-1.5 text-[12.5px]">
