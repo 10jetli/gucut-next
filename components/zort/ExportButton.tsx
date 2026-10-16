@@ -32,7 +32,11 @@ export interface ExportSpec<T> {
   /** ข้อความเตือนพิเศษของจอนั้น เช่น คอลัมน์ที่ไฟล์ไม่มี */
   note?: string
   /** ดึงหนึ่งหน้า · `total` = จำนวนที่ตรงตัวกรองทั้งชุด (null = ท่อไม่บอก) */
-  fetchPage: (offset: number, limit: number) => Promise<{ rows: T[]; total: number | null }>
+  fetchPage: (offset: number, limit: number) => Promise<{
+    rows: T[]; total: number | null
+    /** ท่อบอกเองว่าหมดแล้ว (เช่นไม่ส่ง nextOffset) — ใช้กับเส้นที่หน้าละไม่ถึง limit ที่ขอ */
+    done?: boolean
+  }>
   header: string[]
   /** 🔴 ช่องที่ไม่รู้ให้คืน `null` **ห้ามคืน 0** — ตัวแปลงจะเว้นว่างให้เอง */
   toRow: (row: T) => Cell[]

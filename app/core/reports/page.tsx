@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
+import ExportButton from '@/components/zort/ExportButton'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
@@ -507,6 +508,33 @@ export default function CoreProductReportPage() {
                     onClick={() => { if (typeof dead.nextOffset === 'number') loadDeadPage(dead.nextOffset) }}
                     className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40">ถัดไป →</button>
                 </span>
+              </div>
+            )}
+            {/* 📗 "Download Excel" ใต้ตารางสินค้าจม — ZORT มีปุ่มนี้ใต้ตัวแบ่งหน้า (อ่านจอจริง 16 ต.ค. 2569)
+                ไล่ทุกหน้าด้วย offset ของท่อ · ไม่ส่ง limit เอง (ท่อให้หน้าละ 50) · จบเมื่อท่อไม่ส่ง nextOffset */}
+            {dead && (dead.total ?? 0) > 0 && (
+              <div className="flex justify-end px-4 md:px-5 py-2.5 border-t border-gray-200">
+                <ExportButton
+                  label="📗 Download Excel"
+                  spec={{
+                    filename: 'สินค้าจม',
+                    title: 'สินค้าจม',
+                    scope: DEAD_RANGES.find((r) => r.days === deadDays)?.label ?? `ไม่มีใบขาย ${deadDays} วัน`,
+                    note: dead.historyFrom ? `นับจากใบขายที่คลังเงามีตั้งแต่ ${thaiDate(dead.historyFrom)} เท่านั้น · มูลค่าคิดจากราคาขาย ไม่ใช่ต้นทุน` : 'มูลค่าคิดจากราคาขาย ไม่ใช่ต้นทุน',
+                    fetchPage: async (off) => {
+                      const r = await fetch(`/api/web/core?list=deadstock&days=${deadDays}&offset=${off}`).then((x) => x.json())
+                      if (!r || !Array.isArray(r.rows)) throw new Error(r?.error || 'ท่อไม่ส่งแถวมา')
+                      return { rows: r.rows as DeadRow[], total: typeof r.total === 'number' ? r.total : null, done: typeof r.nextOffset !== 'number' }
+                    },
+                    header: ['รหัสสินค้า', 'สินค้า', 'หมวดหมู่', 'วันที่ขายล่าสุด', 'จำนวนคงเหลือ', 'มูลค่าสินค้าคงเหลือ (บาท)'],
+                    toRow: (r: DeadRow) => [
+                      r.sku, r.name || null, r.category || null,
+                      r.lastSoldAt ? thaiDate(r.lastSoldAt) : null,
+                      typeof r.onhand === 'number' ? r.onhand : null,
+                      typeof r.value === 'number' ? r.value : null,
+                    ],
+                  }}
+                />
               </div>
             )}
           </Card>
