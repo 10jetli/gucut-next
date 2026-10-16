@@ -29,7 +29,15 @@ interface Person {
   firstDay?: string | null
   /** ท่อคิดให้เสร็จ: คนนี้เป็นลูกค้าใหม่ในช่วงที่เลือกไหม (firstDay อยู่ในช่วง) */
   newInRange?: boolean
+  /** ชื่อผู้ใช้ฝั่งมาร์เก็ตเพลส (integrationCustomer) — ท่อเพิ่ม 16 ต.ค. 2569 · ไม่มี = ใบไม่ได้มาจากมาร์เก็ตเพลส/ท่อรุ่นเก่า */
+  marketplaceNames?: string[]
 }
+
+/** แถวตารางจังหวัด — ท่อนับให้ (3841b6f7) · customers = ชื่อที่ไม่ว่างเท่านั้น · unnamedOrders นับเป็นใบ **ห้ามบวกเป็นคน** */
+interface ProvinceRow { province: string; customers: number; orders: number; sales: number; unnamedOrders?: number }
+/** ข้อมูลจังหวัดในกระจกย้อนได้ถึงวันนี้ (ท่อกวาดย้อนหลังถึง 1 ก.ค. 2569 · จดหมายท่อ 16 ต.ค.) — ใบก่อนนั้นจะตกไปอยู่แถว (ไม่ระบุ) */
+const จังหวัดมีตั้งแต่ = '2026-07-01'
+const PROV_PER_PAGE = 6
 
 /** กราฟรายเดือนสามเส้น — ⚠️ **สองกองแรกนับเป็นคน กองไม่ระบุชื่อนับเป็นใบ ห้ามบวกรวมกัน**
  *  (ฝั่งท่อกำชับตอนออกแบบ 6 ก.ย. — หน่วยต่างกัน เส้นอยู่กราฟเดียวกันได้แต่ต้องมีป้ายหน่วย) */
@@ -207,7 +215,7 @@ export default function CoreCustomersPage() {
   const [q, setQ] = useState('')
   /* แท็บตั้งต้น = ลูกค้าใหม่ แบบ ZORT (`tableoption` ของ /Dashboard/ContactReport ตั้งต้นที่ "ลูกค้าใหม่" · ZORT ไม่มีแท็บ "ทั้งหมด"
      — ของเราเก็บไว้เป็นตัวเลือกเพิ่ม · อ่านจอจริง 16 ต.ค. 2569) */
-  const [tab, setTab] = useState<'all' | 'a' | 'b'>('a')
+  const [tab, setTab] = useState<'all' | 'a' | 'b' | 'mk'>('a')
   const [page, setPage] = useState(0)
   const [PER_PAGE, setPerPage] = useState(PER_PAGE_เริ่มต้น)
 
@@ -224,6 +232,13 @@ export default function CoreCustomersPage() {
    *     ⇒ ห้ามเอาสองกองมาบวกกัน และถ้าจะเขียนคำว่า "ลูกค้าทั้งหมด" ต้องบอกว่านับเฉพาะที่มีชื่อ
    *  null = ท่อรุ่นเก่าไม่ส่งมา ⇒ ไม่เขียนเลขนั้นเลย ห้ามเดาจากจำนวนที่โหลดมา */
   const [distinctNames, setDistinctNames] = useState<number | null>(null)
+  /** ตารางจังหวัด — null + provSkip = ท่อบอกว่ายังไม่มีข้อมูล (ห้ามโชว์ตารางว่าง) */
+  const [provinces, setProvinces] = useState<ProvinceRow[] | null>(null)
+  const [provSkip, setProvSkip] = useState('')
+  const [provSource, setProvSource] = useState<Record<string, number> | null>(null)
+  /** ตัวเลือกแบบ ZORT `contactperprovincetype`: จำนวนลูกค้า · จำนวนรายการ · มูลค่ารายการ */
+  const [provBy, setProvBy] = useState<'customers' | 'orders' | 'sales'>('customers')
+  const [provPage, setProvPage] = useState(0)
   /** วันแรกสุดที่กระจกมีข้อมูล — '' = ท่อยังไม่ส่ง (ก่อน deploy รอบ 21:00) */
   const [historyFrom, setHistoryFrom] = useState('')
   const [monthly, setMonthly] = useState<MonthlyRow[]>([])
@@ -278,17 +293,22 @@ export default function CoreCustomersPage() {
       const gt = d?.groupTotals
       setGroupTotals(gt && typeof gt?.new?.sales === 'number' && typeof gt?.repeat?.sales === 'number' ? gt : null)
       setDistinctNames(typeof d?.distinctNames === 'number' ? d.distinctNames : null)
+      setProvinces(Array.isArray(d.provinces) ? d.provinces : null)
+      setProvSkip(typeof d.provinceSkipped === 'string' ? d.provinceSkipped : (Array.isArray(d.provinces) ? '' : 'ท่อรุ่นนี้ยังไม่ส่งตารางจังหวัด'))
+      setProvSource(d.provinceSource && typeof d.provinceSource === 'object' ? d.provinceSource : null)
+      setProvPage(0)
       setScope(typeof d.store === 'string' ? d.store : '')
 
       const list: Person[] = (Array.isArray(d.customers) ? d.customers : []).map(
         (c: { name: string; orders: number; sales: number; lastDay: string; channels?: { channel: string; orders: number }[]
-              firstDay?: string | null; newInRange?: boolean }) => ({
+              firstDay?: string | null; newInRange?: boolean; marketplaceNames?: unknown }) => ({
           name: c.name, orders: Number(c.orders) || 0,
           amount: Number(c.sales) || 0, last: c.lastDay || '',
           channels: Array.isArray(c.channels) ? c.channels : [],
           firstDay: typeof c.firstDay === 'string' ? c.firstDay : null,
           // รับได้ทั้งไม่มีฟิลด์ (ท่อยังไม่ deploy) และมีเป็น boolean — ชนิดอื่นถือว่าไม่รู้
           newInRange: typeof c.newInRange === 'boolean' ? c.newInRange : undefined,
+          marketplaceNames: Array.isArray(c.marketplaceNames) ? c.marketplaceNames.filter((x): x is string => typeof x === 'string' && x.trim() !== '') : undefined,
         }),
       )
       // ขอบประวัติของกระจก — ตัวกันนิยาม "ใหม่" เพี้ยนตรงขอบ (กระจกเริ่ม ~มิ.ย. 2569)
@@ -321,6 +341,8 @@ export default function CoreCustomersPage() {
   useEffect(() => { load(90) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const named = people.filter((p) => p.name !== NO_NAME)
+  /** แท็บ Marketplace Username — เฉพาะรายที่ท่อส่งชื่อผู้ใช้มาร์เก็ตเพลสมา (จากรายที่โหลดมาเท่านั้น) */
+  const mkC = useMemo(() => people.filter((p) => (p.marketplaceNames ?? []).length > 0), [people])
   const repeat = named.filter((p) => p.orders >= 2)
   const once = named.filter((p) => p.orders === 1)
 
@@ -338,11 +360,12 @@ export default function CoreCustomersPage() {
   const LAB_B = hasZortDef ? 'ลูกค้าซื้อซ้ำ' : 'ซื้อซ้ำในช่วง'
 
   const filtered = useMemo(() => {
-    const base = tab === 'b' ? repC : tab === 'a' ? newC : people
+    const base = tab === 'b' ? repC : tab === 'a' ? newC : tab === 'mk' ? mkC : people
     const needle = q.trim().toLowerCase()
-    const list = needle ? base.filter((p) => p.name.toLowerCase().includes(needle)) : base
+    const list = needle ? base.filter((p) => p.name.toLowerCase().includes(needle)
+      || (p.marketplaceNames ?? []).some((m) => m.toLowerCase().includes(needle))) : base
     return [...list].sort((a, b) => b.amount - a.amount)
-  }, [people, newC, repC, tab, q])
+  }, [people, newC, repC, mkC, tab, q])
 
   const totalAmount = people.reduce((s, p) => s + p.amount, 0)
   /* 🔴 **ตัวหารของ % ต้องเป็นยอดทั้งช่วง ไม่ใช่ยอดของรายที่โหลดมา** (แก้ 17 ก.ย. 2569 · A1 ในใบสำรวจ t_mu5bhh84)
@@ -676,15 +699,69 @@ export default function CoreCustomersPage() {
             </div>
           </div>
 
-          {/* ── ผัง ZORT (ภาพ 75): ตารางจังหวัด × จำนวนลูกค้า ──
-              คลังเงาไม่ได้เก็บที่อยู่/จังหวัดของใบขาย ⇒ ทำตารางจริงไม่ได้ ห้ามเดา
-              (ZORT ใช้ที่อยู่จัดส่ง — ของเรามีในระบบออเดอร์เว็บเท่านั้น ไม่ครอบคลุมมาร์เก็ตเพลส) */}
-          <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-4 text-[12.5px] text-gray-600">
-            ผัง ZORT มีตาราง <b>จังหวัด × จำนวนลูกค้า</b> ตรงนี้ และเลือกได้ว่าจะนับ
-            <b> จำนวนลูกค้า · จำนวนรายการ · มูลค่ารายการ</b> (กดดูจอจริง 16 ก.ย. 2569)
-            — คลังเงายังไม่เก็บจังหวัดของใบขาย จึง<b>ยังทำไม่ได้ ไม่ใช่ลืม</b> ·
-            ทะเบียนผู้ติดต่อมีช่องที่อยู่ก็จริง แต่<b>เป็นข้อความอิสระที่ส่วนใหญ่ไม่มีชื่อจังหวัด</b>
-            {' '}(สุ่มดู 100 ราย: มีที่อยู่ 88 · อ่านชื่อจังหวัดออกเพียง 1) ⇒ แยกจังหวัดจากตรงนั้นจะได้ตารางที่ผิดเกือบทั้งใบ
+          {/* ── ผัง ZORT: การ์ดตาราง จังหวัด / จำนวนลูกค้า + ตัวเลือก `contactperprovincetype` (หน้าละ 6 แถวแบบ ZORT) ──
+              ท่อนับให้ฝั่งเซิร์ฟเวอร์ (3841b6f7): ที่อยู่ส่งของก่อน ถอยไปที่อยู่ลูกค้า · ไม่มีทั้งคู่ = แถว (ไม่ระบุ) แยกไว้
+              🔴 provinces = null ⇒ เขียนเหตุจากท่อ "ยังไม่มีข้อมูล" ห้ามโชว์ตารางว่าง (ร้าน z2 ยังไม่มีจังหวัดเลย)
+              ⚠️ เลข (ไม่ระบุ) ของ ZORT กับของเรานับคนละแบบ (อ่านจอ 16 ต.ค.: ZORT 215 ราย · ของเรานับเฉพาะชื่อ) ⇒ ไม่อ้างว่าตรง */}
+          <div className="bg-white border border-gray-200 rounded-md mb-4">
+            <div className="flex flex-wrap items-center gap-3 px-4 pt-4 pb-2">
+              <p className="text-[15px] font-semibold text-gray-900 mr-auto">📍 จังหวัด</p>
+              <select value={provBy} onChange={(e) => { setProvBy(e.target.value as 'customers' | 'orders' | 'sales'); setProvPage(0) }}
+                disabled={!provinces}
+                className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white max-w-full min-w-0 disabled:text-gray-400">
+                <option value="customers">จำนวนลูกค้า</option>
+                <option value="orders">จำนวนรายการ</option>
+                <option value="sales">มูลค่ารายการ</option>
+              </select>
+            </div>
+            {!provinces ? (
+              <p className="px-4 pb-4 text-[12.5px] text-gray-500 leading-relaxed">
+                <b>ยังไม่มีข้อมูลจังหวัด</b>{provSkip ? <> — {provSkip.replace(/\*\*/g, '')}</> : null}
+              </p>
+            ) : (() => {
+              const rows = [...provinces].sort((x, y) => (Number(y[provBy]) || 0) - (Number(x[provBy]) || 0))
+              const pages = Math.max(1, Math.ceil(rows.length / PROV_PER_PAGE))
+              const pg = Math.min(provPage, pages - 1)
+              const หัว = provBy === 'customers' ? 'จำนวนลูกค้า' : provBy === 'orders' ? 'จำนวนรายการ' : 'มูลค่ารายการ'
+              return (
+                <>
+                  <TableWrap>
+                    <table className="w-full">
+                      <thead className="bg-white border-b border-gray-200">
+                        <tr><th className={TH}>จังหวัด</th><th className={THR}>{หัว}</th></tr>
+                      </thead>
+                      <tbody>
+                        {rows.slice(pg * PROV_PER_PAGE, (pg + 1) * PROV_PER_PAGE).map((r) => (
+                          <tr key={r.province} className="border-b border-[#e8ecf8] last:border-0">
+                            <td className={TD}>{r.province === '(ไม่ระบุ)' ? 'ไม่ระบุ' : r.province}</td>
+                            <td className={TDR}>
+                              {provBy === 'sales' ? fmtMoney(r.sales) : (Number(r[provBy]) || 0).toLocaleString('th-TH')}
+                              {provBy === 'customers' && (r.unnamedOrders ?? 0) > 0 && (
+                                <span className="block text-[11px] text-gray-400">+ ใบไม่ระบุชื่อ {(r.unnamedOrders ?? 0).toLocaleString('th-TH')} ใบ (นับเป็นคนไม่ได้)</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </TableWrap>
+                  <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2 border-t border-gray-100 text-[12px] text-gray-500">
+                    <span>{rows.length.toLocaleString('th-TH')} จังหวัด · หน้า {pg + 1}/{pages}</span>
+                    <span className="flex gap-2">
+                      <button type="button" disabled={pg <= 0} onClick={() => setProvPage(pg - 1)} className="px-2 py-0.5 rounded border border-gray-300 disabled:opacity-40">← ก่อนหน้า</button>
+                      <button type="button" disabled={pg >= pages - 1} onClick={() => setProvPage(pg + 1)} className="px-2 py-0.5 rounded border border-gray-300 disabled:opacity-40">ถัดไป →</button>
+                    </span>
+                  </div>
+                  <p className="px-4 pb-3 text-[11.5px] text-gray-400 leading-relaxed">
+                    {provSource && <>ที่มาของจังหวัด: {Object.entries(provSource).map(([k, v]) => `${k} ${Number(v).toLocaleString('th-TH')} ใบ`).join(' · ')} · </>}
+                    นับเฉพาะใบที่มีชื่อเป็นลูกค้า ใบไม่ระบุชื่อแยกไว้
+                    {range.from && range.from < จังหวัดมีตั้งแต่ && (
+                      <span className="text-amber-700"> · ⚠️ ข้อมูลจังหวัดมีตั้งแต่ {thaiDate(จังหวัดมีตั้งแต่)} ⇒ ใบก่อนนั้นอยู่แถว ไม่ระบุ</span>
+                    )}
+                  </p>
+                </>
+              )
+            })()}
           </div>
 
           {/* 🔴 **เลขบนแท็บนับจากรายที่โหลดมาเท่านั้น** — ตอนถูกตัด มันไม่ใช่ยอดของทั้งช่วง
@@ -708,31 +785,16 @@ export default function CoreCustomersPage() {
               { id: 'all', label: 'ทั้งหมด', count: people.length },
               { id: 'a', label: LAB_A, count: newC.length },
               { id: 'b', label: LAB_B, count: repC.length },
+              { id: 'mk', label: 'Marketplace Username', count: mkC.length },
             ]}
             active={tab}
-            onChange={(id) => { setTab(id as 'all' | 'a' | 'b'); setPage(0) }}
+            onChange={(id) => { setTab(id as 'all' | 'a' | 'b' | 'mk'); setPage(0) }}
           />
           <p className="text-[11.5px] text-gray-400 mt-1">
             แท็บ &ldquo;ทั้งหมด&rdquo; รวมใบที่ไม่ระบุชื่อ
             {unkC.length > 0 && <> และคนที่ยังไม่ทราบสถานะอีก {unkC.length.toLocaleString('th-TH')} ราย</>}
             {' '}⇒ สองแท็บขวาบวกกันไม่เท่าแท็บแรก ·
-            {' '}ZORT มีแท็บที่สามคือ <b>Marketplace Username</b> — คลังเงายังไม่เก็บชื่อผู้ใช้ฝั่งมาร์เก็ตเพลส จึงยังทำไม่ได้
-          </p>
-          {/* 🔴 **สองชิ้นของ ZORT ที่จอนี้ยังไม่พูดถึงเลย** — อ่าน DOM สด `/Dashboard/ContactReport` 4 ต.ค. 2569
-              ① **ตาราง "จังหวัด / จำนวนลูกค้า"** (6 แถว) + select `contactperprovincetype`
-                 เลือกได้ 3 แบบ: จำนวนลูกค้า · จำนวนรายการ · มูลค่ารายการ
-                 ⇒ ของเราทำไม่ได้เพราะท่อ `list=contacts` ส่ง `address` มาเป็นค่าว่างแทบทุกแถว
-                    และนโยบายของท่อปิดบังที่อยู่ไว้บางส่วน (ช่อง note ของเส้นประกาศเอง)
-                 ⚠️ **ห้ามเดาจังหวัดจากเบอร์โทรหรือชื่อ** — จะได้แผนที่ลูกค้าที่ผิดแล้วไม่มีอะไรฟ้อง
-              ② **ปุ่มความละเอียดกราฟ วัน / เดือน / ไตรมาส / ปี** (ZORT มี 4 ปุ่มนี้ในจอนี้)
-                 ของเราใช้ dropdown "ย้อนหลัง N" แทน ⇒ เลือก**ช่วง**ได้ แต่เปลี่ยน**ความละเอียด**ไม่ได้
-              🔑 เขียนไว้เพราะของที่ไม่ถูกเอ่ยถึงจะถูกอ่านว่า "เทียบแล้วตรงกัน" */}
-          <p className="text-[11.5px] text-gray-500 mt-1.5 leading-relaxed">
-            ℹ️ <b>อีกสองชิ้นที่ ZORT มีในจอนี้แต่เรายังไม่มี</b> (วัด 4 ต.ค. 2569) —
-            {' '}① ตาราง <b>&ldquo;จังหวัด / จำนวนลูกค้า&rdquo;</b> (เลือกดูเป็นจำนวนลูกค้า · จำนวนรายการ · มูลค่ารายการ)
-            {' '}⇒ ท่อส่งที่อยู่ลูกค้ามาเป็นค่าว่างแทบทุกแถวและปิดบังไว้บางส่วน <b>จึงยังแยกจังหวัดไม่ได้</b>
-            {' '}· ② ปุ่ม <b>วัน / เดือน / ไตรมาส / ปี</b> ที่เปลี่ยนความละเอียดของกราฟ
-            {' '}⇒ ของเราเลือกได้แค่<b>ช่วงย้อนหลัง</b> เพราะท่อรับเฉพาะจำนวนวัน
+            {tab === 'mk' && <> แท็บ <b>Marketplace Username</b> แสดงชื่อผู้ใช้มาร์เก็ตเพลสของรายที่โหลดมา{truncated ? ' (ไม่ใช่ทุกรายในช่วง — ดูบรรทัดบน)' : ''} · ZORT แยกแถวต่อชื่อผู้ใช้ ของเราแยกต่อชื่อลูกค้า ⇒ คนที่มีหลายชื่อผู้ใช้อยู่แถวเดียว</>}
           </p>
 
           <TableWrap>
@@ -775,8 +837,11 @@ export default function CoreCustomersPage() {
                           <span className="ml-1.5 text-[11.5px] text-gray-400">(หลายคนรวมกัน — เปิดดูรายคนไม่ได้)</span>
                         </>
                       ) : (
-                        <Link href={`/core/customers/detail?name=${encodeURIComponent(p.name)}`}
-                          className="text-[#457ab2] hover:underline font-medium">{p.name}</Link>
+                        <>
+                          <Link href={`/core/customers/detail?name=${encodeURIComponent(p.name)}`}
+                            className="text-[#457ab2] hover:underline font-medium">{tab === 'mk' ? (p.marketplaceNames ?? []).join(' · ') : p.name}</Link>
+                          {tab === 'mk' && <span className="block text-[11.5px] text-gray-400">ชื่อลูกค้า: {p.name}</span>}
+                        </>
                       )}
                     </td>
                     {/* ⚠️ โชว์จำนวนใบต่อช่องทางด้วย — "ซื้อ 4 ใบ" กับ "ซื้อทาง Shopee 4 ใบ"

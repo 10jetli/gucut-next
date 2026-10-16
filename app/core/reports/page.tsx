@@ -52,6 +52,8 @@ interface DeadResp {
   historyFrom?: string
   enoughHistory?: boolean
   cut?: string
+  /** ท่อบอกว่าเรียงแบบไหนจริง — ขอ lastsold (แบบ ZORT) · ไม่ตรง ⇒ จอต้องบอก */
+  sortApplied?: string
   /** ไล่หน้า — ท่อตอบครั้งละ 50 (16 ต.ค. 2569: total 1,543 · rows 50) · **เดินหน้าด้วย nextOffset เท่านั้น** (pagingNote ของท่อ) */
   offset?: number; limit?: number; nextOffset?: number | null
 }
@@ -64,13 +66,21 @@ interface DeadResp {
    เดิมของเราย่อเป็น "ขายไม่ได้เกิน N" ⇒ ความหมายเดียวกัน **แต่คนละคำ**
    ⚠️ กติกา zort-words: คำบนจอต้องเป็นคำเดียวกับ ZORT ห้ามแปลหรือย่อเอง
       เพราะคนที่ชิน ZORT ค้นหาจากคำ ไม่ใช่จากความหมาย */
-const DEAD_RANGES = [
+/* 🗓 16 ต.ค. 2569: ZORT ตัด "N เดือน" แบบปฏิทิน (วันเดียวกันของ N เดือนก่อน) ไม่ใช่นับถอย 30/90 วัน
+   ⇒ ท่อเพิ่ม `months=` ให้ (3841b6f7) · 7 วันยังเป็นจำนวนวันตามคำของ ZORT
+   และ ZORT เรียง "วันที่ขายล่าสุด" ใหม่→เก่า ⇒ ส่ง `sort=lastsold` (ท่อตอบ sortApplied กลับมา) */
+const DEAD_RANGES: { days: number; label: string; months?: number }[] = [
   { days: 7, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 7 วัน' },
-  { days: 30, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 1 เดือน' },
-  { days: 90, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 3 เดือน' },
-  { days: 180, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 6 เดือน' },
-  { days: 365, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 1 ปี' },
+  { days: 30, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 1 เดือน', months: 1 },
+  { days: 90, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 3 เดือน', months: 3 },
+  { days: 180, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 6 เดือน', months: 6 },
+  { days: 365, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 1 ปี', months: 12 },
 ]
+/** พารามิเตอร์ช่วงของเส้น deadstock — ที่เดียว ใช้ทั้งโหลดแรก · เปลี่ยนหน้า · ส่งออก (สามที่ต้องตรงกันเสมอ) */
+const deadQs = (days: number) => {
+  const m = DEAD_RANGES.find((r) => r.days === days)?.months
+  return `${m ? `months=${m}` : `days=${days}`}&sort=lastsold`
+}
 
 export default function CoreProductReportPage() {
   const [stock, setStock] = useState<StockResp | null>(null)
@@ -116,7 +126,7 @@ export default function CoreProductReportPage() {
         fetch('/api/web/core?list=stock&limit=1').then((r) => r.json()),
         // ท่อนี้มีแล้ว · ล้มก็ไม่ทำให้ทั้งจอพัง แค่ตารางสินค้าจมว่าง
         // ⚠️ แต่ต้องจำไว้ว่า "ล้มเพราะอะไร" — ท่อพังกับไม่มีสินค้าจม เขียนเหมือนกันไม่ได้
-        fetch(`/api/web/core?list=deadstock&days=${days}`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/web/core?list=deadstock&${deadQs(days)}`).then((r) => r.json()).catch(() => null),
         // ค่าที่คัดจาก ZORT — ล้มก็แค่ไม่มีบรรทัดเทียบ ไม่ทำให้ทั้งจอพัง
         fetch('/api/web/core?list=categories').then((r) => r.json()).catch(() => null),
         /* 🏬 มูลค่าคงเหลือรายคลัง — ZORT มีการ์ดนี้ในจอเดียวกัน (typeoption: รายคลัง/รายหมวดหมู่)
@@ -153,7 +163,7 @@ export default function CoreProductReportPage() {
   const loadDeadPage = useCallback(async (offset: number) => {
     setDeadBusy(true)
     try {
-      const r = await fetch(`/api/web/core?list=deadstock&days=${deadDays}&offset=${offset}`).then((x) => x.json()).catch(() => null)
+      const r = await fetch(`/api/web/core?list=deadstock&${deadQs(deadDays)}&offset=${offset}`).then((x) => x.json()).catch(() => null)
       setDead(r && !r.error ? r : null)
       setDeadErr(!r ? 'ยิงไปที่ท่อสินค้าจมไม่สำเร็จ' : (typeof r.error === 'string' ? r.error : ''))
     } finally { setDeadBusy(false) }
@@ -498,6 +508,7 @@ export default function CoreProductReportPage() {
               <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-2.5 border-t border-gray-200 text-[12.5px] text-gray-500">
                 <span>
                   แสดง {fmtNum((dead.offset ?? 0) + 1)}–{fmtNum((dead.offset ?? 0) + (dead.rows?.length ?? 0))} จาก {fmtNum(dead.total)} รหัส
+                  {dead.sortApplied !== 'lastsold' && <span className="text-amber-700"> · ⚠️ ลำดับไม่ใช่วันที่ขายล่าสุดแบบ ZORT (ท่อตอบว่าเรียงแบบ {dead.sortApplied || 'ไม่บอก'})</span>}
                   {q.trim() && <span className="text-amber-700"> · ค้นหากรองเฉพาะ {fmtNum(dead.rows?.length ?? 0)} แถวในหน้านี้ (ท่อยังไม่รับคำค้น)</span>}
                 </span>
                 <span className="flex items-center gap-2">
@@ -522,7 +533,7 @@ export default function CoreProductReportPage() {
                     scope: DEAD_RANGES.find((r) => r.days === deadDays)?.label ?? `ไม่มีใบขาย ${deadDays} วัน`,
                     note: dead.historyFrom ? `นับจากใบขายที่คลังเงามีตั้งแต่ ${thaiDate(dead.historyFrom)} เท่านั้น · มูลค่าคิดจากราคาขาย ไม่ใช่ต้นทุน` : 'มูลค่าคิดจากราคาขาย ไม่ใช่ต้นทุน',
                     fetchPage: async (off) => {
-                      const r = await fetch(`/api/web/core?list=deadstock&days=${deadDays}&offset=${off}`).then((x) => x.json())
+                      const r = await fetch(`/api/web/core?list=deadstock&${deadQs(deadDays)}&offset=${off}`).then((x) => x.json())
                       if (!r || !Array.isArray(r.rows)) throw new Error(r?.error || 'ท่อไม่ส่งแถวมา')
                       return { rows: r.rows as DeadRow[], total: typeof r.total === 'number' ? r.total : null, done: typeof r.nextOffset !== 'number' }
                     },
