@@ -6,7 +6,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync, existsSync, statSync, readFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import {tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -301,7 +301,7 @@ test('✅ ย่อนกลับ: ใบในคิวที่โผล่�
  *    ไม่งั้นวันที่เขาแก้ใบ เทสผมจะแดงโดย **อาการไม่ชี้ไปที่เขา** (เจ็บมาแล้ววันนี้)
  */
 test('🎖️ ตัวควบคุมลบจากข้อมูลจริง: nothing-triggers-it มีสตริงในเนื้อ แต่ต้องไม่ถูกนับ', () => {
-  const คลัง = process.env.TEAM_LESSONS || '/home/jetli/claude-shared/en/lessons'
+  const คลัง = process.env.TEAM_LESSONS || join(homedir(), 'claude-shared', 'en', 'lessons')
   const ที่ = join(คลัง, 'nothing-triggers-it.md')
   if (!existsSync(ที่)) {
     /* 🔶 ใบหาย ⇒ **"คุมไม่ได้รอบนี้" ไม่ใช่ "ผ่าน"** — ความเงียบตอนคุมไม่ได้คือข่าวดีปลอม */

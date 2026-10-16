@@ -17,6 +17,7 @@
  *    (ท่าเดียวกับด่านคำสั่ง bash ของทีม — บังคับให้อธิบาย ไม่ใช่ห้ามแข็ง ๆ แล้วมีคนถอดกฎ)
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { fileURLToPath } from 'node:url'
 import { join, relative } from 'node:path'
 import { บอกไฟล์นอกรีโป } from './lib/ของนอกรีโป.mjs'
@@ -42,7 +43,7 @@ const ข้าม = new Set(['node_modules', '.git', '.next', '.next-verify', '
  *
  * ⚠️ ไฟล์เคสอยู่ **นอกรีโป** ⇒ รายงาน mtime ทุกรอบตามกติกาผู้อ่านข้ามรีโป
  *    อ่านไม่ได้ ⇒ **ตัดสินไม่ได้** ไม่ใช่ "ผ่าน" */
-const ไฟล์เคส = process.env.CONFIRM_CASES || '/home/jetli/claude-shared/lib/เคส-ใบอนุญาตยืนยันแล้ว.json'
+const ไฟล์เคส = process.env.CONFIRM_CASES || join(homedir(), 'claude-shared', 'lib', 'เคส-ใบอนุญาตยืนยันแล้ว.json')
 
 /** รูปของฝั่งนี้ — เขียนเองโดยเจตนา แล้วให้เคสร่วมเป็นคนตัดสินว่าถูกไหม */
 const รูปใบอนุญาต = /#[^\S\n]*ยืนยันแล้ว:[^\S\n]*(\S[^\n]{19,})/

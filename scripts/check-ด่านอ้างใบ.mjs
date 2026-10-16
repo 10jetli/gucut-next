@@ -66,6 +66,7 @@
  *       ([[สองจอที่นับคนละอย่างห้ามบังคับให้เท่ากัน]])
  */
 import { readFileSync, existsSync, readdirSync, realpathSync, statSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { join } from 'node:path'
@@ -75,7 +76,7 @@ import { join } from 'node:path'
    ([[ทางที่ไม่เคยถูกเดินคือทางที่ยังไม่รู้ว่าใช้ได้ไหม]]) */
 const ROOT = process.env.GATE_CARDS_ROOT || fileURLToPath(new URL('..', import.meta.url))
 /** คลังทีม — ปลายทางหลักของชื่อใบ (คำตัดสินฝั่งท่อ 14 ต.ค. 2569) */
-const คลังทีม = process.env.TEAM_LESSONS || '/home/jetli/claude-shared/en/lessons'
+const คลังทีม = process.env.TEAM_LESSONS || join(homedir(), 'claude-shared', 'en', 'lessons')
 /** 🔑 **คิวของขั้นรวม** — ที่ที่ผมวางใบใหม่ และฝั่งท่อเป็นคนยกขึ้นคลังทีม
  *
  * ฝั่งท่อขอให้ด่านนี้ดูสองโฟลเดอร์ เพื่อให้มันจับ "ใบที่ถูกอ้างแต่ยังไม่ถูกยก"
@@ -93,7 +94,7 @@ const คลังทีม = process.env.TEAM_LESSONS || '/home/jetli/claude-sh
  * ⚠️ และสถานะนี้ **ต้องไม่ทำให้ด่านแดง** — มันคือคิวของอีกฝั่ง
  *    ถ้าแดง ผมจะบล็อก push ตัวเองด้วยงานของเขา ⇒ แล้วผมจะเลิกอ้างใบใหม่ไปเลย
  *    ⇒ แรงกดดันที่ซื่อสัตย์คือ **อายุของใบในคิว** ไม่ใช่สีแดง */
-const คิวรวม = process.env.TEAM_LESSONS_QUEUE || '/home/jetli/claude-shared/บทเรียนใหม่'
+const คิวรวม = process.env.TEAM_LESSONS_QUEUE || join(homedir(), 'claude-shared', 'บทเรียนใหม่')
 /** ฐานหนี้ "ไม่มีช่องเลย" — เลขเดียว ที่เดียว ([[เลขเกณฑ์ต้องมีที่เดียว]]) */
 const ไฟล์ฐาน = process.env.GATE_CARDS_BASE || join(ROOT, 'scripts', 'lib', 'หนี้ด่านอ้างใบ.json')
 
