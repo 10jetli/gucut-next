@@ -385,6 +385,10 @@ export default function ProductDetailPage() {
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               ลบ
             </Link>
+            {/* คำสั่ง ▾ — ZORT /Product/Details มีแค่ ซื้อสินค้า · ขายสินค้า · โอนสินค้า (อ่านเมนูจาก HTML 16 ต.ค. 2569)
+                ⇒ หยิบสามข้อนี้จากเมนูชุดเดียวกับ ⋮ ในตาราง (ทางไปจริงอยู่ที่เดียว) · ตำแหน่งต่อจาก "ลบ" ตาม ZORT */}
+            <RowMenu label="คำสั่ง" items={productMenuItems(sku, (href) => router.push(href))
+              .filter((it) => ['ซื้อสินค้า', 'ขายสินค้า', 'โอนสินค้า'].includes(it.label))} />
             {/* 🔴 **ห้ามชี้ปุ่มนี้ไป /core/moves** — จอนี้เป็นกระจกของ ZORT
                 สูตรเทียบสต็อกคือ (สต็อกเมื่อวาน − ที่ขายไป + stock_moves) − สต็อกวันนี้จาก ZORT
                 ⇒ เขียนลง stock_moves โดยไม่ยิงกลับ ZORT = สูตรคิดว่ามีของเข้ามาเพิ่ม
@@ -403,21 +407,15 @@ export default function ProductDetailPage() {
               className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
               พิมพ์เอกสาร
             </Link>
-            <Link href="/core/channels"
-              className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
-              อัพเดทช่องทางอื่น
-            </Link>
+            {/* อัพเดทช่องทางอื่น ▾ — ZORT เป็นเมนู 3 ข้อ (อัพเดทจำนวน/ข้อมูลสินค้า · เพิ่มสินค้าไปช่องทางการขายอื่น) · ใช้ชุดเดียวกับเมนูตาราง */}
+            <RowMenu label="อัพเดทช่องทางอื่น" items={productMenuItems(sku, (href) => router.push(href))
+              .filter((it) => it.label.endsWith('ไปช่องทางการขายอื่น'))} />
             {/* ZORT มีปุ่มนี้ — ประวัติว่าใครแก้อะไรเมื่อไหร่ · คลังเงาไม่ได้เก็บเลย */}
             <span
               title="คลังเงาไม่ได้เก็บประวัติว่าใครแก้อะไรเมื่อไหร่ — ดูได้ที่ ZORT เท่านั้น"
               className="text-[12.5px] text-gray-300 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed"
             >
               ดูกิจกรรมของรายการ
-            </span>
-            {/* ZORT มีปุ่ม "คำสั่ง ▾" รวมคำสั่งทั้งหมด — ใช้เมนูชุดเดียวกับ ⋮ ในตาราง */}
-            <span className="inline-flex items-center gap-1 text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-2 py-1">
-              คำสั่ง
-              <RowMenu items={productMenuItems(sku, (href) => router.push(href))} />
             </span>
           </div>
 
