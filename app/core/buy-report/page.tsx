@@ -505,7 +505,7 @@ export default function BuyReportPage() {
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <div className="flex items-center gap-2 mr-auto">
                 <span className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center text-[15px]">📊</span>
-                <p className="text-[15px] font-semibold text-gray-900">ยอดซื้อ รายสินค้า</p>
+                <p className="text-[15px] font-semibold text-gray-900">ยอดซื้อ</p>
               </div>
               {/* 📦 dropdown จัดกลุ่ม — ผังเดียวกับ `tableoption` ของ ZORT
                      (สินค้า · หมวดหมู่ · ผู้ติดต่อ · ผู้ใช้งาน · คลัง/สาขา)
@@ -522,8 +522,9 @@ export default function BuyReportPage() {
                 <option value="sku">สินค้า</option>
                 <option value="category">หมวดหมู่</option>
                 <option value="vendor">ผู้ติดต่อ</option>
-                <option value="warehouse">คลัง/สาขา</option>
+                {/* ลำดับตาม ZORT: สินค้า · หมวดหมู่ · ผู้ติดต่อ · ผู้ใช้งาน · คลัง/สาขา (อ่านจอจริง 16 ต.ค. 2569) */}
                 <option value="user" disabled>ผู้ใช้งาน (กระจกใบซื้อไม่เก็บผู้สร้างใบ)</option>
+                <option value="warehouse">คลัง/สาขา</option>
               </select>
               <input value={itemQ} onChange={(e) => setItemQ(e.target.value)} placeholder="พิมพ์คำค้นหา"
                 className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]" />

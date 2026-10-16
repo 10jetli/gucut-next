@@ -530,6 +530,12 @@ export default function SalesReportPage() {
   const [whItems, setWhItems] = useState<{ sku: string; name: string; qty: number; amount: number }[] | null>(null)
   const [whItemsErr, setWhItemsErr] = useState('')
   const [report, setReport] = useState<Report | null>(null)
+  /** 📦 จัดกลุ่มตารางยอดขาย — `tableoption` ของ ZORT · ทำได้จริงตอนนี้: สินค้า · หมวดหมู่ (ท่อ `topproducts&by=category`) */
+  const [tableBy, setTableBy] = useState<'sku' | 'cat'>('sku')
+  type แถวหมวด = { category: string; qty?: number; amount?: number | null; skus?: number; orders?: number }
+  const [catRows, setCatRows] = useState<แถวหมวด[] | null>(null)
+  const [catErr, setCatErr] = useState('')
+  const [catScope, setCatScope] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [refreshed, setRefreshed] = useState(new Date())
@@ -631,6 +637,32 @@ export default function SalesReportPage() {
   }, [])
 
   useEffect(() => { load(days) }, [load, days])
+
+  /* 📦 ยอดขายตามหมวด — ดึงครบทุกหน้าด้วย nextOffset ของท่อ (ไม่ส่ง limit เอง)
+     ⚠️ ร้อยละต้องหารด้วยผลรวม **ทุกหมวด** ⇒ ต้องได้ครบก่อนถึงจะแสดง · ไม่ครบ = ไม่เขียน % (ไม่เดา)
+     ขอบเขตร้านเดียวกับตารางรายสินค้าข้างกัน (ไม่ส่ง store = ทุกร้าน) ⇒ สองมุมมองเทียบกันได้ */
+  useEffect(() => {
+    if (tableBy !== 'cat' || !report) return
+    let ยกเลิก = false
+    setCatRows(null); setCatErr('')
+    ;(async () => {
+      const rows: แถวหมวด[] = []
+      let off = 0
+      for (let i = 0; i < 40; i++) {
+        const r = await fetch(`/api/web/core?list=topproducts&by=category&from=${report.range.from}&to=${report.range.to}&offset=${off}`)
+          .then((x) => x.json()).catch(() => null)
+        if (ยกเลิก) return
+        if (!r || !Array.isArray(r.items)) { setCatErr(r?.error || 'ท่อไม่ส่งแถวหมวดมา'); return }
+        if (r.applied && r.applied.by !== 'category') { setCatErr('ท่อไม่ได้จัดกลุ่มตามหมวด (applied.by ไม่ตรง)'); return }
+        if (i === 0) setCatScope([r.storeScope, r.amountScope].filter(Boolean).join(' · ').replace(/\*\*/g, ''))
+        rows.push(...r.items)
+        if (typeof r.nextOffset !== 'number') { setCatRows(rows); return }
+        off = r.nextOffset
+      }
+      setCatErr('ไล่หน้าเกิน 40 รอบแล้วยังไม่จบ — ไม่แสดงเพื่อไม่ให้ร้อยละผิด')
+    })()
+    return () => { ยกเลิก = true }
+  }, [tableBy, report])
   /* 🔑 ส่ง **ช่วงวันที่จอกำลังโชว์** ให้ `?costsince=1` ไม่ใช่ทั้งประวัติร้าน
      (สัญญากำกับไว้: ไม่ส่ง from/to = ได้แต่เลขทั้งกระจกซึ่งตัดสินใจไม่ได้) */
   const ประตูกำไร = useประตูกำไร(report?.range.from ?? null, report?.range.to ?? null)
@@ -968,13 +1000,13 @@ export default function SalesReportPage() {
                       🔑 **บางแบบเราทำได้อยู่แล้ว แต่อยู่ที่อื่น** ⇒ ป้ายต้องชี้ทางไปที่นั้น
                          ไม่ใช่เขียน "ยังไม่มี" ทั้งที่มี (คนอ่านจะเลิกหา) */}
                   <select
-                    value="sku"
-                    onChange={() => { /* มีแบบเดียวที่ทำได้จริงในตารางนี้ */ }}
+                    value={tableBy}
+                    onChange={(e) => setTableBy(e.target.value as 'sku' | 'cat')}
                     className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0"
-                    title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้แบบเดียว (รายสินค้า) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
+                    title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้สองแบบ (สินค้า · หมวดหมู่) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
                   >
                     <option value="sku">สินค้า</option>
-                    <option value="cat" disabled>หมวดหมู่ (ท่อพร้อมแล้ว · จอยังไม่ได้ทำ)</option>
+                    <option value="cat">หมวดหมู่</option>
                     <option value="bundle" disabled>สินค้าเป็นชุด (ยังไม่มี — ท่อไม่รวมยอดขายรายชุด)</option>
                     <option value="channel" disabled>ช่องทางการขาย (มีแล้ว — ดูแท็บ &ldquo;ตามช่องทางการขาย&rdquo; ข้างบน)</option>
                     <option value="paych" disabled>ช่องทางการชำระเงิน (ยังไม่มี — ท่อไม่ส่งช่องทางชำระเงินรายใบ)</option>
@@ -995,7 +1027,7 @@ export default function SalesReportPage() {
                        ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์ ⇒ ไม่เขียน คนจะเชื่อว่าค้นครบทุกใบ
                        (คลาสเดียวกับ "ตัวนับกับตัวแถวมาคนละกติกา" ใน CLAUDE.md) */}
                 <p className="text-[11.5px] text-gray-400 px-4 md:px-5 pt-1">
-                  ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum((report.topProducts ?? []).length)} รายการ)
+                  ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum(tableBy === 'cat' ? (catRows ?? []).length : (report.topProducts ?? []).length)} {tableBy === 'cat' ? 'หมวด' : 'รายการ'})
                   {' '}ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์
                   {/* ⑦ หมวดหมู่ใต้ชื่อสินค้า — ท่อส่งมาแล้ว (b0a4aa3) ⇒ ขึ้นจริงในตารางข้างล่าง */}
                 </p>
@@ -1007,6 +1039,62 @@ export default function SalesReportPage() {
                     📌 ขอบเขตของคอลัมน์ <b>ยอดขาย(บาท)</b> — {report.amountScope.replace(/\*\*/g, '')}
                   </p>
                 )}
+                {tableBy === 'cat' ? (
+                  <>
+                    {catScope && (
+                      <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
+                        📌 ขอบเขตของตารางหมวด — {catScope} · ร้อยละเทียบกับผลรวมทุกหมวด (แบบ ZORT) ไม่ใช่ยอดขายรวมของช่วง
+                      </p>
+                    )}
+                    <TableWrap>
+                      <table className="w-full min-w-[560px]">
+                        <thead className="bg-white border-b border-gray-200">
+                          <tr>
+                            <th className={TH}>หมวดหมู่</th>
+                            <th className={THR}>จำนวน</th>
+                            <th className={THR}>ยอดขาย(บาท)</th>
+                            <th className={THR}>ยอดขาย (%)</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(catErr || (catRows && catRows.length === 0)) && (
+                            <EmptyState cols={4} icon={catErr ? '⚠️' : '📊'}
+                              title={catErr ? 'ดึงยอดขายตามหมวดไม่ได้' : 'ยังไม่มียอดขายในช่วงนี้'}
+                              detail={catErr ? `ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะขายไม่ได้ — ${catErr}` : 'ลองขยายช่วงเวลาด้านบน'} />
+                          )}
+                          {!catErr && !catRows && (
+                            <tr><td colSpan={4} className="py-6 text-center text-[12.5px] text-gray-400">กำลังรวมยอดตามหมวด…</td></tr>
+                          )}
+                          {(() => {
+                            const rows = catRows ?? []
+                            /* ผลรวมคิดจากแถวที่ได้ครบแล้วเท่านั้น (ด่านข้างบนไม่ setCatRows ถ้าไล่หน้าไม่จบ) */
+                            const รวม = rows.reduce((a, r) => a + (typeof r.amount === 'number' ? r.amount : 0), 0)
+                            const ไม่รู้ยอด = rows.some((r) => typeof r.amount !== 'number')
+                            const t = tableQ.trim().toLowerCase()
+                            return rows
+                              .filter((r) => !t || String(r.category ?? '').toLowerCase().includes(t))
+                              .map((r) => {
+                                const amount = typeof r.amount === 'number' ? r.amount : null
+                                const share = amount !== null && รวม > 0 && !ไม่รู้ยอด ? (amount / รวม) * 100 : null
+                                return (
+                                  <tr key={r.category} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                    <td className={TD}>{r.category || '(ยังไม่ได้จัดหมวดใน ZORT)'}</td>
+                                    <td className={TDR}>{fmtNum(r.qty)}</td>
+                                    <td className={TDR}>{amount !== null ? fmtMoney(amount) : <span className="text-gray-300">—</span>}</td>
+                                    <td className={TDR}>
+                                      {share !== null
+                                        ? <span className="text-[11.5px] font-semibold text-blue-700 bg-blue-50 rounded px-1.5 py-0.5">{share.toFixed(2)}%</span>
+                                        : <span className="text-gray-300">—</span>}
+                                    </td>
+                                  </tr>
+                                )
+                              })
+                          })()}
+                        </tbody>
+                      </table>
+                    </TableWrap>
+                  </>
+                ) : (
                 <TableWrap>
                   <table className="w-full min-w-[720px]">
                     <thead className="bg-white border-b border-gray-200">
@@ -1067,6 +1155,7 @@ export default function SalesReportPage() {
                     </tbody>
                   </table>
                 </TableWrap>
+                )}
               </Card>
             </>
           )}
