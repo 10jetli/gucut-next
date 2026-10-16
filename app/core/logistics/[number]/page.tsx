@@ -22,7 +22,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import PipeGapFrame from '@/components/zort/PipeGapFrame'
-import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
+import { PageHead, thaiDate, RowMenu } from '@/components/zort'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Row {
@@ -77,7 +77,16 @@ export default function LogisticsDetailPage() {
         summary="รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)" />
       <div className="flex items-center gap-2">
         <Link href="/core/logistics" className="text-[12.5px] text-blue-600 hover:underline">← กลับไปบริการขนส่ง</Link>
-        <BtnGhost onClick={() => void load()} disabled={loading}>โหลดใหม่</BtnGhost>
+      </div>
+      {/* 🧰 แถบปุ่มแบบ ZORT /Logistics/Details (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
+          คำสั่ง ▾ (ส่งสินค้าสำเร็จ) · ส่ง SMS ให้ลูกค้า · พิมพ์ใบแปะกล่อง — ทั้งหมดเป็นการเขียนกลับ ZORT หรือยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ
+          (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
+      <div className="flex flex-wrap items-center gap-2">
+        <RowMenu label="คำสั่ง" items={[{ label: 'ส่งสินค้าสำเร็จ', disabled: 'ยังทำไม่ได้ — เปลี่ยนสถานะใบส่งต้องเขียนกลับ ZORT' }]} />
+        <span title="ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ)"
+          className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ส่ง SMS ให้ลูกค้า</span>
+        <span title="ยังทำไม่ได้ — ใบแปะกล่องต้องใช้ที่อยู่เต็มของผู้รับ ซึ่งเราไม่ได้เก็บ (รอตัดสินเรื่องข้อมูลส่วนบุคคล)"
+          className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">พิมพ์ใบแปะกล่อง</span>
       </div>
 
       {loading && <LoadingState />}
