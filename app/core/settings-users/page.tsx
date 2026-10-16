@@ -67,8 +67,10 @@ interface UserRow {
   active?: boolean
 }
 
-export default async function SettingsUsersPage({ searchParams }: { searchParams?: { q?: string } }) {
-  const q = (searchParams?.q ?? '').trim().toLowerCase()
+export default async function SettingsUsersPage({ searchParams }: { searchParams?: { q?: string | string[]; qname?: string | string[] } }) {
+  /* ช่องค้นหลัก (q) กับช่อง "ชื่อ" ในแผงค้นหาขั้นสูง (qname) — ค่าที่ส่งซ้ำมาเป็นอาเรย์ได้ ⇒ หยิบตัวแรกที่ไม่ว่าง ห้ามเรียก .toLowerCase() บนอาเรย์ */
+  const ค่าแรก = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v) ?? ''
+  const q = (ค่าแรก(searchParams?.qname).trim() || ค่าแรก(searchParams?.q)).trim().toLowerCase()
   const admin = passInfo('SITE_PASSWORD')
   const legacyStaff = passInfo('STAFF_PASSWORD')
   const named = Array.from({ length: 8 }, (_, i) => {
@@ -154,10 +156,27 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
       <form method="get" className="flex items-center gap-3 mb-4">
         <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-3.5 py-1.5 w-[280px]">
           <span className="text-gray-400 text-[12.5px]">🔍</span>
-          <input name="q" defaultValue={searchParams?.q ?? ''} placeholder="ค้นหาผู้ใช้งาน"
+          <input name="q" defaultValue={ค่าแรก(searchParams?.q)} placeholder="ค้นหาผู้ใช้งาน"
             className="flex-1 text-[12.5px] outline-none bg-transparent" />
         </div>
-        <button type="submit" className="text-[12.5px] text-blue-600 hover:underline">ค้นหา</button>
+        {/* ผัง ZORT /User/list: ข้างช่องค้นมีแค่ลิงก์ "ค้นหาขั้นสูง" (แผง #searchAdvance = อีเมล · ชื่อ · อ่านจอ 16 ต.ค. 2569)
+            ปุ่ม "ค้นหา" ของเราเดิมเอาออกจากสายตา — กด Enter ในช่องค้นแทน (ยังเป็นปุ่ม submit ให้โปรแกรมอ่านจอใช้ได้) */}
+        <button type="submit" className="sr-only">ค้นหา</button>
+        {/* <details> ใช้ได้โดยไม่ต้องมี JS — จอนี้เป็น server component */}
+        <details className="relative">
+          <summary className="list-none cursor-pointer text-[12.5px] text-blue-600 hover:underline">ค้นหาขั้นสูง</summary>
+          <div className="absolute z-10 mt-2 w-[320px] bg-white border border-gray-200 rounded-md shadow-lg p-3 space-y-2">
+            <label className="block text-[12.5px] text-gray-600">ชื่อ
+              <input name="qname" defaultValue={ค่าแรก(searchParams?.qname)} placeholder="ชื่อ"
+                className="mt-1 block w-full text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5" />
+            </label>
+            <label className="block text-[12.5px] text-gray-300" title="ผู้ใช้ของเราไม่มีอีเมล — เข้าระบบด้วยรหัสผ่านที่ตั้งใน Netlify/หน้าเว็บ ⇒ ไม่มีอะไรให้ค้น">อีเมล
+              <input disabled placeholder="ผู้ใช้ของเราไม่มีอีเมล"
+                className="mt-1 block w-full text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 cursor-not-allowed" />
+            </label>
+            <button type="submit" className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5" style={{ background: '#4669e5' }}>ค้นหา</button>
+          </div>
+        </details>
         {q && <Link href="/core/settings-users" className="text-[12.5px] text-gray-500 hover:underline">ล้างคำค้น</Link>}
       </form>
 
@@ -246,7 +265,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
               ))}
               {rows.length === 0 && (
                 <tr><td colSpan={6} className="px-3 py-6 text-center text-[12.5px] text-gray-400">
-                  {q ? `ไม่พบผู้ใช้ที่ชื่อตรงกับ "${searchParams?.q}"` : 'ยังไม่ได้ตั้งผู้ใช้'}
+                  {q ? `ไม่พบผู้ใช้ที่ชื่อตรงกับ "${q}"` : 'ยังไม่ได้ตั้งผู้ใช้'}
                 </td></tr>
               )}
             </tbody>
