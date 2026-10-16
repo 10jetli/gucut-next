@@ -1,6 +1,6 @@
 'use client'
 // รายงาน → สินค้า — **ลอกจาก `zort-ui/57-zort-รายงาน-สินค้า.jpg`**
-// ผัง: ชื่อจอ "สินค้า" → สองการ์ดคู่ (สรุปมูลค่าสินค้าทั้งหมด | มูลค่าสินค้าคงเหลือรายคลัง)
+// ผัง: ชื่อจอ "สินค้า" → สองการ์ดคู่ (สรุปมูลค่าสินค้าทั้งหมด | มูลค่าสินค้าคงเหลือรายคลัง) → สินค้าจม → สต็อกที่ต้องดู → ล็อตใกล้หมดอายุ (ลำดับตาม ZORT 16 ต.ค. 2569)
 //      → การ์ด "สินค้าจม": รหัสสินค้า · สินค้า (หมวดหมู่ตัวเล็กใต้ชื่อ) · วันที่ขายล่าสุด ·
 //        จำนวนคงเหลือ · มูลค่าสินค้าคงเหลือ (บาท)
 //
@@ -416,59 +416,6 @@ export default function CoreProductReportPage() {
             </Card>
           </div>
 
-          {/* 📉 การ์ด "สินค้าหมด / คงเหลือน้อย" — ZORT มีสองการ์ดนี้ในจอเดียวกัน
-                 🔴 **ไม่ลอกชื่อ ZORT มาทั้งดุ้น** เพราะนับคนละอย่าง:
-                    · ของเรา `out` = คงเหลือ **≤ 0 (รวมติดลบ)** · ของ ZORT "สินค้าหมด" = 0 พอดี
-                    · ของเรา `low` = **คงเหลือ 1–3 ชิ้น (เกณฑ์ของระบบเราเอง)**
-                      ZORT คิด "ใกล้หมด" จาก **กลุ่ม Lead Time** (`/LeadTimeGroup`) ซึ่ง **ร้านยังไม่ได้ตั้งสักกลุ่ม**
-                      ⇒ ตารางฝั่ง ZORT ว่างเพราะคำนวณไม่ได้ ไม่ใช่เพราะไม่มีของใกล้หมด (ฝั่งท่อไล่สเปกมาให้ 16 ก.ย. 2569)
-                 ⇒ เขียนเกณฑ์ไว้ข้างตัวเลขทุกตัว ไม่ให้ใครอ่านว่าเท่ากับของ ZORT */}
-          {stockCounts && (
-            <Card className="mt-4">
-              <p className="text-[15px] font-semibold text-gray-900 mb-2">สต็อกที่ต้องดู</p>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="border border-gray-200 rounded-md px-3 py-2.5">
-                  <p className="text-[12.5px] text-gray-500">คงเหลือ 0 หรือติดลบ</p>
-                  <p className="text-[22px] font-semibold text-red-500 leading-tight">{fmtNum(stockCounts.outOfStock ?? 0)}</p>
-                  <p className="text-[11.5px] text-gray-400 leading-relaxed">
-                    รวมของที่<b>ติดลบ {fmtNum(stockCounts.negative ?? 0)} รหัส</b>ไว้ด้วย
-                    {' '}· ZORT นับ &ldquo;สินค้าหมด&rdquo; เฉพาะ 0 พอดี ⇒ เลขนี้จะมากกว่าของ ZORT
-                  </p>
-                </div>
-                <div className="border border-gray-200 rounded-md px-3 py-2.5">
-                  <p className="text-[12.5px] text-gray-500">คงเหลือ 1–3 ชิ้น</p>
-                  <p className="text-[22px] font-semibold text-amber-600 leading-tight">{fmtNum(stockCounts.low ?? 0)}</p>
-                  <p className="text-[11.5px] text-gray-400 leading-relaxed">
-                    <b>เกณฑ์ของระบบเราเอง</b> — ไม่ใช่ &ldquo;ใกล้หมด&rdquo; แบบ ZORT
-                  </p>
-                </div>
-                <div className="border border-gray-200 rounded-md px-3 py-2.5">
-                  <p className="text-[12.5px] text-gray-500">สินค้าทั้งหมดในทะเบียน</p>
-                  <p className="text-[22px] font-semibold text-gray-900 leading-tight">{fmtNum(stockCounts.total ?? 0)}</p>
-                  <p className="text-[11.5px] text-gray-400">ใช้เป็นตัวส่วนของสองช่องซ้าย</p>
-                </div>
-              </div>
-              <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 leading-relaxed">
-                ⚠️ ZORT มีการ์ด &ldquo;สินค้าใกล้หมด&rdquo; ที่คิดจาก <b>กลุ่ม Lead Time</b> (ตั้งที่หน้า /LeadTimeGroup ของ ZORT)
-                {' '}ซึ่ง<b>ร้านยังไม่ได้ตั้งสักกลุ่ม</b> ⇒ ตารางฝั่ง ZORT ว่างเพราะคำนวณไม่ได้
-                {' '}· ของเรา<b>ยังไม่ทำแบบนั้น</b> และ<b>ไม่เดาเกณฑ์เอง</b>
-              </p>
-              {/* 🔴 **สองชิ้นที่ ZORT มีในจอนี้แต่เรายังไม่มี — ต้องเขียนไว้ ไม่ใช่เงียบ**
-                  อ่าน DOM สด 4 ต.ค. 2569: จอ `/Dashboard/ProductReport` มี
-                    ① ตัวกรองคลังของกล่องสินค้าใกล้หมด (`lowstockwarehouseid` = ทั้งหมด·โกดัง·KLD·ANJ)
-                    ② **กล่องที่ห้า "ล็อตใกล้หมดอายุ"** พร้อมตัวกรองคลังชุดเดียวกัน
-                  ⇒ ของเรามี 4 กล่อง เขามี 5 · และกล่องสินค้าใกล้หมดของเราไม่แยกคลัง
-                  ⚠️ เขียนไว้เพราะ **ช่องที่เว้นว่างจะถูกอ่านว่า "ไม่มีอะไรขาด"** */}
-              <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
-                ℹ️ <b>ที่จอนี้ยังไม่มีเทียบกับ ZORT</b> (วัด 4 ต.ค. 2569) —
-                {' '}① <b>ตัวกรองคลัง</b> ของกล่องสินค้าใกล้หมด (ZORT เลือก ทั้งหมด / โกดัง / KLD / ANJ ได้ · ของเรารวมทุกคลัง)
-                {' '}② กล่อง <b>&ldquo;ล็อตใกล้หมดอายุ&rdquo;</b> — ZORT มีเป็นกล่องที่ห้าในจอเดียวกัน
-                {' '}ของเรายังไม่มีเพราะ<b>คลังเราไม่ได้เก็บล็อต/วันหมดอายุ</b> (สินค้าเป็นอะไหล่ ไม่มีวันหมดอายุ)
-                {' '}⇒ ไม่ใช่ &ldquo;ลืมทำ&rdquo; แต่ต้องมีข้อมูลล็อตก่อนจึงทำได้
-              </p>
-            </Card>
-          )}
-
           <Card padded={false} className="mt-4">
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <p className="text-[15px] font-semibold text-gray-900 mr-auto">สินค้าจม</p>
@@ -578,6 +525,85 @@ export default function CoreProductReportPage() {
               )}
             </div>
           )}
+
+          {/* 📉 การ์ด "สินค้าหมด / คงเหลือน้อย" — ZORT มีสองการ์ดนี้ในจอเดียวกัน
+                 🔴 **ไม่ลอกชื่อ ZORT มาทั้งดุ้น** เพราะนับคนละอย่าง:
+                    · ของเรา `out` = คงเหลือ **≤ 0 (รวมติดลบ)** · ของ ZORT "สินค้าหมด" = 0 พอดี
+                    · ของเรา `low` = **คงเหลือ 1–3 ชิ้น (เกณฑ์ของระบบเราเอง)**
+                      ZORT คิด "ใกล้หมด" จาก **กลุ่ม Lead Time** (`/LeadTimeGroup`) ซึ่ง **ร้านยังไม่ได้ตั้งสักกลุ่ม**
+                      ⇒ ตารางฝั่ง ZORT ว่างเพราะคำนวณไม่ได้ ไม่ใช่เพราะไม่มีของใกล้หมด (ฝั่งท่อไล่สเปกมาให้ 16 ก.ย. 2569)
+                 ⇒ เขียนเกณฑ์ไว้ข้างตัวเลขทุกตัว ไม่ให้ใครอ่านว่าเท่ากับของ ZORT */}
+          {stockCounts && (
+            <Card className="mt-4">
+              <p className="text-[15px] font-semibold text-gray-900 mb-2">สต็อกที่ต้องดู</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="border border-gray-200 rounded-md px-3 py-2.5">
+                  <p className="text-[12.5px] text-gray-500">คงเหลือ 0 หรือติดลบ</p>
+                  <p className="text-[22px] font-semibold text-red-500 leading-tight">{fmtNum(stockCounts.outOfStock ?? 0)}</p>
+                  <p className="text-[11.5px] text-gray-400 leading-relaxed">
+                    รวมของที่<b>ติดลบ {fmtNum(stockCounts.negative ?? 0)} รหัส</b>ไว้ด้วย
+                    {' '}· ZORT นับ &ldquo;สินค้าหมด&rdquo; เฉพาะ 0 พอดี ⇒ เลขนี้จะมากกว่าของ ZORT
+                  </p>
+                </div>
+                <div className="border border-gray-200 rounded-md px-3 py-2.5">
+                  <p className="text-[12.5px] text-gray-500">คงเหลือ 1–3 ชิ้น</p>
+                  <p className="text-[22px] font-semibold text-amber-600 leading-tight">{fmtNum(stockCounts.low ?? 0)}</p>
+                  <p className="text-[11.5px] text-gray-400 leading-relaxed">
+                    <b>เกณฑ์ของระบบเราเอง</b> — ไม่ใช่ &ldquo;ใกล้หมด&rdquo; แบบ ZORT
+                  </p>
+                </div>
+                <div className="border border-gray-200 rounded-md px-3 py-2.5">
+                  <p className="text-[12.5px] text-gray-500">สินค้าทั้งหมดในทะเบียน</p>
+                  <p className="text-[22px] font-semibold text-gray-900 leading-tight">{fmtNum(stockCounts.total ?? 0)}</p>
+                  <p className="text-[11.5px] text-gray-400">ใช้เป็นตัวส่วนของสองช่องซ้าย</p>
+                </div>
+              </div>
+              <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-3 leading-relaxed">
+                ⚠️ ZORT มีการ์ด &ldquo;สินค้าใกล้หมด&rdquo; ที่คิดจาก <b>กลุ่ม Lead Time</b> (ตั้งที่หน้า /LeadTimeGroup ของ ZORT)
+                {' '}ซึ่ง<b>ร้านยังไม่ได้ตั้งสักกลุ่ม</b> ⇒ ตารางฝั่ง ZORT ว่างเพราะคำนวณไม่ได้
+                {' '}· ของเรา<b>ยังไม่ทำแบบนั้น</b> และ<b>ไม่เดาเกณฑ์เอง</b>
+              </p>
+              {/* 🔴 ที่ ZORT มีแต่กล่องนี้ยังไม่มี — เขียนไว้ เพราะช่องที่เว้นว่างจะถูกอ่านว่า "ไม่มีอะไรขาด"
+                  (กล่อง "ล็อตใกล้หมดอายุ" ย้ายไปเป็นการ์ดของตัวเองตามผัง ZORT แล้ว 16 ต.ค. 2569) */}
+              <p className="text-[11.5px] text-gray-500 mt-2 leading-relaxed">
+                ℹ️ <b>ที่กล่องนี้ยังไม่มีเทียบกับ ZORT</b> (วัด 4 ต.ค. 2569) —
+                {' '}<b>ตัวกรองคลัง</b> ของกล่องสินค้าใกล้หมด (ZORT เลือก ทั้งหมด / โกดัง / KLD / ANJ ได้ · ของเรารวมทุกคลัง)
+              </p>
+            </Card>
+          )}
+
+          {/* 🧾 การ์ด "ล็อตใกล้หมดอายุ" — ผังเดียวกับ ZORT (/Dashboard/ProductReport อ่านจอจริง 16 ต.ค. 2569:
+                 หัวการ์ด + ตัวเลือกคลัง `lowexpirylotwarehouseid` + ตาราง ล็อต/สินค้า/วันหมดอายุ/จำนวนคงเหลือ · ZORT ขึ้น 0 แถว)
+                 ระบบเรายังไม่เก็บล็อต/วันหมดอายุ ⇒ แสดงผังพร้อมเหตุ ไม่เดาแถว · ตัวเลือกคลังปิดไว้เพราะไม่มีอะไรให้กรอง */}
+          <Card padded={false} className="mt-4">
+            <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
+              <p className="text-[15px] font-semibold text-gray-900 mr-auto">ล็อตใกล้หมดอายุ</p>
+              <select disabled className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-gray-50 text-gray-400 max-w-full">
+                <option>ทั้งหมด</option>
+                {(whs ?? []).map((w) => <option key={w.code}>{w.name || w.code}</option>)}
+              </select>
+            </div>
+            <TableWrap>
+              <table className="w-full min-w-[560px]">
+                <thead className="bg-white border-b border-gray-200">
+                  <tr>
+                    <th className={TH}>ล็อต</th>
+                    <th className={TH}>สินค้า</th>
+                    <th className={TH}>วันหมดอายุ</th>
+                    <th className={THR}>จำนวนคงเหลือ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <EmptyState
+                    cols={4}
+                    icon="🧾"
+                    title="ระบบเรายังไม่เก็บข้อมูลล็อต"
+                    detail="ตารางนี้ว่างเพราะยังไม่มีข้อมูลล็อต/วันหมดอายุในระบบเรา ไม่ได้แปลว่าตรวจแล้วไม่มี · ฝั่ง ZORT ตารางนี้ก็ขึ้น 0 แถว (อ่านจอ ZORT 16 ต.ค. 2569 · ทุกคลัง)"
+                  />
+                </tbody>
+              </table>
+            </TableWrap>
+          </Card>
 
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             การวิเคราะห์ยอดขาย (ยอดรายเดือน · ช่องทางที่ทำเงิน · สินค้าขายดี) ย้ายไปอยู่ที่
