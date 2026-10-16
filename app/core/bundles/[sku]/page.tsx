@@ -314,7 +314,7 @@ export default function BundleDetailPage() {
 
             <Link href="/core/soon/bundle-push-marketplace" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">อัพเดทช่องทางอื่น ▾</Link>
             <Link href="/core/soon/bundle-activity" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">ดูกิจกรรมของรายการ</Link>
-            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Bundle/Details ไม่มี (อ่านปุ่มทั้งหน้า) */}
           </div>
 
           <div className="bg-white border border-gray-200 rounded-md p-5 mt-3 flex flex-wrap gap-6">

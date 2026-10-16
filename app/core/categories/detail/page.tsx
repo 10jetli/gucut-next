@@ -97,9 +97,7 @@ function Inner() {
               className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5" style={{ background: '#4669e5' }}>
               เปิดในจอสินค้า
             </Link>
-            {/* รีเฟรช = โหลดหน้าที่กำลังดูซ้ำ ไม่ใช่กระโดดกลับหน้าแรก
-                (ส่ง offset เองเสมอ — ปล่อย onClick={load} ตรง ๆ จะส่ง MouseEvent ไปเป็นเลขหน้า) */}
-            <BtnGhost onClick={() => load(offset)} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT ไม่มีปุ่มรีเฟรชในจอไหนเลยที่อ่านมา */}
           </div>
         }
       />

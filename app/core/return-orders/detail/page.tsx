@@ -13,7 +13,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, BtnGhost, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus } from '@/components/zort'
 
 interface Line {
   sku?: string; name?: string; qty?: number; unit?: string
@@ -69,7 +69,7 @@ function Inner() {
       <p className="text-[12.5px] mb-2"><Link href="/core/return-orders" className="text-blue-600 hover:underline">‹ รับคืนสินค้า</Link></p>
       <PageHead title={`ใบคืนสินค้า ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก</span>}
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT จอรายละเอียดเอกสารไม่มี */ />
 
       {/* 🔴 กล่องนี้ต้องบอก **สามอย่างที่ต่างกัน** ไม่ใช่ประโยคเดียวคลุมทุกกรณี
              · เลขผิดรูป ⇒ ยังไม่ได้ถาม ZORT เลย  · ติดต่อ ZORT ไม่ได้ ⇒ ยังไม่รู้ว่ามีใบไหม

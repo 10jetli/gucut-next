@@ -23,7 +23,7 @@ import { SALE_STATUS, PAY_STATUS, PURCHASE_STATUS, CONTACT_TYPE, zortWord } from
 import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost } from '@/components/zort'
+import { PageHead } from '@/components/zort'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
 interface Order {
@@ -118,7 +118,7 @@ function Inner() {
       </p>
       <PageHead title={d?.name || key || 'ลูกค้า'}
         summary={<span className="text-gray-400">ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา</span>}
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Contact/ContactDetail ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า) */ />
 
       {/* 🔴 **ข้อจำกัดการจับคู่ต้องอยู่ใต้ชื่อลูกค้า ไม่ใช่ท้ายจอ** (ย้ายขึ้นมา 12 ก.ย. 2569)
           มันตอบคำถามว่า "ใบพวกนี้เป็นของคนนี้จริงไหม" ⇒ กำกับ**ทุกอย่างที่อยู่ใต้มัน**
