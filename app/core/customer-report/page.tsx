@@ -135,7 +135,9 @@ export default function CoreCustomersPage() {
   /** จำนวนใบทั้งช่วงที่ท่อนับให้ (ไม่ถูกตัดที่ 500 ราย) — null = ท่อไม่ส่ง ⇒ ถอยไปบวกจากแถวพร้อมบอกว่าเป็นของรายที่แสดง */
   const [totalOrders, setTotalOrders] = useState<number | null>(null)
   /** มุมมองการ์ดจำนวนลูกค้า — ผังเดียวกับ dropdown `typeoption` ของ ZORT (จำนวนลูกค้า/ยอดขาย) */
-  // ตั้งต้น = ยอดขาย แบบ ZORT (#typeoption selected = ยอดขาย · อ่านจอ 16 ต.ค. 2569)
+  // ตั้งต้น = ยอดขาย ตามที่จอ ZORT ขึ้น (#typeoption selected = ยอดขาย · อ่านจอ 16 ต.ค. 2569)
+  // ⚠️ ZORT จำตัวกรองที่ใช้ครั้งก่อนได้ (จอยอดขายของเขาค้างช่วง ส.ค. ที่มีคนตั้งไว้) ⇒ ค่านี้อาจเป็นค่าที่ ZORT จำไว้ ไม่ใช่ค่าตั้งต้นจริง
+  //    ยืนยันได้ด้วยบัญชี ZORT ที่ไม่เคยเปิดจอนี้ — ยังไม่ได้ทำ
   const [cardBy, setCardBy] = useState<'people' | 'sales'>('sales')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
