@@ -531,7 +531,7 @@ export default function SalesReportPage() {
   const [whItemsErr, setWhItemsErr] = useState('')
   const [report, setReport] = useState<Report | null>(null)
   /** 📦 จัดกลุ่มตารางยอดขาย — `tableoption` ของ ZORT · ทำได้จริงตอนนี้: สินค้า · หมวดหมู่ (ท่อ `topproducts&by=category`) */
-  const [tableBy, setTableBy] = useState<'sku' | 'cat'>('sku')
+  const [tableBy, setTableBy] = useState<'sku' | 'cat' | 'channel' | 'wh'>('sku')
   type แถวหมวด = { category: string; qty?: number; amount?: number | null; skus?: number; orders?: number }
   const [catRows, setCatRows] = useState<แถวหมวด[] | null>(null)
   const [catErr, setCatErr] = useState('')
@@ -677,7 +677,7 @@ export default function SalesReportPage() {
         ⇒ ตอนนี้ท่อส่ง `byWarehouse` มาให้ครบทุกแถวรวมแถว `code: ""` (ยังไม่รู้คลัง) และผลรวมเท่ากับ stores เป๊ะ
      ⚠️ ไม่มีคีย์ `byWarehouse` = ท่อรุ่นเก่า ⇒ **ยังไม่รู้** ห้ามโชว์ 0 */
   useEffect(() => {
-    if (tab !== 'branch' || !report) return
+    if ((tab !== 'branch' && tableBy !== 'wh') || !report) return
     let dead = false
     setWhLoading(true); setWhSalesErr('')
     const { from, to } = report.range
@@ -712,7 +712,7 @@ export default function SalesReportPage() {
       .catch((e) => { if (!dead) { setWhSales(null); setWhSalesErr(String(e instanceof Error ? e.message : e)) } })
       .finally(() => { if (!dead) setWhLoading(false) })
     return () => { dead = true }
-  }, [tab, report])
+  }, [tableBy, tab, report])
 
   /* 🏬 ตารางสินค้าในแท็บคลัง — ZORT มี และกรองตามคลังที่เลือก (ท่อเปิด `topproducts&warehouse=` ให้แล้ว 01fbeb1)
      ⚠️ **ยอดตรงนี้คิดจากบรรทัดสินค้า** ส่วนยอดในตารางคลังคิดจากหัวใบ (รวมส่วนลดท้ายบิล/ค่าส่ง)
@@ -1001,20 +1001,20 @@ export default function SalesReportPage() {
                          ไม่ใช่เขียน "ยังไม่มี" ทั้งที่มี (คนอ่านจะเลิกหา) */}
                   <select
                     value={tableBy}
-                    onChange={(e) => setTableBy(e.target.value as 'sku' | 'cat')}
+                    onChange={(e) => setTableBy(e.target.value as 'sku' | 'cat' | 'channel' | 'wh')}
                     className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0"
-                    title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้สองแบบ (สินค้า · หมวดหมู่) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
+                    title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้สี่แบบ (สินค้า · หมวดหมู่ · ช่องทางการขาย · คลัง/สาขา) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
                   >
                     <option value="sku">สินค้า</option>
                     <option value="cat">หมวดหมู่</option>
                     <option value="bundle" disabled>สินค้าเป็นชุด (ยังไม่มี — ท่อไม่รวมยอดขายรายชุด)</option>
-                    <option value="channel" disabled>ช่องทางการขาย (มีแล้ว — ดูแท็บ &ldquo;ตามช่องทางการขาย&rdquo; ข้างบน)</option>
+                    <option value="channel">ช่องทางการขาย</option>
                     <option value="paych" disabled>ช่องทางการชำระเงิน (ยังไม่มี — ท่อไม่ส่งช่องทางชำระเงินรายใบ)</option>
                     <option value="customer" disabled>ลูกค้า (มีแล้ว — ดูจอ รายงาน → ลูกค้า)</option>
                     <option value="tier" disabled>กลุ่มลูกค้า (ยังไม่มี — ร้านยังไม่ได้ตั้งกลุ่มลูกค้าใน ZORT)</option>
                     <option value="agent" disabled>ตัวแทนจำหน่าย (ยังไม่มี — ร้านยังไม่มีตัวแทนจำหน่ายใน ZORT)</option>
                     <option value="user" disabled>ผู้ใช้งาน (ยังไม่มี — กระจกใบขายไม่เก็บผู้สร้างใบ)</option>
-                    <option value="wh" disabled>คลัง/สาขา (มีแล้ว — ดูแท็บ &ldquo;ตามคลัง/สาขา&rdquo; ข้างบน)</option>
+                    <option value="wh">คลัง/สาขา</option>
                   </select>
                   <input
                     value={tableQ}
@@ -1027,19 +1027,72 @@ export default function SalesReportPage() {
                        ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์ ⇒ ไม่เขียน คนจะเชื่อว่าค้นครบทุกใบ
                        (คลาสเดียวกับ "ตัวนับกับตัวแถวมาคนละกติกา" ใน CLAUDE.md) */}
                 <p className="text-[11.5px] text-gray-400 px-4 md:px-5 pt-1">
-                  ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum(tableBy === 'cat' ? (catRows ?? []).length : (report.topProducts ?? []).length)} {tableBy === 'cat' ? 'หมวด' : 'รายการ'})
+                  ช่องค้นหานี้กรอง<b>เฉพาะรายการที่โหลดมาแล้ว</b> ({fmtNum(tableBy === 'cat' ? (catRows ?? []).length : tableBy === 'channel' ? new Set(report.channels.map((c) => c.name)).size : tableBy === 'wh' ? (whSales ?? []).length : (report.topProducts ?? []).length)} {tableBy === 'cat' ? 'หมวด' : tableBy === 'channel' ? 'ช่องทาง' : tableBy === 'wh' ? 'คลัง' : 'รายการ'})
                   {' '}ไม่ใช่ค้นทั้งช่วงเวลาที่เซิร์ฟเวอร์
                   {/* ⑦ หมวดหมู่ใต้ชื่อสินค้า — ท่อส่งมาแล้ว (b0a4aa3) ⇒ ขึ้นจริงในตารางข้างล่าง */}
                 </p>
                 {/* ⚠️ ขอบเขตของ "ยอดขาย(บาท)" — มาจากท่อ ไม่ได้พิมพ์เอง
                     พิมพ์เองเมื่อไหร่ก็กลายเป็นคำค้างวันที่ท่อเปลี่ยนกติกา (บทเรียนใบ S4) */}
-                {report.amountScope && (
+                {report.amountScope && tableBy === 'sku' && (
                   <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200
                     rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
                     📌 ขอบเขตของคอลัมน์ <b>ยอดขาย(บาท)</b> — {report.amountScope.replace(/\*\*/g, '')}
                   </p>
                 )}
-                {tableBy === 'cat' ? (
+                {(tableBy === 'channel' || tableBy === 'wh') ? (() => {
+                  /* ช่องทาง/คลัง แบบ ZORT: ชื่อ · ยอดขาย(บาท) · ยอดขาย (%) — % หารผลรวมของแถวในตารางนี้เอง
+                     ช่องทาง: report.channels (หัวใบ · ชื่อเดียวกันต่างร้านรวมเป็นแถวเดียว) · คลัง: orderfacets&warehouses=1
+                     ⚠️ ยอดหัวใบ ≠ ยอดบรรทัดสินค้าในมุมมองสินค้า/หมวด (หัวใบรวมส่วนลดท้ายบิลกับค่าส่ง) */
+                  const ชื่อหัว = tableBy === 'channel' ? 'ช่องทางการขาย' : 'คลัง/สาขา'
+                  let rows: { key: string; label: string; sales: number }[] | null
+                  let err = ''
+                  if (tableBy === 'channel') {
+                    const m = new Map<string, number>()
+                    for (const c of report.channels) m.set(c.name, (m.get(c.name) ?? 0) + (Number(c.sales) || 0))
+                    rows = Array.from(m, ([k, v]) => ({ key: k, label: k, sales: v }))
+                  } else {
+                    err = whSalesErr
+                    rows = whSales ? whSales.map((w) => ({ key: w.code || '(ไม่รู้คลัง)', label: w.code ? `${w.name || w.code} (${w.code})` : 'ยังไม่รู้คลัง', sales: Number(w.sales) || 0 })) : null
+                  }
+                  const t = tableQ.trim().toLowerCase()
+                  const รวม = (rows ?? []).reduce((a, r) => a + r.sales, 0)
+                  const shownRows = (rows ?? []).filter((r) => !t || r.label.toLowerCase().includes(t)).sort((a, b) => b.sales - a.sales)
+                  return (
+                    <>
+                      <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
+                        📌 ยอดในมุมมองนี้คิดจาก<b>หัวใบ</b> (รวมส่วนลดท้ายบิลกับค่าส่ง) ทุกร้านรวมกัน — ไม่เท่ากับมุมมองสินค้า/หมวดที่คิดจากบรรทัดสินค้า เป็นเรื่องปกติ
+                        {' '}· ร้อยละเทียบกับผลรวมของแถวในตารางนี้
+                      </p>
+                      <TableWrap>
+                        <table className="w-full min-w-[520px]">
+                          <thead className="bg-white border-b border-gray-200">
+                            <tr>
+                              <th className={TH}>{ชื่อหัว}</th>
+                              <th className={THR}>ยอดขาย(บาท)</th>
+                              <th className={THR}>ยอดขาย (%)</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {err && <EmptyState cols={3} icon="⚠️" title={`ดึงยอดตาม${ชื่อหัว}ไม่ได้`} detail={`ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะขายไม่ได้ — ${err}`} />}
+                            {!err && rows === null && <tr><td colSpan={3} className="py-6 text-center text-[12.5px] text-gray-400">กำลังรวมยอดตาม{ชื่อหัว}…</td></tr>}
+                            {!err && rows !== null && rows.length === 0 && <EmptyState cols={3} icon="📊" title="ยังไม่มียอดขายในช่วงนี้" detail="ลองขยายช่วงเวลาด้านบน" />}
+                            {shownRows.map((r) => (
+                              <tr key={r.key} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
+                                <td className={TD}>{tableBy === 'channel' ? <ChannelTag name={r.label} /> : r.label}</td>
+                                <td className={TDR}>{fmtMoney(r.sales)}</td>
+                                <td className={TDR}>
+                                  {รวม > 0
+                                    ? <span className="text-[11.5px] font-semibold text-blue-700 bg-blue-50 rounded px-1.5 py-0.5">{((r.sales / รวม) * 100).toFixed(2)}%</span>
+                                    : <span className="text-gray-300">—</span>}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </TableWrap>
+                    </>
+                  )
+                })() : tableBy === 'cat' ? (
                   <>
                     {catScope && (
                       <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
