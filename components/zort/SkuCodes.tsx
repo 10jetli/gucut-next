@@ -15,7 +15,7 @@ import { useEffect, useState } from 'react'
 import { code128b, code128Svg } from '@/lib/barcode128'
 import { qrEncode } from '@/lib/qr'
 
-type State = 'loading' | 'have' | 'none' | 'unknown' | 'error'
+type State = 'loading' | 'have' | 'none' | 'unknown' | 'error' | 'missing'
 
 export default function SkuCodes({ sku }: { sku: string }) {
   const [barcode, setBarcode] = useState<string | null>(null)
@@ -42,8 +42,12 @@ export default function SkuCodes({ sku }: { sku: string }) {
         if (!alive) return
         if (d?.error) { setState('error'); setErr(String(d.error)); return }
         const row = Array.isArray(d?.rows) ? d.rows.find((x: { sku?: string }) => x?.sku === sku) : null
-        /* ⚠️ failed = ยิงแล้วล่ม · missing = ท่อไม่รู้จักรหัสนี้ — ทั้งคู่คือ "ยังไม่รู้" ไม่ใช่ "ไม่มี" */
-        if (!row) { setState('unknown'); return }
+        /* 16 ต.ค. 2569 ท่อประกาศ (หลังแก้บั๊ก 502): missing = ZORT ตอบว่าไม่มีรหัสนี้ = **คำตอบ** · failed = ถามไม่สำเร็จ = ยังไม่รู้
+           ⇒ แยกสองอย่างนี้ออกจากกัน · รหัสที่ failed ห้ามพิมพ์ฉลาก (ข้อความ unknown บอกอยู่แล้ว) */
+        if (!row) {
+          const ใน = (k: string) => Array.isArray(d?.[k]) && d[k].some((x: unknown) => (typeof x === 'string' ? x : (x as { sku?: string })?.sku) === sku)
+          setState(ใน('missing') && !ใน('failed') ? 'missing' : 'unknown'); return
+        }
         if (typeof row.barcode === 'string' && row.barcode.trim()) { setBarcode(row.barcode.trim()); setState('have'); return }
         setState(row.noBarcode ? 'none' : 'unknown')
       })
@@ -103,6 +107,12 @@ export default function SkuCodes({ sku }: { sku: string }) {
           <p className="text-[11.5px] text-amber-800 mt-1 leading-relaxed">
             ⚠️ <b>ZORT ไม่มีบาร์โค้ดของรายการนี้</b> — รูปข้างบนวาดจาก<b>รหัสสินค้า</b>
             {' '}สแกนแล้วจะได้ <span className="font-mono">{sku}</span> ไม่ใช่เลขบาร์โค้ด
+          </p>
+        )}
+        {state === 'missing' && (
+          <p className="text-[11.5px] text-amber-800 mt-1 leading-relaxed">
+            ⚠️ <b>ZORT ตอบว่าไม่มีรหัสนี้ในระบบ</b> จึงไม่มีบาร์โค้ด — รูปข้างบนวาดจาก<b>รหัสสินค้า</b>
+            {' '}สแกนแล้วจะได้ <span className="font-mono">{sku}</span>
           </p>
         )}
         {state === 'unknown' && (
