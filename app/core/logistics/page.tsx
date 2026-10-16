@@ -35,7 +35,7 @@ import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSe
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark, PageNav,} from '@/components/zort'
 
 interface Row {
@@ -301,10 +301,10 @@ export default function LogisticsPage() {
         placeholder="เลขพัสดุ ชื่อผู้รับ เลขที่ใบขาย"
         advanced={
           <>
-            <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
-            {/* 🔴 โชว์ลิงก์แผงเฉพาะเมื่อท่อ **สะท้อนคีย์ from กลับมา** — ท่อรุ่นก่อนเมินเงียบ
+            {/* ลิงก์ "ค้นหา ·" เอาออก 16 ต.ค. 2569 — ZORT /Logistics/list ข้างช่องค้นมีแค่ "ค้นหาขั้นสูง" (กด Enter ในช่องค้นแทน)
+                🔴 โชว์ลิงก์แผงเฉพาะเมื่อท่อ **สะท้อนคีย์ from กลับมา** — ท่อรุ่นก่อนเมินเงียบ
                 ⇒ ช่องที่กรอกแล้วไม่มีผลแย่กว่าไม่มีช่อง (กฎข้อ ① ของแผง) */}
-            {canAdv && <>{' · '}<AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} /></>}
+            {canAdv && <AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} />}
           </>
         }
       />
@@ -529,6 +529,11 @@ export default function LogisticsPage() {
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
+                          /* 📐 สามข้อแรกตามเมนูแถวของ ZORT /Logistics/list (อ่าน `.dropdown-menu` 16 ต.ค. 2569 · ไม่ได้กด):
+                             ดูรายละเอียด · ส่ง SMS ให้ลูกค้า · พิมพ์ฉลากจัดส่ง — ของเราเพิ่มเองต่อท้าย */
+                          { label: 'ดูรายละเอียด', onClick: () => router.push(`/core/logistics/${encodeURIComponent(r.number)}`) },
+                          { label: 'ส่ง SMS ให้ลูกค้า', disabled: 'ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ)' },
+                          { label: 'พิมพ์ฉลากจัดส่ง', disabled: 'ยังทำไม่ได้ — ต้องใช้ที่อยู่เต็มของผู้รับ ซึ่งเราไม่ได้เก็บ (รอตัดสินเรื่องข้อมูลส่วนบุคคล)' },
                           // ⚠️ ไม่มีเลขพัสดุแล้วยังให้กดคัดลอกได้ = คัดลอกค่าว่างแบบเงียบ ๆ
                           //    คนกดจะไปวางแล้วได้ช่องว่าง โดยไม่มีอะไรบอกว่าเกิดอะไรขึ้น
                           {
