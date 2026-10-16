@@ -16,7 +16,7 @@ import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { fmtMoney, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
@@ -90,6 +90,9 @@ function monthEndIso(backMonths: number) {
   return new Date(Date.UTC(t.getUTCFullYear(), t.getUTCMonth() - backMonths + 1, 0)).toISOString().slice(0, 10)
 }
 
+/* 🗓 "ย้อนหลัง 1/3 เดือน" แบบ ZORT = วันที่ 1 ของเดือนที่ถอยไป (16 ต.ค. 2569 · วัดจากจอรายการขาย/รายงานลูกค้าของ ZORT
+   ซึ่งใช้ตัวเลือกช่วงวันตัวเดียวกัน) · 6 เดือน/1 ปียังไม่ได้วัด ⇒ ใช้ isoAgo (วันเดียวกันของเดือนที่ถอยไป) ตามเดิม */
+const ต้นเดือนแบบZORT = (n: 1 | 3) => ต้นเดือนย้อนหลังแบบZORT(n) ?? isoAgo(n)
 function isoAgo(months: number) {
   // ⚠️ ต้องบวก 7 เหมือน todayIso ไม่งั้นต้นช่วงกับปลายช่วงคิดคนละเขตเวลา
   const t = new Date(Date.now() + 7 * 3600e3)
@@ -152,7 +155,7 @@ const วันครบ = (v: string) => /^\d{4}-\d{2}-\d{2}$/.test(v) && Numbe
 export default function BuyReportPage() {
   const [rows, setRows] = useState<Po[] | null>(null)
   const [all, setAll] = useState<Resp | null>(null)
-  const [from, setFrom] = useState(isoAgo(3))
+  const [from, setFrom] = useState(ต้นเดือนแบบZORT(3))
   const [to, setTo] = useState(todayIso())
   const [adv, setAdv] = useState(false)
   const [grain, setGrain] = useState<Grain>('month')
@@ -369,8 +372,8 @@ export default function BuyReportPage() {
               ['เมื่อวานนี้', () => [dayAgoIso(1), dayAgoIso(1)]],
               ['เดือนนี้', () => [monthStartIso(0), todayIso()]],
               ['เดือนที่แล้ว', () => [monthStartIso(1), monthEndIso(1)]],
-              ['ย้อนหลัง 1 เดือน', () => [isoAgo(1), todayIso()]],
-              ['ย้อนหลัง 3 เดือน', () => [isoAgo(3), todayIso()]],
+              ['ย้อนหลัง 1 เดือน', () => [ต้นเดือนแบบZORT(1), todayIso()]],
+              ['ย้อนหลัง 3 เดือน', () => [ต้นเดือนแบบZORT(3), todayIso()]],
               ['ย้อนหลัง 6 เดือน', () => [isoAgo(6), todayIso()]],
               ['ย้อนหลัง 1 ปี', () => [isoAgo(12), todayIso()]],
             ] as [string, () => [string, string]][]).map(([label, range]) => {
