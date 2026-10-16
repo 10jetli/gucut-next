@@ -695,7 +695,7 @@ export default function ProductDetailPage() {
               <p className="text-[15px] font-semibold text-gray-900 mr-auto">รายงาน</p>
 
               <label className="text-[12.5px] text-gray-500">การแสดงผล</label>
-              {/* ⚠️ ZORT มี 8 ตัวเลือก เราทำได้ 5 — **สามอันที่เหลือขึ้นเป็นตัวเลือกสีเทา**
+              {/* ⚠️ ZORT มี 8 ตัวเลือก เราทำได้ 4 (+ ปรับในระบบเราต่อท้าย) — **ที่เหลือขึ้นเป็นตัวเลือกสีเทาพร้อมเหตุ**
                   ซ่อนทิ้ง = ไม่มีอะไรบอกว่าขาดอะไร · ใส่ให้กดได้ = ตัวเลือกหลอก
                   (ท่าเดียวกับปุ่ม "ปรับจำนวน" ที่เป็นสีเทาพร้อมเหตุผล) */}
               <select
@@ -703,12 +703,33 @@ export default function ProductDetailPage() {
                 onChange={(e) => setCardKind(e.target.value)}
                 className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white"
               >
-                {(card?.kinds ?? [{ key: 'all', label: 'การเคลื่อนไหว' }]).map((k) => (
-                  <option key={k.key} value={k.key}>{k.label}</option>
-                ))}
-                {(card?.missingKinds ?? []).map((m) => (
-                  <option key={m} value="" disabled>{m} — เรายังทำไม่ได้</option>
-                ))}
+                {/* 🗂 ชื่อและลำดับตาม `typetransactionoption` ของ ZORT 8 ค่า (อ่านจอจริง 16 ต.ค. 2569)
+                    แต่ละค่าผูกกับคีย์ของท่อ · เปิดได้เฉพาะเมื่อท่อประกาศคีย์นั้นใน kinds (ไม่ใช่เดาจากชื่อ)
+                    ⚠️ คีย์ adjust ของท่อ = ปรับด้วยมือในระบบเรา ≠ "ปรับและยกมา" ของ ZORT (ใบ TF- ของ ZORT) ⇒ แยกเป็นตัวเลือกท้ายของเราเอง */}
+                {(() => {
+                  const kinds = card?.kinds ?? [{ key: 'all', label: '' }]
+                  const มีคีย์ = new Set(kinds.map((k) => k.key))
+                  /* วันที่ท่อเพิ่มชนิดใหม่โดยใช้คำเดียวกับ ZORT ตัวเลือกต้องเปิดเอง ไม่ค้างเป็นสีเทาโกหก ⇒ จับคู่ด้วยชื่อด้วย */
+                  const คีย์จากชื่อ = (label: string) => kinds.find((k) => k.label === label)?.key
+                  const ZORT8: { label: string; key?: string; เหตุ: string }[] = [
+                    { label: 'การเคลื่อนไหว', key: 'all', เหตุ: '' },
+                    { label: 'การเคลื่อนไหวที่รอโอนเท่านั้น', เหตุ: 'ยังไม่มีใบรอโอนรายสินค้า' },
+                    { label: 'รายการปรับและยกมาเท่านั้น', เหตุ: 'ยังไม่มีใบปรับ/ยกมาของ ZORT รายสินค้า' },
+                    { label: 'รายการซื้อขายทั้งหมด', key: 'trade', เหตุ: '' },
+                    { label: 'รายการขายเท่านั้น', key: 'sale', เหตุ: '' },
+                    { label: 'รายการซื้อเท่านั้น', key: 'buy', เหตุ: '' },
+                    { label: 'รายการซื้อขายที่สำเร็จเท่านั้น', เหตุ: 'ท่อยังไม่กรองตามสถานะ' },
+                    { label: 'รายการซื้อขายที่รอโอนเท่านั้น', เหตุ: 'ท่อยังไม่กรองตามสถานะ' },
+                  ]
+                  return (
+                    <>
+                      {ZORT8.map((o) => { const k = (o.key && มีคีย์.has(o.key)) ? o.key : คีย์จากชื่อ(o.label); return k
+                        ? <option key={o.label} value={k}>{o.label}</option>
+                        : <option key={o.label} value="" disabled>{o.label} — เรายังทำไม่ได้{o.เหตุ ? ` (${o.เหตุ})` : ''}</option> })}
+                      {มีคีย์.has('adjust') && <option value="adjust">รายการปรับในระบบเรา (ZORT ไม่มี)</option>}
+                    </>
+                  )
+                })()}
               </select>
 
               <label className="text-[12.5px] text-gray-500">คลังสินค้า/สาขา</label>
