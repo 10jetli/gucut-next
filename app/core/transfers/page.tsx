@@ -286,13 +286,9 @@ export default function CoreTransfersPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขที่ใบโอน หรือคำอธิบาย"
-        advanced={
-          <>
-            <LinkText onClick={() => load(0)}>ค้นหา</LinkText>
-            {/* ปุ่มเปิดแผงโผล่เฉพาะตอนท่อกรองวันได้จริง — ปุ่มที่เปิดแผงว่างคือปุ่มหลอก */}
-            {ท่อรับช่วงวัน && <> · <LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText></>}
-          </>
-        }
+        /* ลิงก์ "ค้นหา ·" เอาออก 16 ต.ค. 2569 — ZORT /Warehouse/Transferlist ข้างช่องค้นมีแค่ "ค้นหาขั้นสูง" (กด Enter แทน)
+           ปุ่มเปิดแผงโผล่เฉพาะตอนท่อกรองวันได้จริง — ปุ่มที่เปิดแผงว่างคือปุ่มหลอก */
+        advanced={ท่อรับช่วงวัน ? <LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText> : undefined}
       />
 
       {/* 🔎 คำค้นที่ "ตรงกับทุกใบ" — ผลเท่ากับตอนไม่ได้ค้นเป๊ะ
