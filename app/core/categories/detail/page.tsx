@@ -14,7 +14,7 @@ import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { fmtMoney, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแบบZORT, วันนี้วันไทย } from '@/lib/format'
 import { PageHead, BtnGhost, Pill, TableWrap, TH, TD } from '@/components/zort'
 
 interface CatRow {
@@ -26,6 +26,8 @@ interface CatRow {
 }
 interface StockRow {
   sku?: string; name?: string; onhand?: number; available?: number
+  /** 🔴 ท่อส่งคงเหลือมาในชื่อ `qty` (ไม่ใช่ onhand) — เดิมจออ่าน onhand อย่างเดียว ⇒ คอลัมน์คงเหลือขีดทุกแถว (เจอ 16 ต.ค. 2569) */
+  qty?: number
   price?: number; cost?: number
 }
 
@@ -43,10 +45,40 @@ function Inner() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [warn, setWarn] = useState('')
+  /** ยอดขายเดือนที่แล้ว/เดือนนี้ของหมวด — topproducts&by=category ร้าน z1 (บัญชีเดียวกับจอ ZORT) · null = ยังไม่รู้ */
+  const [เดือน, setเดือน] = useState<{ ก่อน: number | null; นี้: number | null; ผิด?: string } | null>(null)
 
   /* 🔴 **หนึ่งคำขอต่อการกดหนึ่งครั้ง — ห้ามวนกวาดทุกหน้ามานับเอง**
      ท่อ cap limit ไว้ 200 ตายตัว และส่ง total ของหมวดมาให้แล้ว ⇒ ใช้ total ปิดปุ่ม
      ท่าเดียวกับจอสินค้า/รายการขาย (ดู stock/page.tsx: shown = offset + rows.length) */
+  /* 📅 การ์ดยอดขายสองเดือนแบบ ZORT — ไล่ nextOffset ของท่อจนเจอหมวดนี้ (ไม่ส่ง limit เอง)
+     ⚠️ ยอดเราตัดใบค้างจ่ายแล้ว (unpaidAmount ต่อแถว) แต่ **ยังไม่หักใบคืน** (ท่อทำรายแถวไม่ได้) ⇒ ZORT ต่ำกว่าได้ · เขียนบนการ์ด
+     📏 วัด 16 ต.ค. 2569 โซ่ NEWWAVE: ก.ย. เรา 112,878.15 vs ZORT 108,935.33 · ต.ค. 52,751.38 vs 50,764.10 */
+  useEffect(() => {
+    if (!catName) return
+    let ยกเลิก = false
+    const หา = async (from: string, to: string): Promise<number | null> => {
+      let off = 0
+      for (let i = 0; i < 20; i++) {
+        const r = await fetch(`/api/web/core?list=topproducts&by=category&store=z1&from=${from}&to=${to}&offset=${off}`).then((x) => x.json())
+        if (!r || !Array.isArray(r.items)) throw new Error(r?.error || 'ท่อไม่ส่งแถวมา')
+        const row = r.items.find((x: { category?: string }) => x.category === catName)
+        if (row) return typeof row.amount === 'number' ? row.amount - (typeof row.unpaidAmount === 'number' ? row.unpaidAmount : 0) : null
+        if (typeof r.nextOffset !== 'number') return 0 /* ไล่ครบทุกหมวดแล้วไม่เจอ = ช่วงนั้นหมวดนี้ไม่มียอดจริง */
+        off = r.nextOffset
+      }
+      return null
+    }
+    const วันนี้ = วันนี้วันไทย()
+    const ต้นเดือนนี้ = ต้นเดือนย้อนหลังแบบZORT(0) ?? `${วันนี้.slice(0, 7)}-01`
+    const ต้นเดือนก่อน = ต้นเดือนย้อนหลังแบบZORT(1) ?? ''
+    const สิ้นเดือนก่อน = new Date(Date.parse(ต้นเดือนนี้) - 864e5).toISOString().slice(0, 10)
+    Promise.all([หา(ต้นเดือนก่อน, สิ้นเดือนก่อน), หา(ต้นเดือนนี้, วันนี้)])
+      .then(([ก่อน, นี้]) => { if (!ยกเลิก) setเดือน({ ก่อน, นี้ }) })
+      .catch((e) => { if (!ยกเลิก) setเดือน({ ก่อน: null, นี้: null, ผิด: String(e instanceof Error ? e.message : e) }) })
+    return () => { ยกเลิก = true }
+  }, [catName])
+
   const load = useCallback(async (off = 0) => {
     if (!catName) { setError('ไม่ได้ระบุหมวด (ต้องเปิดจากจอหมวดหมู่)'); setLoading(false); return }
     setLoading(true); setError(''); setWarn('')
@@ -89,8 +121,8 @@ function Inner() {
     <div className="p-4 md:p-6">
       <p className="text-[12.5px] mb-2"><Link href="/core/categories" className="text-blue-600 hover:underline">‹ หมวดหมู่</Link></p>
       <PageHead
-        title={`หมวด: ${catName || '—'}`}
-        summary={<span className="text-gray-400">ภาพรวมหมวด + สินค้าในหมวด (ประกอบจากเส้นที่มีอยู่ ไม่มีเส้นใหม่)</span>}
+        title={catName || '—'}
+        summary={<span className="text-gray-500">รายละเอียดหมวดหมู่</span>}
         actions={
           <div className="flex items-center gap-2">
             <Link href={`/core/stock?category=${encodeURIComponent(catName)}`}
@@ -116,37 +148,35 @@ function Inner() {
             </p>
           )}
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-            {[
-              ['จำนวน SKU', catSkus === null ? null : catSkus, 'num'],
-              ['มูลค่าคงเหลือ (ทุน)', NUM(cat?.onhand_value), 'money'],
-              ['มูลค่าพร้อมขาย (ทุน)', NUM(cat?.available_value), 'money'],
-              ['มูลค่าคงเหลือ (ราคาขาย)', NUM(cat?.onhand_value_sell), 'money'],
-            ].map(([label, val, kind]) => (
-              <div key={String(label)} className="bg-white border border-gray-200 rounded-md p-3">
-                <p className="text-[11.5px] text-gray-400">{String(label)}</p>
-                <p className="text-[16px] font-semibold text-gray-900 tabular-nums">
-                  {val === null ? <span className="text-[12.5px] text-gray-300">ไม่รู้ (ท่อไม่ได้ส่งมา)</span>
-                    : kind === 'money' ? fmtMoney(val as number) : fmtNum(val as number)}
+          {/* 🗂 การ์ด 4 ใบตามผัง ZORT /Product/CategoryDetail (อ่านจอจริง 16 ต.ค. 2569):
+              สินค้าคงเหลือ (บาท) · สินค้าพร้อมขาย (บาท) · ยอดขายเดือนที่แล้ว (บาท) · ยอดขายเดือนนี้ (บาท)
+              สองใบแรก = ค่าที่คัดจากจอ ZORT (ต้นทุนเฉลี่ยที่ API ไม่เปิด) — บอกที่มาบนการ์ด · ค่าที่เราคิดเองย้ายไปบรรทัดรอง */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+            {([
+              ['สินค้าคงเหลือ (บาท)', NUM(cat?.zortValue), 'คัดจากจอ ZORT (เก่าได้ ซื้อของเข้าแล้วต้องคัดใหม่)'],
+              ['สินค้าพร้อมขาย (บาท)', NUM(cat?.zortAvailable), 'คัดจากจอ ZORT (เก่าได้)'],
+              ['ยอดขายเดือนที่แล้ว (บาท)', เดือน ? เดือน.ก่อน : undefined, 'ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้'],
+              ['ยอดขายเดือนนี้ (บาท)', เดือน ? เดือน.นี้ : undefined, 'ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้'],
+            ] as [string, number | null | undefined, string][]).map(([label, val, note]) => (
+              <div key={label} className="bg-white border border-gray-200 rounded-md p-3">
+                <p className="text-[11.5px] text-gray-500">{label}</p>
+                <p className="text-[18px] font-semibold text-gray-900 tabular-nums">
+                  {val === undefined ? <span className="text-[12.5px] text-gray-300">กำลังถาม…</span>
+                    : val === null ? <span className="text-[12.5px] text-gray-400">ยังไม่รู้{เดือน?.ผิด && label.startsWith('ยอดขาย') ? ` — ${เดือน.ผิด}` : ''}</span>
+                    : fmtMoney(val)}
                 </p>
+                <p className="text-[11px] text-gray-400 leading-snug mt-0.5">{note}</p>
               </div>
             ))}
           </div>
-
-          {/* ค่าที่คัดมือจาก ZORT — แยกกล่องและเขียนกำกับ ห้ามปนกับค่าที่คิดสด */}
-          {(NUM(cat?.zortSkus) !== null || NUM(cat?.zortValue) !== null) && (
-            <div className="bg-white border border-gray-200 rounded-md p-3 mb-4">
-              <p className="text-[12.5px] font-semibold text-gray-700 mb-1">ค่าที่คัดมาจากจอ ZORT (ไม่ใช่ค่าที่คิดสด)</p>
-              <div className="flex flex-wrap gap-4 text-[12.5px]">
-                <span>SKU: <b>{NUM(cat?.zortSkus) === null ? '—' : fmtNum(cat!.zortSkus as number)}</b></span>
-                <span>มูลค่าคงเหลือ: <b>{NUM(cat?.zortValue) === null ? '—' : fmtMoney(cat!.zortValue as number)}</b></span>
-                <span>พร้อมขาย: <b>{NUM(cat?.zortAvailable) === null ? '—' : fmtMoney(cat!.zortAvailable as number)}</b></span>
-              </div>
-              <p className="text-[11.5px] text-gray-400 mt-1">
-                ต้นทุนเฉลี่ยถ่วงน้ำหนักที่ API ไม่เปิดให้ดึง — <b>ค่าคัดมือจึงเก่าได้</b> ซื้อของเข้าใหม่แล้วต้องคัดใหม่
-              </p>
-            </div>
-          )}
+          {/* ค่าที่เราคิดเองจากต้นทุนในกระจก — ไม่ใช่เลขของ ZORT (ต้นทุนคนละแบบ) ⇒ บรรทัดรอง พร้อมป้าย */}
+          <p className="text-[11.5px] text-gray-500 mb-4 leading-relaxed">
+            ระบบเราคิดเอง (ไม่ใช่เลข ZORT): {catSkus === null ? '' : <>SKU <b>{fmtNum(catSkus)}</b> · </>}
+            มูลค่าคงเหลือตามทุนในกระจก <b>{NUM(cat?.onhand_value) === null ? '—' : fmtMoney(cat!.onhand_value as number)}</b> ·
+            {' '}พร้อมขาย <b>{NUM(cat?.available_value) === null ? '—' : fmtMoney(cat!.available_value as number)}</b> ·
+            {' '}ตามราคาขาย <b>{NUM(cat?.onhand_value_sell) === null ? '—' : fmtMoney(cat!.onhand_value_sell as number)}</b>
+            {NUM(cat?.zortSkus) !== null && <> · ZORT นับ SKU <b>{fmtNum(cat!.zortSkus as number)}</b></>}
+          </p>
 
           {mismatch && (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
@@ -188,7 +218,7 @@ function Inner() {
                           : '—'}
                       </td>
                       <td className={TD}>{it.name || '—'}</td>
-                      <td className={`${TD} text-right tabular-nums`}>{NUM(it.onhand) === null ? '—' : fmtNum(it.onhand!)}</td>
+                      <td className={`${TD} text-right tabular-nums`}>{(NUM(it.onhand) ?? NUM(it.qty)) === null ? '—' : fmtNum((NUM(it.onhand) ?? NUM(it.qty))!)}</td>
                       <td className={`${TD} text-right tabular-nums`}>
                         {NUM(it.available) === null ? '—'
                           : <span className={it.available! < 0 ? 'text-red-600 font-semibold' : ''}>{fmtNum(it.available!)}</span>}
