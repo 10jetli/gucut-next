@@ -47,6 +47,10 @@ function Inner() {
   const [warn, setWarn] = useState('')
   /** ยอดขายเดือนที่แล้ว/เดือนนี้ของหมวด — topproducts&by=category ร้าน z1 (บัญชีเดียวกับจอ ZORT) · null = ยังไม่รู้ */
   const [เดือน, setเดือน] = useState<{ ก่อน: number | null; นี้: number | null; ผิด?: string } | null>(null)
+  /** 🏆 สินค้าขายดีย้อนหลังของหมวด — ZORT `bestsalestype` วันนี้/7 วัน/1 เดือน/3 เดือน (ค่าตั้งต้น 7 วันตามหัวการ์ด ZORT) */
+  const [ขายดีวัน, setขายดีวัน] = useState(7)
+  const [ขายดี, setขายดี] = useState<{ rows: { sku: string; name?: string; qty?: number; amount?: number | null }[]; from: string; to: string; more: boolean } | null>(null)
+  const [ขายดีผิด, setขายดีผิด] = useState('')
 
   /* 🔴 **หนึ่งคำขอต่อการกดหนึ่งครั้ง — ห้ามวนกวาดทุกหน้ามานับเอง**
      ท่อ cap limit ไว้ 200 ตายตัว และส่ง total ของหมวดมาให้แล้ว ⇒ ใช้ total ปิดปุ่ม
@@ -78,6 +82,27 @@ function Inner() {
       .catch((e) => { if (!ยกเลิก) setเดือน({ ก่อน: null, นี้: null, ผิด: String(e instanceof Error ? e.message : e) }) })
     return () => { ยกเลิก = true }
   }, [catName])
+
+  /* 🏆 ขายดีของหมวด — topproducts&category= (ท่อ 4d82279c) · 🔴 แสดงแถวเฉพาะเมื่อท่อสะท้อน applied.category ตรงชื่อหมวด
+     ท่อรุ่นที่ยังไม่รับ category จะคืนสินค้าทุกหมวดปนกัน ⇒ ถ้าไม่ตรวจ จอจะโชว์โซ่ KINGKONG ในหมวดโซ่ NEWWAVE เงียบ ๆ
+     ช่วงเป็นจำนวนวันนับถอย (ยังไม่ได้วัดว่า 1/3 เดือนของ ZORT การ์ดนี้นับแบบปฏิทินหรือไม่) ⇒ เขียนช่วงจริงใต้ตาราง */
+  useEffect(() => {
+    if (!catName) return
+    let ยกเลิก = false
+    setขายดี(null); setขายดีผิด('')
+    const to = วันนี้วันไทย()
+    const from = new Date(Date.parse(to) - Math.max(0, ขายดีวัน - 1) * 864e5).toISOString().slice(0, 10)
+    fetch(`/api/web/core?list=topproducts&category=${encodeURIComponent(catName)}&store=z1&sort=qty&from=${from}&to=${to}`)
+      .then((x) => x.json())
+      .then((r) => {
+        if (ยกเลิก) return
+        if (!r || !Array.isArray(r.items)) throw new Error(r?.error || 'ท่อไม่ส่งแถวมา')
+        if (r.applied?.category !== catName) throw new Error('ท่อรุ่นนี้ยังไม่กรองตามหมวด (applied.category ไม่ตรง) — ไม่แสดงเพื่อไม่ให้สินค้าหมวดอื่นปนเข้ามา')
+        setขายดี({ rows: r.items, from, to, more: typeof r.nextOffset === 'number' })
+      })
+      .catch((e) => { if (!ยกเลิก) setขายดีผิด(String(e instanceof Error ? e.message : e)) })
+    return () => { ยกเลิก = true }
+  }, [catName, ขายดีวัน])
 
   const load = useCallback(async (off = 0) => {
     if (!catName) { setError('ไม่ได้ระบุหมวด (ต้องเปิดจากจอหมวดหมู่)'); setLoading(false); return }
@@ -177,6 +202,61 @@ function Inner() {
             {' '}ตามราคาขาย <b>{NUM(cat?.onhand_value_sell) === null ? '—' : fmtMoney(cat!.onhand_value_sell as number)}</b>
             {NUM(cat?.zortSkus) !== null && <> · ZORT นับ SKU <b>{fmtNum(cat!.zortSkus as number)}</b></>}
           </p>
+
+          {/* 🏆 สินค้าขายดีย้อนหลัง — ผังเดียวกับ ZORT (ชื่อสินค้า · จำนวนที่ขายได้ · ยอดขาย · เรียงจำนวนที่ขายได้) */}
+          <div className="bg-white border border-gray-200 rounded-md mb-4">
+            <div className="flex flex-wrap items-center gap-3 px-4 pt-3 pb-2">
+              <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีวัน === 1 ? 'วันนี้' : ขายดีวัน === 7 ? '7 วัน' : ขายดีวัน === 30 ? '1 เดือน' : '3 เดือน'}</p>
+              <select value={ขายดีวัน} onChange={(e) => setขายดีวัน(Number(e.target.value))}
+                className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white max-w-full min-w-0">
+                <option value={1}>วันนี้</option>
+                <option value={7}>7 วัน</option>
+                <option value={30}>1 เดือน</option>
+                <option value={90}>3 เดือน</option>
+              </select>
+            </div>
+            {ขายดีผิด ? (
+              <p className="px-4 pb-3 text-[12.5px] text-gray-500">ยังแสดงไม่ได้ — {ขายดีผิด}</p>
+            ) : !ขายดี ? (
+              <p className="px-4 pb-3 text-[12.5px] text-gray-400">กำลังถาม…</p>
+            ) : (
+              <>
+                <TableWrap>
+                  <table className="w-full">
+                    <thead className="bg-white border-b border-gray-200">
+                      <tr><th className={TH}>ชื่อสินค้า</th><th className={`${TH} text-right`}>จำนวนที่ขายได้</th><th className={`${TH} text-right`}>ยอดขาย</th></tr>
+                    </thead>
+                    <tbody>
+                      {ขายดี.rows.length === 0 && (
+                        <tr><td colSpan={3} className="py-5 text-center text-[12.5px] text-gray-400">ช่วงนี้หมวดนี้ยังไม่มียอดขาย</td></tr>
+                      )}
+                      {ขายดี.rows.map((r) => (
+                        <tr key={r.sku} className="border-b border-gray-100 last:border-0">
+                          <td className={TD}><Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">{r.name || r.sku}</Link></td>
+                          <td className={`${TD} text-right tabular-nums`}>{NUM(r.qty) === null ? '—' : fmtNum(r.qty!)}</td>
+                          <td className={`${TD} text-right tabular-nums`}>{NUM(r.amount) === null ? '—' : fmtMoney(r.amount!)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </TableWrap>
+                <p className="px-4 py-2 text-[11px] text-gray-400">
+                  ช่วง {ขายดี.from} ถึง {ขายดี.to} · ร้าน z1 · ยอดบรรทัดสินค้า ยังไม่หักใบคืน
+                  {ขายดี.more && ' · แสดงกลุ่มแรกที่ท่อส่งมา ยังมีรายการถัดไป'}
+                </p>
+              </>
+            )}
+          </div>
+
+          {/* 🏬 มูลค่าสินค้าคงเหลือ รายคลัง — ZORT แยก โกดัง/KLD/ANJ · กระจกเรามีแต่ยอดรวมทั้งร้าน
+              ฝั่งท่อขอ (16 ต.ค. 2569): **ห้ามเอายอดรวมใส่ช่องโกดัง** — ตรงวันนี้เพราะของอยู่โกดังเกือบหมด แล้วจะผิดเงียบวันย้ายของ */}
+          <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-4">
+            <p className="text-[14px] font-semibold text-gray-900">มูลค่าสินค้าคงเหลือ รายคลัง</p>
+            <p className="text-[12.5px] text-gray-600 mt-1">
+              รวมทุกคลัง <b>{NUM(cat?.zortValue) === null ? '—' : fmtMoney(cat!.zortValue as number)}</b> บาท (ค่าคัดจากจอ ZORT)
+              {' '}· <span className="text-gray-500">ยังแยกรายคลังไม่ได้ — ระบบเราเก็บสต็อกเป็นยอดรวมทั้งร้าน</span>
+            </p>
+          </div>
 
           {mismatch && (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
