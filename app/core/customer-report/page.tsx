@@ -11,7 +11,7 @@
 // ⚠️ จับลูกค้าด้วย "ชื่อ" ไม่ใช่เบอร์โทร — ชื่อซ้ำถูกนับรวมเป็นคนเดียว ต้องเขียนบอกบนจอ
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { fmtMoney } from '@/lib/format'
+import { fmtMoney, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
@@ -52,9 +52,11 @@ const thaiDay = (back = 0) =>
    ⚠️ และคำว่า "ย้อนหลัง 3 เดือน" ของสองระบบ **ไม่ใช่ช่วงเดียวกัน**
       ZORT = วันที่ 1 ของเดือนที่ถอยไป 3 เดือน ถึงวันนี้ (อ่านจากจอ: 1/6/2569 - 16/9/2569)
       ของเรา = 90 วันนับถอยหลังจากวันนี้ ⇒ จอต้องโชว์ช่วงจริงที่ท่อใช้เสมอ (ดูป้ายใต้ตัวเลือก) */
-const RANGES = [
-  { days: 30, label: 'ย้อนหลัง 1 เดือน' },
-  { days: 90, label: 'ย้อนหลัง 3 เดือน' },
+/* 🗓 16 ต.ค. 2569: ท่อรับ from/to แล้ว (ข้อ 13 ปิด) ⇒ 1/3 เดือนส่งช่วงแบบ ZORT (วันที่ 1 ของเดือนที่ถอยไป ถึงวันนี้)
+   ด้วยตัวช่วยเดียวกับจอรายการขาย · 6 เดือน/1 ปียังไม่ได้วัดกับ ZORT ⇒ คงนับถอยเป็นวัน */
+const RANGES: { days: number; label: string; เดือนแบบZORT?: number }[] = [
+  { days: 30, label: 'ย้อนหลัง 1 เดือน', เดือนแบบZORT: 1 },
+  { days: 90, label: 'ย้อนหลัง 3 เดือน', เดือนแบบZORT: 3 },
   { days: 180, label: 'ย้อนหลัง 6 เดือน' },
   { days: 365, label: 'ย้อนหลัง 1 ปี' },
 ]
@@ -132,6 +134,8 @@ export default function CoreCustomersPage() {
   /** ช่วงจริงที่ท่อใช้ (ท่อ echo กลับมา) — **ห้ามคำนวณเองในจอ** เพราะเราไม่ได้เป็นคนตัดวัน
    *  ⚠️ เอาไว้ให้คนเทียบกับ ZORT ได้ว่าคำว่า "3 เดือน" ของสองฝั่งไม่ใช่ช่วงเดียวกัน */
   const [range, setRange] = useState<{ from: string; to: string }>({ from: '', to: '' })
+  /** ท่อบอกว่าช่วงมาจาก from/to ที่เราส่ง (เทียบ ZORT ได้) หรือ days — null = ท่อรุ่นเก่าไม่บอก */
+  const [ช่วงมาจาก, setช่วงมาจาก] = useState<string | null>(null)
   /** ยอดทั้งช่วงที่ท่อนับให้ (ไม่ได้ถูกตัดที่ 500 ราย) — ใช้เป็นตัวหารและตัวปิดช่องว่าง
    *  null = ท่อไม่ได้ส่งมา ⇒ **ห้ามเดาจากแถวที่โหลดมา** */
   const [totalSales, setTotalSales] = useState<number | null>(null)
@@ -159,7 +163,9 @@ export default function CoreCustomersPage() {
             ของจริง 90 วัน = 819 ใบ · 325,980 บาท (เกือบทั้งหมดเป็น POS หน้าร้าน)
             ถ้าปล่อยให้รวมเป็นแถวเดียว มันจะขึ้นเป็น "ลูกค้าอันดับ 1 ซื้อ 819 ใบ"
             ซึ่งไม่ใช่คน แต่เป็นกองของคนที่ไม่ได้ระบุชื่อ */
-      const res = await fetch(`/api/web/core?bycustomer=1&days=${range}&limit=500`)
+      const ต้นเดือน = ต้นเดือนย้อนหลังแบบZORT(RANGES.find((r) => r.days === range)?.เดือนแบบZORT)
+      const ช่วงqs = ต้นเดือน ? `from=${ต้นเดือน}&to=${thaiDay(0)}` : `days=${range}`
+      const res = await fetch(`/api/web/core?bycustomer=1&${ช่วงqs}&limit=500`)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
       if (d?.skip) throw new Error(SKIP + d.skip)
@@ -188,6 +194,7 @@ export default function CoreCustomersPage() {
       // ขอบประวัติของกระจก — ตัวกันนิยาม "ใหม่" เพี้ยนตรงขอบ (กระจกเริ่ม ~มิ.ย. 2569)
       setHistoryFrom(typeof d.historyFrom === 'string' ? d.historyFrom : '')
       setRange({ from: typeof d.from === 'string' ? d.from : '', to: typeof d.to === 'string' ? d.to : '' })
+      setช่วงมาจาก(typeof d['ช่วงมาจาก'] === 'string' ? d['ช่วงมาจาก'] : null)
       setTotalSales(typeof d.totalSales === 'number' ? d.totalSales : null)
       setTotalOrders(typeof d.totalOrders === 'number' ? d.totalOrders : null)
       setMonthly(Array.isArray(d.monthly) ? d.monthly : [])
@@ -324,9 +331,13 @@ export default function CoreCustomersPage() {
                 ดรอปดาวน์ `#dateperiod` ของเขาซ่อนอยู่หลังวิดเจ็ต · ฟังก์ชัน `changedateperiod()` แค่ซ่อน/โชว์ช่องวันเอง
                 (การคิดช่วงจริงอยู่ฝั่งเซิร์ฟเวอร์) และจอเขาไม่แสดงช่วงวันที่ถูก resolve ออกมา
                 ⇒ คงข้อความ "เทียบตรง ๆ ไม่ได้" ไว้ (ยังจริงแน่นอน) แต่ **ไม่ยืนยันกติกาวันที่ 1** จนกว่าจะวัดได้ */}
-            {' '}· ZORT ใช้ตัวเลือกของเขาเอง (&ldquo;ย้อนหลัง N เดือน&rdquo; · เดือนนี้ · ปีนี้ …) ซึ่ง<b>ช่วงวันไม่ตรงกับของเรา</b>
-            {' '}⇒ <b>เทียบยอดตรง ๆ ไม่ได้</b> · <span className="text-gray-400">(ยังไม่ได้พิสูจน์ว่าเขาตัดวันแรกของช่วงอย่างไร — ตรวจ 18 ก.ย. 2569 แล้วจอเขาไม่แสดงช่วงที่ใช้จริง)</span>
-            {' '}· ZORT ยังมี วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว · ปีนี้ · กำหนดเอง ซึ่งเรา<b>ยังทำไม่ได้</b> เพราะท่อรับแต่จำนวนวันย้อนหลัง
+            {/* 16 ต.ค. 2569: จอ ZORT แสดงช่วงจริงแล้ว ("ย้อนหลัง 3 เดือน (1/7/2569 - 16/10/2569)") และท่อรับ from/to แล้ว
+                ⇒ 1/3 เดือนส่งช่วงเดียวกับ ZORT · ข้อความตัดสินจาก `ช่วงมาจาก` ที่ท่อตอบ ไม่ใช่จากที่จอขอ */}
+            {ช่วงมาจาก && ช่วงมาจาก.startsWith('from/to')
+              ? <>{' '}· <b>ช่วงวันเดียวกับ ZORT</b> (วันที่ 1 ของเดือนที่ถอยไป ถึงวันนี้)
+                  {' '}— <span className="text-amber-700">แต่การแบ่ง ลูกค้าใหม่/ซื้อซ้ำ/ไม่ระบุ ยังไม่ตรงกับ ZORT (เทียบ 16 ต.ค. 2569 ยอดกลุ่มต่างกัน กำลังไล่เหตุ)</span></>
+              : <>{' '}· ช่วงนี้<b>นับถอยเป็นวัน</b> ซึ่ง ZORT ไม่ได้นับแบบนี้ ⇒ <b>เทียบยอดตรง ๆ ไม่ได้</b></>}
+            {' '}· ZORT ยังมี วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว · ปีนี้ · กำหนดเอง ซึ่งจอนี้<b>ยังไม่ได้ทำ</b> (ท่อรับ from/to แล้ว — ทำได้ ไม่ใช่ทำไม่ได้)
           </span>
         </p>
       )}
