@@ -276,19 +276,31 @@ function DetailInner() {
               {order.source === 'z2' ? 'สาขา 2' : 'สาขา 1'}
             </span>
           )}
+          {/* ZORT มีลิงก์ "แนบไฟล์" ใต้ชื่อจอ (อ่าน HTML 16 ต.ค. 2569 · openUpload) — แนบไฟล์ = เขียนกลับ ZORT ⇒ สีเทาพร้อมเหตุ */}
+          {order && (
+            <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ (จอนี้อ่านอย่างเดียว) · สลิปที่ลูกค้าส่งมาดูได้ในกล่องสลิปข้างล่าง"
+              className="inline-block mt-1 ml-2 text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
+          )}
         </div>
-        {nav && idx >= 0 && (
-          <div className="flex items-center gap-2 text-[12.5px] text-gray-500">
-            {/* ไม่รู้จำนวนทั้งชุด ⇒ เขียน "?" ไม่ใช่ 0 (0 แปลว่าไม่มีใบเลย ซึ่งขัดกับการที่เราเปิดใบอยู่) */}
-            <span>{(idx + 1).toLocaleString('th-TH')}/{nav.total === null ? '?' : nav.total.toLocaleString('th-TH')}</span>
-            {nav.prev
-              ? <Link href={hrefFor(nav.prev, idx - 1)} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50">‹</Link>
-              : <span className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-300">‹</span>}
-            {nav.next
-              ? <Link href={hrefFor(nav.next, idx + 1)} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50">›</Link>
-              : <span className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-300">›</span>}
-          </div>
-        )}
+        <div className="flex flex-col items-end gap-2">
+          {nav && idx >= 0 && (
+            <div className="flex items-center gap-2 text-[12.5px] text-gray-500">
+              {/* ไม่รู้จำนวนทั้งชุด ⇒ เขียน "?" ไม่ใช่ 0 (0 แปลว่าไม่มีใบเลย ซึ่งขัดกับการที่เราเปิดใบอยู่) */}
+              <span>{(idx + 1).toLocaleString('th-TH')}/{nav.total === null ? '?' : nav.total.toLocaleString('th-TH')}</span>
+              {nav.prev
+                ? <Link href={hrefFor(nav.prev, idx - 1)} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50">‹</Link>
+                : <span className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-300">‹</span>}
+              {nav.next
+                ? <Link href={hrefFor(nav.next, idx + 1)} className="w-7 h-7 rounded border border-gray-300 flex items-center justify-center hover:bg-gray-50">›</Link>
+                : <span className="w-7 h-7 rounded border border-gray-200 flex items-center justify-center text-gray-300">›</span>}
+            </div>
+          )}
+          {/* ZORT มี "Share Link" ใต้ตัวเลื่อนใบ (openPublicLink · ลิงก์สาธารณะของ ZORT) — ท่อยังไม่ส่ง sharelink ⇒ สีเทาพร้อมเหตุ */}
+          {order && (
+            <span title="ยังทำไม่ได้ — ลิงก์สาธารณะของใบ (sharelink) ท่อยังไม่ส่งมา · ขอไว้ในรายชื่อช่องที่จอรอแล้ว"
+              className="text-[12.5px] text-gray-300 cursor-not-allowed">🔗 Share Link</span>
+          )}
+        </div>
       </div>
 
       {/* 🧰 แถบปุ่มใต้ชื่อจอ — ลอกจาก ZORT /Sell/Details (อ่านปุ่ม+พิกัด+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
