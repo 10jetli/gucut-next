@@ -153,15 +153,16 @@ function TrendChart({ rows, by = 'people' }: { rows: MonthlyRow[]; by?: 'people'
 function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
   const W = 460; const H = 180; const padL = 44; const padR = 14; const padY = 22
   const n = rows.length
-  const มีไม่รู้ = rows.some((r) => (Number(r.unknownSales) || 0) > 0)
+  const มีไม่รู้ = rows.some((r) => typeof r.unknownSales === 'number' && r.unknownSales > 0)
   const เส้น: { key: keyof MonthlyRow; label: string; color: string; dash?: string }[] = [
     { key: 'newSales', label: 'ลูกค้าใหม่', color: '#8ea8f8' },
     { key: 'repeatSales', label: 'ซื้อซ้ำ', color: '#f2938c' },
     { key: 'unnamedSales', label: 'ไม่ระบุชื่อ', color: '#9ca3af', dash: '4 3' },
     ...(มีไม่รู้ ? [{ key: 'unknownSales' as const, label: 'ไม่รู้วันซื้อครั้งแรก', color: '#d97706', dash: '2 2' }] : []),
   ]
-  const val = (r: MonthlyRow, k: keyof MonthlyRow) => Number(r[k]) || 0
-  const max = Math.max(...rows.flatMap((r) => เส้น.map((l) => val(r, l.key))), 1)
+  /* ไม่รู้ยอด = null (ไม่แปลงเป็น 0) ⇒ ตัดเส้นตรงเดือนนั้น ไม่ลากลงแกน */
+  const val = (r: MonthlyRow, k: keyof MonthlyRow): number | null => (typeof r[k] === 'number' ? (r[k] as number) : null)
+  const max = Math.max(...rows.flatMap((r) => เส้น.map((l) => val(r, l.key) ?? -Infinity)), 1)
   const x = (i: number) => padL + (n === 1 ? (W - padL - padR) / 2 : (i * (W - padL - padR)) / (n - 1))
   const y = (v: number) => H - padY - (v / max) * (H - padY * 2)
   const ย่อ = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(1)} ล.` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : String(Math.round(v)))
@@ -177,7 +178,7 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
           <line key={f2} x1={padL} x2={W - padR} y1={y(max * f2)} y2={y(max * f2)} stroke="#eef1f7" />
         ))}
         {เส้น.map((l) => (
-          <path key={l.key} d={rows.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(val(r, l.key)).toFixed(1)}`).join(' ')}
+          <path key={l.key} d={rows.map((r, i) => { const v = val(r, l.key); if (v === null) return ''; const ก่อนว่าง = i === 0 || val(rows[i - 1], l.key) === null; return `${ก่อนว่าง ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}` }).join(' ')}
             fill="none" stroke={l.color} strokeWidth={l.dash ? 1.5 : 2} strokeDasharray={l.dash} />
         ))}
         {rows.map((r, i) => (
@@ -719,7 +720,9 @@ export default function CoreCustomersPage() {
                 <b>ยังไม่มีข้อมูลจังหวัด</b>{provSkip ? <> — {provSkip.replace(/\*\*/g, '')}</> : null}
               </p>
             ) : (() => {
-              const rows = [...provinces].sort((x, y) => (Number(y[provBy]) || 0) - (Number(x[provBy]) || 0))
+              /* ค่าไม่ใช่ตัวเลข = ไม่รู้ ⇒ เรียงไว้ท้าย และแสดงขีด (ไม่ใช่ 0) */
+              const คีย์ = (r: ProvinceRow) => (typeof r[provBy] === 'number' ? (r[provBy] as number) : -Infinity)
+              const rows = [...provinces].sort((x, y) => คีย์(y) - คีย์(x))
               const pages = Math.max(1, Math.ceil(rows.length / PROV_PER_PAGE))
               const pg = Math.min(provPage, pages - 1)
               const หัว = provBy === 'customers' ? 'จำนวนลูกค้า' : provBy === 'orders' ? 'จำนวนรายการ' : 'มูลค่ารายการ'
@@ -735,7 +738,7 @@ export default function CoreCustomersPage() {
                           <tr key={r.province} className="border-b border-[#e8ecf8] last:border-0">
                             <td className={TD}>{r.province === '(ไม่ระบุ)' ? 'ไม่ระบุ' : r.province}</td>
                             <td className={TDR}>
-                              {provBy === 'sales' ? fmtMoney(r.sales) : (Number(r[provBy]) || 0).toLocaleString('th-TH')}
+                              {provBy === 'sales' ? fmtMoney(r.sales) : (typeof r[provBy] === 'number' ? (r[provBy] as number).toLocaleString('th-TH') : '—')}
                               {provBy === 'customers' && (r.unnamedOrders ?? 0) > 0 && (
                                 <span className="block text-[11px] text-gray-400">+ ใบไม่ระบุชื่อ {(r.unnamedOrders ?? 0).toLocaleString('th-TH')} ใบ (นับเป็นคนไม่ได้)</span>
                               )}

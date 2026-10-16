@@ -549,7 +549,7 @@ export default function SalesReportPage() {
   const [catErr, setCatErr] = useState('')
   const [catScope, setCatScope] = useState('')
   /** 👤 มุมมองลูกค้า — bycustomer ช่วงเดียวกับรายงาน · rows = รายที่มีชื่อ (ใบไม่ระบุชื่อแยกกอง ไม่ใช่คน) */
-  const [custData, setCustData] = useState<{ rows: { name: string; sales: number }[]; namedTotal: number | null; truncated: boolean; unnamedSales: number | null } | null>(null)
+  const [custData, setCustData] = useState<{ rows: { name: string; sales: number | null }[]; namedTotal: number | null; truncated: boolean; unnamedSales: number | null } | null>(null)
   const [custErr, setCustErr] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -672,7 +672,7 @@ export default function SalesReportPage() {
         const named = gt && typeof gt.new?.sales === 'number' && typeof gt.repeat?.sales === 'number'
           ? gt.new.sales + gt.repeat.sales + (typeof gt.unknownFirstDay?.sales === 'number' ? gt.unknownFirstDay.sales : 0) : null
         setCustData({
-          rows: d.customers.map((c: { name: string; sales: number }) => ({ name: c.name, sales: Number(c.sales) || 0 })),
+          rows: d.customers.map((c: { name: string; sales?: unknown }) => ({ name: c.name, sales: typeof c.sales === 'number' ? c.sales : null })),
           namedTotal: named,
           truncated: d.truncated === true,
           unnamedSales: typeof d.unnamed?.sales === 'number' ? d.unnamed.sales : null,
@@ -1106,15 +1106,15 @@ export default function SalesReportPage() {
                           {custErr && <EmptyState cols={3} icon="⚠️" title="ดึงยอดขายตามลูกค้าไม่ได้" detail={`ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะไม่มีลูกค้า — ${custErr}`} />}
                           {!custErr && !custData && <tr><td colSpan={3} className="py-6 text-center text-[12.5px] text-gray-400">กำลังรวมยอดตามลูกค้า…</td></tr>}
                           {custData && (() => {
-                            const ฐาน = custData.namedTotal ?? custData.rows.reduce((a, r) => a + r.sales, 0)
+                            const ฐาน = custData.namedTotal ?? custData.rows.reduce((a, r) => a + (r.sales ?? 0), 0)
                             const t = tableQ.trim().toLowerCase()
-                            const rows = custData.rows.filter((r) => !t || r.name.toLowerCase().includes(t)).sort((a, b) => b.sales - a.sales)
+                            const rows = custData.rows.filter((r) => !t || r.name.toLowerCase().includes(t)).sort((a, b) => (b.sales ?? -Infinity) - (a.sales ?? -Infinity))
                             if (rows.length === 0) return <EmptyState cols={3} icon="📊" title="ไม่มีลูกค้าที่ตรงเงื่อนไข" detail="ลองขยายช่วงเวลาด้านบน หรือล้างคำค้น" />
                             return rows.map((r) => (
                               <tr key={r.name} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
                                 <td className={TD}><Link href={`/core/customers/detail?name=${encodeURIComponent(r.name)}`} className="text-blue-600 hover:underline">{r.name}</Link></td>
                                 <td className={TDR}>{fmtMoney(r.sales)}</td>
-                                <td className={TDR}>{ฐาน > 0
+                                <td className={TDR}>{ฐาน > 0 && r.sales !== null
                                   ? <span className="text-[11.5px] font-semibold text-blue-700 bg-blue-50 rounded px-1.5 py-0.5">{((r.sales / ฐาน) * 100).toFixed(2)}%</span>
                                   : <span className="text-gray-300">—</span>}</td>
                               </tr>
@@ -1132,21 +1132,27 @@ export default function SalesReportPage() {
                      ช่องทาง: report.channels (หัวใบ · ชื่อเดียวกันต่างร้านรวมเป็นแถวเดียว) · คลัง: orderfacets&warehouses=1
                      ⚠️ ยอดหัวใบ ≠ ยอดบรรทัดสินค้าในมุมมองสินค้า/หมวด (หัวใบรวมส่วนลดท้ายบิลกับค่าส่ง) */
                   const ชื่อหัว = tableBy === 'channel' ? 'ช่องทางการขาย' : 'คลัง/สาขา'
-                  let rows: { key: string; label: string; sales: number }[] | null
+                  /* sales = null เมื่อท่อไม่ส่งตัวเลข (ไม่รู้) — ห้ามแปลงเป็น 0 ⇒ แถวนั้นขึ้นขีด และร้อยละบอกว่ามีส่วนที่ไม่รู้ */
+                  let rows: { key: string; label: string; sales: number | null }[] | null
                   let err = ''
                   /* ยอดแบบ ZORT ใช้ได้เมื่อท่อส่งครบ **ทุกช่อง** — ขาดช่องเดียวก็ถอยไปยอดหัวใบทั้งตาราง (ห้ามปนสองนิยามในตารางเดียว) */
                   const แบบZORT = tableBy === 'channel' && report.channels.length > 0 && report.channels.every((c) => typeof c.salesZortStyle === 'number')
                   if (tableBy === 'channel') {
-                    const m = new Map<string, number>()
-                    for (const c of report.channels) m.set(c.name, (m.get(c.name) ?? 0) + (แบบZORT ? (c.salesZortStyle as number) : (Number(c.sales) || 0)))
+                    const m = new Map<string, number | null>()
+                    for (const c of report.channels) {
+                      const v = แบบZORT ? (c.salesZortStyle as number) : (typeof c.sales === 'number' ? c.sales : null)
+                      const เดิม = m.has(c.name) ? m.get(c.name)! : 0
+                      m.set(c.name, v === null || เดิม === null ? null : เดิม + v)
+                    }
                     rows = Array.from(m, ([k, v]) => ({ key: k, label: k, sales: v }))
                   } else {
                     err = whSalesErr
-                    rows = whSales ? whSales.map((w) => ({ key: w.code || '(ไม่รู้คลัง)', label: w.code ? `${w.name || w.code} (${w.code})` : 'ยังไม่รู้คลัง', sales: Number(w.sales) || 0 })) : null
+                    rows = whSales ? whSales.map((w) => ({ key: w.code || '(ไม่รู้คลัง)', label: w.code ? `${w.name || w.code} (${w.code})` : 'ยังไม่รู้คลัง', sales: typeof w.sales === 'number' ? w.sales : null })) : null
                   }
                   const t = tableQ.trim().toLowerCase()
-                  const รวม = (rows ?? []).reduce((a, r) => a + r.sales, 0)
-                  const shownRows = (rows ?? []).filter((r) => !t || r.label.toLowerCase().includes(t)).sort((a, b) => b.sales - a.sales)
+                  const มีไม่รู้ = (rows ?? []).some((r) => r.sales === null)
+                  const รวม = (rows ?? []).reduce((a, r) => a + (r.sales ?? 0), 0)
+                  const shownRows = (rows ?? []).filter((r) => !t || r.label.toLowerCase().includes(t)).sort((a, b) => (b.sales ?? -Infinity) - (a.sales ?? -Infinity))
                   return (
                     <>
                       <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
@@ -1154,7 +1160,7 @@ export default function SalesReportPage() {
                           ? <>📌 ยอด<b>แบบ ZORT</b> — ยอดหัวใบ ตัดใบที่ยังไม่จ่าย และหักใบคืนที่ออกในช่วงนี้ (ท่อคิดให้) ทุกร้านรวมกัน</>
                           : <>📌 ยอดในมุมมองนี้คิดจาก<b>หัวใบ</b> (รวมส่วนลดท้ายบิลกับค่าส่ง) ทุกร้านรวมกัน{tableBy === 'channel' ? (report.channels.some((c) => c.salesZortStyle === null) ? ' · ยังไม่ตัดใบค้างจ่าย/ใบคืนแบบ ZORT เพราะรอบนี้ระบบอ่านใบคืนไม่ได้ (ไม่รู้ ไม่ใช่ศูนย์)' : ' · ยังไม่ตัดใบค้างจ่าย/ใบคืนแบบ ZORT') : ''}</>}
                         {' '}— ไม่เท่ากับมุมมองสินค้า/หมวดที่คิดจากบรรทัดสินค้า เป็นเรื่องปกติ
-                        {' '}· ร้อยละเทียบกับผลรวมของแถวในตารางนี้
+                        {' '}· ร้อยละเทียบกับผลรวมของแถวในตารางนี้{มีไม่รู้ ? ' — มีแถวที่ไม่รู้ยอด จึงยังคิดร้อยละไม่ได้' : ''}
                       </p>
                       <TableWrap>
                         <table className="w-full min-w-[520px]">
@@ -1174,7 +1180,7 @@ export default function SalesReportPage() {
                                 <td className={TD}>{tableBy === 'channel' ? <ChannelTag name={r.label} /> : r.label}</td>
                                 <td className={TDR}>{fmtMoney(r.sales)}</td>
                                 <td className={TDR}>
-                                  {รวม > 0
+                                  {รวม > 0 && !มีไม่รู้ && r.sales !== null
                                     ? <span className="text-[11.5px] font-semibold text-blue-700 bg-blue-50 rounded px-1.5 py-0.5">{((r.sales / รวม) * 100).toFixed(2)}%</span>
                                     : <span className="text-gray-300">—</span>}
                                 </td>
