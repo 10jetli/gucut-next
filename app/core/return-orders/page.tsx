@@ -41,7 +41,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   PageHead, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
-  EmptyState, Pill, relDay, thaiDate, EndpointMissing,
+  EmptyState, Pill, relDay, thaiDate, EndpointMissing, RowMenu,
 } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import { coreJson } from '@/lib/api-shape'
@@ -246,7 +246,7 @@ export default function ReturnOrdersPage() {
         }
         actions={
           <>
-            {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Sell/list?sttype=1 (รายการคืนสินค้า) ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า) */}
+            {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT รับคืนสินค้า /Buy/list?sttype=1 (หัวจอ "รายการรับคืนสินค้าเข้า") ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า · แก้ที่อ้างผิดจอ 16 ต.ค. 2569) */}
           </>
         }
       />
@@ -368,11 +368,12 @@ export default function ReturnOrdersPage() {
                   <th className={THR}>มูลค่า</th>
                   <th className={TH}>สถานะ</th>
                   <th className={TH}>ชำระเงิน</th>
+                  <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
               <tbody>
                 {shown.length === 0 && (
-                  <EmptyState cols={8} icon="↩️"
+                  <EmptyState cols={9} icon="↩️"
                     title={rows.length === 0 ? 'ยังไม่มีใบคืนของ' : 'ไม่พบใบในคำค้นนี้'}
                     detail={rows.length === 0
                       ? 'ZORT ตอบกลับมาว่าไม่มีใบคืนของสักใบ (ดึงสำเร็จ แต่ว่างจริง)'
@@ -418,13 +419,31 @@ export default function ReturnOrdersPage() {
                           </div>)}
                     </td>
                     <td className={TD}>{r.paid ? <Pill tone={tone(r.paid)}>{r.paid}</Pill> : DASH}</td>
+                    {/* ⋮ เมนูแถวแบบ ZORT รับคืนสินค้า /Buy/list?sttype=1 (อ่าน `.dropdown-menu` ของแถวจริง 16 ต.ค. 2569 · ไม่ได้กด)
+                        ZORT: ปักหมุดไว้บนสุด · คัดลอก · แก้ไข · พิมพ์เอกสาร · พิมพ์ใบแปะจดหมาย/กล่อง · เพิ่ม Tag · ซ่อน · ยกเลิกรายการ
+                        ของเรากดได้แค่ เปิดรายละเอียด (ต้องมี id) · ที่เหลือเป็นการเขียนกลับ ZORT/ยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ */}
+                    <td className={`${TD} text-right`}>
+                      <RowMenu items={[
+                        ...(r.id ? [{ label: 'เปิดรายละเอียด', onClick: () => { window.location.href = `/core/return-orders/detail?id=${encodeURIComponent(String(r.id))}` } }] : []),
+                        ...([
+                          ['ปักหมุดไว้บนสุด', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT'],
+                          ['คัดลอก', 'ยังทำไม่ได้ — สร้างใบคืนใหม่ใน ZORT = เขียนกลับ'],
+                          ['แก้ไข', 'ยังทำไม่ได้ — แก้ใบต้องเขียนกลับ ZORT'],
+                          ['พิมพ์เอกสาร', 'ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบรับคืน'],
+                          ['พิมพ์ใบแปะจดหมาย/กล่อง', 'ยังทำไม่ได้ — ต้องใช้ที่อยู่เต็มของลูกค้า ซึ่งเราไม่ได้เก็บ'],
+                          ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT'],
+                          ['ซ่อน', 'ยังทำไม่ได้ — ซ่อนใบต้องเขียนกลับ ZORT'],
+                          ['ยกเลิกรายการ', 'ยังทำไม่ได้ — ยกเลิกใบต้องทำใน ZORT (ย้อนไม่ได้)'],
+                        ] as const).map(([label, disabled]) => ({ label, disabled })),
+                      ]} />
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </TableWrap>
 
-          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (ZORT /Sell/list?sttype=1 อ่านปุ่มแล้ว 16 ต.ค. 2569) */}
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (ZORT /Buy/list?sttype=1 อ่านปุ่มแล้ว 16 ต.ค. 2569) */}
           <div className="mt-3 flex items-center gap-2">
             {/* 📤 ส่งออกใบคืนจากลูกค้า ครบทุกหน้า
                 🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** — กับดักเดิมที่ CLAUDE.md
