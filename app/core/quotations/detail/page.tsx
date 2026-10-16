@@ -11,7 +11,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, thaiDate } from '@/components/zort'
+import { PageHead, TableWrap, TH, THR, TD, TDR, thaiDate, RowMenu } from '@/components/zort'
 import { QUOTATION_DETAIL_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Line {
@@ -82,7 +82,23 @@ function Inner() {
       {/* ⚠️ ห้ามเอา number ขึ้นหัวเรื่องตอนท่อส่งผิดชั้น — มันคือจำนวนสินค้า ไม่ใช่เลขที่ใบ */}
       <PageHead title={`ใบเสนอราคา ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน</span>}
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Quotation/Details ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
+
+      {/* 🧰 แถบปุ่มแบบ ZORT /Quotation/Details (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
+          คำสั่ง ▾ (คัดลอก · เพิ่ม Tag · ซ่อน) · พิมพ์เอกสาร ▾ (พิมพ์เอกสาร · พิมพ์เอกสาร + จัดเก็บ) — ยังทำไม่ได้ทั้งหมด ⇒ สีเทาพร้อมเหตุ */}
+      {d && !wrongLevel && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <RowMenu label="คำสั่ง" items={([
+            ['คัดลอก', 'ยังทำไม่ได้ — จอสร้างใบเสนอราคายังรับค่าจากใบเดิมไม่ได้ (สร้างใหม่ได้ที่ปุ่ม "สร้าง" ของจอรายการ)'],
+            ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT'],
+            ['ซ่อน', 'ยังทำไม่ได้ — ซ่อนใบต้องเขียนกลับ ZORT'],
+          ] as const).map(([label, disabled]) => ({ label, disabled }))} />
+          <RowMenu label="🖨 พิมพ์เอกสาร" items={([
+            ['พิมพ์เอกสาร', 'ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบเสนอราคา'],
+            ['พิมพ์เอกสาร + จัดเก็บ', 'ยังทำไม่ได้ — จัดเก็บไฟล์ไว้ในระบบไฟล์ของ ZORT = เขียนกลับ'],
+          ] as const).map(([label, disabled]) => ({ label, disabled }))} />
+        </div>
+      )}
 
       {/* 🔴 กล่องนี้ต้องบอก **สามอย่างที่ต่างกัน** ไม่ใช่ประโยคเดียวคลุมทุกกรณี
              · เลขผิดรูป ⇒ ยังไม่ได้ถาม ZORT เลย  · ติดต่อ ZORT ไม่ได้ ⇒ ยังไม่รู้ว่ามีใบไหม
