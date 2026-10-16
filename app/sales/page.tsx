@@ -39,7 +39,7 @@ interface Report {
   /** คำอธิบายขอบเขตจากท่อ — เอาขึ้นจอตรง ๆ ไม่เขียนเอง */
   returnsScope?: string | null
   daily: { date: string; sales: number; orders: number }[]
-  channels: { label: string; name: string; store: string; sales: number; orders: number; prevSales: number }[]
+  channels: { label: string; name: string; store: string; sales: number; orders: number; prevSales: number; salesZortStyle?: number | null }[]
   // ยอดเงินรายสินค้ามาจาก /api/core?list=topproducts (รวมจาก order_items จริง)
   // ยังเป็น optional ไว้ เผื่อท่อนั้นล่ม — โชว์ขีดดีกว่าโชว์เลขที่เดาเอง
   /** ⑦ `category` มากับทุกแถวแล้ว (ท่อ gucut-web b0a4aa3 · 15 ก.ย. 2569)
@@ -60,7 +60,11 @@ interface Report {
 }
 
 interface CoreRow { number: string; channel: string; amount: number; order_date: string }
-interface CoreChan { channel: string; orders: number; amount: number }
+interface CoreChan {
+  channel: string; orders: number; amount: number
+  /** ยอดแบบ ZORT ต่อช่องทาง (ท่อเพิ่ม 16 ต.ค. 2569): amount − ใบค้างจ่าย − ใบคืนที่ออกในช่วง · ไม่มีคีย์ = ท่อรุ่นเก่า */
+  salesZortStyle?: number | null; unpaidAmount?: number | null; returnedAmount?: number | null
+}
 
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
@@ -69,8 +73,10 @@ const thaiDay = (back = 0) =>
  *  🔴 เดิมวนดึงทีละ 200 ใบ สูงสุด 12 หน้า = 2,400 ใบ มาบวกเป็นกราฟรายวันเองในเบราว์เซอร์
  *     ⇒ ช้าโดยไม่จำเป็น และ **ถ้าช่วงไหนเกิน 2,400 ใบ กราฟจะขาดหายเงียบ ๆ**
  *     (โรคเดียวกับจอการเงินที่เพิ่งแก้ — ค่าที่ต้องเห็นข้อมูลทั้งชุด ต้องให้ฐานคิดให้) */
-async function fetchRange(from: string, to: string) {
-  const qs = new URLSearchParams({ list: 'orders', from, to, limit: '1' })
+async function fetchRange(from: string, to: string, ยอดแบบZORT = false) {
+  /* `zortstyle=1` ขอ salesZortStyle/returnedAmount ต่อช่องทาง — ท่อให้ต่อเมื่อขอ เพราะต้องกวาดใบคืนอีกรอบ
+     ⇒ ขอเฉพาะช่วงปัจจุบัน (ช่วงก่อนใช้แค่ยอดเทียบ) · สามสถานะ: ไม่มีคีย์ = ไม่ได้ขอ · null = ท่ออ่านใบคืนไม่ได้ · ตัวเลข */
+  const qs = new URLSearchParams({ list: 'orders', from, to, limit: '1', ...(ยอดแบบZORT ? { zortstyle: '1' } : {}) })
   const res = await fetch(`/api/web/core?${qs}`)
   const d = await res.json()
   if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
@@ -556,7 +562,7 @@ export default function SalesReportPage() {
       const prevFrom = thaiDay(d * 2 - 1)
 
       const [cur, prev, best, daily] = await Promise.all([
-        fetchRange(from, to),
+        fetchRange(from, to, true),
         fetchRange(prevFrom, prevTo),
         // ยอดขายรายสินค้าพร้อม "ยอดเงินจริง" จาก order_items (ไม่ใช่ qty คูณราคาขาย ซึ่งเป็นการเดา)
         fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=10`)
@@ -615,6 +621,8 @@ export default function SalesReportPage() {
           sales: c.amount,
           orders: c.orders,
           prevSales: prevByChan.get(c.channel) ?? 0,
+          /* คงสามสถานะไว้: undefined = ท่อไม่ส่งคีย์ · null = ท่ออ่านใบคืนไม่ได้ (ไม่รู้) · ตัวเลข */
+          salesZortStyle: 'salesZortStyle' in c ? (typeof c.salesZortStyle === 'number' ? c.salesZortStyle : null) : undefined,
         })),
         topError,
         returns: ret,
@@ -1046,9 +1054,11 @@ export default function SalesReportPage() {
                   const ชื่อหัว = tableBy === 'channel' ? 'ช่องทางการขาย' : 'คลัง/สาขา'
                   let rows: { key: string; label: string; sales: number }[] | null
                   let err = ''
+                  /* ยอดแบบ ZORT ใช้ได้เมื่อท่อส่งครบ **ทุกช่อง** — ขาดช่องเดียวก็ถอยไปยอดหัวใบทั้งตาราง (ห้ามปนสองนิยามในตารางเดียว) */
+                  const แบบZORT = tableBy === 'channel' && report.channels.length > 0 && report.channels.every((c) => typeof c.salesZortStyle === 'number')
                   if (tableBy === 'channel') {
                     const m = new Map<string, number>()
-                    for (const c of report.channels) m.set(c.name, (m.get(c.name) ?? 0) + (Number(c.sales) || 0))
+                    for (const c of report.channels) m.set(c.name, (m.get(c.name) ?? 0) + (แบบZORT ? (c.salesZortStyle as number) : (Number(c.sales) || 0)))
                     rows = Array.from(m, ([k, v]) => ({ key: k, label: k, sales: v }))
                   } else {
                     err = whSalesErr
@@ -1060,7 +1070,10 @@ export default function SalesReportPage() {
                   return (
                     <>
                       <p className="text-[11.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mx-4 md:mx-5 mt-1.5">
-                        📌 ยอดในมุมมองนี้คิดจาก<b>หัวใบ</b> (รวมส่วนลดท้ายบิลกับค่าส่ง) ทุกร้านรวมกัน — ไม่เท่ากับมุมมองสินค้า/หมวดที่คิดจากบรรทัดสินค้า เป็นเรื่องปกติ
+                        {แบบZORT
+                          ? <>📌 ยอด<b>แบบ ZORT</b> — ยอดหัวใบ ตัดใบที่ยังไม่จ่าย และหักใบคืนที่ออกในช่วงนี้ (ท่อคิดให้) ทุกร้านรวมกัน</>
+                          : <>📌 ยอดในมุมมองนี้คิดจาก<b>หัวใบ</b> (รวมส่วนลดท้ายบิลกับค่าส่ง) ทุกร้านรวมกัน{tableBy === 'channel' ? (report.channels.some((c) => c.salesZortStyle === null) ? ' · ยังไม่ตัดใบค้างจ่าย/ใบคืนแบบ ZORT เพราะรอบนี้ระบบอ่านใบคืนไม่ได้ (ไม่รู้ ไม่ใช่ศูนย์)' : ' · ยังไม่ตัดใบค้างจ่าย/ใบคืนแบบ ZORT') : ''}</>}
+                        {' '}— ไม่เท่ากับมุมมองสินค้า/หมวดที่คิดจากบรรทัดสินค้า เป็นเรื่องปกติ
                         {' '}· ร้อยละเทียบกับผลรวมของแถวในตารางนี้
                       </p>
                       <TableWrap>
