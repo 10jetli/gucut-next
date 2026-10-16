@@ -336,6 +336,18 @@ export default function DashboardPage() {
         "ร้านปิดถาวร" ไม่ได้จริง (ช่องทางที่แค่ขายไม่ดี 2 เดือนจะถูกเหมารวม)
         ⇒ **จอไม่โชว์กองนั้น** จนกว่าเจ้าของร้านจะประกาศรายชื่อช่องทางที่ปิดแล้วเอง */
   const [pending, setPending] = useState<PendingResp | null>(null)
+  /* 🧾 การ์ดแบบหน้า /Dashboard/Initial ของ ZORT — `?cards=1&store=z1` (ท่อเพิ่ม 16 ต.ค. 2569 · 0.5 วิ)
+     ค้างชำระเงิน = สำเร็จ + รอชำระ/ชำระบางส่วน ทุกช่วงเวลา ร้าน z1 (ฝั่งจอเทียบกับ ZORT แล้ว 27 ใบ 56,522 ตรงเป๊ะ)
+     🔴 การ์ดที่ท่อตอบ `null` = ไม่มีคู่สถานะที่ชื่อตรง (ชื่อสถานะอาจเปลี่ยน) ⇒ **ยังไม่รู้ ห้ามแสดงเป็น 0** */
+  type การ์ดZORT = { orders: number; amount: number; ช่องที่นับ?: string[] } | null
+  const [zCards, setZCards] = useState<{ ค้างชำระเงิน?: การ์ดZORT; ค้างโอนสินค้า?: การ์ดZORT } | null | 'ล้ม'>(null)
+  useEffect(() => {
+    let ยัง = true
+    fetch('/api/web/core?cards=1&store=z1').then((r) => r.json())
+      .then((d) => { if (ยัง) setZCards(d && typeof d === 'object' && d['การ์ด'] && typeof d['การ์ด'] === 'object' ? d['การ์ด'] : 'ล้ม') })
+      .catch(() => { if (ยัง) setZCards('ล้ม') })
+    return () => { ยัง = false }
+  }, [])
   /* 📊 ของใหม่สำหรับผังเมนู 1 ให้เหมือน ZORT (สเปก ~/claude-shared/สเปก-เมนู1-ภาพรวม.md · 15 ก.ย. 2569)
      🔴 กติกาของใบนี้: **UI ก่อน · ตัวเลขดึงไม่ได้ต้องคงสามสถานะ ห้ามใส่ 0 หรือเลขปลอมให้จอดูเต็ม**
         ⇒ ทุกก้อนข้างล่างเป็น `null` เมื่อ "ยังไม่รู้" และจอต้องเขียนว่ายังดึงไม่ได้ */
@@ -855,19 +867,22 @@ export default function DashboardPage() {
                 **จดคนละเวลากับกระจก** ⇒ ต้องอ่านการ์ดบน `/Dashboard/Initial` **ในนาทีเดียวกับที่ยิง `cardguess`**
                 (อยู่ในใบ `~/claude-shared/งานกวาด-ZORT-ยืนยันด้วยตา.md` เป็นงาน #0) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <ZortStat
-            icon="💲" bg="#FDECEC" fg="#dc2626"
-            /* ⚠️ `=== 0` เท่านั้น — `undefined` แปลว่ายังไม่รู้ ห้ามทำให้ดูเงียบเหมือนไม่มีอะไรค้าง */
-            quiet={pending?.counts?.['รอจ่ายอยู่'] === 0}
-            label="รายการขาย ค้างชำระเงิน"
-            value={pending?.counts?.['รอจ่ายอยู่'] === undefined
-              ? 'ยังไม่มีข้อมูล'
-              : `${fmtNum(pending.counts['รอจ่ายอยู่'])} ใบ`}
-            note={pending?.amounts?.['รอจ่ายอยู่'] === undefined
-              ? 'ดึงจากคลังเงาไม่ได้รอบนี้'
-              : `${fmtMoney(pending.amounts['รอจ่ายอยู่'])} · นิยามของเรา ยังไม่ได้เทียบใบต่อใบกับการ์ด ZORT`}
-            age={<AgeLine กอง="รอจ่ายอยู่" ages={pending?.ages} />}
-          />
+          {/* 💲 ค้างชำระเงิน — **นิยามเดียวกับการ์ด ZORT** จาก `?cards=1&store=z1` (เทียบใบต่อใบแล้ว 16 ต.ค. 2569: 27 ใบ 56,522)
+              เดิมใช้กอง "รอจ่ายอยู่" ของเราเอง (ใบยังไม่เสร็จที่ยังไม่จ่าย) ซึ่งคนละคำถามกับ ZORT (ใบสำเร็จแล้วแต่เงินยังไม่ครบ ส่วนใหญ่ COD) */}
+          {(() => {
+            const c = zCards && zCards !== 'ล้ม' ? zCards['ค้างชำระเงิน'] : undefined
+            return (
+              <ZortStat
+                icon="💲" bg="#FDECEC" fg="#dc2626"
+                quiet={!!c && c.orders === 0}
+                label="รายการขาย ค้างชำระเงิน"
+                value={zCards === null ? 'กำลังโหลด…' : zCards === 'ล้ม' ? 'ยังไม่มีข้อมูล' : c === null || c === undefined ? 'ยังไม่รู้' : `${fmtNum(c.orders)} ใบ`}
+                note={zCards === 'ล้ม' ? 'ดึงการ์ดจากท่อไม่ได้รอบนี้'
+                  : c === null ? 'ไม่พบคู่สถานะที่ใช้นับ — ชื่อสถานะอาจเปลี่ยน (ไม่ใช่ 0)'
+                  : c ? `${fmtMoney(c.amount)} · ใบสำเร็จที่ยังรอชำระ/ชำระบางส่วน ทุกช่วงเวลา ร้านออนไลน์ (z1) — นิยามเดียวกับการ์ด ZORT` : ''}
+              />
+            )
+          })()}
           <ZortStat
             icon="🎒" bg="#E6F7EF" fg="#059669"
             quiet={pending?.counts?.['ต้องส่งของ'] === 0}
