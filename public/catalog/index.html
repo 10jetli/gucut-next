@@ -154,6 +154,10 @@ font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;color:#1e3a
          ทำเป็นปุ่มเพราะข้อมูลอยู่ชั้น override ที่เก็บส่วนกลาง — ยิงจากนอกเบราว์เซอร์ไม่ได้ (401) -->
     <button class="btn" id="oemMvBtn"
             title="ย้ายค่าที่เป็นตัวเลขล้วนจากช่อง Tags ไปช่อง OEM&#10;ทำเฉพาะแถวที่เห็นบนจอนี้ (ตามตัวกรองที่เลือกอยู่)&#10;แถวที่มี OEM อยู่แล้วจะถูกข้าม ไม่ทับของเดิม">⇢ Tags → OEM</button>
+    <!-- 🧹 ล้างชื่อโรงงาน — ท่านประธานสั่ง 16 ต.ค. 2569 "MINI-ONE เปลี่ยนเป็น ไม่ระบุโรงงาน"
+         ทำเป็นปุ่มด้วยเหตุผลเดียวกับปุ่มข้างบน: ข้อมูลอยู่ชั้น override ที่เก็บส่วนกลาง ยิงจากนอกเบราว์เซอร์ไม่ได้ -->
+    <button class="btn" id="facClrBtn"
+            title="ล้างชื่อโรงงานของแถวที่เห็นบนจอนี้ ให้กลับเป็น ไม่ระบุโรงงาน&#10;ทำเฉพาะแถวที่เห็น (ตามตัวกรองที่เลือกอยู่)&#10;แถวที่ไม่มีโรงงานอยู่แล้วจะถูกข้าม">🧹 ล้างโรงงาน</button>
     <div class="pop">
       <button class="btn" id="colBtn">คอลัมน์ ▾</button>
       <div class="menu" id="colMenu"></div>
@@ -686,6 +690,43 @@ document.getElementById("oemMvBtn").onclick=function(){
   save(LS_OVR,state.ovr);   // sync.js ดักตัวนี้แล้วดันขึ้นส่วนกลางให้เอง
   render();
   alert("ย้ายแล้ว "+move.length+" แถว ✓\nซิงก์ขึ้นส่วนกลางอัตโนมัติ · เครื่องอื่นเห็นตามภายในไม่กี่วินาที");
+};
+
+document.getElementById("facClrBtn").onclick=function(){
+  /* 🧹 ล้างชื่อโรงงานเป็นชุด — ท่านประธานสั่ง 16 ต.ค. 2569 "MINI-ONE เปลี่ยนเป็น ไม่ระบุโรงงาน"
+
+     ⚠️ **ทำกับเฉพาะแถวที่เห็นบนจอตอนนี้** (currentRows ผ่านตัวกรองหมวด/โรงงาน/ค้นหา)
+        ⇒ อยากล้างทั้งหมวด ต้อง **ล้างตัวกรองโรงงานก่อน** ไม่งั้นจะได้เฉพาะโรงงานที่เลือกอยู่
+        กล่องยืนยันจึงบอกทั้ง "เห็นกี่แถว" และ "ทั้งหมวดมีกี่แถว" ให้เทียบกันได้ก่อนกด
+     ⚠️ **แถวที่ไม่มีโรงงานอยู่แล้วให้ข้าม** — จะได้ไม่ไปสร้าง override เปล่า ๆ ให้รก
+     ⚠️ **สำรอง override ก่อนเขียนทุกครั้ง** คีย์สำรองไม่ใช่คีย์ที่ sync ขึ้นส่วนกลาง จึงไม่กวนของกลาง
+        (ตาข่ายสแน็ปช็อตฝั่งเซิร์ฟเวอร์ยังไม่ขึ้น ⇒ ฝั่งเบราว์เซอร์คือทางกู้คืนทางเดียวตอนนี้) */
+  var rows=currentRows(), ล้าง=[], ไม่มีอยู่แล้ว=0, โรงงาน={};
+  rows.forEach(function(r){
+    var f=String((state.ovr[r.sku]||{}).factory||"").trim();
+    if(!f){ ไม่มีอยู่แล้ว++; return; }
+    โรงงาน[f]=(โรงงาน[f]||0)+1;
+    ล้าง.push(r);
+  });
+  var ชื่อโรงงาน=Object.keys(โรงงาน).map(function(k){return k+" ("+โรงงาน[k]+")";}).join(" · ")||"-";
+  var ทั้งหมวด=state.base.filter(function(p){
+    return (state.ovr[p.sku]||{}).category===state.cat || (p.cat===state.cat);
+  }).length;
+  var สรุป="ในจอนี้ "+rows.length+" แถว"+(ทั้งหมวด?" (ทั้งหมวดมี "+ทั้งหมวด+" แถว)":"")+"\n"
+    +"• จะล้างโรงงาน "+ล้าง.length+"\n"
+    +"• ข้าม (ไม่ระบุโรงงานอยู่แล้ว) "+ไม่มีอยู่แล้ว+"\n"
+    +"• โรงงานที่จะถูกล้าง: "+ชื่อโรงงาน;
+  if(!ล้าง.length){alert("ไม่มีแถวไหนเข้าเกณฑ์\n\n"+สรุป);return;}
+  if(!confirm("ล้างชื่อโรงงาน → ไม่ระบุโรงงาน\n\n"+สรุป+"\n\nทำเลยไหม?"))return;
+  try{localStorage.setItem("gucut_overrides_backup_"+Date.now(),JSON.stringify(state.ovr));}catch(e){}
+  ล้าง.forEach(function(r){
+    var o=state.ovr[r.sku]; if(!o)return;
+    delete o.factory;
+    if(Object.keys(o).length)state.ovr[r.sku]=o; else delete state.ovr[r.sku];
+  });
+  save(LS_OVR,state.ovr);   // sync.js ดักตัวนี้แล้วดันขึ้นส่วนกลางให้เอง
+  rebuildFacFilter(); renderFacBar(); render();
+  alert("ล้างแล้ว "+ล้าง.length+" แถว ✓\nซิงก์ขึ้นส่วนกลางอัตโนมัติ · เครื่องอื่นเห็นตามภายในไม่กี่วินาที");
 };
 
 function rebuildFacFilter(){
