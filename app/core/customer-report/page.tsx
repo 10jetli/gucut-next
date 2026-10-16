@@ -70,11 +70,32 @@ const RANGES: { days: number; label: string; เดือนแบบZORT?: numb
 ]
 
 
-/** ป้ายเดือนบนแกนนอน เช่น 2026-10 → ต.ค./69 — ใช้ร่วมสองมุมมองของกราฟแนวโน้ม */
+/** รวมแถวรายเดือนเป็นไตรมาส/ปี — **รวมได้เฉพาะยอดเงิน** (บาทบวกกันข้ามเดือนได้)
+ *  ⚠️ จำนวนคนรวมข้ามเดือนไม่ได้: คนเดียวซื้อสองเดือนจะถูกนับสองครั้ง ⇒ มุมมองจำนวนลูกค้าใช้ได้แค่รายเดือน
+ *  ช่องเงินที่เดือนใดไม่ส่ง ⇒ ช่องรวมเป็น undefined (ไม่เดาเป็นศูนย์) */
+function รวมยอดตามช่วง(rows: MonthlyRow[], by: 'quarter' | 'year'): MonthlyRow[] {
+  const keys = ['newSales', 'repeatSales', 'unnamedSales', 'unknownSales', 'totalSales'] as const
+  const out = new Map<string, MonthlyRow>()
+  for (const r of rows) {
+    const [yy, mm] = String(r.month).split('-').map(Number)
+    const k = by === 'year' ? `${yy}` : `${yy}-Q${Math.ceil(mm / 3)}`
+    const acc: MonthlyRow = out.get(k) ?? { month: k, newSales: 0, repeatSales: 0, unnamedSales: 0, unknownSales: 0, totalSales: 0 }
+    for (const f of keys) {
+      const v = r[f]
+      acc[f] = typeof v === 'number' && typeof acc[f] === 'number' ? (acc[f] as number) + v : undefined
+    }
+    out.set(k, acc)
+  }
+  return Array.from(out.values())
+}
+
+/** ป้ายแกนนอนแบบ ZORT เช่น 2026-10 → ต.ค./2569 · 2026-Q3 → ไตรมาส 3/2569 · 2026 → 2569 — ใช้ร่วมสองมุมมองของกราฟแนวโน้ม */
 function mLabel(m: string) {
   const [yy, mm] = String(m).split('-').map(Number)
   const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-  return mm >= 1 && mm <= 12 ? `${M[mm - 1]}/${(yy + 543) % 100}` : String(m)
+  if (/^\d{4}-Q[1-4]$/.test(m)) return `ไตรมาส ${m.slice(-1)}/${yy + 543}`
+  if (/^\d{4}$/.test(m)) return String(yy + 543)
+  return mm >= 1 && mm <= 12 ? `${M[mm - 1]}/${yy + 543}` : String(m)
 }
 
 /** กราฟแนวโน้มรายเดือนแบบ ZORT (ภาพ 75) — สามเส้น
@@ -113,6 +134,7 @@ function TrendChart({ rows, by = 'people' }: { rows: MonthlyRow[]; by?: 'people'
         <text x={2} y={yP(maxP) + 4} className="fill-gray-400 text-[10px]">{maxP} คน</text>
         <text x={W - 2} y={yU(maxU) + 4} textAnchor="end" className="fill-gray-400 text-[10px]">{maxU} ใบ</text>
       </svg>
+      <p className="text-center text-[11px] text-gray-400 -mt-1">ช่วงเวลา</p>
     </div>
   )
 }
@@ -155,11 +177,12 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
         ))}
         <text x={2} y={y(max) + 4} className="fill-gray-400 text-[10px]">{ย่อ(max)} ฿</text>
       </svg>
+      <p className="text-center text-[11px] text-gray-400 -mt-1">ช่วงเวลา</p>
       {/* ตารางตัวเลขใต้กราฟ — เส้นบอกทิศ ตัวเลขบอกขนาด · คอลัมน์รวมมาจาก totalSales ของท่อ ไม่ได้บวกเอง */}
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-[11.5px] tabular-nums">
           <thead><tr className="text-gray-500">
-            <th className="text-left font-normal py-0.5">เดือน</th>
+            <th className="text-left font-normal py-0.5">ช่วงเวลา</th>
             {เส้น.map((l) => <th key={l.key} className="text-right font-normal py-0.5 px-1">{l.label}</th>)}
             <th className="text-right font-normal py-0.5">รวม</th>
           </tr></thead>
@@ -221,6 +244,8 @@ export default function CoreCustomersPage() {
   const [cardBy, setCardBy] = useState<'people' | 'sales'>('sales')
   /** มุมมองกราฟแนวโน้ม — ZORT `salestypeoption` (จำนวนลูกค้า | ยอดขาย) · แยกจากการ์ดวงกลม เพราะ ZORT ก็แยกสองตัว */
   const [trendBy, setTrendBy] = useState<'people' | 'sales'>('people')
+  /** ความละเอียดแกนเวลา — ปุ่ม วัน/เดือน/ไตรมาส/ปี ใต้กราฟของ ZORT (อ่านจอจริง 16 ต.ค. 2569) */
+  const [trendGran, setTrendGran] = useState<'month' | 'quarter' | 'year'>('month')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -600,7 +625,39 @@ export default function CoreCustomersPage() {
                   ท่อ bycustomer ตอบเป็นยอดรวมทั้งช่วง ไม่มีมิติเวลา ⇒ วาดไม่ได้โดยไม่เดา
                   **การ์ดต้องอยู่ตามผังพร้อมเหตุผล** ไม่ใช่หายไปเฉย ๆ (คนที่ชิน ZORT จะหา) */}
               {monthly.length > 0
-                ? <TrendChart rows={monthly} by={trendBy === 'sales' && มียอดรายเดือน(monthly) ? 'sales' : 'people'} />
+                ? (() => {
+                  const ยอด = trendBy === 'sales' && มียอดรายเดือน(monthly)
+                  const gran = ยอด ? trendGran : 'month'
+                  const rows = gran === 'month' ? monthly : รวมยอดตามช่วง(monthly, gran)
+                  const ปุ่ม: { k: 'day' | 'month' | 'quarter' | 'year'; label: string; ใช้ได้: boolean }[] = [
+                    { k: 'day', label: 'วัน', ใช้ได้: false },
+                    { k: 'month', label: 'เดือน', ใช้ได้: true },
+                    { k: 'quarter', label: 'ไตรมาส', ใช้ได้: ยอด },
+                    { k: 'year', label: 'ปี', ใช้ได้: ยอด },
+                  ]
+                  return (
+                    <>
+                      <TrendChart rows={rows} by={ยอด ? 'sales' : 'people'} />
+                      <div className="flex justify-end mt-2">
+                        <div className="inline-flex border border-gray-300 rounded overflow-hidden text-[12px]">
+                          {ปุ่ม.map((b) => (
+                            <button key={b.k} type="button" disabled={!b.ใช้ได้}
+                              aria-pressed={gran === b.k}
+                              onClick={() => b.k !== 'day' && setTrendGran(b.k)}
+                              className={`px-2.5 py-1 border-l first:border-l-0 border-gray-300 ${gran === b.k ? 'bg-gray-100 font-semibold underline' : 'bg-white'} disabled:text-gray-300 disabled:cursor-not-allowed`}>
+                              {b.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      {/* ปุ่มที่ปิดต้องบอกเหตุบนจอ — title อย่างเดียวอ่านข้ามได้ */}
+                      <p className="text-[11px] text-gray-400 mt-1 text-right">
+                        วัน: ท่อส่งข้อมูลเป็นรายเดือนเท่านั้น
+                        {!ยอด && ' · ไตรมาส/ปี: ใช้ได้ในมุมมองยอดขาย (จำนวนคนรวมข้ามเดือนไม่ได้ คนเดียวจะถูกนับซ้ำ)'}
+                      </p>
+                    </>
+                  )
+                })()
                 : (
                   <p className="text-[12.5px] text-gray-500 leading-relaxed">
                     ZORT วาดกราฟลูกค้าใหม่/ซื้อซ้ำรายเดือน — ท่อยังไม่ส่งข้อมูลรายเดือนมา
