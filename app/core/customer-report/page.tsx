@@ -33,7 +33,15 @@ interface Person {
 
 /** กราฟรายเดือนสามเส้น — ⚠️ **สองกองแรกนับเป็นคน กองไม่ระบุชื่อนับเป็นใบ ห้ามบวกรวมกัน**
  *  (ฝั่งท่อกำชับตอนออกแบบ 6 ก.ย. — หน่วยต่างกัน เส้นอยู่กราฟเดียวกันได้แต่ต้องมีป้ายหน่วย) */
-interface MonthlyRow { month: string; newCustomers?: number; repeatCustomers?: number; unnamedOrders?: number }
+interface MonthlyRow {
+  month: string; newCustomers?: number; repeatCustomers?: number; unnamedOrders?: number
+  /** ยอดขายรายกลุ่ม (บาท) — ท่อเพิ่ม 16 ต.ค. 2569 · newSales+repeatSales+unnamedSales+unknownSales = totalSales ของเดือนนั้น
+   *  ท่อรุ่นเก่าไม่ส่ง ⇒ undefined ⇒ มุมมองยอดขายปิดไว้ ห้ามวาดเป็นศูนย์ */
+  newSales?: number; repeatSales?: number; unnamedSales?: number; unknownSales?: number; unknownCustomers?: number; totalSales?: number
+}
+/** ท่อส่งยอดขายรายเดือนครบทุกแถวไหม — ขาดแถวเดียวก็ไม่วาด (เส้นที่ตกเป็นศูนย์กลางกราฟ = โกหก) */
+const มียอดรายเดือน = (rows: MonthlyRow[]) =>
+  rows.length > 0 && rows.every((r) => typeof r.newSales === 'number' && typeof r.repeatSales === 'number' && typeof r.unnamedSales === 'number')
 
 /* 🔢 จำนวนต่อหน้า — ZORT ให้เลือก 10/20/50/100 ทุกจอรายการ
    จอนี้แบ่งหน้า **ในเบราว์เซอร์** (ดึงมาทั้งชุดแล้วตัดแสดง) ⇒ เปลี่ยนค่าไม่ต้องยิงท่อใหม่
@@ -62,14 +70,22 @@ const RANGES: { days: number; label: string; เดือนแบบZORT?: numb
 ]
 
 
+/** ป้ายเดือนบนแกนนอน เช่น 2026-10 → ต.ค./69 — ใช้ร่วมสองมุมมองของกราฟแนวโน้ม */
+function mLabel(m: string) {
+  const [yy, mm] = String(m).split('-').map(Number)
+  const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+  return mm >= 1 && mm <= 12 ? `${M[mm - 1]}/${(yy + 543) % 100}` : String(m)
+}
+
 /** กราฟแนวโน้มรายเดือนแบบ ZORT (ภาพ 75) — สามเส้น
  *  ⚠️ **สองเส้นแรกหน่วยเป็น "คน" เส้นไม่ระบุชื่อหน่วยเป็น "ใบ" — ห้ามบวกรวมกัน**
  *     (ฝั่งท่อกำชับตอนออกแบบ) ⇒ เส้นใบใช้**แกนขวาแยก** + ป้ายหน่วยกำกับทั้งสองแกน
  *     สามเส้นบนกราฟเดียวที่หน่วยไม่เท่ากันโดยไม่มีป้าย = ชวนให้คนอ่านบวกรวมโดยไม่รู้ตัว */
-function TrendChart({ rows }: { rows: MonthlyRow[] }) {
+function TrendChart({ rows, by = 'people' }: { rows: MonthlyRow[]; by?: 'people' | 'sales' }) {
   const W = 460; const H = 180; const padL = 34; const padR = 38; const padY = 22
   const n = rows.length
   if (n === 0) return null
+  if (by === 'sales') return <TrendSalesChart rows={rows} />
   const maxP = Math.max(...rows.map((r) => Math.max(Number(r.newCustomers) || 0, Number(r.repeatCustomers) || 0)), 1)
   const maxU = Math.max(...rows.map((r) => Number(r.unnamedOrders) || 0), 1)
   const x = (i: number) => padL + (n === 1 ? (W - padL - padR) / 2 : (i * (W - padL - padR)) / (n - 1))
@@ -77,11 +93,6 @@ function TrendChart({ rows }: { rows: MonthlyRow[] }) {
   const yU = (v: number) => H - padY - (v / maxU) * (H - padY * 2)
   const line = (get: (r: MonthlyRow) => number, y: (v: number) => number) =>
     rows.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(get(r)).toFixed(1)}`).join(' ')
-  const mLabel = (m: string) => {
-    const [yy, mm] = String(m).split('-').map(Number)
-    const M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
-    return mm >= 1 && mm <= 12 ? `${M[mm - 1]}/${(yy + 543) % 100}` : String(m)
-  }
   return (
     <div>
       <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] mb-1">
@@ -102,6 +113,68 @@ function TrendChart({ rows }: { rows: MonthlyRow[] }) {
         <text x={2} y={yP(maxP) + 4} className="fill-gray-400 text-[10px]">{maxP} คน</text>
         <text x={W - 2} y={yU(maxU) + 4} textAnchor="end" className="fill-gray-400 text-[10px]">{maxU} ใบ</text>
       </svg>
+    </div>
+  )
+}
+
+/** มุมมอง "ยอดขาย" ของกราฟแนวโน้ม — ผังเดียวกับ dropdown `salestypeoption` ของ ZORT
+ *  ทุกเส้นหน่วยเป็นบาทเหมือนกัน ⇒ แกนเดียวได้ (ต่างจากมุมมองจำนวนที่คนกับใบปนกัน)
+ *  เส้น "ไม่รู้วันซื้อครั้งแรก" โผล่เฉพาะเดือนที่ท่อส่งเกินศูนย์ — ท่อกำชับว่าถ้ามีแปลว่า JOIN เพี้ยน **อย่าซ่อน** */
+function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
+  const W = 460; const H = 180; const padL = 44; const padR = 14; const padY = 22
+  const n = rows.length
+  const มีไม่รู้ = rows.some((r) => (Number(r.unknownSales) || 0) > 0)
+  const เส้น: { key: keyof MonthlyRow; label: string; color: string; dash?: string }[] = [
+    { key: 'newSales', label: 'ลูกค้าใหม่', color: '#8ea8f8' },
+    { key: 'repeatSales', label: 'ซื้อซ้ำ', color: '#f2938c' },
+    { key: 'unnamedSales', label: 'ไม่ระบุชื่อ', color: '#9ca3af', dash: '4 3' },
+    ...(มีไม่รู้ ? [{ key: 'unknownSales' as const, label: 'ไม่รู้วันซื้อครั้งแรก', color: '#d97706', dash: '2 2' }] : []),
+  ]
+  const val = (r: MonthlyRow, k: keyof MonthlyRow) => Number(r[k]) || 0
+  const max = Math.max(...rows.flatMap((r) => เส้น.map((l) => val(r, l.key))), 1)
+  const x = (i: number) => padL + (n === 1 ? (W - padL - padR) / 2 : (i * (W - padL - padR)) / (n - 1))
+  const y = (v: number) => H - padY - (v / max) * (H - padY * 2)
+  const ย่อ = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(1)} ล.` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : String(Math.round(v)))
+  return (
+    <div>
+      <div className="flex flex-wrap gap-x-4 gap-y-1 text-[11.5px] mb-1">
+        {เส้น.map((l) => (
+          <span key={l.key}><span className="inline-block w-2.5 h-2.5 rounded-full align-middle mr-1" style={{ background: l.color }} />{l.label} (บาท)</span>
+        ))}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="แนวโน้มยอดขายรายเดือนแยกกลุ่มลูกค้า">
+        {[0.5, 1].map((f2) => (
+          <line key={f2} x1={padL} x2={W - padR} y1={y(max * f2)} y2={y(max * f2)} stroke="#eef1f7" />
+        ))}
+        {เส้น.map((l) => (
+          <path key={l.key} d={rows.map((r, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(val(r, l.key)).toFixed(1)}`).join(' ')}
+            fill="none" stroke={l.color} strokeWidth={l.dash ? 1.5 : 2} strokeDasharray={l.dash} />
+        ))}
+        {rows.map((r, i) => (
+          <text key={r.month} x={x(i)} y={H - 6} textAnchor="middle" className="fill-gray-400 text-[10px]">{mLabel(r.month)}</text>
+        ))}
+        <text x={2} y={y(max) + 4} className="fill-gray-400 text-[10px]">{ย่อ(max)} ฿</text>
+      </svg>
+      {/* ตารางตัวเลขใต้กราฟ — เส้นบอกทิศ ตัวเลขบอกขนาด · คอลัมน์รวมมาจาก totalSales ของท่อ ไม่ได้บวกเอง */}
+      <div className="overflow-x-auto mt-2">
+        <table className="w-full text-[11.5px] tabular-nums">
+          <thead><tr className="text-gray-500">
+            <th className="text-left font-normal py-0.5">เดือน</th>
+            {เส้น.map((l) => <th key={l.key} className="text-right font-normal py-0.5 px-1">{l.label}</th>)}
+            <th className="text-right font-normal py-0.5">รวม</th>
+          </tr></thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.month} className="border-t border-gray-100">
+                <td className="py-0.5">{mLabel(r.month)}</td>
+                {เส้น.map((l) => <td key={l.key} className="text-right py-0.5 px-1">{fmtMoney(r[l.key] as number | undefined)}</td>)}
+                <td className="text-right py-0.5">{fmtMoney(r.totalSales)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <p className="text-[11px] text-gray-400 mt-1">ตัดใบยกเลิกออกแล้ว แต่ยังรวมใบที่ยังไม่จ่าย</p>
     </div>
   )
 }
@@ -146,6 +219,8 @@ export default function CoreCustomersPage() {
   // ⚠️ ZORT จำตัวกรองที่ใช้ครั้งก่อนได้ (จอยอดขายของเขาค้างช่วง ส.ค. ที่มีคนตั้งไว้) ⇒ ค่านี้อาจเป็นค่าที่ ZORT จำไว้ ไม่ใช่ค่าตั้งต้นจริง
   //    ยืนยันได้ด้วยบัญชี ZORT ที่ไม่เคยเปิดจอนี้ — ยังไม่ได้ทำ
   const [cardBy, setCardBy] = useState<'people' | 'sales'>('sales')
+  /** มุมมองกราฟแนวโน้ม — ZORT `salestypeoption` (จำนวนลูกค้า | ยอดขาย) · แยกจากการ์ดวงกลม เพราะ ZORT ก็แยกสองตัว */
+  const [trendBy, setTrendBy] = useState<'people' | 'sales'>('people')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -507,12 +582,25 @@ export default function CoreCustomersPage() {
                 })()}
             </div>
             <div className="bg-white border border-gray-200 rounded-md p-4">
-              <p className="text-[15px] font-semibold text-gray-900 mb-3">📈 แนวโน้ม</p>
+              <div className="flex items-center justify-between gap-3 mb-3">
+                <p className="text-[15px] font-semibold text-gray-900">📈 แนวโน้ม</p>
+                <select
+                  value={trendBy}
+                  onChange={(e) => setTrendBy(e.target.value as 'people' | 'sales')}
+                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white"
+                >
+                  <option value="people">จำนวนลูกค้า</option>
+                  {/* ท่อรุ่นที่ไม่ส่งยอดรายเดือน ⇒ ปิดตัวเลือกพร้อมเหตุ ไม่วาดเส้นศูนย์ */}
+                  <option value="sales" disabled={!มียอดรายเดือน(monthly)}>
+                    {มียอดรายเดือน(monthly) ? 'ยอดขาย' : 'ยอดขาย (ท่อยังไม่ส่งยอดรายเดือน)'}
+                  </option>
+                </select>
+              </div>
               {/* ⚠️ ZORT วาดเส้นรายเดือน ลูกค้าใหม่/ซื้อซ้ำ/ไม่ระบุ — ต้องมีข้อมูลรายเดือนถึงจะวาดได้
                   ท่อ bycustomer ตอบเป็นยอดรวมทั้งช่วง ไม่มีมิติเวลา ⇒ วาดไม่ได้โดยไม่เดา
                   **การ์ดต้องอยู่ตามผังพร้อมเหตุผล** ไม่ใช่หายไปเฉย ๆ (คนที่ชิน ZORT จะหา) */}
               {monthly.length > 0
-                ? <TrendChart rows={monthly} />
+                ? <TrendChart rows={monthly} by={trendBy === 'sales' && มียอดรายเดือน(monthly) ? 'sales' : 'people'} />
                 : (
                   <p className="text-[12.5px] text-gray-500 leading-relaxed">
                     ZORT วาดกราฟลูกค้าใหม่/ซื้อซ้ำรายเดือน — ท่อยังไม่ส่งข้อมูลรายเดือนมา
