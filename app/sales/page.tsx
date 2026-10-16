@@ -7,14 +7,14 @@
 // รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน)
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ } from '@/lib/format'
+import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import { ยอดขายแบบZORT, type ผลยอดแบบZORT, type แถวใบคืน } from '@/lib/zort-sales-total'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, type ประตูกำไร } from '@/components/zort/CostGate'
 import {
-  PageHead, BtnGhost, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag, thaiDate,
+  PageHead, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag, thaiDate,
 } from '@/components/zort'
 
 interface Report {
@@ -131,11 +131,14 @@ async function fetchDaily(days: number) {
 /* ช่วงเวลา — ไล่ให้ครบตามที่ ZORT มี (กดดูเอง 15 ก.ย. 2569: 1/3/6 เดือน · 1 ปี · วันนี้ · เมื่อวาน · เดือนนี้ · เดือนที่แล้ว)
    ⚠️ **ของเรายังไม่มี "เมื่อวาน · เดือนนี้ · เดือนที่แล้ว"** เพราะจอนี้คิดช่วงจาก "ย้อนหลัง N วัน" อย่างเดียว
       ⇒ สามอันนั้นต้องเลือกช่วงวันเองได้ก่อน (งานคนละชิ้น) · เขียนไว้ในรายงานแล้ว ไม่แกล้งใส่ตัวเลือกที่ให้ช่วงผิด */
-const PERIODS = [
+/* 🗓 `เดือนแบบZORT` = นับแบบ ZORT: วันที่ 1 ของเดือนที่ถอยไป N เดือน (ไม่ใช่ N วันนับถอย) — 16 ต.ค. 2569
+   หลักฐาน: จอรายการขาย ZORT "ย้อนหลัง 3 เดือน" = 1/7/2569–15/10/2569 · รายงานลูกค้า 1/7–16/10 (สองจอ เครื่องมือช่วงวันตัวเดียวกัน)
+   ⚠️ 6 เดือน / 1 ปี ยังไม่ได้วัดกับจอ ZORT ⇒ คงแบบนับถอยเป็นวันไว้ ไม่เดาให้ */
+const PERIODS: { days: number; label: string; เดือนแบบZORT?: number }[] = [
   { days: 1, label: 'วันนี้' },
   { days: 7, label: 'ย้อนหลัง 7 วัน' },
-  { days: 30, label: 'ย้อนหลัง 1 เดือน' },
-  { days: 90, label: 'ย้อนหลัง 3 เดือน' },
+  { days: 30, label: 'ย้อนหลัง 1 เดือน', เดือนแบบZORT: 1 },
+  { days: 90, label: 'ย้อนหลัง 3 เดือน', เดือนแบบZORT: 3 },
   { days: 180, label: 'ย้อนหลัง 6 เดือน' },
   { days: 365, label: 'ย้อนหลัง 1 ปี' },
 ]
@@ -533,11 +536,15 @@ export default function SalesReportPage() {
   const [tab, setTab] = useState<'all' | 'branch' | 'chan' | 'mkt'>('all')
   const [bucket, setBucket] = useState<Bucket>('day')
 
-  const load = useCallback(async (d: number) => {
+  const load = useCallback(async (เลือก: number) => {
     setLoading(true)
     setError('')
     try {
       const to = thaiDay(0)
+      /* ช่วงแบบ ZORT (ต้นเดือน) ⇒ แปลงเป็นจำนวนวันจริงของช่วง แล้วใช้ `d` ตัวเดียวทั้งฟังก์ชัน
+         (ยอดเทียบช่วงก่อน · กราฟรายวัน · ยอดรายวันจากท่อ ต้องยาวเท่ากันหมด ไม่งั้นเทียบคนละขนาด) */
+      const ต้นเดือน = ต้นเดือนย้อนหลังแบบZORT(PERIODS.find((p) => p.days === เลือก)?.เดือนแบบZORT)
+      const d = ต้นเดือน ? Math.round((Date.parse(to) - Date.parse(ต้นเดือน)) / 86400000) + 1 : เลือก
       const from = thaiDay(d - 1)
       const prevTo = thaiDay(d)
       const prevFrom = thaiDay(d * 2 - 1)
@@ -712,11 +719,7 @@ export default function SalesReportPage() {
       {/* หัวจอแบบ ZORT: ชื่อจอ → บรรทัดช่วงเวลา → แท็บ (ภาพ 03-รายงานยอดขาย.jpg) */}
       <PageHead
         title="ยอดขาย"
-        actions={
-          <BtnGhost onClick={() => load(days)} disabled={loading}>
-            {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
-          </BtnGhost>
-        }
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Dashboard/SalesReport ไม่มี (อ่านปุ่มทั้งหน้า: วัน เดือน ไตรมาส ปี) */
       />
 
       <div className="flex flex-wrap items-center gap-3 mb-3">
