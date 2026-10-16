@@ -107,7 +107,9 @@ function TrendChart({ rows }: { rows: MonthlyRow[] }) {
 export default function CoreCustomersPage() {
   const [days, setDays] = useState(90)
   const [q, setQ] = useState('')
-  const [tab, setTab] = useState<'all' | 'a' | 'b'>('all')
+  /* แท็บตั้งต้น = ลูกค้าใหม่ แบบ ZORT (`tableoption` ของ /Dashboard/ContactReport ตั้งต้นที่ "ลูกค้าใหม่" · ZORT ไม่มีแท็บ "ทั้งหมด"
+     — ของเราเก็บไว้เป็นตัวเลือกเพิ่ม · อ่านจอจริง 16 ต.ค. 2569) */
+  const [tab, setTab] = useState<'all' | 'a' | 'b'>('a')
   const [page, setPage] = useState(0)
   const [PER_PAGE, setPerPage] = useState(PER_PAGE_เริ่มต้น)
 
@@ -231,8 +233,13 @@ export default function CoreCustomersPage() {
      ช่วง 365 วัน ท่อส่งมา 500 จาก 4,281 ราย ⇒ ของเดิมหารด้วย 6.81 ล้าน (500 ราย + ไม่มีชื่อ) แทน 9.15 ล้าน
      ⇒ % ทุกแถวสูงเกินจริงราว 34% · ท่อส่ง totalSales มาให้ตั้งแต่แรก แต่ตารางไม่ได้ใช้
      ท่อไม่ส่ง (รุ่นเก่า) ⇒ ถอยไปใช้ยอดของรายที่แสดง และหัวคอลัมน์บอกขอบเขต */
-  const ตัวหารร้อยละ = totalSales !== null && totalSales > 0 ? totalSales : totalAmount
-  const ร้อยละของทั้งช่วง = totalSales !== null && totalSales > 0
+  /* 📐 ZORT คิด "ยอดขาย (%)" **ในกลุ่มของแท็บ** (อ่านจอ 16 ต.ค. 2569: แท็บลูกค้าใหม่ 54,000 = 7.34% ของยอดลูกค้าใหม่ 736,135.40)
+     ⇒ แท็บลูกค้าใหม่/ซื้อซ้ำ หารด้วยยอดของกลุ่มนั้น — **เฉพาะตอนรายชื่อครบ** (ท่อไม่ได้ตัด) ไม่งั้นยอดกลุ่มขาด % จะพองเงียบ ๆ
+       รายชื่อถูกตัด ⇒ ถอยไปหารด้วยยอดทั้งช่วงเหมือนเดิม และหัวคอลัมน์บอกว่าหารด้วยอะไร */
+  const ยอดกลุ่ม = tab === 'a' ? newC.reduce((x, p) => x + p.amount, 0) : tab === 'b' ? repC.reduce((x, p) => x + p.amount, 0) : null
+  const ร้อยละในกลุ่ม = ยอดกลุ่ม !== null && ยอดกลุ่ม > 0 && !truncated
+  const ตัวหารร้อยละ = ร้อยละในกลุ่ม ? (ยอดกลุ่ม as number) : totalSales !== null && totalSales > 0 ? totalSales : totalAmount
+  const ร้อยละของทั้งช่วง = !ร้อยละในกลุ่ม && totalSales !== null && totalSales > 0
   const shown = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
 
@@ -564,8 +571,8 @@ export default function CoreCustomersPage() {
                   <th className={THR}>จำนวนใบ</th>
                   <th className={THR}>ยอดรวม</th>
                   {/* ZORT (ภาพ 76) มีคอลัมน์ ยอดขาย (%) — สัดส่วนต่อยอดรวมของช่วง */}
-                  <th className={THR} title={ร้อยละของทั้งช่วง ? 'ร้อยละของยอดขายทั้งช่วง (ท่อนับทุกใบ ไม่ใช่เฉพาะรายที่แสดง)' : 'ร้อยละของยอดรวมเฉพาะรายที่แสดง — ท่อไม่ได้ส่งยอดทั้งช่วงมา'}>
-                    ยอดขาย (%{ร้อยละของทั้งช่วง ? '' : ' ของรายที่แสดง'})
+                  <th className={THR} title={ร้อยละในกลุ่ม ? `ร้อยละของยอดขายกลุ่ม${tab === 'a' ? 'ลูกค้าใหม่' : 'ลูกค้าซื้อซ้ำ'}ในช่วงนี้ (แบบ ZORT)` : ร้อยละของทั้งช่วง ? 'ร้อยละของยอดขายทั้งช่วง (ท่อนับทุกใบ ไม่ใช่เฉพาะรายที่แสดง)' : 'ร้อยละของยอดรวมเฉพาะรายที่แสดง — ท่อไม่ได้ส่งยอดทั้งช่วงมา'}>
+                    ยอดขาย (%{ร้อยละในกลุ่ม ? '' : ร้อยละของทั้งช่วง ? ' ของทั้งช่วง' : ' ของรายที่แสดง'})
                   </th>
                   <th className={THR}>ซื้อล่าสุด</th>
                 </tr>
