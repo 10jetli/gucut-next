@@ -51,6 +51,8 @@ interface DeadResp {
   historyFrom?: string
   enoughHistory?: boolean
   cut?: string
+  /** ไล่หน้า — ท่อตอบครั้งละ 50 (16 ต.ค. 2569: total 1,543 · rows 50) · **เดินหน้าด้วย nextOffset เท่านั้น** (pagingNote ของท่อ) */
+  offset?: number; limit?: number; nextOffset?: number | null
 }
 
 /* ช่วง "สินค้าจม" — ให้ครบตามที่ ZORT มี (กดดูจอ ZORT เอง 16 ก.ย. 2569 · `tableoption` 5 ค่า)
@@ -76,6 +78,8 @@ export default function CoreProductReportPage() {
   const [deadErr, setDeadErr] = useState('')
   const [catErr, setCatErr] = useState('')
   const [deadDays, setDeadDays] = useState(90)
+  /** แถวแรกของหน้าที่เปิดอยู่ (ค่าที่ท่อตอบกลับ ไม่ใช่ค่าที่จอขอ) */
+  const [deadBusy, setDeadBusy] = useState(false)
   /** 🏬 มูลค่าคงเหลือรายคลัง (ZORT มีการ์ดนี้) · `stockValue: null` = ยังไม่รู้ ห้ามนับเป็น 0 */
   const [whs, setWhs] = useState<{ code: string; name?: string; stockValue?: number | null; collectedDayTH?: string | null }[] | null>(null)
   /* 💰 **มูลค่าทั้งร้านที่ ZORT แสดง = ผลรวมมูลค่ารายคลังที่ ZORT ตอบ** (16 ต.ค. 2569: 16,179,086.88 + 1,562.32 + 0
@@ -143,6 +147,16 @@ export default function CoreProductReportPage() {
   }, [deadDays])
 
   useEffect(() => { load() }, [load])
+
+  /* 📄 ไล่หน้าสินค้าจม — ยิงเฉพาะเส้นนี้ ไม่โหลดทั้งจอใหม่ · offset มาจาก nextOffset ของท่อ (ห้ามบวก limit เอง) */
+  const loadDeadPage = useCallback(async (offset: number) => {
+    setDeadBusy(true)
+    try {
+      const r = await fetch(`/api/web/core?list=deadstock&days=${deadDays}&offset=${offset}`).then((x) => x.json()).catch(() => null)
+      setDead(r && !r.error ? r : null)
+      setDeadErr(!r ? 'ยิงไปที่ท่อสินค้าจมไม่สำเร็จ' : (typeof r.error === 'string' ? r.error : ''))
+    } finally { setDeadBusy(false) }
+  }, [deadDays])
 
   function downloadStockValue() {
     if (!stock) return
@@ -530,6 +544,24 @@ export default function CoreProductReportPage() {
                 </tbody>
               </table>
             </TableWrap>
+            {/* 🔴 ตัวนับ (total) กับแถว (ครั้งละ 50) มาคนละขนาด ⇒ ต้องบอกว่าเห็นแถวไหนถึงแถวไหน (CLAUDE.md กฎแท็บข้อ 4)
+                ZORT ก็แบ่งหน้าตารางนี้ (1 2 3 … 194) · เดิมจอเราแสดง 50 แถวแรกเฉย ๆ ไม่มีทางไปหน้าถัดไป */}
+            {dead && typeof dead.total === 'number' && dead.total > 0 && (
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-2.5 border-t border-gray-200 text-[12.5px] text-gray-500">
+                <span>
+                  แสดง {fmtNum((dead.offset ?? 0) + 1)}–{fmtNum((dead.offset ?? 0) + (dead.rows?.length ?? 0))} จาก {fmtNum(dead.total)} รหัส
+                  {q.trim() && <span className="text-amber-700"> · ค้นหากรองเฉพาะ {fmtNum(dead.rows?.length ?? 0)} แถวในหน้านี้ (ท่อยังไม่รับคำค้น)</span>}
+                </span>
+                <span className="flex items-center gap-2">
+                  <button type="button" disabled={deadBusy || (dead.offset ?? 0) <= 0}
+                    onClick={() => loadDeadPage(Math.max(0, (dead.offset ?? 0) - (dead.limit ?? dead.rows?.length ?? 50)))}
+                    className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40">← ก่อนหน้า</button>
+                  <button type="button" disabled={deadBusy || typeof dead.nextOffset !== 'number'}
+                    onClick={() => { if (typeof dead.nextOffset === 'number') loadDeadPage(dead.nextOffset) }}
+                    className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40">ถัดไป →</button>
+                </span>
+              </div>
+            )}
           </Card>
 
           {dead && (dead.total ?? 0) > 0 && (
