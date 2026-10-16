@@ -307,7 +307,7 @@ function Inner() {
       <p className="text-[12.5px] mb-2">
         <Link href="/core/purchases" className="text-blue-600 hover:underline">‹ รายการซื้อ</Link>
       </p>
-      <PageHead title={`ใบสั่งซื้อ ${d?.number || no}`}
+      <PageHead title="รายละเอียดรายการซื้อ" /* ตาม ZORT /Buy/Details (16 ต.ค. 2569) · เลขที่ใบอยู่ในช่อง "รายการ" */
         summary={<>
           <span className="text-gray-400">{d?.source || 'อ่านจากคลังเงา'}</span>
           {/* 🏬 ร้านของใบนี้ — **ค่ามาจากช่อง `store` ที่ท่อตอบ ไม่ใช่ที่จอเดาจาก URL**
@@ -350,6 +350,8 @@ function Inner() {
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
             className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">Accounting ▾</span>
+          <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
+            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
             className="ml-auto text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
         </div>
@@ -374,11 +376,13 @@ function Inner() {
         <>
           <div className="mb-4 grid gap-3 md:grid-cols-2">
             <section className="rounded border border-gray-200 bg-white p-3">
-              <h2 className="mb-2 text-[12.5px] font-semibold">หัวใบ</h2>
+              <h2 className="mb-2 text-[12.5px] font-semibold">ข้อมูล</h2>
               <div className="grid gap-1">
+                <Field k="รายการ" v={d.number || no} />
                 {/* 📐 ZORT `/Buy/Details`: ประเภทรายการ = ซื้อสินค้าเข้า (อ่าน 16 ต.ค. 2569) */}
                 <Field k="ประเภทรายการ" v="ซื้อสินค้าเข้า" />
-                <Field k="ผู้ขาย" v={d.vendor} />
+                {/* ป้ายตาม ZORT คือ "ผู้ติดต่อ" (ค่าเป็นผู้ขาย) */}
+                <Field k="ผู้ติดต่อ" v={d.vendor} />
                 {/* 🔴 เดิมโชว์ค่าดิบ "2026-03-10" — ทั้งร้านอ่านปี พ.ศ. และจออื่นแปลงหมดแล้ว
                     จอเดียวที่ไม่แปลง = คนเทียบข้ามจอแล้วสะดุด และเสี่ยงอ่านปีผิดไป 543 ปี
                     (เจอกับของจริงตอนเปิดใบ PO-202603001 · 14 ก.ย. 2569) */}
@@ -456,9 +460,9 @@ function Inner() {
                 🔑 มีผลกับแผนตัด ZORT: ของเราไม่มีทางส่งรายใบ ⇒ ถ้าสับสวิตช์กลางวัน
                    ใบที่ถูกกดส่งไปแล้วด้วยมือจะถูกส่งซ้ำโดยสะพานของเรา */}
             <p className="mb-2 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
-              ⚠️ <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — คอลัมน์ <b>ส่วนลดต่อหน่วย</b> ·
-              กล่อง <b>ค่าใช้จ่ายอื่น</b> · <b>สถานะการโอนสินค้า</b> · ช่อง <b>พูดคุย</b> ·
-              ปุ่ม <b>Accounting</b> (ส่งใบนี้เข้า PEAK รายใบ — วัดจอเขา 4 ต.ค. 2569)
+              ⚠️ <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — <b>ค่า</b>ในคอลัมน์ส่วนลดต่อหน่วย (คอลัมน์มีแล้ว ขึ้น — = ยังไม่รู้) ·
+              กล่อง <b>ค่าใช้จ่ายอื่น</b> · กล่องประวัติ<b>การโอนสินค้า</b> · ช่อง <b>พูดคุย</b>
+              {' '}· ปุ่ม Accounting มีแล้วในแถบบนแต่เป็นสีเทา (ส่งใบนี้เข้า PEAK รายใบ — วัดจอเขา 4 ต.ค. 2569)
               <span className="block mt-0.5 text-gray-600">
                 เหตุ: เส้น <code>?purchase=</code> ของท่อส่งมาแค่ เลขที่ใบ · ผู้ขาย · วันที่ · สถานะ ·
                 สถานะชำระเงิน · คลัง · หมายเหตุ · และบรรทัด (รหัส · ชื่อ · จำนวน · ราคา/หน่วย)
@@ -480,7 +484,8 @@ function Inner() {
                       <th className="py-1 pr-2 font-medium">รหัส</th>
                       <th className="py-1 pr-2 font-medium">ชื่อสินค้า</th>
                       <th className="py-1 pr-2 font-medium text-right">จำนวน</th>
-                      <th className="py-1 pr-2 font-medium text-right">ราคา/หน่วย</th>
+                      <th className="py-1 pr-2 font-medium text-right">มูลค่าต่อหน่วย</th>
+                      <th className="py-1 pr-2 font-medium text-right">ส่วนลดต่อหน่วย</th>
                       <th className="py-1 font-medium text-right">รวม</th>
                     </tr>
                   </thead>
@@ -497,6 +502,8 @@ function Inner() {
                         <td className="py-1 pr-2">{l.name || '—'}</td>
                         <td className="py-1 pr-2 text-right tabular-nums">{baht(l.qty)}</td>
                         <td className="py-1 pr-2 text-right tabular-nums">{baht(l.price)}</td>
+                        {/* ZORT มีคอลัมน์นี้ · ท่อเส้น ?purchase= ยังไม่ส่งส่วนลดรายบรรทัด ⇒ ไม่รู้ ไม่ใช่ 0 (ดูกล่องเหลืองข้างบน) */}
+                        <td className="py-1 pr-2 text-right text-gray-300" title="ท่อยังไม่ส่งส่วนลดรายบรรทัดมา">—</td>
                         <td className="py-1 text-right tabular-nums">
                           {baht((Number(l.qty) || 0) * (Number(l.price) || 0))}
                         </td>
