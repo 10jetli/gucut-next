@@ -247,56 +247,6 @@ export default function ReturnOrdersPage() {
         actions={
           <>
             <BtnGhost onClick={() => load()} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
-            {/* 📤 ส่งออกใบคืนจากลูกค้า ครบทุกหน้า
-                🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** — กับดักเดิมที่ CLAUDE.md
-                   จดไว้เรื่อง GetOrders และผมเองก็เคยเกือบสรุปผิดว่าดึงได้แค่ 200 ใบจาก 689
-                   ⇒ แปลง offset ที่ตัวช่วยส่งมา เป็นเลขหน้าตรงนี้ */}
-            <ExportButton
-              disabled={loading}
-              spec={{
-                filename: 'ใบคืนจากลูกค้า',
-                scope: `${storeLabel(store)}${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
-                title: 'ใบคืนสินค้าจากลูกค้า',
-                note: 'ใบคืนที่ลูกค้าคืนเรา (CN-) — คนละชุดกับใบคืนที่เราส่งคืนผู้ขาย'
-                  + ' · เลขที่ใบคืนซ้ำกันได้จริง (ยิงตรวจ 15 ก.ย. 2569: 689 ใบ เลขที่ไม่ซ้ำ 537) — ใช้คอลัมน์ id แยกใบ ห้ามลบแถวที่ดูซ้ำ',
-                /* ✅ **ถอดคำเตือน "ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้" ออกแล้ว** (15 ก.ย. 2569)
-                   ท่อรับ `q` จริงแล้ว (gucut-web 8d4b031) และผม **ยิงดู `applied.q` จากคำตอบจริง
-                   ก่อนถอด** ไม่ได้ถอดตามคำบอกเล่าว่า deploy แล้ว (ฝั่งท่อกำชับข้อนี้เอง)
-                   📏 ยิงจริง: เลขที่ใบเป๊ะ ⇒ applied.q ตรง · source mirror · total 1
-                   ⚠️ มี q ⇒ ผลมาจากกระจก ไม่ใช่ ZORT สด ⇒ เขียนไว้ในหัวไฟล์ด้วย */
-                /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์** — ลืมส่ง `store` แล้วไฟล์จะกลายเป็นของ z1
-                   ทั้งที่จอโชว์ z2 อยู่ · ผิดแบบไม่มีอะไรฟ้อง เพราะไฟล์หน้าตาปกติ */
-                filters: [
-                  ['ร้าน', storeLabel(store)],
-                  q.trim()
-                    ? ['คำค้นหา', `${q.trim()} — ค้นที่เซิร์ฟเวอร์ ครอบทุกใบ (ผลมาจากกระจกของเรา ไม่ใช่ ZORT สด)`]
-                    : ['คำค้นหา', '(ไม่ได้ค้น)'],
-                ],
-                fetchPage: async (offsetAt, limit) => {
-                  const page = Math.floor(offsetAt / limit) + 1
-                  const qs = new URLSearchParams({ list: 'returnorders', limit: String(limit), page: String(page) })
-                  if (store) qs.set('store', store)
-                  if (q.trim()) qs.set('q', q.trim())
-                  const r = await fetch(`/api/web/core?${qs}`)
-                  const d = await r.json()
-                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
-                },
-                /* 🔴 **ต้องมีคอลัมน์ id** — ยิงจริง 15 ก.ย. 2569: 689 ใบมี **เลขที่ซ้ำกัน 152 แถว**
-                   แต่ `id` ไม่ซ้ำเลยสักใบ (กวาดทั้ง 4 หน้า คีย์ข้ามหน้าซ้ำ 0)
-                   ⇒ ถ้าไฟล์ไม่มี id จะมีแถวหน้าตาเหมือนกันเป๊ะ 133 แถว แล้วคนเปิดไฟล์
-                      จะนึกว่าส่งออกซ้ำ แล้วลบทิ้งเอง ⇒ ยอดหายโดยที่ข้อมูลไม่เคยผิด
-                   (บทเรียนเดียวกับบัตรสต็อกที่มีแถวซ้ำจริง 106 แถว — ของซ้ำที่เป็นของจริง
-                    ต้องมีอะไรให้แยกแยะ ไม่งั้นคนจะแก้ "ปัญหา" ที่ไม่มีอยู่) */
-                header: ['id', 'เลขที่ใบคืน', 'วันที่', 'ลูกค้า', 'ใบขายอ้างอิง', 'คลัง', 'ยอด (บาท)', 'สถานะ', 'การชำระเงิน'],
-                toRow: (r: Row) => [
-                  r.id === undefined || r.id === null ? null : String(r.id),
-                  r.number ?? null, r.date ?? null, r.customer ?? null, r.reference || null,
-                  r.warehouse || null, typeof r.amount === 'number' ? r.amount : null,
-                  r.status ?? null, r.paid ?? null,
-                ],
-              }}
-            />
           </>
         }
       />
@@ -473,6 +423,61 @@ export default function ReturnOrdersPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (ผังเดียวกับจอรายการทุกจอของ ZORT ที่อ่านแล้ว — จอนี้ยังไม่ได้อ่านตรง) */}
+          <div className="mt-3 flex items-center gap-2">
+            {/* 📤 ส่งออกใบคืนจากลูกค้า ครบทุกหน้า
+                🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** — กับดักเดิมที่ CLAUDE.md
+                   จดไว้เรื่อง GetOrders และผมเองก็เคยเกือบสรุปผิดว่าดึงได้แค่ 200 ใบจาก 689
+                   ⇒ แปลง offset ที่ตัวช่วยส่งมา เป็นเลขหน้าตรงนี้ */}
+            <ExportButton
+              label="📗 Export to Excel"
+              disabled={loading}
+              spec={{
+                filename: 'ใบคืนจากลูกค้า',
+                scope: `${storeLabel(store)}${q.trim() ? ` · ค้นหา "${q.trim()}"` : ''}`,
+                title: 'ใบคืนสินค้าจากลูกค้า',
+                note: 'ใบคืนที่ลูกค้าคืนเรา (CN-) — คนละชุดกับใบคืนที่เราส่งคืนผู้ขาย'
+                  + ' · เลขที่ใบคืนซ้ำกันได้จริง (ยิงตรวจ 15 ก.ย. 2569: 689 ใบ เลขที่ไม่ซ้ำ 537) — ใช้คอลัมน์ id แยกใบ ห้ามลบแถวที่ดูซ้ำ',
+                /* ✅ **ถอดคำเตือน "ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้" ออกแล้ว** (15 ก.ย. 2569)
+                   ท่อรับ `q` จริงแล้ว (gucut-web 8d4b031) และผม **ยิงดู `applied.q` จากคำตอบจริง
+                   ก่อนถอด** ไม่ได้ถอดตามคำบอกเล่าว่า deploy แล้ว (ฝั่งท่อกำชับข้อนี้เอง)
+                   📏 ยิงจริง: เลขที่ใบเป๊ะ ⇒ applied.q ตรง · source mirror · total 1
+                   ⚠️ มี q ⇒ ผลมาจากกระจก ไม่ใช่ ZORT สด ⇒ เขียนไว้ในหัวไฟล์ด้วย */
+                /* 🔴 **ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์** — ลืมส่ง `store` แล้วไฟล์จะกลายเป็นของ z1
+                   ทั้งที่จอโชว์ z2 อยู่ · ผิดแบบไม่มีอะไรฟ้อง เพราะไฟล์หน้าตาปกติ */
+                filters: [
+                  ['ร้าน', storeLabel(store)],
+                  q.trim()
+                    ? ['คำค้นหา', `${q.trim()} — ค้นที่เซิร์ฟเวอร์ ครอบทุกใบ (ผลมาจากกระจกของเรา ไม่ใช่ ZORT สด)`]
+                    : ['คำค้นหา', '(ไม่ได้ค้น)'],
+                ],
+                fetchPage: async (offsetAt, limit) => {
+                  const page = Math.floor(offsetAt / limit) + 1
+                  const qs = new URLSearchParams({ list: 'returnorders', limit: String(limit), page: String(page) })
+                  if (store) qs.set('store', store)
+                  if (q.trim()) qs.set('q', q.trim())
+                  const r = await fetch(`/api/web/core?${qs}`)
+                  const d = await r.json()
+                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                  return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                },
+                /* 🔴 **ต้องมีคอลัมน์ id** — ยิงจริง 15 ก.ย. 2569: 689 ใบมี **เลขที่ซ้ำกัน 152 แถว**
+                   แต่ `id` ไม่ซ้ำเลยสักใบ (กวาดทั้ง 4 หน้า คีย์ข้ามหน้าซ้ำ 0)
+                   ⇒ ถ้าไฟล์ไม่มี id จะมีแถวหน้าตาเหมือนกันเป๊ะ 133 แถว แล้วคนเปิดไฟล์
+                      จะนึกว่าส่งออกซ้ำ แล้วลบทิ้งเอง ⇒ ยอดหายโดยที่ข้อมูลไม่เคยผิด
+                   (บทเรียนเดียวกับบัตรสต็อกที่มีแถวซ้ำจริง 106 แถว — ของซ้ำที่เป็นของจริง
+                    ต้องมีอะไรให้แยกแยะ ไม่งั้นคนจะแก้ "ปัญหา" ที่ไม่มีอยู่) */
+                header: ['id', 'เลขที่ใบคืน', 'วันที่', 'ลูกค้า', 'ใบขายอ้างอิง', 'คลัง', 'ยอด (บาท)', 'สถานะ', 'การชำระเงิน'],
+                toRow: (r: Row) => [
+                  r.id === undefined || r.id === null ? null : String(r.id),
+                  r.number ?? null, r.date ?? null, r.customer ?? null, r.reference || null,
+                  r.warehouse || null, typeof r.amount === 'number' ? r.amount : null,
+                  r.status ?? null, r.paid ?? null,
+                ],
+              }}
+            />
+          </div>
 
           {/* 📄 เลขหน้า — ท่อรับ `page` มาตลอด แต่จอไม่เคยส่ง ⇒ เห็นแค่ 100 ใบแรกจาก 693
               และ **ไม่มีทางไปดูที่เหลือเลย** · PageNav อ่าน total จากท่อ ไม่รู้ total ก็บอกว่าไม่รู้เอง
