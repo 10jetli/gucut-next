@@ -77,7 +77,8 @@ function Inner() {
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
       <p className="text-[12.5px] mb-2"><Link href="/core/transfers" className="text-blue-600 hover:underline">‹ รายการโอนสินค้า</Link></p>
-      <PageHead title={`ใบโอน ${wrongLevel ? '' : d?.number || ''}`}
+      {/* หัวจอตาม ZORT: "รายละเอียดรายการโอนสินค้า" · เลขที่ใบอยู่ในช่อง "รายการ" ข้างล่าง (อ่านจอจริง 16 ต.ค. 2569) */}
+      <PageHead title="รายละเอียดรายการโอนสินค้า"
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Warehouse/TransferDetails ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
 
@@ -93,6 +94,10 @@ function Inner() {
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           <span title="ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบโอนสินค้า"
             className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">🖨 พิมพ์เอกสาร</span>
+          <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
+          <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
+            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
         </div>
       )}
 
@@ -137,15 +142,16 @@ function Inner() {
 
       {!loading && !error && d && !wrongLevel && (
         <>
-          <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
-            <div><p className="text-gray-400 text-[11.5px]">สถานะ</p>{/* เดิมโชว์ค่าดิบจากท่อ (Success/Pending) = อังกฤษบนจอ · ใบ t_mu23dljn
+          <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-[12.5px]">
+            <div><p className="text-gray-400 text-[11.5px]">รายการ</p><span className="font-medium">{d.number || '—'}</span></div>
+            <div><p className="text-gray-400 text-[11.5px]">การโอนสินค้า</p>{/* คำตาม ZORT (เดิม "สถานะ") · เดิมโชว์ค่าดิบจากท่อ (Success/Pending) = อังกฤษบนจอ · ใบ t_mu23dljn
                   คำมาจาก lib/zort-words.ts ที่เดียว · ไม่รู้จัก = คืนค่าดิบ ไม่เดา */}
               <Pill tone={d.status === 'Success' ? 'green' : 'orange'}>
                 {zortWord(TRANSFER_STATUS, d.status).text || '—'}
               </Pill></div>
-            <div><p className="text-gray-400 text-[11.5px]">วันที่โอน</p>{thaiDate(d.date)}</div>
+            <div><p className="text-gray-400 text-[11.5px]">วันที่</p>{thaiDate(d.date)}</div>
             <div>
-              <p className="text-gray-400 text-[11.5px]">จากคลัง → ไปคลัง</p>
+              <p className="text-gray-400 text-[11.5px]">ไป <span className="text-gray-300">(จากคลัง → ไปคลัง)</span></p>
               {wh(d.from, names)} → {wh(d.to, names)}
               {whErr && (d.from || d.to) && (
                 <span className="block text-[10px] text-amber-700 mt-0.5">
