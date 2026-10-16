@@ -165,7 +165,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
         {/* <details> ใช้ได้โดยไม่ต้องมี JS — จอนี้เป็น server component */}
         <details className="relative">
           <summary className="list-none cursor-pointer text-[12.5px] text-blue-600 hover:underline">ค้นหาขั้นสูง</summary>
-          <div className="absolute z-10 mt-2 w-[320px] bg-white border border-gray-200 rounded-md shadow-lg p-3 space-y-2">
+          <div className="absolute z-10 mt-2 right-0 w-[320px] max-w-[calc(100vw-32px)] bg-white border border-gray-200 rounded-md shadow-lg p-3 space-y-2">
             <label className="block text-[12.5px] text-gray-600">ชื่อ
               <input name="qname" defaultValue={ค่าแรก(searchParams?.qname)} placeholder="ชื่อ"
                 className="mt-1 block w-full text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5" />

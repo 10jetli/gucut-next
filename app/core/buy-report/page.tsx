@@ -457,7 +457,7 @@ export default function BuyReportPage() {
                   value="total"
                   onChange={() => { /* มีค่าเดียวที่เลือกได้จริง */ }}
                   title="ข้อมูลรายหมวดมีแล้ว (ตารางข้างล่างจัดกลุ่มตามหมวดได้) แต่กราฟรายหมวดยังไม่ได้ทำ"
-                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
+                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
                 >
                   <option value="total">ยอดซื้อรวม</option>
                   <option value="cat" disabled>ยอดซื้อตามหมวดหมู่ (ข้อมูลมีแล้ว · กราฟยังไม่ได้ทำ)</option>
