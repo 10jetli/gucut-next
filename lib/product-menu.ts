@@ -15,7 +15,6 @@ export function productMenuItems(sku: string, go: (href: string) => void): RowMe
   return [
     { label: 'ปักหมุดไว้บนสุด', disabled: 'ZORT ไม่เปิด API หมวดหมู่/การปักหมุด — ปักได้ที่ ZORT เท่านั้น' },
     { label: 'ดูภาพรวม', onClick: () => go(`/core/stock/${encodeURIComponent(sku)}`) },
-    { label: 'คัดลอกรหัสสินค้า', onClick: () => { navigator.clipboard?.writeText(sku).catch(() => {}) } },
     /* เดิม disabled ด้วยเหตุผล "ยังไม่มีท่อเปิดใบซื้อ" — ค้างตั้งแต่ท่อเปิด ?addpo=1
        และจอ /core/purchases/new เกิดขึ้นแล้ว (เจอตอนกวาดคลาส stale-state 11 ก.ย. 2569)
        จอนั้นประกาศข้อจำกัดของตัวเองครบ (ส่งจริงยังปิด รอเจ้าของร้านอนุมัติ · ซ้อมได้) */
@@ -36,7 +35,8 @@ export function productMenuItems(sku: string, go: (href: string) => void): RowMe
        ⇒ คลาส stale-state ซ้ำรอยบรรทัดอื่นในไฟล์นี้ที่เคยโดนมาแล้วสองรอบ
        ⚠️ และต้อง **ติดรหัสไปด้วย** — ฝั่งท่อกำชับ: ปุ่มที่พาไปแล้วต้องพิมพ์รหัสใหม่เอง
           คือปุ่มที่กดแล้วเหมือนไม่เกิดอะไร (เหตุผลเดียวกับ 'ขายสินค้า' ที่ติด ?sku= ไปให้) */
-    { label: 'พิมพ์เอกสาร (ฉลาก/บาร์โค้ด)', onClick: () => go(`/core/stock/print?sku=${encodeURIComponent(sku)}`) },
+    /* คำบนเมนูตาม ZORT "พิมพ์เอกสาร" (อ่านเมนูแถวจริง 16 ต.ค. 2569) · ปลายทางคือหน้าพิมพ์ฉลาก/บาร์โค้ดของเรา */
+    { label: 'พิมพ์เอกสาร', onClick: () => go(`/core/stock/print?sku=${encodeURIComponent(sku)}`) },
     /* 🔴 **สองบรรทัดนี้กลายเป็นเท็จตั้งแต่ 14 ก.ย. 2569** (เจอ 15 ก.ย. · ใบ t_mu1wvgcw)
        เขียนว่า "ยังไม่มีท่อเขียนกลับ ZORT" และ "ลบที่นี่ไม่มีผลกับต้นทาง"
        แต่ของจริง: จอ `/core/stock/<รหัส>/edit` ทำเสร็จแล้ว และท่อมีครบทั้งสองเส้น
@@ -71,5 +71,8 @@ export function productMenuItems(sku: string, go: (href: string) => void): RowMe
        ⚠️ คนละเรื่องกับ "ปรับจำนวน" ที่ปิดไว้ข้างบน: อันนั้นคือแก้ยอดคงเหลือข้างเดียว
        อันนี้คือสมุดของเข้า-ออกของคลังเงา (receive/transfer/…) ที่มี ref กันซ้ำ */
     { label: 'บันทึกของเข้า-ออก (รหัสนี้)', onClick: () => go(`/core/moves?sku=${encodeURIComponent(sku)}`) },
+    /* 📋 ของเราเพิ่ม (ZORT ไม่มีในเมนูนี้) — ย้ายมาท้ายเมนู 16 ต.ค. 2569 ให้ลำดับข้างบนตรงกับ ZORT ทุกข้อ
+       (ZORT: ปักหมุด · ดูภาพรวม · ซื้อ · ขาย · โอน · ปรับจำนวน · พิมพ์เอกสาร · แก้ไข · ลบ · เพิ่ม Tag · ปิดใช้งาน · ราคาขายตามกลุ่ม · 3×ช่องทางการขายอื่น) */
+    { label: 'คัดลอกรหัสสินค้า', onClick: () => { navigator.clipboard?.writeText(sku).catch(() => {}) } },
   ]
 }

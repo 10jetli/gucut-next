@@ -65,7 +65,7 @@ walk('app', '')
 const MENU_KEYS = [
   { label: 'แก้ไข', key: 'product-edit' },
   { label: 'ลบ', key: 'product-delete' },
-  { label: 'พิมพ์เอกสาร (ฉลาก/บาร์โค้ด)', key: 'product-print' },
+  { label: 'พิมพ์เอกสาร', key: 'product-print' },
 ]
 
 let fail = 0
