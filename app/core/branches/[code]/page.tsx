@@ -29,7 +29,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import PipeGapFrame from '@/components/zort/PipeGapFrame'
-import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
+import { PageHead, thaiDate, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
 
 interface Warehouse {
   code: string; name: string; province?: string; isPos?: boolean
@@ -102,13 +102,48 @@ export default function BranchDetailPage() {
   }, [code])
   useEffect(() => { void load() }, [load])
 
+  /* 🏆 สินค้าขายดีของคลังนี้ — ZORT มีตาราง "สินค้าขายดีย้อนหลัง N วัน" (bestsalestype: วันนี้ · 7 วัน · 1 เดือน · 3 เดือน)
+     ท่อ `list=topproducts&warehouse=` กรองรายคลังได้จริง (ยิงดู 16 ต.ค. 2569: NEW 75 รหัส · KLD 22 · รหัสมั่ว 0 และ applied.warehouse ตอบกลับตรง)
+     ⚠️ "1 เดือน/3 เดือน" ของตารางนี้ใน ZORT นับแบบไหนยังไม่ได้วัด ⇒ นับถอยเป็นวัน และ **เขียนช่วงจริงบนจอเสมอ** */
+  const [ขายดีช่วง, setขายดีช่วง] = useState(7)
+  const [ขายดี, setขายดี] = useState<{ items: { sku: string; name: string; qty: number; amount: number | null }[]; totalSkus: number | null; offset: number; nextOffset: number | null; from: string; to: string } | null>(null)
+  const [ขายดีล้ม, setขายดีล้ม] = useState('')
+  const โหลดขายดี = useCallback(async (วัน: number, offset = 0) => {
+    setขายดีล้ม('')
+    const from = thaiDay(Math.max(0, วัน - 1)), to = thaiDay(0)
+    try {
+      const d = await fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=20&offset=${offset}&warehouse=${encodeURIComponent(code)}`).then((r) => r.json())
+      if (d?.error) throw new Error(d.error)
+      /* 🔴 ท่อต้องตอบกลับว่ากรองคลังนี้จริง — ไม่ตรง = ยอดทั้งร้านปลอมเป็นยอดคลัง (กติกาเดียวกับจอยอดขาย) */
+      if (d?.applied?.warehouse !== code) throw new Error('ท่อไม่ได้ยืนยันว่ากรองคลังนี้ — ไม่แสดงตัวเลข เพราะอาจเป็นยอดทั้งร้าน')
+      setขายดี({
+        items: Array.isArray(d.items) ? d.items : [],
+        totalSkus: typeof d.totalSkus === 'number' ? d.totalSkus : null,
+        offset: typeof d.applied?.offset === 'number' ? d.applied.offset : offset,
+        nextOffset: typeof d.nextOffset === 'number' ? d.nextOffset : null,
+        from, to,
+      })
+    } catch (e) { setขายดี(null); setขายดีล้ม(e instanceof Error ? e.message : String(e)) }
+  }, [code])
+  useEffect(() => { void โหลดขายดี(ขายดีช่วง) }, [โหลดขายดี, ขายดีช่วง])
+
   return (
     <div className="p-4 md:p-6 space-y-4">
-      <PageHead title={`คลัง ${code}`}
-        summary="รายละเอียดคลังสินค้า/สาขา — ลอกผังจาก ZORT /Warehouse/Details (อ่าน DOM สด 5 ต.ค. 2569)" />
-      <div className="flex items-center gap-2">
+      {/* หัวจอตาม ZORT: "<ชื่อคลัง> (รหัส : NEW)" + "รายละเอียดคลังสินค้า" (อ่านจอจริง 16 ต.ค. 2569) */}
+      <PageHead title={`${wh?.name || code} (รหัส : ${code})`}
+        summary="รายละเอียดคลังสินค้า" />
+      <div className="flex flex-wrap items-center gap-2">
         <Link href="/core/branches" className="text-[12.5px] text-blue-600 hover:underline">← กลับไปรายการคลัง</Link>
-        <BtnGhost onClick={() => void load()} disabled={loading}>โหลดใหม่</BtnGhost>
+        {/* 🧰 ปุ่มแบบ ZORT: โอนสินค้าเข้า · โอนสินค้าออก · มูลค่าสินค้าคงเหลือ · แก้ไข · ลบ (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
+        {(['โอนสินค้าเข้า', 'โอนสินค้าออก'] as const).map((t) => (
+          <span key={t} title="ยังทำไม่ได้ — สร้างใบโอนต้องเขียนกลับ ZORT (จอรายการโอนของเราอ่านอย่างเดียว)"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">{t}</span>
+        ))}
+        <Link href="/core/reports" className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">มูลค่าสินค้าคงเหลือ</Link>
+        {(['แก้ไข', 'ลบ'] as const).map((t) => (
+          <span key={t} title="ยังทำไม่ได้ — แก้/ลบคลังต้องทำใน ZORT"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">{t}</span>
+        ))}
       </div>
 
       {loading && <LoadingState />}
@@ -193,12 +228,64 @@ export default function BranchDetailPage() {
                     {/* 🔴 ZORT แยกรายสินค้า ของเราได้แค่ยอดรวมของคลัง ⇒ เขียนกำกับ
                            ห้ามปล่อยให้คนอ่านว่าเป็นรายสินค้า (ตารางที่ ②/④ ของ ZORT) */}
                     <p className="text-[11.5px] text-gray-500 mt-1.5">
-                      เป็น<b>ยอดรวมของคลัง</b> — ZORT แยกเป็นรายสินค้าได้ (ตาราง “ชื่อสินค้า · จำนวนที่ขายได้ · ยอดขาย”)
-                      แต่ท่อส่งมาถึงระดับคลังเท่านั้น
+                      เป็น<b>ยอดรวมของคลัง</b> · รายสินค้าดูได้ที่ตาราง &ldquo;สินค้าขายดี&rdquo; ข้างล่าง
                     </p>
                   </>
                 )
                 : <LoadingState text="กำลังถามยอดขายรายคลัง…" />}
+          </Card>
+
+          <Card padded={false}>
+            <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
+              <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีช่วง === 1 ? 'วันนี้' : `${ขายดีช่วง} วัน`}</p>
+              <select value={ขายดีช่วง} onChange={(e) => setขายดีช่วง(Number(e.target.value))}
+                className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white">
+                <option value={1}>วันนี้</option><option value={7}>7 วัน</option>
+                <option value={30}>1 เดือน</option><option value={90}>3 เดือน</option>
+              </select>
+            </div>
+            {ขายดีล้ม
+              ? <p className="px-4 md:px-5 pb-4 text-[12.5px] text-amber-800">⚠️ ถามสินค้าขายดีของคลังนี้ไม่สำเร็จ — <b>ยังไม่รู้</b> ({ขายดีล้ม})</p>
+              : !ขายดี ? <div className="px-4 pb-4"><LoadingState text="กำลังถามสินค้าขายดี…" /></div>
+              : (
+                <>
+                  <p className="px-4 md:px-5 pb-2 text-[11.5px] text-gray-500">ช่วง {thaiDate(ขายดี.from)} – {thaiDate(ขายดี.to)} · คิดจากบรรทัดสินค้าในใบขายที่ตัดของจากคลังนี้
+                    {/* ⚠️ ท่อเรียงตามจำนวน (by รับแค่ month/category — ยิงดู 16 ต.ค. 2569) · เรียงใหม่ในหน้าเดียวจะผิดข้ามหน้า ⇒ ไม่เรียงเอง บอกตรง ๆ */}
+                    {' '}· <span className="text-amber-700">เรียงตามจำนวนที่ขายได้ (ZORT เรียงตามยอดขาย — ท่อยังเรียงตามยอดเงินไม่ได้)</span></p>
+                  <TableWrap>
+                    <table className="w-full min-w-[520px]">
+                      <thead className="bg-white border-b border-gray-200">
+                        <tr><th className={TH}>ชื่อสินค้า</th><th className={THR}>จำนวนที่ขายได้</th><th className={THR}>ยอดขาย</th></tr>
+                      </thead>
+                      <tbody>
+                        {ขายดี.items.length === 0 && (
+                          <tr><td colSpan={3} className="px-3 py-6 text-center text-[12.5px] text-gray-400">ช่วงนี้ไม่มีใบขายที่ตัดของจากคลังนี้</td></tr>
+                        )}
+                        {ขายดี.items.map((r) => (
+                          <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0">
+                            <td className={TD}><Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">{r.name || r.sku}</Link></td>
+                            <td className={TDR}>{fmtNum(r.qty)}</td>
+                            <td className={TDR}>{typeof r.amount === 'number' ? fmtMoney(r.amount) : <span className="text-gray-300" title="ท่อไม่ส่งยอดเงินของบรรทัดนี้">—</span>}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </TableWrap>
+                  {ขายดี.items.length > 0 && (
+                    <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-2.5 border-t border-gray-200 text-[12.5px] text-gray-500">
+                      <span>แสดง {fmtNum(ขายดี.offset + 1)}–{fmtNum(ขายดี.offset + ขายดี.items.length)}{ขายดี.totalSkus !== null ? ` จาก ${fmtNum(ขายดี.totalSkus)} รายการ` : ''}</span>
+                      <span className="flex items-center gap-2">
+                        <button type="button" disabled={ขายดี.offset <= 0}
+                          onClick={() => void โหลดขายดี(ขายดีช่วง, Math.max(0, ขายดี.offset - 20))}
+                          className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40">← ก่อนหน้า</button>
+                        <button type="button" disabled={ขายดี.nextOffset === null}
+                          onClick={() => { if (ขายดี.nextOffset !== null) void โหลดขายดี(ขายดีช่วง, ขายดี.nextOffset) }}
+                          className="px-2.5 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-40">ถัดไป →</button>
+                      </span>
+                    </div>
+                  )}
+                </>
+              )}
           </Card>
 
           <PipeGapFrame
