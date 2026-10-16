@@ -51,6 +51,7 @@ function Inner() {
   const [ขายดีวัน, setขายดีวัน] = useState(7)
   const [ขายดี, setขายดี] = useState<{ rows: { sku: string; name?: string; qty?: number; amount?: number | null }[]; from: string; to: string; more: boolean } | null>(null)
   const [ขายดีผิด, setขายดีผิด] = useState('')
+  const [ขายดีรายละเอียด, setขายดีรายละเอียด] = useState('')
 
   /* 🔴 **หนึ่งคำขอต่อการกดหนึ่งครั้ง — ห้ามวนกวาดทุกหน้ามานับเอง**
      ท่อ cap limit ไว้ 200 ตายตัว และส่ง total ของหมวดมาให้แล้ว ⇒ ใช้ total ปิดปุ่ม
@@ -89,14 +90,15 @@ function Inner() {
   useEffect(() => {
     if (!catName) return
     let ยกเลิก = false
-    setขายดี(null); setขายดีผิด('')
+    setขายดี(null); setขายดีผิด(''); setขายดีรายละเอียด('')
     const to = วันนี้วันไทย()
     const from = new Date(Date.parse(to) - Math.max(0, ขายดีวัน - 1) * 864e5).toISOString().slice(0, 10)
     fetch(`/api/web/core?list=topproducts&category=${encodeURIComponent(catName)}&store=z1&sort=qty&from=${from}&to=${to}`)
       .then((x) => x.json())
       .then((r) => {
         if (ยกเลิก) return
-        if (!r || !Array.isArray(r.items)) throw new Error(r?.error || 'ท่อไม่ส่งแถวมา')
+        /* ข้อความผิดพลาดดิบของท่อเป็นอังกฤษ/SQL — จอแสดงเหตุเป็นไทยสั้น ๆ ส่วนรายละเอียดเก็บไว้ใน title ให้คนตามบั๊กอ่าน */
+        if (!r || !Array.isArray(r.items)) { setขายดีรายละเอียด(String(r?.error ?? '')); throw new Error('ระบบหลังบ้านตอบผิดพลาดรอบนี้ (ชี้ที่ข้อความนี้เพื่อดูรายละเอียด)') }
         if (r.applied?.category !== catName) throw new Error('ท่อรุ่นนี้ยังไม่กรองตามหมวด (applied.category ไม่ตรง) — ไม่แสดงเพื่อไม่ให้สินค้าหมวดอื่นปนเข้ามา')
         setขายดี({ rows: r.items, from, to, more: typeof r.nextOffset === 'number' })
       })
@@ -216,7 +218,7 @@ function Inner() {
               </select>
             </div>
             {ขายดีผิด ? (
-              <p className="px-4 pb-3 text-[12.5px] text-gray-500">ยังแสดงไม่ได้ — {ขายดีผิด}</p>
+              <p className="px-4 pb-3 text-[12.5px] text-gray-500" title={ขายดีรายละเอียด || undefined}>ยังแสดงไม่ได้ — {ขายดีผิด}</p>
             ) : !ขายดี ? (
               <p className="px-4 pb-3 text-[12.5px] text-gray-400">กำลังถาม…</p>
             ) : (
