@@ -21,7 +21,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
-import { PageHead, BtnGhost, WriteResult, thaiDate } from '@/components/zort'
+import { PageHead, WriteResult, thaiDate, RowMenu } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
@@ -323,12 +323,37 @@ function Inner() {
           )}
           {d?.id != null && <span className="text-gray-300"> · id {String(d.id)}</span>}
         </>}
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Buy/Details ไม่มี · แถบปุ่มแบบ ZORT อยู่ใต้หัวจอ */ />
 
       {/* 🔴 หัวจอข้างบนโชว์ร้าน "ที่ท่อตอบ" ซึ่งถูกแล้ว — แต่ยังไม่ได้บอกว่า **ตรงกับที่ลิงก์ขอไหม**
           ลิงก์บอก z2 แล้วท่อตอบ z1 ⇒ คนอ่านเห็นแค่ z1 เฉย ๆ โดยไม่รู้ว่ากำลังอ่านใบผิดร้าน
           ⚠️ เลขที่ใบของสองร้านซ้ำกันได้ ⇒ อ่านผิดร้านแล้วไม่มีอะไรดูผิดเลย */}
       <StoreEcho ขอ={store} ได้={d?.store} />
+
+      {/* 🧰 แถบปุ่มแบบ ZORT /Buy/Details (อ่านปุ่ม+รายการเมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
+          ลำดับ: คำสั่ง ▾ · พิมพ์เอกสาร ▾ · Accounting ▾ · (ขวา) ดูกิจกรรมของรายการ
+          ⚠️ ของเรายังไม่มีหน้าพิมพ์ใบสั่งซื้อ และทุกคำสั่งต้องเขียนกลับ ZORT ⇒ สีเทาทั้งหมดพร้อมเหตุ (ไม่ซ่อน — คนจาก ZORT จะมองหา) */}
+      {d && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <RowMenu label="คำสั่ง" items={([
+            ['คืนสินค้าออก', 'ยังทำไม่ได้ — สร้างใบคืนสินค้าให้ผู้ขายต้องเขียนกลับ ZORT'],
+            ['คัดลอก', 'ยังทำไม่ได้ — สร้างใบสั่งซื้อใหม่จากใบนี้ยังไม่มี (สร้างใหม่ได้ที่ปุ่ม "สร้าง" ของจอรายการซื้อ)'],
+            ['แก้ไข', 'ยังทำไม่ได้ — แก้ใบต้องเขียนกลับ ZORT'],
+            ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT'],
+            ['ซ่อน', 'ยังทำไม่ได้ — ซ่อนใบต้องเขียนกลับ ZORT'],
+            ['ยกเลิกรายการ', 'ยังทำไม่ได้ — ยกเลิกใบต้องทำใน ZORT (ย้อนไม่ได้)'],
+          ] as const).map(([label, disabled]) => ({ label, disabled }))} />
+          <RowMenu label="🖨 พิมพ์เอกสาร" items={([
+            ['พิมพ์เอกสาร', 'ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบสั่งซื้อ (มีแต่ใบขาย)'],
+            ['พิมพ์ใบแปะจดหมาย/กล่อง', 'ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบสั่งซื้อ'],
+            ['พิมพ์เอกสาร + จัดเก็บ', 'ยังทำไม่ได้ — จัดเก็บไฟล์ไว้ในระบบไฟล์ของ ZORT = เขียนกลับ'],
+          ] as const).map(([label, disabled]) => ({ label, disabled }))} />
+          <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">Accounting ▾</span>
+          <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
+            className="ml-auto text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
+        </div>
+      )}
 
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'ดึงใบสั่งซื้อไม่ได้'}>{error}</ErrorBox>}
       {/* 🔴 **เลขที่ใบซ้ำกันในร้านเดียวกันได้จริง** — ท่อจะไม่เลือกใบให้ (ตั้งใจ) แต่ส่ง id มาให้
