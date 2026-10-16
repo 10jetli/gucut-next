@@ -95,7 +95,10 @@ function Inner() {
     let ยกเลิก = false
     setขายดี(null); setขายดีผิด(''); setขายดีรายละเอียด('')
     const to = วันนี้วันไทย()
-    const from = new Date(Date.parse(to) - Math.max(0, ขายดีวัน - 1) * 864e5).toISOString().slice(0, 10)
+    /* 📏 ช่วงของ ZORT "7 วัน" วัดแล้ว (16 ต.ค. 2569 โซ่ NEWWAVE): วันนี้−7 ถึงวันนี้ (8 วันปฏิทิน) ตรงเป๊ะ 2/4 แถว
+       อีก 2 แถวของเราสูงกว่าในทิศที่ใบคืนอธิบายได้ (ZORT หักใบคืน เรายังหักรายแถวไม่ได้) · ช่วง 7 วันนับรวมวันนี้ ตรง 1/4
+       ⇒ ใช้ วันนี้−N · วันนี้ = วันเดียว · 1/3 เดือนยังไม่ได้วัด (ZORT คิดฝั่งเซิร์ฟเวอร์ ไม่เห็นสูตร) ⇒ จอเขียนช่วงจริงใต้ตาราง */
+    const from = new Date(Date.parse(to) - (ขายดีวัน === 1 ? 0 : ขายดีวัน) * 864e5).toISOString().slice(0, 10)
     fetch(`/api/web/core?list=topproducts&category=${encodeURIComponent(catName)}&store=z1&sort=qty&from=${from}&to=${to}`)
       .then((x) => x.json())
       .then((r) => {
