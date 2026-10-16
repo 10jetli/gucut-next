@@ -183,6 +183,23 @@ export default function ConnectionsRegistryPage() {
   // ⚠️ กดเองเท่านั้น ห้ามตั้งให้ยิงซ้ำเอง — จอนี้ยิงของจริงไปหาทุกเจ้า (กติกาเจ้าของร้าน)
   useEffect(() => { load() }, [load])
 
+  /* 📦 ผลกระทบจริงของ token หมด = **สต็อกบนแพลตฟอร์มหยุดอัปเดต** (ท่อขอ 16 ต.ค. 2569 — Lazada หยุดดันตั้งแต่ 5 ต.ค. 21:30 ไม่มีใครรู้ 10 วัน)
+     อ่าน `?pushstate=1` (อ่านอย่างเดียว · ไม่ยิงแพลตฟอร์ม) · เกณฑ์ "ค้างนาน" ใช้ `ค้างนานเกณฑ์ชั่วโมง` ของท่อ ไม่ตั้งเลขเอง */
+  const [push, setPush] = useState<{ เกณฑ์ชม: number | null; ราย: Record<string, string | null> } | null | 'ล้ม'>(null)
+  useEffect(() => {
+    let ยัง = true
+    fetch('/api/web/core?pushstate=1').then((r) => r.json()).then((j) => {
+      if (!ยัง) return
+      if (!j || typeof j !== 'object' || !j.byChannel || typeof j.byChannel !== 'object') { setPush('ล้ม'); return }
+      const ราย: Record<string, string | null> = {}
+      for (const [k, v] of Object.entries(j.byChannel as Record<string, { lastSweep?: { at?: string } }>)) ราย[k] = typeof v?.lastSweep?.at === 'string' ? v.lastSweep.at : null
+      setPush({ เกณฑ์ชม: typeof j['ค้างนานเกณฑ์ชั่วโมง'] === 'number' ? j['ค้างนานเกณฑ์ชั่วโมง'] : null, ราย })
+    }).catch(() => { if (ยัง) setPush('ล้ม') })
+    return () => { ยัง = false }
+  }, [])
+  /** ชื่อแถวบนจอ → คีย์ช่องทางของท่อ (เฉพาะสามเจ้าที่มีตัวดันสต็อก) */
+  const คีย์ช่องทาง = (name: string) => /lazada/i.test(name) ? 'lazada' : /shopee/i.test(name) ? 'shopee' : /tiktok/i.test(name) ? 'tiktok' : null
+
   const groups = data?.groups ?? {}
   const all = Object.values(groups).flat()
   // กลุ่มที่เซิร์ฟเวอร์ส่งมาแต่ไม่มีในรายการข้างบน — ต้องวาดต่อท้าย ห้ามทิ้ง
@@ -390,6 +407,31 @@ export default function ConnectionsRegistryPage() {
                             <span className={c.retired ? 'text-gray-500 line-through' : 'text-blue-600'}>{c.name}</span>
                             {c.detail && <span className="block text-[11.5px] text-gray-400">{c.detail}</span>}
                             <TokenExpiry at={c.tokenExpiresAtUtc} expired={c.tokenExpired} />
+                            {(() => {
+                              const ch = คีย์ช่องทาง(c.name)
+                              if (!ch) return null
+                              /* 🔴 เหตุจริงจากตัวต่ออายุ (ท่อเลิกกลืน error แล้ว) — แสดงตามตัวอักษร ไม่แปลเอง */
+                              const tr = (data as { tokenRefresh?: { result?: Record<string, { ok?: boolean; why?: string }> } } | null)?.tokenRefresh?.result?.[ch]
+                              /* ท่อบางรุ่นใส่เหตุไว้ใน detail ของแถวแล้ว ⇒ แสดงซ้ำเฉพาะตอน detail ยังไม่มีข้อความนี้ (ไม่พูดซ้ำสองบรรทัด) */
+                              const เหตุ = tr && tr.ok === false && typeof tr.why === 'string' && !(c.detail ?? '').includes(tr.why) ? tr.why : null
+                              const at = push && push !== 'ล้ม' ? push.ราย[ch] : undefined
+                              const d = typeof at === 'string' ? parseUtc(at) : null
+                              const ชม = d ? (Date.now() - d.getTime()) / 3600e3 : null
+                              const หยุด = ชม !== null && push && push !== 'ล้ม' && push.เกณฑ์ชม !== null && ชม > push.เกณฑ์ชม
+                              return (
+                                <>
+                                  {เหตุ && <span className="block text-[11.5px] text-red-700 mt-0.5">เหตุจากระบบ: {เหตุ}</span>}
+                                  {push === 'ล้ม'
+                                    ? <span className="block text-[11.5px] text-amber-700 mt-0.5">อ่านสถานะการดันสต็อกไม่ได้รอบนี้ — ยังไม่รู้</span>
+                                    : !d ? null
+                                    : หยุด
+                                      ? <span className="block text-[11.5px] text-red-700 font-medium mt-0.5">
+                                          ⚠️ สต็อกบน {c.name} หยุดอัปเดตตั้งแต่ {thaiDayTime(d)} (เวลาไทย) · {Math.floor((ชม as number) / 24).toLocaleString('th-TH')} วันแล้ว — เสี่ยงขายเกินสต็อก
+                                        </span>
+                                      : <span className="block text-[11.5px] text-gray-400 mt-0.5">ดันสต็อกรอบล่าสุด {thaiDayTime(d)} (เวลาไทย)</span>}
+                                </>
+                              )
+                            })()}
                           </td>
                           <td className={TD}>
                             {/* ⚠️ ZORT โชว์ 100% ทุกแถว — ของเราไม่มีระบบกระจายสินค้า
