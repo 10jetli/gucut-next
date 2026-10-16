@@ -22,6 +22,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState } from '@/components/zort'
+import { อ่านสถานะดันสต็อก, type ผลดันสต็อก } from '@/lib/stock-push-state'
 import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 
 interface Conn {
@@ -185,16 +186,13 @@ export default function ConnectionsRegistryPage() {
 
   /* 📦 ผลกระทบจริงของ token หมด = **สต็อกบนแพลตฟอร์มหยุดอัปเดต** (ท่อขอ 16 ต.ค. 2569 — Lazada หยุดดันตั้งแต่ 5 ต.ค. 21:30 ไม่มีใครรู้ 10 วัน)
      อ่าน `?pushstate=1` (อ่านอย่างเดียว · ไม่ยิงแพลตฟอร์ม) · เกณฑ์ "ค้างนาน" ใช้ `ค้างนานเกณฑ์ชั่วโมง` ของท่อ ไม่ตั้งเลขเอง */
-  const [push, setPush] = useState<{ เกณฑ์ชม: number | null; ราย: Record<string, string | null> } | null | 'ล้ม'>(null)
+  /* ใช้ตัวตัดสินเดียวกับแถบแดงหน้าแรก (lib/stock-push-state.ts) — สองจอจะไม่ตัดสินคนละแบบ */
+  const [push, setPush] = useState<ผลดันสต็อก | null>(null)
   useEffect(() => {
     let ยัง = true
-    fetch('/api/web/core?pushstate=1').then((r) => r.json()).then((j) => {
-      if (!ยัง) return
-      if (!j || typeof j !== 'object' || !j.byChannel || typeof j.byChannel !== 'object') { setPush('ล้ม'); return }
-      const ราย: Record<string, string | null> = {}
-      for (const [k, v] of Object.entries(j.byChannel as Record<string, { lastSweep?: { at?: string } }>)) ราย[k] = typeof v?.lastSweep?.at === 'string' ? v.lastSweep.at : null
-      setPush({ เกณฑ์ชม: typeof j['ค้างนานเกณฑ์ชั่วโมง'] === 'number' ? j['ค้างนานเกณฑ์ชั่วโมง'] : null, ราย })
-    }).catch(() => { if (ยัง) setPush('ล้ม') })
+    fetch('/api/web/core?pushstate=1').then((r) => r.json())
+      .then((j) => { if (ยัง) setPush(อ่านสถานะดันสต็อก(j)) })
+      .catch(() => { if (ยัง) setPush(อ่านสถานะดันสต็อก(null)) })
     return () => { ยัง = false }
   }, [])
   /** ชื่อแถวบนจอ → คีย์ช่องทางของท่อ (เฉพาะสามเจ้าที่มีตัวดันสต็อก) */
@@ -414,15 +412,15 @@ export default function ConnectionsRegistryPage() {
                               const tr = (data as { tokenRefresh?: { result?: Record<string, { ok?: boolean; why?: string }> } } | null)?.tokenRefresh?.result?.[ch]
                               /* ท่อบางรุ่นใส่เหตุไว้ใน detail ของแถวแล้ว ⇒ แสดงซ้ำเฉพาะตอน detail ยังไม่มีข้อความนี้ (ไม่พูดซ้ำสองบรรทัด) */
                               const เหตุ = tr && tr.ok === false && typeof tr.why === 'string' && !(c.detail ?? '').includes(tr.why) ? tr.why : null
-                              const at = push && push !== 'ล้ม' ? push.ราย[ch] : undefined
-                              const d = typeof at === 'string' ? parseUtc(at) : null
-                              const ชม = d ? (Date.now() - d.getTime()) / 3600e3 : null
-                              const หยุด = ชม !== null && push && push !== 'ล้ม' && push.เกณฑ์ชม !== null && ชม > push.เกณฑ์ชม
+                              const แถว = push?.ราย.find((x) => x.ช่องทาง === ch)
+                              const d = แถว?.at ? parseUtc(แถว.at) : null
+                              const ชม = แถว?.ชม ?? null
+                              const หยุด = แถว?.หยุด === true
                               return (
                                 <>
                                   {เหตุ && <span className="block text-[11.5px] text-red-700 mt-0.5">เหตุจากระบบ: {เหตุ}</span>}
-                                  {push === 'ล้ม'
-                                    ? <span className="block text-[11.5px] text-amber-700 mt-0.5">อ่านสถานะการดันสต็อกไม่ได้รอบนี้ — ยังไม่รู้</span>
+                                  {push && push.สถานะ === 'ไม่รู้' && !แถว
+                                    ? <span className="block text-[11.5px] text-amber-700 mt-0.5">{push.เหตุไม่รู้ ?? 'อ่านสถานะการดันสต็อกไม่ได้รอบนี้'} — ยังไม่รู้</span>
                                     : !d ? null
                                     : หยุด
                                       ? <span className="block text-[11.5px] text-red-700 font-medium mt-0.5">

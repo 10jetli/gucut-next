@@ -9,6 +9,7 @@
 // ยังเหลือสองใบที่ยังพึ่ง ZORT อยู่ (ไม่มีในคลังเงา) — ติดป้ายบอกไว้บนจอแล้ว:
 //   · สินค้าตีกลับ → /api/returns-summary (มีแคช 6 ชม. · ย้ายจาก /api/returns 28 ก.ย. 2569)
 //   · การสั่งของกับโรงงาน → /api/sheets (ไม่ใช่ ZORT อยู่แล้ว)
+import StockPushAlert from '@/components/zort/StockPushAlert'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -573,6 +574,9 @@ export default function DashboardPage() {
           </BtnGhost>
         }
       />
+
+      {/* 🚨 ดันสต็อกไปแพลตฟอร์มหยุด — ใต้หัวจอทันที (คำเตือนที่ต้องเลื่อนถึงเห็นคือวางผิดที่) · ดึงครั้งเดียว ไม่ poll */}
+      <StockPushAlert />
 
       {loading && <LoadingState />}
 
