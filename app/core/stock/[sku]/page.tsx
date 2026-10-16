@@ -367,7 +367,7 @@ export default function ProductDetailPage() {
                 <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
                   คัดลอกลิงก์หน้านี้
                 </BtnGhost>
-                <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+                {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Product/Details ไม่มี */}
               </>
             }
           />

@@ -11,7 +11,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, BtnGhost, Pill, TableWrap, TH, TD, thaiDate } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu } from '@/components/zort'
 
 interface Line { sku?: string; name?: string; qty?: number }
 interface Resp {
@@ -79,7 +79,22 @@ function Inner() {
       <p className="text-[12.5px] mb-2"><Link href="/core/transfers" className="text-blue-600 hover:underline">‹ รายการโอนสินค้า</Link></p>
       <PageHead title={`ใบโอน ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
-        actions={<BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>} />
+        /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Warehouse/TransferDetails ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
+
+      {/* 🧰 แถบปุ่มแบบ ZORT /Warehouse/TransferDetails (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
+          คำสั่ง ▾ (คัดลอก · เพิ่ม Tag · แก้ไข · ยกเลิกรายการ) · พิมพ์เอกสาร — ทุกข้อต้องเขียนกลับ ZORT หรือยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ */}
+      {d && !wrongLevel && (
+        <div className="flex flex-wrap items-center gap-2 mb-4">
+          <RowMenu label="คำสั่ง" items={([
+            ['คัดลอก', 'ยังทำไม่ได้ — สร้างใบโอนใหม่จากใบนี้ยังไม่มี'],
+            ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT'],
+            ['แก้ไข', 'ยังทำไม่ได้ — แก้ใบต้องเขียนกลับ ZORT'],
+            ['ยกเลิกรายการ', 'ยังทำไม่ได้ — ยกเลิกใบต้องทำใน ZORT (ย้อนไม่ได้)'],
+          ] as const).map(([label, disabled]) => ({ label, disabled }))} />
+          <span title="ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบโอนสินค้า"
+            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">🖨 พิมพ์เอกสาร</span>
+        </div>
+      )}
 
       {/* 🔴 กล่องนี้ต้องบอก **สามอย่างที่ต่างกัน** ไม่ใช่ประโยคเดียวคลุมทุกกรณี
              · เลขผิดรูป ⇒ ยังไม่ได้ถาม ZORT เลย  · ติดต่อ ZORT ไม่ได้ ⇒ ยังไม่รู้ว่ามีใบไหม
