@@ -659,7 +659,7 @@ export default function DashboardPage() {
                 เดิมจอนี้มีแต่ ② ⇒ คนเทียบสองจอแล้วไม่เห็นเลยว่า ZORT ดู "กำไร" ได้
                 ⚠️ จอยอดขาย `/sales` ของเรามีครบสองอันอยู่แล้ว ⇒ จอภาพรวมต้องใช้ถ้อยคำเดียวกัน
                    ไม่งั้นสองจอของเราเองเรียกของเดียวกันคนละชื่อ */}
-            <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
+            <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
               value="sales" onChange={() => { /* มีชุดเดียวที่ทำได้จริง */ }}
               /* 🔴 **เหตุผลต้องเจาะจงว่าขาดอะไร ไม่ใช่ "ยังไม่มีต้นทุน" เฉย ๆ**
                  ยิงท่อตรวจเอง 4 ต.ค. 2569: `list=stock` ส่งช่อง `buy` (ราคาซื้อ) มา**รายสินค้าจริง**
@@ -683,7 +683,7 @@ export default function DashboardPage() {
                 กำไรรวม{เปิดยอดรวมได้(ประตูกำไร) ? '' : ` (${ป้ายสั้น(ประตูกำไร)})`}
               </option>
             </select>
-            <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
+            <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
               value="total" onChange={() => { /* มีชนิดเดียวที่ทำได้จริง */ }}
               title="ท่อรวมยอดตามหมวดให้ได้แล้ว แต่จอนี้ยังไม่ได้ทำมุมมองรายหมวด">
               <option value="total">ยอดขายรวม</option>
@@ -735,7 +735,7 @@ export default function DashboardPage() {
               <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📦</span>
               มูลค่าสินค้าคงเหลือรายคลัง
             </p>
-            <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
+            <select className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
               value="wh" onChange={() => { /* มีแบบเดียวที่ทำได้จริง */ }}
               title="ZORT เลือกได้หลายแบบ ของเรามีรายคลังแบบเดียว">
               <option value="wh">รายคลัง</option>

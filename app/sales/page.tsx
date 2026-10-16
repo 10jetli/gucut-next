@@ -397,7 +397,7 @@ function ReportKindSelect({ ประตู }: { ประตู: ประต�
     <select
       value="total"
       onChange={() => { /* มีค่าเดียวที่เลือกได้จริง */ }}
-      className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700"
+      className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
       /* 🔄 **แก้ป้าย 15 ก.ย. 2569** — เดิมเขียนว่า "ยังไม่มี" เพราะท่อไม่ส่งหมวดมา
          ตอนนี้ท่อส่งแล้ว (b0a4aa3 · `by=category` รวมให้ฝั่งเซิร์ฟเวอร์ 36 หมวด)
          ⇒ ที่ยังขาดคือ **จอยังไม่ได้ทำ** ไม่ใช่ข้อมูลไม่มี · เขียนให้ตรงกับความจริงปัจจุบัน
@@ -970,7 +970,7 @@ export default function SalesReportPage() {
                   <select
                     value="sku"
                     onChange={() => { /* มีแบบเดียวที่ทำได้จริงในตารางนี้ */ }}
-                    className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
+                    className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0"
                     title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้แบบเดียว (รายสินค้า) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
                   >
                     <option value="sku">สินค้า</option>
@@ -1157,7 +1157,7 @@ export default function SalesReportPage() {
                 <select
                   value={whPick}
                   onChange={(e) => setWhPick(e.target.value)}
-                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
+                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0"
                 >
                   <option value="">ทั้งหมด</option>
                   {/* รายชื่อคลังมาจากที่ท่อส่ง ไม่ใช่รายชื่อตายตัว · แถว "ยังไม่รู้คลัง" (code ว่าง) เลือกไม่ได้ */}
