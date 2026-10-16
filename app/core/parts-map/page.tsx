@@ -15,6 +15,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
+import { แปลชื่ออะไหล่ } from '@/lib/parts-thai'
 import {
   type ข้อมูลรุ่น, type แถว, ล้างsku, ตรวจรหัสร้าน, แบนรายการ, สถานะของแถว, ความคืบหน้า, ช่องถัดไป,
 } from '@/lib/parts-map'
@@ -49,10 +50,46 @@ async function ดึงรายชื่อรุ่น(): Promise<{ id: strin
   }
 }
 
+/** รูปสินค้าของร้าน: รหัสร้าน → {รูป, ชื่อ}
+ *  มาจากฟีดสาธารณะ /products.json ซึ่งมีอยู่แล้วเพื่อให้ AI อ่าน ⇒ ไม่ต้องทำท่อใหม่
+ *
+ *  ⚠️ โหลดไม่สำเร็จ ⇒ **ไม่โชว์รูป แต่หน้าต้องใช้งานได้ปกติทุกอย่าง**
+ *     รูปเป็นของช่วยดู ไม่ใช่ของที่งานนี้ต้องมี · ให้หน้าพังเพราะรูปโหลดไม่ได้คือเอาหางไปคุมหัว
+ *  ⚠️ รหัสในฟีดเป็นรหัสระดับสินค้า ตัวเลือกย่อยอาจไม่อยู่ในนั้น ⇒ หาไม่เจอเป็นเรื่องปกติ
+ *     **ห้ามตีความว่า "ไม่เจอรูป = จับคู่ผิด"** */
+async function โหลดรูปสินค้า(): Promise<Record<string, { รูป: string; ชื่อ: string }>> {
+  try {
+    const r = await fetch('https://gucut.com/products.json', { cache: 'no-store' })
+    if (!r.ok) return {}
+    const j = await r.json()
+    const arr = Array.isArray(j) ? j : (j?.products ?? j?.items ?? [])
+    if (!Array.isArray(arr)) return {}
+    const out: Record<string, { รูป: string; ชื่อ: string }> = {}
+    for (const it of arr) {
+      const sku = String(it?.sku ?? '').trim().toUpperCase()
+      const รูป = String(it?.image ?? '')
+      if (sku && รูป) out[sku] = { รูป, ชื่อ: String(it?.name ?? '') }
+    }
+    return out
+  } catch { return {} }
+}
+
+/** ลิงก์หารูปอ้างอิง — เปิดแท็บใหม่ไปหน้าค้นหารูป
+ *  🔴 **เปิดลิงก์เท่านั้น ห้ามดึงรูปมาแสดงหรือเก็บ** — รูปในผลค้นหาเป็นของเจ้าอื่น
+ *     ท่านประธานยืนยันเจตนาไว้ว่าเป็นภาพดูประกอบ ไม่เอาลงเว็บ (17 ต.ค. 2569)
+ *  🔑 ใส่ทั้งรหัสคู่มือและชื่ออังกฤษ + คำว่า chainsaw
+ *     รหัสเดี่ยว ๆ ให้ผลเป็นเว็บขายอะไหล่ซึ่งมีรูปตรงที่สุด ส่วนชื่อช่วยตอนรหัสไม่ติด */
+function ลิงก์หารูป(รหัส: string, ชื่อ: string) {
+  const q = [รหัส, ชื่อ, 'chainsaw'].filter(Boolean).join(' ')
+  return `https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`
+}
+
 export default function Page() {
   const [รุ่น, setรุ่น] = useState('f440')
   const [รุ่นทั้งหมด, setรุ่นทั้งหมด] = useState(รุ่นสำรอง)
   useEffect(() => { ดึงรายชื่อรุ่น().then(setรุ่นทั้งหมด) }, [])
+  const [รูปสินค้า, setรูปสินค้า] = useState<Record<string, { รูป: string; ชื่อ: string }>>({})
+  useEffect(() => { โหลดรูปสินค้า().then(setรูปสินค้า) }, [])
   const [ข้อมูล, setข้อมูล] = useState<ข้อมูลรุ่น | null>(null)
   const [แมป, setแมป] = useState<Record<string, string>>({})
   const [ร่าง, setร่าง] = useState<Record<string, string>>({})
@@ -227,6 +264,10 @@ export default function Page() {
             const หัวกลุ่ม = หัวนี้ !== กลุ่มก่อนหน้า
             if (หัวกลุ่ม) กลุ่มก่อนหน้า = หัวนี้
             const ค่าในช่อง = ร่าง[r.คีย์] !== undefined ? ร่าง[r.คีย์] : (แมป[r.คีย์] || '')
+            const คำแปล = แปลชื่ออะไหล่(r.ชื่อ).ไทย || r.ชื่อ
+            /* รูปของร้านโชว์เฉพาะเมื่อ **บันทึกแล้วจริง** ไม่ใช่ตอนกำลังพิมพ์
+               ไม่งั้นรูปจะกระพริบเปลี่ยนไปมาทุกตัวอักษรที่พิมพ์ */
+            const รูปของแถว = รูปสินค้า[(แมป[r.คีย์] || '').trim().toUpperCase()] || null
             return (
               <div key={`${r.กลุ่มId}-${r.ลำดับ}`}>
                 {หัวกลุ่ม && (
@@ -238,8 +279,31 @@ export default function Page() {
                                 flex flex-wrap items-center gap-x-3 gap-y-1.5">
                   <span className="w-7 h-7 shrink-0 rounded-full bg-gray-100 text-gray-700
                                    text-[12.5px] flex items-center justify-center">{r.เลข}</span>
+                  {/* 🔑 **รูปสองทางตามสถานะ** — จับคู่แล้วโชว์รูปของร้าน (ยืนยันว่าใส่ถูกตัว)
+                      ยังไม่จับคู่ให้ปุ่มหารูปอ้างอิง (ตอบว่าชิ้นนี้หน้าตายังไง)
+                      ⚠️ ที่ว่างต้องกว้างเท่ากันทั้งสองทาง ไม่งั้นแถวกระตุกตอนกรอกเสร็จ */}
+                  <span className="w-11 h-11 shrink-0 flex items-center justify-center">
+                    {รูปของแถว ? (
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img src={รูปของแถว.รูป} alt={รูปของแถว.ชื่อ} title={รูปของแถว.ชื่อ}
+                           className="w-11 h-11 object-contain rounded border border-gray-200 bg-white" />
+                    ) : (
+                      <a href={ลิงก์หารูป(r.รหัส, r.ชื่อ)} target="_blank" rel="noopener noreferrer"
+                         title={`หารูปอ้างอิงของ ${r.รหัส} — เปิดแท็บใหม่ ไม่ได้เก็บรูปลงเว็บ`}
+                         className="w-9 h-9 rounded border border-gray-300 text-gray-500
+                                    flex items-center justify-center text-[14px] hover:bg-gray-50">🔍</a>
+                    )}
+                  </span>
                   <span className="font-mono text-[12.5px] whitespace-nowrap">{r.รหัส}</span>
-                  <span className="text-[12.5px] text-gray-600 grow min-w-[140px]">{r.ชื่อ}</span>
+                  {/* 🔴 **ชื่อไทยเพิ่มเข้ามา แต่อังกฤษห้ามหาย** (ท่านประธานสั่ง "แปลไทย" 17 ต.ค. 2569)
+                      คนที่กรอกหน้านี้ถือคู่มือ**ภาษาอังกฤษ**อยู่ในมือ โชว์แต่ไทย = หาแถวในคู่มือไม่เจอ
+                      ⇒ คำแปลที่ทำให้ทำงานช้าลงคือคำแปลที่ผิดหน้าที่ */}
+                  <span className="text-[12.5px] grow min-w-[140px]">
+                    <span className="text-gray-800">{คำแปล}</span>
+                    {คำแปล !== r.ชื่อ && (
+                      <span className="text-gray-400 ml-1.5 text-[11.5px]">{r.ชื่อ}</span>
+                    )}
+                  </span>
                   <span className="text-[11.5px] text-gray-400 whitespace-nowrap">×{r.จำนวน}</span>
                   <input
                     ref={(el) => { ช่อง.current[r.ลำดับ] = el }}
