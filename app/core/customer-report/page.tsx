@@ -15,7 +15,7 @@ import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText, summaryLine, EmptyState, thaiDate, PageNav,} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav,} from '@/components/zort'
 
 interface Row { id: string; channel: string; amount: number; customer: string; order_date: string }
 /** ⚠️ channels เป็น **อาร์เรย์ของ object** ไม่ใช่ข้อความคั่นลูกน้ำ (ฝั่งท่อเลือกแบบนี้ และถูก)
@@ -135,7 +135,8 @@ export default function CoreCustomersPage() {
   /** จำนวนใบทั้งช่วงที่ท่อนับให้ (ไม่ถูกตัดที่ 500 ราย) — null = ท่อไม่ส่ง ⇒ ถอยไปบวกจากแถวพร้อมบอกว่าเป็นของรายที่แสดง */
   const [totalOrders, setTotalOrders] = useState<number | null>(null)
   /** มุมมองการ์ดจำนวนลูกค้า — ผังเดียวกับ dropdown `typeoption` ของ ZORT (จำนวนลูกค้า/ยอดขาย) */
-  const [cardBy, setCardBy] = useState<'people' | 'sales'>('people')
+  // ตั้งต้น = ยอดขาย แบบ ZORT (#typeoption selected = ยอดขาย · อ่านจอ 16 ต.ค. 2569)
+  const [cardBy, setCardBy] = useState<'people' | 'sales'>('sales')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -275,11 +276,7 @@ export default function CoreCustomersPage() {
             </span>
           </>
         )}
-        actions={
-          <BtnGhost onClick={() => load()} disabled={loading}>
-            {loading ? 'กำลังรวม…' : 'ดึงใหม่'}
-          </BtnGhost>
-        }
+        /* 🔁 ปุ่ม "ดึงใหม่" เอาออก 16 ต.ค. 2569 — ZORT /Dashboard/ContactReport ไม่มี (อ่านปุ่มทั้งหน้า: วัน เดือน ไตรมาส ปี) */
       />
 
       <SearchRow
@@ -495,7 +492,7 @@ export default function CoreCustomersPage() {
                            คือ "รอบนี้ไม่มีข้อมูลมา" — ห้ามเดาต่อว่าใครเป็นคนผิด */}
                     <span className="block text-[11.5px] text-gray-400 mt-1.5">
                       ปกติท่อส่งข้อมูลรายเดือนมาให้ — เห็นข้อความนี้แปลว่า<b>รอบนี้ไม่ได้มา</b>
-                      {' '}ลองกดดึงใหม่ก่อน · ถ้ายังไม่มาอีกค่อยแจ้ง
+                      {' '}ลองโหลดหน้านี้ใหม่ก่อน · ถ้ายังไม่มาอีกค่อยแจ้ง
                     </span>
                   </p>
                 )}
