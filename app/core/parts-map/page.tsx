@@ -16,6 +16,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost } from '@/components/zort'
 import { แปลชื่ออะไหล่ } from '@/lib/parts-thai'
+import { สร้างดัชนี, แนะนำรหัส, type ดัชนีสินค้า } from '@/lib/แนะนำรหัส'
 import {
   type ข้อมูลรุ่น, type แถว, ล้างsku, ตรวจรหัสร้าน, แบนรายการ, สถานะของแถว, ความคืบหน้า, ช่องถัดไป,
 } from '@/lib/parts-map'
@@ -27,22 +28,28 @@ import {
       (288XP · 5200 · 7800TB · MINI · 7800 SUPER-S · F180 · F361 · F038 · F360 · F880 · F382)
    🔑 คำเตือนที่พึ่งความจำคนไม่ใช่ตาข่าย — ทางแก้คืออ่านจากแหล่งเดียวกับหน้าร้าน
       models.json ถูก gen ใหม่ทุกครั้งที่ build ⇒ เพิ่มรุ่นครั้งหน้า หน้านี้ตามเอง */
-const รุ่นสำรอง = [
-  { id: 'f070', ชื่อ: 'F 070' }, { id: 'f090', ชื่อ: 'F 090' }, { id: 'f250', ชื่อ: 'F 250' },
-  { id: 'f381', ชื่อ: 'F 381' }, { id: 'f440', ชื่อ: 'F 440' }, { id: 'f660', ชื่อ: 'F 660' },
+/* ⚠️ `คำค้นร้าน` คือคำที่ร้านใช้เรียกรุ่นในชื่อสินค้า (MS440) — ตัวแนะนำรหัสใช้ตัวนี้
+   รายชื่อสำรองจึงต้องมีด้วย ไม่งั้นตอนฟีดล่ม ตัวแนะนำจะเงียบไปโดยไม่มีใครรู้สาเหตุ */
+const รุ่นสำรอง: { id: string; ชื่อ: string; คำค้นร้าน?: string }[] = [
+  { id: 'f070', ชื่อ: 'F 070', คำค้นร้าน: 'MS070' }, { id: 'f090', ชื่อ: 'F 090', คำค้นร้าน: 'MS090' }, { id: 'f250', ชื่อ: 'F 250', คำค้นร้าน: 'MS250' },
+  { id: 'f381', ชื่อ: 'F 381', คำค้นร้าน: 'MS381' }, { id: 'f440', ชื่อ: 'F 440', คำค้นร้าน: 'MS440' }, { id: 'f660', ชื่อ: 'F 660', คำค้นร้าน: 'MS660' },
 ]
 
 /** รายชื่อรุ่นจากหน้าร้าน — แหล่งเดียวกับที่ /parts/ ใช้จริง
  *  ⚠️ อ่านไม่ได้ ⇒ คืนรายชื่อสำรอง **ห้ามคืนรายการว่าง**
  *     ว่าง = แถบเลือกรุ่นหายทั้งแถบ ⇒ คนใช้คิดว่าข้อมูลอะไหล่หาย ทั้งที่แค่เน็ตสะดุด */
-async function ดึงรายชื่อรุ่น(): Promise<{ id: string; ชื่อ: string }[]> {
+async function ดึงรายชื่อรุ่น(): Promise<{ id: string; ชื่อ: string; คำค้นร้าน?: string }[]> {
   try {
     const r = await fetch('https://gucut.com/parts/models.json', { cache: 'no-store' })
     if (!r.ok) return รุ่นสำรอง
     const j = await r.json()
     const ms = Array.isArray(j) ? j : (j?.รุ่น ?? j?.models ?? [])
     const out = ms
-      .map((m: any) => ({ id: String(m?.slug ?? ''), ชื่อ: String(m?.ชื่อ ?? m?.slug ?? '') }))
+      .map((m: any) => ({
+        id: String(m?.slug ?? ''),
+        ชื่อ: String(m?.ชื่อ ?? m?.slug ?? ''),
+        คำค้นร้าน: m?.คำค้นร้าน ? String(m.คำค้นร้าน) : undefined,
+      }))
       .filter((m: { id: string }) => m.id)
     return out.length ? out : รุ่นสำรอง
   } catch {
@@ -57,21 +64,32 @@ async function ดึงรายชื่อรุ่น(): Promise<{ id: strin
  *     รูปเป็นของช่วยดู ไม่ใช่ของที่งานนี้ต้องมี · ให้หน้าพังเพราะรูปโหลดไม่ได้คือเอาหางไปคุมหัว
  *  ⚠️ รหัสในฟีดเป็นรหัสระดับสินค้า ตัวเลือกย่อยอาจไม่อยู่ในนั้น ⇒ หาไม่เจอเป็นเรื่องปกติ
  *     **ห้ามตีความว่า "ไม่เจอรูป = จับคู่ผิด"** */
-async function โหลดรูปสินค้า(): Promise<Record<string, { รูป: string; ชื่อ: string }>> {
+type คลังสินค้า = {
+  ตามรหัส: Record<string, { รูป: string; ชื่อ: string }>
+  ดัชนี: ดัชนีสินค้า | null
+}
+
+async function โหลดสินค้าร้าน(): Promise<คลังสินค้า> {
   try {
     const r = await fetch('https://gucut.com/products.json', { cache: 'no-store' })
-    if (!r.ok) return {}
+    if (!r.ok) return { ตามรหัส: {}, ดัชนี: null }
     const j = await r.json()
     const arr = Array.isArray(j) ? j : (j?.products ?? j?.items ?? [])
-    if (!Array.isArray(arr)) return {}
-    const out: Record<string, { รูป: string; ชื่อ: string }> = {}
+    if (!Array.isArray(arr)) return { ตามรหัส: {}, ดัชนี: null }
+    const ตามรหัส: Record<string, { รูป: string; ชื่อ: string }> = {}
+    const รายการ = []
     for (const it of arr) {
-      const sku = String(it?.sku ?? '').trim().toUpperCase()
+      const sku = String(it?.sku ?? '').trim()
+      if (!sku) continue
+      const ชื่อ = String(it?.name ?? '')
       const รูป = String(it?.image ?? '')
-      if (sku && รูป) out[sku] = { รูป, ชื่อ: String(it?.name ?? '') }
+      /* 🔑 เก็บลง `ตามรหัส` แม้ไม่มีรูป — ท่านประธานสั่งให้โชว์ **ชื่อสินค้าจริง**
+         ด้วย ไม่ใช่แค่รูป ⇒ สินค้าที่ยังไม่มีรูปก็ต้องยืนยันชื่อให้คนกรอกเห็นได้ */
+      ตามรหัส[sku.toUpperCase()] = { รูป, ชื่อ }
+      รายการ.push({ sku, ชื่อ, รูป })
     }
-    return out
-  } catch { return {} }
+    return { ตามรหัส, ดัชนี: สร้างดัชนี(รายการ) }
+  } catch { return { ตามรหัส: {}, ดัชนี: null } }
 }
 
 /** ลิงก์หารูปอ้างอิง — เปิดแท็บใหม่ไปหน้าค้นหารูป
@@ -88,8 +106,10 @@ export default function Page() {
   const [รุ่น, setรุ่น] = useState('f440')
   const [รุ่นทั้งหมด, setรุ่นทั้งหมด] = useState(รุ่นสำรอง)
   useEffect(() => { ดึงรายชื่อรุ่น().then(setรุ่นทั้งหมด) }, [])
-  const [รูปสินค้า, setรูปสินค้า] = useState<Record<string, { รูป: string; ชื่อ: string }>>({})
-  useEffect(() => { โหลดรูปสินค้า().then(setรูปสินค้า) }, [])
+  const [คลัง, setคลัง] = useState<คลังสินค้า>({ ตามรหัส: {}, ดัชนี: null })
+  useEffect(() => { โหลดสินค้าร้าน().then(setคลัง) }, [])
+  /* คำที่ร้านใช้เรียกรุ่นนี้ (MS440 · 7800) — ตัวแนะนำขาดอันนี้ไม่ได้ ดู lib/แนะนำรหัส.ts */
+  const คำค้นรุ่น = รุ่นทั้งหมด.find((m) => m.id === รุ่น)?.คำค้นร้าน || ''
   const [ข้อมูล, setข้อมูล] = useState<ข้อมูลรุ่น | null>(null)
   const [แมป, setแมป] = useState<Record<string, string>>({})
   const [ร่าง, setร่าง] = useState<Record<string, string>>({})
@@ -267,7 +287,12 @@ export default function Page() {
             const คำแปล = แปลชื่ออะไหล่(r.ชื่อ).ไทย || r.ชื่อ
             /* รูปของร้านโชว์เฉพาะเมื่อ **บันทึกแล้วจริง** ไม่ใช่ตอนกำลังพิมพ์
                ไม่งั้นรูปจะกระพริบเปลี่ยนไปมาทุกตัวอักษรที่พิมพ์ */
-            const รูปของแถว = รูปสินค้า[(แมป[r.คีย์] || '').trim().toUpperCase()] || null
+            const รูปของแถว = คลัง.ตามรหัส[(แมป[r.คีย์] || '').trim().toUpperCase()] || null
+            /* 🔴 **เสนอเฉพาะแถวที่ยังว่าง** — แถวที่คนกรอกแล้วห้ามเอาข้อเสนอไปแย้ง
+               ไม่งั้นคนจะเริ่มสงสัยของที่ตัวเองใส่ถูกแล้ว แล้วเสียเวลาไล่ตรวจซ้ำทั้งหน้า */
+            const ข้อเสนอ = !รูปของแถว && !ค่าในช่อง && คลัง.ดัชนี
+              ? แนะนำรหัส(คลัง.ดัชนี, คำแปล, r.ชื่อ, คำค้นรุ่น, { ตัวอักษร: r.ตัวอักษร, เลข: Number(r.เลข) }, 1)
+              : []
             return (
               <div key={`${r.กลุ่มId}-${r.ลำดับ}`}>
                 {หัวกลุ่ม && (
@@ -304,6 +329,15 @@ export default function Page() {
                       <span className="text-gray-400 ml-1.5 text-[11.5px]">{r.ชื่อ}</span>
                     )}
                   </span>
+                  {/* ✅ "ชื่อสินค้าจริงจากระบบ" — ท่านประธานวงไว้ในรูป 17 ต.ค. 2569
+                      🔑 ของจริงที่มันตอบคือ **"รหัสที่ใส่ไปคือของชิ้นนี้ใช่ไหม"**
+                         รหัส 5 หลักอย่างเดียวบอกอะไรไม่ได้ · พิมพ์ผิดหนึ่งหลัก
+                         จอก็ยังขึ้น "● จับคู่แล้ว" เขียวเหมือนกันทุกประการ */}
+                  {รูปของแถว?.ชื่อ && (
+                    <span className="text-[11.5px] text-emerald-800 bg-emerald-50 border
+                                     border-emerald-200 rounded px-1.5 py-0.5 max-w-[260px] truncate"
+                          title={รูปของแถว.ชื่อ}>{รูปของแถว.ชื่อ}</span>
+                  )}
                   <span className="text-[11.5px] text-gray-400 whitespace-nowrap">×{r.จำนวน}</span>
                   <input
                     ref={(el) => { ช่อง.current[r.ลำดับ] = el }}
@@ -337,6 +371,29 @@ export default function Page() {
                 {/* 🔑 **สถานะที่ห้าที่เคยไม่มี: "บันทึกแล้วแต่ไม่ตรงกับที่พิมพ์"**
                     ไม่ใช่สำเร็จ (คนพิมพ์อีกอย่าง) และไม่ใช่ล้มเหลว (ของลงฐานแล้วจริง)
                     ⇒ ต้องเป็นข้อความของตัวเอง · ยุบเข้ากองไหนก็โกหกคนอ่านทั้งคู่ */}
+                {/* 🔴 **ข้อเสนอ ≠ คำตอบ** — ต้องกดรับเอง ห้ามเติมช่องเอง ห้ามบันทึกเอง
+                    ข้อมูลเดาที่ถูกบันทึกอัตโนมัติ จะปนกับข้อมูลจริงโดยแยกไม่ออกตลอดกาล
+                    ⇒ หน้าตาต้องต่างจากค่าที่บันทึกแล้วชัดเจน (ส้ม ไม่ใช่เขียว) และมีคำว่า "เดา"
+                    วัดแล้วชั้นที่เสนอออกมาถูก 58/59 แต่ 98% ไม่ใช่ 100% — คนต้องเป็นคนตัดสิน */}
+                {ข้อเสนอ.length > 0 && (
+                  <div className="text-[11.5px] mt-1 ml-[132px] flex items-center gap-1.5 flex-wrap">
+                    <span className="text-gray-400">ระบบเดาว่า</span>
+                    {ข้อเสนอ.map((ข) => (
+                      <button key={ข.sku} type="button"
+                        onClick={() => { setร่าง((ก) => ({ ...ก, [r.คีย์]: ข.sku })); บันทึก(r.คีย์, ข.sku) }}
+                        title={`กดเพื่อใช้รหัสนี้ — ${ข.ชื่อ}`}
+                        className="inline-flex items-center gap-1.5 rounded border border-amber-300
+                                   bg-amber-50 text-amber-900 px-1.5 py-0.5 hover:bg-amber-100">
+                        {ข.รูป && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={ข.รูป} alt="" className="w-5 h-5 object-contain" />
+                        )}
+                        <span className="font-mono">{ข.sku}</span>
+                        <span className="max-w-[230px] truncate">{ข.ชื่อ}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
                 {เตือน[r.คีย์] && (
                   <div className="text-[11.5px] text-amber-800 mt-1 ml-[132px]">
                     ⚠ {เตือน[r.คีย์]}
