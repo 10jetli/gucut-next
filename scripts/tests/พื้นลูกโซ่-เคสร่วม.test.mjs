@@ -7,14 +7,19 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { mkdtempSync, writeFileSync, rmSync, readFileSync, existsSync, statSync, unlinkSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { tmpdir, homedir } from 'node:os'
 import { join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 
 const ด่าน = fileURLToPath(new URL('../check-chain-floor.mjs', import.meta.url))
+/* 🔴 **ห้ามฝังพาธของเครื่องใดเครื่องหนึ่ง** — ของเดิมเขียน `/home/jetli/...` ตายตัว
+   ⇒ เทสนี้ **ตกเสมอบนเครื่องอื่น** (เครื่อง Mac ของทีม) ⇒ ด่านก่อน push แดงค้าง
+   ⇒ คนที่ทำงานเครื่องนั้น push งานของตัวเองไม่ได้เลย ทั้งที่งานไม่เกี่ยวกับเทสนี้
+   (เจอจริง 17 ต.ค. 2569 · คลาสเดียวกับกฎ "ห้ามฝัง IP วงแลน")
+   ⇒ ใช้บ้านของผู้ใช้เป็นฐาน · ยังเคารพ CHAIN_FLOOR_CASES เหมือนเดิมถ้าตั้งไว้ */
 const ไฟล์เคส = process.env.CHAIN_FLOOR_CASES
-  || '/home/jetli/claude-shared/lib/เคส-พื้นจำนวนด่านในสาย.json'
+  || join(homedir(), 'claude-shared', 'lib', 'เคส-พื้นจำนวนด่านในสาย.json')
 
 /** จัดฉาก package.json ให้มีชื่อด่าน N ตัว (ชื่อซ้ำได้ตามเคส) */
 function ยิง({ จำนวนด่าน, พื้น, เหตุที่ลด, ชื่อซ้ำ, ไฟล์พื้นหาย }) {
