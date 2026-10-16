@@ -40,7 +40,7 @@ import {
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from '@/components/zort'
+import { PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from '@/components/zort'
 import SkuCodes from '@/components/zort/SkuCodes'
 
 interface BundleRow {
@@ -274,6 +274,15 @@ export default function BundleDetailPage() {
 
       {bundle && (
         <>
+          {/* หัวจอแบบ ZORT: "รายละเอียดสินค้า <ชื่อชุด>" + Share Link มุมขวา (ผังเดียวกับหน้ารายละเอียดสินค้า) */}
+          <PageHead
+            title={`รายละเอียดสินค้า ${bundle.name || sku}`}
+            actions={
+              <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
+                คัดลอกลิงก์หน้านี้
+              </BtnGhost>
+            }
+          />
           {/* ── (1) ปุ่มบนสุด 6 ปุ่มเหมือน ZORT ────────────────────────────────
               🔴 ทุกปุ่มต้อง "ทำอะไรจริง" หรือ "พาไปหน้าที่บอกว่าติดอะไร"
                  ห้ามมีปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง */}
@@ -317,46 +326,7 @@ export default function BundleDetailPage() {
             {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Bundle/Details ไม่มี (อ่านปุ่มทั้งหน้า) */}
           </div>
 
-          <div className="bg-white border border-gray-200 rounded-md p-5 mt-3 flex flex-wrap gap-6">
-            {img
-              ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={img} alt="" className="w-[180px] h-[130px] rounded border border-gray-200 object-cover bg-white" />
-              )
-              : <span className="block w-[180px] h-[130px] rounded border border-gray-200 bg-gray-100" />}
-
-            <div className="min-w-0 flex-1">
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-[20px] font-semibold text-gray-900">{bundle.name || sku}</h1>
-                <span className={`text-[11.5px] font-semibold rounded px-2 py-0.5 ${
-                  bundle.active === false ? 'text-gray-600 bg-gray-100' : 'text-emerald-800 bg-emerald-100'
-                }`}>
-                  {bundle.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
-                </span>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3 mt-4 max-w-[560px]">
-                <div>
-                  <p className="text-[12.5px] text-gray-500">รหัสสินค้า</p>
-                  <p className="text-[15px] text-gray-900">{bundle.sku}</p>
-                </div>
-                <div>
-                  <p className="text-[12.5px] text-gray-500">ราคาขาย</p>
-                  <p className="text-[15px] text-gray-900">
-                    {typeof bundle.sellprice === 'number' ? `${fmtMoney(bundle.sellprice)} บาท` : '—'}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-[12.5px] text-gray-500">วันหมดอายุรายการ</p>
-                  <p className="text-[15px] text-gray-400">-</p>
-                </div>
-              </div>
-            </div>
-
-            {/* ── (3) QR + บาร์โค้ด มุมขวาบนเหมือน ZORT ── */}
-            <SkuCodes sku={sku} />
-          </div>
-
+          {/* 🗂 ลำดับส่วนตาม ZORT /Bundle/Details (อ่านจอจริง 16 ต.ค. 2569): การ์ด 3 ใบ → ข้อมูลชุด → สินค้าในชุด → กราฟยอดขาย → คงเหลือรายคลัง → รายการขาย */}
           {/* ── (2) การ์ดบนสุด 3 ใบ ────────────────────────────────────────── */}
           <div className="flex flex-wrap gap-3 mt-3">
             <Card
@@ -405,6 +375,128 @@ export default function BundleDetailPage() {
               เดือนนี้ยังไม่มีการขาย — ขายล่าสุดเมื่อ <b>{thaiDate(lastSold)}</b> (มีประวัติขายรวม {fmtNum(sales.length)} แถว)
             </p>
           )}
+
+          <div className="bg-white border border-gray-200 rounded-md p-5 mt-3 flex flex-wrap gap-6">
+            {img
+              ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={img} alt="" className="w-[180px] h-[130px] rounded border border-gray-200 object-cover bg-white" />
+              )
+              : <span className="block w-[180px] h-[130px] rounded border border-gray-200 bg-gray-100" />}
+
+            <div className="min-w-0 flex-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="text-[20px] font-semibold text-gray-900">{bundle.name || sku}</h1>
+                <span className={`text-[11.5px] font-semibold rounded px-2 py-0.5 ${
+                  bundle.active === false ? 'text-gray-600 bg-gray-100' : 'text-emerald-800 bg-emerald-100'
+                }`}>
+                  {bundle.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
+                </span>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-x-8 gap-y-3 mt-4 max-w-[560px]">
+                <div>
+                  <p className="text-[12.5px] text-gray-500">รหัสสินค้า</p>
+                  <p className="text-[15px] text-gray-900">{bundle.sku}</p>
+                </div>
+                <div>
+                  <p className="text-[12.5px] text-gray-500">ราคาขาย</p>
+                  <p className="text-[15px] text-gray-900">
+                    {typeof bundle.sellprice === 'number' ? `${fmtMoney(bundle.sellprice)} บาท` : '—'}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-[12.5px] text-gray-500">วันหมดอายุรายการ</p>
+                  <p className="text-[15px] text-gray-400">-</p>
+                </div>
+              </div>
+            </div>
+
+            {/* ── (3) QR + บาร์โค้ด มุมขวาบนเหมือน ZORT ── */}
+            <SkuCodes sku={sku} />
+          </div>
+
+          <p className="text-[15px] font-semibold text-gray-900 mt-5 mb-2">สินค้าใน สินค้าเป็นชุด</p>
+          <TableWrap>
+            <table className="w-full min-w-[620px]">
+              <thead className="bg-white border-b border-gray-200">
+                <tr>
+                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH}>รหัส</th>
+                  <th className={TH}>ชื่อสินค้า</th>
+                  <th className={THR}>จำนวน</th>
+                </tr>
+              </thead>
+              <tbody>
+                {items.length === 0 && (
+                  <EmptyState cols={4} icon="📦" title="ยังไม่มีรายการส่วนประกอบของชุดนี้"
+                    detail="รายการในชุดเก็บมาจากหน้ารายละเอียดของ ZORT ทีละชุด — ชุดนี้อาจยังไม่ถูกเก็บ" />
+                )}
+                {items.map((it, i) => (
+                  <tr key={`${it.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                    <td className={`${TD} text-gray-400`}>{it.line ?? i + 1}</td>
+                    <td className={`${TD} whitespace-nowrap`}>
+                      <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
+                        {it.sku}
+                      </Link>
+                    </td>
+                    <td className={TD}>
+                      <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
+                        {it.name || '—'}
+                      </Link>
+                    </td>
+                    <td className={TDR}>{fmtNum(it.qty)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </TableWrap>
+
+          {/* ── (4) กราฟยอดขายรายเดือน ─────────────────────────────────────── */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-5 mb-2">
+            <p className="text-[15px] font-semibold text-gray-900">ยอดขายรายเดือน (ย้อนหลัง 6 เดือน)</p>
+            {/* 🔴 **ไม่มีปุ่ม "ดูกราฟ" อีกแล้ว** — เดิมต้องกดเพราะยิงเดือนละครั้ง 6 ครั้ง
+                   ตอนนี้คิดจากแถวขายที่หน้านี้โหลดมาอยู่แล้ว ⇒ ขึ้นเองทันที ไม่มีการยิงเพิ่ม */}
+            <span className="text-[11.5px] text-gray-400">จากบัตรสต็อกของรหัสชุด — ไม่ต้องกดโหลด</span>
+          </div>
+          <div className="bg-white border border-gray-200 rounded-md p-4">
+            {!sales && !salesErr && <p className="text-[12.5px] text-gray-400">กำลังอ่านรายการขายของชุดนี้…</p>}
+            {(sales || salesErr) && (
+              <>
+                {/* 🔴 เดือนที่ไม่รู้ **ห้ามวาดเป็นแท่งศูนย์** — แท่งเตี้ยอ่านได้ว่า "ขายได้น้อย"
+                       ⇒ ใช้แถบลายเทา + ขีด แทน เพื่อให้ต่างจาก "ขายได้ 0 จริง" ชัดเจน */}
+                <div className="flex items-end gap-3 h-[150px]">
+                  {chart.map((s) => (
+                    <div key={s.key} className="flex-1 flex flex-col items-center justify-end h-full">
+                      {s.amount === null
+                        ? (
+                          <span className="w-full rounded-t bg-[repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb_4px,#f3f4f6_4px,#f3f4f6_8px)] border border-gray-300"
+                            style={{ height: '18px' }} title="ยังไม่รู้ยอดของเดือนนี้ — ไม่ใช่ 0 บาท" />
+                        )
+                        : (
+                          <>
+                            <span className="text-[10px] text-gray-500 mb-0.5">{fmtMoney(s.amount)}</span>
+                            <span className="w-full rounded-t bg-[#4669e5]"
+                              style={{ height: `${Math.max(3, (s.amount / chartMax) * 110)}px` }} />
+                          </>
+                        )}
+                      <span className="text-[11.5px] text-gray-500 mt-1 whitespace-nowrap">{s.label}</span>
+                      {s.amount === null && <span className="text-[10px] text-gray-400">ยังไม่รู้</span>}
+                    </div>
+                  ))}
+                </div>
+                <p className="text-[12.5px] text-gray-500 mt-3 leading-relaxed">
+                  {chartKnown === 0
+                    ? <>⚠️ <b>ทั้ง 6 เดือนยังไม่รู้ยอด</b> — แถบลายเทาคือ &ldquo;ยังไม่รู้&rdquo; <b>ไม่ใช่ 0 บาท</b>{salesUnknownWhy ? ` (${salesUnknownWhy})` : ''}</>
+                    : <>แท่งเตี้ยสุด = เดือนนั้น<b>ไม่มีการขายจริง</b> · แถบลายเทา = <b>ยังไม่รู้ยอด ไม่ใช่ 0 บาท</b></>}
+                  <br />
+                  {/* 🔑 ที่มาของตัวเลข — คนอ่านต้องรู้ว่านับจากอะไร ไม่ใช่เชื่อแท่งกราฟลอย ๆ */}
+                  นับจาก<b>แถวขายในบัตรสต็อกของรหัสชุด</b> (ZORT บันทึกการขายชุดไว้ที่รหัสชุด ไม่ใช่รหัสลูก)
+                  {' '}⇒ <b>ไม่นับซ้ำกับชิ้นส่วน</b> · ตรวจแล้วให้เลขเดียวกับรายงานของ ZORT เอง (15 ก.ย. 2569)
+                </p>
+              </>
+            )}
+          </div>
 
           {/* ── (5) คงเหลือรายคลัง ─────────────────────────────────────────── */}
           <div className="flex flex-wrap items-center justify-between gap-2 mt-5 mb-2">
@@ -488,88 +580,6 @@ export default function BundleDetailPage() {
             📏 <b>ตรวจซ้ำ 15 ก.ย. 2569</b>: ยิงชุดที่มีของในคลังหลายสิบตัว — NEW เท่ากับยอดไม่ระบุคลัง<b>ทุกตัว</b>
             {' '}⇒ <b>ยังไม่มีตัวอย่างไหนที่แยกสองอย่างนี้ออกจากกันได้</b> จึงยังสรุปไม่ได้ (ไม่ใช่ว่าเลิกตรวจ)
           </p>
-
-          {/* ── (4) กราฟยอดขายรายเดือน ─────────────────────────────────────── */}
-          <div className="flex flex-wrap items-center justify-between gap-2 mt-5 mb-2">
-            <p className="text-[15px] font-semibold text-gray-900">ยอดขายรายเดือน (ย้อนหลัง 6 เดือน)</p>
-            {/* 🔴 **ไม่มีปุ่ม "ดูกราฟ" อีกแล้ว** — เดิมต้องกดเพราะยิงเดือนละครั้ง 6 ครั้ง
-                   ตอนนี้คิดจากแถวขายที่หน้านี้โหลดมาอยู่แล้ว ⇒ ขึ้นเองทันที ไม่มีการยิงเพิ่ม */}
-            <span className="text-[11.5px] text-gray-400">จากบัตรสต็อกของรหัสชุด — ไม่ต้องกดโหลด</span>
-          </div>
-          <div className="bg-white border border-gray-200 rounded-md p-4">
-            {!sales && !salesErr && <p className="text-[12.5px] text-gray-400">กำลังอ่านรายการขายของชุดนี้…</p>}
-            {(sales || salesErr) && (
-              <>
-                {/* 🔴 เดือนที่ไม่รู้ **ห้ามวาดเป็นแท่งศูนย์** — แท่งเตี้ยอ่านได้ว่า "ขายได้น้อย"
-                       ⇒ ใช้แถบลายเทา + ขีด แทน เพื่อให้ต่างจาก "ขายได้ 0 จริง" ชัดเจน */}
-                <div className="flex items-end gap-3 h-[150px]">
-                  {chart.map((s) => (
-                    <div key={s.key} className="flex-1 flex flex-col items-center justify-end h-full">
-                      {s.amount === null
-                        ? (
-                          <span className="w-full rounded-t bg-[repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb_4px,#f3f4f6_4px,#f3f4f6_8px)] border border-gray-300"
-                            style={{ height: '18px' }} title="ยังไม่รู้ยอดของเดือนนี้ — ไม่ใช่ 0 บาท" />
-                        )
-                        : (
-                          <>
-                            <span className="text-[10px] text-gray-500 mb-0.5">{fmtMoney(s.amount)}</span>
-                            <span className="w-full rounded-t bg-[#4669e5]"
-                              style={{ height: `${Math.max(3, (s.amount / chartMax) * 110)}px` }} />
-                          </>
-                        )}
-                      <span className="text-[11.5px] text-gray-500 mt-1 whitespace-nowrap">{s.label}</span>
-                      {s.amount === null && <span className="text-[10px] text-gray-400">ยังไม่รู้</span>}
-                    </div>
-                  ))}
-                </div>
-                <p className="text-[12.5px] text-gray-500 mt-3 leading-relaxed">
-                  {chartKnown === 0
-                    ? <>⚠️ <b>ทั้ง 6 เดือนยังไม่รู้ยอด</b> — แถบลายเทาคือ &ldquo;ยังไม่รู้&rdquo; <b>ไม่ใช่ 0 บาท</b>{salesUnknownWhy ? ` (${salesUnknownWhy})` : ''}</>
-                    : <>แท่งเตี้ยสุด = เดือนนั้น<b>ไม่มีการขายจริง</b> · แถบลายเทา = <b>ยังไม่รู้ยอด ไม่ใช่ 0 บาท</b></>}
-                  <br />
-                  {/* 🔑 ที่มาของตัวเลข — คนอ่านต้องรู้ว่านับจากอะไร ไม่ใช่เชื่อแท่งกราฟลอย ๆ */}
-                  นับจาก<b>แถวขายในบัตรสต็อกของรหัสชุด</b> (ZORT บันทึกการขายชุดไว้ที่รหัสชุด ไม่ใช่รหัสลูก)
-                  {' '}⇒ <b>ไม่นับซ้ำกับชิ้นส่วน</b> · ตรวจแล้วให้เลขเดียวกับรายงานของ ZORT เอง (15 ก.ย. 2569)
-                </p>
-              </>
-            )}
-          </div>
-
-          <p className="text-[15px] font-semibold text-gray-900 mt-5 mb-2">สินค้าใน สินค้าเป็นชุด</p>
-          <TableWrap>
-            <table className="w-full min-w-[620px]">
-              <thead className="bg-white border-b border-gray-200">
-                <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}>รหัส</th>
-                  <th className={TH}>ชื่อสินค้า</th>
-                  <th className={THR}>จำนวน</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 && (
-                  <EmptyState cols={4} icon="📦" title="ยังไม่มีรายการส่วนประกอบของชุดนี้"
-                    detail="รายการในชุดเก็บมาจากหน้ารายละเอียดของ ZORT ทีละชุด — ชุดนี้อาจยังไม่ถูกเก็บ" />
-                )}
-                {items.map((it, i) => (
-                  <tr key={`${it.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                    <td className={`${TD} text-gray-400`}>{it.line ?? i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap`}>
-                      <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
-                        {it.sku}
-                      </Link>
-                    </td>
-                    <td className={TD}>
-                      <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
-                        {it.name || '—'}
-                      </Link>
-                    </td>
-                    <td className={TDR}>{fmtNum(it.qty)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </TableWrap>
 
           {/* ── (6) ตารางรายการขายของชุดนี้ ────────────────────────────────── */}
           <p className="text-[15px] font-semibold text-gray-900 mt-5 mb-2">รายการขายของชุดนี้</p>
