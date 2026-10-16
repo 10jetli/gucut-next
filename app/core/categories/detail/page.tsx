@@ -52,6 +52,9 @@ function Inner() {
   const [ขายดี, setขายดี] = useState<{ rows: { sku: string; name?: string; qty?: number; amount?: number | null }[]; from: string; to: string; more: boolean } | null>(null)
   const [ขายดีผิด, setขายดีผิด] = useState('')
   const [ขายดีรายละเอียด, setขายดีรายละเอียด] = useState('')
+  /** 📈 กราฟยอดขายรายเดือนของหมวด — topproducts&by=month&category= (ท่อแก้ 16 ต.ค. 2569 ให้ by=month กรองหมวดได้) */
+  const [รายเดือน, setรายเดือน] = useState<{ month: string; amount: number | null }[] | null>(null)
+  const [รายเดือนผิด, setรายเดือนผิด] = useState('')
 
   /* 🔴 **หนึ่งคำขอต่อการกดหนึ่งครั้ง — ห้ามวนกวาดทุกหน้ามานับเอง**
      ท่อ cap limit ไว้ 200 ตายตัว และส่ง total ของหมวดมาให้แล้ว ⇒ ใช้ total ปิดปุ่ม
@@ -105,6 +108,34 @@ function Inner() {
       .catch((e) => { if (!ยกเลิก) setขายดีผิด(String(e instanceof Error ? e.message : e)) })
     return () => { ยกเลิก = true }
   }, [catName, ขายดีวัน])
+
+  /* 📈 ยอดขายรายเดือน 4 เดือนล่าสุดแบบ ZORT (ภาพจอ ZORT: ก.ค.–ต.ค.) · 🔴 แสดงเฉพาะเมื่อ applied.category ตรงหมวด
+     ⚠️ ใช้ amount (ยอดบรรทัด รวมใบค้างจ่าย ยังไม่หักใบคืน) · ไม่ลบ unpaidAmount ของเส้นนี้ เพราะเส้น by=month คิดค้างจ่ายจากสถานะเอกสาร
+        ซึ่งต่างนิยามกับ unpaidAmount ฐานการชำระเงิน (ท่อวัด 16 ต.ค.: 34,149.20 vs 6,240.00) ⇒ ห้ามปน */
+  useEffect(() => {
+    if (!catName) return
+    let ยกเลิก = false
+    setรายเดือน(null); setรายเดือนผิด('')
+    const from = ต้นเดือนย้อนหลังแบบZORT(3) ?? ''
+    const to = วันนี้วันไทย()
+    fetch(`/api/web/core?list=topproducts&by=month&category=${encodeURIComponent(catName)}&store=z1&from=${from}&to=${to}`)
+      .then((x) => x.json())
+      .then((r) => {
+        if (ยกเลิก) return
+        if (!r || !Array.isArray(r.items)) throw new Error('ระบบหลังบ้านตอบผิดพลาดรอบนี้')
+        if (r.applied?.category !== catName) throw new Error('ท่อรุ่นนี้ยังไม่กรองตามหมวด — ไม่วาดเพื่อไม่ให้ยอดทั้งร้านปนเข้ามา')
+        /* สร้างช่องเดือนให้ครบ 4 เดือนก่อน แล้วเติม — ท่อส่งเฉพาะเดือนที่มียอด ไม่งั้นแกนเวลาจะข้ามเดือนที่ขายไม่ได้ */
+        const มี = new Map<string, number>(r.items.map((x: { month: string; amount?: number }) => [x.month, typeof x.amount === 'number' ? x.amount : NaN]))
+        const เดือนทั้งหมด: string[] = []
+        for (let k = 3; k >= 0; k--) { const d = k === 0 ? `${to.slice(0, 7)}-01` : (ต้นเดือนย้อนหลังแบบZORT(k) ?? ''); เดือนทั้งหมด.push(d.slice(0, 7)) }
+        setรายเดือน(เดือนทั้งหมด.map((m) => {
+          const v = มี.has(m) ? มี.get(m)! : 0
+          return { month: m, amount: Number.isFinite(v) ? v : null }
+        }))
+      })
+      .catch((e) => { if (!ยกเลิก) setรายเดือนผิด(String(e instanceof Error ? e.message : e)) })
+    return () => { ยกเลิก = true }
+  }, [catName])
 
   const load = useCallback(async (off = 0) => {
     if (!catName) { setError('ไม่ได้ระบุหมวด (ต้องเปิดจากจอหมวดหมู่)'); setLoading(false); return }
@@ -204,6 +235,42 @@ function Inner() {
             {' '}ตามราคาขาย <b>{NUM(cat?.onhand_value_sell) === null ? '—' : fmtMoney(cat!.onhand_value_sell as number)}</b>
             {NUM(cat?.zortSkus) !== null && <> · ZORT นับ SKU <b>{fmtNum(cat!.zortSkus as number)}</b></>}
           </p>
+
+          {/* 📈 ยอดขาย — การ์ดกราฟรายเดือนตามผัง ZORT (ตัวเลือก salesoption: ยอดขาย · กำไรจากการขาย) */}
+          <div className="bg-white border border-gray-200 rounded-md mb-4">
+            <div className="flex flex-wrap items-center gap-3 px-4 pt-3 pb-2">
+              <p className="text-[14px] font-semibold text-gray-900 mr-auto">ยอดขาย</p>
+              <select value="sales" onChange={() => { /* มีค่าเดียวที่ทำได้จริง */ }}
+                className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white max-w-full min-w-0">
+                <option value="sales">ยอดขาย</option>
+                <option value="profit" disabled>กำไรจากการขาย — ยังทำไม่ได้ (ต้องใช้ต้นทุนคงเหลือเฉลี่ยรายตัว)</option>
+              </select>
+            </div>
+            {รายเดือนผิด ? (
+              <p className="px-4 pb-3 text-[12.5px] text-gray-500">ยังแสดงไม่ได้ — {รายเดือนผิด}</p>
+            ) : !รายเดือน ? (
+              <p className="px-4 pb-3 text-[12.5px] text-gray-400">กำลังถาม…</p>
+            ) : (() => {
+              const สูงสุด = Math.max(1, ...รายเดือน.map((m) => m.amount ?? 0))
+              const TH_M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+              return (
+                <div className="px-4 pb-3">
+                  <div className="flex items-end gap-3 h-[140px]">
+                    {รายเดือน.map((m) => (
+                      <div key={m.month} className="flex-1 flex flex-col items-center justify-end h-full min-w-0">
+                        <span className="text-[10.5px] text-gray-500 tabular-nums mb-0.5">{m.amount === null ? '?' : fmtMoney(m.amount)}</span>
+                        {m.amount === null
+                          ? <div className="w-full max-w-[56px] h-full rounded-t bg-[repeating-linear-gradient(45deg,#e5e7eb,#e5e7eb_4px,#fff_4px,#fff_8px)]" title="ยังไม่รู้ยอด ไม่ใช่ 0" />
+                          : <div className="w-full max-w-[56px] rounded-t bg-[#8ea8f8]" style={{ height: `${Math.max(2, (m.amount / สูงสุด) * 100)}%` }} />}
+                        <span className="text-[11px] text-gray-500 mt-1">{TH_M[Number(m.month.slice(5, 7)) - 1]}/{Number(m.month.slice(0, 4)) + 543}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-gray-400 mt-2">ร้าน z1 · ยอดบรรทัดสินค้า รวมใบค้างจ่าย ยังไม่หักใบคืน ⇒ สูงกว่าจอ ZORT ได้ · เดือนนี้นับถึงวันนี้</p>
+                </div>
+              )
+            })()}
+          </div>
 
           {/* 🏆 สินค้าขายดีย้อนหลัง — ผังเดียวกับ ZORT (ชื่อสินค้า · จำนวนที่ขายได้ · ยอดขาย · เรียงจำนวนที่ขายได้) */}
           <div className="bg-white border border-gray-200 rounded-md mb-4">
