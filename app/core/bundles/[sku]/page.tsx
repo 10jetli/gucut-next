@@ -413,7 +413,7 @@ export default function BundleDetailPage() {
             </div>
 
             {/* ── (3) QR + บาร์โค้ด มุมขวาบนเหมือน ZORT ── */}
-            <SkuCodes sku={sku} />
+            <SkuCodes sku={sku} ชนิด="ชุด" />
           </div>
 
           <p className="text-[15px] font-semibold text-gray-900 mt-5 mb-2">สินค้าใน สินค้าเป็นชุด</p>

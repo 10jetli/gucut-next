@@ -17,7 +17,10 @@ import { qrEncode } from '@/lib/qr'
 
 type State = 'loading' | 'have' | 'none' | 'unknown' | 'error' | 'missing'
 
-export default function SkuCodes({ sku }: { sku: string }) {
+/** `ชนิด="ชุด"` สำหรับหน้าสินค้าเป็นชุด — เส้น productlabels ครอบเฉพาะสินค้าเดี่ยว ⇒ รหัสชุดตกกอง missing เสมอ
+ *  (ยิงจริง 17 ต.ค. 2569: 00073-30-KK มีอยู่ใน ZORT แต่ได้ missing · หัวไฟล์นี้จดชุด 00073-11.8-NW ไว้แล้วตั้งแต่ 14 ก.ย.)
+ *  ⇒ บนหน้าชุด missing แปลว่า "เส้นนี้ไม่ครอบชุด" **ไม่ใช่** "ZORT ไม่มีรหัสนี้" */
+export default function SkuCodes({ sku, ชนิด = 'สินค้า' }: { sku: string; ชนิด?: 'สินค้า' | 'ชุด' }) {
   const [barcode, setBarcode] = useState<string | null>(null)
   const [state, setState] = useState<State>('loading')
   const [err, setErr] = useState('')
@@ -46,7 +49,7 @@ export default function SkuCodes({ sku }: { sku: string }) {
            ⇒ แยกสองอย่างนี้ออกจากกัน · รหัสที่ failed ห้ามพิมพ์ฉลาก (ข้อความ unknown บอกอยู่แล้ว) */
         if (!row) {
           const ใน = (k: string) => Array.isArray(d?.[k]) && d[k].some((x: unknown) => (typeof x === 'string' ? x : (x as { sku?: string })?.sku) === sku)
-          setState(ใน('missing') && !ใน('failed') ? 'missing' : 'unknown'); return
+          setState(ชนิด === 'สินค้า' && ใน('missing') && !ใน('failed') ? 'missing' : 'unknown'); return
         }
         if (typeof row.barcode === 'string' && row.barcode.trim()) { setBarcode(row.barcode.trim()); setState('have'); return }
         setState(row.noBarcode ? 'none' : 'unknown')
@@ -117,7 +120,7 @@ export default function SkuCodes({ sku }: { sku: string }) {
         )}
         {state === 'unknown' && (
           <p className="text-[11.5px] text-gray-600 mt-1 leading-relaxed">
-            ⚠️ <b>ยังไม่รู้ว่า ZORT มีบาร์โค้ดของรายการนี้หรือไม่</b> (ท่อไม่พบรายการนี้ในชุดฉลาก)
+            ⚠️ <b>ยังไม่รู้ว่า ZORT มีบาร์โค้ดของรายการนี้หรือไม่</b> {ชนิด === 'ชุด' ? '(ระบบดึงบาร์โค้ดได้เฉพาะสินค้าเดี่ยว ยังไม่ครอบสินค้าเป็นชุด)' : '(ท่อไม่พบรายการนี้ในชุดฉลาก)'}
             {' '}— <b>ไม่ได้แปลว่าไม่มี</b> · รูปข้างบนวาดจากรหัสสินค้า
           </p>
         )}
