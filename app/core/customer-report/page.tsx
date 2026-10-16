@@ -118,6 +118,9 @@ export default function CoreCustomersPage() {
   /** ท่อบอกเองว่านับรวมกี่ร้าน — ห้ามจอเดา */
   const [scope, setScope] = useState('')
   const [truncated, setTruncated] = useState(false)
+  /** ยอดรวมรายกลุ่มของ **ทั้งช่วง** (ไม่ถูกตัดที่ limit) — ท่อเพิ่ม 16 ต.ค. 2569 · null = ท่อไม่ส่ง/ข้ามรอบนี้ ⇒ ไม่โชว์ % ในกลุ่ม */
+  type กลุ่ม = { customers: number | null; orders: number; sales: number }
+  const [groupTotals, setGroupTotals] = useState<{ new: กลุ่ม; repeat: กลุ่ม; unknownFirstDay: กลุ่ม; unnamed: กลุ่ม } | null>(null)
   /** จำนวน "ชื่อลูกค้าที่แตกต่างกัน" ทั้งช่วง — ท่อส่งมาให้แล้ว (distinctNames)
    *  ⚠️ หน่วยคือ **ชื่อ** และนับเฉพาะใบที่มีชื่อ · กอง unnamed (ส่วนใหญ่คือ POS) แยกต่างหาก
    *     ⇒ ห้ามเอาสองกองมาบวกกัน และถ้าจะเขียนคำว่า "ลูกค้าทั้งหมด" ต้องบอกว่านับเฉพาะที่มีชื่อ
@@ -165,6 +168,9 @@ export default function CoreCustomersPage() {
       if (!('customers' in d)) throw new Error('เซิร์ฟเวอร์ตอบมาไม่ครบ (ไม่มีรายชื่อลูกค้า) — ยังสรุปยอดไม่ได้')
       // ตัดที่ limit เมื่อไหร่ต้องบอก — ท่อส่งธงมาเอง จอไม่ต้องเดา
       setTruncated(d?.truncated === true)
+      /* อ่านแบบทนรูป: ต้องมี new/repeat ที่ sales เป็นตัวเลข ไม่งั้นถือว่าไม่มี (ห้ามเดาเป็น 0) */
+      const gt = d?.groupTotals
+      setGroupTotals(gt && typeof gt?.new?.sales === 'number' && typeof gt?.repeat?.sales === 'number' ? gt : null)
       setDistinctNames(typeof d?.distinctNames === 'number' ? d.distinctNames : null)
       setScope(typeof d.store === 'string' ? d.store : '')
 
@@ -239,8 +245,13 @@ export default function CoreCustomersPage() {
   /* 📐 ZORT คิด "ยอดขาย (%)" **ในกลุ่มของแท็บ** (อ่านจอ 16 ต.ค. 2569: แท็บลูกค้าใหม่ 54,000 = 7.34% ของยอดลูกค้าใหม่ 736,135.40)
      ⇒ แท็บลูกค้าใหม่/ซื้อซ้ำ หารด้วยยอดของกลุ่มนั้น — **เฉพาะตอนรายชื่อครบ** (ท่อไม่ได้ตัด) ไม่งั้นยอดกลุ่มขาด % จะพองเงียบ ๆ
        รายชื่อถูกตัด ⇒ ถอยไปหารด้วยยอดทั้งช่วงเหมือนเดิม และหัวคอลัมน์บอกว่าหารด้วยอะไร */
-  const ยอดกลุ่ม = tab === 'a' ? newC.reduce((x, p) => x + p.amount, 0) : tab === 'b' ? repC.reduce((x, p) => x + p.amount, 0) : null
-  const ร้อยละในกลุ่ม = ยอดกลุ่ม !== null && ยอดกลุ่ม > 0 && !truncated
+  /* 🔑 ยอดกลุ่มมาจาก `groupTotals` ของท่อ (ทั้งช่วง ไม่ถูกตัด) ก่อนเสมอ · ไม่มี ⇒ ใช้ผลรวมรายที่โหลดมา **เฉพาะตอนไม่ถูกตัด** */
+  const ยอดกลุ่ม = tab === 'a'
+    ? (groupTotals ? groupTotals.new.sales : (!truncated ? newC.reduce((x, p) => x + p.amount, 0) : null))
+    : tab === 'b'
+      ? (groupTotals ? groupTotals.repeat.sales : (!truncated ? repC.reduce((x, p) => x + p.amount, 0) : null))
+      : null
+  const ร้อยละในกลุ่ม = ยอดกลุ่ม !== null && ยอดกลุ่ม > 0
   const ตัวหารร้อยละ = ร้อยละในกลุ่ม ? (ยอดกลุ่ม as number) : totalSales !== null && totalSales > 0 ? totalSales : totalAmount
   const ร้อยละของทั้งช่วง = !ร้อยละในกลุ่ม && totalSales !== null && totalSales > 0
   const shown = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
@@ -368,9 +379,14 @@ export default function CoreCustomersPage() {
               {named.length === 0
                 ? <p className="text-[12.5px] text-gray-400">ยังไม่มีลูกค้าที่ระบุชื่อในช่วงนี้</p>
                 : (() => {
-                  const total = newC.length + repC.length || 1
-                  const pctNew = Math.round((newC.length / total) * 1000) / 10
-                  const pctRep = Math.round((repC.length / total) * 1000) / 10
+                  /* 🔑 มี `groupTotals` (ทั้งช่วง ไม่ถูกตัด · ท่อเพิ่ม 16 ต.ค. 2569) ⇒ ใช้เลขนี้ทั้งการ์ด · ไม่มี ⇒ ผลรวมรายที่โหลดมา + ก้อนส่วนที่เหลือแบบเดิม */
+                  const gt = groupTotals
+                  const nNew = gt?.new.customers ?? newC.length
+                  const nRep = gt?.repeat.customers ?? repC.length
+                  const nUnk = gt ? (gt.unknownFirstDay.customers ?? 0) : unkC.length
+                  const total = nNew + nRep || 1
+                  const pctNew = Math.round((nNew / total) * 1000) / 10
+                  const pctRep = Math.round((nRep / total) * 1000) / 10
                   const C = 2 * Math.PI * 42
 
                   /* ── มุมมอง "ยอดขาย" (typeoption ของ ZORT) ─────────────────────────
@@ -380,13 +396,13 @@ export default function CoreCustomersPage() {
                            · ไม่ระบุชื่อ (POS) — ท่อส่งมาแยกอยู่แล้ว (ZORT ก็มีแถว "ไม่ระบุ" ในมุมมองนี้)
                            · ส่วนที่อยู่นอก 500 รายแรก — **ยังไม่รู้ว่าเป็นใหม่หรือซื้อซ้ำ** ห้ามยัดเข้ากลุ่มใดกลุ่มหนึ่ง */
                   const sumOf = (list: Person[]) => list.reduce((n, x) => n + x.amount, 0)
-                  const salesNew = sumOf(newC)
-                  const salesRep = sumOf(repC)
-                  const salesUnk = sumOf(unkC)
+                  const salesNew = gt ? gt.new.sales : sumOf(newC)
+                  const salesRep = gt ? gt.repeat.sales : sumOf(repC)
+                  const salesUnk = gt ? gt.unknownFirstDay.sales : sumOf(unkC)
                   const unnamedRow = people.find((x) => x.name === NO_NAME)
-                  const salesNoName = unnamedRow ? unnamedRow.amount : 0
+                  const salesNoName = gt ? gt.unnamed.sales : (unnamedRow ? unnamedRow.amount : 0)
                   /* ยอดที่ท่อนับทั้งช่วง (ไม่ได้ถูกตัด) — ไม่มีก็ไม่เดา */
-                  const rest = totalSales === null
+                  const rest = gt ? 0 : totalSales === null
                     ? null
                     : Math.max(0, Math.round((totalSales - salesNew - salesRep - salesUnk - salesNoName) * 100) / 100)
 
@@ -401,9 +417,10 @@ export default function CoreCustomersPage() {
                           {LAB_A} <b>{fmtMoney(salesNew)}</b> บาท {bar(salesNew, '#8ea8f8')}</p>
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
                           {LAB_B} <b>{fmtMoney(salesRep)}</b> บาท {bar(salesRep, '#f2938c')}</p>
-                        {salesUnk > 0 && (
+                        {/* กอง "ไม่รู้วันซื้อครั้งแรก" — ท่อกำชับห้ามตัดทิ้ง (0 วันนี้ ไม่ใช่ 0 ตลอดไป) ⇒ มี groupTotals ให้โชว์เสมอ */}
+                        {(salesUnk > 0 || gt) && (
                           <p className="text-gray-600"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-300" />
-                            ไม่ทราบสถานะ <b>{fmtMoney(salesUnk)}</b> บาท</p>
+                            ไม่รู้วันซื้อครั้งแรก <b>{fmtMoney(salesUnk)}</b> บาท</p>
                         )}
                         <p className="text-gray-600"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-400" />
                           ไม่ระบุชื่อ (ส่วนใหญ่เป็นหน้าร้าน) <b>{fmtMoney(salesNoName)}</b> บาท {bar(salesNoName, '#9ca3af')}</p>
@@ -417,7 +434,9 @@ export default function CoreCustomersPage() {
                         {/* ⚠️ ก้อน "อยู่นอก 500 รายแรก" คือ **ส่วนที่เหลือ** (ยอดทั้งช่วง ลบก้อนที่รู้)
                             ⇒ มันบวกครบเพราะวิธีคิด ไม่ใช่เพราะเราไปตรวจมา — เขียนให้ตรงตามนั้น */}
                         <p className="text-[11.5px] text-gray-400 leading-relaxed max-w-[330px] pt-1">
-                          {totalSales !== null
+                          {gt
+                            ? <>ยอดของทุกกลุ่มเป็นของ<b>ทั้งช่วง</b> (ท่อแยกกลุ่มให้ ไม่ถูกตัดที่ 500 ราย){totalSales !== null && <> · ยอดทั้งช่วง {fmtMoney(totalSales)} บาท</>}</>
+                            : totalSales !== null
                             ? <>ยอดทั้งช่วงที่ท่อนับให้ <b>{fmtMoney(totalSales)}</b> บาท ·
                               ก้อนสุดท้ายคือ<b>ส่วนที่เหลือ</b>จากยอดนั้น (ไม่ใช่เลขที่แยกกลุ่มมาแล้ว)</>
                             : <>ท่อไม่ได้ส่งยอดรวมทั้งช่วงมารอบนี้ ⇒ บอกไม่ได้ว่าสองกลุ่มนี้ครบหรือยัง</>}
@@ -432,25 +451,25 @@ export default function CoreCustomersPage() {
                       <svg viewBox="0 0 100 100" className="w-36 h-36 -rotate-90">
                         <circle cx="50" cy="50" r="42" fill="none" stroke="#8ea8f8" strokeWidth="16" />
                         <circle cx="50" cy="50" r="42" fill="none" stroke="#f2938c" strokeWidth="16"
-                          strokeDasharray={`${(repC.length / total) * C} ${C}`} />
+                          strokeDasharray={`${(nRep / total) * C} ${C}`} />
                       </svg>
                       <div className="text-[12.5px] space-y-1.5">
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
                           {LAB_A}{' '}
-                          <b>{newC.length.toLocaleString('th-TH')}</b> ราย ({pctNew}%)</p>
+                          <b>{nNew.toLocaleString('th-TH')}</b> ราย ({pctNew}%)</p>
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
                           {LAB_B}{' '}
-                          <b>{repC.length.toLocaleString('th-TH')}</b> ราย ({pctRep}%)</p>
-                        {unkC.length > 0 && (
+                          <b>{nRep.toLocaleString('th-TH')}</b> ราย ({pctRep}%)</p>
+                        {(nUnk > 0 || gt) && (
                           <p className="text-[12.5px] text-gray-500">
                             <span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-300" />
-                            ไม่ทราบสถานะ <b>{unkC.length.toLocaleString('th-TH')}</b> ราย
+                            ไม่รู้วันซื้อครั้งแรก <b>{nUnk.toLocaleString('th-TH')}</b> ราย
                             <span className="text-gray-400"> (หา firstDay ไม่ได้ — ไม่ได้อยู่ในวงกลม)</span>
                           </p>
                         )}
                         {/* 🔴 ถูกตัดที่ 500 ราย ⇒ **วงกลมนี้ไม่ใช่ทั้งช่วง** ต้องเขียนไว้ตรงนี้
                             ไม่ใช่ปล่อยให้คนอ่านไปเทียบกับเลข 547/255 ของ ZORT ซึ่งเป็นทั้งชุด */}
-                        {truncated && (
+                        {truncated && !groupTotals && (
                           <p className="text-[11.5px] text-amber-700">
                             นับจาก {named.length.toLocaleString('th-TH')} รายที่โหลดมาเท่านั้น
                             {distinctNames !== null && <> (ทั้งช่วงมี {distinctNames.toLocaleString('th-TH')} ราย)</>}
@@ -629,6 +648,13 @@ export default function CoreCustomersPage() {
                 แสดง {filtered.length === 0 ? 0 : (page * PER_PAGE + 1).toLocaleString('th-TH')}–
                 {Math.min((page + 1) * PER_PAGE, filtered.length).toLocaleString('th-TH')} จาก{' '}
                 {filtered.length.toLocaleString('th-TH')} ราย
+                {/* ท่อกำชับ: % ในกลุ่มต้องมีป้าย historyFrom คู่กันเสมอ — คนที่ซื้อก่อนวันนั้นจะดูเป็นลูกค้าใหม่เกินจริง */}
+                {ร้อยละในกลุ่ม && (
+                  <span className="block text-[11.5px] text-gray-400">
+                    ยอดขาย (%) = สัดส่วนในยอดของกลุ่ม{tab === 'a' ? 'ลูกค้าใหม่' : 'ลูกค้าซื้อซ้ำ'}ทั้งช่วง {fmtMoney(ยอดกลุ่ม as number)} บาท (แบบ ZORT)
+                    {historyFrom && <> · <span className="text-amber-700">ประวัติย้อนได้ถึง {thaiDate(historyFrom)} — คนที่ซื้อก่อนนั้นจะนับเป็นลูกค้าใหม่เกินจริง</span></>}
+                  </span>
+                )}
               </span>
               {/* เลขหน้าแบบ ZORT (ชิ้นเดียวกับจอรายการอื่น) — จอนี้แบ่งหน้าจากอาเรย์ที่กรองแล้วในเบราว์เซอร์
                   ⇒ จำนวนทั้งชุดคือ `filtered.length` ซึ่งรู้แน่นอน จึงบอกจำนวนหน้าได้ */}

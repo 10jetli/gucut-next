@@ -106,13 +106,13 @@ export default function BranchDetailPage() {
      ท่อ `list=topproducts&warehouse=` กรองรายคลังได้จริง (ยิงดู 16 ต.ค. 2569: NEW 75 รหัส · KLD 22 · รหัสมั่ว 0 และ applied.warehouse ตอบกลับตรง)
      ⚠️ "1 เดือน/3 เดือน" ของตารางนี้ใน ZORT นับแบบไหนยังไม่ได้วัด ⇒ นับถอยเป็นวัน และ **เขียนช่วงจริงบนจอเสมอ** */
   const [ขายดีช่วง, setขายดีช่วง] = useState(7)
-  const [ขายดี, setขายดี] = useState<{ items: { sku: string; name: string; qty: number; amount: number | null }[]; totalSkus: number | null; offset: number; nextOffset: number | null; from: string; to: string } | null>(null)
+  const [ขายดี, setขายดี] = useState<{ items: { sku: string; name: string; qty: number; amount: number | null }[]; totalSkus: number | null; offset: number; nextOffset: number | null; เรียง: string | null; from: string; to: string } | null>(null)
   const [ขายดีล้ม, setขายดีล้ม] = useState('')
   const โหลดขายดี = useCallback(async (วัน: number, offset = 0) => {
     setขายดีล้ม('')
     const from = thaiDay(Math.max(0, วัน - 1)), to = thaiDay(0)
     try {
-      const d = await fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=20&offset=${offset}&warehouse=${encodeURIComponent(code)}`).then((r) => r.json())
+      const d = await fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=20&offset=${offset}&warehouse=${encodeURIComponent(code)}&sort=amount`).then((r) => r.json())
       if (d?.error) throw new Error(d.error)
       /* 🔴 ท่อต้องตอบกลับว่ากรองคลังนี้จริง — ไม่ตรง = ยอดทั้งร้านปลอมเป็นยอดคลัง (กติกาเดียวกับจอยอดขาย) */
       if (d?.applied?.warehouse !== code) throw new Error('ท่อไม่ได้ยืนยันว่ากรองคลังนี้ — ไม่แสดงตัวเลข เพราะอาจเป็นยอดทั้งร้าน')
@@ -121,6 +121,8 @@ export default function BranchDetailPage() {
         totalSkus: typeof d.totalSkus === 'number' ? d.totalSkus : null,
         offset: typeof d.applied?.offset === 'number' ? d.applied.offset : offset,
         nextOffset: typeof d.nextOffset === 'number' ? d.nextOffset : null,
+        /* เรียงตามที่ท่อ **ตอบว่าใช้จริง** (sortApplied) ไม่ใช่ตามที่จอขอ — ท่อรุ่นเก่าเมินแล้วเรียงตามจำนวน */
+        เรียง: typeof d.sortApplied === 'string' ? d.sortApplied : null,
         from, to,
       })
     } catch (e) { setขายดี(null); setขายดีล้ม(e instanceof Error ? e.message : String(e)) }
@@ -250,8 +252,11 @@ export default function BranchDetailPage() {
               : (
                 <>
                   <p className="px-4 md:px-5 pb-2 text-[11.5px] text-gray-500">ช่วง {thaiDate(ขายดี.from)} – {thaiDate(ขายดี.to)} · คิดจากบรรทัดสินค้าในใบขายที่ตัดของจากคลังนี้
-                    {/* ⚠️ ท่อเรียงตามจำนวน (by รับแค่ month/category — ยิงดู 16 ต.ค. 2569) · เรียงใหม่ในหน้าเดียวจะผิดข้ามหน้า ⇒ ไม่เรียงเอง บอกตรง ๆ */}
-                    {' '}· <span className="text-amber-700">เรียงตามจำนวนที่ขายได้ (ZORT เรียงตามยอดขาย — ท่อยังเรียงตามยอดเงินไม่ได้)</span></p>
+                    {/* 🔑 เรียงตามยอดขายแบบ ZORT ด้วย sort=amount (ท่อเพิ่มให้ 16 ต.ค. 2569 · มีตัวตัดสินเสมอกัน ⇒ ไล่หน้าไม่ซ้ำ/ไม่หาย)
+                        ท่อตอบว่าเรียงอย่างอื่น ⇒ บอกตรง ๆ ไม่เรียงเองในหน้าเดียว (จะผิดข้ามหน้า) */}
+                    {' '}· {ขายดี.เรียง === 'amount'
+                      ? <span>เรียงตามยอดขาย</span>
+                      : <span className="text-amber-700">เรียงตาม{ขายดี.เรียง === 'qty' ? 'จำนวนที่ขายได้' : 'ค่าที่ท่อไม่ได้บอก'} (ZORT เรียงตามยอดขาย — ท่อรอบนี้ไม่ได้เรียงตามยอดเงิน)</span>}</p>
                   <TableWrap>
                     <table className="w-full min-w-[520px]">
                       <thead className="bg-white border-b border-gray-200">
