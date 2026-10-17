@@ -120,3 +120,13 @@ button[aria-disabled="true"].disabled-readable {
   box-shadow: none !important;
   cursor: not-allowed;
 }
+
+/* 📏 ตารางแบบ ZORT (วัด DOM 5 จอ 17 ต.ค. 2569) — ใช้กับทุกตารางใน <TableWrap>
+   หัวตาราง #e8ecef · ไม่มีเส้นคั่นแถว · แถวคี่ #f8f9fa
+   ⚠️ สีแถวสลับอยู่ใน @layer components + :where() ⇒ ความเจาะจงต่ำ ⇒ แถวที่เพจทาสีเอง (แดง/เหลืองเตือน) และ hover ยังชนะ
+      ส่วนเส้นคั่นแถวต้องชนะคลาส border-b ที่เพจเขียนไว้ ⇒ อยู่นอก layer ความเจาะจงสูงกว่า */
+.zort-table thead { background-color: #e8ecef; }
+.zort-table tbody tr { border-bottom-width: 0; }
+@layer components {
+  .zort-table :where(tbody tr:nth-child(odd)) { background-color: #f8f9fa; }
+}

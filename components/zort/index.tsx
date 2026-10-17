@@ -310,9 +310,11 @@ export function toneOfStatus(s: string): PillTone {
 export function TableWrap({ children }: { children: ReactNode }) {
   /* ⚠️ พื้นตารางของ ZORT ไม่ใช่ขาวสนิท — วัดได้ #f8f9fa (พบ 85% ในบริเวณแถว)
      ขาวสนิทบนพื้นหน้า #f0f2f9 จะดูตัดกันแรงกว่าของจริง */
+  /* 📏 **วัด DOM ZORT 5 จอ 17 ต.ค. 2569** (แทนค่าที่เคยวัดจากพิกเซลภาพข้างบน):
+     กล่องตาราง พื้นขาว · เงา rgba(65,101,237,.1) 0 3px 6px · ไม่มีขอบ · มุมเหลี่ยม
+     หัวตาราง #e8ecef · **ไม่มีเส้นคั่นแถว** ใช้แถวสลับสี #f8f9fa แทน ⇒ กฎอยู่ที่ `.zort-table` ใน globals.css */
   return (
-    <div className="border rounded-md overflow-hidden"
-      style={{ background: ZORT_ROW_BG, borderColor: ZORT_LINE }}>
+    <div className="zort-table bg-white overflow-hidden" style={{ boxShadow: '0 3px 6px rgba(65,101,237,.1)' }}>
       <div className="overflow-x-auto">{children}</div>
     </div>
   )
@@ -331,12 +333,12 @@ export const THR = 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.
 /** หัวคอลัมน์แบบ Kanit 14 #3e3e3e — ZORT ใช้ที่ /Logistics/list กับ /Product/Categorylist (วัด 17 ต.ค. 2569) ไม่ใช่ Lato 12 เหมือนจออื่น */
 export const TH_KANIT = "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
 export const THR_KANIT = "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
-export const TD = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top'
-export const TDR = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
+export const TD = 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top'
+export const TDR = 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
 /** ช่องลำดับแถว (#) — ZORT ใช้ Lato 12 สีเทา #868e96 (วัด DOM 8 จอรายการ 17 ต.ค. 2569) */
 /*  ⚠️ เขียนเต็ม ห้ามต่อจาก TD — TD มี text-[14px] อยู่แล้ว สองคลาสขนาดชนกัน
        Tailwind ตัดสินด้วยลำดับใน CSS ไม่ใช่ลำดับในสตริง ⇒ 14 ชนะ (วัดเว็บจริงได้ 14 ทั้ง 6 จอ) */
-export const TD_NO = "px-2 py-3 align-top font-['Lato','Boon',sans-serif] text-[12px] text-[#868e96]"
+export const TD_NO = "px-2 py-2 align-top font-['Lato','Boon',sans-serif] text-[12px] text-[#868e96]"
 /** ลิงก์ในแถวตาราง — ZORT ใช้ Boon 14 น้ำหนัก 400 สี #337ab7 (วัด 8 จอรายการ 17 ต.ค. 2569)
  *  ⚠️ ยกเว้น /Sell/list ที่ ZORT ใช้ Kanit — จอขายใส่ฟอนต์เพิ่มเอง */
 export const ROW_LINK = 'text-[#337ab7] font-normal hover:underline'
