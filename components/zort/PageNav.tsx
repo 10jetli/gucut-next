@@ -39,9 +39,12 @@ export const PAGE_CHOICES = [10, 20, 50, 100]
 /* 📏 วัดของจริง 16 ก.ย. 2569 บนแท็บเล็ต 820px: ปุ่มเลขหน้าเดิมสูง **27px**
    ร้านกดจากแท็บเล็ตที่เคาน์เตอร์ ⇒ เป้ากดควรใกล้ 40px (นิ้วคนกว้างกว่าเมาส์)
    ⚠️ ขยายด้วย padding ไม่ใช่ตัวอักษร — ตัวเลขใหญ่ขึ้นจะไม่เหมือน ZORT */
-const BTN = 'px-3 py-2.5 rounded border text-[12.5px] leading-none disabled:opacity-40 disabled:cursor-not-allowed'
-const PLAIN = `${BTN} bg-white border-gray-300 text-gray-700 hover:bg-gray-50`
-const HERE = `${BTN} bg-[#4165ed] border-[#4165ed] text-white font-semibold`
+/* 📏 สี/ฟอนต์ตาม ZORT (วัด /Sell/list 17 ต.ค. 2569): Lato 12 #3e3e3e พื้นขาว ขอบ #adb5bd มุม 4
+      หน้าปัจจุบัน = **พื้นเทา #dee2e6 ตัวหนังสือสีเดิม** — ZORT ไม่ใช้พื้นน้ำเงิน
+   ⚠️ ความสูงยังคง ~35 (ZORT 28) ตามเหตุผลข้างบน — ให้ท่านประธานตัดสินว่าจะลดเป็น 28 ไหม */
+const BTN = "px-3 py-2.5 rounded border font-['Lato','Boon',sans-serif] text-[12px] leading-none disabled:opacity-40 disabled:cursor-not-allowed"
+const PLAIN = `${BTN} bg-white border-[#adb5bd] text-[#3e3e3e] hover:bg-gray-50`
+const HERE = `${BTN} bg-[#dee2e6] border-[#adb5bd] text-[#3e3e3e]`
 
 /** หน้าที่จะโชว์: หน้าแรก · รอบตัวเอง ±2 · หน้าสุดท้าย (ที่เหลือเป็น …) */
 function pagesToShow(cur: number, last: number): (number | '…')[] {
