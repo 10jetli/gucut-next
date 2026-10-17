@@ -334,7 +334,9 @@ export const THR_KANIT = "text-right font-normal font-['Kanit','Boon',sans-serif
 export const TD = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top'
 export const TDR = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
 /** ช่องลำดับแถว (#) — ZORT ใช้ Lato 12 สีเทา #868e96 (วัด DOM 8 จอรายการ 17 ต.ค. 2569) */
-export const TD_NO = `${TD} font-['Lato','Boon',sans-serif] text-[12px] text-[#868e96]`
+/*  ⚠️ เขียนเต็ม ห้ามต่อจาก TD — TD มี text-[14px] อยู่แล้ว สองคลาสขนาดชนกัน
+       Tailwind ตัดสินด้วยลำดับใน CSS ไม่ใช่ลำดับในสตริง ⇒ 14 ชนะ (วัดเว็บจริงได้ 14 ทั้ง 6 จอ) */
+export const TD_NO = "px-2 py-3 align-top font-['Lato','Boon',sans-serif] text-[12px] text-[#868e96]"
 /** ลิงก์ในแถวตาราง — ZORT ใช้ Boon 14 น้ำหนัก 400 สี #337ab7 (วัด 8 จอรายการ 17 ต.ค. 2569)
  *  ⚠️ ยกเว้น /Sell/list ที่ ZORT ใช้ Kanit — จอขายใส่ฟอนต์เพิ่มเอง */
 export const ROW_LINK = 'text-[#337ab7] font-normal hover:underline'

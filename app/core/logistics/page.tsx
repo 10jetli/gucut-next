@@ -508,7 +508,7 @@ export default function LogisticsPage() {
                         {r.carrier || 'ไม่ระบุขนส่ง'}
                       </span>
                     </td>
-                    <td className={`${TD} whitespace-nowrap text-gray-600`}>
+                    <td className={`${TD} whitespace-nowrap`}>
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
                     </td>
                     <td className={`${TD} max-w-[200px] truncate`}>{r.receiver || <span className="text-gray-300">—</span>}</td>

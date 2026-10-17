@@ -348,7 +348,8 @@ export default function CoreCategoriesPage() {
                     {/* เลขจำนวน SKU ของ ZORT เป็นสีเขียวเสมอ ไม่ขึ้นกับเงื่อนไขอะไร */}
                     {/* ⚠️ ZORT ส่งจำนวน SKU มาด้วย — ถ้าไม่ตรงกับของเราต้องเห็นทันที
                         ไม่ตรง = กระจกสินค้าขาดหรือเกินในหมวดนั้น ซึ่งเป็นเรื่องใหญ่กว่ามูลค่า */}
-                    <td className={TDR} style={{ color: ZORT_GREEN }}>
+                    {/* 📏 ZORT ช่องจำนวน SKU = Lato สี #3e3e3e (วัด DOM 17 ต.ค. 2569) — สีเขียว/แดงมีแค่ช่องมูลค่า */}
+                    <td className={`${TDR} font-['Lato','Boon',sans-serif]`}>
                       {fmtNum(r.skus)}
                       {typeof r.zortSkus === 'number' && r.zortSkus !== r.skus && (
                         <span className="block text-[10px] text-amber-700" title="จำนวนใน ZORT ไม่ตรงกับคลังเงา">
