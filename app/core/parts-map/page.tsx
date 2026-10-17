@@ -116,6 +116,10 @@ export default function Page() {
   const [รุ่นทั้งหมด, setรุ่นทั้งหมด] = useState(รุ่นสำรอง)
   /* ⚠️ เก็บเหตุที่ดึงไม่ได้ไว้ขึ้นจอ — ไม่ใช่แค่ log ที่ไม่มีใครเปิดดู */
   const [โหลดพลาด, setโหลดพลาด] = useState<string[]>([])
+  /** ผังที่กดขยายอยู่ — null = ไม่ได้เปิด
+   *  ⚠️ ขยาย "ในหน้าเดิม" ไม่ใช่เปิดแท็บใหม่ · คนใช้หน้านี้กรอกค้างอยู่กลางรายการ
+   *     เปิดแท็บใหม่แล้วกลับมา ต้องเลื่อนหาตำแหน่งเดิมใหม่ทุกครั้ง */
+  const [ผังขยาย, setผังขยาย] = useState<{ url: string; ชื่อ: string } | null>(null)
   useEffect(() => {
     ดึงรายชื่อรุ่น().then(setรุ่นทั้งหมด).catch((e) =>
       setโหลดพลาด((ก) => [...ก, `รายชื่อรุ่น: ${e?.message || e} — แสดงเฉพาะ ${รุ่นสำรอง.length} รุ่นที่ฝังไว้`]))
@@ -323,6 +327,27 @@ export default function Page() {
         )}
       </div>
 
+      {/* ชั้นขยายผัง — กดที่ไหนก็ปิด · Esc ก็ปิด
+          ⚠️ ต้องปิดง่ายที่สุด เพราะคนเปิดมาดูแวบเดียวแล้วกลับไปกรอกต่อ */}
+      {ผังขยาย && (
+        <div role="dialog" aria-modal="true" aria-label={`ผังอะไหล่ ${ผังขยาย.ชื่อ}`}
+             onClick={() => setผังขยาย(null)}
+             onKeyDown={(e) => { if (e.key === 'Escape') setผังขยาย(null) }}
+             tabIndex={-1}
+             ref={(el) => el?.focus()}
+             className="fixed inset-0 z-50 bg-black/70 p-3 overflow-auto cursor-zoom-out">
+          <div className="mx-auto max-w-5xl">
+            <div className="flex items-center justify-between text-white text-[13px] mb-2">
+              <span>{ผังขยาย.ชื่อ}</span>
+              <span className="rounded border border-white/40 px-2 py-0.5">ปิด ✕</span>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={ผังขยาย.url} alt={`ผังอะไหล่ ${ผังขยาย.ชื่อ}`}
+                 className="w-full h-auto bg-white rounded" />
+          </div>
+        </div>
+      )}
+
       {busy && <LoadingState />}
 
       {!busy && ข้อมูล && (
@@ -352,26 +377,32 @@ export default function Page() {
                     <h2 className="text-[14px] font-semibold text-gray-800 mt-4 mb-1">
                       {หัวนี้}
                     </h2>
-                    {/* 🔑 **พับเก็บได้ แต่เปิดไว้แต่แรก** — ท่านสั่งให้ "ใส่รูปผังให้ตรงหมวด"
-                        ⇒ ต้องเห็นทันทีโดยไม่ต้องกด (ซ่อนไว้ = เหมือนไม่ได้ใส่)
-                        แต่หน้านี้ยาวหลายร้อยแถว คนที่จำผังได้แล้วต้องพับทิ้งได้
-                        ⚠️ ห้ามใส่ `loading="lazy"`+`open` คู่กันแบบไม่คิด — รูปผังใบละ ~1500px
-                           18–23 หมวดต่อรุ่น ⇒ โหลดพร้อมกันหมดคือหลายสิบเมกตอนเปิดหน้า
-                           ใช้ lazy ให้โหลดเฉพาะใบที่เลื่อนไปถึง */}
-                    {(ภาพของหมวด[หัวนี้] ?? []).map((ภ) => (
-                      <details key={ภ.url} open className="mb-2">
-                        <summary className="text-[11.5px] text-gray-500 cursor-pointer select-none
-                                            py-1">ผังอะไหล่หมวดนี้</summary>
-                        <a href={ภ.url} target="_blank" rel="noopener noreferrer"
-                           title="เปิดภาพเต็มในแท็บใหม่">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img src={ภ.url} alt={`ผังอะไหล่ ${หัวนี้}`} loading="lazy"
-                               width={ภ.w || undefined} height={ภ.h || undefined}
-                               className="w-full max-w-[560px] h-auto rounded border
-                                          border-gray-200 bg-white" />
-                        </a>
-                      </details>
-                    ))}
+                    {/* 🔑 **แถบรูปย่อ ไม่ใช่รูปเต็ม** — ท่านประธาน 17 ต.ค. 2569
+                        "มันซ้ำใช่ไหม" + "ต้องออกแบบให้ใช้ง่ายๆ"
+                        ตรวจแล้วไม่ซ้ำ เป็นผังคนละแผ่นของหมวดเดียวกัน (a กับ a2)
+                        **แต่ที่อ่านเป็นซ้ำคือความผิดของการออกแบบ** — วางรูปใหญ่สองใบ
+                        ซ้อนกันโดยไม่มีป้ายบอกว่าใบไหนแผ่นไหน
+                        ⇒ ติดป้าย "แผ่น N" + ย่อลง · รายการอะไหล่จึงกลับมาอยู่ในจอแรก
+                           ซึ่งคืองานหลักของหน้านี้ · f440 มีหมวดหลายแผ่น 4 หมวด (J ถึง 3 แผ่น) */}
+                    {(ภาพของหมวด[หัวนี้] ?? []).length > 0 && (
+                      <div className="flex items-center gap-2 mb-2 flex-wrap">
+                        <span className="text-[11.5px] text-gray-500">ผังอะไหล่:</span>
+                        {(ภาพของหมวด[หัวนี้] ?? []).map((ภ, n, ทั้งหมด) => (
+                          <button key={ภ.url} type="button"
+                            onClick={() => setผังขยาย({ url: ภ.url, ชื่อ: หัวนี้ })}
+                            title="กดเพื่อขยายเต็มจอ"
+                            className="flex items-center gap-1.5 rounded border border-gray-300
+                                       bg-white px-1.5 py-1 hover:border-gray-500">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={ภ.url} alt="" loading="lazy"
+                                 className="h-14 w-auto max-w-[110px] object-contain" />
+                            {ทั้งหมด.length > 1 && (
+                              <span className="text-[11px] text-gray-600">แผ่น {n + 1}</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </>
                 )}
                 {/* 🔑 **ผังเดียวกับหน้าลูกค้า** (gucut.com/parts/<รุ่น>/)
