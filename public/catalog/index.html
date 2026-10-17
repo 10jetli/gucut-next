@@ -466,7 +466,10 @@ function cell(r,key,q){
     case"category":return '<td class="factory">'+hl(r.category,q)+'</td>';
     case"factory":return '<td class="factory">'+hl(r.factory,q)+'</td>';
     case"wechat":return '<td class="wechat">'+esc(r.wechat)+'</td>';
-    case"img":return '<td class="num">'+(r.img?'<img class="thumb" loading="lazy" src="'+esc(r.img)+'" alt="" onerror="this.className=\'thumb ph\';this.removeAttribute(\'src\');this.textContent=\'—\'">':'<div class="thumb ph">—</div>')+'</td>';
+    /* 🔍 กดรูปแล้วขยาย — ท่านประธานสั่ง 17 ต.ค. 2569 "กดภาพแล้วให้ขยายภาพใหญ่"
+       ติด `data-zoom` ไว้กับรูป แล้วให้ตัวจับระดับตารางอ่านเอา
+       ⚠️ ห้ามผูก onclick รายรูป — ตารางวาดใหม่ทุกครั้งที่กรอง/เรียง แล้วจะหลุดเงียบ ๆ */
+    case"img":return '<td class="num">'+(r.img?'<img class="thumb" loading="lazy" style="cursor:zoom-in" data-zoom="'+esc(r.img)+'" title="กดเพื่อขยาย" src="'+esc(r.img)+'" alt="" onerror="this.className=\'thumb ph\';this.removeAttribute(\'src\');this.textContent=\'—\'">':'<div class="thumb ph">—</div>')+'</td>';
     case"price":return '<td class="num">'+(r.price?"฿"+r.price:"-")+'</td>';
     case"stock":return '<td class="num"><span class="qty '+qtyClass(r.stock)+'">'+r.stock+'</span></td>';
     case"daysLeft":{
@@ -1306,6 +1309,37 @@ document.getElementById("pickIn").addEventListener("keydown",e=>{
       ข้อความ.textContent = "🔴 " + e.message + " — ตัวเลขบนจอยังเป็นชุดเดิม";
     } finally { ปุ่ม.disabled = false; }
   });
+})();
+</script>
+
+<!-- 🔍 ซูมรูปคลัง — ท่านประธานสั่ง 17 ต.ค. 2569 "กดภาพแล้วให้ขยายภาพใหญ่"
+     ⚠️ เพิ่มอย่างเดียว ไม่แตะของเดิม (/catalog/ เป็นหน้าต้องห้าม แก้ได้เฉพาะตอนสั่ง) -->
+<div id="zoomLayer" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.78);
+     align-items:center;justify-content:center;cursor:zoom-out;padding:24px">
+  <img id="zoomImg" alt="" style="max-width:min(1100px,94vw);max-height:92vh;object-fit:contain;
+       background:#fff;border-radius:8px">
+</div>
+<script>
+(function(){
+  var ชั้น=document.getElementById("zoomLayer"), รูป=document.getElementById("zoomImg");
+  /* 🔑 จับที่ `document` ไม่ใช่ที่รูป — ตารางถูกวาดใหม่ทุกครั้งที่กรอง/เรียง/แก้
+     ผูกรายตัวจะหลุดหลังวาดใหม่ **โดยรูปยังอยู่ครบ** ⇒ กดไม่ติดแบบไม่มีอะไรฟ้อง */
+  document.addEventListener("click", function(e){
+    var t=e.target;
+    if(!t || !t.getAttribute) return;
+    var u=t.getAttribute("data-zoom");
+    if(!u) return;
+    /* ⚠️ ขยายต้องใช้ **ไฟล์ต้นฉบับ** ไม่ใช่ขยาย thumb ด้วย CSS
+       ขยาย thumb = ภาพเบลอ ⇒ ตอบคำถาม "ใช่ชิ้นนี้ไหม" ไม่ได้อยู่ดี = ฟีเจอร์เปล่า
+       ที่อยู่รูปของคลังเป็นขั้น `orig` อยู่แล้ว แต่เผื่อวันหน้าเปลี่ยนไปใช้ขั้นย่อ
+       จึงแปลงขั้นใด ๆ ให้เป็น orig ตรงนี้ */
+    รูป.src = u.replace(/\/i\/(128|256|384|640)\//, "/i/orig/");
+    ชั้น.style.display="flex";
+  });
+  function ปิด(){ ชั้น.style.display="none"; รูป.removeAttribute("src"); }
+  ชั้น.addEventListener("click", ปิด);
+  /* ⚠️ ต้องปิดด้วย Esc ด้วย — คนเปิดดูแวบเดียวแล้วกลับไปทำงานต่อ ต้องปิดง่ายที่สุด */
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape") ปิด(); });
 })();
 </script>
 </body>
