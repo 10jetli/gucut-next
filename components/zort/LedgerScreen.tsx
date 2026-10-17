@@ -370,7 +370,7 @@ export default function LedgerScreen({
               /* ✅ มีจอจริงแล้วต้องพาไปของจริง — ปล่อยให้ชี้หน้า soon ทั้งที่ของเสร็จแล้ว
                  คือโรคที่เคยเจอกับ /core/purchases/new (คนอ่านว่า "ยังไม่ได้ทำ" ทั้งที่มีมา 8 วัน) */
               <Link href={createHref ?? `/core/soon/${soonKey}`}
-                className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+                className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
                 style={{ background: '#4165ed' }}>
                 {createLabel}
               </Link>

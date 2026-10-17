@@ -41,7 +41,7 @@ export default function TopBar({ mainMl, anim }: TopBarProps) {
   const company = useCompanyName()
   return (
     <header
-      className={`hidden md:flex fixed top-0 ${mainMl} right-0 h-14 bg-white border-b border-gray-200 items-center justify-between px-5 z-20 ${anim}`}
+      className={`hidden md:flex fixed top-0 ${mainMl} right-0 h-[52px] bg-white border-b border-gray-200 items-center justify-between px-5 z-20 ${anim}`}
     >
       <div className="flex items-center gap-2 min-w-0">
         <StMark size={17} />

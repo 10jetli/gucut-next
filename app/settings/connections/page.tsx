@@ -236,7 +236,7 @@ export default function ConnectionsRegistryPage() {
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังตรวจ…' : 'ตรวจอีกครั้ง'}</BtnGhost>
             <Link href="/core/soon/connection-add"
-              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
               style={{ background: '#4165ed' }}>
               เพิ่มการเชื่อมต่อ
             </Link>

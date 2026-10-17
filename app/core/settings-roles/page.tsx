@@ -55,7 +55,7 @@ export default function SettingsRolesPage() {
         actions={
           /* ผัง ZORT: ปุ่ม "เพิ่มสิทธิ์การใช้งานใหม่" — ของเราพาไปหน้าที่บอกตรง ๆ ว่าต้องแก้โค้ด */
           <Link href="/core/soon/role-add"
-            className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+            className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
             style={{ background: '#4165ed' }}>
             เพิ่มสิทธิ์การใช้งานใหม่
           </Link>

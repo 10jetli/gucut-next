@@ -126,7 +126,10 @@ export default function AppShell({ children, role }: AppShellProps) {
           ทำให้จอกว้างเหลือที่ว่างข้างขวาเป็นแถบใหญ่ ต่างจาก ZORT ที่ตารางกินเต็มจอ
           (เห็นชัดตอนเทียบภาพหลังร้านเรากับ ZORT — ตารางเยอะคอลัมน์ต้องการที่) */}
       {/* ป้าย "ใช้แทน ZORT ได้หรือยัง" — ทะเบียนเดียว จุดวาดเดียว (lib/zort-ready.ts) */}
-      <main className={`${mainMl} md:pt-14 ${anim}`}><ZortReadyBar />{children}</main>
+      {/* 📏 **ระยะบน = 58 ไม่ใช่ 52** (วัด ZORT /Sell/list 17 ต.ค. 2569): แถบบน ZORT 51 + เส้น 1 ⇒ เนื้อหาเริ่ม y=52
+          แล้วช่องว่างบน 30 ⇒ หัวจอ y=82 · ของเรา = แถบบน 52 + 6 ตรงนี้ + padding ของเพจ 24 = 82
+          (ท่าเดียวกับ margin ซ้าย 206 ข้างบน) ⚠️ แถบป้ายใช้แทน ZORT ดันลงอีกเท่าความสูงของมัน — ZORT ไม่มีแถบนี้ */}
+      <main className={`${mainMl} md:pt-[58px] ${anim}`}><ZortReadyBar />{children}</main>
 
       <MobileBottomNav navItems={navItems} onMenu={() => setDrawerOpen(true)} />
       <MobileDrawer navItems={navItems} open={drawerOpen} onClose={() => setDrawerOpen(false)} />

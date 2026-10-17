@@ -206,7 +206,7 @@ export default function CoreContactsPage() {
             {/* ชี้หน้าจริง 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิด แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/customers/new"
-              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
               style={{ background: '#4165ed' }}>
               เพิ่มผู้ติดต่อใหม่
             </Link>

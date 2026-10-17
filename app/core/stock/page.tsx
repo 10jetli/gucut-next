@@ -583,7 +583,7 @@ function CoreStockInner() {
                    (บั๊กคลาสเดียวกับปุ่มสร้างรายการซื้อที่ลิงก์ผิดมา 8 วัน) · นำเข้า Excel ยังพาไปหน้า soon เพราะจอยังไม่มี */}
             <ImportButton kind="product" />
             <Link href="/core/stock/new"
-              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
               style={{ background: '#4165ed' }}>
               เพิ่มสินค้าใหม่
             </Link>

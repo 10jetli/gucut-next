@@ -145,7 +145,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
              8 ก.ย. 2569: เลิกพาไป /core/soon/user-add (หน้า "ยังไม่ได้ทำ" กลาง ๆ)
              ไปหน้าจริงที่บอกช่องว่างถัดไป + ลิงก์ตรง + ข้อ "ต้อง deploy ใหม่" ที่พิสูจน์แล้ว */
           <Link href="/core/settings-users/add"
-            className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+            className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
             style={{ background: '#4165ed' }}>
             เพิ่มผู้ใช้งาน
           </Link>
@@ -174,7 +174,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
               <input disabled placeholder="ผู้ใช้ของเราไม่มีอีเมล"
                 className="mt-1 block w-full text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 cursor-not-allowed" />
             </label>
-            <button type="submit" className="text-[16px] font-normal text-white rounded-full px-4 py-1.5" style={{ background: '#4165ed' }}>ค้นหา</button>
+            <button type="submit" className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]" style={{ background: '#4165ed' }}>ค้นหา</button>
           </div>
         </details>
         {q && <Link href="/core/settings-users" className="text-[12.5px] text-gray-500 hover:underline">ล้างคำค้น</Link>}

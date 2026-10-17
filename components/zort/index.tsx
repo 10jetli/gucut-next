@@ -61,7 +61,7 @@ export function PageHead({
   if (ปุ่มใต้หัวจอ) {
     return (
       <div className="mb-4">
-        <h1 className="text-[30px] leading-tight font-medium text-[#3e3e3e]">{title}</h1>
+        <h1 className="text-[30px] leading-[30px] font-medium text-[#3e3e3e]">{title}</h1>
         {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
         {actions && <div className="flex flex-wrap items-center gap-2 mt-3">{actions}</div>}
       </div>
@@ -76,7 +76,7 @@ export function PageHead({
       <div className="min-w-0 flex-1 basis-[18rem]">
         {/* ⚠️ ZORT ใช้ฟอนต์ Prompt เหมือนเรา (ตรวจจาก zortout.com แล้ว) แต่หัวจอเขาน้ำหนัก 600
             ไม่ใช่ 700 และไม่บีบตัวอักษร — ของเดิมหนาและแน่นกว่าต้นแบบ */}
-        <h1 className="text-[30px] leading-tight font-medium text-[#3e3e3e]">{title}</h1>
+        <h1 className="text-[30px] leading-[30px] font-medium text-[#3e3e3e]">{title}</h1>
         {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
       </div>
       {/* 🔴 **`shrink-0` ทำให้แถวปุ่มล้นจอบนมือถือ/แท็บเล็ต** (วัดจริง 16 ก.ย. 2569)

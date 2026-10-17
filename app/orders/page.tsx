@@ -43,7 +43,7 @@ export default function OrdersPage() {
         ⚠️ จอนี้อ่านจาก <b>ZORT โดยตรง</b> (ไม่ใช่กระจกข้อมูลของเรา) — วันที่ร้านเลิกใช้ ZORT จอนี้จะว่าง
         {' '}· จอที่ใช้งานจริงคือ <a href="/core/sales" className="text-blue-600 hover:underline font-medium">รายการขาย</a>
       </p>
-      <div className="sticky top-0 md:top-14 bg-white/90 backdrop-blur-md z-10 flex gap-2 px-4 py-2.5 border-b border-gray-100">
+      <div className="sticky top-0 md:top-[52px] bg-white/90 backdrop-blur-md z-10 flex gap-2 px-4 py-2.5 border-b border-gray-100">
         {['1', '2'].map(s => (
           <PillButton key={s} active={store === s} onClick={() => setStore(s)}>
             {s === '1' ? 'Gucut' : 'Ceojet'}

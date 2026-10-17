@@ -321,7 +321,7 @@ export default function ReturnReceivePage() {
                 return typeof cap === 'number' && it.qty > cap ? { ...it, qty: cap } : it
               }))
               setOverQ(null)
-            }} className="text-[16px] font-normal text-white rounded-full px-4 py-1.5" style={{ background: '#b45309' }}>
+            }} className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]" style={{ background: '#b45309' }}>
               ปรับเหลือเท่าที่คืนได้
             </button>
             <span className="text-[11.5px] text-amber-800 self-center">

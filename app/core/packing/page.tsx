@@ -175,7 +175,7 @@ export default function PackingPage() {
           <div className="flex items-center gap-2">
             {/* ผัง ZORT: เมนูแพ็คสินค้าเปิด wizard แพ็คทีละใบ — ของเราแยกไว้ที่ /pack */}
             <Link href="/core/packing/pack"
-              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
               style={{ background: '#4165ed' }}>
               เริ่มแพ็คสินค้า
             </Link>

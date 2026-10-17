@@ -187,7 +187,7 @@ function Inner() {
         actions={
           <div className="flex items-center gap-2">
             <Link href={`/core/stock?category=${encodeURIComponent(catName)}`}
-              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5" style={{ background: '#4165ed' }}>
+              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]" style={{ background: '#4165ed' }}>
               เปิดในจอสินค้า
             </Link>
             {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT ไม่มีปุ่มรีเฟรชในจอไหนเลยที่อ่านมา */}
