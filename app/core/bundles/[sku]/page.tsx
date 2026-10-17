@@ -261,7 +261,7 @@ export default function BundleDetailPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/core/bundles" className="text-[12.5px] text-blue-600 hover:underline">← สินค้าเป็นชุด</Link>
+      <Link href="/core/bundles" className="text-[12.5px] text-[#337ab7] hover:underline">← สินค้าเป็นชุด</Link>
 
       {error && <ErrorBox title="ดึงข้อมูลชุดไม่ได้">{error}</ErrorBox>}
       {loading && !bundle && <LoadingState />}
@@ -436,12 +436,12 @@ export default function BundleDetailPage() {
                   <tr key={`${it.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={`${TD} text-gray-400`}>{it.line ?? i + 1}</td>
                     <td className={`${TD} whitespace-nowrap`}>
-                      <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
+                      <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">
                         {it.sku}
                       </Link>
                     </td>
                     <td className={TD}>
-                      <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
+                      <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">
                         {it.name || '—'}
                       </Link>
                     </td>

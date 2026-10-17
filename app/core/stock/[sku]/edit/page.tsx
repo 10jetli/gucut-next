@@ -178,7 +178,7 @@ export default function EditProductPage() {
         summary={product
           ? <>แก้ใน ZORT โดยตรง · id ใน ZORT <b>{product.id}</b>{' | '}<span className="text-gray-400">เลขอ้างอิง: <b>{editRef}</b> (กันการส่งซ้ำ)</span></>
           : loading ? 'กำลังถาม ZORT…' : ''}
-        actions={<Link href={`/core/stock/${encodeURIComponent(sku)}`} className="text-[12.5px] text-blue-600 hover:underline">← กลับหน้าสินค้า</Link>}
+        actions={<Link href={`/core/stock/${encodeURIComponent(sku)}`} className="text-[12.5px] text-[#337ab7] hover:underline">← กลับหน้าสินค้า</Link>}
       />
 
       {loading && <div className="text-[12.5px] text-gray-500">กำลังถาม ZORT ว่าสินค้านี้คือ id ไหน…</div>}

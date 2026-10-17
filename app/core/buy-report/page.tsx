@@ -621,7 +621,7 @@ export default function BuyReportPage() {
                       <td className={TD}>
                         {by === 'sku' && r.sku
                           ? (
-                            <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                            <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-[#337ab7] hover:underline">
                               {r.name || '—'}
                             </Link>
                           )

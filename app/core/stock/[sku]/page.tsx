@@ -344,7 +344,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/core/stock" className="text-[12.5px] text-blue-600 hover:underline">‹ สินค้า</Link>
+      <Link href="/core/stock" className="text-[12.5px] text-[#337ab7] hover:underline">‹ สินค้า</Link>
 
       {error && <ErrorBox title="ดึงข้อมูลสินค้าไม่ได้">{error}</ErrorBox>}
       {loading && !row && <LoadingState />}
@@ -516,7 +516,7 @@ export default function ProductDetailPage() {
                       เพราะพิสูจน์แล้วว่ามันต่ำกว่าต้นทุนจริง 2-3 เท่า */}
                   <p className="text-[15px] text-gray-300">-</p>
                   <p className="text-[11.5px] text-gray-400">
-                    มีเฉพาะระดับหมวด · ดูที่ <Link href="/core/categories" className="text-blue-600 hover:underline">หมวดหมู่</Link>
+                    มีเฉพาะระดับหมวด · ดูที่ <Link href="/core/categories" className="text-[#337ab7] hover:underline">หมวดหมู่</Link>
                   </p>
                 </div>
                 <div>
@@ -541,7 +541,7 @@ export default function ProductDetailPage() {
                             <span key={b.bundleSku}>
                               {i > 0 && ', '}
                               <Link href={`/core/bundles/${encodeURIComponent(b.bundleSku)}`}
-                                className="text-blue-600 hover:underline" title={b.bundleName || ''}>
+                                className="text-[#337ab7] hover:underline" title={b.bundleName || ''}>
                                 {b.bundleSku}
                               </Link>
                             </span>
@@ -799,7 +799,7 @@ export default function ProductDetailPage() {
                           </button>
                         ) : m.kind === 'ซื้อ' && m.ref ? (
                           <Link href={`/core/purchases/detail?no=${encodeURIComponent(String(m.ref))}`}
-                            className="text-blue-600 hover:underline">
+                            className="text-[#337ab7] hover:underline">
                             {m.ref}
                           </Link>
                         ) : (

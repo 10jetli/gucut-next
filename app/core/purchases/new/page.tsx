@@ -123,7 +123,7 @@ function NewPurchaseOrderInner() {
       <PageHead
         title={quick ? 'สร้างใบสั่งซื้ออย่างง่าย' : 'สร้างใบสั่งซื้อ'}
         summary={<>สร้างใบใน ZORT โดยตรง{' | '}<span className="text-gray-400">เลขอ้างอิงใบนี้: <b>{ref}</b> (กันการส่งซ้ำ)</span></>}
-        actions={<Link href="/core/purchases" className="text-[12.5px] text-blue-600 hover:underline">← กลับรายการซื้อ</Link>}
+        actions={<Link href="/core/purchases" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับรายการซื้อ</Link>}
       />
 
       <div className="text-[12.5px] text-red-900 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-4 leading-relaxed">
@@ -164,7 +164,7 @@ function NewPurchaseOrderInner() {
       ) : (
         <p className="text-[12.5px] text-gray-500 mb-3">
           อยากบันทึกว่าได้ของและจ่ายเงินแล้วในใบเดียว ใช้{' '}
-          <Link href="/core/purchases/new?quick=1" className="text-blue-600 hover:underline">สร้างอย่างง่าย</Link>
+          <Link href="/core/purchases/new?quick=1" className="text-[#337ab7] hover:underline">สร้างอย่างง่าย</Link>
         </p>
       )}
 

@@ -319,7 +319,7 @@ export default function PackingPage() {
                             🗑️ ตัดทางถอยได้เมื่อมั่นใจว่าไม่มีการ rollback ท่อแล้ว */}
                         {j.id ? (
                           <Link href={`/core/sales/detail?id=${encodeURIComponent(j.id)}`}
-                            className="text-blue-600 hover:underline font-medium">{j.number}</Link>
+                            className="text-[#337ab7] hover:underline font-medium">{j.number}</Link>
                         ) : (
                           <button type="button" onClick={() => openOrder(j.number)}
                             disabled={opening === j.number}

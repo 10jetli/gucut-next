@@ -287,7 +287,7 @@ export default function PackWizardPage() {
 
       <p className="text-[11.5px] text-gray-400 mt-4 text-center">
         ดูว่าวันนี้ต้องแพ็คใบไหนบ้างที่{' '}
-        <Link href="/core/packing" className="text-blue-600 hover:underline">แพ็คสินค้า (รายการงานค้าง)</Link>
+        <Link href="/core/packing" className="text-[#337ab7] hover:underline">แพ็คสินค้า (รายการงานค้าง)</Link>
       </p>
     </div>
   )

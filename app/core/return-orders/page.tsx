@@ -530,12 +530,12 @@ export default function ReturnOrdersPage() {
             คำที่ไม่รู้จักขึ้นเทา (เดาสีผิดแย่กว่าไม่ระบายสี)
             <br />
             🔴 <b>คนละฐานกับหน้า</b>{' '}
-            <Link href="/returns" className="text-blue-600 hover:underline">สินค้าที่ถูกคืนบ่อย</Link>{' '}
+            <Link href="/returns" className="text-[#337ab7] hover:underline">สินค้าที่ถูกคืนบ่อย</Link>{' '}
             ซึ่งคำนวณของคืนจากออเดอร์ — <b>เลขสองหน้าไม่มีวันตรงกัน และไม่ได้แปลว่าฝั่งไหนผิด</b>
             {' '}(หน้านั้นตอบคำถามที่จอนี้ตอบไม่ได้: ตัวไหนถูกคืนซ้ำ ๆ จนต้องไปแก้ที่ต้นทาง) ·
             ยังไม่มีปุ่ม &ldquo;สร้าง&rdquo; กับ &ldquo;นำเข้าไฟล์&rdquo; แบบ ZORT — เส้นสร้างใบคืนของมีอยู่จริง
             แต่<b>ยังไม่เคยยิงของจริง</b> (ดู{' '}
-            <Link href="/core/zort-noapi" className="text-blue-600 hover:underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>)
+            <Link href="/core/zort-noapi" className="text-[#337ab7] hover:underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>)
           </p>
         </>
       )}

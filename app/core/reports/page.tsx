@@ -475,7 +475,7 @@ export default function CoreProductReportPage() {
                     <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-blue-600 whitespace-nowrap`}>{r.sku}</td>
                       <td className={TD}>
-                        <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                        <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-[#337ab7] hover:underline">
                           {r.name || '—'}
                         </Link>
                         {r.category && <span className="block text-[11.5px] text-gray-400">หมวดหมู่: {r.category}</span>}

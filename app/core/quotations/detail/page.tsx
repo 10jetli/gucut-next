@@ -78,7 +78,7 @@ function Inner() {
   const named = !!d && 'amount' in d
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12.5px] mb-2"><Link href="/core/quotations" className="text-blue-600 hover:underline">‹ ใบเสนอราคา</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/quotations" className="text-[#337ab7] hover:underline">‹ ใบเสนอราคา</Link></p>
       {/* ⚠️ ห้ามเอา number ขึ้นหัวเรื่องตอนท่อส่งผิดชั้น — มันคือจำนวนสินค้า ไม่ใช่เลขที่ใบ */}
       {/* หัวจอตาม ZORT: "รายละเอียดใบเสนอราคา" · เลขที่ใบอยู่ในช่อง "รายการ" (อ่านจอจริง 16 ต.ค. 2569) */}
       <PageHead title="รายละเอียดใบเสนอราคา"

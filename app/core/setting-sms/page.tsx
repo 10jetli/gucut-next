@@ -63,7 +63,7 @@ export default function SettingSmsPage() {
             </p>
             <p className="text-[11.5px] text-gray-400 mt-2">
               ร้านแจ้งลูกค้าทาง <b>LINE + Web Push</b> ซึ่งฟรีและเปิดใช้อยู่แล้ว — ดูรายการแจ้งเตือนที่{' '}
-              <Link href="/core/setting-notify" className="text-blue-600 hover:underline">ตั้งค่า → การแจ้งเตือน</Link>
+              <Link href="/core/setting-notify" className="text-[#337ab7] hover:underline">ตั้งค่า → การแจ้งเตือน</Link>
             </p>
           </div>
         </div>

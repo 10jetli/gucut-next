@@ -137,7 +137,7 @@ export default function BranchDetailPage() {
       <PageHead title={`${wh?.name || code} (รหัส : ${code})`}
         summary="รายละเอียดคลังสินค้า" />
       <div className="flex flex-wrap items-center gap-2">
-        <Link href="/core/branches" className="text-[12.5px] text-blue-600 hover:underline">← กลับไปรายการคลัง</Link>
+        <Link href="/core/branches" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับไปรายการคลัง</Link>
         {/* 🧰 ปุ่มแบบ ZORT: โอนสินค้าเข้า · โอนสินค้าออก · มูลค่าสินค้าคงเหลือ · แก้ไข · ลบ (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
         {(['โอนสินค้าเข้า', 'โอนสินค้าออก'] as const).map((t) => (
           <span key={t} title="ยังทำไม่ได้ — สร้างใบโอนต้องเขียนกลับ ZORT (จอรายการโอนของเราอ่านอย่างเดียว)"
@@ -270,7 +270,7 @@ export default function BranchDetailPage() {
                         )}
                         {ขายดี.items.map((r) => (
                           <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0">
-                            <td className={TD}><Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">{r.name || r.sku}</Link></td>
+                            <td className={TD}><Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-[#337ab7] hover:underline">{r.name || r.sku}</Link></td>
                             <td className={TDR}>{fmtNum(r.qty)}</td>
                             <td className={TDR}>{typeof r.amount === 'number' ? fmtMoney(r.amount) : <span className="text-gray-300" title="ท่อไม่ส่งยอดเงินของบรรทัดนี้">—</span>}</td>
                           </tr>

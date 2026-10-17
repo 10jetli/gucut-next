@@ -627,7 +627,7 @@ export default function CorePurchasesPage() {
             <br />
             ชุดที่เห็นตอนนี้ {fmtNum(data.total)} ใบ · {fmtMoney(data.amount)} ·
             จอนี้เป็น<b>ใบสั่งซื้อของ ZORT</b> คนละอย่างกับ{' '}
-            <Link href="/core/factory-orders" className="text-blue-600 hover:underline">สั่งของกับโรงงาน</Link>
+            <Link href="/core/factory-orders" className="text-[#337ab7] hover:underline">สั่งของกับโรงงาน</Link>
             {' '}ที่ร้านใช้ติดตามมัดจำและกำหนดส่ง
           </p>
         </>

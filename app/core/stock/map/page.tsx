@@ -231,7 +231,7 @@ export default function StockMapPage() {
         summary="มองจากข้างในโกดัง — หนึ่งแร็คคือหนึ่งหมวด (หมวด = รุ่นเครื่อง) · ขั้นแรกทำทีละหมวดตามที่ท่านประธานสั่ง" />
 
       <div className="flex flex-wrap items-center gap-2">
-        <Link href="/core/stock" className="text-[12.5px] text-blue-600 hover:underline">
+        <Link href="/core/stock" className="text-[12.5px] text-[#337ab7] hover:underline">
           ← หน้าคลังสินค้า (ตัวจริง ยังอยู่ครบ)
         </Link>
         <BtnGhost onClick={() => void โหลดของ(หมวด)} disabled={loading}>โหลดใหม่</BtnGhost>
@@ -572,9 +572,9 @@ export default function StockMapPage() {
                   </div>
                   <div className="pt-2 border-t border-gray-100 flex flex-wrap gap-2">
                     <Link href={`/core/stock/${encodeURIComponent(เลือก.sku)}`}
-                      className="text-[12.5px] text-blue-600 hover:underline">เปิดจอสินค้ารายตัว →</Link>
+                      className="text-[12.5px] text-[#337ab7] hover:underline">เปิดจอสินค้ารายตัว →</Link>
                     <Link href={`/core/stock?q=${encodeURIComponent(เลือก.sku)}`}
-                      className="text-[12.5px] text-blue-600 hover:underline">ดูในตารางคลัง →</Link>
+                      className="text-[12.5px] text-[#337ab7] hover:underline">ดูในตารางคลัง →</Link>
                   </div>
                   <p className="pt-1 text-[11.5px] text-gray-400 leading-relaxed">
                     ⚠️ &ldquo;ราคาทุน&rdquo; ตรงนี้คือ <b>ราคาซื้อที่ตั้งไว้</b> ไม่ใช่ต้นทุนเฉลี่ย —

@@ -367,7 +367,7 @@ export default function ChatCommercePage() {
                   {room.product && <span className="block text-[11.5px] text-gray-500 truncate">สนใจ: {room.product.t}</span>}
                 </span>
                 {room.phone && (
-                  <a href={`tel:${room.phone}`} className="text-[12.5px] font-semibold text-blue-600 hover:underline">
+                  <a href={`tel:${room.phone}`} className="text-[12.5px] font-semibold text-[#337ab7] hover:underline">
                     {room.phone}
                   </a>
                 )}

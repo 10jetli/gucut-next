@@ -37,7 +37,7 @@ export default function ManualPage() {
           <p>
             ตอนนี้ <b>เดินคู่ขนานกับ ZORT</b> คือทำงานพร้อมกันทั้งสองระบบ แล้วเทียบทุกวันว่าตัวเลขตรงกันไหม
             จนกว่าจะพิสูจน์ได้ว่าตรงตลอด ถึงจะเลิกจ่าย ZORT ได้ —{' '}
-            <Link href="/core" className="text-blue-600 hover:underline">ดูหน้าปัดเทียบยอด</Link>
+            <Link href="/core" className="text-[#337ab7] hover:underline">ดูหน้าปัดเทียบยอด</Link>
           </p>
           <p className="text-gray-500">
             ระหว่างนี้ <b>ZORT ยังต้องใช้ได้ปกติทุกวัน</b> ห้ามหยุดใช้เพราะเห็นว่าระบบนี้ทำได้แล้ว

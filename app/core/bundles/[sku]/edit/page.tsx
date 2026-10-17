@@ -219,7 +219,7 @@ export default function EditBundlePage() {
         summary={bundle
           ? <>เขียนเข้า ZORT โดยตรง (Bundle/UpdateBundle) · id <b>{bundle.id}</b>{' | '}<span className="text-gray-400">เลขอ้างอิง <b>{ref || 'กำลังสร้าง…'}</b></span></>
           : loading ? 'กำลังถาม ZORT…' : ''}
-        actions={<Link href={`/core/bundles/${encodeURIComponent(sku)}`} className="text-[12.5px] text-blue-600 hover:underline">← กลับหน้ารายละเอียดชุด</Link>}
+        actions={<Link href={`/core/bundles/${encodeURIComponent(sku)}`} className="text-[12.5px] text-[#337ab7] hover:underline">← กลับหน้ารายละเอียดชุด</Link>}
       />
 
       {loading && <p className="text-[12.5px] text-gray-500">กำลังถาม ZORT หา id และค่าปัจจุบัน…</p>}

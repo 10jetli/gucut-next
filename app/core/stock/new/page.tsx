@@ -214,7 +214,7 @@ export default function NewProductPage() {
       <PageHead
         title="เพิ่มสินค้า"
         summary={<>สร้างสินค้าใน ZORT โดยตรง{' | '}<span className="text-gray-400">เลขอ้างอิง: <b>{ref}</b> (กันการส่งซ้ำ)</span></>}
-        actions={<Link href="/core/stock" className="text-[12.5px] text-blue-600 hover:underline">← กลับรายการสินค้า</Link>}
+        actions={<Link href="/core/stock" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับรายการสินค้า</Link>}
       />
 
       {/* 🔴 คำเตือนที่ต่างจากจออื่น — จอนี้มีทางที่ของหลุดออกไปถึงลูกค้า */}

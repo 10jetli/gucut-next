@@ -126,7 +126,7 @@ export default function NoImagePage() {
 
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
-      <p className="text-[12.5px] mb-2"><Link href="/core/stock" className="text-blue-600 hover:underline">‹ สินค้า</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/stock" className="text-[#337ab7] hover:underline">‹ สินค้า</Link></p>
       <PageHead
         title="รหัสที่ยังไม่มีรูป"
         summary={<span className="text-gray-500">
@@ -212,7 +212,7 @@ export default function NoImagePage() {
           {/* ลิงก์ออกไปจอของ ZORT ที่อัปโหลดรูปหลายรหัสรวดเดียวได้ — **เราไม่กดแทนให้**
               (กติกาของทีม: ระบบของเราอ่าน ZORT อย่างเดียว การอัปโหลดรูปเป็นการเขียน) */}
           <a href="https://secure.zortout.com/Product/AddPicturelist" target="_blank" rel="noreferrer"
-            className="text-blue-600 hover:underline">
+            className="text-[#337ab7] hover:underline">
             เปิดจัดการรูปภาพสินค้าใน ZORT ↗
           </a>
         </div>
@@ -242,7 +242,7 @@ export default function NoImagePage() {
                 <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0">
                   <td className={`${TD} text-gray-400`}>{i + 1}</td>
                   <td className={`${TD} font-medium whitespace-nowrap`}>
-                    <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">{r.sku}</Link>
+                    <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-[#337ab7] hover:underline">{r.sku}</Link>
                   </td>
                   <td className={TD}>{r.name || <span className="text-gray-400">— ท่อไม่ส่งชื่อมา</span>}</td>
                   <td className={TD} style={{ textAlign: 'right' }}>{typeof r.qty === 'number' ? fmtNum(r.qty) : <span className="text-gray-300" title="ท่อไม่ได้ส่งจำนวนมา — ไม่ใช่ 0">—</span>}</td>

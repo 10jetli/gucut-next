@@ -347,11 +347,11 @@ export default function ReceivePage() {
               <span className="text-gray-500">
                 📌 ถ้าที่พิมพ์เป็น<b>เลขพัสดุ</b> จอนี้หาไม่เจอแน่นอน — ใบโอนสินค้าไม่ได้เก็บเลขพัสดุ
                 {' '}(วัดจริง 19 ก.ย. 2569) · เลขพัสดุอยู่กับ<b>ใบขาย</b> ⇒ ดูที่{' '}
-                <Link href="/core/logistics" className="text-blue-600 hover:underline">บริการส่งสินค้า</Link>
+                <Link href="/core/logistics" className="text-[#337ab7] hover:underline">บริการส่งสินค้า</Link>
               </span>
               <br />
               ถ้าของมาถึงแล้วจริงและต้องบันทึกเดี๋ยวนี้ ใช้{' '}
-              <Link href="/core/moves" className="text-blue-600 hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
+              <Link href="/core/moves" className="text-[#337ab7] hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
               ได้ — แต่ต้องกรอกเลขอ้างอิงเองให้ถูก
             </div>
           )}
@@ -523,7 +523,7 @@ export default function ReceivePage() {
             <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded px-3 py-2 leading-relaxed">
               ⚠️ ท่อรับเรื่องแล้วแต่ <b>ไม่ได้บอกจำนวนบรรทัดที่บันทึก</b> —
               {' '}<b>ยังไม่ต้องกรอกซ้ำ</b> ให้เปิด{' '}
-              <Link href="/core/moves" className="text-blue-600 hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
+              <Link href="/core/moves" className="text-[#337ab7] hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
               ดูว่าเข้าครบไหมก่อน{doc?.number ? <> (เลขใบ <b>{doc.number}</b>)</> : null}
             </p>
           )}
@@ -531,7 +531,7 @@ export default function ReceivePage() {
             <p className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-2 mt-2.5 leading-relaxed">
               บรรทัดที่ซ้ำ <b>ไม่ได้ทำให้ของเข้าคลังสองรอบ</b> — ระบบกันไว้ให้แล้วจากเลขใบเดียวกัน
               {' '}(ถ้าตั้งใจรับเพิ่มจากใบเดิม เช่นของทยอยมา ต้องบันทึกที่{' '}
-              <Link href="/core/moves" className="text-blue-600 hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
+              <Link href="/core/moves" className="text-[#337ab7] hover:underline">หน้าบันทึกของเข้า-ออก</Link>{' '}
               ด้วยเลขอ้างอิงที่ต่างออกไป เช่น เติม -2 ต่อท้าย)
             </p>
           )}
@@ -545,7 +545,7 @@ export default function ReceivePage() {
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
             ⚠️ ระบบบอกได้แค่<b>ยอดรวมของทั้งชุด</b> ว่าใหม่กี่บรรทัด ซ้ำกี่บรรทัด —
             บอกไม่ได้ว่าบรรทัดไหนซ้ำ · ดูของจริงได้ที่{' '}
-            <Link href="/core/moves" className="text-blue-600 hover:underline">ประวัติของเข้า-ออก</Link>
+            <Link href="/core/moves" className="text-[#337ab7] hover:underline">ประวัติของเข้า-ออก</Link>
           </p>
           <div className="mt-4 flex gap-2">
             <button

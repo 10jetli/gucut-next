@@ -288,9 +288,9 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
 
       <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
         สิทธิ์ของแต่ละคนดูที่{' '}
-        <Link href="/core/settings-roles" className="text-blue-600 hover:underline">สิทธิ์การใช้งาน</Link> ·
+        <Link href="/core/settings-roles" className="text-[#337ab7] hover:underline">สิทธิ์การใช้งาน</Link> ·
         <b> คนละระบบกับ &ldquo;ลงเวลาพนักงาน&rdquo;</b> — จอนี้คือสิทธิ์เข้าหลังร้าน
-        การลงเวลาใช้ PIN คนละชุด (<Link href="/site/attendance" className="text-blue-600 hover:underline">ลงเวลาพนักงาน</Link>)
+        การลงเวลาใช้ PIN คนละชุด (<Link href="/site/attendance" className="text-[#337ab7] hover:underline">ลงเวลาพนักงาน</Link>)
       </p>
     </div>
   )

@@ -393,7 +393,7 @@ export default function CoreContactsPage() {
               setTab(id)
             }}
             right={
-              <Link href="/core/soon/contact-group" className="text-[12.5px] text-blue-600 hover:underline">
+              <Link href="/core/soon/contact-group" className="text-[12.5px] text-[#337ab7] hover:underline">
                 + เพิ่มหมวดหมู่
               </Link>
             }

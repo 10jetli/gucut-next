@@ -108,7 +108,7 @@ export default function SettingsProfilePage() {
             {role === null && (
               <p className="text-[15px] text-amber-800">
                 ⚠️ ยังไม่ได้ล็อกอิน หรือรหัสในเครื่องนี้ใช้ไม่ได้แล้ว —{' '}
-                <Link href="/login" className="text-blue-600 hover:underline">เข้าสู่ระบบ</Link>
+                <Link href="/login" className="text-[#337ab7] hover:underline">เข้าสู่ระบบ</Link>
               </p>
             )}
           </div>
@@ -186,7 +186,7 @@ export default function SettingsProfilePage() {
                 เพราะคนจะเชื่อว่าเปลี่ยนแล้ว ทั้งที่รหัสเดิมยังใช้ได้อยู่
               </p>
               <p className="text-[12.5px] mt-2.5">
-                <Link href="/core/settings-users" className="text-blue-600 hover:underline">
+                <Link href="/core/settings-users" className="text-[#337ab7] hover:underline">
                   ดูรายชื่อผู้ใช้ทั้งหมดและสิทธิ์ →
                 </Link>
               </p>
@@ -199,10 +199,10 @@ export default function SettingsProfilePage() {
                 ที่ยังไม่มีคือ **การตั้งค่ารายคน** (อีเมล · การแจ้งเตือน) ผูกกับบัญชีเหล่านั้น
                 ⇒ เขียนให้ตรงว่าขาดอะไร ไม่ใช่บอกว่าไม่มีบัญชีเลย */}
             ZORT เมนูนี้มีชื่อ อีเมล และการแจ้งเตือน<b>รายคน</b> — ของเรามีบัญชีผู้ใช้แล้ว
-            {' '}(<Link href="/core/settings-users" className="text-blue-600 hover:underline">ตั้งค่า → ผู้ใช้งาน</Link>)
+            {' '}(<Link href="/core/settings-users" className="text-[#337ab7] hover:underline">ตั้งค่า → ผู้ใช้งาน</Link>)
             {' '}แต่<b>ยังไม่มีการตั้งค่ารายคนผูกกับบัญชี</b> จึงมีได้เท่านี้ (ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้) ·
             อยากออกจากระบบเครื่องนี้เครื่องเดียว ใช้ปุ่ม{' '}
-            <Link href="/login" className="text-blue-600 hover:underline">เข้าสู่ระบบ</Link>{' '}
+            <Link href="/login" className="text-[#337ab7] hover:underline">เข้าสู่ระบบ</Link>{' '}
             แล้วออกจากระบบที่นั่น
           </p>
         </>

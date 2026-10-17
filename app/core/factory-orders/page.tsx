@@ -120,7 +120,7 @@ export default function CorePurchasesPage() {
             {openOrders.length.toLocaleString('th-TH')} ใบ มูลค่า {fmtMoney(openValue)}
             {paidDeposit > 0 && <> · มัดจำไปแล้ว {fmtMoney(paidDeposit)}</>}
             {' | '}
-            <Link href="/core/moves" className="text-blue-600 hover:underline">บันทึกรับของเข้าคลัง</Link>
+            <Link href="/core/moves" className="text-[#337ab7] hover:underline">บันทึกรับของเข้าคลัง</Link>
           </>
         }
         actions={
@@ -140,7 +140,7 @@ export default function CorePurchasesPage() {
         advanced={q ? <LinkText onClick={() => setQ('')}>ล้างคำค้น</LinkText> : undefined}
         right={
           importCount !== null ? (
-            <Link href="/import" className="text-[12.5px] text-blue-600 hover:underline">
+            <Link href="/import" className="text-[12.5px] text-[#337ab7] hover:underline">
               ดรอปชิปปิ้ง ({importCount.toLocaleString('th-TH')} รายการที่กำลังดู) →
             </Link>
           ) : undefined
@@ -200,7 +200,7 @@ export default function CorePurchasesPage() {
               <span className="text-[12.5px] text-gray-500">
                 แสดง {shown.length.toLocaleString('th-TH')} จาก {orders.length.toLocaleString('th-TH')} รายการ
               </span>
-              <Link href="/tracker" className="text-[12.5px] text-blue-600 hover:underline">
+              <Link href="/tracker" className="text-[12.5px] text-[#337ab7] hover:underline">
                 แก้ไข / อัปรูป / เปลี่ยนสถานะ ที่หน้าติดตามสินค้าจากจีน →
               </Link>
             </div>

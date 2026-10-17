@@ -76,7 +76,7 @@ export default function LogisticsDetailPage() {
       <PageHead title={`บริการขนส่ง ${number}`}
         summary="รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)" />
       <div className="flex items-center gap-2">
-        <Link href="/core/logistics" className="text-[12.5px] text-blue-600 hover:underline">← กลับไปบริการขนส่ง</Link>
+        <Link href="/core/logistics" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับไปบริการขนส่ง</Link>
       </div>
       {/* 🧰 แถบปุ่มแบบ ZORT /Logistics/Details (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
           คำสั่ง ▾ (ส่งสินค้าสำเร็จ) · ส่ง SMS ให้ลูกค้า · พิมพ์ใบแปะกล่อง — ทั้งหมดเป็นการเขียนกลับ ZORT หรือยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ

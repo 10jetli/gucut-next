@@ -143,7 +143,7 @@ export default function NewQuotationPage() {
             <span className="text-gray-400">เลขอ้างอิงใบนี้: <b>{ref}</b> (กันการส่งซ้ำ)</span>
           </>
         }
-        actions={<Link href="/core/quotations" className="text-[12.5px] text-blue-600 hover:underline">← กลับรายการใบเสนอราคา</Link>}
+        actions={<Link href="/core/quotations" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับรายการใบเสนอราคา</Link>}
       />
 
       {/* 🔴 คำเตือนอยู่เหนือฟอร์ม ไม่ใช่ใต้ปุ่ม — คนอ่านก่อนกรอก ไม่ใช่หลังกด */}
@@ -309,11 +309,11 @@ export default function NewQuotationPage() {
             🔑 คลาส stale-state: ประโยคที่เล่า "สภาพตอนนี้" โดยไม่มีวันที่ จะกลายเป็นคำโกหกเงียบ ๆ
                ⇒ เขียนเป็นเหตุการณ์+วันที่ แทนการเล่าสภาพลอย ๆ */}
         <b> จอนี้สร้างได้เฉพาะใบเสนอราคา</b> (ขอบเขตของจอนี้เอง) — จอเขียนจริงที่เปิดแล้ว:
-        {' '}ใบเสนอราคา (6 ก.ย. 2569) · <Link href="/core/stock/new" className="text-blue-600 hover:underline">เพิ่มสินค้า</Link>
-        {' '}และ <Link href="/core/sales/new" className="text-blue-600 hover:underline">สร้างใบขาย</Link> (18 ก.ย. 2569)
+        {' '}ใบเสนอราคา (6 ก.ย. 2569) · <Link href="/core/stock/new" className="text-[#337ab7] hover:underline">เพิ่มสินค้า</Link>
+        {' '}และ <Link href="/core/sales/new" className="text-[#337ab7] hover:underline">สร้างใบขาย</Link> (18 ก.ย. 2569)
         {' '}· <b>ใบสั่งซื้อยังไม่เปิด</b> ·
         ดูสิ่งที่ ZORT เปิดให้ทำได้ที่{' '}
-        <Link href="/core/zort-noapi" className="text-blue-600 hover:underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>
+        <Link href="/core/zort-noapi" className="text-[#337ab7] hover:underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>
       </p>
     </div>
   )

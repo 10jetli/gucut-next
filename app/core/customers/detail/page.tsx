@@ -116,7 +116,7 @@ function Inner() {
   return (
     <div className="p-4 md:p-6 max-w-[980px]">
       <p className="text-[12.5px] mb-2">
-        <Link href="/core/customers" className="text-blue-600 hover:underline">‹ ผู้ติดต่อ</Link>
+        <Link href="/core/customers" className="text-[#337ab7] hover:underline">‹ ผู้ติดต่อ</Link>
       </p>
       {/* หัวจอแบบ ZORT: "รายละเอียดผู้ติดต่อ (รหัส : C…)" · ชื่อย้ายไปแถวแรกของกล่องข้อมูล
           ลูกค้ามาร์เก็ตเพลสไม่มีรหัส (ไม่อยู่ในทะเบียน) ⇒ ใส่ชื่อในวงเล็บแทน ไม่ปล่อยหัวจอไม่บอกว่าเป็นใคร */}
@@ -400,7 +400,7 @@ function Inner() {
                         <td className="py-1 pr-2">
                           {/* ลิงก์ข้ามจอ — เลขที่ใบต้องกดเข้ารายละเอียดได้เสมอ (แบบแผนข้อ 1 ของ ZORT) */}
                           {r.number
-                            ? <Link href={ลิงก์ใบขาย(r.number, r.order_date)} className="text-blue-600 hover:underline">{r.number}</Link>
+                            ? <Link href={ลิงก์ใบขาย(r.number, r.order_date)} className="text-[#337ab7] hover:underline">{r.number}</Link>
                             : '—'}
                         </td>
                         <td className="py-1 pr-2">{r.channel ?? '—'}</td>
@@ -452,7 +452,7 @@ function Inner() {
                   {typeof o?.count === 'number' && o.count > (o.recent?.length ?? 0) && (
                     <>
                       {' · '}
-                      <Link href={ลิงก์ใบของลูกค้า(d?.name ?? '', o.firstDay, o.lastDay)} className="text-blue-600 hover:underline">
+                      <Link href={ลิงก์ใบของลูกค้า(d?.name ?? '', o.firstDay, o.lastDay)} className="text-[#337ab7] hover:underline">
                         ดูครบทุกใบในรายการขาย
                       </Link>
                       <span className="block text-[11.5px] text-gray-400">

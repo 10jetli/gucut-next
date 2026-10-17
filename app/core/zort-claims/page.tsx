@@ -93,7 +93,7 @@ export default function ZortClaimsPage() {
         ทุกอันเขียนละเอียดมีเหตุผลประกอบ <b>ซึ่งคือสิ่งที่ทำให้มันอันตราย</b> ·
         จอนี้มีไว้ถามโลกข้างนอกว่า<b>ยังเป็นอย่างที่เราเขียนไว้ไหม</b> ·
         ดูรายการคำกล่าวอ้างทั้งหมดที่{' '}
-        <Link href="/core/zort-noapi" className="text-blue-600 hover:underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>
+        <Link href="/core/zort-noapi" className="text-[#337ab7] hover:underline">ZORT เปิดให้ทำอะไรผ่าน API</Link>
       </div>
 
       {error && <ErrorBox title="ยิงตรวจไม่สำเร็จ">{error}</ErrorBox>}

@@ -97,7 +97,7 @@ export default function SettingsRolesPage() {
 
       <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
         รายชื่อคนดูที่{' '}
-        <Link href="/core/settings-users" className="text-blue-600 hover:underline">ผู้ใช้งาน</Link> ·
+        <Link href="/core/settings-users" className="text-[#337ab7] hover:underline">ผู้ใช้งาน</Link> ·
         อยากได้สิทธิ์ชั้นที่สาม (เช่น &ldquo;บัญชี&rdquo; เห็นเฉพาะการเงิน) ต้องแก้ middleware —
         เป็นของที่<b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b>
       </p>

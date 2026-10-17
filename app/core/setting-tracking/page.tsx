@@ -36,7 +36,7 @@ export default function SettingTrackingPage() {
             </p>
             <p className="text-[11.5px] text-gray-400 mt-2">
               พิกเซล/โค้ดวิเคราะห์ของเว็บร้านจริงตั้งที่{' '}
-              <Link href="/web/marketing" className="text-blue-600 hover:underline">เว็บไซต์ → พิกเซลการตลาด</Link>
+              <Link href="/web/marketing" className="text-[#337ab7] hover:underline">เว็บไซต์ → พิกเซลการตลาด</Link>
               {' '}(Meta · TikTok · GA4 · Google Ads · LINE Tag)
             </p>
           </div>

@@ -305,7 +305,7 @@ function Inner() {
   return (
     <div className="p-4 md:p-6 max-w-[900px]">
       <p className="text-[12.5px] mb-2">
-        <Link href="/core/purchases" className="text-blue-600 hover:underline">‹ รายการซื้อ</Link>
+        <Link href="/core/purchases" className="text-[#337ab7] hover:underline">‹ รายการซื้อ</Link>
       </p>
       <PageHead title="รายละเอียดรายการซื้อ" /* ตาม ZORT /Buy/Details (16 ต.ค. 2569) · เลขที่ใบอยู่ในช่อง "รายการ" */
         summary={<>

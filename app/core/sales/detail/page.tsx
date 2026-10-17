@@ -269,7 +269,7 @@ function DetailInner() {
       {/* หัวจอ */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
-          <Link href={backHref} className="text-[12.5px] text-blue-600 hover:underline">‹ รายการขาย</Link>
+          <Link href={backHref} className="text-[12.5px] text-[#337ab7] hover:underline">‹ รายการขาย</Link>
           <h1 className="text-[30px] leading-[30px] font-medium text-[#3e3e3e] mt-0.5">
             รายละเอียดรายการขาย
           </h1>
@@ -463,7 +463,7 @@ function DetailInner() {
                         {/* รายการในใบขายกดไปดูสินค้าได้ — ปลายทางมีจริงแล้ว */}
                         {it.sku
                           ? (
-                            <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">
+                            <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">
                               {it.name || '—'}
                             </Link>
                           )

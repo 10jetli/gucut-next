@@ -188,7 +188,7 @@ export default function SlipBox({ docno }: { docno?: string | null }) {
               {o && isPdf && (
                 <p className="text-[12.5px] text-gray-700 mt-2">
                   ไฟล์นี้เป็น PDF —{' '}
-                  <a href={o.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline">เปิดในแท็บใหม่</a>
+                  <a href={o.url} target="_blank" rel="noreferrer" className="text-[#337ab7] hover:underline">เปิดในแท็บใหม่</a>
                 </p>
               )}
             </div>

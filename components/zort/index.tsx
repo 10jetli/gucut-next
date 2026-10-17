@@ -597,7 +597,7 @@ export function EmptyState({
       <td colSpan={cols} className="px-3 py-12 text-center">
         <span className="block text-[40px] leading-none mb-2 opacity-70">{icon}</span>
         {href
-          ? <Link href={href} className="block text-[12.5px] text-blue-600 hover:underline">{title}</Link>
+          ? <Link href={href} className="block text-[12.5px] text-[#337ab7] hover:underline">{title}</Link>
           : <span className="block text-[12.5px] text-blue-600">{title}</span>}
         {detail && <span className="block text-[12.5px] text-gray-500 mt-1 max-w-[520px] mx-auto leading-relaxed">{detail}</span>}
         {action && <span className="block mt-2.5">{action}</span>}

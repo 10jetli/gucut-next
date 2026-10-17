@@ -76,7 +76,7 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12.5px] mb-2"><Link href="/core/transfers" className="text-blue-600 hover:underline">‹ รายการโอนสินค้า</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/transfers" className="text-[#337ab7] hover:underline">‹ รายการโอนสินค้า</Link></p>
       {/* หัวจอตาม ZORT: "รายละเอียดรายการโอนสินค้า" · เลขที่ใบอยู่ในช่อง "รายการ" ข้างล่าง (อ่านจอจริง 16 ต.ค. 2569) */}
       <PageHead title="รายละเอียดรายการโอนสินค้า"
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}

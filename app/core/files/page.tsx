@@ -117,7 +117,7 @@ export default function FilesPage() {
                 <td className={TD}>{ชนิดเอกสาร(f.docType)}</td>
                 <td className={TD}>
                   {f.docno
-                    ? <Link href={ลิงก์ใบขาย(f.docno)} className="text-blue-600 hover:underline whitespace-nowrap">{f.docno}</Link>
+                    ? <Link href={ลิงก์ใบขาย(f.docno)} className="text-[#337ab7] hover:underline whitespace-nowrap">{f.docno}</Link>
                     : '—'}
                 </td>
                 <td className={`${TD} text-gray-400 text-[12px]`}>{f.uploadedBy || 'ZORT ไม่ได้บันทึก'}</td>

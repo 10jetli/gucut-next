@@ -105,7 +105,7 @@ export default function AddUserPage() {
   return (
     <div className="p-4 md:p-6 max-w-[760px]">
       <p className="text-[12.5px] mb-2">
-        <Link href="/core/settings-users" className="text-blue-600 hover:underline">‹ ผู้ใช้งาน</Link>
+        <Link href="/core/settings-users" className="text-[#337ab7] hover:underline">‹ ผู้ใช้งาน</Link>
       </p>
       <PageHead
         title="เพิ่มผู้ใช้งาน"

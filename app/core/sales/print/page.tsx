@@ -153,7 +153,7 @@ export default function SalesPrintPage() {
 
       <div className="no-print">
         <p className="text-[12.5px] mb-2">
-          <Link href="/core/sales" className="text-blue-600 hover:underline">‹ รายการขาย</Link>
+          <Link href="/core/sales" className="text-[#337ab7] hover:underline">‹ รายการขาย</Link>
         </p>
         <PageHead
           title={DOCS[doc].title}

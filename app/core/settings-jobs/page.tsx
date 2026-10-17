@@ -459,7 +459,7 @@ export default function SettingsJobsPage() {
         รายการนี้<b>คัดจากไฟล์ด้วยมือ</b> เพิ่ม/ลบงานแล้วต้องกลับมาแก้จอนี้ —
         แต่ละแถวชี้ไฟล์ต้นทางไว้ให้ตรวจย้อนได้ ·
         ดูสุขภาพระบบแบบยิงจริงได้ที่{' '}
-        <Link href="/web/status" className="text-blue-600 hover:underline">สถานะระบบ</Link>
+        <Link href="/web/status" className="text-[#337ab7] hover:underline">สถานะระบบ</Link>
       </p>
     </div>
   )

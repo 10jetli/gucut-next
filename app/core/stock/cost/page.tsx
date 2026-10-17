@@ -158,7 +158,7 @@ export default function ProductCostPage() {
       <PageHead
         title="ปรับต้นทุนสินค้า"
         summary={<>แก้ราคาซื้อที่ตั้งไว้ใน ZORT หลายรายการพร้อมกัน{' | '}<span className="text-gray-400">ครั้งละไม่เกิน {MAX_ROWS} รายการ</span></>}
-        actions={<Link href="/core/stock" className="text-[12.5px] text-blue-600 hover:underline">← กลับหน้าคลังสินค้า</Link>}
+        actions={<Link href="/core/stock" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับหน้าคลังสินค้า</Link>}
       />
 
       <div className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
@@ -252,7 +252,7 @@ export default function ProductCostPage() {
                     <tr key={r.line} className="border-b border-gray-100 last:border-0">
                       <td className="px-3 py-1 text-gray-400 tabular-nums">{r.line}</td>
                       <td className="px-3 py-1">
-                        <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="font-mono text-blue-600 hover:underline">{r.sku}</Link>
+                        <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="font-mono text-[#337ab7] hover:underline">{r.sku}</Link>
                         {r.name && <span className="text-gray-600"> · {r.name}</span>}
                       </td>
                       <td className="px-3 py-1 text-right tabular-nums">{r.current === undefined ? '—' : r.current === null ? <span className="text-gray-400">ไม่ได้ตั้ง</span> : r.current.toLocaleString('th-TH')}</td>

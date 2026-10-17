@@ -180,7 +180,7 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6">
-      <p className="text-[12.5px] mb-2"><Link href="/core/categories" className="text-blue-600 hover:underline">‹ หมวดหมู่</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/categories" className="text-[#337ab7] hover:underline">‹ หมวดหมู่</Link></p>
       <PageHead
         title={catName || '—'}
         summary={<span className="text-gray-500">รายละเอียดหมวดหมู่</span>}
@@ -304,7 +304,7 @@ function Inner() {
                       )}
                       {ขายดี.rows.map((r) => (
                         <tr key={r.sku} className="border-b border-gray-100 last:border-0">
-                          <td className={TD}><Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">{r.name || r.sku}</Link></td>
+                          <td className={TD}><Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-[#337ab7] hover:underline">{r.name || r.sku}</Link></td>
                           <td className={`${TD} text-right tabular-nums`}>{NUM(r.qty) === null ? '—' : fmtNum(r.qty!)}</td>
                           <td className={`${TD} text-right tabular-nums`}>{NUM(r.amount) === null ? '—' : fmtMoney(r.amount!)}</td>
                         </tr>
@@ -366,7 +366,7 @@ function Inner() {
                     <tr key={it.sku ?? i} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} font-mono text-[12.5px]`}>
                         {it.sku
-                          ? <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-blue-600 hover:underline">{it.sku}</Link>
+                          ? <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">{it.sku}</Link>
                           : '—'}
                       </td>
                       <td className={TD}>{it.name || '—'}</td>
@@ -389,7 +389,7 @@ function Inner() {
             <div className="flex items-center justify-between gap-3 mt-2 flex-wrap">
               <p className="text-[11.5px] text-gray-400">
                 ดึงได้ {fmtNum(PAGE)} รายการต่อครั้ง (เพดานของท่อ) · ดูทั้งหมดพร้อมตัวกรองได้ที่{' '}
-                <Link href={`/core/stock?category=${encodeURIComponent(catName)}`} className="text-blue-600 hover:underline">จอสินค้า</Link>
+                <Link href={`/core/stock?category=${encodeURIComponent(catName)}`} className="text-[#337ab7] hover:underline">จอสินค้า</Link>
               </p>
               <div className="flex gap-2">
                 <BtnGhost onClick={() => load(Math.max(0, offset - PAGE))} disabled={loading || offset === 0}>

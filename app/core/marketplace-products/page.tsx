@@ -214,7 +214,7 @@ export default function MarketplaceProductsPage() {
   return (
     <div className="p-4 md:p-6">
       {/* ผังภาพ 83: breadcrumb กลับไป Marketplace Dashboard อยู่เหนือหัวจอ */}
-      <Link href="/core/marketplace" className="text-[12.5px] text-blue-600 hover:underline">‹ Marketplace Dashboard</Link>
+      <Link href="/core/marketplace" className="text-[12.5px] text-[#337ab7] hover:underline">‹ Marketplace Dashboard</Link>
       <PageHead
         title="สินค้าบน Marketplace"
         summary={
@@ -436,7 +436,7 @@ export default function MarketplaceProductsPage() {
                     <td className={`${TD} text-gray-400`}>{page * 50 + i + 1}</td>
                     <td className={TD}>
                       <Link href={`/core/stock/${encodeURIComponent(r.sku)}`}
-                        className="text-blue-600 hover:underline font-medium">{r.sku}</Link>
+                        className="text-[#337ab7] hover:underline font-medium">{r.sku}</Link>
                     </td>
                     <td className={`${TD} max-w-[380px] truncate`} title={r.name}>{r.name}</td>
                     <td className={TD}>

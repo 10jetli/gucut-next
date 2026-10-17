@@ -760,7 +760,7 @@ export default function CoreSalesPage() {
             {/* ✅ ชี้ไปจอจริงแล้ว 6 ก.ย. 2569 — เดิมชี้ไปหน้า "ยังไม่ได้ทำ" ทั้งที่จอมีแล้ว
                 ⚠️ เจอตอนเปิดจอด้วยเบราว์เซอร์ ไม่ใช่จากการอ่านโค้ด
                    ลิงก์ที่ชี้ไปหน้า "ยังไม่ได้ทำ" ทั้งที่ของมีแล้ว = คนเชื่อว่าเรายังทำไม่เสร็จ */}
-            <Link href="/core/packing" className="text-blue-600 hover:underline">แพ็คสินค้า</Link>
+            <Link href="/core/packing" className="text-[#337ab7] hover:underline">แพ็คสินค้า</Link>
             {' | '}
             <span className="text-gray-400">อ่านจากคลังของเราเอง ไม่ได้ยิง ZORT</span>
           </>

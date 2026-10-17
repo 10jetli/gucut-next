@@ -66,7 +66,7 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12.5px] mb-2"><Link href="/core/return-orders" className="text-blue-600 hover:underline">‹ รับคืนสินค้า</Link></p>
+      <p className="text-[12.5px] mb-2"><Link href="/core/return-orders" className="text-[#337ab7] hover:underline">‹ รับคืนสินค้า</Link></p>
       <PageHead title={`ใบคืนสินค้า ${wrongLevel ? '' : d?.number || ''}`}
         summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT จอรายละเอียดเอกสารไม่มี */ />
@@ -175,7 +175,7 @@ function Inner() {
                         <td className={`${TD} font-mono text-[12.5px]`}>
                           {l.sku
                             ? <Link href={`/core/stock/${encodeURIComponent(l.sku)}`}
-                                className="text-blue-600 hover:underline">{l.sku}</Link>
+                                className="text-[#337ab7] hover:underline">{l.sku}</Link>
                             : '—'}
                         </td>
                         <td className={TD}>{l.name || '—'}</td>
