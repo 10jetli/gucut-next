@@ -500,7 +500,7 @@ export default function QuotationsPage() {
             <select
               disabled
               title="จอนี้ดึงครั้งเดียวทั้งหมด ยังไม่มีการแบ่งหน้า — เลือกได้ก็ไม่มีอะไรเปลี่ยน"
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
             >
               <option>ทั้งหมด</option>
             </select>

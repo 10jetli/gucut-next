@@ -435,7 +435,7 @@ export default function CoreCustomersPage() {
             <select
               value={days}
               onChange={(e) => load(Number(e.target.value))}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
             >
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
             </select>
@@ -493,7 +493,7 @@ export default function CoreCustomersPage() {
                 <select
                   value={cardBy}
                   onChange={(e) => setCardBy(e.target.value as 'people' | 'sales')}
-                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white"
+                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white"
                 >
                   <option value="people">จำนวนลูกค้า</option>
                   <option value="sales">ยอดขาย</option>
@@ -636,7 +636,7 @@ export default function CoreCustomersPage() {
                 <select
                   value={trendBy}
                   onChange={(e) => setTrendBy(e.target.value as 'people' | 'sales')}
-                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white"
+                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white"
                 >
                   <option value="people">จำนวนลูกค้า</option>
                   {/* ท่อรุ่นที่ไม่ส่งยอดรายเดือน ⇒ ปิดตัวเลือกพร้อมเหตุ ไม่วาดเส้นศูนย์ */}
@@ -709,7 +709,7 @@ export default function CoreCustomersPage() {
               <p className="text-[15px] font-semibold text-gray-900 mr-auto">📍 จังหวัด</p>
               <select value={provBy} onChange={(e) => { setProvBy(e.target.value as 'customers' | 'orders' | 'sales'); setProvPage(0) }}
                 disabled={!provinces}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0 disabled:text-gray-400">
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0 disabled:text-gray-400">
                 <option value="customers">จำนวนลูกค้า</option>
                 <option value="orders">จำนวนรายการ</option>
                 <option value="sales">มูลค่ารายการ</option>

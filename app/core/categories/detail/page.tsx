@@ -244,7 +244,7 @@ function Inner() {
             <div className="flex flex-wrap items-center gap-3 px-4 pt-3 pb-2">
               <p className="text-[14px] font-semibold text-gray-900 mr-auto">ยอดขาย</p>
               <select value="sales" onChange={() => { /* มีค่าเดียวที่ทำได้จริง */ }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
                 <option value="sales">ยอดขาย</option>
                 <option value="profit" disabled>กำไรจากการขาย — ยังทำไม่ได้ (ต้องใช้ต้นทุนคงเหลือเฉลี่ยรายตัว)</option>
               </select>
@@ -280,7 +280,7 @@ function Inner() {
             <div className="flex flex-wrap items-center gap-3 px-4 pt-3 pb-2">
               <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีวัน === 1 ? 'วันนี้' : ขายดีวัน === 7 ? '7 วัน' : ขายดีวัน === 30 ? '1 เดือน' : '3 เดือน'}</p>
               <select value={ขายดีวัน} onChange={(e) => setขายดีวัน(Number(e.target.value))}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
                 <option value={1}>วันนี้</option>
                 <option value={7}>7 วัน</option>
                 <option value={30}>1 เดือน</option>

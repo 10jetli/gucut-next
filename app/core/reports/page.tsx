@@ -331,7 +331,7 @@ export default function CoreProductReportPage() {
                 <select
                   value={valueBy}
                   onChange={(e) => setValueBy(e.target.value as 'warehouse' | 'category')}
-                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700"
+                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700"
                 >
                   <option value="warehouse">รายคลัง</option>
                   <option value="category">รายหมวดหมู่</option>
@@ -433,7 +433,7 @@ export default function CoreProductReportPage() {
               <select
                 value={deadDays}
                 onChange={(e) => { const d = Number(e.target.value); setDeadDays(d); load(d) }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
               >
                 {DEAD_RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
               </select>
@@ -617,7 +617,7 @@ export default function CoreProductReportPage() {
           <Card padded={false} className="mt-4">
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <p className="text-[15px] font-semibold text-gray-900 mr-auto">ล็อตใกล้หมดอายุ</p>
-              <select disabled className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 max-w-full">
+              <select disabled className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 max-w-full">
                 <option>ทั้งหมด</option>
                 {(whs ?? []).map((w) => <option key={w.code}>{w.name || w.code}</option>)}
               </select>

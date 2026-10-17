@@ -617,7 +617,7 @@ function CoreStockInner() {
             <select
               value={sort}
               onChange={(e) => { setSort(e.target.value); load(0, e.target.value) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
             >
               {SORTS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
             </select>
@@ -781,7 +781,7 @@ function CoreStockInner() {
               onFocus={โหลดหมวด}
               onMouseDown={โหลดหมวด}
               onChange={(e) => { setCategory(e.target.value); setOffset(0) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white max-w-[280px]"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-[280px]"
               title="กรองตามหมวดหมู่ — ตัวเลขคือจำนวนรหัสในหมวดนั้นทั้งคลัง"
             >
               <option value="">🗂️ ทุกหมวดหมู่</option>

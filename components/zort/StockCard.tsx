@@ -106,7 +106,7 @@ export default function StockCard({ sku }: { sku: string }) {
         <p className="text-[15px] font-semibold text-gray-900">บัตรสต็อก (ประวัติเข้า-ออก)</p>
         <div className="flex flex-wrap items-center gap-2">
           <select value={kind} onChange={(e) => setKind(e.target.value)}
-            className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded-full px-3 py-1 bg-white">
+            className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded-full px-3 py-1 bg-white">
             {kinds.map((k) => <option key={k.key} value={k.key}>{k.label}</option>)}
           </select>
           <input type="date" value={from} onChange={(e) => setFrom(e.target.value)}

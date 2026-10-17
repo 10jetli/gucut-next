@@ -600,7 +600,7 @@ export default function ProductDetailPage() {
               <select
                 value={chartMode}
                 onChange={(e) => setChartMode(e.target.value as 'amount' | 'qty')}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
               >
                 <option value="amount">ยอดขาย (บาท)</option>
                 <option value="qty">จำนวนที่ขายได้</option>
@@ -701,7 +701,7 @@ export default function ProductDetailPage() {
               <select
                 value={cardKind}
                 onChange={(e) => setCardKind(e.target.value)}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
               >
                 {/* 🗂 ชื่อและลำดับตาม `typetransactionoption` ของ ZORT 8 ค่า (อ่านจอจริง 16 ต.ค. 2569)
                     แต่ละค่าผูกกับคีย์ของท่อ · เปิดได้เฉพาะเมื่อท่อประกาศคีย์นั้นใน kinds (ไม่ใช่เดาจากชื่อ)
@@ -738,7 +738,7 @@ export default function ProductDetailPage() {
               <select
                 disabled
                 title="คลังเงาเก็บสต็อกรวมทั้งร้าน (3 คลัง: โกดัง + จุดขาย 2) — ตรวจระดับพารามิเตอร์แล้ว 10 ก.ย. 2569: ZORT เมินตัวกรองคลัง (ใส่ warehouseid แล้วเลขไม่เปลี่ยน)"
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
               >
                 <option>ทั้งหมด</option>
               </select>

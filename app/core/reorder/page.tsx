@@ -130,7 +130,7 @@ export default function ReorderPage() {
             <select
               value={days}
               onChange={(e) => load(Number(e.target.value))}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
             >
               {DAYS.map((n) => <option key={n} value={n}>คิดยอดใช้จาก {n} วันล่าสุด</option>)}
             </select>

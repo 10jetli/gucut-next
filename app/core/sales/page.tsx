@@ -809,7 +809,7 @@ export default function CoreSalesPage() {
                   const v = e.target.value === 'ship' ? 'ship' : 'order'
                   setชนิดวัน(v); load(0, { dateType: v })
                 }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
               >
                 <option value="order">วันที่</option>
                 <option value="payment" disabled title={data?.dateTypesUnavailable?.payment ?? 'ท่อยังไม่รองรับ (ยิงดู 16 ต.ค. 2569: ตอบ 400)'}>
@@ -835,7 +835,7 @@ export default function CoreSalesPage() {
                 setช่วงปฏิทิน(''); setAdvFrom(''); setAdvTo('')
                 setDays(d); load(0, { days: d, from: '', to: '' })
               }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
             >
               {ช่วงปฏิทินทั้งหมด.map((r) => <option key={r.ค่า} value={r.ค่า}>{r.label}</option>)}
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
@@ -849,7 +849,7 @@ export default function CoreSalesPage() {
             <select
               value={store}
               onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
             >
               <option value="">ทุกร้าน (2 ร้าน)</option>
               {/* 🔴 ห้ามพิมพ์ชื่อนิติบุคคลในไฟล์จอ — ถูกอบเข้า chunk สาธารณะ /_next/static
@@ -861,7 +861,7 @@ export default function CoreSalesPage() {
             <select
               value={channel}
               onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
             >
               <option value="">ทุกช่องทาง</option>
               {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
