@@ -10,6 +10,7 @@
       ⇒ ชื่อที่เหลืออังกฤษค้างหนึ่งคำ ยังเป็นชื่อที่คนอ่านไม่เข้าใจอยู่ดี */
 import { readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
+import { บอกกองนอกรีโป } from './lib/ของนอกรีโป.mjs'
 
 const ที่เก็บผัง = process.env.PARTS_DIR || '../gucut-web/public/parts'
 
@@ -66,8 +67,13 @@ function แปล(ชื่อ) {
 let ครบ = 0, บางส่วน = 0, ไทยอยู่แล้ว = 0, รวม = 0
 const ค้าง = new Map()
 const ตัวอย่างค้าง = new Map()
-for (const f of readdirSync(ที่เก็บผัง)) {
-  if (!f.endsWith('.json') || f === 'models.json') continue
+/* 📂 ผังอะไหล่อยู่ **นอกรีโปนี้** (gucut-web) ⇒ บอกที่มาก่อนตัดสินทุกครั้ง
+   เหตุ: อีกฝั่งแก้ไฟล์แล้วถึงเราทันทีโดยไม่ต้อง push ⇒ เปอร์เซ็นต์ในใบนี้เปลี่ยนได้
+   ทั้งที่รีโปนี้ไม่มีอะไรเปลี่ยนสักบรรทัด ⇒ ตัวเลขที่ไม่บอกที่มา = ตัวเลขที่ตามกลับไม่ได้ */
+const ไฟล์ผัง = readdirSync(ที่เก็บผัง).filter((f) => f.endsWith('.json') && f !== 'models.json')
+บอกกองนอกรีโป(ไฟล์ผัง.map((f) => join(ที่เก็บผัง, f)), { ป้าย: 'ผังอะไหล่ (gucut-web):', ย่อหน้า: '' })
+
+for (const f of ไฟล์ผัง) {
   const d = JSON.parse(readFileSync(join(ที่เก็บผัง, f), 'utf8'))
   for (const g of d.กลุ่ม || []) for (const a of g.อะไหล่ || []) {
     const ชื่อ = String(a.ชื่อ || '').trim()
