@@ -374,48 +374,58 @@ export default function Page() {
                     ))}
                   </>
                 )}
-                <div className="bg-white border border-gray-200 rounded-md px-3 py-2
-                                flex flex-wrap items-center gap-x-3 gap-y-1.5">
-                  <span className="w-7 h-7 shrink-0 rounded-full bg-gray-100 text-gray-700
-                                   text-[12.5px] flex items-center justify-center">{r.เลข}</span>
-                  {/* 🔑 **รูปสองทางตามสถานะ** — จับคู่แล้วโชว์รูปของร้าน (ยืนยันว่าใส่ถูกตัว)
-                      ยังไม่จับคู่ให้ปุ่มหารูปอ้างอิง (ตอบว่าชิ้นนี้หน้าตายังไง)
-                      ⚠️ ที่ว่างต้องกว้างเท่ากันทั้งสองทาง ไม่งั้นแถวกระตุกตอนกรอกเสร็จ */}
-                  <span className="w-11 h-11 shrink-0 flex items-center justify-center">
-                    {รูปของแถว ? (
+                {/* 🔑 **ผังเดียวกับหน้าลูกค้า** (gucut.com/parts/<รุ่น>/)
+                    ท่านประธานสั่ง 17 ต.ค. 2569 "มันต้องเหมือนกัน"
+                    ไม่ใช่เรื่องสวยงาม — คนที่กรอกหน้านี้คือคนเดียวกับที่เปิดหน้าลูกค้า
+                    ไปเทียบว่าจับคู่ถูกไหม · สองจอคนละผัง = ต้องแปลสายตาใหม่ทุกแถว
+
+                    [รูป 56px] [เลขในผัง] [รหัสร้าน + ชื่อสินค้าร้าน]   [ช่องกรอก] [สถานะ]
+                                          [รหัสคู่มือ · ชื่อไทย · ใช้ N ตัว]
+                    ⚠️ แถวที่ยังไม่จับคู่ไม่มีรูป/ชื่อสินค้า — ช่องต้องคงที่ ไม่ยุบ
+                       ไม่งั้นแถวสูงไม่เท่ากันทั้งหน้า ตากวาดหาไม่ติด */}
+                <div className="bg-white border border-gray-200 rounded-md px-2.5 py-2
+                                flex items-center gap-2.5">
+                  {/* รูปสินค้าของร้าน — ยังไม่จับคู่ให้เป็นปุ่มหารูปอ้างอิงแทน */}
+                  <span className="w-14 h-14 shrink-0 flex items-center justify-center">
+                    {รูปของแถว?.รูป ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={รูปของแถว.รูป} alt={รูปของแถว.ชื่อ} title={รูปของแถว.ชื่อ}
-                           className="w-11 h-11 object-contain rounded border border-gray-200 bg-white" />
+                           className="w-14 h-14 object-contain rounded-md border border-gray-200 bg-white" />
                     ) : (
                       <a href={ลิงก์หารูป(r.รหัส, r.ชื่อ)} target="_blank" rel="noopener noreferrer"
                          title={`หารูปอ้างอิงของ ${r.รหัส} — เปิดแท็บใหม่ ไม่ได้เก็บรูปลงเว็บ`}
-                         className="w-9 h-9 rounded border border-gray-300 text-gray-500
-                                    flex items-center justify-center text-[14px] hover:bg-gray-50">🔍</a>
+                         className="w-14 h-14 rounded-md border border-dashed border-gray-300
+                                    text-gray-400 flex items-center justify-center text-[16px]
+                                    hover:bg-gray-50">🔍</a>
                     )}
                   </span>
-                  <span className="font-mono text-[12.5px] whitespace-nowrap">{r.รหัส}</span>
-                  {/* 🔴 **ชื่อไทยเพิ่มเข้ามา แต่อังกฤษห้ามหาย** (ท่านประธานสั่ง "แปลไทย" 17 ต.ค. 2569)
-                      คนที่กรอกหน้านี้ถือคู่มือ**ภาษาอังกฤษ**อยู่ในมือ โชว์แต่ไทย = หาแถวในคู่มือไม่เจอ
-                      ⇒ คำแปลที่ทำให้ทำงานช้าลงคือคำแปลที่ผิดหน้าที่ */}
-                  <span className="text-[12.5px] grow min-w-[140px]">
-                    <span className="text-gray-800">{คำแปล}</span>
-                    {คำแปล !== r.ชื่อ && (
-                      <span className="text-gray-400 ml-1.5 text-[11.5px]">{r.ชื่อ}</span>
-                    )}
+
+                  <span className="w-7 h-7 shrink-0 rounded-full bg-gray-100 text-gray-700
+                                   text-[12px] font-bold flex items-center justify-center">{r.เลข}</span>
+
+                  <span className="min-w-0 grow">
+                    {/* บรรทัดบน — ของร้าน (รหัส + ชื่อสินค้าจริง) เหมือนหน้าลูกค้าเป๊ะ
+                        ยังไม่จับคู่ ⇒ โชว์ชื่อไทยของอะไหล่แทน จะได้ไม่มีบรรทัดว่าง */}
+                    <span className="block truncate text-[13.5px] font-medium text-gray-900">
+                      {รูปของแถว?.ชื่อ
+                        ? <>
+                            <span className="font-mono text-emerald-700">{(แมป[r.คีย์] || '').trim()}</span>
+                            {' '}{รูปของแถว.ชื่อ}
+                          </>
+                        : คำแปล}
+                    </span>
+                    {/* บรรทัดล่าง — รหัสคู่มือ · ชื่ออังกฤษเดิม (ห้ามตัดทิ้ง) · ใช้กี่ตัว */}
+                    <span className="block text-[11.5px] text-gray-500 tabular-nums truncate">
+                      <span className="font-mono">{r.รหัส}</span>
+                      {รูปของแถว?.ชื่อ ? <> · {คำแปล}</> : null}
+                      {คำแปล !== r.ชื่อ && <> · <span className="text-gray-400">{r.ชื่อ}</span></>}
+                      {r.จำนวน ? ` · ใช้ ${r.จำนวน} ตัว` : ''}
+                    </span>
                   </span>
-                  {/* ✅ "ชื่อสินค้าจริงจากระบบ" — ท่านประธานวงไว้ในรูป 17 ต.ค. 2569
-                      🔑 ของจริงที่มันตอบคือ **"รหัสที่ใส่ไปคือของชิ้นนี้ใช่ไหม"**
-                         รหัส 5 หลักอย่างเดียวบอกอะไรไม่ได้ · พิมพ์ผิดหนึ่งหลัก
-                         จอก็ยังขึ้น "● จับคู่แล้ว" เขียวเหมือนกันทุกประการ */}
-                  {รูปของแถว?.ชื่อ && (
-                    <span className="text-[11.5px] text-emerald-800 bg-emerald-50 border
-                                     border-emerald-200 rounded px-1.5 py-0.5 max-w-[260px] truncate"
-                          title={รูปของแถว.ชื่อ}>{รูปของแถว.ชื่อ}</span>
-                  )}
-                  <span className="text-[11.5px] text-gray-400 whitespace-nowrap">×{r.จำนวน}</span>
+
                   <input
                     ref={(el) => { ช่อง.current[r.ลำดับ] = el }}
-                    className="w-32 border border-gray-300 rounded px-2 py-1.5 text-[12.5px] min-h-[40px]"
+                    className="w-28 shrink-0 border border-gray-300 rounded px-2 py-1.5 text-[12.5px] min-h-[40px]"
                     placeholder="รหัสร้าน"
                     value={ค่าในช่อง}
                     onChange={(e) => setร่าง((ก) => ({ ...ก, [r.คีย์]: e.target.value }))}
@@ -433,7 +443,7 @@ export default function Page() {
                   />
                   {/* 🔴 สี่สถานะ ห้ามยุบ — "บันทึกไม่สำเร็จ" ต้องไม่ดูเหมือน "ยังไม่จับคู่"
                       ไม่งั้นจะกรอกซ้ำทั้งที่เหตุคือเน็ตหลุด */}
-                  <span className="text-[11.5px] whitespace-nowrap w-[108px]">
+                  <span className="text-[11.5px] whitespace-nowrap w-[104px] shrink-0">
                     {ส === 'จับคู่แล้ว' && <span className="text-green-700">● จับคู่แล้ว</span>}
                     {ส === 'ยังไม่จับคู่' && <span className="text-gray-400">○ ยังไม่จับคู่</span>}
                     {ส === 'กำลังบันทึก' && <span className="text-amber-700">◌ กำลังบันทึก…</span>}
@@ -442,15 +452,12 @@ export default function Page() {
                     )}
                   </span>
                 </div>
-                {/* 🔑 **สถานะที่ห้าที่เคยไม่มี: "บันทึกแล้วแต่ไม่ตรงกับที่พิมพ์"**
-                    ไม่ใช่สำเร็จ (คนพิมพ์อีกอย่าง) และไม่ใช่ล้มเหลว (ของลงฐานแล้วจริง)
-                    ⇒ ต้องเป็นข้อความของตัวเอง · ยุบเข้ากองไหนก็โกหกคนอ่านทั้งคู่ */}
                 {/* 🔴 **ข้อเสนอ ≠ คำตอบ** — ต้องกดรับเอง ห้ามเติมช่องเอง ห้ามบันทึกเอง
                     ข้อมูลเดาที่ถูกบันทึกอัตโนมัติ จะปนกับข้อมูลจริงโดยแยกไม่ออกตลอดกาล
                     ⇒ หน้าตาต้องต่างจากค่าที่บันทึกแล้วชัดเจน (ส้ม ไม่ใช่เขียว) และมีคำว่า "เดา"
                     วัดแล้วชั้นที่เสนอออกมาถูก 58/59 แต่ 98% ไม่ใช่ 100% — คนต้องเป็นคนตัดสิน */}
                 {ข้อเสนอ.length > 0 && (
-                  <div className="text-[11.5px] mt-1 ml-[132px] flex items-center gap-1.5 flex-wrap">
+                  <div className="text-[11.5px] mt-1 ml-[104px] flex items-center gap-1.5 flex-wrap">
                     <span className="text-gray-400">ระบบเดาว่า</span>
                     {ข้อเสนอ.map((ข) => (
                       <button key={ข.sku} type="button"
@@ -469,7 +476,7 @@ export default function Page() {
                   </div>
                 )}
                 {เตือน[r.คีย์] && (
-                  <div className="text-[11.5px] text-amber-800 mt-1 ml-[132px]">
+                  <div className="text-[11.5px] text-amber-800 mt-1 ml-[104px]">
                     ⚠ {เตือน[r.คีย์]}
                   </div>
                 )}
