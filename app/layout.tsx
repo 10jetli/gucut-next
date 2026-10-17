@@ -43,7 +43,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           rel="stylesheet"
         />
       </head>
-      <body className="bg-app min-h-screen pb-16 md:pb-0 text-gray-800">
+      <body className="bg-app min-h-screen pb-16 md:pb-0 text-[#3e3e3e]">
         <AppShell role={role}>{children}</AppShell>
       </body>
     </html>
