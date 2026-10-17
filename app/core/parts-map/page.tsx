@@ -40,8 +40,8 @@ const รุ่นสำรอง: { id: string; ชื่อ: string; คำค
  *     ว่าง = แถบเลือกรุ่นหายทั้งแถบ ⇒ คนใช้คิดว่าข้อมูลอะไหล่หาย ทั้งที่แค่เน็ตสะดุด */
 async function ดึงรายชื่อรุ่น(): Promise<{ id: string; ชื่อ: string; คำค้นร้าน?: string }[]> {
   try {
-    const r = await fetch('https://gucut.com/parts/models.json', { cache: 'no-store' })
-    if (!r.ok) return รุ่นสำรอง
+    const r = await fetch('/api/shop-feed?ชนิด=รุ่น', { cache: 'no-store' })
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
     const j = await r.json()
     const ms = Array.isArray(j) ? j : (j?.รุ่น ?? j?.models ?? [])
     const out = ms
@@ -51,9 +51,15 @@ async function ดึงรายชื่อรุ่น(): Promise<{ id: strin
         คำค้นร้าน: m?.คำค้นร้าน ? String(m.คำค้นร้าน) : undefined,
       }))
       .filter((m: { id: string }) => m.id)
-    return out.length ? out : รุ่นสำรอง
-  } catch {
-    return รุ่นสำรอง
+    if (!out.length) throw new Error('รายชื่อรุ่นว่าง')
+    return out
+  } catch (e) {
+    /* 🔴 **ทางถอยต้องไม่เงียบ** — บทเรียน 17 ต.ค. 2569
+       ของเดิม `catch { return รุ่นสำรอง }` ทำให้ CORS บล็อกแล้วจอโชว์ 6 รุ่นเหมือนเดิม
+       ไม่มีอะไรบอกว่าอีก 11 รุ่นหายไป · deploy ผ่าน tsc เขียว แต่ของจริงตาย
+       🔑 **ทางถอยที่เงียบ จะกลายเป็นทางหลักโดยไม่มีใครรู้**
+       ⇒ โยนต่อให้คนเรียกตัดสินใจว่าจะบอกคนใช้ยังไง */
+    throw e
   }
 }
 
@@ -71,11 +77,11 @@ type คลังสินค้า = {
 
 async function โหลดสินค้าร้าน(): Promise<คลังสินค้า> {
   try {
-    const r = await fetch('https://gucut.com/products.json', { cache: 'no-store' })
-    if (!r.ok) return { ตามรหัส: {}, ดัชนี: null }
+    const r = await fetch('/api/shop-feed?ชนิด=สินค้า', { cache: 'no-store' })
+    if (!r.ok) throw new Error(`HTTP ${r.status}`)
     const j = await r.json()
     const arr = Array.isArray(j) ? j : (j?.products ?? j?.items ?? [])
-    if (!Array.isArray(arr)) return { ตามรหัส: {}, ดัชนี: null }
+    if (!Array.isArray(arr)) throw new Error('รูปแบบฟีดสินค้าไม่ตรงที่คาด')
     const ตามรหัส: Record<string, { รูป: string; ชื่อ: string }> = {}
     const รายการ = []
     for (const it of arr) {
@@ -89,7 +95,10 @@ async function โหลดสินค้าร้าน(): Promise<คลั�
       รายการ.push({ sku, ชื่อ, รูป })
     }
     return { ตามรหัส, ดัชนี: สร้างดัชนี(รายการ) }
-  } catch { return { ตามรหัส: {}, ดัชนี: null } }
+  } catch (e) {
+    /* ดูเหตุผลเดียวกันที่ `ดึงรายชื่อรุ่น` — ห้ามกลืนเงียบ */
+    throw e
+  }
 }
 
 /** ลิงก์หารูปอ้างอิง — เปิดแท็บใหม่ไปหน้าค้นหารูป
@@ -105,9 +114,17 @@ function ลิงก์หารูป(รหัส: string, ชื่อ: stri
 export default function Page() {
   const [รุ่น, setรุ่น] = useState('f440')
   const [รุ่นทั้งหมด, setรุ่นทั้งหมด] = useState(รุ่นสำรอง)
-  useEffect(() => { ดึงรายชื่อรุ่น().then(setรุ่นทั้งหมด) }, [])
+  /* ⚠️ เก็บเหตุที่ดึงไม่ได้ไว้ขึ้นจอ — ไม่ใช่แค่ log ที่ไม่มีใครเปิดดู */
+  const [โหลดพลาด, setโหลดพลาด] = useState<string[]>([])
+  useEffect(() => {
+    ดึงรายชื่อรุ่น().then(setรุ่นทั้งหมด).catch((e) =>
+      setโหลดพลาด((ก) => [...ก, `รายชื่อรุ่น: ${e?.message || e} — แสดงเฉพาะ ${รุ่นสำรอง.length} รุ่นที่ฝังไว้`]))
+  }, [])
   const [คลัง, setคลัง] = useState<คลังสินค้า>({ ตามรหัส: {}, ดัชนี: null })
-  useEffect(() => { โหลดสินค้าร้าน().then(setคลัง) }, [])
+  useEffect(() => {
+    โหลดสินค้าร้าน().then(setคลัง).catch((e) =>
+      setโหลดพลาด((ก) => [...ก, `ข้อมูลสินค้าร้าน: ${e?.message || e} — ไม่มีรูป ไม่มีชื่อสินค้า ไม่มีรหัสแนะนำ`]))
+  }, [])
   /* คำที่ร้านใช้เรียกรุ่นนี้ (MS440 · 7800) — ตัวแนะนำขาดอันนี้ไม่ได้ ดู lib/แนะนำรหัส.ts */
   const คำค้นรุ่น = รุ่นทั้งหมด.find((m) => m.id === รุ่น)?.คำค้นร้าน || ''
   const [ข้อมูล, setข้อมูล] = useState<ข้อมูลรุ่น | null>(null)
@@ -255,6 +272,17 @@ export default function Page() {
       />
 
       {err && <ErrorBox>{err}</ErrorBox>}
+
+      {/* 🔴 **ของที่ใช้ทางถอยอยู่ ต้องเห็นบนจอ** — ไม่งั้นมันคือของพังที่หน้าตาปกติ
+          เขียนให้รู้ว่า "หายไปไหน" ด้วย ไม่ใช่แค่ "ผิดพลาด" ลอย ๆ */}
+      {โหลดพลาด.length > 0 && (
+        <div className="mt-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-2 text-[12.5px] text-amber-900">
+          <b>บางส่วนของหน้านี้ดึงข้อมูลไม่ได้</b> — ส่วนที่เหลือยังใช้งานได้ตามปกติ
+          <ul className="list-disc ml-5 mt-1">
+            {โหลดพลาด.map((x) => <li key={x}>{x}</li>)}
+          </ul>
+        </div>
+      )}
 
       <div className="bg-white border border-gray-200 rounded-md p-3 mt-3">
         <div className="flex flex-wrap items-center gap-2">
