@@ -21,7 +21,9 @@ import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแ�
 import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
-import { PageHead, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, thaiShort } from '@/components/zort'
+import {
+  PageHead, TableWrap, TD, TDR, EmptyState, thaiDate, thaiShort, TH_KANIT, THR_KANIT,
+} from '@/components/zort'
 
 interface Po { number: string; vendor?: string; po_date?: string; amount?: number; status?: string }
 interface Resp { total?: number; amount?: number; rows?: Po[]
@@ -424,7 +426,7 @@ export default function BuyReportPage() {
               <div className="flex flex-col items-center justify-center py-12">
                 {หัวยอด > 0
                   ? (
-                    <p className="text-[32px] font-semibold text-blue-600 leading-none">
+                    <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold text-[#337ab7] leading-none">
                       {fmtMoney(หัวยอด)}<span className="text-[15px] text-gray-500 font-normal"> บาท</span>
                     </p>
                   )
@@ -588,15 +590,15 @@ export default function BuyReportPage() {
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
                     {/* หัวคอลัมน์เปลี่ยนตามการจัดกลุ่ม — ไม่งั้นคนอ่านว่า "รหัสสินค้า" แต่เห็นชื่อหมวด */}
-                    <th className={TH}>{
+                    <th className={TH_KANIT}>{
                       by === 'sku' ? 'รหัสสินค้า'
                         : by === 'category' ? 'หมวดหมู่'
                           : by === 'vendor' ? 'ผู้ติดต่อ (ผู้ขาย)' : 'คลัง / สาขา'
                     }</th>
-                    <th className={TH}>{by === 'sku' ? 'สินค้า' : 'จำนวนรหัสในกลุ่ม'}</th>
-                    <th className={THR}>จำนวน</th>
-                    <th className={THR}>ยอดซื้อ (บาท)</th>
-                    <th className={THR}>ยอดซื้อ (%)</th>
+                    <th className={TH_KANIT}>{by === 'sku' ? 'สินค้า' : 'จำนวนรหัสในกลุ่ม'}</th>
+                    <th className={THR_KANIT}>จำนวน</th>
+                    <th className={THR_KANIT}>ยอดซื้อ (บาท)</th>
+                    <th className={THR_KANIT}>ยอดซื้อ (%)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -703,11 +705,11 @@ export default function BuyReportPage() {
               <table className="w-full min-w-[720px]">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className={TH}>เลขที่ใบซื้อ</th>
-                    <th className={TH}>ผู้ขาย</th>
-                    <th className={TH}>วันที่</th>
-                    <th className={THR}>ยอดซื้อ (บาท)</th>
-                    <th className={THR}>ยอดซื้อ (%)</th>
+                    <th className={TH_KANIT}>เลขที่ใบซื้อ</th>
+                    <th className={TH_KANIT}>ผู้ขาย</th>
+                    <th className={TH_KANIT}>วันที่</th>
+                    <th className={THR_KANIT}>ยอดซื้อ (บาท)</th>
+                    <th className={THR_KANIT}>ยอดซื้อ (%)</th>
                   </tr>
                 </thead>
                 <tbody>

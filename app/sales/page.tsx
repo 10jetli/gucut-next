@@ -15,7 +15,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import CategorySeriesChart, { useCategorySeries } from '@/components/zort/CategorySeriesChart'
 import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, type ประตูกำไร } from '@/components/zort/CostGate'
 import {
-  PageHead, Tabs, TableWrap, TH, THR, TD, TDR, EmptyState, ChannelTag, thaiDate,
+  PageHead, Tabs, TableWrap, TH, TD, TDR, EmptyState, ChannelTag, thaiDate, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
 
 interface Report {
@@ -874,7 +874,7 @@ export default function SalesReportPage() {
                         เดิมจอเขียน "0 ใบ · เฉลี่ยใบละ 0 บาท" เมื่อ `totals` ขาดช่อง
                         ⇒ ยืนยันเลข 0 เป็นข้อเท็จจริงทั้งที่แค่ยังไม่รู้ · เลข 0 บนจอเงินคือเลขที่แพงที่สุด
                         ⇒ ไม่มีตัวเลขจริง ⇒ เขียน "ยังไม่รู้" ตรง ๆ (กฎสามสถานะของโปรเจกต์) */}
-                    <p className="text-[34px] font-semibold text-blue-600 leading-none">
+                    <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold text-[#337ab7] leading-none">
                       {typeof report.totals?.sales === 'number'
                         ? fmtMoney(report.totals.sales)
                         : <span className="text-[20px] text-amber-700">ยังไม่รู้ยอดขาย</span>}
@@ -1100,7 +1100,7 @@ export default function SalesReportPage() {
                     <TableWrap>
                       <table className="w-full min-w-[520px]">
                         <thead className="bg-white border-b border-gray-200">
-                          <tr><th className={TH}>ลูกค้า</th><th className={THR}>ยอดขาย(บาท)</th><th className={THR}>ยอดขาย (%)</th></tr>
+                          <tr><th className={TH_KANIT}>ลูกค้า</th><th className={THR_KANIT}>ยอดขาย(บาท)</th><th className={THR_KANIT}>ยอดขาย (%)</th></tr>
                         </thead>
                         <tbody>
                           {custErr && <EmptyState cols={3} icon="⚠️" title="ดึงยอดขายตามลูกค้าไม่ได้" detail={`ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะไม่มีลูกค้า — ${custErr}`} />}
@@ -1166,9 +1166,9 @@ export default function SalesReportPage() {
                         <table className="w-full min-w-[520px]">
                           <thead className="bg-white border-b border-gray-200">
                             <tr>
-                              <th className={TH}>{ชื่อหัว}</th>
-                              <th className={THR}>ยอดขาย(บาท)</th>
-                              <th className={THR}>ยอดขาย (%)</th>
+                              <th className={TH_KANIT}>{ชื่อหัว}</th>
+                              <th className={THR_KANIT}>ยอดขาย(บาท)</th>
+                              <th className={THR_KANIT}>ยอดขาย (%)</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -1202,10 +1202,10 @@ export default function SalesReportPage() {
                       <table className="w-full min-w-[560px]">
                         <thead className="bg-white border-b border-gray-200">
                           <tr>
-                            <th className={TH}>หมวดหมู่</th>
-                            <th className={THR}>จำนวน</th>
-                            <th className={THR}>ยอดขาย(บาท)</th>
-                            <th className={THR}>ยอดขาย (%)</th>
+                            <th className={TH_KANIT}>หมวดหมู่</th>
+                            <th className={THR_KANIT}>จำนวน</th>
+                            <th className={THR_KANIT}>ยอดขาย(บาท)</th>
+                            <th className={THR_KANIT}>ยอดขาย (%)</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1251,11 +1251,11 @@ export default function SalesReportPage() {
                   <table className="w-full min-w-[720px]">
                     <thead className="bg-white border-b border-gray-200">
                       <tr>
-                        <th className={TH}>รหัสสินค้า</th>
-                        <th className={TH}>สินค้า</th>
-                        <th className={THR}>จำนวน</th>
-                        <th className={THR}>ยอดขาย(บาท)</th>
-                        <th className={THR}>ยอดขาย (%)</th>
+                        <th className={TH_KANIT}>รหัสสินค้า</th>
+                        <th className={TH_KANIT}>สินค้า</th>
+                        <th className={THR_KANIT}>จำนวน</th>
+                        <th className={THR_KANIT}>ยอดขาย(บาท)</th>
+                        <th className={THR_KANIT}>ยอดขาย (%)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1332,11 +1332,11 @@ export default function SalesReportPage() {
                 <table className="w-full min-w-[620px]">
                   <thead className="bg-white border-b border-gray-200">
                     <tr>
-                      <th className={TH}>คลัง / สาขา</th>
-                      <th className={THR}>จำนวนใบขาย</th>
-                      <th className={THR}>ยอดขาย(บาท)</th>
-                      <th className={THR}>ใบรับคืน</th>
-                      <th className={TH} style={{ width: 160 }}>สัดส่วน</th>
+                      <th className={TH_KANIT}>คลัง / สาขา</th>
+                      <th className={THR_KANIT}>จำนวนใบขาย</th>
+                      <th className={THR_KANIT}>ยอดขาย(บาท)</th>
+                      <th className={THR_KANIT}>ใบรับคืน</th>
+                      <th className={TH_KANIT} style={{ width: 160 }}>สัดส่วน</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1428,10 +1428,10 @@ export default function SalesReportPage() {
                   <table className="w-full min-w-[620px]">
                     <thead className="bg-white border-b border-gray-200">
                       <tr>
-                        <th className={TH}>รหัสสินค้า</th>
-                        <th className={TH}>สินค้า</th>
-                        <th className={THR}>จำนวน</th>
-                        <th className={THR}>ยอดขาย(บาท)</th>
+                        <th className={TH_KANIT}>รหัสสินค้า</th>
+                        <th className={TH_KANIT}>สินค้า</th>
+                        <th className={THR_KANIT}>จำนวน</th>
+                        <th className={THR_KANIT}>ยอดขาย(บาท)</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1486,11 +1486,11 @@ export default function SalesReportPage() {
                 <table className="w-full min-w-[620px]">
                   <thead className="bg-white border-b border-gray-200">
                     <tr>
-                      <th className={TH}>ช่องทาง</th>
-                      <th className={THR}>จำนวนใบ</th>
-                      <th className={THR}>ยอดขาย(บาท)</th>
-                      <th className={THR}>เทียบช่วงก่อน</th>
-                      <th className={TH} style={{ width: 160 }}>สัดส่วน</th>
+                      <th className={TH_KANIT}>ช่องทาง</th>
+                      <th className={THR_KANIT}>จำนวนใบ</th>
+                      <th className={THR_KANIT}>ยอดขาย(บาท)</th>
+                      <th className={THR_KANIT}>เทียบช่วงก่อน</th>
+                      <th className={TH_KANIT} style={{ width: 160 }}>สัดส่วน</th>
                     </tr>
                   </thead>
                   <tbody>

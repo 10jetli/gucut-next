@@ -15,7 +15,7 @@ import ExportButton from '@/components/zort/ExportButton'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
-  PageHead, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate,
+  PageHead, TableWrap, TH, TD, TDR, EmptyState, thaiDate, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
 
 interface StockResp {
@@ -228,7 +228,7 @@ export default function CoreProductReportPage() {
                 {ยอดZORTสด !== null && (
                   <div className="text-center mb-5">
                     <p className="text-[11.5px] text-gray-500">มูลค่าสินค้าทั้งหมด · {ยอดZORTเมื่อ}</p>
-                    <p className="text-[30px] font-semibold leading-none mt-0.5" style={{ color: 'rgb(19,175,130)' }}>
+                    <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold leading-none mt-0.5" style={{ color: 'rgb(19,175,130)' }}>
                       {/* ทศนิยม 2 ตำแหน่งแบบจอ ZORT (16,177,397.29) — fmtMoney ปัดเหลือ 1 ตำแหน่ง ⇒ เลขดูไม่ตรงกันทั้งที่ค่าเดียวกัน */}
                       {ยอดZORTสด.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                       <span className="text-[15px] text-gray-500 font-normal"> บาท</span>
@@ -248,7 +248,7 @@ export default function CoreProductReportPage() {
                     <p className="text-[11.5px] text-gray-500">
                       ต้นทุนเฉลี่ยถ่วงน้ำหนัก · คัดมาจากจอ ZORT {cat.zortCategories ?? 0} หมวด
                     </p>
-                    <p className="text-[30px] font-semibold leading-none mt-0.5" style={{ color: 'rgb(19,175,130)' }}>
+                    <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold leading-none mt-0.5" style={{ color: 'rgb(19,175,130)' }}>
                       {fmtMoney(cat.zortTotalValue)}
                       <span className="text-[15px] text-gray-500 font-normal"> บาท</span>
                     </p>
@@ -269,7 +269,7 @@ export default function CoreProductReportPage() {
                   </div>
                 )}
                 <p className="text-[11.5px] text-gray-500">คิดจากราคาขาย</p>
-                <p className="text-[30px] font-semibold text-blue-600 leading-none mt-0.5">
+                <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold text-[#337ab7] leading-none mt-0.5">
                   {typeof stock.value === 'number' ? fmtMoney(stock.value) : '—'}
                   <span className="text-[15px] text-gray-500 font-normal"> บาท</span>
                 </p>
@@ -449,11 +449,11 @@ export default function CoreProductReportPage() {
               <table className="w-full min-w-[760px]">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className={TH}>รหัสสินค้า</th>
-                    <th className={TH}>สินค้า</th>
-                    <th className={TH}>วันที่ขายล่าสุด</th>
-                    <th className={THR}>จำนวนคงเหลือ</th>
-                    <th className={THR}>มูลค่าสินค้าคงเหลือ (บาท)</th>
+                    <th className={TH_KANIT}>รหัสสินค้า</th>
+                    <th className={TH_KANIT}>สินค้า</th>
+                    <th className={TH_KANIT}>วันที่ขายล่าสุด</th>
+                    <th className={THR_KANIT}>จำนวนคงเหลือ</th>
+                    <th className={THR_KANIT}>มูลค่าสินค้าคงเหลือ (บาท)</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -626,10 +626,10 @@ export default function CoreProductReportPage() {
               <table className="w-full min-w-[560px]">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className={TH}>ล็อต</th>
-                    <th className={TH}>สินค้า</th>
-                    <th className={TH}>วันหมดอายุ</th>
-                    <th className={THR}>จำนวนคงเหลือ</th>
+                    <th className={TH_KANIT}>ล็อต</th>
+                    <th className={TH_KANIT}>สินค้า</th>
+                    <th className={TH_KANIT}>วันหมดอายุ</th>
+                    <th className={THR_KANIT}>จำนวนคงเหลือ</th>
                   </tr>
                 </thead>
                 <tbody>

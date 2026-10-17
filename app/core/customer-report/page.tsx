@@ -15,7 +15,8 @@ import { fmtMoney, ต้นเดือนย้อนหลังแบบZORT
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav,} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav, TH_KANIT, THR_KANIT,
+} from '@/components/zort'
 
 interface Row { id: string; channel: string; amount: number; customer: string; order_date: string }
 /** ⚠️ channels เป็น **อาร์เรย์ของ object** ไม่ใช่ข้อความคั่นลูกน้ำ (ฝั่งท่อเลือกแบบนี้ และถูก)
@@ -731,7 +732,7 @@ export default function CoreCustomersPage() {
                   <TableWrap>
                     <table className="w-full">
                       <thead className="bg-white border-b border-gray-200">
-                        <tr><th className={TH}>จังหวัด</th><th className={THR}>{หัว}</th></tr>
+                        <tr><th className={TH_KANIT}>จังหวัด</th><th className={THR_KANIT}>{หัว}</th></tr>
                       </thead>
                       <tbody>
                         {rows.slice(pg * PROV_PER_PAGE, (pg + 1) * PROV_PER_PAGE).map((r) => (
@@ -804,16 +805,16 @@ export default function CoreCustomersPage() {
             <table className="w-full min-w-[720px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}>ชื่อ</th>
-                  <th className={TH}>ช่องทางที่ซื้อ</th>
-                  <th className={THR}>จำนวนใบ</th>
-                  <th className={THR}>ยอดรวม</th>
+                  <th className={TH_KANIT} style={{ width: 44 }}>#</th>
+                  <th className={TH_KANIT}>ชื่อ</th>
+                  <th className={TH_KANIT}>ช่องทางที่ซื้อ</th>
+                  <th className={THR_KANIT}>จำนวนใบ</th>
+                  <th className={THR_KANIT}>ยอดรวม</th>
                   {/* ZORT (ภาพ 76) มีคอลัมน์ ยอดขาย (%) — สัดส่วนต่อยอดรวมของช่วง */}
-                  <th className={THR} title={ร้อยละในกลุ่ม ? `ร้อยละของยอดขายกลุ่ม${tab === 'a' ? 'ลูกค้าใหม่' : 'ลูกค้าซื้อซ้ำ'}ในช่วงนี้ (แบบ ZORT)` : ร้อยละของทั้งช่วง ? 'ร้อยละของยอดขายทั้งช่วง (ท่อนับทุกใบ ไม่ใช่เฉพาะรายที่แสดง)' : 'ร้อยละของยอดรวมเฉพาะรายที่แสดง — ท่อไม่ได้ส่งยอดทั้งช่วงมา'}>
+                  <th className={THR_KANIT} title={ร้อยละในกลุ่ม ? `ร้อยละของยอดขายกลุ่ม${tab === 'a' ? 'ลูกค้าใหม่' : 'ลูกค้าซื้อซ้ำ'}ในช่วงนี้ (แบบ ZORT)` : ร้อยละของทั้งช่วง ? 'ร้อยละของยอดขายทั้งช่วง (ท่อนับทุกใบ ไม่ใช่เฉพาะรายที่แสดง)' : 'ร้อยละของยอดรวมเฉพาะรายที่แสดง — ท่อไม่ได้ส่งยอดทั้งช่วงมา'}>
                     ยอดขาย (%{ร้อยละในกลุ่ม ? '' : ร้อยละของทั้งช่วง ? ' ของทั้งช่วง' : ' ของรายที่แสดง'})
                   </th>
-                  <th className={THR}>ซื้อล่าสุด</th>
+                  <th className={THR_KANIT}>ซื้อล่าสุด</th>
                 </tr>
               </thead>
               <tbody>
