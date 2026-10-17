@@ -479,14 +479,26 @@ export default function Page() {
                                           [รหัสคู่มือ · ชื่อไทย · ใช้ N ตัว]
                     ⚠️ แถวที่ยังไม่จับคู่ไม่มีรูป/ชื่อสินค้า — ช่องต้องคงที่ ไม่ยุบ
                        ไม่งั้นแถวสูงไม่เท่ากันทั้งหน้า ตากวาดหาไม่ติด */}
-                <div className="bg-white border border-gray-200 rounded-md px-2.5 py-2
-                                flex items-center gap-2.5">
+                {/* 🎨 **สีพื้นของแถวบอกสถานะทั้งแผง** — ท่านประธานสั่ง 17 ต.ค. 2569
+                    "อันไหนจับคู่แล้วก็ให้เป็นสีเขียวทั้งแผงเลย"
+                    🔑 มีผลจริง ไม่ใช่แค่สวย: หน้านี้ยาว 300–550 แถวต่อรุ่น
+                       ของเดิมบอกสถานะด้วยจุดเล็ก ๆ ท้ายแถว ⇒ ต้องกวาดตาไปขวาสุดทีละแถว
+                       พื้นทั้งแถวเป็นสี ⇒ รู้ได้จากการเลื่อนผ่านอย่างเดียว
+                    ⚠️ **สี่สถานะต้องยังแยกกันได้ ห้ามยุบเหลือสองสี** (กฎเดิมของไฟล์นี้)
+                       "บันทึกไม่สำเร็จ" ต้องไม่ดูเหมือน "ยังไม่จับคู่" ไม่งั้นคนกรอกซ้ำ
+                       ทั้งที่เหตุจริงคือเน็ตหลุด */}
+                <div className={`rounded-md px-2.5 py-2 flex items-center gap-2.5 border ${
+                  ส === 'จับคู่แล้ว' ? 'bg-emerald-50 border-emerald-300'
+                  : ส === 'บันทึกไม่สำเร็จ' ? 'bg-red-50 border-red-300'
+                  : ส === 'กำลังบันทึก' ? 'bg-amber-50 border-amber-300'
+                  : 'bg-white border-gray-200'
+                }`}>
                   {/* รูปสินค้าของร้าน — ยังไม่จับคู่ให้เป็นปุ่มหารูปอ้างอิงแทน */}
                   <span className="w-14 h-14 shrink-0 flex items-center justify-center">
                     {รูปของแถว?.รูป ? (
                       /* eslint-disable-next-line @next/next/no-img-element */
                       <img src={รูปของแถว.รูป} alt={รูปของแถว.ชื่อ} title={รูปของแถว.ชื่อ}
-                           className="w-14 h-14 object-contain rounded-md border border-gray-200 bg-white" />
+                           className="w-14 h-14 object-contain rounded-md border border-emerald-200 bg-white" />
                     ) : (
                       <a href={ลิงก์หารูป(r.รหัส, r.ชื่อ)} target="_blank" rel="noopener noreferrer"
                          title={`หารูปอ้างอิงของ ${r.รหัส} — เปิดแท็บใหม่ ไม่ได้เก็บรูปลงเว็บ`}
@@ -529,7 +541,9 @@ export default function Page() {
 
                   <input
                     ref={(el) => { ช่อง.current[r.ลำดับ] = el }}
-                    className="w-28 shrink-0 border border-gray-300 rounded px-2 py-1.5 text-[12.5px] min-h-[40px]"
+                    className={`w-28 shrink-0 rounded px-2 py-1.5 text-[12.5px] min-h-[40px] border ${
+                      ส === 'จับคู่แล้ว' ? 'border-emerald-300 bg-white' : 'border-gray-300'
+                    }`}
                     placeholder="รหัสร้าน"
                     value={ค่าในช่อง}
                     onChange={(e) => setร่าง((ก) => ({ ...ก, [r.คีย์]: e.target.value }))}
