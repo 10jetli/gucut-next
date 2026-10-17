@@ -349,6 +349,12 @@ export const DL_CARD = 'bg-white rounded-md p-5'
 export const DL_CARD_TITLE = "font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96]"
 export const DL_LABEL = 'text-[16px] text-[#868e96]'
 export const DL_VALUE = 'text-[16px] text-[#3e3e3e]'
+/* ── ฟอร์มสร้าง/แก้ไข — วัด DOM ZORT /Sell/Add กับ /Buy/Add 17 ต.ค. 2569
+   ช่องกรอก/dropdown: Boon 14 #3e3e3e พื้นขาว ขอบ #adb5bd มุม 4 สูง 40 · ป้ายชื่อช่อง Boon 16 น้ำหนัก 500 #3e3e3e
+   ⚠️ เดิมแต่ละฟอร์มประกาศ `const inp` ของตัวเอง 5 ไฟล์ค่าเดียวกัน ⇒ รวมมาที่นี่ (กติกาข้อ 5)
+   ⚠️ มีความสูงตายตัว ⇒ ห้ามใช้กับ <textarea> */
+export const FORM_INPUT = 'w-full h-10 rounded border border-[#adb5bd] bg-white px-3 text-[14px] text-[#3e3e3e] outline-none focus:border-[#4165ed]'
+export const FORM_LABEL = 'block text-[16px] font-medium text-[#3e3e3e] mb-1'
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
 /* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**

@@ -22,13 +22,13 @@
 //     การเขียนจริงเป็นรายเส้น ไม่ได้อนุมัติทั้งกอง
 //  5. **คำเตือน "ลบผ่าน API ไม่ได้" อยู่ใกล้ปุ่ม** ไม่ใช่บนหัวจอที่เลื่อนพ้นตาไปแล้ว
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { PageHead } from './index'
+import { FORM_INPUT, FORM_LABEL, PageHead } from './index'
 import { WriteResult, type WriteResp } from './WriteResult'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
 import PillSend from '@/components/ui/PillSend'
 
-const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
+const inp = FORM_INPUT
 
 export interface FieldSpec {
   /** ชื่อช่องที่จะส่งไปท่อ — **ต้องตรงกับสัญญาช่องที่ฝั่งท่อให้มา ห้ามเดา** */
@@ -169,7 +169,7 @@ export function ShortAddForm({
         {fields.map((f) => (
           <div key={f.k} className={f.wide ? 'md:col-span-3' : ''}>
             <label className="block">
-              <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">
+              <span className={FORM_LABEL}>
                 {f.label}{f.required && <span className="text-red-500"> *</span>}
               </span>
               {f.options ? (

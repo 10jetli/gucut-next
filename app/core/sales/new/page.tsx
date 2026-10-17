@@ -26,7 +26,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import { FORM_INPUT, FORM_LABEL, PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
@@ -90,7 +90,7 @@ const ดูเหมือนZORTล่ม = (r?: SaleResp | null) => {
   return /HTTP\s*5\d\d/.test(String(r.error ?? ''))
 }
 
-const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
+const inp = FORM_INPUT
 const PAY = ['เงินสด', 'โอนเงิน', 'บัตรเครดิต', 'เก็บปลายทาง']
 
 export default function NewSalePage() {
@@ -234,21 +234,21 @@ export default function NewSalePage() {
       </div>
 
       <div className="grid md:grid-cols-3 gap-3 mt-4">
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ชื่อลูกค้า *</span>
+        <label className="block"><span className={FORM_LABEL}>ชื่อลูกค้า *</span>
           <input className={inp} value={customer} onChange={(e) => setCustomer(e.target.value)} /></label>
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">เบอร์โทร</span>
+        <label className="block"><span className={FORM_LABEL}>เบอร์โทร</span>
           <input className={inp} value={phone} onChange={(e) => setPhone(e.target.value)} /></label>
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ช่องทางขาย</span>
+        <label className="block"><span className={FORM_LABEL}>ช่องทางขาย</span>
           <input className={inp} value={channel} onChange={(e) => setChannel(e.target.value)} placeholder="เช่น หน้าร้าน" /></label>
-        <label className="block md:col-span-2"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ที่อยู่จัดส่ง</span>
+        <label className="block md:col-span-2"><span className={FORM_LABEL}>ที่อยู่จัดส่ง</span>
           <input className={inp} value={address} onChange={(e) => setAddress(e.target.value)} /></label>
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">คลัง</span>
+        <label className="block"><span className={FORM_LABEL}>คลัง</span>
           <input className={inp} value={warehouse} onChange={(e) => setWarehouse(e.target.value)} placeholder="เช่น KLD" /></label>
         {/* 🔤 **คำอังกฤษบนจอที่คนขายต้องอ่าน** — เดิมช่องนี้ขึ้น "Pending — ยังไม่จบ" / "Success — จบแล้ว"
             ⇒ โรคเดียวกับที่ท่านประธานทักเรื่องคอลัมน์ชำระเงิน · คำใหม่ลอกจากจอ ZORT `/Sell/Add` จอเดียวกัน
             (ที่นั่นเป็นปุ่มวิทยุคู่ `warehousetype0/1` ใต้หัวข้อ "คลังสินค้า/สาขา") ⇒ ป้ายช่องจึงเปลี่ยนตามเรื่องที่มันทำ
             ค่าดิบที่ส่งให้ท่ออยู่ใน title ของช่อง — ห้ามลบ คนตรวจต้องรู้ว่าจอนี้ส่งอะไรออกไป */}
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">การโอนสินค้า</span>
+        <label className="block"><span className={FORM_LABEL}>การโอนสินค้า</span>
           <select
             className={inp}
             value={status}
@@ -257,13 +257,13 @@ export default function NewSalePage() {
             <option value="Pending">{zortWord(SALE_CREATE_TRANSFER_CHOICE, 'Pending').text}</option>
             <option value="Success">{zortWord(SALE_CREATE_TRANSFER_CHOICE, 'Success').text}</option>
           </select></label>
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ส่วนลด (บาท)</span>
+        <label className="block"><span className={FORM_LABEL}>ส่วนลด (บาท)</span>
           <input className={inp} value={discount} onChange={(e) => setDiscount(e.target.value)} inputMode="decimal" /></label>
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ค่าส่ง (บาท)</span>
+        <label className="block"><span className={FORM_LABEL}>ค่าส่ง (บาท)</span>
           <input className={inp} value={shipping} onChange={(e) => setShipping(e.target.value)} inputMode="decimal" /></label>
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">รับชำระแล้ว (บาท)</span>
+        <label className="block"><span className={FORM_LABEL}>รับชำระแล้ว (บาท)</span>
           <input className={inp} value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="decimal" /></label>
-        <label className="block"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">วิธีชำระเงิน</span>
+        <label className="block"><span className={FORM_LABEL}>วิธีชำระเงิน</span>
           <select className={inp} value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}>
             <option value="">— ยังไม่ระบุ —</option>
             {PAY.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -272,7 +272,7 @@ export default function NewSalePage() {
           <input type="checkbox" checked={cod} onChange={(e) => setCod(e.target.checked)} className="w-4 h-4" />
           <span className="text-[12.5px] text-gray-700">เก็บเงินปลายทาง</span>
         </label>
-        <label className="block md:col-span-3"><span className="block text-[11.5px] font-semibold text-gray-400 mb-1">หมายเหตุ</span>
+        <label className="block md:col-span-3"><span className={FORM_LABEL}>หมายเหตุ</span>
           <input className={inp} value={note} onChange={(e) => setNote(e.target.value)} /></label>
       </div>
 

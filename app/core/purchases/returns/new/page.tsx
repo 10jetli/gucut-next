@@ -27,7 +27,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
-import { PageHead, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import { FORM_INPUT, PageHead, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import { looksLikeFallThrough } from '@/lib/api-shape'
@@ -43,7 +43,7 @@ const REAL_SEND_ENABLED = ส่งจริงได้('purchases/returns/new'
 interface Line { sku: string; name: string; qty: string; price: string }
 const BLANK: Line = { sku: '', name: '', qty: '', price: '' }
 
-const inp = 'w-full border border-gray-300 rounded px-3 py-2 text-[14px]'
+const inp = FORM_INPUT
 const cell = 'w-full border border-gray-200 rounded px-2 py-1.5 text-[12.5px]'
 
 /** ผลซ้อมที่ท่อคืนมา — มี linesTotal ไว้ให้จอเทียบว่าคิดตรงกันไหม

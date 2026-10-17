@@ -17,7 +17,7 @@
 //    ⇒ จอนี้จึงไม่มีช่องหมวดหมู่ ไม่ใช่ลืมใส่
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { PageHead, WriteResult } from '@/components/zort'
+import { FORM_INPUT, FORM_LABEL, PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
@@ -29,7 +29,7 @@ import PillSend from '@/components/ui/PillSend'
    เพราะค่านี้คือ *สถานะการอนุมัติของท่านประธาน* ไม่ใช่ค่าคงที่ของโค้ด
    (เขียนซ้ำหลายที่มาแล้ว 12 ไฟล์ ⇒ จอรายการซื้อพูดเท็จอยู่ 5 วัน · ใบ S4 19 ก.ย. 2569) */
 const REAL_SEND_ENABLED = ส่งจริงได้('customers/new')
-const inp = 'w-full rounded border border-gray-200 px-2.5 py-1.5 text-[12.5px] outline-none focus:border-blue-400'
+const inp = FORM_INPUT
 
 type Resp = WriteResp & { willSend?: Record<string, unknown> }
 
@@ -37,7 +37,7 @@ type Resp = WriteResp & { willSend?: Record<string, unknown> }
 function F({ l, children, req: rq }: { l: string; children: React.ReactNode; req?: boolean }) {
   return (
     <label className="block">
-      <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">{l}{rq && <span className="text-red-500"> *</span>}</span>
+      <span className={FORM_LABEL}>{l}{rq && <span className="text-red-500"> *</span>}</span>
       {children}
     </label>
   )
