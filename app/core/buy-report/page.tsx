@@ -392,7 +392,7 @@ export default function BuyReportPage() {
                      (ของเดิมกรองในเครื่องอย่างเดียวจึงไม่ต้องยิง — ลืมข้อนี้จะได้ตารางของช่วงก่อน) */
                   onClick={() => { setFrom(f); setTo(t); void load(store, by, f, t) }}
                   className={`text-[12.5px] rounded-full px-2.5 py-1 border ${
-                    on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
+                    on ? 'bg-[#eef1fa] border-[#4165ed] text-[#2b3f9e] font-medium'
                       : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`} aria-pressed={on}
                 >
                   {label}

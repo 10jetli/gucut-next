@@ -141,7 +141,7 @@ export default function PackWizardPage() {
               className="w-[260px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500" />
             <button type="submit" disabled={busy || !q.trim()}
               className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
-              style={{ background: '#4669e5' }}>
+              style={{ background: '#4165ed' }}>
               {busy ? 'กำลังค้นหา…' : 'แพ็คสินค้า'}
             </button>
           </form>
@@ -234,7 +234,7 @@ export default function PackWizardPage() {
           <div className="flex items-center gap-3">
             <button onClick={() => setStep(2)} disabled={!allPicked}
               className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2 disabled-readable"
-              style={{ background: '#4669e5' }}>
+              style={{ background: '#4165ed' }}>
               แพ็คสำเร็จ
             </button>
             <button onClick={reset} className="text-[12.5px] text-gray-500 hover:underline">ยกเลิก เริ่มใบใหม่</button>
@@ -262,7 +262,7 @@ export default function PackWizardPage() {
           <div>
             <button onClick={reset}
               className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2"
-              style={{ background: '#4669e5' }}>
+              style={{ background: '#4165ed' }}>
               แพ็คใบถัดไป
             </button>
           </div>

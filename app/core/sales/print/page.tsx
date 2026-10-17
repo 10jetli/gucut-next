@@ -168,7 +168,7 @@ export default function SalesPrintPage() {
               {(Object.keys(DOCS) as DocKey[]).map((k) => (
                 <button key={k} type="button" onClick={() => setDoc(k)}
                   className={`text-[12.5px] rounded-full px-3.5 py-1.5 border ${k === doc
-                    ? 'bg-[#4669e5] border-[#4669e5] text-white font-semibold'
+                    ? 'bg-[#4165ed] border-[#4165ed] text-white font-semibold'
                     : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`} aria-pressed={doc === k}>
                   {DOCS[k].title}
                 </button>
@@ -179,7 +179,7 @@ export default function SalesPrintPage() {
               <button type="button" onClick={() => window.print()}
                 disabled={reading > 0 || ok.length === 0}
                 className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 disabled-readable"
-                style={{ background: '#4669e5' }}>
+                style={{ background: '#4165ed' }}>
                 🖨 พิมพ์ {ok.length.toLocaleString('th-TH')} ใบ
               </button>
             </>

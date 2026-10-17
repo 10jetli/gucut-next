@@ -93,7 +93,7 @@ function ChannelIcon({ ch, size = 18, dim = false }: { ch: Channel; size?: numbe
   // เว็บไซต์ไม่มีโลโก้แพลตฟอร์ม — วาดเป็นลูกโลกสีแบรนด์
   return (
     <span
-      className={`inline-flex items-center justify-center rounded-[4px] bg-[#4669e5] text-white ${dim ? 'opacity-45' : ''}`}
+      className={`inline-flex items-center justify-center rounded-[4px] bg-[#4165ed] text-white ${dim ? 'opacity-45' : ''}`}
       style={{ width: size, height: size }}
     >
       <svg width={size * 0.68} height={size * 0.68} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
@@ -239,7 +239,7 @@ export default function ChatCommercePage() {
                   onClick={() => { setFilter(active ? 'all' : c.key); setOpen(null) }}
                   title={c.live ? `${c.name} · ${c.account}` : `${c.name} · ยังไม่ได้เชื่อม`}
                   className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1.5 transition-colors ${
-                    active ? 'border-[#4669e5] bg-[#eef3fb]' : 'border-gray-200 hover:bg-gray-50'
+                    active ? 'border-[#4165ed] bg-[#eef3fb]' : 'border-gray-200 hover:bg-gray-50'
                   }`}
                 >
                   <ChannelIcon ch={c} size={16} dim={!c.live} />
@@ -377,7 +377,7 @@ export default function ChatCommercePage() {
                 {msgs.map((m, i) => (
                   <div key={i} className={`flex ${m.from === 's' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[72%] rounded-xl px-3.5 py-2 text-[12.5px] leading-relaxed ${
-                      m.from === 's' ? 'bg-[#4669e5] text-white' : 'bg-white text-gray-800 border border-gray-200'
+                      m.from === 's' ? 'bg-[#4165ed] text-white' : 'bg-white text-gray-800 border border-gray-200'
                     }`}>
                       <p className="whitespace-pre-wrap break-words">{m.text}</p>
                       <p className={`mt-0.5 text-[10px] tabular-nums ${m.from === 's' ? 'text-white/60' : 'text-gray-400'}`}>
@@ -404,7 +404,7 @@ export default function ChatCommercePage() {
                   onClick={send}
                   disabled={!reply.trim()}
                   className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled-readable"
-                  style={{ background: '#4669e5' }}
+                  style={{ background: '#4165ed' }}
                 >
                   ส่ง
                 </button>

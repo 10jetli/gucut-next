@@ -272,15 +272,15 @@ export default function CorePurchasesPage() {
                    ⇒ ย้ายสถานะไปที่ `lib/real-send.ts` ที่เดียว (ใบ S4 · 19 ก.ย. 2569)
                    ⚠️ หน้านั้น **ส่งจริงเข้า ZORT ได้แล้ว** (เฉพาะใบปกติ · โหมด ?quick=1 ยังปิด) */}
             <Link href="/core/purchases/new"
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#4669e5' }}>
+              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4165ed' }}>
               สร้าง
             </Link>
             {/* ✅ แก้ 14 ก.ย. 2569 (t_mu0tx40g): เดิมชี้ /core/soon/buy-create-quick
                 ZORT ไม่มีเส้นแยกสำหรับแบบง่าย ⇒ ใช้หน้าเดียวกับ "สร้าง" โหมด ?quick=1 (สถานะสำเร็จ + จ่ายเงินในใบเดียว) */}
             <Link href="/core/purchases/new?quick=1"
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#4669e5' }}>
+              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4165ed' }}>
               สร้างอย่างง่าย
             </Link>
           </>

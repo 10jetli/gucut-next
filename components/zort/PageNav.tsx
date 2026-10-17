@@ -41,7 +41,7 @@ export const PAGE_CHOICES = [10, 20, 50, 100]
    ⚠️ ขยายด้วย padding ไม่ใช่ตัวอักษร — ตัวเลขใหญ่ขึ้นจะไม่เหมือน ZORT */
 const BTN = 'px-3 py-2.5 rounded border text-[12.5px] leading-none disabled:opacity-40 disabled:cursor-not-allowed'
 const PLAIN = `${BTN} bg-white border-gray-300 text-gray-700 hover:bg-gray-50`
-const HERE = `${BTN} bg-[#4669e5] border-[#4669e5] text-white font-semibold`
+const HERE = `${BTN} bg-[#4165ed] border-[#4165ed] text-white font-semibold`
 
 /** หน้าที่จะโชว์: หน้าแรก · รอบตัวเอง ±2 · หน้าสุดท้าย (ที่เหลือเป็น …) */
 function pagesToShow(cur: number, last: number): (number | '…')[] {

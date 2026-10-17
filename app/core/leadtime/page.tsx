@@ -81,8 +81,8 @@ export default function LeadTimeGroupPage() {
           // ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร
           <Link
             href="/core/soon/leadtime"
-            className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-            style={{ background: '#4669e5' }}
+            className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+            style={{ background: '#4165ed' }}
           >
             เพิ่มกลุ่มใหม่
           </Link>

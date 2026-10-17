@@ -28,7 +28,8 @@ export default function ImportButton({ kind }: { kind: string }) {
   if (!(SUPPORTED as readonly string[]).includes(kind)) return null
   return (
     <Link href={`/core/import?kind=${kind}`}
-      className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+      /* 📐 ตาม ZORT (วัด 17 ต.ค. 2569): Kanit 16px น้ำหนัก 400 · ตัวหนังสือ rgb(134,142,150) · พื้น rgb(241,243,245) */
+      className="text-[16px] font-normal text-[#868e96] bg-[#f1f3f5] border border-[#f1f3f5] rounded-full px-4 py-1.5 hover:bg-[#e9ecef]">
       นำเข้าไฟล์ (Excel)
     </Link>
   )

@@ -89,7 +89,7 @@ function Stepper({ at }: { at: number }) {
             <div className="flex flex-col items-center">
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-[12.5px] font-semibold
                 ${i < at ? 'bg-emerald-700 text-white' : i === at ? 'text-white' : 'bg-gray-100 text-gray-400'}`}
-                style={i === at ? { background: '#4669e5' } : undefined}>
+                style={i === at ? { background: '#4165ed' } : undefined}>
                 {i < at ? '✓' : i + 1}
               </div>
               <p className={`text-[11.5px] mt-1 whitespace-nowrap ${i === at ? 'text-gray-900 font-medium' : 'text-gray-400'}`}>
@@ -304,7 +304,7 @@ export default function ReceivePage() {
               onClick={find}
               disabled={busy || !q.trim()}
               className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
-              style={{ background: '#4669e5' }}
+              style={{ background: '#4165ed' }}
             >
               {busy ? 'กำลังค้น…' : 'รับสินค้าเข้า'}
             </button>
@@ -489,7 +489,7 @@ export default function ReceivePage() {
                 onClick={submit}
                 disabled={busy}
                 className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
-                style={{ background: '#4669e5' }}
+                style={{ background: '#4165ed' }}
               >
                 {busy ? 'กำลังบันทึก…' : 'ยืนยันรับเข้าคลัง'}
               </button>
@@ -551,7 +551,7 @@ export default function ReceivePage() {
             <button
               onClick={() => { setStep(0); setQ(''); setDoc(null); setLines([{ sku: '', qty: '' }]); setResult(null) }}
               className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2"
-              style={{ background: '#4669e5' }}
+              style={{ background: '#4165ed' }}
             >
               รับใบถัดไป
             </button>

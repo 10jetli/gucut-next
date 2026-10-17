@@ -341,7 +341,7 @@ export default function NewSalePage() {
 
       <div className="flex flex-wrap items-center gap-2 mt-4">
         <button onClick={() => send(false)} disabled={busy || !ref || locked}
-          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled-readable" style={{ background: '#4669e5' }}>
+          className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled-readable" style={{ background: '#4165ed' }}>
           {busy ? 'กำลังส่ง…' : '🧪 ทดลองส่ง (ยังไม่เข้า ZORT)'}
         </button>
         {/* 🔴 ส่งจริงไปแล้ว ⇒ **ไม่มีปุ่มให้กดอีก** ไม่ใช่ปุ่มจาง ๆ ที่ยังเล็งกดได้

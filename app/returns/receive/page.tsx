@@ -321,7 +321,7 @@ export default function ReturnReceivePage() {
                 return typeof cap === 'number' && it.qty > cap ? { ...it, qty: cap } : it
               }))
               setOverQ(null)
-            }} className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5" style={{ background: '#b45309' }}>
+            }} className="text-[16px] font-normal text-white rounded-full px-4 py-1.5" style={{ background: '#b45309' }}>
               ปรับเหลือเท่าที่คืนได้
             </button>
             <span className="text-[11.5px] text-amber-800 self-center">
@@ -339,7 +339,7 @@ export default function ReturnReceivePage() {
           <p className="text-[12.5px] text-gray-500 mb-3">
             เหตุผล: {cancelledDoc.cancelReason || '—'} · ล็อกใบขายปลดแล้ว เปิดใบใหม่ได้ทันที
           </p>
-          <button onClick={reset} className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4669e5' }}>
+          <button onClick={reset} className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2" style={{ background: '#4165ed' }}>
             รับใบถัดไป
           </button>
         </div>
@@ -400,7 +400,7 @@ export default function ReturnReceivePage() {
                 <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus placeholder="เลขที่ใบ หรือเลขพัสดุ"
                   className="w-[240px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500" />
                 <button type="submit" disabled={busy || !q.trim()}
-                  className="text-[12.5px] font-semibold text-white rounded-full px-5 disabled:opacity-50" style={{ background: '#4669e5' }}>
+                  className="text-[12.5px] font-semibold text-white rounded-full px-5 disabled:opacity-50" style={{ background: '#4165ed' }}>
                   {busy ? 'กำลังหา…' : 'ค้นหา'}
                 </button>
               </form>
@@ -457,7 +457,7 @@ export default function ReturnReceivePage() {
                     {pendingDoc.staff && <> · โดย {pendingDoc.staff}</>}
                   </p>
                   <button onClick={() => resume(pendingDoc.returnId)} disabled={busy}
-                    className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 mt-1.5" style={{ background: '#4669e5' }}>
+                    className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5 mt-1.5" style={{ background: '#4165ed' }}>
                     ทำต่อจากที่ค้าง
                   </button>
                   <span className="text-[11.5px] text-blue-700/70 ml-2">เปิดใบใหม่ซ้ำ = เสี่ยงคืนเกิน เซิร์ฟเวอร์จะตีกลับ</span>
@@ -502,7 +502,7 @@ export default function ReturnReceivePage() {
               )}
               <button disabled={pickedCount === 0 || busy || (unmatched && pick.some((p) => p.qty > 0 && !p.name.trim()))}
                 onClick={() => setStep(1)}
-                className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
+                className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4165ed' }}>
                 ถัดไป: ถ่ายรูปตอนรับ ({pickedCount} รายการ)
               </button>
             </>
@@ -559,7 +559,7 @@ export default function ReturnReceivePage() {
             <button onClick={() => setStep(0)} className="text-[12.5px] text-gray-500 px-3">← กลับ</button>
             {doc ? (
               <button onClick={retryPhotos} disabled={photos.length === 0 || busy}
-                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
+                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4165ed' }}>
                 {busy ? 'กำลังส่ง…' : `ส่งรูปเข้าใบ ${doc.returnId}`}
               </button>
             ) : photos.some((p) => p.status === 'failed') ? (
@@ -569,7 +569,7 @@ export default function ReturnReceivePage() {
               </button>
             ) : (
               <button onClick={submitReceive} disabled={!photosOk || busy}
-                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
+                className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4165ed' }}>
                 {busy ? 'กำลังบันทึก…' : 'บันทึกรับของ + ส่งรูป'}
               </button>
             )}
@@ -615,7 +615,7 @@ export default function ReturnReceivePage() {
             })}
           </div>
           <button onClick={() => setStep(3)} disabled={!allGraded}
-            className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
+            className="w-full text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4165ed' }}>
             ถัดไป: สรุปทวนกับลูกค้า
           </button>
           {/* ยกเลิกใบ — คนถือเท่านั้น · ใบที่ moved แล้วเซิร์ฟเวอร์ไม่ให้ (ไม่ยื่นปุ่มตอนนั้นอยู่แล้ว) */}
@@ -661,7 +661,7 @@ export default function ReturnReceivePage() {
                 เซิร์ฟเวอร์อาจบันทึกไปแล้วก็ได้ กดซ้ำเสี่ยงซ้ำซ้อน · กดปุ่มเดียวนี้เพื่อดูสถานะจริง
               </p>
               <button onClick={() => resume(doc.returnId)} disabled={busy}
-                className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4669e5' }}>
+                className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4165ed' }}>
                 {busy ? 'กำลังเช็ค…' : 'เช็คสถานะจริงของใบนี้'}
               </button>
             </div>
@@ -713,7 +713,7 @@ export default function ReturnReceivePage() {
                   {doc.quarantineNo && <> · เขียนเลขกัก <b className="font-mono">{doc.quarantineNo}</b> ติดของแล้ววางกองกักเท่านั้น</>}
                 </p>
               )}
-              <button onClick={reset} className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4669e5' }}>
+              <button onClick={reset} className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2" style={{ background: '#4165ed' }}>
                 รับใบถัดไป
               </button>
             </div>
@@ -740,7 +740,7 @@ export default function ReturnReceivePage() {
               <div className="flex gap-2">
                 <button onClick={() => setStep(2)} className="text-[12.5px] text-gray-500 px-3">← แก้คำตัดสิน</button>
                 <button onClick={confirm} disabled={busy}
-                  className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4669e5' }}>
+                  className="flex-1 text-[14px] font-semibold text-white rounded-full py-2.5 disabled-readable" style={{ background: '#4165ed' }}>
                   {busy ? 'กำลังบันทึก…' : 'ยืนยัน — บันทึกจริง'}
                 </button>
               </div>

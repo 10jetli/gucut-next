@@ -277,7 +277,7 @@ export default function PrintLabelsPage() {
               <input type="checkbox" checked={showPrice} onChange={(e) => setShowPrice(e.target.checked)} /> ใส่ราคา
             </label>
             <button onClick={() => void load(skus)} disabled={loading || !skus.length}
-              className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled-readable" style={{ background: '#4669e5' }}>
+              className="rounded-full px-5 py-2 text-[12.5px] font-semibold text-white disabled-readable" style={{ background: '#4165ed' }}>
               {loading ? 'กำลังถาม ZORT…' : `ถามบาร์โค้ด ${skus.length} รหัส`}
             </button>
           </div>

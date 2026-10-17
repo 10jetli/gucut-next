@@ -80,7 +80,7 @@ export default function FilesPage() {
       <form className="flex flex-wrap items-center gap-2 mb-3" onSubmit={(e) => { e.preventDefault(); setOffset(0); setคำค้น(q) }}>
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="ค้นเลขที่ใบ"
           className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[220px] max-w-full" />
-        <button type="submit" className="text-[12.5px] font-medium text-white rounded px-3 py-1.5" style={{ background: '#4669e5' }}>ค้นหา</button>
+        <button type="submit" className="text-[12.5px] font-medium text-white rounded px-3 py-1.5" style={{ background: '#4165ed' }}>ค้นหา</button>
         {/* ② ท่อค้นได้แค่เลขที่ใบ — เขียนตรงนี้ คนพิมพ์ชื่อไฟล์แล้วได้ 0 จะได้ไม่สรุปว่าไม่มีไฟล์ */}
         <span className="text-[11.5px] text-gray-400">ค้นได้เฉพาะเลขที่ใบ ยังค้นชื่อไฟล์ไม่ได้</span>
       </form>

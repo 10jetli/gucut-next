@@ -476,7 +476,7 @@ export default function BundleDetailPage() {
                         : (
                           <>
                             <span className="text-[10px] text-gray-500 mb-0.5">{fmtMoney(s.amount)}</span>
-                            <span className="w-full rounded-t bg-[#4669e5]"
+                            <span className="w-full rounded-t bg-[#4165ed]"
                               style={{ height: `${Math.max(3, (s.amount / chartMax) * 110)}px` }} />
                           </>
                         )}

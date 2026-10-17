@@ -22,7 +22,8 @@ import { thaiDate } from '@/lib/format'
       ของจริงเป็นน้ำเงินสดกว่ามาก **#4669e5** (พบ 90% ในแถบเมนูที่เลือก
       และ 58% ในโซนปุ่มหลัก) ⇒ ปุ่มหลักทุกจอของเราเข้มกว่า ZORT มาตลอด
    ⚠️ จะแก้สีต้องวัดจากภาพใหม่เท่านั้น **ห้ามปรับด้วยสายตา** */
-export const ZORT_BLUE = '#4669e5'        // ปุ่มหลัก · เมนูที่เลือก · ขีดใต้แท็บ
+/* 17 ต.ค. 2569: วัด getComputedStyle ปุ่ม สร้าง บนจอ ZORT ได้ rgb(65,101,237) = #4165ed (ค่าเดิมมาจากพิกเซลภาพ เพี้ยนเล็กน้อย) */
+export const ZORT_BLUE = '#4165ed'        // ปุ่มหลัก · เมนูที่เลือก · ขีดใต้แท็บ
 export const ZORT_SIDEBAR = '#222a57'     // พื้นแถบเมนูซ้าย
 export const ZORT_PAGE_BG = '#f0f2f9'     // พื้นหลังหน้า (แบน ไม่มีไล่สี)
 export const ZORT_ROW_BG = '#f8f9fa'      // พื้นแถวในตาราง
@@ -60,7 +61,7 @@ export function PageHead({
   if (ปุ่มใต้หัวจอ) {
     return (
       <div className="mb-4">
-        <h1 className="text-[26px] leading-tight font-semibold text-gray-900">{title}</h1>
+        <h1 className="text-[30px] leading-tight font-medium text-[#3e3e3e]">{title}</h1>
         {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
         {actions && <div className="flex flex-wrap items-center gap-2 mt-3">{actions}</div>}
       </div>
@@ -75,7 +76,7 @@ export function PageHead({
       <div className="min-w-0 flex-1 basis-[18rem]">
         {/* ⚠️ ZORT ใช้ฟอนต์ Prompt เหมือนเรา (ตรวจจาก zortout.com แล้ว) แต่หัวจอเขาน้ำหนัก 600
             ไม่ใช่ 700 และไม่บีบตัวอักษร — ของเดิมหนาและแน่นกว่าต้นแบบ */}
-        <h1 className="text-[26px] leading-tight font-semibold text-gray-900">{title}</h1>
+        <h1 className="text-[30px] leading-tight font-medium text-[#3e3e3e]">{title}</h1>
         {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
       </div>
       {/* 🔴 **`shrink-0` ทำให้แถวปุ่มล้นจอบนมือถือ/แท็บเล็ต** (วัดจริง 16 ก.ย. 2569)
@@ -244,11 +245,12 @@ export function Tabs({
              ⇒ ใส่ `role="tab"` + `aria-selected` ที่ **คอมโพเนนต์** ⇒ ทุกจอที่ใช้ Tabs ได้มาฟรี */
           role="tab"
           aria-selected={active === t.id}
-          className={`text-[12.5px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
+          /* 📐 แท็บตาม ZORT: Kanit 16px น้ำหนัก 400 · แท็บที่เลือกสีน้ำเงิน rgb(65,101,237) (วัด 17 ต.ค. 2569) */
+          className={`text-[16px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
             t.ปิดไว้
               ? 'border-transparent text-gray-300 cursor-not-allowed'
               : active === t.id
-                ? 'border-blue-600 text-gray-900 font-semibold'
+                ? 'border-[#4165ed] text-[#4165ed]'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
           }`}
         >
@@ -320,10 +322,12 @@ export function TableWrap({ children }: { children: ReactNode }) {
    🔑 เหตุที่คุ้ม: 12⇒8 คืนความกว้าง **4px × 2 ด้าน × จำนวนคอลัมน์** โดย **ไม่ตัดข้อมูลแม้ตัวเดียว**
       (ตารางจอขาย 11 คอลัมน์ ⇒ คืน ~88px) ⇒ ต่างจากการใส่เพดาน/ตัดคำซึ่งจ่ายด้วยข้อมูลที่คนอ่านไม่เห็น
    ⚠️ เป็นของร่วมหลายจอ ⇒ ถ้าวันหนึ่งจะขยับอีก **ต้องวัดต้นแบบใหม่ ≥3 จอก่อน** และวัดผลหลังเปลี่ยนทุกครั้ง */
-export const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-2 py-2.5 whitespace-nowrap'
-export const THR = 'text-right font-normal text-[12.5px] text-gray-500 px-2 py-2.5 whitespace-nowrap'
-export const TD = 'px-2 py-3 text-[12.5px] text-gray-700 align-top'
-export const TDR = 'px-2 py-3 text-[12.5px] text-gray-800 align-top text-right whitespace-nowrap'
+/* 📐 ขนาด/สีตาม ZORT (วัด /Sell/list 17 ต.ค. 2569 · ท่านประธานสั่ง font สี ขนาด เหมือน 100%):
+   หัวคอลัมน์ Lato 12px rgb(134,142,150) · เซลล์ Boon 14px rgb(62,62,62) */
+export const TH = 'text-left font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
+export const THR = 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
+export const TD = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top'
+export const TDR = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
 /* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**

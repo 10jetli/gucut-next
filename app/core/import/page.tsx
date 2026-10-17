@@ -135,7 +135,7 @@ function ImportInner() {
       <div className="flex flex-wrap gap-2 mb-4">
         {KINDS.map((k) => (
           <button key={k.kind} onClick={() => { setKind(k.kind); reset() }}
-            className={`text-[12.5px] rounded-full px-4 py-1.5 border ${k.kind === kind ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`} aria-pressed={kind === k.kind}>
+            className={`text-[12.5px] rounded-full px-4 py-1.5 border ${k.kind === kind ? 'bg-[#4165ed] text-white border-[#4165ed]' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`} aria-pressed={kind === k.kind}>
             {k.label}
           </button>
         ))}

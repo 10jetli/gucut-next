@@ -181,8 +181,8 @@ export default function QuotationsPage() {
             {/* ✅ ต่อของจริงแล้ว 6 ก.ย. 2569 — เจ้าของร้านอนุมัติ **เฉพาะใบเสนอราคา**
                 (ไม่รวมเพิ่มสินค้า/ใบสั่งซื้อ) · จอปลายทางบังคับซ้อมก่อนส่งจริง */}
             <Link href="/core/quotations/new"
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#4669e5' }}>
+              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4165ed' }}>
               สร้าง
             </Link>
           </>

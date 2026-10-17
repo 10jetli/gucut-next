@@ -273,8 +273,8 @@ export default function CoreTransfersPage() {
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             {/* โอนสินค้าจริงร้านทำที่เครื่องมือเดิมอยู่แล้ว ⇒ ปุ่มนี้พาไปของจริง ไม่ใช่หน้า soon */}
             <Link href="/catalog/index.html#trf"
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#4669e5' }}>
+              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4165ed' }}>
               สร้างรายการโอนสินค้า
             </Link>
           </>

@@ -61,7 +61,7 @@ export default function StorePicker({ value, onChange, disabled, note }: {
             aria-pressed={on}
             onClick={() => { if (value !== v) onChange(v) }}
             className={`text-[12.5px] rounded-full px-3 py-1 border disabled:opacity-50 ${
-              on ? 'bg-[#eef1fa] border-[#4669e5] text-[#2b3f9e] font-medium'
+              on ? 'bg-[#eef1fa] border-[#4165ed] text-[#2b3f9e] font-medium'
                 : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
           >
             {storeLabel(v)}

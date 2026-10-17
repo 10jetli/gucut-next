@@ -94,7 +94,7 @@ export default function AdminLogPage() {
                 key={h}
                 onClick={() => setชั่วโมง(h)}
                 className={`text-[12.5px] rounded-lg px-3 py-1.5 border ${
-                  ชั่วโมง === h ? 'bg-[#4669e5] text-white border-[#4669e5]' : 'bg-white text-gray-700 border-gray-300'
+                  ชั่วโมง === h ? 'bg-[#4165ed] text-white border-[#4165ed]' : 'bg-white text-gray-700 border-gray-300'
                 }`} aria-pressed={ชั่วโมง === h}
               >
                 {h} ชม.

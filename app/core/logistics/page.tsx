@@ -257,8 +257,8 @@ export default function LogisticsPage() {
               นำเข้ารายการไฟล์ Excel
             </Link>
             <Link href="/core/soon/shipping"
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#4669e5' }}>
+              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4165ed' }}>
               ขนส่ง
             </Link>
           </>

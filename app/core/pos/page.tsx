@@ -678,7 +678,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                 aria-pressed={branch === b.code}
                 className={`text-[14px] font-semibold rounded-lg px-4 py-2.5 border transition-colors ${
                   branch === b.code
-                    ? 'bg-[#4669e5] text-white border-[#4669e5]'
+                    ? 'bg-[#4165ed] text-white border-[#4165ed]'
                     : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'
                 }`}
               >
@@ -799,7 +799,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                     onClick={() => setPayMethod(id)}
                     className={`flex-1 text-[12.5px] font-semibold py-2.5 border transition-colors ${
                       payMethod === id
-                        ? 'bg-[#4669e5] text-white border-[#4669e5]'
+                        ? 'bg-[#4165ed] text-white border-[#4165ed]'
                         : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50'
                     }`} aria-pressed={payMethod === id}
                   >
@@ -868,7 +868,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                 if (e.key === 'Enter' && found.length > 0) addToCart(found[0])
               }}
               placeholder="สแกนบาร์โค้ด / พิมพ์รหัสหรือชื่อสินค้า แล้วกด Enter"
-              className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#4669e5]"
+              className="w-full text-[16px] border-2 border-gray-300 rounded-xl px-4 py-3.5 focus:outline-none focus:border-[#4165ed]"
             />
             {looking && <p className="text-[12.5px] text-gray-400 mt-1">กำลังค้น…</p>}
             {!looking && q.trim() !== '' && (
@@ -1058,7 +1058,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
                   </div>
                   <button
                     onClick={() => resumeBill(h.id)}
-                    className="text-[12.5px] font-semibold text-white bg-[#4669e5] rounded-lg px-3 py-2 shrink-0"
+                    className="text-[12.5px] font-semibold text-white bg-[#4165ed] rounded-lg px-3 py-2 shrink-0"
                   >
                     เรียกคืน
                   </button>
@@ -1218,7 +1218,7 @@ const เลขหรือไม่รู้ = (v: unknown) => (typeof v === 'n
             onClick={() => (step === 'cart' ? setStep('pay') : checkout())}
             disabled={saving || !branch || cart.length === 0 || (hasZero && !allowZero)}
             className="w-full text-[18px] font-bold text-white py-4 disabled-readable"
-            style={{ background: '#4669e5' }}
+            style={{ background: '#4165ed' }}
           >
             {saving
               ? 'กำลังบันทึก…'

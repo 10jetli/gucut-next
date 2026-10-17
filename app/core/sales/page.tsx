@@ -775,13 +775,13 @@ export default function CoreSalesPage() {
             {/* ชี้หน้าจริงตั้งแต่ 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิดอยู่ แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/sales/new"
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#4669e5' }}>
+              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4165ed' }}>
               สร้าง
             </Link>
             <Link href="/core/pos"
-              className="text-[12.5px] font-semibold text-white rounded-full px-4 py-1.5"
-              style={{ background: '#4669e5' }}>
+              className="text-[16px] font-normal text-white rounded-full px-4 py-1.5"
+              style={{ background: '#4165ed' }}>
               สร้างอย่างง่าย
             </Link>
           </>
@@ -1294,7 +1294,7 @@ export default function CoreSalesPage() {
                         onChange={(v) => setPicked((old) => (v ? [...old, r.id] : old.filter((x) => x !== r.id)))} />
                     </td>
                     {/* ZORT เขียน "วันนี้/เมื่อวานนี้" ไม่ใช่วันที่ดิบ — อ่านเร็วกว่าตอนกวาดตา */}
-                    <td className={`${TD} whitespace-nowrap text-gray-500`} title={r.order_date}>
+                    <td className={`${TD} whitespace-nowrap`} title={r.order_date}>
                       {relDay(r.order_date)}
                     </td>
                     <td className={TD}>
@@ -1309,7 +1309,7 @@ export default function CoreSalesPage() {
                                กว้าง 194px เป็นคอลัมน์ที่กว้างที่สุดและ **ไม่มีเพดาน** ต่างจากคอลัมน์อื่น)
                              ZORT ตัดเลขใบลงสองบรรทัดจริง (เห็นในภาพ `261014KU6JWHD`/`0`) */}
                       <Link href={detailHref(r.id, i)} onClick={(e) => e.stopPropagation()}
-                        className="text-blue-600 font-medium hover:underline break-all">{r.number}</Link>
+                        className="text-[#337ab7] font-normal hover:underline break-all">{r.number}</Link>
                       {/* 🔴 **เลขที่ใบซ้ำกันข้ามร้านจริง** (ฝั่งท่อจับได้ 15 ก.ย. 2569)
                           z1 และ z2 เดินเลขคนละชุด ⇒ `SO-202503029` มีทั้งสองร้าน **คนละใบ คนละยอด**
                           (z1 ฿7,757 ค้างชำระ · z2 ฿450 จ่ายแล้ว) · ตัวกรองร้านตั้งต้นคือ "ทุกร้าน"
