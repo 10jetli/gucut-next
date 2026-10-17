@@ -153,18 +153,19 @@ export function BtnPrimary({ children, ...p }: React.ButtonHTMLAttributes<HTMLBu
   return (
     <button
       {...p}
-      className="text-[12.5px] font-semibold text-white rounded-full px-5 py-2 transition-opacity hover:opacity-90 disabled:opacity-50"
+      className="text-[16px] leading-6 font-normal text-white rounded-full px-5 py-[9px] transition-opacity hover:opacity-90 disabled:opacity-50"
       style={{ background: ZORT_BLUE }}
     >
       {children}
     </button>
   )
 }
+/* 📏 ZORT (วัด 17 ต.ค. 2569): ปุ่มหลัก Kanit 16 น้ำหนัก 400 ขาวบน #4165ed สูง 42 · ปุ่มรอง #868e96 บนพื้น #f1f3f5 สูง 42 */
 export function BtnGhost({ children, ...p }: React.ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       {...p}
-      className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-5 py-2 hover:bg-gray-50 transition-colors disabled:opacity-50"
+      className="text-[16px] leading-6 font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-5 py-[9px] hover:bg-[#e9ecef] transition-colors disabled:opacity-50"
     >
       {children}
     </button>

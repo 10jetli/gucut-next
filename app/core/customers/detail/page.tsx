@@ -23,7 +23,8 @@ import { SALE_STATUS, PAY_STATUS, PURCHASE_STATUS, CONTACT_TYPE, zortWord } from
 import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { PageHead, TH_KANIT, THR_KANIT, DL_CARD, DL_CARD_TITLE } from '@/components/zort'
+/* หัวการ์ดจอผู้ติดต่อของ ZORT = Boon 14/500 #3e3e3e (ไม่ใช่เทาแบบจอใบขาย · วัด 17 ต.ค. 2569) */
+import { PageHead, TH_KANIT, THR_KANIT, DL_CARD } from '@/components/zort'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
 interface Order {
@@ -207,7 +208,7 @@ function Inner() {
         <div className="grid gap-4 md:grid-cols-[320px_1fr]">
           {/* ── ข้อมูลติดต่อ ── */}
           <section className={DL_CARD}>
-            <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ข้อมูลติดต่อ</h2>
+            <h2 className="mb-2 font-['Boon',sans-serif] text-[14px] font-medium text-[#3e3e3e]">ข้อมูลติดต่อ</h2>
             {c ? (
               <table className="w-full text-[12.5px]">
                 <tbody>
@@ -245,7 +246,7 @@ function Inner() {
 
           {/* ── ประวัติการซื้อ ── */}
           <section className={DL_CARD}>
-            <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ประวัติการซื้อ</h2>
+            <h2 className="mb-2 font-['Boon',sans-serif] text-[14px] font-medium text-[#3e3e3e]">ประวัติการซื้อ</h2>
             <div className="mb-3 flex flex-wrap gap-4 text-[12.5px]">
               <div><span className="text-gray-500">จำนวนใบ </span><b>{o?.count ?? 0}</b></div>
               <div><span className="text-gray-500">ยอดรวม </span><b>{baht(o?.total)}</b> บาท</div>
@@ -261,7 +262,7 @@ function Inner() {
             {/* 🧺 ยอดขายรายสินค้า — กล่องเดียวกับ "ยอดขาย · รายสินค้า" ของ ZORT
                 ⚠️ ท่อส่งมา 20 อันดับแรก ⇒ ต้องเขียนกำกับว่าทั้งหมดมีกี่รายการ ไม่งั้นคนอ่านนึกว่าเท่านี้ */}
             {d?.products && (d.products.rows?.length ?? 0) > 0 && (
-              <div className="mb-3 rounded-md bg-white p-2.5">
+              <div className="mb-3 rounded-md bg-white p-5">
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
                   {/* แท็บเดียวกับ ZORT (รายสินค้า · รายหมวดหมู่) — ทั้งสองแท็บมาจากชุดข้อมูลเดียวกัน
                       ⇒ ตัวเลขสองแท็บบวกได้เท่ากัน ไม่ใช่คนละกติกา (กฎเรื่องแท็บข้อ 4) */}
