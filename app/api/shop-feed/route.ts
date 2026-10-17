@@ -19,9 +19,20 @@ import { NextResponse } from 'next/server'
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
+/** ที่อยู่หน้าร้านที่จะไปดึงข้อมูล — ตั้งทับได้ด้วย `GUCUT_SHOP_URL`
+ *  🔑 **ห้ามฝัง gucut.com ตายตัว** — เว็บทดสอบ (`test2.gucut.com`) จะยิงไปกินเครดิต
+ *     ของจริงโดยไม่มีใครรู้ ทั้งที่ตั้งใจซ้อมเพื่อ **ไม่** ให้เสียเครดิต
+ *     (ท่านประธานถามเรื่องนี้ตรง ๆ 17 ต.ค. 2569 — ตอนนั้นของยังฝังตายตัวอยู่)
+ *  🔑 "รันที่ไหน" ไม่ได้แปลว่า "ยิงไปที่ไหน" */
+const หน้าร้าน = (process.env.GUCUT_SHOP_URL || 'https://gucut.com').replace(/\/+$/, '')
+
+
 const แหล่ง: Record<string, string> = {
-  รุ่น: 'https://gucut.com/parts/models.json',
-  สินค้า: 'https://gucut.com/products.json',
+  รุ่น: `${หน้าร้าน}/parts/models.json`,
+  /* ⚠️ `products.json` เป็น **ฟังก์ชันของ Netlify** ⇒ เว็บทดสอบไม่มี (404)
+     ไม่เป็นไร — หน้าจับคู่ใช้คลังอะไหล่ (โดเมนเดียวกัน) เป็นแหล่งหลักอยู่แล้ว
+     ฟีดนี้เป็นแค่ตัวเสริมราคา/ลิงก์สินค้า */
+  สินค้า: `${หน้าร้าน}/products.json`,
 }
 
 export async function GET(req: Request) {

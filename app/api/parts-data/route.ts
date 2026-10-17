@@ -24,6 +24,13 @@ import { NextRequest, NextResponse } from 'next/server'
       ของที่คุมได้จริงคือ **หัวที่ท่อนี้ตอบ**
    🔑 กฎ: **คำตอบที่ขึ้นกับพารามิเตอร์ ห้ามตอบ `cache-control: public`**
       เว้นแต่พิสูจน์ได้ว่าชั้นที่เก็บแยกคำตอบตามพารามิเตอร์จริง — ที่นี่ไม่แยก */
+/** ที่อยู่หน้าร้านที่จะไปดึงข้อมูล — ตั้งทับได้ด้วย `GUCUT_SHOP_URL`
+ *  🔑 **ห้ามฝัง gucut.com ตายตัว** — เว็บทดสอบ (`test2.gucut.com`) จะยิงไปกินเครดิต
+ *     ของจริงโดยไม่มีใครรู้ ทั้งที่ตั้งใจซ้อมเพื่อ **ไม่** ให้เสียเครดิต
+ *     (ท่านประธานถามเรื่องนี้ตรง ๆ 17 ต.ค. 2569 — ตอนนั้นของยังฝังตายตัวอยู่)
+ *  🔑 "รันที่ไหน" ไม่ได้แปลว่า "ยิงไปที่ไหน" */
+const หน้าร้าน = (process.env.GUCUT_SHOP_URL || 'https://gucut.com').replace(/\/+$/, '')
+
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
@@ -36,7 +43,7 @@ export async function GET(req: NextRequest) {
   const รุ่น = ล้างรุ่น(req.nextUrl.searchParams.get('model'))
   if (!รุ่น) return NextResponse.json({ error: 'ต้องระบุ model' }, { status: 400 })
   try {
-    const r = await fetch(`https://gucut.com/parts/${รุ่น}.json`, { cache: 'no-store' })
+    const r = await fetch(`${หน้าร้าน}/parts/${รุ่น}.json`, { cache: 'no-store' })
     if (!r.ok) {
       /* 🔑 อ่านไม่ได้ ≠ ไม่มีอะไหล่ — ต้องตอบเป็นข้อผิดพลาด ไม่ใช่ก้อนว่าง
          ไม่งั้นจอจะขึ้นว่า "รุ่นนี้ยังไม่มีรายการอะไหล่" ทั้งที่ของมีอยู่ */
