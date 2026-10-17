@@ -341,6 +341,80 @@ export default function Page() {
     return ''
   }
 
+  const [งานOEM, setงานOEM] = useState('')
+
+  /** ดึงรหัสคู่มือของคู่ที่จับไว้แล้ว ไปเติมคอลัมน์ OEM ในคลังอะไหล่
+   *  ท่านประธานสั่ง 17 ต.ค. 2569 "ถ้าใส่รหัสร้านแล้ว ให้ดูด OEM ไปใส่ คลังอะไหล่"
+   *
+   *  🔴 **เขียนลงคลังคือทับทั้งก้อน ไม่มีประวัติย้อนกลับ** ⇒ ด่านสามชั้น ห้ามถอด
+   *     ① อ่านไม่ได้ ⇒ ไม่เขียนเลย (ไม่ใช่เขียนทับด้วยก้อนว่าง)
+   *     ② เติมเฉพาะช่องที่ว่าง ห้ามทับของเดิม + นับยืนยันก่อนส่ง
+   *     ③ เขียนเสร็จอ่านกลับมาเทียบ — `ok:true` ไม่ได้แปลว่าเขียนตามที่ส่ง
+   *  ⚠️ รหัสร้านหนึ่งตัวผูกได้หลายรหัสคู่มือ (ชิ้นเดียวใช้หลายรุ่น)
+   *     ⇒ ต่อด้วย " / " ตามรูปแบบที่ร้านใช้อยู่เองในคลัง ไม่ใช่เลือกมาตัวเดียว */
+  const ดึงOEMเข้าคลัง = useCallback(async () => {
+    setงานOEM('กำลังอ่านข้อมูล…')
+    try {
+      const st = await fetch('/api/catalog/state', { cache: 'no-store' }).then((r) => r.json())
+      if (!st || st.readFailed || !st.exists) throw new Error('อ่านสถานะคลังไม่ได้ — ไม่เขียนอะไรทั้งสิ้น')
+      const ovrเดิม: Record<string, any> = st.ovr || {}
+      const oemเดิม: Record<string, string> = {}
+      for (const [k, v] of Object.entries(ovrเดิม)) if (v && (v as any).oem) oemเดิม[k] = String((v as any).oem)
+
+      const ของsku: Record<string, string[]> = {}
+      for (const m of รุ่นทั้งหมด) {
+        const cur = await fetch(`/api/web/parts-map?model=${encodeURIComponent(m.id)}&_=${Date.now()}`,
+          { cache: 'no-store' }).then((r) => r.json()).catch(() => null)
+        for (const [k, v] of Object.entries((cur && cur.map) || {})) {
+          const sku = String(v || '').trim().toUpperCase()
+          /* ข้ามของที่ร้านเพิ่มเอง — คีย์ `+H1` ไม่ใช่รหัสคู่มือ เอาไปใส่ OEM ไม่ได้ */
+          if (!sku || k.startsWith('+')) continue
+          if (!ของsku[sku]) ของsku[sku] = []
+          if (!ของsku[sku].includes(k)) ของsku[sku].push(k)
+        }
+      }
+
+      const ovrใหม่: Record<string, any> = JSON.parse(JSON.stringify(ovrเดิม))
+      let เติม = 0
+      for (const [sku, รหัส] of Object.entries(ของsku)) {
+        if (String((ovrเดิม[sku] || {}).oem || '').trim()) continue
+        ovrใหม่[sku] = { ...(ovrใหม่[sku] || {}), oem: รหัส.join(' / ') }
+        เติม++
+      }
+      if (!เติม) { setงานOEM('คลังมี OEM ครบทุกตัวที่จับคู่ไว้แล้ว — ไม่มีอะไรต้องเติม'); return }
+
+      /* ด่าน ② — ของเดิมต้องไม่ถูกแตะแม้แต่ตัวเดียว */
+      let แตะ = 0
+      for (const [k, v] of Object.entries(oemเดิม)) if (String((ovrใหม่[k] || {}).oem || '') !== v) แตะ++
+      if (แตะ) throw new Error(`หยุด: การคำนวณจะทับ OEM เดิม ${แตะ} ตัว — ไม่เขียน`)
+
+      setงานOEM(`กำลังเขียน ${เติม} ตัว…`)
+      const r = await fetch('/api/catalog/state', {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          ovr: ovrใหม่, catMap: st.catMap || {}, catNew: st.catNew || [], facs: st.facs || [],
+          catDone: st.catDone || [], picked: st.picked || [], added: st.added || [],
+        }),
+      })
+      const d = await r.json().catch(() => null)
+      if (!r.ok || !d || d.ok !== true) throw new Error(String((d && d.error) || `HTTP ${r.status}`))
+
+      /* ด่าน ③ — อ่านกลับมาเทียบ */
+      const ยืนยัน = await fetch(`/api/catalog/state?_=${Date.now()}`, { cache: 'no-store' }).then((r) => r.json())
+      const o2: Record<string, any> = (ยืนยัน && ยืนยัน.ovr) || {}
+      let ไม่ตรง = 0
+      for (const [sku, v] of Object.entries(ovrใหม่)) {
+        const ควร = String((v as any).oem || '')
+        if (ควร && String((o2[sku] || {}).oem || '') !== ควร) ไม่ตรง++
+      }
+      setงานOEM(ไม่ตรง
+        ? `⚠ เขียนแล้วแต่ตรวจกลับไม่ตรง ${ไม่ตรง} ตัว — เปิดคลังอะไหล่ดูก่อนทำซ้ำ`
+        : `✅ เติม OEM ให้คลังอะไหล่ ${เติม} ตัว · ตรวจกลับตรงครบ`)
+    } catch (e) {
+      setงานOEM(`🔴 ${e instanceof Error ? e.message : 'ทำไม่สำเร็จ'}`)
+    }
+  }, [รุ่นทั้งหมด])
+
   let กลุ่มก่อนหน้า = ''
   return (
     <div className="p-4 md:p-6">
@@ -498,10 +572,24 @@ export default function Page() {
       <PageHead
         title="จับคู่รหัสอะไหล่"
         summary="รหัสในคู่มือ STIHL → รหัสสินค้าของร้าน · พิมพ์แล้วกด Enter เพื่อไปช่องว่างถัดไป"
-        actions={<BtnGhost onClick={() => void โหลด(รุ่น)}>ดึงข้อมูลใหม่</BtnGhost>}
+        actions={
+          <span className="flex items-center gap-2">
+            {/* ⇢ ท่านประธานสั่ง 17 ต.ค. 2569 "ถ้าใส่รหัสร้านแล้ว ให้ดูด OEM ไปใส่ คลังอะไหล่
+                จะได้เชื่อมกัน 3 แห่ง" · กดซ้ำได้เพราะจับคู่เพิ่มทุกวัน */}
+            <BtnGhost onClick={() => void ดึงOEMเข้าคลัง()}>⇢ ดึง OEM เข้าคลังอะไหล่</BtnGhost>
+            <BtnGhost onClick={() => void โหลด(รุ่น)}>ดึงข้อมูลใหม่</BtnGhost>
+          </span>
+        }
       />
 
       {err && <ErrorBox>{err}</ErrorBox>}
+
+      {/* ⚠️ ผลของปุ่มดึง OEM ต้องเห็นบนจอ — งานที่เขียนข้อมูลแล้วเงียบ คือที่ที่ความผิดพลาดสะสม */}
+      {งานOEM && (
+        <div className="mt-3 rounded-md border border-gray-300 bg-white px-3 py-2 text-[12.5px]">
+          {งานOEM}
+        </div>
+      )}
 
       {/* 🔴 **ของที่ใช้ทางถอยอยู่ ต้องเห็นบนจอ** — ไม่งั้นมันคือของพังที่หน้าตาปกติ
           เขียนให้รู้ว่า "หายไปไหน" ด้วย ไม่ใช่แค่ "ผิดพลาด" ลอย ๆ */}
