@@ -23,7 +23,8 @@
  *    ⇒ จอนี้จึงต้องอ่านออกทั้งตอนที่เส้นยังไม่มี และตอนที่มีแล้ว
  */
 import { useEffect, useState } from 'react'
-import { PageHead } from '@/components/zort'
+/* หัวตาราง/ช่องใช้ชิ้นกลางแบบ ZORT (Lato 12 #868e96 / Boon 14 #3e3e3e) — เดิมประกาศสำเนาในไฟล์ (17 ต.ค. 2569) */
+import { PageHead, TH, TD } from '@/components/zort'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 
@@ -61,8 +62,6 @@ function เวลาไทย(iso?: string): string {
   return `${p(d.getUTCDate())}/${p(d.getUTCMonth() + 1)} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())}:${p(d.getUTCSeconds())}`
 }
 
-const TH = 'px-3 py-2 text-left font-semibold text-gray-600'
-const TD = 'px-3 py-2 align-top'
 
 export default function AdminLogPage() {
   const [d, setD] = useState<Resp | null>(null)

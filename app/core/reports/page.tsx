@@ -347,12 +347,12 @@ export default function CoreProductReportPage() {
                 whErr && !whs
                   ? <p className="text-[12.5px] text-red-700 py-6 text-center">⚠️ ดึงมูลค่ารายคลังไม่ได้: {whErr}</p>
                   : (
-                    <table className="w-full text-[12.5px]">
+                    <table className="w-full text-[14px] text-[#3e3e3e]">
                       <thead>
-                        <tr className="text-gray-500 border-b border-gray-200">
-                          <th className="text-left font-medium py-1.5">คลังสินค้า</th>
-                          <th className="text-right font-medium">มูลค่าคงเหลือ (บาท)</th>
-                          <th className="text-right font-medium">สัดส่วน</th>
+                        <tr className="border-b border-gray-200">
+                          <th className={TH_KANIT}>คลังสินค้า</th>
+                          <th className={THR_KANIT}>มูลค่าคงเหลือ (บาท)</th>
+                          <th className={THR_KANIT}>สัดส่วน</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -387,12 +387,12 @@ export default function CoreProductReportPage() {
                 catErr && !cat
                   ? <p className="text-[12.5px] text-red-700 py-6 text-center">⚠️ ดึงมูลค่าตามหมวดไม่ได้: {catErr}</p>
                   : (
-                    <table className="w-full text-[12.5px]">
+                    <table className="w-full text-[14px] text-[#3e3e3e]">
                       <thead>
-                        <tr className="text-gray-500 border-b border-gray-200">
-                          <th className="text-left font-medium py-1.5">หมวดหมู่</th>
-                          <th className="text-right font-medium">รหัสสินค้า</th>
-                          <th className="text-right font-medium">มูลค่าคงเหลือ (บาท)</th>
+                        <tr className="border-b border-gray-200">
+                          <th className={TH_KANIT}>หมวดหมู่</th>
+                          <th className={THR_KANIT}>รหัสสินค้า</th>
+                          <th className={THR_KANIT}>มูลค่าคงเหลือ (บาท)</th>
                         </tr>
                       </thead>
                       <tbody>

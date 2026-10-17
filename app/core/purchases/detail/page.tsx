@@ -191,13 +191,13 @@ function ReceiveBox({ number, store, lines }: { number: string; store?: string |
           </div>
           {mode === 'partial' && (
             <div className="mt-2 overflow-x-auto">
-              <table className="w-full text-[12.5px]">
+              <table className="w-full text-[14px] text-[#3e3e3e]">
                 <thead>
-                  <tr className="border-b border-gray-200 text-left text-gray-500">
-                    <th className="py-1 pr-2 font-medium">รหัส</th>
-                    <th className="py-1 pr-2 font-medium">ชื่อสินค้า</th>
-                    <th className="py-1 pr-2 font-medium text-right">สั่งไว้ (กระจก)</th>
-                    <th className="py-1 font-medium text-right" style={{ width: 130 }}>นับได้</th>
+                  <tr className="border-b border-gray-200 text-left">
+                    <th className={TH}>รหัส</th>
+                    <th className={TH}>ชื่อสินค้า</th>
+                    <th className={THR}>สั่งไว้ (กระจก)</th>
+                    <th className={THR} style={{ width: 130 }}>นับได้</th>
                   </tr>
                 </thead>
                 <tbody>
