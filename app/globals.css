@@ -8,6 +8,7 @@
      (ไม่มีใน Google Fonts) · ใบอนุญาตวางคู่ไฟล์ที่ public/fonts/boon/OFL.txt ตามเงื่อนไข OFL
    · Kanit / Lato: Google Fonts (โหลดใน app/layout.tsx) · Lato ไม่มีตัวไทย ⇒ หัวคอลัมน์ภาษาไทยถอยไป Boon เหมือน ZORT
    🚫 เฉพาะหลังร้าน (gucut-next) — หน้าร้าน gucut-web ยังใช้ฟอนต์ระบบตามกติกาเดิม (ท่านอนุมัติเฉพาะหลังร้าน) */
+@font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-Light.woff2') format('woff2'); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
 @font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-SemiBold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }

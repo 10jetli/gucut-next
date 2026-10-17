@@ -28,10 +28,13 @@ const isStaticLink = (href: string) => href.startsWith('/catalog/')
 // ⚠️ **ทั้งแถบเป็นน้ำเงินเข้ม** ไม่ใช่พื้นขาว — เห็นชัดจากภาพความละเอียดสูง 2 ก.ย. 2569
 //    รอบก่อนผมทำพื้นขาวแล้วให้เฉพาะกลุ่มที่กางเป็นน้ำเงิน ซึ่งผิดทั้งคู่
 //    บทเรียนซ้ำรอบที่สอง: **สีต้องดูจากภาพที่ชัดพอ** ภาพย่อทั้งหน้าอ่านสีพื้นไม่ได้
-const BAR_BG = '#222a57'        // พื้นแถบทั้งแถบ — **วัดจากพิกเซลภาพจริง** (พบ 73%)
+/* 📏 **วัดจาก DOM ของ ZORT 17 ต.ค. 2569** (computed style ที่ 1280px · แทนค่าที่เคยวัดจากพิกเซลภาพ)
+   พื้น rgb(34,40,90) · หัวกลุ่ม Kanit 16 น้ำหนัก 300 สี #ced4da สูง 41 (กลุ่มที่กาง = 400 สีขาว)
+   ลูก Boon 14 น้ำหนัก 300 สีขาว สูง 38 · ลูกที่เลือก พื้น rgb(65,101,237) */
+const BAR_BG = '#22285a'        // พื้นแถบทั้งแถบ
 const GROUP_LINE = '#2f6fe0'    // เส้นสว่างคาดใต้หัวข้อกลุ่มที่กางอยู่
-const CHILD_ACTIVE = '#4669e5'  // ลูกที่เลือกอยู่ — **วัดจากพิกเซลภาพจริง** (พบ 90% ในแถบที่เลือก)
-const ITEM_ACTIVE = '#4669e5'   // เมนูเดี่ยวที่เลือกอยู่ — ZORT ใช้สีเดียวกับลูกที่เลือก
+const CHILD_ACTIVE = '#4165ed'  // ลูกที่เลือกอยู่
+const ITEM_ACTIVE = '#4165ed'   // เมนูเดี่ยวที่เลือกอยู่ — ZORT ใช้สีเดียวกับลูกที่เลือก
 
 interface SidebarProps {
   navItems: NavItem[]
@@ -101,9 +104,9 @@ export default function Sidebar({
                   <button
                     onClick={() => toggleGroup(item.label)}
                     title={item.label}
-                    className={`w-full flex items-center gap-2.5 py-3 text-[15px] transition-colors ${
+                    className={`w-full flex items-center gap-2.5 py-[8.5px] text-[16px] leading-6 transition-colors ${
                       collapsed ? 'justify-center px-0' : 'px-3'
-                    } ${open ? 'text-white font-bold' : 'text-white/80 hover:bg-white/10'}`}
+                    } ${open ? 'text-white font-normal' : 'text-[#ced4da] font-extralight hover:bg-white/10'}`}
                     style={open ? { borderBottom: `2px solid ${GROUP_LINE}` } : undefined} aria-expanded={open}
                   >
                     <span className="text-[16px] w-5 text-center shrink-0">{item.icon}</span>
@@ -125,12 +128,12 @@ export default function Sidebar({
                         // ⚠️ เมนูที่ยังไม่ได้ทำเนื้อหา (soon) แสดง **จางกว่า** ของที่ใช้ได้จริง
                         //    เจ้าของร้านสั่งให้เมนูครบก่อน เนื้อหาใส่ทีหลัง — ถ้าดูไม่ออกว่าอันไหนพร้อม
                         //    คนใช้จะเสียเวลากดหาทีละอัน
-                        const cls = `flex items-center gap-1.5 py-3 pl-10 pr-3 text-[14px] transition-colors ${
+                        const cls = `flex items-center gap-1.5 py-[7px] pl-10 pr-3 text-[14px] leading-6 font-light transition-colors ${
                           active
-                            ? 'text-white font-semibold'
+                            ? 'text-white'
                             : c.soon
                               ? 'text-white/40 hover:bg-white/5'
-                              : 'text-white/85 hover:bg-white/10'
+                              : 'text-white hover:bg-white/10'
                         }`
                         const style = active ? { background: CHILD_ACTIVE } : undefined
                         // จุดเล็ก ๆ ท้ายชื่อ = ยังไม่ได้ทำ (คนตาบอดสีก็แยกออก ไม่ได้พึ่งสีอย่างเดียว)

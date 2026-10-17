@@ -41,11 +41,14 @@ export default function TopBar({ mainMl, anim }: TopBarProps) {
   const company = useCompanyName()
   return (
     <header
-      className={`hidden md:flex fixed top-0 ${mainMl} right-0 h-[52px] bg-white border-b border-gray-200 items-center justify-between px-5 z-20 ${anim}`}
+      /* 🔴 ต้องมี left-0 — ของเดิมมีแค่ right-0 ⇒ แถบหดเท่าเนื้อหาแล้วไปเกาะขวา (วัดได้ x=870 กว้าง 401 ที่จอ 1280)
+         📏 ZORT (วัด DOM 17 ต.ค. 2569): แถบบนเต็มความกว้าง · ชื่อบริษัทเริ่ม x=258 = Kanit 16 น้ำหนัก 400 สี #3e3e3e
+         ของเรา: margin 206 + pl 27 + โลโก้ 17 + ช่อง 8 = 258 */
+      className={`hidden md:flex fixed top-0 left-0 ${mainMl} right-0 h-[52px] bg-white border-b border-gray-200 items-center justify-between pl-[27px] pr-5 z-20 ${anim}`}
     >
       <div className="flex items-center gap-2 min-w-0">
         <StMark size={17} />
-        <p className="text-[12.5px] font-bold text-gray-800 truncate">{company}</p>
+        <p className="font-['Kanit','Boon',sans-serif] text-[16px] font-normal text-[#3e3e3e] truncate">{company}</p>
       </div>
 
       <div className="flex items-center gap-1.5">
