@@ -128,7 +128,7 @@ function StatusCard({ icon, label, value, tone }: {
 }) {
   const color = tone === 'green' ? 'text-emerald-600' : tone === 'orange' ? 'text-orange-500' : 'text-gray-800'
   return (
-    <div className="bg-white border border-gray-200 rounded-md px-4 py-3.5 flex items-center gap-3">
+    <div className="bg-white rounded-md p-5 flex items-center gap-3">
       <span className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-[16px] shrink-0">{icon}</span>
       <div className="ml-auto text-right min-w-0">
         <p className="text-[11.5px] text-gray-400">{label}</p>
