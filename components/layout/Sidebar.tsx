@@ -107,7 +107,7 @@ export default function Sidebar({
                     className={`w-full flex items-center gap-2.5 py-[8.5px] text-[16px] leading-6 transition-colors ${
                       collapsed ? 'justify-center px-0' : 'px-3'
                     } ${open ? 'text-white font-normal' : 'text-[#ced4da] font-extralight hover:bg-white/10'}`}
-                    style={open ? { borderBottom: `2px solid ${GROUP_LINE}` } : undefined} aria-expanded={open}
+                    style={open ? { borderBottom: `2px solid ${GROUP_LINE}`, paddingBottom: '6.5px' } /* เส้น 2px กินความสูง ⇒ ลด padding ล่างให้รวม 41 เท่า ZORT */ : undefined} aria-expanded={open}
                   >
                     <span className="text-[16px] w-5 text-center shrink-0">{item.icon}</span>
                     {!collapsed && (

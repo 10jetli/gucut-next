@@ -84,8 +84,13 @@ export default function AppShell({ children, role }: AppShellProps) {
     setOpenGroups((prev) => saveGroups({ ...prev, [label]: !prev[label] }))
   }
 
+  /* 🔴 เลือกตัวที่เจาะจงที่สุดเท่านั้น — ของเดิมจับด้วยคำนำหน้าอย่างเดียว ⇒ "โครงการแก่น" (/core)
+     ติดสีน้ำเงินพร้อม "ดูรายการขาย" (/core/sales) ทุกจอใต้ /core (วัดเว็บจริง 17 ต.ค. 2569 เจอ 2 แถบพร้อมกัน)
+     ⇒ ตรงคำนำหน้าได้ก็ต่อเมื่อไม่มีลิงก์อื่นในเมนูที่ยาวกว่าและตรงด้วย */
+  const allHrefs = navItems.flatMap((i) => [i.href, ...(i.children ?? []).map((c) => c.href)]).filter((h): h is string => !!h)
+  const ตรง = (href: string) => (href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/'))
   const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(href + '/')
+    ตรง(href) && (pathname === href || !allHrefs.some((h) => h.length > href.length && ตรง(h)))
 
   /* 📏 **แถบเมนู 200px — วัดจาก DOM ของ ZORT ตรง ๆ ไม่ใช่จากภาพ** (15 ต.ค. 2569)
      ของจริงที่วัดได้: รายการในเมนูของ ZORT `x=0 กว้าง=200` (ยืนยัน 2 จอ)
