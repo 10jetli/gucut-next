@@ -273,7 +273,7 @@ export default function Page() {
           เนื้อหาไล่มาจากของจริงในโค้ด ไม่ได้เขียนตามที่เดา (ที่มาอยู่ในคอมเมนต์ของ commit)
           ⚠️ บรรทัดสรุปต้องเห็นตลอด ส่วนละเอียดพับไว้ — หน้านี้มีหลายร้อยแถว
              กล่องอธิบายที่กางค้างจะดันงานหลักตกจอ (บทเรียนเดียวกับรูปผัง) */}
-      <details className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-[12.5px]">
+      <details open className="mt-3 rounded-md border border-sky-200 bg-sky-50 px-3 py-2 text-[12.5px]">
         <summary className="cursor-pointer select-none text-sky-900">
           <b>สามหน้านี้ทำงานต่อกันเป็นสายเดียว</b>
           <span className="text-sky-800">
@@ -282,6 +282,92 @@ export default function Page() {
         </summary>
 
         <div className="mt-2 space-y-2 text-sky-950 leading-relaxed">
+        {/* 🖼️ **ภาพอธิบายระบบ** — ท่านประธานวาดมือมาแล้วสั่ง "เน้นภาพให้เข้าใจง่ายๆแบบนี้"
+            ยึดผังที่ท่านวาด: เส้นแนวนอนแบ่งสองชั้น
+              ชั้นบน = เชื่อมอัตโนมัติด้วย OEM/รหัสโรงงาน · ชั้นล่าง = จับคู่ด้วยมือ
+            🔑 ท่านสรุประบบได้ตรงกว่าข้อความที่ผมเขียนไว้ตอนแรก — ความต่างที่สำคัญจริง
+               ไม่ใช่ "หน้าไหนต่อหน้าไหน" แต่คือ **"รุ่นไหนเชื่อมเองได้ รุ่นไหนต้องกรอกมือ"**
+            ⚠️ วาดด้วย SVG ในหน้าเลย ไม่โหลดรูปจากไหน — ไม่มีไฟล์ให้หาย ไม่มีคำขอเพิ่ม */}
+        <figure className="mt-2 mb-3">
+          <svg viewBox="0 0 760 290" role="img"
+               aria-label="ผังการทำงาน: รุ่นที่ผังใช้รหัส OEM เชื่อมกับคลังอะไหล่อัตโนมัติ ส่วนรุ่น STIHL ต้องกรอกรหัสร้านด้วยมือ ทั้งสองทางไปจบที่หน้าลูกค้าให้กดซื้อได้"
+               className="w-full h-auto max-w-[760px]">
+            <defs>
+              <marker id="หัวลูกศร" viewBox="0 0 10 10" refX="9" refY="5"
+                      markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor" />
+              </marker>
+            </defs>
+
+            {/* ── ชั้นบน: เชื่อมอัตโนมัติ ── */}
+            <text x="8" y="20" fontSize="13" fontWeight="700" fill="#047857">
+              เชื่อมอัตโนมัติ — รุ่นที่ผังใช้รหัสโรงงาน (7800 TB · MINI · 7800 SUPER-S)
+            </text>
+
+            <rect x="8" y="32" width="196" height="64" rx="8"
+                  fill="#ecfdf5" stroke="#10b981" strokeWidth="1.5" />
+            <text x="106" y="54" fontSize="13" fontWeight="700" textAnchor="middle" fill="#064e3b">คลังอะไหล่</text>
+            <text x="106" y="71" fontSize="11" textAnchor="middle" fill="#047857">1.gucut.com/catalog</text>
+            <text x="106" y="88" fontSize="11" textAnchor="middle" fill="#047857">รหัสร้าน · OEM · โรงงาน</text>
+
+            <line x1="208" y1="64" x2="300" y2="64" stroke="#10b981" strokeWidth="2"
+                  markerEnd="url(#หัวลูกศร)" color="#10b981" />
+            <text x="254" y="56" fontSize="11" fontWeight="700" textAnchor="middle" fill="#047857">รหัส OEM</text>
+            <text x="254" y="82" fontSize="11" textAnchor="middle" fill="#047857">ตรงกัน = จับคู่เอง</text>
+
+            <rect x="304" y="32" width="186" height="64" rx="8"
+                  fill="#ffffff" stroke="#94a3b8" strokeWidth="1.5" />
+            <text x="397" y="54" fontSize="13" fontWeight="700" textAnchor="middle" fill="#0f172a">ผังอะไหล่</text>
+            <text x="397" y="71" fontSize="11" textAnchor="middle" fill="#475569">gucut.com/parts</text>
+            <text x="397" y="88" fontSize="11" textAnchor="middle" fill="#475569">เลขในภาพ + รหัสคู่มือ</text>
+
+            <line x1="494" y1="110" x2="560" y2="134" stroke="#64748b" strokeWidth="2"
+                  markerEnd="url(#หัวลูกศร)" color="#64748b" />
+
+            {/* ── เส้นแบ่งสองชั้น (ตามที่ท่านวาด) ── */}
+            <line x1="0" y1="124" x2="520" y2="124" stroke="#cbd5e1" strokeWidth="1.5" strokeDasharray="6 5" />
+
+            {/* ── ชั้นล่าง: จับคู่ด้วยมือ ── */}
+            <text x="8" y="150" fontSize="13" fontWeight="700" fill="#b45309">
+              จับคู่ด้วยมือ — รุ่น STIHL (ผังใช้รหัส STIHL ที่คลังไม่มี)
+            </text>
+
+            <rect x="8" y="162" width="196" height="64" rx="8"
+                  fill="#fffbeb" stroke="#f59e0b" strokeWidth="1.5" />
+            <text x="106" y="184" fontSize="13" fontWeight="700" textAnchor="middle" fill="#78350f">หน้าจับคู่ (หน้านี้)</text>
+            <text x="106" y="201" fontSize="11" textAnchor="middle" fill="#b45309">/core/parts-map</text>
+            <text x="106" y="218" fontSize="11" textAnchor="middle" fill="#b45309">คนพิมพ์รหัสร้านทีละชิ้น</text>
+
+            <line x1="208" y1="194" x2="300" y2="194" stroke="#f59e0b" strokeWidth="2"
+                  markerEnd="url(#หัวลูกศร)" color="#f59e0b" />
+            <text x="254" y="186" fontSize="11" fontWeight="700" textAnchor="middle" fill="#b45309">กรอกรหัสร้าน</text>
+            <text x="254" y="212" fontSize="11" textAnchor="middle" fill="#b45309">บันทึกทันที</text>
+
+            <rect x="304" y="162" width="186" height="64" rx="8"
+                  fill="#ffffff" stroke="#94a3b8" strokeWidth="1.5" />
+            <text x="397" y="190" fontSize="13" fontWeight="700" textAnchor="middle" fill="#0f172a">ตารางจับคู่</text>
+            <text x="397" y="210" fontSize="11" textAnchor="middle" fill="#475569">รหัสคู่มือ → รหัสร้าน</text>
+
+            <line x1="494" y1="180" x2="560" y2="160" stroke="#64748b" strokeWidth="2"
+                  markerEnd="url(#หัวลูกศร)" color="#64748b" />
+
+            {/* ── ปลายทางเดียวกันทั้งสองทาง ── */}
+            <rect x="564" y="104" width="188" height="86" rx="8"
+                  fill="#eff6ff" stroke="#3b82f6" strokeWidth="1.5" />
+            <text x="658" y="128" fontSize="13" fontWeight="700" textAnchor="middle" fill="#1e3a8a">หน้าลูกค้า</text>
+            <text x="658" y="146" fontSize="11" textAnchor="middle" fill="#1d4ed8">gucut.com/parts/&lt;รุ่น&gt;</text>
+            <text x="658" y="166" fontSize="11" textAnchor="middle" fill="#1d4ed8">แตะเลขในผัง →</text>
+            <text x="658" y="182" fontSize="11" fontWeight="700" textAnchor="middle" fill="#1d4ed8">ราคา · มีของไหม · ซื้อได้</text>
+
+            <text x="380" y="262" fontSize="12" fontWeight="700" textAnchor="middle" fill="#9a3412">
+              ชิ้นที่ยังไม่จับคู่ = ลูกค้าเห็นแค่ชื่ออะไหล่ กดซื้อไม่ได้
+            </text>
+            <text x="380" y="280" fontSize="11" textAnchor="middle" fill="#7c2d12">
+              งานในหน้านี้คือสิ่งเดียวที่เปลี่ยน &quot;ผังอะไหล่&quot; ให้กลายเป็น &quot;ของที่ขายได้&quot;
+            </text>
+          </svg>
+        </figure>
+
           <p>
             <b>1 · คลังอะไหล่</b> <code>1.gucut.com/catalog</code> — ตอบว่า <b>&quot;ร้านมีอะไรบ้าง&quot;</b>
             {' '}รหัสร้าน (SKU) · ชื่อ · รหัส OEM · โรงงาน · สต็อก · รูป
