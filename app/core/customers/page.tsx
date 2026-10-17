@@ -193,18 +193,8 @@ export default function CoreContactsPage() {
                 {typeof data.total === 'number'
                   ? <>จำนวน {fmtNum(data.total)} รายการ</>
                   : <>ต้องพิมพ์คำค้นก่อนถึงจะดูส่วนนี้ได้</>}
-                {/* ⚠️ **ท่อไม่ส่งเลขมา ≠ ไม่มีใครมีอีเมล** — เดิมเขียน `?? 0`
-                    ถ้าท่อรุ่นเก่าไม่มีคีย์นั้น จอจะประกาศว่า "มีอีเมล 0" เป็นข้อเท็จจริง
-                    ทั้งที่แปลว่า "ไม่รู้" ⇒ คนอ่านอาจสั่งงานจากเลขนั้น (เช่น เลิกทำเรื่องอีเมล)
-                    ⇒ ไม่รู้ต้องเขียนว่าไม่รู้ · เขียนเลขได้เฉพาะตอนมีเลขจริง */}
-                {(typeof data.withPhone === 'number' || typeof data.withEmail === 'number'
-                  || typeof data.withTax === 'number') && (
-                  <span className="text-gray-400">
-                    {' '}· มีเบอร์ {typeof data.withPhone === 'number' ? fmtNum(data.withPhone) : 'ไม่รู้'}
-                    {' '}· มีอีเมล {typeof data.withEmail === 'number' ? fmtNum(data.withEmail) : 'ไม่รู้'}
-                    {' '}· มีเลขผู้เสียภาษี {typeof data.withTax === 'number' ? fmtNum(data.withTax) : 'ไม่รู้'}
-                  </span>
-                )}
+                {/* 📐 17 ต.ค. 2569: ตัวนับ มีเบอร์/มีอีเมล/มีเลขผู้เสียภาษี ย้ายไปใต้ตาราง — ZORT บรรทัดนี้มีแค่ "จำนวน N รายการ"
+                    (อ่านหัวจอ /Contact/list ทั้งแถว · กติกาท่านประธาน 3 ก.ย.: ของที่เราเพิ่มเองไม่อยู่บนบรรทัดสรุป) */}
               </>
             )
             : 'กำลังโหลด…'
@@ -612,6 +602,23 @@ export default function CoreContactsPage() {
             })()}
           </div>
 
+          {data && !data.skip && (
+            <>
+            {/* ⚠️ **ท่อไม่ส่งเลขมา ≠ ไม่มีใครมีอีเมล** — เดิมเขียน `?? 0`
+                ถ้าท่อรุ่นเก่าไม่มีคีย์นั้น จอจะประกาศว่า "มีอีเมล 0" เป็นข้อเท็จจริง
+                ทั้งที่แปลว่า "ไม่รู้" ⇒ คนอ่านอาจสั่งงานจากเลขนั้น (เช่น เลิกทำเรื่องอีเมล)
+                ⇒ ไม่รู้ต้องเขียนว่าไม่รู้ · เขียนเลขได้เฉพาะตอนมีเลขจริง */}
+            {(typeof data.withPhone === 'number' || typeof data.withEmail === 'number'
+              || typeof data.withTax === 'number') && (
+              <p className="text-[12.5px] text-gray-500 mt-3">
+              <b>ข้อมูลเพิ่มเติม (ZORT ไม่มีส่วนนี้):</b>{" "}
+                มีเบอร์ {typeof data.withPhone === 'number' ? fmtNum(data.withPhone) : 'ไม่รู้'}
+                {' '}· มีอีเมล {typeof data.withEmail === 'number' ? fmtNum(data.withEmail) : 'ไม่รู้'}
+                {' '}· มีเลขผู้เสียภาษี {typeof data.withTax === 'number' ? fmtNum(data.withTax) : 'ไม่รู้'}
+              </p>
+            )}
+            </>
+          )}
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             เลขประจำตัวผู้เสียภาษี<b>ถูกปิดบางส่วนมาจากเซิร์ฟเวอร์</b> (เห็น 4 ตัวท้าย) —
             จอนี้เห็นเลขเต็มไม่ได้เลยแม้แต่ในหน่วยความจำของเบราว์เซอร์ ·
