@@ -21,7 +21,7 @@ import { reconcileOrder } from '@/lib/order-money'
 import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { Pill, toneOfStatus, TH, THR, TD, TDR, ZORT_BLUE, thaiDate, RowMenu } from '@/components/zort'
+import { Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu } from '@/components/zort'
 
 interface Order {
   id: string; source: string; number: string; channel: string
@@ -97,11 +97,12 @@ function Card({ title, icon, children, className = '' }: {
   title?: string; icon?: string; children: React.ReactNode; className?: string
 }) {
   return (
-    <div className={`bg-white border border-gray-200 rounded-md ${className}`}>
+    /* 📏 ZORT (วัด /Sell/Details 17 ต.ค. 2569): การ์ดพื้นขาว ไม่มีขอบ มุม 6 · หัวการ์ด Boon 14 น้ำหนัก 500 #868e96 */
+    <div className={`bg-white rounded-md ${className}`}>
       {title && (
         <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
           {icon && <span className="text-[14px]">{icon}</span>}
-          <p className="text-[14px] font-bold text-gray-800">{title}</p>
+          <p className="text-[14px] font-medium text-[#868e96]">{title}</p>
         </div>
       )}
       {children}
@@ -113,8 +114,9 @@ function Card({ title, icon, children, className = '' }: {
 function Field({ label, value, muted }: { label: string; value: React.ReactNode; muted?: boolean }) {
   return (
     <div className="flex gap-4 py-1.5">
-      <span className="text-[12.5px] text-gray-500 w-[130px] shrink-0">{label}</span>
-      <span className={`text-[12.5px] ${muted ? 'text-gray-400 italic' : 'text-gray-800'} break-words min-w-0`}>
+      {/* 📏 ZORT ป้าย Boon 16 #868e96 · ค่า Boon 16 #3e3e3e */}
+      <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{label}</span>
+      <span className={`text-[16px] ${muted ? 'text-gray-400 italic' : 'text-[#3e3e3e]'} break-words min-w-0`}>
         {value}
       </span>
     </div>
@@ -268,7 +270,7 @@ function DetailInner() {
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
           <Link href={backHref} className="text-[12.5px] text-blue-600 hover:underline">‹ รายการขาย</Link>
-          <h1 className="text-[26px] leading-tight font-bold text-gray-900 tracking-tight mt-0.5">
+          <h1 className="text-[30px] leading-[30px] font-medium text-[#3e3e3e] mt-0.5">
             รายละเอียดรายการขาย
           </h1>
           {order && (
@@ -455,7 +457,7 @@ function DetailInner() {
                   )}
                   {items.map((it, i) => (
                     <tr key={it.line} className="border-b border-gray-100 last:border-0">
-                      <td className={`${TD} text-gray-400`}>{i + 1}</td>
+                      <td className={TD_NO}>{i + 1}</td>
                       <td className={`${TD} whitespace-nowrap`}>{it.sku || '—'}</td>
                       <td className={TD}>
                         {/* รายการในใบขายกดไปดูสินค้าได้ — ปลายทางมีจริงแล้ว */}

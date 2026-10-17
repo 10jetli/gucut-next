@@ -487,7 +487,8 @@ export function RowMenu({ items, label }: {
         ? (
           <button type="button" aria-expanded={open}
             onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
-            className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
+            /* 📏 ZORT แถบปุ่มหัวจอรายละเอียด (วัด /Sell/Details 17 ต.ค. 2569): Kanit 14 #3e3e3e ขอบ #adb5bd มุม 4 สูง 39 */
+            className="text-[14px] leading-[21px] text-[#3e3e3e] bg-white border border-[#adb5bd] rounded px-3 py-2 hover:bg-gray-50">
             {label} ▾
           </button>
         )
