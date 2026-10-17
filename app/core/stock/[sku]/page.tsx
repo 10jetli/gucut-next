@@ -28,7 +28,7 @@ import type { คำตอบที่อาจถูกบีบ } from '@/lib/
 import { type ที่มาเลขสต็อก, type แผนที่ป้ายที่มา } from '@/lib/stock-source'
 import { findOrderId } from '@/lib/open-order'
 import {
-  PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu,
+  PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
 
 interface Row {
@@ -378,11 +378,11 @@ export default function ProductDetailPage() {
                  ลบกับแก้อยู่หน้าเดียวกัน เพราะต้องถาม id ของ ZORT ก่อนเหมือนกัน */}
           <div className="flex flex-wrap items-center gap-2 -mt-1 mb-4">
             <Link href={`/core/stock/${encodeURIComponent(sku)}/edit`}
-              className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
+              className={DETAIL_BTN}>
               แก้ไข
             </Link>
             <Link href={`/core/stock/${encodeURIComponent(sku)}/edit#delete`}
-              className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
+              className={DETAIL_BTN}>
               ลบ
             </Link>
             {/* คำสั่ง ▾ — ZORT /Product/Details มีแค่ ซื้อสินค้า · ขายสินค้า · โอนสินค้า (อ่านเมนูจาก HTML 16 ต.ค. 2569)
@@ -404,7 +404,7 @@ export default function ProductDetailPage() {
               ปรับจำนวน
             </span>
             <Link href={`/core/stock/print?sku=${encodeURIComponent(sku)}`}
-              className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
+              className={DETAIL_BTN}>
               พิมพ์เอกสาร
             </Link>
             {/* อัพเดทช่องทางอื่น ▾ — ZORT เป็นเมนู 3 ข้อ (อัพเดทจำนวน/ข้อมูลสินค้า · เพิ่มสินค้าไปช่องทางการขายอื่น) · ใช้ชุดเดียวกับเมนูตาราง */}
@@ -748,14 +748,14 @@ export default function ProductDetailPage() {
               <table className="w-full min-w-[860px]">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className={TH}>วันที่</th>
-                    <th className={TH}>ประเภท</th>
-                    <th className={TH}>สถานะ</th>
-                    <th className={TH}>รายการ</th>
-                    <th className={THR}>จำนวน</th>
-                    <th className={TH}>จาก</th>
-                    <th className={TH}>ไป</th>
-                    <th className={THR}>คงเหลือ</th>
+                    <th className={TH_KANIT}>วันที่</th>
+                    <th className={TH_KANIT}>ประเภท</th>
+                    <th className={TH_KANIT}>สถานะ</th>
+                    <th className={TH_KANIT}>รายการ</th>
+                    <th className={THR_KANIT}>จำนวน</th>
+                    <th className={TH_KANIT}>จาก</th>
+                    <th className={TH_KANIT}>ไป</th>
+                    <th className={THR_KANIT}>คงเหลือ</th>
                   </tr>
                 </thead>
                 <tbody>

@@ -29,7 +29,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import PipeGapFrame from '@/components/zort/PipeGapFrame'
-import { PageHead, thaiDate, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
+import {
+  PageHead, thaiDate, TableWrap, TH, THR, TD, TDR, DETAIL_BTN,
+} from '@/components/zort'
 
 interface Warehouse {
   code: string; name: string; province?: string; isPos?: boolean
@@ -141,7 +143,7 @@ export default function BranchDetailPage() {
           <span key={t} title="ยังทำไม่ได้ — สร้างใบโอนต้องเขียนกลับ ZORT (จอรายการโอนของเราอ่านอย่างเดียว)"
             className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">{t}</span>
         ))}
-        <Link href="/core/reports" className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">มูลค่าสินค้าคงเหลือ</Link>
+        <Link href="/core/reports" className={DETAIL_BTN}>มูลค่าสินค้าคงเหลือ</Link>
         {(['แก้ไข', 'ลบ'] as const).map((t) => (
           <span key={t} title="ยังทำไม่ได้ — แก้/ลบคลังต้องทำใน ZORT"
             className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">{t}</span>

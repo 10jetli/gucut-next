@@ -27,7 +27,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
-import { FORM_INPUT, PageHead, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import {
+  FORM_INPUT, PageHead, TableWrap, TH, THR, TD, TDR, WriteResult, DETAIL_BTN,
+} from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import { looksLikeFallThrough } from '@/lib/api-shape'
@@ -238,7 +240,7 @@ export default function NewPurchaseReturnPage() {
 
       <div className="flex flex-wrap items-center gap-3 mt-2">
         <button type="button" onClick={() => setLines((o) => [...o, { ...BLANK }])}
-          className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">+ เพิ่มบรรทัด</button>
+          className={DETAIL_BTN}>+ เพิ่มบรรทัด</button>
         <span className="text-[12.5px] text-gray-500">
           ยอดสินค้า <b className="text-gray-800">{fmtMoney(itemsTotal)}</b> จาก {clean.length} บรรทัด
           {touched > clean.length && <span className="text-amber-700"> · อีก {touched - clean.length} บรรทัดกรอกไม่ครบ จะไม่ถูกส่ง</span>}

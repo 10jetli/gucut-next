@@ -17,7 +17,9 @@ import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import { ShortAddForm } from '@/components/zort/ShortAddForm'
 import { ส่งจริงได้ } from '@/lib/real-send'
-import { FORM_INPUT, FORM_LABEL } from '@/components/zort'
+import {
+  FORM_INPUT, FORM_LABEL, DETAIL_BTN,
+} from '@/components/zort'
 
 /** 🔴 สวิตช์ปุ่มส่งจริง — ห้ามเปิดจนกว่าเจ้าของร้านจะอนุมัติ "การเพิ่มสินค้าชุด" โดยเฉพาะ */
 /* ⚠️ ค่าอยู่ที่ `lib/real-send.ts` ที่เดียว — **ห้ามเขียนค่าตายตรงนี้**
@@ -130,7 +132,7 @@ export default function NewBundlePage() {
               <p className="text-[11.5px] text-gray-500">ใส่รหัสสินค้าที่มีอยู่แล้วใน ZORT · จำนวนต้องมากกว่า 0</p>
             </div>
             <button type="button" onClick={() => setLines((o) => [...o, { sku: '', qty: '1' }])}
-              className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5 hover:bg-gray-50">
+              className={DETAIL_BTN}>
               + เพิ่มแถว
             </button>
           </div>

@@ -23,7 +23,7 @@ import { SALE_STATUS, PAY_STATUS, PURCHASE_STATUS, CONTACT_TYPE, zortWord } from
 import { thaiDate } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { PageHead } from '@/components/zort'
+import { PageHead, TH_KANIT, THR_KANIT, DL_CARD, DL_CARD_TITLE } from '@/components/zort'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
 interface Order {
@@ -206,8 +206,8 @@ function Inner() {
         )}
         <div className="grid gap-4 md:grid-cols-[320px_1fr]">
           {/* ── ข้อมูลติดต่อ ── */}
-          <section className="rounded border border-gray-200 bg-white p-3">
-            <h2 className="mb-2 text-[12.5px] font-semibold">ข้อมูลติดต่อ</h2>
+          <section className={DL_CARD}>
+            <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ข้อมูลติดต่อ</h2>
             {c ? (
               <table className="w-full text-[12.5px]">
                 <tbody>
@@ -244,8 +244,8 @@ function Inner() {
           </section>
 
           {/* ── ประวัติการซื้อ ── */}
-          <section className="rounded border border-gray-200 bg-white p-3">
-            <h2 className="mb-2 text-[12.5px] font-semibold">ประวัติการซื้อ</h2>
+          <section className={DL_CARD}>
+            <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ประวัติการซื้อ</h2>
             <div className="mb-3 flex flex-wrap gap-4 text-[12.5px]">
               <div><span className="text-gray-500">จำนวนใบ </span><b>{o?.count ?? 0}</b></div>
               <div><span className="text-gray-500">ยอดรวม </span><b>{baht(o?.total)}</b> บาท</div>
@@ -261,7 +261,7 @@ function Inner() {
             {/* 🧺 ยอดขายรายสินค้า — กล่องเดียวกับ "ยอดขาย · รายสินค้า" ของ ZORT
                 ⚠️ ท่อส่งมา 20 อันดับแรก ⇒ ต้องเขียนกำกับว่าทั้งหมดมีกี่รายการ ไม่งั้นคนอ่านนึกว่าเท่านี้ */}
             {d?.products && (d.products.rows?.length ?? 0) > 0 && (
-              <div className="mb-3 rounded border border-gray-200 bg-white p-2.5">
+              <div className="mb-3 rounded-md bg-white p-2.5">
                 <div className="mb-1.5 flex flex-wrap items-baseline gap-2">
                   {/* แท็บเดียวกับ ZORT (รายสินค้า · รายหมวดหมู่) — ทั้งสองแท็บมาจากชุดข้อมูลเดียวกัน
                       ⇒ ตัวเลขสองแท็บบวกได้เท่ากัน ไม่ใช่คนละกติกา (กฎเรื่องแท็บข้อ 4) */}
@@ -299,9 +299,9 @@ function Inner() {
                   <table className="w-full text-[12.5px]">
                     <thead>
                       <tr className="border-b border-gray-200 text-left text-gray-500">
-                        <th className="py-1 pr-2 font-medium">สินค้า</th>
-                        <th className="py-1 pr-2 font-medium text-right">จำนวน</th>
-                        <th className="py-1 font-medium text-right">มูลค่า</th>
+                        <th className={TH_KANIT}>สินค้า</th>
+                        <th className={THR_KANIT}>จำนวน</th>
+                        <th className={THR_KANIT}>มูลค่า</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -324,9 +324,9 @@ function Inner() {
                   <table className="w-full text-[12.5px]">
                     <thead>
                       <tr className="border-b border-gray-200 text-left text-gray-500">
-                        <th className="py-1 pr-2 font-medium">หมวดหมู่</th>
-                        <th className="py-1 pr-2 font-medium text-right">จำนวน SKU</th>
-                        <th className="py-1 font-medium text-right">มูลค่า</th>
+                        <th className={TH_KANIT}>หมวดหมู่</th>
+                        <th className={THR_KANIT}>จำนวน SKU</th>
+                        <th className={THR_KANIT}>มูลค่า</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -380,13 +380,13 @@ function Inner() {
                     <tr className="border-b border-gray-200 text-left text-gray-500">
                       {/* คอลัมน์ ประเภท แบบ ZORT — ตารางเดียวมีทั้งขายออกและซื้อเข้า
                           ขึ้นเฉพาะเมื่อผู้ติดต่อรายนี้มีใบซื้อจริง ไม่งั้นเป็นคอลัมน์ที่มีค่าเดียวทั้งตาราง */}
-                      {!!buys.length && <th className="py-1 pr-2 font-medium">ประเภท</th>}
-                      <th className="py-1 pr-2 font-medium">วันที่</th>
-                      <th className="py-1 pr-2 font-medium">เลขที่</th>
-                      <th className="py-1 pr-2 font-medium">ช่องทาง</th>
-                      <th className="py-1 pr-2 font-medium text-right">มูลค่า</th>
-                      <th className="py-1 pr-2 font-medium">สถานะ</th>
-                      <th className="py-1 font-medium">ชำระเงิน</th>
+                      {!!buys.length && <th className={TH_KANIT}>ประเภท</th>}
+                      <th className={TH_KANIT}>วันที่</th>
+                      <th className={TH_KANIT}>เลขที่</th>
+                      <th className={TH_KANIT}>ช่องทาง</th>
+                      <th className={THR_KANIT}>มูลค่า</th>
+                      <th className={TH_KANIT}>สถานะ</th>
+                      <th className={TH_KANIT}>ชำระเงิน</th>
                     </tr>
                   </thead>
                   <tbody>

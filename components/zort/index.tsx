@@ -355,6 +355,8 @@ export const DL_VALUE = 'text-[16px] text-[#3e3e3e]'
    ⚠️ มีความสูงตายตัว ⇒ ห้ามใช้กับ <textarea> */
 export const FORM_INPUT = 'w-full h-10 rounded border border-[#adb5bd] bg-white px-3 text-[14px] text-[#3e3e3e] outline-none focus:border-[#4165ed]'
 export const FORM_LABEL = 'block text-[16px] font-medium text-[#3e3e3e] mb-1'
+/** ปุ่มกรอบในแถบปุ่มจอรายละเอียด (แก้ไข · พิมพ์ · คำสั่ง ▾) — ZORT Kanit 14 #3e3e3e ขอบ #adb5bd มุม 4 สูง 39 (วัด 17 ต.ค. 2569) */
+export const DETAIL_BTN = 'inline-block text-[14px] leading-[21px] text-[#3e3e3e] bg-white border border-[#adb5bd] rounded px-3 py-2 hover:bg-gray-50'
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
 /* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**
@@ -501,7 +503,7 @@ export function RowMenu({ items, label }: {
           <button type="button" aria-expanded={open}
             onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
             /* 📏 ZORT แถบปุ่มหัวจอรายละเอียด (วัด /Sell/Details 17 ต.ค. 2569): Kanit 14 #3e3e3e ขอบ #adb5bd มุม 4 สูง 39 */
-            className="text-[14px] leading-[21px] text-[#3e3e3e] bg-white border border-[#adb5bd] rounded px-3 py-2 hover:bg-gray-50">
+            className={DETAIL_BTN}>
             {label} ▾
           </button>
         )
