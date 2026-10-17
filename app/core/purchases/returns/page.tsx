@@ -17,8 +17,9 @@ export default function PurchaseReturnsPage() {
     <LedgerScreen
       title="คืนสินค้า (ให้ผู้ขาย)"
       cols={[
-        { label: 'เลขที่ใบคืน' },
+        /* ลำดับ วันที่ → รายการ ตาม ZORT (17 ต.ค. 2569) · ⚠️ สลับที่นี่ต้องสลับ ROW_MAPS.returnpurchaseorders ด้วย */
         { label: 'วันที่' },
+        { label: 'เลขที่ใบคืน' },
         { label: 'ผู้ขาย' },
         { label: 'ใบสั่งซื้ออ้างอิง' },
         { label: 'คลัง' },

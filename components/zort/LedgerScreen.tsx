@@ -32,7 +32,7 @@ import { fmtMoney } from '@/lib/format'
 /* 🔑 ตัวตัดสิน "ติดฝั่งไหน" อยู่ที่ `lib/upstream-state.ts` ที่เดียว — มีเทสของตัวเอง
    (เขียนซ้ำในจอ = ตรรกะสองชุดที่จะเพี้ยนกัน และชุดในจอจะไม่มีใครเทส) */
 import { ควรลองใหม่, ฝั่งที่ติดจาก } from '@/lib/upstream-state'
-import { PageHead, TableWrap, TH, THR, thaiDate } from './index'
+import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, thaiDate } from './index'
 
 export interface LedgerCol { label: string; right?: boolean }
 
@@ -92,9 +92,10 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
      ชื่อสองอันนี้คล้ายกันมาก ⇒ ทุกข้อความบนจอต้องมีคำว่า "ให้ผู้ขาย" กำกับ
      สลับสองจอนี้ = ตัดสต็อกผิดทาง แล้วของหายจากคลังโดยไม่มีอะไรฟ้อง
      ⚠️ `customername` ของเส้นนี้ = **ผู้ขาย** ไม่ใช่ลูกค้า (ZORT ใช้ชื่อช่องเดิม) */
+  /* ลำดับตาม ZORT: วันที่ ก่อน รายการ (วัดหัวตาราง /Sell/list?sttype=1 17 ต.ค. 2569) — ต้องตรงกับ cols ในจอ */
   returnpurchaseorders: (r) => [
-    pick(r, 'number'),
     day(pick(r, 'returnpurchaseorderdateString', 'returnpurchaseorderdate', 'createdatetime')),
+    pick(r, 'number'),
     pick(r, 'customername', 'contactname'),
     pick(r, 'referencenumber'),
     pick(r, 'warehousecode'),
@@ -501,9 +502,9 @@ export default function LedgerScreen({
               const cells = (zortList && ROW_MAPS[zortList]) ? ROW_MAPS[zortList](r) : []
               return (
                 <tr key={i} className="border-b border-[#e8ecf8] last:border-0 bg-white">
-                  <td className="px-3 py-2.5 text-[12.5px] text-gray-400">{i + 1}</td>
+                  <td className={TD_NO}>{i + 1}</td>
                   {cols.map((c, j) => (
-                    <td key={c.label} className={`px-3 py-2.5 text-[12.5px] text-gray-700 ${c.right ? 'text-right' : ''}`}>
+                    <td key={c.label} className={c.right ? TDR : TD}>
                       {/* ⚠️ ฟิลด์หาย = "—" **ห้ามเดาค่า** (ยังไม่เคยเห็นรูปแถวจริงของ ZORT) */}
                       {cells[j] === null || cells[j] === undefined || cells[j] === '' ? '—' : String(cells[j])}
                     </td>
