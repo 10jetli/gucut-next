@@ -556,6 +556,13 @@ function CoreStockInner() {
               {typeof data.noSkuInZort !== 'number' && !category && !q.trim() && tab === 'all' && (
                 <span className="text-gray-400"> ({skuScopeNote(data.noSkuInZort)})</span>
               )}
+              {/* 🔗 สองลิงก์บนบรรทัดสรุปแบบ ZORT — "จำนวน N รายการ | จัดการรูปภาพสินค้า | ปรับต้นทุนสินค้า"
+                  (อ่านข้อความหัวจอ /Product/list จริง 17 ต.ค. 2569 · 16 ต.ค. เราย้ายลงใต้ตารางเพราะอ่านแค่ #tabledesc ⇒ พลาดสองลิงก์ที่อยู่ข้างกัน)
+                  จัดการรูปภาพ: เรายังไม่มีหน้าอัปหลายรหัส ⇒ พาไปคำอธิบายใต้ตาราง ไม่พาไปหน้าหลอก */}
+              <span className="text-gray-400">{' | '}</span>
+              <a href="#product-image-note" className="text-blue-600 hover:underline">จัดการรูปภาพสินค้า</a>
+              <span className="text-gray-400">{' | '}</span>
+              <Link href="/core/stock/cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
               {/* 🔴 มีของแต่ไม่มีรหัส = **สต็อกที่ระบบเราตามไม่ได้เลย** ต้องเห็นชัด ไม่ใช่ในวงเล็บสีเทา */}
               {Number(data.noSkuWithStock) > 0 && (
                 <span className="block mt-1 text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
@@ -1136,8 +1143,9 @@ function CoreStockInner() {
           {/* 📎 ของที่ ZORT ไม่มี — รวมไว้ใต้ตารางพร้อมหัวบอกว่าเป็นของเพิ่ม */}
           <div className="mt-6">
             <p className="text-[12.5px] font-semibold text-gray-500 mb-2">ข้อมูลเพิ่มเติม (ZORT ไม่มีส่วนนี้)</p>
-            {/* 📐 ย้ายจากบรรทัดใต้ชื่อจอ 16 ต.ค. 2569 — ZORT ใต้ชื่อจอมีแค่ "จำนวน N รายการ" (อ่าน #tabledesc) */}
-            <p className="text-[12.5px] mb-3">
+            {/* 📐 16 ต.ค. 2569 ย้ายลิงก์สองตัวลงมาที่นี่ เพราะอ่านแค่ #tabledesc ⇒ **ผิด** · 17 ต.ค. อ่านหัวจอทั้งแถวแล้ว ZORT มีสองลิงก์บนบรรทัดสรุป
+                ⇒ ลิงก์ย้ายกลับขึ้นบรรทัดสรุปแล้ว · เหลือไว้ที่นี่เฉพาะคำอธิบายเรื่องรูป (ปลายทางของลิงก์ จัดการรูปภาพสินค้า) */}
+            <p id="product-image-note" className="text-[12.5px] mb-3 scroll-mt-4">
               {/* ✅ แก้ 14 ก.ย. 2569 (t_mu10s2ns): เดิมชี้ /core/soon/product-image ทั้งที่อัปรูปทำได้แล้ว (t_mu108yr3)
                   — อัปรูปทีละตัวในจอแก้สินค้า (ต้องรู้ id ของ ZORT ก่อน จึงไม่มีหน้ารวม) ⇒ บอกทางตรง ๆ ไม่ลิงก์ไปหน้า "ยังไม่ได้ทำ" */}
               {/* 🖼️ เพิ่ม 16 ก.ย. 2569: ZORT มีจอ **จัดการรูปภาพสินค้า** (`/Product/AddPicturelist`)
@@ -1152,8 +1160,6 @@ function CoreStockInner() {
               <span className="text-gray-600">จัดการรูปภาพสินค้า: ตอนนี้ใส่รูปเข้า ZORT จากจอเรา<b>ยังไม่ได้</b>
                 {' '}(จอแก้ไขสินค้าซ้อมได้ แต่ปุ่มส่งจริงยังปิด รอท่านประธานอนุมัติ)
                 {' '}· ใส่รูปได้ที่จอ <b>&ldquo;จัดการรูปภาพสินค้า&rdquo; ของ ZORT</b> (เมนูสินค้า) ซึ่งใส่หลายรหัสทีเดียวได้</span>
-              {' | '}
-              <Link href="/core/stock/cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
             </p>
           {/* 🔴 ของที่ลูกค้าซื้อไม่ได้ — เดิมวางเหนือแท็บ · ย้ายลงใต้ตาราง 16 ต.ค. 2569 ตามผัง ZORT (Marketplace Dashboard → แท็บทันที)
               ⚠️ ยังอยู่ในหน้าเดียวกัน ไม่ได้ซ่อน · ถ้าต้องการให้เห็นก่อน ให้ย้ายกลับพร้อมเหตุ */}
