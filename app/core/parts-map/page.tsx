@@ -429,6 +429,29 @@ export default function Page() {
          ⚠️ ได้หลายชื่อ ⇒ **เลือกตัวที่สั้นที่สุด ไม่ใช่ต่อกันยาว ๆ**
             ต่อกันจะได้ข้อความที่ซ้ำตัวเองและอ่านไม่รู้เรื่อง
             ตัวที่สั้นที่สุด = ตัวที่ไม่มีหมายเหตุรุ่นห้อยท้าย */
+      /* HH SKU — รหัสของโรงงาน Hanakawa · แหล่งเดียวคือไฟล์ `public/catalog/hh-*.json`
+         📏 วัดแล้ว 89 รหัส และ **ใส่ครบแล้วทั้งหมด** ⇒ ปกติจะเติม 0 ตัว ซึ่งถูกต้อง
+         ⇒ มีไว้เพื่อวันที่โรงงานส่งไฟล์ใหม่มา จะได้ไม่ต้องทำมือ
+         🔴 **ไม่มีแหล่งให้เติม HH ของรหัสที่เหลือ** — ไม่ใช่ของพัง แต่คือ "ไม่มีข้อมูล"
+         ⚠️ รหัสร้านจริงบางตัวมีช่องว่าง+ตัวพิมพ์เล็ก ("05428 set เสื้อสูบ") แต่ไฟล์เขียนตัวใหญ่
+            ⇒ เทียบไม่สนตัวพิมพ์ แล้ว **เขียนกลับด้วยรหัสจริง** ไม่งั้นได้ override ผี */
+      let เติมHH = 0
+      try {
+        const ฐาน = await fetch('/catalog/products.json', { cache: 'no-store' }).then((r) => r.json())
+        const จริงของ: Record<string, string> = {}
+        for (const it of (ฐาน?.products ?? [])) จริงของ[String(it?.sku ?? '').toUpperCase()] = String(it?.sku ?? '')
+        for (const f of ['hh-288xp', 'hh-5200', 'hh-ms440', 'hh-ms660']) {
+          const d = await fetch(`/catalog/${f}.json`, { cache: 'no-store' }).then((r) => r.json()).catch(() => ({}))
+          for (const [k, v] of Object.entries(d || {})) {
+            const sku = จริงของ[String(k).toUpperCase()]
+            if (!sku) continue
+            if (String((ovrเดิม[sku] || {}).hh || '').trim()) continue
+            ovrใหม่[sku] = { ...(ovrใหม่[sku] || {}), hh: String(v) }
+            เติมHH++
+          }
+        }
+      } catch { /* อ่านไฟล์ HH ไม่ได้ ⇒ ข้ามส่วนนี้ ไม่ล้มทั้งงาน */ }
+
       let เติมชื่อ = 0
       for (const [sku, ชื่อ] of Object.entries(ชื่อของsku)) {
         if (!ชื่อ.length) continue
@@ -438,14 +461,14 @@ export default function Page() {
         เติมชื่อ++
       }
 
-      if (!เติม && !เติมรุ่น && !เติมชื่อ) { setงานOEM('คลังตรงกับตารางจับคู่อยู่แล้ว — ไม่มีอะไรต้องเติม'); return }
+      if (!เติม && !เติมรุ่น && !เติมชื่อ && !เติมHH) { setงานOEM('คลังตรงกับตารางจับคู่อยู่แล้ว — ไม่มีอะไรต้องเติม'); return }
 
       /* ด่าน ② — ของเดิมต้องไม่ถูกแตะแม้แต่ตัวเดียว */
       let แตะ = 0
       for (const [k, v] of Object.entries(oemเดิม)) if (String((ovrใหม่[k] || {}).oem || '') !== v) แตะ++
       if (แตะ) throw new Error(`หยุด: การคำนวณจะทับ OEM เดิม ${แตะ} ตัว — ไม่เขียน`)
 
-      setงานOEM(`กำลังเขียน — OEM ${เติม} · ใช้กับรุ่น ${เติมรุ่น} · ชื่ออังกฤษ ${เติมชื่อ}…`)
+      setงานOEM(`กำลังเขียน — OEM ${เติม} · ใช้กับรุ่น ${เติมรุ่น} · ชื่ออังกฤษ ${เติมชื่อ} · HH ${เติมHH}…`)
       const r = await fetch('/api/catalog/state', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -463,14 +486,14 @@ export default function Page() {
       for (const [sku, v] of Object.entries(ovrใหม่)) {
         /* ⚠️ ตรวจกลับต้องครอบ **ทุกช่องที่เขียนไป** ไม่ใช่เฉพาะ OEM
            ตรวจไม่ครบ = ช่องที่ไม่ได้ตรวจพังเงียบ แล้วข้อความบนจอยังขึ้นว่าตรงครบ */
-        for (const ช่อง of ['oem', 'models', 'nameEn'] as const) {
+        for (const ช่อง of ['oem', 'models', 'nameEn', 'hh'] as const) {
           const ควร = String((v as any)[ช่อง] || '')
           if (ควร && String((o2[sku] || {})[ช่อง] || '') !== ควร) ไม่ตรง++
         }
       }
       setงานOEM(ไม่ตรง
         ? `⚠ เขียนแล้วแต่ตรวจกลับไม่ตรง ${ไม่ตรง} ตัว — เปิดคลังอะไหล่ดูก่อนทำซ้ำ`
-        : `✅ เติมให้คลังอะไหล่แล้ว — OEM ${เติม} · ใช้กับรุ่น ${เติมรุ่น} · ชื่ออังกฤษ ${เติมชื่อ} · ตรวจกลับตรงครบ`)
+        : `✅ เติมให้คลังอะไหล่แล้ว — OEM ${เติม} · ใช้กับรุ่น ${เติมรุ่น} · ชื่ออังกฤษ ${เติมชื่อ} · HH ${เติมHH} · ตรวจกลับตรงครบ`)
     } catch (e) {
       setงานOEM(`🔴 ${e instanceof Error ? e.message : 'ทำไม่สำเร็จ'}`)
     }
