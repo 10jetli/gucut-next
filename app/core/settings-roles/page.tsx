@@ -75,7 +75,7 @@ export default function SettingsRolesPage() {
           <tbody>
             {ROLES.map((r) => (
               <tr key={r.name} className="border-b border-[#e8ecf8] last:border-0">
-                <td className={`${TD} text-gray-900 font-medium`}>{r.name}</td>
+                <td className={TD}>{r.name}</td>
                 <td className={`${TD} text-gray-700`}>{r.detail}</td>
                 <td className={`${TD} text-gray-500`}>{r.who}</td>
                 <td className={`${TD} text-right`}>

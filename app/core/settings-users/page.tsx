@@ -31,7 +31,7 @@
 import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
-import { PageHead, TH_KANIT as TH, TD } from '@/components/zort'
+import { PageHead, TH_KANIT as TH, TD, FORM_INPUT } from '@/components/zort'
 import { listStaffUsers } from '@/lib/staff-users'
 import { thaiDate } from '@/lib/format'
 
@@ -168,7 +168,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
           <div className="absolute z-10 mt-2 right-0 w-[320px] max-w-[calc(100vw-32px)] bg-white border border-gray-200 rounded-md shadow-lg p-3 space-y-2">
             <label className="block text-[12.5px] text-gray-600">ชื่อ
               <input name="qname" defaultValue={ค่าแรก(searchParams?.qname)} placeholder="ชื่อ"
-                className="mt-1 block w-full text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5" />
+                className={`mt-1 block ${FORM_INPUT}`} />
             </label>
             <label className="block text-[12.5px] text-gray-300" title="ผู้ใช้ของเราไม่มีอีเมล — เข้าระบบด้วยรหัสผ่านที่ตั้งใน Netlify/หน้าเว็บ ⇒ ไม่มีอะไรให้ค้น">อีเมล
               <input disabled placeholder="ผู้ใช้ของเราไม่มีอีเมล"
@@ -236,7 +236,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i} className="border-b border-[#e8ecf8] last:border-0">
-                  <td className={`${TD} text-gray-900 font-medium`}>
+                  <td className={TD}>
                     {r.name}
                     {dupNames.includes(r.name) && (
                       <span className="ml-1.5 text-[11.5px] text-amber-700" title="ชื่อนี้มีมากกว่าหนึ่งบัญชี — คนละบัญชีจริง ๆ">⚠️ ชื่อซ้ำ</span>
