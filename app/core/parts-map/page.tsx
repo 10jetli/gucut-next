@@ -136,7 +136,16 @@ export default function Page() {
          ⚠️ `cache: 'no-store'` อย่างเดียวไม่พอ — มันคุมแคชในเบราว์เซอร์ ไม่ได้คุมขอบเครือข่าย
             ตัวที่คุมได้คือ **url ที่ไม่ซ้ำ** · ขา /parts/ ของลูกค้ายังใช้แคชเดิมต่อไป ไม่ถูกแตะ */
       const [ด, ม] = await Promise.all([
-        fetch(`/api/parts-data?model=${encodeURIComponent(m)}`).then((r) => r.json()),
+        /* 🔴 **ขานี้เคยไม่มีตัวกันแคช ทั้งที่คอมเมนต์ข้างบนอธิบายปัญหานี้ไว้แล้ว**
+           เจอจากภาพหน้าจอที่ท่านประธานส่งมา 17 ต.ค. 2569: เลือก F 660 แล้ว
+           **ตัวนับเป็นของ F660 (39) แต่แถวเป็นรหัส 1128… ซึ่งเป็นของ MS440**
+           (ของ MS660 ขึ้นต้น 1122) ⇒ ตารางจับคู่สด แต่รายการอะไหล่เก่า
+           = คนกรอกจะจับคู่รหัสร้านเข้ากับอะไหล่ **ผิดรุ่น** โดยจอไม่ฟ้องอะไรเลย
+           🔑 บทเรียน: **แก้บั๊กแคชแล้วต้องไล่ทุกขาที่โหลดคู่กัน ไม่ใช่ขาที่เจอปัญหา**
+              ขาที่เหลือไว้จะพังแบบเดียวกันเป๊ะ แต่ตอนนี้แย่กว่าเดิม เพราะอีกขาสดแล้ว
+              ⇒ จอผสมข้อมูลสองรุ่นเข้าด้วยกัน ซึ่งดูสมเหตุสมผลกว่าตอนเก่าทั้งคู่ */
+        fetch(`/api/parts-data?model=${encodeURIComponent(m)}&_=${Date.now()}`,
+              { cache: 'no-store' }).then((r) => r.json()),
         fetch(`/api/web/parts-map?model=${encodeURIComponent(m)}&_=${Date.now()}`, { cache: 'no-store' })
           .then((r) => r.json()),
       ])
@@ -207,6 +216,21 @@ export default function Page() {
       }
     })
   }, [รุ่น])
+
+  /* รูปผังประจำหมวด — ท่านประธานสั่ง 17 ต.ค. 2569 "ใส่รูปภาพแผนผังอะไหล่ให้ตรงหมวด"
+     🔑 คีย์ต้องเป็น "ตัวอักษร · ชื่อ" ให้**ตรงกับหัวข้อที่จอรวมไว้แล้ว**
+        ข้อมูลจริงแยกแผ่นภาพ (`a` กับ `a2`) แต่จอรวมเป็นหัวเดียว
+        ⇒ ถ้าคีย์ด้วย `กลุ่มId` รูปแผ่นที่สองจะหายไปเงียบ ๆ ทั้งที่ไฟล์มีอยู่
+     ⚠️ หมวดที่ไม่มีภาพ (ยังไม่ได้ตัด) ต้องไม่โชว์กรอบเปล่า — ไม่มีก็คือไม่โชว์ */
+  const ภาพของหมวด: Record<string, { url: string; w: number; h: number }[]> = {}
+  for (const g of (ข้อมูล?.กลุ่ม ?? [])) {
+    if (!g?.ภาพ) continue
+    const k = `${g.ตัวอักษร} · ${g.ชื่อ}`
+    ;(ภาพของหมวด[k] ||= []).push({
+      url: `https://gucut.com/parts/${encodeURIComponent(รุ่น)}/${g.ภาพ}`,
+      w: Number(g.w) || 0, h: Number(g.h) || 0,
+    })
+  }
 
   const รายการทั้งหมด = แบนรายการ(ข้อมูล)
   const คืบ = ความคืบหน้า(รายการทั้งหมด, แมป)
@@ -296,9 +320,31 @@ export default function Page() {
             return (
               <div key={`${r.กลุ่มId}-${r.ลำดับ}`}>
                 {หัวกลุ่ม && (
-                  <h2 className="text-[14px] font-semibold text-gray-800 mt-4 mb-1">
-                    {หัวนี้}
-                  </h2>
+                  <>
+                    <h2 className="text-[14px] font-semibold text-gray-800 mt-4 mb-1">
+                      {หัวนี้}
+                    </h2>
+                    {/* 🔑 **พับเก็บได้ แต่เปิดไว้แต่แรก** — ท่านสั่งให้ "ใส่รูปผังให้ตรงหมวด"
+                        ⇒ ต้องเห็นทันทีโดยไม่ต้องกด (ซ่อนไว้ = เหมือนไม่ได้ใส่)
+                        แต่หน้านี้ยาวหลายร้อยแถว คนที่จำผังได้แล้วต้องพับทิ้งได้
+                        ⚠️ ห้ามใส่ `loading="lazy"`+`open` คู่กันแบบไม่คิด — รูปผังใบละ ~1500px
+                           18–23 หมวดต่อรุ่น ⇒ โหลดพร้อมกันหมดคือหลายสิบเมกตอนเปิดหน้า
+                           ใช้ lazy ให้โหลดเฉพาะใบที่เลื่อนไปถึง */}
+                    {(ภาพของหมวด[หัวนี้] ?? []).map((ภ) => (
+                      <details key={ภ.url} open className="mb-2">
+                        <summary className="text-[11.5px] text-gray-500 cursor-pointer select-none
+                                            py-1">ผังอะไหล่หมวดนี้</summary>
+                        <a href={ภ.url} target="_blank" rel="noopener noreferrer"
+                           title="เปิดภาพเต็มในแท็บใหม่">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={ภ.url} alt={`ผังอะไหล่ ${หัวนี้}`} loading="lazy"
+                               width={ภ.w || undefined} height={ภ.h || undefined}
+                               className="w-full max-w-[560px] h-auto rounded border
+                                          border-gray-200 bg-white" />
+                        </a>
+                      </details>
+                    ))}
+                  </>
                 )}
                 <div className="bg-white border border-gray-200 rounded-md px-3 py-2
                                 flex flex-wrap items-center gap-x-3 gap-y-1.5">
