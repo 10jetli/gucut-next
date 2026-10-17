@@ -199,12 +199,26 @@
     return เพิ่ม;
   }
 
+  var แก้ล่าสุดที่เห็น=null;
   function ดึงของใหม่(){
     /* ⚠️ ข้ามรอบที่กล่องแก้ไขเปิดอยู่ — วาดจอใหม่ตอนคนกำลังพิมพ์ = ค่าในช่องกระโดด */
     var bg=document.getElementById("modalBg");
     if(bg && bg.style.display && bg.style.display!=="none") return;
-    fetch("/api/catalog/state?_="+Date.now(),{cache:"no-store"})
+    /* 💸 **หยุดถามตอนแท็บถูกซ่อน** — จอที่ไม่มีใครดูไม่ต้องรู้ข่าว
+       คนเปิดแท็บทิ้งไว้ข้ามคืนคือเรื่องปกติ ไม่ใช่กรณีพิเศษ */
+    if(document.hidden) return;
+    /* 💸 **ถามเบาก่อน** (~60 ไบต์) แล้วดึงก้อนเต็ม (~217 KB) เฉพาะตอนค่าเปลี่ยนจริง
+       วัดแล้ว: ดึงเต็มทุกรอบ = 610 MB/วัน ต่อแท็บ ⇒ ~18 GB/เดือน กินเครดิตไปเปล่า ๆ */
+    fetch("/api/catalog/state?meta=1&_="+Date.now(),{cache:"no-store"})
       .then(function(r){return r.ok?r.json():null;})
+      .then(function(m){
+        /* 🔴 ถามไม่ได้ ⇒ ไม่ทำอะไร **ห้ามตีความว่าไม่มีของใหม่** */
+        if(!m || m.readFailed || !m.exists) return null;
+        if(แก้ล่าสุดที่เห็น!==null && m.updatedAt===แก้ล่าสุดที่เห็น) return null;
+        แก้ล่าสุดที่เห็น=m.updatedAt;
+        return fetch("/api/catalog/state?_="+Date.now(),{cache:"no-store"})
+          .then(function(r){return r.ok?r.json():null;});
+      })
       .then(function(d){
         /* 🔴 อ่านไม่ได้ ⇒ ไม่ทำอะไร **ห้ามตีความว่าเซิร์ฟเวอร์ว่าง** */
         if(!d || d.readFailed || !d.exists || !d.ovr) return;
@@ -223,5 +237,6 @@
   }
   /* 10 วินาที — เร็วพอให้รู้สึกว่า "ขึ้นทันที" และไม่ถี่จนยิงเซิร์ฟเวอร์ทิ้ง ๆ ขว้าง ๆ
      (หน้าจับคู่เขียนทันทีที่กรอกเสร็จอยู่แล้ว ⇒ รอสูงสุด 10 วิ) */
-  setInterval(ดึงของใหม่, 10000);
+  /* 15 วิ · ถามเบาอย่างเดียวจึงถูกมาก (~60 ไบต์/ครั้ง ≈ 0.3 MB/เดือนต่อแท็บ) */
+  setInterval(ดึงของใหม่, 15000);
 })();

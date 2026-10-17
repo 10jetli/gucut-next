@@ -9,7 +9,29 @@ export const dynamic = 'force-dynamic'
 
 // GET /api/catalog/state — โหลดสถานะคลังอะไหล่ (โรงงาน/การแก้ไข/หมวดหมู่) ที่เก็บส่วนกลางใน Drive
 // ให้หน้า /catalog ทุกเครื่อง/เบราว์เซอร์เห็นข้อมูลตรงกัน แทนที่จะต่างคนต่าง localStorage
-export async function GET() {
+/* 💸 **โหมดถามเบา `?meta=1`** — คืนแค่ "แก้ล่าสุดเมื่อไหร่" (เพิ่ม 17 ต.ค. 2569)
+   ก้อนเต็ม ~217 KB · ตัวดึงของหน้าคลังถามทุก 10 วิ ⇒ **610 MB/วัน ต่อแท็บที่เปิดค้าง**
+   (~18 GB + 86,400 คำขอ/เดือน) ซึ่งกินเครดิตไปเปล่า ๆ เพราะส่วนใหญ่ไม่มีอะไรเปลี่ยน
+   ⇒ ถามเบาก่อน (~60 ไบต์) แล้วดึงก้อนเต็มเฉพาะตอนค่าเปลี่ยนจริง — ถูกกว่า ~3,600 เท่า
+   ⚠️ ต้องอ่านของจริงเหมือนเดิม ไม่ใช่เดาจากแคช ไม่งั้น "ไม่เปลี่ยน" จะเป็นคำตอบที่ผิดได้ */
+export async function GET(req: NextRequest) {
+  const เบา = new URL(req.url).searchParams.get('meta') === '1'
+  if (เบา) {
+    try {
+      const state = await loadCatalogStateBlobsStrict()
+      return NextResponse.json({ exists: !!state, updatedAt: state?.updatedAt ?? null })
+    } catch (e: any) {
+      /* 🔴 อ่านไม่ได้ ⇒ บอกตรง ๆ **ห้ามตอบว่า exists:false** (ดูเหตุผลเต็มในขา GET ปกติ) */
+      return NextResponse.json(
+        { error: 'อ่านสถานะคลังอะไหล่ไม่ได้ — ' + String(e?.message ?? e), readFailed: true },
+        { status: 502 },
+      )
+    }
+  }
+  return ดึงเต็ม()
+}
+
+async function ดึงเต็ม() {
   try {
     const state = await loadCatalogStateBlobsStrict()
     if (!state) return NextResponse.json({ exists: false })
