@@ -33,12 +33,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang="th">
-      {/* ฟอนต์หลักของระบบ — Prompt จาก Google Fonts (โหลดฝั่ง browser ผู้ใช้ตรงๆ ไม่ผูกกับ build) รองรับภาษาไทยเต็มรูปแบบ */}
+      {/* ฟอนต์ตาม ZORT (17 ต.ค. 2569): Kanit (หัวข้อ/ปุ่ม/แท็บ) + Lato (หัวคอลัมน์) จาก Google Fonts · Boon โฮสต์เองใน globals.css
+          เลิกโหลด Prompt แล้ว — ไม่มีที่ไหนใช้ (ค้นทั้งรีโป) */}
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link
-          href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&family=Lato:wght@400;700&display=swap"
           rel="stylesheet"
         />
       </head>

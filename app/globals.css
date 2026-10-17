@@ -2,9 +2,28 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 🔤 ฟอนต์ชุดเดียวกับ ZORT (ท่านประธานสั่ง 17 ต.ค. 2569: "font สี ก็ต้องเหมือน … เอาให้เหมือน 100%")
+   วัดจอ ZORT /Sell/list (CDP 9223 · 1600x900): ทั้งหน้า = Boon · หัวจอ/ปุ่ม/แท็บ/ลิงก์ในตาราง = Kanit · หัวคอลัมน์ = Lato
+   · Boon: ฟอนต์ OFL 1.1 ของ FontUni (github.com/fontuni/boon v3.0) — **โฮสต์เอง** จากแหล่งทางการ ไม่ได้เอาไฟล์จาก ZORT
+     (ไม่มีใน Google Fonts) · ใบอนุญาตวางคู่ไฟล์ที่ public/fonts/boon/OFL.txt ตามเงื่อนไข OFL
+   · Kanit / Lato: Google Fonts (โหลดใน app/layout.tsx) · Lato ไม่มีตัวไทย ⇒ หัวคอลัมน์ภาษาไทยถอยไป Boon เหมือน ZORT
+   🚫 เฉพาะหลังร้าน (gucut-next) — หน้าร้าน gucut-web ยังใช้ฟอนต์ระบบตามกติกาเดิม (ท่านอนุมัติเฉพาะหลังร้าน) */
+@font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-Regular.woff2') format('woff2'); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-Medium.woff2') format('woff2'); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-SemiBold.woff2') format('woff2'); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: 'Boon'; src: url('/fonts/boon/Boon-Bold.woff2') format('woff2'); font-weight: 700; font-style: normal; font-display: swap; }
+
 html, body {
   margin: 0;
-  font-family: 'Prompt', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-family: 'Boon', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+/* หัวข้อ · ปุ่ม · แท็บ · ลิงก์ในตาราง = Kanit ตาม ZORT · ลิงก์ที่แต่งเป็นปุ่ม (rounded-full) นับเป็นปุ่ม */
+h1, h2, h3, button, [role='tab'], a.rounded-full, table a {
+  font-family: 'Kanit', 'Boon', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+/* หัวคอลัมน์ตาราง = Lato (ตัวละตินและตัวเลข) · ตัวไทยถอยไป Boon */
+thead th {
+  font-family: 'Lato', 'Boon', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
 }
 
 /* พื้นหลังหลักของระบบ — **สีแบนตาม ZORT ไม่มีไล่สี**
