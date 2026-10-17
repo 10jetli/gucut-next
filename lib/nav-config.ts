@@ -188,7 +188,8 @@ export const NAV_ITEMS: NavItem[] = [
     icon: '📄',
     label: 'เอกสาร',
     children: [
-      soon('files', 'ไฟล์'),
+      /* ✅ 17 ต.ค. 2569: จอไฟล์แบบ ZORT /FileUpload/list ขึ้นแล้ว (ท่อ list=files อ่านจากคลังสลิปของเราเอง) */
+      { href: '/core/files', label: 'ไฟล์' },
       { href: '/core/accounting-docs', label: 'เอกสารบัญชี' },
     ],
   },

@@ -539,6 +539,8 @@ export const SOON: Record<string, SoonPage> = {
   // ── เอกสาร ──
   files: {
     title: 'ไฟล์',
+    /* ✅ ทำเสร็จ 17 ต.ค. 2569 — ลิงก์เก่าที่ยังชี้มาที่นี่จะถูกพาไปหน้าจริง */
+    builtAt: '/core/files',
     what: 'คลังไฟล์แนบของร้าน เช่น สลิปโอนเงิน',
     meanwhile: 'ZORT มีเส้นอ่านไฟล์แนบรายเอกสาร (Order/GetOrderFiles · GetOrderFileDetail · '
       + 'PurchaseOrder/… · Quotation/… · ReturnOrder/… — ตรวจ 15 ก.ย. 2569 ตอบ 200 ทุกตัว) '
