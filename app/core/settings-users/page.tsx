@@ -29,7 +29,9 @@
 //    ช่องค้นหาจึงเป็นฟอร์ม GET (?q=) ให้เซิร์ฟเวอร์กรอง — ค้นได้จริง ไม่ใช่ช่องหลอก
 //    ⚠️ **ห้ามส่งค่ารหัสผ่านออกไปไม่ว่ากรณีใด** — บอกแค่ "ตั้งแล้วหรือยัง ยาวกี่ตัว"
 import Link from 'next/link'
-import { PageHead } from '@/components/zort'
+/* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
+   ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
+import { PageHead, TH_KANIT as TH, TD } from '@/components/zort'
 import { listStaffUsers } from '@/lib/staff-users'
 import { thaiDate } from '@/lib/format'
 
@@ -51,8 +53,6 @@ function passInfo(k: string) {
   return { set: v.length > 0, len: v.length }
 }
 
-const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
-const TD = 'px-3 py-3 text-[12.5px] align-top'
 
 /** แถวในตาราง — มาจากสองแหล่ง และ **ต้องรู้ว่าแถวไหนมาจากไหน** */
 interface UserRow {

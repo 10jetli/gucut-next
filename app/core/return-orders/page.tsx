@@ -39,7 +39,7 @@ import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import { toThai, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import {
+import { TD_NO, ROW_LINK,
   PageHead, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
   EmptyState, Pill, relDay, thaiDate, EndpointMissing, RowMenu,
 } from '@/components/zort'
@@ -381,7 +381,7 @@ export default function ReturnOrdersPage() {
                 )}
                 {shown.map((r, i) => (
                   <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                    <td className={`${TD} text-gray-400`}>{i + 1}</td>
+                    <td className={TD_NO}>{i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`} title={thaiDate(r.date)}>
                       {r.date ? relDay(r.date) : DASH}
                     </td>
@@ -391,7 +391,7 @@ export default function ReturnOrdersPage() {
                     <td className={`${TD} font-medium text-gray-800`}>
                       {r.id
                         ? <Link href={`/core/return-orders/detail?id=${encodeURIComponent(String(r.id))}`}
-                            className="text-blue-600 hover:underline">{r.number || DASH}</Link>
+                            className={ROW_LINK}>{r.number || DASH}</Link>
                         : (r.number || DASH)}
                     </td>
                     <td className={`${TD} text-gray-600`}>{r.reference || DASH}</td>

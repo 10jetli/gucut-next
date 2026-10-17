@@ -12,10 +12,10 @@
 //    🔴 **แก้ middleware แล้วต้องมาแก้ตารางนี้ด้วยเสมอ** — ตารางที่ตกยุคคือจอที่โกหก
 // ⚠️ ลิงก์ "แก้ไข" ของ ZORT เป็นหน้าแก้จริง — ของเราแก้ที่โค้ด ⇒ เขียนบอกตรง ๆ แทนลิงก์หลอก
 import Link from 'next/link'
-import { PageHead } from '@/components/zort'
+/* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
+   ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
+import { PageHead, TH_KANIT as TH, TD } from '@/components/zort'
 
-const TH = 'text-left font-normal text-[12.5px] text-gray-500 px-3 py-2.5 whitespace-nowrap'
-const TD = 'px-3 py-3 text-[12.5px] align-top'
 
 /** สิทธิ์จริงของระบบ — ต้องตรงกับ middleware.ts เสมอ (แก้ที่โน่นต้องมาแก้ที่นี่)
  *  ⚠️ ห้ามเพิ่มแถวที่ middleware ไม่รู้จัก — ตารางนี้คือคำอธิบายของจริง ไม่ใช่ความตั้งใจ */

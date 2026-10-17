@@ -391,7 +391,7 @@ export default function LedgerScreen({
           onKeyDown={(e) => { if (e.key === 'Enter') void loadZort() }}
           title={zortList ? 'พิมพ์แล้วกด Enter — ค้นที่เซิร์ฟเวอร์ ครอบทุกรายการ ไม่ใช่แค่หน้าที่เห็น'
             : 'จอนี้ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีอะไรให้ค้น'}
-          className={`w-full max-w-[400px] text-[12.5px] border border-gray-300 rounded-full px-4 py-2 ${
+          className={`w-full max-w-[400px] h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] px-4 py-2 ${
             zortList ? 'bg-white text-gray-800' : 'bg-gray-50 text-gray-400'}`}
         />
         {zortList

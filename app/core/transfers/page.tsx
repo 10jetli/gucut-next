@@ -23,7 +23,7 @@ import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import {
+import { TD_NO, ROW_LINK,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, TD,
   LinkText, RowMenu, EmptyState, thaiDate, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
@@ -488,12 +488,12 @@ export default function CoreTransfersPage() {
                 )}
                 {rows.map((r, i) => (
                   <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    <td className={TD_NO}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(r.transfer_date)}</td>
                     <td className={TD}>
                       {r.id !== null && r.id !== undefined
                         ? <Link href={`/core/transfers/detail?id=${encodeURIComponent(String(r.id))}`}
-                            className="text-blue-600 font-medium hover:underline">{r.number}</Link>
+                            className={ROW_LINK}>{r.number}</Link>
                         : <span className="text-gray-900 font-medium" title="แถวนี้ไม่มี id — เปิดรายละเอียดไม่ได้">{r.number}</span>}
                     </td>
                     <td className={`${TD} text-gray-700`}>{typeTh(r.kind)}</td>
