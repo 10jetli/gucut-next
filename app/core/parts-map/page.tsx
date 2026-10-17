@@ -362,13 +362,30 @@ export default function Page() {
       for (const [k, v] of Object.entries(ovrเดิม)) if (v && (v as any).oem) oemเดิม[k] = String((v as any).oem)
 
       const ของsku: Record<string, string[]> = {}
+      /* 🔑 ชื่ออังกฤษจากคู่มือ — ท่านประธานสั่ง "เอาชื่อมาด้วย" 17 ต.ค. 2569
+         ⚠️ คู่มือมี **ขีดอ่อน (U+00AD)** ปนกับขีดปกติ ⇒ "O­ring" กับ "O-ring"
+            เป็นคนละข้อความถ้าไม่ล้างก่อน = นับเป็นสองชื่อทั้งที่ชื่อเดียวกัน */
+      const ชื่อของsku: Record<string, string[]> = {}
+      const ล้างชื่อ = (v: unknown) =>
+        String(v || '').replace(/\u00ad/g, '-').replace(/\s+/g, ' ').trim()
       /* 🔑 เก็บ "รุ่นที่ใช้ได้" ไปพร้อมกันในรอบเดียว — ท่านประธานทักว่าอะไหล่อยู่ได้หลายหมวด
          วัดแล้ว: 210 จาก 692 ตัวที่จับคู่ อยู่มากกว่า 1 รุ่น (ตัวหนึ่งถึง 12 รุ่น)
          แยกเป็นอีกปุ่ม = เดินตารางซ้ำสองรอบ และคนต้องจำว่ากดครบหรือยัง */
       const รุ่นของsku: Record<string, string[]> = {}
       for (const m of รุ่นทั้งหมด) {
-        const cur = await fetch(`/api/web/parts-map?model=${encodeURIComponent(m.id)}&_=${Date.now()}`,
-          { cache: 'no-store' }).then((r) => r.json()).catch(() => null)
+        const [cur, dia] = await Promise.all([
+          fetch(`/api/web/parts-map?model=${encodeURIComponent(m.id)}&_=${Date.now()}`,
+            { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+          fetch(`/api/parts-data?model=${encodeURIComponent(m.id)}`,
+            { cache: 'no-store' }).then((r) => r.json()).catch(() => null),
+        ])
+        const ชื่อตามรหัส: Record<string, string> = {}
+        for (const g of ((dia && dia.กลุ่ม) || []) as any[]) {
+          for (const a of (g.อะไหล่ || []) as any[]) {
+            const รหัส = String(a?.รหัส || '').replace(/\s+/g, '')
+            if (รหัส && a?.ชื่อ) ชื่อตามรหัส[รหัส] = ล้างชื่อ(a.ชื่อ)
+          }
+        }
         for (const [k, v] of Object.entries((cur && cur.map) || {})) {
           const sku = String(v || '').trim().toUpperCase()
           /* ข้ามของที่ร้านเพิ่มเอง — คีย์ `+H1` ไม่ใช่รหัสคู่มือ เอาไปใส่ OEM ไม่ได้
@@ -379,6 +396,11 @@ export default function Page() {
           if (k.startsWith('+')) continue
           if (!ของsku[sku]) ของsku[sku] = []
           if (!ของsku[sku].includes(k)) ของsku[sku].push(k)
+          const ชื่อ = ชื่อตามรหัส[k]
+          if (ชื่อ) {
+            if (!ชื่อของsku[sku]) ชื่อของsku[sku] = []
+            if (!ชื่อของsku[sku].includes(ชื่อ)) ชื่อของsku[sku].push(ชื่อ)
+          }
         }
       }
 
@@ -403,14 +425,27 @@ export default function Page() {
         เติมรุ่น++
       }
 
-      if (!เติม && !เติมรุ่น) { setงานOEM('คลังตรงกับตารางจับคู่อยู่แล้ว — ไม่มีอะไรต้องเติม'); return }
+      /* ชื่ออังกฤษ: **เติมเฉพาะที่ว่าง ไม่ทับ** (เป็นเนื้อหาที่คนแก้เองได้ เหมือน OEM)
+         ⚠️ ได้หลายชื่อ ⇒ **เลือกตัวที่สั้นที่สุด ไม่ใช่ต่อกันยาว ๆ**
+            ต่อกันจะได้ข้อความที่ซ้ำตัวเองและอ่านไม่รู้เรื่อง
+            ตัวที่สั้นที่สุด = ตัวที่ไม่มีหมายเหตุรุ่นห้อยท้าย */
+      let เติมชื่อ = 0
+      for (const [sku, ชื่อ] of Object.entries(ชื่อของsku)) {
+        if (!ชื่อ.length) continue
+        if (String((ovrเดิม[sku] || {}).nameEn || '').trim()) continue
+        const เลือก = [...ชื่อ].sort((a, b) => a.length - b.length)[0]
+        ovrใหม่[sku] = { ...(ovrใหม่[sku] || {}), nameEn: เลือก }
+        เติมชื่อ++
+      }
+
+      if (!เติม && !เติมรุ่น && !เติมชื่อ) { setงานOEM('คลังตรงกับตารางจับคู่อยู่แล้ว — ไม่มีอะไรต้องเติม'); return }
 
       /* ด่าน ② — ของเดิมต้องไม่ถูกแตะแม้แต่ตัวเดียว */
       let แตะ = 0
       for (const [k, v] of Object.entries(oemเดิม)) if (String((ovrใหม่[k] || {}).oem || '') !== v) แตะ++
       if (แตะ) throw new Error(`หยุด: การคำนวณจะทับ OEM เดิม ${แตะ} ตัว — ไม่เขียน`)
 
-      setงานOEM(`กำลังเขียน — OEM ${เติม} ตัว · ใช้กับรุ่น ${เติมรุ่น} ตัว…`)
+      setงานOEM(`กำลังเขียน — OEM ${เติม} · ใช้กับรุ่น ${เติมรุ่น} · ชื่ออังกฤษ ${เติมชื่อ}…`)
       const r = await fetch('/api/catalog/state', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -426,12 +461,16 @@ export default function Page() {
       const o2: Record<string, any> = (ยืนยัน && ยืนยัน.ovr) || {}
       let ไม่ตรง = 0
       for (const [sku, v] of Object.entries(ovrใหม่)) {
-        const ควร = String((v as any).oem || '')
-        if (ควร && String((o2[sku] || {}).oem || '') !== ควร) ไม่ตรง++
+        /* ⚠️ ตรวจกลับต้องครอบ **ทุกช่องที่เขียนไป** ไม่ใช่เฉพาะ OEM
+           ตรวจไม่ครบ = ช่องที่ไม่ได้ตรวจพังเงียบ แล้วข้อความบนจอยังขึ้นว่าตรงครบ */
+        for (const ช่อง of ['oem', 'models', 'nameEn'] as const) {
+          const ควร = String((v as any)[ช่อง] || '')
+          if (ควร && String((o2[sku] || {})[ช่อง] || '') !== ควร) ไม่ตรง++
+        }
       }
       setงานOEM(ไม่ตรง
         ? `⚠ เขียนแล้วแต่ตรวจกลับไม่ตรง ${ไม่ตรง} ตัว — เปิดคลังอะไหล่ดูก่อนทำซ้ำ`
-        : `✅ เติมให้คลังอะไหล่แล้ว — OEM ${เติม} ตัว · ใช้กับรุ่น ${เติมรุ่น} ตัว · ตรวจกลับตรงครบ`)
+        : `✅ เติมให้คลังอะไหล่แล้ว — OEM ${เติม} · ใช้กับรุ่น ${เติมรุ่น} · ชื่ออังกฤษ ${เติมชื่อ} · ตรวจกลับตรงครบ`)
     } catch (e) {
       setงานOEM(`🔴 ${e instanceof Error ? e.message : 'ทำไม่สำเร็จ'}`)
     }
