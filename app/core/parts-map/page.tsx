@@ -362,13 +362,21 @@ export default function Page() {
       for (const [k, v] of Object.entries(ovrเดิม)) if (v && (v as any).oem) oemเดิม[k] = String((v as any).oem)
 
       const ของsku: Record<string, string[]> = {}
+      /* 🔑 เก็บ "รุ่นที่ใช้ได้" ไปพร้อมกันในรอบเดียว — ท่านประธานทักว่าอะไหล่อยู่ได้หลายหมวด
+         วัดแล้ว: 210 จาก 692 ตัวที่จับคู่ อยู่มากกว่า 1 รุ่น (ตัวหนึ่งถึง 12 รุ่น)
+         แยกเป็นอีกปุ่ม = เดินตารางซ้ำสองรอบ และคนต้องจำว่ากดครบหรือยัง */
+      const รุ่นของsku: Record<string, string[]> = {}
       for (const m of รุ่นทั้งหมด) {
         const cur = await fetch(`/api/web/parts-map?model=${encodeURIComponent(m.id)}&_=${Date.now()}`,
           { cache: 'no-store' }).then((r) => r.json()).catch(() => null)
         for (const [k, v] of Object.entries((cur && cur.map) || {})) {
           const sku = String(v || '').trim().toUpperCase()
-          /* ข้ามของที่ร้านเพิ่มเอง — คีย์ `+H1` ไม่ใช่รหัสคู่มือ เอาไปใส่ OEM ไม่ได้ */
-          if (!sku || k.startsWith('+')) continue
+          /* ข้ามของที่ร้านเพิ่มเอง — คีย์ `+H1` ไม่ใช่รหัสคู่มือ เอาไปใส่ OEM ไม่ได้
+             แต่ "ใช้กับรุ่น" ยังนับได้ เพราะของที่เพิ่มเองก็อยู่ในรุ่นนั้นจริง */
+          if (!sku) continue
+          if (!รุ่นของsku[sku]) รุ่นของsku[sku] = []
+          if (!รุ่นของsku[sku].includes(m.ชื่อ)) รุ่นของsku[sku].push(m.ชื่อ)
+          if (k.startsWith('+')) continue
           if (!ของsku[sku]) ของsku[sku] = []
           if (!ของsku[sku].includes(k)) ของsku[sku].push(k)
         }
@@ -381,14 +389,28 @@ export default function Page() {
         ovrใหม่[sku] = { ...(ovrใหม่[sku] || {}), oem: รหัส.join(' / ') }
         เติม++
       }
-      if (!เติม) { setงานOEM('คลังมี OEM ครบทุกตัวที่จับคู่ไว้แล้ว — ไม่มีอะไรต้องเติม'); return }
+
+      /* ⚠️ "ใช้กับรุ่น" **ทับของเดิมได้** ต่างจาก OEM — มันคือข้อเท็จจริงที่คำนวณจาก
+         ตารางจับคู่ ไม่ใช่ค่าที่คนพิมพ์เอง ⇒ จับคู่เพิ่มรุ่นใหม่แล้วค่าต้องขยายตาม
+         🔴 แต่ **ห้ามลบทิ้งถ้าคำนวณได้ว่าง** — ว่างแปลว่า "ยังไม่จับคู่"
+            ไม่ใช่ "ไม่ใช้กับรุ่นไหนเลย" (ไม่รู้ ห้ามกลายเป็นไม่มี) */
+      let เติมรุ่น = 0
+      for (const [sku, รุ่น] of Object.entries(รุ่นของsku)) {
+        if (!รุ่น.length) continue
+        const ค่า = รุ่น.join(' · ')
+        if (String((ovrเดิม[sku] || {}).models || '') === ค่า) continue
+        ovrใหม่[sku] = { ...(ovrใหม่[sku] || {}), models: ค่า }
+        เติมรุ่น++
+      }
+
+      if (!เติม && !เติมรุ่น) { setงานOEM('คลังตรงกับตารางจับคู่อยู่แล้ว — ไม่มีอะไรต้องเติม'); return }
 
       /* ด่าน ② — ของเดิมต้องไม่ถูกแตะแม้แต่ตัวเดียว */
       let แตะ = 0
       for (const [k, v] of Object.entries(oemเดิม)) if (String((ovrใหม่[k] || {}).oem || '') !== v) แตะ++
       if (แตะ) throw new Error(`หยุด: การคำนวณจะทับ OEM เดิม ${แตะ} ตัว — ไม่เขียน`)
 
-      setงานOEM(`กำลังเขียน ${เติม} ตัว…`)
+      setงานOEM(`กำลังเขียน — OEM ${เติม} ตัว · ใช้กับรุ่น ${เติมรุ่น} ตัว…`)
       const r = await fetch('/api/catalog/state', {
         method: 'POST', headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
@@ -409,7 +431,7 @@ export default function Page() {
       }
       setงานOEM(ไม่ตรง
         ? `⚠ เขียนแล้วแต่ตรวจกลับไม่ตรง ${ไม่ตรง} ตัว — เปิดคลังอะไหล่ดูก่อนทำซ้ำ`
-        : `✅ เติม OEM ให้คลังอะไหล่ ${เติม} ตัว · ตรวจกลับตรงครบ`)
+        : `✅ เติมให้คลังอะไหล่แล้ว — OEM ${เติม} ตัว · ใช้กับรุ่น ${เติมรุ่น} ตัว · ตรวจกลับตรงครบ`)
     } catch (e) {
       setงานOEM(`🔴 ${e instanceof Error ? e.message : 'ทำไม่สำเร็จ'}`)
     }

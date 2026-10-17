@@ -249,6 +249,12 @@ font-size:13px;cursor:pointer;font-family:inherit;white-space:nowrap;color:#1e3a
       <select id="mCatSel"></select>
       <input id="mCat" type="text" placeholder="พิมพ์ชื่อหมวดใหม่" autocomplete="off" style="margin-top:6px;display:none">
       <datalist id="catList"></datalist></div>
+    <!-- 🔑 "ใช้กับรุ่น" — ท่านประธานทัก 17 ต.ค. 2569 ว่า "อะไหล่สามารถอยู่ได้มากกว่า 1 หมวด"
+         วัดแล้ว: รหัสร้านที่จับคู่ 692 ตัว **อยู่มากกว่า 1 รุ่น 210 ตัว** (ตัวหนึ่งถึง 12 รุ่น)
+         ⚠️ แยกจาก "ชื่อหมวด" โดยตั้งใจ — หมวดคุมการจัดกลุ่ม/ตัวนับ/Excel
+            ให้หมวดเลือกหลายอัน = ตัวนับแต่ละหมวดนับซ้ำ ยอดรวมไม่เท่าจำนวนสินค้าจริง -->
+    <div class="fld"><label>ใช้กับรุ่น <span style="font-weight:400;color:#5f6368;font-size:12px">— ใส่ได้หลายรุ่น (คั่นด้วย · ) · เติมอัตโนมัติได้จากหน้า “จับคู่รหัสอะไหล่”</span></label>
+      <input id="mModels" type="text" placeholder="เช่น 7800SP · 7800TB · MINI"></div>
     <div class="fld"><label>ลิงก์รูป (Image URL)</label><input id="mImg" type="text" placeholder="https://…">
       <div class="hint">เฟสถัดไปจะอัปโหลดรูปได้โดยตรง (เก็บใน Drive)</div>
       <img class="preview" id="mPrev" alt="" style="display:none">
@@ -295,7 +301,7 @@ const THRESHOLD=5;
 const COLS=[
   {key:"sku",label:"SKU"},{key:"name",label:"Product Name"},{key:"nameEn",label:"Name (EN)"},
   {key:"oem",label:"OEM"},{key:"hh",label:"HH SKU"},{key:"tags",label:"Tags"},{key:"cn",label:"คำอธิบาย (จีน)"},
-  {key:"category",label:"ชื่อหมวด"},{key:"factory",label:"ชื่อโรงงาน"},
+  {key:"category",label:"ชื่อหมวด"},{key:"models",label:"ใช้กับรุ่น"},{key:"factory",label:"ชื่อโรงงาน"},
   {key:"img",label:"Image"},{key:"price",label:"ราคา"},{key:"stock",label:"สต๊อก"},
   {key:"reco",label:"คำแนะนำ"},{key:"daysLeft",label:"หมดในกี่วัน"},{key:"perDay",label:"ขาย/วัน"},
   {key:"sold6",label:"ขาย 12ด"},{key:"qty",label:"จำนวนสั่ง"},{key:"edit",label:"แก้ไข"}
@@ -400,6 +406,11 @@ function row(p){
     nameEn:o.nameEn??p.pp.name,
     oem:o.oem??p.pp.oem, hh:o.hh??p.pp.hh, tagsName:o.tags??p.pp.name, cn:o.cn??p.pp.cn,
     category:catOf(p),
+    /* 🔑 "ใช้กับรุ่น" — ของตัวเดียวใช้ได้หลายรุ่น (วัดแล้ว 210 จาก 692 ตัวที่จับคู่)
+       เก็บเป็นข้อความคั่นด้วย " · " · เติมอัตโนมัติจากตารางจับคู่ได้ที่หน้า "จับคู่รหัสอะไหล่"
+       ⚠️ แยกจาก `category` โดยตั้งใจ — หมวดคุมการจัดกลุ่ม/ตัวนับ/Excel
+          ถ้าให้หมวดเลือกหลายอัน ตัวนับแต่ละหมวดจะนับซ้ำ ยอดรวมไม่เท่าจำนวนสินค้าจริง */
+    models:o.models||"",
     factory:o.factory||"", wechat:facWx(o.factory||""),
     img:o.img||(p.img?state.prefix+encodeURIComponent(p.img):""),
     // ⚠️ สต๊อกกับยอดขายเอาของสดจาก ZORT ก่อนเสมอ — ไฟล์ products.json เป็นของนิ่ง
@@ -429,7 +440,9 @@ function currentRows(){
     if(fs==="low"&&!(r.stock>0&&r.stock<=THRESHOLD))return false;
     if(fs==="in"&&r.stock<=THRESHOLD)return false;
     if(fr!==""&&String(reco(r.stock,r.sku).lvl)!==fr)return false;
-    if(q){const hay=(r.sku+" "+r.name+" "+r.nameEn+" "+r.oem+" "+r.hh+" "+r.tagsName+" "+r.cn+" "+r.category+" "+r.factory+" "+r.wechat).toLowerCase();if(!hay.includes(q))return false;}
+    /* ⚠️ ต้องรวม `models` ด้วย ไม่งั้นช่อง "ใช้กับรุ่น" เป็นแค่ของประดับ —
+         พิมพ์ "7800TB" แล้วต้องเจอของที่ใช้กับรุ่นนั้น แม้หมวดหลักจะเป็นรุ่นอื่น */
+      if(q){const hay=(r.sku+" "+r.name+" "+r.nameEn+" "+r.oem+" "+r.hh+" "+r.tagsName+" "+r.cn+" "+r.category+" "+r.models+" "+r.factory+" "+r.wechat).toLowerCase();if(!hay.includes(q))return false;}
     return true;
   });
   const s=state.sort;
@@ -464,6 +477,7 @@ function cell(r,key,q){
     case"tags":return '<td>'+hl(r.tagsName,q)+'</td>';
     case"cn":return '<td class="cn">'+esc(r.cn)+'</td>';
     case"category":return '<td class="factory">'+hl(r.category,q)+'</td>';
+    case"models":return '<td class="factory">'+hl(r.models,q)+'</td>';
     case"factory":return '<td class="factory">'+hl(r.factory,q)+'</td>';
     case"wechat":return '<td class="wechat">'+esc(r.wechat)+'</td>';
     /* 🔍 กดรูปแล้วขยาย — ท่านประธานสั่ง 17 ต.ค. 2569 "กดภาพแล้วให้ขยายภาพใหญ่"
@@ -604,6 +618,7 @@ function openEdit(sku){
     +'<option value="__new__"'+(cats.includes(cur)?"":" selected")+'>✏️ พิมพ์ชื่อหมวดใหม่…</option>';
   if(!cats.includes(cur)){inp.style.display="block";inp.value=cur;}else{inp.style.display="none";inp.value="";}
   document.getElementById("mOEM").value=r.oem||"";document.getElementById("mHH").value=r.hh||"";document.getElementById("mTags").value=r.tagsName||"";document.getElementById("mCn").value=r.cn||"";
+  document.getElementById("mModels").value=(state.ovr[sku]&&state.ovr[sku].models)||"";
   document.getElementById("mImg").value=(state.ovr[sku]&&state.ovr[sku].img)||"";
   rebuildFacSel(r.factory);
   updatePrev();
@@ -622,6 +637,7 @@ document.getElementById("mSave").onclick=()=>{
   const nameEn=document.getElementById("mNameEn").value.trim();
   const _sel=document.getElementById("mCatSel");
   const cat=(_sel.value==="__new__")?document.getElementById("mCat").value.trim():_sel.value;
+  const models=document.getElementById("mModels").value.trim();
   const img=document.getElementById("mImg").value.trim();
   const _fs=document.getElementById("mFacSel");
   let fac=(_fs.value==="__newfac__")?document.getElementById("mFacNew").value.trim():_fs.value;
@@ -639,6 +655,7 @@ document.getElementById("mSave").onclick=()=>{
    const cnDesc=document.getElementById("mCn").value.trim();
    if(cnDesc!==(base.pp.cn||""))o.cn=cnDesc;
   if(cat&&cat!==((base.cat&&base.cat.trim())||("อะไหล่ "+base.model)))o.category=cat;
+  if(models)o.models=models; else delete o.models;
   if(img)o.img=img; if(fac)o.factory=fac; if(we)o.wechat=we;
   if(Object.keys(o).length)state.ovr[sku]=o; else delete state.ovr[sku];
   save(LS_OVR,state.ovr);
