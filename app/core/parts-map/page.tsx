@@ -175,6 +175,8 @@ export default function Page() {
      ⇒ ไม่ชนรหัสคู่มือ (ซึ่งเป็นตัวเลขล้วน) · ใช้ท่อเดิม ไม่ต้องแก้เซิร์ฟเวอร์ */
   const [หมวดกำลังเพิ่ม, setหมวดกำลังเพิ่ม] = useState('')
   const [ร่างเพิ่ม, setร่างเพิ่ม] = useState('')
+  /** แถวที่เพิ่มเองซึ่งกำลังแก้อยู่ (คีย์ `+H1`) — '' = ไม่ได้แก้อะไรอยู่ */
+  const [แก้แถวที่เพิ่มเอง, setแก้แถวที่เพิ่มเอง] = useState('')
   useEffect(() => {
     ดึงรายชื่อรุ่น().then(setรุ่นทั้งหมด).catch((e) =>
       setโหลดพลาด((ก) => [...ก, `รายชื่อรุ่น: ${e?.message || e} — แสดงเฉพาะ ${รุ่นสำรอง.length} รุ่นที่ฝังไว้`]))
@@ -325,6 +327,8 @@ export default function Page() {
   /** คีย์ของแถวที่เพิ่มเองในหมวดนี้ เรียงตามลำดับที่ใส่ */
   const คีย์ที่เพิ่มเอง = (ตัวอักษร: string) =>
     Object.keys(แมป)
+      /* ⚠️ `\\d+$` ท้ายสุดสำคัญ — กันไม่ให้คีย์ข้อความกำกับ (`+H1T`) ถูกนับเป็นอีกแถวหนึ่ง
+         ถ้าหลุด จะได้แถวผีที่ "รหัสร้าน" เป็นข้อความกำกับ ซึ่งดูเหมือนข้อมูลจริงทุกประการ */
       .filter((k) => new RegExp(`^\\+${ตัวอักษร}\\d+$`, 'i').test(k) && String(แมป[k] || '').trim())
       .sort((a, b) => Number(a.slice(1 + ตัวอักษร.length)) - Number(b.slice(1 + ตัวอักษร.length)))
 
@@ -674,6 +678,8 @@ export default function Page() {
                     {คีย์ที่เพิ่มเอง(r.ตัวอักษร).map((k) => {
                       const sku = String(แมป[k] || '').trim()
                       const ของ = คลัง.ตามรหัส[sku.toUpperCase()]
+                      /* ข้อความกำกับเก็บที่คีย์เดียวกัน + T (`+H1` → `+H1T`) */
+                      const ข้อความกำกับ = String(แมป[k + 'T'] || '').trim()
                       return (
                         <div key={k} className="bg-emerald-50 border border-emerald-300 rounded-md
                                                 px-2.5 py-2 flex items-center gap-2.5 mb-1">
@@ -695,13 +701,55 @@ export default function Page() {
                               {ของ?.ชื่อ ? <> {ของ.ชื่อ}</> : null}
                             </span>
                             <span className="block text-[11.5px] text-gray-500 truncate">
-                              เพิ่มเอง — คู่มือไม่มีชิ้นนี้
+                              {ข้อความกำกับ || 'เพิ่มเอง — คู่มือไม่มีชิ้นนี้'}
                             </span>
                           </span>
-                          <button type="button" title="ลบออกจากหมวดนี้"
-                            onClick={() => บันทึก(k, '')}
-                            className="shrink-0 text-[12.5px] rounded border border-gray-300 px-2 py-1
-                                       text-gray-500 hover:text-red-600 hover:border-red-300">ลบ ✕</button>
+
+                          {/* ✏️ **แก้ได้ + ใส่ข้อความกำกับได้** — ท่านประธานวงมา 17 ต.ค. 2569
+                              🔑 ของที่เพิ่มเองแก้ไม่ได้ = กับดัก (ใส่ผิดต้องลบแล้วใส่ใหม่ทั้งแถว)
+                                 และข้อความกำกับจำเป็นจริง เพราะชิ้นที่คู่มือไม่มี
+                                 **ไม่มีเลขในผังให้อ้าง** คนอ่านรอบหน้าจะไม่รู้ว่าอยู่ตรงไหนของเครื่อง
+                              ⚠️ เก็บข้อความที่คีย์ `+H1T` ในตารางเดิม ไม่สร้างที่เก็บใหม่
+                              ⚠️ **เซิร์ฟเวอร์บังคับว่าค่าต้องมีอังกฤษ/เลขอย่างน้อย 1 ตัว และ ≤32**
+                                 (อ่าน `ล้างsku` ใน parts-map.mjs แล้ว ไม่ได้เดา)
+                                 ⇒ ไทยล้วนจะถูกตีกลับ · ต้องบอกก่อนพิมพ์ ไม่ใช่ตอนโดนปฏิเสธ */}
+                          {แก้แถวที่เพิ่มเอง === k ? (
+                            <span className="shrink-0 flex items-center gap-1.5">
+                              <input defaultValue={sku} aria-label="รหัสร้าน"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') { setแก้แถวที่เพิ่มเอง(''); return }
+                                  if (e.key !== 'Enter') return
+                                  e.preventDefault()
+                                  บันทึก(k, (e.target as HTMLInputElement).value)
+                                  setแก้แถวที่เพิ่มเอง('')
+                                }}
+                                placeholder="รหัสร้าน"
+                                className="w-28 border border-gray-300 rounded px-2 py-1 text-[12px] min-h-[34px]" />
+                              <input defaultValue={ข้อความกำกับ} aria-label="ข้อความกำกับ"
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Escape') { setแก้แถวที่เพิ่มเอง(''); return }
+                                  if (e.key !== 'Enter') return
+                                  e.preventDefault()
+                                  บันทึก(k + 'T', (e.target as HTMLInputElement).value)
+                                  setแก้แถวที่เพิ่มเอง('')
+                                }}
+                                placeholder="ข้อความกำกับ (มีเลข/อังกฤษอย่างน้อย 1 ตัว)"
+                                className="w-64 border border-gray-300 rounded px-2 py-1 text-[12px] min-h-[34px]" />
+                              <button type="button" onClick={() => setแก้แถวที่เพิ่มเอง('')}
+                                className="text-[12px] text-gray-500 px-1">ปิด</button>
+                            </span>
+                          ) : (
+                            <span className="shrink-0 flex items-center gap-1.5">
+                              <button type="button" onClick={() => setแก้แถวที่เพิ่มเอง(k)}
+                                title="แก้รหัสร้าน / ใส่ข้อความกำกับ"
+                                className="text-[12.5px] rounded border border-gray-300 px-2 py-1
+                                           text-gray-600 hover:bg-white">แก้ไข</button>
+                              <button type="button" title="ลบออกจากหมวดนี้"
+                                onClick={() => บันทึก(k, '')}
+                                className="text-[12.5px] rounded border border-gray-300 px-2 py-1
+                                           text-gray-500 hover:text-red-600 hover:border-red-300">ลบ ✕</button>
+                            </span>
+                          )}
                         </div>
                       )
                     })}
