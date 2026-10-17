@@ -168,6 +168,13 @@ export default function Page() {
    *  ⚠️ ขยาย "ในหน้าเดิม" ไม่ใช่เปิดแท็บใหม่ · คนใช้หน้านี้กรอกค้างอยู่กลางรายการ
    *     เปิดแท็บใหม่แล้วกลับมา ต้องเลื่อนหาตำแหน่งเดิมใหม่ทุกครั้ง */
   const [ผังขยาย, setผังขยาย] = useState<{ url: string; ชื่อ: string } | null>(null)
+
+  /* 🔑 **เพิ่มรหัสร้านเองในหมวด** — ท่านประธานสั่ง 17 ต.ค. 2569 ("+เพิ่ม (รหัสร้าน)")
+     คู่มือโรงงานไม่ได้มีทุกชิ้นที่ร้านขายจริง ⇒ เดิมชิ้นที่คู่มือไม่มี ใส่เข้าหมวดไม่ได้เลย
+     เก็บในตารางเดิมด้วยคีย์ `+<ตัวอักษรหมวด><ลำดับ>` (เช่น `+H1`)
+     ⇒ ไม่ชนรหัสคู่มือ (ซึ่งเป็นตัวเลขล้วน) · ใช้ท่อเดิม ไม่ต้องแก้เซิร์ฟเวอร์ */
+  const [หมวดกำลังเพิ่ม, setหมวดกำลังเพิ่ม] = useState('')
+  const [ร่างเพิ่ม, setร่างเพิ่ม] = useState('')
   useEffect(() => {
     ดึงรายชื่อรุ่น().then(setรุ่นทั้งหมด).catch((e) =>
       setโหลดพลาด((ก) => [...ก, `รายชื่อรุ่น: ${e?.message || e} — แสดงเฉพาะ ${รุ่นสำรอง.length} รุ่นที่ฝังไว้`]))
@@ -313,6 +320,21 @@ export default function Page() {
     if (n === null) return
     const el = ช่อง.current[n]
     if (el) { el.focus(); el.select() }
+  }
+
+  /** คีย์ของแถวที่เพิ่มเองในหมวดนี้ เรียงตามลำดับที่ใส่ */
+  const คีย์ที่เพิ่มเอง = (ตัวอักษร: string) =>
+    Object.keys(แมป)
+      .filter((k) => new RegExp(`^\\+${ตัวอักษร}\\d+$`, 'i').test(k) && String(แมป[k] || '').trim())
+      .sort((a, b) => Number(a.slice(1 + ตัวอักษร.length)) - Number(b.slice(1 + ตัวอักษร.length)))
+
+  /** คีย์ถัดไปที่ยังว่าง — ไม่ไล่จากจำนวน เพราะลบตรงกลางแล้วเลขจะชนกัน */
+  const คีย์ถัดไป = (ตัวอักษร: string) => {
+    for (let n = 1; n < 500; n++) {
+      const k = `+${ตัวอักษร}${n}`
+      if (!String(แมป[k] || '').trim()) return k
+    }
+    return ''
   }
 
   let กลุ่มก่อนหน้า = ''
@@ -586,6 +608,67 @@ export default function Page() {
                         ซ้อนกันโดยไม่มีป้ายบอกว่าใบไหนแผ่นไหน
                         ⇒ ติดป้าย "แผ่น N" + ย่อลง · รายการอะไหล่จึงกลับมาอยู่ในจอแรก
                            ซึ่งคืองานหลักของหน้านี้ · f440 มีหมวดหลายแผ่น 4 หมวด (J ถึง 3 แผ่น) */}
+                    {/* ➕ **เพิ่มรหัสร้านเองในหมวดนี้** — ท่านประธานสั่ง 17 ต.ค. 2569
+                        สำหรับชิ้นที่ร้านขายจริงแต่คู่มือโรงงานไม่มี
+                        ⚠️ ต้อง **ลบได้** ด้วย — ของที่เพิ่มเองแล้วลบไม่ได้คือกับดัก
+                           เพราะคนจะใส่ผิดแน่นอน (ลบ = บันทึกค่าว่าง ท่าเดียวกับลบการจับคู่ปกติ) */}
+                    <div className="flex flex-wrap items-center gap-2 mb-1">
+                      {คีย์ที่เพิ่มเอง(r.ตัวอักษร).map((k) => {
+                        const sku = String(แมป[k] || '').trim()
+                        const ของ = คลัง.ตามรหัส[sku.toUpperCase()]
+                        return (
+                          <span key={k} className="inline-flex items-center gap-2 rounded-md border
+                                                   border-emerald-300 bg-emerald-50 pl-1 pr-1.5 py-1">
+                            {ของ?.รูป && (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={ของ.รูป} alt="" className="w-9 h-9 object-contain rounded bg-white" />
+                            )}
+                            <span className="text-[12px] leading-tight">
+                              <span className="block font-mono">{sku}</span>
+                              {ของ?.ชื่อ && (
+                                <span className="block text-[11px] text-gray-600 max-w-[200px] truncate">
+                                  {ของ.ชื่อ}
+                                </span>
+                              )}
+                            </span>
+                            <button type="button" title="ลบออกจากหมวดนี้"
+                              onClick={() => บันทึก(k, '')}
+                              className="text-gray-400 hover:text-red-600 px-1">✕</button>
+                          </span>
+                        )
+                      })}
+
+                      {หมวดกำลังเพิ่ม === r.ตัวอักษร ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <input autoFocus value={ร่างเพิ่ม}
+                            onChange={(e) => setร่างเพิ่ม(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Escape') { setหมวดกำลังเพิ่ม(''); setร่างเพิ่ม(''); return }
+                              if (e.key !== 'Enter') return
+                              e.preventDefault()
+                              const k = คีย์ถัดไป(r.ตัวอักษร)
+                              /* ⚠️ ไม่มีคีย์ว่าง (ใส่ครบ 499 ช่อง) ⇒ ต้องบอก ห้ามเงียบ */
+                              if (!k) { setเตือน((ก) => ({ ...ก, [`+${r.ตัวอักษร}`]: 'หมวดนี้เพิ่มได้ครบแล้ว' })); return }
+                              บันทึก(k, ร่างเพิ่ม)
+                              setร่างเพิ่ม('')
+                            }}
+                            placeholder="รหัสร้าน แล้วกด Enter"
+                            className="w-44 border border-gray-300 rounded px-2 py-1 text-[12px] min-h-[34px]" />
+                          <button type="button" onClick={() => { setหมวดกำลังเพิ่ม(''); setร่างเพิ่ม('') }}
+                            className="text-[12px] text-gray-500 px-1">ยกเลิก</button>
+                        </span>
+                      ) : (
+                        <button type="button"
+                          onClick={() => { setหมวดกำลังเพิ่ม(r.ตัวอักษร); setร่างเพิ่ม('') }}
+                          title="เพิ่มชิ้นที่ร้านขายจริงแต่คู่มือไม่มี"
+                          className="text-[12px] rounded border border-gray-300 px-2 py-1
+                                     text-gray-600 hover:bg-gray-50">+ เพิ่ม (รหัสร้าน)</button>
+                      )}
+                      {เตือน[`+${r.ตัวอักษร}`] && (
+                        <span className="text-[11.5px] text-amber-800">⚠ {เตือน[`+${r.ตัวอักษร}`]}</span>
+                      )}
+                    </div>
+
                     {(ภาพของหมวด[หัวนี้] ?? []).length > 0 && (
                       <div className="flex items-center gap-2 mb-2 flex-wrap">
                         <span className="text-[11.5px] text-gray-500">ผังอะไหล่:</span>
