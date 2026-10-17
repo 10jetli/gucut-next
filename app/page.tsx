@@ -229,11 +229,12 @@ function ZortBigCard({ icon, label, value, unknown, tone }: {
       <div className="flex items-start gap-3">
         <span className="w-9 h-9 shrink-0 rounded-full bg-violet-50 flex items-center justify-center text-[16px]">{icon}</span>
         <div className="ml-auto text-right">
-          <p className="text-[12.5px] text-gray-500">{label}</p>
+          <p className="text-[14px] font-medium text-[#868e96]">{label}</p>
           {unknown
             ? <p className="text-[12.5px] text-amber-800 mt-1 leading-snug max-w-[260px]">⚠️ {unknown}</p>
-            : <p className={`text-[26px] font-semibold leading-tight ${
-              tone === 'red' ? 'text-red-500' : tone === 'green' ? 'text-emerald-600' : 'text-blue-600'}`}>{value}</p>}
+            /* 📏 ZORT ตัวเลขเด่น Lato 24 น้ำหนัก 600 สี #2f8dde (วัด /Dashboard 17 ต.ค. 2569) · แดง/เขียวมีความหมาย ⇒ คงไว้ */
+            : <p className={`font-['Lato','Boon',sans-serif] text-[24px] font-semibold leading-tight ${
+              tone === 'red' ? 'text-red-500' : tone === 'green' ? 'text-emerald-600' : 'text-[#2f8dde]'}`}>{value}</p>}
         </div>
       </div>
     </Card>
