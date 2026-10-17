@@ -364,9 +364,10 @@ export default function ProductDetailPage() {
               <>
                 {/* ZORT มี "Share Link" มุมขวาบน — ของเราคัดลอกลิงก์หน้านี้จริง ๆ
                     (ทำได้จริงเลยทำ · ต่างจากปุ่มอื่นที่ต้องรอท่อ) */}
-                <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
+                {/* 📏 ปุ่ม Share Link ของ ZORT เป็นปุ่มกรอบ 14px สูง 39 (วัด 17 ต.ค. 2569) ⇒ DETAIL_BTN ไม่ใช่ปุ่มรองสีเทา */}
+                <button type="button" className={DETAIL_BTN} onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
                   คัดลอกลิงก์หน้านี้
-                </BtnGhost>
+                </button>
                 {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Product/Details ไม่มี */}
               </>
             }
