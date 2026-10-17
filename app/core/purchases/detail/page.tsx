@@ -21,7 +21,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
-import { PageHead, WriteResult, thaiDate, RowMenu } from '@/components/zort'
+import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
@@ -375,8 +375,8 @@ function Inner() {
       {!loading && !error && d && (
         <>
           <div className="mb-4 grid gap-3 md:grid-cols-2">
-            <section className="rounded border border-gray-200 bg-white p-3">
-              <h2 className="mb-2 text-[12.5px] font-semibold">ข้อมูล</h2>
+            <section className={DL_CARD}>
+              <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ข้อมูล</h2>
               <div className="grid gap-1">
                 <Field k="รายการ" v={d.number || no} />
                 {/* 📐 ZORT `/Buy/Details`: ประเภทรายการ = ซื้อสินค้าเข้า (อ่าน 16 ต.ค. 2569) */}
@@ -407,8 +407,8 @@ function Inner() {
               </div>
             </section>
 
-            <section className="rounded border border-gray-200 bg-white p-3">
-              <h2 className="mb-2 text-[12.5px] font-semibold">ยอดเงิน</h2>
+            <section className={DL_CARD}>
+              <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ยอดเงิน</h2>
               {/* 🔴 สองยอดคู่กันเสมอ — ท่อส่งมาทั้งคู่โดยตั้งใจ */}
               <div className="grid gap-1 text-[12.5px]">
                 <div className="flex justify-between">
@@ -441,8 +441,8 @@ function Inner() {
             </section>
           </div>
 
-          <section className="rounded border border-gray-200 bg-white p-3">
-            <h2 className="mb-2 text-[12.5px] font-semibold">
+          <section className={DL_CARD}>
+            <h2 className={`mb-2 ${DL_CARD_TITLE}`}>
               รายการสินค้า {d.lines?.length ? `(${d.lines.length} บรรทัด)` : ''}
             </h2>
             {/* 🔬 เทียบกับจอ `/Buy/Details` ของ ZORT ทีละชิ้น 16 ก.ย. 2569 (อ่านอย่างเดียว)
@@ -477,26 +477,26 @@ function Inner() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="w-full text-[12.5px]">
+                <table className="w-full text-[14px] text-[#3e3e3e]">
                   <thead>
                     <tr className="border-b border-gray-200 text-left text-gray-500">
-                      <th className="py-1 pr-2 font-medium">#</th>
-                      <th className="py-1 pr-2 font-medium">รหัส</th>
-                      <th className="py-1 pr-2 font-medium">ชื่อสินค้า</th>
-                      <th className="py-1 pr-2 font-medium text-right">จำนวน</th>
-                      <th className="py-1 pr-2 font-medium text-right">มูลค่าต่อหน่วย</th>
-                      <th className="py-1 pr-2 font-medium text-right">ส่วนลดต่อหน่วย</th>
-                      <th className="py-1 font-medium text-right">รวม</th>
+                      <th className={TH}>#</th>
+                      <th className={TH}>รหัส</th>
+                      <th className={TH}>ชื่อสินค้า</th>
+                      <th className={THR}>จำนวน</th>
+                      <th className={THR}>มูลค่าต่อหน่วย</th>
+                      <th className={THR}>ส่วนลดต่อหน่วย</th>
+                      <th className={THR}>รวม</th>
                     </tr>
                   </thead>
                   <tbody>
                     {d.lines.map((l, i) => (
                       <tr key={`${l.sku ?? i}-${l.line ?? i}`} className="border-b border-gray-100 last:border-0">
-                        <td className="py-1 pr-2 text-gray-400">{l.line ?? i + 1}</td>
+                        <td className={TD_NO}>{l.line ?? i + 1}</td>
                         <td className="py-1 pr-2 font-mono text-[12.5px]">
                           {/* เลขรหัสสินค้าเข้าจอสินค้าได้ — แบบแผน "ทุกตัวระบุตัวตนต้องกดได้" */}
                           {l.sku
-                            ? <Link href={`/core/stock?q=${encodeURIComponent(l.sku)}`} className="text-blue-600 hover:underline">{l.sku}</Link>
+                            ? <Link href={`/core/stock?q=${encodeURIComponent(l.sku)}`} className={ROW_LINK}>{l.sku}</Link>
                             : '—'}
                         </td>
                         <td className="py-1 pr-2">{l.name || '—'}</td>
@@ -529,9 +529,9 @@ function Inner() {
 function Field({ k, v }: { k: string; v?: string | null }) {
   if (!v) return null
   return (
-    <div className="flex gap-2 text-[12.5px]">
-      <span className="min-w-[92px] text-gray-500">{k}</span>
-      <span className="break-words">{v}</span>
+    <div className="flex gap-2">
+      <span className={`${DL_LABEL} min-w-[150px]`}>{k}</span>
+      <span className={`${DL_VALUE} break-words`}>{v}</span>
     </div>
   )
 }

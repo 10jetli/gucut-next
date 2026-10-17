@@ -342,6 +342,13 @@ export const TD_NO = "px-2 py-2 align-top font-['Lato','Boon',sans-serif] text-[
 /** ลิงก์ในแถวตาราง — ZORT ใช้ Boon 14 น้ำหนัก 400 สี #337ab7 (วัด 8 จอรายการ 17 ต.ค. 2569)
  *  ⚠️ ยกเว้น /Sell/list ที่ ZORT ใช้ Kanit — จอขายใส่ฟอนต์เพิ่มเอง */
 export const ROW_LINK = 'text-[#337ab7] font-normal hover:underline'
+/* ── จอรายละเอียด (ใบขาย/ใบซื้อ/ใบเสนอราคา) — วัด DOM ZORT /Sell/Details /Buy/Details /Quotation/Details 17 ต.ค. 2569
+   การ์ด: พื้นขาว ไม่มีขอบ มุม 6 ช่องใน 20 · หัวการ์ด Boon 14 น้ำหนัก 500 #868e96
+   ป้ายชื่อช่อง Boon 16 #868e96 · ค่า Boon 16 #3e3e3e */
+export const DL_CARD = 'bg-white rounded-md p-5'
+export const DL_CARD_TITLE = "font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96]"
+export const DL_LABEL = 'text-[16px] text-[#868e96]'
+export const DL_VALUE = 'text-[16px] text-[#3e3e3e]'
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
 /* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**

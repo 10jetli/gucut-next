@@ -11,7 +11,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, TableWrap, TH, THR, TD, TDR, thaiDate, RowMenu } from '@/components/zort'
+import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, thaiDate, RowMenu } from '@/components/zort'
 import { QUOTATION_DETAIL_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Line {
@@ -149,25 +149,25 @@ function Inner() {
           {/* หัวใบแบบ ZORT — ขึ้นเมื่อท่อรุ่นใหม่ส่งช่องที่ตั้งชื่อแล้วมาให้
               ⚠️ เช็ค "มีคีย์ไหม" ไม่ใช่ค่า truthy — ใบยอด ฿0 มีจริง (ของแถม/ลดเต็มจำนวน) */}
           {named ? (
-            <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
+            <div className={`${DL_CARD} mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 ${DL_VALUE}`}>
               {/* 🔤 เดิมโชว์ค่าดิบ ("Voided") — เขียนเป็น `{d.status || …}` จึงรอดการกวาดสองรอบก่อน
                   คำ + ป้ายช่องลอกจากจอ ZORT จอเดียวกัน (`/Quotation/Details` ใช้ป้ายว่า "สถานะรายการ")
                   จับคู่ใบเดียวกันสองฝั่งแล้ว 16 ก.ย. 2569 ⇒ Voided = "ถูกยกเลิก" (ตารางของ ZORT ใช้ "ยกเลิก") */}
-              <div><p className="text-gray-400 text-[11.5px]">รายการ</p><span className="font-medium">{d.number || <span className="text-gray-300">—</span>}</span></div>
-              <div><p className="text-gray-400 text-[11.5px]">สถานะรายการ</p>
+              <div><p className={DL_LABEL}>รายการ</p><span className="font-medium">{d.number || <span className="text-gray-300">—</span>}</span></div>
+              <div><p className={DL_LABEL}>สถานะรายการ</p>
                 {d.status
                   ? <span title={`ค่าที่ท่อส่งมา: ${d.status}`}>{zortWord(QUOTATION_DETAIL_STATUS, d.status).text}</span>
                   : <span className="text-gray-300">—</span>}</div>
-              <div><p className="text-gray-400 text-[11.5px]">วันที่</p>{d.date ? thaiDate(d.date) : <span className="text-gray-300">—</span>}</div>
-              <div><p className="text-gray-400 text-[11.5px]">ชื่อลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
-              <div><p className="text-gray-400 text-[11.5px]">ยอดใบ</p><span className="tabular-nums font-medium">{baht(d.amount)}</span></div>
-              <div><p className="text-gray-400 text-[11.5px]">ภาษี</p><span className="tabular-nums">{baht(d.vatAmount)}</span></div>
-              <div><p className="text-gray-400 text-[11.5px]">ส่วนลด</p><span className="tabular-nums">{baht(d.discountAmount)}</span></div>
-              <div><p className="text-gray-400 text-[11.5px]">ค่าส่ง</p><span className="tabular-nums">{baht(d.shippingAmount)}</span></div>
+              <div><p className={DL_LABEL}>วันที่</p>{d.date ? thaiDate(d.date) : <span className="text-gray-300">—</span>}</div>
+              <div><p className={DL_LABEL}>ชื่อลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
+              <div><p className={DL_LABEL}>ยอดใบ</p><span className="tabular-nums font-medium">{baht(d.amount)}</span></div>
+              <div><p className={DL_LABEL}>ภาษี</p><span className="tabular-nums">{baht(d.vatAmount)}</span></div>
+              <div><p className={DL_LABEL}>ส่วนลด</p><span className="tabular-nums">{baht(d.discountAmount)}</span></div>
+              <div><p className={DL_LABEL}>ค่าส่ง</p><span className="tabular-nums">{baht(d.shippingAmount)}</span></div>
             </div>
           ) : (
-            <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
-              <p className="text-[12.5px] font-semibold text-gray-800 mb-2">ช่องเงินที่ ZORT เก็บไว้ (ทุกช่องที่มีค่า)</p>
+            <div className={`${DL_CARD} mb-4`}>
+              <p className={`${DL_CARD_TITLE} mb-2`}>ช่องเงินที่ ZORT เก็บไว้ (ทุกช่องที่มีค่า)</p>
               <p className="text-[11.5px] text-gray-400 mb-2">
                 ท่อรุ่นนี้ยังไม่ได้ตั้งชื่อช่องให้ — จอจึงยังไม่รู้ว่าช่องไหนคือยอดใบ และ<b>จะไม่เดาให้</b>
               </p>
@@ -207,7 +207,7 @@ function Inner() {
             <p className="text-[12.5px] text-gray-400">ใบนี้ไม่มีบรรทัดสินค้า</p>
           ) : (
             <>
-              <p className="text-[12.5px] font-semibold text-gray-800 mb-2">บรรทัดสินค้า ({d.lines.length})</p>
+              <p className={`${DL_CARD_TITLE} mb-2`}>บรรทัดสินค้า ({d.lines.length})</p>
               <TableWrap>
                 <table className="w-full min-w-[560px]">
                   <thead className="bg-white border-b border-gray-200">
@@ -221,7 +221,7 @@ function Inner() {
                   <tbody>
                     {d.lines.map((l, i) => (
                       <tr key={`${l.sku ?? ''}-${i}`} className="border-b border-[#e8ecf8] last:border-0">
-                        <td className={`${TD} text-gray-400`}>{i + 1}</td>
+                        <td className={TD_NO}>{i + 1}</td>
                         <td className={`${TD} font-mono text-[12.5px]`}>{l.sku || '—'}</td>
                         <td className={TD}>{l.name || '—'}</td>
                         <td className={TDR}>{typeof l.qty === 'number' ? l.qty.toLocaleString('th-TH') : '—'}{l.unit ? <span className="text-gray-500"> {l.unit}</span> : null}</td>
@@ -245,7 +245,7 @@ function Inner() {
                 <summary className="text-[12.5px] text-gray-500 cursor-pointer">ดูทุกช่องดิบที่ ZORT ส่งมา (ไว้ไล่ปัญหา)</summary>
                 <div className="mt-2 space-y-2">
                   {named && money && Object.keys(money).length > 0 && (
-                    <div className="bg-white border border-gray-200 rounded-md p-3">
+                    <div className="bg-white rounded-md p-3">
                       <p className="text-[11.5px] text-gray-400 mb-1">ช่องเงินทั้งหมดของหัวใบ</p>
                       <dl className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
                         {Object.entries(money).map(([k, v]) => (
@@ -256,7 +256,7 @@ function Inner() {
                     </div>
                   )}
                   {d.lines.map((l, i) => (
-                    <div key={i} className="bg-white border border-gray-200 rounded-md p-3">
+                    <div key={i} className="bg-white rounded-md p-3">
                       <dl className="flex flex-wrap gap-x-4 gap-y-1 text-[12.5px]">
                         {Object.entries(l['ทุกช่องในบรรทัด'] ?? {}).map(([k, v]) => (
                           <div key={k}><dt className="inline text-gray-400 font-mono text-[10px]">{k}:</dt>{' '}
