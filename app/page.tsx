@@ -279,7 +279,7 @@ function MonthTrend({ data, kind }: { data: { ym: string; sales: number }[]; kin
  *  🔴 คลังที่ท่อไม่ส่งตัวเลขมา (`null`) **ไม่ใช่ 0** ⇒ ไม่เอาเข้ากราฟ และต้องเขียนแยกว่าไม่รู้
  *     (ของจริง: KLD/ANJ ติดสิทธิ์ผู้ใช้ API — ยิงเห็นเอง 15 ก.ย. 2569) */
 function WarehousePie({ rows }: { rows: { code: string; name: string; stockValue: number | null }[] }) {
-  const COLORS = ['#7c6cf0', '#4669e5', '#34c3a4', '#f0a23c', '#e2607a']
+  const COLORS = ['#7c6cf0', '#4165ed', '#34c3a4', '#f0a23c', '#e2607a']
   const known = rows.filter((r) => typeof r.stockValue === 'number' && (r.stockValue as number) > 0)
   const unknown = rows.filter((r) => typeof r.stockValue !== 'number')
   const zero = rows.filter((r) => r.stockValue === 0)

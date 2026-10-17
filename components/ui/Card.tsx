@@ -18,9 +18,10 @@ export default function Card({
   return (
     <As
       className={[
-        'bg-white rounded-2xl border border-gray-100/80',
-        'shadow-[0_1px_2px_rgba(15,23,42,0.04),0_10px_24px_-16px_rgba(15,23,42,0.14)]',
-        hover ? 'transition-all duration-200 hover:shadow-[0_2px_4px_rgba(15,23,42,0.06),0_18px_32px_-16px_rgba(15,23,42,0.2)] hover:-translate-y-0.5' : '',
+        /* 📏 ZORT (วัด DOM แดชบอร์ด + จอรายละเอียด 17 ต.ค. 2569): การ์ดพื้นขาว มุม 6 ไม่มีขอบ ไม่มีเงา ช่องใน 20
+           ⚠️ การ์ดที่กดได้ยังมีเงาบาง ๆ ตอนชี้ — ไม่งั้นมองไม่ออกว่ากดได้ (ZORT ไม่มีการ์ดกดได้บนจอที่วัด) */
+        'bg-white rounded-md',
+        hover ? 'transition-shadow duration-200 hover:shadow-[0_3px_6px_rgba(65,101,237,0.15)]' : '',
         padded ? 'p-4 md:p-5' : '',
         className,
       ].filter(Boolean).join(' ')}
