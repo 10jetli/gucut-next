@@ -732,7 +732,7 @@ export default function LedgerScreen({
                 ? `จอนี้ดึงมาครั้งละ 200 แถว ยังไม่ได้ทำการแบ่งหน้า (ตอนนี้ ${rows.length} แถว)`
                 : 'ZORT ตอบแล้วว่าไม่มีรายการ จึงยังไม่มีอะไรให้แบ่งหน้า')
             : 'ยังไม่ได้ดึงข้อมูล'}
-          className="text-[12.5px] border border-gray-200 rounded px-2 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
+          className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
         >
           <option>20</option>
         </select>

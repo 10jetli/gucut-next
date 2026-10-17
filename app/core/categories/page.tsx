@@ -203,7 +203,7 @@ export default function CoreCategoriesPage() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="ค้นหา"
-          className="w-full max-w-[320px] text-[12.5px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-400"
+          className="w-full max-w-[320px] h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] px-4 py-2 outline-none focus:border-[#868e96]"
         />
       </div>
 

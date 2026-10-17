@@ -193,7 +193,7 @@ export function SearchRow({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') onSubmit() }}
           placeholder={placeholder}
-          className="w-[330px] max-w-full text-[12.5px] border border-gray-300 rounded-full pl-9 pr-3 py-2 focus:outline-none focus:border-gray-400"
+          className="w-[330px] max-w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] pl-9 pr-3 py-2 focus:outline-none focus:border-[#868e96]"
         />
       </div>
       {advanced}
@@ -248,12 +248,12 @@ export function Tabs({
           role="tab"
           aria-selected={active === t.id}
           /* 📐 แท็บตาม ZORT: Kanit 16px น้ำหนัก 400 · แท็บที่เลือกสีน้ำเงิน rgb(65,101,237) (วัด 17 ต.ค. 2569) */
-          className={`text-[16px] px-3.5 py-2.5 -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
+          className={`text-[16px] px-3.5 py-[11px] -mb-px border-b-2 transition-colors whitespace-nowrap flex-none ${
             t.ปิดไว้
               ? 'border-transparent text-gray-300 cursor-not-allowed'
               : active === t.id
                 ? 'border-[#4165ed] text-[#4165ed]'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                : 'border-transparent font-light text-[#adb5bd] hover:text-[#3e3e3e]' /* ZORT แท็บที่ไม่ได้เลือก: น้ำหนัก 300 สี #adb5bd สูง 48 (วัด 17 ต.ค. 2569) */
           }`}
         >
           {t.label}

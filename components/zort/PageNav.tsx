@@ -97,7 +97,7 @@ export default function PageNav({ offset, perPage, total, rowsOnPage, onGo, onPe
           <span className="text-[12.5px] text-gray-500 ml-1">จำนวนต่อหน้า</span>
           <select value={perPage} disabled={disabled}
             onChange={(e) => onPerPage(Number(e.target.value))}
-            className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white">
+            className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white">
             {PAGE_CHOICES.map((n) => <option key={n} value={n}>{n}</option>)}
           </select>
         </>

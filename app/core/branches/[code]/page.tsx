@@ -241,7 +241,7 @@ export default function BranchDetailPage() {
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีช่วง === 1 ? 'วันนี้' : `${ขายดีช่วง} วัน`}</p>
               <select value={ขายดีช่วง} onChange={(e) => setขายดีช่วง(Number(e.target.value))}
-                className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 bg-white">
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2.5 py-1 bg-white">
                 <option value={1}>วันนี้</option><option value={7}>7 วัน</option>
                 <option value={30}>1 เดือน</option><option value={90}>3 เดือน</option>
               </select>

@@ -464,7 +464,7 @@ export default function BuyReportPage() {
                 <select
                   value={chartView}
                   onChange={(e) => setChartView(e.target.value === 'cat' ? 'cat' : 'total')}
-                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
+                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
                 >
                   <option value="total">ยอดซื้อรวม</option>
                   <option value="cat">ยอดซื้อตามหมวดหมู่</option>
@@ -527,7 +527,7 @@ export default function BuyReportPage() {
                   const v = e.target.value as 'sku' | 'category' | 'vendor' | 'warehouse'
                   setBy(v); void load(store, v)
                 }}
-                className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700"
               >
                 <option value="sku">สินค้า</option>
                 <option value="category">หมวดหมู่</option>

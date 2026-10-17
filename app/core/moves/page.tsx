@@ -211,7 +211,7 @@ function MovesInner() {
           <label className="text-[12.5px] text-gray-500">
             เหตุผล
             <select value={reason} onChange={(e) => setReason(e.target.value)}
-              className="mt-1 w-full text-[12.5px] border border-gray-200 rounded-lg px-2.5 py-1.5 bg-white">
+              className="mt-1 w-full font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded-lg px-2.5 py-1 bg-white">
               {REASONS.map((r) => (
                 <option key={r.id} value={r.id}>{r.label} ({r.dir === 'in' ? 'เข้า' : 'ออก'})</option>
               ))}

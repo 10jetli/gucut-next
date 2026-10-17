@@ -83,7 +83,7 @@ export default function AdvancedSearch({
           <span className="block mb-1">{f.label}</span>
           <select value={String(f.value)}
             onChange={(e) => f.onChange(e.target.value as string & boolean)}
-            className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white"
+            className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] border border-[#ccc] rounded px-2 py-1 bg-white"
             style={f.width ? { width: f.width } : undefined}>
             {(f.options ?? []).map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
           </select>

@@ -242,7 +242,7 @@ export default function PrintLabelsPage() {
           <div className="flex flex-wrap items-end gap-3 mt-3">
             <label className="block">
               <span className="block text-[11.5px] font-semibold text-gray-400 mb-1">ขนาดฉลาก</span>
-              <select className="rounded border border-gray-200 px-2 py-1.5 text-[12.5px]" value={size} onChange={(e) => setSize(e.target.value)}>
+              <select className="rounded border border-[#ccc] px-2 py-1 font-['Lato','Boon',sans-serif] text-[12px] text-[#555]" value={size} onChange={(e) => setSize(e.target.value)}>
                 {SIZES.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
               </select>
             </label>
