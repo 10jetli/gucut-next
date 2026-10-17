@@ -39,7 +39,7 @@ import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import {
+import { ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, LinkText, EmptyState, RowMenu, PageNav,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
@@ -458,14 +458,14 @@ export default function CoreContactsPage() {
                   )}
                   {rows.map((r, i) => (
                     <tr key={r.id} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                      <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                      <td className={TD_NO}>{offset + i + 1}</td>
                       <td className={`${TD} whitespace-nowrap`}>{r.code || DASH}</td>
                       <td className={TD}>
                         {/* ✅ 8 ก.ย. 2569: มีหน้าปลายทางแล้ว (/core/customers/detail + เส้น ?customer=)
                             ⇒ ทำเป็นลิงก์ตาม ZORT (ชื่อ → ContactDetail) · สีฟ้า = สัญญาว่ากดได้ ตอนนี้จริงแล้ว */}
                         {r.name ? (
                           <Link href={`/core/customers/detail?name=${encodeURIComponent(r.name)}`}
-                            className="text-blue-600 hover:underline">{r.name}</Link>
+                            className={ROW_LINK}>{r.name}</Link>
                         ) : <span className="text-gray-800">{DASH}</span>}
                         {/* ZORT ต่อท้ายชื่อสาขาในวงเล็บ — ค่าที่ได้มาบางแถวเป็นรหัสดิบ ("1")
                             แสดงตามที่ต้นทางให้มา ไม่แต่งเอง แล้วอธิบายไว้ท้ายตาราง */}

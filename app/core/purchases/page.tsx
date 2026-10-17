@@ -22,7 +22,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import {
+import { ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
   LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
@@ -465,7 +465,7 @@ export default function CorePurchasesPage() {
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.number} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(String(r.number)) ? 'bg-[#eef1fa]' : ''}`}>
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    <td className={TD_NO}>{offset + i + 1}</td>
                     <td className={TD}>
                       <RowCheck label={`เลือก ${r.number}`}
                         checked={picked.includes(String(r.number))}
@@ -478,7 +478,7 @@ export default function CorePurchasesPage() {
                           เส้น ?purchase= เปิดให้แล้ว 8 ก.ย. 2569 */}
                       {/* 🏬 พก store ไปด้วย — เลขที่ใบของสองร้านซ้ำกันได้ ⇒ ถ้าไม่บอกร้าน หน้ารายใบจะไปเปิดของ z1 เสมอ */}
                       <Link href={`/core/purchases/detail?no=${encodeURIComponent(r.number)}${store ? `&store=${store}` : ''}`}
-                        className="text-blue-600 hover:underline font-medium">{r.number}</Link>
+                        className={ROW_LINK}>{r.number}</Link>
                     </td>
                     <td className={TD}><span className="text-gray-800">{r.vendor || '—'}</span></td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>

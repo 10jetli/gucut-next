@@ -1309,7 +1309,7 @@ export default function CoreSalesPage() {
                                กว้าง 194px เป็นคอลัมน์ที่กว้างที่สุดและ **ไม่มีเพดาน** ต่างจากคอลัมน์อื่น)
                              ZORT ตัดเลขใบลงสองบรรทัดจริง (เห็นในภาพ `261014KU6JWHD`/`0`) */}
                       <Link href={detailHref(r.id, i)} onClick={(e) => e.stopPropagation()}
-                        className="text-[#337ab7] font-normal hover:underline break-all">{r.number}</Link>
+                        className="font-['Kanit','Boon',sans-serif] text-[#337ab7] font-normal hover:underline break-all">{r.number}</Link>
                       {/* 🔴 **เลขที่ใบซ้ำกันข้ามร้านจริง** (ฝั่งท่อจับได้ 15 ก.ย. 2569)
                           z1 และ z2 เดินเลขคนละชุด ⇒ `SO-202503029` มีทั้งสองร้าน **คนละใบ คนละยอด**
                           (z1 ฿7,757 ค้างชำระ · z2 ฿450 จ่ายแล้ว) · ตัวกรองร้านตั้งต้นคือ "ทุกร้าน"

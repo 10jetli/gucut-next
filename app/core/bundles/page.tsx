@@ -24,7 +24,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
-import {
+import { ROW_LINK, TD_NO,
   PageHead, SearchRow, TableWrap, Tabs, TH, THR, TD, TDR,
   LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
@@ -427,7 +427,7 @@ export default function CoreBundlesPage() {
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.sku} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    <td className={TD_NO}>{offset + i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-700 font-medium`}>{r.sku}</td>
                     {/* รูปอยู่ในคอลัมน์ชื่อ แบบเดียวกับจอสินค้าของ ZORT */}
                     <td className={TD}>
@@ -444,7 +444,7 @@ export default function CoreBundlesPage() {
                           onMouseEnter={() => showItems(r.sku)}
                           onMouseLeave={() => setHoverSku(null)}
                         >
-                          <Link href={`/core/bundles/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                          <Link href={`/core/bundles/${encodeURIComponent(r.sku)}`} className={ROW_LINK}>
                             {r.name || '—'}
                           </Link>
                           {hoverSku === r.sku && (

@@ -26,7 +26,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import { categoryCoverage } from '@/lib/category-net'
 import { skuScopeNote } from '@/lib/sku-scope'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { PageHead, TableWrap, TH, THR, TD, TDR, EmptyState, RowMenu } from '@/components/zort'
+import {
+  TH_KANIT, THR_KANIT, ROW_LINK, PageHead, TableWrap, TD, TDR, EmptyState, RowMenu,
+} from '@/components/zort'
 
 interface Row {
   name: string
@@ -309,11 +311,11 @@ export default function CoreCategoriesPage() {
                   เพราะท่อเมิน `sort` ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก · ติดเฉพาะช่องที่วัดมาแล้ว */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">ชื่อหมวดหมู่</span></th>
-                  <th className={THR}>จำนวน SKU</th>
-                  <th className={THR}>มูลค่าสินค้าคงเหลือ</th>
-                  <th className={THR}>มูลค่าสินค้าพร้อมขาย</th>
-                  <th className={TH} style={{ width: 90 }}></th>
+                  <th className={TH_KANIT}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">ชื่อหมวดหมู่</span></th>
+                  <th className={THR_KANIT}>จำนวน SKU</th>
+                  <th className={THR_KANIT}>มูลค่าสินค้าคงเหลือ</th>
+                  <th className={THR_KANIT}>มูลค่าสินค้าพร้อมขาย</th>
+                  <th className={TH_KANIT} style={{ width: 90 }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -330,7 +332,7 @@ export default function CoreCategoriesPage() {
                           เจ้าของร้านจับได้ 8 ก.ย. 2569 · ท่อรับ &category= จับคู่ตรงตัวแล้ว 66d2c0f
                           รวมแถวพิเศษ '(ยังไม่ได้จัดหมวดใน ZORT)' ด้วย — ท่อรู้จักค่านี้) */}
                       <Link href={`/core/stock?category=${encodeURIComponent(r.name ?? '')}`}
-                        className="text-blue-600 hover:underline">{r.name}</Link>
+                        className={ROW_LINK}>{r.name}</Link>
                       {/* ⚠️ หมวดที่ยัง "เดาจากชื่อสินค้า" ต้องดูออก — ไม่งั้นเข้าใจว่าทุกหมวดมาจาก ZORT */}
                       {r.zort === false && (
                         <span className="ml-1.5 text-[10px] text-gray-600 bg-gray-100 rounded px-1.5 py-0.5">

@@ -62,7 +62,8 @@ export function PageHead({
     return (
       <div className="mb-4">
         <h1 className="text-[30px] leading-[30px] font-medium text-[#3e3e3e]">{title}</h1>
-        {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
+        {/* 📏 ZORT (วัด /Product/list 17 ต.ค. 2569): บรรทัดสรุปใต้หัวจอ Kanit 16 #3e3e3e ห่างหัวจอ 8 */}
+        {summary && <div className="font-['Kanit','Boon',sans-serif] text-[16px] text-[#3e3e3e] mt-2">{summary}</div>}
         {actions && <div className="flex flex-wrap items-center gap-2 mt-3">{actions}</div>}
       </div>
     )
@@ -77,7 +78,8 @@ export function PageHead({
         {/* ⚠️ ZORT ใช้ฟอนต์ Prompt เหมือนเรา (ตรวจจาก zortout.com แล้ว) แต่หัวจอเขาน้ำหนัก 600
             ไม่ใช่ 700 และไม่บีบตัวอักษร — ของเดิมหนาและแน่นกว่าต้นแบบ */}
         <h1 className="text-[30px] leading-[30px] font-medium text-[#3e3e3e]">{title}</h1>
-        {summary && <div className="text-[12.5px] text-gray-500 mt-1">{summary}</div>}
+        {/* 📏 ZORT (วัด /Product/list 17 ต.ค. 2569): บรรทัดสรุปใต้หัวจอ Kanit 16 #3e3e3e ห่างหัวจอ 8 */}
+        {summary && <div className="font-['Kanit','Boon',sans-serif] text-[16px] text-[#3e3e3e] mt-2">{summary}</div>}
       </div>
       {/* 🔴 **`shrink-0` ทำให้แถวปุ่มล้นจอบนมือถือ/แท็บเล็ต** (วัดจริง 16 ก.ย. 2569)
           flex-wrap ห่อได้ก็จริง แต่ `shrink-0` ห้ามกล่องหดลงต่ำกว่าความกว้างของเนื้อใน
@@ -326,8 +328,16 @@ export function TableWrap({ children }: { children: ReactNode }) {
    หัวคอลัมน์ Lato 12px rgb(134,142,150) · เซลล์ Boon 14px rgb(62,62,62) */
 export const TH = 'text-left font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
 export const THR = 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
+/** หัวคอลัมน์แบบ Kanit 14 #3e3e3e — ZORT ใช้ที่ /Logistics/list กับ /Product/Categorylist (วัด 17 ต.ค. 2569) ไม่ใช่ Lato 12 เหมือนจออื่น */
+export const TH_KANIT = "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
+export const THR_KANIT = "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
 export const TD = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top'
 export const TDR = 'px-2 py-3 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
+/** ช่องลำดับแถว (#) — ZORT ใช้ Lato 12 สีเทา #868e96 (วัด DOM 8 จอรายการ 17 ต.ค. 2569) */
+export const TD_NO = `${TD} font-['Lato','Boon',sans-serif] text-[12px] text-[#868e96]`
+/** ลิงก์ในแถวตาราง — ZORT ใช้ Boon 14 น้ำหนัก 400 สี #337ab7 (วัด 8 จอรายการ 17 ต.ค. 2569)
+ *  ⚠️ ยกเว้น /Sell/list ที่ ZORT ใช้ Kanit — จอขายใส่ฟอนต์เพิ่มเอง */
+export const ROW_LINK = 'text-[#337ab7] font-normal hover:underline'
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
 /* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**

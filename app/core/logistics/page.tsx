@@ -35,8 +35,8 @@ import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSe
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR,
-  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark, PageNav,} from '@/components/zort'
+  TH_KANIT, THR_KANIT, ROW_LINK, PageHead, SearchRow, Tabs, TableWrap, TD, TDR, Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark, PageNav,
+} from '@/components/zort'
 
 interface Row {
   id: string; number: string; trackingNo?: string; date?: string
@@ -253,7 +253,7 @@ export default function LogisticsPage() {
           <>
             {/* 🔁 ปุ่ม "รีเฟรช" บนหัวจอเอาออก 16 ต.ค. 2569 — ZORT ไม่มี (อ่านจอ ZORT รายการนี้) */}
             <Link href="/core/soon/shipping"
-              className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+              className="font-['Kanit','Boon',sans-serif] text-[16px] leading-6 font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-4 py-[9px] hover:bg-[#e9ecef]">
               นำเข้ารายการไฟล์ Excel
             </Link>
             <Link href="/core/soon/shipping"
@@ -468,20 +468,20 @@ export default function LogisticsPage() {
             <table className="w-full min-w-[900px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH}>รายการ</th>
-                  <th className={TH}><span title={data?.dateBasis ? `วันที่ในคอลัมน์นี้ = ${data.dateBasis}` : undefined}>วันที่</span></th>
-                  <th className={TH}>ชื่อผู้รับ</th>
-                  <th className={THR}>จำนวนรายการขาย</th>
-                  <th className={TH}>ชำระเงิน</th>
+                  <th className={TH_KANIT}>รายการ</th>
+                  <th className={TH_KANIT}><span title={data?.dateBasis ? `วันที่ในคอลัมน์นี้ = ${data.dateBasis}` : undefined}>วันที่</span></th>
+                  <th className={TH_KANIT}>ชื่อผู้รับ</th>
+                  <th className={THR_KANIT}>จำนวนรายการขาย</th>
+                  <th className={TH_KANIT}>ชำระเงิน</th>
                   {/* 🔴 **คำว่า "สถานะ" ของสองจอไม่ใช่เรื่องเดียวกัน** (กดอ่านจอ ZORT 16 ก.ย. 2569)
                       ZORT คอลัมน์นี้คือ **สถานะการส่ง** — ตารางเห็นจริง "กำลังส่ง" · "สำเร็จ"
                       (แผงค้นหาของเขามี สำเร็จ · รอชำระ · รอส่ง · กำลังส่ง · ถูกยกเลิก)
                       ของเราได้มาจากท่อเป็น **สถานะใบขาย** (Success/Pending/Voided) ⇒ ไม่มี "กำลังส่ง" เลย
                       ⇒ ตั้งชื่อคอลัมน์ให้ตรงกับของที่มีจริง **ห้ามแปะคำ ZORT ทับของที่ไม่ใช่เรื่องเดียวกัน**
                          (กติกาในสกิล zort-words: เจอสถานะที่เราไม่มี = งานแก้ระบบ ต้องแจ้ง ไม่ใช่แปะคำ) */}
-                  <th className={TH} title="สถานะของใบขาย — ไม่ใช่สถานะการส่งของบริษัทขนส่ง">สถานะใบขาย</th>
-                  <th className={TH}>หมายเลขออเดอร์</th>
-                  <th className={TH} style={{ width: 56 }}></th>
+                  <th className={TH_KANIT} title="สถานะของใบขาย — ไม่ใช่สถานะการส่งของบริษัทขนส่ง">สถานะใบขาย</th>
+                  <th className={TH_KANIT}>หมายเลขออเดอร์</th>
+                  <th className={TH_KANIT} style={{ width: 56 }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -500,7 +500,7 @@ export default function LogisticsPage() {
                           จะโชว์เลขที่ใบขาย**ซ้ำกับคอลัมน์ "หมายเลขออเดอร์" ในแถวเดียวกัน**
                           อ่านแล้วนึกว่าเลขนั้นคือเลขพัสดุ ⇒ ยังไม่มีก็ต้องบอกว่ายังไม่มี */}
                       <Link href={`/core/sales/detail?id=${encodeURIComponent(r.id)}`}
-                        className={r.trackingNo ? 'text-blue-600 hover:underline font-medium' : 'text-gray-400 hover:underline'}>
+                        className={r.trackingNo ? ROW_LINK : 'text-gray-400 hover:underline'}>
                         {r.trackingNo || 'ยังไม่มีเลขพัสดุ'}
                       </Link>
                       <span className="flex items-center gap-1 text-[11.5px] text-gray-400 mt-0.5">
@@ -524,7 +524,7 @@ export default function LogisticsPage() {
                     {/* กดเลขที่ใบ → จอรายละเอียด (ลอกจาก ZORT ที่กดแถวแล้วไป /Logistics/Details) */}
                     <td className={`${TD} whitespace-nowrap`}>
                       <Link href={`/core/logistics/${encodeURIComponent(r.number)}`}
-                        className="text-blue-600 hover:underline">{r.number}</Link>
+                        className={ROW_LINK}>{r.number}</Link>
                     </td>
                     <td className={`${TD} text-right`}>
                       <RowMenu

@@ -362,7 +362,7 @@ export default function LedgerScreen({
           <>
             {withImport && (
               <Link href={`/core/soon/${soonKey}`}
-                className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                className="font-['Kanit','Boon',sans-serif] text-[16px] leading-6 font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-4 py-[9px] hover:bg-[#e9ecef]">
                 นำเข้าไฟล์ (Excel)
               </Link>
             )}

@@ -17,7 +17,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { thaiDateTime } from '@/components/zort/PushStatusBoard'
 import ExportButton from '@/components/zort/ExportButton'
-import {
+import { ROW_LINK, TD_NO,
   PageHead, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
 
@@ -241,7 +241,7 @@ export default function CoreBranchesPage() {
                   const s = statOf(w.code)
                   return (
                     <tr key={w.code} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                      <td className={`${TD} text-gray-400`}>{i + 1}</td>
+                      <td className={TD_NO}>{i + 1}</td>
                       <td className={`${TD} text-gray-700 font-medium whitespace-nowrap`}>{w.code}</td>
                       {/* 🔗 ทางเข้าจอรายละเอียด — ZORT มี `/Warehouse/Details?wid=` ของเราเพิ่งทำ 5 ต.ค. 2569
                              ก่อนหน้านี้แถวนี้เป็น **ทางตัน** กดแล้วไม่ไปไหน (ใบเทียบ ZORT ข้อ 13)
@@ -249,7 +249,7 @@ export default function CoreBranchesPage() {
                              เพราะท่อส่ง `code` มา ไม่ได้ส่ง id ของ ZORT (ช่อง `id` อยู่ใน zortFields แต่ท่อไม่ส่งต่อ) */}
                       <td className={TD}>
                         <Link href={`/core/branches/${encodeURIComponent(w.code)}`}
-                          className="text-blue-600 hover:underline">{w.name || w.code}</Link>
+                          className={ROW_LINK}>{w.name || w.code}</Link>
                       </td>
                       <td className={TD}>
                         <span className="text-gray-600">ทั่วไป</span>

@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import {
+import { ROW_LINK, TD_NO,
   PageHead, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate, RowMenu,
 } from '@/components/zort'
@@ -334,7 +334,7 @@ export default function QuotationsPage() {
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                    <td className={`${TD} text-gray-400`}>{i + 1}</td>
+                    <td className={TD_NO}>{i + 1}</td>
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
                     </td>
@@ -342,7 +342,7 @@ export default function QuotationsPage() {
                       {/* กดเลขเข้ารายละเอียด (ZORT กดได้ — กวาดคลาส 8 ก.ย.) · ใบไร้ id = บอกตรง ๆ */}
                       {r.id !== null && r.id !== undefined
                         ? <Link href={`/core/quotations/detail?id=${encodeURIComponent(String(r.id))}`}
-                            className="text-blue-600 font-medium hover:underline">{r.number}</Link>
+                            className={ROW_LINK}>{r.number}</Link>
                         : <span className="text-gray-900 font-medium" title="ใบนี้ ZORT ไม่ส่ง id มา — เปิดรายละเอียดไม่ได้">{r.number}</span>}
                     </td>
                     <td className={`${TD} max-w-[220px] truncate`} title={r.phone || ''}>
@@ -351,7 +351,7 @@ export default function QuotationsPage() {
                              อธิบายว่าจับคู่ประวัติไม่ได้ ดีกว่าปิดปุ่มเงียบ ๆ แล้วคนสงสัยว่าทำไมกดไม่ได้ */}
                       {r.customer ? (
                         <Link href={`/core/customers/detail?name=${encodeURIComponent(r.customer)}`}
-                          className="text-blue-600 hover:underline">{r.customer}</Link>
+                          className={ROW_LINK}>{r.customer}</Link>
                       ) : <span className="text-gray-300">-</span>}
                     </td>
                     {/* ZORT มีคอลัมน์ช่องทาง แต่ทั้ง 3 ใบใน ZORT เองก็เป็นขีด และท่อก็ไม่ส่งช่องนี้มา

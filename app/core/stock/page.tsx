@@ -24,7 +24,7 @@ import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
-import {
+import { ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
@@ -559,10 +559,10 @@ function CoreStockInner() {
               {/* 🔗 สองลิงก์บนบรรทัดสรุปแบบ ZORT — "จำนวน N รายการ | จัดการรูปภาพสินค้า | ปรับต้นทุนสินค้า"
                   (อ่านข้อความหัวจอ /Product/list จริง 17 ต.ค. 2569 · 16 ต.ค. เราย้ายลงใต้ตารางเพราะอ่านแค่ #tabledesc ⇒ พลาดสองลิงก์ที่อยู่ข้างกัน)
                   จัดการรูปภาพ: เรายังไม่มีหน้าอัปหลายรหัส ⇒ พาไปคำอธิบายใต้ตาราง ไม่พาไปหน้าหลอก */}
-              <span className="text-gray-400">{' | '}</span>
-              <a href="#product-image-note" className="text-blue-600 hover:underline">จัดการรูปภาพสินค้า</a>
-              <span className="text-gray-400">{' | '}</span>
-              <Link href="/core/stock/cost" className="text-blue-600 hover:underline">ปรับต้นทุนสินค้า</Link>
+              <span className="font-light">{' | '}</span>
+              <a href="#product-image-note" className="text-[#337ab7] hover:underline">จัดการรูปภาพสินค้า</a>
+              <span className="font-light">{' | '}</span>
+              <Link href="/core/stock/cost" className="text-[#337ab7] hover:underline">ปรับต้นทุนสินค้า</Link>
               {/* 🔴 มีของแต่ไม่มีรหัส = **สต็อกที่ระบบเราตามไม่ได้เลย** ต้องเห็นชัด ไม่ใช่ในวงเล็บสีเทา */}
               {Number(data.noSkuWithStock) > 0 && (
                 <span className="block mt-1 text-[12.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
@@ -882,7 +882,7 @@ function CoreStockInner() {
                 )}
                 {rows.map((r, i) => (
                   <tr key={r.sku} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(r.sku) ? 'bg-[#eef1fa]' : ''}`}>
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    <td className={TD_NO}>{offset + i + 1}</td>
                     <td className={TD}>
                       <RowCheck label={`เลือก ${r.sku}`}
                         checked={picked.includes(r.sku)}
@@ -952,7 +952,7 @@ function CoreStockInner() {
                       {/* 🔴 เคยเป็น span สีฟ้าที่กดไม่ได้ — เจ้าของร้านกดจากมือถือ 5 จุดแล้วแจ้งว่า
                           "กดเข้าสินค้าไม่ได้เลย" · **สีฟ้าในตาราง = สัญญาว่ากดได้**
                           แก้โดยทำหน้าจริงขึ้นมา ไม่ใช่ถอดสีฟ้าออก (3 ก.ย. 2569) */}
-                      <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className="text-blue-600 hover:underline">
+                      <Link href={`/core/stock/${encodeURIComponent(r.sku)}`} className={ROW_LINK}>
                         {r.name || <span className="text-gray-400">— ท่อไม่ส่งชื่อมา</span>}
                       </Link>
                       {/* 📐 ZORT เขียนบรรทัดเล็กใต้ชื่อ `หมวดหมู่: …` (อ่านแถวจริง 15 ต.ค. 2569)
