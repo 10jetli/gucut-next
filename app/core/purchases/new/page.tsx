@@ -14,7 +14,7 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import { FORM_INPUT, FORM_LABEL, PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
@@ -150,14 +150,14 @@ function NewPurchaseOrderInner() {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <label className="block">
-              <span className="text-[12.5px] text-gray-600">ยอดที่จ่ายแล้ว</span>
+              <span className={FORM_LABEL}>ยอดที่จ่ายแล้ว</span>
               <input value={paid} onChange={(e) => setPaid(e.target.value)} inputMode="decimal"
-                className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ไม่ใส่ = ยังไม่บันทึกการจ่าย" />
+                className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ = ยังไม่บันทึกการจ่าย" />
             </label>
             <label className="block">
-              <span className="text-[12.5px] text-gray-600">วิธีชำระ</span>
+              <span className={FORM_LABEL}>วิธีชำระ</span>
               <input value={paymentMethod} onChange={(e) => setPaymentMethod(e.target.value)}
-                className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ต้องเป็นชื่อที่มีใน ZORT เช่น โอน" />
+                className={`${FORM_INPUT} mt-1`} placeholder="ต้องเป็นชื่อที่มีใน ZORT เช่น โอน" />
             </label>
           </div>
         </div>
@@ -170,14 +170,14 @@ function NewPurchaseOrderInner() {
 
       <div className="bg-white border border-gray-200 rounded-md p-4 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-[12.5px] text-gray-600">คู่ค้า / ผู้ขาย</span>
+          <span className={FORM_LABEL}>คู่ค้า / ผู้ขาย</span>
           <input value={vendor} onChange={(e) => setVendor(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ไม่ใส่ก็ได้" />
+            className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
         </label>
         <label className="block">
-          <span className="text-[12.5px] text-gray-600">หมายเหตุในใบ</span>
+          <span className={FORM_LABEL}>หมายเหตุในใบ</span>
           <input value={note} onChange={(e) => setNote(e.target.value)}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ไม่ใส่ก็ได้" />
+            className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
         </label>
       </div>
 
@@ -263,7 +263,7 @@ function NewPurchaseOrderInner() {
       <div className="flex flex-wrap items-center justify-between gap-3 mt-3">
         <BtnGhost onClick={() => setLines((v) => [...v, { ...BLANK }])}>+ เพิ่มบรรทัด</BtnGhost>
         {/* ⚠️ ยอดรวมประกาศขอบเขต — บรรทัดที่ไม่ใส่ราคาไม่ถูกนับ */}
-        <span className="text-[12.5px] text-gray-600">
+        <span className={FORM_LABEL}>
           {clean.length === 0 ? <span className="text-gray-400">ยังไม่มีบรรทัดที่ใช้ได้</span>
             : priced === clean.length ? <>รวม <b>{fmtMoney(total)}</b> ({clean.length} บรรทัด)</>
               : <>รวมเฉพาะ <b>{priced}</b> บรรทัดที่ใส่ราคา = <b>{fmtMoney(total)}</b></>}

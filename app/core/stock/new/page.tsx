@@ -54,7 +54,7 @@
 // 🚫 **ห้ามลบ TEST-20260918 ก่อน 20 ก.ย. 2569** (ต้องดูข้ามวันว่ามันเข้ากระจกเมื่อไหร่)
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { PageHead, WriteResult } from '@/components/zort'
+import { FORM_INPUT, FORM_LABEL, PageHead, WriteResult } from '@/components/zort'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
@@ -87,9 +87,9 @@ function Field({ label, value, onChange, ph, hint }:
   { label: string; value: string; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; ph?: string; hint?: string }) {
   return (
     <label className="block">
-      <span className="text-[12.5px] text-gray-600">{label}</span>
+      <span className={FORM_LABEL}>{label}</span>
       <input value={value} onChange={onChange} placeholder={ph}
-        className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" />
+        className={`${FORM_INPUT} mt-1`} />
       {hint && <span className="block text-[11.5px] text-gray-400 mt-0.5">{hint}</span>}
     </label>
   )
@@ -254,27 +254,27 @@ export default function NewProductPage() {
             ⚠️ ค่าว่าง = ไม่ส่งช่องนั้น ⇒ ZORT ใช้ค่าปริยายของตัวเอง
                (ห้ามยัด 0 ให้เอง — 0 มีความหมายว่า "สินค้า"/"ไม่มี VAT" ไม่ใช่ "ไม่ระบุ") */}
         <label className="block">
-          <span className="text-[12.5px] text-gray-600">ประเภทสินค้า</span>
+          <span className={FORM_LABEL}>ประเภทสินค้า</span>
           <select value={f.productType} onChange={(e) => setF((v) => ({ ...v, productType: e.target.value }))}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1 bg-white">
+            className={`${FORM_INPUT} mt-1`}>
             <option value="">ไม่ระบุ (ให้ ZORT ใช้ค่าปริยาย)</option>
             <option value="0">0 — สินค้า</option>
             <option value="1">1 — บริการ (ไม่มีสต็อก เช่น ค่าส่ง ค่าซ่อม)</option>
           </select>
         </label>
         <label className="block">
-          <span className="text-[12.5px] text-gray-600">VAT ขาย</span>
+          <span className={FORM_LABEL}>VAT ขาย</span>
           <select value={f.vat} onChange={(e) => setF((v) => ({ ...v, vat: e.target.value }))}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1 bg-white">
+            className={`${FORM_INPUT} mt-1`}>
             <option value="">ไม่ระบุ</option>
             <option value="0">0</option><option value="1">1</option>
             <option value="2">2</option><option value="3">3</option>
           </select>
         </label>
         <label className="block">
-          <span className="text-[12.5px] text-gray-600">VAT ซื้อ</span>
+          <span className={FORM_LABEL}>VAT ซื้อ</span>
           <select value={f.purchaseVat} onChange={(e) => setF((v) => ({ ...v, purchaseVat: e.target.value }))}
-            className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1 bg-white">
+            className={`${FORM_INPUT} mt-1`}>
             <option value="">ไม่ระบุ</option>
             <option value="0">0</option><option value="1">1</option><option value="2">2</option>
           </select>

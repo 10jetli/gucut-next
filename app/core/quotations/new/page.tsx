@@ -28,7 +28,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, เลขอ้างอิงเอกสาร } from '@/lib/format'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
+import { FORM_INPUT, FORM_LABEL, PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, WriteResult } from '@/components/zort'
 import { LinesTotalCheck } from '@/components/zort/LinesTotalCheck'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
@@ -167,24 +167,24 @@ export default function NewQuotationPage() {
       <div className="bg-white border border-gray-200 rounded-md p-4 mb-3 space-y-3">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <label className="block">
-            <span className="text-[12.5px] text-gray-600">ชื่อลูกค้า <span className="text-red-600">*</span></span>
+            <span className={FORM_LABEL}>ชื่อลูกค้า <span className="text-red-600">*</span></span>
             <input value={customer} onChange={(e) => setCustomer(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ชื่อ-นามสกุล หรือชื่อบริษัท" />
+              className={`${FORM_INPUT} mt-1`} placeholder="ชื่อ-นามสกุล หรือชื่อบริษัท" />
           </label>
           <label className="block">
-            <span className="text-[12.5px] text-gray-600">เบอร์โทร</span>
+            <span className={FORM_LABEL}>เบอร์โทร</span>
             <input value={phone} onChange={(e) => setPhone(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ไม่ใส่ก็ได้" />
+              className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
           </label>
           <label className="block">
-            <span className="text-[12.5px] text-gray-600">เลขอ้างอิงของร้าน</span>
+            <span className={FORM_LABEL}>เลขอ้างอิงของร้าน</span>
             <input value={reference} onChange={(e) => setReference(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="เช่น เลขใบเสนอราคาเดิม" />
+              className={`${FORM_INPUT} mt-1`} placeholder="เช่น เลขใบเสนอราคาเดิม" />
           </label>
           <label className="block">
-            <span className="text-[12.5px] text-gray-600">หมายเหตุในใบ</span>
+            <span className={FORM_LABEL}>หมายเหตุในใบ</span>
             <input value={note} onChange={(e) => setNote(e.target.value)}
-              className="w-full border border-gray-300 rounded px-3 py-2 text-[14px] mt-1" placeholder="ไม่ใส่ก็ได้" />
+              className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
           </label>
         </div>
       </div>
@@ -232,7 +232,7 @@ export default function NewQuotationPage() {
         <BtnGhost onClick={() => setLines((v) => [...v, { ...BLANK }])}>+ เพิ่มบรรทัด</BtnGhost>
         {/* ⚠️ ยอดรวมต้องประกาศขอบเขตตัวเอง — บรรทัดที่ไม่ใส่ราคาไม่ได้ถูกนับ
             ถ้าเขียนแค่ "รวม ฿X" คนจะนึกว่านั่นคือยอดทั้งใบ */}
-        <span className="text-[12.5px] text-gray-600">
+        <span className={FORM_LABEL}>
           {clean.length === 0
             ? <span className="text-gray-400">ยังไม่มีบรรทัดที่ใช้ได้</span>
             : priced === clean.length
