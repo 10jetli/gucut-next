@@ -539,6 +539,38 @@ export default function Page() {
                     </span>
                   </span>
 
+                  {/* 🔴 **ข้อเสนออยู่ในแถว ติดช่องกรอก** — ท่านประธานสั่ง 17 ต.ค. 2569
+                      "ระบบเดาให้ย้ายมาอยู่ตรงนี้ ทำภาพให้ใหญ่ๆหน่อย"
+                      ของเดิมอยู่ใต้แถว ⇒ สายตาวิ่ง ซ้าย→ขวา→ย้อนลงซ้าย→กลับขวา
+                      สามจังหวะต่อแถว × หลายร้อยแถว · ย้ายมาแล้วข้อเสนอกับที่ที่ใช้มันอยู่ที่เดียวกัน
+                      ⚠️ รูปต้องใหญ่พอ **ดูออกว่าใช่ชิ้นเดียวกันไหม** — ของเดิม 20px ดูไม่ออก
+                         ข้อเสนอที่ดูไม่ออกคือข้อเสนอที่ไม่มีใครกด = เท่ากับไม่มี
+
+                      🔴 **ข้อเสนอ ≠ คำตอบ** — ต้องกดรับเอง ห้ามเติมช่องเอง ห้ามบันทึกเอง
+                      ป้ายสีส้มคำว่า "ระบบเดาว่า" ไม่ใช่สีเขียวแบบค่าที่บันทึกแล้ว
+                      วัดแล้วชั้นที่เสนอออกมาถูก 58/59 แต่ **98% ไม่ใช่ 100%** คนต้องเป็นคนตัดสิน */}
+                  {ข้อเสนอ.length > 0 && (
+                    <span className="shrink-0 flex items-center gap-1.5">
+                      <span className="text-[11px] text-gray-400 whitespace-nowrap">ระบบเดาว่า</span>
+                      {ข้อเสนอ.map((ข) => (
+                        <button key={ข.sku} type="button"
+                          onClick={() => { setร่าง((ก) => ({ ...ก, [r.คีย์]: ข.sku })); บันทึก(r.คีย์, ข.sku) }}
+                          title={`กดเพื่อใช้รหัสนี้ — ${ข.ชื่อ}`}
+                          className="flex items-center gap-2 rounded-md border border-amber-300
+                                     bg-amber-50 text-amber-900 pl-1 pr-2 py-1 hover:bg-amber-100">
+                          {ข.รูป && (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img src={ข.รูป} alt="" className="w-12 h-12 object-contain rounded bg-white" />
+                          )}
+                          <span className="text-left leading-tight">
+                            <span className="block font-mono text-[12px]">{ข.sku}</span>
+                            <span className="block text-[11px] max-w-[190px] truncate">{ข.ชื่อ}</span>
+                          </span>
+                        </button>
+                      ))}
+                    </span>
+                  )}
+
                   <input
                     ref={(el) => { ช่อง.current[r.ลำดับ] = el }}
                     className={`w-28 shrink-0 rounded px-2 py-1.5 text-[12.5px] min-h-[40px] border ${
@@ -570,29 +602,6 @@ export default function Page() {
                     )}
                   </span>
                 </div>
-                {/* 🔴 **ข้อเสนอ ≠ คำตอบ** — ต้องกดรับเอง ห้ามเติมช่องเอง ห้ามบันทึกเอง
-                    ข้อมูลเดาที่ถูกบันทึกอัตโนมัติ จะปนกับข้อมูลจริงโดยแยกไม่ออกตลอดกาล
-                    ⇒ หน้าตาต้องต่างจากค่าที่บันทึกแล้วชัดเจน (ส้ม ไม่ใช่เขียว) และมีคำว่า "เดา"
-                    วัดแล้วชั้นที่เสนอออกมาถูก 58/59 แต่ 98% ไม่ใช่ 100% — คนต้องเป็นคนตัดสิน */}
-                {ข้อเสนอ.length > 0 && (
-                  <div className="text-[11.5px] mt-1 ml-[104px] flex items-center gap-1.5 flex-wrap">
-                    <span className="text-gray-400">ระบบเดาว่า</span>
-                    {ข้อเสนอ.map((ข) => (
-                      <button key={ข.sku} type="button"
-                        onClick={() => { setร่าง((ก) => ({ ...ก, [r.คีย์]: ข.sku })); บันทึก(r.คีย์, ข.sku) }}
-                        title={`กดเพื่อใช้รหัสนี้ — ${ข.ชื่อ}`}
-                        className="inline-flex items-center gap-1.5 rounded border border-amber-300
-                                   bg-amber-50 text-amber-900 px-1.5 py-0.5 hover:bg-amber-100">
-                        {ข.รูป && (
-                          /* eslint-disable-next-line @next/next/no-img-element */
-                          <img src={ข.รูป} alt="" className="w-5 h-5 object-contain" />
-                        )}
-                        <span className="font-mono">{ข.sku}</span>
-                        <span className="max-w-[230px] truncate">{ข.ชื่อ}</span>
-                      </button>
-                    ))}
-                  </div>
-                )}
                 {เตือน[r.คีย์] && (
                   <div className="text-[11.5px] text-amber-800 mt-1 ml-[104px]">
                     ⚠ {เตือน[r.คีย์]}
