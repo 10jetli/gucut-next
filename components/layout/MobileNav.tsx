@@ -3,6 +3,7 @@
 // เดิมแถบล่างยัดเมนูหลักทุกตัวจนล้นจอ และเข้าเมนูย่อย (เช่นเครื่องมือเว็บไซต์ 16 ตัว)
 // ไม่ได้เลย — แก้เป็นลิ้นชักแบบแอปทั่วไป (เจ้าของร้านสั่ง 28 ส.ค. 2569)
 import { useEffect, useState } from 'react'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import CreditBadge from '@/components/ui/CreditBadge'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -115,7 +116,7 @@ export function MobileDrawer({ navItems, open, onClose }: {
                         className={`block py-2.5 pl-[52px] pr-4 text-[12.5px] border-l-2 ${isActive(c.href) ? 'border-white bg-black/25 text-white font-semibold' : 'border-transparent text-white/85 active:bg-black/15'}`}>
                         {c.label}
                         {/* จุดสถานะแทน ZORT — ทะเบียนเดียวกับ Sidebar (lib/zort-ready.ts) */}
-                        {(() => { const r = ป้ายของเส้นทาง(c.href); return r
+                        {(() => { const r = เหมือนZORT ? null : ป้ายของเส้นทาง(c.href); return r
                           ? <span className="ml-1.5 text-[10px]" title={r.หัว}>{r.dot}</span>
                           : null })()}
                       </NavAnchor>

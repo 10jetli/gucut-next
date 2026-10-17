@@ -1,5 +1,6 @@
 'use client'
 import { มิลลิวินาทีจากท่อ } from '@/lib/format'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 // บรรทัด "ข้อมูล ณ เวลา…" — บอกอายุของตัวเลขบนจอ
 //
 // 🔴 **ทำไมต้องมี** (4 ก.ย. 2569) — ทุกตัวเลขในจอคลังเงานับจากกระจก ไม่ได้ยิง ZORT สด
@@ -94,6 +95,17 @@ export default function DataFreshness(
     'นับจากครั้งที่ไปดู ZORT ไม่ใช่ครั้งที่ข้อมูลเปลี่ยน — คืนที่ร้านเงียบ ข้อมูลไม่เปลี่ยนก็ไม่ได้แปลว่าซิงก์ตาย',
   ].filter(Boolean).join('\n')
 
+  /* 🎯 โหมดเหมือน ZORT — ยุบเหลือเวลาเล็ก ๆ (ZORT ไม่มีบรรทัดนี้เลย)
+     🔴 **ยกเว้นตอนข้อมูลเก่าเกิน (stale)** — นั่นคือคำเตือนว่าตัวเลขบนจออาจไม่ใช่ของล่าสุด
+        ซ่อนไปด้วยคือทำให้จอโกหกเพื่อให้เหมือนต้นแบบ ซึ่งแย่กว่าไม่เหมือน
+     🔑 คำอธิบายเต็มยังอยู่ใน title เหมือนเดิม ⇒ ซ่อน ไม่ใช่ลบ */
+  if (เหมือนZORT && !stale) {
+    return (
+      <span className="text-[12px] text-gray-400 mb-2 inline-block cursor-help" title={tip}>
+        ⏱ {thaiClock(synced)}
+      </span>
+    )
+  }
   return (
     <p
       className={`text-[12.5px] mb-2 ${stale ? 'text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2' : 'text-gray-500'}`}

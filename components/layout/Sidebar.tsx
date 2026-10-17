@@ -13,6 +13,7 @@
 //    เจ้าของร้านส่งภาพครอปมาให้ถึงเห็นว่าเป็นบล็อกน้ำเงินเข้ม
 //    ⇒ บทเรียน: สีกับพื้นหลังต้องดูจากภาพครอปที่ชัดพอ อย่าสรุปจากภาพย่อทั้งหน้า
 import Link from 'next/link'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import CreditBadge from '@/components/ui/CreditBadge'
 // (เดิม import useEffect/useState ไว้ใช้กับป้ายเครดิต — ย้ายไป CreditBadge แล้ว 18 ก.ย. 2569)
 import type { NavItem } from '@/lib/nav-config'
@@ -141,7 +142,7 @@ export default function Sidebar({
                           <>
                             <span className="truncate">{c.label}</span>
                             {/* จุดสถานะ "ใช้แทน ZORT ได้หรือยัง" — อ่านจากทะเบียนเดียว lib/zort-ready.ts */}
-                            {(() => { const r = ป้ายของเส้นทาง(c.href); return r
+                            {(() => { const r = เหมือนZORT ? null : ป้ายของเส้นทาง(c.href); return r
                               ? <span className="text-[10px] shrink-0" title={r.หัว}>{r.dot}</span>
                               : null })()}
                             {c.soon && !active && <span className="text-[10px] shrink-0">◦</span>}

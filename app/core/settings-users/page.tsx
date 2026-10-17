@@ -154,10 +154,10 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
 
       {/* ช่องค้นหาตามผัง — ฟอร์ม GET ให้เซิร์ฟเวอร์กรอง (จอนี้เป็น server component) */}
       <form method="get" className="flex items-center gap-3 mb-4">
-        <div className="flex items-center gap-2 bg-white border border-gray-300 rounded-full px-3.5 py-1.5 w-[280px]">
+        <div className="flex items-center gap-2 h-10 bg-white border border-[#adb5bd] rounded-[24px] px-3.5 w-[280px]">
           <span className="text-gray-400 text-[12.5px]">🔍</span>
           <input name="q" defaultValue={ค่าแรก(searchParams?.q)} placeholder="ค้นหาผู้ใช้งาน"
-            className="flex-1 text-[12.5px] outline-none bg-transparent" />
+            className="flex-1 text-[14px] text-[#3e3e3e] outline-none bg-transparent" />
         </div>
         {/* ผัง ZORT /User/list: ข้างช่องค้นมีแค่ลิงก์ "ค้นหาขั้นสูง" (แผง #searchAdvance = อีเมล · ชื่อ · อ่านจอ 16 ต.ค. 2569)
             ปุ่ม "ค้นหา" ของเราเดิมเอาออกจากสายตา — กด Enter ในช่องค้นแทน (ยังเป็นปุ่ม submit ให้โปรแกรมอ่านจอใช้ได้) */}

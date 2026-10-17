@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation'
 import { ป้ายของเส้นทาง, กระทบสต็อก, ส่งจริงได้ } from '@/lib/zort-ready'
 import PushSwitchNote from '@/components/layout/PushSwitchNote'
 import { จำนวนกล่องแดง, ฟังกล่องแดง } from '@/lib/จอพังอยู่'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export default function ZortReadyBar() {
   const pathname = usePathname()
@@ -26,6 +27,17 @@ export default function ZortReadyBar() {
     return ฟังกล่องแดง(อ่าน)
   }, [pathname])
 
+  /* 🎯 โหมดเหมือน ZORT — ป้าย "ความสามารถ" ถูกซ่อน (ZORT ไม่มีแถบนี้)
+     🔴 **แต่กล่องแดง \"อ่านข้อมูลไม่ได้\" ต้องไม่ถูกซ่อนด้วย** — นั่นคือคำเตือนว่าตัวเลขบนจอ
+        เชื่อไม่ได้ตอนนี้ · ซ่อนไปด้วยคือทำให้จอโกหกเพื่อให้เหมือนต้นแบบ ซึ่งแย่กว่าไม่เหมือน */
+  if (เหมือนZORT) {
+    if (พัง <= 0) return null
+    return (
+      <div className="px-4 md:px-6 py-1.5 text-[12.5px] bg-red-600 text-white border-b border-red-700">
+        ⛔ <b>ตอนนี้จอนี้อ่านข้อมูลไม่ได้</b> — ดูกล่องแดงข้างล่าง
+      </div>
+    )
+  }
   if (!b) return null
   return (
     <>
