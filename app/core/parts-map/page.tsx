@@ -613,31 +613,6 @@ export default function Page() {
                         ⚠️ ต้อง **ลบได้** ด้วย — ของที่เพิ่มเองแล้วลบไม่ได้คือกับดัก
                            เพราะคนจะใส่ผิดแน่นอน (ลบ = บันทึกค่าว่าง ท่าเดียวกับลบการจับคู่ปกติ) */}
                     <div className="flex flex-wrap items-center gap-2 mb-1">
-                      {คีย์ที่เพิ่มเอง(r.ตัวอักษร).map((k) => {
-                        const sku = String(แมป[k] || '').trim()
-                        const ของ = คลัง.ตามรหัส[sku.toUpperCase()]
-                        return (
-                          <span key={k} className="inline-flex items-center gap-2 rounded-md border
-                                                   border-emerald-300 bg-emerald-50 pl-1 pr-1.5 py-1">
-                            {ของ?.รูป && (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={ของ.รูป} alt="" className="w-9 h-9 object-contain rounded bg-white" />
-                            )}
-                            <span className="text-[12px] leading-tight">
-                              <span className="block font-mono">{sku}</span>
-                              {ของ?.ชื่อ && (
-                                <span className="block text-[11px] text-gray-600 max-w-[200px] truncate">
-                                  {ของ.ชื่อ}
-                                </span>
-                              )}
-                            </span>
-                            <button type="button" title="ลบออกจากหมวดนี้"
-                              onClick={() => บันทึก(k, '')}
-                              className="text-gray-400 hover:text-red-600 px-1">✕</button>
-                          </span>
-                        )
-                      })}
-
                       {หมวดกำลังเพิ่ม === r.ตัวอักษร ? (
                         <span className="inline-flex items-center gap-1.5">
                           <input autoFocus value={ร่างเพิ่ม}
@@ -688,6 +663,48 @@ export default function Page() {
                         ))}
                       </div>
                     )}
+                    {/* 📦 **ของที่เพิ่มเอง = แถวในรายการ ไม่ใช่ป้ายลอย**
+                        ท่านประธานวงลูกศรชี้ลงมาที่รายการ 17 ต.ค. 2569 ("ให้มันเข้าไปในนี้")
+                        🔑 ถูกกว่าแบบเดิมจริง — ของที่เพิ่มเองเป็นอะไหล่ของหมวดนั้น
+                           เท่า ๆ กับแถวในคู่มือ ต่างกันแค่ที่มา · วางเป็นป้ายลอย
+                           = สื่อว่าเป็นของประกอบ และคนอ่านรายการจากบนลงล่างจะข้ามมันไป
+                        ⚠️ แต่ **ต้องดูออกว่าไม่ได้มาจากคู่มือ** — ถ้าหน้าตาเหมือนกันเป๊ะ
+                           คนจะเข้าใจว่าคู่มือมีชิ้นนี้ ⇒ ป้ายวงกลมเป็น "+" ไม่ใช่เลขในผัง
+                           และบรรทัดล่างเขียนบอกที่มาไว้ */}
+                    {คีย์ที่เพิ่มเอง(r.ตัวอักษร).map((k) => {
+                      const sku = String(แมป[k] || '').trim()
+                      const ของ = คลัง.ตามรหัส[sku.toUpperCase()]
+                      return (
+                        <div key={k} className="bg-emerald-50 border border-emerald-300 rounded-md
+                                                px-2.5 py-2 flex items-center gap-2.5 mb-1">
+                          <span className="w-14 h-14 shrink-0 flex items-center justify-center">
+                            {ของ?.รูป ? (
+                              /* eslint-disable-next-line @next/next/no-img-element */
+                              <img src={ของ.รูป} alt={ของ.ชื่อ} title={ของ.ชื่อ}
+                                   className="w-14 h-14 object-contain rounded-md border border-emerald-200 bg-white" />
+                            ) : (
+                              <span className="w-14 h-14 rounded-md border border-dashed border-emerald-300
+                                               text-emerald-500 flex items-center justify-center text-[16px]">+</span>
+                            )}
+                          </span>
+                          <span className="w-7 h-7 shrink-0 rounded-full bg-emerald-100 text-emerald-700
+                                           text-[12px] font-bold flex items-center justify-center">+</span>
+                          <span className="min-w-0 grow">
+                            <span className="block truncate text-[13.5px] font-medium text-gray-900">
+                              <span className="font-mono text-emerald-700">{sku}</span>
+                              {ของ?.ชื่อ ? <> {ของ.ชื่อ}</> : null}
+                            </span>
+                            <span className="block text-[11.5px] text-gray-500 truncate">
+                              เพิ่มเอง — คู่มือไม่มีชิ้นนี้
+                            </span>
+                          </span>
+                          <button type="button" title="ลบออกจากหมวดนี้"
+                            onClick={() => บันทึก(k, '')}
+                            className="shrink-0 text-[12.5px] rounded border border-gray-300 px-2 py-1
+                                       text-gray-500 hover:text-red-600 hover:border-red-300">ลบ ✕</button>
+                        </div>
+                      )
+                    })}
                   </>
                 )}
                 {/* 🔑 **ผังเดียวกับหน้าลูกค้า** (gucut.com/parts/<รุ่น>/)
