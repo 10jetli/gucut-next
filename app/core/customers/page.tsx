@@ -45,6 +45,7 @@ import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import DataFreshness, { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Contact {
   id: string; type?: string; name?: string; code?: string
@@ -216,9 +217,12 @@ export default function CoreContactsPage() {
 
       {/* 🔒 ข้อความจากเซิร์ฟเวอร์ที่บอกว่านี่คือข้อมูลส่วนบุคคล — ต้องขึ้นบนจอเสมอ */}
       {data?.note && (
-        <div className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
-          🔒 {data.note}
-        </div>
+        /* 🎯 โหมดเหมือน ZORT: ยังขึ้นเสมอ (ข้อมูลส่วนบุคคล) แต่เป็นบรรทัดเทาเล็กไม่มีกรอบ */
+        เหมือนZORT
+          ? <p className="text-[11.5px] text-gray-400 mb-1">🔒 {data.note}</p>
+          : <div className="text-[12.5px] text-gray-700 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
+              🔒 {data.note}
+            </div>
       )}
 
       {/* ⏱ **อายุของตัวเลขบนจอนี้** — จอนี้อ่านจากกระจก ไม่ได้ยิง ZORT สด
@@ -243,6 +247,13 @@ export default function CoreContactsPage() {
           {(() => {
             const sweep = parseUtc(data.sync?.fullSweepAtUtc)
             if (sweep) {
+              /* 🎯 โหมดเหมือน ZORT: กวาดครบแล้ว = ข้อมูลปกติ ⇒ ย่อเป็นข้อความสั้นมีคำเต็มใน title (สองกรณีที่เหลือเป็นคำเตือน ไม่ย่อ) */
+              if (เหมือนZORT) return (
+                <span className="text-[12px] text-gray-400 mb-2 inline-block ml-2 cursor-help"
+                  title={`กวาดครบทั้งฐานล่าสุด ${thaiDayTime(sweep)} (เวลาไทย) — การแก้ชื่อ/เบอร์ของรายเก่าตามมาถึงรอบนั้น`}>
+                  · 🧹 {thaiDayTime(sweep)}
+                </span>
+              )
               return (
                 <p className="text-[12.5px] text-gray-500 mb-2">
                   🧹 กวาดครบทั้งฐานล่าสุด <b>{thaiDayTime(sweep)}</b> (เวลาไทย) — การแก้ชื่อ/เบอร์ของรายเก่าตามมาถึงรอบนั้น
@@ -401,7 +412,13 @@ export default function CoreContactsPage() {
 
           {/* ย่อหน้านี้อธิบายเฉพาะกรณี "ข้อมูลชนิดยังน้อย" — กรณีท่อไม่ส่ง byType / ท่อไม่รับตัวกรอง / จอยังไม่ต่อ (จด 15 ต.ค. 2569)
               ให้เหตุบนแท็บอธิบาย (เดิมขึ้นทุกกรณี ⇒ วันที่ข้อมูลครบแล้วจะยังบอกว่า Undefined เกือบทั้งฐาน) */}
-          {!hasType && data?.byType != null && มีชนิดจริง < ชนิดพื้น && (
+          {/* 🎯 โหมดเหมือน ZORT: คำอธิบายยาวว่าทำไมแท็บลูกค้า/คู่ค้ากดไม่ได้ ยุบเป็นบรรทัดเทาเดียว คำเต็มใน title */}
+          {เหมือนZORT && !hasType && data?.byType != null && มีชนิดจริง < ชนิดพื้น && (
+            <p className="text-[11.5px] text-gray-400 mt-1 cursor-help" title={`แท็บลูกค้ากับคู่ค้ายังกดไม่ได้ — ชนิดผู้ติดต่อที่ ZORT ส่งมาเป็น Undefined เกือบทั้งฐาน (มีชนิดจริง ${fmtNum(มีชนิดจริง)} ราย จาก ${fmtNum(รวมทั้งฐาน)}) และในข้อมูลดิบไม่มีฟิลด์แยกลูกค้า/คู่ค้า ⇒ กรองแล้วได้ศูนย์เสมอ จึงเปิดไว้ให้ผังตรงแต่ยังกดไม่ได้\n\nนี่ไม่ใช่ช่องว่างของระบบเรา แต่เป็นช่องว่างของข้อมูลร้าน — แท็บเดียวกันใน ZORT ก็กรองไม่ได้ ถ้าอยากแยกต้องไปตั้งที่ ZORT ก่อน`}>
+              ⓘ ทำไมแท็บลูกค้า/คู่ค้ากดไม่ได้ (ชี้เพื่ออ่าน)
+            </p>
+          )}
+          {!เหมือนZORT && !hasType && data?.byType != null && มีชนิดจริง < ชนิดพื้น && (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border-x border-b border-amber-200 px-3.5 py-2 leading-relaxed">
               แท็บ <b>ลูกค้า</b> กับ <b>คู่ค้า</b> ยังกดไม่ได้ — ชนิดผู้ติดต่อที่ ZORT ส่งมาเป็น
               <b> Undefined เกือบทั้งฐาน</b>: เดิมสุ่มตรวจ 1,000 ราย (5 ช่วงคนละหน้า · 3 ก.ย. 2569)
