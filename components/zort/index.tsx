@@ -345,7 +345,10 @@ export function TableWrap({ children }: { children: ReactNode }) {
      กล่องตาราง พื้นขาว · เงา rgba(65,101,237,.1) 0 3px 6px · ไม่มีขอบ · มุมเหลี่ยม
      หัวตาราง #e8ecef · **ไม่มีเส้นคั่นแถว** ใช้แถวสลับสี #f8f9fa แทน ⇒ กฎอยู่ที่ `.zort-table` ใน globals.css */
   return (
-    <div className="zort-table bg-white overflow-hidden" style={{ boxShadow: '0 3px 6px rgba(65,101,237,.1)' }}>
+    /* 📐 โหมดเหมือน ZORT — วัด 19 ต.ค. 2569 (/Warehouse/Transferlist): แถว ZORT สูงต่ำสุด 41.3px
+       เพราะช่องติ๊กทุกแถว (กล่อง 25px + ช่องใน 16) · ของเรา 40px ในจอที่ไม่มีช่องติ๊ก ⇒ แถวเหลื่อมสะสม 1.3px ต่อแถว
+       ⇒ ความสูงแถวขั้นต่ำ 41px (เป็นขั้นต่ำ แถวที่สูงกว่าไม่กระทบ) · นอกโหมดเหมือนเดิม */
+    <div className={`zort-table bg-white overflow-hidden ${เหมือนZORT ? '[&_tbody_tr]:h-[41.3px]' : ''}`} style={{ boxShadow: '0 3px 6px rgba(65,101,237,.1)' }}>
       <div className="overflow-x-auto">{children}</div>
     </div>
   )
