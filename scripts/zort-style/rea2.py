@@ -74,6 +74,18 @@ with sync_playwright() as pw:
                 if not art:
                     raise RuntimeError(f"ถ่ายภาพฝั่ง {side} ไม่ได้: " + json.dumps(d, ensure_ascii=False)[:160])
                 open(f"ra-{side}.json", "w").write(json.dumps(art))
+            # 📐 ภาพสองฝั่งต้องขนาดเท่ากัน — 18 ต.ค. 2569 เย็น หน้าต่างเบราว์เซอร์ 9224 (ใช้ร่วม) ถูกปรับขนาด
+            #    REA ถ่ายตามพิกเซลหน้าต่างจริง ⇒ ฝั่งเราได้ 2240x1033 เทียบกับ ZORT 1600x900 ไม่ออก ("REA เทียบไม่ออก")
+            #    ⇒ ไม่ไปแก้ขนาดหน้าต่างของคนอื่น · ถ่ายฝั่งเราด้วย playwright ที่ viewport 1600x900 แทน และจดไว้ในแถว
+            import base64, struct, hashlib
+            def ขนาด(path):
+                raw = base64.b64decode(json.load(open(path))["data_base64"])[:24]
+                return struct.unpack(">II", raw[16:24])
+            if ขนาด("ra-o.json") != ขนาด("ra-z.json"):
+                png = po.screenshot()
+                open("ra-o.json", "w").write(json.dumps({"sha256": hashlib.sha256(png).hexdigest(), "bytes": len(png),
+                                                          "media_type": "image/png", "data_base64": base64.b64encode(png).decode()}))
+                row["ภาพเรา"] = "playwright (ขนาดหน้าต่างไม่ตรง)"
             r = rea(["compare-web-screenshots", "ra-z.json", "ra-o.json", "--format", "json"])
             nr = r.get("normalized_result") or {}
             cr = nr.get("changed_ratio")
