@@ -30,6 +30,7 @@ import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import { ขอบเขตกรองในเครื่อง } from '@/lib/client-filter-scope'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   number: string
@@ -254,7 +255,10 @@ export default function CorePurchasesPage() {
               {' | '}
               {/* ✅ แก้ 14 ก.ย. 2569 (t_mu0tx40g): เดิมชี้ /core/soon/stock-count — ตอนนี้ตรวจนับ/รับของทำได้ในหน้าใบสั่งซื้อรายใบ
                   (ต้องรู้ id ของใบใน ZORT ก่อน จึงไม่มีหน้ารวมแยก) ⇒ บอกทางตรง ๆ แทนการพาไปหน้า "ยังไม่ได้ทำ" */}
-              <span className="text-gray-600">ตรวจสอบการนับสินค้าเข้า: <b>กดเลขที่ใบ</b> แล้วใช้ช่อง &ldquo;รับของ / ตรวจนับ&rdquo;</span>
+              {/* 🎯 โหมดเหมือน ZORT: ZORT เขียนแค่ "ตรวจสอบการนับสินค้าเข้า" ⇒ วิธีใช้ย้ายไปอยู่ใน title ของ ⓘ */}
+              {เหมือนZORT
+                ? <span className="text-gray-600 cursor-help" title={'กดเลขที่ใบ แล้วใช้ช่อง "รับของ / ตรวจนับ"'}>ตรวจสอบการนับสินค้าเข้า <span className="text-gray-400">ⓘ</span></span>
+                : <span className="text-gray-600">ตรวจสอบการนับสินค้าเข้า: <b>กดเลขที่ใบ</b> แล้วใช้ช่อง &ldquo;รับของ / ตรวจนับ&rdquo;</span>}
             </>
             : 'กำลังโหลด…'
         }
@@ -478,7 +482,7 @@ export default function CorePurchasesPage() {
                           เส้น ?purchase= เปิดให้แล้ว 8 ก.ย. 2569 */}
                       {/* 🏬 พก store ไปด้วย — เลขที่ใบของสองร้านซ้ำกันได้ ⇒ ถ้าไม่บอกร้าน หน้ารายใบจะไปเปิดของ z1 เสมอ */}
                       <Link href={`/core/purchases/detail?no=${encodeURIComponent(r.number)}${store ? `&store=${store}` : ''}`}
-                        className={ROW_LINK}>{r.number}</Link>
+                        className={`${ROW_LINK} whitespace-nowrap`}>{r.number}</Link>
                     </td>
                     <td className={TD}><span className="text-gray-800">{r.vendor || '—'}</span></td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>

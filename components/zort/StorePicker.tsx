@@ -37,6 +37,8 @@ export function storeLabel(s: StoreId): string {
       : 'ไม่ได้เลือก (ท่อคืนร้านออนไลน์ z1)'
 }
 
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+
 export default function StorePicker({ value, onChange, disabled, note }: {
   value: StoreId
   onChange: (s: 'z1' | 'z2') => void
@@ -46,7 +48,8 @@ export default function StorePicker({ value, onChange, disabled, note }: {
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-2">
-      <span className="text-[12.5px] text-gray-500">ร้าน:</span>
+      <span className={`text-[12.5px] text-gray-500 ${เหมือนZORT ? 'cursor-help' : ''}`}
+        title={เหมือนZORT ? (note ?? 'เส้นนี้ตอบทีละร้าน — ยอดและตัวนับทั้งหมดเป็นของร้านที่เลือกเท่านั้น') : undefined}>ร้าน:</span>
       {(['z1', 'z2'] as const).map((v) => {
         const on = value === v || (value === '' && v === 'z1')
         return (
@@ -68,9 +71,12 @@ export default function StorePicker({ value, onChange, disabled, note }: {
           </button>
         )
       })}
-      <span className="text-[11.5px] text-gray-400">
-        {note ?? 'เส้นนี้ตอบทีละร้าน — ยอดและตัวนับทั้งหมดเป็นของร้านที่เลือกเท่านั้น'}
-      </span>
+      {/* โหมดเหมือน ZORT: ประโยคอธิบายย้ายไปเป็น title ของคำว่า "ร้าน:" (ซ่อน ไม่ใช่ลบ) */}
+      {!เหมือนZORT && (
+        <span className="text-[11.5px] text-gray-400">
+          {note ?? 'เส้นนี้ตอบทีละร้าน — ยอดและตัวนับทั้งหมดเป็นของร้านที่เลือกเท่านั้น'}
+        </span>
+      )}
     </div>
   )
 }
