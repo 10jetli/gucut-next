@@ -8,15 +8,17 @@
 import type { ReactNode } from 'react'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
-export default function ZortLookFold({ สรุป, children, tone = 'amber' }: {
+export default function ZortLookFold({ สรุป, children, tone = 'amber', เปิดไว้ = false }: {
   /** บรรทัดเดียวที่ต้องพูดเรื่องหลักของกล่องให้ครบ (ไม่ใช่แค่ "หมายเหตุ") */
   สรุป: ReactNode
   children: ReactNode
   tone?: 'amber' | 'gray'
+  /** กางไว้ตั้งแต่แรก — ใช้ตอนข้างในมี "ของพังรอบนี้" ที่ต้องเห็นโดยไม่ต้องกด (เช่นท่อบอกว่าอ่านกระจกไม่ได้) */
+  เปิดไว้?: boolean
 }) {
   if (!เหมือนZORT) return <>{children}</>
   return (
-    <details className="mb-2 text-[11.5px]">
+    <details className="mb-2 text-[11.5px]" open={เปิดไว้}>
       <summary className={`cursor-pointer select-none ${tone === 'amber' ? 'text-amber-800' : 'text-gray-500'}`}>
         {สรุป} <span className="text-gray-400">(กดเพื่ออ่าน)</span>
       </summary>

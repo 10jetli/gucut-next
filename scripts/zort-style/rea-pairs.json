@@ -57,11 +57,25 @@
   "เรา": "/core/logistics"
  },
  {
+  "no": "10",
+  "กลุ่ม": "รายการขาย",
+  "ชื่อ": "รับคืนสินค้า",
+  "zort": "/Buy/list?&sttype=1",
+  "เรา": "/core/return-orders"
+ },
+ {
   "no": "13",
   "กลุ่ม": "รายการซื้อ",
   "ชื่อ": "ดูรายการซื้อ",
   "zort": "/Buy/list?",
   "เรา": "/core/purchases"
+ },
+ {
+  "no": "14",
+  "กลุ่ม": "รายการซื้อ",
+  "ชื่อ": "คืนสินค้า",
+  "zort": "/Sell/list?&sttype=1",
+  "เรา": "/core/purchases/returns"
  },
  {
   "no": "15",
@@ -160,6 +174,20 @@
   "ชื่อ": "เอกสารบัญชี",
   "zort": "/ZDocument/list?",
   "เรา": "/core/accounting-docs"
+ },
+ {
+  "no": "39",
+  "กลุ่ม": "ตั้งค่า",
+  "ชื่อ": "ผู้ใช้งาน",
+  "zort": "/User/list?",
+  "เรา": "/core/settings-users"
+ },
+ {
+  "no": "40",
+  "กลุ่ม": "ตั้งค่า",
+  "ชื่อ": "สิทธิ์การใช้งาน",
+  "zort": "/Setting/UserRolelist?",
+  "เรา": "/core/settings-roles"
  },
  {
   "no": "41",

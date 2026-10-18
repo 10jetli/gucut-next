@@ -41,8 +41,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { TH_NO, TD_NO, ROW_LINK,
   PageHead, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
-  EmptyState, Pill, relDay, thaiDate, EndpointMissing, RowMenu,
+  EmptyState, Pill, relDay, thaiDate, EndpointMissing, RowMenu, THC, TDC, คลังใต้ป้าย, PaymentPill,
 } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 import ExportButton from '@/components/zort/ExportButton'
 import { coreJson } from '@/lib/api-shape'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -218,7 +219,7 @@ export default function ReturnOrdersPage() {
                 {ใช้ยอดกระจก ? (
                   <>
                     {', '}มูลค่าทั้งหมด <b>{fmtMoney(mt!.amount!)}</b>
-                    {typeof mt!.amountExcludingVoided === 'number' && mt!.countExcludingVoided !== mt!.count && (
+                    {!เหมือนZORT && typeof mt!.amountExcludingVoided === 'number' && mt!.countExcludingVoided !== mt!.count && (
                       <span className="text-gray-500"> (ไม่นับใบยกเลิก {fmtNum(mt!.count! - (mt!.countExcludingVoided ?? 0))} ใบ = {fmtMoney(mt!.amountExcludingVoided)})</span>
                     )}
                   </>
@@ -232,6 +233,17 @@ export default function ReturnOrdersPage() {
                     )}
                   </>
                 )}
+                {/* 📐 โหมดเหมือน ZORT (18 ต.ค. 2569): หัวจอ ZORT มีแค่ "จำนวน N รายการ, มูลค่าทั้งหมด X"
+                    ⇒ วงเล็บไม่นับใบยกเลิก + ที่มาของข้อมูล ย้ายเข้า ⓘ (คำเต็มใน title) · ขอบเขต "เฉพาะ N ใบ" ยังขึ้นบนจอเสมอ */}
+                {เหมือนZORT && (
+                  <span className="text-gray-400 cursor-help ml-1" title={[
+                    ใช้ยอดกระจก && typeof mt!.amountExcludingVoided === 'number' && mt!.countExcludingVoided !== mt!.count
+                      ? `ไม่นับใบยกเลิก ${fmtNum(mt!.count! - (mt!.countExcludingVoided ?? 0))} ใบ = ${fmtMoney(mt!.amountExcludingVoided)}` : '',
+                    d?.applied?.source === 'mirror' ? 'ใบคืนของ (CN-) ตอนค้นหาอ่านจากกระจกของเรา (ไม่ได้ค้น = อ่านสดจาก ZORT)' : 'ใบคืนของ (CN-) อ่านสดจาก ZORT',
+                    'คนละฐานกับหน้า “สินค้าที่ถูกคืนบ่อย”',
+                  ].filter(Boolean).join('\n')}>ⓘ</span>
+                )}
+                {!เหมือนZORT && <>
                 {' | '}
                 <span className="text-gray-400">
                   {/* 🔴 **"อ่านสดจาก ZORT" เป็นจริงเฉพาะตอนไม่ได้ค้น** (15 ก.ย. 2569)
@@ -242,6 +254,7 @@ export default function ReturnOrdersPage() {
                     ? <>ตอนค้นหาอ่านจาก<b>กระจกของเรา</b> (ไม่ได้ค้น = อ่านสดจาก ZORT)</>
                     : 'อ่านสดจาก ZORT'} — <b>คนละฐานกับหน้า &ldquo;สินค้าที่ถูกคืนบ่อย&rdquo;</b>
                 </span>
+                </>}
               </>
             )
         }
@@ -263,6 +276,9 @@ export default function ReturnOrdersPage() {
       {!loading && !error && d && (
         <>
           {partial && (
+            /* 📐 โหมดเหมือน ZORT: พับ แต่บรรทัดสรุปยังบอกขอบเขต + คำเตือนเรื่อง amount · ถ้ากระจกพังรอบนี้ไม่พับ (เป็นของพังที่ต้องเห็น) */
+            <ZortLookFold tone="amber" สรุป={<>⚠️ แสดง {fmtNum(rows.length)} {ใบชุดนี้} จากทั้งหมด {fmtNum(total!)} ใบ · ยอดเงินมาจากช่อง amount ที่ยังไม่พิสูจน์ว่าเป็นยอดคืน</>}
+              เปิดไว้={!ใช้ยอดกระจก && !!d?.mirrorTotalsError}>
             <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2 mb-3 leading-relaxed">
               {/* 🔴 **สองบรรทัดในจอเดียวเคยพูดสวนกัน** (เจอด้วยการเปิดจอจริง 18 ก.ย. 2569 ค่ำ)
                   หัวจอโชว์ "มูลค่าทั้งหมด 723,346.14 (ไม่นับใบยกเลิก 152 ใบ)" ซึ่งเป็น**ยอดของทั้ง 693 ใบ**
@@ -287,6 +303,7 @@ export default function ReturnOrdersPage() {
               ⚠️ และยอดนั้นบวกจากช่อง <b>amount</b> ของ ZORT ซึ่ง<b>ยังไม่ได้พิสูจน์ว่าคือยอดคืนของใบ</b>
               {' '}— กดเข้าใบแล้วดูช่องเงินทั้งหมดก่อนเอาไปคิดเงินจริง
             </div>
+            </ZortLookFold>
           )}
 
           <SearchRow
@@ -369,8 +386,8 @@ export default function ReturnOrdersPage() {
                   <th className={TH}>อ้างอิง</th>
                   <th className={TH}>ลูกค้า</th>
                   <th className={THR}>มูลค่า</th>
-                  <th className={TH}>สถานะ</th>
-                  <th className={TH}>ชำระเงิน</th>
+                  <th className={THC}>สถานะ</th>
+                  <th className={THC}>ชำระเงิน</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
@@ -412,16 +429,19 @@ export default function ReturnOrdersPage() {
                       {/* 🔴 เดิมโชว์ค่าดิบ ("Success") — คำอังกฤษบนจอคือเรื่องที่ท่านประธานทักไว้
                           ⚠️ คำนี้ **ยืมจากใบ PO บนจอ `/Buy/list` ของ ZORT** เพราะยังไม่เคยเห็นแถว CN- บนจอเขา
                              (ดูที่มาใน lib/zort-words.ts — เจอแถว CN เมื่อไหร่ต้องกลับมาแก้) */}
-                      {r.status ? <Pill tone={tone(r.status)}>{zortWord(RETURN_ORDER_STATUS, r.status).text}</Pill> : DASH}
+                      {/* 🔴 tone() เทียบคำไทยตรงเป๊ะ ⇒ ต้องส่งคำที่แปลแล้ว ไม่ใช่ค่าดิบ (เดิมส่ง Success ⇒ เทาทุกแถว · เจอ 18 ต.ค. 2569) */}
+                      {r.status ? <Pill tone={tone(zortWord(RETURN_ORDER_STATUS, r.status).text)}>{zortWord(RETURN_ORDER_STATUS, r.status).text}</Pill> : DASH}
                       {/* ZORT โชว์ชื่อโกดังเป็นบรรทัดย่อยใต้สถานะ */}
                       {r.warehouse && (ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[r.warehouse]
-                        ? <div className="text-[11.5px] text-gray-500 mt-0.5">{ชื่อคลัง.names[r.warehouse]}</div>
+                        ? <div className={`${คลังใต้ป้าย} mt-0.5`}>{ชื่อคลัง.names[r.warehouse]}</div>
                         : <div className="text-[11.5px] text-gray-400 mt-0.5"
                             title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
                             รหัสคลัง {r.warehouse}
                           </div>)}
                     </td>
-                    <td className={TD}>{r.paid ? <Pill tone={tone(r.paid)}>{r.paid}</Pill> : DASH}</td>
+                    {/* 🔴 เดิมโชว์ค่าดิบ "Paid" ภาษาอังกฤษ (เห็นบนภาพเทียบ 18 ต.ค. 2569 · ZORT จอเดียวกันเขียน ชำระครบ)
+                        ⇒ ใช้ PaymentPill ที่แปลด้วย PAY_STATUS (พิสูจน์จากตารางแล้ว) · ไม่รู้จัก = โชว์ค่าดิบสีเทาเหมือนเดิม */}
+                    <td className={TDC}>{r.paid ? <PaymentPill value={r.paid} /> : DASH}</td>
                     {/* ⋮ เมนูแถวแบบ ZORT รับคืนสินค้า /Buy/list?sttype=1 (อ่าน `.dropdown-menu` ของแถวจริง 16 ต.ค. 2569 · ไม่ได้กด)
                         ZORT: ปักหมุดไว้บนสุด · คัดลอก · แก้ไข · พิมพ์เอกสาร · พิมพ์ใบแปะจดหมาย/กล่อง · เพิ่ม Tag · ซ่อน · ยกเลิกรายการ
                         ของเรากดได้แค่ เปิดรายละเอียด (ต้องมี id) · ที่เหลือเป็นการเขียนกลับ ZORT/ยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ */}
