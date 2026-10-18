@@ -893,4 +893,6 @@ ZORT (บัญชีร้าน z1) แสดง **ยอดขายรวม
 | 47 | กลุ่ม Lead Time | วัดไม่ได้ | วัดไม่ได้ |
 
 วัดไม่ได้ 2 คู่: วางแผนสั่งซื้อซ้ำ (/ReorderPoint) · กลุ่ม Lead Time (/LeadTimeGroup) — URL ฝั่ง ZORT พาไปหน้า error และไม่อยู่ในเมนูซ้าย ⇒ ต้องหา URL จริงก่อน
+  ⇒ ลองแล้ว 18 ต.ค. 2569 (เปิดหน้าอย่างเดียว): `/LeadTimeGroup` `/LeadTimeGroup?` `/LeadTimeGroup/Index?` `/LeadTimeGroup/list?` `/ReorderPoint` `/ReorderPoint?` `/ReorderPoint/Index?` `/ReorderPoint/list?` **error หมด**
+     ทั้งที่ 15 ก.ย. 2569 เปิด `/LeadTimeGroup` ได้ (0 กลุ่ม) และสองเมนูนี้ไม่อยู่ในเมนูซ้าย ZORT แล้ว ⇒ ZORT ย้าย/ปิดหน้านี้ — ไม่ใช่ URL ในคู่เราผิด
 กลุ่มที่ไม่ขยับ (เซลเพจ 83 · กระเป๋าเงิน 67 · เอกสารบัญชี 60 · สินค้าบน Marketplace 64): เนื้อหาคนละเรื่อง หรือกลุ่มการเงินที่ไม่แตะตามสั่ง
