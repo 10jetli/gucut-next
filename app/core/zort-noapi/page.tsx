@@ -170,7 +170,7 @@ export default function ZortNoApiPage() {
           {m && (
             <div className="bg-gray-50 border border-gray-200 rounded-md p-4">
               <p className="text-[14px] font-semibold text-gray-800 mb-2">ผลข้างบนพิสูจน์มายังไง</p>
-              {m.how && <p className="text-[12.5px] text-gray-700 leading-relaxed">{m.how}</p>}
+              {m.how && <p className="text-[12.5px] text-gray-700 leading-relaxed">{pipeText(String(m.how))}</p>}
               {m.read && (
                 <ul className="text-[12.5px] text-gray-600 mt-2 space-y-1">
                   {Object.entries(m.read).map(([k, v]) => (
