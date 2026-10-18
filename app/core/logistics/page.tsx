@@ -37,6 +37,7 @@ import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   TH_KANIT, THR_KANIT, ROW_LINK, PageHead, SearchRow, Tabs, TableWrap, TD, TDR, Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark, PageNav,
 } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 
 interface Row {
   id: string; number: string; trackingNo?: string; date?: string
@@ -273,6 +274,7 @@ export default function LogisticsPage() {
              แถวล่าสุด **15 ก.ย. 2569** (หัก 24 พอยท์ต่อใบในแถวที่เห็น) ⇒ **ร้านใช้อยู่จริงทุกวัน**
           🔴 แปลว่า ถ้าเลิก ZORT **ช่องทางจองขนส่ง/ตัดพอยท์หายไปด้วย** ไม่ใช่แค่จอข้อมูลหาย
              ⇒ เขียนบอกบนจอ เพราะจอนี้คือที่ที่คนจะมาหาเรื่องขนส่ง (เงียบไว้ = เข้าใจว่าเราทำได้แล้ว) */}
+      <ZortLookFold tone="amber" สรุป={<>🚚 จองขนส่ง/พิมพ์ฉลากยังทำที่ ZORT · ⚠️ เลขหัวจอนี้เทียบกับ ZORT ตรง ๆ ไม่ได้</>}>
       <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">
         🚚 จอนี้<b>อ่านข้อมูลขนส่งจากใบขาย</b>เท่านั้น — การ<b>จองขนส่ง/พิมพ์ฉลาก</b>ยังทำที่ ZORT
         <br />
@@ -293,6 +295,7 @@ export default function LogisticsPage() {
         (เมนู 9 จุด → <b>L Shipping Point</b> ซึ่งตัด “พอยท์” ต่อการจองหนึ่งครั้ง · ร้านใช้อยู่จริง
         โดยรายการล่าสุดที่เห็นคือ 17 ก.ย. 2569 · อ่านจากจอเขาเมื่อ 18 ก.ย. 2569)
       </p>
+      </ZortLookFold>
 
       <SearchRow
         value={q}
@@ -365,6 +368,7 @@ export default function LogisticsPage() {
                  ⚠️ เก็บบรรทัดนี้ไว้เพราะ **คอมเมนต์ที่ค้างว่า "ยังไม่รู้" ในไฟล์เดียวกับคำตอบ
                     จะทำให้คนอ่านรอบหน้าไปตามหาคำตอบที่มีอยู่แล้ว** และอาจไปเขียนคำเดิมทับของใหม่
                  (เจอตอนกวาดคำเตือนหมดอายุ 18 ก.ย. 2569 — คลาสเดียวกับป้าย "ท่อนท้ายยังไม่ได้แก้" ที่ถอดไปแล้ว) */}
+          <ZortLookFold tone="amber" สรุป={<>⚠️ ตัวเลขจอนี้กับของ ZORT นับคนละประชากร — เทียบตรง ๆ ไม่ได้</>}>
           <div className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
             <b>ตัวเลขจอนี้กับของ ZORT นับคนละประชากร — เทียบตรง ๆ ไม่ได้</b>
             <br />
@@ -407,12 +411,14 @@ export default function LogisticsPage() {
               </>
             )}
           </div>
+          </ZortLookFold>
 
           {/* สรุปขนส่งรายเจ้า — ZORT มีคอลัมน์นี้เป็นโลโก้ ของเราเป็นชื่อที่ ZORT ส่งมา
               ซึ่งสะกดได้หลายแบบ ⇒ ฝั่งท่อรวมให้แล้ว (a03c019) จอโชว์ชื่อกลุ่มเป็นหลัก
               🔴 **แต่ต้องกดดูชื่อดิบได้เสมอ** — รวมกลุ่มคือการตีความ ไม่ใช่ความจริงดิบ
                  วันไหนต้องไล่ว่าใบไหนมาจากชื่อไหน ต้องยังไล่ได้ ไม่งั้นเราทับข้อมูลต้นทางทิ้ง */}
           {Array.isArray(data.carrierGroups) && data.carrierGroups.length > 0 && (
+            <ZortLookFold tone="gray" สรุป={<>🚚 ขนส่งที่ใช้ {data.carrierGroups.length} กลุ่ม</>}>
             <div className="text-[12.5px] text-gray-700 bg-white border border-gray-200 rounded-md px-3.5 py-2.5 mb-3">
               <span className="text-gray-500">ขนส่งที่ใช้:</span>{' '}
               {data.carrierGroups.map((g) => (
@@ -439,6 +445,7 @@ export default function LogisticsPage() {
                 </span>
               )}
             </div>
+            </ZortLookFold>
           )}
 
           <Tabs tabs={tabs} active={only} onChange={(id) => { setOnly(id); load(0, id) }} />
@@ -448,10 +455,12 @@ export default function LogisticsPage() {
               ⇒ สองแท็บนั้นแบ่งกองกันครบ · ส่วน COD 28,880 **ซ้อนทับทั้งสองกอง**
               ⚠️ วางเรียงกันในแถบเดียวโดยไม่บอก = คนบวกทั้งสี่แล้วได้ 64,644 แล้วคิดว่าตัวเลขพัง */}
           {(typeof data?.cod === 'number' && data.cod > 0) && (
+            <ZortLookFold tone="gray" สรุป={<>ℹ️ เก็บเงินปลายทางเป็นตัวกรองคนละแกน — อย่าบวกสี่แท็บรวมกัน</>}>
             <p className="text-[11.5px] text-gray-500 mt-1">
               ℹ️ <b>เก็บเงินปลายทาง</b> เป็นตัวกรอง<b>คนละแกน</b> — ซ้อนกับ &ldquo;ยังไม่มีเลขพัสดุ&rdquo; และ &ldquo;ส่งแล้ว&rdquo;
               ⇒ <b>อย่าเอาตัวเลขทั้งสี่แท็บมาบวกกัน</b> (สองแท็บแรกรวมกันได้เท่ากับทั้งหมดอยู่แล้ว)
             </p>
+            </ZortLookFold>
           )}
 
           {/* ⚠️ เตือนตรง ๆ ว่าตารางข้างล่างไม่ตรงกับแท็บที่กด — **ห้ามเงียบ**
