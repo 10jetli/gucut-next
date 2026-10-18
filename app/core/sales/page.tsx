@@ -29,6 +29,7 @@ import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
 import DormantInShipPile from '@/components/zort/DormantInShipPile'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   id: string; source: string; number: string; channel: string
@@ -728,13 +729,13 @@ export default function CoreSalesPage() {
                 ? (
                   <>
                     {summaryLine(data.total, เงิน.จ่ายแล้ว).replace('มูลค่าทั้งหมด', 'จ่ายแล้ว')}
-                    {typeof เงิน.ยังไม่จ่าย === 'number' && เงิน.ยังไม่จ่าย > 0 && (
+                    {!เหมือนZORT && typeof เงิน.ยังไม่จ่าย === 'number' && เงิน.ยังไม่จ่าย > 0 && (
                       <span className="text-amber-700">
                         {' '}· ยังไม่จ่ายอีก {เงิน.ยังไม่จ่าย.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท
                       </span>
                     )}
                     {/* 🔴 ป้ายที่มาต้องติดกับเลข ไม่ใช่อยู่ท้ายจอ — เลขสองกติกาหน้าตาเหมือนกันเป๊ะ */}
-                    {เงิน.ที่มา === 'status' && (
+                    {!เหมือนZORT && เงิน.ที่มา === 'status' && (
                       <span className="text-gray-500">
                         {' '}(นับจากคอลัมน์ <b>สถานะใบ</b> ไม่ใช่สถานะชำระเงิน — ท่อรุ่นนี้ยังไม่ส่งของที่ถูก)
                       </span>
@@ -750,7 +751,7 @@ export default function CoreSalesPage() {
             )}
             {/* ⚠️ ซ่อนวงเล็บตอนอยู่แท็บ "ยกเลิก" — แท็บนั้นเป็นใบยกเลิกทั้งหมดอยู่แล้ว
                 วงเล็บจะซ้ำกับตัวเลขหลักเป๊ะ ๆ แล้วคนอ่านสะดุดว่าทำไมบอกสองรอบ */}
-            {voided && toneOfStatus(status) !== 'red' && (
+            {!เหมือนZORT && voided && toneOfStatus(status) !== 'red' && (
               <span className="text-gray-400">
                 {' '}(รวมใบยกเลิก {voided.orders.toLocaleString('th-TH')} ใบ {fmtMoney(voided.amount)})
               </span>
@@ -761,8 +762,17 @@ export default function CoreSalesPage() {
                 ⚠️ เจอตอนเปิดจอด้วยเบราว์เซอร์ ไม่ใช่จากการอ่านโค้ด
                    ลิงก์ที่ชี้ไปหน้า "ยังไม่ได้ทำ" ทั้งที่ของมีแล้ว = คนเชื่อว่าเรายังทำไม่เสร็จ */}
             <Link href="/core/packing" className="text-[#337ab7] hover:underline">แพ็คสินค้า</Link>
-            {' | '}
-            <span className="text-gray-400">อ่านจากคลังของเราเอง ไม่ได้ยิง ZORT</span>
+            {!เหมือนZORT && <>{' | '}<span className="text-gray-400">อ่านจากคลังของเราเอง ไม่ได้ยิง ZORT</span></>}
+            {/* 🎯 โหมดเหมือน ZORT: ZORT เขียนแค่ "จำนวน N รายการ, มูลค่า… | แพ็คสินค้า" ⇒ ของที่เราเติมยุบเป็น ⓘ
+                ซ่อน ไม่ใช่ลบ — ข้อความเต็มอยู่ใน title · ⚠️ "ยอดเป็นของทั้งช่วงวัน" ไม่ยุบ (เตือนตัวเลขคนละขอบเขต กฎข้อ 4) */}
+            {เหมือนZORT && data && (
+              <span className="text-gray-400 cursor-help" title={[
+                typeof เงิน.ยังไม่จ่าย === 'number' && เงิน.ยังไม่จ่าย > 0 ? `ยังไม่จ่ายอีก ${เงิน.ยังไม่จ่าย.toLocaleString('th-TH', { maximumFractionDigits: 2 })} บาท` : '',
+                เงิน.ที่มา === 'status' ? 'นับจากคอลัมน์สถานะใบ ไม่ใช่สถานะชำระเงิน — ท่อรุ่นนี้ยังไม่ส่งของที่ถูก' : '',
+                voided && toneOfStatus(status) !== 'red' ? `รวมใบยกเลิก ${voided.orders.toLocaleString('th-TH')} ใบ ${fmtMoney(voided.amount)}` : '',
+                'อ่านจากคลังของเราเอง ไม่ได้ยิง ZORT',
+              ].filter(Boolean).join('\n')}>{' '}ⓘ</span>
+            )}
           </>
         }
         actions={
@@ -1165,7 +1175,7 @@ export default function CoreSalesPage() {
           {/* ℹ️ ค่าที่จัดกองไม่ได้ซึ่ง **อยู่นอกช่วงที่เลือก** — เทา ไม่ใช่คำเตือน
               ⇒ ตอบคำถาม "ขยายช่วงวันแล้วจะเจอไหม" · โชว์เฉพาะตอนในช่วงนี้ไม่มี
                  (ถ้าในช่วงมีอยู่แล้ว กล่องเหลืองข้างบนพูดไปแล้ว ⇒ พูดซ้ำ = เสียงหอน) */}
-          {เงิน.ค่าที่ยังไม่จัดกอง.length === 0
+          {!เหมือนZORT && เงิน.ค่าที่ยังไม่จัดกอง.length === 0
             && (เงิน.ค่าที่ยังไม่จัดกองทั้งฐาน?.length ?? 0) > 0 && (
             <p className="mt-1 text-[11.5px] text-gray-500">
               ℹ️ ฐานข้อมูลมีสถานะชำระเงินที่จอยังจัดกองไม่ได้อยู่{' '}
@@ -1196,7 +1206,20 @@ export default function CoreSalesPage() {
           )}
 
           {/* คำดิบที่ยังไม่มีคำไทยยืนยัน — บรรทัดนี้หายเองวันที่เติมคำลง `lib/zort-words.ts` */}
-          {สถานะที่ยังไม่มีคำไทย.length > 0 && (
+          {/* 🎯 โหมดเหมือน ZORT: สองบรรทัดหมายเหตุ (ค่าชำระเงินนอกช่วง · แท็บคำดิบ) ยุบเป็นบรรทัดเทาเดียว ข้อความเต็มใน title
+              คำเตือนจริง (เงินสองแหล่งไม่ตรง · รายชื่อแท็บใช้ทางสำรอง) ไม่ยุบ */}
+          {เหมือนZORT && (() => {
+            const ข้อ = [
+              เงิน.ค่าที่ยังไม่จัดกอง.length === 0 && (เงิน.ค่าที่ยังไม่จัดกองทั้งฐาน?.length ?? 0) > 0
+                ? `ฐานข้อมูลมีสถานะชำระเงินที่จอยังจัดกองไม่ได้ (${เงิน.ค่าที่ยังไม่จัดกองทั้งฐาน!.join(' · ')}) แต่ไม่มีในช่วงวันที่เลือก ⇒ ขยายช่วงวันแล้วตัวเลขเงินจะมีกองที่ไม่ถูกนับ` : '',
+              สถานะที่ยังไม่มีคำไทย.length > 0
+                ? `แท็บ ${สถานะที่ยังไม่มีคำไทย.join(' · ')} ยังเป็นคำดิบจาก ZORT — ยังไม่ได้ยืนยันว่าจอ ZORT เรียกเป็นไทยว่าอะไร จึงไม่เดาคำแปล` : '',
+            ].filter(Boolean)
+            return ข้อ.length > 0 && (
+              <p className="mt-1 text-[11.5px] text-gray-400 cursor-help" title={ข้อ.join('\n\n')}>ⓘ หมายเหตุ {ข้อ.length} ข้อ (ชี้เพื่ออ่าน)</p>
+            )
+          })()}
+          {!เหมือนZORT && สถานะที่ยังไม่มีคำไทย.length > 0 && (
             <p className="mt-1 text-[11.5px] text-amber-800">
               ⚠️ แท็บ <b>{สถานะที่ยังไม่มีคำไทย.join(' · ')}</b> ยังเป็น<b>คำดิบจาก ZORT</b> —
               เรายังไม่ได้ยืนยันว่าจอ ZORT เรียกสถานะนี้เป็นไทยว่าอะไร จึง<b>ไม่เดาคำแปล</b>
