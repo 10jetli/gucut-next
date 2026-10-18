@@ -29,6 +29,7 @@ import { ROW_LINK, TD_NO,
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
@@ -465,6 +466,41 @@ function CoreStockInner() {
     )
   }
 
+  /* ตัวเลือกหมวด + ป้ายสถานะ — ใช้สองที่ (แถวของตัวเองปกติ · ยุบเข้าแถว Marketplace ในโหมดเหมือน ZORT) */
+  const ตัวกรองหมวด = (
+    <>
+            <select
+              value={category}
+              onFocus={โหลดหมวด}
+              onMouseDown={โหลดหมวด}
+              onChange={(e) => { setCategory(e.target.value); setOffset(0) }}
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-[280px]"
+              title="กรองตามหมวดหมู่ — ตัวเลขคือจำนวนรหัสในหมวดนั้นทั้งคลัง"
+            >
+              <option value="">🗂️ ทุกหมวดหมู่</option>
+              {/* ระหว่างยังไม่โหลด ให้เห็นค่าที่เลือกอยู่เสมอ (ค่ามาจาก URL ได้) */}
+              {category && !cats?.some((c) => c.name === category) && <option value={category}>{category}</option>}
+              {cats?.map((c) => (
+                <option key={c.name} value={c.name}>{c.name} ({fmtNum(c.skus)})</option>
+              ))}
+            </select>
+            {catsLoading && <span className="text-[11.5px] text-gray-400">กำลังโหลดรายชื่อหมวด…</span>}
+            {/* ⚠️ โหลดรายชื่อหมวดไม่ได้ ต้องบอก — รายการว่างอ่านได้ว่า "ไม่มีหมวด" ซึ่งคนละเรื่อง */}
+            {catsErr && (
+              <span className="text-[11.5px] text-amber-800" title={catsErr}>
+                ⚠️ โหลดรายชื่อหมวดไม่ได้ — ยังกรองด้วยลิงก์ <code>?category=</code> ได้อยู่
+              </span>
+            )}
+            {category && (
+              <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-full px-3 py-1 text-[12.5px]">
+                🗂️ กรองหมวด: <b>{category}</b>
+                <button onClick={() => { setCategory(""); setOffset(0) }} title="ถอดตัวกรองหมวด"
+                  className="text-blue-500 hover:text-blue-800 font-bold ml-0.5">✕</button>
+              </span>
+            )}
+    </>
+  )
+
   return (
     <div className="p-4 md:p-6">
       {/* ⚠️ ต้องเป็นชิ้นแรกสุด เหนือหัวจอ — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
@@ -539,6 +575,12 @@ function CoreStockInner() {
                      **ไม่ใช่ 2,668 ที่อยู่หน้าประโยคเดียวกัน** ⇒ เหลือ 6 ตัวที่ไม่มีคำอธิบาย
                    ⇒ คนที่เอาไปเทียบจะหาของหาย 6 ตัวที่ไม่เคยหาย (กฎข้อ 4 ใน CLAUDE.md)
                    ⇒ เขียนการหักให้ครบทุกก้อนจนเหลือเศษศูนย์ */
+                เหมือนZORT ? (
+                  /* 🎯 โหมดเหมือน ZORT: ZORT ไม่มีวงเล็บนี้ ⇒ ยุบเป็น ⓘ — ข้อความหักครบทุกก้อนยังอยู่ใน title (กฎข้อ 4 ยังถูกบอก) */
+                  <span className="text-gray-400 cursor-help text-[14px]" title={`ZORT มี ${(data.zortTotal ?? 0).toLocaleString('th-TH')} — หักไม่มีรหัส ${Number(data.noSkuInZort).toLocaleString('th-TH')} ตัว${typeof data.noSkuWithStock === 'number' && data.noSkuWithStock === 0 ? ' (สต็อกเป็นศูนย์ทั้งหมด)' : ''}${kind === 'goods' && typeof data.services === 'number' && data.services > 0 ? ` · หักบริการ ${data.services.toLocaleString('th-TH')} รายการที่แท็บนี้ไม่รวม` : ''}`}>
+                    {' '}ⓘ
+                  </span>
+                ) :
                 <span className="text-gray-400">
                   {' '}(ZORT มี {(data.zortTotal ?? 0).toLocaleString('th-TH')} — หัก
                   {' '}<b>ไม่มีรหัส {Number(data.noSkuInZort).toLocaleString('th-TH')} ตัว</b>
@@ -701,13 +743,13 @@ function CoreStockInner() {
 
       {data && !data.skip && (
         <>
-          <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
+          {!เหมือนZORT && <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
             ⚠️ ตัวเลขนี้คือ <b>ภาพถ่ายสต็อกของวันที่ {thaiDate(data.day)}</b> (ถ่ายตอนตี 1) ไม่ใช่ยอดสดวินาทีนี้
-          </div>
+          </div>}
 
           {/* ⚠️ ซ่อนได้ แต่ต้องบอกว่าซ่อนอะไรไว้กี่รายการและกดกลับได้ตรงนี้เลย
               การซ่อนเงียบ ๆ ทำให้คนหาของไม่เจอแล้วสรุปว่าข้อมูลหาย */}
-          <p className="text-[12.5px] text-gray-500 mb-2">
+          {!เหมือนZORT && <p className="text-[12.5px] text-gray-500 mb-2">
             {kind === 'goods' ? (
               <>
                 ซ่อนรายการ<b>บริการ</b>
@@ -731,11 +773,27 @@ function CoreStockInner() {
                 </button>
               </>
             )}
-          </p>
+          </p>}
 
           {/* แถบเหนือแท็บตามผัง ZORT (`zort-ui/35-zort-สินค้า-รายการ.jpg`)
               ขวามือมี ปุ่ม "Marketplace Dashboard" + ไอคอนสลับมุมมอง (รายการ / ตาราง) */}
-          <div className="flex flex-wrap items-center justify-end gap-2 mb-1">
+          <div className={`flex flex-wrap items-center gap-2 mb-1 ${เหมือนZORT ? 'justify-between' : 'justify-end'}`}>
+            {/* 🎯 โหมดเหมือน ZORT (lib/โหมดเหมือนzort.ts): ZORT มีแถวนี้แถวเดียวเหนือแท็บ ⇒ ยุบของเราที่เคยกิน 3 แถว
+                (กล่องภาพถ่ายสต็อก · บรรทัดซ่อนบริการ · แถวตัวเลือกหมวด) มาไว้ซ้ายแถวนี้ — **ซ่อน ไม่ใช่ลบ**:
+                ข้อความเต็มอยู่ใน title และปุ่มแสดง/ซ่อนบริการยังกดได้ (วัด REA 18 ต.ค. 2569: ตารางของเราต่ำกว่า ZORT ~170px) */}
+            {เหมือนZORT && (
+              <div className="flex flex-wrap items-center gap-2 mr-auto text-[12px] text-gray-400">
+                {ตัวกรองหมวด}
+                <span className="cursor-help" title={`ตัวเลขนี้คือภาพถ่ายสต็อกของวันที่ ${thaiDate(data.day)} (ถ่ายตอนตี 1) ไม่ใช่ยอดสดวินาทีนี้`}>
+                  ⏱ ภาพถ่ายสต็อก {thaiDate(data.day)}
+                </span>
+                {kind === 'goods'
+                  ? <span title="ค่าส่ง · ค่าซ่อม · ค่าน้ำมัน — ไม่มีสต็อกจริง จึงติดลบตลอด">· ซ่อนบริการ{typeof data.services === 'number' ? ` ${data.services.toLocaleString('th-TH')}` : ''}{' '}
+                      <button onClick={() => { setKind('all'); load(0, sort, tab, 'all') }} className="text-[#337ab7] hover:underline">แสดงทั้งหมด</button></span>
+                  : <span>· แสดงบริการด้วย{' '}
+                      <button onClick={() => { setKind('goods'); load(0, sort, tab, 'goods') }} className="text-[#337ab7] hover:underline">ซ่อนบริการ</button></span>}
+              </div>
+            )}
             {/* ✅ ปลายทางเดียวกับ ZORT (`href="/Marketplace"` อ่านจริง 15 ต.ค. 2569) = เมนู Marketplace Dashboard ของเรา
                 🔴 เดิมชี้ /core/channels (เขียนไว้ก่อนมีจอ /core/marketplace) ⇒ ชื่อเดียวกับเมนูซ้ายแต่พาไปคนละหน้า
                 ⇒ ปลายทางต้องตรงกับเมนูที่ใช้ชื่อเดียวกัน (lib/nav-config.ts) */}
@@ -775,37 +833,7 @@ function CoreStockInner() {
           {/* 🗂️ ตัวเลือกหมวดหมู่ — ZORT มีช่องนี้บนจอสินค้า ของเราเดิมรับค่าจาก URL ได้อย่างเดียว
               (เทียบทีละชิ้น 18 ก.ย. 2569 · ท่อรับ `category` อยู่แล้ว ⇒ เป็นช่องเดียวที่ทำได้ในเลนจอ)
               ⚠️ ใช้ <select> ธรรมดาเพื่อให้ใช้ได้บนมือถือด้วย และเลือกแล้วยิงทันทีเหมือนตัวกรองอื่นของจอนี้ */}
-          <div className="flex items-center gap-2 flex-wrap mb-3">
-            <select
-              value={category}
-              onFocus={โหลดหมวด}
-              onMouseDown={โหลดหมวด}
-              onChange={(e) => { setCategory(e.target.value); setOffset(0) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-[280px]"
-              title="กรองตามหมวดหมู่ — ตัวเลขคือจำนวนรหัสในหมวดนั้นทั้งคลัง"
-            >
-              <option value="">🗂️ ทุกหมวดหมู่</option>
-              {/* ระหว่างยังไม่โหลด ให้เห็นค่าที่เลือกอยู่เสมอ (ค่ามาจาก URL ได้) */}
-              {category && !cats?.some((c) => c.name === category) && <option value={category}>{category}</option>}
-              {cats?.map((c) => (
-                <option key={c.name} value={c.name}>{c.name} ({fmtNum(c.skus)})</option>
-              ))}
-            </select>
-            {catsLoading && <span className="text-[11.5px] text-gray-400">กำลังโหลดรายชื่อหมวด…</span>}
-            {/* ⚠️ โหลดรายชื่อหมวดไม่ได้ ต้องบอก — รายการว่างอ่านได้ว่า "ไม่มีหมวด" ซึ่งคนละเรื่อง */}
-            {catsErr && (
-              <span className="text-[11.5px] text-amber-800" title={catsErr}>
-                ⚠️ โหลดรายชื่อหมวดไม่ได้ — ยังกรองด้วยลิงก์ <code>?category=</code> ได้อยู่
-              </span>
-            )}
-            {category && (
-              <span className="inline-flex items-center gap-1.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-full px-3 py-1 text-[12.5px]">
-                🗂️ กรองหมวด: <b>{category}</b>
-                <button onClick={() => { setCategory(""); setOffset(0) }} title="ถอดตัวกรองหมวด"
-                  className="text-blue-500 hover:text-blue-800 font-bold ml-0.5">✕</button>
-              </span>
-            )}
-          </div>
+          {!เหมือนZORT && <div className="flex items-center gap-2 flex-wrap mb-3">{ตัวกรองหมวด}</div>}
           {/* 🔴 ท่อใช้ตัวกรองไม่ตรงกับที่จอขอ — ถ้าเงียบไว้ ตัวนับกับแถวจะมาคนละกติกา
               และจอจะ "ดูปกติทุกประการ" (เคสวันที่ 2 ก.ย. 2569 ทั้งสามเคสเป็นแบบนี้) */}
           {echoWarn && (
