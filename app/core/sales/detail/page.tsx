@@ -424,8 +424,9 @@ function DetailInner() {
             />
           </div>
 
-          {/* การ์ดคู่: ข้อมูล / ลูกค้า */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* การ์ดคู่: ข้อมูล / ลูกค้า
+              📐 โหมดเหมือน ZORT (วัด 19 ต.ค. 2569): ZORT เป็น **การ์ดเดียว** กว้างเต็ม ข้อมูลซ้าย ลูกค้าขวา ⇒ พื้นขาวที่กล่องนอก · ไม่มีช่องคั่น */}
+          <div className={`grid grid-cols-1 md:grid-cols-2 ${เหมือนZORT ? 'gap-0 bg-white rounded-[6px] py-2' : 'gap-4'}`}>
             <Card title="ข้อมูล" icon="📄">
               <div className="px-4 py-3">
                 <Field label="รายการ" value={<span className="text-blue-600 font-medium">{order.number}</span>} />
