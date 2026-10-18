@@ -17,9 +17,14 @@
 //    (ที่ตาข่ายนั้นเฝ้าคือคำของเราเองที่ไหลไปหลายจอโดยไม่มีใครอ่านซ้ำ)
 //    ⇒ ถ้าวันหนึ่งเพิ่มคำของเราเองลงในนี้ **ต้องเอาเข้ารายชื่อเฝ้าด้วย**
 
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+
 export default function StoreScopeLine({ scope }: { scope?: string | null }) {
   const text = String(scope ?? '').trim()
   if (!text) return null
+  /* 🎯 โหมดเหมือน ZORT: ZORT ไม่มีกล่องนี้ (ล็อกอินทีละร้าน) ⇒ ยุบเป็นบรรทัดเทาเล็ก ไม่มีกรอบ — ข้อความจากท่อยังขึ้นครบ ไม่ซ่อน
+     (ขอบเขตร้านเปลี่ยนความหมายของทุกเลขบนจอ ⇒ ซ่อนลง title ไม่ได้) */
+  if (เหมือนZORT) return <p className="text-[11.5px] text-gray-400 mb-1">🏬 ขอบเขตข้อมูล: {text}</p>
   return (
     <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1.5 mb-2 leading-relaxed">
       🏬 <b>ขอบเขตข้อมูล:</b> {text}
