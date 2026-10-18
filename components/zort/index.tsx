@@ -291,7 +291,16 @@ const PILL: Record<PillTone, string> = {
 const PILL_ZORT: Partial<Record<PillTone, string>> = {
   green: 'bg-[rgb(206,255,241)] text-[rgb(31,144,112)]',
   red: 'bg-[rgb(255,235,235)] text-[rgb(211,53,53)]',
+  /* วัด DOM ซ้ำ 19 ต.ค. 2569 (/Sell/list · /Quotation/list · /Logistics/list): z-badge--waiting · z-badge--progress
+     ค่าเดิมของสองสีนี้ประมาณจากภาพ (#de9353/#fef8e8 · #498dd8/#edf6fe) ⇒ ใช้ค่าจาก DOM ในโหมด */
+  orange: 'bg-[rgb(255,248,230)] text-[rgb(234,144,67)]',
+  blue: 'bg-[rgb(235,246,255)] text-[rgb(47,141,222)]',
 }
+/** ป้าย COD — ZORT: span.z-badge--progress Boon 12px 700 · rgb(47,141,222) บน rgb(235,246,255) · ขอบมน 10 · ช่องใน 3px 7px (วัด 19 ต.ค. 2569)
+ *  นอกโหมดคงป้ายเหลืองเดิม */
+export const COD_BADGE = เหมือนZORT
+  ? 'inline-block text-[12px] font-bold leading-none rounded-[10px] px-[7px] py-[3px] text-[rgb(47,141,222)] bg-[rgb(235,246,255)]'
+  : 'text-[11.5px] font-semibold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5'
 export function Pill({ tone = 'gray', children }: { tone?: PillTone; children: ReactNode }) {
   if (เหมือนZORT) return (
     <span className={`inline-block text-[14px] leading-[14px] font-normal rounded-[24px] px-3 py-1 whitespace-nowrap ${PILL_ZORT[tone] || PILL[tone]}`}>

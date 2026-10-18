@@ -36,7 +36,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   TH_KANIT, THR_KANIT, ROW_LINK, PageHead, SearchRow, Tabs, TableWrap, TD, TDR, Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark, PageNav,
-} from '@/components/zort'
+ COD_BADGE,} from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
@@ -548,7 +548,7 @@ export default function LogisticsPage() {
                     <td className={TD}>
                       {/* ⚠️ COD = เก็บเงินปลายทาง (ยังไม่ได้เงิน) ไม่ใช่ "จ่ายแล้ว" — ห้ามใช้สีเขียว */}
                       {r.isCod
-                        ? <span className="text-[11.5px] font-semibold text-amber-800 bg-amber-100 rounded px-1.5 py-0.5">COD</span>
+                        ? <span className={COD_BADGE}>COD</span>
                         : <span className="text-gray-400 text-[12.5px]">โอน/ชำระก่อน</span>}
                     </td>
                     <td className={TD}><Pill tone={toneOfStatus(r.status ?? '')}>{statusTh(r.status)}</Pill></td>

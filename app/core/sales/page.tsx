@@ -18,7 +18,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {TH_NO, 
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย,} from '@/components/zort'
+  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
@@ -1372,7 +1372,7 @@ export default function CoreSalesPage() {
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>
                       {r.ship_date ? thaiDate(r.ship_date) : <span className="text-gray-300">—</span>}
                       {(r.is_cod === 1 || r.is_cod === true) && (
-                        <span className="block text-[10px] text-amber-800 bg-amber-100 rounded px-1.5 py-0.5 mt-0.5 w-fit">COD</span>
+                        <span className={`block w-fit mt-0.5 ${COD_BADGE}`}>COD</span>
                       )}
                     </td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
