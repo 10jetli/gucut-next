@@ -274,6 +274,8 @@ export default function QuotationsPage() {
                 (กติกา: ของที่เราคิดขึ้นเอง ห้ามอยู่ในจอที่กำลังลอก ZORT)
                 ⇒ แต่ **ต้องเขียนกำกับว่า "ทั้งหมด" รวมใบยกเลิกไว้เท่าไหร่** ตามกติกาแท็บใน CLAUDE.md
                    ไม่งั้นคนอ่าน 6 ใบแล้วไม่รู้ว่าครึ่งหนึ่งถูกยกเลิกไปแล้ว (ของจริง 18 ก.ย. 2569: ยกเลิก 3 จาก 6) */}
+            {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ ⇒ shrink-0 (บทเรียนจอใบซื้อ 19 ต.ค. 2569) */}
+            <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
             <Tabs
               tabs={[
                 { id: '', label: 'ทั้งหมด', count: all.length },
@@ -282,6 +284,15 @@ export default function QuotationsPage() {
               active={tab}
               onChange={setTab}
             />
+            </div>
+            {/* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านอยู่ในแถบแท็บ (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */}
+            {เหมือนZORT && (
+              <div className="ml-auto mb-1 min-w-0">
+                <StorePicker value={store} disabled={loading}
+                  onChange={(v) => { setStore(v); load(v) }}
+                  ต่อท้าย={<>{data?.storeScope && <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${data.storeScope}`}>ⓘ</span>}{tab === '' && all.filter((r) => r.status === 'Voided').length > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ รวมยกเลิก {fmtNum(all.filter((r) => r.status === 'Voided').length)}</span>}</>} />
+              </div>
+            )}
             <button
               onClick={() => load()}
               disabled={loading}
@@ -304,10 +315,8 @@ export default function QuotationsPage() {
           )}
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
-          <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(v) }}
-            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
-            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={data?.storeScope} />{tab === '' && all.filter((r) => r.status === 'Voided').length > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ ทั้งหมดรวมใบยกเลิก {fmtNum(all.filter((r) => r.status === 'Voided').length)} ใบ</span>}</> : undefined} />
+          {!เหมือนZORT && <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(v) }} />}
           {!เหมือนZORT && <StoreScopeLine scope={data?.storeScope} />}
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />

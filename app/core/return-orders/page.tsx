@@ -312,6 +312,12 @@ export default function ReturnOrdersPage() {
             onSubmit={() => load()}
             placeholder="ค้นเลขที่ใบคืน · เลขใบขายอ้างอิง · ชื่อลูกค้า"
             advanced={<LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
+            /* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านมาอยู่ขวาของช่องค้นหา (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */
+            right={เหมือนZORT ? (
+              <StorePicker value={store} disabled={loading}
+                onChange={(v) => { setStore(v); load(q, v) }}
+                ต่อท้าย={d?.storeScope ? <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${d.storeScope}`}>ⓘ</span> : undefined} />
+            ) : undefined}
           />
 
           {/* 🔎 ค้นหาขั้นสูง — ZORT มีช่วงวันที่บนจอนี้ และท่อเรารับ from/to มาตลอด
@@ -367,10 +373,8 @@ export default function ReturnOrdersPage() {
           )}
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
-          <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(q, v) }}
-            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
-            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={d?.storeScope} /></> : undefined} />
+          {!เหมือนZORT && <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(q, v) }} />}
 
           {!เหมือนZORT && <StoreScopeLine scope={d?.storeScope} />}
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}

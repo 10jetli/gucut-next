@@ -331,6 +331,8 @@ export default function CoreTransfersPage() {
           {/* ผัง ZORT (ภาพ 31): ปุ่มรีเฟรชวงกลมอยู่มุมขวาของแถบแท็บ — วางเพิ่ม ไม่ย้ายอันบนหัวจอ
               (กติกาเดียวกับจอใบเสนอราคา: ย้ายขึ้นที่เดียวผิดผัง ย้ายลงที่เดียวหายจากที่คนเราชิน) */}
           <div className="flex items-end justify-between gap-3">
+            {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ ⇒ shrink-0 (บทเรียนจอใบซื้อ 19 ต.ค. 2569) */}
+            <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
             <Tabs
               // ZORT โชว์ ทั้งหมด · รอโอน (2) · สำเร็จ — แท็บที่เป็น 0 ก็ต้องโชว์
               tabs={[
@@ -373,6 +375,15 @@ export default function CoreTransfersPage() {
               active={tab}
               onChange={(id) => { setTab(id); load(0, id) }}
             />
+            </div>
+            {/* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านอยู่ในแถบแท็บ (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */}
+            {เหมือนZORT && (
+              <div className="ml-auto mb-1 min-w-0">
+                <StorePicker value={store} disabled={loading}
+                  onChange={(v) => { setStore(v); load(0, tab, v) }}
+                  ต่อท้าย={data?.storeScope ? <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${data.storeScope}`}>ⓘ</span> : undefined} />
+              </div>
+            )}
             <button onClick={() => load(0)} disabled={loading} aria-label="โหลดใหม่"
               title="โหลดใหม่"
               className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
@@ -456,10 +467,8 @@ export default function CoreTransfersPage() {
           )}
 
           {/* 🏬 เลือกร้าน — ปุ่มชุดเดียวกับจอเอกสารอื่น (components/zort/StorePicker) */}
-          <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(0, tab, v) }}
-            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
-            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={data?.storeScope} /></> : undefined} />
+          {!เหมือนZORT && <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(0, tab, v) }} />}
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
           {!เหมือนZORT && <StoreScopeLine scope={data?.storeScope} />}
