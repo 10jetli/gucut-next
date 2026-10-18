@@ -360,6 +360,13 @@ export default function CorePurchasesPage() {
               active={tab}
               onChange={(id) => { setTab(id); load(0, id) }}
             />
+            {เหมือนZORT && (
+              <div className="ml-auto mb-1 min-w-0">
+                <StorePicker value={store} disabled={loading}
+                  onChange={(v) => { setStore(v); load(0, tab, v) }}
+                  ต่อท้าย={<><StoreScopeInline scope={data?.storeScope} />{tab === 'all' && typeof ยกเลิกในทั้งหมด === 'number' && ยกเลิกในทั้งหมด > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ ทั้งหมดรวมใบยกเลิก {fmtNum(ยกเลิกในทั้งหมด)} ใบ</span>}</>} />
+              </div>
+            )}
             <button onClick={() => load(0, tab)} disabled={loading} aria-label="โหลดใหม่" title="โหลดใหม่"
               className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
                 bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
@@ -424,10 +431,10 @@ export default function CorePurchasesPage() {
           )}
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
-          <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(0, tab, v) }}
-            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
-            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={data?.storeScope} />{tab === 'all' && typeof ยกเลิกในทั้งหมด === 'number' && ยกเลิกในทั้งหมด > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ ทั้งหมดรวมใบยกเลิก {fmtNum(ยกเลิกในทั้งหมด)} ใบ</span>}</> : undefined} />
+          {/* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านย้ายขึ้นไปอยู่ในแถบแท็บ (ดูข้างบน) — ZORT ไม่มีแถวเลือกร้าน
+              แถวนี้ดันตารางลง ~50px ⇒ ลายแถวเหลื่อมเฟสกับ ZORT ทุกแถว (วัด 19 ต.ค. 2569) · นอกโหมดอยู่ที่เดิม */}
+          {!เหมือนZORT && <StorePicker value={store} disabled={loading}
+            onChange={(v) => { setStore(v); load(0, tab, v) }} />}
           {!เหมือนZORT && <StoreScopeLine scope={data?.storeScope} />}
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />
