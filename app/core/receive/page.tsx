@@ -40,8 +40,9 @@
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, thaiDate } from '@/components/zort'
+import { FORM_INPUT, PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, thaiDate } from '@/components/zort'
 import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 
 interface Doc {
   id?: string; number?: string; kind?: string; status?: string
@@ -282,28 +283,31 @@ export default function ReceivePage() {
 
       {/* ── ขั้นที่ 1 ─────────────────────────────────────── */}
       {step === 0 && (
-        <div className="bg-white border border-gray-200 rounded-md p-6 text-center">
-          <p className="text-[17px] font-semibold text-gray-900 mb-1">เริ่มต้นการรับสินค้าเข้า</p>
-          <p className="text-[12.5px] text-gray-600">กรอกหมายเลขใบโอน หรือเลขอ้างอิง</p>
+        /* 📏 ZORT /Pickandpack/Main ขั้นที่ 1 (วัด 18 ต.ค. 2569): การ์ดขาวไม่มีขอบ · หัว Kanit 30/500 · ป้าย 16 #3e3e3e · ช่องกรอกกว้าง ~250 · ปุ่ม 16/400 */
+        <div className="bg-white rounded-md p-8 text-center">
+          <p className="font-['Kanit','Boon',sans-serif] text-[30px] leading-[30px] font-medium text-[#3e3e3e] mb-6">เริ่มต้นการรับสินค้าเข้า</p>
+          <p className="text-[16px] text-[#3e3e3e]">กรอกหมายเลขใบโอน หรือเลขอ้างอิง</p>
           {/* 🔴 ต้องบอกตั้งแต่ก่อนกรอก ว่าเลขพัสดุใช้ไม่ได้ — ไม่ใช่ปล่อยให้ค้นแล้วขึ้น "ไม่พบ"
               ซึ่งจะทำให้คนสรุปผิดว่า "ไม่มีใบนี้ในระบบ" ทั้งที่ระบบแค่ค้นด้วยเลขนั้นไม่เป็น */}
+          <ZortLookFold tone="gray" สรุป={<>ⓘ ค้นจากไหน (ZORT สดก่อน · คลังเงา) และเลขพัสดุยังไม่ยืนยัน</>}>
           <p className="text-[11.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 mt-2.5 inline-block leading-relaxed">
             หาให้สองทาง: <b>ถาม ZORT สดก่อน</b> (ได้รายการสินค้ากับเลขพัสดุมาด้วย)
             {' '}ไม่ได้ค่อยหาในคลังเงา ·
             {' '}<b>เลขพัสดุยังไม่ยืนยันว่าค้นได้</b> ZORT จอจริงค้นได้แต่เรายังไม่เคยยิงทดสอบ
           </p>
+          </ZortLookFold>
           <div className="mt-4 flex flex-col items-center gap-3">
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') find() }}
               placeholder="เช่น TF-2026xxxxxx"
-              className="w-full max-w-[320px] border border-gray-300 rounded px-3 py-2 text-[14px]"
+              className={`${FORM_INPUT} max-w-[250px]`}
             />
             <button
               onClick={find}
               disabled={busy || !q.trim()}
-              className="text-[14px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
+              className="text-[16px] leading-6 font-normal text-white rounded-full px-8 py-[9px] disabled:opacity-50"
               style={{ background: '#4165ed' }}
             >
               {busy ? 'กำลังค้น…' : 'รับสินค้าเข้า'}
