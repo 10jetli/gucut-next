@@ -25,7 +25,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { TH_NO, TD_NO, ROW_LINK,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, TD,
-  LinkText, RowMenu, EmptyState, thaiDate, PageNav,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, PageNav, THC, TDC,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import PipeNote from '@/components/ui/PipeNote'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -478,7 +478,7 @@ export default function CoreTransfersPage() {
                   <th className={TH}>ประเภท</th>
                   <th className={TH}>จาก</th>
                   <th className={TH}>ไป</th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
+                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
@@ -502,7 +502,7 @@ export default function CoreTransfersPage() {
                     <td className={`${TD} text-gray-700`}>{typeTh(r.kind)}</td>
                     <td className={TD}>{wh(r.from_wh)}</td>
                     <td className={TD}>{wh(r.to_wh)}</td>
-                    <td className={TD}><Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill></td>
+                    <td className={TDC}><Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill></td>
                     <td className={`${TD} text-right`}>
                       <RowMenu
                         items={[
