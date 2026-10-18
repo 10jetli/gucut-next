@@ -187,7 +187,9 @@ export function SearchRow({
   advanced?: ReactNode
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 mb-4">
+    /* 📐 โหมดเหมือน ZORT — วัดตำแหน่งจริง (CSS px) /Bundle/list 18 ต.ค. 2569: บรรทัด "จำนวน" ล่าง 144 → ช่องค้นหา 164–204 → หัวตาราง 224
+       ของเราเดิม ช่องค้นหา 160–200 แล้วต่อด้วยแท็บ/ตารางห่าง 16 (บางจอ 12) ⇒ เลื่อนลง 4 (mt-1) และเว้นล่าง 20 (mb-5) */
+    <div className={`flex flex-wrap items-center gap-3 ${เหมือนZORT ? 'mt-1 mb-5' : 'mb-4'}`}>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[12.5px]">🔍</span>
         <input
