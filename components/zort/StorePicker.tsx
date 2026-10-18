@@ -1,4 +1,5 @@
 'use client'
+import type React from 'react'
 /* ปุ่มเลือกร้าน z1/z2 — ใช้ร่วมทุกจอเอกสารที่ท่อแยกร้านแล้ว (15 ก.ย. 2569)
  *
  * 🔴 **ทำไมเป็นตัวประกอบร่วม ไม่ใช่ก๊อปวางทีละจอ**
@@ -39,12 +40,14 @@ export function storeLabel(s: StoreId): string {
 
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
-export default function StorePicker({ value, onChange, disabled, note }: {
+export default function StorePicker({ value, onChange, disabled, note, ต่อท้าย }: {
   value: StoreId
   onChange: (s: 'z1' | 'z2') => void
   disabled?: boolean
   /** ข้อความต่อท้ายของจอนั้น ๆ · ไม่ใส่ = ใช้ประโยคกลาง */
   note?: string
+  /** ของที่วางต่อท้ายในแถวเดียวกัน — โหมดเหมือน ZORT ใช้รวมขอบเขตร้าน/หมายเหตุใบยกเลิกมาไว้แถวนี้แถวเดียว */
+  ต่อท้าย?: React.ReactNode
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 mb-2">
@@ -77,6 +80,7 @@ export default function StorePicker({ value, onChange, disabled, note }: {
           {note ?? 'เส้นนี้ตอบทีละร้าน — ยอดและตัวนับทั้งหมดเป็นของร้านที่เลือกเท่านั้น'}
         </span>
       )}
+      {ต่อท้าย}
     </div>
   )
 }

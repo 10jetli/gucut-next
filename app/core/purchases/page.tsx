@@ -14,7 +14,7 @@
 //    แต่จะได้จอที่ **หน้าตาผ่านแต่ข้อมูลผิดความหมาย** — "เหมือน ZORT 100%"
 //    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
 import { useCallback, useEffect, useState } from 'react'
-import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import { PURCHASE_STATUS, zortWord } from '@/lib/zort-words'
@@ -393,7 +393,7 @@ export default function CorePurchasesPage() {
                  ⇒ ถ้าวันไหนโหลดไม่ครบ ต้องบอกตรง ๆ ว่ากรองเฉพาะที่โหลดมา */}
           {/* ยอด "ทั้งหมด" รวมใบยกเลิกไว้ด้วย ⇒ ต้องเขียนกำกับ (กติกาแท็บใน CLAUDE.md)
               ซ่อนตอนอยู่แท็บยกเลิกเอง เพราะจะซ้ำกับตัวเลขหลัก · หายเองถ้าไม่มีใบยกเลิก */}
-          {tab === 'all' && typeof ยกเลิกในทั้งหมด === 'number' && ยกเลิกในทั้งหมด > 0 && (
+          {!เหมือนZORT && tab === 'all' && typeof ยกเลิกในทั้งหมด === 'number' && ยกเลิกในทั้งหมด > 0 && (
             <p className="text-[11.5px] text-amber-800 mb-1">
               ⚠️ ยอด <b>ทั้งหมด</b> รวม<b>ใบยกเลิก {fmtNum(ยกเลิกในทั้งหมด)} ใบ</b>ไว้ด้วย —
               กดแท็บยกเลิกเพื่อดูว่าใบไหน
@@ -425,8 +425,10 @@ export default function CorePurchasesPage() {
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
           <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(0, tab, v) }} />
-          <StoreScopeLine scope={data?.storeScope} />
+            onChange={(v) => { setStore(v); load(0, tab, v) }}
+            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
+            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={data?.storeScope} />{tab === 'all' && typeof ยกเลิกในทั้งหมด === 'number' && ยกเลิกในทั้งหมด > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ ทั้งหมดรวมใบยกเลิก {fmtNum(ยกเลิกในทั้งหมด)} ใบ</span>}</> : undefined} />
+          {!เหมือนZORT && <StoreScopeLine scope={data?.storeScope} />}
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />
 
