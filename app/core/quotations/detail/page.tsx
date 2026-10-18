@@ -11,7 +11,9 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, thaiDate, RowMenu } from '@/components/zort'
+import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, thaiDate, RowMenu, toneOfStatus, PILL_ZORT_CLASS } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { QUOTATION_DETAIL_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Line {
@@ -77,12 +79,15 @@ function Inner() {
   /** ท่อรุ่นที่ตั้งชื่อช่องให้แล้วหรือยัง — ดูจาก **การมีคีย์** ไม่ใช่ค่า (amount = 0 ถูกต้องได้) */
   const named = !!d && 'amount' in d
   return (
-    <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12.5px] mb-2"><Link href="/core/quotations" className="text-[#337ab7] hover:underline">‹ ใบเสนอราคา</Link></p>
+    <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[860px]'}`}>
+      {/* 📐 โหมดเหมือน ZORT (วัด /Quotation/Details 19 ต.ค. 2569 · ใบ QT-202506001): ลิงก์กลับ Kanit 14 · จอกว้างเต็ม */}
+      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}><Link href="/core/quotations" className="text-[#337ab7] hover:underline">‹ ใบเสนอราคา</Link></p>
       {/* ⚠️ ห้ามเอา number ขึ้นหัวเรื่องตอนท่อส่งผิดชั้น — มันคือจำนวนสินค้า ไม่ใช่เลขที่ใบ */}
       {/* หัวจอตาม ZORT: "รายละเอียดใบเสนอราคา" · เลขที่ใบอยู่ในช่อง "รายการ" (อ่านจอจริง 16 ต.ค. 2569) */}
       <PageHead title="รายละเอียดใบเสนอราคา"
-        summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน</span>}
+        summary={เหมือนZORT
+          ? <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน">ⓘ</span>
+          : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Quotation/Details ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
 
       {/* 🧰 แถบปุ่มแบบ ZORT /Quotation/Details (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
@@ -148,7 +153,50 @@ function Inner() {
         <>
           {/* หัวใบแบบ ZORT — ขึ้นเมื่อท่อรุ่นใหม่ส่งช่องที่ตั้งชื่อแล้วมาให้
               ⚠️ เช็ค "มีคีย์ไหม" ไม่ใช่ค่า truthy — ใบยอด ฿0 มีจริง (ของแถม/ลดเต็มจำนวน) */}
-          {named ? (
+          {named && เหมือนZORT ? (
+            /* 📐 โหมดเหมือน ZORT: การ์ดสถานะ (ครึ่งแถว) → การ์ดเดียว ข้อมูลซ้าย/ลูกค้าขวา (หัว Kanit 20 · ป้าย Boon 16 เทา · ค่า Boon 16)
+               ยอดเงิน 4 ช่องยังอยู่ครบในการ์ดถัดไป (ZORT วางยอดไว้ท้ายตารางสินค้า — ของเรายังไม่ย้าย) */
+            <>
+              <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+                <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>▤</span>
+                  <div className="text-right">
+                    <h2 className="text-[14px] font-medium text-[#868e96] m-0">สถานะรายการ</h2>
+                    <div className="mt-2">
+                      {d.status
+                        ? <span title={`ค่าที่ท่อส่งมา: ${d.status}`} className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(zortWord(QUOTATION_DETAIL_STATUS, d.status).text))}`}>{zortWord(QUOTATION_DETAIL_STATUS, d.status).text}</span>
+                        : <span className="text-gray-300">—</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mb-4 bg-white rounded-[6px] grid md:grid-cols-2 gap-0 py-2">
+                {([
+                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['วันที่', d.date ? thaiDate(d.date) : null]]],
+                  ['ลูกค้า', '👤', [['ชื่อลูกค้า', d.customer || null]]],
+                ] as const).map(([หัว, รูป, แถว]) => (
+                  <section key={หัว} className="px-5 py-3">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>{รูป}</span>
+                      <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
+                    </div>
+                    {แถว.map(([k, v]) => (
+                      <div key={k} className="flex gap-4 py-1.5">
+                        <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{k}</span>
+                        <span className="text-[16px] text-[#3e3e3e]">{v ?? <span className="text-gray-300">—</span>}</span>
+                      </div>
+                    ))}
+                  </section>
+                ))}
+              </div>
+              <div className={`${DL_CARD} mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 ${DL_VALUE}`}>
+                <div><p className={DL_LABEL}>ยอดใบ</p><span className="tabular-nums font-medium">{baht(d.amount)}</span></div>
+                <div><p className={DL_LABEL}>ภาษี</p><span className="tabular-nums">{baht(d.vatAmount)}</span></div>
+                <div><p className={DL_LABEL}>ส่วนลด</p><span className="tabular-nums">{baht(d.discountAmount)}</span></div>
+                <div><p className={DL_LABEL}>ค่าส่ง</p><span className="tabular-nums">{baht(d.shippingAmount)}</span></div>
+              </div>
+            </>
+          ) : named ? (
             <div className={`${DL_CARD} mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 ${DL_VALUE}`}>
               {/* 🔤 เดิมโชว์ค่าดิบ ("Voided") — เขียนเป็น `{d.status || …}` จึงรอดการกวาดสองรอบก่อน
                   คำ + ป้ายช่องลอกจากจอ ZORT จอเดียวกัน (`/Quotation/Details` ใช้ป้ายว่า "สถานะรายการ")
@@ -188,6 +236,7 @@ function Inner() {
               ของเขามีกล่อง/ปุ่มที่จอเราไม่มี — เขียนไว้บนจอ ดีกว่าให้คนเปิดหาแล้วไม่เจอ
               ⚠️ ทุกอย่างในรายการนี้เป็น **การเขียนข้อมูล** (แนบไฟล์ · Tag · โอนสินค้า · ส่ง SMS)
                  ⇒ ทำไม่ได้จนท่านประธานอนุมัติจอเขียน — ห้ามทำเงียบ ๆ */}
+          <ZortLookFold tone="gray" สรุป={<>ที่จอ ZORT มีแต่จอนี้ยังไม่มี: พูดคุย · Tag ผู้ใช้งาน · โอนสินค้าบางส่วน · ส่ง SMS · วันที่อนุมัติ</>}>
           <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
             <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> (เทียบของจริง 16 ก.ย. 2569) —
             {' '}พูดคุย (คอมเมนต์ในใบ) · <b>Tag ผู้ใช้งาน</b> ·
@@ -198,6 +247,7 @@ function Inner() {
               ระหว่างนี้ทำได้ที่ ZORT ตามปกติ
             </div>
           </div>
+          </ZortLookFold>
 
           {d.lines === null || d.lines === undefined ? (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
