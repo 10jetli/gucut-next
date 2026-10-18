@@ -26,6 +26,8 @@ import { เหมือนZORT } from '@/lib/โหมดเหมือนzort
    ⚠️ จะแก้สีต้องวัดจากภาพใหม่เท่านั้น **ห้ามปรับด้วยสายตา** */
 /* 17 ต.ค. 2569: วัด getComputedStyle ปุ่ม สร้าง บนจอ ZORT ได้ rgb(65,101,237) = #4165ed (ค่าเดิมมาจากพิกเซลภาพ เพี้ยนเล็กน้อย) */
 export const ZORT_BLUE = '#4165ed'        // ปุ่มหลัก · เมนูที่เลือก · ขีดใต้แท็บ
+/** วงไอคอนในการ์ดสถานะ/หัวการ์ดของจอรายละเอียด (วัด DOM /Sell/Details · /Buy/Details 19 ต.ค. 2569) — ไอคอนในวงใช้ ZORT_BLUE */
+export const ZORT_ICON_BG = '#d0daff'
 export const ZORT_SIDEBAR = '#222a57'     // พื้นแถบเมนูซ้าย
 export const ZORT_PAGE_BG = '#f0f2f9'     // พื้นหลังหน้า (แบน ไม่มีไล่สี)
 export const ZORT_ROW_BG = '#f8f9fa'      // พื้นแถวในตาราง
@@ -350,7 +352,7 @@ export function TableWrap({ children }: { children: ReactNode }) {
     /* 📐 โหมดเหมือน ZORT — วัด 19 ต.ค. 2569 (/Warehouse/Transferlist): แถว ZORT สูงต่ำสุด 41.3px
        เพราะช่องติ๊กทุกแถว (กล่อง 25px + ช่องใน 16) · ของเรา 40px ในจอที่ไม่มีช่องติ๊ก ⇒ แถวเหลื่อมสะสม 1.3px ต่อแถว
        ⇒ ความสูงแถวขั้นต่ำ 41px (เป็นขั้นต่ำ แถวที่สูงกว่าไม่กระทบ) · นอกโหมดเหมือนเดิม */
-    <div className={`zort-table bg-white overflow-hidden ${เหมือนZORT ? '[&_tbody_tr]:h-[41.3px]' : ''}`} style={{ boxShadow: '0 3px 6px rgba(65,101,237,.1)' }}>
+    <div className={`zort-table bg-white overflow-hidden ${เหมือนZORT ? '[&_tbody_tr]:h-[41.3px]' : ''}`} style={{ boxShadow: '0 3px 6px #4165ed1a' }}>
       <div className="overflow-x-auto">{children}</div>
     </div>
   )

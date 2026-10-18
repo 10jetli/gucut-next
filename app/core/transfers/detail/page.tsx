@@ -11,7 +11,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Line { sku?: string; name?: string; qty?: number }
@@ -152,7 +152,7 @@ function Inner() {
             <>
               <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>⇄</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>⇄</span>
                   <div className="text-right">
                     <h2 className="text-[14px] font-medium text-[#868e96] m-0">การโอนสินค้า</h2>
                     <div className="mt-2">
@@ -165,7 +165,7 @@ function Inner() {
               </div>
               <section className="mb-[30px] bg-white rounded-[6px] px-5 py-5">
                 <div className="flex items-center gap-3 mb-4">
-                  <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>📄</span>
+                  <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📄</span>
                   <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ข้อมูล</h2>
                 </div>
                 {([
@@ -205,7 +205,7 @@ function Inner() {
           {/* 📐 โหมดเหมือน ZORT: หัวการ์ด "สินค้า" Kanit 20 เหนือตาราง */}
           {เหมือนZORT && (
             <div className="flex items-center gap-3 mb-3">
-              <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>📦</span>
+              <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📦</span>
               <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">สินค้า</h2>
             </div>
           )}

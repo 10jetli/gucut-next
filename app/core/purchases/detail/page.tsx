@@ -21,7 +21,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
-import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, toneOfStatus, PILL_ZORT_CLASS } from '@/components/zort'
+import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import type { WriteResp } from '@/components/zort'
@@ -306,7 +306,7 @@ function Inner() {
 
   return (
     <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[900px]'}`}>
-      {/* 📐 โหมดเหมือน ZORT — วัด DOM /Buy/Details 19 ต.ค. 2569: ลิงก์กลับ Kanit 14 #337ab7 · จอกว้างเต็ม (การ์ดสถานะ 2 ใบเต็มแถว) */}
+      {/* 📐 โหมดเหมือน ZORT — วัด DOM /Buy/Details 19 ต.ค. 2569: ลิงก์กลับ Kanit 14 #337ab7 · จอกว้างเต็ม (การ์ดสถานะสองใบเต็มแถว) */}
       <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}>
         <Link href="/core/purchases" className="text-[#337ab7] hover:underline">‹ รายการซื้อ</Link>
       </p>
@@ -383,8 +383,8 @@ function Inner() {
 
       {!loading && !error && d && (
         <>
-          {/* 📐 โหมดเหมือน ZORT — การ์ดสถานะ 2 ใบ (วัด DOM /Buy/Details 19 ต.ค. 2569):
-              กล่องขาว ขอบมน 6 ช่องใน 20 · ซ้ายวงไอคอน 48 สี rgb(208,218,255) ไอคอน rgb(65,101,237) (วาดเอง ไม่ใช้ไอคอนของเขา)
+          {/* 📐 โหมดเหมือน ZORT — การ์ดสถานะสองใบ (วัด DOM /Buy/Details 19 ต.ค. 2569):
+              กล่องขาว ขอบมน 6 ช่องใน 20 · ซ้ายวงไอคอน 48 สี #d0daff ไอคอน #4165ed (วาดเอง ไม่ใช้ไอคอนของเขา)
               · ขวาป้ายหัว Boon 14 w500 #868e96 + ป้ายสถานะใหญ่ (สูง 32) · สองแถวนี้จึงไม่ซ้ำในการ์ดข้อมูล */}
           {เหมือนZORT && (
             <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
@@ -393,7 +393,7 @@ function Inner() {
                 ['สถานะการโอนสินค้า', d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : null, '▤'],
               ] as const).map(([หัว, ค่า, รูป]) => (
                 <div key={หัว} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>{รูป}</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>{รูป}</span>
                   <div className="text-right">
                     <h2 className="text-[14px] font-medium text-[#868e96] m-0">{หัว}</h2>
                     <div className="mt-2">

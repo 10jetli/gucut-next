@@ -21,7 +21,7 @@ import { reconcileOrder } from '@/lib/order-money'
 import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { TH_NO, Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu, PILL_ZORT_CLASS } from '@/components/zort'
+import { TH_NO, Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Order {
@@ -104,7 +104,7 @@ function Card({ title, icon, children, className = '' }: {
     <div className={`bg-white rounded-md ${className}`}>
       {title && (เหมือนZORT ? (
         <div className="flex items-center gap-3 px-5 pt-5 mb-4">
-          {icon && <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>{icon}</span>}
+          {icon && <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{icon}</span>}
           <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{title}</h2>
         </div>
       ) : (
@@ -132,7 +132,7 @@ function Field({ label, value, muted }: { label: string; value: React.ReactNode;
 }
 
 /* 📐 โหมดเหมือน ZORT — วัด DOM /Sell/Details + /Buy/Details 19 ต.ค. 2569:
-   กล่องขาว ขอบ 6 ช่องใน 20 · วงไอคอน 48 rgb(208,218,255) ไอคอนน้ำเงิน rgb(65,101,237) (ใช้สัญลักษณ์ของเราเอง ไม่ใช่ไอคอนของ ZORT)
+   กล่องขาว ขอบ 6 ช่องใน 20 · วงไอคอน 48 #d0daff ไอคอนน้ำเงิน #4165ed (ใช้สัญลักษณ์ของเราเอง ไม่ใช่ไอคอนของ ZORT)
    · ป้ายหัว Boon 14 w500 #868e96 · ค่าที่เป็นสถานะ = ป้ายใหญ่สูง 32 · ค่าที่ไม่ใช่สถานะ (ขนส่ง) = Kanit 20 #3e3e3e */
 const สัญลักษณ์Z: Record<string, string> = { '💳': '฿', '📦': '▤', '🚚': '➤' }
 function StatusCard({ icon, label, value, tone }: {
@@ -142,7 +142,7 @@ function StatusCard({ icon, label, value, tone }: {
   if (เหมือนZORT) return (
     <div className="bg-white rounded-[6px] p-5 flex items-center gap-3">
       <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0"
-        style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>{สัญลักษณ์Z[icon] ?? icon}</span>
+        style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>{สัญลักษณ์Z[icon] ?? icon}</span>
       <div className="ml-auto text-right min-w-0">
         <p className="text-[14px] font-medium text-[#868e96]">{label}</p>
         <div className="mt-2">
