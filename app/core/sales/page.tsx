@@ -706,6 +706,37 @@ export default function CoreSalesPage() {
   const { tabs, ตัวนับสถานะเชื่อได้, ไม่มีแท็บตรง } = แถบแท็บ
   const แท็บที่เลือก = แถบแท็บ.active
 
+  /* ตัวเลือกร้าน + ช่องทาง — วางในแถวกรอง (ปกติ) หรือในแผงตัวกรอง (โหมดเหมือน ZORT) */
+  const ตัวเลือกร้านช่องทาง = (
+    <>
+            <select
+              value={store}
+              onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[130px]"
+            >
+              <option value="">ทุกร้าน (2 ร้าน)</option>
+              {/* 🔴 ห้ามพิมพ์ชื่อนิติบุคคลในไฟล์จอ — ถูกอบเข้า chunk สาธารณะ /_next/static
+                  (เจ้าของร้านจับได้ 8 ก.ย. 2569 ที่หน้า /login · ไล่ทั้งคลาสแล้วเจอที่นี่ด้วย)
+                  ใช้ชื่อหน้าที่ของร้านแทน — คนใช้แยกออกอยู่แล้วว่า z1=ออนไลน์ z2=หน้าร้าน */}
+              <option value="z1">ร้านออนไลน์ (z1)</option>
+              <option value="z2">หน้าร้าน (z2)</option>
+            </select>
+            <select
+              value={channel}
+              onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[150px]"
+            >
+              <option value="">ทุกช่องทาง</option>
+              {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
+                  React จะโยน "Objects are not valid as a React child" แล้ว **ทิ้งทั้งหน้าเป็นจอขาว**
+                  (เจอจริงตอนป้อนข้อมูลปลอมที่ชนิดไม่ตรง 6 ก.ย. 2569 — ชนิดผิดช่องเดียว ล้มทั้งจอ)
+                  ⇒ ชนิดไม่ตรงก็แค่ตัวเลือกนั้นหาย ดีกว่าทั้งจอหาย */}
+              {(data?.channels ?? []).filter((c) => typeof c === 'string')
+                .map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
+    </>
+  )
+
   return (
     <div className="p-4 md:p-6">
       {/* ⚠️ ชิ้นแรกสุด เหนือหัวจอ — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
@@ -856,31 +887,7 @@ export default function CoreSalesPage() {
             {/* ⚠️ ชื่อร้านมาจากบัญชี ZORT สองบัญชีของร้าน — z1 คือบริษัทที่ขายบนเว็บ
                 z2 คือบัญชีที่สอง ซึ่งตอนนี้เป็นเครื่องคิดเงินหน้าร้านล้วน
                 (เลิกขายออนไลน์ 22 ก.พ. 2569 — ฝั่งท่อไล่วันจริงยืนยันแล้ว) */}
-            <select
-              value={store}
-              onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[130px]"
-            >
-              <option value="">ทุกร้าน (2 ร้าน)</option>
-              {/* 🔴 ห้ามพิมพ์ชื่อนิติบุคคลในไฟล์จอ — ถูกอบเข้า chunk สาธารณะ /_next/static
-                  (เจ้าของร้านจับได้ 8 ก.ย. 2569 ที่หน้า /login · ไล่ทั้งคลาสแล้วเจอที่นี่ด้วย)
-                  ใช้ชื่อหน้าที่ของร้านแทน — คนใช้แยกออกอยู่แล้วว่า z1=ออนไลน์ z2=หน้าร้าน */}
-              <option value="z1">ร้านออนไลน์ (z1)</option>
-              <option value="z2">หน้าร้าน (z2)</option>
-            </select>
-            <select
-              value={channel}
-              onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[150px]"
-            >
-              <option value="">ทุกช่องทาง</option>
-              {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
-                  React จะโยน "Objects are not valid as a React child" แล้ว **ทิ้งทั้งหน้าเป็นจอขาว**
-                  (เจอจริงตอนป้อนข้อมูลปลอมที่ชนิดไม่ตรง 6 ก.ย. 2569 — ชนิดผิดช่องเดียว ล้มทั้งจอ)
-                  ⇒ ชนิดไม่ตรงก็แค่ตัวเลือกนั้นหาย ดีกว่าทั้งจอหาย */}
-              {(data?.channels ?? []).filter((c) => typeof c === 'string')
-                .map((c) => <option key={c} value={c}>{c}</option>)}
-            </select>
+            {!เหมือนZORT && ตัวเลือกร้านช่องทาง}
           </>
         }
       />
@@ -982,6 +989,9 @@ export default function CoreSalesPage() {
         applyLabel="ค้นหาตามช่วงนี้"
         serverFiltered="ช่วงวันที่ · ร้าน · ช่องทาง · สถานะ · คำค้นหา · สถานะชำระเงิน · COD · สินค้า · ช่องทางจัดส่ง · วันส่งสินค้า · ช่วงมูลค่า · หมายเลขรายการ · ชื่อลูกค้า · Tag · ผู้สร้าง · คลัง"
         extraNote={<>
+          {/* 🎯 โหมดเหมือน ZORT: แถวกรองของ ZORT มีแค่ แสดง [วันที่][ช่วง][ตัวกรอง] — ร้าน/ช่องทางของเราย้ายมาอยู่ในแผงตัวกรอง
+              (เปลี่ยนแล้วมีผลทันทีเหมือนเดิม · ร้านที่เลือกอยู่บอกในบรรทัด "ค้นหา:" เสมอ) */}
+          {เหมือนZORT && <div className="flex flex-wrap items-center gap-2 mb-2">ร้าน / ช่องทาง: {ตัวเลือกร้านช่องทาง}</div>}
           ใส่ช่องเดียวก็ได้ — อีกข้างจะใช้ค่าจากตัวเลือก &ldquo;แสดง N วัน&rdquo;
           {/* 💾 ติ๊กจำตัวกรอง — ลอกจาก ZORT (remember_filter) · ไฟเขียวจาก CEO 15 ก.ย. 2569 */}
           <br />
@@ -1368,9 +1378,11 @@ export default function CoreSalesPage() {
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
                     <td className={TD}>
                       <Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill>
+                      {/* โหมดเหมือน ZORT: คลังกับไอคอน 🚚 อยู่บรรทัดเดียวกันใต้ป้าย ⇒ ขึ้นบรรทัดใหม่ตรงนี้ครั้งเดียว */}
+                      {เหมือนZORT && <br />}
                       {r.warehouse_code && (
                         ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[r.warehouse_code]
-                          ? <span className="block text-[11.5px] text-gray-500 mt-1">{ชื่อคลัง.names[r.warehouse_code]}</span>
+                          ? <span className={`${เหมือนZORT ? 'inline-block' : 'block'} text-[11.5px] text-gray-500 mt-1`}>{ชื่อคลัง.names[r.warehouse_code]}</span>
                           : <span className="block text-[11.5px] text-gray-400 mt-1"
                               title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
                               รหัสคลัง {r.warehouse_code}
@@ -1384,14 +1396,17 @@ export default function CoreSalesPage() {
                           คำแปลมาจากท่อล้วน ๆ จอไม่รู้จักรหัสดิบเลย */}
                       {r.shipStatus && r.shipStatus !== '—' && (
                         <span
-                          className="block text-[11.5px] text-gray-500 mt-1"
+                          /* 🎯 โหมดเหมือน ZORT: ช่องนี้ของ ZORT มีแค่ป้ายสถานะ + คลัง ⇒ ยุบสถานะแพลตฟอร์มเป็นไอคอน 🚚 ท้ายบรรทัดคลัง
+                             คำเต็มอยู่ใน title (แถวสูงเกิน ZORT ~20px เพราะบรรทัดนี้ · วัด preview 18 ต.ค. 2569) */
+                          className={เหมือนZORT ? 'inline-block ml-1 text-[11.5px] text-gray-500 cursor-help align-middle' : 'block text-[11.5px] text-gray-500 mt-1'}
                           title={[
+                            `สถานะฝั่งแพลตฟอร์ม: ${r.shipStatus}`,
                             `สถานะฝั่งแพลตฟอร์ม${r.shipStatusFrom ? ` (${r.shipStatusFrom})` : ''}`,
                             r.integrationStatus ? `ค่าดิบ: ${r.integrationStatus}` : '',
                             r.shipStatusUnverified ? 'คำแปลนี้ยังไม่ได้ยืนยันกับเอกสารทางการ' : '',
                           ].filter(Boolean).join('\n')}
                         >
-                          🚚 {r.shipStatus}
+                          🚚{!เหมือนZORT && <> {r.shipStatus}</>}
                           {/* จุดส้ม = คำแปลยังไม่ยืนยัน (รหัสตัวเลขของ TikTok)
                               ต้องมีอะไรบอกสายตา ไม่งั้นคนเชื่อคำแปล TikTok เท่ากับ Shopee */}
                           {r.shipStatusUnverified && <span className="text-amber-600"> •</span>}
