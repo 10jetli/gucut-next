@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import SkeletonRows from '@/components/ui/SkeletonRows'
+import { pipeText } from '@/components/ui/PipeNote'
 
 /* ────────────────────────── ข้อมูล ────────────────────────── */
 
@@ -325,7 +326,7 @@ export default function ChatCommercePage() {
 
                 <div className="bg-white border border-gray-200 rounded-md p-4">
                   <p className="text-[12.5px] font-semibold text-gray-800 mb-1.5">ติดอะไรอยู่</p>
-                  <p className="text-[12.5px] text-gray-700 leading-relaxed">{notLive.blocker}</p>
+                  <p className="text-[12.5px] text-gray-700 leading-relaxed">{pipeText(notLive.blocker)}</p>
 
                   <p className="text-[12.5px] font-semibold text-gray-800 mt-4 mb-1.5">ต้องทำอะไรถึงจะเปิดได้</p>
                   <ol className="text-[12.5px] text-gray-700 leading-relaxed list-decimal pl-5 space-y-1">

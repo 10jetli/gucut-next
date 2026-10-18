@@ -11,6 +11,7 @@
  *    ③ สภาพจาก `lib/costsince.ts` ⇒ ท่อตอบแล้ว · ตัวตัดสินอยู่ที่นั่น มีเทส 26 ข้อคุม
  */
 import { useCallback, useEffect, useState } from 'react'
+import { pipeText } from '@/components/ui/PipeNote'
 import { อ่านสภาพต้นทุน, type CostSinceตอบ, type สภาพต้นทุน } from '@/lib/costsince'
 import ZortLookFold from './ZortLookFold'
 
@@ -84,7 +85,7 @@ export default function CostStateNote({ ประตู, ช่วง }: { ป�
   return (
     <ZortLookFold tone={เตือน ? 'amber' : 'gray'} สรุป={<>{เตือน ? '⚠️ ' : ''}ยังคิดกำไรรวมไม่ได้{ช่วง ? ` (${ช่วง})` : ''}</>}>
     <p className={`text-[11.5px] mt-1 ${เตือน ? 'text-amber-800' : 'text-gray-500'}`}>
-      {เตือน ? '⚠️ ' : ''}<b>ยังคิดกำไรรวมไม่ได้</b>{ช่วง ? ` (${ช่วง})` : ''} — {เหตุเต็ม(ประตู)}
+      {เตือน ? '⚠️ ' : ''}<b>ยังคิดกำไรรวมไม่ได้</b>{ช่วง ? ` (${ช่วง})` : ''} — {pipeText(เหตุเต็ม(ประตู))}
       {ประตู.ชนิด === 'ตอบแล้ว' && ประตู.สภาพ.โชว์รายบรรทัดได้ === true && (
         <> · <span className="text-gray-600">กำไร<b>รายบรรทัด</b>ของบรรทัดที่ตรึงต้นทุนแล้ว อ่านได้ตามปกติ
           — ความจริงรายบรรทัดไม่ขึ้นกับว่าบรรทัดอื่นมีข้อมูลไหม</span></>

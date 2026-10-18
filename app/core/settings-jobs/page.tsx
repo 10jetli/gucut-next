@@ -29,6 +29,7 @@ import { รอบต่อวัน, ป้ายรอบต่อวัน } 
 import SweepTiming from '@/components/zort/SweepTiming'
 import JobTiming from '@/components/zort/JobTiming'
 import { PageHead, Pill } from '@/components/zort'
+import { pipeText } from '@/components/ui/PipeNote'
 
 /* 🔄 **ตารางของตัวดันสต็อกเปลี่ยนสองรอบในวันเดียว — ไม่ใช่ใครพิมพ์ผิด**
    เช้า: ทุก 15 นาที → ลดเหลือวันละครั้ง (commit ท่อ aacde9e · เหตุผลตอนนั้นคือประหยัดเครดิต)
@@ -428,7 +429,7 @@ export default function SettingsJobsPage() {
                 </span>
               </span>
             </div>
-            <p className="text-[12.5px] text-gray-700 leading-relaxed">{j.what}</p>
+            <p className="text-[12.5px] text-gray-700 leading-relaxed">{pipeText(j.what)}</p>
             <dl className="text-[12.5px] mt-2.5 space-y-1.5">
               <div>
                 <dt className="text-gray-400 text-[11.5px]">รู้ได้ยังไงว่ายังวิ่งอยู่</dt>
@@ -438,7 +439,7 @@ export default function SettingsJobsPage() {
                 {/* 🔴 ข้อนี้สำคัญที่สุด — งานตามเวลาที่ตายเงียบ คือของที่ไม่มีใครรู้ว่าตาย
                     (เกิดจริง 5 ก.ย.: ซิงก์ตายเพราะ await ไม่มี catch แล้วจอโชว์เลขเดิมสวยงาม) */}
                 <dt className="text-gray-400 text-[11.5px]">ถ้ามันตายเงียบจะเกิดอะไร</dt>
-                <dd className="text-amber-800">{j.ifDead}</dd>
+                <dd className="text-amber-800">{pipeText(j.ifDead)}</dd>
               </div>
               <div>
                 <dt className="text-gray-400 text-[11.5px]">ไฟล์ (ตรวจย้อนได้)</dt>

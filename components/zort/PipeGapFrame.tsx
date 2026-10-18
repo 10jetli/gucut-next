@@ -8,6 +8,7 @@
  *    ⇒ `คำขอ` ต้องเป็นคำขอที่ยิงได้จริง (ชื่อพารามิเตอร์/ชื่อเส้น) ไม่ใช่ "ขอข้อมูลเพิ่ม"
  */
 import Card from '@/components/ui/Card'
+import { pipeText } from '@/components/ui/PipeNote'
 
 export default function PipeGapFrame({ หัว, คอลัมน์, เหตุ, คำขอ }: {
   หัว: string; คอลัมน์: string; เหตุ: string; คำขอ: string
@@ -18,10 +19,10 @@ export default function PipeGapFrame({ หัว, คอลัมน์, เห�
       <p className="text-[12.5px] text-gray-500 mb-2">คอลัมน์ของ ZORT: {คอลัมน์}</p>
       <div className="border border-dashed border-gray-300 rounded-md px-4 py-5">
         <p className="text-[12.5px] text-amber-800 leading-relaxed">
-          ⚠️ <b>ยังเติมตารางนี้ไม่ได้</b> — {เหตุ}
+          ⚠️ <b>ยังเติมตารางนี้ไม่ได้</b> — {pipeText(เหตุ)}
         </p>
         <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">
-          🔧 ที่ต้องขอฝั่งท่อ: {คำขอ}
+          🔧 ที่ต้องขอฝั่งท่อ: {pipeText(คำขอ)}
         </p>
         <p className="text-[11.5px] text-gray-400 mt-1.5">
           กรอบนี้ค้างไว้ให้เห็นว่า ZORT มีตารางนี้ — ถ้าซ่อน จะไม่มีใครรู้ว่าต้องไปขอให้เปิด

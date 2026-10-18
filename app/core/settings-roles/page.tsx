@@ -15,6 +15,7 @@ import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
 import { PageHead, TH_KANIT as TH, TD } from '@/components/zort'
+import { pipeText } from '@/components/ui/PipeNote'
 
 
 /** สิทธิ์จริงของระบบ — ต้องตรงกับ middleware.ts เสมอ (แก้ที่โน่นต้องมาแก้ที่นี่)
@@ -76,7 +77,8 @@ export default function SettingsRolesPage() {
             {ROLES.map((r) => (
               <tr key={r.name} className="border-b border-[#e8ecf8] last:border-0">
                 <td className={TD}>{r.name}</td>
-                <td className={`${TD} text-gray-700`}>{r.detail}</td>
+                {/* ข้อความนี้มี **ตัวหนา** แบบ markdown ⇒ ผ่าน pipeText ไม่งั้นดอกจันขึ้นจอดิบ ๆ (เจอบนจอสิทธิ์การใช้งาน 18 ต.ค. 2569) */}
+                <td className={`${TD} text-gray-700`}>{pipeText(r.detail)}</td>
                 <td className={`${TD} text-gray-500`}>{r.who}</td>
                 <td className={`${TD} text-right`}>
                   {/* ZORT ตรงนี้เป็นลิงก์ "แก้ไข" — ของเราแก้ที่โค้ด บอกตรง ๆ ดีกว่าลิงก์ที่กดแล้วไปไหนไม่ได้ */}

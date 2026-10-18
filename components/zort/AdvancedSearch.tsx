@@ -18,6 +18,7 @@
  */
 import type { ReactNode } from 'react'
 import { BtnGhost, LinkText } from './index'
+import { pipeText } from '@/components/ui/PipeNote'
 
 export interface AdvField {
   label: string
@@ -129,7 +130,7 @@ export default function AdvancedSearch({
         {/* ③ อะไรไม่มีให้กรอง และเพราะอะไร */}
         {notAvailable?.map((n) => (
           <span key={n.what} className="block mt-1">
-            ⚠️ ไม่มีตัวกรอง <b>{n.what}</b> — {n.why}
+            ⚠️ ไม่มีตัวกรอง <b>{n.what}</b> — {pipeText(n.why)}
           </span>
         ))}
         {extraNote && <span className="block mt-1">{extraNote}</span>}
