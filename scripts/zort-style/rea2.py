@@ -84,6 +84,9 @@ with sync_playwright() as pw:
         except Exception as e:
             row["ผิดพลาด"] = str(e)[:70]
         out.append(row); print(f"  {row['no']:>3} {row['ชื่อ'][:22]:<22} {row.get('ต่าง%', row.get('ผิดพลาด'))}", flush=True)
-    pz.close() if False else None
+    # 🧹 ปิดแท็บที่เปิดเองทุกครั้ง — รอบก่อนลืมปิด ⇒ แท็บค้างสะสมจน CDP 9224 เชื่อมต่อไม่ทัน (เจอ 18 ต.ค. 2569)
+    for _pg in (pz, po):
+        try: _pg.close()
+        except Exception: pass
 json.dump(out, open(OUT, "w"), ensure_ascii=False, indent=1)
 print("เสร็จ", len(out), "หน้า")
