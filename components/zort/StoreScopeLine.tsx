@@ -31,3 +31,10 @@ export default function StoreScopeLine({ scope }: { scope?: string | null }) {
     </p>
   )
 }
+
+/** ขอบเขตร้านแบบต่อท้ายแถวตัวเลือกร้าน (โหมดเหมือน ZORT) — ข้อความเดียวกับ StoreScopeLine ไม่มีกรอบ */
+export function StoreScopeInline({ scope }: { scope?: string | null }) {
+  const text = String(scope ?? '').trim()
+  if (!text) return null
+  return <span className="text-[11.5px] text-gray-400">· 🏬 {text}</span>
+}

@@ -30,7 +30,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import AdvancedSearch from '@/components/zort/AdvancedSearch'
 import PageNav from '@/components/zort/PageNav'
-import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import Link from 'next/link'
@@ -45,6 +45,7 @@ import { TD_NO, ROW_LINK,
 } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import { coreJson } from '@/lib/api-shape'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   /** id ของ ZORT — ท่อเริ่มส่งมา 9 ก.ย. 2569 (8d22291) · ไม่มี = เปิดใบรายใบไม่ได้
@@ -350,9 +351,11 @@ export default function ReturnOrdersPage() {
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
           <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(q, v) }} />
+            onChange={(v) => { setStore(v); load(q, v) }}
+            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
+            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={d?.storeScope} /></> : undefined} />
 
-          <StoreScopeLine scope={d?.storeScope} />
+          {!เหมือนZORT && <StoreScopeLine scope={d?.storeScope} />}
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={d?.store} ท่อเลือกให้={d?.storeDefaulted} />
 

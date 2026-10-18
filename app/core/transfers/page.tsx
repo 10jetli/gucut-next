@@ -15,7 +15,7 @@
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { useCallback, useEffect, useState } from 'react'
 import AdvancedSearch from '@/components/zort/AdvancedSearch'
-import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
@@ -28,6 +28,7 @@ import { TD_NO, ROW_LINK,
   LinkText, RowMenu, EmptyState, thaiDate, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import PipeNote from '@/components/ui/PipeNote'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 /* 🔴 **ชื่อฟิลด์เคยผิดทั้งชุด — คอลัมน์ขึ้นขีดกลางทุกแถวโดยไม่มีอะไรฟ้อง** (แก้ 5 ก.ย. 2569)
    จอเดาชื่อไว้ว่า transferdate · transferType · fromwarehousecode · towarehousecode
@@ -456,10 +457,12 @@ export default function CoreTransfersPage() {
 
           {/* 🏬 เลือกร้าน — ปุ่มชุดเดียวกับจอเอกสารอื่น (components/zort/StorePicker) */}
           <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(0, tab, v) }} />
+            onChange={(v) => { setStore(v); load(0, tab, v) }}
+            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
+            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={data?.storeScope} /></> : undefined} />
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
-          <StoreScopeLine scope={data?.storeScope} />
+          {!เหมือนZORT && <StoreScopeLine scope={data?.storeScope} />}
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />
 

@@ -8,7 +8,7 @@
 //    ⇒ ต้องเขียนบนจอว่าเป็นข้อมูลสด เพราะจอพี่น้องข้าง ๆ อ่านจากคลังเงาทั้งหมด
 //      คนใช้ต้องรู้ว่าจอไหนยิง ZORT จริง เวลา ZORT ล่มจะได้เข้าใจว่าทำไมจอนี้จอเดียวที่ว่าง
 import { useCallback, useEffect, useState } from 'react'
-import StoreScopeLine from '@/components/zort/StoreScopeLine'
+import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import { QUOTATION_STATUS, zortWord } from '@/lib/zort-words'
@@ -23,6 +23,7 @@ import { ROW_LINK, TD_NO,
 import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/zort/AdvancedSearch'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   /** id ในระบบ ZORT — เส้นรายใบรับ id เท่านั้น (ส่งเลขที่ใบ = ค่าว่างเงียบ ๆ · ท่อเตือนไว้เอง) */
@@ -295,7 +296,7 @@ export default function QuotationsPage() {
 
           {/* "ทั้งหมด" รวมใบยกเลิกไว้ด้วย ⇒ เขียนกำกับจำนวน (กติกาแท็บใน CLAUDE.md)
               นับจากแถวที่โหลดมาซึ่งเป็นทั้งชุด (จอนี้ดึงสดทั้งหมด) · หายเองถ้าไม่มีใบยกเลิก */}
-          {tab === '' && all.filter((r) => r.status === 'Voided').length > 0 && (
+          {!เหมือนZORT && tab === '' && all.filter((r) => r.status === 'Voided').length > 0 && (
             <p className="text-[11.5px] text-amber-800 mb-1">
               ⚠️ ยอด <b>ทั้งหมด</b> รวม<b>ใบที่ยกเลิกแล้ว {fmtNum(all.filter((r) => r.status === 'Voided').length)} ใบ</b>ไว้ด้วย —
               ดูคอลัมน์สถานะของแต่ละแถว <span className="text-amber-700/80">(จอนี้ไม่มีแท็บแยก เพราะ ZORT ก็ไม่มี)</span>
@@ -304,8 +305,10 @@ export default function QuotationsPage() {
 
           {/* 🏬 ขอบเขตร้าน — อ่านจากคำตอบท่อ ไม่พิมพ์ z1 ตายตัว (ใบ t_mu2kxy6u) */}
           <StorePicker value={store} disabled={loading}
-            onChange={(v) => { setStore(v); load(v) }} />
-          <StoreScopeLine scope={data?.storeScope} />
+            onChange={(v) => { setStore(v); load(v) }}
+            /* โหมดเหมือน ZORT: ขอบเขตร้าน (+หมายเหตุใบยกเลิก) มาต่อท้ายแถวนี้แทนกินแถวของตัวเอง */
+            ต่อท้าย={เหมือนZORT ? <><StoreScopeInline scope={data?.storeScope} />{tab === '' && all.filter((r) => r.status === 'Voided').length > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ ทั้งหมดรวมใบยกเลิก {fmtNum(all.filter((r) => r.status === 'Voided').length)} ใบ</span>}</> : undefined} />
+          {!เหมือนZORT && <StoreScopeLine scope={data?.storeScope} />}
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />
 
