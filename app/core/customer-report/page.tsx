@@ -14,6 +14,8 @@ import Link from 'next/link'
 import { fmtMoney, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
@@ -413,12 +415,14 @@ export default function CoreCustomersPage() {
                 </>
               )
               : summaryLine(people.length, totalAmount)}
-            {' | '}
+            {/* 🎯 โหมดเหมือน ZORT: ที่มาของยอดย้ายเป็น ⓘ — "แสดง N จาก M" ข้างหน้ายังอยู่ (กฎข้อ 4) */}
+            {เหมือนZORT && <span className="text-gray-400 cursor-help" title={`รวมจากออเดอร์ ${(totalOrders ?? scanned).toLocaleString('th-TH')} ใบในคลังของเราเอง${totalOrders === null && truncated ? ' (นับเฉพาะรายที่แสดง)' : ''}${scope ? ` · ${scope}` : ''}`}> ⓘ</span>}
+            {!เหมือนZORT && <>{' | '}
             <span className="text-gray-400">
               {/* 🔴 เดิมบวกจากแถวที่โหลดมา ⇒ ช่วง 365 วันขึ้น 6,229 ใบ ทั้งที่ท่อนับได้ 11,484 */}
               รวมจากออเดอร์ {(totalOrders ?? scanned).toLocaleString('th-TH')} ใบในคลังของเราเอง
               {totalOrders === null && truncated ? ' (นับเฉพาะรายที่แสดง)' : ''}{scope ? ` · ${scope}` : ''}
-            </span>
+            </span></>}
           </>
         )}
         /* 🔁 ปุ่ม "ดึงใหม่" เอาออก 16 ต.ค. 2569 — ZORT /Dashboard/ContactReport ไม่มี (อ่านปุ่มทั้งหน้า: วัน เดือน ไตรมาส ปี) */
@@ -449,6 +453,7 @@ export default function CoreCustomersPage() {
              ถ้าไม่เขียนไว้ คนจะเอาสองจอมาเทียบแล้วสรุปว่า "ตัวเลขผิด" ทั้งที่ช่วงไม่เท่ากัน
              วันที่ที่โชว์คือวันที่ **ท่อ echo กลับมา** ไม่ใช่วันที่จอคำนวณเอง */}
       {(range.from || range.to) && (
+        <ZortLookFold tone="gray" สรุป={<>ช่วงที่ใช้จริง {thaiDate(range.from)} – {thaiDate(range.to)}</>}>
         <p className="text-[11.5px] text-gray-500 -mt-1 mb-3">
           ช่วงที่ใช้จริง <b>{thaiDate(range.from)} – {thaiDate(range.to)}</b>
           <span className="text-gray-400">
@@ -465,6 +470,7 @@ export default function CoreCustomersPage() {
             {' '}· ZORT ยังมี วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว · ปีนี้ · กำหนดเอง ซึ่งจอนี้<b>ยังไม่ได้ทำ</b> (ท่อรับ from/to แล้ว — ทำได้ ไม่ใช่ทำไม่ได้)
           </span>
         </p>
+        </ZortLookFold>
       )}
 
       {error && <ErrorBox title="ดึงข้อมูลลูกค้าไม่ได้">{error}</ErrorBox>}
@@ -473,10 +479,12 @@ export default function CoreCustomersPage() {
       {!loading && !error && (
         <>
           {truncated && (
+            <ZortLookFold สรุป={<>⚠️ ตารางแสดง 500 รายที่ยอดสูงสุด ไม่ใช่ทั้งหมด</>}>
             <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
               ⚠️ ช่วงนี้มีลูกค้ามากกว่า 500 ราย — ตารางแสดง <b>500 รายที่ยอดสูงสุด</b> เท่านั้น
               <b> ไม่ใช่ทั้งหมด</b> · ยอดของแต่ละรายที่แสดงถูกต้องครบถ้วน แต่รายที่ยอดน้อยกว่านั้นไม่ได้อยู่ในตาราง
             </div>
+            </ZortLookFold>
           )}
 
           {/* ── ผัง ZORT (ภาพ 75): การ์ดคู่ "จำนวนลูกค้า" (วงกลม) | "แนวโน้ม" (กราฟเส้น) ──
