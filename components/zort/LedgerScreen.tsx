@@ -33,6 +33,7 @@ import { fmtMoney } from '@/lib/format'
    (เขียนซ้ำในจอ = ตรรกะสองชุดที่จะเพี้ยนกัน และชุดในจอจะไม่มีใครเทส) */
 import { ควรลองใหม่, ฝั่งที่ติดจาก } from '@/lib/upstream-state'
 import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, thaiDate } from './index'
+import ZortLookFold from './ZortLookFold'
 
 export interface LedgerCol { label: string; right?: boolean }
 
@@ -548,6 +549,7 @@ export default function LedgerScreen({
                             : impossible ? 'ยังไม่ได้ต่อท่อกับ ZORT (และสร้าง/แก้ผ่าน ZORT ไม่ได้ — ดูหลักฐานข้างล่าง)'
                               : 'ยังไม่ได้ต่อท่อกับ ZORT'}
                 </p>
+                <ZortLookFold tone="gray" สรุป={<>ⓘ จอนี้ใช้ทำอะไร และทำไมว่าง</>}>
                 <p className="text-[12.5px] text-gray-500 mt-1 max-w-[520px] mx-auto leading-relaxed">
                   {purpose}
                   <br />
@@ -627,14 +629,17 @@ export default function LedgerScreen({
                   )}
                   {meanwhile}
                 </p>
+                </ZortLookFold>
                 {/* 🔴 (14 ก.ย. 2569) **หลักฐานต้องอยู่บนจอ ไม่ใช่แค่ในทะเบียน** — ถ้าจอบอกแค่ว่า "ZORT ไม่เปิดเส้น"
                     คนอ่านไม่มีทางรู้ว่าใครตรวจ ตรวจเมื่อไหร่ ลองชื่อไหนบ้าง แล้วจะเชื่อหรือไม่เชื่อก็ได้ทั้งคู่
                     ⇒ ดึงข้อความจากทะเบียน (ซึ่งมีวันที่และชื่อเส้นที่ลองยิง) มาแสดงตรงนี้ */}
                 {impossible && (
+                  <ZortLookFold tone="amber" สรุป={<>⚠️ หลักฐานว่าสร้าง/แก้ผ่าน ZORT ไม่ได้</>}>
                   <p className="text-[12.5px] text-red-900 bg-red-50 border border-red-200 rounded-md px-3 py-2 mt-3 max-w-[520px] mx-auto leading-relaxed text-left">
                     <b>หลักฐาน:</b> {impossible}
                     {reg?.meanwhile && <><br /><span className="text-red-800">ระหว่างนี้: {reg.meanwhile}</span></>}
                   </p>
+                  </ZortLookFold>
                 )}
                 {/* ✅ ถ้ามีหลักฐานว่าว่างจริง ให้พูดให้ต่างจาก "ยังไม่ได้ดึง" อย่างชัดเจน
                     — และชี้ไปที่ของที่เก็บไว้ ไม่งั้นคนหาไม่เจอว่ามีคนตรวจให้แล้ว
