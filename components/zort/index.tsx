@@ -387,7 +387,11 @@ export const TD_DATE = เหมือนZORT ? `${TD} whitespace-nowrap` : `${T
    ชื่อคลังใต้ป้าย Boon 12px rgb(65,101,237) · นอกโหมดเหมือนเดิมทุกตัว */
 export const THC = เหมือนZORT ? TH.replace('text-left', 'text-center') : TH
 export const TDC = เหมือนZORT ? `${TD} text-center` : TD
-export const คลังใต้ป้าย = เหมือนZORT ? 'text-[12px] text-[rgb(65,101,237)]' : 'text-[11.5px] text-gray-500'
+/* วัดซ้ำ 19 ต.ค. 2569 (/Buy/list?sttype=1): ชื่อคลังเป็น span.z-tag (Boon 12 · บรรทัด 12 · ช่องใน 4px 8px · ขอบบน 4) อยู่ใน div สูง 30
+   ⇒ ตัวหนังสือเริ่มที่ +8 และกินที่ 30px ⇒ แถวของ ZORT สูง 68 (ของเราเดิม ~60 ⇒ แถวเหลื่อมสะสมทุกแถว) · รวมระยะไว้ในค่าคงที่นี้แล้ว ห้ามเติม mt ที่จุดใช้ */
+export const คลังใต้ป้าย = เหมือนZORT
+  ? 'block text-[12px] leading-[12px] pt-2 pb-[10px] text-[rgb(65,101,237)]'
+  : 'block text-[11.5px] text-gray-500 mt-0.5'
 /** ช่องลำดับแถว (#) — ZORT ใช้ Lato 12 สีเทา #868e96 (วัด DOM 8 จอรายการ 17 ต.ค. 2569) */
 /*  ⚠️ เขียนเต็ม ห้ามต่อจาก TD — TD มี text-[14px] อยู่แล้ว สองคลาสขนาดชนกัน
        Tailwind ตัดสินด้วยลำดับใน CSS ไม่ใช่ลำดับในสตริง ⇒ 14 ชนะ (วัดเว็บจริงได้ 14 ทั้ง 6 จอ) */

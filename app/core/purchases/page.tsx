@@ -492,7 +492,7 @@ export default function CorePurchasesPage() {
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
                       {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
                       {r.warehouse && (ป้ายคลัง(r.warehouse)
-                        ? <span className={`block ${คลังใต้ป้าย} mt-0.5`}>{ป้ายคลัง(r.warehouse)}</span>
+                        ? <span className={คลังใต้ป้าย}>{ป้ายคลัง(r.warehouse)}</span>
                         : <span className="block text-[11.5px] text-gray-400 mt-0.5"
                             title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
                             รหัสคลัง {r.warehouse}

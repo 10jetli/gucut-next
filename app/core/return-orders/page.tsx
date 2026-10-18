@@ -433,7 +433,7 @@ export default function ReturnOrdersPage() {
                       {r.status ? <Pill tone={tone(zortWord(RETURN_ORDER_STATUS, r.status).text)}>{zortWord(RETURN_ORDER_STATUS, r.status).text}</Pill> : DASH}
                       {/* ZORT โชว์ชื่อโกดังเป็นบรรทัดย่อยใต้สถานะ */}
                       {r.warehouse && (ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[r.warehouse]
-                        ? <div className={`${คลังใต้ป้าย} mt-0.5`}>{ชื่อคลัง.names[r.warehouse]}</div>
+                        ? <div className={คลังใต้ป้าย}>{ชื่อคลัง.names[r.warehouse]}</div>
                         : <div className="text-[11.5px] text-gray-400 mt-0.5"
                             title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
                             รหัสคลัง {r.warehouse}
