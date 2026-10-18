@@ -194,7 +194,7 @@ export function SearchRow({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') onSubmit() }}
           placeholder={placeholder}
-          className="w-[330px] max-w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] pl-9 pr-3 py-2 focus:outline-none focus:border-[#868e96]"
+          className="w-[400px] max-w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] pl-9 pr-3 py-2 focus:outline-none focus:border-[#868e96]"
         />
       </div>
       {advanced}
