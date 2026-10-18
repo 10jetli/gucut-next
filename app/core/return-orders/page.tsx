@@ -39,7 +39,7 @@ import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import { toThai, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { TH_NO, TD_NO, ROW_LINK,
+import { TD_DATE, TH_NO, TD_NO, ROW_LINK,
   PageHead, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
   EmptyState, Pill, relDay, thaiDate, EndpointMissing, RowMenu, THC, TDC, คลังใต้ป้าย, PaymentPill,
 } from '@/components/zort'
@@ -402,7 +402,7 @@ export default function ReturnOrdersPage() {
                 {shown.map((r, i) => (
                   <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={TD_NO}>{i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap text-gray-600`} title={thaiDate(r.date)}>
+                    <td className={TD_DATE} title={thaiDate(r.date)}>
                       {r.date ? relDay(r.date) : DASH}
                     </td>
                     {/* เลขที่ใบกดเข้ารายละเอียดได้ตั้งแต่ 9 ก.ย. 2569 — ต้องมี id เท่านั้น

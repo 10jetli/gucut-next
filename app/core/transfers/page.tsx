@@ -23,7 +23,7 @@ import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { TH_NO, TD_NO, ROW_LINK,
+import { TD_DATE, TH_NO, TD_NO, ROW_LINK,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, TD,
   LinkText, RowMenu, EmptyState, thaiDate, PageNav, THC, TDC,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
@@ -492,7 +492,7 @@ export default function CoreTransfersPage() {
                 {rows.map((r, i) => (
                   <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={TD_NO}>{offset + i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(r.transfer_date)}</td>
+                    <td className={TD_DATE}>{thaiDate(r.transfer_date)}</td>
                     <td className={TD}>
                       {r.id !== null && r.id !== undefined
                         ? <Link href={`/core/transfers/detail?id=${encodeURIComponent(String(r.id))}`}

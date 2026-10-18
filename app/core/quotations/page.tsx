@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { TH_NO, ROW_LINK, TD_NO,
+import { TD_DATE, TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate, RowMenu,
 } from '@/components/zort'
@@ -338,7 +338,7 @@ export default function QuotationsPage() {
                 {rows.map((r, i) => (
                   <tr key={r.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={TD_NO}>{i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap text-gray-600`}>
+                    <td className={TD_DATE}>
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
                     </td>
                     <td className={TD}>

@@ -373,8 +373,16 @@ export const THR = เหมือนZORT
 /** หัวคอลัมน์แบบ Kanit 14 #3e3e3e — ZORT ใช้ที่ /Logistics/list กับ /Product/Categorylist (วัด 17 ต.ค. 2569) ไม่ใช่ Lato 12 เหมือนจออื่น */
 export const TH_KANIT = "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
 export const THR_KANIT = "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
-export const TD = 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top'
-export const TDR = 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
+/* 📐 วัดซ้ำ 19 ต.ค. 2569 (/Quotation/list · /Sell/list): เซลล์ Boon 14px **บรรทัด 20px** (ของเราเดิม 21px ⇒ ชื่อยาวที่ตกหลายบรรทัดสูงกว่า ZORT บรรทัดละ 1px)
+   ⇒ โหมดเหมือน ZORT ใส่ leading-5 · นอกโหมดเหมือนเดิม */
+export const TD = เหมือนZORT
+  ? 'px-2 py-2 text-[14px] leading-5 text-[#3e3e3e] align-top'
+  : 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top'
+export const TDR = เหมือนZORT
+  ? 'px-2 py-2 text-[14px] leading-5 text-[#3e3e3e] align-top text-right whitespace-nowrap'
+  : 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
+/** ช่องวันที่ในตาราง — ZORT เป็นสีเดียวกับเซลล์อื่น #3e3e3e (วัด 19 ต.ค. 2569) · ของเราเดิมเทา text-gray-600 */
+export const TD_DATE = เหมือนZORT ? `${TD} whitespace-nowrap` : `${TD} whitespace-nowrap text-gray-600`
 /* 📐 ช่องสถานะ/ชำระเงิน — วัด /Buy/list 18 ต.ค. 2569: ZORT จัดกลาง (td.status / td.payment text-center)
    ชื่อคลังใต้ป้าย Boon 12px rgb(65,101,237) · นอกโหมดเหมือนเดิมทุกตัว */
 export const THC = เหมือนZORT ? TH.replace('text-left', 'text-center') : TH

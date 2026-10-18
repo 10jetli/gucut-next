@@ -22,7 +22,7 @@ import { findOrderId } from '@/lib/open-order'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
-import {TH_NO, 
+import {TD_DATE, TH_NO, 
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, ChannelTag, thaiDate, Pill, RowCheck, BulkBar,} from '@/components/zort'
 
@@ -339,7 +339,7 @@ export default function PackingPage() {
                         )}
                       </td>
                       <td className={TD}><ChannelTag name={j.channel} /></td>
-                      <td className={`${TD} whitespace-nowrap text-gray-600`}>{thaiDate(j.day)}</td>
+                      <td className={TD_DATE}>{thaiDate(j.day)}</td>
                       <td className={TD}>
                         <Pill tone={ageTone(a)}>
                           {a === null ? 'ไม่ทราบ' : a === 0 ? 'วันนี้' : `${fmtNum(a)} วัน`}

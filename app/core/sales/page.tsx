@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation'
 import { fmtMoney, ช่วงปฏิทินไทย, ต้นเดือนย้อนหลังแบบZORT, type ชนิดช่วงปฏิทิน } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
-import {TH_NO, 
+import {TD_DATE, TH_NO, 
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE,} from '@/components/zort'
@@ -1344,7 +1344,7 @@ export default function CoreSalesPage() {
                                กว้าง 194px เป็นคอลัมน์ที่กว้างที่สุดและ **ไม่มีเพดาน** ต่างจากคอลัมน์อื่น)
                              ZORT ตัดเลขใบลงสองบรรทัดจริง (เห็นในภาพ `261014KU6JWHD`/`0`) */}
                       <Link href={detailHref(r.id, i)} onClick={(e) => e.stopPropagation()}
-                        className="font-['Kanit','Boon',sans-serif] text-[#337ab7] font-normal hover:underline break-all">{r.number}</Link>
+                        className={`${เหมือนZORT ? '' : "font-['Kanit','Boon',sans-serif] "}text-[#337ab7] font-normal hover:underline break-all`}>{r.number}</Link>
                       {/* 🔴 **เลขที่ใบซ้ำกันข้ามร้านจริง** (ฝั่งท่อจับได้ 15 ก.ย. 2569)
                           z1 และ z2 เดินเลขคนละชุด ⇒ `SO-202503029` มีทั้งสองร้าน **คนละใบ คนละยอด**
                           (z1 ฿7,757 ค้างชำระ · z2 ฿450 จ่ายแล้ว) · ตัวกรองร้านตั้งต้นคือ "ทุกร้าน"
@@ -1369,7 +1369,7 @@ export default function CoreSalesPage() {
                       {/* 🔴 ไม่ fallback ไป ship_name (ชื่อผู้รับ) — ดูเหตุผลในไฟล์ส่งออกข้างบน */}
                       {r.ship_channel || <span className="text-gray-300">—</span>}
                     </td>
-                    <td className={`${TD} whitespace-nowrap text-gray-600`}>
+                    <td className={TD_DATE}>
                       {r.ship_date ? thaiDate(r.ship_date) : <span className="text-gray-300">—</span>}
                       {(r.is_cod === 1 || r.is_cod === true) && (
                         <span className={`block w-fit mt-0.5 ${COD_BADGE}`}>COD</span>
