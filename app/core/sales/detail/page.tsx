@@ -98,14 +98,21 @@ function Card({ title, icon, children, className = '' }: {
   title?: string; icon?: string; children: React.ReactNode; className?: string
 }) {
   return (
-    /* 📏 ZORT (วัด /Sell/Details 17 ต.ค. 2569): การ์ดพื้นขาว ไม่มีขอบ มุม 6 · หัวการ์ด Boon 14 น้ำหนัก 500 #868e96 */
+    /* 📏 ZORT (วัด /Sell/Details 17 ต.ค. 2569): การ์ดพื้นขาว ไม่มีขอบ มุม 6 · หัวการ์ด Boon 14 น้ำหนัก 500 #868e96
+       🔄 วัดซ้ำ 19 ต.ค. 2569 ทุกหัวการ์ด (ข้อมูล · ลูกค้า · สินค้า · ข้อมูลการจัดส่งสินค้า · การชำระเงิน): **Kanit 20 w500 #3e3e3e** ไม่มีเส้นใต้ เว้นล่าง 16
+          ⇒ ค่าเดิมข้างบนผิด/เก่า · โหมดเหมือน ZORT ใช้ค่าที่วัดซ้ำ (นอกโหมดคงเดิม) */
     <div className={`bg-white rounded-md ${className}`}>
-      {title && (
+      {title && (เหมือนZORT ? (
+        <div className="flex items-center gap-3 px-5 pt-5 mb-4">
+          {icon && <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>{icon}</span>}
+          <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{title}</h2>
+        </div>
+      ) : (
         <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100">
           {icon && <span className="text-[14px]">{icon}</span>}
           <p className="text-[14px] font-medium text-[#868e96]">{title}</p>
         </div>
-      )}
+      ))}
       {children}
     </div>
   )
