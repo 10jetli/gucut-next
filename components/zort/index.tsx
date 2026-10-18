@@ -13,6 +13,7 @@ import { useState, type ReactNode } from 'react'
 import { PAY_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { thaiDate } from '@/lib/format'
+import { pipeText } from '@/components/ui/PipeNote'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 /* ── จานสี ZORT — **วัดจากพิกเซลของภาพจอจริง ไม่ใช่เดาด้วยตา** ────────────
@@ -763,9 +764,21 @@ export function DataUnreliableBanner(
   if (!msg) return null
   return (
     <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
-      🔴 <b>{what}เชื่อไม่ได้ตอนนี้</b> — {msg}
+      🔴 <b>{what}เชื่อไม่ได้ตอนนี้</b> — {pipeText(String(msg))}
     </div>
   )
+}
+
+/** เหตุรายช่องทางจากท่อ ⇒ ข้อความบนจอ
+ *  · ท่อใช้ **ตัวหนา** แบบ markdown ⇒ ผ่าน pipeText (เจอดอกจันดิบบนจอสินค้า/สินค้าเป็นชุด 18 ต.ค. 2569)
+ *  · error ดิบของ Node ("Cannot find module …") เป็นภาษาอังกฤษ ⇒ แปลว่าพังที่ไหน ข้อความเดิมอยู่ใน title
+ *    (ตัวเดียวกับที่จอ Marketplace Dashboard ทำ) */
+export function เหตุช่องทางบนจอ(id: string, raw: string): ReactNode {
+  if (!raw) return ''
+  if (/Cannot find module/i.test(raw)) return (
+    <span title={raw}><b>ระบบฝั่งท่อหาไฟล์ที่ใช้ถาม {id} ไม่เจอ</b> (ท่อพัง ไม่ใช่ร้านหลุดการเชื่อมต่อ) — ชี้เพื่อดูข้อความเดิม</span>
+  )
+  return pipeText(raw)
 }
 
 export function MarketUnreliableBanner({ unreliable }: { unreliable?: Record<string, string> | null }) {
@@ -775,7 +788,7 @@ export function MarketUnreliableBanner({ unreliable }: { unreliable?: Record<str
     <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
       {bad.map(([k, reason]) => (
         <p key={k}>
-          🔴 <b>คอลัมน์ Marketplace: ข้อมูลของ {k} เชื่อไม่ได้ตอนนี้</b> — {reason}
+          🔴 <b>คอลัมน์ Marketplace: ข้อมูลของ {k} เชื่อไม่ได้ตอนนี้</b> — {pipeText(String(reason))}
           {' '}<b>อย่าใช้คอลัมน์นี้ตัดสินใจกับ {k} จนกว่าจะแก้เสร็จ</b>
         </p>
       ))}
@@ -877,7 +890,7 @@ export function MarketCoverage(
           สินค้าที่ไม่มีโลโก้ของเจ้านั้น <b>ไม่ได้แปลว่าไม่ได้ลงขาย</b> แปลว่าเรายังมองไม่เห็น
           {/* บอกเหตุผลรายเจ้า — ต่างกันคนละเรื่อง: ยังไม่กดอนุญาต vs ยิงแล้วล่ม */}
           {missing.filter((k) => why(k)).map((k) => (
-            <span key={k} className="block text-gray-500">· {k}: {why(k)}</span>
+            <span key={k} className="block text-gray-500">· {k}: {เหตุช่องทางบนจอ(k, why(k))}</span>
           ))}
         </>
       )}

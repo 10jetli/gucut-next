@@ -215,7 +215,7 @@ export default function ZortArchPage() {
               {/* 🔑 กติกาสต็อก — วาง **กลางผัง** ไม่ใช่เชิงอรรถ: คนอ่านถามข้อนี้เป็นข้อแรกเสมอ */}
               {flow?.stockRule && (
                 <Card x={M} y={RULE_Y} w={IN} title="กติกาสต็อกของ ZORT"
-                  lines={[flow.stockRule]} accent titleAnchor="start" fill="#FFF3EC" />
+                  lines={[String(flow.stockRule ?? '').replace(/\*\*/g, '')]} /* ข้อความใน SVG ทำตัวหนาไม่ได้ ⇒ ตัดดอกจันของท่อทิ้ง (เจอดิบบนจอ 18 ต.ค. 2569) */ accent titleAnchor="start" fill="#FFF3EC" />
               )}
             </svg>
           </div>

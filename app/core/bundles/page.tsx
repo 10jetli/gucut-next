@@ -498,7 +498,7 @@ export default function CoreBundlesPage() {
                           วัด DOM 18 ต.ค. 2569: span.z-badge--success ขอบมน 24px พื้น rgb(206,255,241) ⇒ ในโหมดเหมือน ZORT ทำเป็นป้าย
                           (ป้ายปิดใช้งานเป็นเทา = ของเราเอง — ZORT มี 0 แถวที่ปิดใช้งาน ยังไม่มีให้วัด) */}
                       {เหมือนZORT
-                        ? <span className="inline-block rounded-[24px] px-3 py-1 text-[14px] leading-[14px]"
+                        ? <span className="inline-block whitespace-nowrap rounded-[24px] px-3 py-1 text-[14px] leading-[14px]"
                             style={r.active === false ? { color: '#6b7280', background: '#f3f4f6' } : { color: 'rgb(31,144,112)', background: 'rgb(206,255,241)' }}>
                             {r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
                           </span>

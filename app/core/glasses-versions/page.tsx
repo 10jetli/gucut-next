@@ -12,6 +12,8 @@
  *       หน้านี้จะไม่รู้จักรุ่นใหม่ และ**ไม่มีอะไรฟ้อง** จึงต้องโชว์ "อัปเดตเมื่อ" ให้เห็นเสมอ
  */
 
+import { pipeText } from '@/components/ui/PipeNote'
+
 export const dynamic = 'force-dynamic'
 
 const ฐาน = 'https://video.gucut.com/apk'
@@ -119,7 +121,7 @@ export default async function หน้าเวอร์ชันแว่น()
                 <ul className="mt-2 space-y-1">
                   {v.ทำอะไรได้.map((t, i) => (
                     <li key={i} className="text-sm leading-relaxed text-gray-800">
-                      • {t}
+                      • {pipeText(String(t))}
                     </li>
                   ))}
                 </ul>

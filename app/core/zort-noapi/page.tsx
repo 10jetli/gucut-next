@@ -22,6 +22,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, Pill, thaiDate, EndpointMissing } from '@/components/zort'
 import { coreJson } from '@/lib/api-shape'
+import { pipeText } from '@/components/ui/PipeNote'
 
 interface Item { what?: string; at?: string; probe?: string; note?: string; untested?: boolean }
 interface Method {
@@ -124,7 +125,7 @@ export default function ZortNoApiPage() {
                 {it.probe && (
                   <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{it.probe}</p>
                 )}
-                {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{it.note}</p>}
+                {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{pipeText(String(it.note))}</p>}
               </div>
             ))}
           </div>
@@ -160,7 +161,7 @@ export default function ZortNoApiPage() {
                 {it.probe && (
                   <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{it.probe}</p>
                 )}
-                {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{it.note}</p>}
+                {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{pipeText(String(it.note))}</p>}
               </div>
             ))}
           </div>
