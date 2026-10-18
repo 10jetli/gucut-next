@@ -115,7 +115,7 @@ export default function ZortNoApiPage() {
             {noApi.map((it, i) => (
               <div key={`${it.what}-${i}`} className="bg-white border border-gray-200 rounded-md p-3.5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="text-[14px] font-medium text-gray-900">{it.what}</p>
+                  <p className="text-[14px] font-medium text-gray-900">{pipeText(String(it.what))}</p>
                   <span className="flex items-center gap-2">
                     <Pill tone="red">ไม่มีเส้นให้เรียก</Pill>
                     {/* ⚠️ อายุหลักฐานต้องติดมาด้วย — ผลยิงตรวจเมื่อ 3 เดือนก่อนกับเมื่อวานนี้ น้ำหนักไม่เท่ากัน */}
@@ -123,7 +123,7 @@ export default function ZortNoApiPage() {
                   </span>
                 </div>
                 {it.probe && (
-                  <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{it.probe}</p>
+                  <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{pipeText(String(it.probe))}</p>
                 )}
                 {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{pipeText(String(it.note))}</p>}
               </div>
@@ -147,7 +147,7 @@ export default function ZortNoApiPage() {
             {can.map((it, i) => (
               <div key={`${it.what}-${i}`} className="bg-white border border-gray-200 rounded-md p-3.5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
-                  <p className="text-[14px] font-medium text-gray-900">{it.what}</p>
+                  <p className="text-[14px] font-medium text-gray-900">{pipeText(String(it.what))}</p>
                   <span className="flex items-center gap-2">
                     {/* 🔴 อ่านจากธงตรง ๆ ห้ามเดาจากกอง · ธงเป็น untested ⇒ ไม่มีฟิลด์ = ถือว่ายิงผ่านแล้ว
                         แต่ถ้าฟิลด์หลุดหายทั้งชุด จอจะเผลอบอกว่า "ยิงผ่านแล้ว" ⇒ จึงเขียนข้อความ
@@ -159,7 +159,7 @@ export default function ZortNoApiPage() {
                   </span>
                 </div>
                 {it.probe && (
-                  <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{it.probe}</p>
+                  <p className="text-[11.5px] text-gray-500 font-mono mt-1.5 leading-relaxed break-words">{pipeText(String(it.probe))}</p>
                 )}
                 {it.note && <p className="text-[12.5px] text-gray-600 mt-1.5 leading-relaxed">{pipeText(String(it.note))}</p>}
               </div>

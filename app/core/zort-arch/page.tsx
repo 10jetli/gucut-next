@@ -26,6 +26,7 @@ import { C, Card, Arrow, ArrowHeads, FitText, cardH, estW } from '@/components/u
    (วันที่เขียนจอนี้ เปิดดูด้วยตาไม่ได้ทั้งสองทาง: Netlify ปิด build · next dev ติด systemd) */
 import { จัดชั้น, แยกหัวกับวงเล็บ, แบ่งแถว, วางกล่อง, แทรกแถบกติกา } from '@/lib/zort-arch-layout'
 import type { ผังNode } from '@/lib/zort-arch-layout'
+import { pipeText } from '@/components/ui/PipeNote'
 
 type Node = ผังNode
 interface Edge { from: string; to: string; label?: string; basis?: string }
@@ -240,7 +241,7 @@ export default function ZortArchPage() {
                     <tr key={i} className={`border-t border-gray-100 ${ชัด ? '' : 'bg-amber-50/60'}`}>
                       <td className="px-4 py-2">{ชื่อ(e.from)}</td>
                       <td className="px-4 py-2">{ชื่อ(e.to)}</td>
-                      <td className="px-4 py-2">{e.label ?? '—'}</td>
+                      <td className="px-4 py-2">{e.label ? pipeText(String(e.label)) : '—'}</td>
                       <td className={`px-4 py-2 ${ชัด ? 'text-gray-600' : 'text-amber-900 font-medium'}`}>
                         {String(legend[String(e.basis)] ?? e.basis ?? 'ไม่ระบุ').replace(/\*\*/g, '')}
                       </td>
@@ -267,10 +268,10 @@ export default function ZortArchPage() {
                 <tbody>
                   {d.manual!.roles!.map((r, i) => (
                     <tr key={i} className="border-t border-gray-100">
-                      <td className="px-4 py-2 font-medium text-gray-900">{r.who ?? '—'}</td>
-                      <td className="px-4 py-2 text-gray-600">{r.uses ?? '—'}</td>
+                      <td className="px-4 py-2 font-medium text-gray-900">{r.who ? pipeText(String(r.who)) : '—'}</td>
+                      <td className="px-4 py-2 text-gray-600">{r.uses ? pipeText(String(r.uses)) : '—'}</td>
                       <td className="px-4 py-2"><code>{r.ourReplacement ?? '—'}</code></td>
-                      <td className="px-4 py-2 text-amber-900">{r.blocker ?? '—'}</td>
+                      <td className="px-4 py-2 text-amber-900">{r.blocker ? pipeText(String(r.blocker)) : '—'}</td>
                     </tr>
                   ))}
                 </tbody>
