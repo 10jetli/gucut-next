@@ -16,6 +16,7 @@ import Link from 'next/link'
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
 import { PageHead, TH_KANIT as TH, TD } from '@/components/zort'
 import { pipeText } from '@/components/ui/PipeNote'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 
 /** สิทธิ์จริงของระบบ — ต้องตรงกับ middleware.ts เสมอ (แก้ที่โน่นต้องมาแก้ที่นี่)
@@ -49,7 +50,10 @@ export default function SettingsRolesPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="สิทธิ์การใช้งาน"
-        summary={<>จำนวน {ROLES.length} รายการ{' | '}
+        summary={เหมือนZORT
+          /* 📐 โหมดเหมือน ZORT: หัวจอ ZORT มีแค่ "จำนวน N รายการ" ⇒ คำอธิบายเข้า ⓘ */
+          ? <>จำนวน {ROLES.length} รายการ{' '}<span className="text-gray-400 cursor-help" title="ครบสามชั้นเท่า ZORT แล้ว (14 ก.ย. 2569) — Admin · พนักงาน · บัญชี">ⓘ</span></>
+          : <>จำนวน {ROLES.length} รายการ{' | '}
           <span className="text-gray-400">
             ครบสามชั้นเท่า ZORT แล้ว (14 ก.ย. 2569) — Admin · พนักงาน · บัญชี
           </span></>}
