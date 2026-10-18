@@ -188,7 +188,10 @@ export default function MarketplaceProductsPage() {
     if (serverFilter === false) return rows.filter((r) => (r.marketplaces ?? []).includes(id)).length
     return undefined
   }
-  const noneCount = counts && typeof counts.none === 'number' ? counts.none
+  /* กอง "ยังไม่ได้ลงที่ไหนเลย" นับรหัสที่ช่องทางที่ถามไม่สำเร็จรวมไปด้วย ⇒ เลขในวงเล็บเป็นคำสัญญาที่ไม่จริง
+     ⇒ ไม่โชว์เลขตอนมีช่องทางที่ไม่รู้ (แท็บยังกดได้ · ข้างในมีกล่องเหลืองบอกเหตุอยู่แล้ว) */
+  const noneCount = ช่องทางที่ไม่รู้.length ? undefined
+    : counts && typeof counts.none === 'number' ? counts.none
     : serverFilter === false ? rows.filter((r) => (r.marketplaces ?? []).length === 0).length
       : undefined
 
