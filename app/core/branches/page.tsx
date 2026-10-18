@@ -12,6 +12,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 import Link from 'next/link'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
@@ -175,6 +176,16 @@ export default function CoreBranchesPage() {
 
       {!loading && !error && (
         <>
+          {/* 📐 โหมดเหมือน ZORT — กล่องเดียวกับจอหมวดหมู่ (วัด DOM /Product/Categorylist · /Warehouse/list ผังเดียวกัน):
+              กล่องขาว p-3 ขอบมน 6 มีเงา · Boon 16 #3e3e3e · บรรทัดเดียว "มูลค่าสินค้าคงเหลือ + เวลาคัด" คำอธิบายเข้า ⓘ
+              ⚠️ ถ้าไม่รู้เวลาคัด หรือรอบคัดอ่านไม่สำเร็จ ยังขึ้นบนจอเหมือนเดิม (ห้ามซ่อน) */}
+          {เหมือนZORT && valueCollectedAt && !valuesError ? (
+            <div className="bg-white shadow rounded-[6px] p-3 mb-4 text-[16px] text-[#3e3e3e]">
+              มูลค่าสินค้าคงเหลือ คัดล่าสุด: {valueCollectedAt}{' '}
+              <span className="text-gray-400 cursor-help text-[14px]"
+                title="มูลค่าสินค้าคงเหลือรายคลังคัดมาจากจอ ZORT ไม่ใช่คิดจากคลังเงา (เวลาไทย) · ตัวคัดวิ่งทุกชั่วโมง ⇒ ซื้อของเข้าหรือโอนของระหว่างรอบ เลขจะเก่ากว่าจอ ZORT เล็กน้อยเสมอ">ⓘ</span>
+            </div>
+          ) : (
           <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 text-[12.5px] text-gray-700">
             {/* 🕰 **คำเดิมตรงนี้กลายเป็นเท็จแล้ว — แก้ 15 ก.ย. 2569**
                 เคยเขียนว่า "ยังไม่ได้ดึงมา · คลังเงายังไม่ได้แยกตามคลัง"
@@ -195,6 +206,7 @@ export default function CoreBranchesPage() {
               </span>
             )}
           </div>
+          )}
 
           <TableWrap>
             <table className="w-full min-w-[820px]">
