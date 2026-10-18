@@ -153,6 +153,9 @@ export default function SettingNotifyPage() {
         </div>
       </div>
 
+      {/* โหมดเหมือน ZORT: ตารางเทียบกับ ZORT + หมายเหตุท้ายจอ พับรวมบรรทัดเดียว (ZORT ไม่มีส่วนนี้) */}
+      <div className={เหมือนZORT ? 'mt-3' : ''}>
+      <ZortLookFold tone="gray" สรุป={<>📋 แจ้งเตือนที่ ZORT มีในจอนี้ — ของเราอยู่ตรงไหน · รายการนี้คัดจากโค้ดด้วยมือ</>}>
       <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
         ⚠️ รายการนี้คัดจากโค้ดด้วยมือ (ตรวจล่าสุด {CHECKED_AT}) — เพิ่ม/ลบตัวแจ้งเตือนแล้วต้องกลับมาแก้จอนี้ ·
         แต่ละรายการชี้ไฟล์ต้นทางไว้ให้ตรวจย้อนได้
@@ -198,6 +201,8 @@ export default function SettingNotifyPage() {
             </tbody>
           </table>
         </div>
+      </div>
+      </ZortLookFold>
       </div>
     </div>
   )
