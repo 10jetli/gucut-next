@@ -31,7 +31,8 @@
 import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
-import { PageHead, TH_KANIT as TH, TD, FORM_INPUT } from '@/components/zort'
+import { PageHead, TH_KANIT as TH, TD, FORM_INPUT, Pill } from '@/components/zort'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { listStaffUsers } from '@/lib/staff-users'
 import { thaiDate } from '@/lib/format'
 
@@ -138,7 +139,10 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
         summary={<>จำนวน {rows.length} รายการ{' | '}
           {webErr
             ? <span className="text-red-700">⚠️ <b>ยังไม่ครบ</b> — อ่านผู้ใช้ที่เพิ่มจากหน้าเว็บไม่ได้รอบนี้</span>
-            : <span className="text-gray-400">รวมทั้งผู้ใช้จาก Netlify env และผู้ใช้ที่เพิ่มจากหน้าเว็บ</span>}</>}
+            /* 📐 โหมดเหมือน ZORT: หัวจอ ZORT มีแค่ "จำนวน N รายการ" ⇒ ที่มาย้ายเข้า ⓘ (อ่านไม่ครบยังขึ้นแดงเสมอ) */
+            : เหมือนZORT
+              ? <span className="text-gray-400 cursor-help" title="รวมทั้งผู้ใช้จาก Netlify env และผู้ใช้ที่เพิ่มจากหน้าเว็บ">ⓘ</span>
+              : <span className="text-gray-400">รวมทั้งผู้ใช้จาก Netlify env และผู้ใช้ที่เพิ่มจากหน้าเว็บ</span>}</>}
         actions={
           /* ผัง ZORT: ปุ่มน้ำเงิน "เพิ่มผู้ใช้งาน" — ของเราพาไปหน้าที่บอกวิธีเพิ่มจริง (Netlify env)
              ไม่ทำฟอร์มบนเว็บ เพราะฟอร์มที่ตั้งรหัสได้ต้องส่งรหัสผ่านหน้าเว็บ
@@ -154,7 +158,8 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
 
       {/* ช่องค้นหาตามผัง — ฟอร์ม GET ให้เซิร์ฟเวอร์กรอง (จอนี้เป็น server component) */}
       <form method="get" className="flex items-center gap-3 mb-4">
-        <div className="flex items-center gap-2 h-10 bg-white border border-[#adb5bd] rounded-[24px] px-3.5 w-[280px]">
+        {/* ช่องค้นหา ZORT กว้าง 400 (เหมือนช่องค้นหาร่วมทุกจอ) */}
+        <div className={`flex items-center gap-2 h-10 bg-white border border-[#adb5bd] rounded-[24px] px-3.5 ${เหมือนZORT ? 'w-[400px] max-w-full' : 'w-[280px]'}`}>
           <span className="text-gray-400 text-[12.5px]">🔍</span>
           <input name="q" defaultValue={ค่าแรก(searchParams?.q)} placeholder="ค้นหาผู้ใช้งาน"
             className="flex-1 text-[14px] text-[#3e3e3e] outline-none bg-transparent" />
@@ -258,7 +263,9 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
                   <td className={TD}>
                     {/* ป้ายสถานะแบบ ZORT — ของเรา "ใช้งานได้" = ตั้งรหัสครบ · ไม่ครบ = เข้าไม่ได้จริง */}
                     {r.ok
-                      ? <span className="inline-block text-[11.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">ใช้งานได้</span>
+                      ? (เหมือนZORT
+                        ? <Pill tone="green">ใช้งานได้</Pill>
+                        : <span className="inline-block text-[11.5px] text-emerald-700 bg-emerald-50 border border-emerald-200 rounded px-2 py-0.5">ใช้งานได้</span>)
                       : <span className="inline-block text-[11.5px] text-red-700 bg-red-50 border border-red-200 rounded px-2 py-0.5" title={r.passNote}>เข้าไม่ได้ — {r.passNote}</span>}
                   </td>
                 </tr>
