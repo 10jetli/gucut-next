@@ -21,7 +21,8 @@ import { reconcileOrder } from '@/lib/order-money'
 import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { TH_NO, Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu } from '@/components/zort'
+import { TH_NO, Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu, PILL_ZORT_CLASS } from '@/components/zort'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Order {
   id: string; source: string; number: string; channel: string
@@ -123,10 +124,28 @@ function Field({ label, value, muted }: { label: string; value: React.ReactNode;
   )
 }
 
+/* 📐 โหมดเหมือน ZORT — วัด DOM /Sell/Details + /Buy/Details 19 ต.ค. 2569:
+   กล่องขาว ขอบ 6 ช่องใน 20 · วงไอคอน 48 rgb(208,218,255) ไอคอนน้ำเงิน rgb(65,101,237) (ใช้สัญลักษณ์ของเราเอง ไม่ใช่ไอคอนของ ZORT)
+   · ป้ายหัว Boon 14 w500 #868e96 · ค่าที่เป็นสถานะ = ป้ายใหญ่สูง 32 · ค่าที่ไม่ใช่สถานะ (ขนส่ง) = Kanit 20 #3e3e3e */
+const สัญลักษณ์Z: Record<string, string> = { '💳': '฿', '📦': '▤', '🚚': '➤' }
 function StatusCard({ icon, label, value, tone }: {
   icon: string; label: string; value: React.ReactNode; tone?: 'green' | 'orange' | 'gray'
 }) {
   const color = tone === 'green' ? 'text-emerald-600' : tone === 'orange' ? 'text-orange-500' : 'text-gray-800'
+  if (เหมือนZORT) return (
+    <div className="bg-white rounded-[6px] p-5 flex items-center gap-3">
+      <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0"
+        style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>{สัญลักษณ์Z[icon] ?? icon}</span>
+      <div className="ml-auto text-right min-w-0">
+        <p className="text-[14px] font-medium text-[#868e96]">{label}</p>
+        <div className="mt-2">
+          {tone && tone !== 'gray'
+            ? <span className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(tone)}`}>{value}</span>
+            : <span className="font-['Kanit',sans-serif] text-[20px] text-[#3e3e3e]">{value}</span>}
+        </div>
+      </div>
+    </div>
+  )
   return (
     <div className="bg-white rounded-md p-5 flex items-center gap-3">
       <span className="w-9 h-9 rounded-full bg-blue-50 flex items-center justify-center text-[16px] shrink-0">{icon}</span>
@@ -269,7 +288,7 @@ function DetailInner() {
       {/* หัวจอ */}
       <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
         <div>
-          <Link href={backHref} className="text-[12.5px] text-[#337ab7] hover:underline">‹ รายการขาย</Link>
+          <Link href={backHref} className={`${เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px]" : 'text-[12.5px]'} text-[#337ab7] hover:underline`}>‹ รายการขาย</Link>
           <h1 className="text-[30px] leading-[30px] font-medium text-[#3e3e3e] mt-0.5">
             รายละเอียดรายการขาย
           </h1>
@@ -364,7 +383,7 @@ function DetailInner() {
               🔴 ของเดิมเป็น สถานะรายการ · ช่องทางการขาย · ที่มาของข้อมูล
                  ⇒ สองใบหลังซ้ำกับกล่อง "ข้อมูล" ที่อยู่ใต้ลงมาไม่ถึงจอ
                     และไม่มีใบไหนตอบว่า "เงินมาหรือยัง" ซึ่งเป็นคำถามแรกของคนเปิดใบขาย */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className={`grid grid-cols-1 md:grid-cols-3 ${เหมือนZORT ? 'gap-[30px]' : 'gap-4'}`}>
             <StatusCard
               icon="💳" label="สถานะการชำระเงิน"
               value={payTh(order.pay_status)}
