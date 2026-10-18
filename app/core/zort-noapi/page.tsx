@@ -174,7 +174,7 @@ export default function ZortNoApiPage() {
               {m.read && (
                 <ul className="text-[12.5px] text-gray-600 mt-2 space-y-1">
                   {Object.entries(m.read).map(([k, v]) => (
-                    <li key={k}><code className="text-[11.5px] text-gray-500">{k}</code> = {v}</li>
+                    <li key={k}><code className="text-[11.5px] text-gray-500">{k}</code> = {pipeText(String(v))}</li>
                   ))}
                 </ul>
               )}
