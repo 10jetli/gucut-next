@@ -296,6 +296,8 @@ const PILL_ZORT: Partial<Record<PillTone, string>> = {
   orange: 'bg-[rgb(255,248,230)] text-[rgb(234,144,67)]',
   blue: 'bg-[rgb(235,246,255)] text-[rgb(47,141,222)]',
 }
+/** สีป้ายตามโทน (ค่า DOM ของ ZORT ถ้ามี · ไม่มีใช้สีเดิม) — ให้จอที่ทำป้ายขนาดอื่นเองใช้สีชุดเดียวกัน */
+export const PILL_ZORT_CLASS = (tone: PillTone): string => PILL_ZORT[tone] || PILL[tone]
 /** ป้าย COD — ZORT: span.z-badge--progress Boon 12px 700 · rgb(47,141,222) บน rgb(235,246,255) · ขอบมน 10 · ช่องใน 3px 7px (วัด 19 ต.ค. 2569)
  *  นอกโหมดคงป้ายเหลืองเดิม */
 export const COD_BADGE = เหมือนZORT

@@ -21,7 +21,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
-import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE } from '@/components/zort'
+import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, toneOfStatus, PILL_ZORT_CLASS } from '@/components/zort'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
 import { เลขอ้างอิงเอกสาร } from '@/lib/format'
@@ -303,12 +305,19 @@ function Inner() {
      (จอนี้ไม่มีช่องกรอก จึงไม่เคยแสดงอาการ แต่รูปแบบเดียวกันทำให้จออื่นพิมพ์ไม่ได้) */
 
   return (
-    <div className="p-4 md:p-6 max-w-[900px]">
-      <p className="text-[12.5px] mb-2">
+    <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[900px]'}`}>
+      {/* 📐 โหมดเหมือน ZORT — วัด DOM /Buy/Details 19 ต.ค. 2569: ลิงก์กลับ Kanit 14 #337ab7 · จอกว้างเต็ม (การ์ดสถานะ 2 ใบเต็มแถว) */}
+      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}>
         <Link href="/core/purchases" className="text-[#337ab7] hover:underline">‹ รายการซื้อ</Link>
       </p>
       <PageHead title="รายละเอียดรายการซื้อ" /* ตาม ZORT /Buy/Details (16 ต.ค. 2569) · เลขที่ใบอยู่ในช่อง "รายการ" */
-        summary={<>
+        summary={เหมือนZORT ? (
+          /* โหมดเหมือน ZORT: ZORT ไม่มีบรรทัดใต้หัวจอ ⇒ ที่มา/ร้าน/id เข้า ⓘ · ลิงก์ไม่บอกร้าน (ท่อเลือกให้) ยังขึ้นบนจอ */
+          <>
+            <span className="text-gray-400 cursor-help text-[14px]" title={[d?.source || 'อ่านจากคลังเงา', d?.store ? `ร้าน: ${storeLabel(d.store === 'z2' ? 'z2' : 'z1')}` : '', d?.id != null ? `id ${String(d.id)}` : ''].filter(Boolean).join(' · ')}>ⓘ</span>
+            {d?.store && !store && <span className="text-amber-700 text-[12.5px]">{' 🏬 '}{storeLabel(d.store === 'z2' ? 'z2' : 'z1')} (ลิงก์ไม่ได้บอกร้าน — ท่อเลือกให้)</span>}
+          </>
+        ) : <>
           <span className="text-gray-400">{d?.source || 'อ่านจากคลังเงา'}</span>
           {/* 🏬 ร้านของใบนี้ — **ค่ามาจากช่อง `store` ที่ท่อตอบ ไม่ใช่ที่จอเดาจาก URL**
                  (ยิงดูแล้ว เส้น `?purchase=` ส่ง `store` มาจริง แต่ **ไม่ส่ง `storeScope`**
@@ -374,6 +383,29 @@ function Inner() {
 
       {!loading && !error && d && (
         <>
+          {/* 📐 โหมดเหมือน ZORT — การ์ดสถานะ 2 ใบ (วัด DOM /Buy/Details 19 ต.ค. 2569):
+              กล่องขาว ขอบมน 6 ช่องใน 20 · ซ้ายวงไอคอน 48 สี rgb(208,218,255) ไอคอน rgb(65,101,237) (วาดเอง ไม่ใช้ไอคอนของเขา)
+              · ขวาป้ายหัว Boon 14 w500 #868e96 + ป้ายสถานะใหญ่ (สูง 32) · สองแถวนี้จึงไม่ซ้ำในการ์ดข้อมูล */}
+          {เหมือนZORT && (
+            <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+              {([
+                ['สถานะการชำระเงิน', d.paymentStatus ? zortWord(PURCHASE_DETAIL_PAY_STATUS, d.paymentStatus).text : null, '฿'],
+                ['สถานะการโอนสินค้า', d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : null, '▤'],
+              ] as const).map(([หัว, ค่า, รูป]) => (
+                <div key={หัว} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>{รูป}</span>
+                  <div className="text-right">
+                    <h2 className="text-[14px] font-medium text-[#868e96] m-0">{หัว}</h2>
+                    <div className="mt-2">
+                      {ค่า
+                        ? <span className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(ค่า))}`}>{ค่า}</span>
+                        : <span className="text-gray-300" title="ท่อไม่ได้ส่งสถานะนี้มา">—</span>}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           <div className="mb-4 grid gap-3 md:grid-cols-2">
             <section className={DL_CARD}>
               <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ข้อมูล</h2>
@@ -395,8 +427,9 @@ function Inner() {
                  📖 ป้ายและคำ **ลอกจากจอ `/Buy/Details` ของ ZORT จริง** (กดดูเอง 16 ก.ย. 2569):
                     ป้ายคือ "สถานะการโอนสินค้า" · "สถานะการชำระเงิน"
                     และค่า Voided ของใบซื้อคือ "ถูกยกเลิก" / "ยกเลิก" — **ไม่เหมือนจอใบขาย** */}
-                <Field k="สถานะการโอนสินค้า" v={d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : d.status} />
-                <Field k="สถานะการชำระเงิน" v={d.paymentStatus ? zortWord(PURCHASE_DETAIL_PAY_STATUS, d.paymentStatus).text : d.paymentStatus} />
+                {/* โหมดเหมือน ZORT: สองสถานะนี้อยู่ในการ์ดสถานะข้างบนแล้ว */}
+                {!เหมือนZORT && <Field k="สถานะการโอนสินค้า" v={d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : d.status} />}
+                {!เหมือนZORT && <Field k="สถานะการชำระเงิน" v={d.paymentStatus ? zortWord(PURCHASE_DETAIL_PAY_STATUS, d.paymentStatus).text : d.paymentStatus} />}
                 <Field k="คลังปลายทาง" v={d.warehouse
                   ? (ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[d.warehouse] ? ชื่อคลัง.names[d.warehouse] : `รหัสคลัง ${d.warehouse}`)
                   : d.warehouse} />
@@ -459,6 +492,8 @@ function Inner() {
                 ⚠️ **ไม่ได้กด** — เขียนเข้าสมุดบัญชีจริง (กฎ `zort-readonly`)
                 🔑 มีผลกับแผนตัด ZORT: ของเราไม่มีทางส่งรายใบ ⇒ ถ้าสับสวิตช์กลางวัน
                    ใบที่ถูกกดส่งไปแล้วด้วยมือจะถูกส่งซ้ำโดยสะพานของเรา */}
+            {/* 📐 โหมดเหมือน ZORT: พับ แต่บรรทัดสรุปยังบอกว่าขาดอะไร */}
+            <ZortLookFold สรุป={<>⚠️ ที่จอ ZORT มีแต่จอนี้ยังไม่มี: ส่วนลดต่อหน่วย · ค่าใช้จ่ายอื่น · ประวัติการโอนสินค้า · พูดคุย</>}>
             <p className="mb-2 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-2.5 py-1.5">
               ⚠️ <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — <b>ค่า</b>ในคอลัมน์ส่วนลดต่อหน่วย (คอลัมน์มีแล้ว ขึ้น — = ยังไม่รู้) ·
               กล่อง <b>ค่าใช้จ่ายอื่น</b> · กล่องประวัติ<b>การโอนสินค้า</b> · ช่อง <b>พูดคุย</b>
@@ -470,6 +505,7 @@ function Inner() {
                 ส่วน “พูดคุย” เป็นการ<b>เขียนกลับ</b>ที่ ZORT ซึ่งเรายังทำไม่ได้
               </span>
             </p>
+            </ZortLookFold>
             {!d.lines?.length ? (
               /* สามสถานะ: ใบนี้ไม่มีบรรทัดจริง ≠ ดึงไม่สำเร็จ (ถ้าดึงพลาดจะไปที่ ErrorBox แล้ว) */
               <p className="text-[12.5px] text-gray-500">
