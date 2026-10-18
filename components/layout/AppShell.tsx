@@ -8,9 +8,12 @@ import Sidebar from './Sidebar'
 import TopBar from './TopBar'
 import { MobileHeader, MobileBottomNav, MobileDrawer } from './MobileNav'
 import ZortReadyBar from '@/components/layout/ZortReadyBar'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 const STORAGE_KEY = 'gucut-sidebar-collapsed'
-const GROUPS_KEY = 'gucut-sidebar-groups'
+const GROUPS_KEY_DEFAULT = 'gucut-sidebar-groups'
+/* 🎯 โหมดเหมือน ZORT ใช้คีย์จำแยก — ไม่งั้นค่า "กางหมด" ที่จำไว้จากยุคก่อนจะทับการพับตั้งต้นทันทีที่เปิดหน้า */
+const GROUPS_KEY = เหมือนZORT ? 'gucut-sidebar-groups:zortlook' : GROUPS_KEY_DEFAULT
 
 interface AppShellProps { children: React.ReactNode; role: 'admin' | 'staff' | null }
 
@@ -33,7 +36,11 @@ export default function AppShell({ children, role }: AppShellProps) {
   //    ของที่เคยกดได้ทันที (ระบบสั่งของ · ดรอปชิปปิ้ง · โอนสินค้า · ดึงบิล) หายเข้าไปอยู่ข้างใน
   //    บทเรียน: จัดกลุ่มใหม่ = ของเดิมต้องยัง "เห็นได้ทันที" เหมือนเดิม ไม่ใช่แค่ "ยังเข้าถึงได้"
   const allOpen = () => Object.fromEntries(navItems.filter((i) => i.children).map((i) => [i.label, true]))
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(allOpen)
+  /* 🎯 **โหมดเหมือน ZORT: พับทุกกลุ่มเป็นค่าตั้งต้น** — ท่านประธานสั่ง 18 ต.ค. 2569 "พับให้เหมือน ZORT"
+     ทับกฎ 2 ก.ย. ข้างบนด้วยคำสั่งใหม่ของท่านเอง (หลังเห็นว่าเมนูกางคือก้อนต่างใหญ่สุดทุกจอ)
+     🔴 พับ ≠ ลบ: ทุกเมนูยังอยู่ครบ กดกางเจอทุกตัว · กลุ่มของหน้าที่เปิดอยู่กางเองอัตโนมัติ (effect ข้างล่าง)
+     · กลุ่มที่กดกาง/พับเองถูกจำไว้ (คีย์แยกของโหมดนี้) · ปิดโหมด = กางหมดตามกฎเดิม */
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(() => (เหมือนZORT ? {} : allOpen()))
 
   useEffect(() => {
     try {
