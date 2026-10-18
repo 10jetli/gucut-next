@@ -1383,7 +1383,7 @@ export default function CoreSalesPage() {
                       {r.warehouse_code && (
                         ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[r.warehouse_code]
                           ? <span className={`${เหมือนZORT ? 'inline-block' : 'block'} text-[11.5px] text-gray-500 mt-1`}>{ชื่อคลัง.names[r.warehouse_code]}</span>
-                          : <span className="block text-[11.5px] text-gray-400 mt-1"
+                          : <span className={`${เหมือนZORT ? 'inline-block' : 'block'} text-[11.5px] text-gray-400 mt-1`}
                               title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
                               รหัสคลัง {r.warehouse_code}
                             </span>
