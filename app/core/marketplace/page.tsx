@@ -22,6 +22,8 @@ import Card from '@/components/ui/Card'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, thaiHm } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 /** ตัวเลขรายช่องทางที่ขอฝั่งท่อไว้ (`?marketplacecounts=1`) — ยังไม่มาก็ไม่เป็นไร
  *  ⚠️ ทุกช่องเป็น optional โดยตั้งใจ: วันที่ท่อส่งมาครึ่งเดียว จอต้องขึ้นขีดเฉพาะช่องนั้น
@@ -112,8 +114,19 @@ export default function MarketplaceDashboardPage() {
 
   const checked = Array.isArray(data?.checkedMarketplaces) ? data!.checkedMarketplaces! : []
   const isChecked = (id: string) => checked.some((c) => String(c).toLowerCase() === id)
-  const why = (id: string) =>
+  const whyRaw = (id: string) =>
     (data?.marketplacesFailed?.[id] ?? data?.marketplacesNotConnected?.[id] ?? '').trim()
+  /* 🔴 ข้อความที่ออกจอต้องเป็นภาษาไทย — 18 ต.ค. 2569 ท่อตอบ error ดิบของ Node
+     ("Cannot find module '/var/task/netlify/functions/shopee.mjs' …") ขึ้นการ์ดทั้งดุ้น
+     ⇒ แปลเป็นไทยว่าพังที่ไหน · ข้อความดิบเก็บใน title ให้ฝั่งท่อตามต่อได้ */
+  const why = (id: string): React.ReactNode => {
+    const r = whyRaw(id)
+    if (!r) return ''
+    if (/Cannot find module/i.test(r)) return (
+      <span title={r}><b>ระบบฝั่งท่อหาไฟล์ที่ใช้ถาม{' '}{id}{' '}ไม่เจอ</b> (ท่อพัง ไม่ใช่ร้านหลุดการเชื่อมต่อ) — ชี้เพื่อดูข้อความเดิม</span>
+    )
+    return r
+  }
   const d_unlisted = data?.unlisted ?? null
   const countOf = (id: string): Counts | null => {
     const c = data?.marketplaceCounts
@@ -126,7 +139,13 @@ export default function MarketplaceDashboardPage() {
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
       <PageHead
         title="Marketplace Dashboard"
-        summary={
+        summary={เหมือนZORT ? (
+          /* 📐 โหมดเหมือน ZORT: จอเขามีแต่หัวข้อ ไม่มีบรรทัดอธิบาย ⇒ เหลือเวลาที่ถามแพลตฟอร์ม + ⓘ */
+          thaiHm(data?.marketplacesAt)
+            ? <span className="text-[12.5px] text-gray-500" title="ร้านที่ผูกไว้กับแต่ละแพลตฟอร์ม และจำนวนสินค้าที่เรามองเห็นบนเจ้านั้น">
+                ถามแพลตฟอร์มล่าสุด {thaiHm(data?.marketplacesAt)} น. (เวลาไทย) ⓘ</span>
+            : undefined
+        ) : (
           <>
             ร้านที่ผูกไว้กับแต่ละแพลตฟอร์ม และจำนวนสินค้าที่เรามองเห็นบนเจ้านั้น
             {thaiHm(data?.marketplacesAt) && (
@@ -134,13 +153,15 @@ export default function MarketplaceDashboardPage() {
                 <span className="text-gray-400"> (เวลาไทย)</span></>
             )}
           </>
-        }
+        )}
         actions={
           <>
-            <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
+            {/* โหมดเหมือน ZORT ซ่อนปุ่มรีเฟรช (ZORT ไม่มี · รีโหลดหน้าได้ผลเดียวกัน) — แบบเดียวกับจอสินค้าเป็นชุด */}
+            {!เหมือนZORT && <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>}
             {/* ผัง ZORT มีปุ่มน้ำเงิน "จัดการการเชื่อมต่อ" มุมขวาบน — ของเราชี้ไปจอช่องทางขาย */}
             <Link href="/core/channels"
-              className="text-[12.5px] font-semibold text-white bg-blue-600 rounded-md px-3.5 py-1.5 hover:bg-blue-700">
+              className={เหมือนZORT ? 'text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px] bg-[#4165ed]'
+                : 'text-[12.5px] font-semibold text-white bg-blue-600 rounded-md px-3.5 py-1.5 hover:bg-blue-700'}>
               จัดการการเชื่อมต่อ
             </Link>
           </>
@@ -231,6 +252,8 @@ export default function MarketplaceDashboardPage() {
           {/* 🧺 **ของที่ถูกถอดจากหน้าร้าน Shopee แต่คลังยังมีของ** — เงินจมที่มองไม่เห็นจากจอไหนเลย
               เขียนตามกติกาสามข้อของฝั่งท่อ: หน่วยกำกับทุกเลข · "ยังไม่รู้" แยกกอง · โชว์อายุข้อมูล */}
           {d_unlisted && (
+            /* 📐 โหมดเหมือน ZORT: จอเขาไม่มีกล่องนี้ ⇒ พับไว้ แต่ **เลขหลักยังอยู่บนบรรทัดสรุป** (เงินจมที่ต้องเห็น) */
+            <ZortLookFold สรุป={<>Shopee · ถอดจากหน้าร้านแล้วแต่คลังยังมีของ{typeof d_unlisted.itemsWithStock === 'number' ? <> <b>{fmtNum(d_unlisted.itemsWithStock)}</b> สินค้า</> : null}</>}>
             <Card>
               <p className="text-[12.5px] font-semibold text-gray-700 mb-1">
                 Shopee · ถอดจากหน้าร้านแล้ว แต่คลังเรายังมีของ
@@ -335,8 +358,10 @@ export default function MarketplaceDashboardPage() {
                 🚫 ตอนนี้มีเฉพาะ <b>Shopee</b> — Lazada/TikTok ยังไม่มีเส้นแบบนี้ ⇒ <b>ห้ามอ่านว่าเป็นภาพรวมทุกเจ้า</b>
               </p>
             </Card>
+            </ZortLookFold>
           )}
 
+          <ZortLookFold tone="gray" สรุป="เลขบนจอนี้มาจากไหน">
           <Card>
             <p className="text-[12.5px] font-semibold text-gray-700 mb-2">เลขบนจอนี้มาจากไหน</p>
             <ul className="text-[12.5px] text-gray-600 space-y-1.5 leading-relaxed list-disc pl-4">
@@ -359,6 +384,7 @@ export default function MarketplaceDashboardPage() {
             จอนี้อ่านค่าจากท่อล้วน ๆ ไม่มีตัวเลขไหนเขียนตายตัวไว้ในหน้าจอ —
             วันที่แพลตฟอร์มตอบไม่ได้ การ์ดจะขึ้นขีดพร้อมเหตุผล ไม่ใช่เลขเก่าค้างจอ
           </p>
+          </ZortLookFold>
         </>
       )}
     </div>
