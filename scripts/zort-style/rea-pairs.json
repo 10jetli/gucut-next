@@ -1,0 +1,199 @@
+[
+ {
+  "no": "1",
+  "กลุ่ม": "รายงาน",
+  "ชื่อ": "ภาพรวม",
+  "zort": "/Dashboard/Main",
+  "เรา": "/",
+  "เมนู": "ภาพรวม"
+ },
+ {
+  "no": "2",
+  "กลุ่ม": "รายงาน",
+  "ชื่อ": "ยอดขาย",
+  "zort": "/Dashboard/SalesReport?",
+  "เรา": "/sales"
+ },
+ {
+  "no": "3",
+  "กลุ่ม": "รายงาน",
+  "ชื่อ": "ยอดซื้อ",
+  "zort": "/Dashboard/BuyReport?",
+  "เรา": "/core/buy-report"
+ },
+ {
+  "no": "4",
+  "กลุ่ม": "รายงาน",
+  "ชื่อ": "สินค้า",
+  "zort": "/Dashboard/ProductReport",
+  "เรา": "/core/reports"
+ },
+ {
+  "no": "5",
+  "กลุ่ม": "รายงาน",
+  "ชื่อ": "ลูกค้า",
+  "zort": "/Dashboard/ContactReport?",
+  "เรา": "/core/customer-report"
+ },
+ {
+  "no": "7",
+  "กลุ่ม": "รายการขาย",
+  "ชื่อ": "ดูรายการขาย",
+  "zort": "/Sell/list?",
+  "เรา": "/core/sales"
+ },
+ {
+  "no": "8",
+  "กลุ่ม": "รายการขาย",
+  "ชื่อ": "ใบเสนอราคา",
+  "zort": "/Quotation/list?",
+  "เรา": "/core/quotations"
+ },
+ {
+  "no": "9",
+  "กลุ่ม": "รายการขาย",
+  "ชื่อ": "บริการส่งสินค้า",
+  "zort": "/Logistics/list?",
+  "เรา": "/core/logistics"
+ },
+ {
+  "no": "13",
+  "กลุ่ม": "รายการซื้อ",
+  "ชื่อ": "ดูรายการซื้อ",
+  "zort": "/Buy/list?",
+  "เรา": "/core/purchases"
+ },
+ {
+  "no": "15",
+  "กลุ่ม": "รายการซื้อ",
+  "ชื่อ": "รับสินค้า",
+  "zort": "/Pickandpack/Main?&mc=OTI4Mzg=&type=1",
+  "เรา": "/core/receive + /core/moves"
+ },
+ {
+  "no": "16",
+  "กลุ่ม": "สินค้า",
+  "ชื่อ": "สินค้า",
+  "zort": "/Product/list?",
+  "เรา": "/core/stock"
+ },
+ {
+  "no": "18",
+  "กลุ่ม": "สินค้า",
+  "ชื่อ": "สินค้าเป็นชุด",
+  "zort": "/Bundle/list?",
+  "เรา": "/core/bundles"
+ },
+ {
+  "no": "19",
+  "กลุ่ม": "สินค้า",
+  "ชื่อ": "สินค้าหลากคุณสมบัติ",
+  "zort": "/Product/Variantlist?",
+  "เรา": "/core/variants"
+ },
+ {
+  "no": "20",
+  "กลุ่ม": "สินค้า",
+  "ชื่อ": "หมวดหมู่",
+  "zort": "/Product/Categorylist?",
+  "เรา": "/core/categories"
+ },
+ {
+  "no": "21",
+  "กลุ่ม": "สินค้า",
+  "ชื่อ": "คลังสินค้า/สาขา",
+  "zort": "/Warehouse/list?",
+  "เรา": "/core/branches"
+ },
+ {
+  "no": "22",
+  "กลุ่ม": "สินค้า",
+  "ชื่อ": "รายการโอนสินค้า",
+  "zort": "/Warehouse/Transferlist?",
+  "เรา": "/core/transfers"
+ },
+ {
+  "no": "23",
+  "กลุ่ม": "ลูกค้า/คู่ค้า",
+  "ชื่อ": "ผู้ติดต่อ",
+  "zort": "/Contact/list?",
+  "เรา": "/core/customers"
+ },
+ {
+  "no": "27",
+  "กลุ่ม": "ร้านค้าออนไลน์",
+  "ชื่อ": "เซลเพจ",
+  "zort": "/SalePage/List",
+  "เรา": "/core/salepages"
+ },
+ {
+  "no": "30",
+  "กลุ่ม": "การเงิน",
+  "ชื่อ": "กระเป๋าเงิน",
+  "zort": "/Fin/walletlist?",
+  "เรา": "/core/wallet"
+ },
+ {
+  "no": "31",
+  "กลุ่ม": "การเงิน",
+  "ชื่อ": "รายได้อื่น",
+  "zort": "/Fin/list?&financetype=1",
+  "เรา": "/core/other-income"
+ },
+ {
+  "no": "32",
+  "กลุ่ม": "การเงิน",
+  "ชื่อ": "รายจ่ายอื่น",
+  "zort": "/Fin/list?&financetype=2",
+  "เรา": "/core/other-expense"
+ },
+ {
+  "no": "33",
+  "กลุ่ม": "การเงิน",
+  "ชื่อ": "รายการโอนเงิน",
+  "zort": "/Fin/Transferlist?",
+  "เรา": "/core/money-transfers"
+ },
+ {
+  "no": "36",
+  "กลุ่ม": "เอกสาร",
+  "ชื่อ": "เอกสารบัญชี",
+  "zort": "/ZDocument/list?",
+  "เรา": "/core/accounting-docs"
+ },
+ {
+  "no": "41",
+  "กลุ่ม": "ตั้งค่า",
+  "ชื่อ": "การแจ้งเตือน",
+  "zort": "/Setting/Notification?",
+  "เรา": "/core/setting-notify"
+ },
+ {
+  "no": "44",
+  "กลุ่ม": "ร้านค้าออนไลน์",
+  "ชื่อ": "Marketplace Dashboard",
+  "zort": "/Marketplace/Dashboard",
+  "เรา": "/core/marketplace"
+ },
+ {
+  "no": "45",
+  "กลุ่ม": "ร้านค้าออนไลน์",
+  "ชื่อ": "สินค้าบน Marketplace",
+  "zort": "/Marketplace/List",
+  "เรา": "/core/marketplace-products"
+ },
+ {
+  "no": "46",
+  "กลุ่ม": "วางแผนธุรกิจ",
+  "ชื่อ": "วางแผนสั่งซื้อซ้ำ",
+  "zort": "/ReorderPoint",
+  "เรา": "/core/reorder"
+ },
+ {
+  "no": "47",
+  "กลุ่ม": "วางแผนธุรกิจ",
+  "ชื่อ": "กลุ่ม Lead Time",
+  "zort": "/LeadTimeGroup",
+  "เรา": "/core/leadtime"
+ }
+]
