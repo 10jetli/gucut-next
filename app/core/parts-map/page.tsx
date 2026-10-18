@@ -374,87 +374,6 @@ export default function Page() {
     })
   }
 
-  /* 🔢 **ลำดับแถวที่ร้านจัดเอง** — ท่านประธาน 17 ต.ค. 2569
-     "เลื่อนสลับกันได้ เลื่อนลงสุดขึ้นสุดได้" และให้ **ลูกค้าเห็นตามลำดับที่จัดด้วย**
-     ⇒ เก็บในตารางจับคู่เดิม (หน้าลูกค้าอ่านตารางนี้อยู่แล้ว) ที่คีย์ `<รหัส>#R`
-     ⚠️ ต้องกันคีย์ `#R` ออกจากทุกที่ที่อ่าน "คู่จับคู่" ไม่งั้นกลายเป็นสินค้าผี sku = "0010"
-        (คลาสเดียวกับคีย์ข้อความกำกับ `+H1T`) */
-  const คีย์ลำดับ = (คีย์: string) => `${คีย์}#R`
-  const อ่านลำดับ = (คีย์: string) => {
-    const v = Number(String(แมป[คีย์ลำดับ(คีย์)] || '').replace(/\D/g, ''))
-    return Number.isFinite(v) && v > 0 ? v : null
-  }
-
-  /** ย้ายแถวในหมวด แล้วเขียนลำดับใหม่ทั้งหมวด
-   *  ⚠️ ครั้งแรกต้องเขียนให้ครบทั้งหมวด — เขียนแค่แถวที่ขยับ = แถวที่เหลือไม่มีลำดับ
-   *     แล้วการเรียงจะเดาไม่ได้ · เว้นระยะทีละ 10 เผื่อแทรกภายหลัง */
-  const ย้ายแถว = useCallback(async (คีย์ในหมวด: string[], จาก: number, ไป: number) => {
-    const ลำดับ = [...คีย์ในหมวด]
-    if (จาก < 0 || จาก >= ลำดับ.length) return
-    const ปลาย = Math.max(0, Math.min(ลำดับ.length - 1, ไป))
-    if (ปลาย === จาก) return
-    const [ตัว] = ลำดับ.splice(จาก, 1)
-    ลำดับ.splice(ปลาย, 0, ตัว)
-    const ก้อน: Record<string, string> = {}
-    ลำดับ.forEach((k, i) => { ก้อน[คีย์ลำดับ(k)] = String((i + 1) * 10).padStart(4, '0') })
-    setแมป((ก) => ({ ...ก, ...ก้อน }))
-    try {
-      /* 🔴 **โหมดชุดของท่อเขียนทับทั้งรุ่น** ⇒ ต้องอ่านของสดจากเซิร์ฟเวอร์ก่อนรวม
-         ส่งจากสำเนาในจอเฉย ๆ = ทับงานที่คนอื่นเพิ่งกรอกจากอีกเครื่องไปทั้งรุ่น
-         (ตารางนี้พิมพ์ด้วยมือ ไม่มีสำเนาที่อื่น สร้างใหม่จากอะไรไม่ได้) */
-      const สด = await fetch(`/api/web/parts-map?model=${encodeURIComponent(รุ่น)}&_=${Date.now()}`,
-        { cache: 'no-store' }).then((r) => r.json())
-      if (!สด || typeof สด.map !== 'object' || !สด.map) throw new Error('อ่านตารางสดไม่ได้ — ไม่บันทึกลำดับ')
-      const r = await fetch(`/api/web/parts-map?model=${encodeURIComponent(รุ่น)}`, {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        /* ⚠️ ส่งเป็นชุด ไม่ใช่ทีละตัว — หมวดหนึ่งมีได้ร้อยแถว
-           ยิงทีละตัวร้อยครั้ง = ช้าและมีโอกาสขาดกลางคัน แล้วลำดับเพี้ยนครึ่ง ๆ กลาง ๆ */
-        body: JSON.stringify({ map: { ...สด.map, ...ก้อน } }),
-      })
-      const d = await r.json().catch(() => null)
-      if (!r.ok || (d && d.error)) throw new Error(String((d && d.error) || `HTTP ${r.status}`))
-      if (d && typeof d.map === 'object' && d.map) setแมป(d.map)
-    } catch (e) {
-      setงานOEM(`🔴 บันทึกลำดับไม่สำเร็จ — ${e instanceof Error ? e.message : 'ไม่ทราบเหตุ'}`)
-    }
-  }, [รุ่น, แมป])
-
-  /* 🔢 เรียงตามลำดับที่ร้านจัดเอง — เฉพาะ **ภายในหมวดเดียวกัน**
-     ⚠️ ห้ามเรียงข้ามหมวด หมวดต้องอยู่ตามคู่มือเสมอ (ลูกค้าเทียบกับหนังสือ)
-     ⚠️ แถวที่ยังไม่มีลำดับ ⇒ อยู่ตามเดิม **ต่อท้ายแถวที่มีลำดับ**
-        ไม่ใช่ลอยไปบนสุด (ค่าว่างถูกตีเป็น 0 แล้วแซงทุกตัว — กับดักคลาสสิก) */
-  const รายการทั้งหมด = (() => {
-    const ดิบ = แบนรายการ(ข้อมูล)
-    const มีลำดับ = ดิบ.some((r) => อ่านลำดับ(r.คีย์) !== null)
-    if (!มีลำดับ) return ดิบ
-    const กลุ่มเดิม: string[] = []
-    for (const r of ดิบ) if (!กลุ่มเดิม.includes(r.กลุ่มId)) กลุ่มเดิม.push(r.กลุ่มId)
-    const out: typeof ดิบ = []
-    for (const g of กลุ่มเดิม) {
-      const ใน = ดิบ.filter((r) => r.กลุ่มId === g)
-      const เดิมที่ = new Map(ใน.map((r, i) => [r.คีย์, i]))
-      out.push(...[...ใน].sort((a, b) => {
-        const la = อ่านลำดับ(a.คีย์), lb = อ่านลำดับ(b.คีย์)
-        if (la !== null && lb !== null) return la - lb
-        if (la !== null) return -1
-        if (lb !== null) return 1
-        return (เดิมที่.get(a.คีย์) ?? 0) - (เดิมที่.get(b.คีย์) ?? 0)
-      }))
-    }
-    return out
-  })()
-  const คืบ = ความคืบหน้า(รายการทั้งหมด, แมป)
-  const รายการ = เฉพาะว่าง
-    ? รายการทั้งหมด.filter((r) => !ล้างsku(แมป[r.คีย์]))
-    : รายการทั้งหมด
-
-  const ไปช่องถัดไป = (จาก: number) => {
-    const n = ช่องถัดไป(รายการทั้งหมด, จาก, แมป)
-    if (n === null) return
-    const el = ช่อง.current[n]
-    if (el) { el.focus(); el.select() }
-  }
-
   /** คีย์ของแถวที่เพิ่มเองในหมวดนี้ เรียงตามลำดับที่ใส่ */
   const คีย์ที่เพิ่มเอง = (ตัวอักษร: string) =>
     Object.keys(แมป)
@@ -487,6 +406,12 @@ export default function Page() {
          MINI เก็บ `D4` (มีตัวอักษรกลุ่มนำหน้า) · F 250 เก็บ `10` (เลขล้วน)
        ไม่เติมตัวอักษรกลุ่มให้ตัวที่เป็นเลขล้วน = เทียบ "F13" กับ "10" ⇒ **ไม่มีวันตรงกัน**
        ⇒ เหลืองลวงทั้งรุ่น · วัดแล้ว: ก่อนแก้ 28.8% หลังแก้ 21.2% (ลวงหาย 84 แถว) */
+    /* 🔴 **แถวที่ยังไม่มีเลขในผัง ห้ามตรวจ** (18 ต.ค. 2569)
+       แถวที่ร้านเพิ่มเองโชว์ '+' จนกว่าจะใส่เลข ⇒ เทียบกับ '+' ได้ข้อความ
+       "ชื่อสินค้าอ้างถึง A1 แต่แถวนี้คือ +" ซึ่งไม่มีความหมายและเป็นเท็จทุกใบ
+       (ท่านประธานส่งภาพมา 4 แถวติดกันเหลืองหมดด้วยข้อความนี้)
+       🔑 เตือนที่เทียบกับค่าที่ไม่มีความหมาย = เตือนลวง 100% ตามนิยาม */
+    if (!/[A-Za-z0-9]/.test(ตำแหน่งแถว)) return null
     const ดิบตำแหน่ง = ตำแหน่งแถว.toUpperCase()
     const นี่ = /^[A-Z]/.test(ดิบตำแหน่ง)
       ? ดิบตำแหน่ง
@@ -530,7 +455,7 @@ export default function Page() {
     const หา = String(รหัสร้าน || '').trim().toUpperCase()
     if (!หา) return []
     return Object.entries(แมป)
-      .filter(([k, v]) => !/^\+[A-Za-z]+\d+T$/.test(k) && !/#R$/.test(k)
+      .filter(([k, v]) => !/^\+[A-Za-z]+\d+[A-Za-z]$/.test(k) && !/#R$/.test(k)
         && String(v || '').trim().toUpperCase() === หา)
       .map(([k]) => k)
   }
@@ -543,6 +468,9 @@ export default function Page() {
     }
     return ''
   }
+
+  /** กำลังแก้เลขในผังของแถวไหน (คีย์ของแถวที่ร้านเพิ่มเอง) — ท่านประธานสั่ง 18 ต.ค. 2569 */
+  const [แก้เลขแถวไหนอยู่, setแก้เลขแถวไหนอยู่] = useState('')
 
   const [งานOEM, setงานOEM] = useState('')
 
@@ -738,6 +666,107 @@ export default function Page() {
     const t = setTimeout(() => { void ดึงOEMเข้าคลัง(true) }, 2500)
     return () => clearTimeout(t)
   }, [รุ่นทั้งหมด, ดึงOEMเข้าคลัง])
+
+  /* 🔢 **ลำดับแถวที่ร้านจัดเอง** — ท่านประธาน 17 ต.ค. 2569
+     "เลื่อนสลับกันได้ เลื่อนลงสุดขึ้นสุดได้" และให้ **ลูกค้าเห็นตามลำดับที่จัดด้วย**
+     ⇒ เก็บในตารางจับคู่เดิม (หน้าลูกค้าอ่านตารางนี้อยู่แล้ว) ที่คีย์ `<รหัส>#R`
+     ⚠️ ต้องกันคีย์ `#R` ออกจากทุกที่ที่อ่าน "คู่จับคู่" ไม่งั้นกลายเป็นสินค้าผี sku = "0010"
+        (คลาสเดียวกับคีย์ข้อความกำกับ `+H1T`) */
+  const คีย์ลำดับ = (คีย์: string) => `${คีย์}#R`
+  const อ่านลำดับ = (คีย์: string) => {
+    const v = Number(String(แมป[คีย์ลำดับ(คีย์)] || '').replace(/\D/g, ''))
+    return Number.isFinite(v) && v > 0 ? v : null
+  }
+
+  /** ย้ายแถวในหมวด แล้วเขียนลำดับใหม่ทั้งหมวด
+   *  ⚠️ ครั้งแรกต้องเขียนให้ครบทั้งหมวด — เขียนแค่แถวที่ขยับ = แถวที่เหลือไม่มีลำดับ
+   *     แล้วการเรียงจะเดาไม่ได้ · เว้นระยะทีละ 10 เผื่อแทรกภายหลัง */
+  const ย้ายแถว = useCallback(async (คีย์ในหมวด: string[], จาก: number, ไป: number) => {
+    const ลำดับ = [...คีย์ในหมวด]
+    if (จาก < 0 || จาก >= ลำดับ.length) return
+    const ปลาย = Math.max(0, Math.min(ลำดับ.length - 1, ไป))
+    if (ปลาย === จาก) return
+    const [ตัว] = ลำดับ.splice(จาก, 1)
+    ลำดับ.splice(ปลาย, 0, ตัว)
+    const ก้อน: Record<string, string> = {}
+    ลำดับ.forEach((k, i) => { ก้อน[คีย์ลำดับ(k)] = String((i + 1) * 10).padStart(4, '0') })
+    setแมป((ก) => ({ ...ก, ...ก้อน }))
+    try {
+      /* 🔴 **โหมดชุดของท่อเขียนทับทั้งรุ่น** ⇒ ต้องอ่านของสดจากเซิร์ฟเวอร์ก่อนรวม
+         ส่งจากสำเนาในจอเฉย ๆ = ทับงานที่คนอื่นเพิ่งกรอกจากอีกเครื่องไปทั้งรุ่น
+         (ตารางนี้พิมพ์ด้วยมือ ไม่มีสำเนาที่อื่น สร้างใหม่จากอะไรไม่ได้) */
+      const สด = await fetch(`/api/web/parts-map?model=${encodeURIComponent(รุ่น)}&_=${Date.now()}`,
+        { cache: 'no-store' }).then((r) => r.json())
+      if (!สด || typeof สด.map !== 'object' || !สด.map) throw new Error('อ่านตารางสดไม่ได้ — ไม่บันทึกลำดับ')
+      const r = await fetch(`/api/web/parts-map?model=${encodeURIComponent(รุ่น)}`, {
+        method: 'POST', headers: { 'content-type': 'application/json' },
+        /* ⚠️ ส่งเป็นชุด ไม่ใช่ทีละตัว — หมวดหนึ่งมีได้ร้อยแถว
+           ยิงทีละตัวร้อยครั้ง = ช้าและมีโอกาสขาดกลางคัน แล้วลำดับเพี้ยนครึ่ง ๆ กลาง ๆ */
+        body: JSON.stringify({ map: { ...สด.map, ...ก้อน } }),
+      })
+      const d = await r.json().catch(() => null)
+      if (!r.ok || (d && d.error)) throw new Error(String((d && d.error) || `HTTP ${r.status}`))
+      if (d && typeof d.map === 'object' && d.map) setแมป(d.map)
+    } catch (e) {
+      setงานOEM(`🔴 บันทึกลำดับไม่สำเร็จ — ${e instanceof Error ? e.message : 'ไม่ทราบเหตุ'}`)
+    }
+  }, [รุ่น, แมป])
+
+  /* 🔢 เรียงตามลำดับที่ร้านจัดเอง — เฉพาะ **ภายในหมวดเดียวกัน**
+     ⚠️ ห้ามเรียงข้ามหมวด หมวดต้องอยู่ตามคู่มือเสมอ (ลูกค้าเทียบกับหนังสือ)
+     ⚠️ แถวที่ยังไม่มีลำดับ ⇒ อยู่ตามเดิม **ต่อท้ายแถวที่มีลำดับ**
+        ไม่ใช่ลอยไปบนสุด (ค่าว่างถูกตีเป็น 0 แล้วแซงทุกตัว — กับดักคลาสสิก) */
+  const รายการทั้งหมด = (() => {
+    /* ➕ **เพิ่มเองในรายการเดียวกับแถวคู่มือ** — ท่านประธานสั่ง 18 ต.ค. 2569
+       "ให้ตัวที่เพิ่มเข้าเลื่อนขึ้นลงได้ด้วย"
+       🔑 เหตุที่เดิมเลื่อนไม่ได้ **ไม่ใช่เพราะลืมใส่ปุ่ม** — มันอยู่คนละรายการ
+          (ของที่เพิ่มเองวาดในบล็อกหัวหมวด · แถวคู่มือวาดในรายการหลัก)
+          ⇒ ใส่ปุ่มเฉย ๆ ก็เลื่อนไปแทรกระหว่างแถวคู่มือไม่ได้อยู่ดี
+       ⇒ รวมเป็นรายการเดียว แล้วให้ลำดับ `#R` คุมทั้งสองชนิดเหมือนกัน */
+    const ดิบ = แบนรายการ(ข้อมูล)
+    for (const g of (ข้อมูล?.กลุ่ม ?? [])) {
+      for (const k of คีย์ที่เพิ่มเอง(g.ตัวอักษร)) {
+        if (ดิบ.some((x) => x.คีย์ === k)) continue
+        ดิบ.push({
+          /* 🔢 **เลขในผังที่ร้านใส่เอง** — ท่านประธานสั่ง 18 ต.ค. 2569
+             คู่มือไม่มีชิ้นนี้ ⇒ ไม่มีเลขให้อ้าง แต่ร้านรู้ว่ามันอยู่ตรงไหนในรูป
+             ยังไม่ใส่ = '+' เหมือนเดิม (ไม่ใช่ค่าว่าง ไม่งั้นวงกลมจะโล่ง) */
+          เลข: String(แมป[k + 'N'] || '').trim() || '+', รหัส: '', จำนวน: '',
+          ชื่อ: String(แมป[k + 'T'] || '').trim(),
+          กลุ่มId: g.id, กลุ่มชื่อ: g.ชื่อ, ตัวอักษร: g.ตัวอักษร,
+          คีย์: k, ลำดับ: ดิบ.length,
+        } as (typeof ดิบ)[number])
+      }
+    }
+    const มีลำดับ = ดิบ.some((r) => อ่านลำดับ(r.คีย์) !== null)
+    if (!มีลำดับ) return ดิบ
+    const กลุ่มเดิม: string[] = []
+    for (const r of ดิบ) if (!กลุ่มเดิม.includes(r.กลุ่มId)) กลุ่มเดิม.push(r.กลุ่มId)
+    const out: typeof ดิบ = []
+    for (const g of กลุ่มเดิม) {
+      const ใน = ดิบ.filter((r) => r.กลุ่มId === g)
+      const เดิมที่ = new Map(ใน.map((r, i) => [r.คีย์, i]))
+      out.push(...[...ใน].sort((a, b) => {
+        const la = อ่านลำดับ(a.คีย์), lb = อ่านลำดับ(b.คีย์)
+        if (la !== null && lb !== null) return la - lb
+        if (la !== null) return -1
+        if (lb !== null) return 1
+        return (เดิมที่.get(a.คีย์) ?? 0) - (เดิมที่.get(b.คีย์) ?? 0)
+      }))
+    }
+    return out
+  })()
+  const คืบ = ความคืบหน้า(รายการทั้งหมด, แมป)
+  const รายการ = เฉพาะว่าง
+    ? รายการทั้งหมด.filter((r) => !ล้างsku(แมป[r.คีย์]))
+    : รายการทั้งหมด
+
+  const ไปช่องถัดไป = (จาก: number) => {
+    const n = ช่องถัดไป(รายการทั้งหมด, จาก, แมป)
+    if (n === null) return
+    const el = ช่อง.current[n]
+    if (el) { el.focus(); el.select() }
+  }
 
   let กลุ่มก่อนหน้า = ''
   return (
@@ -1127,92 +1156,6 @@ export default function Page() {
                         ))}
                       </div>
                     )}
-                    {/* 📦 **ของที่เพิ่มเอง = แถวในรายการ ไม่ใช่ป้ายลอย**
-                        ท่านประธานวงลูกศรชี้ลงมาที่รายการ 17 ต.ค. 2569 ("ให้มันเข้าไปในนี้")
-                        🔑 ถูกกว่าแบบเดิมจริง — ของที่เพิ่มเองเป็นอะไหล่ของหมวดนั้น
-                           เท่า ๆ กับแถวในคู่มือ ต่างกันแค่ที่มา · วางเป็นป้ายลอย
-                           = สื่อว่าเป็นของประกอบ และคนอ่านรายการจากบนลงล่างจะข้ามมันไป
-                        ⚠️ แต่ **ต้องดูออกว่าไม่ได้มาจากคู่มือ** — ถ้าหน้าตาเหมือนกันเป๊ะ
-                           คนจะเข้าใจว่าคู่มือมีชิ้นนี้ ⇒ ป้ายวงกลมเป็น "+" ไม่ใช่เลขในผัง
-                           และบรรทัดล่างเขียนบอกที่มาไว้ */}
-                    {คีย์ที่เพิ่มเอง(r.ตัวอักษร).map((k) => {
-                      const sku = String(แมป[k] || '').trim()
-                      const ของ = คลัง.ตามรหัส[sku.toUpperCase()]
-                      /* ข้อความกำกับเก็บที่คีย์เดียวกัน + T (`+H1` → `+H1T`) */
-                      const ข้อความกำกับ = String(แมป[k + 'T'] || '').trim()
-                      return (
-                        <div key={k} className="bg-emerald-50 border border-emerald-300 rounded-md
-                                                px-2.5 py-2 flex items-center gap-2.5 mb-1">
-                          <span className="w-14 h-14 shrink-0 flex items-center justify-center">
-                            {ของ?.รูป ? (
-                              /* eslint-disable-next-line @next/next/no-img-element */
-                              <img src={ของ.รูป} alt={ของ.ชื่อ} title={ของ.ชื่อ}
-                                   className="w-14 h-14 object-contain rounded-md border border-emerald-200 bg-white" />
-                            ) : (
-                              <span className="w-14 h-14 rounded-md border border-dashed border-emerald-300
-                                               text-emerald-500 flex items-center justify-center text-[16px]">+</span>
-                            )}
-                          </span>
-                          <span className="w-7 h-7 shrink-0 rounded-full bg-emerald-100 text-emerald-700
-                                           text-[12px] font-bold flex items-center justify-center">+</span>
-                          <span className="min-w-0 grow">
-                            <span className="block truncate text-[13.5px] font-medium text-gray-900">
-                              <span className="font-mono text-emerald-700">{sku}</span>
-                              {ของ?.ชื่อ ? <> {ของ.ชื่อ}</> : null}
-                            </span>
-                            <span className="block text-[11.5px] text-gray-500 truncate">
-                              {ข้อความกำกับ || 'เพิ่มเอง — คู่มือไม่มีชิ้นนี้'}
-                            </span>
-                          </span>
-
-                          {/* ✏️ **แก้ได้ + ใส่ข้อความกำกับได้** — ท่านประธานวงมา 17 ต.ค. 2569
-                              🔑 ของที่เพิ่มเองแก้ไม่ได้ = กับดัก (ใส่ผิดต้องลบแล้วใส่ใหม่ทั้งแถว)
-                                 และข้อความกำกับจำเป็นจริง เพราะชิ้นที่คู่มือไม่มี
-                                 **ไม่มีเลขในผังให้อ้าง** คนอ่านรอบหน้าจะไม่รู้ว่าอยู่ตรงไหนของเครื่อง
-                              ⚠️ เก็บข้อความที่คีย์ `+H1T` ในตารางเดิม ไม่สร้างที่เก็บใหม่
-                              ⚠️ **เซิร์ฟเวอร์บังคับว่าค่าต้องมีอังกฤษ/เลขอย่างน้อย 1 ตัว และ ≤32**
-                                 (อ่าน `ล้างsku` ใน parts-map.mjs แล้ว ไม่ได้เดา)
-                                 ⇒ ไทยล้วนจะถูกตีกลับ · ต้องบอกก่อนพิมพ์ ไม่ใช่ตอนโดนปฏิเสธ */}
-                          {แก้แถวที่เพิ่มเอง === k ? (
-                            <span className="shrink-0 flex items-center gap-1.5">
-                              <input defaultValue={sku} aria-label="รหัสร้าน"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Escape') { setแก้แถวที่เพิ่มเอง(''); return }
-                                  if (e.key !== 'Enter') return
-                                  e.preventDefault()
-                                  บันทึก(k, (e.target as HTMLInputElement).value)
-                                  setแก้แถวที่เพิ่มเอง('')
-                                }}
-                                placeholder="รหัสร้าน"
-                                className="w-28 border border-gray-300 rounded px-2 py-1 text-[12px] min-h-[34px]" />
-                              <input defaultValue={ข้อความกำกับ} aria-label="ข้อความกำกับ"
-                                onKeyDown={(e) => {
-                                  if (e.key === 'Escape') { setแก้แถวที่เพิ่มเอง(''); return }
-                                  if (e.key !== 'Enter') return
-                                  e.preventDefault()
-                                  บันทึก(k + 'T', (e.target as HTMLInputElement).value)
-                                  setแก้แถวที่เพิ่มเอง('')
-                                }}
-                                placeholder="ข้อความกำกับ (มีเลข/อังกฤษอย่างน้อย 1 ตัว)"
-                                className="w-64 border border-gray-300 rounded px-2 py-1 text-[12px] min-h-[34px]" />
-                              <button type="button" onClick={() => setแก้แถวที่เพิ่มเอง('')}
-                                className="text-[12px] text-gray-500 px-1">ปิด</button>
-                            </span>
-                          ) : (
-                            <span className="shrink-0 flex items-center gap-1.5">
-                              <button type="button" onClick={() => setแก้แถวที่เพิ่มเอง(k)}
-                                title="แก้รหัสร้าน / ใส่ข้อความกำกับ"
-                                className="text-[12.5px] rounded border border-gray-300 px-2 py-1
-                                           text-gray-600 hover:bg-white">แก้ไข</button>
-                              <button type="button" title="ลบออกจากหมวดนี้"
-                                onClick={() => บันทึก(k, '')}
-                                className="text-[12.5px] rounded border border-gray-300 px-2 py-1
-                                           text-gray-500 hover:text-red-600 hover:border-red-300">ลบ ✕</button>
-                            </span>
-                          )}
-                        </div>
-                      )
-                    })}
                   </>
                 )}
                 {/* 🔑 **ผังเดียวกับหน้าลูกค้า** (gucut.com/parts/<รุ่น>/)
@@ -1258,9 +1201,42 @@ export default function Page() {
                     )}
                   </span>
 
-                  <span className={`w-7 h-7 shrink-0 rounded-full text-[12px] font-bold
-                                   flex items-center justify-center ${
-                    เตือนชื่อ ? 'bg-yellow-400 text-yellow-950' : 'bg-gray-100 text-gray-700'}`}>{r.เลข}</span>
+                  {/* 🔢 **เลขในผัง — แถวที่ร้านเพิ่มเองกดแก้ได้** (ท่านประธานสั่ง 18 ต.ค. 2569)
+                      ⚠️ **แถวจากคู่มือห้ามแก้** — เลขนั้นเป็นของโรงงาน แก้แล้วไม่ตรงกับรูปที่ลูกค้าดู
+                         และไม่มีที่เก็บด้วย (แมปเก็บเฉพาะของที่ร้านใส่เอง)
+                      ⚠️ Escape = ยกเลิก · Enter = บันทึก · ว่างแล้ว Enter = ลบเลขออก (กลับเป็น +) */}
+                  {r.คีย์.startsWith('+') && แก้เลขแถวไหนอยู่ === r.คีย์ ? (
+                    <input autoFocus defaultValue={r.เลข === '+' ? '' : r.เลข}
+                      aria-label="เลขในผังอะไหล่"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') { setแก้เลขแถวไหนอยู่(''); return }
+                        if (e.key !== 'Enter') return
+                        e.preventDefault()
+                        บันทึก(r.คีย์ + 'N', (e.target as HTMLInputElement).value)
+                        setแก้เลขแถวไหนอยู่('')
+                      }}
+                      onBlur={() => setแก้เลขแถวไหนอยู่('')}
+                      placeholder="A1"
+                      className="w-12 h-7 shrink-0 border border-yellow-500 rounded px-1
+                                 text-[12px] font-bold text-center" />
+                  ) : (
+                    <span
+                      role={r.คีย์.startsWith('+') ? 'button' : undefined}
+                      tabIndex={r.คีย์.startsWith('+') ? 0 : undefined}
+                      onClick={r.คีย์.startsWith('+') ? () => setแก้เลขแถวไหนอยู่(r.คีย์) : undefined}
+                      onKeyDown={r.คีย์.startsWith('+')
+                        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setแก้เลขแถวไหนอยู่(r.คีย์) } }
+                        : undefined}
+                      title={r.คีย์.startsWith('+')
+                        ? 'กดเพื่อใส่/แก้เลขในผังอะไหล่ (เช่น A1) — คู่มือไม่มีชิ้นนี้ ร้านกรอกเอง'
+                        : 'เลขจากคู่มือโรงงาน — แก้ไม่ได้'}
+                      className={`w-7 h-7 shrink-0 rounded-full text-[12px] font-bold
+                                 flex items-center justify-center ${
+                        เตือนชื่อ ? 'bg-yellow-400 text-yellow-950' : 'bg-gray-100 text-gray-700'
+                      } ${r.คีย์.startsWith('+')
+                        ? 'cursor-pointer ring-1 ring-dashed ring-gray-400 hover:ring-gray-700' : ''}`}
+                    >{r.เลข}</span>
+                  )}
 
                   <span className="min-w-0 grow">
                     {/* บรรทัดบน — ของร้าน (รหัส + ชื่อสินค้าจริง) เหมือนหน้าลูกค้าเป๊ะ
@@ -1283,7 +1259,11 @@ export default function Page() {
                     </span>
                     {/* บรรทัดล่าง — รหัสคู่มือ · ชื่ออังกฤษเดิม (ห้ามตัดทิ้ง) · ใช้กี่ตัว */}
                     <span className="block text-[11.5px] text-gray-500 tabular-nums truncate">
-                      <span className="font-mono">{r.รหัส}</span>
+                      {/* ➕ ของที่เพิ่มเองไม่มีรหัสคู่มือ ⇒ บอกที่มาแทน
+                          **ต้องดูออกว่าไม่ได้มาจากคู่มือ** แม้จะอยู่รายการเดียวกันแล้ว */}
+                      {r.คีย์.startsWith('+')
+                        ? <span className="text-emerald-700">เพิ่มเอง — คู่มือไม่มีชิ้นนี้</span>
+                        : <span className="font-mono">{r.รหัส}</span>}
                       {รูปของแถว?.ชื่อ ? <> · {คำแปล}</> : null}
                       {คำแปล !== r.ชื่อ && <> · <span className="text-gray-400">{r.ชื่อ}</span></>}
                       {r.จำนวน ? ` · ใช้ ${r.จำนวน} ตัว` : ''}
@@ -1345,7 +1325,48 @@ export default function Page() {
                       )
                     })()}
                   </span>
-                  {!r.คีย์ ? (
+                  {/* ➕ **แถวเพิ่มเองในรายการหลัก** — ท่านประธานสั่ง 18 ต.ค. 2569
+                      ให้เลื่อนขึ้น-ลงได้เหมือนแถวอื่น ⇒ ต้องอยู่รายการเดียวกัน
+                      ฝั่งขวาเป็น แก้ไข/ลบ แทนช่องกรอก (ของที่เพิ่มเองไม่มีรหัสคู่มือให้จับคู่) */}
+                  {r.คีย์.startsWith('+') ? (
+                    แก้แถวที่เพิ่มเอง === r.คีย์ ? (
+                      <span className="shrink-0 flex items-center gap-1.5">
+                        <input defaultValue={String(แมป[r.คีย์] || '')} aria-label="รหัสร้าน"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') { setแก้แถวที่เพิ่มเอง(''); return }
+                            if (e.key !== 'Enter') return
+                            e.preventDefault()
+                            บันทึก(r.คีย์, (e.target as HTMLInputElement).value)
+                            setแก้แถวที่เพิ่มเอง('')
+                          }}
+                          placeholder="รหัสร้าน"
+                          className="w-28 border border-gray-300 rounded px-2 py-1 text-[12px] min-h-[34px]" />
+                        <input defaultValue={String(แมป[r.คีย์ + 'T'] || '')} aria-label="ข้อความกำกับ"
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') { setแก้แถวที่เพิ่มเอง(''); return }
+                            if (e.key !== 'Enter') return
+                            e.preventDefault()
+                            บันทึก(r.คีย์ + 'T', (e.target as HTMLInputElement).value)
+                            setแก้แถวที่เพิ่มเอง('')
+                          }}
+                          placeholder="ข้อความกำกับ (มีเลข/อังกฤษอย่างน้อย 1 ตัว)"
+                          className="w-56 border border-gray-300 rounded px-2 py-1 text-[12px] min-h-[34px]" />
+                        <button type="button" onClick={() => setแก้แถวที่เพิ่มเอง('')}
+                          className="text-[12px] text-gray-500 px-1">ปิด</button>
+                      </span>
+                    ) : (
+                      <span className="shrink-0 flex items-center gap-1.5">
+                        <button type="button" onClick={() => setแก้แถวที่เพิ่มเอง(r.คีย์)}
+                          title="แก้รหัสร้าน / ใส่ข้อความกำกับ"
+                          className="text-[12.5px] rounded border border-gray-300 px-2 py-1
+                                     text-gray-600 hover:bg-white">แก้ไข</button>
+                        <button type="button" title="ลบออกจากหมวดนี้"
+                          onClick={() => บันทึก(r.คีย์, '')}
+                          className="text-[12.5px] rounded border border-gray-300 px-2 py-1
+                                     text-gray-500 hover:text-red-600 hover:border-red-300">ลบ ✕</button>
+                      </span>
+                    )
+                  ) : !r.คีย์ ? (
                     <span className="w-[236px] shrink-0 text-[11.5px] text-gray-500 text-right pr-1">
                       คู่มือไม่มีรหัสชิ้นนี้ — จับคู่ไม่ได้
                     </span>
