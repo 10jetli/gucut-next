@@ -12,6 +12,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { อ่านสภาพต้นทุน, type CostSinceตอบ, type สภาพต้นทุน } from '@/lib/costsince'
+import ZortLookFold from './ZortLookFold'
 
 export type ประตูกำไร =
   | { ชนิด: 'กำลังถาม' }
@@ -78,7 +79,10 @@ export function useประตูกำไร(from?: string | null, to?: string
 export default function CostStateNote({ ประตู, ช่วง }: { ประตู: ประตูกำไร; ช่วง?: string }) {
   if (เปิดยอดรวมได้(ประตู)) return null
   const เตือน = ประตู.ชนิด === 'ถามไม่สำเร็จ'
+  /* 🎯 โหมดเหมือน ZORT: ZORT ไม่มีบรรทัดนี้ ⇒ ย่อเหลือ "ยังคิดกำไรรวมไม่ได้ (ช่วง)" ที่ยังมองเห็นบนจอ (ตามกติกาข้างบน: ห้ามซ่อนลง title)
+     เหตุเต็มกดกางได้ · ปิดโหมด = บรรทัดเต็มเหมือนเดิม */
   return (
+    <ZortLookFold tone={เตือน ? 'amber' : 'gray'} สรุป={<>{เตือน ? '⚠️ ' : ''}ยังคิดกำไรรวมไม่ได้{ช่วง ? ` (${ช่วง})` : ''}</>}>
     <p className={`text-[11.5px] mt-1 ${เตือน ? 'text-amber-800' : 'text-gray-500'}`}>
       {เตือน ? '⚠️ ' : ''}<b>ยังคิดกำไรรวมไม่ได้</b>{ช่วง ? ` (${ช่วง})` : ''} — {เหตุเต็ม(ประตู)}
       {ประตู.ชนิด === 'ตอบแล้ว' && ประตู.สภาพ.โชว์รายบรรทัดได้ === true && (
@@ -86,5 +90,6 @@ export default function CostStateNote({ ประตู, ช่วง }: { ป�
           — ความจริงรายบรรทัดไม่ขึ้นกับว่าบรรทัดอื่นมีข้อมูลไหม</span></>
       )}
     </p>
+    </ZortLookFold>
   )
 }
