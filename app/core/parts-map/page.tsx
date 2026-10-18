@@ -406,6 +406,12 @@ export default function Page() {
          MINI เก็บ `D4` (มีตัวอักษรกลุ่มนำหน้า) · F 250 เก็บ `10` (เลขล้วน)
        ไม่เติมตัวอักษรกลุ่มให้ตัวที่เป็นเลขล้วน = เทียบ "F13" กับ "10" ⇒ **ไม่มีวันตรงกัน**
        ⇒ เหลืองลวงทั้งรุ่น · วัดแล้ว: ก่อนแก้ 28.8% หลังแก้ 21.2% (ลวงหาย 84 แถว) */
+    /* 🔴 **แถวที่ยังไม่มีเลขในผัง ห้ามตรวจ** (18 ต.ค. 2569)
+       แถวที่ร้านเพิ่มเองโชว์ '+' จนกว่าจะใส่เลข ⇒ เทียบกับ '+' ได้ข้อความ
+       "ชื่อสินค้าอ้างถึง A1 แต่แถวนี้คือ +" ซึ่งไม่มีความหมายและเป็นเท็จทุกใบ
+       (ท่านประธานส่งภาพมา 4 แถวติดกันเหลืองหมดด้วยข้อความนี้)
+       🔑 เตือนที่เทียบกับค่าที่ไม่มีความหมาย = เตือนลวง 100% ตามนิยาม */
+    if (!/[A-Za-z0-9]/.test(ตำแหน่งแถว)) return null
     const ดิบตำแหน่ง = ตำแหน่งแถว.toUpperCase()
     const นี่ = /^[A-Z]/.test(ดิบตำแหน่ง)
       ? ดิบตำแหน่ง
@@ -449,7 +455,7 @@ export default function Page() {
     const หา = String(รหัสร้าน || '').trim().toUpperCase()
     if (!หา) return []
     return Object.entries(แมป)
-      .filter(([k, v]) => !/^\+[A-Za-z]+\d+T$/.test(k) && !/#R$/.test(k)
+      .filter(([k, v]) => !/^\+[A-Za-z]+\d+[A-Za-z]$/.test(k) && !/#R$/.test(k)
         && String(v || '').trim().toUpperCase() === หา)
       .map(([k]) => k)
   }
@@ -462,6 +468,9 @@ export default function Page() {
     }
     return ''
   }
+
+  /** กำลังแก้เลขในผังของแถวไหน (คีย์ของแถวที่ร้านเพิ่มเอง) — ท่านประธานสั่ง 18 ต.ค. 2569 */
+  const [แก้เลขแถวไหนอยู่, setแก้เลขแถวไหนอยู่] = useState('')
 
   const [งานOEM, setงานOEM] = useState('')
 
@@ -719,7 +728,10 @@ export default function Page() {
       for (const k of คีย์ที่เพิ่มเอง(g.ตัวอักษร)) {
         if (ดิบ.some((x) => x.คีย์ === k)) continue
         ดิบ.push({
-          เลข: '+', รหัส: '', จำนวน: '',
+          /* 🔢 **เลขในผังที่ร้านใส่เอง** — ท่านประธานสั่ง 18 ต.ค. 2569
+             คู่มือไม่มีชิ้นนี้ ⇒ ไม่มีเลขให้อ้าง แต่ร้านรู้ว่ามันอยู่ตรงไหนในรูป
+             ยังไม่ใส่ = '+' เหมือนเดิม (ไม่ใช่ค่าว่าง ไม่งั้นวงกลมจะโล่ง) */
+          เลข: String(แมป[k + 'N'] || '').trim() || '+', รหัส: '', จำนวน: '',
           ชื่อ: String(แมป[k + 'T'] || '').trim(),
           กลุ่มId: g.id, กลุ่มชื่อ: g.ชื่อ, ตัวอักษร: g.ตัวอักษร,
           คีย์: k, ลำดับ: ดิบ.length,
@@ -1189,9 +1201,42 @@ export default function Page() {
                     )}
                   </span>
 
-                  <span className={`w-7 h-7 shrink-0 rounded-full text-[12px] font-bold
-                                   flex items-center justify-center ${
-                    เตือนชื่อ ? 'bg-yellow-400 text-yellow-950' : 'bg-gray-100 text-gray-700'}`}>{r.เลข}</span>
+                  {/* 🔢 **เลขในผัง — แถวที่ร้านเพิ่มเองกดแก้ได้** (ท่านประธานสั่ง 18 ต.ค. 2569)
+                      ⚠️ **แถวจากคู่มือห้ามแก้** — เลขนั้นเป็นของโรงงาน แก้แล้วไม่ตรงกับรูปที่ลูกค้าดู
+                         และไม่มีที่เก็บด้วย (แมปเก็บเฉพาะของที่ร้านใส่เอง)
+                      ⚠️ Escape = ยกเลิก · Enter = บันทึก · ว่างแล้ว Enter = ลบเลขออก (กลับเป็น +) */}
+                  {r.คีย์.startsWith('+') && แก้เลขแถวไหนอยู่ === r.คีย์ ? (
+                    <input autoFocus defaultValue={r.เลข === '+' ? '' : r.เลข}
+                      aria-label="เลขในผังอะไหล่"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Escape') { setแก้เลขแถวไหนอยู่(''); return }
+                        if (e.key !== 'Enter') return
+                        e.preventDefault()
+                        บันทึก(r.คีย์ + 'N', (e.target as HTMLInputElement).value)
+                        setแก้เลขแถวไหนอยู่('')
+                      }}
+                      onBlur={() => setแก้เลขแถวไหนอยู่('')}
+                      placeholder="A1"
+                      className="w-12 h-7 shrink-0 border border-yellow-500 rounded px-1
+                                 text-[12px] font-bold text-center" />
+                  ) : (
+                    <span
+                      role={r.คีย์.startsWith('+') ? 'button' : undefined}
+                      tabIndex={r.คีย์.startsWith('+') ? 0 : undefined}
+                      onClick={r.คีย์.startsWith('+') ? () => setแก้เลขแถวไหนอยู่(r.คีย์) : undefined}
+                      onKeyDown={r.คีย์.startsWith('+')
+                        ? (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setแก้เลขแถวไหนอยู่(r.คีย์) } }
+                        : undefined}
+                      title={r.คีย์.startsWith('+')
+                        ? 'กดเพื่อใส่/แก้เลขในผังอะไหล่ (เช่น A1) — คู่มือไม่มีชิ้นนี้ ร้านกรอกเอง'
+                        : 'เลขจากคู่มือโรงงาน — แก้ไม่ได้'}
+                      className={`w-7 h-7 shrink-0 rounded-full text-[12px] font-bold
+                                 flex items-center justify-center ${
+                        เตือนชื่อ ? 'bg-yellow-400 text-yellow-950' : 'bg-gray-100 text-gray-700'
+                      } ${r.คีย์.startsWith('+')
+                        ? 'cursor-pointer ring-1 ring-dashed ring-gray-400 hover:ring-gray-700' : ''}`}
+                    >{r.เลข}</span>
+                  )}
 
                   <span className="min-w-0 grow">
                     {/* บรรทัดบน — ของร้าน (รหัส + ชื่อสินค้าจริง) เหมือนหน้าลูกค้าเป๊ะ
