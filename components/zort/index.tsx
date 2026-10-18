@@ -188,8 +188,10 @@ export function SearchRow({
 }) {
   return (
     /* 📐 โหมดเหมือน ZORT — วัดตำแหน่งจริง (CSS px) /Bundle/list 18 ต.ค. 2569: บรรทัด "จำนวน" ล่าง 144 → ช่องค้นหา 164–204 → หัวตาราง 224
-       ของเราเดิม ช่องค้นหา 160–200 แล้วต่อด้วยแท็บ/ตารางห่าง 16 (บางจอ 12) ⇒ เลื่อนลง 4 (mt-1) และเว้นล่าง 20 (mb-5) */
-    <div className={`flex flex-wrap items-center gap-3 ${เหมือนZORT ? 'mt-1 mb-5' : 'mb-4'}`}>
+       ของเราเดิม ช่องค้นหา 160–200 แล้วต่อด้วยแท็บ/ตารางห่าง 16 (บางจอ 12) ⇒ เลื่อนลง 4 และเว้นล่าง 20 (mb-5)
+       ⚠️ เลื่อนลงต้องใช้ pt-1 ไม่ใช่ mt-1 — mt-1 ยุบรวมกับ mb-4 ของ PageHead (margin collapse) ⇒ ไม่ขยับเลย
+          (รอบแรกใช้ mt-1 · วัดบน preview ได้ 160 เท่าเดิม ทั้งที่ class ขึ้นครบ) */
+    <div className={`flex flex-wrap items-center gap-3 ${เหมือนZORT ? 'pt-1 mb-5' : 'mb-4'}`}>
       <div className="relative">
         <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[12.5px]">🔍</span>
         <input
@@ -317,7 +319,9 @@ export function Pill({ tone = 'gray', children }: { tone?: PillTone; children: R
 export function toneOfStatus(s: string): PillTone {
   const t = String(s ?? '').toLowerCase()
   if (/ยกเลิก|cancel|void|คืน/.test(t)) return 'red'
-  if (/สำเร็จ|complete|done|paid|ชำระครบ|approve/.test(t)) return 'green'
+  /* 18 ต.ค. 2569: เติม success — ค่าดิบของ ZORT คือ `Success` (= สำเร็จ / อนุมัติแล้ว) แต่ไม่เข้าคำไหนเลย
+     ⇒ ป้ายขึ้นเทาในจอใบเสนอราคา/ขนส่ง/รายการขาย ทั้งที่ ZORT เป็นเขียว (z-badge--success · เทียบภาพ preview 6ad4b257f0) */
+  if (/สำเร็จ|complete|done|paid|ชำระครบ|approve|success/.test(t)) return 'green'
   if (/รอ|pending|wait|unpaid|ค้าง/.test(t)) return 'orange'
   return 'gray'
 }
