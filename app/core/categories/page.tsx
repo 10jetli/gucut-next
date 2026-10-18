@@ -29,6 +29,7 @@ import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
   TH_KANIT, THR_KANIT, ROW_LINK, PageHead, TableWrap, TD, TDR, EmptyState, RowMenu,
 } from '@/components/zort'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   name: string
@@ -239,11 +240,13 @@ export default function CoreCategoriesPage() {
                   ZORT ตรงนี้เป็น "วันที่อัพเดทล่าสุด + ปุ่มอัพเดท" — เป็นข้อยกเว้นของกฎ
                   "เหมือน 100%" ที่เจ้าของร้านสั่งเอง (กรณีเดียวกับจอการเงินที่เขาให้เก็บของเราไว้)
                   ⚠️ ห้ามเปลี่ยนกลับให้เหมือน ZORT โดยไม่ถามเขาก่อน */}
-              <span className="block text-[11.5px] text-gray-500 mt-0.5">
+              {/* 🎯 โหมดเหมือน ZORT: ZORT การ์ดนี้บรรทัดเดียว ⇒ คำอธิบายย้ายเป็น ⓘ (ปุ่มสลับยังอยู่ตามที่เจ้าของร้านเลือก) */}
+              {เหมือนZORT && <span className="text-gray-400 cursor-help" title="คิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ — ไม่ใช่ภาพถ่ายสต็อกรายวัน จึงไม่มี วันที่อัพเดทล่าสุด แบบ ZORT · ปุ่มสลับวิธีคิดมูลค่าเป็นของเราเอง (เจ้าของร้านเลือกให้เก็บไว้ เพราะต้นทุนกับราคาขายต่างกันหลักสิบล้าน)"> ⓘ</span>}
+              {!เหมือนZORT && <span className="block text-[11.5px] text-gray-500 mt-0.5">
                 คิดสดจากทะเบียนสินค้าในคลังเงาทุกครั้งที่เปิดจอ — ไม่ใช่ภาพถ่ายสต็อกรายวัน
                 จึงไม่มี &quot;วันที่อัพเดทล่าสุด&quot; แบบ ZORT · ปุ่มสลับวิธีคิดมูลค่าเป็นของเราเอง
                 (เจ้าของร้านเลือกให้เก็บไว้ เพราะต้นทุนกับราคาขายต่างกันหลักสิบล้าน)
-              </span>
+              </span>}
             </p>
             <div className="flex items-center gap-1.5 shrink-0">
               <button
@@ -275,7 +278,16 @@ export default function CoreCategoriesPage() {
 
           {/* ⚠️ ข้อความนี้ห้ามถอด — ตัวเลขหน้าตาเหมือน ZORT แต่คิดคนละวิธี
               ไม่บอก = คนเอาไปเทียบแล้วเชื่อว่าตรงกัน ทั้งที่ต่างกันหลักแสน */}
-          {basis === 'zort' && d.matchesZort && (
+          {/* 🎯 โหมดเหมือน ZORT: กล่องเขียว 3 บรรทัด ⇒ บรรทัดเดียว ข้อความยืนยันยังอยู่บนจอ · คำเตือนสองข้อใน title (ไม่ถอด) */}
+          {เหมือนZORT && basis === 'zort' && d.matchesZort && (
+            <p className="text-[12px] text-emerald-800 mb-2 cursor-help" title={'เป็นค่าที่คัดมา ไม่ใช่คิดเอง — ซื้อของเข้าใหม่แล้วเลขนี้จะเก่าจนกว่าจะคัดใหม่ · หมวด "(ยังไม่ได้จัดหมวดใน ZORT)" ไม่มีค่าคัดมา เพราะ ZORT ไม่มีแถวนั้น\n\nราคาซื้อในทะเบียนของเราต่ำกว่าต้นทุนจริง 2-3 เท่า ⇒ กดดู "ตามต้นทุน" ได้ แต่อย่าเอาไปใช้กับบัญชี'}>
+              ✅ ตัวเลขชุดนี้ตรงกับ ZORT
+              {typeof d.zortTotalValue === 'number' && <> · รวมทุกหมวด {fmtMoney(d.zortTotalValue)} บาท</>}
+              {d.zortCollectedAt && <> · คัดเมื่อ {thaiDate(d.zortCollectedAt)}</>}
+              <span className="text-amber-700"> · ⚠️ หมายเหตุ 2 ข้อ (ชี้เพื่ออ่าน)</span>
+            </p>
+          )}
+          {!เหมือนZORT && basis === 'zort' && d.matchesZort && (
             <div className="text-[12.5px] text-emerald-900 bg-emerald-50 border border-emerald-200 rounded-md px-3.5 py-2.5 mb-3 leading-relaxed">
               ✅ <b>ตัวเลขชุดนี้ตรงกับ ZORT</b> — เป็นต้นทุนเฉลี่ยถ่วงน้ำหนักที่<b>คัดมาจากจอ ZORT</b>
               {typeof d.zortTotalValue === 'number' && <> · รวมทุกหมวด <b>{fmtMoney(d.zortTotalValue)}</b> บาท</>}
@@ -348,8 +360,10 @@ export default function CoreCategoriesPage() {
                     {/* เลขจำนวน SKU ของ ZORT เป็นสีเขียวเสมอ ไม่ขึ้นกับเงื่อนไขอะไร */}
                     {/* ⚠️ ZORT ส่งจำนวน SKU มาด้วย — ถ้าไม่ตรงกับของเราต้องเห็นทันที
                         ไม่ตรง = กระจกสินค้าขาดหรือเกินในหมวดนั้น ซึ่งเป็นเรื่องใหญ่กว่ามูลค่า */}
-                    {/* 📏 ZORT ช่องจำนวน SKU = Lato สี #3e3e3e (วัด DOM 17 ต.ค. 2569) — สีเขียว/แดงมีแค่ช่องมูลค่า */}
-                    <td className={`${TDR} font-['Lato','Boon',sans-serif]`}>
+                    {/* 📏 ZORT ช่องจำนวน SKU = Lato สีเขียว rgb(19,175,130) (ดูภาพจอคู่กัน 18 ต.ค. 2569)
+                        🔴 17 ต.ค. เราถอดสีเขียวออกเพราะวัด getComputedStyle ได้ #3e3e3e — แต่นั่นคือสีของ <td>
+                           ZORT ทาสีที่ตัวลูกข้างใน ⇒ วัดผิดชั้น ⇒ คืนสีเขียว */}
+                    <td className={`${TDR} font-['Lato','Boon',sans-serif]`} style={{ color: ZORT_GREEN }}>
                       {fmtNum(r.skus)}
                       {typeof r.zortSkus === 'number' && r.zortSkus !== r.skus && (
                         <span className="block text-[10px] text-amber-700" title="จำนวนใน ZORT ไม่ตรงกับคลังเงา">
