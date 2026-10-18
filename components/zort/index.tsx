@@ -13,6 +13,7 @@ import { useState, type ReactNode } from 'react'
 import { PAY_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { thaiDate } from '@/lib/format'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 /* ── จานสี ZORT — **วัดจากพิกเซลของภาพจอจริง ไม่ใช่เดาด้วยตา** ────────────
    ที่มา: `zort-ui/` ภาพความละเอียด 3108×1482 (เจ้าของร้านส่งมา 4 ก.ย. 2569)
@@ -278,7 +279,20 @@ const PILL: Record<PillTone, string> = {
   gray: 'bg-gray-100 text-gray-600',
   blue: 'bg-[#edf6fe] text-[#498dd8]',
 }
+/* 📐 โหมดเหมือน ZORT — วัด DOM 18 ต.ค. 2569 (/Bundle/list · /Quotation/list): span.z-badge--sm
+   Boon 14px 400 · ขอบมน 24px · ช่องใน 4px 12px · บรรทัด 14px
+   เขียว(success) ตัว rgb(31,144,112) พื้น rgb(206,255,241) · แดง(error) ตัว rgb(211,53,53) พื้น rgb(255,235,235)
+   ส้ม/ฟ้า/เทา ยังไม่ได้วัดจาก DOM ⇒ คงสีเดิมที่วัดจากภาพ */
+const PILL_ZORT: Partial<Record<PillTone, string>> = {
+  green: 'bg-[rgb(206,255,241)] text-[rgb(31,144,112)]',
+  red: 'bg-[rgb(255,235,235)] text-[rgb(211,53,53)]',
+}
 export function Pill({ tone = 'gray', children }: { tone?: PillTone; children: ReactNode }) {
+  if (เหมือนZORT) return (
+    <span className={`inline-block text-[14px] leading-[14px] font-normal rounded-[24px] px-3 py-1 whitespace-nowrap ${PILL_ZORT[tone] || PILL[tone]}`}>
+      {children}
+    </span>
+  )
   return (
     <span className={`inline-block text-[11.5px] font-semibold rounded-full px-2.5 py-0.5 whitespace-nowrap ${PILL[tone]}`}>
       {children}
@@ -329,8 +343,17 @@ export function TableWrap({ children }: { children: ReactNode }) {
    ⚠️ เป็นของร่วมหลายจอ ⇒ ถ้าวันหนึ่งจะขยับอีก **ต้องวัดต้นแบบใหม่ ≥3 จอก่อน** และวัดผลหลังเปลี่ยนทุกครั้ง */
 /* 📐 ขนาด/สีตาม ZORT (วัด /Sell/list 17 ต.ค. 2569 · ท่านประธานสั่ง font สี ขนาด เหมือน 100%):
    หัวคอลัมน์ Lato 12px rgb(134,142,150) · เซลล์ Boon 14px rgb(62,62,62) */
-export const TH = 'text-left font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
-export const THR = 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
+/* ⚠️ แก้ 18 ต.ค. 2569: "Lato 12 เทา" ข้างบนวัดได้จาก **ช่อง # เท่านั้น** — วัด DOM ใหม่ทุกช่อง
+   (/Sell/list · /Quotation/list · /Bundle/list): หัวช่องอื่นเป็น **Kanit 14** (#3e3e3e · ช่องที่เรียงได้เป็นลิงก์ #337ab7)
+   ⇒ ในโหมดเหมือน ZORT หัวช่องเป็น Kanit 14 · ช่อง # ใช้ TH_NO (Lato 12 เทา ตามที่วัดถูกแล้ว) */
+const TH_LATO = 'text-left font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
+export const TH_NO = TH_LATO
+export const TH = เหมือนZORT
+  ? "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
+  : TH_LATO
+export const THR = เหมือนZORT
+  ? "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
+  : 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
 /** หัวคอลัมน์แบบ Kanit 14 #3e3e3e — ZORT ใช้ที่ /Logistics/list กับ /Product/Categorylist (วัด 17 ต.ค. 2569) ไม่ใช่ Lato 12 เหมือนจออื่น */
 export const TH_KANIT = "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
 export const THR_KANIT = "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"

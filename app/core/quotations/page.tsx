@@ -16,7 +16,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { ROW_LINK, TD_NO,
+import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   Pill, toneOfStatus, EmptyState, thaiDate, RowMenu,
 } from '@/components/zort'
@@ -319,7 +319,7 @@ export default function QuotationsPage() {
                   ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">วันที่</span></th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">รายการ</span></th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">ลูกค้า</span></th>

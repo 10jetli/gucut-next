@@ -17,7 +17,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { thaiDateTime } from '@/components/zort/PushStatusBoard'
 import ExportButton from '@/components/zort/ExportButton'
-import { ROW_LINK, TD_NO,
+import { TH_NO, ROW_LINK, TD_NO,
   PageHead, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
 
@@ -200,7 +200,7 @@ export default function CoreBranchesPage() {
             <table className="w-full min-w-[820px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH}>รหัส</th>
                   <th className={TH}>ชื่อคลัง/สาขา</th>
                   <th className={TH}>ประเภท</th>

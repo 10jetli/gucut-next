@@ -21,7 +21,7 @@ import { reconcileOrder } from '@/lib/order-money'
 import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu } from '@/components/zort'
+import { TH_NO, Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu } from '@/components/zort'
 
 interface Order {
   id: string; source: string; number: string; channel: string
@@ -436,7 +436,7 @@ function DetailInner() {
               <table className="w-full min-w-[720px]">
                 <thead className="border-b border-gray-200">
                   <tr>
-                    <th className={TH} style={{ width: 44 }}>#</th>
+                    <th className={TH_NO} style={{ width: 44 }}>#</th>
                     <th className={TH}>รหัส</th>
                     <th className={TH}>ชื่อสินค้า</th>
                     <th className={THR}>จำนวน</th>

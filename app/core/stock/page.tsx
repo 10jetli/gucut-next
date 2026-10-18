@@ -24,7 +24,7 @@ import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
-import { ROW_LINK, TD_NO,
+import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
@@ -862,7 +862,7 @@ function CoreStockInner() {
                        ⇒ ⇒ วันที่ท่อถอดคีย์ไหนออก ปุ่มนั้นจะกลายเป็นข้อความอธิบายเองโดยไม่มีใครต้องกลับมาแก้ */}
                 <tr>
                   {/* 📐 ลำดับ `#` ก่อนช่องติ๊ก — ตาม ZORT (`th.index` แล้ว `th.chk` · อ่าน thead จริง 15 ต.ค. 2569) */}
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     {/* ติ๊กทั้งหน้า — **ทั้งหน้าเท่านั้น ไม่ใช่ทั้งคลัง** (ZORT ก็เลือกได้แค่หน้าที่เห็น) */}
                     <RowCheck label="เลือกทั้งหน้า"

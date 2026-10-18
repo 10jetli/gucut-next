@@ -40,7 +40,7 @@ import {
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from '@/components/zort'
+import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from '@/components/zort'
 import SkuCodes from '@/components/zort/SkuCodes'
 
 interface BundleRow {
@@ -421,7 +421,7 @@ export default function BundleDetailPage() {
             <table className="w-full min-w-[620px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH}>รหัส</th>
                   <th className={TH}>ชื่อสินค้า</th>
                   <th className={THR}>จำนวน</th>

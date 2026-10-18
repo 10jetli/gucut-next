@@ -16,7 +16,7 @@ import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import { ลิงก์ใบขาย } from '@/lib/sale-link'
-import { PageHead, TableWrap, TH, TD, EmptyState, thaiDate } from '@/components/zort'
+import { TH_NO, PageHead, TableWrap, TH, TD, EmptyState, thaiDate } from '@/components/zort'
 
 interface FileRow {
   fileid: string; docno?: string; docType?: string; filename?: string | null; kind?: string | null
@@ -89,7 +89,7 @@ export default function FilesPage() {
         <table className="w-full min-w-[820px]">
           <thead className="bg-white border-b border-gray-200">
             <tr>
-              <th className={TH} style={{ width: 44 }}>#</th>
+              <th className={TH_NO} style={{ width: 44 }}>#</th>
               <th className={TH}>ไฟล์</th>
               <th className={TH}>ประเภท</th>
               <th className={TH}>รายการ</th>

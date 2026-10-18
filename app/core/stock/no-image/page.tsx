@@ -13,7 +13,7 @@
 // ⚠️ อ่านอย่างเดียว — ไม่เขียนอะไรกลับไปที่ ZORT
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
-import { PageHead, BtnGhost, TableWrap, TH, TD, EmptyState } from '@/components/zort'
+import { TH_NO, PageHead, BtnGhost, TableWrap, TH, TD, EmptyState } from '@/components/zort'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
 import { fmtNum, thaiDate } from '@/lib/format'
@@ -223,7 +223,7 @@ export default function NoImagePage() {
           <table className="w-full">
             <thead className="bg-white border-b border-gray-200">
               <tr>
-                <th className={TH} style={{ width: 44 }}>#</th>
+                <th className={TH_NO} style={{ width: 44 }}>#</th>
                 <th className={TH}>รหัส</th>
                 <th className={TH}>ชื่อสินค้า</th>
                 {/* ⚠️ ต้องโชว์เหตุผลของลำดับ ไม่งั้นคนอ่านไม่รู้ว่าทำไมรหัสนี้อยู่บน

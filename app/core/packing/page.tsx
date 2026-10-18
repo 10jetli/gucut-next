@@ -22,7 +22,7 @@ import { findOrderId } from '@/lib/open-order'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
-import {
+import {TH_NO, 
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, ChannelTag, thaiDate, Pill, RowCheck, BulkBar,} from '@/components/zort'
 
@@ -277,7 +277,7 @@ export default function PackingPage() {
                 <tr>
                   {/* 📐 `#` ก่อนช่องติ๊ก — **กติกาของเราเอง** ไม่ใช่ของ ZORT (จอแพ็คของ ZORT ไม่มีตาราง)
                       ให้ตรงกับจอขาย/คลัง/ซื้อของเรา · ที่มาเขียนไว้ใน scripts/lib/จับคู่จอ-zort.json หมวด ลำดับเลขก่อนติ๊ก */}
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={เลือกได้.length > 0 && picked.length === เลือกได้.length}

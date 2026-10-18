@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation'
 import { fmtMoney, ช่วงปฏิทินไทย, ต้นเดือนย้อนหลังแบบZORT, type ชนิดช่วงปฏิทิน } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
-import {
+import {TH_NO, 
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
@@ -1281,7 +1281,7 @@ export default function CoreSalesPage() {
                       ⚠️ หลักฐานเป็น **การอ่านจอ ZORT เมื่อ 5 ต.ค.** ยังไม่ได้เปิดดูซ้ำรอบนี้
                          (จอ ZORT เข้าไม่ได้ — ยังไม่มีโปรไฟล์ที่ล็อกอินบัญชีหลัก)
                          ⇒ เป็นของที่ต้องยืนยันด้วยตาอีกครั้งตอนเปิด ZORT ได้ ไม่ใช่ของที่ปิดจบแล้ว */}
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
