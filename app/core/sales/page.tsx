@@ -18,7 +18,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {TH_NO, 
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
+  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
@@ -1295,8 +1295,8 @@ export default function CoreSalesPage() {
                   <th className={TH}>บริการขนส่ง</th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันส่งสินค้า</span></th>
                   <th className={THR}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">มูลค่า</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
-                  <th className={TH}>ชำระเงิน</th>
+                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
+                  <th className={THC}>ชำระเงิน</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
@@ -1376,13 +1376,13 @@ export default function CoreSalesPage() {
                       )}
                     </td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
-                    <td className={TD}>
+                    <td className={TDC}>
                       <Pill tone={toneOfStatus(r.status)}>{statusTh(r.status)}</Pill>
                       {/* โหมดเหมือน ZORT: คลังกับไอคอน 🚚 อยู่บรรทัดเดียวกันใต้ป้าย ⇒ ขึ้นบรรทัดใหม่ตรงนี้ครั้งเดียว */}
                       {เหมือนZORT && <br />}
                       {r.warehouse_code && (
                         ชื่อคลัง && !ชื่อคลัง.อ่านไม่ได้ && ชื่อคลัง.names[r.warehouse_code]
-                          ? <span className={`${เหมือนZORT ? 'inline-block' : 'block'} text-[11.5px] text-gray-500 mt-1`}>{ชื่อคลัง.names[r.warehouse_code]}</span>
+                          ? <span className={`${เหมือนZORT ? 'inline-block' : 'block'} ${คลังใต้ป้าย} mt-1`}>{ชื่อคลัง.names[r.warehouse_code]}</span>
                           : <span className={`${เหมือนZORT ? 'inline-block' : 'block'} text-[11.5px] text-gray-400 mt-1`}
                               title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
                               รหัสคลัง {r.warehouse_code}
@@ -1431,7 +1431,7 @@ export default function CoreSalesPage() {
                         </span>
                       )}
                     </td>
-                    <td className={TD}>
+                    <td className={TDC}>
                       {r.pay_status
                         ? <PaymentPill value={r.pay_status} />
                         : <span className="text-gray-300">—</span>}

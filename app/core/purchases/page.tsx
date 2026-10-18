@@ -24,7 +24,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
@@ -453,8 +453,8 @@ export default function CorePurchasesPage() {
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
                   <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ผู้ติดต่อ</span></th>
                   <th className={THR}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">มูลค่า</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ชำระเงิน</span></th>
+                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
+                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ชำระเงิน</span></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
@@ -488,11 +488,11 @@ export default function CorePurchasesPage() {
                     </td>
                     <td className={TD}><span className="text-gray-800">{r.vendor || '—'}</span></td>
                     <td className={TDR}>{fmtMoney(r.amount)}</td>
-                    <td className={TD}>
+                    <td className={TDC}>
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
                       {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
                       {r.warehouse && (ป้ายคลัง(r.warehouse)
-                        ? <span className="block text-[11.5px] text-gray-500 mt-0.5">{ป้ายคลัง(r.warehouse)}</span>
+                        ? <span className={`block ${คลังใต้ป้าย} mt-0.5`}>{ป้ายคลัง(r.warehouse)}</span>
                         : <span className="block text-[11.5px] text-gray-400 mt-0.5"
                             title={ชื่อคลัง === null ? 'กำลังอ่านชื่อคลัง' : 'ดึงชื่อคลังไม่ได้รอบนี้ — นี่คือรหัสคลัง ไม่ใช่ชื่อ'}>
                             รหัสคลัง {r.warehouse}
@@ -505,7 +505,7 @@ export default function CorePurchasesPage() {
                           title={r.note}>📝 {r.note}</span>
                       )}
                     </td>
-                    <td className={TD}>
+                    <td className={TDC}>
                       <PaymentPill value={r.payment_status} />
                     </td>
                     <td className={`${TD} text-right`}>

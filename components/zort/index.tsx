@@ -365,6 +365,11 @@ export const TH_KANIT = "text-left font-normal font-['Kanit','Boon',sans-serif] 
 export const THR_KANIT = "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
 export const TD = 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top'
 export const TDR = 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
+/* 📐 ช่องสถานะ/ชำระเงิน — วัด /Buy/list 18 ต.ค. 2569: ZORT จัดกลาง (td.status / td.payment text-center)
+   ชื่อคลังใต้ป้าย Boon 12px rgb(65,101,237) · นอกโหมดเหมือนเดิมทุกตัว */
+export const THC = เหมือนZORT ? TH.replace('text-left', 'text-center') : TH
+export const TDC = เหมือนZORT ? `${TD} text-center` : TD
+export const คลังใต้ป้าย = เหมือนZORT ? 'text-[12px] text-[rgb(65,101,237)]' : 'text-[11.5px] text-gray-500'
 /** ช่องลำดับแถว (#) — ZORT ใช้ Lato 12 สีเทา #868e96 (วัด DOM 8 จอรายการ 17 ต.ค. 2569) */
 /*  ⚠️ เขียนเต็ม ห้ามต่อจาก TD — TD มี text-[14px] อยู่แล้ว สองคลาสขนาดชนกัน
        Tailwind ตัดสินด้วยลำดับใน CSS ไม่ใช่ลำดับในสตริง ⇒ 14 ชนะ (วัดเว็บจริงได้ 14 ทั้ง 6 จอ) */
