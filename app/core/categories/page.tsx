@@ -214,8 +214,12 @@ export default function CoreCategoriesPage() {
       {d && (
         <>
           {/* แถบเทาบอกที่มาของมูลค่า — ZORT มีแถบนี้พร้อมปุ่มอัพเดทมุมขวา */}
-          <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 flex flex-wrap items-center gap-3">
-            <p className="text-[12.5px] text-gray-700 min-w-0 flex-1">
+          {/* 📐 โหมดเหมือน ZORT — วัด DOM /Product/Categorylist 18 ต.ค. 2569: กล่องขาว p-3 ขอบมน 6 มีเงา · ตัวหนังสือ Boon 16 #3e3e3e
+              (เนื้อความ + ปุ่มสลับของเราคงเดิม ตามที่เจ้าของร้านเลือก) */}
+          <div className={เหมือนZORT
+            ? 'bg-white shadow rounded-[6px] p-3 mb-4 flex flex-wrap items-center gap-3'
+            : 'bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 flex flex-wrap items-center gap-3'}>
+            <p className={`${เหมือนZORT ? 'text-[16px] text-[#3e3e3e]' : 'text-[12.5px] text-gray-700'} min-w-0 flex-1`}>
               มูลค่าสินค้าคงเหลือ, มูลค่าสินค้าพร้อมขาย · คิดจาก
               <b>
                 {basis === 'zort' ? 'ต้นทุนเฉลี่ยถ่วงน้ำหนัก (คัดมาจากจอ ZORT)'
