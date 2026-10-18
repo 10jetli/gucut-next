@@ -13,7 +13,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus, PILL_ZORT_CLASS } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Line {
   sku?: string; name?: string; qty?: number; unit?: string
@@ -65,10 +67,13 @@ function Inner() {
   const money = d?.['เงินที่ ZORT เก็บไว้']
 
   return (
-    <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12.5px] mb-2"><Link href="/core/return-orders" className="text-[#337ab7] hover:underline">‹ รับคืนสินค้า</Link></p>
+    <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[860px]'}`}>
+      {/* 📐 โหมดเหมือน ZORT (วัดเทียบ /Buy/Details ใบรับคืน 19 ต.ค. 2569 · CN-261017TR3HPQHV): ลิงก์กลับ Kanit 14 · จอกว้างเต็ม · ข้อความหัวจอคงเดิม (กติกาข้อ 6) */}
+      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}><Link href="/core/return-orders" className="text-[#337ab7] hover:underline">‹ รับคืนสินค้า</Link></p>
       <PageHead title={`ใบคืนสินค้า ${wrongLevel ? '' : d?.number || ''}`}
-        summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก</span>}
+        summary={เหมือนZORT
+          ? <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก">ⓘ</span>
+          : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT จอรายละเอียดเอกสารไม่มี */ />
 
       {/* 🔴 กล่องนี้ต้องบอก **สามอย่างที่ต่างกัน** ไม่ใช่ประโยคเดียวคลุมทุกกรณี
@@ -111,7 +116,45 @@ function Inner() {
 
       {!loading && !error && d && !wrongLevel && (
         <>
-          <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
+          {เหมือนZORT && (
+            /* 📐 โหมดเหมือน ZORT: การ์ดสถานะ (ZORT มีสองใบ: ชำระเงิน · โอนสินค้า — เส้นรายใบของเราส่งแค่สถานะใบ ⇒ ใบเดียว ไม่เดาอีกใบ)
+               → การ์ดข้อมูล/ลูกค้า (หัว Kanit 20 · ป้าย/ค่า Boon 16) */
+            <>
+              <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+                <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>▤</span>
+                  <div className="text-right">
+                    <h2 className="text-[14px] font-medium text-[#868e96] m-0">สถานะการโอนสินค้า</h2>
+                    <div className="mt-2">
+                      {d.status
+                        ? <span title={`ค่าที่ท่อส่งมา: ${d.status}`} className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(zortWord(RETURN_ORDER_STATUS, d.status).text))}`}>{zortWord(RETURN_ORDER_STATUS, d.status).text}</span>
+                        : <span className="text-gray-300">—</span>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mb-[30px] bg-white rounded-[6px] grid md:grid-cols-2 gap-0 py-2">
+                {([
+                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['วันที่', d.date ? thaiDate(d.date) : null], ['อ้างอิง', d.reference || null]]],
+                  ['ลูกค้า', '👤', [['ชื่อลูกค้า', d.customer || null]]],
+                ] as const).map(([หัว, รูป, แถว]) => (
+                  <section key={หัว} className="px-5 py-3">
+                    <div className="flex items-center gap-3 mb-4">
+                      <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>{รูป}</span>
+                      <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
+                    </div>
+                    {แถว.map(([k, v]) => (
+                      <div key={k} className="flex gap-4 py-1.5">
+                        <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{k}</span>
+                        <span className="text-[16px] text-[#3e3e3e]">{v ?? <span className="text-gray-300">—</span>}</span>
+                      </div>
+                    ))}
+                  </section>
+                ))}
+              </div>
+            </>
+          )}
+          {!เหมือนZORT && <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 text-[12.5px]">
             <div><p className="text-gray-400 text-[11.5px]">สถานะ</p>
               {d.status ? <Pill tone={toneOfStatus(d.status)}>{zortWord(RETURN_ORDER_STATUS, d.status).text}</Pill> : <span className="text-gray-300">—</span>}</div>
             <div><p className="text-gray-400 text-[11.5px]">วันที่คืน</p>
@@ -119,9 +162,11 @@ function Inner() {
             <div><p className="text-gray-400 text-[11.5px]">ลูกค้า</p>{d.customer || <span className="text-gray-300">—</span>}</div>
             <div><p className="text-gray-400 text-[11.5px]">อ้างอิง (ใบขายเดิม)</p>
               {d.reference ? <span className="font-mono text-[12.5px]">{d.reference}</span> : <span className="text-gray-300">—</span>}</div>
-          </div>
+          </div>}
 
           {/* ⚠️ ยอดใบ: ท่อยังไม่ตั้งชื่อช่องให้ ⇒ แสดงทุกช่องที่มีค่าและเขียนบอกตรง ๆ ว่าจอไม่เดา */}
+          {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีกล่องช่องเงินดิบ ⇒ พับ บรรทัดสรุปยังบอกว่าจอไม่เดาว่าช่องไหนคือยอดคืน */}
+          <ZortLookFold tone="gray" สรุป={<>ช่องเงินที่ ZORT เก็บไว้{money ? ` (${Object.keys(money).length} ช่อง)` : ''} — จอไม่เดาว่าช่องไหนคือยอดคืนของใบ</>}>
           <div className="bg-white border border-gray-200 rounded-md p-4 mb-4">
             <p className="text-[12.5px] font-semibold text-gray-800 mb-1">ช่องเงินที่ ZORT เก็บไว้ (ทุกช่องที่มีค่า)</p>
             <p className="text-[11.5px] text-gray-400 mb-2">
@@ -150,6 +195,7 @@ function Inner() {
               <p className="text-[12.5px] text-gray-400">ไม่มีช่องเงินที่มีค่าติดมากับใบนี้</p>
             )}
           </div>
+          </ZortLookFold>
 
           {d.lines === null || d.lines === undefined ? (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
