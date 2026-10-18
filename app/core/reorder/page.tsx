@@ -21,7 +21,7 @@ import Link from 'next/link'
 import { fmtNum, TH_MONTHS } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, EmptyState } from '@/components/zort'
+import { TH_NO, PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, EmptyState } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import LinkStock from '@/components/zort/LinkStock'
 
@@ -327,7 +327,7 @@ export default function ReorderPage() {
                     คอลัมน์ที่ ZORT มีแต่เราไม่มีข้อมูล **ยังต้องมีอยู่** แล้วเขียนว่าทำไมถึงว่าง
                     (ห้ามลบคอลัมน์ทิ้ง — คนไล่เทียบกับภาพจะนึกว่าตัวเองอ่านผิด) */}
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH}>ชื่อสินค้า</th>
                   <th className={TH}>กลุ่ม Lead Time</th>
                   <th className={TH}>คู่ค้า</th>

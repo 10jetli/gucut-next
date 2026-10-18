@@ -22,7 +22,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { ROW_LINK, TD_NO,
+import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
   LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
@@ -442,7 +442,7 @@ export default function CorePurchasesPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   {/* 📐 `#` ก่อนช่องติ๊ก — ตาม ZORT /Buy/list (หัวตาราง `#`,`` วัด 15 ต.ค. 2569) */}
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}

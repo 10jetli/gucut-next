@@ -15,7 +15,7 @@ import type { TrackerOrder, TrackerStatus } from '@/lib/types'
 import { fmtMoney } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import {
+import {TH_NO, 
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR, BtnGhost, LinkText,
   type PillTone, EmptyState, thaiDate,
 } from '@/components/zort'
@@ -163,7 +163,7 @@ export default function CorePurchasesPage() {
             <table className="w-full min-w-[820px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH}>สินค้า</th>
                   <th className={TH}>ผู้ขาย / โรงงาน</th>
                   <th className={THR}>จำนวน</th>

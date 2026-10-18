@@ -19,7 +19,7 @@ import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import {
+import {TH_NO, 
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
@@ -416,7 +416,7 @@ export default function MarketplaceProductsPage() {
             <table className="w-full min-w-[760px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH}>รหัส</th>
                   <th className={TH}>ชื่อสินค้า</th>
                   {/* ผังภาพ 83: "ลิงก์ Marketplace" — เราไม่มี URL รายตัว (API ไม่ส่ง)

@@ -39,7 +39,7 @@ import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import { toThai, thaiMoment } from '@/lib/recipe-fresh'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
-import { TD_NO, ROW_LINK,
+import { TH_NO, TD_NO, ROW_LINK,
   PageHead, SearchRow, LinkText, TableWrap, TH, THR, TD, TDR,
   EmptyState, Pill, relDay, thaiDate, EndpointMissing, RowMenu,
 } from '@/components/zort'
@@ -363,7 +363,7 @@ export default function ReturnOrdersPage() {
             <table className="w-full min-w-[860px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
                   <th className={TH}>วันที่</th>
                   <th className={TH}>รายการ</th>
                   <th className={TH}>อ้างอิง</th>

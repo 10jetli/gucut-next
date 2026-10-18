@@ -18,7 +18,7 @@
 //    ZORT ว่าง = ร้านยังไม่ได้ตั้งกลุ่ม · ของเราว่าง = **ยังไม่ได้ต่อท่อ**
 //    ⇒ ห้ามเขียน "0 รายการ" ลอย ๆ เพราะเราไม่ได้นับอะไรเลย ศูนย์ของเราแปลว่า "ยังไม่รู้"
 import Link from 'next/link'
-import { PageHead, TableWrap, TH, THR } from '@/components/zort'
+import { TH_NO, PageHead, TableWrap, TH, THR } from '@/components/zort'
 import { SOON } from '@/lib/zort-menu'
 
 /* 🔴 **จอนี้เขียนว่า "ยังไม่ได้ต่อท่อ" ทั้งที่ทะเบียนบอกว่า "ทำไม่ได้จริง"** (เจอตอนกวาดจริง 14 ก.ย. 2569)
@@ -104,7 +104,7 @@ export default function LeadTimeGroupPage() {
             <tr>
               {/* ⚠️ ZORT มีช่องติ๊กหน้าแถว — ของเราไม่ทำ เพราะยังไม่มีคำสั่งหมู่ที่ทำงานจริง
                   ช่องติ๊กที่ติ๊กแล้วทำอะไรไม่ได้คือของหลอก (กติกาเดิมของโปรเจกต์) */}
-              <th className={TH} style={{ width: 44 }}>#</th>
+              <th className={TH_NO} style={{ width: 44 }}>#</th>
               <th className={TH}>ชื่อกลุ่ม</th>
               <th className={TH}>คู่ค้า</th>
               <th className={THR}>ต้องการขายให้หมดภายใน (วัน)</th>

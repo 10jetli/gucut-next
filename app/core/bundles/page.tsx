@@ -24,7 +24,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
-import { ROW_LINK, TD_NO,
+import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, TableWrap, Tabs, TH, THR, TD, TDR,
   LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
@@ -125,12 +125,22 @@ const PAGE = 50
  *     สาเหตุยังไม่รู้ ⇒ ระหว่างนี้ **ห้ามปล่อยให้ 0 อ่านว่า "ยังมีของพอดี ๆ ไม่ติดลบ"**
  *     เพราะคนจะรับออเดอร์ต่อทั้งที่ของขาดอยู่ — ตระกูลเดียวกับ "ไม่รู้ถูกแสดงเป็น 0"
  *     ⚠️ ทำเป็นคำกำกับ **ไม่ใช่เดาค่าเป็น -10** — เราไม่รู้ว่าติดลบเท่าไหร่หรือติดลบจริงไหม */
+/* 📐 โหมดเหมือน ZORT — วัด /Bundle/list 18 ต.ค. 2569 (อ่าน DOM อย่างเดียว):
+   หัวคอลัมน์ Kanit 14 มาจาก TH ร่วมแล้ว · รหัส/สินค้าเป็นชุด เป็นลิงก์น้ำเงิน #337ab7
+   วันหมดอายุ/สถานะ จัดกลาง · สถานะเป็นป้ายกลม 14px rgb(31,144,112) บน rgb(206,255,241)
+   ตัวเลขคงเหลือ/พร้อมขาย Lato 600 มีสี: ≤0 แดง rgb(242,87,87) · 1–4 เหลือง rgb(239,177,93) · ≥5 เขียว rgb(19,175,130)
+   (เกณฑ์ 5 มาจากของที่เห็นบนจอเขา: 4 = เหลือง · 5 = เขียว · ไม่ใช่เลขที่เราตั้งเอง) */
+const หัวC = เหมือนZORT ? TH.replace('text-left', 'text-center') : TH
+const หัวลิงก์ = เหมือนZORT ? 'text-[#337ab7]' : ''
+const สีจำนวนZORT = (n: number) => (n <= 0 ? '#f25757' : n < 5 ? '#efb15d' : '#13af82')
+
 function Qty({ n, unit, maybeNegative }: { n?: number; unit?: string; maybeNegative?: boolean }) {
   if (typeof n !== 'number') return <span className="text-gray-300">—</span>
   const u = (unit || 'SET').trim()
   const suspect = maybeNegative && n === 0
   return (
-    <span className={n < 0 ? 'text-red-500 font-semibold' : 'text-gray-800'}>
+    <span className={เหมือนZORT ? "font-['Lato',sans-serif] font-semibold" : n < 0 ? 'text-red-500 font-semibold' : 'text-gray-800'}
+      style={เหมือนZORT ? { color: สีจำนวนZORT(n) } : undefined}>
       {fmtNum(n)}{u ? ` ${u}` : ''}
       {suspect && (
         <span className="text-amber-600 font-semibold cursor-help ml-0.5"
@@ -402,9 +412,9 @@ export default function CoreBundlesPage() {
                   เพราะท่อเมิน `sort` ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก · ติดเฉพาะช่องที่วัดมาแล้ว */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH} style={{ width: 44 }}>#</th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">รหัส</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">สินค้าเป็นชุด</span></th>
+                  <th className={TH_NO} style={{ width: 44 }}>#</th>
+                  <th className={TH}><span className={หัวลิงก์} title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">รหัส</span></th>
+                  <th className={TH}><span className={หัวลิงก์} title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">สินค้าเป็นชุด</span></th>
                   <th className={THR}>ราคาสินค้ารวม</th>
                   <th className={THR}>ราคาขาย</th>
                   {/* 🕰 สองคอลัมน์นี้คือของที่แถบอายุข้างบนกำกับอยู่ — ใส่นาฬิกาให้ชี้ตรงกัน
@@ -415,8 +425,8 @@ export default function CoreBundlesPage() {
                   <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''}${stock.state === 'ok' ? ` — ล่าสุด ${thaiMoment(stock.syncedThai)} (${agoText(stock.ageMinutes)})` : ' — ดูอายุที่แถบเหนือตาราง'} · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
                     พร้อมขาย <span className="opacity-50 font-normal">🕰</span>
                   </th>
-                  <th className={TH}>วันหมดอายุรายการ</th>
-                  <th className={TH}>สถานะ</th>
+                  <th className={หัวC}>วันหมดอายุรายการ</th>
+                  <th className={หัวC}>สถานะ</th>
                   <th className={TH}>Marketplace</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
@@ -482,12 +492,19 @@ export default function CoreBundlesPage() {
                     <td className={TDR}>{typeof r.sellprice === 'number' ? fmtMoney(r.sellprice) : <span className="text-gray-300">—</span>}</td>
                     <td className={TDR}><Qty n={r.onhand} unit={r.unit} /></td>
                     <td className={TDR}><Qty n={r.available} unit={r.unit} maybeNegative /></td>
-                    <td className={`${TD} text-gray-400`}>-</td>
-                    <td className={TD}>
-                      {/* ZORT เขียนเป็นตัวหนังสือเขียว ไม่ใช่ป้ายกลม */}
-                      <span className={r.active === false ? 'text-gray-500' : 'text-emerald-600'}>
-                        {r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
-                      </span>
+                    <td className={`${TD} text-gray-400 ${เหมือนZORT ? 'text-center' : ''}`}>-</td>
+                    <td className={`${TD} ${เหมือนZORT ? 'text-center' : ''}`}>
+                      {/* ⚠️ คอมเมนต์เดิมเขียนว่า "ZORT เป็นตัวหนังสือเขียว ไม่ใช่ป้ายกลม" — ผิด
+                          วัด DOM 18 ต.ค. 2569: span.z-badge--success ขอบมน 24px พื้น rgb(206,255,241) ⇒ ในโหมดเหมือน ZORT ทำเป็นป้าย
+                          (ป้ายปิดใช้งานเป็นเทา = ของเราเอง — ZORT มี 0 แถวที่ปิดใช้งาน ยังไม่มีให้วัด) */}
+                      {เหมือนZORT
+                        ? <span className="inline-block rounded-[24px] px-3 py-1 text-[14px] leading-[14px]"
+                            style={r.active === false ? { color: '#6b7280', background: '#f3f4f6' } : { color: 'rgb(31,144,112)', background: 'rgb(206,255,241)' }}>
+                            {r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
+                          </span>
+                        : <span className={r.active === false ? 'text-gray-500' : 'text-emerald-600'}>
+                            {r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
+                          </span>}
                     </td>
                     {/* ⚠️ ZORT โชว์ไอคอนร้านมาร์เก็ตเพลสตรงนี้ แต่ **API ไม่ส่งข้อมูลนี้มาเลย**
                         (Bundle/GetBundles ไม่มีช่อง marketplace) ⇒ มีหัวคอลัมน์ให้ผังตรง

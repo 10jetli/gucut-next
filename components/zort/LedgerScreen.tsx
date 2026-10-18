@@ -32,7 +32,7 @@ import { fmtMoney } from '@/lib/format'
 /* 🔑 ตัวตัดสิน "ติดฝั่งไหน" อยู่ที่ `lib/upstream-state.ts` ที่เดียว — มีเทสของตัวเอง
    (เขียนซ้ำในจอ = ตรรกะสองชุดที่จะเพี้ยนกัน และชุดในจอจะไม่มีใครเทส) */
 import { ควรลองใหม่, ฝั่งที่ติดจาก } from '@/lib/upstream-state'
-import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, thaiDate } from './index'
+import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, thaiDate } from './index'
 import ZortLookFold from './ZortLookFold'
 
 export interface LedgerCol { label: string; right?: boolean }
@@ -492,7 +492,7 @@ export default function LedgerScreen({
         <table className="w-full min-w-[720px]">
           <thead className="bg-white border-b border-gray-200">
             <tr>
-              <th className={TH} style={{ width: 44 }}>#</th>
+              <th className={TH_NO} style={{ width: 44 }}>#</th>
               {cols.map((c) => <th key={c.label} className={c.right ? THR : TH}>{c.label}</th>)}
             </tr>
           </thead>

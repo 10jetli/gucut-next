@@ -42,11 +42,21 @@ test('แถบเมนูกว้าง 200 และเนื้อหาเ
 test('ช่องว่างซ้าย/ขวาของเซลล์ตาราง = 8px (px-2) ตาม ZORT', () => {
   const s = อ่าน('components/zort/index.tsx')
   for (const ชื่อ of ['TH', 'THR', 'TD', 'TDR']) {
-    const m = s.match(new RegExp(`export const ${ชื่อ} = '([^']+)'`))
-    assert.ok(m, `หา ${ชื่อ} ใน components/zort/index.tsx ไม่เจอ`)
-    assert.ok(m[1].includes(ที่วัดมา.ช่องว่างเซลล์),
-      `${ชื่อ} ต้องใช้ ${ที่วัดมา.ช่องว่างเซลล์} (ZORT 8px · วัด 3 จอ) — ได้ '${m[1]}'`)
-    assert.ok(!m[1].includes('px-3'), `${ชื่อ} ยังมี px-3 (12px) ซึ่งกว้างกว่า ZORT`)
+    /* 18 ต.ค. 2569: TH/THR มีสองกิ่งตามโหมดเหมือน ZORT (Kanit 14 / Lato 12) ⇒ ตรวจ **ทุกกิ่ง**
+       ค่าที่อ้างชื่อค่าคงที่อื่น (เช่น TH_LATO) ตามไปอ่านค่านั้นด้วย — กิ่งไหนหลุด px-2 ก็ต้องแดง */
+    const decl = s.match(new RegExp(`export const ${ชื่อ} = ([\\s\\S]*?)\\n(?=export |const |/\\*|\\n)`))
+    assert.ok(decl, `หา ${ชื่อ} ใน components/zort/index.tsx ไม่เจอ`)
+    const ค่า = [...decl[1].matchAll(/'([^']+)'|"([^"]+)"/g)].map(x => x[1] || x[2])
+    for (const อ้าง of decl[1].match(/\b[A-Z][A-Z_]+\b/g) || []) {
+      const mm = s.match(new RegExp(`const ${อ้าง} = '([^']+)'`))
+      if (mm) ค่า.push(mm[1])
+    }
+    assert.ok(ค่า.length > 0, `${ชื่อ} ไม่มีค่าคลาสให้ตรวจ — ได้ '${decl[1]}'`)
+    for (const v of ค่า) {
+      assert.ok(v.includes(ที่วัดมา.ช่องว่างเซลล์),
+        `${ชื่อ} ต้องใช้ ${ที่วัดมา.ช่องว่างเซลล์} (ZORT 8px · วัด 3 จอ) — ได้ '${v}'`)
+      assert.ok(!v.includes('px-3'), `${ชื่อ} ยังมี px-3 (12px) ซึ่งกว้างกว่า ZORT`)
+    }
   }
 })
 
