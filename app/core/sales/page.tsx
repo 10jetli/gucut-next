@@ -819,7 +819,7 @@ export default function CoreSalesPage() {
                   const v = e.target.value === 'ship' ? 'ship' : 'order'
                   setชนิดวัน(v); load(0, { dateType: v })
                 }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[110px]"
               >
                 <option value="order">วันที่</option>
                 <option value="payment" disabled title={data?.dateTypesUnavailable?.payment ?? 'ท่อยังไม่รองรับ (ยิงดู 16 ต.ค. 2569: ตอบ 400)'}>
@@ -845,7 +845,7 @@ export default function CoreSalesPage() {
                 setช่วงปฏิทิน(''); setAdvFrom(''); setAdvTo('')
                 setDays(d); load(0, { days: d, from: '', to: '' })
               }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[150px]"
             >
               {ช่วงปฏิทินทั้งหมด.map((r) => <option key={r.ค่า} value={r.ค่า}>{r.label}</option>)}
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
@@ -859,7 +859,7 @@ export default function CoreSalesPage() {
             <select
               value={store}
               onChange={(e) => { setStore(e.target.value); load(0, { store: e.target.value }) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[130px]"
             >
               <option value="">ทุกร้าน (2 ร้าน)</option>
               {/* 🔴 ห้ามพิมพ์ชื่อนิติบุคคลในไฟล์จอ — ถูกอบเข้า chunk สาธารณะ /_next/static
@@ -871,7 +871,7 @@ export default function CoreSalesPage() {
             <select
               value={channel}
               onChange={(e) => { setChannel(e.target.value); load(0, { channel: e.target.value }) }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[150px]"
             >
               <option value="">ทุกช่องทาง</option>
               {/* ⚠️ กรองให้เหลือเฉพาะ "ข้อความ" ก่อนวาด — ถ้าท่อเปลี่ยนช่องนี้เป็นก้อน object
@@ -1083,6 +1083,8 @@ export default function CoreSalesPage() {
               คนละขอบเขต และไม่มีอะไรบอก** คนอ่านจะนึกว่าตัวเลขขัดกันเอง
               (กับดักเดียวกับ 1,926 vs 319 ของ Shopee เมื่อบ่าย — เลขคนละคำถามเอามาเทียบกัน) */}
           {' '}· <b>เลขบนแท็บนับเฉพาะช่วงวันที่นี้</b> ไม่ใช่ทั้งคลัง
+          {/* 🎯 โหมดเหมือน ZORT: ZORT มีบรรทัด "ค้นหา:" บรรทัดเดียว ⇒ เวลาข้อมูลมาต่อท้ายบรรทัดนี้แทนกินอีกแถว (ตอนข้อมูลเก่าเกิน DataFreshness ยังโชว์เต็มเอง) */}
+          {เหมือนZORT && <>{' · '}<DataFreshness freshness={data?.freshness} everyMinutes={60} scheduleNote="นาทีที่ 13" /></>}
         </div>
       )}
 
@@ -1094,7 +1096,7 @@ export default function CoreSalesPage() {
           ① เขียนตารางที่ไม่มีอยู่จริง ("นาทีที่ 13 และ 43")
           ② เตือนเร็วเกินจริง (เกณฑ์ = รอบ × 3 + 10 ⇒ 100 นาที ทั้งที่รอบจริงห่างกัน 60 นาที)
           ⇒ ส่งค่าจริงเข้าไป · ด่าน check-cron-table จับเฉพาะตารางบนจองานตามเวลา **ไม่ครอบจุดนี้** */}
-      <DataFreshness freshness={data?.freshness} everyMinutes={60} scheduleNote="นาทีที่ 13" />
+      {!เหมือนZORT && <DataFreshness freshness={data?.freshness} everyMinutes={60} scheduleNote="นาทีที่ 13" />}
 
       <DataUnreliableBanner reason={data?.statusUnreliable} what="ตัวเลขบนแท็บสถานะ" />
 
