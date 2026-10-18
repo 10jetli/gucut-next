@@ -62,10 +62,13 @@ export default function AppShell({ children, role }: AppShellProps) {
 
   useEffect(() => {
     for (const item of navItems) {
-      if (item.children && item.children.some((c) => pathname === c.href || pathname.startsWith(c.href + '/'))) {
+      /* 🔴 ใช้ isActive (เลือกลิงก์ที่เจาะจงที่สุด) ไม่ใช่จับคำนำหน้า — ของเดิมทำให้กลุ่ม JET (มี /core "โครงการแก่น")
+         กางพร้อมกลุ่มจริงทุกจอใต้ /core · เห็นชัดตอนเปิดโหมดพับ (วัด preview 18 ต.ค. 2569: กาง 2 กลุ่มบน /core/sales) */
+      if (item.children && item.children.some((c) => isActive(c.href))) {
         setOpenGroups((prev) => ({ ...prev, [item.label]: true }))
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, navItems])
 
   const toggleCollapse = () => {
