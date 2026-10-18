@@ -172,7 +172,18 @@ export default function MarketplaceProductsPage() {
      (ของเดิมนับถูกเพราะกวาดทั้งคลัง ⇒ รอบนี้เร็วขึ้นแต่เลขผิด = แย่กว่าเดิม)
      ⇒ กติกา: นับเองได้เฉพาะตอนที่ `rows` คือทั้งคลังจริง ๆ (โหมดทางถอย) เท่านั้น
         โหมดท่อยังไม่ได้เลขจากท่อ = คืน undefined ⇒ แท็บไม่โชว์ตัวเลข (ดีกว่าโชว์เลขผิด) */
+  /* 🔴 **ช่องทางที่ท่อถามไม่สำเร็จ ⇒ เลขของช่องทางนั้นคือ "ไม่รู้" ไม่ใช่ 0** (เจอ 18 ต.ค. 2569)
+     ท่อพัง (Cannot find module shopee.mjs) แต่ยังส่ง channelCounts เป็น 0 ⇒ แท็บขึ้น "Shopee (0)"
+     ทั้งที่จอ Marketplace Dashboard บอกว่ายังเช็คไม่ได้ · ไม่รู้ห้ามกลายเป็นศูนย์ที่ชั้นจอ */
+  const เหตุไม่รู้ = (id: string): string =>
+    (meta?.marketplacesFailed?.[id] != null ? 'ดึงไม่สำเร็จรอบนี้'
+      : meta?.marketplacesNotConnected?.[id] != null ? 'ยังไม่ได้เชื่อมร้าน' : '')
+  const ช่องทางที่ไม่รู้ = [
+    ...Object.keys(meta?.marketplacesFailed ?? {}),
+    ...Object.keys(meta?.marketplacesNotConnected ?? {}),
+  ]
   const countOn = (id: string): number | undefined => {
+    if (เหตุไม่รู้(id)) return undefined
     if (counts && typeof counts[id] === 'number') return counts[id]
     if (serverFilter === false) return rows.filter((r) => (r.marketplaces ?? []).includes(id)).length
     return undefined
@@ -393,7 +404,9 @@ export default function MarketplaceProductsPage() {
             tabs={[
               // ไม่มีเลขจากท่อ = ไม่ใส่ count ⇒ แท็บไม่โชว์ตัวเลข (ดีกว่าโชว์เลขของหน้าเดียว)
               { id: 'all', label: 'ทั้งหมด', count: typeof meta?.total === 'number' ? meta.total : undefined },
-              ...PLATFORMS.map((p) => ({ id: p.id, label: p.label, count: countOn(p.id) })),
+              ...PLATFORMS.map((p) => ({ id: p.id, label: p.label, count: countOn(p.id),
+                /* กดแล้วจะได้ 0 แถวซึ่งก็เป็นเท็จเหมือนกัน ⇒ ปิดไว้พร้อมเหตุในตัวปุ่ม */
+                ปิดไว้: เหตุไม่รู้(p.id) ? `${p.label}: ${เหตุไม่รู้(p.id)} — ยังไม่รู้ว่าลงขายอยู่กี่ตัว` : undefined })),
               // 🔴 แท็บนี้คือของที่มีค่าที่สุดในจอ — ของที่ยังไม่ได้ลงขายที่ไหนเลย
               { id: 'none', label: 'ยังไม่ได้ลงที่ไหนเลย', count: noneCount },
             ]}
@@ -442,7 +455,10 @@ export default function MarketplaceProductsPage() {
                     <td className={TD}>
                       {(r.marketplaces ?? []).length > 0
                         ? <MarketLogos list={r.marketplaces} by={r.marketplacesBy} from={r.marketplacesFrom} />
-                        : <span className="text-gray-300">ยังไม่ได้ลง</span>}
+                        : ช่องทางที่ไม่รู้.length
+                          /* บางช่องทางถามไม่สำเร็จ ⇒ "ไม่เจอ" ไม่ใช่ "ไม่ได้ลง" */
+                          ? <span className="text-amber-700" title={`รอบนี้ยังไม่รู้สถานะของ ${ช่องทางที่ไม่รู้.join(' · ')} ⇒ อาจลงขายอยู่ที่นั่น`}>ยังไม่รู้</span>
+                          : <span className="text-gray-300">ยังไม่ได้ลง</span>}
                     </td>
                     <td className={TD}>
                       {/* "วางจำหน่าย" ตามข้อมูลจริงที่มี: active จากทะเบียนสินค้า —
