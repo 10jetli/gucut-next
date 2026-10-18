@@ -15,6 +15,15 @@
 //    เพิ่ม/ลบตัวแจ้งเตือนเมื่อไหร่ต้องกลับมาแก้ที่นี่ · แต่ละรายการชี้ไฟล์ต้นทางให้ตรวจได้
 import { useState } from 'react'
 import { PageHead } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+
+/* 📐 โหมดเหมือน ZORT — วัด DOM /Setting/Notification 18 ต.ค. 2569 (อ่านอย่างเดียว):
+   แท็บบน Kanit 16 · เลือกอยู่ rgb(65,101,237) 400 · ไม่ได้เลือก rgb(173,181,189) 300 · ช่องใน 12px 16px
+   รายการซ้าย กว้าง 200 · Kanit 16 300 rgb(134,142,150) ช่องใน 12px 20px · เลือกอยู่ 400 น้ำเงินบนพื้น rgb(239,242,249)
+   หัวกล่องขวา Boon 16 400 #3e3e3e ช่องใน 12px 30px เส้นล่าง rgb(241,243,245) */
+const แท็บZ = "font-['Kanit',sans-serif] text-[16px] px-4 py-3 -mb-px"
+const ซ้ายZ = "block w-full text-left font-['Kanit',sans-serif] text-[16px] px-5 py-3"
 
 /** วันที่ไล่ตรวจกับโค้ดจริงล่าสุด — แก้เมื่อกลับมาตรวจใหม่ */
 const CHECKED_AT = '6 ก.ย. 2569'
@@ -73,30 +82,36 @@ export default function SettingNotifyPage() {
     <div className="p-4 md:p-6">
       <PageHead
         title="ตั้งค่าการแจ้งเตือน"
-        summary={
+        summary={เหมือนZORT ? undefined : (
           <>
             การแจ้งเตือนที่ระบบส่งอยู่จริง แยกตามช่องทาง
             {' | '}
             <span className="text-gray-400">คัดจากโค้ดจริง · ตรวจล่าสุด {CHECKED_AT}</span>
           </>
-        }
+        )}
       />
 
       {/* ⚠️ ป้ายต้องมาก่อนเนื้อหา — จอ ZORT เป็นฟอร์มตั้งค่า ของเราเป็นแผนที่ของจริง
           ไม่บอก = คนหาปุ่มเปิด-ปิดแล้วนึกว่าจอพัง */}
+      {/* โหมดเหมือน ZORT: พับ แต่บรรทัดสรุปยังบอกว่าอ่านอย่างเดียว (ไม่บอก = คนหาปุ่มแล้วนึกว่าจอพัง) */}
+      <ZortLookFold tone="gray" สรุป={<>ℹ️ จอนี้อ่านอย่างเดียว — ปุ่มเปิด-ปิดรายตัวยังไม่ได้ทำ · การแจ้งเตือนที่ระบบส่งอยู่จริง คัดจากโค้ด ตรวจล่าสุด {CHECKED_AT}</>}>
       <div className="bg-blue-50 border border-blue-100 rounded-md px-3.5 py-2.5 mb-4 text-[12.5px] text-blue-900 leading-relaxed">
         ℹ️ จอนี้<b>อ่านอย่างเดียว</b> — บอกว่าระบบแจ้งเตือนอะไร ให้ใคร เมื่อไหร่ และตั้งค่าอยู่ที่ไฟล์ไหน ·
         ZORT รุ่นเต็มมีปุ่มเปิด-ปิดรายตัว ของเรา<b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b>
         (ตอนนี้เปิด-ปิดที่ env/โค้ด — สั่งเมื่อไหร่ค่อยทำปุ่มจริง ไม่ทำปุ่มหลอก)
       </div>
+      </ZortLookFold>
 
       {/* แท็บช่องทาง — ชั้นเดียวกับแท็บ โปรแกรม/อีเมล/มือถือ ของ ZORT
           ⚠️ ร้านไม่ใช้อีเมลแจ้งเตือน — ไม่ทำแท็บเปล่า */}
-      <div className="flex flex-wrap items-center gap-6 border-b border-gray-200 mb-4 px-1">
+      <div className={`flex flex-wrap items-center border-b border-gray-200 mb-4 ${เหมือนZORT ? 'gap-0' : 'gap-6 px-1'}`}>
         {CHANNELS.map((c) => (
           <button key={c.id}
             onClick={() => { setChan(c.id); setSel(c.items[0].id) }}
-            className={`text-[12.5px] pb-2 -mb-px ${c.id === chan
+            title={เหมือนZORT ? c.desc : undefined}
+            className={เหมือนZORT
+              ? `${แท็บZ} ${c.id === chan ? 'text-[rgb(65,101,237)] font-normal border-b-2 border-[rgb(65,101,237)]' : 'text-[rgb(173,181,189)] font-light hover:text-gray-600'}`
+              : `text-[12.5px] pb-2 -mb-px ${c.id === chan
               ? 'text-blue-600 border-b-2 border-blue-600 font-medium'
               : 'text-gray-500 hover:text-gray-700'}`} aria-pressed={chan === c.id}>
             {c.label}
@@ -104,22 +119,27 @@ export default function SettingNotifyPage() {
         ))}
       </div>
 
-      <p className="text-[12.5px] text-gray-500 mb-3">{active.desc}</p>
+      {/* โหมดเหมือน ZORT: คำอธิบายช่องทางย้ายไปอยู่ใน title ของแท็บ (ZORT ไม่มีบรรทัดนี้) */}
+      {!เหมือนZORT && <p className="text-[12.5px] text-gray-500 mb-3">{active.desc}</p>}
 
       {/* ผัง ZORT: รายการซ้าย · รายละเอียดขวา */}
-      <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-0 border border-gray-200 rounded-md overflow-hidden bg-white">
+      <div className={`grid grid-cols-1 ${เหมือนZORT ? 'md:grid-cols-[200px_1fr]' : 'md:grid-cols-[260px_1fr]'} gap-0 border border-gray-200 rounded-md overflow-hidden bg-white`}>
         <div className="border-b md:border-b-0 md:border-r border-gray-200">
           {active.items.map((i) => (
             <button key={i.id} onClick={() => setSel(i.id)}
-              className={`block w-full text-left px-4 py-3 text-[12.5px] border-b border-gray-100 last:border-0 ${
+              className={เหมือนZORT
+                ? `${ซ้ายZ} ${i.id === item.id ? 'bg-[rgb(239,242,249)] text-[rgb(65,101,237)] font-normal border-l-4 border-l-[rgb(65,101,237)]' : 'text-[rgb(134,142,150)] font-light hover:bg-gray-50'}`
+                : `block w-full text-left px-4 py-3 text-[12.5px] border-b border-gray-100 last:border-0 ${
                 i.id === item.id ? 'bg-blue-50 text-blue-700 font-medium border-l-2 border-l-blue-600' : 'text-gray-700 hover:bg-gray-50'}`} aria-current={sel === i.id ? 'true' : undefined}>
               {i.name}
             </button>
           ))}
         </div>
-        <div className="p-5">
-          <p className="text-[15px] font-semibold text-gray-900 mb-3">{item.name}</p>
-          <dl className="text-[12.5px] space-y-2.5">
+        <div className={เหมือนZORT ? '' : 'p-5'}>
+          {เหมือนZORT
+            ? <p className="text-[16px] text-[#3e3e3e] px-[30px] py-3 border-b border-[rgb(241,243,245)] mb-3">{item.name}</p>
+            : <p className="text-[15px] font-semibold text-gray-900 mb-3">{item.name}</p>}
+          <dl className={`text-[12.5px] space-y-2.5 ${เหมือนZORT ? 'px-[30px] pb-5' : ''}`}>
             <div><dt className="text-gray-400 text-[11.5px]">ยิงเมื่อ</dt><dd className="text-gray-800">{item.when}</dd></div>
             <div><dt className="text-gray-400 text-[11.5px]">ใครได้รับ</dt><dd className="text-gray-800">{item.who}</dd></div>
             <div><dt className="text-gray-400 text-[11.5px]">โค้ดที่ยิง (ตรวจได้)</dt>
