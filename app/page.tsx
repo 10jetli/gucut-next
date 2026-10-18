@@ -19,6 +19,7 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, เหตุเต็ม } from '@/components/zort/CostGate'
 
 interface CoreOrderRow {
@@ -558,8 +559,14 @@ export default function DashboardPage() {
   return (
     <div className="p-4 md:p-6 space-y-4 md:space-y-5">
       <PageHead
-        title="ภาพรวมร้าน"
-        summary={
+        /* 🎯 โหมดเหมือน ZORT: ชื่อหัวจอ "ภาพรวม" ตามเมนู ZORT · บรรทัดสรุปเหลือ "รวม N ร้าน" (บอกว่าทำไมเลขต่างจาก ZORT ที่ดูทีละร้าน — ไม่ซ่อน) + ⓘ */
+        title={เหมือนZORT ? 'ภาพรวม' : 'ภาพรวมร้าน'}
+        summary={เหมือนZORT ? (
+          <span suppressHydrationWarning className="cursor-help"
+            title={`ตัวเลขจากคลังของเราเอง (ไม่ได้ยิง ZORT) · อัพเดต ${refreshed.toLocaleTimeString('th-TH')}`}>
+            {storeNames ? <>รวม {storeNames} </> : null}<span className="text-gray-400">ⓘ</span>
+          </span>
+        ) : (
           <span suppressHydrationWarning>
             {/* 🔴 **ห้ามเขียนจำนวนร้านตายตัว** — ท่อส่งรายชื่อร้านที่มีบิลจริงในช่วงนั้นมาให้
                 วันที่มีร้านที่สาม ป้ายนี้เปลี่ยนตามเอง · และช่วงที่ร้านไหนไม่มีบิล ก็จะไม่ถูกนับ
@@ -568,7 +575,7 @@ export default function DashboardPage() {
             {storeNames && <> · <b>รวม {storeNames}</b></>}
             {' · '}อัพเดต {refreshed.toLocaleTimeString('th-TH')}
           </span>
-        }
+        )}
         actions={
           <BtnGhost onClick={load} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
