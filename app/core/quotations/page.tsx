@@ -137,6 +137,57 @@ export default function QuotationsPage() {
   const รู้ทั้งชุด = typeof data?.total === 'number' && Number.isFinite(data.total)
   const cut = รู้ทั้งชุด ? Math.max(0, Number(data!.total) - all.length) : 0
 
+  /* ปุ่ม Export — แยกเป็นตัวแปรเพื่อวางได้สองที่ (เหนือแถบเลขหน้าตามเดิม / ใต้แถบเลขหน้าในโหมดเหมือน ZORT) */
+  const ปุ่มส่งออก = (
+          <div className="mt-3 flex items-center gap-2">
+             {/* 📤 ชุดเล็ก (ท่อบอก total 6) แต่ยังวนหน้าให้ครบเหมือนจอใหญ่
+                 เพราะวันหนึ่งใบเยอะขึ้น แล้วจะไม่มีใครกลับมาแก้ปุ่มนี้ */}
+             <ExportButton
+               label="📗 Export to Excel"
+               disabled={loading}
+               spec={{
+                 filename: 'ใบเสนอราคา',
+                 /* ขอบเขตต้องพูดความจริงข้อเดียวกับ filters ข้างล่าง: ท่อไม่รับคำค้น ⇒ ไฟล์ได้ทุกใบ
+      ✅ ยิงยืนยันซ้ำ 18 ก.ย. 2569: ส่ง q= แล้ว total ค้าง 6 เท่าเดิม **และท่อประกาศกลับมาว่า `ignored: {q}`**
+         ⇒ ตอนนี้ท่อบอกเองแล้วว่าเมิน ไม่ใช่เมินเงียบ (ฝั่งท่อแก้ให้ตามที่เราขอ) */
+                 scope: `${storeLabel(store)} · ทุกใบ (ไฟล์ไม่ได้กรองตามคำค้นบนจอ)`,
+                 title: 'ใบเสนอราคา',
+                 /* 🔴 **จอนี้กรองคำค้นหาในเบราว์เซอร์ ไม่ใช่ที่เซิร์ฟเวอร์** (ท่อไม่รับ `q`)
+                    ⇒ ไฟล์ที่ส่งออกได้ **ทุกแถว ไม่ได้กรองตามคำค้น** ⇒ ต้องเขียนให้ตรง
+                    เดิมผมเขียนว่า "คำค้นหา: xyz" ทั้งที่ไม่ได้ส่งไปกรองเลย = ไฟล์โกหกขอบเขตตัวเอง
+                    (เจอตอนไล่ตรวจคู่ของ check-inherited 15 ก.ย. 2569) */
+                 filters: [
+                   ['ร้าน', storeLabel(store)],
+                   q.trim()
+                     ? ['คำค้นหาบนจอ', `${q.trim()} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้ (ท่อไม่รองรับ) ได้ทุกแถว`]
+                     : ['คำค้นหา', '(ไม่ได้ค้น)'],
+                 ],
+                 /* 🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** (แก้ 15 ก.ย. 2569 · ใบ t_mu2mc4jj)
+                    เดิมส่ง `offset` ซึ่งท่อ **เมินเงียบ ๆ** ⇒ ขอหน้าถัดไปได้ก้อนเดิม
+                    วันนั้นยังไม่ออกอาการเพราะใบเสนอราคามีแค่ 6 ใบ (จบในหน้าเดียว)
+                    ⚠️ **ยิงยืนยันเองก่อนเปลี่ยน ไม่ได้เปลี่ยนตามคำบอกเล่าว่า deploy แล้ว**
+                       (ฝั่งท่อกำชับข้อนี้เอง · ท่อ gucut-web 4951ad3)
+                       ผล 15 ก.ย. 2569: `limit=2` หน้า 1/2/3 ได้ id คนละชุด รวม 6 ไม่ซ้ำ = `total` เป๊ะ
+                       · หน้า 4 ว่าง · และ `offset` **ยังถูกเมินอยู่** (ยิงเทียบแล้วได้ก้อนเดิม)
+                    📌 เพดานของท่อ: page 1–50 · limit สูงสุด 200 */
+                 fetchPage: async (offsetAt, limit) => {
+                   const page = Math.floor(offsetAt / limit) + 1
+                   /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ (ลืมส่ง store ⇒ ได้ไฟล์ของ z1 เงียบ ๆ) */
+                   const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&page=${page}${store ? `&store=${store}` : ''}`)
+                   const d = await r.json()
+                   if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+                   return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
+                 },
+                 header: ['เลขที่ใบเสนอราคา', 'วันที่', 'ลูกค้า', 'เบอร์โทร', 'ยอด (บาท)', 'สถานะ', 'อ้างอิง'],
+                 toRow: (r: Row) => [
+                   r.number, r.date ?? null, r.customer ?? null, r.phone || null,
+                   typeof r.amount === 'number' ? r.amount : null, r.status ?? null, r.reference || null,
+                 ],
+               }}
+             />
+    </div>
+  )
+
   return (
     <div className="p-4 md:p-6">
       {/* 🔃 ผัง **ชิดขวาบรรทัดหัวจอ** — ZORT `/Quotation/list` วัดซ้ำ 17 ต.ค. 2569: นำเข้าไฟล์ x=958 y=82 · สร้าง x=1143 y=82
@@ -406,53 +457,8 @@ export default function QuotationsPage() {
           </TableWrap>
 
           {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
-          <div className="mt-3 flex items-center gap-2">
-                   {/* 📤 ชุดเล็ก (ท่อบอก total 6) แต่ยังวนหน้าให้ครบเหมือนจอใหญ่
-                       เพราะวันหนึ่งใบเยอะขึ้น แล้วจะไม่มีใครกลับมาแก้ปุ่มนี้ */}
-                   <ExportButton
-                     label="📗 Export to Excel"
-                     disabled={loading}
-                     spec={{
-                       filename: 'ใบเสนอราคา',
-                       /* ขอบเขตต้องพูดความจริงข้อเดียวกับ filters ข้างล่าง: ท่อไม่รับคำค้น ⇒ ไฟล์ได้ทุกใบ
-            ✅ ยิงยืนยันซ้ำ 18 ก.ย. 2569: ส่ง q= แล้ว total ค้าง 6 เท่าเดิม **และท่อประกาศกลับมาว่า `ignored: {q}`**
-               ⇒ ตอนนี้ท่อบอกเองแล้วว่าเมิน ไม่ใช่เมินเงียบ (ฝั่งท่อแก้ให้ตามที่เราขอ) */
-                       scope: `${storeLabel(store)} · ทุกใบ (ไฟล์ไม่ได้กรองตามคำค้นบนจอ)`,
-                       title: 'ใบเสนอราคา',
-                       /* 🔴 **จอนี้กรองคำค้นหาในเบราว์เซอร์ ไม่ใช่ที่เซิร์ฟเวอร์** (ท่อไม่รับ `q`)
-                          ⇒ ไฟล์ที่ส่งออกได้ **ทุกแถว ไม่ได้กรองตามคำค้น** ⇒ ต้องเขียนให้ตรง
-                          เดิมผมเขียนว่า "คำค้นหา: xyz" ทั้งที่ไม่ได้ส่งไปกรองเลย = ไฟล์โกหกขอบเขตตัวเอง
-                          (เจอตอนไล่ตรวจคู่ของ check-inherited 15 ก.ย. 2569) */
-                       filters: [
-                         ['ร้าน', storeLabel(store)],
-                         q.trim()
-                           ? ['คำค้นหาบนจอ', `${q.trim()} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยคำค้นนี้ (ท่อไม่รองรับ) ได้ทุกแถว`]
-                           : ['คำค้นหา', '(ไม่ได้ค้น)'],
-                       ],
-                       /* 🔴 **เส้นนี้แบ่งหน้าด้วย `page=` ไม่ใช่ `offset=`** (แก้ 15 ก.ย. 2569 · ใบ t_mu2mc4jj)
-                          เดิมส่ง `offset` ซึ่งท่อ **เมินเงียบ ๆ** ⇒ ขอหน้าถัดไปได้ก้อนเดิม
-                          วันนั้นยังไม่ออกอาการเพราะใบเสนอราคามีแค่ 6 ใบ (จบในหน้าเดียว)
-                          ⚠️ **ยิงยืนยันเองก่อนเปลี่ยน ไม่ได้เปลี่ยนตามคำบอกเล่าว่า deploy แล้ว**
-                             (ฝั่งท่อกำชับข้อนี้เอง · ท่อ gucut-web 4951ad3)
-                             ผล 15 ก.ย. 2569: `limit=2` หน้า 1/2/3 ได้ id คนละชุด รวม 6 ไม่ซ้ำ = `total` เป๊ะ
-                             · หน้า 4 ว่าง · และ `offset` **ยังถูกเมินอยู่** (ยิงเทียบแล้วได้ก้อนเดิม)
-                          📌 เพดานของท่อ: page 1–50 · limit สูงสุด 200 */
-                       fetchPage: async (offsetAt, limit) => {
-                         const page = Math.floor(offsetAt / limit) + 1
-                         /* 🔴 ไฟล์ต้องเป็นของร้านเดียวกับที่จอโชว์ (ลืมส่ง store ⇒ ได้ไฟล์ของ z1 เงียบ ๆ) */
-                         const r = await fetch(`/api/web/core?list=quotations&limit=${limit}&page=${page}${store ? `&store=${store}` : ''}`)
-                         const d = await r.json()
-                         if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                         return { rows: (Array.isArray(d.rows) ? d.rows : []) as Row[], total: typeof d.total === 'number' ? d.total : null }
-                       },
-                       header: ['เลขที่ใบเสนอราคา', 'วันที่', 'ลูกค้า', 'เบอร์โทร', 'ยอด (บาท)', 'สถานะ', 'อ้างอิง'],
-                       toRow: (r: Row) => [
-                         r.number, r.date ?? null, r.customer ?? null, r.phone || null,
-                         typeof r.amount === 'number' ? r.amount : null, r.status ?? null, r.reference || null,
-                       ],
-                     }}
-                   />
-          </div>
+          {/* 📐 โหมดเหมือน ZORT: ปุ่มส่งออกย้ายไปอยู่ใต้แถบเลขหน้า (ผัง ZORT · วัดภาพ 19 ต.ค. 2569) */}
+          {!เหมือนZORT && ปุ่มส่งออก}
 
           {/* 📏 **บรรทัดบอกช่วงที่แสดง** — จอรายการอื่นทุกจอมี จอนี้ไม่มี (เจอ 19 ก.ย. 2569
               ตอนกวาดเลขหน้าทั้ง repo: จอนี้เป็นจอเดียวที่ตอบว่า "ไม่มีบรรทัดบอกช่วงที่แสดง")
@@ -518,6 +524,7 @@ export default function QuotationsPage() {
               <option>ทั้งหมด</option>
             </select>
           </div>
+          {เหมือนZORT && ปุ่มส่งออก}
 
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {/* 🔴 **ประโยคนี้กลายเป็นเท็จตั้งแต่ 733055e** (เจอ 15 ก.ย. 2569 · ใบ t_mu1wvgcw)
