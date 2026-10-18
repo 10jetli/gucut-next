@@ -11,7 +11,8 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS } from '@/components/zort'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Line { sku?: string; name?: string; qty?: number }
 interface Resp {
@@ -75,11 +76,14 @@ function Inner() {
   const wrongLevel = (d?.fields ?? []).some((f) => LINE_ONLY.includes(String(f).toLowerCase()))
 
   return (
-    <div className="p-4 md:p-6 max-w-[860px]">
-      <p className="text-[12.5px] mb-2"><Link href="/core/transfers" className="text-[#337ab7] hover:underline">‹ รายการโอนสินค้า</Link></p>
+    <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[860px]'}`}>
+      {/* 📐 โหมดเหมือน ZORT (วัดเทียบ /Warehouse/TransferDetails 19 ต.ค. 2569 · TF-202610025): ลิงก์กลับ Kanit 14 · จอกว้างเต็ม */}
+      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}><Link href="/core/transfers" className="text-[#337ab7] hover:underline">‹ รายการโอนสินค้า</Link></p>
       {/* หัวจอตาม ZORT: "รายละเอียดรายการโอนสินค้า" · เลขที่ใบอยู่ในช่อง "รายการ" ข้างล่าง (อ่านจอจริง 16 ต.ค. 2569) */}
       <PageHead title="รายละเอียดรายการโอนสินค้า"
-        summary={<span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
+        summary={เหมือนZORT
+          ? <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก">ⓘ</span>
+          : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Warehouse/TransferDetails ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
 
       {/* 🧰 แถบปุ่มแบบ ZORT /Warehouse/TransferDetails (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
@@ -142,7 +146,43 @@ function Inner() {
 
       {!loading && !error && d && !wrongLevel && (
         <>
-          <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-[12.5px]">
+          {เหมือนZORT && (
+            /* 📐 โหมดเหมือน ZORT: การ์ดสถานะ "การโอนสินค้า" (ครึ่งแถว) → การ์ดข้อมูล (หัว Kanit 20 · ป้าย/ค่า Boon 16)
+               ZORT มีคอลัมน์ "ผู้ติดต่อ" (ผู้สร้างรายการ) ด้วย แต่ท่อเส้นนี้ไม่ส่งผู้สร้าง ⇒ ไม่ทำช่องว่างหลอก */
+            <>
+              <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+                <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: 'rgb(208,218,255)', color: 'rgb(65,101,237)' }}>⇄</span>
+                  <div className="text-right">
+                    <h2 className="text-[14px] font-medium text-[#868e96] m-0">การโอนสินค้า</h2>
+                    <div className="mt-2">
+                      <span className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(d.status === 'Success' ? 'green' : 'orange')}`}>
+                        {zortWord(TRANSFER_STATUS, d.status).text || '—'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <section className="mb-[30px] bg-white rounded-[6px] px-5 py-5">
+                <div className="flex items-center gap-3 mb-4">
+                  <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>📄</span>
+                  <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ข้อมูล</h2>
+                </div>
+                {([
+                  ['รายการ', d.number || '—'],
+                  ['วันที่', thaiDate(d.date)],
+                  ['ไป', <>{wh(d.from, names)} → {wh(d.to, names)}{whErr && (d.from || d.to) && <span className="block text-[11.5px] text-amber-700 mt-0.5">⚠️ ดึงชื่อคลังไม่ได้ — ที่เห็นคือ<b>รหัสคลัง</b> ไม่ใช่ชื่อ</span>}</>],
+                  ['เลขพัสดุ', d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>],
+                ] as const).map(([k, v]) => (
+                  <div key={k} className="flex gap-4 py-1.5 md:max-w-[50%]">
+                    <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{k}</span>
+                    <span className="text-[16px] text-[#3e3e3e]">{v}</span>
+                  </div>
+                ))}
+              </section>
+            </>
+          )}
+          {!เหมือนZORT && <div className="bg-white border border-gray-200 rounded-md p-4 mb-4 grid grid-cols-2 md:grid-cols-5 gap-3 text-[12.5px]">
             <div><p className="text-gray-400 text-[11.5px]">รายการ</p><span className="font-medium">{d.number || '—'}</span></div>
             <div><p className="text-gray-400 text-[11.5px]">การโอนสินค้า</p>{/* คำตาม ZORT (เดิม "สถานะ") · เดิมโชว์ค่าดิบจากท่อ (Success/Pending) = อังกฤษบนจอ · ใบ t_mu23dljn
                   คำมาจาก lib/zort-words.ts ที่เดียว · ไม่รู้จัก = คืนค่าดิบ ไม่เดา */}
@@ -161,7 +201,14 @@ function Inner() {
             </div>
             <div><p className="text-gray-400 text-[11.5px]">เลขพัสดุ</p>
               {d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>}</div>
-          </div>
+          </div>}
+          {/* 📐 โหมดเหมือน ZORT: หัวการ์ด "สินค้า" Kanit 20 เหนือตาราง */}
+          {เหมือนZORT && (
+            <div className="flex items-center gap-3 mb-3">
+              <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: 'rgb(208,218,255)' }}>📦</span>
+              <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">สินค้า</h2>
+            </div>
+          )}
 
           {d.lines === null || d.lines === undefined ? (
             <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2">
