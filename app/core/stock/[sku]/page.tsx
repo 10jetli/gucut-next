@@ -30,6 +30,8 @@ import { findOrderId } from '@/lib/open-order'
 import {
   PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
@@ -420,8 +422,39 @@ export default function ProductDetailPage() {
             </span>
           </div>
 
+          {/* 📐 โหมดเหมือน ZORT — วัด DOM /Product/Details 19 ต.ค. 2569 (สินค้า 00817 อ่านอย่างเดียว):
+              กล่องขาว ช่องใน 20 · ซ้ายวงไอคอน 48 · ขวาป้าย Boon 14 w500 #3e3e3e พร้อมหน่วย · ค่า Lato 30 w600 สีประจำการ์ด
+              คงเหลือ วง #ebf6ff สี #2f8dde · พร้อมขาย วง #cefff1 สี #13af82 · ยอดขาย วง #d0daff สี #4165ed (สัญลักษณ์ในวงเป็นของเรา)
+              · กล่องที่มาของเลขพร้อมขาย (สำคัญ: อธิบายว่าทำไมต่างจาก ZORT) ย้ายไปพับใต้การ์ด ไม่ถอด */}
+          {เหมือนZORT && (() => {
+            const หน่วย = row.unit ? ` (${row.unit})` : ''
+            const การ์ด = ([
+              ['สินค้าคงเหลือ' + หน่วย, '#ebf6ff', '#2f8dde', '▦', fmtNum(Number(row.qty ?? 0))],
+              ['สินค้าพร้อมขาย' + หน่วย, '#cefff1', '#13af82', '✓', row.available == null ? '-' : fmtNum(Number(row.available))],
+              ['ยอดขายเดือนนี้ (บาท)', '#d0daff', '#4165ed', '฿', thisMonth == null ? '-' : fmtMoney(thisMonth)],
+            ] as const)
+            return (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-[30px]">
+                  {การ์ด.map(([ป้าย, วง, สี, รูป, ค่า]) => (
+                    <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
+                      <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
+                      <div className="text-right">
+                        <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
+                        <p className="font-['Lato',sans-serif] text-[30px] leading-[30px] font-semibold mt-1 m-0" style={{ color: ค่า === '-' ? '#ced4da' : สี }}>{ค่า}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <ZortLookFold tone="gray" สรุป={<>ที่มาของเลขพร้อมขาย · ยอดขายเดือนนี้{thisMonth == null ? ' (กด "ดูกราฟยอดขาย" ด้านล่างแล้วเลขจะขึ้นเอง)' : ''}</>}>
+                  <div className="mt-2 text-left"><StockSource row={row} ป้าย={ป้ายที่มา} /></div>
+                </ZortLookFold>
+                <ClampedNote resp={คำตอบสต็อก} ขอ={{ limit: 20, q: sku }} />
+              </>
+            )
+          })()}
           {/* การ์ด 3 ใบแบบ ZORT — ค่าว่างแสดงเป็น "-" ตามจอเขา */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          {!เหมือนZORT && <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <Card>
               <p className="text-[12.5px] text-gray-500 text-right">สินค้าคงเหลือ</p>
               <p className={`text-[28px] font-semibold text-right leading-none mt-1 ${
@@ -466,7 +499,7 @@ export default function ProductDetailPage() {
                 </>
               )}
             </Card>
-          </div>
+          </div>}
 
           {/* กล่องข้อมูล — รูปซ้าย ขวาสองคอลัมน์ ตามผัง ZORT */}
           <div className="bg-white border border-gray-200 rounded-md p-5 mt-4 flex flex-wrap gap-6">
