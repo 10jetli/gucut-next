@@ -28,6 +28,7 @@ import { ROW_LINK, TD_NO,
   PageHead, SearchRow, TableWrap, Tabs, TH, THR, TD, TDR,
   LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   sku: string
@@ -373,7 +374,9 @@ export default function CoreBundlesPage() {
               ที่มา: จอเคยยืนยันคงเหลือ 41 พร้อมขาย 23 ขณะที่ ZORT เป็น 18 / -10
                      เพราะตาราง bundles ไม่มีอะไรซิงก์ให้เลย (ค้าง 187/360)
               ⇒ ตัวเลขที่ไม่บอกอายุ = คำยืนยันที่พิสูจน์ไม่ได้ · จัดชิดขวาให้อยู่แนวคอลัมน์สองอันนั้น */}
-          <div className={`flex justify-end text-[12.5px] leading-relaxed rounded-t-md px-3 py-1.5 border border-b-0 ${
+          {/* 🎯 โหมดเหมือน ZORT: ตอนตัวเลขสด (ok) แถบนี้ย้ายไปอยู่ใน title ของนาฬิกาบนหัวคอลัมน์ — ยังติดคอลัมน์ตามที่เจ้าของร้านสั่ง
+              ตอนเก่า/ไม่รู้ = คำเตือน ⇒ แถบยังขึ้นเต็ม */}
+          {!(เหมือนZORT && stock.state === 'ok') && <div className={`flex justify-end text-[12.5px] leading-relaxed rounded-t-md px-3 py-1.5 border border-b-0 ${
             stock.state === 'stale' ? 'text-amber-900 bg-amber-50 border-amber-300'
               : (stock.state === 'unknown' || stock.state === 'ไม่รู้รอบ') ? 'text-gray-600 bg-gray-50 border-gray-300'
                 : 'text-gray-600 bg-white border-gray-200'}`}>
@@ -392,7 +395,7 @@ export default function CoreBundlesPage() {
                   {' '}— ไม่ได้แปลว่าซิงก์หยุด แค่บอกอายุของตัวเลขไม่ได้</>
               )}
             </span>
-          </div>
+          </div>}
           <TableWrap>
             <table className="w-full min-w-[940px]">
               {/* 🔃 ช่องที่ **จอ ZORT กดเรียงได้** (วัดจอจริง 16 ก.ย. 2569) — ของเรายังเรียงไม่ได้
@@ -406,10 +409,10 @@ export default function CoreBundlesPage() {
                   <th className={THR}>ราคาขาย</th>
                   {/* 🕰 สองคอลัมน์นี้คือของที่แถบอายุข้างบนกำกับอยู่ — ใส่นาฬิกาให้ชี้ตรงกัน
                       ไม่งั้นแถบลอยอยู่ข้างบนแล้วคนเดาไม่ออกว่ามันพูดถึงคอลัมน์ไหน */}
-                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''} — ดูอายุที่แถบเหนือตาราง`}>
+                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''}${stock.state === 'ok' ? ` — ล่าสุด ${thaiMoment(stock.syncedThai)} (${agoText(stock.ageMinutes)})` : ' — ดูอายุที่แถบเหนือตาราง'}`}>
                     คงเหลือ <span className="opacity-50 font-normal">🕰</span>
                   </th>
-                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''} — ดูอายุที่แถบเหนือตาราง · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
+                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''}${stock.state === 'ok' ? ` — ล่าสุด ${thaiMoment(stock.syncedThai)} (${agoText(stock.ageMinutes)})` : ' — ดูอายุที่แถบเหนือตาราง'} · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
                     พร้อมขาย <span className="opacity-50 font-normal">🕰</span>
                   </th>
                   <th className={TH}>วันหมดอายุรายการ</th>
