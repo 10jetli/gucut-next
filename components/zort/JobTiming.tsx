@@ -24,6 +24,7 @@
  */
 import { useCallback, useEffect, useState } from 'react'
 import { อ่านผลย่อย, งานที่รอบล่าสุดไม่ครบ } from '@/lib/job-subresult'
+import { pipeText } from '@/components/ui/PipeNote'
 
 type งาน = {
   /* 🔴 **ท่อส่งชื่องานมาในช่อง `งาน` ไม่ใช่ `id`** (ยิงของจริงแล้วเจอ 19 ก.ย. 2569)
@@ -176,7 +177,7 @@ export default function JobTiming() {
           </span>
           {รอบล่าสุดไม่ครบ.some((x) => x['ล่าสุด']?.note) && (
             <span className="block text-red-800">
-              เหตุที่ท่อจดไว้: {รอบล่าสุดไม่ครบ.map((x) => x['ล่าสุด']?.note).filter(Boolean).join(' · ')}
+              เหตุที่ท่อจดไว้: {pipeText(รอบล่าสุดไม่ครบ.map((x) => x['ล่าสุด']?.note).filter(Boolean).join(' · '))}
             </span>
           )}
         </p>
@@ -254,7 +255,7 @@ export default function JobTiming() {
                        เพื่อตัดสินว่า "ถูกตัดไหม" เท่ากับจอเดาถ้อยคำของท่อ ซึ่งเปลี่ยนได้ทุกเมื่อ */}
                 {x['ล่าสุด']?.note && (
                   <span className="block text-[11.5px] text-gray-400 max-w-[18rem] truncate"
-                    title={x['ล่าสุด']!.note}>{x['ล่าสุด']!.note}</span>
+                    title={x['ล่าสุด']!.note!.replace(/\*\*/g, '')}>{pipeText(x['ล่าสุด']!.note!)}</span>
                 )}
               </td>
               {/* ⚠️ ไม่ได้นับชิ้น ⇒ ขีด ไม่ใช่ 0 (0 อ่านว่า "ทำไม่สำเร็จสักชิ้น" ซึ่งคนละเรื่อง) */}
@@ -305,7 +306,8 @@ export default function JobTiming() {
         <span className="block text-gray-500">
           📌 เวลาที่จดไม่รวม cold start ⇒ <b>ต่ำกว่าที่ถูกคิดเงินเล็กน้อยเสมอ</b> — ห้ามเอาไปเทียบตรง ๆ กับบิล
         </span>
-        {d['⚠️ ขอบเขต'] && <span className="block text-gray-400">{d['⚠️ ขอบเขต']}</span>}
+        {/* ข้อความจากท่อใช้ **ตัวหนา** แบบ markdown ⇒ ผ่าน pipeText (เจอดอกจันดิบบน preview 18 ต.ค. 2569) */}
+        {d['⚠️ ขอบเขต'] && <span className="block text-gray-400">{pipeText(String(d['⚠️ ขอบเขต']))}</span>}
       </p>
     </div>
   )
