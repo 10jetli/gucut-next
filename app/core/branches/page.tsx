@@ -287,7 +287,10 @@ export default function CoreBranchesPage() {
                              ของที่ไม่รู้คือ `null` ซึ่งขึ้น "—" ต่างหาก (สามสถานะ) */}
                       <td className={TDR}>
                         {typeof w.stockValue === 'number'
-                          ? <span style={{ color: w.stockValue === 0 ? '#f25757' : '#13af82' }}>{fmtMoney(w.stockValue)}</span>
+                          /* 🔄 วัดซ้ำ 19 ต.ค. 2569: ZORT **เปลี่ยนแล้ว** — มูลค่า 0 ของ ANJ เป็น green-500 rgb(19,175,130) (เดิม 15 ก.ย. เป็นแดง)
+                             ตอนนี้ ZORT ระบายแดง red-400 ที่ **รหัส/ชื่อ/วันเคลื่อนไหว** ของแถว ANJ แทน (ยังไม่รู้เกณฑ์ ⇒ ไม่เดา)
+                             ⇒ โหมดเหมือน ZORT ใช้สีปัจจุบันของเขา · นอกโหมดคงแดงไว้ (บอกว่าคลังไม่มีของ) */
+                          ? <span style={{ color: w.stockValue === 0 && !เหมือนZORT ? '#f25757' : '#13af82' }}>{fmtMoney(w.stockValue)}</span>
                           : <span className="text-gray-300" title="ท่อยังไม่เคยคัดมูลค่าของคลังนี้ — ไม่ใช่ว่าคลังไม่มีของ (คลังที่ไม่มีของจะขึ้นเลข 0 สีแดง)">—</span>}
                       </td>
                       <td className={TD}>
