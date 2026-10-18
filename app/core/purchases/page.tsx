@@ -355,16 +355,20 @@ export default function CorePurchasesPage() {
         <>
           {/* ผัง ZORT (ภาพ 27): ปุ่มรีเฟรชวงกลมมุมขวาแถบแท็บ — ชั้นแถบแท็บ จุดบอดประจำ (จอที่ 4 แล้ว) */}
           <div className="flex items-end justify-between gap-3">
+            {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ (เห็นจริงบน preview 19 ต.ค.: แท็บ "ยกเลิก (1)" หายไปหลังแถบเลื่อน) ⇒ shrink-0 · ให้ตัวเลือกร้านเป็นฝ่ายตัดบรรทัด */}
+            <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
             <Tabs
               tabs={tabs}
               active={tab}
               onChange={(id) => { setTab(id); load(0, id) }}
             />
+            </div>
             {เหมือนZORT && (
               <div className="ml-auto mb-1 min-w-0">
+                {/* ขอบเขตร้านเข้า ⓘ เพื่อให้พอดีแถว · หมายเหตุใบยกเลิกยังขึ้นบนจอ (กฎแท็บ: ยอดทั้งหมดรวมใบยกเลิกต้องบอก) */}
                 <StorePicker value={store} disabled={loading}
                   onChange={(v) => { setStore(v); load(0, tab, v) }}
-                  ต่อท้าย={<><StoreScopeInline scope={data?.storeScope} />{tab === 'all' && typeof ยกเลิกในทั้งหมด === 'number' && ยกเลิกในทั้งหมด > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ ทั้งหมดรวมใบยกเลิก {fmtNum(ยกเลิกในทั้งหมด)} ใบ</span>}</>} />
+                  ต่อท้าย={<>{data?.storeScope && <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${data.storeScope}`}>ⓘ</span>}{tab === 'all' && typeof ยกเลิกในทั้งหมด === 'number' && ยกเลิกในทั้งหมด > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ รวมยกเลิก {fmtNum(ยกเลิกในทั้งหมด)}</span>}</>} />
               </div>
             )}
             <button onClick={() => load(0, tab)} disabled={loading} aria-label="โหลดใหม่" title="โหลดใหม่"
