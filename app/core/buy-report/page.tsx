@@ -360,7 +360,7 @@ export default function BuyReportPage() {
 
       {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/BuyReport 19 ต.ค. 2569): บรรทัดช่วงวัน Kanit 24 ห่างหัวจอ ~24 */}
       <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-x-6 gap-y-2 mt-6 mb-6' : 'flex flex-wrap items-center gap-3 -mt-1 mb-4'}>
-        <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[24px] leading-[30px] font-medium text-[#3e3e3e]" : 'text-[17px] font-semibold text-gray-800'}>
+        <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[20px] leading-[30px] font-normal text-[#3e3e3e]" : 'text-[17px] font-semibold text-gray-800'}>
           {thaiShort(from)} – {thaiShort(to)}
         </p>
         <button onClick={() => setAdv((v) => !v)} className="text-[12.5px] text-blue-600 hover:underline">
