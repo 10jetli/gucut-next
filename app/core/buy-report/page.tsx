@@ -14,6 +14,8 @@
 import Link from 'next/link'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
+import ZortCardTitle from '@/components/zort/ZortCardTitle'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import StoreEcho from '@/components/zort/StoreEcho'
 import CategorySeriesChart, { useCategorySeries } from '@/components/zort/CategorySeriesChart'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -134,7 +136,8 @@ function BuyChart({ points }: { points: { label: string; value: number }[] }) {
           <g key={i}>
             <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} className="stroke-gray-200" strokeWidth={1} />
             <text x={L - 8} y={y(v) + 4} textAnchor="end" className="fill-gray-400 text-[10px]">
-              {v >= 1000 ? `${Math.round(v / 1000)}K` : Math.round(v)}
+              {/* 🔴 ยอดน้อยกว่า 4 ⇒ เส้นแบ่งเป็นเศษ (0.25 · 0.5 · 0.75) · ปัดเป็นจำนวนเต็มเคยขึ้น "1 1 1 0 0" (19 ต.ค. 2569) ⇒ แสดงเศษ */}
+              {v >= 1000 ? `${Math.round(v / 1000)}K` : Number.isInteger(v) ? v : v.toFixed(v < 1 ? 2 : 1)}
             </text>
           </g>
         )
@@ -284,6 +287,11 @@ export default function BuyReportPage() {
 
     for (const r of inRange) {
       if (!r.po_date) continue
+      /* 🔴 **กราฟต้องนับด้วยกติกาเดียวกับหัวการ์ด** (เจอ 19 ต.ค. 2569 ด้วยภาพจอ)
+         หัวการ์ดขึ้น "ไม่มียอดซื้อ · ไม่นับใบยกเลิก 1 ใบ (1 บาท)" แต่กราฟมียอดพุ่งที่ ก.ย. = ใบยกเลิกใบนั้น
+         ⇒ ตัวเลขกับกราฟมาคนละกติกาวางคู่กัน (CLAUDE.md กฎแท็บข้อ 4) ⇒ หักใบยกเลิกเมื่อหัวการ์ดหัก (`หักยกเลิกได้`) เท่านั้น
+            ถูกตัดแถว ⇒ หัวการ์ดยังรวมใบยกเลิก (และเขียนบอก) ⇒ กราฟก็รวมเหมือนกัน */
+      if (หักยกเลิกได้ && String(r.status ?? '') === 'Voided') continue
       const b = ถังของวัน(r.po_date, grain)
       const slot = m.get(b.key) ?? { label: b.label, value: 0 }
       slot.value += Number(r.amount) || 0
@@ -294,7 +302,7 @@ export default function BuyReportPage() {
       /* 🔑 ลูปถูกตัดเพราะชนเพดาน = **กราฟขาดท้าย** ⇒ ต้องเขียนบนจอ ห้ามโชว์กราฟเงียบ ๆ */
       โครงขาด: ชนเพดาน,
     }
-  }, [inRange, from, to, grain])
+  }, [inRange, from, to, grain, หักยกเลิกได้])
   const points = กราฟ.points
 
   const itemAll = Array.isArray(items?.rows) ? items!.rows! : []
@@ -342,20 +350,25 @@ export default function BuyReportPage() {
       />
 
       {/* 🏬 เลือกร้าน — ส่งให้ทั้งตารางรายใบและตารางรายสินค้า (ยิงทั้งสองเส้นด้วย store เดียวกัน) */}
-      <StorePicker value={store} disabled={loading}
+      {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีแถวเลือกร้าน ⇒ ตัวเลือกร้านย้ายไปท้ายบรรทัดช่วงวัน (ท่าเดียวกับจอรายการซื้อ) */}
+      {!เหมือนZORT && <StorePicker value={store} disabled={loading}
         onChange={(v) => { setStore(v); load(v) }}
-        note="ยอดซื้อทั้งหน้านี้เป็นของร้านที่เลือกเท่านั้น — เส้นใบซื้อตอบทีละร้าน" />
+        note="ยอดซื้อทั้งหน้านี้เป็นของร้านที่เลือกเท่านั้น — เส้นใบซื้อตอบทีละร้าน" />}
 
       {/* 🔴 เทียบว่าท่อใช้ร้านเดียวกับที่จอขอจริง (เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ) */}
       <StoreEcho ขอ={store} ได้={all?.store} ท่อเลือกให้={all?.storeDefaulted} />
 
-      <div className="flex flex-wrap items-center gap-3 -mt-1 mb-4">
-        <p className="text-[17px] font-semibold text-gray-800">
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/BuyReport 19 ต.ค. 2569): บรรทัดช่วงวัน Kanit 24 ห่างหัวจอ ~24 */}
+      <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-x-6 gap-y-2 mt-6 mb-6' : 'flex flex-wrap items-center gap-3 -mt-1 mb-4'}>
+        <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[24px] leading-[30px] font-medium text-[#3e3e3e]" : 'text-[17px] font-semibold text-gray-800'}>
           {thaiShort(from)} – {thaiShort(to)}
         </p>
         <button onClick={() => setAdv((v) => !v)} className="text-[12.5px] text-blue-600 hover:underline">
           ค้นหาขั้นสูง
         </button>
+        {เหมือนZORT && <div className="ml-auto min-w-0"><StorePicker value={store} disabled={loading}
+          onChange={(v) => { setStore(v); load(v) }}
+          note="ยอดซื้อทั้งหน้านี้เป็นของร้านที่เลือกเท่านั้น — เส้นใบซื้อตอบทีละร้าน" /></div>}
       </div>
 
       {adv && (
@@ -417,12 +430,12 @@ export default function BuyReportPage() {
 
       {rows && (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
             <Card>
-              <div className="flex items-center gap-2 mb-1">
+              {เหมือนZORT ? <div className="mb-1"><ZortCardTitle รูป="฿">สรุปยอดซื้อ</ZortCardTitle></div> : <div className="flex items-center gap-2 mb-1">
                 <span className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[15px]">🛒</span>
                 <p className="text-[15px] font-semibold text-gray-900">สรุปยอดซื้อ</p>
-              </div>
+              </div>}
               <div className="flex flex-col items-center justify-center py-12">
                 {หัวยอด > 0
                   ? (
@@ -447,10 +460,10 @@ export default function BuyReportPage() {
 
             <Card>
               <div className="flex items-center justify-between gap-2 mb-2">
-                <div className="flex items-center gap-2">
+                {เหมือนZORT ? <ZortCardTitle รูป="↗">รายงาน</ZortCardTitle> : <div className="flex items-center gap-2">
                   <span className="w-7 h-7 rounded-lg bg-sky-50 flex items-center justify-center text-[15px]">📈</span>
                   <p className="text-[15px] font-semibold text-gray-900">รายงาน</p>
-                </div>
+                </div>}
                 {/* 🔄 **เปลี่ยนจากป้ายนิ่งเป็น dropdown ปิดตัวเลือก 4 ต.ค. 2569** (ตอนเทียบ ZORT ทุกหน้า)
                     เดิมเป็น `<span>` คำว่า "ยอดซื้อรวม" เพราะเรามีชนิดเดียวจริง ๆ — เจตนาถูก
                     แต่ผลคือ **คนอ่านไม่รู้เลยว่า ZORT มีมุมมองที่สองอยู่** ⇒ เทียบสองจอแล้วคิดว่าตรงกันแล้ว
@@ -513,12 +526,12 @@ export default function BuyReportPage() {
           )}
 
           {/* ── ตารางยอดซื้อรายสินค้าแบบ ZORT ── */}
-          <Card padded={false} className="mt-4">
+          <Card padded={false} className={เหมือนZORT ? 'mt-[30px]' : 'mt-4'}>
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
-              <div className="flex items-center gap-2 mr-auto">
+              {เหมือนZORT ? <div className="mr-auto"><ZortCardTitle รูป="▥">ยอดซื้อ</ZortCardTitle></div> : <div className="flex items-center gap-2 mr-auto">
                 <span className="w-7 h-7 rounded-lg bg-violet-50 flex items-center justify-center text-[15px]">📊</span>
                 <p className="text-[15px] font-semibold text-gray-900">ยอดซื้อ</p>
-              </div>
+              </div>}
               {/* 📦 dropdown จัดกลุ่ม — ผังเดียวกับ `tableoption` ของ ZORT
                      (สินค้า · หมวดหมู่ · ผู้ติดต่อ · ผู้ใช้งาน · คลัง/สาขา)
                      🔴 "ผู้ใช้งาน" ปิดไว้พร้อมเหตุผล — ท่อตอบ ok:false ว่ากระจกใบซื้อไม่ได้เก็บผู้สร้างใบ
