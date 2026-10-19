@@ -28,7 +28,7 @@ import type { คำตอบที่อาจถูกบีบ } from '@/lib/
 import { type ที่มาเลขสต็อก, type แผนที่ป้ายที่มา } from '@/lib/stock-source'
 import { findOrderId } from '@/lib/open-order'
 import {
-  PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT, ZORT_BACK_LINK
+  PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT, ZORT_BACK_LINK, ZORT_INFO_LABEL, ZORT_INFO_VALUE, ZORT_INFO_NAME
 } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -89,6 +89,9 @@ interface StockCardResp {
   error?: string
 }
 /** เพดานแถวที่ขอจากท่อ — **ต้องบอกบนจอเมื่อชนเพดาน** ห้ามตัดเงียบ */
+/** ป้าย/ค่าในกล่องข้อมูล — โหมดเหมือน ZORT ใช้ค่ากลางที่วัดจาก DOM · โหมดปกติคงของเดิม */
+const ป้าย = เหมือนZORT ? ZORT_INFO_LABEL : 'text-[12.5px] text-gray-500'
+const ค่า = เหมือนZORT ? ZORT_INFO_VALUE : 'text-[15px] text-gray-900'
 const CARD_LIMIT = 100
 /** ชุดที่มีรหัสนี้เป็นส่วนประกอบ — ถามด้วย `bundleitems&member=<รหัส>` */
 interface InBundle { bundleSku: string; bundleName?: string; qty?: number }
@@ -493,7 +496,7 @@ export default function ProductDetailPage() {
           </div>}
 
           {/* กล่องข้อมูล — รูปซ้าย ขวาสองคอลัมน์ ตามผัง ZORT */}
-          <div className="bg-white border border-gray-200 rounded-md p-5 mt-4 flex flex-wrap gap-6">
+          <div className={`bg-white p-5 flex flex-wrap gap-6 ${เหมือนZORT ? 'rounded-[6px] mt-6' : 'border border-gray-200 rounded-md mt-4'}`}>
             {/* 🖼️ ลำดับรูปตามที่ฝั่งท่อกำหนด (fc52832):
                    ① แผนที่รูปย่อของเรา (128px · เบา) ② ไม่มีค่อยใช้ `imagePath` ของ ZORT (ไฟล์ดิบ)
                    ③ ไม่มีทั้งคู่ ⇒ **แยกให้ออกว่า "ZORT ไม่มีรูป" กับ "ยังไม่รู้"**
@@ -521,37 +524,39 @@ export default function ProductDetailPage() {
               )}
 
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-semibold text-gray-900">{row.name || sku}</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 mt-4 max-w-[640px]">
-                <div>
-                  <p className="text-[12.5px] text-gray-500">รหัสสินค้า</p>
-                  <p className="text-[15px] text-gray-900">{row.sku}</p>
+              <p className={เหมือนZORT ? `${ZORT_INFO_NAME} mb-2` : 'text-[15px] font-semibold text-gray-900'}>{row.name || sku}</p>
+              {/* 🧭 โหมดเหมือน ZORT: ลำดับช่องตาม /Product/Details (รหัส · ราคาขาย · น้ำหนัก · ราคาซื้อ · ต้นทุนเฉลี่ย · ชุด) ด้วย order
+                     ไม่ย้ายโค้ด ⇒ โหมดปกติเรียงเดิม · คอลัมน์ละ 250 ตาม ZORT · ป้าย/ค่าใช้ค่ากลาง ZORT_INFO_* */}
+              <div className={เหมือนZORT ? 'grid grid-cols-2 gap-y-[18px] mt-4 max-w-[500px]' : 'grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 mt-4 max-w-[640px]'}>
+                <div className={`${เหมือนZORT ? 'order-1' : ''}`}>
+                  <p className={ป้าย}>รหัสสินค้า</p>
+                  <p className={ค่า}>{row.sku}</p>
                 </div>
-                <div>
-                  <p className="text-[12.5px] text-gray-500">ราคาขาย</p>
-                  <p className="text-[15px] text-gray-900">
+                <div className={`${เหมือนZORT ? 'order-2' : ''}`}>
+                  <p className={ป้าย}>ราคาขาย</p>
+                  <p className={ค่า}>
                     {typeof row.price === 'number' ? `${fmtMoney(row.price)} บาท` : '-'}
                   </p>
                 </div>
-                <div>
-                  <p className="text-[12.5px] text-gray-500">ต้นทุนคงเหลือเฉลี่ย</p>
+                <div className={`${เหมือนZORT ? 'order-5' : ''}`}>
+                  <p className={ป้าย}>ต้นทุนคงเหลือเฉลี่ย</p>
                   {/* 🔴 ต้นทุนเฉลี่ยเรามีแค่ **ระดับหมวด** (คัดจากจอ ZORT) ไม่มีระดับสินค้า
                       ⇒ ขึ้นขีด + บอกว่าไปดูที่ไหนได้ · ห้ามเอาราคาซื้อในทะเบียนมาแสดงแทน
                       เพราะพิสูจน์แล้วว่ามันต่ำกว่าต้นทุนจริง 2-3 เท่า */}
-                  <p className="text-[15px] text-gray-300">-</p>
+                  <p className={เหมือนZORT ? ค่า : 'text-[15px] text-gray-300'}>-</p>
                   <p className="text-[11.5px] text-gray-400">
                     มีเฉพาะระดับหมวด · ดูที่ <Link href="/core/categories" className="text-[#337ab7] hover:underline">หมวดหมู่</Link>
                   </p>
                 </div>
-                <div>
-                  <p className="text-[12.5px] text-gray-500">ราคาซื้อ</p>
-                  <p className="text-[15px] text-gray-900">
+                <div className={`${เหมือนZORT ? 'order-4' : ''}`}>
+                  <p className={ป้าย}>ราคาซื้อ</p>
+                  <p className={ค่า}>
                     {/* ⚠️ null = ยังไม่ได้กรอก ไม่ใช่ 0 */}
                     {row.buy == null ? <span className="text-gray-300">-</span> : `${fmtMoney(row.buy)} บาท`}
                   </p>
                 </div>
-                <div className="sm:col-span-2">
-                  <p className="text-[12.5px] text-gray-500">สินค้าในสินค้าเป็นชุด</p>
+                <div className={`sm:col-span-2 ${เหมือนZORT ? 'order-6' : ''}`}>
+                  <p className={ป้าย}>สินค้าในสินค้าเป็นชุด</p>
                   {(() => {
                     const list = inBundles?.rows ?? []
                     // ⚠️ ไม่มีคำตอบจากท่อ ≠ ไม่อยู่ในชุดไหน — ต้องเขียนต่างกัน
@@ -596,11 +601,11 @@ export default function ProductDetailPage() {
                   })()}
                 </div>
 
-                <div>
-                  <p className="text-[12.5px] text-gray-500">น้ำหนัก (กรัม)</p>
+                <div className={`${เหมือนZORT ? 'order-3' : ''}`}>
+                  <p className={ป้าย}>น้ำหนัก (กรัม)</p>
                   {/* ⚠️ null = ยังไม่ได้กรอกใน ZORT · 0 = ของไม่มีน้ำหนักจริง ๆ — ห้ามยุบรวมกัน
                       ทั้งคลังมีน้ำหนักจริงแค่ 23% ⇒ ช่องนี้ขึ้นขีดเป็นเรื่องปกติ ไม่ใช่ท่อพัง */}
-                  <p className="text-[15px] text-gray-900">
+                  <p className={ค่า}>
                     {row.weight == null
                       ? <span className="text-gray-300">-</span>
                       : `${fmtNum(Number(row.weight))} กรัม`}
@@ -609,12 +614,14 @@ export default function ProductDetailPage() {
                     <p className="text-[11.5px] text-gray-400">ยังไม่ได้กรอกน้ำหนักที่ ZORT</p>
                   )}
                 </div>
-                <div>
-                  <p className="text-[12.5px] text-gray-500">ลงขายที่</p>
+                <div className={`${เหมือนZORT ? 'order-7' : ''}`}>
+                  <p className={ป้าย}>ลงขายที่</p>
                   <div className="text-[15px]"><MarketLogos list={row.marketplaces} by={row.marketplacesBy} from={row.marketplacesFrom} /></div>
                 </div>
               </div>
             </div>
+            {/* โหมดเหมือน ZORT: QR + บาร์โค้ดมุมขวาในกล่องข้อมูล (ZORT วางที่นี่ ไม่ใช่ท้ายจอ) */}
+            {เหมือนZORT && <div className="ml-auto"><SkuCodes sku={sku} แบบZORT /></div>}
           </div>
 
           <Card className="mt-4">
@@ -898,10 +905,10 @@ export default function ProductDetailPage() {
                  และจอพิมพ์ฉลากอยู่ที่ /core/stock/print?sku= ⇒ ปล่อยไว้คือจอบอกว่าไม่มีของที่มีอยู่
               📌 ตรงกับคำเตือนที่เขียนไว้ในย่อหน้าเดียวกันนี้เองเมื่อ 3 ก.ย. ว่า
                  "ข้อความทำไม่ได้ที่ค้าง อันตรายกว่าตัวตรวจที่เขียวทั้งที่พัง" — แล้วก็ค้างจนได้ */}
-          <div className="mt-5">
+          {!เหมือนZORT && <div className="mt-5">
             <p className="text-[15px] font-semibold text-gray-900 mb-2">QR code และบาร์โค้ด</p>
             <SkuCodes sku={sku} />
-          </div>
+          </div>}
 
           {/* 📇 บัตรสต็อก — ZORT มี ExportStockCard() ในจอรายการสินค้า ของเราไม่เคยมี (ใบ t_mu1i74cu) */}
           <StockCard sku={sku} />

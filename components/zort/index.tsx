@@ -430,6 +430,11 @@ export const FORM_INPUT = 'w-full h-10 rounded border border-[#adb5bd] bg-white 
 export const FORM_LABEL = 'block text-[16px] font-medium text-[#3e3e3e] mb-1'
 /** ปุ่มกรอบในแถบปุ่มจอรายละเอียด (แก้ไข · พิมพ์ · คำสั่ง ▾) — ZORT Kanit 14 #3e3e3e ขอบ #adb5bd มุม 4 สูง 39 (วัด 17 ต.ค. 2569) */
 /** ลิงก์กลับ "‹ หน้าก่อน" เหนือหัวจอ — โหมดเหมือน ZORT: Kanit 14 #337ab7 (วัด /Buy/Details 19 ต.ค. 2569) · ใช้กับ <Link className={ZORT_BACK_LINK}> */
+/* 📏 กล่องข้อมูลจอรายละเอียด (สินค้า · ชุด) — อ่าน DOM /Bundle/Details 19 ต.ค. 2569:
+   ป้าย Boon 14/400 #868e96 · ค่า Lato 18/700 #3e3e3e · ชื่อ Kanit 16/500 #3e3e3e */
+export const ZORT_INFO_LABEL = "font-['Boon',sans-serif] text-[14px] text-[#868e96] leading-[14px] mb-[5px]"
+export const ZORT_INFO_VALUE = "font-['Lato','Boon',sans-serif] text-[18px] font-bold text-[#3e3e3e]"
+export const ZORT_INFO_NAME = "font-['Kanit',sans-serif] text-[16px] font-medium text-[#3e3e3e]"
 export const ZORT_BACK_LINK = เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] text-[#337ab7] hover:underline" : 'text-[12.5px] text-[#337ab7] hover:underline'
 
 /* 📏 วัด DOM /Product/Details 19 ต.ค. 2569 ซ้ำ: Kanit 14/400 #3e3e3e สูง 39 ขอบ #adb5bd มุม 4 ช่องใน 12 — เดิมไม่ได้ระบุฟอนต์ ⇒ ตกเป็น Boon ตัวดูเล็กกว่า ZORT */
