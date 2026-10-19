@@ -43,6 +43,7 @@ import { fmtNum } from '@/lib/format'
 import { FORM_INPUT, PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR, Pill, thaiDate } from '@/components/zort'
 import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Doc {
   id?: string; number?: string; kind?: string; status?: string
@@ -81,7 +82,42 @@ interface MoveResp {
       จนกว่าจะยิงพิสูจน์ว่าค้นด้วยเลขพัสดุเจอ (ลอกคำที่ทำไม่ได้ = ช่องที่กรอกแล้วไม่เจอ) */
 const STEPS = ['กรอกหมายเลขรายการ', 'จัดการรับสินค้า', 'รับสำเร็จ']
 
+/* 🧭 ไอคอนขั้นของเราเอง (วาดเส้นเอง ไม่ใช้ไอคอนของ ZORT) — แว่นขยาย · กล่อง · กล่องมีเครื่องหมายถูก */
+function ไอคอนขั้น({ i, สี }: { i: number; สี: string }) {
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={สี} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {i === 0 && <><circle cx="10.5" cy="10.5" r="6" /><path d="M15 15l5 5" /></>}
+      {i >= 1 && <><path d="M4 8l8-4 8 4v9l-8 4-8-4z" /><path d="M4 8l8 4 8-4M12 12v9" /></>}
+      {i === 2 && <path d="M15 17.5l2 2 3.5-3.5" />}
+    </svg>
+  )
+}
+
+/** 📐 แถบขั้นแบบ ZORT /Pickandpack/Main (ดูภาพ 19 ต.ค. 2569): การ์ดขาวไม่มีขอบ · สามขั้นกลางจอ ต่อด้วยเส้นประ ·
+ *  ขั้นปัจจุบัน = วงน้ำเงินทึบ ไอคอนขาว · ขั้นอื่น = ไอคอนเส้นน้ำเงิน ไม่มีวง · ป้ายขั้นปัจจุบันเข้ม อื่นจาง */
+function StepperZ({ at }: { at: number }) {
+  return (
+    <div className="bg-white rounded-[6px] py-4 mb-[38px] flex justify-center">
+      <div className="flex items-start w-full max-w-[700px]">
+        {STEPS.map((s, i) => (
+          <div key={s} className="flex items-start flex-1 last:flex-none">
+            <div className="flex flex-col items-center w-[150px] shrink-0">
+              <div className="w-11 h-11 rounded-full grid place-items-center" style={i === at ? { background: '#4165ed' } : undefined}>
+                <ไอคอนขั้น i={i} สี={i === at ? '#fff' : '#4165ed'} />
+              </div>
+              <p className={`font-['Kanit',sans-serif] text-[16px] mt-1 ${i <= at ? 'text-[#3e3e3e]' : 'text-[#ced4da]'}`}>ขั้นตอนที่ {i + 1}</p>
+              <p className={`text-[13px] ${i <= at ? 'text-[#868e96]' : 'text-[#ced4da]'}`}>{s}</p>
+            </div>
+            {i < STEPS.length - 1 && <div className="flex-1 border-t border-dashed border-[#ced4da] mt-[22px] -mx-10" />}
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function Stepper({ at }: { at: number }) {
+  if (เหมือนZORT) return <StepperZ at={at} />
   return (
     <div className="bg-white border border-gray-200 rounded-md px-4 py-3 mb-4">
       <div className="flex items-center">
@@ -256,8 +292,13 @@ export default function ReceivePage() {
   }, [doc, lines])
 
   return (
-    <div className="p-4 md:p-6 max-w-[880px]">
-      <PageHead
+    <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[880px]'}`}>
+      {/* โหมดเหมือน ZORT: ZORT ไม่มีหัวจอ (เปิดเป็นหน้าเต็มของตัวเอง) ⇒ ซ่อนหัวจอ · ปุ่มเริ่มใบใหม่ยังอยู่ (ย้ายมาเหนือแถบขั้น) */}
+      {เหมือนZORT ? (step > 0 && (
+        <div className="flex justify-end mb-3">
+          <BtnGhost onClick={() => { setStep(0); setDoc(null); setResult(null); setErr('') }}>เริ่มใบใหม่</BtnGhost>
+        </div>
+      )) : <PageHead
         title="รับสินค้าเข้า"
         summary={
           <>
@@ -271,7 +312,7 @@ export default function ReceivePage() {
             เริ่มใบใหม่
           </BtnGhost>
         ) : undefined}
-      />
+      />}
 
       <Stepper at={step} />
 
@@ -284,7 +325,7 @@ export default function ReceivePage() {
       {/* ── ขั้นที่ 1 ─────────────────────────────────────── */}
       {step === 0 && (
         /* 📏 ZORT /Pickandpack/Main ขั้นที่ 1 (วัด 18 ต.ค. 2569): การ์ดขาวไม่มีขอบ · หัว Kanit 30/500 · ป้าย 16 #3e3e3e · ช่องกรอกกว้าง ~250 · ปุ่ม 16/400 */
-        <div className="bg-white rounded-md p-8 text-center">
+        <div className={`bg-white p-8 text-center ${เหมือนZORT ? 'rounded-[6px]' : 'rounded-md'}`}>
           <p className="font-['Kanit','Boon',sans-serif] text-[30px] leading-[30px] font-medium text-[#3e3e3e] mb-6">เริ่มต้นการรับสินค้าเข้า</p>
           <p className="text-[16px] text-[#3e3e3e]">กรอกหมายเลขใบโอน หรือเลขอ้างอิง</p>
           {/* 🔴 ต้องบอกตั้งแต่ก่อนกรอก ว่าเลขพัสดุใช้ไม่ได้ — ไม่ใช่ปล่อยให้ค้นแล้วขึ้น "ไม่พบ"
