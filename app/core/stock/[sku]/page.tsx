@@ -28,7 +28,7 @@ import type { คำตอบที่อาจถูกบีบ } from '@/lib/
 import { type ที่มาเลขสต็อก, type แผนที่ป้ายที่มา } from '@/lib/stock-source'
 import { findOrderId } from '@/lib/open-order'
 import {
-  PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT,
+  PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT, ZORT_BACK_LINK
 } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -347,7 +347,7 @@ export default function ProductDetailPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/core/stock" className="text-[12.5px] text-[#337ab7] hover:underline">‹ สินค้า</Link>
+      <Link href="/core/stock" className={ZORT_BACK_LINK}>‹ สินค้า</Link>
 
       {error && <ErrorBox title="ดึงข้อมูลสินค้าไม่ได้">{error}</ErrorBox>}
       {loading && !row && <LoadingState />}
