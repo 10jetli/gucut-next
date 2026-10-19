@@ -21,7 +21,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {TH_NO, 
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
+  EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav, ZORT_BACK_LINK } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import { skuScopeNote } from '@/lib/sku-scope'
 import ChannelGapsCard from '@/components/zort/ChannelGapsCard'
@@ -228,7 +228,7 @@ export default function MarketplaceProductsPage() {
   return (
     <div className="p-4 md:p-6">
       {/* ผังภาพ 83: breadcrumb กลับไป Marketplace Dashboard อยู่เหนือหัวจอ */}
-      <Link href="/core/marketplace" className="text-[12.5px] text-[#337ab7] hover:underline">‹ Marketplace Dashboard</Link>
+      <Link href="/core/marketplace" className={ZORT_BACK_LINK}>‹ Marketplace Dashboard</Link>
       <PageHead
         title="สินค้าบน Marketplace"
         summary={

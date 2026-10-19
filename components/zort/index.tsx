@@ -428,7 +428,11 @@ export const DL_VALUE = 'text-[16px] text-[#3e3e3e]'
 export const FORM_INPUT = 'w-full h-10 rounded border border-[#adb5bd] bg-white px-3 text-[14px] text-[#3e3e3e] outline-none focus:border-[#4165ed]'
 export const FORM_LABEL = 'block text-[16px] font-medium text-[#3e3e3e] mb-1'
 /** ปุ่มกรอบในแถบปุ่มจอรายละเอียด (แก้ไข · พิมพ์ · คำสั่ง ▾) — ZORT Kanit 14 #3e3e3e ขอบ #adb5bd มุม 4 สูง 39 (วัด 17 ต.ค. 2569) */
-export const DETAIL_BTN = 'inline-block text-[14px] leading-[21px] text-[#3e3e3e] bg-white border border-[#adb5bd] rounded px-3 py-2 hover:bg-gray-50'
+/** ลิงก์กลับ "‹ หน้าก่อน" เหนือหัวจอ — โหมดเหมือน ZORT: Kanit 14 #337ab7 (วัด /Buy/Details 19 ต.ค. 2569) · ใช้กับ <Link className={ZORT_BACK_LINK}> */
+export const ZORT_BACK_LINK = เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] text-[#337ab7] hover:underline" : 'text-[12.5px] text-[#337ab7] hover:underline'
+
+/* 📏 วัด DOM /Product/Details 19 ต.ค. 2569 ซ้ำ: Kanit 14/400 #3e3e3e สูง 39 ขอบ #adb5bd มุม 4 ช่องใน 12 — เดิมไม่ได้ระบุฟอนต์ ⇒ ตกเป็น Boon ตัวดูเล็กกว่า ZORT */
+export const DETAIL_BTN = "inline-block font-['Kanit',sans-serif] text-[14px] leading-[21px] text-[#3e3e3e] bg-white border border-[#adb5bd] rounded px-3 py-2 hover:bg-gray-50"
 
 /** ตัวเลขในตาราง — **ติดลบต้องเป็นสีแดง** (ZORT ทำแบบนี้ในจอสินค้า คงเหลือ -2 -3) */
 /* 🔴 **ตัวช่วยที่ใช้ร่วมหลายจอ — พังตัวเดียว ล้มพร้อมกันหลายจอ**
