@@ -18,6 +18,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { thaiDateTime } from '@/components/zort/PushStatusBoard'
 import ExportButton from '@/components/zort/ExportButton'
+import ZortFoldIf from '@/components/zort/ZortFoldIf'
 import { TH_NO, ROW_LINK, TD_NO,
   PageHead, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
@@ -162,7 +163,8 @@ export default function CoreBranchesPage() {
         }
       />
 
-      <div className="mb-3">
+      {/* 📐 โหมดเหมือน ZORT: ระยะช่องค้นหาเดียวกับ SearchRow ร่วม (pt-1 mb-5) — ตารางเริ่มตำแหน่งเดียวกับ ZORT */}
+      <div className={เหมือนZORT ? 'pt-1 mb-5' : 'mb-3'}>
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -180,10 +182,15 @@ export default function CoreBranchesPage() {
               กล่องขาว p-3 ขอบมน 6 มีเงา · Boon 16 #3e3e3e · บรรทัดเดียว "มูลค่าสินค้าคงเหลือ + เวลาคัด" คำอธิบายเข้า ⓘ
               ⚠️ ถ้าไม่รู้เวลาคัด หรือรอบคัดอ่านไม่สำเร็จ ยังขึ้นบนจอเหมือนเดิม (ห้ามซ่อน) */}
           {เหมือนZORT && valueCollectedAt && !valuesError ? (
-            <div className="bg-white shadow rounded-[6px] p-3 mb-4 text-[16px] text-[#3e3e3e]">
+            <div className="bg-white shadow rounded-[6px] px-4 py-[14px] mb-5 text-[16px] text-[#3e3e3e] flex items-center justify-between gap-3">
+              <span>
               มูลค่าสินค้าคงเหลือ คัดล่าสุด: {valueCollectedAt}{' '}
               <span className="text-gray-400 cursor-help text-[14px]"
                 title="มูลค่าสินค้าคงเหลือรายคลังคัดมาจากจอ ZORT ไม่ใช่คิดจากคลังเงา (เวลาไทย) · ตัวคัดวิ่งทุกชั่วโมง ⇒ ซื้อของเข้าหรือโอนของระหว่างรอบ เลขจะเก่ากว่าจอ ZORT เล็กน้อยเสมอ">ⓘ</span>
+              </span>
+              {/* ZORT มีปุ่ม "อัพเดท" (สั่งให้ ZORT คำนวณมูลค่าใหม่) — ของเราสั่ง ZORT ไม่ได้ ⇒ สีเทาพร้อมเหตุ ไม่ใช่ปุ่มหลอก */}
+              <span title="ยังทำไม่ได้ — สั่งให้ ZORT คำนวณมูลค่าใหม่ต้องกดที่ ZORT · ของเรารอรอบคัดถัดไป (ทุกชั่วโมง)"
+                className="inline-flex items-center bg-white border border-[#ced4da] rounded-[3px] px-2 h-[27px] text-[13px] font-bold font-['Lato',sans-serif] text-gray-400 cursor-not-allowed shrink-0">⟳ อัพเดท</span>
             </div>
           ) : (
           <div className="bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mb-3 text-[12.5px] text-gray-700">
@@ -348,6 +355,8 @@ export default function CoreBranchesPage() {
             />
           </div>
 
+          {/* 📐 โหมดเหมือน ZORT: หมายเหตุใต้ตารางพับไว้ · ถ้ามีใบที่ยังไม่รู้คลัง บรรทัดสรุปบอกเลย (คำเตือนจริงห้ามซ่อน) */}
+          <ZortFoldIf tone="gray" พับ={เหมือนZORT} สรุป={<>หมายเหตุคลัง · บิล/ยอดขาย 30 วันนับอย่างไร{unknownWh ? <> · <b className="text-amber-800">⚠️ มีใบที่ยังไม่รู้คลัง {fmtNum(unknownWh.orders)} ใบ</b></> : null}</>}>
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {note || 'คลังสินค้าดึงมาจาก ZORT ทั้งหมด'} ·
             {/* ⚠️ ข้อความของท่อ (note) บอกว่าโกดัง "ไม่มียอดขาย" — หมายถึงขายหน้าร้าน (POS) ไม่ได้
@@ -357,6 +366,7 @@ export default function CoreBranchesPage() {
             <b> โกดังไม่ใช่จุดขาย</b> จึงไม่มีให้เลือกในจอขายหน้าร้านและไม่มียอดขาย —
             เป็นความตั้งใจ ไม่ใช่ข้อมูลตกหล่น
           </p>
+          </ZortFoldIf>
         </>
       )}
     </div>

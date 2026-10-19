@@ -14,10 +14,10 @@ import Card from '@/components/ui/Card'
 import ExportButton from '@/components/zort/ExportButton'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortPie from '@/components/zort/ZortPie'
-import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
+import ZortFoldIf from '@/components/zort/ZortFoldIf'
 import {
   PageHead, TableWrap, TH, TD, TDR, EmptyState, thaiDate, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
@@ -84,11 +84,6 @@ const DEAD_RANGES: { days: number; label: string; months?: number }[] = [
 const deadQs = (days: number) => {
   const m = DEAD_RANGES.find((r) => r.days === days)?.months
   return `${m ? `months=${m}` : `days=${days}`}&sort=lastsold`
-}
-
-/** โหมดเหมือน ZORT: พับเนื้อหาเดิมทั้งก้อนไว้ใต้บรรทัดสรุป (ไม่ถอดอะไร) · นอกโหมดแสดงตามเดิม */
-function พับถ้า({ พับ, สรุป, children }: { พับ: boolean; สรุป: React.ReactNode; children: React.ReactNode }) {
-  return พับ ? <ZortLookFold tone="amber" สรุป={สรุป}><div className="mt-2">{children}</div></ZortLookFold> : <>{children}</>
 }
 
 export default function CoreProductReportPage() {
@@ -242,7 +237,7 @@ export default function CoreProductReportPage() {
                   </button>
                 </div>
               )}
-              <พับถ้า พับ={โหมดZ} สรุป={<>{catErr ? '⚠️ ดึงมูลค่าตามต้นทุนเฉลี่ยไม่ได้รอบนี้ · ' : ''}ที่มาของเลข + เลขวิธีคิดของเรา (ราคาขาย · ราคาทุน) — คนละวิธีกับ ZORT ห้ามเทียบทีละบาท</>}>
+              <ZortFoldIf tone="amber" พับ={โหมดZ} สรุป={<>{catErr ? '⚠️ ดึงมูลค่าตามต้นทุนเฉลี่ยไม่ได้รอบนี้ · ' : ''}ที่มาของเลข + เลขวิธีคิดของเรา (ราคาขาย · ราคาทุน) — คนละวิธีกับ ZORT ห้ามเทียบทีละบาท</>}>
               <div className="flex flex-col items-center justify-center py-8">
                 {/* ⚠️ **ต้องโชว์ทั้งสองแบบพร้อมป้ายกำกับ ห้ามโชว์ตัวเดียวลอย ๆ**
                     เลขนี้ต่างจาก ZORT หลายล้าน คนเปิดสองจอเทียบกันแล้วไม่มีคำอธิบาย
@@ -342,7 +337,7 @@ export default function CoreProductReportPage() {
                 {' '}· ตัวเลขทั้งสองแบบข้างบนจึงคร่อมเลขของ ZORT อยู่ (ราคาขายสูงกว่า · ราคาทุนต่ำกว่า)
                 {' '}<b>ห้ามเอาไปเทียบทีละบาท</b> ใช้ดูแนวโน้มและสัดส่วนได้
               </div>
-              </พับถ้า>
+              </ZortFoldIf>
             </Card>
 
             <Card>
@@ -360,7 +355,7 @@ export default function CoreProductReportPage() {
                   </div>
                 </div>
               )}
-              <พับถ้า พับ={วาดวงคลัง} สรุป={<>ตัวเลขรายคลัง/รายหมวด (ตาราง)</>}>
+              <ZortFoldIf tone="amber" พับ={วาดวงคลัง} สรุป={<>ตัวเลขรายคลัง/รายหมวด (ตาราง)</>}>
               {/* 🔴 **แก้ข้อความที่เคยผิดชั้น (4 ก.ย. 2569)** — เดิมเขียนว่า
                   "ZORT ไม่เปิดช่องทางให้ดึงสต็อกแยกตามคลัง … เป็นข้อจำกัดของต้นทาง
                    **ไม่ใช่ของที่ยังทำไม่เสร็จ**" ⇒ กลับด้านกับความจริง
@@ -471,7 +466,7 @@ export default function CoreProductReportPage() {
                 ⚠️ สองมุมมองนี้ <b>คิดคนละฐาน</b> — รายคลังคือตัวเลขที่ ZORT ตอบสด · รายหมวดคิดจากต้นทุนเฉลี่ยที่คัดมา
                 {' '}⇒ <b>ผลรวมไม่เท่ากันเป็นเรื่องปกติ</b>
               </p>
-              </พับถ้า>
+              </ZortFoldIf>
             </Card>
           </div>
 
