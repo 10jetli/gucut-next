@@ -25,6 +25,9 @@ HOST = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else '1.gucut.com'
 คู่ = sys.argv[2] if len(sys.argv) > 2 and sys.argv[2] else '/tmp/คู่จอ.json'
 ผล = sys.argv[3] if len(sys.argv) > 3 and sys.argv[3] else '/tmp/ผลพิกเซล.json'
 เฉพาะ = set(sys.argv[4].split(',')) if len(sys.argv) > 4 and sys.argv[4] else None
+# เก็บภาพสองฝั่งไว้ดูด้วยตา: ตั้ง env เก็บภาพ=<โฟลเดอร์> ⇒ ได้ z<เลขคู่>.png / o<เลขคู่>.png (ไม่ตั้ง = ไม่เก็บ)
+import os
+เก็บภาพ = os.environ.get('เก็บภาพ') or os.environ.get('SAVE_DIR') or ''
 ซ่อนป๊อปอัป = ".modal,.modal-backdrop,.swal2-container{display:none!important} body.modal-open{overflow:auto!important}"
 
 def พร้อม(pg):
@@ -90,6 +93,8 @@ with sync_playwright() as pw:
                 po.wait_for_timeout(1500)
                 o = ภาพ(po)
                 แถว['ต่าง%'] = ต่างกี่เปอร์เซ็นต์(z, o)
+                if เก็บภาพ:
+                    z.save(os.path.join(เก็บภาพ, f"z{p['no']}.png")); o.save(os.path.join(เก็บภาพ, f"o{p['no']}.png"))
                 แถว['ซูม'] = f'ZORT กว้าง {zw}'
             except Exception as e:
                 แถว['ผิดพลาด'] = str(e)[:120]

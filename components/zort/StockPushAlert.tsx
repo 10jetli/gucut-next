@@ -11,6 +11,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { อ่านสถานะดันสต็อก, ชื่อช่องทาง, type ผลดันสต็อก } from '@/lib/stock-push-state'
 import { thaiDayTime } from '@/components/zort/DataFreshness'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export default function StockPushAlert() {
   const [r, setR] = useState<ผลดันสต็อก | null>(null)
@@ -23,6 +24,23 @@ export default function StockPushAlert() {
   }, [])
   if (!r) return null
   const กำกับ = <span className="text-[11.5px] text-gray-400"> · อ่านจากฐานของเราเอง ไม่ได้ยิงถามแพลตฟอร์ม</span>
+  if (r.สถานะ === 'หยุด' && เหมือนZORT) {
+    /* 📐 โหมดเหมือน ZORT: ถ้อยคำเตือนเหมือนเดิมทุกคำ แต่รวมเป็นบรรทัดเดียว (ลิงก์ต่อท้าย · ที่มาของข้อมูลอยู่ใน title)
+       ⇒ ยังแดง ยังเห็นก่อนการ์ด แต่ไม่ดันทั้งหน้าลงสองบรรทัด */
+    return (
+      <div className="rounded-md border border-red-300 bg-red-50 px-4 py-2 text-[12.5px] text-red-800 leading-relaxed">
+        {r.ราย.filter((x) => x.หยุด).map((x, i, a) => (
+          <span key={x.ช่องทาง}>
+            🔴 <b>สต็อกบน {ชื่อช่องทาง(x.ช่องทาง)} หยุดอัปเดตมา {Math.floor((x.ชม as number) / 24).toLocaleString('th-TH')} วัน</b>
+            {x.at && <> (ตั้งแต่ {thaiDayTime(new Date(x.at))} เวลาไทย)</>} — <b>เสี่ยงขายเกินสต็อก</b>
+            {i < a.length - 1 ? ' · ' : ''}
+          </span>
+        ))}
+        {' · '}
+        <Link href="/settings/connections" className="text-red-900 underline" title="อ่านจากฐานของเราเอง ไม่ได้ยิงถามแพลตฟอร์ม">ดูเหตุและวิธีแก้</Link>
+      </div>
+    )
+  }
   if (r.สถานะ === 'หยุด') {
     return (
       <div className="rounded-md border border-red-300 bg-red-50 px-4 py-3 text-[12.5px] text-red-800 leading-relaxed">
