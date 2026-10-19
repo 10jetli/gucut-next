@@ -13,7 +13,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE, RowMenu, DETAIL_BTN } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
@@ -75,6 +75,22 @@ function Inner() {
           ? <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก">ⓘ</span>
           : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT จอรายละเอียดเอกสารไม่มี */ />
+
+      {/* 🧰 แถบปุ่มแบบ ZORT /Buy/Details ของใบรับคืน (อ่านชื่อปุ่มจาก DOM 19 ต.ค. 2569 · ไม่ได้กด): คำสั่ง ▾ · พิมพ์เอกสาร ▾ · Accounting
+          รายการในเมนูของ ZORT โหลดตอนเปิดเมนู — ไม่ได้กดดู ⇒ ใส่เฉพาะที่รู้แน่ · ทุกปุ่มสีเทาพร้อมเหตุ (คนจาก ZORT จะมองหา ไม่ซ่อน)
+          📐 y=194 เท่า ZORT (margin ยุบรวมกับ mb หัวจอ ⇒ ใส่ระยะเต็ม) */}
+      {d && !wrongLevel && (
+        <div className={`flex flex-wrap items-center gap-2 mb-4 ${เหมือนZORT ? 'mt-[25px]' : ''}`}>
+          <RowMenu label="คำสั่ง" items={[
+            { label: 'คำสั่งของใบรับคืน', disabled: 'ยังทำไม่ได้ — ทุกคำสั่งของใบรับคืนต้องเขียนกลับ ZORT (รายการในเมนูของ ZORT ยังไม่ได้อ่าน เพราะต้องกดเปิด)' },
+          ]} />
+          <RowMenu label="🖨 พิมพ์เอกสาร" items={[
+            { label: 'พิมพ์เอกสาร', disabled: 'ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบรับคืน' },
+          ]} />
+          <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
+            className={เหมือนZORT ? `${DETAIL_BTN} !text-gray-400 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>Accounting</span>
+        </div>
+      )}
 
       {/* 🔴 กล่องนี้ต้องบอก **สามอย่างที่ต่างกัน** ไม่ใช่ประโยคเดียวคลุมทุกกรณี
              · เลขผิดรูป ⇒ ยังไม่ได้ถาม ZORT เลย  · ติดต่อ ZORT ไม่ได้ ⇒ ยังไม่รู้ว่ามีใบไหม
