@@ -320,7 +320,10 @@ export default function ReturnOrdersPage() {
                     มูลค่า{partial ? `เฉพาะ ${fmtNum(rows.length)} ${ใบชุดนี้}` : 'ทั้งหมด'}{' '}
                     <b>{fmtMoney(sumShown)}</b>
                     {partial && typeof mt?.count === 'number' && mt.count !== total && (
-                      <span className="text-gray-500"> (ยอดทั้งหมดจากกระจกใช้ไม่ได้ตอนนี้: กระจกมี {fmtNum(mt.count)} ใบ แต่ ZORT มี {fmtNum(total!)} ใบ)</span>
+                      /* 📐 โหมดเหมือน ZORT: เหตุยาวย้ายเข้า ⓘ (ป้าย "มูลค่าเฉพาะ N ใบล่าสุด" ข้างหน้ายังอยู่บนจอ) — ไม่งั้นบรรทัดยาวจนกล่องเตือนตกบรรทัด ดันตารางลง */
+                      เหมือนZORT
+                        ? <span className="text-gray-400 cursor-help text-[14px]" title={`ยอดทั้งหมดจากกระจกใช้ไม่ได้ตอนนี้: กระจกมี ${fmtNum(mt.count)} ใบ แต่ ZORT มี ${fmtNum(total!)} ใบ`}> ⓘ</span>
+                        : <span className="text-gray-500"> (ยอดทั้งหมดจากกระจกใช้ไม่ได้ตอนนี้: กระจกมี {fmtNum(mt.count)} ใบ แต่ ZORT มี {fmtNum(total!)} ใบ)</span>
                     )}
                   </>
                 )}
