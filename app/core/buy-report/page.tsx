@@ -430,7 +430,8 @@ export default function BuyReportPage() {
 
       {rows && (
         <>
-          <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+          {/* 📐 โหมดเหมือน ZORT: การ์ดคู่สูงอย่างน้อย 426 ตามภาพ ZORT (การ์ดกราฟของ ZORT สูงคงที่ แม้ข้อมูลน้อย) */}
+          <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px] [&>*]:min-h-[426px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
             <Card>
               {เหมือนZORT ? <div className="mb-1"><ZortCardTitle รูป="฿">สรุปยอดซื้อ</ZortCardTitle></div> : <div className="flex items-center gap-2 mb-1">
                 <span className="w-7 h-7 rounded-lg bg-indigo-50 flex items-center justify-center text-[15px]">🛒</span>
