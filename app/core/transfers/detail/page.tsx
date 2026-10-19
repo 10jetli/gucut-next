@@ -89,7 +89,7 @@ function Inner() {
       {/* 🧰 แถบปุ่มแบบ ZORT /Warehouse/TransferDetails (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
           คำสั่ง ▾ (คัดลอก · เพิ่ม Tag · แก้ไข · ยกเลิกรายการ) · พิมพ์เอกสาร — ทุกข้อต้องเขียนกลับ ZORT หรือยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ */}
       {d && !wrongLevel && (
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className={`flex flex-wrap items-center gap-2 mb-4 ${เหมือนZORT ? 'mt-[25px]' : ''}`} /* 📐 โหมดเหมือน ZORT: แถบปุ่มที่ y=194 เท่า ZORT (วัด DOM 19 ต.ค. 2569 · margin ยุบรวมกับ mb หัวจอ ⇒ ใส่ระยะเต็ม) */>
           <RowMenu label="คำสั่ง" items={([
             ['คัดลอก', 'ยังทำไม่ได้ — สร้างใบโอนใหม่จากใบนี้ยังไม่มี'],
             ['เพิ่ม Tag', 'ยังทำไม่ได้ — ต้องเขียนกลับ ZORT'],

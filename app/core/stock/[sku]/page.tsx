@@ -380,8 +380,8 @@ export default function ProductDetailPage() {
               ปุ่มที่กดแล้วไม่เกิดอะไรคือปุ่มหลอก ⇒ ที่ยังไม่ได้ทำพาไปหน้าที่บอกตรง ๆ
               ✅ แก้ไข/ลบ มีจอจริงแล้ว (14 ก.ย. 2569 · งานกระดาน t_mu0tx2wj) — ปุ่มส่งจริงยังปิดรอท่านประธานอนุมัติ
                  ลบกับแก้อยู่หน้าเดียวกัน เพราะต้องถาม id ของ ZORT ก่อนเหมือนกัน */}
-          {/* 📐 โหมดเหมือน ZORT: ระยะหัวจอ→แถบปุ่ม 27 (วัด DOM /Product/Details 19 ต.ค. 2569: หัวจอจบ 166 ปุ่มเริ่ม 193 · ของเราเดิม 178) */}
-          <div className={`flex flex-wrap items-center gap-2 ${เหมือนZORT ? 'mt-[11px]' : '-mt-1'} mb-4`}>
+          {/* 📐 โหมดเหมือน ZORT: ระยะหัวจอ→แถบปุ่ม 27 (วัด DOM /Product/Details 19 ต.ค. 2569: หัวจอจบ 166 ปุ่มเริ่ม 193 · ของเราเดิม 178) · ⚠️ margin ยุบรวมกับ mb ของหัวจอ (16) ⇒ ต้องใส่ 27 เต็ม ไม่ใช่ส่วนต่าง */}
+          <div className={`flex flex-wrap items-center gap-2 ${เหมือนZORT ? 'mt-[27px]' : '-mt-1'} mb-4`}>
             <Link href={`/core/stock/${encodeURIComponent(sku)}/edit`}
               className={DETAIL_BTN}>
               แก้ไข
