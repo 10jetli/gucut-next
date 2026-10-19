@@ -31,7 +31,7 @@
 import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
-import { PageHead, TH_KANIT as TH, TD, FORM_INPUT, Pill } from '@/components/zort'
+import { PageHead, TH_KANIT as TH, TD, FORM_INPUT, Pill, ZORT_TABLE_BOX, ZORT_TABLE_SHADOW } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { listStaffUsers } from '@/lib/staff-users'
 import { thaiDate } from '@/lib/format'
@@ -157,7 +157,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
       />
 
       {/* ช่องค้นหาตามผัง — ฟอร์ม GET ให้เซิร์ฟเวอร์กรอง (จอนี้เป็น server component) */}
-      <form method="get" className="flex items-center gap-3 mb-4">
+      <form method="get" className={`flex items-center gap-3 ${เหมือนZORT ? 'pt-1 mb-5' : 'mb-4'}`}>
         {/* ช่องค้นหา ZORT กว้าง 400 (เหมือนช่องค้นหาร่วมทุกจอ) */}
         <div className={`flex items-center gap-2 h-10 bg-white border border-[#adb5bd] rounded-[24px] px-3.5 ${เหมือนZORT ? 'w-[400px] max-w-full' : 'w-[280px]'}`}>
           <span className="text-gray-400 text-[12.5px]">🔍</span>
@@ -223,7 +223,10 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
       )}
 
       {/* ── ตารางตามผังภาพ 81: 5 คอลัมน์ ── */}
-      <div className="border rounded-md overflow-hidden" style={{ background: '#f8f9fa', borderColor: '#e3e8f4' }}>
+      {/* 📐 โหมดเหมือน ZORT: กล่องตารางแบบเดียวกับ TableWrap ร่วม (.zort-table หัวเทา #e8ecef · ไม่มีขอบ · เงาน้ำเงินจาง · แถวสูง 41.3) */}
+      {/* 📐 โหมดเหมือน ZORT: กล่องตารางค่าเดียวกับ TableWrap ร่วม (หัวเทา #e8ecef · ไม่มีขอบ · เงาน้ำเงินจาง · แถวสูง 41.3) */}
+      <div className={เหมือนZORT ? ZORT_TABLE_BOX : 'border rounded-md overflow-hidden'}
+        style={เหมือนZORT ? { boxShadow: ZORT_TABLE_SHADOW } : { background: '#f8f9fa', borderColor: '#e3e8f4' }}>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[760px]">
             <thead className="bg-white border-b border-gray-200">

@@ -345,6 +345,11 @@ export function toneOfStatus(s: string): PillTone {
 
 /* ── ตาราง ─────────────────────────────────────────────────────────────
    หัวตารางตัวเล็กสีเทา · เส้นคั่นบาง · แถวมี hover · ตัวเลขชิดขวา */
+/** กล่องตารางแบบ ZORT สำหรับจอที่สร้างกล่องเอง (ไม่ได้ใช้ TableWrap) — ค่าเดียวกับ TableWrap ในโหมดเหมือน ZORT
+ *  ใช้: ผู้ใช้งาน · สิทธิ์การใช้งาน (เปลี่ยนที่นี่ที่เดียว ทุกจอตามกัน) */
+export const ZORT_TABLE_SHADOW = '0 3px 6px #4165ed1a'
+export const ZORT_TABLE_BOX = 'zort-table bg-white overflow-hidden [&_tbody_tr]:h-[41.3px]'
+
 export function TableWrap({ children }: { children: ReactNode }) {
   /* ⚠️ พื้นตารางของ ZORT ไม่ใช่ขาวสนิท — วัดได้ #f8f9fa (พบ 85% ในบริเวณแถว)
      ขาวสนิทบนพื้นหน้า #f0f2f9 จะดูตัดกันแรงกว่าของจริง */
@@ -355,7 +360,7 @@ export function TableWrap({ children }: { children: ReactNode }) {
     /* 📐 โหมดเหมือน ZORT — วัด 19 ต.ค. 2569 (/Warehouse/Transferlist): แถว ZORT สูงต่ำสุด 41.3px
        เพราะช่องติ๊กทุกแถว (กล่อง 25px + ช่องใน 16) · ของเรา 40px ในจอที่ไม่มีช่องติ๊ก ⇒ แถวเหลื่อมสะสม 1.3px ต่อแถว
        ⇒ ความสูงแถวขั้นต่ำ 41px (เป็นขั้นต่ำ แถวที่สูงกว่าไม่กระทบ) · นอกโหมดเหมือนเดิม */
-    <div className={`zort-table bg-white overflow-hidden ${เหมือนZORT ? '[&_tbody_tr]:h-[41.3px]' : ''}`} style={{ boxShadow: '0 3px 6px #4165ed1a' }}>
+    <div className={`zort-table bg-white overflow-hidden ${เหมือนZORT ? '[&_tbody_tr]:h-[41.3px]' : ''}`} style={{ boxShadow: ZORT_TABLE_SHADOW }}>
       <div className="overflow-x-auto">{children}</div>
     </div>
   )
