@@ -465,7 +465,7 @@ export default function CoreCustomersPage() {
            · ช่องค้นชื่อลูกค้า (กรองแค่ตารางลูกค้าข้างล่าง) ย้ายไปอยู่เหนือตารางนั้น */}
       {เหมือนZORT && (
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 mb-6">
-          <p className="font-['Kanit',sans-serif] text-[24px] leading-[30px] font-medium text-[#3e3e3e]">
+          <p className="font-['Kanit',sans-serif] text-[20px] leading-[30px] font-normal text-[#3e3e3e]">
             {RANGES.find((r) => r.days === days)?.label ?? `ย้อนหลัง ${days} วัน`}
             {(range.from || range.to) && <> ({thaiDate(range.from)} – {thaiDate(range.to)})</>}
           </p>

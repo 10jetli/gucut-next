@@ -42,7 +42,9 @@ def ยังโหลด(pg):
     # ZORT ขึ้น "Loading..." ในการ์ดแดชบอร์ดระหว่างโหลด (ภาพ 19 ต.ค. 2569) ⇒ รอทั้งสองคำ
     try:
         t = pg.evaluate('document.body.innerText') or ''
-        return 'กำลังโหลด' in t or 'Loading...' in t
+        # ZORT รายงานสินค้า: ไอคอนหมุน .fa-spin ข้างหัวการ์ดระหว่างโหลด (ไม่มีข้อความ) — หายภายใน ~8 วิ (19 ต.ค. 2569)
+        หมุน = pg.evaluate("()=>[...document.querySelectorAll('.fa-spin')].some(e=>e.offsetParent)")
+        return 'กำลังโหลด' in t or 'Loading...' in t or bool(หมุน)
     except Exception: return False
 
 def ไป(pg, url):

@@ -812,7 +812,7 @@ export default function SalesReportPage() {
         >
           {PERIODS.map((p) => <option key={p.days} value={p.days}>{p.label}</option>)}
         </select>
-        <span className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[24px] leading-[30px] font-medium text-[#3e3e3e]" : 'text-[12.5px] text-gray-400'} suppressHydrationWarning
+        <span className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[20px] leading-[30px] font-normal text-[#3e3e3e]" : 'text-[12.5px] text-gray-400'} suppressHydrationWarning
           title={เหมือนZORT ? `อัพเดต ${refreshed.toLocaleTimeString('th-TH')}` : undefined}>
           {/* 🔴 **วันที่บนจอต้องผ่าน `thaiDate` เสมอ** — ของเดิมโชว์ `2026-07-08 – 2026-10-05` ดิบ ๆ
                  (เจอ 5 ต.ค. 2569 ด้วยการ **อ่านข้อความบนจอจริง** ไม่ใช่จากด่าน)

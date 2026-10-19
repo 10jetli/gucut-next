@@ -227,7 +227,7 @@ export default function CoreProductReportPage() {
                 : <p className="text-[15px] font-semibold text-gray-900 mb-2">สรุปมูลค่าสินค้าทั้งหมด</p>}
               {โหมดZ && (
                 <div className="flex flex-col items-center justify-center py-14">
-                  <p className="font-['Lato','Boon',sans-serif] text-[48px] font-semibold leading-none" style={{ color: '#2f8dde' }} title={`มูลค่าสินค้าทั้งหมด · ${ยอดZORTเมื่อ}`}>
+                  <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold leading-none" style={{ color: '#337ab7' }} title={`มูลค่าสินค้าทั้งหมด · ${ยอดZORTเมื่อ}`}>
                     {ยอดZORTสด!.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     <span className="text-[15px] text-[#3e3e3e] font-normal"> บาท</span>
                   </p>
