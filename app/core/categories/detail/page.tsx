@@ -18,8 +18,11 @@ import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแ�
 import { PageHead, BtnGhost, Pill, TableWrap, TH, TD, DETAIL_BTN } from '@/components/zort'
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
+import ZortBarChart from '@/components/zort/ZortBarChart'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+/** ที่มาของยอดในกราฟรายเดือน — ใช้ทั้งสองโหมด (ข้อความเดียว ที่เดียว) */
+const ที่มายอดรายเดือน = 'ร้าน z1 · ยอดบรรทัดสินค้า รวมใบค้างจ่าย ยังไม่หักใบคืน ⇒ สูงกว่าจอ ZORT ได้ · เดือนนี้นับถึงวันนี้'
 
 interface CatRow {
   name: string; skus?: number
@@ -296,6 +299,15 @@ function Inner() {
             ) : (() => {
               const สูงสุด = Math.max(1, ...รายเดือน.map((m) => m.amount ?? 0))
               const TH_M = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
+              /* โหมดเหมือน ZORT: กราฟมีแกนตั้ง + เส้นตาราง + คำอธิบายสี + ชื่อแกน "เดือน" (ZortBarChart)
+                 · หมายเหตุที่มาของยอดยังอยู่ใต้กราฟ — ยอดของเราต่างจาก ZORT ได้ ต้องบอก */
+              if (เหมือนZORT) return (
+                <div className="px-5 pb-4">
+                  <ZortBarChart legend={catName || '—'}
+                    points={รายเดือน.map((m) => ({ label: `${TH_M[Number(m.month.slice(5, 7)) - 1]}/${Number(m.month.slice(0, 4)) + 543}`, value: m.amount }))} />
+                  <p className="text-[11px] text-gray-400 mt-2">{ที่มายอดรายเดือน}</p>
+                </div>
+              )
               return (
                 <div className="px-4 pb-3">
                   <div className="flex items-end gap-3 h-[140px]">
@@ -309,7 +321,7 @@ function Inner() {
                       </div>
                     ))}
                   </div>
-                  <p className="text-[11px] text-gray-400 mt-2">ร้าน z1 · ยอดบรรทัดสินค้า รวมใบค้างจ่าย ยังไม่หักใบคืน ⇒ สูงกว่าจอ ZORT ได้ · เดือนนี้นับถึงวันนี้</p>
+                  <p className="text-[11px] text-gray-400 mt-2">{ที่มายอดรายเดือน}</p>
                 </div>
               )
             })()}
