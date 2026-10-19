@@ -9,6 +9,8 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
 import Card from '@/components/ui/Card'
+import ZortCardTitle from '@/components/zort/ZortCardTitle'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { ยอดขายแบบZORT, type ผลยอดแบบZORT, type แถวใบคืน } from '@/lib/zort-sales-total'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
@@ -800,7 +802,9 @@ export default function SalesReportPage() {
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Dashboard/SalesReport ไม่มี (อ่านปุ่มทั้งหน้า: วัน เดือน ไตรมาส ปี) */
       />
 
-      <div className="flex flex-wrap items-center gap-3 mb-3">
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/SalesReport 19 ต.ค. 2569): ใต้หัวจอเป็นบรรทัดช่วงวันตัวใหญ่ Kanit 24 "(1/8/2569 – 31/8/2569)" + ค้นหาขั้นสูง
+           ⇒ ช่วงวันจริงตัวใหญ่ · เวลาอัพเดตย้ายเข้า title · ตัวเลือกช่วงคงไว้หน้าบรรทัด */}
+      <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-x-6 gap-y-2 mt-6 mb-6' : 'flex flex-wrap items-center gap-3 mb-3'}>
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
@@ -808,13 +812,16 @@ export default function SalesReportPage() {
         >
           {PERIODS.map((p) => <option key={p.days} value={p.days}>{p.label}</option>)}
         </select>
-        <span className="text-[12.5px] text-gray-400" suppressHydrationWarning>
+        <span className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[24px] leading-[30px] font-medium text-[#3e3e3e]" : 'text-[12.5px] text-gray-400'} suppressHydrationWarning
+          title={เหมือนZORT ? `อัพเดต ${refreshed.toLocaleTimeString('th-TH')}` : undefined}>
           {/* 🔴 **วันที่บนจอต้องผ่าน `thaiDate` เสมอ** — ของเดิมโชว์ `2026-07-08 – 2026-10-05` ดิบ ๆ
                  (เจอ 5 ต.ค. 2569 ด้วยการ **อ่านข้อความบนจอจริง** ไม่ใช่จากด่าน)
               ⚠️ `check-thai-date` บอกว่าสะอาดทั้งที่บรรทัดนี้อยู่บนจอ ⇒ ด่านมองไม่เห็นรูปนี้:
                  วันที่อยู่ใน **template literal ที่ส่งลง JSX** ไม่ได้อยู่เป็นนิพจน์เดี่ยว
                  ⇒ จดไว้เป็นจุดบอดของด่าน ไม่ได้แก้ด่านในใบนี้ (ต้องมีตัวควบคุมของตัวเอง) */}
-          {report ? `${thaiDate(report.range.from)} – ${thaiDate(report.range.to)}` : ''} · อัพเดต {refreshed.toLocaleTimeString('th-TH')}
+          {เหมือนZORT
+            ? (report ? `(${thaiDate(report.range.from)} – ${thaiDate(report.range.to)})` : '')
+            : <>{report ? `${thaiDate(report.range.from)} – ${thaiDate(report.range.to)}` : ''} · อัพเดต {refreshed.toLocaleTimeString('th-TH')}</>}
         </span>
         {/* ② ลิงก์ "ค้นหาขั้นสูง" — ZORT มีตรงนี้ (สเปกข้อ 2)
             🔴 **ห้ามเป็นลิงก์หลอก** ⇒ กดแล้วต้องได้คำตอบว่าตอนนี้กรองอะไรได้จริงบ้าง */}
@@ -856,14 +863,14 @@ export default function SalesReportPage() {
           {tab === 'all' && (
             <>
               {/* สองการ์ดคู่กันแบบ ZORT: สรุปยอดขายรวม | รายงาน (กราฟ) */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
                 <Card>
                   {/* ⑧ ไอคอนวงกลมหน้าหัวข้อ + ③ dropdown มุมขวาบนของกล่อง (สเปกข้อ 3 กับ 8) */}
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
+                    {เหมือนZORT ? <ZortCardTitle รูป="฿">สรุปยอดขายรวม</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
                       <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">💰</span>
                       สรุปยอดขายรวม
-                    </p>
+                    </p>}
                     <ReportKindSelect ประตู={ประตูกำไร} />
                   </div>
                   {/* บรรทัดเหตุที่ **มองเห็น** — ตัวเลือกที่ปิดไว้ hover ยาก บนมือถือ hover ไม่ได้เลย */}
@@ -979,10 +986,10 @@ export default function SalesReportPage() {
 
                 <Card>
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
+                    {เหมือนZORT ? <ZortCardTitle รูป="↗">รายงาน</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
                       <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📈</span>
                       รายงาน
-                    </p>
+                    </p>}
                     <ReportKindSelect ประตู={ประตูกำไร} withCategory value={chartView} onChange={setChartView} />
                   </div>
                   {/* บรรทัดเหตุที่ **มองเห็น** — ตัวเลือกที่ปิดไว้ hover ยาก บนมือถือ hover ไม่ได้เลย */}
