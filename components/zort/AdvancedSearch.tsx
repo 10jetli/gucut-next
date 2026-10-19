@@ -57,6 +57,12 @@ export function AdvancedSearchLink({ open, onToggle, แบบ = 'ลิงก�
       </button>
     )
   }
+  /* 📏 โหมดเหมือน ZORT: วัด DOM /Contact/list 20 ต.ค. 2569 — ลิงก์ Boon 14/400 #337ab7 (เดิม LinkText Kanit 12.5 #2563eb) */
+  if (เหมือนZORT) return (
+    <button type="button" onClick={onToggle} className="font-['Boon',sans-serif] text-[14px] text-[#337ab7] hover:underline">
+      {open ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}
+    </button>
+  )
   return <LinkText onClick={onToggle}>{open ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}</LinkText>
 }
 
