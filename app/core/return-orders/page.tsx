@@ -255,7 +255,10 @@ export default function ReturnOrdersPage() {
 
   /** กล่องขอบเขต "แสดง N จาก M ใบ · ยอดยังไม่พิสูจน์" — ตัวเดียว วางได้สองที่ตามโหมด (ไม่เขียนซ้ำ) */
   const กล่องขอบเขต = partial ? (
-    <ZortLookFold tone="amber" สรุป={<>⚠️ แสดง {fmtNum(rows.length)} {ใบชุดนี้} จากทั้งหมด {fmtNum(total!)} ใบ · ยอดเงินมาจากช่อง amount ที่ยังไม่พิสูจน์ว่าเป็นยอดคืน</>}
+    <ZortLookFold tone="amber" สรุป={เหมือนZORT
+      /* โหมดเหมือน ZORT: อยู่บรรทัดเดียวกับช่องค้นหา ⇒ สรุปสั้น แต่ยังบอกครบสองเรื่อง (ขอบเขต + ยอดยังไม่พิสูจน์) · ฉบับเต็มอยู่ในกล่องพับ */
+      ? <>⚠️ แสดง {fmtNum(rows.length)} จาก {fmtNum(total!)} ใบ · ยอดเงินยังไม่พิสูจน์</>
+      : <>⚠️ แสดง {fmtNum(rows.length)} {ใบชุดนี้} จากทั้งหมด {fmtNum(total!)} ใบ · ยอดเงินมาจากช่อง amount ที่ยังไม่พิสูจน์ว่าเป็นยอดคืน</>}
       เปิดไว้={!ใช้ยอดกระจก && !!d?.mirrorTotalsError}>
     <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2 mb-3 leading-relaxed">
       {/* 🔴 **สองบรรทัดในจอเดียวเคยพูดสวนกัน** (เจอด้วยการเปิดจอจริง 18 ก.ย. 2569 ค่ำ)
@@ -376,7 +379,7 @@ export default function ReturnOrdersPage() {
             /* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านมาอยู่ขวาของช่องค้นหา (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */
             right={เหมือนZORT ? (
               <div className="flex items-start gap-3 min-w-0">
-                {กล่องขอบเขต && <div className="min-w-0 max-w-[420px] pt-1.5">{กล่องขอบเขต}</div>}
+                {กล่องขอบเขต && <div className="min-w-0 pt-1.5 whitespace-nowrap">{กล่องขอบเขต}</div>}
                 <StorePicker value={store} disabled={loading}
                   onChange={(v) => { setStore(v); load(q, v) }}
                   ต่อท้าย={d?.storeScope ? <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${d.storeScope}`}>ⓘ</span> : undefined} />
