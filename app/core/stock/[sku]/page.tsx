@@ -509,7 +509,7 @@ export default function ProductDetailPage() {
                   src={pickImage(img, row, 640, true) as string}
                   alt=""
                   loading="lazy"
-                  className={เหมือนZORT ? 'w-[220px] h-auto bg-white' /* ZORT img-responsive: สัดส่วนจริงของรูป ไม่ตัด */ : 'w-[220px] h-[160px] rounded border border-gray-200 object-cover bg-white'}
+                  className={เหมือนZORT ? 'w-[220px] h-[220px] object-cover bg-white' /* ZORT: กล่องจัตุรัส (รูปของ ZORT เป็นจัตุรัส) · รูปของเราบางตัวเป็นแนวตั้ง ⇒ ปล่อยสัดส่วนจริงแล้วสูงเกิน (วัด 29.1 · เห็นในภาพ 19 ต.ค.) */ : 'w-[220px] h-[160px] rounded border border-gray-200 object-cover bg-white'}
                 />
               )
               : (
