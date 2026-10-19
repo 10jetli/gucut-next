@@ -143,8 +143,9 @@ export default function AppShell({ children, role }: AppShellProps) {
       {/* ป้าย "ใช้แทน ZORT ได้หรือยัง" — ทะเบียนเดียว จุดวาดเดียว (lib/zort-ready.ts) */}
       {/* 📏 **ระยะบน = 58 ไม่ใช่ 52** (วัด ZORT /Sell/list 17 ต.ค. 2569): แถบบน ZORT 51 + เส้น 1 ⇒ เนื้อหาเริ่ม y=52
           แล้วช่องว่างบน 30 ⇒ หัวจอ y=82 · ของเรา = แถบบน 52 + 6 ตรงนี้ + padding ของเพจ 24 = 82
-          (ท่าเดียวกับ margin ซ้าย 206 ข้างบน) ⚠️ แถบป้ายใช้แทน ZORT ดันลงอีกเท่าความสูงของมัน — ZORT ไม่มีแถบนี้ */}
-      <main className={`${mainMl} md:pt-[58px] ${anim}`}><ZortReadyBar />{children}</main>
+          (ท่าเดียวกับ margin ซ้าย 206 ข้างบน) ⚠️ แถบป้ายใช้แทน ZORT ดันลงอีกเท่าความสูงของมัน — ZORT ไม่มีแถบนี้
+          ⇒ โหมดเหมือน ZORT: ย้ายแถบป้ายไปติดขอบล่าง (CEO ตัดสิน 19 ต.ค. 2569) ⇒ หัวจอ y=82 */}
+      <main className={`${mainMl} md:pt-[58px] ${anim}`}><ZortReadyBar />{children}<ZortReadyBar ตำแหน่ง="ท้าย" /></main>
 
       <MobileBottomNav navItems={navItems} onMenu={() => setDrawerOpen(true)} />
       <MobileDrawer navItems={navItems} open={drawerOpen} onClose={() => setDrawerOpen(false)} />

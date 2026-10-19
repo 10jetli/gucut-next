@@ -13,7 +13,11 @@ import PushSwitchNote from '@/components/layout/PushSwitchNote'
 import { จำนวนกล่องแดง, ฟังกล่องแดง } from '@/lib/จอพังอยู่'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
-export default function ZortReadyBar() {
+/** `ตำแหน่ง` — 'บน' (ค่าตั้งต้น · เหนือเนื้อหา) | 'ท้าย' (โหมดเหมือน ZORT เท่านั้น · แถบติดขอบล่างของจอ)
+ *  🔑 CEO ตัดสิน 19 ต.ค. 2569 (ตามคำสั่งยืน "เหมือน ZORT 100% รวม UI"): **ย้ายแถบป้ายไปท้ายจอ ไม่ใช่ถอด**
+ *     หัวจอต้องอยู่ y=82 เท่า ZORT · ป้ายเกิดจากคำถามของท่านประธานเอง ⇒ ต้องยังเห็นง่าย
+ *     ⇒ ติดขอบล่างแบบ sticky (เห็นตลอดขณะเลื่อน ไม่ดันหัวจอลง) · เดิมโหมดนี้ซ่อนป้ายหายไปเลย = ไม่มีทางเข้าถึง */
+export default function ZortReadyBar({ ตำแหน่ง = 'บน' }: { ตำแหน่ง?: 'บน' | 'ท้าย' }) {
   const pathname = usePathname()
   /* 🔑 **ถ้อยคำทั้งหมดประกอบที่ lib/zort-ready.ts ที่เดียว** — จอนี้แค่วาด
      (ห้ามเติมประโยคตรงนี้อีก ไม่งั้นวันที่ความจริงเปลี่ยน จะต้องไล่แก้สองที่) */
@@ -30,6 +34,20 @@ export default function ZortReadyBar() {
   /* 🎯 โหมดเหมือน ZORT — ป้าย "ความสามารถ" ถูกซ่อน (ZORT ไม่มีแถบนี้)
      🔴 **แต่กล่องแดง \"อ่านข้อมูลไม่ได้\" ต้องไม่ถูกซ่อนด้วย** — นั่นคือคำเตือนว่าตัวเลขบนจอ
         เชื่อไม่ได้ตอนนี้ · ซ่อนไปด้วยคือทำให้จอโกหกเพื่อให้เหมือนต้นแบบ ซึ่งแย่กว่าไม่เหมือน */
+  if (ตำแหน่ง === 'ท้าย') {
+    if (!เหมือนZORT || !b) return null
+    return (
+      <div className={`sticky bottom-[64px] md:bottom-0 z-20 px-4 md:px-6 py-1.5 text-[12.5px] border-t ${
+        b.tone === 'green'
+          ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+          : 'bg-amber-50 text-amber-800 border-amber-200'
+      }`}>
+        {b.dot} <b>{b.หัว}</b>
+        {b.ท้าย && <span className="text-amber-700/80"> — {b.ท้าย}</span>}
+        {กระทบสต็อก.has((pathname ?? '').replace(/\/+$/, '')) && ส่งจริงได้(pathname ?? '') && <PushSwitchNote />}
+      </div>
+    )
+  }
   if (เหมือนZORT) {
     if (พัง <= 0) return null
     return (
