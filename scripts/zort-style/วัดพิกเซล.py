@@ -39,7 +39,10 @@ def พร้อม(pg):
     return False
 
 def ยังโหลด(pg):
-    try: return 'กำลังโหลด' in (pg.evaluate('document.body.innerText') or '')
+    # ZORT ขึ้น "Loading..." ในการ์ดแดชบอร์ดระหว่างโหลด (ภาพ 19 ต.ค. 2569) ⇒ รอทั้งสองคำ
+    try:
+        t = pg.evaluate('document.body.innerText') or ''
+        return 'กำลังโหลด' in t or 'Loading...' in t
     except Exception: return False
 
 def ไป(pg, url):
