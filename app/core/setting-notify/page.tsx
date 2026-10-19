@@ -78,6 +78,17 @@ export default function SettingNotifyPage() {
   const active = CHANNELS.find((c) => c.id === chan) ?? CHANNELS[0]
   const item = active.items.find((i) => i.id === sel) ?? active.items[0]
 
+  /** ป้าย "จอนี้อ่านอย่างเดียว" — ตัวเดียว วางสองที่ตามโหมด (ต้องอยู่ก่อนเนื้อหาเสมอ) */
+  const ป้ายอ่านอย่างเดียว = (
+      <ZortLookFold tone="gray" สรุป={<>ℹ️ จอนี้อ่านอย่างเดียว — ปุ่มเปิด-ปิดรายตัวยังไม่ได้ทำ · การแจ้งเตือนที่ระบบส่งอยู่จริง คัดจากโค้ด ตรวจล่าสุด {CHECKED_AT}</>}>
+      <div className="bg-blue-50 border border-blue-100 rounded-md px-3.5 py-2.5 mb-4 text-[12.5px] text-blue-900 leading-relaxed">
+        ℹ️ จอนี้<b>อ่านอย่างเดียว</b> — บอกว่าระบบแจ้งเตือนอะไร ให้ใคร เมื่อไหร่ และตั้งค่าอยู่ที่ไฟล์ไหน ·
+        ZORT รุ่นเต็มมีปุ่มเปิด-ปิดรายตัว ของเรา<b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b>
+        (ตอนนี้เปิด-ปิดที่ env/โค้ด — สั่งเมื่อไหร่ค่อยทำปุ่มจริง ไม่ทำปุ่มหลอก)
+      </div>
+      </ZortLookFold>
+  )
+
   return (
     <div className="p-4 md:p-6">
       <PageHead
@@ -94,13 +105,7 @@ export default function SettingNotifyPage() {
       {/* ⚠️ ป้ายต้องมาก่อนเนื้อหา — จอ ZORT เป็นฟอร์มตั้งค่า ของเราเป็นแผนที่ของจริง
           ไม่บอก = คนหาปุ่มเปิด-ปิดแล้วนึกว่าจอพัง */}
       {/* โหมดเหมือน ZORT: พับ แต่บรรทัดสรุปยังบอกว่าอ่านอย่างเดียว (ไม่บอก = คนหาปุ่มแล้วนึกว่าจอพัง) */}
-      <ZortLookFold tone="gray" สรุป={<>ℹ️ จอนี้อ่านอย่างเดียว — ปุ่มเปิด-ปิดรายตัวยังไม่ได้ทำ · การแจ้งเตือนที่ระบบส่งอยู่จริง คัดจากโค้ด ตรวจล่าสุด {CHECKED_AT}</>}>
-      <div className="bg-blue-50 border border-blue-100 rounded-md px-3.5 py-2.5 mb-4 text-[12.5px] text-blue-900 leading-relaxed">
-        ℹ️ จอนี้<b>อ่านอย่างเดียว</b> — บอกว่าระบบแจ้งเตือนอะไร ให้ใคร เมื่อไหร่ และตั้งค่าอยู่ที่ไฟล์ไหน ·
-        ZORT รุ่นเต็มมีปุ่มเปิด-ปิดรายตัว ของเรา<b>ยังไม่ได้ทำ ไม่ใช่ทำไม่ได้</b>
-        (ตอนนี้เปิด-ปิดที่ env/โค้ด — สั่งเมื่อไหร่ค่อยทำปุ่มจริง ไม่ทำปุ่มหลอก)
-      </div>
-      </ZortLookFold>
+      {!เหมือนZORT && ป้ายอ่านอย่างเดียว}
 
       {/* แท็บช่องทาง — ชั้นเดียวกับแท็บ โปรแกรม/อีเมล/มือถือ ของ ZORT
           ⚠️ ร้านไม่ใช้อีเมลแจ้งเตือน — ไม่ทำแท็บเปล่า */}
@@ -117,13 +122,16 @@ export default function SettingNotifyPage() {
             {c.label}
           </button>
         ))}
+        {/* 📐 โหมดเหมือน ZORT: ป้าย "อ่านอย่างเดียว" อยู่ท้ายแถบแท็บ — ยังอยู่ **ก่อนเนื้อหา** ตามกติกาของป้ายนี้ แต่ไม่ดันแถบแท็บลง */}
+        {เหมือนZORT && <div className="ml-auto min-w-0 max-w-[520px] pt-2">{ป้ายอ่านอย่างเดียว}</div>}
       </div>
 
       {/* โหมดเหมือน ZORT: คำอธิบายช่องทางย้ายไปอยู่ใน title ของแท็บ (ZORT ไม่มีบรรทัดนี้) */}
       {!เหมือนZORT && <p className="text-[12.5px] text-gray-500 mb-3">{active.desc}</p>}
 
       {/* ผัง ZORT: รายการซ้าย · รายละเอียดขวา */}
-      <div className={`grid grid-cols-1 ${เหมือนZORT ? 'md:grid-cols-[200px_1fr]' : 'md:grid-cols-[260px_1fr]'} gap-0 border border-gray-200 rounded-md overflow-hidden bg-white`}>
+      {/* 📐 โหมดเหมือน ZORT: กล่องสูงอย่างน้อย 426 ตามภาพ /Setting/Notification 19 ต.ค. 2569 */}
+      <div className={`grid grid-cols-1 ${เหมือนZORT ? 'md:grid-cols-[200px_1fr] md:min-h-[426px]' : 'md:grid-cols-[260px_1fr]'} gap-0 border border-gray-200 rounded-md overflow-hidden bg-white`}>
         <div className="border-b md:border-b-0 md:border-r border-gray-200">
           {active.items.map((i) => (
             <button key={i.id} onClick={() => setSel(i.id)}
