@@ -265,6 +265,47 @@ export default function BundleDetailPage() {
         ? 'รายการขายที่ได้มายังไม่ครบ (ท่อตัดแถวหรืออ่านบางแหล่งไม่สำเร็จ) ⇒ ยังรวมยอดไม่ได้'
         : ''
 
+  /* ตารางสินค้าในชุด — โหมดเหมือน ZORT วางไว้ในการ์ดข้อมูล · โหมดปกติวางใต้การ์ด (ตัวเดียวกัน ไม่มีสำเนา) */
+  const ตารางในชุด = (
+    <>
+      <p className={เหมือนZORT ? "font-['Boon',sans-serif] text-[16px] text-[#3e3e3e] mt-6 mb-0" : 'text-[15px] font-semibold text-gray-900 mt-5 mb-2'}>สินค้าใน สินค้าเป็นชุด</p>
+      <TableWrap>
+        <table className="w-full min-w-[620px]">
+          <thead className="bg-white border-b border-gray-200">
+            <tr>
+              <th className={TH_NO} style={{ width: 44 }}>#</th>
+              <th className={TH}>รหัส</th>
+              <th className={TH}>ชื่อสินค้า</th>
+              <th className={THR}>จำนวน</th>
+            </tr>
+          </thead>
+          <tbody>
+            {items.length === 0 && (
+              <EmptyState cols={4} icon="📦" title="ยังไม่มีรายการส่วนประกอบของชุดนี้"
+                detail="รายการในชุดเก็บมาจากหน้ารายละเอียดของ ZORT ทีละชุด — ชุดนี้อาจยังไม่ถูกเก็บ" />
+            )}
+            {items.map((it, i) => (
+              <tr key={`${it.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                <td className={`${TD} text-gray-400`}>{it.line ?? i + 1}</td>
+                <td className={`${TD} whitespace-nowrap`}>
+                  <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">
+                    {it.sku}
+                  </Link>
+                </td>
+                <td className={TD}>
+                  <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">
+                    {it.name || '—'}
+                  </Link>
+                </td>
+                <td className={TDR}>{fmtNum(it.qty)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </TableWrap>
+    </>
+  )
+
   return (
     <div className="p-4 md:p-6">
       <Link href="/core/bundles" className={ZORT_BACK_LINK}>{เหมือนZORT ? '‹' : '←'} สินค้าเป็นชุด</Link>
@@ -416,6 +457,53 @@ export default function BundleDetailPage() {
             </p>
           )}
 
+          {/* 🧭 โหมดเหมือน ZORT: ผังการ์ดข้อมูลชุดตาม DOM /Bundle/Details (อ่าน 19 ต.ค. 2569 ไม่คลิก)
+                การ์ด p 20 · radius 6 · ไม่มีเงา/ขอบ · รูป col-3 (กล่อง 155×104) · เนื้อหา col-9
+                ชื่อ Kanit 16/500 #3e3e3e + ป้ายสถานะเม็ดยา Kanit 16/500 #1f9070 บน #ceFFF1
+                ป้ายช่อง Boon 14 #868e96 · ค่า Lato 18/700 #3e3e3e · QR 150 + บาร์โค้ดใต้ QR
+                **ตารางสินค้าในชุดอยู่ในการ์ดเดียวกัน คอลัมน์เดียวกับข้อมูล** (ไม่ใช่ใต้การ์ด) */}
+          {เหมือนZORT ? (
+            <div className="bg-white rounded-[6px] p-5 mt-6 grid grid-cols-[25%_1fr]">
+              <div className="pr-[30px]">
+                {img
+                  // eslint-disable-next-line @next/next/no-img-element
+                  ? <img src={img} alt="" className="w-[155px] object-cover bg-white" />
+                  : <span className="block w-[155px] h-[104px] bg-[#e9e9e9]" />}
+              </div>
+              <div className="min-w-0">
+                <div className="flex gap-4">
+                  <div className="min-w-0 flex-1">
+                    <h1 className="font-['Kanit',sans-serif] text-[16px] font-medium text-[#3e3e3e] mb-6 flex flex-wrap items-center gap-2">
+                      {bundle.name || sku}
+                      <span className={`font-['Kanit',sans-serif] text-[16px] font-medium rounded-[24px] px-3 py-0.5 ${
+                        bundle.active === false ? 'text-gray-600 bg-gray-100' : 'text-[#1f9070] bg-[#ceFFF1]'
+                      }`}>
+                        {bundle.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
+                      </span>
+                    </h1>
+                    <div className="grid grid-cols-2 gap-x-6 gap-y-[18px] max-w-[400px] font-['Boon',sans-serif]">
+                      <div>
+                        <p className="text-[14px] text-[#868e96] leading-[14px] mb-[5px]">รหัสสินค้า</p>
+                        <p className="font-['Lato',sans-serif] text-[18px] font-bold text-[#3e3e3e]">{bundle.sku}</p>
+                      </div>
+                      <div>
+                        <p className="text-[14px] text-[#868e96] leading-[14px] mb-[5px]">ราคาขาย</p>
+                        <p className="font-['Lato',sans-serif] text-[18px] font-bold text-[#3e3e3e]">
+                          {typeof bundle.sellprice === 'number' ? `${fmtMoney(bundle.sellprice)} บาท` : '—'}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-[14px] text-[#868e96] leading-[14px] mb-[5px]">วันหมดอายุรายการ</p>
+                        <p className="font-['Lato',sans-serif] text-[18px] font-bold text-[#3e3e3e]">-</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="pt-11"><SkuCodes sku={sku} ชนิด="ชุด" แบบZORT /></div>
+                </div>
+              {ตารางในชุด}
+              </div>
+            </div>
+          ) : (<>
           <div className="bg-white border border-gray-200 rounded-md p-5 mt-3 flex flex-wrap gap-6">
             {img
               ? (
@@ -456,41 +544,8 @@ export default function BundleDetailPage() {
             <SkuCodes sku={sku} ชนิด="ชุด" />
           </div>
 
-          <p className="text-[15px] font-semibold text-gray-900 mt-5 mb-2">สินค้าใน สินค้าเป็นชุด</p>
-          <TableWrap>
-            <table className="w-full min-w-[620px]">
-              <thead className="bg-white border-b border-gray-200">
-                <tr>
-                  <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH}>รหัส</th>
-                  <th className={TH}>ชื่อสินค้า</th>
-                  <th className={THR}>จำนวน</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.length === 0 && (
-                  <EmptyState cols={4} icon="📦" title="ยังไม่มีรายการส่วนประกอบของชุดนี้"
-                    detail="รายการในชุดเก็บมาจากหน้ารายละเอียดของ ZORT ทีละชุด — ชุดนี้อาจยังไม่ถูกเก็บ" />
-                )}
-                {items.map((it, i) => (
-                  <tr key={`${it.sku}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                    <td className={`${TD} text-gray-400`}>{it.line ?? i + 1}</td>
-                    <td className={`${TD} whitespace-nowrap`}>
-                      <Link href={`/core/stock?q=${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">
-                        {it.sku}
-                      </Link>
-                    </td>
-                    <td className={TD}>
-                      <Link href={`/core/stock/${encodeURIComponent(it.sku)}`} className="text-[#337ab7] hover:underline">
-                        {it.name || '—'}
-                      </Link>
-                    </td>
-                    <td className={TDR}>{fmtNum(it.qty)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </TableWrap>
+          {ตารางในชุด}
+          </>)}
 
           {/* ── (4) กราฟยอดขายรายเดือน ─────────────────────────────────────── */}
           <div className="flex flex-wrap items-center justify-between gap-2 mt-5 mb-2">

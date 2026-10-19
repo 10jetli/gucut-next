@@ -20,7 +20,13 @@ type State = 'loading' | 'have' | 'none' | 'unknown' | 'error' | 'missing'
 /** `ชนิด="ชุด"` สำหรับหน้าสินค้าเป็นชุด — เส้น productlabels ครอบเฉพาะสินค้าเดี่ยว ⇒ รหัสชุดตกกอง missing เสมอ
  *  (ยิงจริง 17 ต.ค. 2569: 00073-30-KK มีอยู่ใน ZORT แต่ได้ missing · หัวไฟล์นี้จดชุด 00073-11.8-NW ไว้แล้วตั้งแต่ 14 ก.ย.)
  *  ⇒ บนหน้าชุด missing แปลว่า "เส้นนี้ไม่ครอบชุด" **ไม่ใช่** "ZORT ไม่มีรหัสนี้" */
-export default function SkuCodes({ sku, ชนิด = 'สินค้า' }: { sku: string; ชนิด?: 'สินค้า' | 'ชุด' }) {
+export default function SkuCodes({ sku, ชนิด = 'สินค้า', แบบZORT = false }: {
+  sku: string; ชนิด?: 'สินค้า' | 'ชุด'
+  /** ผังแบบ ZORT /Bundle/Details (อ่าน DOM 19 ต.ค. 2569): QR 150px ไม่มีหัว · บาร์โค้ด 155×27 ใต้ QR
+   *  ⚠️ ที่มาของเลขบาร์โค้ด (กอง none/unknown/missing) ยังขึ้นครบ — ย่อเป็นบรรทัดเล็ก ไม่ตัดทิ้ง
+   *  เพราะคนพิมพ์ฉลากต้องรู้ว่าสแกนแล้วได้รหัสสินค้า ไม่ใช่เลขบาร์โค้ด */
+  แบบZORT?: boolean
+}) {
   const [barcode, setBarcode] = useState<string | null>(null)
   const [state, setState] = useState<State>('loading')
   const [err, setErr] = useState('')
@@ -64,13 +70,13 @@ export default function SkuCodes({ sku, ชนิด = 'สินค้า' }: {
   const qr = qrEncode(sku)
 
   return (
-    <div className="flex flex-wrap items-start gap-5">
+    <div className={แบบZORT ? 'flex flex-col items-start gap-3 w-[155px]' : 'flex flex-wrap items-start gap-5'}>
       <div>
-        <p className="text-[11.5px] text-gray-500 mb-1">QR ของรหัสสินค้า</p>
+        {!แบบZORT && <p className="text-[11.5px] text-gray-500 mb-1">QR ของรหัสสินค้า</p>}
         {qr
           ? (
-            <svg viewBox={`0 0 ${qr.size + 4} ${qr.size + 4}`} width={104} height={104}
-              shapeRendering="crispEdges" className="border border-gray-200 rounded bg-white">
+            <svg viewBox={`0 0 ${qr.size + 4} ${qr.size + 4}`} width={แบบZORT ? 150 : 104} height={แบบZORT ? 150 : 104}
+              shapeRendering="crispEdges" className={แบบZORT ? 'bg-white' : 'border border-gray-200 rounded bg-white'}>
               {/* ขอบขาว 2 โมดูลรอบนอก — ไม่มีขอบ เครื่องอ่านหาไม่เจอ (เหมือน quiet zone ของบาร์โค้ด) */}
               <rect x="0" y="0" width={qr.size + 4} height={qr.size + 4} fill="#fff" />
               {qr.modules.map((row, r) => row.map((v, c) => (v
@@ -83,11 +89,11 @@ export default function SkuCodes({ sku, ชนิด = 'สินค้า' }: {
               รหัสนี้ยาวเกินกว่าจะทำ QR ได้ (เกิน 62 ไบต์) — ไม่วาดรูปหลอก
             </p>
           )}
-        <p className="text-[11.5px] text-gray-400 mt-1 max-w-[110px] break-all">{sku}</p>
+        {!แบบZORT && <p className="text-[11.5px] text-gray-400 mt-1 max-w-[110px] break-all">{sku}</p>}
       </div>
 
-      <div className="min-w-[240px]">
-        <p className="text-[11.5px] text-gray-500 mb-1">บาร์โค้ด (Code 128)</p>
+      <div className={แบบZORT ? 'w-[155px]' : 'min-w-[240px]'}>
+        {!แบบZORT && <p className="text-[11.5px] text-gray-500 mb-1">บาร์โค้ด (Code 128)</p>}
         {bc.error
           ? (
             <p className="text-[12.5px] text-red-800 bg-red-50 border border-red-200 rounded px-2 py-1.5 leading-relaxed">
@@ -96,10 +102,10 @@ export default function SkuCodes({ sku, ชนิด = 'สินค้า' }: {
           )
           : (
             <>
-              <div className="w-[240px] h-[52px] bg-white border border-gray-200 rounded px-1"
+              <div className={แบบZORT ? 'w-[155px] h-[27px] bg-white' : 'w-[240px] h-[52px] bg-white border border-gray-200 rounded px-1'}
                 // eslint-disable-next-line react/no-danger
                 dangerouslySetInnerHTML={{ __html: code128Svg(bc, 30) }} />
-              <p className="text-[12.5px] text-gray-700 mt-1 font-mono break-all">{value}</p>
+              <p className={แบบZORT ? 'text-[11px] text-gray-700 text-center' : 'text-[12.5px] text-gray-700 mt-1 font-mono break-all'}>{value}</p>
             </>
           )}
 
