@@ -18,6 +18,7 @@
  *    (เกณฑ์ที่ CEO วางไว้: มีข้อความที่คนอ่านค่อยเข้าตาข่าย อย่าให้ตาข่ายบวม)
  */
 import Link from 'next/link'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 /** ชนิดที่ `/core/import` รับจริง — ต้องตรงกับ KINDS ในหน้านั้น
  *  🔴 เพิ่มชนิดใหม่ที่หน้านำเข้าแล้วอย่าลืมมาเพิ่มที่นี่ ไม่งั้นปุ่มจะไม่โผล่ทั้งที่รองรับแล้ว */
@@ -29,7 +30,11 @@ export default function ImportButton({ kind }: { kind: string }) {
   return (
     <Link href={`/core/import?kind=${kind}`}
       /* 📐 ตาม ZORT (วัด 17 ต.ค. 2569): Kanit 16px น้ำหนัก 400 · ตัวหนังสือ rgb(134,142,150) · พื้น rgb(241,243,245) */
-      className="text-[16px] font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-4 py-[9px] leading-6 hover:bg-[#e9ecef]">
+      /* 📏 โหมดเหมือน ZORT: วัด DOM /Contact/list 20 ต.ค. 2569 — ZORT มีขอบ 0.8px #adb5bd (1px จริงที่ซูม 125%) ช่องใน 8/30
+         (บันทึก 17 ต.ค. วัดแค่สีพื้น/ตัวอักษร พลาดขอบไป — ของเราเลยไม่มีขอบ) */
+      className={เหมือนZORT
+        ? 'text-[16px] font-normal text-[#868e96] bg-[#f1f3f5] rounded-full border border-[#adb5bd] px-[30px] py-[8px] leading-6 hover:bg-[#e9ecef]'
+        : 'text-[16px] font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-4 py-[9px] leading-6 hover:bg-[#e9ecef]'}>
       นำเข้าไฟล์ (Excel)
     </Link>
   )
