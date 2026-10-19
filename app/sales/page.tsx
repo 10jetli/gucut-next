@@ -7,7 +7,7 @@
 // รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน)
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
+import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT, TH_MONTH_SHORT } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -341,6 +341,14 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
   const n = daily.length
   const bw = Math.min(40, ((W - PAD * 2) / n) * 0.55)
   const x = (i: number) => PAD + ((W - PAD * 2) * (i + 0.5)) / n
+  /* 🔴 ป้ายวันใต้กราฟ: เดิมพิมพ์ทุกวัน (ตัวเลขวันเปล่า ๆ) ⇒ ช่วง 3 เดือน 110 ป้ายซ้อนกันอ่านไม่ออก (เห็นในภาพ 19 ต.ค. 2569)
+     ⇒ พิมพ์ราว 12 ป้าย · รูปแบบ "01 ส.ค." แบบ ZORT (มีเดือน เพราะช่วงยาวข้ามเดือน เลขวันเปล่าแยกเดือนไม่ได้) */
+  const ทุก = Math.max(1, Math.ceil(n / 12))
+  const ป้ายวัน = (i: number) => {
+    if (i % ทุก !== 0) return ''
+    const t = String(daily[i]?.date ?? '')
+    return /^\d{4}-\d{2}-\d{2}/.test(t) ? `${t.slice(8, 10)} ${TH_MONTH_SHORT[Number(t.slice(5, 7)) - 1] ?? ''}` : ''
+  }
   const line = daily
     .map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${(H - 24 - (d.orders / maxOrders) * (H - 48)).toFixed(1)}`)
     .join(' ')
@@ -360,7 +368,7 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
             <g key={d.date}>
               <circle cx={x(i)} cy={H - 24 - (d.sales / maxSales) * (H - 48)} r={2.5} className="fill-violet-500" />
               <text x={x(i)} y={H - 8} textAnchor="middle" className="fill-gray-400 text-[10px]">
-                {parseInt(String(d.date ?? '').slice(8), 10) || ''}
+                {ป้ายวัน(i)}
               </text>
             </g>
           ))}
@@ -372,9 +380,10 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
           <g key={d.date}>
             <rect x={x(i) - bw / 2} y={H - 24 - h} width={bw} height={Math.max(h, 1)} rx={4} className="fill-blue-500/80" />
             <text x={x(i)} y={H - 8} textAnchor="middle" className="fill-gray-400 text-[10px]">
-              {parseInt(String(d.date ?? '').slice(8), 10) || ''}
+              {ป้ายวัน(i)}
             </text>
-            {d.sales > 0 && (
+            {/* เลขบนแท่ง: เฉพาะช่วงไม่เกิน 31 วัน — ช่วงยาวกว่านั้นเลขซ้อนกันเหมือนป้ายวัน */}
+            {d.sales > 0 && n <= 31 && (
               <text x={x(i)} y={H - 30 - h} textAnchor="middle" className="fill-gray-500 text-[10px] font-medium">
                 {d.sales >= 1000 ? `${(d.sales / 1000).toFixed(d.sales >= 10000 ? 0 : 1)}K` : Math.round(d.sales)}
               </text>
