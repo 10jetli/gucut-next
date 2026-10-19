@@ -16,6 +16,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
+import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
@@ -391,6 +392,36 @@ export default function CoreCustomersPage() {
   const shown = filtered.slice(page * PER_PAGE, (page + 1) * PER_PAGE)
   const pageCount = Math.max(1, Math.ceil(filtered.length / PER_PAGE))
 
+  /** กล่องพับ "ช่วงที่ใช้จริง" และ "ตารางแสดง 500" — ตัวเดียว วางได้สองที่ตามโหมด (ไม่เขียนซ้ำ) */
+  const กล่องช่วง = (
+        <ZortLookFold tone="gray" สรุป={<>ช่วงที่ใช้จริง {thaiDate(range.from)} – {thaiDate(range.to)}</>}>
+        <p className="text-[11.5px] text-gray-500 -mt-1 mb-3">
+          ช่วงที่ใช้จริง <b>{thaiDate(range.from)} – {thaiDate(range.to)}</b>
+          <span className="text-gray-400">
+            {/* ⚠️ 18 ก.ย. 2569 พยายามพิสูจน์ข้อความ "ZORT นับจากวันที่ 1 ของเดือน" แล้ว **ยังวัดไม่ได้**
+                ดรอปดาวน์ `#dateperiod` ของเขาซ่อนอยู่หลังวิดเจ็ต · ฟังก์ชัน `changedateperiod()` แค่ซ่อน/โชว์ช่องวันเอง
+                (การคิดช่วงจริงอยู่ฝั่งเซิร์ฟเวอร์) และจอเขาไม่แสดงช่วงวันที่ถูก resolve ออกมา
+                ⇒ คงข้อความ "เทียบตรง ๆ ไม่ได้" ไว้ (ยังจริงแน่นอน) แต่ **ไม่ยืนยันกติกาวันที่ 1** จนกว่าจะวัดได้ */}
+            {/* 16 ต.ค. 2569: จอ ZORT แสดงช่วงจริงแล้ว ("ย้อนหลัง 3 เดือน (1/7/2569 - 16/10/2569)") และท่อรับ from/to แล้ว
+                ⇒ 1/3 เดือนส่งช่วงเดียวกับ ZORT · ข้อความตัดสินจาก `ช่วงมาจาก` ที่ท่อตอบ ไม่ใช่จากที่จอขอ */}
+            {ช่วงมาจาก && ช่วงมาจาก.startsWith('from/to')
+              ? <>{' '}· <b>ช่วงวันเดียวกับ ZORT</b> (วันที่ 1 ของเดือนที่ถอยไป ถึงวันนี้)
+                  {' '}— <span className="text-amber-700">แต่การแบ่ง ลูกค้าใหม่/ซื้อซ้ำ/ไม่ระบุ ยังไม่ตรงกับ ZORT (เทียบ 16 ต.ค. 2569 ยอดกลุ่มต่างกัน กำลังไล่เหตุ)</span></>
+              : <>{' '}· ช่วงนี้<b>นับถอยเป็นวัน</b> ซึ่ง ZORT ไม่ได้นับแบบนี้ ⇒ <b>เทียบยอดตรง ๆ ไม่ได้</b></>}
+            {' '}· ZORT ยังมี วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว · ปีนี้ · กำหนดเอง ซึ่งจอนี้<b>ยังไม่ได้ทำ</b> (ท่อรับ from/to แล้ว — ทำได้ ไม่ใช่ทำไม่ได้)
+          </span>
+        </p>
+        </ZortLookFold>
+  )
+  const กล่องตัด500 = (
+            <ZortLookFold สรุป={<>⚠️ ตารางแสดง 500 รายที่ยอดสูงสุด ไม่ใช่ทั้งหมด</>}>
+            <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
+              ⚠️ ช่วงนี้มีลูกค้ามากกว่า 500 ราย — ตารางแสดง <b>500 รายที่ยอดสูงสุด</b> เท่านั้น
+              <b> ไม่ใช่ทั้งหมด</b> · ยอดของแต่ละรายที่แสดงถูกต้องครบถ้วน แต่รายที่ยอดน้อยกว่านั้นไม่ได้อยู่ในตาราง
+            </div>
+            </ZortLookFold>
+  )
+
   return (
     <div className="p-4 md:p-6">
       <PageHead
@@ -428,7 +459,26 @@ export default function CoreCustomersPage() {
         /* 🔁 ปุ่ม "ดึงใหม่" เอาออก 16 ต.ค. 2569 — ZORT /Dashboard/ContactReport ไม่มี (อ่านปุ่มทั้งหน้า: วัน เดือน ไตรมาส ปี) */
       />
 
-      <SearchRow
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/ContactReport 19 ต.ค. 2569): ใต้หัวจอเป็นบรรทัดช่วงวันตัวใหญ่ ไม่มีช่องค้นหา
+           ⇒ ช่วงวันจริง (จากที่ท่อ echo) + ตัวเลือกช่วงอยู่บรรทัดนี้ · กล่องพับรายละเอียดช่วงต่อท้ายแบบ inline
+           · ช่องค้นชื่อลูกค้า (กรองแค่ตารางลูกค้าข้างล่าง) ย้ายไปอยู่เหนือตารางนั้น */}
+      {เหมือนZORT && (
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 mb-6">
+          <p className="font-['Kanit',sans-serif] text-[24px] leading-[30px] font-medium text-[#3e3e3e]">
+            {RANGES.find((r) => r.days === days)?.label ?? `ย้อนหลัง ${days} วัน`}
+            {(range.from || range.to) && <> ({thaiDate(range.from)} – {thaiDate(range.to)})</>}
+          </p>
+          <select
+            value={days}
+            onChange={(e) => load(Number(e.target.value))}
+            className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+          >
+            {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
+          </select>
+          {(range.from || range.to) && <span className="inline-block">{กล่องช่วง}</span>}
+        </div>
+      )}
+      {!เหมือนZORT && <SearchRow
         value={q}
         onChange={(v) => { setQ(v); setPage(0) }}
         onSubmit={() => setPage(0)}
@@ -446,46 +496,21 @@ export default function CoreCustomersPage() {
             </select>
           </>
         }
-      />
+      />}
 
       {/* 🔴 **ช่วงจริงต้องขึ้นจอเสมอ** — คำว่า "ย้อนหลัง 3 เดือน" ของเรากับของ ZORT คนละช่วง
              (ZORT = ตั้งแต่วันที่ 1 ของเดือนที่ถอยไป 3 เดือน · ของเรา = นับถอย 90 วัน)
              ถ้าไม่เขียนไว้ คนจะเอาสองจอมาเทียบแล้วสรุปว่า "ตัวเลขผิด" ทั้งที่ช่วงไม่เท่ากัน
              วันที่ที่โชว์คือวันที่ **ท่อ echo กลับมา** ไม่ใช่วันที่จอคำนวณเอง */}
-      {(range.from || range.to) && (
-        <ZortLookFold tone="gray" สรุป={<>ช่วงที่ใช้จริง {thaiDate(range.from)} – {thaiDate(range.to)}</>}>
-        <p className="text-[11.5px] text-gray-500 -mt-1 mb-3">
-          ช่วงที่ใช้จริง <b>{thaiDate(range.from)} – {thaiDate(range.to)}</b>
-          <span className="text-gray-400">
-            {/* ⚠️ 18 ก.ย. 2569 พยายามพิสูจน์ข้อความ "ZORT นับจากวันที่ 1 ของเดือน" แล้ว **ยังวัดไม่ได้**
-                ดรอปดาวน์ `#dateperiod` ของเขาซ่อนอยู่หลังวิดเจ็ต · ฟังก์ชัน `changedateperiod()` แค่ซ่อน/โชว์ช่องวันเอง
-                (การคิดช่วงจริงอยู่ฝั่งเซิร์ฟเวอร์) และจอเขาไม่แสดงช่วงวันที่ถูก resolve ออกมา
-                ⇒ คงข้อความ "เทียบตรง ๆ ไม่ได้" ไว้ (ยังจริงแน่นอน) แต่ **ไม่ยืนยันกติกาวันที่ 1** จนกว่าจะวัดได้ */}
-            {/* 16 ต.ค. 2569: จอ ZORT แสดงช่วงจริงแล้ว ("ย้อนหลัง 3 เดือน (1/7/2569 - 16/10/2569)") และท่อรับ from/to แล้ว
-                ⇒ 1/3 เดือนส่งช่วงเดียวกับ ZORT · ข้อความตัดสินจาก `ช่วงมาจาก` ที่ท่อตอบ ไม่ใช่จากที่จอขอ */}
-            {ช่วงมาจาก && ช่วงมาจาก.startsWith('from/to')
-              ? <>{' '}· <b>ช่วงวันเดียวกับ ZORT</b> (วันที่ 1 ของเดือนที่ถอยไป ถึงวันนี้)
-                  {' '}— <span className="text-amber-700">แต่การแบ่ง ลูกค้าใหม่/ซื้อซ้ำ/ไม่ระบุ ยังไม่ตรงกับ ZORT (เทียบ 16 ต.ค. 2569 ยอดกลุ่มต่างกัน กำลังไล่เหตุ)</span></>
-              : <>{' '}· ช่วงนี้<b>นับถอยเป็นวัน</b> ซึ่ง ZORT ไม่ได้นับแบบนี้ ⇒ <b>เทียบยอดตรง ๆ ไม่ได้</b></>}
-            {' '}· ZORT ยังมี วันนี้ · เมื่อวานนี้ · เดือนนี้ · เดือนที่แล้ว · ปีนี้ · กำหนดเอง ซึ่งจอนี้<b>ยังไม่ได้ทำ</b> (ท่อรับ from/to แล้ว — ทำได้ ไม่ใช่ทำไม่ได้)
-          </span>
-        </p>
-        </ZortLookFold>
-      )}
+      {!เหมือนZORT && (range.from || range.to) && กล่องช่วง}
 
       {error && <ErrorBox title="ดึงข้อมูลลูกค้าไม่ได้">{error}</ErrorBox>}
       {loading && people.length === 0 && <LoadingState />}
 
       {!loading && !error && (
         <>
-          {truncated && (
-            <ZortLookFold สรุป={<>⚠️ ตารางแสดง 500 รายที่ยอดสูงสุด ไม่ใช่ทั้งหมด</>}>
-            <div className="text-[12.5px] text-amber-700 bg-amber-50 border border-amber-100 rounded px-3 py-2 mb-3">
-              ⚠️ ช่วงนี้มีลูกค้ามากกว่า 500 ราย — ตารางแสดง <b>500 รายที่ยอดสูงสุด</b> เท่านั้น
-              <b> ไม่ใช่ทั้งหมด</b> · ยอดของแต่ละรายที่แสดงถูกต้องครบถ้วน แต่รายที่ยอดน้อยกว่านั้นไม่ได้อยู่ในตาราง
-            </div>
-            </ZortLookFold>
-          )}
+          {/* โหมดเหมือน ZORT: คำเตือนนี้พูดถึงตารางลูกค้า ⇒ ย้ายไปอยู่เหนือตารางนั้น (ไม่ดันการ์ดคู่ลง) */}
+          {!เหมือนZORT && truncated && กล่องตัด500}
 
           {/* ── ผัง ZORT (ภาพ 75): การ์ดคู่ "จำนวนลูกค้า" (วงกลม) | "แนวโน้ม" (กราฟเส้น) ──
               ได้ภาพจอจริงครั้งแรก 6 ก.ย. 2569 (เดิม 404 เพราะ URL ต้องมี ? ต่อท้าย — ฝั่งท่อไขได้)
@@ -493,12 +518,12 @@ export default function CoreCustomersPage() {
                  ของเรามีข้อมูลแค่ในช่วงที่เลือก ⇒ ใช้ "ซื้อครั้งเดียว vs ซื้อซ้ำ **ในช่วง**" แทน
                  คนที่ซื้อครั้งแรกเมื่อปีก่อนแล้วกลับมาซื้อใบเดียวในช่วงนี้ ZORT นับซื้อซ้ำ เรานับครั้งเดียว
                  **ต้องเขียนนิยามบนจอ** ไม่งั้นคนเทียบสองจอแล้วงงว่าทำไมเลขไม่ตรง */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4">
-            <div className="bg-white border border-gray-200 rounded-md p-4">
+          <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px] mb-[30px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4 mb-4'}>
+            <div className={เหมือนZORT ? 'bg-white rounded-[6px] p-6' : 'bg-white border border-gray-200 rounded-md p-4'}>
               {/* หัวการ์ด + ตัวสลับมุมมอง — ผังเดียวกับ dropdown `typeoption` ของ ZORT
                   (กดอ่านจากจอจริง 16 ก.ย. 2569: จำนวนลูกค้า ⇒ 2 แถว · ยอดขาย ⇒ 3 แถว มี "ไม่ระบุ" เพิ่ม) */}
               <div className="flex items-center justify-between gap-3 mb-3">
-                <p className="text-[15px] font-semibold text-gray-900">👥 จำนวนลูกค้า</p>
+                {เหมือนZORT ? <ZortCardTitle รูป="◔">จำนวนลูกค้า</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900">👥 จำนวนลูกค้า</p>}
                 <select
                   value={cardBy}
                   onChange={(e) => setCardBy(e.target.value as 'people' | 'sales')}
@@ -639,9 +664,9 @@ export default function CoreCustomersPage() {
                   )
                 })()}
             </div>
-            <div className="bg-white border border-gray-200 rounded-md p-4">
+            <div className={เหมือนZORT ? 'bg-white rounded-[6px] p-6' : 'bg-white border border-gray-200 rounded-md p-4'}>
               <div className="flex items-center justify-between gap-3 mb-3">
-                <p className="text-[15px] font-semibold text-gray-900">📈 แนวโน้ม</p>
+                {เหมือนZORT ? <ZortCardTitle รูป="↗">แนวโน้ม</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900">📈 แนวโน้ม</p>}
                 <select
                   value={trendBy}
                   onChange={(e) => setTrendBy(e.target.value as 'people' | 'sales')}
@@ -792,6 +817,14 @@ export default function CoreCustomersPage() {
                  ถ้าไม่มี ต้องใช้คำของเราเอง ไม่ใช่แปะคำ ZORT ทับนิยามที่ไม่ตรง
               ⚠️ คนที่ "ไม่ทราบสถานะ" อยู่ในแท็บทั้งหมดเท่านั้น ⇒ สองแท็บล่างบวกกันไม่เท่าแท็บแรก
                  (บอกไว้ใต้แท็บ ไม่ใช่ปล่อยให้คนบวกเอง) */}
+          {เหมือนZORT && truncated && กล่องตัด500}
+          {เหมือนZORT && <SearchRow
+            value={q}
+            onChange={(v) => { setQ(v); setPage(0) }}
+            onSubmit={() => setPage(0)}
+            placeholder="ค้นชื่อลูกค้า"
+            advanced={<LinkText onClick={() => setPage(0)}>ค้นหา</LinkText>}
+          />}
           <Tabs
             tabs={[
               { id: 'all', label: 'ทั้งหมด', count: people.length },
