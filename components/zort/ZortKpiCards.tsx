@@ -23,7 +23,9 @@ export interface ZortKpi {
 
 const COLS: Record<number, string> = { 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-2 lg:grid-cols-4' }
 
-export default function ZortKpiCards({ items }: { items: ZortKpi[] }) {
+/** `ขนาดเลข` — ZORT ใช้ไม่เท่ากันต่อจอ: รายละเอียดสินค้า/คลัง 30 · รายละเอียดหมวด 20 (วัด DOM 19 ต.ค. 2569) */
+export default function ZortKpiCards({ items, ขนาดเลข = 30 }: { items: ZortKpi[]; ขนาดเลข?: 20 | 24 | 30 }) {
+  const เลข = ขนาดเลข === 20 ? 'text-[20px] leading-[20px]' : ขนาดเลข === 24 ? 'text-[24px] leading-[24px]' : 'text-[30px] leading-[30px]'
   return (
     <div className={`grid grid-cols-1 ${COLS[items.length] ?? 'sm:grid-cols-3'} gap-[30px]`}>
       {items.map(({ ป้าย, วง, สี, รูป, ค่า, ว่าง, เหตุ }) => (
@@ -31,7 +33,7 @@ export default function ZortKpiCards({ items }: { items: ZortKpi[] }) {
           <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
           <div className="text-right min-w-0">
             <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
-            <p className="font-['Lato',sans-serif] text-[30px] leading-[30px] font-semibold mt-1 m-0 break-words" style={{ color: ว่าง ? '#ced4da' : สี }}>{ค่า}</p>
+            <p className={`font-['Lato',sans-serif] ${เลข} font-semibold mt-1 m-0 break-words`} style={{ color: ว่าง ? '#ced4da' : สี }}>{ค่า}</p>
           </div>
         </div>
       ))}
