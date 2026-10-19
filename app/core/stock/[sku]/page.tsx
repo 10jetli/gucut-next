@@ -509,7 +509,7 @@ export default function ProductDetailPage() {
                   src={pickImage(img, row, 640, true) as string}
                   alt=""
                   loading="lazy"
-                  className="w-[220px] h-[160px] rounded border border-gray-200 object-cover bg-white"
+                  className={เหมือนZORT ? 'w-[220px] h-auto bg-white' /* ZORT img-responsive: สัดส่วนจริงของรูป ไม่ตัด */ : 'w-[220px] h-[160px] rounded border border-gray-200 object-cover bg-white'}
                 />
               )
               : (
@@ -621,7 +621,7 @@ export default function ProductDetailPage() {
               </div>
             </div>
             {/* โหมดเหมือน ZORT: QR + บาร์โค้ดมุมขวาในกล่องข้อมูล (ZORT วางที่นี่ ไม่ใช่ท้ายจอ) */}
-            {เหมือนZORT && <div className="ml-auto"><SkuCodes sku={sku} แบบZORT /></div>}
+            {เหมือนZORT && <div className="ml-auto"><SkuCodes sku={sku} แบบZORT บาร์โค้ด={{ w: 158, h: 50 }} /></div>}
           </div>
 
           <Card className="mt-4">
