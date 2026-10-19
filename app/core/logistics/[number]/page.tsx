@@ -99,7 +99,7 @@ export default function LogisticsDetailPage() {
       {/* 🧰 แถบปุ่มแบบ ZORT /Logistics/Details (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
           คำสั่ง ▾ (ส่งสินค้าสำเร็จ) · ส่ง SMS ให้ลูกค้า · พิมพ์ใบแปะกล่อง — ทั้งหมดเป็นการเขียนกลับ ZORT หรือยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ
           (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className={`flex flex-wrap items-center gap-2 ${เหมือนZORT ? '!mt-[25px]' : ''}`} /* 📐 โหมดเหมือน ZORT: แถบปุ่ม y=194 เท่า ZORT · !mt เพราะ space-y ของกล่องแม่ทับ */>
         <RowMenu label="คำสั่ง" items={[{ label: 'ส่งสินค้าสำเร็จ', disabled: 'ยังทำไม่ได้ — เปลี่ยนสถานะใบส่งต้องเขียนกลับ ZORT' }]} />
         <span title="ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ)"
           className={ปุ่มเทา}>ส่ง SMS ให้ลูกค้า</span>

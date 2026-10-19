@@ -336,7 +336,7 @@ function DetailInner() {
           🔑 ของที่เราทำได้จริงกดได้ · ของที่ต้องเขียนกลับ ZORT เป็นสีเทาพร้อมเหตุ (คนย้ายมาจาก ZORT จะมองหาคำเหล่านี้)
           ⚠️ เมนู "คำสั่ง" อ่านจากใบสถานะรอโอน — ใบสถานะอื่น ZORT อาจมีรายการต่างจากนี้ (ยังไม่ได้อ่านเทียบ) */}
       {order && (
-        <div className="flex flex-wrap items-center gap-2 mb-4">
+        <div className={`flex flex-wrap items-center gap-2 mb-4 ${เหมือนZORT ? 'mt-[29px]' : ''}`} /* 📐 โหมดเหมือน ZORT: แถบปุ่มที่ y=194 เท่า ZORT (วัด DOM 19 ต.ค. 2569 · margin ยุบรวมกับ mb หัวจอ ⇒ ใส่ระยะเต็ม) */>
           <RowMenu label="คำสั่ง" items={[
             { label: 'แพ็คสินค้า', onClick: () => { window.location.href = '/core/packing' } },
             ...([
