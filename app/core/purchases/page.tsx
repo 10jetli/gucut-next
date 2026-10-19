@@ -354,7 +354,8 @@ export default function CorePurchasesPage() {
       {data && !data.skip && (
         <>
           {/* ผัง ZORT (ภาพ 27): ปุ่มรีเฟรชวงกลมมุมขวาแถบแท็บ — ชั้นแถบแท็บ จุดบอดประจำ (จอที่ 4 แล้ว) */}
-          <div className="flex items-end justify-between gap-3">
+          {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569): แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ช่องซ้าย 20 (ใบเสนอราคา 29.0 → 15.2) */}
+          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pl-5 pr-6' : 'flex items-end justify-between gap-3'}>
             {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ (เห็นจริงบน preview 19 ต.ค.: แท็บ "ยกเลิก (1)" หายไปหลังแถบเลื่อน) ⇒ shrink-0 · ให้ตัวเลือกร้านเป็นฝ่ายตัดบรรทัด */}
             <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
             <Tabs
@@ -364,7 +365,7 @@ export default function CorePurchasesPage() {
             />
             </div>
             {เหมือนZORT && (
-              <div className="ml-auto mb-1 min-w-0">
+              <div className="ml-auto min-w-0">
                 {/* ขอบเขตร้านเข้า ⓘ เพื่อให้พอดีแถว · หมายเหตุใบยกเลิกยังขึ้นบนจอ (กฎแท็บ: ยอดทั้งหมดรวมใบยกเลิกต้องบอก) */}
                 <StorePicker value={store} disabled={loading}
                   onChange={(v) => { setStore(v); load(0, tab, v) }}
@@ -372,8 +373,8 @@ export default function CorePurchasesPage() {
               </div>
             )}
             <button onClick={() => load(0, tab)} disabled={loading} aria-label="โหลดใหม่" title="โหลดใหม่"
-              className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
-                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+              className={`${เหมือนZORT ? '' : 'mb-2 '}shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
+                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed`}>
               {loading ? '⏳' : '⟳'}
             </button>
           </div>

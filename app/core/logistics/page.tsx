@@ -475,7 +475,7 @@ export default function LogisticsPage() {
             <>{โน้ตขนส่ง(data)}</>
           )}
 
-          <Tabs tabs={tabs} active={only} onChange={(id) => { setOnly(id); load(0, id) }} />
+          <Tabs แถบขาว tabs={tabs} active={only} onChange={(id) => { setOnly(id); load(0, id) }} />
 
           {/* 🔴 **"เก็บเงินปลายทาง" เป็นตัวกรองคนละแกนกับสองแท็บแรก** (วัดของจริง 18 ก.ย. 2569)
               ยังไม่มีเลขพัสดุ 1,181 + ส่งแล้ว 34,583 = 35,764 = ทั้งหมด **พอดีเป๊ะ**

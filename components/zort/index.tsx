@@ -220,7 +220,7 @@ export function LinkText({ children, ...p }: React.ButtonHTMLAttributes<HTMLButt
 
 /* ── แท็บสถานะ (มีจำนวนในวงเล็บ + ขีดน้ำเงินใต้ตัวที่เลือก) ───────────────── */
 export function Tabs({
-  tabs, active, onChange, right,
+  tabs, active, onChange, right, แถบขาว,
 }: {
   /* 🔴 **`ปิดไว้` มีเพราะแท็บที่กดได้แต่ไม่ทำอะไร อ่านไม่ออกว่าตั้งใจหรือพัง**
      เจอของจริง 4 ต.ค. 2569 ตอนกวาดกดจริง: แท็บ `ลูกค้า` / `คู่ค้า` ของจอผู้ติดต่อ
@@ -233,6 +233,9 @@ export function Tabs({
   active: string
   onChange: (id: string) => void
   right?: ReactNode
+  /** โหมดเหมือน ZORT: แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ช่องซ้าย 20 (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569)
+   *  ใช้กับจอที่วางแท็บเดี่ยว ๆ · จอที่มีแถวครอบ (แท็บ + ปุ่มโหลดใหม่) ให้ทำขาวที่แถวครอบแทน ไม่งั้นช่องซ้ายซ้อนสองชั้น */
+  แถบขาว?: boolean
 }) {
   return (
     /* 🔴 **แถบแท็บต้องเลื่อนในตัวเอง ห้ามดันทั้งหน้าให้กว้างเกินจอ** (แก้ 19 ก.ย. 2569)
@@ -242,7 +245,7 @@ export function Tabs({
        🔑 **ของเดิมไม่ได้พัง — มันโตข้ามเส้นเฉย ๆ** (คลาสเดียวกับ display-limits-cant-decide)
           และวันที่ ZORT เพิ่มสถานะใหม่ แท็บจะโผล่เองอีก ⇒ ต้องกันไว้ที่คอมโพเนนต์ ไม่ใช่รายจอ
        ⚠️ `overflow-x-auto` ต้องมากับ `flex-none` ที่ปุ่ม ไม่งั้น flex จะบีบปุ่มให้แคบแทนที่จะเลื่อน */
-    <div role="tablist" className="flex items-center gap-1 border-b border-gray-200 mb-0 overflow-x-auto">
+    <div role="tablist" className={`flex items-center gap-1 border-b border-gray-200 mb-0 overflow-x-auto ${แถบขาว && เหมือนZORT ? 'bg-white pl-5 pr-6' : ''}`}>
       {tabs.map((t) => (
         <button
           key={t.id}

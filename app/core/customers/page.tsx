@@ -391,7 +391,7 @@ export default function CoreContactsPage() {
 
       {data && !data.skip && (
         <>
-          <Tabs
+          <Tabs แถบขาว
             tabs={[
               { id: '', label: 'ทั้งหมด', count: typeof data.total === 'number' ? data.total : undefined },
               /* 🔄 **เปลี่ยนเป็น `ปิดไว้` 4 ต.ค. 2569** — เดิมแท็บนี้กดได้แต่ตัว `onChange`

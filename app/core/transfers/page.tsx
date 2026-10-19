@@ -330,7 +330,8 @@ export default function CoreTransfersPage() {
         <>
           {/* ผัง ZORT (ภาพ 31): ปุ่มรีเฟรชวงกลมอยู่มุมขวาของแถบแท็บ — วางเพิ่ม ไม่ย้ายอันบนหัวจอ
               (กติกาเดียวกับจอใบเสนอราคา: ย้ายขึ้นที่เดียวผิดผัง ย้ายลงที่เดียวหายจากที่คนเราชิน) */}
-          <div className="flex items-end justify-between gap-3">
+          {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569): แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ช่องซ้าย 20 (ใบเสนอราคา 29.0 → 15.2) */}
+          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pl-5 pr-6' : 'flex items-end justify-between gap-3'}>
             {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ ⇒ shrink-0 (บทเรียนจอใบซื้อ 19 ต.ค. 2569) */}
             <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
             <Tabs
@@ -378,7 +379,7 @@ export default function CoreTransfersPage() {
             </div>
             {/* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านอยู่ในแถบแท็บ (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */}
             {เหมือนZORT && (
-              <div className="ml-auto mb-1 min-w-0">
+              <div className="ml-auto min-w-0">
                 <StorePicker value={store} disabled={loading}
                   onChange={(v) => { setStore(v); load(0, tab, v) }}
                   ต่อท้าย={data?.storeScope ? <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${data.storeScope}`}>ⓘ</span> : undefined} />
@@ -386,8 +387,8 @@ export default function CoreTransfersPage() {
             )}
             <button onClick={() => load(0)} disabled={loading} aria-label="โหลดใหม่"
               title="โหลดใหม่"
-              className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
-                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed">
+              className={`${เหมือนZORT ? '' : 'mb-2 '}shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
+                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed`}>
               {loading ? '⏳' : '⟳'}
             </button>
           </div>
