@@ -17,6 +17,7 @@ import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแบบZORT, วันนี้วันไทย } from '@/lib/format'
 import { PageHead, BtnGhost, Pill, TableWrap, TH, TD, DETAIL_BTN } from '@/components/zort'
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
+import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
@@ -185,7 +186,7 @@ function Inner() {
     <div className="p-4 md:p-6">
       <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}><Link href="/core/categories" className="text-[#337ab7] hover:underline">‹ หมวดหมู่</Link></p>
       <PageHead
-        title={catName || '—'}
+        title={เหมือนZORT ? <span className="text-[#337ab7]">{catName || '—'}</span> : (catName || '—')} /* 📐 ZORT: ชื่อหมวดเป็นลิงก์สีน้ำเงิน 30/500 #337ab7 (วัด DOM 19 ต.ค. 2569) */
         summary={<span className="text-gray-500">รายละเอียดหมวดหมู่</span>}
         actions={เหมือนZORT ? undefined :
           <div className="flex items-center gap-2">
@@ -230,7 +231,7 @@ function Inner() {
             const ก่อน = เดือน ? เดือน.ก่อน : undefined, นี้ = เดือน ? เดือน.นี้ : undefined
             return (
               <div className="mb-4">
-                <ZortKpiCards items={[
+                <ZortKpiCards ขนาดเลข={20} items={[
                   { ป้าย: 'สินค้าคงเหลือ (บาท)', วง: '#ebf6ff', สี: '#2f8dde', รูป: '▦', ค่า: ค่า(NUM(cat?.zortValue)), ว่าง: NUM(cat?.zortValue) == null, เหตุ: 'คัดจากจอ ZORT (เก่าได้ ซื้อของเข้าแล้วต้องคัดใหม่)' },
                   { ป้าย: 'สินค้าพร้อมขาย (บาท)', วง: '#cefff1', สี: '#13af82', รูป: '✓', ค่า: ค่า(NUM(cat?.zortAvailable)), ว่าง: NUM(cat?.zortAvailable) == null, เหตุ: 'คัดจากจอ ZORT (เก่าได้)' },
                   { ป้าย: 'ยอดขายเดือนที่แล้ว (บาท)', วง: '#ebf6ff', สี: '#2f8dde', รูป: '฿', ค่า: ค่า(ก่อน), ว่าง: ก่อน == null, เหตุ: ก่อน === null ? เดือนผิด : 'ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้' },
@@ -281,7 +282,7 @@ function Inner() {
           {/* 📈 ยอดขาย — การ์ดกราฟรายเดือนตามผัง ZORT (ตัวเลือก salesoption: ยอดขาย · กำไรจากการขาย) */}
           <div className={เหมือนZORT ? 'bg-white rounded-[6px] mb-4' : 'bg-white border border-gray-200 rounded-md mb-4'}>
             <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-3 px-5 pt-5 pb-2' : 'flex flex-wrap items-center gap-3 px-4 pt-3 pb-2'}>
-              <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] mr-auto" : 'text-[14px] font-semibold text-gray-900 mr-auto'}>ยอดขาย</p>
+              {เหมือนZORT ? <div className="mr-auto"><ZortCardTitle รูป="▥">ยอดขาย</ZortCardTitle></div> : <p className="text-[14px] font-semibold text-gray-900 mr-auto">ยอดขาย</p>}
               <select value="sales" onChange={() => { /* มีค่าเดียวที่ทำได้จริง */ }}
                 className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
                 <option value="sales">ยอดขาย</option>
