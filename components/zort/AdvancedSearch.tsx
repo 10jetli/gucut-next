@@ -19,6 +19,7 @@
 import type { ReactNode } from 'react'
 import { BtnGhost, LinkText } from './index'
 import { pipeText } from '@/components/ui/PipeNote'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export interface AdvField {
   label: string
@@ -49,7 +50,10 @@ export function AdvancedSearchLink({ open, onToggle, แบบ = 'ลิงก�
     return (
       <button type="button" onClick={onToggle} aria-expanded={open}
         className={`text-[12.5px] border rounded px-3 py-1.5 bg-white hover:bg-gray-50 ${open ? 'border-blue-500 text-blue-600' : 'border-gray-300 text-gray-700'}`}>
-        ⏷ ตัวกรอง
+        {/* โหมดเหมือน ZORT: ไอคอนกรวยเส้นแบบปุ่ม ตัวกรอง ของ ZORT /Sell/list (วาดเอง ไม่ใช้ไอคอนของ ZORT) */}
+        {เหมือนZORT
+          ? <span className="inline-flex items-center gap-1.5"><svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z" /></svg>ตัวกรอง</span>
+          : '⏷ ตัวกรอง'}
       </button>
     )
   }
