@@ -15,6 +15,7 @@ import ExportButton, { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/co
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortPie from '@/components/zort/ZortPie'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { คลาสตัวเลือก, คลาสช่องค้น, แว่นช่องค้น } from '@/components/zort/formCtl'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import ZortFoldIf from '@/components/zort/ZortFoldIf'
@@ -204,6 +205,16 @@ export default function CoreProductReportPage() {
   const โหมดZ = เหมือนZORT && ยอดZORTสด !== null
   /** วงกลมรายคลัง: เฉพาะมุมมองรายคลัง และรู้มูลค่าครบทุกคลัง (มี null = ไม่วาด) */
   const วาดวงคลัง = เหมือนZORT && valueBy === 'warehouse' && !!whs && whs.length > 0 && whs.every((w) => typeof w.stockValue === 'number')
+  const ตัวเลือกมูลค่า = (
+    <select
+      value={valueBy}
+      onChange={(e) => setValueBy(e.target.value as 'warehouse' | 'category')}
+      className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700")}
+    >
+      <option value="warehouse">รายคลัง</option>
+      <option value="category">รายหมวดหมู่</option>
+    </select>
+  )
   const สีคลัง = ['#8ea8f8', '#d1d5db', '#f2938c', '#13af82', '#efb15d']
 
   return (
@@ -341,7 +352,9 @@ export default function CoreProductReportPage() {
             </Card>
 
             <Card>
-              {เหมือนZORT ? <div className="mb-2"><ZortCardTitle รูป="▦">มูลค่าสินค้าคงเหลือรายคลัง</ZortCardTitle></div>
+              {/* 📐 โหมด ZORT: ตัวเลือก รายคลัง/รายหมวดหมู่ อยู่มุมขวาของหัวการ์ด (DOM ZORT top 160 ระดับเดียวกับหัว)
+                   เดิมอยู่ในกล่องพับใต้วงกลม ⇒ พอวาดวงกลม ตัวเลือกถูกพับหายไปด้วย */}
+              {เหมือนZORT ? <div className="mb-2 flex items-start justify-between gap-3"><ZortCardTitle รูป="▦">มูลค่าสินค้าคงเหลือรายคลัง</ZortCardTitle>{ตัวเลือกมูลค่า}</div>
                 : <p className="text-[15px] font-semibold text-gray-900 mb-2">มูลค่าสินค้าคงเหลือรายคลัง</p>}
               {/* 📐 โหมดเหมือน ZORT: วงกลมสัดส่วนรายคลังแบบ ZORT — **วาดเฉพาะเมื่อรู้มูลค่าครบทุกคลัง**
                    (มีคลังที่ ZORT ไม่ตอบ = null ⇒ สัดส่วนผิด ⇒ ไม่วาด ใช้ตารางตามเดิม — กฎ "ห้ามวาดจากข้อมูลที่ไม่มี") · ตารางพับไว้ใต้วงกลม */}
@@ -370,14 +383,7 @@ export default function CoreProductReportPage() {
                      ⇒ ปล่อยไว้คือคำโกหก และทำให้คนคิดว่าต้องไปคัดมือ
                   🔴 `stockValue` เป็น `null` = **ยังไม่รู้** (ZORT ไม่ให้สิทธิ์ดูคลังนั้น) ⇒ แยกแถว ห้ามนับเป็น 0 */}
               <div className="flex flex-wrap items-center gap-2 mb-2">
-                <select
-                  value={valueBy}
-                  onChange={(e) => setValueBy(e.target.value as 'warehouse' | 'category')}
-                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700"
-                >
-                  <option value="warehouse">รายคลัง</option>
-                  <option value="category">รายหมวดหมู่</option>
-                </select>
+                {!เหมือนZORT && ตัวเลือกมูลค่า}
                 <span className="text-[11.5px] text-gray-400">
                   {valueBy === 'warehouse'
                     ? 'มูลค่าคงเหลือที่ ZORT ตอบรายคลัง (ถามสดตอนเปิดหน้า)'
@@ -476,7 +482,7 @@ export default function CoreProductReportPage() {
               <select
                 value={deadDays}
                 onChange={(e) => { const d = Number(e.target.value); setDeadDays(d); load(d) }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white", 'w-[200px]')}
               >
                 {DEAD_RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
               </select>
@@ -484,7 +490,7 @@ export default function CoreProductReportPage() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
                 placeholder="พิมพ์คำค้นหา"
-                className="text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]"
+                className={คลาสช่องค้น('text-[12.5px] border border-gray-300 rounded px-2.5 py-1.5 w-[200px]')} style={แว่นช่องค้น}
               />
             </div>
 
@@ -660,7 +666,7 @@ export default function CoreProductReportPage() {
           <Card padded={false} className="mt-4">
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <p className="text-[15px] font-semibold text-gray-900 mr-auto">ล็อตใกล้หมดอายุ</p>
-              <select disabled className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 max-w-full">
+              <select disabled className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 max-w-full", 'w-[200px] max-w-full disabled:bg-[#e9ecef]')}>
                 <option>ทั้งหมด</option>
                 {(whs ?? []).map((w) => <option key={w.code}>{w.name || w.code}</option>)}
               </select>
