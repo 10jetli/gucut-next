@@ -108,7 +108,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
 }
 
 export default function LedgerScreen({
-  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, purpose, meanwhile,
+  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, ว่างแถวเตี้ย, purpose, meanwhile,
   emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv, zortCols,
 }: {
   title: string
@@ -152,6 +152,8 @@ export default function LedgerScreen({
    *  🔴 เพิ่ม 16 ก.ย. 2569 เพราะเจอของจริง: จอเซลเพจยืนยันสดวันนี้ แต่ประโยคยังขึ้นวันที่รวม 3 ก.ย.
    *     ⇒ ประโยคเดียวมีสองวันที่ อ่านแล้วไม่รู้ว่าอันไหนคือวันที่ของเลขนั้น */
   sumSeenAt?: string
+  /** โหมดเหมือน ZORT: ตารางว่างเป็นแถวเตี้ยแถวเดียว (เฉพาะจอที่ ZORT ทำแบบนั้นจริง เช่น /SalePage/List) · ไม่ส่ง = กล่องสูงมีรูปแบบจอ ZORT ส่วนใหญ่ */
+  ว่างแถวเตี้ย?: boolean
   /** ZORT เขียนอะไรไว้ในกล่องว่าง — เอาไว้บอกว่าจอนี้มีไว้ทำอะไร */
   purpose: string
   /** ตอนนี้ร้านทำเรื่องนี้ที่ไหน */
@@ -203,6 +205,7 @@ export default function LedgerScreen({
   /* 🔴 อายุต้องนับจาก **วันเดียวกับที่ตัวเลขบนจอบอก** (`sumSeenAt` ของจอนั้น ถ้ามี)
      เดิมนับจาก CHECKED_AT ร่วมเสมอ ⇒ จอเซลเพจขึ้นว่า "ที่ ZORT เมื่อ 16 ต.ค." แต่กล่องเหลืองข้างล่างบอก
      "ตัวเลขข้างบนคัดมาเมื่อ 46 วันที่แล้ว" — ตัวเลขกับอายุมาคนละแหล่ง จอขัดกันเอง (เจอ 19 ต.ค. 2569) */
+  const แถวเตี้ย = เหมือนZORT && !!ว่างแถวเตี้ย
   const วันที่คัด = sumSeenAt ?? CHECKED_AT
   const age = ageOf(วันที่คัด)
 
@@ -386,7 +389,8 @@ export default function LedgerScreen({
         }
       />
 
-      <div className="flex flex-wrap items-center gap-3 mb-3">
+      {/* 📐 โหมดเหมือน ZORT: ระยะช่องค้นหาเดียวกับ SearchRow ร่วม (pt-1 mb-5) — ตารางเริ่มตำแหน่งเดียวกับ ZORT */}
+      <div className={`flex flex-wrap items-center gap-3 ${เหมือนZORT ? 'pt-1 mb-5' : 'mb-3'}`}>
         {/* 🔴 ช่องค้นหาเคยเป็นช่องเทาที่พิมพ์ไม่ได้ทุกจอ — ตอนนี้จอที่ต่อท่อแล้วใช้ได้จริง
             (เส้น ?zortlist= รับ keyword มาตั้งแต่แรก แค่จอไม่เคยเปิดให้ใช้)
             ⚠️ จอที่ยังไม่ต่อท่อยังเทาเหมือนเดิม และบอกเหตุผลตอนชี้ค้าง — ไม่ใช่เทาเฉย ๆ */}
@@ -535,11 +539,13 @@ export default function LedgerScreen({
             )}
             {!(zortAnswered && rows!.length > 0) && (
             <tr>
-              {/* 📐 โหมดเหมือน ZORT (ภาพ /SalePage/List 19 ต.ค. 2569): ตารางว่างของ ZORT เป็นแถวขาวเตี้ยแถวเดียว ไม่มีรูปกลางจอ
-                   ⇒ ลดความสูง ถอดไอคอนโฟลเดอร์ · **ข้อความสถานะ + กล่องพับหลักฐานอยู่ครบ** (คือความจริงของจอนี้ ห้ามถอด) */}
-              <td colSpan={cols.length + 1} className={เหมือนZORT ? 'py-4 text-center' : 'py-14 text-center'}>
-                {!เหมือนZORT && <span className="text-[34px] block opacity-60">🗂️</span>}
-                <p className={เหมือนZORT ? 'text-[14px] text-gray-800' : 'text-[14px] text-gray-800 mt-2'}>
+              {/* 📐 ตารางว่าง: จอ ZORT ส่วนใหญ่เป็น **กล่องสูงมีรูปโฟลเดอร์กลางจอ** (ภาพ /Sell/list?sttype=1 · /Marketplace/List 19 ต.ค. 2569)
+                   ⇒ ค่าตั้งต้นคงแบบสูงไว้ · มีแค่บางจอที่เป็นแถวเตี้ย (/SalePage/List) ⇒ จอนั้นส่ง `ว่างแถวเตี้ย` เอง
+                   🔴 บทเรียน: เคยทำแถวเตี้ยให้ทุกจอจากภาพจอเดียว ⇒ คืนสินค้าให้ผู้ขาย 18.1 → 32.1 · โอนเงิน 17.3 → 31.3 (ถอยกลับ 19 ต.ค. 2569)
+                   **ข้อความสถานะ + กล่องพับหลักฐานอยู่ครบทั้งสองแบบ** */}
+              <td colSpan={cols.length + 1} className={แถวเตี้ย ? 'py-4 text-center' : 'py-14 text-center'}>
+                {!แถวเตี้ย && <span className="text-[34px] block opacity-60">🗂️</span>}
+                <p className={แถวเตี้ย ? 'text-[14px] text-gray-800' : 'text-[14px] text-gray-800 mt-2'}>
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
                   {zLoading ? 'กำลังถาม ZORT…'
                     /* 🔴 resCode 500 = **ขัดข้องฝั่ง ZORT เอง** (ฝั่งท่อยิงตรวจ 23:00 14 ก.ย. 2569

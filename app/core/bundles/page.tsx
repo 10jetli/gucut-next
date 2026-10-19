@@ -501,7 +501,10 @@ export default function CoreBundlesPage() {
                           วัด DOM 18 ต.ค. 2569: span.z-badge--success ขอบมน 24px พื้น rgb(206,255,241) ⇒ ในโหมดเหมือน ZORT ทำเป็นป้าย
                           (ป้ายปิดใช้งานเป็นเทา = ของเราเอง — ZORT มี 0 แถวที่ปิดใช้งาน ยังไม่มีให้วัด) */}
                       {เหมือนZORT
-                        ? <span className="inline-block whitespace-nowrap rounded-[24px] px-3 py-1 text-[14px] leading-[14px]"
+                        /* 📐 ZORT ป้ายนี้กว้าง ~80 แล้วตัดเป็น 2 บรรทัด "เปิดการใช้ / งาน" (ภาพ 19 ต.ค. 2569)
+                           เดิมใส่ whitespace-nowrap กันตัด 4 บรรทัด ⇒ คอลัมน์สถานะกว้างขึ้น บีบชื่อชุดเป็น 6 บรรทัด แถวสูงเกิน ZORT (20.9 → 29.4)
+                           ⇒ กว้างคงที่ 80 ให้ตัด 2 บรรทัดเท่า ZORT */
+                        ? <span className="inline-block w-[80px] rounded-[24px] px-2 py-1 text-[14px] leading-[16px]"
                             style={r.active === false ? { color: '#6b7280', background: '#f3f4f6' } : { color: 'rgb(31,144,112)', background: 'rgb(206,255,241)' }}>
                             {r.active === false ? 'ปิดการใช้งาน' : 'เปิดการใช้งาน'}
                           </span>
