@@ -14,7 +14,7 @@
 import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
-import { PageHead, TH_KANIT as TH, TD } from '@/components/zort'
+import { PageHead, TH_KANIT as TH, TD, ZORT_TABLE_BOX, ZORT_TABLE_SHADOW } from '@/components/zort'
 import { pipeText } from '@/components/ui/PipeNote'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
@@ -67,7 +67,9 @@ export default function SettingsRolesPage() {
         }
       />
 
-      <div className="border rounded-md overflow-hidden" style={{ background: '#f8f9fa', borderColor: '#e3e8f4' }}>
+      {/* 📐 โหมดเหมือน ZORT: กล่องตารางค่าเดียวกับ TableWrap ร่วม (หัวเทา #e8ecef · ไม่มีขอบ · เงาน้ำเงินจาง · แถวสูง 41.3) */}
+      <div className={เหมือนZORT ? ZORT_TABLE_BOX : 'border rounded-md overflow-hidden'}
+        style={เหมือนZORT ? { boxShadow: ZORT_TABLE_SHADOW } : { background: '#f8f9fa', borderColor: '#e3e8f4' }}>
         <table className="w-full min-w-[640px]">
           <thead className="bg-white border-b border-gray-200">
             <tr>
