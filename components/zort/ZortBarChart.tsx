@@ -10,13 +10,13 @@ import type { ReactNode } from 'react'
 export interface BarPoint { label: string; value: number | null }
 
 /** ขั้นแกนที่อ่านง่าย (1 · 2 · 2.5 · 5 × 10^n) ให้ได้ราว ๆ `n` ช่อง */
-function ขั้นแกน(max: number, n = 3): number {
+export function ขั้นแกน(max: number, n = 3): number {
   const raw = max / n
   const mag = 10 ** Math.floor(Math.log10(raw))
   for (const f of [1, 2, 2.5, 5, 10]) if (f * mag >= raw) return f * mag
   return 10 * mag
 }
-const ย่อเลข = (v: number) => v >= 1e6 ? `${+(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${+(v / 1e3).toFixed(1)}K` : String(v)
+export const ย่อเลข = (v: number) => v >= 1e6 ? `${+(v / 1e6).toFixed(2)}M` : v >= 1e3 ? `${+(v / 1e3).toFixed(1)}K` : String(v)
 
 export default function ZortBarChart({ points, legend, xTitle = 'เดือน', สูง = 240 }: {
   points: BarPoint[]
