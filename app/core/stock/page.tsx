@@ -30,6 +30,7 @@ import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortNoImage from '@/components/zort/ZortNoImage'
 
 interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
@@ -967,8 +968,7 @@ function CoreStockInner() {
                             : (
                             /* ไม่มีรูป — กล่องเทาเหมือนเดิม แต่ **บอกเหตุผลผ่าน title** ให้ต่างกันสองแบบ
                                (ใส่ข้อความในตารางทุกแถวจะรก ⇒ ใช้ tooltip · หน้ารายละเอียดเขียนเต็ม) */
-                            <span
-                              className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0"
+                            <ZortNoImage
                               title={noImageReason(r) === 'zort-none'
                                 ? 'ZORT ไม่มีรูปของรหัสนี้ — ต้องถ่ายรูปเพิ่ม'
                                 : noImageReason(r) === 'not-thumbed'

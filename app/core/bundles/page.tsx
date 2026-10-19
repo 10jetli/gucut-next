@@ -29,6 +29,7 @@ import { TH_NO, ROW_LINK, TD_NO,
   LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortNoImage from '@/components/zort/ZortNoImage'
 
 interface Row {
   sku: string
@@ -453,7 +454,7 @@ export default function CoreBundlesPage() {
                             <img src={imgOf(r.sku) as string} alt="" loading="lazy"
                               className="w-10 h-10 rounded border border-gray-200 object-cover bg-white shrink-0" />
                           )
-                          : <span className="block w-10 h-10 rounded border border-gray-200 bg-gray-100 shrink-0" />}
+                          : <ZortNoImage />}
                         <span
                           className="relative min-w-0"
                           onMouseEnter={() => showItems(r.sku)}
