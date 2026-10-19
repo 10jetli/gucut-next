@@ -89,6 +89,13 @@ const statusTh = (s?: string) => {
   return w.text || 'ไม่ระบุสถานะ'
 }
 
+/** เหตุที่ช่องในแผงค้นหาขั้นสูงของจอบริการส่งสินค้าปิดไว้ — ที่เดียว ใช้ทั้งช่องที่ปิดและรายการ ไม่มีให้กรอง
+ *  อ้างอิง: GET list=logistics 20 ต.ค. 2569 · applied มี only/q/from/to/carrier · สัญญาของเส้น กรองจริง(วัดแล้ว) from/q/to */
+const เหตุปิดส่งสินค้า = {
+  คำค้นเดียว: 'ท่อมีคำค้นช่องเดียว (q) — พิมพ์เลขรายการหรือชื่อผู้รับในช่องค้นหาด้านบนได้เลย ยังแยกเป็นรายช่องไม่ได้',
+  สถานะ: 'กระจกเก็บแต่สถานะใบขาย ไม่มีสถานะการส่งของขนส่ง ⇒ ทำตัวเลือกไปก็กดแล้วไม่ตรงความหมาย',
+}
+
 export default function LogisticsPage() {
   const router = useRouter()
   const [data, setData] = useState<Resp | null>(null)
@@ -397,7 +404,12 @@ export default function LogisticsPage() {
       {canAdv && (
         <AdvancedSearch
           open={advOpen}
+          /* 📐 ลำดับช่องตาม DOM แผง searchAdvance ของ ZORT /Logistics/list (อ่านของที่ซ่อนอยู่ 20 ต.ค. 2569):
+             รายการ · ชื่อผู้รับ · ตั้งแต่วันที่ · ถึงวันที่ · ตัวแทนส่งสินค้า (ติ๊ก 9 เจ้า) · สถานะรายการ (ติ๊ก 5 ค่า)
+             ช่องที่ท่อยังกรองไม่ได้ วาดไว้แต่ปิด — เหตุมาจาก เหตุปิดส่งสินค้า ที่เดียวกับรายการข้างล่าง */
           fields={[
+            { label: 'รายการ', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: เหตุปิดส่งสินค้า.คำค้นเดียว },
+            { label: 'ชื่อผู้รับ', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: เหตุปิดส่งสินค้า.คำค้นเดียว },
             { label: 'ตั้งแต่วันที่', kind: 'date', value: fFrom, onChange: (v) => setFFrom(String(v)) },
             { label: 'ถึงวันที่', kind: 'date', value: fTo, onChange: (v) => setFTo(String(v)) },
             {
@@ -408,6 +420,7 @@ export default function LogisticsPage() {
               width: 200,
               options: [{ value: '', label: 'ทั้งหมด' }, ...carrierOpts.map((g) => ({ value: g.carrier, label: `${g.carrier} (${fmtNum(g.c)})` }))],
             },
+            { label: 'สถานะรายการ', kind: 'select', value: '', onChange: () => {}, width: 140, ปิดไว้: เหตุปิดส่งสินค้า.สถานะ },
           ]}
           onApply={() => load(0)}
           onClear={() => {
@@ -417,7 +430,8 @@ export default function LogisticsPage() {
           canClear={Boolean(fFrom || fTo || fCarrier)}
           serverFiltered="คำค้นหา · แท็บ · ช่วงวันที่ · ขนส่ง"
           notAvailable={[
-            { what: 'สถานะการส่ง 5 ค่าแบบ ZORT', why: 'กระจกเก็บแต่สถานะใบขาย ไม่มีสถานะการส่งของขนส่ง ⇒ ทำตัวเลือกไปก็กดแล้วไม่ตรงความหมาย' },
+            { what: 'รายการ · ชื่อผู้รับ แยกช่อง', why: เหตุปิดส่งสินค้า.คำค้นเดียว },
+            { what: 'สถานะการส่ง 5 ค่าแบบ ZORT', why: เหตุปิดส่งสินค้า.สถานะ },
             { what: 'ขนส่งแบบติ๊กหลายเจ้า', why: 'ท่อรับทีละเจ้า' },
           ]}
           extraNote={<>วันที่ = <b>วันส่งสินค้า</b> ถ้าใบยังไม่มีวันส่งใช้<b>วันที่สั่ง</b> (วันเดียวกับคอลัมน์วันที่ในตาราง) · ตัวเลือกขนส่งมาจากช่วงวันที่ตอนยังไม่เลือกขนส่ง</>}
