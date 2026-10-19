@@ -32,6 +32,7 @@ import {
 } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortKpiCards from '@/components/zort/ZortKpiCards'
 
 interface Row {
   sku: string; name: string; qty: number; price: number; sold: number
@@ -428,24 +429,13 @@ export default function ProductDetailPage() {
               · กล่องที่มาของเลขพร้อมขาย (สำคัญ: อธิบายว่าทำไมต่างจาก ZORT) ย้ายไปพับใต้การ์ด ไม่ถอด */}
           {เหมือนZORT && (() => {
             const หน่วย = row.unit ? ` (${row.unit})` : ''
-            const การ์ด = ([
-              ['สินค้าคงเหลือ' + หน่วย, '#ebf6ff', '#2f8dde', '▦', fmtNum(Number(row.qty ?? 0))],
-              ['สินค้าพร้อมขาย' + หน่วย, '#cefff1', '#13af82', '✓', row.available == null ? '-' : fmtNum(Number(row.available))],
-              ['ยอดขายเดือนนี้ (บาท)', '#d0daff', '#4165ed', '฿', thisMonth == null ? '-' : fmtMoney(thisMonth)],
-            ] as const)
             return (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-[30px]">
-                  {การ์ด.map(([ป้าย, วง, สี, รูป, ค่า]) => (
-                    <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                      <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
-                      <div className="text-right">
-                        <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
-                        <p className="font-['Lato',sans-serif] text-[30px] leading-[30px] font-semibold mt-1 m-0" style={{ color: ค่า === '-' ? '#ced4da' : สี }}>{ค่า}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <ZortKpiCards items={[
+                  { ป้าย: 'สินค้าคงเหลือ' + หน่วย, วง: '#ebf6ff', สี: '#2f8dde', รูป: '▦', ค่า: fmtNum(Number(row.qty ?? 0)) },
+                  { ป้าย: 'สินค้าพร้อมขาย' + หน่วย, วง: '#cefff1', สี: '#13af82', รูป: '✓', ค่า: row.available == null ? '-' : fmtNum(Number(row.available)), ว่าง: row.available == null },
+                  { ป้าย: 'ยอดขายเดือนนี้ (บาท)', วง: '#d0daff', สี: '#4165ed', รูป: '฿', ค่า: thisMonth == null ? '-' : fmtMoney(thisMonth), ว่าง: thisMonth == null },
+                ]} />
                 <ZortLookFold tone="gray" สรุป={<>ที่มาของเลขพร้อมขาย · ยอดขายเดือนนี้{thisMonth == null ? ' (กด "ดูกราฟยอดขาย" ด้านล่างแล้วเลขจะขึ้นเอง)' : ''}</>}>
                   <div className="mt-2 text-left"><StockSource row={row} ป้าย={ป้ายที่มา} /></div>
                 </ZortLookFold>

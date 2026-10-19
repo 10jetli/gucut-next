@@ -33,6 +33,7 @@ import {
   PageHead, thaiDate, TableWrap, TH, THR, TD, TDR, DETAIL_BTN,
 } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortKpiCards from '@/components/zort/ZortKpiCards'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 
 interface Warehouse {
@@ -169,22 +170,12 @@ export default function BranchDetailPage() {
               · ประเภทคลัง (จุดขายไหม) ไม่มีใน ZORT แต่สำคัญ ⇒ บรรทัดเล็กใต้การ์ด · กล่องข้อมูลเดิมนอกโหมดเหมือนเดิม */}
           {เหมือนZORT && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-[30px]">
-                {([
+              <ZortKpiCards items={([
                   ['มูลค่าสินค้าคงเหลือ (บาท)', '#ebf6ff', '#2f8dde', '▦', typeof wh.stockValue === 'number' ? fmtMoney(wh.stockValue) : '—',
                     typeof wh.stockValue === 'number' ? (เวลาคัด(wh.valueCollectedAt) ? `อ่านจากจอ ZORT เมื่อ ${เวลาคัด(wh.valueCollectedAt)}` : 'อ่านจากจอ ZORT') : 'ยังไม่เคยคัดมูลค่าของคลังนี้ (ไม่ใช่ศูนย์)'],
                   ['มูลค่าสินค้าพร้อมขาย (บาท)', '#cefff1', '#13af82', '฿', '—', 'ท่อยังไม่ส่งมูลค่าพร้อมขายรายคลัง — ขีด = ยังไม่รู้ ไม่ใช่ศูนย์'],
                   ['เคลื่อนไหวล่าสุด', '#d0daff', '#4165ed', '⇄', wh.movedAt ? thaiDate(String(wh.movedAt)) : '—', wh.movedAt ? '' : 'ไม่รู้'],
-                ] as const).map(([ป้าย, วง, สี, รูป, ค่า, เหตุ]) => (
-                  <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between" title={เหตุ || undefined}>
-                    <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
-                    <div className="text-right">
-                      <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
-                      <p className="font-['Lato',sans-serif] text-[30px] leading-[30px] font-semibold mt-1 m-0" style={{ color: ค่า === '—' ? '#ced4da' : สี }}>{ค่า}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                ] as const).map(([ป้าย, วง, สี, รูป, ค่า, เหตุ]) => ({ ป้าย, วง, สี, รูป, ค่า, เหตุ, ว่าง: ค่า === '—' }))} />
               <p className="text-[12px] text-gray-500 mt-2 mb-4">
                 ประเภท: {wh.isPos === undefined ? 'ยังไม่รู้ (ท่อไม่ส่งธง isPos)' : wh.isPos ? 'จุดขาย (เปิดบิลได้)' : 'คลัง (ไม่ใช่จุดขาย)'}
               </p>

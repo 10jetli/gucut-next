@@ -15,7 +15,10 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแบบZORT, วันนี้วันไทย } from '@/lib/format'
-import { PageHead, BtnGhost, Pill, TableWrap, TH, TD } from '@/components/zort'
+import { PageHead, BtnGhost, Pill, TableWrap, TH, TD, DETAIL_BTN } from '@/components/zort'
+import ZortKpiCards from '@/components/zort/ZortKpiCards'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface CatRow {
   name: string; skus?: number
@@ -180,11 +183,11 @@ function Inner() {
 
   return (
     <div className="p-4 md:p-6">
-      <p className="text-[12.5px] mb-2"><Link href="/core/categories" className="text-[#337ab7] hover:underline">‹ หมวดหมู่</Link></p>
+      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}><Link href="/core/categories" className="text-[#337ab7] hover:underline">‹ หมวดหมู่</Link></p>
       <PageHead
         title={catName || '—'}
         summary={<span className="text-gray-500">รายละเอียดหมวดหมู่</span>}
-        actions={
+        actions={เหมือนZORT ? undefined :
           <div className="flex items-center gap-2">
             <Link href={`/core/stock?category=${encodeURIComponent(catName)}`}
               className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]" style={{ background: '#4165ed' }}>
@@ -195,6 +198,13 @@ function Inner() {
         }
       />
 
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Product/CategoryDetail 19 ต.ค. 2569): ปุ่มกรอบเหลี่ยมใต้หัวจอ (ZORT มี แก้ไข · ลบ — ของเราไม่มี เพราะเขียนกลับ ZORT)
+             ⇒ วางปุ่มของเราที่ตำแหน่งเดียวกันแทนปุ่มกลมมุมขวา */}
+      {เหมือนZORT && (
+        <div className="flex items-center gap-2 mb-6">
+          <Link href={`/core/stock?category=${encodeURIComponent(catName)}`} className={`${DETAIL_BTN} font-['Kanit',sans-serif]`}>เปิดในจอสินค้า</Link>
+        </div>
+      )}
       {error && <ErrorBox title={isSkip(error) ? 'ยังทำงานส่วนนี้ต่อไม่ได้' : 'เปิดหมวดนี้ไม่ได้'}>{error}</ErrorBox>}
       {warn && !error && (
         <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-3">⚠️ {warn}</p>
@@ -212,7 +222,36 @@ function Inner() {
           {/* 🗂 การ์ด 4 ใบตามผัง ZORT /Product/CategoryDetail (อ่านจอจริง 16 ต.ค. 2569):
               สินค้าคงเหลือ (บาท) · สินค้าพร้อมขาย (บาท) · ยอดขายเดือนที่แล้ว (บาท) · ยอดขายเดือนนี้ (บาท)
               สองใบแรก = ค่าที่คัดจากจอ ZORT (ต้นทุนเฉลี่ยที่ API ไม่เปิด) — บอกที่มาบนการ์ด · ค่าที่เราคิดเองย้ายไปบรรทัดรอง */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
+          {/* 📐 โหมดเหมือน ZORT: การ์ดผังเดียวกับจอรายละเอียดสินค้า (วงไอคอนซ้าย ตัวเลขสีขวา) · สีตามภาพ ZORT:
+                 คงเหลือ ฟ้า · พร้อมขาย เขียว · เดือนที่แล้ว ฟ้า · เดือนนี้ แดง · ที่มาของเลขย้ายไปบรรทัดพับ (หัวพับบอกเรื่องยอดสูงกว่า ZORT ไว้แล้ว) */}
+          {เหมือนZORT && (() => {
+            const ค่า = (v: number | null | undefined) => v === undefined ? 'กำลังถาม…' : v === null ? '—' : fmtMoney(v)
+            const เดือนผิด = เดือน?.ผิด ? `ยังไม่รู้ — ${เดือน.ผิด}` : 'ยังไม่รู้'
+            const ก่อน = เดือน ? เดือน.ก่อน : undefined, นี้ = เดือน ? เดือน.นี้ : undefined
+            return (
+              <div className="mb-4">
+                <ZortKpiCards items={[
+                  { ป้าย: 'สินค้าคงเหลือ (บาท)', วง: '#ebf6ff', สี: '#2f8dde', รูป: '▦', ค่า: ค่า(NUM(cat?.zortValue)), ว่าง: NUM(cat?.zortValue) == null, เหตุ: 'คัดจากจอ ZORT (เก่าได้ ซื้อของเข้าแล้วต้องคัดใหม่)' },
+                  { ป้าย: 'สินค้าพร้อมขาย (บาท)', วง: '#cefff1', สี: '#13af82', รูป: '✓', ค่า: ค่า(NUM(cat?.zortAvailable)), ว่าง: NUM(cat?.zortAvailable) == null, เหตุ: 'คัดจากจอ ZORT (เก่าได้)' },
+                  { ป้าย: 'ยอดขายเดือนที่แล้ว (บาท)', วง: '#ebf6ff', สี: '#2f8dde', รูป: '฿', ค่า: ค่า(ก่อน), ว่าง: ก่อน == null, เหตุ: ก่อน === null ? เดือนผิด : 'ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้' },
+                  { ป้าย: 'ยอดขายเดือนนี้ (บาท)', วง: '#ffebeb', สี: '#f25757', รูป: '฿', ค่า: ค่า(นี้), ว่าง: นี้ == null, เหตุ: นี้ === null ? เดือนผิด : 'ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้' },
+                ]} />
+                <div className="mt-2">
+                  <ZortLookFold tone="gray" สรุป="ที่มาของเลข · ยอดขายของเราสูงกว่า ZORT ได้ (ยังไม่หักใบคืน)">
+                    <p className="mt-1">สองใบแรกคัดจากจอ ZORT (เก่าได้ ซื้อของเข้าแล้วต้องคัดใหม่) · ยอดขาย: ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้</p>
+                    <p className="mt-1">
+                      ระบบเราคิดเอง (ไม่ใช่เลข ZORT): {catSkus === null ? '' : <>SKU <b>{fmtNum(catSkus)}</b> · </>}
+                      มูลค่าคงเหลือตามทุนในกระจก <b>{NUM(cat?.onhand_value) === null ? '—' : fmtMoney(cat!.onhand_value as number)}</b> ·
+                      {' '}พร้อมขาย <b>{NUM(cat?.available_value) === null ? '—' : fmtMoney(cat!.available_value as number)}</b> ·
+                      {' '}ตามราคาขาย <b>{NUM(cat?.onhand_value_sell) === null ? '—' : fmtMoney(cat!.onhand_value_sell as number)}</b>
+                      {NUM(cat?.zortSkus) !== null && <> · ZORT นับ SKU <b>{fmtNum(cat!.zortSkus as number)}</b></>}
+                    </p>
+                  </ZortLookFold>
+                </div>
+              </div>
+            )
+          })()}
+          {!เหมือนZORT && <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-2">
             {([
               ['สินค้าคงเหลือ (บาท)', NUM(cat?.zortValue), 'คัดจากจอ ZORT (เก่าได้ ซื้อของเข้าแล้วต้องคัดใหม่)'],
               ['สินค้าพร้อมขาย (บาท)', NUM(cat?.zortAvailable), 'คัดจากจอ ZORT (เก่าได้)'],
@@ -229,20 +268,20 @@ function Inner() {
                 <p className="text-[11px] text-gray-400 leading-snug mt-0.5">{note}</p>
               </div>
             ))}
-          </div>
+          </div>}
           {/* ค่าที่เราคิดเองจากต้นทุนในกระจก — ไม่ใช่เลขของ ZORT (ต้นทุนคนละแบบ) ⇒ บรรทัดรอง พร้อมป้าย */}
-          <p className="text-[11.5px] text-gray-500 mb-4 leading-relaxed">
+          {!เหมือนZORT && <p className="text-[11.5px] text-gray-500 mb-4 leading-relaxed">
             ระบบเราคิดเอง (ไม่ใช่เลข ZORT): {catSkus === null ? '' : <>SKU <b>{fmtNum(catSkus)}</b> · </>}
             มูลค่าคงเหลือตามทุนในกระจก <b>{NUM(cat?.onhand_value) === null ? '—' : fmtMoney(cat!.onhand_value as number)}</b> ·
             {' '}พร้อมขาย <b>{NUM(cat?.available_value) === null ? '—' : fmtMoney(cat!.available_value as number)}</b> ·
             {' '}ตามราคาขาย <b>{NUM(cat?.onhand_value_sell) === null ? '—' : fmtMoney(cat!.onhand_value_sell as number)}</b>
             {NUM(cat?.zortSkus) !== null && <> · ZORT นับ SKU <b>{fmtNum(cat!.zortSkus as number)}</b></>}
-          </p>
+          </p>}
 
           {/* 📈 ยอดขาย — การ์ดกราฟรายเดือนตามผัง ZORT (ตัวเลือก salesoption: ยอดขาย · กำไรจากการขาย) */}
-          <div className="bg-white border border-gray-200 rounded-md mb-4">
-            <div className="flex flex-wrap items-center gap-3 px-4 pt-3 pb-2">
-              <p className="text-[14px] font-semibold text-gray-900 mr-auto">ยอดขาย</p>
+          <div className={เหมือนZORT ? 'bg-white rounded-[6px] mb-4' : 'bg-white border border-gray-200 rounded-md mb-4'}>
+            <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-3 px-5 pt-5 pb-2' : 'flex flex-wrap items-center gap-3 px-4 pt-3 pb-2'}>
+              <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] mr-auto" : 'text-[14px] font-semibold text-gray-900 mr-auto'}>ยอดขาย</p>
               <select value="sales" onChange={() => { /* มีค่าเดียวที่ทำได้จริง */ }}
                 className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
                 <option value="sales">ยอดขาย</option>
