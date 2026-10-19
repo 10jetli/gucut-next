@@ -379,16 +379,20 @@ export function TableWrap({ children }: { children: ReactNode }) {
    (/Sell/list · /Quotation/list · /Bundle/list): หัวช่องอื่นเป็น **Kanit 14** (#3e3e3e · ช่องที่เรียงได้เป็นลิงก์ #337ab7)
    ⇒ ในโหมดเหมือน ZORT หัวช่องเป็น Kanit 14 · ช่อง # ใช้ TH_NO (Lato 12 เทา ตามที่วัดถูกแล้ว) */
 const TH_LATO = 'text-left font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
-export const TH_NO = TH_LATO
+/* 📏 หัวตารางโหมดเหมือน ZORT — วัด DOM 20 ต.ค. 2569 (/Quotation/list · /Product/list · /Contact/list):
+   ช่องใน 12/8 · บรรทัด 20 · ชิดล่าง (vertical-align: bottom) ⇒ หัวบรรทัดเดียวสูง 45 (ของเรา 42: ช่องใน 10 บรรทัด 21 กึ่งกลาง)
+   หัวที่ตกสองบรรทัด ZORT ชิดล่าง ⇒ ข้อความหัวคอลัมน์อื่นในแถวเดียวกันอยู่ระดับเดียวกับบรรทัดล่าง */
+const หัวZ = 'py-3 leading-5 align-bottom'
+export const TH_NO = เหมือนZORT ? TH_LATO.replace('py-2.5', หัวZ) : TH_LATO
 export const TH = เหมือนZORT
-  ? "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
+  ? `text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${หัวZ} whitespace-nowrap`
   : TH_LATO
 export const THR = เหมือนZORT
-  ? "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
+  ? `text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${หัวZ} whitespace-nowrap`
   : 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
 /** หัวคอลัมน์แบบ Kanit 14 #3e3e3e — ZORT ใช้ที่ /Logistics/list กับ /Product/Categorylist (วัด 17 ต.ค. 2569) ไม่ใช่ Lato 12 เหมือนจออื่น */
-export const TH_KANIT = "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
-export const THR_KANIT = "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-2.5 whitespace-nowrap"
+export const TH_KANIT = `text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${เหมือนZORT ? หัวZ : 'py-2.5'} whitespace-nowrap`
+export const THR_KANIT = `text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${เหมือนZORT ? หัวZ : 'py-2.5'} whitespace-nowrap`
 /* 📐 วัดซ้ำ 19 ต.ค. 2569 (/Quotation/list · /Sell/list): เซลล์ Boon 14px **บรรทัด 20px** (ของเราเดิม 21px ⇒ ชื่อยาวที่ตกหลายบรรทัดสูงกว่า ZORT บรรทัดละ 1px)
    ⇒ โหมดเหมือน ZORT ใส่ leading-5 · นอกโหมดเหมือนเดิม */
 export const TD = เหมือนZORT
