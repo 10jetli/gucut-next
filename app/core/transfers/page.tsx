@@ -330,8 +330,8 @@ export default function CoreTransfersPage() {
         <>
           {/* ผัง ZORT (ภาพ 31): ปุ่มรีเฟรชวงกลมอยู่มุมขวาของแถบแท็บ — วางเพิ่ม ไม่ย้ายอันบนหัวจอ
               (กติกาเดียวกับจอใบเสนอราคา: ย้ายขึ้นที่เดียวผิดผัง ย้ายลงที่เดียวหายจากที่คนเราชิน) */}
-          {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569): แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ช่องซ้าย 20 (ใบเสนอราคา 29.0 → 15.2) */}
-          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pl-5 pr-6' : 'flex items-end justify-between gap-3'}>
+          {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569): แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ไม่มีช่องซ้าย (วัด DOM: ระยะเยื้องมาจากช่องในของปุ่มแท็บเอง) (ใบเสนอราคา 29.0 → 15.2) */}
+          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
             {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ ⇒ shrink-0 (บทเรียนจอใบซื้อ 19 ต.ค. 2569) */}
             <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
             <Tabs
