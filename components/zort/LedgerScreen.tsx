@@ -110,7 +110,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
 }
 
 export default function LedgerScreen({
-  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, purpose, meanwhile,
+  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, กรอบแคบZORT, purpose, meanwhile,
   emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv, zortCols,
 }: {
   title: string
@@ -158,6 +158,9 @@ export default function LedgerScreen({
   ว่างแถวเตี้ย?: boolean
   /** โหมดเหมือน ZORT: จอ ZORT ของคู่นี้ไม่มีช่องค้นหา (เช่น /SalePage/List) — มีผลเฉพาะจอที่ยังไม่ต่อท่อ (ช่องค้นหาเทาอยู่แล้ว) */
   zortไม่มีช่องค้นหา?: boolean
+  /** โหมดเหมือน ZORT: จอ ZORT ของคู่นี้เป็นแอปคนละชุด (Chakra) เนื้อหาอยู่ในกรอบกลางจอกว้างสุด 906 และไม่มีแถบจำนวนต่อหน้า
+   *  (วัด DOM /SalePage/List 20 ต.ค. 2569: chakra-container max-width 906 · ไม่มีตัวเลือกจำนวนต่อหน้า) */
+  กรอบแคบZORT?: boolean
   /** ZORT เขียนอะไรไว้ในกล่องว่าง — เอาไว้บอกว่าจอนี้มีไว้ทำอะไร */
   purpose: string
   /** ตอนนี้ร้านทำเรื่องนี้ที่ไหน */
@@ -338,8 +341,9 @@ export default function LedgerScreen({
      **ยังว่างเพราะเรายังไม่ได้ต่อท่อ** ไม่ใช่เพราะ ZORT ห้ามอ่าน
      ⇒ ถ้าเขียนรวมกัน จอจะขัดกับหลักฐานที่แสดงอยู่ข้างล่างในจอเดียวกัน */
   const cantRead = Boolean(impossible) && reg?.impossibleScope !== 'write'
+  const กรอบแคบ = เหมือนZORT && !!กรอบแคบZORT
   return (
-    <div className="p-4 md:p-6">
+    <div className={กรอบแคบ ? 'p-4 md:p-6 max-w-[906px] mx-auto' : 'p-4 md:p-6'}>
       <PageHead
         title={title}
         // ⚠️ ZORT เขียน "จำนวน 0 รายการ, …0 บาท" — ของเราเขียนแบบนั้นไม่ได้
@@ -725,7 +729,8 @@ export default function LedgerScreen({
       {/* แถบท้ายตารางตามผัง ZORT — ขวามือ "จำนวน N รายการ | จำนวนต่อหน้า [20]"
           ⚠️ ล็อกไว้ทั้งคู่ เพราะยังไม่มีข้อมูลให้แบ่งหน้า · โชว์ตามผังแต่ไม่แกล้งใช้ได้
              และ **ห้ามเขียนจำนวนเป็นเลข** เพราะเรายังไม่ได้นับอะไรเลย ศูนย์ของเรา = "ยังไม่รู้" */}
-      <div className="flex flex-wrap items-center justify-end gap-3 mt-3">
+      {/* กรอบแคบ (เซลเพจ): ZORT ไม่มีแถบนี้ — ข้อความ ไม่เปิดเส้น อยู่ในแถวตารางว่างครบแล้ว ⇒ ไม่วาดซ้ำ */}
+      {!กรอบแคบ && <div className="flex flex-wrap items-center justify-end gap-3 mt-3">
         <span className="text-[12.5px] text-gray-400">
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
           {/* 🔴 ต่อท่อแล้วต้องบอกจำนวนจริง — ปล่อยเป็น "ยังไม่ได้ดึงข้อมูล" ทั้งที่ดึงมาแล้ว
@@ -770,7 +775,7 @@ export default function LedgerScreen({
         >
           <option>20</option>
         </select>
-      </div>
+      </div>}
 
       {/* 🔴 **ความต่างของชื่อคอลัมน์ต้องคำนวณ ห้ามพิมพ์** — ไม่งั้นวันที่ใครแก้ `cols`
           ประโยคข้างล่างจะค้างเป็นคำกล่าวอ้างเก่า (คลาส "เลขที่วัดได้ห้ามพิมพ์ค้างไว้")
