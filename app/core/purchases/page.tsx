@@ -13,6 +13,7 @@
 //    เคยคิดจะดัดจอเดิมให้หัวคอลัมน์ตรงภาพแล้วจบ ซึ่งง่ายกว่าและดูเหมือนเสร็จทันที
 //    แต่จะได้จอที่ **หน้าตาผ่านแต่ข้อมูลผิดความหมาย** — "เหมือน ZORT 100%"
 //    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
@@ -276,14 +277,14 @@ export default function CorePurchasesPage() {
                    ⇒ ย้ายสถานะไปที่ `lib/real-send.ts` ที่เดียว (ใบ S4 · 19 ก.ย. 2569)
                    ⚠️ หน้านั้น **ส่งจริงเข้า ZORT ได้แล้ว** (เฉพาะใบปกติ · โหมด ?quick=1 ยังปิด) */}
             <Link href="/core/purchases/new"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               สร้าง
             </Link>
             {/* ✅ แก้ 14 ก.ย. 2569 (t_mu0tx40g): เดิมชี้ /core/soon/buy-create-quick
                 ZORT ไม่มีเส้นแยกสำหรับแบบง่าย ⇒ ใช้หน้าเดียวกับ "สร้าง" โหมด ?quick=1 (สถานะสำเร็จ + จ่ายเงินในใบเดียว) */}
             <Link href="/core/purchases/new?quick=1"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               สร้างอย่างง่าย
             </Link>

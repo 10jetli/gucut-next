@@ -6,6 +6,7 @@
 // ผังที่ลอกมา: ชื่อจอ → บรรทัด "จำนวน N รายการ, มูลค่าทั้งหมด X บาท" → ปุ่มขวาบน
 //              → แถวค้นหา + ตัวเลือกช่วงเวลา → แท็บสถานะมีจำนวนในวงเล็บ
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { useCallback, useEffect, useState } from 'react'
 import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
@@ -831,12 +832,12 @@ export default function CoreSalesPage() {
             {/* ชี้หน้าจริงตั้งแต่ 14 ก.ย. 2569 — ปุ่มส่งจริงในหน้านั้นยังปิดอยู่ แต่ซ้อมได้เต็มที่
                 ซึ่งต่างจาก "ยังไม่ได้ทำ" คนละเรื่อง */}
             <Link href="/core/sales/new"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               สร้าง
             </Link>
             <Link href="/core/pos"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               สร้างอย่างง่าย
             </Link>

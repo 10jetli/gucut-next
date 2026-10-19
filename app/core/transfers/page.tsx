@@ -12,6 +12,7 @@
 //    ⇒ แสดง "-" เหมือน ZORT ไม่ใช่เขียนว่าข้อมูลหาย
 // ⚠️ **ห้ามเอาไปรวมกับ stock_moves** — ตารางนั้นคือของที่ "เราปรับเอง"
 //    ส่วนจอนี้คือกระจกของ ZORT · รวมกันเมื่อไหร่ = ตัดสต็อกสองรอบ
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { useCallback, useEffect, useState } from 'react'
 import AdvancedSearch from '@/components/zort/AdvancedSearch'
@@ -274,7 +275,7 @@ export default function CoreTransfersPage() {
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             {/* โอนสินค้าจริงร้านทำที่เครื่องมือเดิมอยู่แล้ว ⇒ ปุ่มนี้พาไปของจริง ไม่ใช่หน้า soon */}
             <Link href="/catalog/index.html#trf"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               สร้างรายการโอนสินค้า
             </Link>

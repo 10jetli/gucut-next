@@ -11,6 +11,7 @@
 //    เพิ่มชั้น "บัญชี" จริงแล้ว 14 ก.ย. 2569 (งานกระดาน t_mu1bkqy4) ⇒ แถวนี้จึงมีของจริงรองรับ
 //    🔴 **แก้ middleware แล้วต้องมาแก้ตารางนี้ด้วยเสมอ** — ตารางที่ตกยุคคือจอที่โกหก
 // ⚠️ ลิงก์ "แก้ไข" ของ ZORT เป็นหน้าแก้จริง — ของเราแก้ที่โค้ด ⇒ เขียนบอกตรง ๆ แทนลิงก์หลอก
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
@@ -60,7 +61,7 @@ export default function SettingsRolesPage() {
         actions={
           /* ผัง ZORT: ปุ่ม "เพิ่มสิทธิ์การใช้งานใหม่" — ของเราพาไปหน้าที่บอกตรง ๆ ว่าต้องแก้โค้ด */
           <Link href="/core/soon/role-add"
-            className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+            className={HEAD_BTN}
             style={{ background: '#4165ed' }}>
             เพิ่มสิทธิ์การใช้งานใหม่
           </Link>

@@ -28,6 +28,7 @@
 //    เพราะอ่านชื่อพนักงานจาก env (STAFF_NAME_1..8) ซึ่งอยู่ฝั่งเซิร์ฟเวอร์เท่านั้น
 //    ช่องค้นหาจึงเป็นฟอร์ม GET (?q=) ให้เซิร์ฟเวอร์กรอง — ค้นได้จริง ไม่ใช่ช่องหลอก
 //    ⚠️ **ห้ามส่งค่ารหัสผ่านออกไปไม่ว่ากรณีใด** — บอกแค่ "ตั้งแล้วหรือยัง ยาวกี่ตัว"
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
@@ -149,7 +150,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
              8 ก.ย. 2569: เลิกพาไป /core/soon/user-add (หน้า "ยังไม่ได้ทำ" กลาง ๆ)
              ไปหน้าจริงที่บอกช่องว่างถัดไป + ลิงก์ตรง + ข้อ "ต้อง deploy ใหม่" ที่พิสูจน์แล้ว */
           <Link href="/core/settings-users/add"
-            className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+            className={HEAD_BTN}
             style={{ background: '#4165ed' }}>
             เพิ่มผู้ใช้งาน
           </Link>
@@ -179,7 +180,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
               <input disabled placeholder="ผู้ใช้ของเราไม่มีอีเมล"
                 className="mt-1 block w-full text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 cursor-not-allowed" />
             </label>
-            <button type="submit" className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]" style={{ background: '#4165ed' }}>ค้นหา</button>
+            <button type="submit" className={HEAD_BTN} style={{ background: '#4165ed' }}>ค้นหา</button>
           </div>
         </details>
         {q && <Link href="/core/settings-users" className="text-[12.5px] text-gray-500 hover:underline">ล้างคำค้น</Link>}

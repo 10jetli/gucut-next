@@ -8,6 +8,7 @@
 // ⚠️ **คงเหลือติดลบต้องเป็นสีแดง** — ZORT ทำแบบนี้ (เห็นในภาพ -2 -3) เป็นสัญญาณว่าขายเกิน
 // ⚠️ ตัวเลขที่นี่คือ "ภาพถ่ายสต็อกตอนตี 1" ไม่ใช่ยอดสด — ต้องเขียนบอกบนจอเสมอ
 //    ปล่อยให้เข้าใจว่าสดจะกลายเป็นจอที่โกหกเงียบ ๆ ตอนของขยับระหว่างวัน
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react'
 import NegVsPush from '@/components/zort/NegVsPush'
 import DupSkuNote from '@/components/zort/DupSkuNote'
@@ -626,7 +627,7 @@ function CoreStockInner() {
                    (บั๊กคลาสเดียวกับปุ่มสร้างรายการซื้อที่ลิงก์ผิดมา 8 วัน) · นำเข้า Excel ยังพาไปหน้า soon เพราะจอยังไม่มี */}
             <ImportButton kind="product" />
             <Link href="/core/stock/new"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               เพิ่มสินค้าใหม่
             </Link>

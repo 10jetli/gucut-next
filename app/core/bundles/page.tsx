@@ -16,6 +16,7 @@
 //  2. **เรื่องนี้กระทบสต็อกโดยตรง** ขายชุดหนึ่งชุดต้องตัดของหลายตัว
 //     ตราบใดที่คลังเงายังไม่รู้จักส่วนประกอบ การตัดสต็อกจะไม่ตรงความจริงทุกครั้งที่ขายชุด
 //     (แม้แต่ ZORT เองก็มีชุดคงเหลือติดลบ แปลว่ามันก็ตามไม่ทันเหมือนกัน)
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -313,7 +314,7 @@ export default function CoreBundlesPage() {
                 ⇒ ปุ่มที่กดแล้วเกิดอะไรขึ้นจริงแต่ไม่ใช่สิ่งที่คนตั้งใจ **หลอกกว่าปุ่มที่กดแล้วเงียบ**
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             <Link href="/core/bundles/new"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               เพิ่มสินค้าเป็นชุดใหม่
             </Link>
