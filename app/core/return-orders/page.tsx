@@ -26,7 +26,7 @@
 //    ท่อส่ง `total` (จำนวนใบทั้งหมดจาก ZORT) มาให้ แต่ **ไม่ได้ส่งยอดรวมทั้งหมด**
 //    บวกเองจาก N แถวแรกแล้วเขียนว่า "ทั้งหมด" = เลขที่ต่ำกว่าความจริงเสมอ โดยไม่มีอะไรฟ้อง
 //    (คลาสเดียวกับ "หน้าแรกไม่ใช่ตัวแทน" ที่เจอมาแล้วสามครั้ง) ⇒ เขียนกำกับว่าเป็นยอดของกี่ใบ
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import AdvancedSearch from '@/components/zort/AdvancedSearch'
 import PageNav from '@/components/zort/PageNav'
@@ -76,7 +76,7 @@ interface Resp {
   mirrorTotalsError?: string | null
   error?: string
   /** ค่าที่ท่อใช้จริง — ใช้เป็นด่านเทียบกับคำค้นที่จอส่ง (ท่อส่งมาให้เพื่อการนี้) */
-  applied?: { q?: string | null; source?: 'mirror' | 'zort'; from?: string | null; to?: string | null; days?: number | null }
+  applied?: { q?: string | null; source?: 'mirror' | 'zort'; from?: string | null; to?: string | null; days?: number | null; status?: string | null }
   /** เลขหน้าที่ท่อใช้จริง + จำนวนหน้าทั้งหมด (ท่อส่งมาตลอด แต่จอไม่เคยใช้จนถึง 18 ก.ย. 2569) */
   page?: number; pages?: number
   /** มี q ⇒ อ่านจากกระจก ⇒ ต้องบอกว่าซิงก์เมื่อไหร่ · null = ไม่รู้ **ห้ามแปลว่าสด** */
@@ -98,6 +98,18 @@ function tone(s?: string): 'green' | 'orange' | 'red' | 'gray' {
   if (t === 'ยกเลิก') return 'red'
   if (t === 'รอดำเนินการ' || t === 'ค้างชำระ') return 'orange'
   return 'gray'
+}
+
+/** เหตุที่ช่องในแผงค้นหาขั้นสูงของจอรับคืนปิดไว้ — ที่เดียว ใช้ทั้งช่องที่ปิดและรายการ ไม่มีให้กรอง
+ *  อ้างอิง: GET list=returnorders 20 ต.ค. 2569 · supportedFilters = q store from to days status limit page
+ *  · แถวมีช่อง id number reference customer amount status warehouse date paid */
+const เหตุปิดใบคืน = {
+  คำค้นเดียว: 'ท่อมีคำค้นช่องเดียว (q ค้นเลขที่ใบคืน · ใบขายอ้างอิง · ชื่อลูกค้า รวมกัน) — พิมพ์ในช่องค้นหาด้านบนได้เลย ยังแยกเป็นรายช่องไม่ได้',
+  มูลค่า: 'ท่อยังไม่รับช่วงมูลค่าเป็นตัวกรอง (ไม่อยู่ใน supportedFilters) · กรองในเบราว์เซอร์จะได้แค่หน้าที่เห็น จึงไม่ทำ',
+  คลัง: 'แถวมีชื่อคลังมาด้วย แต่ท่อยังไม่รับคลังเป็นตัวกรอง (ไม่อยู่ใน supportedFilters) · กรองในเบราว์เซอร์จะได้แค่หน้าที่เห็น จึงไม่ทำ',
+  ชำระ: 'ท่อยังไม่รับสถานะการชำระเงินเป็นตัวกรอง — ยิงยืนยัน 18 ก.ย. 2569: ส่ง paystatus= ไป total ไม่ขยับ · ยังไม่อยู่ใน supportedFilters 20 ต.ค. 2569',
+  ไม่มีช่อง: 'ท่อยังไม่ส่งช่องนี้ของใบรับคืนมาเลย (แถวมีแค่ เลขที่ อ้างอิง ลูกค้า มูลค่า สถานะ คลัง วันที่ ชำระแล้ว)',
+  วันอื่น: 'ท่อกรองได้แค่วันที่ของใบ (from/to) — วันชนิดอื่นยังไม่มี',
 }
 
 export default function ReturnOrdersPage() {
@@ -123,8 +135,17 @@ export default function ReturnOrdersPage() {
   const [to, setTo] = useState('')
 
   /* เทียบ applied แล้ว: q from to — ด้วยตารางข้างล่าง (ตัวจับข้อความของด่านมองท่านี้ไม่เห็น) */
+  /* 🔍 สถานะใบ (ZORT เรียกกลุ่มนี้ว่า การโอนสินค้า) — ท่อกรองที่เซิร์ฟเวอร์ได้จริงแล้ว
+     (สัญญาของเส้น: กรองจริง(วัดแล้ว) มี status วัดเมื่อ 17 ต.ค. 2569 · ยิงเองซ้ำ 20 ต.ค. 2569: Success 571 + Voided 152 = 723 ทั้งชุด)
+     🔴 ข้อความเดิมในแผงที่บอกว่า "ท่อยังไม่รับ status (ยิง 18 ก.ย.)" เป็นของจริงตอนนั้น แต่หมดอายุแล้ว
+     อ่านผ่าน ref ⇒ ทุกที่ที่เรียก load (เปลี่ยนหน้า · เปลี่ยนร้าน · ค้น) ส่งสถานะเดิมต่อไปเอง ไม่ต้องไล่แก้ทุกจุด */
+  const [สถานะ, setสถานะ] = useState('')
+  const สถานะRef = useRef('')
+  /** ตัวกรองที่ท่อใช้กับจอรอบนี้ — ไฟล์ส่งออกต้องใช้ชุดเดียวกัน (ชื่อแยกจาก d เพราะใน fetchPage มี d ของตัวเองบังอยู่) */
+  const ใช้กับจอ = d?.applied
   const ตัวกรองที่ท่อไม่ได้ใช้ = d?.applied
     ? ([
+        [สถานะRef.current, d.applied.status ?? '', 'สถานะ'],
         [q.trim(), d.applied.q ?? '', 'คำค้น'],
         [from, d.applied.from ?? '', 'วันที่เริ่ม'],
         [to, d.applied.to ?? '', 'วันที่สิ้นสุด'],
@@ -155,6 +176,7 @@ export default function ReturnOrdersPage() {
       /* ส่งเฉพาะช่องที่มีค่า — ส่งค่าว่างไปคือบังคับให้ท่อสลับไปอ่านกระจกโดยไม่มีใครขอ */
       if (f) qs.set('from', f)
       if (t) qs.set('to', t)
+      if (สถานะRef.current) qs.set('status', สถานะRef.current)
       if (pg > 1) qs.set('page', String(pg))
       const got = await coreJson<Resp>(`/api/web/core?${qs}`, ['rows', 'live'])
       setKnown(got.known)
@@ -224,12 +246,19 @@ export default function ReturnOrdersPage() {
             q.trim()
               ? ['คำค้นหา', `${q.trim()} — ค้นที่เซิร์ฟเวอร์ ครอบทุกใบ (ผลมาจากกระจกของเรา ไม่ใช่ ZORT สด)`]
               : ['คำค้นหา', '(ไม่ได้ค้น)'],
+            /* 🔴 ไฟล์ต้องกรองชุดเดียวกับจอ — เดิมส่งแค่ร้าน+คำค้น ⇒ จอกรองช่วงวันอยู่แต่ไฟล์ได้ทุกวัน (เจอ 20 ต.ค. 2569 ตอนเพิ่มตัวกรองสถานะ)
+               ใช้ค่าที่ท่อบอกว่าใช้จริงกับจอรอบนี้ (applied) ไม่ใช่ค่าที่พิมพ์ค้างในแผง */
+            ['ช่วงวันที่', d?.applied?.from || d?.applied?.to ? `${d?.applied?.from ?? '…'} ถึง ${d?.applied?.to ?? '…'}` : '(ไม่ได้กรองวันที่)'],
+            ['การโอนสินค้า', d?.applied?.status ? zortWord(RETURN_ORDER_STATUS, d.applied.status).text : '(ทั้งหมด)'],
           ],
           fetchPage: async (offsetAt, limit) => {
             const page = Math.floor(offsetAt / limit) + 1
             const qs = new URLSearchParams({ list: 'returnorders', limit: String(limit), page: String(page) })
             if (store) qs.set('store', store)
             if (q.trim()) qs.set('q', q.trim())
+            if (ใช้กับจอ?.from) qs.set('from', ใช้กับจอ.from)
+            if (ใช้กับจอ?.to) qs.set('to', ใช้กับจอ.to)
+            if (ใช้กับจอ?.status) qs.set('status', ใช้กับจอ.status)
             const r = await fetch(`/api/web/core?${qs}`)
             const d = await r.json()
             if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
@@ -393,16 +422,45 @@ export default function ReturnOrdersPage() {
               ⚠️ ใส่ได้เฉพาะช่องที่ท่อกรองจริง (กฎข้อ ① ของแผงนี้) */}
           <AdvancedSearch
             open={advOpen}
+            /* 📐 ลำดับช่องตาม DOM แผง searchAdvance ของ ZORT /Buy/list?&sttype=1 (อ่านของที่ซ่อนอยู่ 20 ต.ค. 2569)
+               ช่องที่ท่อยังกรองไม่ได้ วาดไว้ตำแหน่งเดียวกับ ZORT แต่ปิด — เหตุมาจาก เหตุปิดใบคืน ที่เดียวกับรายการข้างล่าง */
             fields={[
-              { label: 'ตั้งแต่วันที่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
-              { label: 'ถึงวันที่', kind: 'date', value: to, onChange: (v) => setTo(v) },
+              { label: 'หมายเลขรายการ', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: เหตุปิดใบคืน.คำค้นเดียว },
+              { label: 'มูลค่าเริ่มต้น', kind: 'number', value: '', onChange: () => {}, width: 110, ปิดไว้: เหตุปิดใบคืน.มูลค่า },
+              { label: 'จนถึงมูลค่า', kind: 'number', value: '', onChange: () => {}, width: 110, ปิดไว้: เหตุปิดใบคืน.มูลค่า },
+              { label: 'อ้างอิง', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบคืน.คำค้นเดียว },
+              { label: 'ผู้ใช้งาน', kind: 'select', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบคืน.ไม่มีช่อง },
+              { label: 'Tag', kind: 'text', value: '', onChange: () => {}, width: 120, ปิดไว้: เหตุปิดใบคืน.ไม่มีช่อง },
+              { label: 'คลัง / สาขา', kind: 'select', value: '', onChange: () => {}, width: 140, ปิดไว้: เหตุปิดใบคืน.คลัง },
+              { label: 'สินค้า', kind: 'text', value: '', onChange: () => {}, width: 160, ปิดไว้: เหตุปิดใบคืน.ไม่มีช่อง },
+              { label: 'Serial no', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบคืน.ไม่มีช่อง },
+              { label: 'แสดงรายการที่ถูกซ่อน', kind: 'check', value: false, onChange: () => {}, ปิดไว้: เหตุปิดใบคืน.ไม่มีช่อง },
+              { label: 'ชื่อลูกค้า', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: เหตุปิดใบคืน.คำค้นเดียว },
+              { label: 'เบอร์โทรศัพท์', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบคืน.ไม่มีช่อง },
+              { label: 'อีเมลลูกค้า', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: เหตุปิดใบคืน.ไม่มีช่อง },
+              {
+                label: 'การโอนสินค้า', kind: 'select', value: สถานะ, width: 140,
+                onChange: (v) => setสถานะ(String(v)),
+                /* ค่าที่ท่อมีจริงในชุดนี้ (Success/Voided) · ป้ายจากทะเบียนคำของ ZORT — ห้ามพิมพ์ค่าดิบขึ้นจอ */
+                options: [{ value: '', label: 'ทั้งหมด' }, ...Object.keys(RETURN_ORDER_STATUS).map((k) => ({ value: k, label: zortWord(RETURN_ORDER_STATUS, k).text }))],
+              },
+              { label: 'สถานะการชำระเงิน', kind: 'select', value: '', onChange: () => {}, width: 140, ปิดไว้: เหตุปิดใบคืน.ชำระ },
+              { label: 'วันที่ ตั้งแต่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
+              { label: 'ถึง', kind: 'date', value: to, onChange: (v) => setTo(v) },
+              { label: 'วันที่ชำระเงิน', kind: 'date', value: '', onChange: () => {}, ปิดไว้: เหตุปิดใบคืน.วันอื่น },
+              { label: 'วันที่โอนสินค้า', kind: 'date', value: '', onChange: () => {}, ปิดไว้: เหตุปิดใบคืน.วันอื่น },
             ]}
-            onApply={() => load(q, store, from, to, 1)}
-            onClear={() => { setFrom(''); setTo(''); setQ(''); load('', store, '', '', 1) }}
-            canClear={!!(from || to || q.trim())}
-            serverFiltered="ช่วงวันที่ · ร้าน · คำค้น (เลขที่ใบคืน · ใบขายอ้างอิง · ชื่อลูกค้า)"
+            onApply={() => { สถานะRef.current = สถานะ; load(q, store, from, to, 1) }}
+            onClear={() => { setFrom(''); setTo(''); setQ(''); setสถานะ(''); สถานะRef.current = ''; load('', store, '', '', 1) }}
+            canClear={!!(from || to || q.trim() || สถานะ)}
+            serverFiltered="ช่วงวันที่ · ร้าน · คำค้น (เลขที่ใบคืน · ใบขายอ้างอิง · ชื่อลูกค้า) · การโอนสินค้า (สถานะใบ)"
             notAvailable={[
-              { what: 'สถานะ / การชำระเงิน', why: 'ท่อยังไม่รับเป็นตัวกรอง — ยิงยืนยัน 18 ก.ย. 2569: ส่ง status= และ paystatus= ไป total ค้าง 693 เท่าเดิมและไม่โผล่ใน ignored ⇒ ท่อไม่รู้จักชื่อนี้ · กรองในเบราว์เซอร์จะกรองได้แค่หน้าที่เห็น จึงไม่ทำ' },
+              { what: 'หมายเลขรายการ · อ้างอิง · ชื่อลูกค้า แยกช่อง', why: เหตุปิดใบคืน.คำค้นเดียว },
+              { what: 'มูลค่าเริ่มต้น/จนถึงมูลค่า', why: เหตุปิดใบคืน.มูลค่า },
+              { what: 'คลัง / สาขา', why: เหตุปิดใบคืน.คลัง },
+              { what: 'สถานะการชำระเงิน', why: เหตุปิดใบคืน.ชำระ },
+              { what: 'ผู้ใช้งาน · Tag · สินค้า · Serial no · ที่ถูกซ่อน · เบอร์ · อีเมล', why: เหตุปิดใบคืน.ไม่มีช่อง },
+              { what: 'วันที่ชำระเงิน · วันที่โอนสินค้า', why: เหตุปิดใบคืน.วันอื่น },
             ]}
             extraNote={
               <>⚠️ <b>ใส่ช่วงวันที่แล้วข้อมูลจะมาจากกระจกของเรา ไม่ใช่ ZORT สด</b> —
