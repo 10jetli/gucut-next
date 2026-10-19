@@ -700,7 +700,8 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <Card>
           <div className="flex items-center justify-between gap-2 mb-1">
-            <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
+            {/* โหมดเหมือน ZORT: หัวการ์ดบรรทัดเดียว (เดิมสอง dropdown บีบจน "ยอด / ขายรวม" ตกสองบรรทัด — เห็นในภาพ 19 ต.ค. 2569) */}
+            <p className={`text-[15px] font-semibold text-gray-900 flex items-center gap-2 ${เหมือนZORT ? 'whitespace-nowrap shrink-0' : ''}`}>
               <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">📈</span>
               ยอดขายรวม
             </p>
