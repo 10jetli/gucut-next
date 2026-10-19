@@ -135,7 +135,9 @@ export default function AdvancedSearch({
       <BtnGhost onClick={onApply}>{applyLabel}</BtnGhost>
       <BtnGhost onClick={onClear} disabled={!canClear}>ล้างเงื่อนไข</BtnGhost>
 
-      <span className="text-[11.5px] text-gray-500 max-w-[440px] leading-snug">
+      {/* บรรทัดของตัวเองเสมอ — เดิมเป็นกล่องแคบ 440px ที่แทรกกลางแถวช่อง ⇒ แผงที่มีช่องเยอะ (รายการขาย 40+ ช่อง)
+          ได้ช่องโหว่สูงเท่ากล่องเหตุผลคั่นกลางแถว (เห็นบน preview 19 ต.ค. 2569) */}
+      <span className="basis-full text-[11.5px] text-gray-500 max-w-[900px] leading-snug">
         {/* ② อะไรกรองที่เซิร์ฟเวอร์ — "ครอบทั้งชุด" กับ "เฉพาะหน้าที่เห็น" คนละเรื่องกันมาก */}
         {serverFiltered && (
           <>✅ <b>{serverFiltered}</b> กรองที่เซิร์ฟเวอร์ — ครอบทุกรายการตามเงื่อนไข ไม่ใช่แค่หน้าที่เห็น</>
