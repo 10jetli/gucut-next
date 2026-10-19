@@ -913,7 +913,8 @@ export default function CoreSalesPage() {
         open={advOpen}
         /* 🔍 ช่องทั้งหมดนี้ **ท่อกรองที่เซิร์ฟเวอร์จริง** — ยิงยืนยันเองแล้วทุกช่องก่อนใส่
            (กฎข้อ ① ของแผงนี้: ห้ามใส่ช่องที่กรอกแล้วไม่มีผล) */
-        /* 🧭 **เรียงตามแผง `#searchFilter` ของ ZORT `/Sell/list`** (CEO อ่าน DOM สด 19 ต.ค. 2569: 31 ช่อง + ติ๊ก 23 ตัว)
+        /* 🧭 **เรียงตามแผง `.search-advance` ของ ZORT `/Sell/list`** (อ่าน DOM สด 19 ต.ค. 2569 21:20 ไม่คลิก:
+             ช่องข้อความ → ติ๊ก COD/ซ่อน → ลูกค้า/เบอร์/อีเมล/จัดส่ง → 10 สถานะ → ชำระเงิน → 6 คู่วันท้ายสุด)
            ช่องที่ท่อยังกรองไม่ได้ **วาดไว้ตำแหน่งเดียวกับ ZORT แต่ปิด** (`ปิดไว้`) พร้อมเหตุใน notAvailable ข้างล่าง
            — CEO สั่ง "อย่าทำปุ่มหลอก ใส่แล้วปิดไว้พร้อมเหตุผลบนจอ" · ช่องปิดไม่ส่งค่าอะไรไปท่อ */
         fields={[
@@ -952,17 +953,6 @@ export default function CoreSalesPage() {
           { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
           { label: 'สินค้า (รหัส/ชื่อ)', kind: 'text', value: fProduct, onChange: (v) => setFProduct(String(v)), placeholder: 'เช่น 00313', width: 170 },
           { label: 'Serial no', kind: 'text', value: fSerial, onChange: (v) => setFSerial(String(v)), placeholder: 'เลขซีเรียลในใบ', width: 150, ปิดไว้: ท่อยังไม่รู้จัก('serial') },
-          { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
-          { label: 'เบอร์โทรศัพท์', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
-          { label: 'อีเมลลูกค้า', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: ท่อไม่รับช่องนี้ },
-          { label: 'ช่องทางจัดส่ง', kind: 'text', value: fShipCh, onChange: (v) => setFShipCh(String(v)), placeholder: 'เช่น Flash', width: 150 },
-          { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
-          { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
-          { label: 'วันส่งสินค้า ตั้งแต่', kind: 'date', value: fShipFrom, onChange: (v) => setFShipFrom(String(v)) },
-          { label: 'ถึง', kind: 'date', value: fShipTo, onChange: (v) => setFShipTo(String(v)) },
-          ...(['วันที่ชำระเงิน', 'วันที่โอนสินค้า', 'วันที่สร้าง', 'วันที่อัพเดท'] as const).flatMap((ชื่อ) => (['ตั้งแต่', 'ถึง'] as const).map((ปลาย) => (
-            { label: `${ชื่อ} ${ปลาย}`, kind: 'date' as const, value: '', onChange: () => {}, ปิดไว้: วันชนิดอื่นยังไม่มี }
-          ))),
           {
             label: 'เก็บเงินปลายทาง',
             kind: 'select',
@@ -976,6 +966,10 @@ export default function CoreSalesPage() {
             ],
           },
           { label: 'แสดงรายการที่ถูกซ่อน', kind: 'check', value: false, onChange: () => {}, ปิดไว้: 'กระจกไม่ได้เก็บธงถูกซ่อนของ ZORT' },
+          { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
+          { label: 'เบอร์โทรศัพท์', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
+          { label: 'อีเมลลูกค้า', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: ท่อไม่รับช่องนี้ },
+          { label: 'ช่องทางจัดส่ง', kind: 'text', value: fShipCh, onChange: (v) => setFShipCh(String(v)), placeholder: 'เช่น Flash', width: 150 },
           /* 10 สถานะของ ZORT — วาดครบตามผังแต่ปิด (เหตุ: สถานะรายการ 10 ค่าแบบ ZORT ข้างล่าง) */
           ...['รอโอนสินค้า', 'สำเร็จ', 'โอนบางส่วน', 'ยกเลิก', 'ยกเลิก (หมดอายุ)', 'แพ็คแล้ว', 'รอส่งสินค้า', 'กำลังส่งสินค้า', 'จัดส่งไม่สำเร็จ', 'ยกเลิกการส่งสินค้า'].map((ชื่อ) => (
             { label: ชื่อ, kind: 'check' as const, value: false, onChange: () => {}, ปิดไว้: 'กระจกมีสถานะจริงแค่ 5 ค่า ยังไม่ได้พิสูจน์การจับคู่กับ 10 ค่าของ ZORT — จะรู้เมื่ออ่านสถานะใบเดียวกันจากสองฝั่งเทียบกัน' }
@@ -995,6 +989,13 @@ export default function CoreSalesPage() {
               { value: 'Voided', label: zortWord(PAY_STATUS, 'Voided').text },
             ],
           },
+          { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
+          { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
+          { label: 'วันส่งสินค้า ตั้งแต่', kind: 'date', value: fShipFrom, onChange: (v) => setFShipFrom(String(v)) },
+          { label: 'ถึง', kind: 'date', value: fShipTo, onChange: (v) => setFShipTo(String(v)) },
+          ...(['วันที่ชำระเงิน', 'วันที่โอนสินค้า', 'วันที่สร้าง', 'วันที่อัพเดท'] as const).flatMap((ชื่อ) => (['ตั้งแต่', 'ถึง'] as const).map((ปลาย) => (
+            { label: `${ชื่อ} ${ปลาย}`, kind: 'date' as const, value: '', onChange: () => {}, ปิดไว้: วันชนิดอื่นยังไม่มี }
+          ))),
         ]}
         notAvailable={[
           /* 🔴 เหตุของช่องที่ปิดไว้ข้างบน — ต้องเห็นบนจอ ไม่ใช่แค่ใน title (คนบนมือถือชี้ค้างไม่ได้) */
