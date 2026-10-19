@@ -20,6 +20,8 @@ import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { thaiDateTime } from '@/components/zort/PushStatusBoard'
 import ExportButton from '@/components/zort/ExportButton'
 import ZortFoldIf from '@/components/zort/ZortFoldIf'
+import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
+import { SearchRow } from '@/components/zort'
 import { TH_NO, ROW_LINK, TD_NO,
   PageHead, TableWrap, TH, THR, TD, TDR, RowMenu, EmptyState, thaiDate,
 } from '@/components/zort'
@@ -42,6 +44,10 @@ interface WarehouseSales { code: string; orders: number; amount: number }
 const thaiDay = (back = 0) =>
   new Date(Date.now() + 7 * 3600e3 - back * 864e5).toISOString().slice(0, 10)
 
+/** เหตุที่ช่อง ☐ แสดงคลังสินค้าที่ถูกลบ ปิดไว้ — GET list=warehouses 20 ต.ค. 2569 ได้ 3 คลัง ช่อง code/name/province/stockValue/movedAt/valueCollectedAt/collectedDayTH/isPos
+ *  ⇒ ไม่มีช่องบอกว่าคลังไหนถูกลบ และไม่รู้ว่าท่อรวมคลังที่ลบแล้วมาด้วยไหม */
+const คลังที่ถูกลบยังไม่รู้ = 'ท่อส่งรายชื่อคลังมาโดยไม่มีช่องบอกว่าคลังไหนถูกลบ — ยังแยกไม่ได้ (ไม่ใช่ว่าไม่มีคลังที่ถูกลบ)'
+
 export default function CoreBranchesPage() {
   const [rows, setRows] = useState<Warehouse[]>([])
   const [note, setNote] = useState('')
@@ -60,6 +66,12 @@ export default function CoreBranchesPage() {
    *  (ผมกันเคส "กำลังโหลด" ไว้แล้ว แต่ลืมเคส "โหลดไม่สำเร็จ" ซึ่งจบลงที่หน้าตาเดียวกัน) */
   const [salesFailed, setSalesFailed] = useState(false)
   const [q, setQ] = useState('')
+  /* 🔍 ค้นหาขั้นสูงแบบ ZORT (แผง searchAdvance ของ /Warehouse/list — อ่าน DOM ที่ซ่อนอยู่ 20 ต.ค. 2569):
+     รหัสคลัง/สาขา · ชื่อคลัง/สาขา · ☐ แสดงคลังสินค้าที่ถูกลบ
+     กรองในเบราว์เซอร์จาก **รายชื่อคลังทั้งหมด** (ท่อส่งครบทุกคลังในครั้งเดียว ไม่มีแบ่งหน้า) ⇒ ไม่ใช่กรองแค่หน้าที่เห็น */
+  const [advOpen, setAdvOpen] = useState(false)
+  const [advCode, setAdvCode] = useState('')
+  const [advName, setAdvName] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   /** ท่อบอกว่ารอบคัดมูลค่าล่าสุดพลาด — **ต้องขึ้นจอ ไม่ใช่เงียบ**
@@ -136,9 +148,11 @@ export default function CoreBranchesPage() {
     return { orders: hit?.orders ?? 0, amount: hit?.amount ?? 0 }
   }
 
-  const list = q.trim()
-    ? rows.filter((r) => `${r.code} ${r.name}`.toLowerCase().includes(q.trim().toLowerCase()))
-    : rows
+  const มี = (ค่า: unknown, คำ: string) => String(ค่า ?? '').toLowerCase().includes(คำ.trim().toLowerCase())
+  const list = rows
+    .filter((r) => !q.trim() || มี(`${r.code} ${r.name}`, q))
+    .filter((r) => !advCode.trim() || มี(r.code, advCode))
+    .filter((r) => !advName.trim() || มี(r.name, advName))
 
   return (
     <div className="p-4 md:p-6">
@@ -165,7 +179,28 @@ export default function CoreBranchesPage() {
       />
 
       {/* 📐 โหมดเหมือน ZORT: ระยะช่องค้นหาเดียวกับ SearchRow ร่วม (pt-1 mb-5) — ตารางเริ่มตำแหน่งเดียวกับ ZORT */}
-      <div className={เหมือนZORT ? 'pt-1 mb-5' : 'mb-3'}>
+      {เหมือนZORT ? (
+        <>
+          {/* 📐 โหมดเหมือน ZORT: แถวค้นหาตัวกลาง (แว่นขยาย · เว้นซ้าย 42) + ลิงก์ ค้นหาขั้นสูง แบบ /Warehouse/list */}
+          <SearchRow value={q} onChange={setQ} onSubmit={() => {}} placeholder="พิมพ์คำค้นหา"
+            advanced={<AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} />} />
+          <AdvancedSearch
+            open={advOpen}
+            fields={[
+              { label: 'รหัสคลัง/สาขา', kind: 'text', value: advCode, onChange: setAdvCode, placeholder: 'รหัสคลัง/สาขา', width: 160 },
+              { label: 'ชื่อคลัง/สาขา', kind: 'text', value: advName, onChange: setAdvName, placeholder: 'ชื่อคลัง/สาขา', width: 200 },
+              { label: 'แสดงคลังสินค้าที่ถูกลบ', kind: 'check', value: false, onChange: () => {}, ปิดไว้: คลังที่ถูกลบยังไม่รู้ },
+            ]}
+            onApply={() => {}}
+            onClear={() => { setAdvCode(''); setAdvName('') }}
+            canClear={!!(advCode || advName)}
+            applyLabel="ค้นหา"
+            clientFiltered="กรองในเบราว์เซอร์จากรายชื่อคลังทั้งหมดที่ท่อส่งมา (ครบทุกคลัง ไม่ได้กรองแค่หน้าที่เห็น) · พิมพ์แล้วตารางเปลี่ยนทันที"
+            notAvailable={[{ what: 'แสดงคลังสินค้าที่ถูกลบ', why: คลังที่ถูกลบยังไม่รู้ }]}
+          />
+        </>
+      ) : (
+      <div className="mb-3">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
@@ -173,6 +208,7 @@ export default function CoreBranchesPage() {
           className="w-full max-w-[400px] h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] px-4 py-2 outline-none focus:border-[#868e96]"
         />
       </div>
+      )}
 
       {error && <ErrorBox title="ดึงรายชื่อคลังไม่ได้">{error}</ErrorBox>}
       {loading && rows.length === 0 && <LoadingState />}
