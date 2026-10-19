@@ -38,7 +38,8 @@ export const ZORT_LINK = '#457ab2'        // ลิงก์ในตารา�
 export function PageHead({
   title, summary, actions, ปุ่มใต้หัวจอ = false,
 }: {
-  title: string
+  /** ข้อความหรือชิ้นส่วน (เช่น ชื่อ + รหัสตัวเล็กสีเทาแบบ ZORT) — วาดใน <h1> อย่างเดียว */
+  title: ReactNode
   /** บรรทัดใต้ชื่อจอ เช่น "จำนวน 1,534 รายการ, มูลค่าทั้งหมด 1,804,130.3 บาท" */
   summary?: ReactNode
   actions?: ReactNode
