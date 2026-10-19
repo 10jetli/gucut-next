@@ -36,6 +36,14 @@ export function fmtMoney(n?: number | null) {
  *
  *  ⚠️ **คืน "—" ไม่ใช่ 0** — 0 ที่แปลว่า "ไม่มีข้อมูล" คือของอันตรายที่สุดในโปรเจกต์นี้
  *     (ทั้งวันนี้เราไล่ปิดกรณี "null ถูกอ่านเป็นศูนย์" มาแล้วหลายจุด) */
+/** เงินทศนิยม 2 ตำแหน่งเสมอ (17,410.30) — แบบการ์ดหน้าภาพรวมของ ZORT (วัด DOM 19 ต.ค. 2569)
+ *  กฎเดียวกับ fmtMoney: ไม่ใช่ตัวเลข = "—" ห้ามกลายเป็น 0 */
+export function fmtMoney2(n?: number | null) {
+  if (n === null || n === undefined) return '—'
+  const v = Number(n)
+  return Number.isFinite(v) ? v.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) : '—'
+}
+
 export function fmtNum(n: number | null | undefined) {
   // ⚠️ `Number(null)` = 0 ⇒ เช็ค null แยกก่อน ไม่งั้น "ไม่มีข้อมูล" จะกลายเป็น "ศูนย์" อีกรอบ
   if (n === null || n === undefined) return '—'

@@ -12,7 +12,7 @@
 import StockPushAlert from '@/components/zort/StockPushAlert'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { fmtMoney, fmtNum } from '@/lib/format'
+import { fmtMoney, fmtMoney2, fmtNum } from '@/lib/format'
 import { อ่านเงินตามการชำระ } from '@/lib/sales-tabs'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
@@ -222,13 +222,17 @@ function Shortcut({ href, icon, label, soon }: { href: string; icon: string; lab
       (ซ่อน = เอาไปเทียบผังกับ ZORT ไม่ได้ ซึ่งเป็นงานของรอบนี้พอดี) */
 
 /** การ์ดตัวเลขแบบ ZORT: ไอคอนวงกลมชิดซ้าย · ป้ายกับตัวเลขชิดขวา */
+/** การ์ดเงินแถวบน — โหมดเหมือน ZORT ทศนิยม 2 ตำแหน่งเสมอ (17,410.30) · โหมดปกติคงของเดิม */
+const เงินการ์ด = เหมือนZORT ? fmtMoney2 : fmtMoney
+
 function ZortBigCard({ icon, label, value, unknown, tone }: {
   icon: string; label: string; value?: string; unknown?: string; tone?: 'red' | 'green'
 }) {
   return (
     <Card>
       <div className="flex items-start gap-3">
-        <span className="w-9 h-9 shrink-0 rounded-full bg-violet-50 flex items-center justify-center text-[16px]">{icon}</span>
+        {/* โหมดเหมือน ZORT: วงไอคอน ~46px สี #d0daff (ภาพ /Dashboard 19 ต.ค. 2569 · วงเป็นภาพของ ZORT อ่าน DOM ไม่เจอ ⇒ กะจากภาพ) */}
+        <span className={`shrink-0 rounded-full flex items-center justify-center ${เหมือนZORT ? 'w-[46px] h-[46px] bg-[#d0daff] text-[20px]' : 'w-9 h-9 bg-violet-50 text-[16px]'}`}>{icon}</span>
         <div className="ml-auto text-right">
           <p className="text-[14px] font-medium text-[#868e96]">{label}</p>
           {unknown
@@ -617,17 +621,17 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <ZortBigCard
           icon="🛒" label="ยอดขายวันนี้ (บาท)"
-          value={coreError ? undefined : fmtMoney(เงินวันนี้.จ่ายแล้ว ?? today?.totalAmount)}
+          value={coreError ? undefined : เงินการ์ด(เงินวันนี้.จ่ายแล้ว ?? today?.totalAmount)}
           unknown={coreError ? 'ดึงยอดวันนี้ไม่ได้ — ยังไม่รู้ว่าวันนี้ขายได้เท่าไหร่' : undefined}
         />
         <ZortBigCard
           icon="📅" label={`ยอดขายเดือนนี้ ${thisMonthLabel} (บาท)`}
-          value={monthSales !== null ? fmtMoney(monthSales) : undefined}
+          value={monthSales !== null ? เงินการ์ด(monthSales) : undefined}
           unknown={monthSales === null ? `ยังดึงยอดรายเดือนไม่ได้${monthsErr ? ` (${monthsErr})` : ''}` : undefined}
         />
         <ZortBigCard
           icon="📈" label="ยอดขายรวมทั้งปี (บาท)"
-          value={yearSales !== null ? fmtMoney(yearSales) : undefined}
+          value={yearSales !== null ? เงินการ์ด(yearSales) : undefined}
           unknown={yearSales === null ? `ยังดึงยอดรายเดือนไม่ได้${monthsErr ? ` (${monthsErr})` : ''}` : undefined}
         />
       </div>
