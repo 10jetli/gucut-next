@@ -40,7 +40,13 @@ import {
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from '@/components/zort'
+import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+
+/* 📐 ปุ่มแถบบน — โหมดเหมือน ZORT ใช้ปุ่มกรอบเหลี่ยม (DETAIL_BTN · วัด 17 ต.ค.) · นอกโหมดคงปุ่มกลมเดิม */
+const ปุ่มZ = เหมือนZORT ? DETAIL_BTN : 'text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50'
+const ปุ่มลบZ = เหมือนZORT ? DETAIL_BTN : 'text-[12.5px] font-medium text-red-700 bg-white border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50'
 import SkuCodes from '@/components/zort/SkuCodes'
 
 interface BundleRow {
@@ -290,12 +296,12 @@ export default function BundleDetailPage() {
             {/* 🔑 ปุ่มแก้ไขชี้หน้าจริงแล้ว (ใบงาน t_mv4hthvf) — เส้น `?updatebundle=1` ตอบ 405
                 บน production แล้ว ยืนยันด้วยตัวควบคุมลบ `updatebundlezzz=1` ที่ตอบ fallthrough
                 ⚠️ ปุ่มลบยังชี้ `/core/soon/` อยู่โดยตั้งใจ — จอลบยังไม่ได้ทำ (คนละใบ) */}
-            <Link href={`/core/bundles/${encodeURIComponent(sku)}/edit`} className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">แก้ไข</Link>
-            <Link href="/core/soon/bundle-delete" className="text-[12.5px] font-medium text-red-700 bg-white border border-red-200 rounded-full px-4 py-1.5 hover:bg-red-50">ลบ</Link>
+            <Link href={`/core/bundles/${encodeURIComponent(sku)}/edit`} className={ปุ่มZ}>แก้ไข</Link>
+            <Link href="/core/soon/bundle-delete" className={ปุ่มลบZ}>ลบ</Link>
 
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'cmd' ? '' : 'cmd')}
-                className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                className={ปุ่มZ}>
                 คำสั่ง ▾
               </button>
               {menu === 'cmd' && (
@@ -311,7 +317,7 @@ export default function BundleDetailPage() {
 
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'print' ? '' : 'print')}
-                className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
+                className={ปุ่มZ}>
                 พิมพ์เอกสาร ▾
               </button>
               {menu === 'print' && (
@@ -321,14 +327,47 @@ export default function BundleDetailPage() {
               )}
             </span>
 
-            <Link href="/core/soon/bundle-push-marketplace" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">อัพเดทช่องทางอื่น ▾</Link>
-            <Link href="/core/soon/bundle-activity" className="text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">ดูกิจกรรมของรายการ</Link>
+            <Link href="/core/soon/bundle-push-marketplace" className={ปุ่มZ}>อัพเดทช่องทางอื่น ▾</Link>
+            <Link href="/core/soon/bundle-activity" className={ปุ่มZ}>ดูกิจกรรมของรายการ</Link>
             {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Bundle/Details ไม่มี (อ่านปุ่มทั้งหน้า) */}
           </div>
 
           {/* 🗂 ลำดับส่วนตาม ZORT /Bundle/Details (อ่านจอจริง 16 ต.ค. 2569): การ์ด 3 ใบ → ข้อมูลชุด → สินค้าในชุด → กราฟยอดขาย → คงเหลือรายคลัง → รายการขาย */}
           {/* ── (2) การ์ดบนสุด 3 ใบ ────────────────────────────────────────── */}
-          <div className="flex flex-wrap gap-3 mt-3">
+          {/* 📐 โหมดเหมือน ZORT — วัด DOM /Bundle/Details = ผังเดียวกับ /Product/Details (19 ต.ค. 2569):
+              การ์ดขาว ช่องใน 20 · วงไอคอน 48 · ป้าย Boon 14 w500 · ค่า Lato 30 w600 · คงเหลือ #2f8dde · พร้อมขาย #13af82 · ยอดขาย #4165ed
+              หมายเหตุใต้ค่าของแต่ละการ์ด (ซิงก์เมื่อไหร่ · พร้อมขายของ API ต่างจากจอ ZORT · ที่มายอดขาย) ย้ายไปพับใต้การ์ด ไม่ถอด */}
+          {เหมือนZORT && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-[30px] mt-3">
+                {([
+                  ['สินค้าคงเหลือ', '#ebf6ff', '#2f8dde', '▦', typeof bundle.onhand === 'number' ? `${fmtNum(bundle.onhand)} ${unit}` : '—'],
+                  ['สินค้าพร้อมขาย', '#cefff1', '#13af82', '✓', typeof bundle.available === 'number' ? `${fmtNum(bundle.available)} ${unit}` : '—'],
+                  ['ยอดขายเดือนนี้ (บาท)', '#d0daff', '#4165ed', '฿', monthSum.amount !== null ? fmtMoney(monthSum.amount) : (salesUnknownWhy ? 'ยังไม่รู้' : '—')],
+                ] as const).map(([ป้าย, วง, สี, รูป, ค่า]) => (
+                  <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
+                    <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
+                    <div className="text-right">
+                      <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
+                      <p className="font-['Lato',sans-serif] text-[30px] leading-[30px] font-semibold mt-1 m-0" style={{ color: ค่า === '—' ? '#ced4da' : สี }}>{ค่า}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <ZortLookFold tone="gray" สรุป={<>ที่มาของตัวเลขบนการ์ด{bundle.available === 0 ? ' · ⚠️ พร้อมขาย 0 อาจหมายถึงติดลบ' : ''}{monthSum.amount === 0 && sales && sales.length === 0 ? ' · ชุดนี้ยังไม่เคยขายเลยสักใบ' : ''}</>}>
+                <ul className="text-[12px] text-gray-600 list-disc pl-5 mt-1 space-y-0.5">
+                  {stock.state === 'ok' && <li>คงเหลือ: ซิงก์จาก ZORT {agoText(stock.ageMinutes)}</li>}
+                  <li>พร้อมขาย: {bundle.available === 0
+                    ? '0 อาจหมายถึงติดลบ — เทียบทั้ง 360 ชุดกับจอ ZORT แล้ว (15 ก.ย. 2569) ส่วนใหญ่ของชุดที่ขึ้น 0 ตรงนี้ จอ ZORT แสดงค่าติดลบ'
+                    : 'ตัวเลขนี้มาจาก ZORT API — เทียบกับจอ ZORT แล้ว (15 ก.ย. 2569) บางชุดจอ ZORT ต่ำกว่านี้'}</li>
+                  <li>ยอดขายเดือนนี้ ({monthLabel(now.getFullYear(), now.getMonth(), false)}): {monthSum.amount !== null
+                    ? `${monthSum.qty ? `ขายได้ ${fmtNum(monthSum.qty)} ${unit} · ` : ''}จากบัตรสต็อกของรหัสชุด${monthSum.voided ? ` · ไม่นับใบยกเลิก ${fmtNum(monthSum.voided)} ใบ` : ''}`
+                    : (salesUnknownWhy || 'ยังไม่รู้')}</li>
+                </ul>
+              </ZortLookFold>
+            </>
+          )}
+          {!เหมือนZORT && <div className="flex flex-wrap gap-3 mt-3">
             <Card
               label="สินค้าคงเหลือ"
               value={typeof bundle.onhand === 'number' ? `${fmtNum(bundle.onhand)} ${unit}` : '—'}
@@ -358,11 +397,12 @@ export default function BundleDetailPage() {
                   + (monthSum.voided ? ` · ไม่นับใบยกเลิก ${fmtNum(monthSum.voided)} ใบ` : '')
                 : undefined}
             />
-          </div>
+          </div>}
 
           {/* 🔴 ยอดขายเดือนนี้เป็น 0 แล้วชุดนี้ไม่เคยขายเลย — ต้องบอกว่า "ตรวจแล้ว" ไม่ใช่ปล่อยให้เดา
                  (ต่างจากกรณีอ่านไม่ได้ ซึ่งการ์ดจะขึ้นเหตุผลแทนตัวเลขอยู่แล้ว) */}
-          {monthSum.amount === 0 && sales && sales.length === 0 && (
+          {/* โหมดเหมือน ZORT: ข้อความนี้อยู่ในบรรทัดพับใต้การ์ดแล้ว (บรรทัดสรุปบอกว่า "ยังไม่เคยขาย") */}
+          {!เหมือนZORT && monthSum.amount === 0 && sales && sales.length === 0 && (
             <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-2 leading-relaxed">
               ℹ️ <b>ชุดนี้ยังไม่เคยขายเลยสักใบ</b> — ไม่ใช่ &ldquo;อ่านข้อมูลไม่ได้&rdquo;
               {' '}บัตรสต็อกของรหัสชุดนี้ไม่มีแถวขายเลย ({unit}ที่มีในคลังยังอยู่ครบ)<br />
