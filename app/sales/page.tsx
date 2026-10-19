@@ -804,7 +804,7 @@ export default function SalesReportPage() {
 
       {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/SalesReport 19 ต.ค. 2569): ใต้หัวจอเป็นบรรทัดช่วงวันตัวใหญ่ Kanit 24 "(1/8/2569 – 31/8/2569)" + ค้นหาขั้นสูง
            ⇒ ช่วงวันจริงตัวใหญ่ · เวลาอัพเดตย้ายเข้า title · ตัวเลือกช่วงคงไว้หน้าบรรทัด */}
-      <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-x-6 gap-y-2 mt-6 mb-6' : 'flex flex-wrap items-center gap-3 mb-3'}>
+      <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-x-6 gap-y-2 mt-[31px] mb-6' : 'flex flex-wrap items-center gap-3 mb-3'}>
         <select
           value={days}
           onChange={(e) => setDays(Number(e.target.value))}
