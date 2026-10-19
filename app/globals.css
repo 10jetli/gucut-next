@@ -122,11 +122,12 @@ button[aria-disabled="true"].disabled-readable {
 }
 
 /* 📏 ตารางแบบ ZORT (วัด DOM 5 จอ 17 ต.ค. 2569) — ใช้กับทุกตารางใน <TableWrap>
-   หัวตาราง #e8ecef · ไม่มีเส้นคั่นแถว · แถวคี่ #f8f9fa
+   หัวตาราง #e8ecef · ไม่มีเส้นคั่นแถว · **แถวคู่** #f8f9fa (แถวแรกขาว)
+   🔴 แก้ 20 ต.ค. 2569: บันทึก 17 ต.ค. เขียน "แถวคี่" — วัดซ้ำ 5 จอ (ผู้ติดต่อ · ขาย · ใบเสนอราคา · สินค้า · ชุด) แถวแรกโปร่งใส แถวสองเป็น #f8f9fa ทุกจอ ⇒ ของเราสลับกลับด้านมาตลอด
    ⚠️ สีแถวสลับอยู่ใน @layer components + :where() ⇒ ความเจาะจงต่ำ ⇒ แถวที่เพจทาสีเอง (แดง/เหลืองเตือน) และ hover ยังชนะ
       ส่วนเส้นคั่นแถวต้องชนะคลาส border-b ที่เพจเขียนไว้ ⇒ อยู่นอก layer ความเจาะจงสูงกว่า */
 .zort-table thead { background-color: #e8ecef; }
 .zort-table tbody tr { border-bottom-width: 0; }
 @layer components {
-  .zort-table :where(tbody tr:nth-child(odd)) { background-color: #f8f9fa; }
+  .zort-table :where(tbody tr:nth-child(even)) { background-color: #f8f9fa; }
 }
