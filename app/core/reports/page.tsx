@@ -11,7 +11,7 @@ import Link from 'next/link'
 import { useCallback, useEffect, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
-import ExportButton from '@/components/zort/ExportButton'
+import ExportButton, { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/components/zort/ExportButton'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortPie from '@/components/zort/ZortPie'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -231,9 +231,9 @@ export default function CoreProductReportPage() {
                     {ยอดZORTสด!.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     <span className="text-[15px] text-[#3e3e3e] font-normal"> บาท</span>
                   </p>
-                  <button onClick={downloadStockValue}
-                    className="mt-8 inline-flex items-center bg-white border border-[#ced4da] rounded-[3px] px-2 h-[27px] text-[13px] font-bold font-['Lato',sans-serif] text-[#3e3e3e] hover:bg-gray-50">
-                    Download Excel
+                  {/* ปุ่มส่งออกค่ากลางแบบ ZORT (เดิมเดาจากภาพ Lato 13 หนา — ค่า DOM จริงคือ Kanit 12/400 · ExportButton แก้ไปแล้ว จอนี้ตกค้าง) */}
+                  <button onClick={downloadStockValue} className={`mt-8 ${ZORT_EXPORT_BTN}`}>
+                    <ไอคอนไฟล์ />Download Excel
                   </button>
                 </div>
               )}
@@ -472,7 +472,7 @@ export default function CoreProductReportPage() {
 
           <Card padded={false} className={เหมือนZORT ? 'mt-[30px]' : 'mt-4'}>
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
-              <p className="text-[15px] font-semibold text-gray-900 mr-auto">สินค้าจม</p>
+              {เหมือนZORT ? <div className="mr-auto"><ZortCardTitle รูป="▥">สินค้าจม</ZortCardTitle></div> : <p className="text-[15px] font-semibold text-gray-900 mr-auto">สินค้าจม</p>}
               <select
                 value={deadDays}
                 onChange={(e) => { const d = Number(e.target.value); setDeadDays(d); load(d) }}

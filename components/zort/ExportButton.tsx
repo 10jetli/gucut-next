@@ -48,6 +48,14 @@ export interface ExportSpec<T> {
 /** อีโมจิ/สัญลักษณ์นำหน้าป้าย (เช่น 📗) — โหมดเหมือน ZORT ตัดออก เพราะ ZORT ใช้ไอคอนไฟล์แทน */
 const อีโมจินำหน้า = new RegExp('^\\P{L}+\\s*', 'u')
 
+/** 📐 ปุ่มส่งออกแบบ ZORT (วัด DOM /Quotation/list 19 ต.ค. 2569: Kanit 12/400 ขอบ #adb5bd มุม 4 สูง 28 ช่องใน 8)
+ *  export ไว้ให้ปุ่มดาวน์โหลดที่ไม่ได้ผ่าน ExportButton ใช้ค่าเดียวกัน — ไม่เดาสไตล์ใหม่ทีละจอ */
+export const ZORT_EXPORT_BTN = "inline-flex items-center gap-1.5 bg-white border border-[#adb5bd] rounded-[4px] px-2 h-[28px] text-[12px] font-normal font-['Kanit',sans-serif] text-[#3e3e3e] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+/** ไอคอนไฟล์ที่วาดเอง (ไม่เอาไอคอนของ ZORT) */
+export function ไอคอนไฟล์() {
+  return <svg aria-hidden width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="#3e3e3e" strokeWidth="1"><path d="M1 .5h6l3.5 3.5v8.5h-9.5z" /><path d="M3 6l4 4M7 6l-4 4" /></svg>
+}
+
 export default function ExportButton<T>({ spec, disabled, label = '📤 ส่งออก Excel', onDone }: {
   spec: ExportSpec<T>
   disabled?: boolean
@@ -117,8 +125,8 @@ export default function ExportButton<T>({ spec, disabled, label = '📤 ส่�
            ไอคอนไฟล์วาดเอง (ไม่เอาไอคอนของ ZORT) · ตัดอีโมจินำหน้าป้ายออก · การทำงานเหมือนเดิมทุกอย่าง */}
       {เหมือนZORT ? (
         <button type="button" onClick={run} disabled={busy || disabled}
-          className="inline-flex items-center gap-1.5 bg-white border border-[#adb5bd] rounded-[4px] px-2 h-[28px] text-[12px] font-normal font-['Kanit',sans-serif] text-[#3e3e3e] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
-          <svg aria-hidden width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="#3e3e3e" strokeWidth="1"><path d="M1 .5h6l3.5 3.5v8.5h-9.5z" /><path d="M3 6l4 4M7 6l-4 4" /></svg>
+          className={ZORT_EXPORT_BTN}>
+          <ไอคอนไฟล์ />
           {busy ? `กำลังรวบรวม… ${got.toLocaleString('th-TH')} แถว` : label.replace(อีโมจินำหน้า, '')}
         </button>
       ) : (
