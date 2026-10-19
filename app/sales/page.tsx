@@ -876,7 +876,8 @@ export default function SalesReportPage() {
                 <Card>
                   {/* ⑧ ไอคอนวงกลมหน้าหัวข้อ + ③ dropdown มุมขวาบนของกล่อง (สเปกข้อ 3 กับ 8) */}
                   <div className="flex items-center justify-between gap-2 mb-2">
-                    {เหมือนZORT ? <ZortCardTitle รูป="฿">สรุปยอดขายรวม</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
+                    {/* shrink-0: หัวการ์ดไม่ถูก dropdown บีบจนตัดเป็น "สรุปยอดขายร…" (เห็นในภาพ 20 ต.ค. 2569) — ZORT แสดงเต็ม · ให้ dropdown หดแทน */}
+                    {เหมือนZORT ? <div className="shrink-0"><ZortCardTitle รูป="฿">สรุปยอดขายรวม</ZortCardTitle></div> : <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2">
                       <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">💰</span>
                       สรุปยอดขายรวม
                     </p>}
