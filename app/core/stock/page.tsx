@@ -687,6 +687,16 @@ function CoreStockInner() {
           ...(รับ.includes('sellmax') ? [ช่อง('sellmax', 'ราคาขาย ถึง')] : []),
           ...(รับ.includes('buymin') ? [ช่อง('buymin', 'ราคาซื้อ ตั้งแต่')] : []),
           ...(รับ.includes('buymax') ? [ช่อง('buymax', 'ราคาซื้อ ถึง')] : []),
+          /* 📐 ช่องที่ ZORT มีต่อจากราคาซื้อ (DOM แผง searchAdvance /Product/list 20 ต.ค. 2569: คลังสินค้า · หมวดหมู่ · Tag · แสดงสินค้าที่ถูกลบ)
+             ท่อประกาศว่าไม่มีข้อมูล ⇒ วาดไว้ตำแหน่งเดียวกับ ZORT แต่ปิด · เหตุคือคำของท่อเอง (advancedFiltersUnavailable) ไม่ได้แต่งเอง
+             หมวดหมู่ไม่อยู่ตรงนี้ เพราะกรองได้จริงที่เซิร์ฟเวอร์ผ่านลิงก์จากจอหมวดหมู่ (?category=) */
+          ...(['warehouse', 'tag', 'archived'] as const)
+            .filter((k) => typeof data?.advancedFiltersUnavailable?.[k] === 'string')
+            .map((k): AdvField => ({
+              label: k === 'warehouse' ? 'คลังสินค้า' : k === 'tag' ? 'Tag' : 'แสดงสินค้าที่ถูกลบ',
+              kind: k === 'archived' ? 'check' : 'text', value: k === 'archived' ? false : '', width: 140,
+              onChange: () => {}, ปิดไว้: String(data!.advancedFiltersUnavailable![k]),
+            } as AdvField)),
         ]
         const ไม่มี = Object.entries(data?.advancedFiltersUnavailable ?? {})
           .filter(([, why]) => typeof why === 'string')
