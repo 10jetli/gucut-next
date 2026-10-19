@@ -40,7 +40,7 @@ import {
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN, ZORT_BACK_LINK } from '@/components/zort'
+import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN, ZORT_BACK_LINK, ZORT_INFO_LABEL, ZORT_INFO_VALUE, ZORT_INFO_NAME } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
@@ -473,7 +473,7 @@ export default function BundleDetailPage() {
               <div className="min-w-0">
                 <div className="flex gap-4">
                   <div className="min-w-0 flex-1">
-                    <h1 className="font-['Kanit',sans-serif] text-[16px] font-medium text-[#3e3e3e] mb-6 flex flex-wrap items-center gap-2">
+                    <h1 className={`${ZORT_INFO_NAME} mb-6 flex flex-wrap items-center gap-2`}>
                       {bundle.name || sku}
                       <span className={`font-['Kanit',sans-serif] text-[16px] font-medium rounded-[24px] px-3 py-0.5 ${
                         bundle.active === false ? 'text-gray-600 bg-gray-100' : 'text-[#1f9070] bg-[#ceFFF1]'
@@ -483,18 +483,18 @@ export default function BundleDetailPage() {
                     </h1>
                     <div className="grid grid-cols-2 gap-x-6 gap-y-[18px] max-w-[400px] font-['Boon',sans-serif]">
                       <div>
-                        <p className="text-[14px] text-[#868e96] leading-[14px] mb-[5px]">รหัสสินค้า</p>
-                        <p className="font-['Lato',sans-serif] text-[18px] font-bold text-[#3e3e3e]">{bundle.sku}</p>
+                        <p className={ZORT_INFO_LABEL}>รหัสสินค้า</p>
+                        <p className={ZORT_INFO_VALUE}>{bundle.sku}</p>
                       </div>
                       <div>
-                        <p className="text-[14px] text-[#868e96] leading-[14px] mb-[5px]">ราคาขาย</p>
-                        <p className="font-['Lato',sans-serif] text-[18px] font-bold text-[#3e3e3e]">
+                        <p className={ZORT_INFO_LABEL}>ราคาขาย</p>
+                        <p className={ZORT_INFO_VALUE}>
                           {typeof bundle.sellprice === 'number' ? `${fmtMoney(bundle.sellprice)} บาท` : '—'}
                         </p>
                       </div>
                       <div>
-                        <p className="text-[14px] text-[#868e96] leading-[14px] mb-[5px]">วันหมดอายุรายการ</p>
-                        <p className="font-['Lato',sans-serif] text-[18px] font-bold text-[#3e3e3e]">-</p>
+                        <p className={ZORT_INFO_LABEL}>วันหมดอายุรายการ</p>
+                        <p className={ZORT_INFO_VALUE}>-</p>
                       </div>
                     </div>
                   </div>
