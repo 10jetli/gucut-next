@@ -33,6 +33,7 @@ import {
   PageHead, thaiDate, TableWrap, TH, THR, TD, TDR, DETAIL_BTN,
 } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 
 interface Warehouse {
   code: string; name: string; province?: string; isPos?: boolean
@@ -239,6 +240,8 @@ export default function BranchDetailPage() {
             </div>
           </Card>}
 
+          {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีการ์ดยอดขาย 30 วัน ⇒ พับ แต่บรรทัดสรุปยังบอกยอด (ล้ม/ยังโหลด = บอกตามจริง) */}
+          <ZortLookFold tone="gray" สรุป={<>ยอดขายของคลังนี้ · 30 วันล่าสุด: {ยอดล้ม ? 'ถามไม่สำเร็จ — ยังไม่รู้' : ยอด ? (ยอด.amount === null ? 'ยังไม่รู้ยอด' : `${fmtMoney(ยอด.amount)} บาท`) + (ยอด.orders === null ? '' : ` · ${fmtNum(ยอด.orders)} ใบ`) : 'กำลังถาม…'}</>}>
           <Card>
             <p className="text-[14px] font-semibold text-gray-900 mb-1">ยอดขายของคลังนี้ · 30 วันล่าสุด</p>
             {ยอดล้ม
@@ -266,6 +269,7 @@ export default function BranchDetailPage() {
                 )
                 : <LoadingState text="กำลังถามยอดขายรายคลัง…" />}
           </Card>
+          </ZortLookFold>
 
           <Card padded={false}>
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
