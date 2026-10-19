@@ -1130,8 +1130,8 @@ export default function CoreSalesPage() {
       {data && !data.skip && (
         <>
           {/* ผัง ZORT (ภาพ 01): ปุ่มรีเฟรชวงกลมมุมขวาแถบแท็บ — ชั้นแถบแท็บ จุดบอดประจำ (จอที่ 5) */}
-          {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569): แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ช่องซ้าย 20 (ใบเสนอราคา 29.0 → 15.2) */}
-          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pl-5 pr-6' : 'flex items-end justify-between gap-3'}>
+          {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569): แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ไม่มีช่องซ้าย (วัด DOM: ระยะเยื้องมาจากช่องในของปุ่มแท็บเอง) (ใบเสนอราคา 29.0 → 15.2) */}
+          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
             <Tabs
               tabs={tabs}
               active={แท็บที่เลือก}
