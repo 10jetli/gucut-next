@@ -9,7 +9,7 @@
 //    ⇒ ทะเบียนผู้ติดต่อ (28,250 ราย เมื่อ 6 ก.ย. 2569 — เลขนับได้ ต้องมีวันที่กำกับ) อยู่ที่ /core/customers ตามเดิม
 // ⚠️ รวมยอดในเบราว์เซอร์จาก /api/core?list=orders ทีละหน้า (ท่อหลังบ้านเป็นเขตอีกฝั่ง)
 // ⚠️ จับลูกค้าด้วย "ชื่อ" ไม่ใช่เบอร์โทร — ชื่อซ้ำถูกนับรวมเป็นคนเดียว ต้องเขียนบอกบนจอ
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { fmtMoney, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -263,8 +263,17 @@ export default function CoreCustomersPage() {
   // ⚠️ ZORT จำตัวกรองที่ใช้ครั้งก่อนได้ (จอยอดขายของเขาค้างช่วง ส.ค. ที่มีคนตั้งไว้) ⇒ ค่านี้อาจเป็นค่าที่ ZORT จำไว้ ไม่ใช่ค่าตั้งต้นจริง
   //    ยืนยันได้ด้วยบัญชี ZORT ที่ไม่เคยเปิดจอนี้ — ยังไม่ได้ทำ
   const [cardBy, setCardBy] = useState<'people' | 'sales'>('sales')
+  const หัววงกลม = cardBy === 'sales' ? 'ยอดขาย' : 'จำนวนลูกค้า'
   /** มุมมองกราฟแนวโน้ม — ZORT `salestypeoption` (จำนวนลูกค้า | ยอดขาย) · แยกจากการ์ดวงกลม เพราะ ZORT ก็แยกสองตัว */
   const [trendBy, setTrendBy] = useState<'people' | 'sales'>('people')
+  /** คนเลือกเองแล้วหรือยัง — ใช้กันไม่ให้การสลับค่าตั้งต้นข้างล่างทับสิ่งที่คนเลือก */
+  const เลือกแนวโน้มเอง = useRef(false)
+  /* โหมดเหมือน ZORT: ZORT เปิดกราฟแนวโน้มที่ ยอดขาย — สลับให้ **เฉพาะเมื่อท่อส่งยอดรายเดือนมาจริง**
+     (ตั้งค่าตั้งต้นเป็น sales ตรง ๆ ไม่ได้: ท่อรุ่นที่ไม่ส่งยอด ตัวเลือกจะขึ้น ยอดขาย แต่กราฟวาดจำนวนคน = ป้ายผิดของ)
+     และไม่ทับสิ่งที่คนเลือกเองแล้ว */
+  useEffect(() => {
+    if (เหมือนZORT && !เลือกแนวโน้มเอง.current && มียอดรายเดือน(monthly)) setTrendBy('sales')
+  }, [monthly])
   /** ความละเอียดแกนเวลา — ปุ่ม วัน/เดือน/ไตรมาส/ปี ใต้กราฟของ ZORT (อ่านจอจริง 16 ต.ค. 2569) */
   const [trendGran, setTrendGran] = useState<'month' | 'quarter' | 'year'>('month')
   const [loading, setLoading] = useState(true)
@@ -524,7 +533,8 @@ export default function CoreCustomersPage() {
               {/* หัวการ์ด + ตัวสลับมุมมอง — ผังเดียวกับ dropdown `typeoption` ของ ZORT
                   (กดอ่านจากจอจริง 16 ก.ย. 2569: จำนวนลูกค้า ⇒ 2 แถว · ยอดขาย ⇒ 3 แถว มี "ไม่ระบุ" เพิ่ม) */}
               <div className="flex items-center justify-between gap-3 mb-3">
-                {เหมือนZORT ? <ZortCardTitle รูป="◔">จำนวนลูกค้า</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900">👥 จำนวนลูกค้า</p>}
+                {/* 🔴 หัวการ์ดต้องตามตัวเลือก (ZORT: เลือก ยอดขาย ⇒ หัว ยอดขาย) — เดิมเขียนตาย "จำนวนลูกค้า" ทั้งที่วงกลมเป็นยอดเงิน (ค่าตั้งต้น sales) = หัวบอกคนละอย่างกับของในการ์ด */}
+                {เหมือนZORT ? <ZortCardTitle รูป="◔">{หัววงกลม}</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900">👥 {หัววงกลม}</p>}
                 <select
                   value={cardBy}
                   onChange={(e) => setCardBy(e.target.value as 'people' | 'sales')}
@@ -681,7 +691,7 @@ export default function CoreCustomersPage() {
                 {เหมือนZORT ? <ZortCardTitle รูป="↗">แนวโน้ม</ZortCardTitle> : <p className="text-[15px] font-semibold text-gray-900">📈 แนวโน้ม</p>}
                 <select
                   value={trendBy}
-                  onChange={(e) => setTrendBy(e.target.value as 'people' | 'sales')}
+                  onChange={(e) => { เลือกแนวโน้มเอง.current = true; setTrendBy(e.target.value as 'people' | 'sales') }}
                   className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white"
                 >
                   <option value="people">จำนวนลูกค้า</option>
