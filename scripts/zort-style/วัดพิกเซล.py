@@ -10,6 +10,9 @@
 🔴 2. แท็บ ZORT ซูม 125% (innerWidth 1280 · dpr 1.25) ส่วนของเรา 1600 · dpr 1 ⇒ ภาพสองฝั่งคนละมาตราส่วนทั้งจอ
       ⇒ ซูมเนื้อหาฝั่งเราด้วย CSS ให้กว้าง 1280 เท่ากัน (ท่าเดียวกับ rea2.py) · ไม่ไปแก้ซูมของ ZORT (เบราว์เซอร์ร่วม)
 🔴 3. ช่อง "เรา" มีหลายหน้าคั่นด้วย " + " หรือมีคำอธิบายต่อท้าย ⇒ ใช้คำแรกเท่านั้น (เดิมเปิดเป็น URL ทั้งก้อน = หน้าไม่มีจริง)
+🔴 4. คู่ที่มีช่อง "เมนู" ต้องอ่านลิงก์จากเมนูซ้ายของ ZORT ตอนวัด (ท่าเดียวกับ rea2.py)
+      เช่น ภาพรวม = /Dashboard/Main + โทเคนรายร้าน — ไม่มีโทเคนได้ **หน้าแรกของ ZORT คนละหน้า** (เจอ 19 ต.ค. 2569: 49.4 คือเทียบผิดหน้า)
+      ⚠️ ห้ามจดโทเคนนั้นลงไฟล์ (รีโปสาธารณะ) — อ่านสดทุกครั้ง
 🚫 ฝั่ง ZORT เป็นหน้า error ⇒ จด "วัดไม่ได้" ห้ามออกเป็น %
 🔴 ปิดแท็บเสมอแม้ error
 """
@@ -54,10 +57,17 @@ with sync_playwright() as pw:
     pz = bz.contexts[0].new_page(); po = bo.contexts[0].new_page()
     try:
         for p in (pz, po): p.set_viewport_size({'width': 1600, 'height': 900})
+        เมนูZORT = {}
+        if any(p.get('เมนู') for p in pairs):
+            pz.goto('https://secure.zortout.com/Product/list?', wait_until='domcontentloaded', timeout=60000); pz.wait_for_timeout(3000)
+            เมนูZORT = dict(pz.evaluate("()=>[...document.querySelectorAll('ul.side-nav a')].map(a=>[a.innerText.trim(),a.getAttribute('href')||''])"))
         for p in pairs:
             แถว = {'no': p['no'], 'ชื่อ': p['ชื่อ']}
             try:
-                ไป(pz, 'https://secure.zortout.com' + p['zort'].split(' ')[0])
+                zurl = เมนูZORT.get(p.get('เมนู') or '') or p['zort'].split(' ')[0]
+                if p.get('เมนู') and not เมนูZORT.get(p['เมนู']):
+                    raise RuntimeError(f"วัดไม่ได้ — หาเมนู {p['เมนู']} ในเมนูซ้ายของ ZORT ไม่เจอ")
+                ไป(pz, 'https://secure.zortout.com' + zurl)
                 pz.add_style_tag(content=ซ่อนป๊อปอัป); pz.wait_for_timeout(2500)
                 if 'ZortError' in pz.url or 'มีปัญหาบางประการ' in (pz.evaluate('document.body.innerText') or '')[:400]:
                     raise RuntimeError('วัดไม่ได้ — ฝั่ง ZORT เป็นหน้า error: ' + pz.url.split('?')[0])
