@@ -244,6 +244,9 @@ const เหตุที่ท่อยังไม่กรอง: Record<strin
   serial: '🟡 ยังไม่ได้ทำ — ฝั่งท่อกำลังตรวจว่า ZORT ส่งช่อง serial มาในใบหรือไม่ (ถ้ามี ต้องเพิ่มคอลัมน์ + กวาดย้อนหลังก่อน)',
   agent: '🔴 ทำไม่ได้ ไม่ใช่ยังไม่ได้ทำ — ZORT ไม่เปิด API ตัวแทน (ยิงตรวจ 6 ก.ย. 2569 ได้ 404 ทุกชื่อ)',
 }
+/** เหตุของช่อง ZORT ที่ท่อยังไม่รับ — ใช้ทั้งตอนปิดช่อง และใน notAvailable (ข้อความเดียว ที่เดียว) */
+const ท่อไม่รับช่องนี้ = 'ท่อ list=orders ยังไม่รับช่องนี้ (ไม่อยู่ใน advancedFilters 13 ช่องที่ท่อประกาศ · ยิงดู 19 ต.ค. 2569) · ยังไม่ได้ตรวจว่ากระจกเก็บค่านี้ไว้หรือไม่ — จะรู้เมื่อฝั่งท่อตอบใบขอ 19 ต.ค. 2569 ว่าตาราง orders มีคอลัมน์นี้ไหม'
+const วันชนิดอื่นยังไม่มี = 'ท่อเลือกชนิดวันได้แค่ วันที่ของใบ กับ วันส่งสินค้า (dateTypes order/ship) — ชนิดอื่นของ ZORT ยังไม่มี'
 
 const MEMO_KEY = 'gucut:core-sales:filter'
 const DEFAULT_DAYS = 90
@@ -426,6 +429,10 @@ export default function CoreSalesPage() {
     if (fAgent.trim()) out.push(['agent', fAgent.trim()])
     return out
   }, [fPay, fCod, fProduct, fShipCh, fShipFrom, fShipTo, fMin, fMax, fNumber, fTag, fCreator, fWh, fCustomer, fSerial, fAgent])
+  /** ช่องที่ท่อยังไม่ประกาศใน advancedFilters ⇒ คืนเหตุ (ใช้ปิดช่อง) · ท่อประกาศเมื่อไหร่ช่องเปิดเอง
+   *  ⚠️ ยังไม่ได้คำตอบจากท่อ (data ว่าง) ⇒ ถือว่ายังไม่รู้จัก — เปิดไว้ก่อนรู้ = ปุ่มหลอกช่วงโหลด */
+  const ท่อยังไม่รู้จัก = (k: 'serial' | 'agent'): string | undefined =>
+    data?.advancedFilters && k in data.advancedFilters ? undefined : เหตุที่ท่อยังไม่กรอง[k]
 
   const load = useCallback(async (
     off = 0,
@@ -906,9 +913,73 @@ export default function CoreSalesPage() {
         open={advOpen}
         /* 🔍 ช่องทั้งหมดนี้ **ท่อกรองที่เซิร์ฟเวอร์จริง** — ยิงยืนยันเองแล้วทุกช่องก่อนใส่
            (กฎข้อ ① ของแผงนี้: ห้ามใส่ช่องที่กรอกแล้วไม่มีผล) */
+        /* 🧭 **เรียงตามแผง `#searchFilter` ของ ZORT `/Sell/list`** (CEO อ่าน DOM สด 19 ต.ค. 2569: 31 ช่อง + ติ๊ก 23 ตัว)
+           ช่องที่ท่อยังกรองไม่ได้ **วาดไว้ตำแหน่งเดียวกับ ZORT แต่ปิด** (`ปิดไว้`) พร้อมเหตุใน notAvailable ข้างล่าง
+           — CEO สั่ง "อย่าทำปุ่มหลอก ใส่แล้วปิดไว้พร้อมเหตุผลบนจอ" · ช่องปิดไม่ส่งค่าอะไรไปท่อ */
         fields={[
+          { label: 'หมายเลขรายการ', kind: 'text', value: fNumber, onChange: (v) => setFNumber(String(v)), placeholder: 'เช่น SO-2026', width: 150 },
+          { label: 'มูลค่าตั้งแต่', kind: 'number', value: fMin, onChange: (v) => setFMin(String(v)), placeholder: '0', width: 110 },
+          { label: 'จนถึงมูลค่า', kind: 'number', value: fMax, onChange: (v) => setFMax(String(v)), placeholder: '999999', width: 110 },
+          { label: 'อ้างอิง', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
+          {
+            /* ตัวเดียวกับตัวเลือกช่องทางเหนือตาราง (state `channel` ตัวเดียว) — ไม่ใช่ตัวกรองที่สอง */
+            label: 'ช่องทางการขาย',
+            kind: 'select',
+            value: channel,
+            onChange: (v) => setChannel(String(v)),
+            width: 150,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              ...(data?.channels ?? []).filter((c) => typeof c === 'string').map((c) => ({ value: c, label: c })),
+            ],
+          },
+          /* 🔑 สองช่องนี้เปิดเองวันที่ท่อประกาศคีย์ใน advancedFilters — ไม่ต้องมีใครกลับมาแก้จอ */
+          { label: 'ชื่อตัวแทน', kind: 'text', value: fAgent, onChange: (v) => setFAgent(String(v)), placeholder: 'ชื่อตัวแทนจำหน่าย', width: 150, ปิดไว้: ท่อยังไม่รู้จัก('agent') },
+          { label: 'ผู้สร้าง', kind: 'text', value: fCreator, onChange: (v) => setFCreator(String(v)), placeholder: 'ชื่อผู้สร้างใบ', width: 130 },
+          {
+            label: 'คลัง',
+            kind: 'select',
+            value: fWh,
+            onChange: (v) => setFWh(String(v)),
+            width: 170,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: 'NEW', label: 'NEW' },
+              { value: 'KLD', label: 'KLD' },
+              { value: 'ANJ', label: 'ANJ' },
+            ],
+          },
+          { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
+          { label: 'สินค้า (รหัส/ชื่อ)', kind: 'text', value: fProduct, onChange: (v) => setFProduct(String(v)), placeholder: 'เช่น 00313', width: 170 },
+          { label: 'Serial no', kind: 'text', value: fSerial, onChange: (v) => setFSerial(String(v)), placeholder: 'เลขซีเรียลในใบ', width: 150, ปิดไว้: ท่อยังไม่รู้จัก('serial') },
+          { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
+          { label: 'เบอร์โทรศัพท์', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
+          { label: 'อีเมลลูกค้า', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: ท่อไม่รับช่องนี้ },
+          { label: 'ช่องทางจัดส่ง', kind: 'text', value: fShipCh, onChange: (v) => setFShipCh(String(v)), placeholder: 'เช่น Flash', width: 150 },
           { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
           { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
+          { label: 'วันส่งสินค้า ตั้งแต่', kind: 'date', value: fShipFrom, onChange: (v) => setFShipFrom(String(v)) },
+          { label: 'ถึง', kind: 'date', value: fShipTo, onChange: (v) => setFShipTo(String(v)) },
+          ...(['วันที่ชำระเงิน', 'วันที่โอนสินค้า', 'วันที่สร้าง', 'วันที่อัพเดท'] as const).flatMap((ชื่อ) => (['ตั้งแต่', 'ถึง'] as const).map((ปลาย) => (
+            { label: `${ชื่อ} ${ปลาย}`, kind: 'date' as const, value: '', onChange: () => {}, ปิดไว้: วันชนิดอื่นยังไม่มี }
+          ))),
+          {
+            label: 'เก็บเงินปลายทาง',
+            kind: 'select',
+            value: fCod,
+            onChange: (v) => setFCod(String(v)),
+            width: 130,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: '1', label: 'เฉพาะ COD' },
+              { value: '0', label: 'ไม่ใช่ COD' },
+            ],
+          },
+          { label: 'แสดงรายการที่ถูกซ่อน', kind: 'check', value: false, onChange: () => {}, ปิดไว้: 'กระจกไม่ได้เก็บธงถูกซ่อนของ ZORT' },
+          /* 10 สถานะของ ZORT — วาดครบตามผังแต่ปิด (เหตุ: สถานะรายการ 10 ค่าแบบ ZORT ข้างล่าง) */
+          ...['รอโอนสินค้า', 'สำเร็จ', 'โอนบางส่วน', 'ยกเลิก', 'ยกเลิก (หมดอายุ)', 'แพ็คแล้ว', 'รอส่งสินค้า', 'กำลังส่งสินค้า', 'จัดส่งไม่สำเร็จ', 'ยกเลิกการส่งสินค้า'].map((ชื่อ) => (
+            { label: ชื่อ, kind: 'check' as const, value: false, onChange: () => {}, ปิดไว้: 'กระจกมีสถานะจริงแค่ 5 ค่า ยังไม่ได้พิสูจน์การจับคู่กับ 10 ค่าของ ZORT — จะรู้เมื่ออ่านสถานะใบเดียวกันจากสองฝั่งเทียบกัน' }
+          )),
           {
             label: 'สถานะชำระเงิน',
             kind: 'select',
@@ -924,45 +995,22 @@ export default function CoreSalesPage() {
               { value: 'Voided', label: zortWord(PAY_STATUS, 'Voided').text },
             ],
           },
-          {
-            label: 'เก็บเงินปลายทาง',
-            kind: 'select',
-            value: fCod,
-            onChange: (v) => setFCod(String(v)),
-            width: 130,
-            options: [
-              { value: '', label: 'ทั้งหมด' },
-              { value: '1', label: 'เฉพาะ COD' },
-              { value: '0', label: 'ไม่ใช่ COD' },
-            ],
-          },
-          { label: 'สินค้า (รหัส/ชื่อ)', kind: 'text', value: fProduct, onChange: (v) => setFProduct(String(v)), placeholder: 'เช่น 00313', width: 170 },
-          { label: 'ช่องทางจัดส่ง', kind: 'text', value: fShipCh, onChange: (v) => setFShipCh(String(v)), placeholder: 'เช่น Flash', width: 150 },
-          { label: 'วันส่งสินค้า ตั้งแต่', kind: 'date', value: fShipFrom, onChange: (v) => setFShipFrom(String(v)) },
-          { label: 'ถึง', kind: 'date', value: fShipTo, onChange: (v) => setFShipTo(String(v)) },
-          { label: 'มูลค่าตั้งแต่', kind: 'number', value: fMin, onChange: (v) => setFMin(String(v)), placeholder: '0', width: 110 },
-          { label: 'จนถึงมูลค่า', kind: 'number', value: fMax, onChange: (v) => setFMax(String(v)), placeholder: '999999', width: 110 },
-          { label: 'หมายเลขรายการ', kind: 'text', value: fNumber, onChange: (v) => setFNumber(String(v)), placeholder: 'เช่น SO-2026', width: 150 },
-          { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
-          { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
-          { label: 'ผู้สร้าง', kind: 'text', value: fCreator, onChange: (v) => setFCreator(String(v)), placeholder: 'ชื่อผู้สร้างใบ', width: 130 },
-          { label: 'Serial no', kind: 'text', value: fSerial, onChange: (v) => setFSerial(String(v)), placeholder: 'เลขซีเรียลในใบ', width: 150 },
-          { label: 'ชื่อตัวแทน', kind: 'text', value: fAgent, onChange: (v) => setFAgent(String(v)), placeholder: 'ชื่อตัวแทนจำหน่าย', width: 150 },
-          {
-            label: 'คลัง',
-            kind: 'select',
-            value: fWh,
-            onChange: (v) => setFWh(String(v)),
-            width: 170,
-            options: [
-              { value: '', label: 'ทั้งหมด' },
-              { value: 'NEW', label: 'NEW' },
-              { value: 'KLD', label: 'KLD' },
-              { value: 'ANJ', label: 'ANJ' },
-            ],
-          },
         ]}
         notAvailable={[
+          /* 🔴 เหตุของช่องที่ปิดไว้ข้างบน — ต้องเห็นบนจอ ไม่ใช่แค่ใน title (คนบนมือถือชี้ค้างไม่ได้) */
+          {
+            what: 'อ้างอิง · เบอร์โทรศัพท์ · อีเมลลูกค้า',
+            why: ท่อไม่รับช่องนี้,
+          },
+          {
+            what: 'วันที่ชำระเงิน · วันที่โอนสินค้า · วันที่สร้าง · วันที่อัพเดท',
+            why: วันชนิดอื่นยังไม่มี,
+          },
+          {
+            what: 'ชำระบางส่วน',
+            why: 'ZORT มีติ๊ก ชำระบางส่วน แยกจาก ชำระครบ — กระจกเก็บสถานะชำระเงินแค่ Paid / Pending / Voided ⇒ แยกใบที่จ่ายบางส่วนไม่ได้',
+          },
+          ...(['serial', 'agent'] as const).filter((k) => ท่อยังไม่รู้จัก(k)).map((k) => ({ what: ADV_TH[k], why: เหตุที่ท่อยังไม่กรอง[k] })),
           {
             what: 'ใบที่ยังไม่รู้คลัง',
             why: 'ใบก่อน 1 ก.ย. 2569 ส่วนหนึ่งท่อยังไม่ได้เก็บรหัสคลัง ⇒ เลือกคลังไหนก็ไม่ขึ้น (วัด 17 ก.ย. 2569: ช่วง 1 ส.ค.–16 ก.ย. มี 40 ใบ) · ยังเลือก "ไม่รู้คลัง" ไม่ได้',
