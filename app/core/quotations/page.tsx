@@ -7,6 +7,7 @@
 // 💡 **จอนี้ดึงสดจาก ZORT ไม่ทำกระจก** (ของ 3 แถวไม่ควรมีสำเนาให้ไม่ตรงกันได้)
 //    ⇒ ต้องเขียนบนจอว่าเป็นข้อมูลสด เพราะจอพี่น้องข้าง ๆ อ่านจากคลังเงาทั้งหมด
 //      คนใช้ต้องรู้ว่าจอไหนยิง ZORT จริง เวลา ZORT ล่มจะได้เข้าใจว่าทำไมจอนี้จอเดียวที่ว่าง
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
@@ -235,7 +236,7 @@ export default function QuotationsPage() {
             {/* ✅ ต่อของจริงแล้ว 6 ก.ย. 2569 — เจ้าของร้านอนุมัติ **เฉพาะใบเสนอราคา**
                 (ไม่รวมเพิ่มสินค้า/ใบสั่งซื้อ) · จอปลายทางบังคับซ้อมก่อนส่งจริง */}
             <Link href="/core/quotations/new"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               สร้าง
             </Link>

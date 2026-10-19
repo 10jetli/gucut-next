@@ -25,6 +25,7 @@
 //
 // ✅ กติกาที่ใช้จริงตอนนี้: ห้ามเขียนว่า "ทั้งหมด N ใบ" เหมือนเดิม
 //    แต่เหตุผลเปลี่ยน — ไม่ใช่เพราะเราขาด แต่เพราะ **สองฝั่งนับคนละอย่าง** ⇒ เขียนกำกับว่านับอะไร
+import { HEAD_BTN, HEAD_BTN_GHOST } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
@@ -357,11 +358,11 @@ export default function LogisticsPage() {
           <>
             {/* 🔁 ปุ่ม "รีเฟรช" บนหัวจอเอาออก 16 ต.ค. 2569 — ZORT ไม่มี (อ่านจอ ZORT รายการนี้) */}
             <Link href="/core/soon/shipping"
-              className="font-['Kanit','Boon',sans-serif] text-[16px] leading-6 font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-4 py-[9px] hover:bg-[#e9ecef]">
+              className={HEAD_BTN_GHOST}>
               นำเข้ารายการไฟล์ Excel
             </Link>
             <Link href="/core/soon/shipping"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               ขนส่ง
             </Link>

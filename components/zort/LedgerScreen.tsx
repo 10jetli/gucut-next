@@ -23,6 +23,7 @@
 //
 // ⚠️ ปุ่ม "สร้าง…" กับ "นำเข้าไฟล์" พาไปหน้าที่บอกตรง ๆ ว่ายังทำอะไรไม่ได้
 //    ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง
+import { HEAD_BTN, HEAD_BTN_GHOST } from '@/components/zort/headBtn'
 import ExportButton from '@/components/zort/ExportButton'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
@@ -375,7 +376,7 @@ export default function LedgerScreen({
           <>
             {withImport && (
               <Link href={`/core/soon/${soonKey}`}
-                className="font-['Kanit','Boon',sans-serif] text-[16px] leading-6 font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-4 py-[9px] hover:bg-[#e9ecef]">
+                className={HEAD_BTN_GHOST}>
                 นำเข้าไฟล์ (Excel)
               </Link>
             )}
@@ -383,7 +384,7 @@ export default function LedgerScreen({
               /* ✅ มีจอจริงแล้วต้องพาไปของจริง — ปล่อยให้ชี้หน้า soon ทั้งที่ของเสร็จแล้ว
                  คือโรคที่เคยเจอกับ /core/purchases/new (คนอ่านว่า "ยังไม่ได้ทำ" ทั้งที่มีมา 8 วัน) */
               <Link href={createHref ?? `/core/soon/${soonKey}`}
-                className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+                className={HEAD_BTN}
                 style={{ background: '#4165ed' }}>
                 {createLabel}
               </Link>

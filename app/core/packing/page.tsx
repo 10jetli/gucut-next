@@ -15,6 +15,7 @@
 //
 // ⚠️ ท่อ `?pending=1` แยกกองมาให้แล้ว 3 กอง — จอนี้ใช้แค่กอง **"ต้องส่งของ"**
 //    (อีกสองกองคือ "รอจ่ายอยู่" กับ "ใบผี" ซึ่งเป็นงานคนละเรื่อง อยู่ในจอรายการขาย)
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -175,7 +176,7 @@ export default function PackingPage() {
           <div className="flex items-center gap-2">
             {/* ผัง ZORT: เมนูแพ็คสินค้าเปิด wizard แพ็คทีละใบ — ของเราแยกไว้ที่ /pack */}
             <Link href="/core/packing/pack"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               เริ่มแพ็คสินค้า
             </Link>

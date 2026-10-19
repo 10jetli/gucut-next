@@ -9,6 +9,7 @@
 // ⚠️ ค่า zortValue/zortAvailable/zortSkus เป็น **ค่าที่คัดมือจากจอ ZORT** (API ไม่เปิดให้ดึง)
 //    ⇒ เก่าได้ · จอต้องเขียนกำกับ ห้ามโชว์ปนกับค่าที่คิดสดจากกระจกโดยไม่บอก
 // ⚠️ หมวด "(ยังไม่ได้จัดหมวดใน ZORT)" = แถว category ว่างในกระจก ไม่ใช่หมวดจริงของ ZORT
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -194,7 +195,7 @@ function Inner() {
         actions={เหมือนZORT ? undefined :
           <div className="flex items-center gap-2">
             <Link href={`/core/stock?category=${encodeURIComponent(catName)}`}
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]" style={{ background: '#4165ed' }}>
+              className={HEAD_BTN} style={{ background: '#4165ed' }}>
               เปิดในจอสินค้า
             </Link>
             {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT ไม่มีปุ่มรีเฟรชในจอไหนเลยที่อ่านมา */}

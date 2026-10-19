@@ -17,6 +17,7 @@
 //    🚫 เลิกใช้แล้ว       (retired: true)     เช่น Shopify ที่ปิดถาวรไปแล้ว
 //    ⚠️ ยุบ null รวมกับ false เมื่อไหร่ = จอบอกว่า "ไม่ได้เชื่อม" ทั้งที่ความจริงคือ "ยังไม่ได้ตรวจ"
 //       และไม่มีอะไรมาบังคับให้เห็นว่าตัวตรวจไหนยังขาด
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
@@ -236,7 +237,7 @@ export default function ConnectionsRegistryPage() {
           <>
             <BtnGhost onClick={load} disabled={loading}>{loading ? 'กำลังตรวจ…' : 'ตรวจอีกครั้ง'}</BtnGhost>
             <Link href="/core/soon/connection-add"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               เพิ่มการเชื่อมต่อ
             </Link>

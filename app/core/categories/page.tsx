@@ -17,6 +17,7 @@
 //    ⚠️ ราคาขายบังเอิญใกล้เลข ZORT มากกว่าต้นทุน — **ห้ามเลือกอันนั้นเพราะมันใกล้กว่า**
 //       ได้จอที่หน้าตาเหมือนแต่ตัวเลขคนละเรื่อง แล้วคนที่เอาไปเทียบจะเชื่อว่าตรงกัน
 //       **ใกล้ไม่ใช่เหมือน**
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import ExportButton from '@/components/zort/ExportButton'
 import { useRouter } from 'next/navigation'
@@ -191,7 +192,7 @@ export default function CoreCategoriesPage() {
                 ⇒ ปุ่มที่กดแล้วเกิดอะไรขึ้นจริงแต่ไม่ใช่สิ่งที่คนตั้งใจ **หลอกกว่าปุ่มที่กดแล้วเงียบ**
                 ⇒ หน้านำเข้ายังไม่รับชนิดนี้ ⇒ ไม่มีปุ่ม (ฝั่งท่อกำชับ: ชนิดที่ยังไม่รับ อย่าให้ปุ่มโผล่) */}
             <Link href="/core/soon/category-add"
-              className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+              className={HEAD_BTN}
               style={{ background: '#4165ed' }}>
               เพิ่มหมวดหมู่
             </Link>

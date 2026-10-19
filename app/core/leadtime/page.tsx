@@ -17,6 +17,7 @@
 // 🔴 **แต่ "ว่าง" ของเรา ไม่เท่ากับ "ว่าง" ของ ZORT**
 //    ZORT ว่าง = ร้านยังไม่ได้ตั้งกลุ่ม · ของเราว่าง = **ยังไม่ได้ต่อท่อ**
 //    ⇒ ห้ามเขียน "0 รายการ" ลอย ๆ เพราะเราไม่ได้นับอะไรเลย ศูนย์ของเราแปลว่า "ยังไม่รู้"
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import Link from 'next/link'
 import { TH_NO, PageHead, TableWrap, TH, THR } from '@/components/zort'
 import { SOON } from '@/lib/zort-menu'
@@ -81,7 +82,7 @@ export default function LeadTimeGroupPage() {
           // ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร
           <Link
             href="/core/soon/leadtime"
-            className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]"
+            className={HEAD_BTN}
             style={{ background: '#4165ed' }}
           >
             เพิ่มกลุ่มใหม่

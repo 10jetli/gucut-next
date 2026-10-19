@@ -21,6 +21,7 @@
 //
 // 🔌 **สัญญาข้อมูลทั้งหมดอยู่ lib/returns-api.ts — ร่างเสนอ รอฝั่งท่อยืนยัน** จอนี้ยังไม่ผูกเมนู
 //    จนกว่า API จริงขึ้น (สร้างล่วงหน้าตามแผน CEO 7 ก.ย. ดึก: ทำส่วนไม่รอ API ก่อน)
+import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useRef, useState } from 'react'
 import Link from 'next/link'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
@@ -321,7 +322,7 @@ export default function ReturnReceivePage() {
                 return typeof cap === 'number' && it.qty > cap ? { ...it, qty: cap } : it
               }))
               setOverQ(null)
-            }} className="text-[16px] leading-6 font-normal text-white rounded-full px-4 py-[9px]" style={{ background: '#b45309' }}>
+            }} className={HEAD_BTN} style={{ background: '#b45309' }}>
               ปรับเหลือเท่าที่คืนได้
             </button>
             <span className="text-[11.5px] text-amber-800 self-center">
