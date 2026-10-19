@@ -36,6 +36,7 @@ import { ควรลองใหม่, ฝั่งที่ติดจาก
 import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, thaiDate } from './index'
 import ZortLookFold from './ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { แว่นช่องค้น } from '@/components/zort/formCtl'
 
 export interface LedgerCol { label: string; right?: boolean }
 
@@ -406,25 +407,29 @@ export default function LedgerScreen({
           value={zortList ? kw : ''}
           onChange={(e) => setKw(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') void loadZort() }}
-          title={zortList ? 'พิมพ์แล้วกด Enter — ค้นที่เซิร์ฟเวอร์ ครอบทุกรายการ ไม่ใช่แค่หน้าที่เห็น'
+          title={zortList ? `พิมพ์แล้วกด Enter — ค้นที่เซิร์ฟเวอร์ ครอบทุกรายการ ไม่ใช่แค่หน้าที่เห็น${เหมือนZORT && !canDateFilter ? ' · ชุดข้อมูลนี้ของ ZORT ไม่มีวันที่ให้กรอง (ท่อตอบ 400 ถ้าส่งช่วงวันไป) — ค้นด้วยคำค้นได้อย่างเดียว' : ''}`
             : 'จอนี้ยังไม่ได้ต่อท่อกับ ZORT จึงยังไม่มีอะไรให้ค้น'}
-          className={`w-full max-w-[400px] h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] px-4 py-2 ${
+          /* 📐 โหมดเหมือน ZORT: แว่นขยายซ้าย + เว้นซ้าย 42 แบบช่องค้นหาของ ZORT (วัด DOM 20 ต.ค. 2569) */
+          style={แว่นช่องค้น}
+          className={`w-full max-w-[400px] h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] ${เหมือนZORT ? "font-['Boon',sans-serif] pl-[42px] pr-4 bg-no-repeat" : 'px-4'} py-2 ${
             zortList ? 'bg-white' : 'bg-gray-50 text-gray-400'}`}
         />
         {zortList
           ? (
             <>
-              <button type="button" onClick={() => void loadZort()}
-                className="text-[12.5px] text-blue-600 hover:underline">ค้นหา</button>
+              {/* 📐 โหมดเหมือน ZORT: จอ ZORT ไม่มีลิงก์ ค้นหา ข้างช่อง (อ่าน DOM /Product/Variantlist 20 ต.ค. 2569) — กด Enter ค้นได้เหมือนเดิม */}
+              {!เหมือนZORT && <button type="button" onClick={() => void loadZort()}
+                className="text-[12.5px] text-blue-600 hover:underline">ค้นหา</button>}
               {canDateFilter && (
                 <button type="button" onClick={() => setAdvOpen((v) => !v)}
-                  className="text-[12.5px] text-blue-600 hover:underline">
+                  className={เหมือนZORT ? "font-['Boon',sans-serif] text-[14px] text-[#337ab7] hover:underline" : 'text-[12.5px] text-blue-600 hover:underline'}>
                   {advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}
                 </button>
               )}
               {/* 🔴 `variations` ท่อไม่รับช่วงวันที่ ⇒ **ไม่โชว์ปุ่มเลย ดีกว่าโชว์แล้วเงียบ ๆ ไม่ส่ง**
                   และบอกด้วยว่าทำไมไม่มี ไม่ใช่หายไปเฉย ๆ */}
-              {!canDateFilter && (
+              {/* โหมดเหมือน ZORT: ZORT ไม่มีค้นหาขั้นสูงในจอแบบนี้ (ไม่มีแม้แต่แผงที่พับไว้) ⇒ ไม่วาดป้ายเทา · เหตุย้ายไปอยู่ title ของช่องค้นหา */}
+              {!canDateFilter && !เหมือนZORT && (
                 <span className="text-[12.5px] text-gray-300 cursor-help"
                   title="ชุดข้อมูลนี้ของ ZORT ไม่มีวันที่ให้กรอง (ท่อตอบ 400 ถ้าส่งช่วงวันไป) — ค้นด้วยคำค้นได้อย่างเดียว">
                   ค้นหาขั้นสูง (ไม่มีวันที่ให้กรอง)
@@ -551,9 +556,11 @@ export default function LedgerScreen({
                    🔴 บทเรียน: เคยทำแถวเตี้ยให้ทุกจอจากภาพจอเดียว ⇒ คืนสินค้าให้ผู้ขาย 18.1 → 32.1 · โอนเงิน 17.3 → 31.3 (ถอยกลับ 19 ต.ค. 2569)
                    **ข้อความสถานะ + กล่องพับหลักฐานอยู่ครบทั้งสองแบบ** */}
               {/* 📐 โหมดเหมือน ZORT (ภาพ /Product/Variantlist 19 ต.ค. 2569): กล่องว่างพื้นขาว (ไม่ใช่สีแถวสลับ) · ความสูงคง py-14 — ZORT สูงไม่เท่ากันทุกจอ (ลอง py-10: หลากคุณสมบัติดีขึ้น แต่คืนสินค้าให้ผู้ขาย/โอนเงินแย่ลง ⇒ ถอย) */}
-              <td colSpan={cols.length + 1} className={แถวเตี้ย ? 'py-4 text-center' : เหมือนZORT ? 'py-14 text-center !bg-white' : 'py-14 text-center'}>
-                {!แถวเตี้ย && <span className="text-[34px] block opacity-60">🗂️</span>}
-                <p className={แถวเตี้ย ? 'text-[14px] text-gray-800' : 'text-[14px] text-gray-800 mt-2'}>
+              {/* 📏 โหมดเหมือน ZORT (DOM /Product/Variantlist 20 ต.ค. 2569): กล่องว่างช่องใน 30 บนล่าง · รูปโฟลเดอร์ ~98×85 ห่างหัวตาราง 38
+                   · ข้อความ Boon 14 #868e96 ใต้รูป ~25 — รูปวาดเองเป็น SVG (ไม่ใช้ภาพของ ZORT) · ข้อความสถานะของเราคงเดิมทุกคำ */}
+              <td colSpan={cols.length + 1} className={แถวเตี้ย ? 'py-4 text-center' : เหมือนZORT ? 'pt-[38px] pb-[30px] text-center !bg-white' : 'py-14 text-center'}>
+                {!แถวเตี้ย && (เหมือนZORT ? <รูปโฟลเดอร์ว่าง /> : <span className="text-[34px] block opacity-60">🗂️</span>)}
+                <p className={แถวเตี้ย ? 'text-[14px] text-gray-800' : เหมือนZORT ? "font-['Boon',sans-serif] text-[14px] text-[#868e96] mt-[25px]" : 'text-[14px] text-gray-800 mt-2'}>
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
                   {zLoading ? 'กำลังถาม ZORT…'
                     /* 🔴 resCode 500 = **ขัดข้องฝั่ง ZORT เอง** (ฝั่งท่อยิงตรวจ 23:00 14 ก.ย. 2569
@@ -845,5 +852,21 @@ export default function LedgerScreen({
         )
       })()}
     </div>
+  )
+}
+
+/** โฟลเดอร์เปิดมีกระดาษ + วงกลมบวก — วาดเองตามขนาดรูปตารางว่างของ ZORT (98×85) · ไม่ใช้ไฟล์ภาพของเขา */
+function รูปโฟลเดอร์ว่าง() {
+  return (
+    <svg aria-hidden width="98" height="85" viewBox="0 0 98 85" className="block mx-auto">
+      <ellipse cx="49" cy="80" rx="42" ry="4" fill="#e9ecef" />
+      <rect x="18" y="6" width="30" height="38" rx="2" fill="#f1f3f5" stroke="#ced4da" />
+      <rect x="40" y="2" width="30" height="40" rx="2" fill="#f8f9fa" stroke="#ced4da" />
+      <path d="M45 12h20M45 18h20M45 24h14M23 16h18M23 22h18" stroke="#8ea8f8" strokeWidth="2" strokeLinecap="round" />
+      <path d="M6 30a3 3 0 0 1 3-3h20l6 6h46a3 3 0 0 1 3 3v36a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" fill="#f2b84b" />
+      <path d="M6 40a3 3 0 0 1 3-3h72a3 3 0 0 1 3 3v32a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3z" fill="#fcd577" />
+      <circle cx="80" cy="66" r="11" fill="#fff" stroke="#4165ed" strokeWidth="2.5" />
+      <path d="M80 60v12M74 66h12" stroke="#4165ed" strokeWidth="2.5" strokeLinecap="round" />
+    </svg>
   )
 }
