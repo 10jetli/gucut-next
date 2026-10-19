@@ -40,7 +40,7 @@ import {
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN } from '@/components/zort'
+import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN, ZORT_BACK_LINK } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
@@ -267,7 +267,7 @@ export default function BundleDetailPage() {
 
   return (
     <div className="p-4 md:p-6">
-      <Link href="/core/bundles" className="text-[12.5px] text-[#337ab7] hover:underline">← สินค้าเป็นชุด</Link>
+      <Link href="/core/bundles" className={ZORT_BACK_LINK}>{เหมือนZORT ? '‹' : '←'} สินค้าเป็นชุด</Link>
 
       {error && <ErrorBox title="ดึงข้อมูลชุดไม่ได้">{error}</ErrorBox>}
       {loading && !bundle && <LoadingState />}
