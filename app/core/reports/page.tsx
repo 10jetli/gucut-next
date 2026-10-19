@@ -12,6 +12,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import ExportButton from '@/components/zort/ExportButton'
+import ZortCardTitle from '@/components/zort/ZortCardTitle'
+import ZortPie from '@/components/zort/ZortPie'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import {
@@ -80,6 +84,11 @@ const DEAD_RANGES: { days: number; label: string; months?: number }[] = [
 const deadQs = (days: number) => {
   const m = DEAD_RANGES.find((r) => r.days === days)?.months
   return `${m ? `months=${m}` : `days=${days}`}&sort=lastsold`
+}
+
+/** โหมดเหมือน ZORT: พับเนื้อหาเดิมทั้งก้อนไว้ใต้บรรทัดสรุป (ไม่ถอดอะไร) · นอกโหมดแสดงตามเดิม */
+function พับถ้า({ พับ, สรุป, children }: { พับ: boolean; สรุป: React.ReactNode; children: React.ReactNode }) {
+  return พับ ? <ZortLookFold tone="amber" สรุป={สรุป}><div className="mt-2">{children}</div></ZortLookFold> : <>{children}</>
 }
 
 export default function CoreProductReportPage() {
@@ -196,6 +205,12 @@ export default function CoreProductReportPage() {
     return !s || String(r.sku ?? '').toLowerCase().includes(s) || (r.name ?? '').toLowerCase().includes(s)
   })
 
+  /** โหมดเหมือน ZORT ใช้ผังการ์ดสรุปแบบ ZORT ได้เฉพาะเมื่อมียอดสดจาก ZORT */
+  const โหมดZ = เหมือนZORT && ยอดZORTสด !== null
+  /** วงกลมรายคลัง: เฉพาะมุมมองรายคลัง และรู้มูลค่าครบทุกคลัง (มี null = ไม่วาด) */
+  const วาดวงคลัง = เหมือนZORT && valueBy === 'warehouse' && !!whs && whs.length > 0 && whs.every((w) => typeof w.stockValue === 'number')
+  const สีคลัง = ['#8ea8f8', '#d1d5db', '#f2938c', '#13af82', '#efb15d']
+
   return (
     <div className="p-4 md:p-6">
       <PageHead
@@ -210,7 +225,23 @@ export default function CoreProductReportPage() {
         <>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
             <Card>
-              <p className="text-[15px] font-semibold text-gray-900 mb-2">สรุปมูลค่าสินค้าทั้งหมด</p>
+              {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/ProductReport 19 ต.ค. 2569): การ์ดมีแค่ยอดรวมตัวใหญ่ + ปุ่ม Download Excel
+                   ⇒ ใช้เฉพาะตอนมียอดสดจาก ZORT (เลขที่ตรงกับ ZORT) · เนื้อหาเดิมทั้งก้อน (เลขวิธีคิดของเรา + กล่องเตือน) พับไว้ใต้บรรทัดสรุป ไม่ถอด */}
+              {โหมดZ ? <div className="mb-2"><ZortCardTitle รูป="฿">สรุปมูลค่าสินค้าทั้งหมด</ZortCardTitle></div>
+                : <p className="text-[15px] font-semibold text-gray-900 mb-2">สรุปมูลค่าสินค้าทั้งหมด</p>}
+              {โหมดZ && (
+                <div className="flex flex-col items-center justify-center py-14">
+                  <p className="font-['Lato','Boon',sans-serif] text-[48px] font-semibold leading-none" style={{ color: '#2f8dde' }} title={`มูลค่าสินค้าทั้งหมด · ${ยอดZORTเมื่อ}`}>
+                    {ยอดZORTสด!.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <span className="text-[15px] text-[#3e3e3e] font-normal"> บาท</span>
+                  </p>
+                  <button onClick={downloadStockValue}
+                    className="mt-8 inline-flex items-center bg-white border border-[#ced4da] rounded-[3px] px-2 h-[27px] text-[13px] font-bold font-['Lato',sans-serif] text-[#3e3e3e] hover:bg-gray-50">
+                    Download Excel
+                  </button>
+                </div>
+              )}
+              <พับถ้า พับ={โหมดZ} สรุป={<>{catErr ? '⚠️ ดึงมูลค่าตามต้นทุนเฉลี่ยไม่ได้รอบนี้ · ' : ''}ที่มาของเลข + เลขวิธีคิดของเรา (ราคาขาย · ราคาทุน) — คนละวิธีกับ ZORT ห้ามเทียบทีละบาท</>}>
               <div className="flex flex-col items-center justify-center py-8">
                 {/* ⚠️ **ต้องโชว์ทั้งสองแบบพร้อมป้ายกำกับ ห้ามโชว์ตัวเดียวลอย ๆ**
                     เลขนี้ต่างจาก ZORT หลายล้าน คนเปิดสองจอเทียบกันแล้วไม่มีคำอธิบาย
@@ -310,10 +341,25 @@ export default function CoreProductReportPage() {
                 {' '}· ตัวเลขทั้งสองแบบข้างบนจึงคร่อมเลขของ ZORT อยู่ (ราคาขายสูงกว่า · ราคาทุนต่ำกว่า)
                 {' '}<b>ห้ามเอาไปเทียบทีละบาท</b> ใช้ดูแนวโน้มและสัดส่วนได้
               </div>
+              </พับถ้า>
             </Card>
 
             <Card>
-              <p className="text-[15px] font-semibold text-gray-900 mb-2">มูลค่าสินค้าคงเหลือรายคลัง</p>
+              {เหมือนZORT ? <div className="mb-2"><ZortCardTitle รูป="▦">มูลค่าสินค้าคงเหลือรายคลัง</ZortCardTitle></div>
+                : <p className="text-[15px] font-semibold text-gray-900 mb-2">มูลค่าสินค้าคงเหลือรายคลัง</p>}
+              {/* 📐 โหมดเหมือน ZORT: วงกลมสัดส่วนรายคลังแบบ ZORT — **วาดเฉพาะเมื่อรู้มูลค่าครบทุกคลัง**
+                   (มีคลังที่ ZORT ไม่ตอบ = null ⇒ สัดส่วนผิด ⇒ ไม่วาด ใช้ตารางตามเดิม — กฎ "ห้ามวาดจากข้อมูลที่ไม่มี") · ตารางพับไว้ใต้วงกลม */}
+              {วาดวงคลัง && (
+                <div className="flex items-center justify-center gap-8 flex-wrap py-6">
+                  <ZortPie ป้าย="สัดส่วนมูลค่าคงเหลือรายคลัง" ขนาด={220} ชิ้น={(whs ?? []).map((w, i) => ({ ค่า: w.stockValue as number, สี: สีคลัง[i % สีคลัง.length] }))} />
+                  <div className="text-[14px] text-[#3e3e3e] space-y-1">
+                    {(whs ?? []).map((w, i) => (
+                      <p key={w.code}><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: สีคลัง[i % สีคลัง.length] }} />{w.name || w.code}</p>
+                    ))}
+                  </div>
+                </div>
+              )}
+              <พับถ้า พับ={วาดวงคลัง} สรุป={<>ตัวเลขรายคลัง/รายหมวด (ตาราง)</>}>
               {/* 🔴 **แก้ข้อความที่เคยผิดชั้น (4 ก.ย. 2569)** — เดิมเขียนว่า
                   "ZORT ไม่เปิดช่องทางให้ดึงสต็อกแยกตามคลัง … เป็นข้อจำกัดของต้นทาง
                    **ไม่ใช่ของที่ยังทำไม่เสร็จ**" ⇒ กลับด้านกับความจริง
@@ -424,6 +470,7 @@ export default function CoreProductReportPage() {
                 ⚠️ สองมุมมองนี้ <b>คิดคนละฐาน</b> — รายคลังคือตัวเลขที่ ZORT ตอบสด · รายหมวดคิดจากต้นทุนเฉลี่ยที่คัดมา
                 {' '}⇒ <b>ผลรวมไม่เท่ากันเป็นเรื่องปกติ</b>
               </p>
+              </พับถ้า>
             </Card>
           </div>
 

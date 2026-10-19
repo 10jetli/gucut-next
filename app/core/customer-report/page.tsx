@@ -17,6 +17,7 @@ import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
+import ZortPie from '@/components/zort/ZortPie'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
@@ -212,38 +213,6 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
       </div>
       <p className="text-[11px] text-gray-400 mt-1">ตัดใบยกเลิกออกแล้ว แต่ยังรวมใบที่ยังไม่จ่าย</p>
     </div>
-  )
-}
-
-/** 🥧 วงกลมแบ่งสัดส่วนแบบ ZORT (โหมดเหมือน ZORT · ภาพ /Dashboard/ContactReport 19 ต.ค. 2569: % เขียนสีขาวในชิ้น)
- *  ⚠️ วาดจากเลขชุดเดียวกับบรรทัดคำอธิบายข้าง ๆ เท่านั้น — ไม่มีเลขใหม่ · ชิ้นที่ศูนย์ไม่วาด
- *  ⚠️ % คิดจากผลรวมของชิ้นที่ส่งมา (ถ้ามีก้อน "นอก 500 รายแรก" ก็รวมด้วย) */
-function วงกลมZORT({ ชิ้น }: { ชิ้น: { ค่า: number; สี: string }[] }) {
-  const รวม = ชิ้น.reduce((n, x) => n + Math.max(0, x.ค่า), 0)
-  if (!รวม) return null
-  let มุม = -Math.PI / 2
-  const R = 48, cx = 50, cy = 50
-  return (
-    <svg viewBox="0 0 100 100" className="w-[260px] h-[260px] shrink-0" role="img" aria-label="สัดส่วนยอดขายตามกลุ่มลูกค้า">
-      {ชิ้น.filter((x) => x.ค่า > 0).map((x, i) => {
-        const ส่วน = x.ค่า / รวม
-        const a0 = มุม, a1 = มุม + ส่วน * 2 * Math.PI
-        มุม = a1
-        const กลาง = (a0 + a1) / 2
-        const d = ส่วน >= 0.9999
-          ? `M ${cx} ${cy - R} A ${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R} Z`
-          : `M ${cx} ${cy} L ${cx + R * Math.cos(a0)} ${cy + R * Math.sin(a0)} A ${R} ${R} 0 ${ส่วน > 0.5 ? 1 : 0} 1 ${cx + R * Math.cos(a1)} ${cy + R * Math.sin(a1)} Z`
-        return (
-          <g key={i}>
-            <path d={d} fill={x.สี} stroke="#fff" strokeWidth="0.6" />
-            {ส่วน >= 0.05 && (
-              <text x={cx + R * 0.62 * Math.cos(กลาง)} y={cy + R * 0.62 * Math.sin(กลาง)} fill="#fff" fontSize="5.2" fontWeight="600"
-                textAnchor="middle" dominantBaseline="middle">{(Math.round(ส่วน * 1000) / 10).toFixed(1)}%</text>
-            )}
-          </g>
-        )
-      })}
-    </svg>
   )
 }
 
@@ -616,7 +585,7 @@ export default function CoreCustomersPage() {
                     const สีไม่ระบุ = เหมือนZORT ? '#2f8dde' : '#9ca3af'
                     return (
                       <div className={เหมือนZORT ? 'flex items-center gap-8 flex-wrap' : ''}>
-                      {เหมือนZORT && <วงกลมZORT ชิ้น={[
+                      {เหมือนZORT && <ZortPie ป้าย="สัดส่วนยอดขายตามกลุ่มลูกค้า" ชิ้น={[
                         { ค่า: salesNew, สี: '#8ea8f8' },
                         { ค่า: salesRep, สี: '#f2938c' },
                         { ค่า: salesUnk, สี: '#d1d5db' },
