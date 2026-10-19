@@ -1045,7 +1045,7 @@ export default function CoreSalesPage() {
       )}
 
       {data && (
-        <div className={เหมือนZORT ? 'text-[12.5px] text-gray-500 mb-5' : 'text-[12.5px] text-gray-500 mb-3'}>
+        <div className={เหมือนZORT ? 'text-[12.5px] text-gray-500 mb-2 leading-[22px]' : 'text-[12.5px] text-gray-500 mb-3'}>
           {/* ZORT เขียนวันแบบ 1/6/2569–2/9/2569 ไม่ใช่ ISO — ตรงนี้คือบรรทัดเดียวกันของเขา
               📐 โหมดเหมือน ZORT (ภาพ /Sell/list 19 ต.ค. 2569): Kanit 18 สีเข้ม "ค้นหา: วันที่:…" · นิยามวันย้ายเข้า ⓘ */}
           <span className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[18px] text-[#3e3e3e]" : ''}>🔍 ค้นหา: วันที่ {thaiShort(data.from)} – {thaiShort(data.to)}</span>
