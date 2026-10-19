@@ -25,6 +25,8 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 /* หัวการ์ดจอผู้ติดต่อของ ZORT = Boon 14/500 #3e3e3e (ไม่ใช่เทาแบบจอใบขาย · วัด 17 ต.ค. 2569) */
 import { PageHead, TH_KANIT, THR_KANIT, DL_CARD } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
 interface Order {
@@ -114,14 +116,17 @@ function Inner() {
   const ป้าย = ป้ายชื่อซ้ำจาก(!!sp.get('name') && !sp.get('id'), d?.['ชื่อซ้ำกันหลายราย'], !!d)
 
   return (
-    <div className="p-4 md:p-6 max-w-[980px]">
-      <p className="text-[12.5px] mb-2">
+    <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[980px]'}`}>
+      {/* 📐 โหมดเหมือน ZORT (วัด DOM /Contact/ContactDetail 19 ต.ค. 2569 · C20892): ลิงก์กลับ Kanit 14 · จอกว้างเต็ม */}
+      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}>
         <Link href="/core/customers" className="text-[#337ab7] hover:underline">‹ ผู้ติดต่อ</Link>
       </p>
       {/* หัวจอแบบ ZORT: "รายละเอียดผู้ติดต่อ (รหัส : C…)" · ชื่อย้ายไปแถวแรกของกล่องข้อมูล
           ลูกค้ามาร์เก็ตเพลสไม่มีรหัส (ไม่อยู่ในทะเบียน) ⇒ ใส่ชื่อในวงเล็บแทน ไม่ปล่อยหัวจอไม่บอกว่าเป็นใคร */}
       <PageHead title={c?.code ? `รายละเอียดผู้ติดต่อ (รหัส : ${String(c.code)})` : `รายละเอียดผู้ติดต่อ (${d?.name || key || 'ลูกค้า'})`}
-        summary={<span className="text-gray-400">ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา</span>}
+        summary={เหมือนZORT
+          ? <span className="text-gray-400 cursor-help text-[14px]" title="ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา">ⓘ</span>
+          : <span className="text-gray-400">ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Contact/ContactDetail ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า) */ />
 
       {/* 🔴 **ข้อจำกัดการจับคู่ต้องอยู่ใต้ชื่อลูกค้า ไม่ใช่ท้ายจอ** (ย้ายขึ้นมา 12 ก.ย. 2569)
@@ -148,9 +153,12 @@ function Inner() {
         ) : null}
 
       {d?.matchNote && (
+        /* โหมดเหมือน ZORT: พับ แต่บรรทัดสรุปยังบอกว่ามีข้อจำกัดการจับคู่ (คำเตือนว่าใบที่เห็นอาจไม่ใช่ของคนนี้ "ชื่อซ้ำ" อยู่ข้างบนและไม่พับ) */
+        <ZortLookFold สรุป={<>⚠️ ข้อจำกัดการจับคู่ลูกค้า — จับคู่ออเดอร์ด้วยชื่อ</>}>
         <p className="mb-3 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
           ⚠️ <b>ข้อจำกัดการจับคู่ลูกค้า</b> — {d.matchNote}
         </p>
+        </ZortLookFold>
       )}
 
       {/* 🔴 ชื่อถูกปิดบัง — ต้องบอกก่อนที่ผู้ใช้จะเห็นเลข 0 แล้วเข้าใจผิด */}
@@ -175,7 +183,36 @@ function Inner() {
                ไม่ใช่สถานะเอกสาร (ใบ "รอโอนสินค้า" ที่ชำระครบแล้ว ZORT ก็นับ)
             ⚠️ ใบที่สามของ ZORT (ยอดค้างชำระ) **จงใจไม่ใส่เลข** — วัดแล้วพบว่า ZORT ไม่ได้เอา
                ผลรวมใบที่ยังไม่ชำระมาใส่ ⇒ ถ้าเราคิดเองจะได้เลขที่ดูดีแต่ตอบคนละคำถามกับจอที่คนเชื่ออยู่ */}
-        <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        {/* 📐 โหมดเหมือน ZORT — วัด DOM 19 ต.ค. 2569: การ์ดขาว ช่องใน 20 · วงไอคอน 48 · ป้าย Boon 14 w500 #3e3e3e · ค่า Lato 24 w600
+            เดือนนี้ วง #ebf6ff สี #2f8dde · ปีนี้ วง #cefff1 สี #13af82 · ค้างชำระ วง #ffebeb สี #f25757 (สัญลักษณ์ในวงเป็นของเรา)
+            ⚠️ ค่าคงความจริงของเรา: ไม่มียอด = 0 (ZORT เขียน "-") · ค้างชำระ = "ยังคิดไม่ได้" เหตุผลอยู่ใน title + บรรทัดพับข้างล่าง */}
+        {เหมือนZORT && (
+          <>
+            <div className="mb-3 grid grid-cols-1 gap-[30px] sm:grid-cols-3">
+              {([
+                ['ยอดขายเดือนนี้ (บาท)', '#ebf6ff', '#2f8dde', '▦', typeof d?.money?.thisMonth === 'number' ? baht(d.money.thisMonth) : '—', d?.money?.month ? `ช่วง ${d.money.month}` : 'ยังไม่รู้ช่วงที่ตัด'],
+                ['ยอดขายปีนี้ (บาท)', '#cefff1', '#13af82', '▦', typeof d?.money?.thisYear === 'number' ? baht(d.money.thisYear) : '—', d?.money?.year ? `ช่วง ${d.money.year}` : 'ยังไม่รู้ช่วงที่ตัด'],
+                ['ยอดค้างชำระ (บาท)', '#ffebeb', '#f25757', '฿', 'ยังคิดไม่ได้', d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'],
+              ] as const).map(([ป้าย, วง, สี, รูป, ค่า, เหตุ]) => (
+                <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between" title={เหตุ}>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
+                  <div className="text-right">
+                    <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
+                    <p className={`${ค่า === 'ยังคิดไม่ได้' ? "font-['Kanit',sans-serif] text-[18px]" : "font-['Lato',sans-serif] text-[24px]"} font-semibold mt-1 m-0`} style={{ color: ค่า === '—' ? '#ced4da' : สี }}>{ค่า}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <ZortLookFold tone="gray" สรุป={<>กติกาการนับยอดเดือนนี้/ปีนี้ · ทำไมยอดค้างชำระยังคิดไม่ได้</>}>
+              <p className="mb-3 text-[11.5px] text-gray-500">
+                {d?.money?.scope ? <>กติกาของสองการ์ดแรก: {d.money.scope} · </> : null}
+                ยอดค้างชำระ: {d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'}
+                {' · '}จอ ZORT เขียน “-” เมื่อไม่มียอด ส่วนจอนี้เขียนเลข 0 (ขีดของเราแปลว่า “ยังไม่รู้”)
+              </p>
+            </ZortLookFold>
+          </>
+        )}
+        {!เหมือนZORT && <div className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
           {[
             { t: 'ยอดขายเดือนนี้ (บาท)', v: d?.money?.thisMonth, sub: d?.money?.month },
             { t: 'ยอดขายปีนี้ (บาท)', v: d?.money?.thisYear, sub: d?.money?.year },
@@ -198,8 +235,8 @@ function Inner() {
               {d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'}
             </div>
           </div>
-        </div>
-        {d?.money?.scope && (
+        </div>}
+        {!เหมือนZORT && d?.money?.scope && (
           <p className="mb-3 text-[11.5px] text-gray-500">
             กติกาของสองการ์ดแรก: {d.money.scope}
             {' · '}จอ ZORT เขียน “-” เมื่อไม่มียอด ส่วนจอนี้เขียนเลข 0 (ขีดของเราแปลว่า “ยังไม่รู้”)
