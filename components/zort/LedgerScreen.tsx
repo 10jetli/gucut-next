@@ -111,7 +111,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
 
 export default function LedgerScreen({
   title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, กรอบแคบZORT, purpose, meanwhile,
-  emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv, zortCols,
+  emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv, ผังแผงZORT, zortCols,
 }: {
   title: string
   cols: LedgerCol[]
@@ -130,6 +130,9 @@ export default function LedgerScreen({
    *  🔴 ต้องส่งมาจากจอที่ใช้ เพราะแต่ละหน้าของ ZORT มีช่องไม่เหมือนกัน
    *     (กดอ่านของจริงแล้วเท่านั้น ห้ามเดาจากหน้าอื่น) */
   missingAdv?: { what: string; why: string }[]
+  /** ช่องของแผงค้นหาขั้นสูงของ ZORT ตามลำดับ DOM (อ่านของที่ซ่อนอยู่) — ช่องที่มี `วันที่` ผูกกับช่วงวันที่ที่กรองได้จริง
+   *  ช่องอื่นวาดไว้ตำแหน่งเดียวกับ ZORT แต่ปิด ด้วยเหตุ `เหตุ` ตัวเดียว (ที่เดียวกับรายการ ไม่มีให้กรอง) · ไม่ส่ง = มีแค่ช่วงวันที่เหมือนเดิม */
+  ผังแผงZORT?: { เหตุ: string; ช่อง: { label: string; kind: 'text' | 'number' | 'select' | 'check' | 'date'; วันที่?: 'from' | 'to' }[] }
   /** ✅ **หลักฐานว่า "ว่างจริง" ไม่ใช่ "ยังไม่รู้"** — ข้อความสั้น ๆ ที่บอก **ช่วงวันที่ใช้ตรวจ**
    *  🔴 ใส่ได้เฉพาะจอที่ **เปิดช่วงวันกว้างแล้วยังไม่มีรายการ** เท่านั้น
    *     บทเรียน 6 ก.ย. 2569: จอ ZORT ตั้งช่วงเริ่มต้นแคบ (/Sell/list 7 วัน = 122 · 10 ปี = 26,030)
@@ -453,10 +456,16 @@ export default function LedgerScreen({
       {/* 🔍 แผงค้นหาขั้นสูง — ใช้ตัวประกอบร่วม · มีเฉพาะช่องที่ท่อกรองให้จริง */}
       <AdvancedSearch
         open={advOpen && canDateFilter}
-        fields={[
-          { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
-          { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
-        ]}
+        fields={ผังแผงZORT
+          ? ผังแผงZORT.ช่อง.map((c) => c.วันที่ === 'from'
+            ? { label: c.label, kind: 'date' as const, value: advFrom, onChange: (v: string) => setAdvFrom(String(v)) }
+            : c.วันที่ === 'to'
+              ? { label: c.label, kind: 'date' as const, value: advTo, onChange: (v: string) => setAdvTo(String(v)) }
+              : { label: c.label, kind: c.kind, value: c.kind === 'check' ? false : '', onChange: () => {}, width: 140, ปิดไว้: ผังแผงZORT.เหตุ })
+          : [
+            { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
+            { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
+          ]}
         onApply={() => void loadZort()}
         onClear={() => { setAdvFrom(''); setAdvTo('') }}
         canClear={!!advFrom || !!advTo}
@@ -464,7 +473,9 @@ export default function LedgerScreen({
         serverFiltered="คำค้นหา · ช่วงวันที่"
         /* 🔎 ช่องที่ ZORT มีแต่เราไม่มี — จอที่เรียกใช้ส่งมาเอง (ไม่เดาแทนหน้าอื่น)
            ยิงตรวจแล้วว่าเส้น `?zortlist=` รับแค่ keyword/from/to ⇒ ช่องอื่นใส่ไปก็ไม่มีผล */
-        notAvailable={missingAdv}
+        notAvailable={missingAdv ?? (ผังแผงZORT
+          ? [{ what: ผังแผงZORT.ช่อง.filter((c) => !c.วันที่).map((c) => c.label).join(' · '), why: ผังแผงZORT.เหตุ }]
+          : undefined)}
         extraNote="ใส่ช่องเดียวก็ได้"
       />
       </>}
