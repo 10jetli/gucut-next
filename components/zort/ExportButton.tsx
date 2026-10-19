@@ -16,6 +16,7 @@ import {
   type Cell, type Coverage,
 } from '@/lib/csv-export'
 import { BtnGhost } from './index'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export interface ExportSpec<T> {
   /** ชื่อไฟล์ (ไม่ต้องใส่ .csv · ตัวปุ่มเติม "-ดึง<วันไทย>" ให้เองตามกติกาข้อ ③) */
@@ -43,6 +44,9 @@ export interface ExportSpec<T> {
   /** เพดานแถวต่อรอบ (ท่อส่วนใหญ่ 200) */
   limit?: number
 }
+
+/** อีโมจิ/สัญลักษณ์นำหน้าป้าย (เช่น 📗) — โหมดเหมือน ZORT ตัดออก เพราะ ZORT ใช้ไอคอนไฟล์แทน */
+const อีโมจินำหน้า = new RegExp('^\\P{L}+\\s*', 'u')
 
 export default function ExportButton<T>({ spec, disabled, label = '📤 ส่งออก Excel', onDone }: {
   spec: ExportSpec<T>
@@ -109,9 +113,19 @@ export default function ExportButton<T>({ spec, disabled, label = '📤 ส่�
 
   return (
     <span className="inline-flex flex-col items-start">
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Marketplace/List 19 ต.ค. 2569): ปุ่มเล็กพื้นขาวขอบเทา Lato หนา 13
+           ไอคอนไฟล์วาดเอง (ไม่เอาไอคอนของ ZORT) · ตัดอีโมจินำหน้าป้ายออก · การทำงานเหมือนเดิมทุกอย่าง */}
+      {เหมือนZORT ? (
+        <button type="button" onClick={run} disabled={busy || disabled}
+          className="inline-flex items-center gap-1.5 bg-white border border-[#ced4da] rounded-[3px] px-2 h-[27px] text-[13px] font-bold font-['Lato',sans-serif] text-[#3e3e3e] hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed">
+          <svg aria-hidden width="11" height="13" viewBox="0 0 11 13" fill="none" stroke="#3e3e3e" strokeWidth="1"><path d="M1 .5h6l3.5 3.5v8.5h-9.5z" /><path d="M3 6l4 4M7 6l-4 4" /></svg>
+          {busy ? `กำลังรวบรวม… ${got.toLocaleString('th-TH')} แถว` : label.replace(อีโมจินำหน้า, '')}
+        </button>
+      ) : (
       <BtnGhost onClick={run} disabled={busy || disabled}>
         {busy ? `กำลังรวบรวม… ${got.toLocaleString('th-TH')} แถว` : label}
       </BtnGhost>
+      )}
       {/* 🔴 ข้อความนี้คือ **ผลลัพธ์เดียวที่ผู้ใช้ได้** เมื่อไฟล์ไม่ออก — ไม่ใช่คำเตือนประกอบ
           ⇒ ใช้สีแดงเหมือนงานที่ไม่สำเร็จจริง ๆ (ของเดิมเป็นสีเหลือง เพราะตอนนั้นไฟล์ยังออกคู่กัน)
           กฎ CLAUDE.md: หัวข้อความต้องตรงกับสิ่งที่เกิดขึ้นจริง ไม่ใช่เรื่องถ้อยคำ */}

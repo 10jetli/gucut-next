@@ -217,11 +217,13 @@ export default function QuotationsPage() {
                     (cut = 0 เพราะไม่รู้) จะตกไปพูดว่า **"ทั้งหมด"** ซึ่งเป็นคำรับประกันที่เราไม่ได้รู้ */}
                 มูลค่า{!รู้ทั้งชุด ? `เฉพาะ ${fmtNum(all.length)} ใบที่ดึงมา (ยังไม่รู้ว่าทั้งชุดมีกี่ใบ)`
                   : cut > 0 ? `เฉพาะ ${fmtNum(all.length)} ใบที่ดึงมา` : 'ทั้งหมด'} {fmtMoney(sum)} บาท
-                {' | '}
-                {/* ⚠️ ต้องบอกว่าจอนี้ยิง ZORT สด ต่างจากจออื่นที่อ่านคลังเงา */}
-                <span className="text-gray-400">
-                  {data.live ? 'ดึงสดจาก ZORT ทุกครั้งที่เปิดจอ (ไม่ได้ทำสำเนา)' : 'อ่านจากคลังของเราเอง'}
-                </span>
+                {/* ⚠️ ต้องบอกว่าจอนี้ยิง ZORT สด ต่างจากจออื่นที่อ่านคลังเงา
+                    📐 โหมดเหมือน ZORT: ZORT จบบรรทัดที่ยอดเงิน ⇒ ที่มาย้ายเข้า ⓘ (ยังอ่านได้ ไม่ถอด) */}
+                {เหมือนZORT
+                  ? <span className="text-gray-400 cursor-help text-[14px]" title={data.live ? 'ดึงสดจาก ZORT ทุกครั้งที่เปิดจอ (ไม่ได้ทำสำเนา)' : 'อ่านจากคลังของเราเอง'}> ⓘ</span>
+                  : <>{' | '}<span className="text-gray-400">
+                    {data.live ? 'ดึงสดจาก ZORT ทุกครั้งที่เปิดจอ (ไม่ได้ทำสำเนา)' : 'อ่านจากคลังของเราเอง'}
+                  </span></>}
               </>
             )
             : 'กำลังโหลด…'
@@ -319,7 +321,8 @@ export default function QuotationsPage() {
               ของเรามีปุ่มรีเฟรชอยู่แล้วแต่ไปอยู่บนหัวจอ ⇒ **มีของครบแต่วางคนละที่**
               คนที่ชิน ZORT จะกวาดตาหาตรงนี้ ⇒ วางไว้ทั้งสองที่ ไม่ใช่ย้าย
               (ย้ายขึ้นไปที่เดียวก็ผิดผัง · ย้ายลงมาที่เดียวก็หายจากที่คนของเราชินอยู่) */}
-          <div className="flex items-end justify-between gap-3">
+          {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list 19 ต.ค. 2569): แถบแท็บอยู่ **บนการ์ดขาวเดียวกับตาราง** ช่องซ้าย 20 · ปุ่มโหลดใหม่ชิดขวาในแถบ */}
+          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pl-5 pr-6' : 'flex items-end justify-between gap-3'}>
             {/* 🔶 **ไม่เพิ่มแท็บเอง** — จอนี้ลอกแท็บมาจาก ZORT (ทั้งหมด · อนุมัติแล้ว) เท่านั้น
                 แม้ข้อมูลจะมี 3 สถานะ (ยกเลิก · รออนุมัติ · อนุมัติแล้ว) ก็ไม่ตั้งแท็บที่ ZORT ไม่มี
                 (กติกา: ของที่เราคิดขึ้นเอง ห้ามอยู่ในจอที่กำลังลอก ZORT)
@@ -338,7 +341,7 @@ export default function QuotationsPage() {
             </div>
             {/* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านอยู่ในแถบแท็บ (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */}
             {เหมือนZORT && (
-              <div className="ml-auto mb-1 min-w-0">
+              <div className="ml-auto min-w-0">
                 <StorePicker value={store} disabled={loading}
                   onChange={(v) => { setStore(v); load(v) }}
                   ต่อท้าย={<>{data?.storeScope && <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${data.storeScope}`}>ⓘ</span>}{tab === '' && all.filter((r) => r.status === 'Voided').length > 0 && <span className="text-[11.5px] text-amber-800"> · ⚠️ รวมยกเลิก {fmtNum(all.filter((r) => r.status === 'Voided').length)}</span>}</>} />
@@ -349,8 +352,8 @@ export default function QuotationsPage() {
               disabled={loading}
               aria-label="โหลดใหม่"
               title="โหลดใหม่ — จอนี้ดึงสดจาก ZORT ทุกครั้ง"
-              className="mb-2 shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
-                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+              className={`${เหมือนZORT ? '' : 'mb-2 '}shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
+                bg-white text-gray-500 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed`}
             >
               {loading ? '⏳' : '⟳'}
             </button>
