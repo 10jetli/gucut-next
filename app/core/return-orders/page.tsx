@@ -334,6 +334,8 @@ export default function ReturnOrdersPage() {
                     'คนละฐานกับหน้า “สินค้าที่ถูกคืนบ่อย”',
                   ].filter(Boolean).join('\n')}>ⓘ</span>
                 )}
+                {/* 📐 โหมดเหมือน ZORT: กล่องขอบเขตต่อท้ายยอดเงินที่มันเตือน (ป้ายขอบเขตต้องอยู่ติดตัวเลข) · inline-block ⇒ ตอนพับไม่เพิ่มความสูง ตารางเริ่มตำแหน่งเดียวกับ ZORT */}
+                {เหมือนZORT && กล่องขอบเขต && <span className="inline-block align-middle ml-3 font-['Boon',sans-serif]">{กล่องขอบเขต}</span>}
                 {!เหมือนZORT && <>
                 {' | '}
                 <span className="text-gray-400">
@@ -366,7 +368,7 @@ export default function ReturnOrdersPage() {
 
       {!loading && !error && d && (
         <>
-          {/* 📐 โหมดเหมือน ZORT: กล่องขอบเขตย้ายไปอยู่ขวาของช่องค้นหา (ข้างตัวเลือกร้าน) — บรรทัดสรุปยังเห็นบนจอเหมือนเดิม
+          {/* 📐 โหมดเหมือน ZORT: กล่องขอบเขตย้ายไปต่อท้ายบรรทัดยอดเงินบนหัวจอ — บรรทัดสรุปยังเห็นบนจอเหมือนเดิม
                แต่ไม่ดันตารางลง 30px (ภาพ /Buy/list?sttype=1 19 ต.ค. 2569: ZORT ตารางเริ่มใต้ช่องค้นหาทันที) */}
           {!เหมือนZORT && กล่องขอบเขต}
 
@@ -378,12 +380,9 @@ export default function ReturnOrdersPage() {
             advanced={<LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
             /* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านมาอยู่ขวาของช่องค้นหา (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */
             right={เหมือนZORT ? (
-              <div className="flex items-start gap-3 min-w-0">
-                {กล่องขอบเขต && <div className="min-w-0 pt-1.5 whitespace-nowrap">{กล่องขอบเขต}</div>}
-                <StorePicker value={store} disabled={loading}
-                  onChange={(v) => { setStore(v); load(q, v) }}
-                  ต่อท้าย={d?.storeScope ? <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${d.storeScope}`}>ⓘ</span> : undefined} />
-              </div>
+              <StorePicker value={store} disabled={loading}
+                onChange={(v) => { setStore(v); load(q, v) }}
+                ต่อท้าย={d?.storeScope ? <span className="text-[11.5px] text-gray-400 cursor-help" title={`🏬 ${d.storeScope}`}>ⓘ</span> : undefined} />
             ) : undefined}
           />
 
