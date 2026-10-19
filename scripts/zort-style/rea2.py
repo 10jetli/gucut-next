@@ -60,6 +60,10 @@ with sync_playwright() as pw:
                 pg.bring_to_front()
                 return pg.context.new_cdp_session(pg).send("Target.getTargetInfo")["targetInfo"]["targetId"]
             # 🙈 ซ่อนป๊อปอัปบนจอ ZORT (เช่น "อัปโหลดใบหักภาษี ณ ที่จ่าย") ด้วยการซ่อนใน DOM เครื่องเรา — ไม่กดปุ่ม ไม่ส่งอะไรไป ZORT
+            #    ⚠️ ซ่อนครั้งเดียวไม่พอ — ป๊อปอัปเด้งช้ากว่าโหลดหน้า แล้วติดเข้าภาพ (19 ต.ค. 2569: หมวด 41.6 เพราะป๊อปอัปภาษีบังทั้งจอ)
+            #       ⇒ ใส่ style ค้างไว้ในหน้า ครอบป๊อปอัปที่เด้งทีหลังด้วย แล้วรอให้เลยจังหวะเด้งก่อนถ่าย
+            pz.add_style_tag(content=".modal,.modal-backdrop,.swal2-container{display:none!important} body.modal-open{overflow:auto!important}")
+            pz.wait_for_timeout(2500)
             pz.evaluate("""()=>{document.querySelectorAll('.modal,.modal-backdrop,.swal2-container,[class*=chat-widget],#launcher,iframe[title*=chat i]').forEach(e=>e.style.setProperty('display','none','important'));document.body.classList.remove('modal-open');document.body.style.overflow=''}""")
             zi = pz.evaluate("()=>({w:innerWidth,h:innerHeight,d:devicePixelRatio})")
             ตั้งซูมเรา(zi["w"], zi["h"], zi["d"]); po.wait_for_timeout(1500)
