@@ -31,6 +31,7 @@ import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
 import DormantInShipPile from '@/components/zort/DormantInShipPile'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { คลาสวันซ้าย, คลาสวันขวา, ลูกศรวัน, ป้ายแสดง } from '@/components/zort/dateSelect'
 
 interface Row {
   id: string; source: string; number: string; channel: string
@@ -856,7 +857,9 @@ export default function CoreSalesPage() {
            (แถว: แสดง [วันที่] [ย้อนหลัง 3 เดือน] [ตัวกรอง] · อ่านปุ่ม+พิกัด 16 ต.ค. 2569) ⇒ ย้ายไปท้ายแถวขวา */
         right={
           <>
-            <span className="text-[12.5px] text-gray-500">แสดง</span>
+            <span className={ป้ายแสดง}>แสดง</span>
+            {/* 🔗 สองตัวเลือกห่อเป็นก้อนเดียว — ZORT วางติดกันใช้ขอบร่วม (ช่องว่างของแถวจะแยกมันออกจากกัน) */}
+            <span className="inline-flex items-center">
             {/* 📅 ชนิดวันที่ — โชว์เมื่อท่อประกาศ dateTypesSupported เท่านั้น (ท่อเก่า ⇒ ไม่มี dropdown · คิดจากวันที่ของใบ)
                 ยิงดู 16 ต.ค. 2569: order/ship ตอบ 200 · payment ตอบ 400 พร้อมเหตุ ⇒ ตัวเลือกปิด เหตุจาก dateTypesUnavailable */}
             {Array.isArray(data?.dateTypesSupported) && (
@@ -866,7 +869,7 @@ export default function CoreSalesPage() {
                   const v = e.target.value === 'ship' ? 'ship' : 'order'
                   setชนิดวัน(v); load(0, { dateType: v })
                 }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[110px]"
+                className={คลาสวันซ้าย('max-w-[110px]')} style={ลูกศรวัน}
               >
                 <option value="order">วันที่</option>
                 <option value="payment" disabled title={data?.dateTypesUnavailable?.payment ?? 'ท่อยังไม่รองรับ (ยิงดู 16 ต.ค. 2569: ตอบ 400)'}>
@@ -892,11 +895,12 @@ export default function CoreSalesPage() {
                 setช่วงปฏิทิน(''); setAdvFrom(''); setAdvTo('')
                 setDays(d); load(0, { days: d, from: '', to: '' })
               }}
-              className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-[150px]"
+              className={คลาสวันขวา('max-w-[150px]', Array.isArray(data?.dateTypesSupported))} style={ลูกศรวัน}
             >
               {ช่วงปฏิทินทั้งหมด.map((r) => <option key={r.ค่า} value={r.ค่า}>{r.label}</option>)}
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
             </select>
+            </span>
             <AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} แบบ="ปุ่มตัวกรอง" />
             {/* ร้าน/ช่องทาง ZORT ไม่มีในแถวนี้ (บัญชีเดียว · ช่องทางอยู่ในตัวกรอง) — ของเรารวมสองบัญชี จึงต้องมี
                 วางต่อท้ายหลังปุ่มตัวกรอง ให้ลำดับต้นแถวตรงกับ ZORT */}
