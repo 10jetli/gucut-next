@@ -30,11 +30,12 @@ import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import PipeGapFrame from '@/components/zort/PipeGapFrame'
 import {
-  PageHead, thaiDate, TableWrap, TH, THR, TD, TDR, DETAIL_BTN,
+  PageHead, thaiDate, TableWrap, TH, THR, TD, TDR, DETAIL_BTN, ZORT_BACK_LINK,
 } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
 import ZortLookFold from '@/components/zort/ZortLookFold'
+import ZortCardTitle from '@/components/zort/ZortCardTitle'
 
 interface Warehouse {
   code: string; name: string; province?: string; isPos?: boolean
@@ -137,19 +138,24 @@ export default function BranchDetailPage() {
   return (
     <div className="p-4 md:p-6 space-y-4">
       {/* หัวจอตาม ZORT: "<ชื่อคลัง> (รหัส : NEW)" + "รายละเอียดคลังสินค้า" (อ่านจอจริง 16 ต.ค. 2569) */}
-      <PageHead title={`${wh?.name || code} (รหัส : ${code})`}
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Warehouse/Details 19 ต.ค. 2569): ลิงก์กลับ "‹ คลังสินค้า/สาขา" เหนือหัวจอ · รหัสคลังตัวเล็กสีเทาต่อท้ายชื่อ */}
+      {เหมือนZORT && <p className="-mb-3"><Link href="/core/branches" className={ZORT_BACK_LINK}>‹ คลังสินค้า/สาขา</Link></p>}
+      <PageHead title={เหมือนZORT
+        ? <>{wh?.name || code} <span className="text-[16px] text-[#828282] font-normal">(รหัส : {code})</span></>
+        : `${wh?.name || code} (รหัส : ${code})`}
         summary="รายละเอียดคลังสินค้า" />
-      <div className="flex flex-wrap items-center gap-2">
-        <Link href="/core/branches" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับไปรายการคลัง</Link>
+      <div className={`flex flex-wrap items-center gap-2 ${เหมือนZORT ? '!mt-[25px]' : ''}`}>
+        {!เหมือนZORT && <Link href="/core/branches" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับไปรายการคลัง</Link>}
         {/* 🧰 ปุ่มแบบ ZORT: โอนสินค้าเข้า · โอนสินค้าออก · มูลค่าสินค้าคงเหลือ · แก้ไข · ลบ (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
         {(['โอนสินค้าเข้า', 'โอนสินค้าออก'] as const).map((t) => (
           <span key={t} title="ยังทำไม่ได้ — สร้างใบโอนต้องเขียนกลับ ZORT (จอรายการโอนของเราอ่านอย่างเดียว)"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">{t}</span>
+            className={เหมือนZORT ? `${DETAIL_BTN} !text-gray-400 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>{t}</span>
         ))}
         <Link href="/core/reports" className={DETAIL_BTN}>มูลค่าสินค้าคงเหลือ</Link>
-        {(['แก้ไข', 'ลบ'] as const).map((t) => (
+        {/* ZORT วาง แก้ไข · ลบ ชิดขวาเป็นตัวหนังสือเทา (ไม่ใช่ปุ่มกรอบ) */}
+        {(['แก้ไข', 'ลบ'] as const).map((t, i) => (
           <span key={t} title="ยังทำไม่ได้ — แก้/ลบคลังต้องทำใน ZORT"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">{t}</span>
+            className={เหมือนZORT ? `${i === 0 ? 'ml-auto ' : ''}font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>{t}</span>
         ))}
       </div>
 
@@ -176,9 +182,7 @@ export default function BranchDetailPage() {
                   ['มูลค่าสินค้าพร้อมขาย (บาท)', '#cefff1', '#13af82', '฿', '—', 'ท่อยังไม่ส่งมูลค่าพร้อมขายรายคลัง — ขีด = ยังไม่รู้ ไม่ใช่ศูนย์'],
                   ['เคลื่อนไหวล่าสุด', '#d0daff', '#4165ed', '⇄', wh.movedAt ? thaiDate(String(wh.movedAt)) : '—', wh.movedAt ? '' : 'ไม่รู้'],
                 ] as const).map(([ป้าย, วง, สี, รูป, ค่า, เหตุ]) => ({ ป้าย, วง, สี, รูป, ค่า, เหตุ, ว่าง: ค่า === '—' }))} />
-              <p className="text-[12px] text-gray-500 mt-2 mb-4">
-                ประเภท: {wh.isPos === undefined ? 'ยังไม่รู้ (ท่อไม่ส่งธง isPos)' : wh.isPos ? 'จุดขาย (เปิดบิลได้)' : 'คลัง (ไม่ใช่จุดขาย)'}
-              </p>
+              {/* ประเภทคลังย้ายไปขึ้นต้นบรรทัดพับยอดขายข้างล่าง (บรรทัดเดียวแทนสอง — ZORT ไม่มีทั้งสองบรรทัด) */}
             </>
           )}
           {!เหมือนZORT && <Card>
@@ -232,7 +236,7 @@ export default function BranchDetailPage() {
           </Card>}
 
           {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีการ์ดยอดขาย 30 วัน ⇒ พับ แต่บรรทัดสรุปยังบอกยอด (ล้ม/ยังโหลด = บอกตามจริง) */}
-          <ZortLookFold tone="gray" สรุป={<>ยอดขายของคลังนี้ · 30 วันล่าสุด: {ยอดล้ม ? 'ถามไม่สำเร็จ — ยังไม่รู้' : ยอด ? (ยอด.amount === null ? 'ยังไม่รู้ยอด' : `${fmtMoney(ยอด.amount)} บาท`) + (ยอด.orders === null ? '' : ` · ${fmtNum(ยอด.orders)} ใบ`) : 'กำลังถาม…'}</>}>
+          <ZortLookFold tone="gray" สรุป={<>{เหมือนZORT && <>ประเภท: {wh.isPos === undefined ? 'ยังไม่รู้ (ท่อไม่ส่งธง isPos)' : wh.isPos ? 'จุดขาย (เปิดบิลได้)' : 'คลัง (ไม่ใช่จุดขาย)'} · </>}ยอดขายของคลังนี้ · 30 วันล่าสุด: {ยอดล้ม ? 'ถามไม่สำเร็จ — ยังไม่รู้' : ยอด ? (ยอด.amount === null ? 'ยังไม่รู้ยอด' : `${fmtMoney(ยอด.amount)} บาท`) + (ยอด.orders === null ? '' : ` · ${fmtNum(ยอด.orders)} ใบ`) : 'กำลังถาม…'}</>}>
           <Card>
             <p className="text-[14px] font-semibold text-gray-900 mb-1">ยอดขายของคลังนี้ · 30 วันล่าสุด</p>
             {ยอดล้ม
@@ -264,7 +268,9 @@ export default function BranchDetailPage() {
 
           <Card padded={false}>
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
-              <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีช่วง === 1 ? 'วันนี้' : `${ขายดีช่วง} วัน`}</p>
+              {เหมือนZORT
+                ? <div className="mr-auto"><ZortCardTitle รูป="↗">สินค้าขายดีย้อนหลัง {ขายดีช่วง === 1 ? 'วันนี้' : `${ขายดีช่วง} วัน`}</ZortCardTitle></div>
+                : <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีช่วง === 1 ? 'วันนี้' : `${ขายดีช่วง} วัน`}</p>}
               <select value={ขายดีช่วง} onChange={(e) => setขายดีช่วง(Number(e.target.value))}
                 className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white">
                 <option value={1}>วันนี้</option><option value={7}>7 วัน</option>
