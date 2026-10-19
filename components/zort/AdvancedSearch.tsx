@@ -33,6 +33,9 @@ export interface AdvField {
   options?: { value: string; label: string }[]
   /** ความกว้างช่อง (px) — ช่องยาวอย่างชื่อสินค้าต้องกว้างกว่าช่องตัวเลข */
   width?: number
+  /** ช่องที่ ZORT มีแต่ท่อยังกรองไม่ได้ — วาดไว้ในตำแหน่งเดียวกับ ZORT แต่ **ปิด** พร้อมเหตุ (ชี้ค้างอ่านได้)
+   *  🔴 ไม่ใช่ปุ่มหลอก: กรอกไม่ได้ ไม่ส่งค่า · จอที่ใช้ต้องใส่เหตุเดียวกันใน `notAvailable` ด้วย (เหตุต้องเห็นบนจอ ไม่ใช่แค่ใน title) */
+  ปิดไว้?: string
 }
 
 /** ลิงก์เปิด/ปิดแผง — วางไว้ข้างช่องค้นหา (ตำแหน่งเดียวกับ ZORT) */
@@ -77,9 +80,22 @@ export default function AdvancedSearch({
   applyLabel?: string
 }) {
   if (!open) return null
+  /* ช่องที่ปิดไว้: กล่องเทากรอกไม่ได้ · ป้ายจาง · เหตุใน title — ครอบทุกชนิดด้วยตัววาดเดียว */
+  const ปิด = (f: AdvField) => (
+    <label key={f.label} className="text-[12.5px] text-gray-400 cursor-not-allowed" title={`ยังกรองไม่ได้ — ${f.ปิดไว้}`}>
+      {f.kind === 'check'
+        ? <span className="flex items-center gap-2 pb-1.5"><input type="checkbox" disabled />{f.label}</span>
+        : <>
+          <span className="block mb-1">{f.label}</span>
+          <input disabled type={f.kind === 'date' ? 'date' : 'text'} placeholder="ยังกรองไม่ได้"
+            className="text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 text-gray-400 cursor-not-allowed"
+            style={{ width: f.kind === 'date' ? undefined : (f.width ?? 150) }} />
+        </>}
+    </label>
+  )
   return (
     <div className="bg-white border border-gray-200 rounded-md p-3.5 mb-3 flex flex-wrap items-end gap-3">
-      {fields.map((f) => (f.kind === 'select' ? (
+      {fields.map((f) => (f.ปิดไว้ ? ปิด(f) : f.kind === 'select' ? (
         <label key={f.label} className="text-[12.5px] text-gray-600">
           <span className="block mb-1">{f.label}</span>
           <select value={String(f.value)}
