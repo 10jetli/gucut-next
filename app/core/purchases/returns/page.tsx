@@ -47,6 +47,37 @@ export default function PurchaseReturnsPage() {
       createHref="/core/purchases/returns/new"
       soonKey="buy-return"
       zortList="returnpurchaseorders"
+      /* 📐 แผงค้นหาขั้นสูงตามผัง ZORT /Sell/list?&sttype=1 (ZORT ใช้ผังจอขายกับจอนี้ · อ่านแผง #searchAdvance ที่ซ่อนอยู่ 20 ต.ค. 2569)
+         เส้น ?zortlist= รับแค่ keyword/from/to (ยิงตรวจแล้ว — คอมเมนต์ใน LedgerScreen) ⇒ ช่วงวันที่ของใบกรองได้จริง ที่เหลือวาดไว้แต่ปิด */
+      ผังแผงZORT={{
+        เหตุ: 'เส้นที่จอนี้ใช้ (?zortlist=) รับแค่คำค้น กับช่วงวันที่ของใบ — ช่องนี้ใส่ไปก็ไม่มีผล (คำค้นพิมพ์ในช่องค้นหาด้านบนได้)',
+        ช่อง: [
+          { label: 'หมายเลขรายการ', kind: 'text' },
+          { label: 'มูลค่าเริ่มต้น', kind: 'number' },
+          { label: 'จนถึงมูลค่า', kind: 'number' },
+          { label: 'อ้างอิง', kind: 'text' },
+          { label: 'ช่องทางการขาย', kind: 'text' },
+          { label: 'ชื่อตัวแทน', kind: 'text' },
+          { label: 'ผู้ใช้งาน', kind: 'select' },
+          { label: 'Tag', kind: 'text' },
+          { label: 'คลัง / สาขา', kind: 'select' },
+          { label: 'สินค้า', kind: 'text' },
+          { label: 'Serial no', kind: 'text' },
+          { label: 'แสดงเฉพาะรายการเก็บเงินปลายทาง', kind: 'check' },
+          { label: 'แสดงรายการที่ถูกซ่อน', kind: 'check' },
+          { label: 'ชื่อผู้ติดต่อ', kind: 'text' },
+          { label: 'เบอร์โทรศัพท์', kind: 'text' },
+          { label: 'อีเมลผู้ติดต่อ', kind: 'text' },
+          { label: 'ช่องทางจัดส่ง', kind: 'text' },
+          { label: 'การโอนสินค้า / การจัดส่ง', kind: 'select' },
+          { label: 'สถานะการชำระเงิน', kind: 'select' },
+          { label: 'วันที่ ตั้งแต่', kind: 'date', วันที่: 'from' },
+          { label: 'วันที่ ถึง', kind: 'date', วันที่: 'to' },
+          { label: 'วันส่งสินค้า', kind: 'date' },
+          { label: 'วันที่ชำระเงิน', kind: 'date' },
+          { label: 'วันที่โอนสินค้า', kind: 'date' },
+        ],
+      }}
       /* 🔴 ยอดรวมมาจากท่อเท่านั้น — ท่อไม่ส่งช่องไหนมา จอขึ้น "ยังไม่รู้" ไม่ใช่ 0 */
       totals={[
         { key: 'totalAmount', label: 'มูลค่ารวม' },
