@@ -22,7 +22,9 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import PipeGapFrame from '@/components/zort/PipeGapFrame'
-import { PageHead, thaiDate, RowMenu } from '@/components/zort'
+import { PageHead, thaiDate, RowMenu, Pill, toneOfStatus, DETAIL_BTN } from '@/components/zort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Row {
@@ -35,11 +37,17 @@ interface Row {
 function ช่อง({ ป้าย, ค่า }: { ป้าย: string; ค่า: React.ReactNode }) {
   return (
     <div>
-      <p className="text-[11.5px] text-gray-500">{ป้าย}</p>
-      <p className="text-[15px] font-semibold text-gray-900">{ค่า}</p>
+      {/* 📐 โหมดเหมือน ZORT (วัดจากภาพ /Logistics/Details 19 ต.ค. 2569): ป้าย 14 เทา · ค่า 18 หนา #3e3e3e */}
+      <p className={เหมือนZORT ? 'text-[14px] text-[#828282] mb-1' : 'text-[11.5px] text-gray-500'}>{ป้าย}</p>
+      <div className={เหมือนZORT ? 'text-[18px] font-semibold text-[#3e3e3e]' : 'text-[15px] font-semibold text-gray-900'}>{ค่า}</div>
     </div>
   )
 }
+
+/** ปุ่มที่ยังทำไม่ได้ · โหมดเหมือน ZORT ใช้ขนาดปุ่มแถบหัวจอของ ZORT (สูง 39) แต่ตัวอักษรเทา */
+const ปุ่มเทา = เหมือนZORT
+  ? `${DETAIL_BTN} font-['Kanit',sans-serif] !text-gray-400 cursor-not-allowed`
+  : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'
 
 const ยังไม่มี = (ข้อความ: string) => <span className="text-[12.5px] text-gray-400">{ข้อความ}</span>
 
@@ -73,20 +81,30 @@ export default function LogisticsDetailPage() {
 
   return (
     <div className="p-4 md:p-6 space-y-4">
+      {/* 📐 โหมดเหมือน ZORT: ลิงก์กลับอยู่เหนือหัวจอ (Kanit 14 #337ab7) · ไม่มีบรรทัดใต้หัวจอ ⇒ ที่มาเข้า ⓘ */}
+      {เหมือนZORT && (
+        <p className="font-['Kanit',sans-serif] text-[14px] -mb-3">
+          <Link href="/core/logistics" className="text-[#337ab7] hover:underline">‹ บริการขนส่ง</Link>
+        </p>
+      )}
       <PageHead title={`บริการขนส่ง ${number}`}
-        summary="รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)" />
-      <div className="flex items-center gap-2">
-        <Link href="/core/logistics" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับไปบริการขนส่ง</Link>
-      </div>
+        summary={เหมือนZORT
+          ? <span className="text-gray-400 cursor-help text-[14px]" title="รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)">ⓘ</span>
+          : 'รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)'} />
+      {!เหมือนZORT && (
+        <div className="flex items-center gap-2">
+          <Link href="/core/logistics" className="text-[12.5px] text-[#337ab7] hover:underline">← กลับไปบริการขนส่ง</Link>
+        </div>
+      )}
       {/* 🧰 แถบปุ่มแบบ ZORT /Logistics/Details (อ่านปุ่ม+เมนูจาก HTML 16 ต.ค. 2569 · ไม่ได้กด)
           คำสั่ง ▾ (ส่งสินค้าสำเร็จ) · ส่ง SMS ให้ลูกค้า · พิมพ์ใบแปะกล่อง — ทั้งหมดเป็นการเขียนกลับ ZORT หรือยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ
           (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
       <div className="flex flex-wrap items-center gap-2">
         <RowMenu label="คำสั่ง" items={[{ label: 'ส่งสินค้าสำเร็จ', disabled: 'ยังทำไม่ได้ — เปลี่ยนสถานะใบส่งต้องเขียนกลับ ZORT' }]} />
         <span title="ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ)"
-          className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ส่ง SMS ให้ลูกค้า</span>
+          className={ปุ่มเทา}>ส่ง SMS ให้ลูกค้า</span>
         <span title="ยังทำไม่ได้ — ใบแปะกล่องต้องใช้ที่อยู่เต็มของผู้รับ ซึ่งเราไม่ได้เก็บ (รอตัดสินเรื่องข้อมูลส่วนบุคคล)"
-          className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">พิมพ์ใบแปะกล่อง</span>
+          className={ปุ่มเทา}>พิมพ์ใบแปะกล่อง</span>
       </div>
 
       {loading && <LoadingState />}
@@ -98,7 +116,65 @@ export default function LogisticsDetailPage() {
         </p></Card>
       )}
 
-      {!loading && !err && row && (
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Logistics/Details 19 ต.ค. 2569): ซ้ายการ์ดข้อมูล 2 คอลัมน์ · ขวาการ์ด Pick up + ประวัติ
+             ช่องเหมือนกันกับโหมดปกติทุกช่อง (ค่าเดียวกัน) แค่จัดผัง · กรอบช่องที่ท่อยังไม่ส่งยังขึ้นครบ ไม่ซ่อน */}
+      {!loading && !err && row && เหมือนZORT && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+          <div className="bg-white rounded-md p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+              <ช่อง ป้าย="รายการ" ค่า={row.number} />
+              <ช่อง ป้าย="วันที่" ค่า={row.date ? thaiDate(String(row.date)) : ยังไม่มี('ไม่รู้')} />
+              <ช่อง ป้าย="Tracking No" ค่า={row.trackingNo || ยังไม่มี('ยังไม่มีเลขพัสดุ')} />
+              <ช่อง ป้าย="สถานะรายการ"
+                ค่า={row.status ? <Pill tone={toneOfStatus(String(row.status))}>{statusTh(row.status)}</Pill> : ยังไม่มี('ไม่รู้')} />
+              <ช่อง ป้าย="ส่งโดย" ค่า={row.carrier || ยังไม่มี('ท่อไม่ได้ส่งชื่อขนส่งมา')} />
+              <ช่อง ป้าย="ชำระเงิน"
+                ค่า={typeof row.isCod === 'boolean'
+                  ? (row.isCod ? 'เก็บเงินปลายทาง (COD)' : 'ไม่ใช่ COD')
+                  : ยังไม่มี('ท่อไม่ได้ส่งธง COD มา')} />
+              <ช่อง ป้าย="ชื่อผู้รับ" ค่า={row.receiver || ยังไม่มี('ท่อไม่ได้ส่งชื่อผู้รับมา')} />
+              <ช่อง ป้าย="จำนวนรายการขาย"
+                ค่า={typeof row.lines === 'number' ? `${fmtNum(row.lines)} รายการ` : ยังไม่มี('ไม่รู้')} />
+            </div>
+            <div className="border-t border-[#e8ecf8] pt-4 space-y-3">
+              <PipeGapFrame
+                หัว="ค่าส่ง"
+                คอลัมน์="ค่าส่ง (ของจริงที่อ่านได้จาก ZORT: 28 บาท)"
+                เหตุ="แถวของ `list=logistics` มี 9 ช่อง และไม่มีช่องค่าส่งเลย (ยิงอ่านรูปข้อมูลจริง 5 ต.ค. 2569)"
+                คำขอ="เพิ่มช่อง `shippingCost` ลงในแถวของ `list=logistics`" />
+              <PipeGapFrame
+                หัว="รายการขายที่เกี่ยวข้อง"
+                คอลัมน์="เลขที่ใบขาย (ของจริง: SO-202610010)"
+                เหตุ="ท่อส่งมาแค่ `lines` ซึ่งเป็น **จำนวนนับ** ไม่ใช่รายชื่อใบขาย ⇒ กดต่อไปที่ใบขายไม่ได้"
+                คำขอ="เพิ่มช่อง `orderNumbers` (อาเรย์ของเลขที่ใบขาย) ลงในแถวของ `list=logistics`" />
+            </div>
+            <ZortLookFold สรุป="📏 จอนี้ตรงกับ ZORT กี่ช่อง · ปุ่มที่ยังไม่มี">
+              <p>
+                จอ ZORT ของใบนี้มี 10 ช่อง · ที่นี่ตรงกัน <b>6 ช่อง</b> และมีเพิ่มอีก 2 ช่อง
+                (ชื่อผู้รับ · จำนวนรายการขาย) ที่ ZORT แสดงในหน้ารายการแทน — ช่องที่ยังขาด <b>ไม่ได้ซ่อนไว้</b>
+              </p>
+              <p className="mt-1">
+                🖨️ ZORT มีปุ่ม <b>ส่ง SMS ให้ลูกค้า</b> กับ <b>พิมพ์ใบแปะกล่อง</b> — ของเรายังไม่มีทั้งคู่
+                ปุ่มบนแถบเป็นสีเทาพร้อมเหตุ (ชี้เมาส์ค้างเพื่ออ่าน)
+              </p>
+            </ZortLookFold>
+          </div>
+          <div className="bg-white rounded-md p-6 space-y-3">
+            <PipeGapFrame
+              หัว="รายละเอียด Pick up"
+              คอลัมน์="รายละเอียด Pick up"
+              เหตุ="ไม่มีช่องนี้ในแถวที่ท่อส่งมา"
+              คำขอ="เพิ่มช่อง `pickup` ลงในแถวของ `list=logistics`" />
+            <PipeGapFrame
+              หัว="ประวัติรายการ (การเดินทางของพัสดุ)"
+              คอลัมน์="ข้อความเหตุการณ์ + วันเวลา (ของจริง 2 เหตุการณ์: รับพัสดุเข้าสาขา · เจ้าหน้าที่สาขารับพัสดุ)"
+              เหตุ="เป็นข้อมูลรายเหตุการณ์ของใบเดียว ซึ่ง `list=logistics` เป็นเส้นรายการ ไม่มีที่ให้ใส่"
+              คำขอ="เส้นใหม่รายใบ เช่น `?logisticsevents=<number>` คืนรายการเหตุการณ์พร้อมเวลา" />
+          </div>
+        </div>
+      )}
+
+      {!loading && !err && row && !เหมือนZORT && (
         <>
           <Card>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
