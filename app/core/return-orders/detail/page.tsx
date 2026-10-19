@@ -29,6 +29,13 @@ interface Resp {
   fields?: string[]; error?: string; skip?: string
 }
 
+/** เครื่องหมายช่องที่เส้นรายใบไม่ส่ง — คนละอย่างกับ null (ส่งมาแต่ว่าง) */
+const ไม่ส่ง = Symbol('ไม่ส่ง')
+/* 📏 ยิงตรวจ 19 ต.ค. 2569 (GET อ่านอย่างเดียว): ZORT **ส่งช่องเหล่านี้มาจริง** — อยู่ในรายชื่อ `fields` ของคำตอบ
+   (paymentstatus · saleschannel · createusername · customerphone · customeraddress) แต่ท่อส่ง **ค่า** มาให้จอแค่ 6 ช่อง
+   ⇒ เหตุคือ "ท่อยังไม่ส่งต่อค่า" ไม่ใช่ "ZORT ไม่มี" · ขอฝั่งท่อแล้ว (ใบถึง CTO 19 ต.ค. 2569) */
+const ไม่ส่งช่องนี้ = 'ZORT มีค่านี้ในใบ แต่ท่อของเรายังไม่ส่งต่อมาให้จอ — ยังไม่รู้ ไม่ใช่ว่าง'
+
 const fmtVal = (v: unknown) =>
   typeof v === 'number' ? v.toLocaleString('th-TH') : String(v ?? '—')
 
@@ -89,6 +96,9 @@ function Inner() {
           ]} />
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
             className={เหมือนZORT ? `${DETAIL_BTN} !text-gray-400 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>Accounting</span>
+          {/* ZORT มีปุ่มนี้ต่อท้ายแถบ (อ่าน DOM 19 ต.ค. 2569) — เหตุเดียวกับจอใบโอน/ใบเสนอราคา */}
+          {เหมือนZORT && <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
+            className={`${DETAIL_BTN} !text-gray-400 cursor-not-allowed`}>ดูกิจกรรมของรายการ</span>}
         </div>
       )}
 
@@ -137,10 +147,21 @@ function Inner() {
                → การ์ดข้อมูล/ลูกค้า (หัว Kanit 20 · ป้าย/ค่า Boon 16) */
             <>
               <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+                {/* 🔴 การ์ดชำระเงิน: ZORT มี (ใบแรก) — ท่อยังไม่ส่งต่อค่า paymentstatus ⇒ วาดไว้ตำแหน่งเดิมแต่ขึ้น "ยังไม่รู้" สีเทา
+                       (CEO 19 ต.ค. 2569: ช่องที่ท่อยังไม่รองรับ ใส่แล้วปิดไว้พร้อมเหตุบนจอ — ไม่เดาค่า และไม่ซ่อนทั้งใบ) */}
+                <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>฿</span>
+                  <div className="text-right">
+                    <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">สถานะการชำระเงิน</h2>
+                    <div className="mt-2">
+                      <span title={ไม่ส่งช่องนี้} className="inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 text-gray-400 bg-gray-100 cursor-help">ยังไม่รู้</span>
+                    </div>
+                  </div>
+                </div>
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
                   <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>▤</span>
                   <div className="text-right">
-                    <h2 className="text-[14px] font-medium text-[#868e96] m-0">สถานะการโอนสินค้า</h2>
+                    <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">สถานะการโอนสินค้า</h2>
                     <div className="mt-2">
                       {d.status
                         ? <span title={`ค่าที่ท่อส่งมา: ${d.status}`} className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(zortWord(RETURN_ORDER_STATUS, d.status).text))}`}>{zortWord(RETURN_ORDER_STATUS, d.status).text}</span>
@@ -151,8 +172,10 @@ function Inner() {
               </div>
               <div className="mb-[30px] bg-white rounded-[6px] grid md:grid-cols-2 gap-0 py-2">
                 {([
-                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['วันที่', d.date ? thaiDate(d.date) : null], ['อ้างอิง', d.reference || null]]],
-                  ['ลูกค้า', '👤', [['ชื่อลูกค้า', d.customer || null]]],
+                  /* แถวเรียงตาม ZORT · `ไม่ส่ง` = เส้นรายใบของเรายังไม่ส่งช่องนี้ (ขีด + เหตุ ไม่ใช่ค่าว่างจริง)
+                     ประเภทรายการเป็นค่าคงที่ของจอนี้ (ทุกใบในจอนี้คือใบรับคืน) ไม่ได้มาจากท่อ */
+                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['ประเภทรายการ', 'รับคืนสินค้า'], ['วันที่', d.date ? thaiDate(d.date, 'เต็ม') : null], ['อ้างอิง', d.reference || null], ['ช่องทางการขาย', ไม่ส่ง]]],
+                  ['ลูกค้า', '👤', [['ผู้สร้างรายการ', ไม่ส่ง], ['ชื่อลูกค้า', d.customer || null], ['เบอร์โทรศัพท์ลูกค้า', ไม่ส่ง], ['ที่อยู่ลูกค้า', ไม่ส่ง]]],
                 ] as const).map(([หัว, รูป, แถว]) => (
                   <section key={หัว} className="px-5 py-3">
                     <div className="flex items-center gap-3 mb-4">
@@ -162,11 +185,12 @@ function Inner() {
                     {แถว.map(([k, v]) => (
                       <div key={k} className="flex gap-4 py-1.5">
                         <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{k}</span>
-                        <span className="text-[16px] text-[#3e3e3e]">{v ?? <span className="text-gray-300">—</span>}</span>
+                        <span className="text-[16px] text-[#3e3e3e]">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span> : v ?? <span className="text-gray-300">—</span>}</span>
                       </div>
                     ))}
                   </section>
                 ))}
+                <p className="md:col-span-2 px-5 pb-2 text-[11.5px] text-gray-400">— ที่ ช่องทางการขาย · ผู้สร้างรายการ · เบอร์ · ที่อยู่ = {ไม่ส่งช่องนี้}</p>
               </div>
             </>
           )}
