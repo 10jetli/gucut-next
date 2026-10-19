@@ -385,10 +385,11 @@ const TH_LATO = 'text-left font-normal text-[12px] text-[#868e96] px-2 py-2.5 wh
 const หัวZ = 'py-3 leading-5 align-bottom'
 export const TH_NO = เหมือนZORT ? TH_LATO.replace('py-2.5', หัวZ) : TH_LATO
 export const TH = เหมือนZORT
-  ? `text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${หัวZ} whitespace-nowrap`
+  /* เขียนคลาสเต็มเป็นสตริง ไม่แทรก ${หัวZ}: เทส ผังเทียบ-ZORT อ่านค่าจากสตริงในเครื่องหมายคำพูด — template literal ทำให้มันอ่านชื่อฟอนต์ในวงเล็บเหลี่ยมเป็นค่าคลาส (ตกลวง 20 ต.ค. 2569 · ห้ามใส่เครื่องหมายคำพูดในคอมเมนต์ตรงนี้ด้วย) */
+  ? "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-3 leading-5 align-bottom whitespace-nowrap"
   : TH_LATO
 export const THR = เหมือนZORT
-  ? `text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${หัวZ} whitespace-nowrap`
+  ? "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-3 leading-5 align-bottom whitespace-nowrap"
   : 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
 /** หัวคอลัมน์แบบ Kanit 14 #3e3e3e — ZORT ใช้ที่ /Logistics/list กับ /Product/Categorylist (วัด 17 ต.ค. 2569) ไม่ใช่ Lato 12 เหมือนจออื่น */
 export const TH_KANIT = `text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${เหมือนZORT ? หัวZ : 'py-2.5'} whitespace-nowrap`
