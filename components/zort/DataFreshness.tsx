@@ -150,6 +150,14 @@ export function MarketStaleBar({ stale, staleMs, at }: {
       : mins < 60 ? `${mins.toLocaleString('th-TH')} นาที`
         : `${Math.floor(mins / 60)} ชม. ${mins % 60} นาที`
 
+  /* 📐 โหมดเหมือน ZORT: แถบนี้โผล่เป็นช่วง ๆ (ตอนกวาดคอลัมน์ Marketplace ค้าง) แล้วดันตารางลง ~70px ⇒ จอสินค้า/ชุดเลขกระโดด (เจอ 19 ต.ค. 2569)
+     ⇒ บรรทัดเดียว: คำเตือนหลัก (ภาพเก่า + อายุ + กำลังกวาด) อยู่บนจอ · ประโยคผลกระทบอยู่ใน title */
+  if (เหมือนZORT) return (
+    <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-1 mb-2 truncate"
+      title={`สินค้าที่เพิ่งลง/เพิ่งถอดจากมาร์เก็ตเพลสในช่วงนี้ อาจยังไม่สะท้อนในโลโก้ที่เห็น${atDate ? ` · กวาดจริงล่าสุด ${thaiDayTime(atDate)} เวลาไทย` : ''}`}>
+      🕰 <b>คอลัมน์ Marketplace เป็นภาพเก่า{age ? ` ${age}` : ' (ไม่รู้ว่าเก่าแค่ไหน)'}</b> — ระบบกำลังกวาดรอบใหม่ รีเฟรชอีกครั้งในสักครู่จะได้ของสด
+    </p>
+  )
   return (
     <p className="text-[12.5px] text-amber-900 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2 leading-relaxed">
       🕰 <b>คอลัมน์ Marketplace เป็นภาพเก่า{age ? ` ${age}` : ''}</b>
