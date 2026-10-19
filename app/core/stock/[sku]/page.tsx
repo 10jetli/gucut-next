@@ -525,6 +525,8 @@ export default function ProductDetailPage() {
 
             <div className="min-w-0 flex-1">
               <p className={เหมือนZORT ? `${ZORT_INFO_NAME} mb-2` : 'text-[15px] font-semibold text-gray-900'}>{row.name || sku}</p>
+              {/* โหมดเหมือน ZORT: ชื่อเต็มบรรทัดอยู่เหนือ [ข้อมูล | QR] — แบบ ZORT (QR เริ่มใต้ชื่อ ชื่อไม่ถูกบีบจนตกสองบรรทัด) */}
+              <div className={เหมือนZORT ? 'flex items-start gap-6' : ''}>
               {/* 🧭 โหมดเหมือน ZORT: ลำดับช่องตาม /Product/Details (รหัส · ราคาขาย · น้ำหนัก · ราคาซื้อ · ต้นทุนเฉลี่ย · ชุด) ด้วย order
                      ไม่ย้ายโค้ด ⇒ โหมดปกติเรียงเดิม · คอลัมน์ละ 250 ตาม ZORT · ป้าย/ค่าใช้ค่ากลาง ZORT_INFO_* */}
               <div className={เหมือนZORT ? 'grid grid-cols-2 gap-y-[18px] mt-4 max-w-[500px]' : 'grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 mt-4 max-w-[640px]'}>
@@ -619,10 +621,11 @@ export default function ProductDetailPage() {
                   <div className="text-[15px]"><MarketLogos list={row.marketplaces} by={row.marketplacesBy} from={row.marketplacesFrom} /></div>
                 </div>
               </div>
+                {/* โหมดเหมือน ZORT: QR + บาร์โค้ดมุมขวาในกล่องข้อมูล (ZORT วางที่นี่ ไม่ใช่ท้ายจอ)
+                    · ห่างขอบขวาการ์ด ~90px (ภาพสองฝั่ง 19 ต.ค. 2569: ZORT 90 · เราเดิม 28) */}
+                {เหมือนZORT && <div className="ml-auto mr-[62px] mt-4 shrink-0"><SkuCodes sku={sku} แบบZORT บาร์โค้ด={{ w: 158, h: 50 }} /></div>}
+              </div>
             </div>
-            {/* โหมดเหมือน ZORT: QR + บาร์โค้ดมุมขวาในกล่องข้อมูล (ZORT วางที่นี่ ไม่ใช่ท้ายจอ) */}
-            {/* QR ห่างขอบขวาการ์ด ~90px แบบ ZORT (ภาพสองฝั่ง 19 ต.ค. 2569: ZORT 90 · เราเดิม 28) */}
-            {เหมือนZORT && <div className="ml-auto mr-[62px]"><SkuCodes sku={sku} แบบZORT บาร์โค้ด={{ w: 158, h: 50 }} /></div>}
           </div>
 
           <Card className="mt-4">
