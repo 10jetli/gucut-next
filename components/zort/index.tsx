@@ -203,7 +203,7 @@ export function SearchRow({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') onSubmit() }}
           placeholder={placeholder}
-          className="w-[400px] max-w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] pl-9 pr-3 py-2 focus:outline-none focus:border-[#868e96]"
+          className={`w-[400px] max-w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] ${เหมือนZORT ? 'pl-[42px]' : 'pl-9'} pr-3 py-2 focus:outline-none focus:border-[#868e96]`} /* ZORT ช่องซ้าย 42 (วัด DOM 20 ต.ค. 2569) */
         />
       </div>
       {advanced}
