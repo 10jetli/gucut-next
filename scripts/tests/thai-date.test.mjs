@@ -30,7 +30,7 @@ try {
     '--lib', 'es2020,dom', '--esModuleInterop', '--skipLibCheck'],
     { cwd: process.cwd(), stdio: 'inherit' })
   writeFileSync(join(out, 'package.json'), '{"type":"module"}')
-  const { thaiDate, thaiDateUtc, thaiDayFromUtc, ageInThaiDays, เลขอ้างอิงเอกสาร, วันไทยจากMs } = await import(join(out, 'format.js'))
+  const { thaiDate, thaiDateUtc, thaiDayFromUtc, ageInThaiDays, เลขอ้างอิงเอกสาร, วันไทยจากMs, fmtMoney2 } = await import(join(out, 'format.js'))
 
   const cases = [
     ['2026-03-19T17:00:00.000Z', '20 มี.ค. 2569', 'เที่ยงคืนเวลาไทย — ของเดิมได้ 19 (เลื่อนไปหนึ่งวัน)'],
@@ -145,6 +145,13 @@ try {
     console.log(`  ${ok ? '✅' : '❌'} เดือนเต็ม ${input.padEnd(26)} ⇒ ${got}`)
   }
   if (thaiDate('2026-10-19') !== '19 ต.ค. 2569') { fail++; console.log('  ❌ ค่าตั้งต้นต้องยังเป็นเดือนย่อ') }
+  /* fmtMoney2 (การ์ดภาพรวมแบบ ZORT) — ทศนิยม 2 เสมอ · 0 จริงยังเป็น 0.00 · ไม่รู้ต้องเป็น — ห้ามเป็น 0 */
+  for (const [input, want] of [[17410.3, '17,410.30'], [0, '0.00'], [null, '—'], [undefined, '—']]) {
+    const got = fmtMoney2(input)
+    const ok = got === want
+    if (!ok) fail++
+    console.log(`  ${ok ? '✅' : '❌'} fmtMoney2(${input}) ⇒ ${got}`)
+  }
   /* วันไทยจากMs ต้องไม่ขยับของที่ถูกอยู่แล้ว */
   if (วันไทยจากMs(Date.parse('2026-09-20T12:00:00+07:00')) !== '2026-09-20') {
     fail++; console.log('  ❌ วันไทยจากMs เพี้ยนที่เที่ยงวัน')
