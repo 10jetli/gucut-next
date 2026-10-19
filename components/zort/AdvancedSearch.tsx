@@ -49,7 +49,11 @@ export function AdvancedSearchLink({ open, onToggle, แบบ = 'ลิงก�
   if (แบบ === 'ปุ่มตัวกรอง') {
     return (
       <button type="button" onClick={onToggle} aria-expanded={open}
-        className={`text-[12.5px] border rounded px-3 py-1.5 bg-white hover:bg-gray-50 ${open ? 'border-blue-500 text-blue-600' : 'border-gray-300 text-gray-700'}`}>
+        /* 📏 โหมดเหมือน ZORT: วัด DOM /Sell/list 20 ต.ค. 2569 — 90×30.6 Kanit 14/400 #868e96 บน #f1f3f5 ขอบ 0.8 #adb5bd มุม 4 ช่องใน 4/8
+           (เดิม 89×36 Kanit 12.5 #374151 พื้นขาว) · เปิดแผงอยู่ = ขอบ/ตัวหนังสือฟ้าเหมือนโหมดเดิม ให้รู้ว่าแผงกางอยู่ */
+        className={เหมือนZORT
+          ? `font-['Kanit',sans-serif] text-[14px] font-normal leading-[21px] border-[0.8px] rounded-[4px] px-2 py-1 bg-[#f1f3f5] hover:bg-[#e9ecef] ${open ? 'border-[#4165ed] text-[#4165ed]' : 'border-[#adb5bd] text-[#868e96]'}`
+          : `text-[12.5px] border rounded px-3 py-1.5 bg-white hover:bg-gray-50 ${open ? 'border-blue-500 text-blue-600' : 'border-gray-300 text-gray-700'}`}>
         {/* โหมดเหมือน ZORT: ไอคอนกรวยเส้นแบบปุ่ม ตัวกรอง ของ ZORT /Sell/list (วาดเอง ไม่ใช้ไอคอนของ ZORT) */}
         {เหมือนZORT
           ? <span className="inline-flex items-center gap-1.5"><svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z" /></svg>ตัวกรอง</span>
