@@ -108,7 +108,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
 }
 
 export default function LedgerScreen({
-  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, ว่างแถวเตี้ย, purpose, meanwhile,
+  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, purpose, meanwhile,
   emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv, zortCols,
 }: {
   title: string
@@ -154,6 +154,8 @@ export default function LedgerScreen({
   sumSeenAt?: string
   /** โหมดเหมือน ZORT: ตารางว่างเป็นแถวเตี้ยแถวเดียว (เฉพาะจอที่ ZORT ทำแบบนั้นจริง เช่น /SalePage/List) · ไม่ส่ง = กล่องสูงมีรูปแบบจอ ZORT ส่วนใหญ่ */
   ว่างแถวเตี้ย?: boolean
+  /** โหมดเหมือน ZORT: จอ ZORT ของคู่นี้ไม่มีช่องค้นหา (เช่น /SalePage/List) — มีผลเฉพาะจอที่ยังไม่ต่อท่อ (ช่องค้นหาเทาอยู่แล้ว) */
+  zortไม่มีช่องค้นหา?: boolean
   /** ZORT เขียนอะไรไว้ในกล่องว่าง — เอาไว้บอกว่าจอนี้มีไว้ทำอะไร */
   purpose: string
   /** ตอนนี้ร้านทำเรื่องนี้ที่ไหน */
@@ -205,6 +207,7 @@ export default function LedgerScreen({
   /* 🔴 อายุต้องนับจาก **วันเดียวกับที่ตัวเลขบนจอบอก** (`sumSeenAt` ของจอนั้น ถ้ามี)
      เดิมนับจาก CHECKED_AT ร่วมเสมอ ⇒ จอเซลเพจขึ้นว่า "ที่ ZORT เมื่อ 16 ต.ค." แต่กล่องเหลืองข้างล่างบอก
      "ตัวเลขข้างบนคัดมาเมื่อ 46 วันที่แล้ว" — ตัวเลขกับอายุมาคนละแหล่ง จอขัดกันเอง (เจอ 19 ต.ค. 2569) */
+  const ซ่อนแถวค้นหา = เหมือนZORT && !!zortไม่มีช่องค้นหา && !zortList
   const แถวเตี้ย = เหมือนZORT && !!ว่างแถวเตี้ย
   const วันที่คัด = sumSeenAt ?? CHECKED_AT
   const age = ageOf(วันที่คัด)
@@ -389,7 +392,9 @@ export default function LedgerScreen({
         }
       />
 
-      {/* 📐 โหมดเหมือน ZORT: ระยะช่องค้นหาเดียวกับ SearchRow ร่วม (pt-1 mb-5) — ตารางเริ่มตำแหน่งเดียวกับ ZORT */}
+      {/* 📐 โหมดเหมือน ZORT: ระยะช่องค้นหาเดียวกับ SearchRow ร่วม (pt-1 mb-5) — ตารางเริ่มตำแหน่งเดียวกับ ZORT
+           · จอที่ ZORT ไม่มีช่องค้นหา **และ** เรายังไม่ต่อท่อ (ช่องเทากดไม่ได้อยู่แล้ว) ⇒ ไม่วาดแถวนี้ (เช่น /SalePage/List) */}
+      {!(ซ่อนแถวค้นหา) && <>
       <div className={`flex flex-wrap items-center gap-3 ${เหมือนZORT ? 'pt-1 mb-5' : 'mb-3'}`}>
         {/* 🔴 ช่องค้นหาเคยเป็นช่องเทาที่พิมพ์ไม่ได้ทุกจอ — ตอนนี้จอที่ต่อท่อแล้วใช้ได้จริง
             (เส้น ?zortlist= รับ keyword มาตั้งแต่แรก แค่จอไม่เคยเปิดให้ใช้)
@@ -452,6 +457,7 @@ export default function LedgerScreen({
         notAvailable={missingAdv}
         extraNote="ใส่ช่องเดียวก็ได้"
       />
+      </>}
 
       {dateLine && <p className="text-[12.5px] text-gray-600 mb-2">{dateLine}</p>}
 
