@@ -35,9 +35,19 @@ def พร้อม(pg):
         except Exception: pass
     return False
 
+def ยังโหลด(pg):
+    try: return 'กำลังโหลด' in (pg.evaluate('document.body.innerText') or '')
+    except Exception: return False
+
 def ไป(pg, url):
     pg.goto(url, wait_until='domcontentloaded', timeout=60000)
     พร้อม(pg)
+    # 🔴 จอที่ไม่มีตาราง (แดชบอร์ด) ผ่าน พร้อม() ได้ทั้งที่ยังขึ้น "กำลังโหลด…" ⇒ ถ่ายภาพจอโหลด (เจอ 19 ต.ค. 2569 Marketplace Dashboard)
+    #    ⇒ รอให้คำนั้นหายอีกไม่เกิน 20 วิ · ยังไม่หาย = จดไว้ในผล ไม่ใช่เงียบ
+    for _ in range(10):
+        if not ยังโหลด(pg): return True
+        pg.wait_for_timeout(2000)
+    return not ยังโหลด(pg)
 
 def ภาพ(pg):
     return Image.open(io.BytesIO(pg.screenshot(timeout=60000))).convert('RGB')
@@ -73,7 +83,8 @@ with sync_playwright() as pw:
                     raise RuntimeError('วัดไม่ได้ — ฝั่ง ZORT เป็นหน้า error: ' + pz.url.split('?')[0])
                 zw = pz.evaluate('innerWidth')
                 z = ภาพ(pz)
-                ไป(po, 'https://' + HOST + p['เรา'].split(' ')[0])
+                โหลดทัน = ไป(po, 'https://' + HOST + p['เรา'].split(' ')[0])
+                if not โหลดทัน: แถว['หมายเหตุ'] = "ฝั่งเรายังขึ้น กำลังโหลด ตอนถ่าย"
                 if zw and zw != 1600:
                     po.evaluate(f"()=>document.documentElement.style.zoom='{1600 / zw}'")
                 po.wait_for_timeout(1500)
