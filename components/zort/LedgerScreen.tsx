@@ -34,6 +34,7 @@ import { fmtMoney } from '@/lib/format'
 import { ควรลองใหม่, ฝั่งที่ติดจาก } from '@/lib/upstream-state'
 import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, thaiDate } from './index'
 import ZortLookFold from './ZortLookFold'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export interface LedgerCol { label: string; right?: boolean }
 
@@ -534,9 +535,11 @@ export default function LedgerScreen({
             )}
             {!(zortAnswered && rows!.length > 0) && (
             <tr>
-              <td colSpan={cols.length + 1} className="py-14 text-center">
-                <span className="text-[34px] block opacity-60">🗂️</span>
-                <p className="text-[14px] text-gray-800 mt-2">
+              {/* 📐 โหมดเหมือน ZORT (ภาพ /SalePage/List 19 ต.ค. 2569): ตารางว่างของ ZORT เป็นแถวขาวเตี้ยแถวเดียว ไม่มีรูปกลางจอ
+                   ⇒ ลดความสูง ถอดไอคอนโฟลเดอร์ · **ข้อความสถานะ + กล่องพับหลักฐานอยู่ครบ** (คือความจริงของจอนี้ ห้ามถอด) */}
+              <td colSpan={cols.length + 1} className={เหมือนZORT ? 'py-4 text-center' : 'py-14 text-center'}>
+                {!เหมือนZORT && <span className="text-[34px] block opacity-60">🗂️</span>}
+                <p className={เหมือนZORT ? 'text-[14px] text-gray-800' : 'text-[14px] text-gray-800 mt-2'}>
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
                   {zLoading ? 'กำลังถาม ZORT…'
                     /* 🔴 resCode 500 = **ขัดข้องฝั่ง ZORT เอง** (ฝั่งท่อยิงตรวจ 23:00 14 ก.ย. 2569
