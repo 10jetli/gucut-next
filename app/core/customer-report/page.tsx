@@ -464,7 +464,7 @@ export default function CoreCustomersPage() {
            ⇒ ช่วงวันจริง (จากที่ท่อ echo) + ตัวเลือกช่วงอยู่บรรทัดนี้ · กล่องพับรายละเอียดช่วงต่อท้ายแบบ inline
            · ช่องค้นชื่อลูกค้า (กรองแค่ตารางลูกค้าข้างล่าง) ย้ายไปอยู่เหนือตารางนั้น */}
       {เหมือนZORT && (
-        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 mb-6">
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-0 mb-6">
           <p className="font-['Kanit',sans-serif] text-[20px] leading-[30px] font-normal text-[#3e3e3e]">
             {RANGES.find((r) => r.days === days)?.label ?? `ย้อนหลัง ${days} วัน`}
             {(range.from || range.to) && <> ({thaiDate(range.from)} – {thaiDate(range.to)})</>}
