@@ -576,7 +576,8 @@ export default function DashboardPage() {
             {' · '}อัพเดต {refreshed.toLocaleTimeString('th-TH')}
           </span>
         )}
-        actions={
+        /* 📐 โหมดเหมือน ZORT: ZORT /Dashboard/Main ไม่มีปุ่มรีเฟรช (จอรายงานอื่นถอดไปตั้งแต่ 16 ต.ค. 2569) ⇒ ไม่วาด · โหลดใหม่ด้วยการเปิดหน้าใหม่ได้เหมือน ZORT */
+        actions={เหมือนZORT ? undefined :
           <BtnGhost onClick={load} disabled={loading}>
             {loading ? 'กำลังโหลด…' : 'รีเฟรช'}
           </BtnGhost>
