@@ -223,7 +223,8 @@ export default function CoreProductReportPage() {
 
       {stock && (
         <>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* 📐 โหมดเหมือน ZORT: ตำแหน่งการ์ดคู่ตามภาพ ZORT (เริ่มต่ำกว่าหัวจอ 12 · สูงอย่างน้อย 396 · ห่างการ์ดถัดไป 30) */}
+          <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px] mt-3 [&>*]:min-h-[396px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
             <Card>
               {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/ProductReport 19 ต.ค. 2569): การ์ดมีแค่ยอดรวมตัวใหญ่ + ปุ่ม Download Excel
                    ⇒ ใช้เฉพาะตอนมียอดสดจาก ZORT (เลขที่ตรงกับ ZORT) · เนื้อหาเดิมทั้งก้อน (เลขวิธีคิดของเรา + กล่องเตือน) พับไว้ใต้บรรทัดสรุป ไม่ถอด */}
@@ -351,7 +352,7 @@ export default function CoreProductReportPage() {
                    (มีคลังที่ ZORT ไม่ตอบ = null ⇒ สัดส่วนผิด ⇒ ไม่วาด ใช้ตารางตามเดิม — กฎ "ห้ามวาดจากข้อมูลที่ไม่มี") · ตารางพับไว้ใต้วงกลม */}
               {วาดวงคลัง && (
                 <div className="flex items-center justify-center gap-8 flex-wrap py-6">
-                  <ZortPie ป้าย="สัดส่วนมูลค่าคงเหลือรายคลัง" ขนาด={220} ชิ้น={(whs ?? []).map((w, i) => ({ ค่า: w.stockValue as number, สี: สีคลัง[i % สีคลัง.length] }))} />
+                  <ZortPie ป้าย="สัดส่วนมูลค่าคงเหลือรายคลัง" ขนาด={175} ชิ้น={(whs ?? []).map((w, i) => ({ ค่า: w.stockValue as number, สี: สีคลัง[i % สีคลัง.length] }))} />
                   <div className="text-[14px] text-[#3e3e3e] space-y-1">
                     {(whs ?? []).map((w, i) => (
                       <p key={w.code}><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: สีคลัง[i % สีคลัง.length] }} />{w.name || w.code}</p>
@@ -474,7 +475,7 @@ export default function CoreProductReportPage() {
             </Card>
           </div>
 
-          <Card padded={false} className="mt-4">
+          <Card padded={false} className={เหมือนZORT ? 'mt-[30px]' : 'mt-4'}>
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <p className="text-[15px] font-semibold text-gray-900 mr-auto">สินค้าจม</p>
               <select
