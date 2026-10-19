@@ -21,7 +21,7 @@ import {TD_DATE, TH_NO,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
-import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
+import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
 import { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
@@ -248,6 +248,7 @@ const เหตุที่ท่อยังไม่กรอง: Record<strin
 }
 /** เหตุของช่อง ZORT ที่ท่อยังไม่รับ — ใช้ทั้งตอนปิดช่อง และใน notAvailable (ข้อความเดียว ที่เดียว) */
 const ท่อไม่รับช่องนี้ = 'ท่อ list=orders ยังไม่รับช่องนี้ (ไม่อยู่ใน advancedFilters 13 ช่องที่ท่อประกาศ · ยิงดู 19 ต.ค. 2569) · ยังไม่ได้ตรวจว่ากระจกเก็บค่านี้ไว้หรือไม่ — จะรู้เมื่อฝั่งท่อตอบใบขอ 19 ต.ค. 2569 ว่าตาราง orders มีคอลัมน์นี้ไหม'
+const เหตุประเภทค่าขนส่ง = 'ZORT มี select `logisticsiscash` แยกว่าใบนั้นจ่ายค่าส่งตรงหรือหักจากพอยท์ — ท่อของเราไม่ส่งช่องนี้มาเลย (ไม่อยู่ใน applied ของเส้น list=orders) ⇒ ทำช่องไปก็กรองไม่ได้'
 const วันชนิดอื่นยังไม่มี = 'ท่อเลือกชนิดวันได้แค่ วันที่ของใบ กับ วันส่งสินค้า (dateTypes order/ship) — ชนิดอื่นของ ZORT ยังไม่มี'
 
 const MEMO_KEY = 'gucut:core-sales:filter'
@@ -281,6 +282,25 @@ const ช่วงปฏิทินทั้งหมด: { ค่า: ชน�
   { ค่า: 'สัปดาห์นี้', label: 'สัปดาห์นี้' },
   { ค่า: 'เดือนนี้', label: 'เดือนนี้' },
 ]
+
+/** ปุ่ม โหมด [กรวย][แว่น] แบบ ZORT /Sell/list — วัด DOM 20 ต.ค. 2569: ป้าย Kanit 12 #868e96 เว้นขวา 8 · ปุ่มละ 29.6×26.7
+ *  ตัวที่เลือกอยู่ พื้น #f1f3f5 ตัว #868e96 ขอบ #adb5bd · อีกตัว พื้นขาว ตัว #333 ขอบ #ccc · มุมนอก 4
+ *  ไอคอนวาดเอง (ไม่ใช้ฟอนต์ไอคอนของ ZORT) */
+function ปุ่มโหมดแผง({ โหมด, เปลี่ยน }: { โหมด: 'กรอง' | 'ขั้นสูง'; เปลี่ยน: (m: 'กรอง' | 'ขั้นสูง') => void }) {
+  const ปุ่ม = (m: 'กรอง' | 'ขั้นสูง', ชื่อ: string, มุม: string, รูป: React.ReactNode) => (
+    <button type="button" title={ชื่อ} aria-label={ชื่อ} aria-pressed={โหมด === m} onClick={() => เปลี่ยน(m)}
+      className={`w-[29.6px] h-[26.7px] inline-flex items-center justify-center border-[0.8px] ${มุม} ${โหมด === m ? 'bg-[#f1f3f5] text-[#868e96] border-[#adb5bd]' : 'bg-white text-[#333] border-[#ccc] hover:bg-gray-50'}`}>
+      {รูป}
+    </button>
+  )
+  return (
+    <span className="inline-flex items-center ml-3">
+      <span className="font-['Kanit',sans-serif] text-[12px] text-[#868e96] mr-2">โหมด</span>
+      {ปุ่ม('กรอง', 'ตัวกรอง', 'rounded-l-[4px]', <svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z" /></svg>)}
+      {ปุ่ม('ขั้นสูง', 'ค้นหาขั้นสูง', 'rounded-r-[4px] -ml-[0.8px]', <svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.5 15.5L21 21" /></svg>)}
+    </span>
+  )
+}
 
 export default function CoreSalesPage() {
   const router = useRouter()
@@ -318,6 +338,15 @@ export default function CoreSalesPage() {
      ⚠️ **ห้ามใส่ช่องกรองที่ท่อไม่รองรับ** ลงในแผงนี้ — ช่องที่กรอกแล้วไม่มีผล
         แย่กว่าไม่มีช่อง เพราะคนกรอกแล้วเชื่อว่ากรองแล้ว */
   const [advOpen, setAdvOpen] = useState(false)
+  /** โหมดแผงแบบ ZORT — จำต่อคนในเบราว์เซอร์นี้ (ZORT จำที่บัญชี · ของเราไม่มีที่เก็บค่าตั้งรายคน) · อ่าน/เขียนห่อ try เสมอ */
+  const [โหมดแผง, setโหมดแผงดิบ] = useState<'กรอง' | 'ขั้นสูง'>('กรอง')
+  useEffect(() => {
+    try { if (localStorage.getItem('gucut:core-sales:panel-mode') === 'ขั้นสูง') setโหมดแผงดิบ('ขั้นสูง') } catch { /* เบราว์เซอร์ปิดที่เก็บ ⇒ ใช้ค่าตั้งต้น */ }
+  }, [])
+  const setโหมดแผง = (m: 'กรอง' | 'ขั้นสูง') => {
+    setโหมดแผงดิบ(m)
+    try { localStorage.setItem('gucut:core-sales:panel-mode', m) } catch { /* จำไม่ได้ก็ใช้ได้ในรอบนี้ */ }
+  }
   /* 🔴 **รับ `?from=` `?to=` จาก URL ด้วย** (แก้ 17 ก.ย. 2569 · ใบ t_mu2u9mym)
      ลิงก์ `?q=<เลขที่ใบ>` อย่างเดียวค้นได้แค่ในช่วง 90 วันของจอ
      วัดจริง: สุ่มใบที่มีสลิป 12 ใบ ⇒ ค้นในช่วง 90 วันเจอ **1 ใบ** · เปิดช่วงกว้างเจอ **12 ใบ**
@@ -754,6 +783,106 @@ export default function CoreSalesPage() {
                 ? `แท็บ ${สถานะที่ยังไม่มีคำไทย.join(' · ')} ยังเป็นคำดิบจาก ZORT — ยังไม่ได้ยืนยันว่าจอ ZORT เรียกเป็นไทยว่าอะไร จึงไม่เดาคำแปล` : '',
             ].filter(Boolean)) as string[]
 
+  /* 🔍 ช่องทั้งหมดของแผงค้นหาขั้นสูง (เรียงตามแผง .search-advance ของ ZORT) — คำอธิบายเดิมอยู่ที่ <AdvancedSearch> ข้างล่าง */
+  const ช่องทั้งหมด: AdvField[] = [
+          { label: 'หมายเลขรายการ', kind: 'text', value: fNumber, onChange: (v) => setFNumber(String(v)), placeholder: 'เช่น SO-2026', width: 150 },
+          { label: 'มูลค่าตั้งแต่', kind: 'number', value: fMin, onChange: (v) => setFMin(String(v)), placeholder: '0', width: 110 },
+          { label: 'จนถึงมูลค่า', kind: 'number', value: fMax, onChange: (v) => setFMax(String(v)), placeholder: '999999', width: 110 },
+          { label: 'อ้างอิง', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
+          {
+            /* ตัวเดียวกับตัวเลือกช่องทางเหนือตาราง (state `channel` ตัวเดียว) — ไม่ใช่ตัวกรองที่สอง */
+            label: 'ช่องทางการขาย',
+            kind: 'select',
+            value: channel,
+            onChange: (v) => setChannel(String(v)),
+            width: 150,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              ...(data?.channels ?? []).filter((c) => typeof c === 'string').map((c) => ({ value: c, label: c })),
+            ],
+          },
+          /* 🔑 สองช่องนี้เปิดเองวันที่ท่อประกาศคีย์ใน advancedFilters — ไม่ต้องมีใครกลับมาแก้จอ */
+          { label: 'ชื่อตัวแทน', kind: 'text', value: fAgent, onChange: (v) => setFAgent(String(v)), placeholder: 'ชื่อตัวแทนจำหน่าย', width: 150, ปิดไว้: ท่อยังไม่รู้จัก('agent') },
+          { label: 'ผู้สร้าง', kind: 'text', value: fCreator, onChange: (v) => setFCreator(String(v)), placeholder: 'ชื่อผู้สร้างใบ', width: 130 },
+          {
+            label: 'คลัง',
+            kind: 'select',
+            value: fWh,
+            onChange: (v) => setFWh(String(v)),
+            width: 170,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: 'NEW', label: 'NEW' },
+              { value: 'KLD', label: 'KLD' },
+              { value: 'ANJ', label: 'ANJ' },
+            ],
+          },
+          { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
+          { label: 'สินค้า (รหัส/ชื่อ)', kind: 'text', value: fProduct, onChange: (v) => setFProduct(String(v)), placeholder: 'เช่น 00313', width: 170 },
+          { label: 'Serial no', kind: 'text', value: fSerial, onChange: (v) => setFSerial(String(v)), placeholder: 'เลขซีเรียลในใบ', width: 150, ปิดไว้: ท่อยังไม่รู้จัก('serial') },
+          {
+            label: 'เก็บเงินปลายทาง',
+            kind: 'select',
+            value: fCod,
+            onChange: (v) => setFCod(String(v)),
+            width: 130,
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: '1', label: 'เฉพาะ COD' },
+              { value: '0', label: 'ไม่ใช่ COD' },
+            ],
+          },
+          { label: 'แสดงรายการที่ถูกซ่อน', kind: 'check', value: false, onChange: () => {}, ปิดไว้: 'กระจกไม่ได้เก็บธงถูกซ่อนของ ZORT' },
+          { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
+          { label: 'เบอร์โทรศัพท์', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
+          { label: 'อีเมลลูกค้า', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: ท่อไม่รับช่องนี้ },
+          { label: 'ช่องทางจัดส่ง', kind: 'text', value: fShipCh, onChange: (v) => setFShipCh(String(v)), placeholder: 'เช่น Flash', width: 150 },
+          /* 10 สถานะของ ZORT — วาดครบตามผังแต่ปิด (เหตุ: สถานะรายการ 10 ค่าแบบ ZORT ข้างล่าง) */
+          ...['รอโอนสินค้า', 'สำเร็จ', 'โอนบางส่วน', 'ยกเลิก', 'ยกเลิก (หมดอายุ)', 'แพ็คแล้ว', 'รอส่งสินค้า', 'กำลังส่งสินค้า', 'จัดส่งไม่สำเร็จ', 'ยกเลิกการส่งสินค้า'].map((ชื่อ) => (
+            { label: ชื่อ, kind: 'check' as const, value: false, onChange: () => {}, ปิดไว้: 'กระจกมีสถานะจริงแค่ 5 ค่า ยังไม่ได้พิสูจน์การจับคู่กับ 10 ค่าของ ZORT — จะรู้เมื่ออ่านสถานะใบเดียวกันจากสองฝั่งเทียบกัน' }
+          )),
+          {
+            label: 'สถานะชำระเงิน',
+            kind: 'select',
+            value: fPay,
+            onChange: (v) => setFPay(String(v)),
+            width: 150,
+            /* 🔑 ค่าที่ส่งเป็นค่าดิบของกระจก (Paid/Pending/Voided) แต่ **คำบนจอมาจาก lib/zort-words**
+               ⇒ คนใช้เห็นคำเดียวกับ ZORT · ห้ามพิมพ์คำไทยตายตัวที่นี่ */
+            options: [
+              { value: '', label: 'ทั้งหมด' },
+              { value: 'Paid', label: zortWord(PAY_STATUS, 'Paid').text },
+              { value: 'Pending', label: zortWord(PAY_STATUS, 'Pending').text },
+              { value: 'Voided', label: zortWord(PAY_STATUS, 'Voided').text },
+            ],
+          },
+          { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
+          { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
+          { label: 'วันส่งสินค้า ตั้งแต่', kind: 'date', value: fShipFrom, onChange: (v) => setFShipFrom(String(v)) },
+          { label: 'ถึง', kind: 'date', value: fShipTo, onChange: (v) => setFShipTo(String(v)) },
+          ...(['วันที่ชำระเงิน', 'วันที่โอนสินค้า', 'วันที่สร้าง', 'วันที่อัพเดท'] as const).flatMap((ชื่อ) => (['ตั้งแต่', 'ถึง'] as const).map((ปลาย) => (
+            { label: `${ชื่อ} ${ปลาย}`, kind: 'date' as const, value: '', onChange: () => {}, ปิดไว้: วันชนิดอื่นยังไม่มี }
+          ))),
+  ]
+  /* 🧭 โหมดแผงแบบ ZORT (ปุ่ม โหมด [กรวย][แว่น] ท้ายแถวตัวกรอง · อ่าน DOM /Sell/list 20 ต.ค. 2569):
+       กรวย = ปุ่ม ตัวกรอง เปิดแผง #searchFilter · แว่น = ลิงก์ ค้นหาขั้นสูง ข้างช่องค้น เปิดแผง #searchAdvance
+     ของเราเป็น **state ตัวกรองชุดเดียว วาดได้สองผัง** — ทั้งสองผังกรองจริง (ไม่ใช่ปุ่มหลอก) · ช่องที่ท่อไม่รับยังปิดพร้อมเหตุเหมือนเดิม
+     ผังตัวกรองเรียงตามแผง #searchFilter ของ ZORT: การโอนสินค้า+การจัดส่ง (10 ติ๊ก) · ชำระเงิน · บริการขนส่ง · ประเภท · คลัง · วันที่ · COD · ที่ถูกซ่อน · ผู้ใช้ */
+  const เลือกช่อง = (ชื่อ: string) => ช่องทั้งหมด.find((f) => f.label === ชื่อ)
+  const ช่องตัวกรอง: AdvField[] = [
+    ...['รอโอนสินค้า', 'สำเร็จ', 'โอนบางส่วน', 'ยกเลิก', 'ยกเลิก (หมดอายุ)', 'แพ็คแล้ว', 'รอส่งสินค้า', 'กำลังส่งสินค้า', 'จัดส่งไม่สำเร็จ', 'ยกเลิกการส่งสินค้า'].map(เลือกช่อง),
+    เลือกช่อง('สถานะชำระเงิน'),
+    เลือกช่อง('ช่องทางจัดส่ง'),
+    { label: 'ประเภท', kind: 'select', value: '', onChange: () => {}, width: 150, ปิดไว้: เหตุประเภทค่าขนส่ง } as AdvField,
+    เลือกช่อง('คลัง'),
+    เลือกช่อง('ตั้งแต่วันที่'),
+    เลือกช่อง('ถึงวันที่'),
+    เลือกช่อง('เก็บเงินปลายทาง'),
+    เลือกช่อง('แสดงรายการที่ถูกซ่อน'),
+    เลือกช่อง('ผู้สร้าง'),
+  ].filter((f): f is AdvField => !!f)
+  const ช่องในแผง = เหมือนZORT && โหมดแผง === 'กรอง' ? ช่องตัวกรอง : ช่องทั้งหมด
+
   return (
     <div className="p-4 md:p-6">
       {/* ⚠️ ชิ้นแรกสุด เหนือหัวจอ — คำเตือนที่ต้องเลื่อนถึงเห็น คือคำเตือนที่วางผิดที่ */}
@@ -851,6 +980,8 @@ export default function CoreSalesPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขรายการขาย ชื่อลูกค้า ช่องทางการขาย และอื่นๆ"
+        /* 🧭 โหมด ค้นหาขั้นสูง (แว่น) ของ ZORT: ลิงก์อยู่ข้างช่องค้น แทนปุ่มตัวกรองท้ายแถว */
+        advanced={เหมือนZORT && โหมดแผง === 'ขั้นสูง' ? <AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} /> : undefined}
         /* 🔴 เดิมลิงก์ตรงนี้เขียนว่า "ค้นหา" และกดแล้วแค่โหลดซ้ำ — ผัง ZORT ตรงนี้คือ "ค้นหาขั้นสูง"
            ⇒ ตอนนี้กดแล้วกางแผงช่วงวันที่จริง (ท่อรับ from/to) ไม่ใช่ลิงก์ประดับ */
         /* 🔴 ผัง ZORT จอนี้ไม่มีลิงก์ "ค้นหาขั้นสูง" ข้างช่องค้น — มีปุ่ม "ตัวกรอง" ต่อท้ายตัวเลือกช่วงวัน
@@ -901,7 +1032,8 @@ export default function CoreSalesPage() {
               {RANGES.map((r) => <option key={r.days} value={r.days}>{r.label}</option>)}
             </select>
             </span>
-            <AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} แบบ="ปุ่มตัวกรอง" />
+            {!(เหมือนZORT && โหมดแผง === 'ขั้นสูง') && <AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} แบบ="ปุ่มตัวกรอง" />}
+            {เหมือนZORT && <ปุ่มโหมดแผง โหมด={โหมดแผง} เปลี่ยน={setโหมดแผง} />}
             {/* ร้าน/ช่องทาง ZORT ไม่มีในแถวนี้ (บัญชีเดียว · ช่องทางอยู่ในตัวกรอง) — ของเรารวมสองบัญชี จึงต้องมี
                 วางต่อท้ายหลังปุ่มตัวกรอง ให้ลำดับต้นแถวตรงกับ ZORT */}
             {/* ⚠️ ชื่อร้านมาจากบัญชี ZORT สองบัญชีของร้าน — z1 คือบริษัทที่ขายบนเว็บ
@@ -922,86 +1054,7 @@ export default function CoreSalesPage() {
              ช่องข้อความ → ติ๊ก COD/ซ่อน → ลูกค้า/เบอร์/อีเมล/จัดส่ง → 10 สถานะ → ชำระเงิน → 6 คู่วันท้ายสุด)
            ช่องที่ท่อยังกรองไม่ได้ **วาดไว้ตำแหน่งเดียวกับ ZORT แต่ปิด** (`ปิดไว้`) พร้อมเหตุใน notAvailable ข้างล่าง
            — CEO สั่ง "อย่าทำปุ่มหลอก ใส่แล้วปิดไว้พร้อมเหตุผลบนจอ" · ช่องปิดไม่ส่งค่าอะไรไปท่อ */
-        fields={[
-          { label: 'หมายเลขรายการ', kind: 'text', value: fNumber, onChange: (v) => setFNumber(String(v)), placeholder: 'เช่น SO-2026', width: 150 },
-          { label: 'มูลค่าตั้งแต่', kind: 'number', value: fMin, onChange: (v) => setFMin(String(v)), placeholder: '0', width: 110 },
-          { label: 'จนถึงมูลค่า', kind: 'number', value: fMax, onChange: (v) => setFMax(String(v)), placeholder: '999999', width: 110 },
-          { label: 'อ้างอิง', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
-          {
-            /* ตัวเดียวกับตัวเลือกช่องทางเหนือตาราง (state `channel` ตัวเดียว) — ไม่ใช่ตัวกรองที่สอง */
-            label: 'ช่องทางการขาย',
-            kind: 'select',
-            value: channel,
-            onChange: (v) => setChannel(String(v)),
-            width: 150,
-            options: [
-              { value: '', label: 'ทั้งหมด' },
-              ...(data?.channels ?? []).filter((c) => typeof c === 'string').map((c) => ({ value: c, label: c })),
-            ],
-          },
-          /* 🔑 สองช่องนี้เปิดเองวันที่ท่อประกาศคีย์ใน advancedFilters — ไม่ต้องมีใครกลับมาแก้จอ */
-          { label: 'ชื่อตัวแทน', kind: 'text', value: fAgent, onChange: (v) => setFAgent(String(v)), placeholder: 'ชื่อตัวแทนจำหน่าย', width: 150, ปิดไว้: ท่อยังไม่รู้จัก('agent') },
-          { label: 'ผู้สร้าง', kind: 'text', value: fCreator, onChange: (v) => setFCreator(String(v)), placeholder: 'ชื่อผู้สร้างใบ', width: 130 },
-          {
-            label: 'คลัง',
-            kind: 'select',
-            value: fWh,
-            onChange: (v) => setFWh(String(v)),
-            width: 170,
-            options: [
-              { value: '', label: 'ทั้งหมด' },
-              { value: 'NEW', label: 'NEW' },
-              { value: 'KLD', label: 'KLD' },
-              { value: 'ANJ', label: 'ANJ' },
-            ],
-          },
-          { label: 'Tag', kind: 'text', value: fTag, onChange: (v) => setFTag(String(v)), placeholder: 'มีคำนี้ใน Tag', width: 130 },
-          { label: 'สินค้า (รหัส/ชื่อ)', kind: 'text', value: fProduct, onChange: (v) => setFProduct(String(v)), placeholder: 'เช่น 00313', width: 170 },
-          { label: 'Serial no', kind: 'text', value: fSerial, onChange: (v) => setFSerial(String(v)), placeholder: 'เลขซีเรียลในใบ', width: 150, ปิดไว้: ท่อยังไม่รู้จัก('serial') },
-          {
-            label: 'เก็บเงินปลายทาง',
-            kind: 'select',
-            value: fCod,
-            onChange: (v) => setFCod(String(v)),
-            width: 130,
-            options: [
-              { value: '', label: 'ทั้งหมด' },
-              { value: '1', label: 'เฉพาะ COD' },
-              { value: '0', label: 'ไม่ใช่ COD' },
-            ],
-          },
-          { label: 'แสดงรายการที่ถูกซ่อน', kind: 'check', value: false, onChange: () => {}, ปิดไว้: 'กระจกไม่ได้เก็บธงถูกซ่อนของ ZORT' },
-          { label: 'ชื่อลูกค้า', kind: 'text', value: fCustomer, onChange: (v) => setFCustomer(String(v)), placeholder: 'มีคำนี้ในชื่อ', width: 150 },
-          { label: 'เบอร์โทรศัพท์', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: ท่อไม่รับช่องนี้ },
-          { label: 'อีเมลลูกค้า', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: ท่อไม่รับช่องนี้ },
-          { label: 'ช่องทางจัดส่ง', kind: 'text', value: fShipCh, onChange: (v) => setFShipCh(String(v)), placeholder: 'เช่น Flash', width: 150 },
-          /* 10 สถานะของ ZORT — วาดครบตามผังแต่ปิด (เหตุ: สถานะรายการ 10 ค่าแบบ ZORT ข้างล่าง) */
-          ...['รอโอนสินค้า', 'สำเร็จ', 'โอนบางส่วน', 'ยกเลิก', 'ยกเลิก (หมดอายุ)', 'แพ็คแล้ว', 'รอส่งสินค้า', 'กำลังส่งสินค้า', 'จัดส่งไม่สำเร็จ', 'ยกเลิกการส่งสินค้า'].map((ชื่อ) => (
-            { label: ชื่อ, kind: 'check' as const, value: false, onChange: () => {}, ปิดไว้: 'กระจกมีสถานะจริงแค่ 5 ค่า ยังไม่ได้พิสูจน์การจับคู่กับ 10 ค่าของ ZORT — จะรู้เมื่ออ่านสถานะใบเดียวกันจากสองฝั่งเทียบกัน' }
-          )),
-          {
-            label: 'สถานะชำระเงิน',
-            kind: 'select',
-            value: fPay,
-            onChange: (v) => setFPay(String(v)),
-            width: 150,
-            /* 🔑 ค่าที่ส่งเป็นค่าดิบของกระจก (Paid/Pending/Voided) แต่ **คำบนจอมาจาก lib/zort-words**
-               ⇒ คนใช้เห็นคำเดียวกับ ZORT · ห้ามพิมพ์คำไทยตายตัวที่นี่ */
-            options: [
-              { value: '', label: 'ทั้งหมด' },
-              { value: 'Paid', label: zortWord(PAY_STATUS, 'Paid').text },
-              { value: 'Pending', label: zortWord(PAY_STATUS, 'Pending').text },
-              { value: 'Voided', label: zortWord(PAY_STATUS, 'Voided').text },
-            ],
-          },
-          { label: 'ตั้งแต่วันที่', kind: 'date', value: advFrom, onChange: (v) => setAdvFrom(String(v)) },
-          { label: 'ถึงวันที่', kind: 'date', value: advTo, onChange: (v) => setAdvTo(String(v)) },
-          { label: 'วันส่งสินค้า ตั้งแต่', kind: 'date', value: fShipFrom, onChange: (v) => setFShipFrom(String(v)) },
-          { label: 'ถึง', kind: 'date', value: fShipTo, onChange: (v) => setFShipTo(String(v)) },
-          ...(['วันที่ชำระเงิน', 'วันที่โอนสินค้า', 'วันที่สร้าง', 'วันที่อัพเดท'] as const).flatMap((ชื่อ) => (['ตั้งแต่', 'ถึง'] as const).map((ปลาย) => (
-            { label: `${ชื่อ} ${ปลาย}`, kind: 'date' as const, value: '', onChange: () => {}, ปิดไว้: วันชนิดอื่นยังไม่มี }
-          ))),
-        ]}
+        fields={ช่องในแผง}
         notAvailable={[
           /* 🔴 เหตุของช่องที่ปิดไว้ข้างบน — ต้องเห็นบนจอ ไม่ใช่แค่ใน title (คนบนมือถือชี้ค้างไม่ได้) */
           {
@@ -1030,7 +1083,7 @@ export default function CoreSalesPage() {
              แต่ **ตกสองช่องนี้ไป** ⇒ ช่องที่ไม่ถูกเอ่ยถึงจะถูกอ่านว่า "เทียบแล้วไม่มีอะไรขาด" */
           {
             what: 'ประเภทค่าขนส่ง (Direct Payment / Logistic Point)',
-            why: 'ZORT มี select `logisticsiscash` แยกว่าใบนั้นจ่ายค่าส่งตรงหรือหักจากพอยท์ — ท่อของเราไม่ส่งช่องนี้มาเลย (ไม่อยู่ใน applied ของเส้น list=orders) ⇒ ทำช่องไปก็กรองไม่ได้',
+            why: เหตุประเภทค่าขนส่ง,
           },
           {
             what: 'แสดงรายการที่ถูกซ่อน',
