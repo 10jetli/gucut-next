@@ -18,7 +18,7 @@ import { useCallback, useEffect, useState } from 'react'
 import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
-import { PURCHASE_STATUS, zortWord } from '@/lib/zort-words'
+import { PURCHASE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
@@ -86,6 +86,14 @@ const statusTh = (s?: string) => {
 const statusTone = (s: string) =>
   s === 'Success' ? 'green' : s === 'Voided' ? 'red' : s ? 'orange' : 'gray'
 
+/** เหตุที่ช่องในแผงค้นหาขั้นสูงของจอรายการซื้อปิดไว้ — ที่เดียว ใช้ทั้งช่องที่ปิดและรายการ ไม่มีให้กรอง */
+const เหตุปิดใบซื้อ = {
+  /* 🔬 ตามหลัก "ดูของที่แถวส่งมาแล้วก่อนขอใหม่": แถว list=purchases มี 8 ช่อง (วัด 15 ต.ค. 2569 · ยิงซ้ำ 20 ต.ค. 2569 เท่าเดิม)
+     amount id number payment_status po_date status vendor warehouse ⇒ ช่องพวกนี้ไม่มีค่าในแถวเลย */
+  ไม่มีช่อง: 'แถวที่ท่อส่งมาไม่มีช่องนี้ (วัด 15 ต.ค. 2569: มีแค่ เลขที่ · วันที่ · ผู้ติดต่อ · คลัง · มูลค่า · สถานะ · ชำระเงิน) — รอท่อ',
+  สถานะ: 'ท่อยังไม่รับเป็นตัวกรอง — ยิงยืนยันซ้ำ 18 ก.ย. 2569 (ส่ง status= แล้ว total ค้าง 33) · แท็บด้านบนกรองสถานะให้แล้ว (กรองในเครื่อง)',
+}
+
 export default function CorePurchasesPage() {
   const [q, setQ] = useState('')
   /* 🏬 ร้านที่กำลังดู (ท่อ gucut-web 0932fac · 15 ก.ย. 2569) — ยิงจริง: z1 33 ใบ · z2 64 ใบ = ZORT ทั้งคู่ */
@@ -125,7 +133,7 @@ export default function CorePurchasesPage() {
   /* 🖥️ ตัวกรองที่กรอง **ในเบราว์เซอร์** จากช่องที่แถวส่งมาแล้ว (15 ต.ค. 2569 · จอเหมือน ZORT /Buy/list)
      แถว list=purchases มี number · amount · vendor · warehouse อยู่แล้ว แต่แผงเดิมมีแค่ช่วงวัน
      ⇒ ไม่ต้องรอท่อ · ⚠️ ครอบทั้งชุดเฉพาะตอน `loadedAll` — ไม่ครบ ⇒ บรรทัดใต้แท็บบอกว่ากรองเฉพาะที่โหลดมา */
-  const ว่างเปล่า = { เลข: '', ตั้งแต่: '', ถึง: '', ผู้ติดต่อ: '', คลัง: '' }
+  const ว่างเปล่า = { เลข: '', ตั้งแต่: '', ถึง: '', ผู้ติดต่อ: '', คลัง: '', ชำระ: '' }
   const [ร่าง, setร่าง] = useState(ว่างเปล่า)
   const [กรอง, setกรอง] = useState(ว่างเปล่า)
   const [data, setData] = useState<Resp | null>(null)
@@ -173,6 +181,7 @@ export default function CorePurchasesPage() {
     if (กรอง.เลข.trim() && !String(r.number ?? '').toLowerCase().includes(กรอง.เลข.trim().toLowerCase())) return false
     if (กรอง.ผู้ติดต่อ.trim() && !String(r.vendor ?? '').toLowerCase().includes(กรอง.ผู้ติดต่อ.trim().toLowerCase())) return false
     if (กรอง.คลัง && (r.warehouse ?? '') !== กรอง.คลัง) return false
+    if (กรอง.ชำระ && (r.payment_status ?? '') !== กรอง.ชำระ) return false
     /* มูลค่าที่ไม่ใช่ตัวเลข (ท่อไม่ส่ง) ⇒ ตัดสินไม่ได้ ⇒ ไม่ผ่านเมื่อมีเงื่อนไขมูลค่า (ห้ามเดาเป็น 0) */
     if (กรอง.ตั้งแต่.trim() && !(Number.isFinite(ม) && ม >= Number(กรอง.ตั้งแต่))) return false
     if (กรอง.ถึง.trim() && !(Number.isFinite(ม) && ม <= Number(กรอง.ถึง))) return false
@@ -180,6 +189,8 @@ export default function CorePurchasesPage() {
   }
   const rows = (tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)).filter(ผ่านตัวกรอง)
   const คลังที่มี = Array.from(new Set(allRows.map((r) => r.warehouse).filter((w): w is string => !!w))).sort()
+  /** ค่าสถานะชำระเงินที่มีจริงในแถวที่โหลดมา (แถวมี payment_status · วัด 15 ต.ค. 2569) — ป้ายจากทะเบียนคำ ZORT ไม่พิมพ์ค่าดิบ */
+  const ชำระที่มี = Array.from(new Set(allRows.map((r) => r.payment_status).filter((w): w is string => !!w))).sort()
   /** โหลดมาครบทั้งชุดหรือยัง — ใช้ตัดสินว่าการกรองในเครื่องครอบทั้งชุดไหม */
   /* 🔴 ตัดสินจากฟังก์ชันกลางทุกครั้ง — เดิม `offset + โหลดมา >= ทั้งหมด` ได้ "ครบ" ตอนอยู่หน้าสุดท้าย
      ทั้งที่ในเครื่องมีแค่แถวของหน้านั้น (เจอ 15 ต.ค. 2569 · เทส client-filter-scope ปลูกเคสนี้ไว้) */
@@ -304,29 +315,40 @@ export default function CorePurchasesPage() {
       {/* 🔎 ช่วงวันที่ใบซื้อ — ท่อรับจริง (ยิงยืนยัน 18 ก.ย. 2569) */}
       <AdvancedSearch
         open={advOpen}
+        /* 📐 ลำดับช่องตาม DOM แผง searchAdvance ของ ZORT /Buy/list (อ่านของที่ซ่อนอยู่ 20 ต.ค. 2569)
+           ช่องที่ท่อยังไม่ส่งค่ามา วาดไว้ตำแหน่งเดียวกับ ZORT แต่ปิด — เหตุมาจาก เหตุปิดใบซื้อ ที่เดียวกับรายการข้างล่าง */
         fields={[
           { label: 'หมายเลขรายการ', kind: 'text', value: ร่าง.เลข, onChange: (v) => setร่าง({ ...ร่าง, เลข: v }), placeholder: 'หมายเลขรายการ', width: 150 },
           { label: 'มูลค่าเริ่มต้น', kind: 'number', value: ร่าง.ตั้งแต่, onChange: (v) => setร่าง({ ...ร่าง, ตั้งแต่: v }), placeholder: '0', width: 120 },
           { label: 'จนถึงมูลค่า', kind: 'number', value: ร่าง.ถึง, onChange: (v) => setร่าง({ ...ร่าง, ถึง: v }), placeholder: '999,999', width: 120 },
-          { label: 'ชื่อผู้ติดต่อ', kind: 'text', value: ร่าง.ผู้ติดต่อ, onChange: (v) => setร่าง({ ...ร่าง, ผู้ติดต่อ: v }), placeholder: 'ชื่อผู้ติดต่อ', width: 160 },
+          { label: 'อ้างอิง', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'ผู้ใช้งาน', kind: 'select', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'Tag', kind: 'text', value: '', onChange: () => {}, width: 120, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
           { label: 'คลัง / สาขา', kind: 'select', value: ร่าง.คลัง, onChange: (v) => setร่าง({ ...ร่าง, คลัง: v }),
             options: [{ value: '', label: 'คลัง / สาขา - ทั้งหมด' }, ...คลังที่มี.map((w) => ({ value: w, label: ป้ายคลัง(w) ?? `รหัสคลัง ${w}` }))], width: 170 },
+          { label: 'สินค้า', kind: 'text', value: '', onChange: () => {}, width: 160, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'Serial no', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'แสดงรายการที่ถูกซ่อน', kind: 'check', value: false, onChange: () => {}, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'ชื่อผู้ติดต่อ', kind: 'text', value: ร่าง.ผู้ติดต่อ, onChange: (v) => setร่าง({ ...ร่าง, ผู้ติดต่อ: v }), placeholder: 'ชื่อผู้ติดต่อ', width: 160 },
+          { label: 'เบอร์โทรศัพท์', kind: 'text', value: '', onChange: () => {}, width: 130, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'อีเมลผู้ติดต่อ', kind: 'text', value: '', onChange: () => {}, width: 150, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'การโอนสินค้า', kind: 'select', value: '', onChange: () => {}, width: 140, ปิดไว้: เหตุปิดใบซื้อ.สถานะ },
+          { label: 'สถานะการชำระเงิน', kind: 'select', value: ร่าง.ชำระ, onChange: (v) => setร่าง({ ...ร่าง, ชำระ: v }), width: 150,
+            options: [{ value: '', label: 'ทั้งหมด' }, ...ชำระที่มี.map((v) => ({ value: v, label: zortWord(PAY_STATUS, v).text }))] },
           { label: 'ตั้งแต่วันที่', kind: 'date', value: from, onChange: (v) => setFrom(v) },
           { label: 'ถึงวันที่', kind: 'date', value: to, onChange: (v) => setTo(v) },
+          { label: 'วันที่ชำระเงิน', kind: 'date', value: '', onChange: () => {}, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
+          { label: 'วันที่โอนสินค้า', kind: 'date', value: '', onChange: () => {}, ปิดไว้: เหตุปิดใบซื้อ.ไม่มีช่อง },
         ] as AdvField[]}
         onApply={() => { setกรอง(ร่าง); load(0, tab, store, perPage, from, to) }}
         onClear={() => { setร่าง(ว่างเปล่า); setกรอง(ว่างเปล่า); setFrom(''); setTo(''); load(0, tab, store, perPage, '', '') }}
         canClear={!!(from || to) || กรองอยู่ || Object.values(ร่าง).some((v) => v.trim() !== '')}
         serverFiltered="ช่วงวันที่ใบซื้อ · ร้าน · คำค้น"
-        clientFiltered={`หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง: ${ขอบเขตกรอง.บรรทัด}`}
+        clientFiltered={`หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง · สถานะการชำระเงิน: ${ขอบเขตกรอง.บรรทัด}`}
         notAvailable={[
-          /* 🔬 ตามหลัก "ดูของที่แถวส่งมาแล้วก่อนขอใหม่": แถว list=purchases มี 8 ช่อง (วัด 15 ต.ค. 2569)
-             amount id number payment_status po_date status vendor warehouse ⇒ ช่องข้างล่างไม่มีค่าในแถวเลย */
           ...(['อ้างอิง', 'ผู้ใช้งาน (คนสร้างใบ)', 'Tag', 'สินค้า', 'Serial no', 'แสดงรายการที่ถูกซ่อน',
-            'เบอร์โทรศัพท์', 'อีเมลผู้ติดต่อ', 'วันที่ชำระเงิน', 'วันที่โอนสินค้า'].map((what) => ({
-            what, why: 'แถวที่ท่อส่งมาไม่มีช่องนี้ (วัด 15 ต.ค. 2569: มีแค่ เลขที่ · วันที่ · ผู้ติดต่อ · คลัง · มูลค่า · สถานะ · ชำระเงิน) — รอท่อ',
-          }))),
-          { what: 'สถานะ (สำเร็จ · ยกเลิก · รอโอน)', why: 'ท่อยังไม่รับเป็นตัวกรอง — ยิงยืนยันซ้ำ 18 ก.ย. 2569 (ส่ง status= แล้ว total ค้าง 33) · แท็บด้านบนจึงกรองในเครื่อง' },
+            'เบอร์โทรศัพท์', 'อีเมลผู้ติดต่อ', 'วันที่ชำระเงิน', 'วันที่โอนสินค้า'].map((what) => ({ what, why: เหตุปิดใบซื้อ.ไม่มีช่อง }))),
+          { what: 'การโอนสินค้า (สำเร็จ · ยกเลิก · รอโอน)', why: เหตุปิดใบซื้อ.สถานะ },
         ]}
       />
 
@@ -579,6 +601,11 @@ export default function CorePurchasesPage() {
                   ['แท็บสถานะบนจอ', tab === 'all' ? 'ทั้งหมด'
                     : `${tab} — ⚠️ ไฟล์นี้ไม่ได้กรองด้วยสถานะ (ท่อไม่รองรับ) ได้ทุกสถานะ`],
                   ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+                  /* 🔴 ตัวกรองในแผงค้นหาขั้นสูง (หมายเลข · มูลค่า · ผู้ติดต่อ · คลัง · ชำระเงิน) กรองในเครื่องบนจอเท่านั้น
+                     ไฟล์ดึงจากท่อใหม่ทั้งชุด ⇒ ต้องเขียนว่าไม่ได้กรองตามแผง ไม่งั้นไฟล์โกหกขอบเขตตัวเองแบบเดียวกับแท็บ (เจอ 20 ต.ค. 2569) */
+                  ['ตัวกรองในแผงค้นหาขั้นสูง', กรองอยู่
+                    ? '⚠️ ไฟล์นี้ไม่ได้กรองตามแผง (แผงกรองในเครื่องเฉพาะบนจอ) — ได้ทุกแถวตามร้าน/ช่วงวัน/คำค้น'
+                    : '(ไม่ได้ใช้)'],
                 ],
                 fetchPage: async (offsetAt, limit) => {
                   const qs = new URLSearchParams({ list: 'purchases', limit: String(limit), offset: String(offsetAt) })
