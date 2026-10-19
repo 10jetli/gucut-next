@@ -215,6 +215,38 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
   )
 }
 
+/** 🥧 วงกลมแบ่งสัดส่วนแบบ ZORT (โหมดเหมือน ZORT · ภาพ /Dashboard/ContactReport 19 ต.ค. 2569: % เขียนสีขาวในชิ้น)
+ *  ⚠️ วาดจากเลขชุดเดียวกับบรรทัดคำอธิบายข้าง ๆ เท่านั้น — ไม่มีเลขใหม่ · ชิ้นที่ศูนย์ไม่วาด
+ *  ⚠️ % คิดจากผลรวมของชิ้นที่ส่งมา (ถ้ามีก้อน "นอก 500 รายแรก" ก็รวมด้วย) */
+function วงกลมZORT({ ชิ้น }: { ชิ้น: { ค่า: number; สี: string }[] }) {
+  const รวม = ชิ้น.reduce((n, x) => n + Math.max(0, x.ค่า), 0)
+  if (!รวม) return null
+  let มุม = -Math.PI / 2
+  const R = 48, cx = 50, cy = 50
+  return (
+    <svg viewBox="0 0 100 100" className="w-[260px] h-[260px] shrink-0" role="img" aria-label="สัดส่วนยอดขายตามกลุ่มลูกค้า">
+      {ชิ้น.filter((x) => x.ค่า > 0).map((x, i) => {
+        const ส่วน = x.ค่า / รวม
+        const a0 = มุม, a1 = มุม + ส่วน * 2 * Math.PI
+        มุม = a1
+        const กลาง = (a0 + a1) / 2
+        const d = ส่วน >= 0.9999
+          ? `M ${cx} ${cy - R} A ${R} ${R} 0 1 1 ${cx - 0.01} ${cy - R} Z`
+          : `M ${cx} ${cy} L ${cx + R * Math.cos(a0)} ${cy + R * Math.sin(a0)} A ${R} ${R} 0 ${ส่วน > 0.5 ? 1 : 0} 1 ${cx + R * Math.cos(a1)} ${cy + R * Math.sin(a1)} Z`
+        return (
+          <g key={i}>
+            <path d={d} fill={x.สี} stroke="#fff" strokeWidth="0.6" />
+            {ส่วน >= 0.05 && (
+              <text x={cx + R * 0.62 * Math.cos(กลาง)} y={cy + R * 0.62 * Math.sin(กลาง)} fill="#fff" fontSize="5.2" fontWeight="600"
+                textAnchor="middle" dominantBaseline="middle">{(Math.round(ส่วน * 1000) / 10).toFixed(1)}%</text>
+            )}
+          </g>
+        )
+      })}
+    </svg>
+  )
+}
+
 export default function CoreCustomersPage() {
   const [days, setDays] = useState(90)
   const [q, setQ] = useState('')
@@ -580,19 +612,29 @@ export default function CoreCustomersPage() {
                       <span className="inline-block h-2 rounded-sm align-middle"
                         style={{ background: color, width: `${totalSales ? Math.max(2, (v / totalSales) * 160) : 2}px` }} />
                     )
+                    /* 📐 โหมดเหมือน ZORT: วงกลมแบ่งสัดส่วนทางซ้าย + บรรทัดคำอธิบายเดิม (มียอดเงิน) ทางขวา · "ไม่ระบุชื่อ" ใช้สีน้ำเงินแบบชิ้น "ไม่ระบุ" ของ ZORT */
+                    const สีไม่ระบุ = เหมือนZORT ? '#2f8dde' : '#9ca3af'
                     return (
-                      <div className="text-[12.5px] space-y-2">
+                      <div className={เหมือนZORT ? 'flex items-center gap-8 flex-wrap' : ''}>
+                      {เหมือนZORT && <วงกลมZORT ชิ้น={[
+                        { ค่า: salesNew, สี: '#8ea8f8' },
+                        { ค่า: salesRep, สี: '#f2938c' },
+                        { ค่า: salesUnk, สี: '#d1d5db' },
+                        { ค่า: salesNoName, สี: สีไม่ระบุ },
+                        { ค่า: rest ?? 0, สี: '#fcd34d' },
+                      ]} />}
+                      <div className="text-[12.5px] space-y-2 min-w-0">
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#8ea8f8' }} />
-                          {LAB_A} <b>{fmtMoney(salesNew)}</b> บาท {bar(salesNew, '#8ea8f8')}</p>
+                          {LAB_A} <b>{fmtMoney(salesNew)}</b> บาท {!เหมือนZORT && bar(salesNew, '#8ea8f8')}</p>
                         <p><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: '#f2938c' }} />
-                          {LAB_B} <b>{fmtMoney(salesRep)}</b> บาท {bar(salesRep, '#f2938c')}</p>
+                          {LAB_B} <b>{fmtMoney(salesRep)}</b> บาท {!เหมือนZORT && bar(salesRep, '#f2938c')}</p>
                         {/* กอง "ไม่รู้วันซื้อครั้งแรก" — ท่อกำชับห้ามตัดทิ้ง (0 วันนี้ ไม่ใช่ 0 ตลอดไป) ⇒ มี groupTotals ให้โชว์เสมอ */}
                         {(salesUnk > 0 || gt) && (
                           <p className="text-gray-600"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-300" />
                             ไม่รู้วันซื้อครั้งแรก <b>{fmtMoney(salesUnk)}</b> บาท</p>
                         )}
-                        <p className="text-gray-600"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-gray-400" />
-                          ไม่ระบุชื่อ (ส่วนใหญ่เป็นหน้าร้าน) <b>{fmtMoney(salesNoName)}</b> บาท {bar(salesNoName, '#9ca3af')}</p>
+                        <p className="text-gray-600"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: สีไม่ระบุ }} />
+                          ไม่ระบุชื่อ (ส่วนใหญ่เป็นหน้าร้าน) <b>{fmtMoney(salesNoName)}</b> บาท {!เหมือนZORT && bar(salesNoName, '#9ca3af')}</p>
                         {/* 🔴 ก้อนที่ปิดช่องว่าง — มีเมื่อถูกตัดที่ 500 รายเท่านั้น */}
                         {rest !== null && rest > 0 && (
                           <p className="text-amber-800"><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5 bg-amber-300" />
@@ -611,6 +653,7 @@ export default function CoreCustomersPage() {
                             : <>ท่อไม่ได้ส่งยอดรวมทั้งช่วงมารอบนี้ ⇒ บอกไม่ได้ว่าสองกลุ่มนี้ครบหรือยัง</>}
                           {' '}· ZORT มีมุมมองนี้เหมือนกัน (ลูกค้าใหม่ · ลูกค้าซื้อซ้ำ · ไม่ระบุ)
                         </p>
+                      </div>
                       </div>
                     )
                   }
