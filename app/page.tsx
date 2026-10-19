@@ -20,6 +20,7 @@ import Card from '@/components/ui/Card'
 import StatCard from '@/components/ui/StatCard'
 import { PageHead, BtnGhost, thaiDate } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { ขั้นแกน, ย่อเลข } from '@/components/zort/ZortBarChart'
 import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, เหตุเต็ม } from '@/components/zort/CostGate'
 
 interface CoreOrderRow {
@@ -248,6 +249,7 @@ function ZortBigCard({ icon, label, value, unknown, tone }: {
 
 /** กราฟเส้น/แท่งยอดขายรายเดือน — SVG ล้วน (ชุดเดียวกับที่จอยอดขายใช้ แต่หน่วยเป็นเดือน) */
 function MonthTrend({ data, kind }: { data: { ym: string; sales: number }[]; kind: 'line' | 'bar' }) {
+  if (เหมือนZORT && kind === 'line') return <MonthTrendZ data={data} />
   const W = 560, H = 170, PAD = 10
   const max = Math.max(...data.map((d) => d.sales), 1)
   const n = Math.max(data.length, 1)
@@ -277,6 +279,42 @@ function MonthTrend({ data, kind }: { data: { ym: string; sales: number }[]; kin
         </g>
       ))}
       <text x={W / 2} y={H - 1} textAnchor="middle" className="fill-gray-400 text-[10px]">ช่วงเวลา</text>
+    </svg>
+  )
+}
+
+/** 📈 โหมดเหมือน ZORT: กราฟเส้นมีแกนตั้ง 0 · 200K · 400K · 600K + เส้นตารางจางครึ่งขั้น · คำอธิบายเส้นด้านบน ·
+ *  ชื่อเดือนแบบ ก.ค./2569 · สีเส้น #97aefc · ไม่มีเลขบนจุด (ดูภาพ /Dashboard 19 ต.ค. 2569) — เลขยังอ่านได้จาก title ของจุด
+ *  ขั้นแกนใช้ตัวเดียวกับ ZortBarChart (ไม่คัดลอก) */
+function MonthTrendZ({ data }: { data: { ym: string; sales: number }[] }) {
+  const W = 560, H = 260, L = 50, R = 20, T = 40, B = 34
+  const max = Math.max(...data.map((d) => d.sales), 1)
+  const ขั้น = ขั้นแกน(max)
+  const ยอด = Math.ceil(max / ขั้น) * ขั้น
+  const n = Math.max(data.length, 1)
+  const x = (i: number) => L + ((W - L - R) * (i + 0.5)) / n
+  const y = (v: number) => T + (H - T - B) * (1 - v / ยอด)
+  const เส้น = Array.from({ length: Math.round(ยอด / ขั้น) * 2 + 1 }, (_, i) => (i * ขั้น) / 2)
+  const thai = (ym: string) => `${['', 'ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'][Number(String(ym).slice(5, 7))] ?? ym}/${Number(String(ym).slice(0, 4)) + 543}`
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto font-['Lato','Boon',sans-serif]" role="img" aria-label="กราฟยอดขายรายเดือน">
+      <line x1={L + 40} x2={L + 64} y1={14} y2={14} stroke="#97aefc" strokeWidth={2} />
+      <circle cx={L + 52} cy={14} r={3.5} fill="#97aefc" />
+      <text x={L + 70} y={18} className="fill-[#3e3e3e] text-[11px]">ยอดขายรวม</text>
+      {เส้น.map((v, i) => (
+        <g key={v}>
+          <line x1={L} x2={W - R} y1={y(v)} y2={y(v)} stroke={i === 0 ? '#666' : i % 2 === 0 ? '#d4d4d4' : '#ececec'} />
+          {i % 2 === 0 && <text x={L - 8} y={y(v) + 4} textAnchor="end" className="fill-[#3e3e3e] text-[11px]">{ย่อเลข(v)}</text>}
+        </g>
+      ))}
+      <path d={data.map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(d.sales).toFixed(1)}`).join(' ')}
+        fill="none" stroke="#97aefc" strokeWidth={2} strokeLinejoin="round" />
+      {data.map((d, i) => (
+        <g key={d.ym}>
+          <circle cx={x(i)} cy={y(d.sales)} r={4} fill="#97aefc"><title>{fmtMoney(d.sales)}</title></circle>
+          <text x={x(i)} y={H - B + 18} textAnchor="middle" className="fill-[#3e3e3e] text-[11.5px]">{thai(d.ym)}</text>
+        </g>
+      ))}
     </svg>
   )
 }
