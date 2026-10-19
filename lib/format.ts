@@ -65,7 +65,9 @@ export function fmtDateTime(iso: string) {
 const TH_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
-export function thaiDate(raw?: string | null): string {
+/** `เดือน: 'เต็ม'` = ชื่อเดือนเต็ม (19 ตุลาคม 2569) แบบการ์ดเคลื่อนไหวล่าสุดของ ZORT · ค่าตั้งต้นย่อเหมือนเดิม */
+export function thaiDate(raw?: string | null, เดือน: 'ย่อ' | 'เต็ม' = 'ย่อ'): string {
+  const ชื่อเดือน = เดือน === 'เต็ม' ? TH_MONTHS : TH_MONTH_SHORT
   const s = String(raw ?? '').trim()
   if (!s) return '—'
   /* 🔴 **ค่าที่มีเวลาและโซนติดมาด้วย ต้องแปลงเป็นเวลาไทยก่อน ห้ามตัดเอาแต่ 10 ตัวแรก**
@@ -81,14 +83,14 @@ export function thaiDate(raw?: string | null): string {
     const t = new Date(s)
     if (!Number.isNaN(t.getTime())) {
       const bkk = new Date(t.getTime() + 7 * 3600000)
-      return `${bkk.getUTCDate()} ${TH_MONTH_SHORT[bkk.getUTCMonth()]} ${bkk.getUTCFullYear() + 543}`
+      return `${bkk.getUTCDate()} ${ชื่อเดือน[bkk.getUTCMonth()]} ${bkk.getUTCFullYear() + 543}`
     }
   }
   const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(s)
   if (!m) return s
   const year = Number(m[1]), mon = Number(m[2]), day = Number(m[3])
   if (!year || mon < 1 || mon > 12 || !day) return s
-  return `${day} ${TH_MONTH_SHORT[mon - 1]} ${year + 543}`
+  return `${day} ${ชื่อเดือน[mon - 1]} ${year + 543}`
 }
 
 /* ── วันไทยจากเวลาที่ฐานเขียนไว้เป็น UTC ───────────────────────────────

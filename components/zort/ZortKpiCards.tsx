@@ -19,6 +19,8 @@ export interface ZortKpi {
   ว่าง?: boolean
   /** ข้อความเมื่อชี้เมาส์ (ที่มาของเลข / เหตุที่ว่าง) */
   เหตุ?: string
+  /** การ์ดที่ค่าเป็นข้อความ (วันที่) — ZORT ใช้ Kanit น้ำหนักปกติ ไม่ใช่ Lato หนา (วัด DOM /Warehouse/Details 19 ต.ค. 2569: Kanit 24/400) */
+  ค่าเป็นข้อความ?: boolean
 }
 
 const COLS: Record<number, string> = { 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-2 lg:grid-cols-4' }
@@ -28,12 +30,13 @@ export default function ZortKpiCards({ items, ขนาดเลข = 30 }: { it
   const เลข = ขนาดเลข === 20 ? 'text-[20px] leading-[20px]' : ขนาดเลข === 24 ? 'text-[24px] leading-[24px]' : 'text-[30px] leading-[30px]'
   return (
     <div className={`grid grid-cols-1 ${COLS[items.length] ?? 'sm:grid-cols-3'} gap-[30px]`}>
-      {items.map(({ ป้าย, วง, สี, รูป, ค่า, ว่าง, เหตุ }) => (
+      {items.map(({ ป้าย, วง, สี, รูป, ค่า, ว่าง, เหตุ, ค่าเป็นข้อความ }) => (
         <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between gap-3" title={เหตุ || undefined}>
           <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
           <div className="text-right min-w-0">
-            <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
-            <p className={`font-['Lato',sans-serif] ${เลข} font-semibold mt-1 m-0 break-words`} style={{ color: ว่าง ? '#ced4da' : สี }}>{ค่า}</p>
+            {/* ป้าย Boon 14/500 — วัด DOM 19 ต.ค. 2569 ทั้ง /Product/Details กับ /Warehouse/Details (เดิม h2 รับ Kanit มาจากหัวเรื่อง) */}
+            <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
+            <p className={`${ค่าเป็นข้อความ ? "font-['Kanit',sans-serif] font-normal" : "font-['Lato',sans-serif] font-semibold"} ${เลข} mt-1 m-0 break-words`} style={{ color: ว่าง ? '#ced4da' : สี }}>{ค่า}</p>
           </div>
         </div>
       ))}
