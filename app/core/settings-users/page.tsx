@@ -172,13 +172,15 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
         <details className="relative">
           <summary className="list-none cursor-pointer text-[12.5px] text-blue-600 hover:underline">ค้นหาขั้นสูง</summary>
           <div className="absolute z-10 mt-2 right-0 w-[320px] max-w-[calc(100vw-32px)] bg-white border border-gray-200 rounded-md shadow-lg p-3 space-y-2">
-            <label className="block text-[12.5px] text-gray-600">ชื่อ
-              <input name="qname" defaultValue={ค่าแรก(searchParams?.qname)} placeholder="ชื่อ"
-                className={`mt-1 block ${FORM_INPUT}`} />
-            </label>
+            {/* 📐 ลำดับตาม DOM ZORT: อีเมล ก่อน ชื่อ (อ่านแผง #searchAdvance 20 ต.ค. 2569) · เหตุที่ปิดต้องเห็นบนจอ ไม่ใช่แค่ title (CEO 19 ต.ค.) */}
             <label className="block text-[12.5px] text-gray-300" title="ผู้ใช้ของเราไม่มีอีเมล — เข้าระบบด้วยรหัสผ่านที่ตั้งใน Netlify/หน้าเว็บ ⇒ ไม่มีอะไรให้ค้น">อีเมล
               <input disabled placeholder="ผู้ใช้ของเราไม่มีอีเมล"
                 className="mt-1 block w-full text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 cursor-not-allowed" />
+              <span className="block mt-1 text-[11.5px] text-gray-400">ปิดไว้: ผู้ใช้ของเราไม่มีอีเมล — เข้าระบบด้วยรหัสผ่านที่ตั้งใน Netlify/หน้าเว็บ ⇒ ไม่มีอะไรให้ค้น</span>
+            </label>
+            <label className="block text-[12.5px] text-gray-600">ชื่อ
+              <input name="qname" defaultValue={ค่าแรก(searchParams?.qname)} placeholder="ชื่อ"
+                className={`mt-1 block ${FORM_INPUT}`} />
             </label>
             <button type="submit" className={HEAD_BTN} style={{ background: '#4165ed' }}>ค้นหา</button>
           </div>
