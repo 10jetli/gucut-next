@@ -199,7 +199,11 @@ export default function LedgerScreen({
     แทนด้วย?: Record<string, string>
   }
 }) {
-  const age = ageOf(CHECKED_AT)
+  /* 🔴 อายุต้องนับจาก **วันเดียวกับที่ตัวเลขบนจอบอก** (`sumSeenAt` ของจอนั้น ถ้ามี)
+     เดิมนับจาก CHECKED_AT ร่วมเสมอ ⇒ จอเซลเพจขึ้นว่า "ที่ ZORT เมื่อ 16 ต.ค." แต่กล่องเหลืองข้างล่างบอก
+     "ตัวเลขข้างบนคัดมาเมื่อ 46 วันที่แล้ว" — ตัวเลขกับอายุมาคนละแหล่ง จอขัดกันเอง (เจอ 19 ต.ค. 2569) */
+  const วันที่คัด = sumSeenAt ?? CHECKED_AT
+  const age = ageOf(วันที่คัด)
 
   /* ── ถาม ZORT จริงผ่านท่อ (เส้น ?zortlist= ขึ้น production 14 ก.ย. 2569) ──────
      🔴 **สามสถานะ ห้ามยุบ** (ฝั่งท่อกำชับ · ท่อตั้งใจไม่แนบ rows มาตอน 502)
@@ -665,7 +669,7 @@ export default function LedgerScreen({
                   <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2 mt-3 max-w-[520px] mx-auto leading-relaxed">
                     ⚠️ ตัวเลขข้างบนคัดมาด้วยมือเมื่อ <b>{age} วันที่แล้ว</b> —
                     เก่าเกินจะเชื่อแล้ว <b>ไปเปิดจอ ZORT ดูอีกครั้ง</b> แล้วแก้ค่า
-                    <code className="mx-1">CHECKED_AT</code> ใน <code>LedgerScreen.tsx</code>
+                    <code className="mx-1">{sumSeenAt ? 'sumSeenAt' : 'CHECKED_AT'}</code> ใน <code>{sumSeenAt ? 'หน้าของจอนี้' : 'LedgerScreen.tsx'}</code>
                   </p>
                 )}
               </td>
