@@ -18,6 +18,7 @@
 //     (แม้แต่ ZORT เองก็มีชุดคงเหลือติดลบ แปลว่ามันก็ตามไม่ทันเหมือนกัน)
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { สีจำนวนZORT } from '@/components/zort/qtyColor'
 import SortHead, { SortNotApplied, type สถานะเรียง } from '@/components/zort/SortHead'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
@@ -136,7 +137,6 @@ const PAGE = 50
 const หัวC = เหมือนZORT ? TH.replace('text-left', 'text-center') : TH
 /* ✅ ZORT ทำหัว รหัส/สินค้าเป็นชุด เป็นลิงก์น้ำเงินกดเรียงได้ — เดิมท่อไม่รับ sort จึงคงสีเข้ม (กันปุ่มหลอก · ถามท่านประธาน 19 ต.ค. 2569)
    20 ต.ค. 2569 ท่อรับ sort/dir แล้ว ⇒ ใช้ SortHead ซึ่งเป็นลิงก์ **เฉพาะเมื่อท่อประกาศ applied.sortDefaulted** (ท่อรุ่นเก่ายังเป็นตัวหนังสือเข้ม) */
-const สีจำนวนZORT = (n: number) => (n <= 0 ? '#f25757' : n < 5 ? '#efb15d' : '#13af82')
 
 function Qty({ n, unit, maybeNegative }: { n?: number; unit?: string; maybeNegative?: boolean }) {
   if (typeof n !== 'number') return <span className="text-gray-300">—</span>
