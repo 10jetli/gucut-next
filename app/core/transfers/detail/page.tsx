@@ -173,6 +173,9 @@ function Inner() {
               {/* 📏 DOM /Warehouse/TransferDetails 20 ต.ค. 2569: กล่อง ช่องใน 20 · คอลัมน์ข้อมูลครึ่งกล่อง ช่องใน 15+30 ⇒ ตัวหนังสือห่างขอบกล่อง 50
                    แถว ป้าย 1/3 (104) | ค่า 2/3 ช่องในข้างละ 15 · วันที่เดือนเต็มแบบ ZORT (13 ตุลาคม 2569) */}
               <section className="mb-[30px] bg-white rounded-[6px] p-5">
+                {/* 📐 ZORT แบ่งกล่องสองคอลัมน์: ข้อมูล | ผู้ติดต่อ (ผู้สร้างรายการ) — ภาพ TF-202610025 20 ต.ค. 2569 */}
+                <div className="md:grid md:grid-cols-2">
+                <div>
                 <div className="flex items-center gap-3 mb-4 pl-[30px]">
                   <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📄</span>
                   <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ข้อมูล</h2>
@@ -183,13 +186,27 @@ function Inner() {
                   /* 📐 ZORT แถว ไป = ชื่อคลังปลายทางอย่างเดียว (ภาพ TF-202610025 20 ต.ค. 2569: "โกดัง") · ใบที่มีต้นทาง แยกแถว จาก ไว้ก่อน */
                   ...(d.from ? [['จาก', wh(d.from, names)] as const] : []),
                   ['ไป', <>{d.to ? (names[String(d.to).trim()] || wh(d.to, names)) : wh(d.to, names)}{whErr && (d.from || d.to) && <span className="block text-[11.5px] text-amber-700 mt-0.5">⚠️ ดึงชื่อคลังไม่ได้ — ที่เห็นคือ<b>รหัสคลัง</b> ไม่ใช่ชื่อ</span>}</>],
-                  ['เลขพัสดุ', d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>],
+                  /* ZORT ไม่มีแถวเลขพัสดุ ⇒ ขึ้นเฉพาะใบที่มีเลขจริง (ใบไม่มีเลข ข้อมูลไม่หาย — ไม่มีอะไรให้แสดง) */
+                  ...(d.tracking ? [['เลขพัสดุ', <span key="t" className="font-mono">{d.tracking}</span>] as const] : []),
                 ] as const).map(([k, v]) => (
-                  <div key={k} className="grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] md:max-w-[50%] md:pr-[45px]">
+                  <div key={k} className="grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] md:pr-[45px]">
                     <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
                     <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px]">{v}</span>
                   </div>
                 ))}
+                </div>
+                <div className="mt-4 md:mt-0">
+                  <div className="flex items-center gap-3 mb-4 pl-[30px]">
+                    <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>👤</span>
+                    <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ผู้ติดต่อ</h2>
+                  </div>
+                  {/* ⚠️ ZORT API ไม่ส่งผู้สร้างรายการของใบโอน (ช่องที่ส่งมา: fields ในคำตอบ · ยิงดู 20 ต.ค. 2569) ⇒ ขีด + เหตุ ห้ามเดาชื่อ */}
+                  <div className="grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] md:pr-[45px]">
+                    <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">ผู้สร้างรายการ</span>
+                    <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-gray-300 px-[15px] cursor-help" title="ZORT API ไม่ส่งชื่อผู้สร้างรายการของใบโอนมา — ดูได้ที่จอ ZORT">—</span>
+                  </div>
+                </div>
+                </div>
               </section>
             </>
           )}
@@ -214,6 +231,7 @@ function Inner() {
               {d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>}</div>
           </div>}
           {/* 📐 โหมดเหมือน ZORT: หัวการ์ด "สินค้า" Kanit 20 เหนือตาราง */}
+          <กล่องสินค้า>
           {เหมือนZORT && (
             <div className="flex items-center gap-3 mb-3">
               <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📦</span>
@@ -259,10 +277,16 @@ function Inner() {
               })()}
             </TableWrap>
           )}
+          </กล่องสินค้า>
         </>
       )}
     </div>
   )
+}
+
+/** 📐 โหมดเหมือน ZORT: ส่วน "สินค้า" อยู่ในกล่องขาวแบบกล่องข้อมูล (ภาพ /Warehouse/TransferDetails 20 ต.ค. 2569) · โหมดเดิมไม่ห่อ */
+function กล่องสินค้า({ children }: { children: React.ReactNode }) {
+  return เหมือนZORT ? <section className="bg-white rounded-[6px] p-5 mb-[30px]">{children}</section> : <>{children}</>
 }
 
 export default function TransferDetailPage() {
