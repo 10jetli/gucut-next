@@ -36,7 +36,7 @@ import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSe
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {
-  TH_KANIT, THR_KANIT, ROW_LINK, PageHead, SearchRow, Tabs, TableWrap, TD, TDR, Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, CarrierMark, PageNav,
+  TH_KANIT, THR_KANIT, ROW_LINK, PageHead, SearchRow, Tabs, TableWrap, TD, TDR, Pill, toneOfStatus, EmptyState, thaiDate, relDay, RowMenu, CarrierMark, PageNav,
  COD_BADGE,} from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -554,8 +554,9 @@ export default function LogisticsPage() {
                         {r.carrier || 'ไม่ระบุขนส่ง'}
                       </span>
                     </td>
-                    <td className={`${TD} whitespace-nowrap`}>
-                      {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
+                    {/* 📐 โหมดเหมือน ZORT: ใบล่าสุดเขียน "วันนี้ / เมื่อวานนี้" (ภาพ /Logistics/list 20 ต.ค. 2569) · วันที่เต็มอยู่ใน title */}
+                    <td className={`${TD} whitespace-nowrap`} title={เหมือนZORT && r.date ? thaiDate(r.date) : undefined}>
+                      {r.date ? (เหมือนZORT ? relDay(String(r.date).slice(0, 10)) : thaiDate(r.date)) : <span className="text-gray-300">—</span>}
                     </td>
                     <td className={`${TD} max-w-[200px] truncate`}>{r.receiver || <span className="text-gray-300">—</span>}</td>
                     {/* ไม่รู้จำนวนรายการในใบ ⇒ ขีด (0 แปลว่าใบนี้ไม่มีสินค้าเลย ซึ่งคนละเรื่อง) */}
