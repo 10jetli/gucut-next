@@ -18,6 +18,8 @@ import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { fmtMoney, fmtNum, ต้นเดือนย้อนหลังแบบZORT, วันนี้วันไทย } from '@/lib/format'
 import { PageHead, BtnGhost, Pill, TableWrap, TH, TD, DETAIL_BTN } from '@/components/zort'
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
+import { คลาสตัวเลือก } from '@/components/zort/formCtl'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortBarChart from '@/components/zort/ZortBarChart'
 import ZortLookFold from '@/components/zort/ZortLookFold'
@@ -207,6 +209,14 @@ function Inner() {
              ⇒ วางปุ่มของเราที่ตำแหน่งเดียวกันแทนปุ่มกลมมุมขวา */}
       {เหมือนZORT && (
         <div className="flex items-center gap-2 mb-6">
+          {/* 📏 ZORT มี แก้ไข · ลบ ตรงนี้ (DOM 20 ต.ค. 2569: ปุ่มกรอบ สูง 39 Kanit 14 มีไอคอน) — ของเราแก้/ลบหมวดต้องเขียนกลับ ZORT ⇒ วาดไว้แต่กดไม่ได้ เหตุใน title
+              ไอคอนวาดเอง · ปุ่ม เปิดในจอสินค้า ของเราต่อท้าย */}
+          <span title="ยังทำไม่ได้ — แก้หมวดต้องเขียนกลับ ZORT" className={`${DETAIL_BTN_OFF} inline-flex items-center gap-1`}>
+            <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M14 6l4 4" /></svg>แก้ไข
+          </span>
+          <span title="ยังทำไม่ได้ — ลบหมวดต้องทำใน ZORT" className={`${DETAIL_BTN_OFF} inline-flex items-center gap-1`}>
+            <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>ลบ
+          </span>
           <Link href={`/core/stock?category=${encodeURIComponent(catName)}`} className={`${DETAIL_BTN} font-['Kanit',sans-serif]`}>เปิดในจอสินค้า</Link>
         </div>
       )}
@@ -287,8 +297,9 @@ function Inner() {
           <div className={เหมือนZORT ? 'bg-white rounded-[6px] mb-4' : 'bg-white border border-gray-200 rounded-md mb-4'}>
             <div className={เหมือนZORT ? 'flex flex-wrap items-center gap-3 px-5 pt-5 pb-2' : 'flex flex-wrap items-center gap-3 px-4 pt-3 pb-2'}>
               {เหมือนZORT ? <div className="mr-auto"><ZortCardTitle รูป="▥">ยอดขาย</ZortCardTitle></div> : <p className="text-[14px] font-semibold text-gray-900 mr-auto">ยอดขาย</p>}
+              {/* 📏 ZORT ตัวเลือกนี้ Boon 14 สูง 40 กว้าง 130 (DOM 20 ต.ค. 2569) */}
               <select value="sales" onChange={() => { /* มีค่าเดียวที่ทำได้จริง */ }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
+                className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0", 'w-[130px] max-w-full')}>
                 <option value="sales">ยอดขาย</option>
                 <option value="profit" disabled>กำไรจากการขาย — ยังทำไม่ได้ (ต้องใช้ต้นทุนคงเหลือเฉลี่ยรายตัว)</option>
               </select>
@@ -333,7 +344,7 @@ function Inner() {
             <div className="flex flex-wrap items-center gap-3 px-4 pt-3 pb-2">
               <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีวัน === 1 ? 'วันนี้' : ขายดีวัน === 7 ? '7 วัน' : ขายดีวัน === 30 ? '1 เดือน' : '3 เดือน'}</p>
               <select value={ขายดีวัน} onChange={(e) => setขายดีวัน(Number(e.target.value))}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0">
+                className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0", 'max-w-full')}>
                 <option value={1}>วันนี้</option>
                 <option value={7}>7 วัน</option>
                 <option value={30}>1 เดือน</option>
