@@ -26,6 +26,8 @@ import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 /* หัวการ์ดจอผู้ติดต่อของ ZORT = Boon 14/500 #3e3e3e (ไม่ใช่เทาแบบจอใบขาย · วัด 17 ต.ค. 2569) */
 import { PageHead, TH_KANIT, THR_KANIT, DL_CARD } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
+import { IconEdit, IconTrash } from '@/components/zort/ButtonIcons'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
@@ -128,6 +130,18 @@ function Inner() {
           ? <span className="text-gray-400 cursor-help text-[14px]" title="ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา">ⓘ</span>
           : <span className="text-gray-400">ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Contact/ContactDetail ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า) */ />
+
+      {/* 🧰 โหมดเหมือน ZORT: แถบปุ่ม /Contact/ContactDetail (ภาพ 20 ต.ค. 2569) ซื้อสินค้าเข้า · ขายสินค้าออก · ดูกิจกรรมของรายการ · แก้ไข/ลบ ชิดขวา
+          ทุกปุ่มยังทำไม่ได้จากจอนี้ ⇒ วาดไว้ขนาดเดียวกับ ZORT แต่กดไม่ได้ เหตุใน title */}
+      {เหมือนZORT && (
+        <div className="flex flex-wrap items-center gap-2 mt-[25px] mb-[30px]">
+          <span title="ยังทำไม่ได้ — เปิดใบซื้อจากผู้ติดต่อคนนี้ต้องเขียนกลับ ZORT" className={DETAIL_BTN_OFF}>ซื้อสินค้าเข้า</span>
+          <span title="ยังทำไม่ได้จากจอนี้ — เปิดบิลที่เครื่องคิดเงิน (POS) แล้วเลือกลูกค้าเอง" className={DETAIL_BTN_OFF}>ขายสินค้าออก</span>
+          <span title="ยังทำไม่ได้ — ประวัติการแก้เก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ" className={DETAIL_BTN_OFF}>ดูกิจกรรมของรายการ</span>
+          <span title="ยังทำไม่ได้ — แก้ผู้ติดต่อต้องเขียนกลับ ZORT" className="ml-auto inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed"><IconEdit />แก้ไข</span>
+          <span title="ยังทำไม่ได้ — ลบผู้ติดต่อต้องทำใน ZORT" className="inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed"><IconTrash />ลบ</span>
+        </div>
+      )}
 
       {/* 🔴 **ข้อจำกัดการจับคู่ต้องอยู่ใต้ชื่อลูกค้า ไม่ใช่ท้ายจอ** (ย้ายขึ้นมา 12 ก.ย. 2569)
           มันตอบคำถามว่า "ใบพวกนี้เป็นของคนนี้จริงไหม" ⇒ กำกับ**ทุกอย่างที่อยู่ใต้มัน**
@@ -242,11 +256,26 @@ function Inner() {
             {' · '}จอ ZORT เขียน “-” เมื่อไม่มียอด ส่วนจอนี้เขียนเลข 0 (ขีดของเราแปลว่า “ยังไม่รู้”)
           </p>
         )}
-        <div className="grid gap-4 md:grid-cols-[320px_1fr]">
+        {/* 📐 โหมดเหมือน ZORT: สองการ์ดกว้างเท่ากัน (ภาพ 20 ต.ค. 2569) · การ์ดซ้ายมีรูปคนกลม แล้วตามด้วยช่องข้อมูล 7 ช่องไม่มีเส้นคั่น */}
+        <div className={เหมือนZORT ? 'grid gap-[30px] md:grid-cols-2' : 'grid gap-4 md:grid-cols-[320px_1fr]'}>
           {/* ── ข้อมูลติดต่อ ── */}
           <section className={DL_CARD}>
-            <h2 className="mb-2 font-['Boon',sans-serif] text-[14px] font-medium text-[#3e3e3e]">ข้อมูลติดต่อ</h2>
-            {c ? (
+            {เหมือนZORT ? (
+              <span aria-hidden className="block w-[80px] h-[80px] rounded-full bg-[#dee2e6] overflow-hidden mb-8">
+                <svg viewBox="0 0 80 80" width="80" height="80"><circle cx="40" cy="31" r="15" fill="#fff" /><path d="M14 72c3-15 13-23 26-23s23 8 26 23z" fill="#fff" /></svg>
+              </span>
+            ) : <h2 className="mb-2 font-['Boon',sans-serif] text-[14px] font-medium text-[#3e3e3e]">ข้อมูลติดต่อ</h2>}
+            {c && เหมือนZORT ? (
+              /* ช่องของ ZORT ครบ 7 ช่องเสมอ: ท่อส่งค่าว่าง = "-" แบบ ZORT · ท่อไม่ส่งช่องนั้นมาเลย = บอกตรง ๆ (ไม่ทำให้ความเงียบกลายเป็นค่าว่าง) */
+              <dl className="font-['Boon',sans-serif] text-[16px] leading-[23px]">
+                {([['ชื่อ', d?.name || key, true], ...(['phone', 'email', 'address', 'tax_id', 'branch_name', 'branch_no'] as const).map((k) => [LABEL[k], c[k], k in c] as const)] as const).map(([label, v, มีช่อง]) => (
+                  <div key={label} className="grid grid-cols-[1fr_2fr] py-[7px]">
+                    <dt className="text-[#868e96]">{label}</dt>
+                    <dd className="text-[#3e3e3e] break-words">{!มีช่อง ? <span className="text-[12.5px] text-gray-400">ท่อไม่ได้ส่งช่องนี้มา</span> : (v ? String(v) : '-')}</dd>
+                  </div>
+                ))}
+              </dl>
+            ) : c ? (
               <table className="w-full text-[12.5px]">
                 <tbody>
                   <tr className="border-b border-gray-100">
