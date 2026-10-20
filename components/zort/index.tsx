@@ -197,7 +197,10 @@ export function SearchRow({
           (รอบแรกใช้ mt-1 · วัดบน preview ได้ 160 เท่าเดิม ทั้งที่ class ขึ้นครบ) */
     <div className={`flex flex-wrap items-center gap-3 ${เหมือนZORT ? 'pt-1 mb-5' : 'mb-4'}`}>
       <div className="relative">
-        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[12.5px]">🔍</span>
+        {/* 📐 โหมดเหมือน ZORT: แว่นขยายเส้นสีเทา (ภาพจอรายการ ZORT 20 ต.ค. 2569 · วาดเอง ไม่ใช้ฟอนต์ไอคอนของ ZORT) แทนอีโมจิ */}
+        {เหมือนZORT
+          ? <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#868e96" strokeWidth={1.4} strokeLinecap="round" className="absolute left-4 top-1/2 -translate-y-1/2"><circle cx={7} cy={7} r={5.5} /><path d="M11 11l4 4" /></svg>
+          : <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-[12.5px]">🔍</span>}
         <input
           value={value}
           onChange={(e) => onChange(e.target.value)}
