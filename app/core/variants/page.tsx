@@ -5,8 +5,6 @@ import LedgerScreen from '@/components/zort/LedgerScreen'
 export default function VariantsPage() {
   return (
     <LedgerScreen
-      /* 📐 ผังท้ายตารางแบบ ZORT (จำนวนต่อหน้าก่อน Export · ช่องว่างมีแค่ ไม่มีข้อมูล) — จอนี้ไม่ใช่กลุ่มการเงิน */
-      ผังท้ายZORT
       title="สินค้าหลากคุณสมบัติ"
       cols={[
         { label: 'รหัส' },
