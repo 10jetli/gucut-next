@@ -160,11 +160,12 @@ function Inner() {
             /* 📐 โหมดเหมือน ZORT: การ์ดสถานะ (ครึ่งแถว) → การ์ดเดียว ข้อมูลซ้าย/ลูกค้าขวา (หัว Kanit 20 · ป้าย Boon 16 เทา · ค่า Boon 16)
                ยอดเงิน 4 ช่องยังอยู่ครบในการ์ดถัดไป (ZORT วางยอดไว้ท้ายตารางสินค้า — ของเรายังไม่ย้าย) */
             <>
-              <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+              {/* 📏 การ์ดสถานะต่ำกว่าแถวปุ่ม 30 แบบ ZORT (ของเรา 20) ⇒ padding บน 8 · ป้าย Boon 14 (h2 รับ Kanit จากหัวเรื่องร่วม) */}
+              <div className="mb-[30px] pt-2 grid gap-[30px] md:grid-cols-2">
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
                   <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>▤</span>
                   <div className="text-right">
-                    <h2 className="text-[14px] font-medium text-[#868e96] m-0">สถานะรายการ</h2>
+                    <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">สถานะรายการ</h2>
                     <div className="mt-2">
                       {d.status
                         ? <span title={`ค่าที่ท่อส่งมา: ${d.status}`} className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(zortWord(QUOTATION_DETAIL_STATUS, d.status).text))}`}>{zortWord(QUOTATION_DETAIL_STATUS, d.status).text}</span>
@@ -173,20 +174,25 @@ function Inner() {
                   </div>
                 </div>
               </div>
-              <div className="mb-4 bg-white rounded-[6px] grid md:grid-cols-2 gap-0 py-2">
+              {/* 📐 ผังเดียวกับใบโอน/ใบซื้อ (ภาพ /Quotation/Details QT-202506001 20 ต.ค. 2569): กล่องช่องใน 20 · หัวเว้นซ้าย 30 · แถว 1/3|2/3 สูง 23 ห่าง 31
+                  ลูกค้า ZORT มี 5 แถว — ท่อส่งแค่ชื่อ (ZORT ตอบ createusername/customerphone/customeremail/customeraddress มาในช่องดิบ แต่ท่อไม่ส่งต่อ · ขอ CTO แล้ว 20 ต.ค.)
+                  ⇒ แถวที่ยังไม่มีขึ้นขีด + เหตุใน title ไม่เดาค่า */}
+              <div className="mb-4 bg-white rounded-[6px] p-5 md:grid md:grid-cols-2">
                 {([
-                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['วันที่', d.date ? thaiDate(d.date) : null]]],
-                  ['ลูกค้า', '👤', [['ชื่อลูกค้า', d.customer || null]]],
+                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['วันที่', d.date ? thaiDate(d.date, 'เต็ม') : null]]],
+                  ['ลูกค้า', '👤', [['ผู้สร้างรายการ', undefined], ['ชื่อลูกค้า', d.customer || null], ['เบอร์โทรศัพท์ลูกค้า', undefined], ['อีเมลลูกค้า', undefined], ['ที่อยู่ลูกค้า', undefined]]],
                 ] as const).map(([หัว, รูป, แถว]) => (
-                  <section key={หัว} className="px-5 py-3">
-                    <div className="flex items-center gap-3 mb-4">
+                  <section key={หัว} className="mt-4 md:mt-0">
+                    <div className="flex items-center gap-3 mb-4 pl-[30px]">
                       <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{รูป}</span>
                       <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                     </div>
-                    {แถว.map(([k, v]) => (
-                      <div key={k} className="flex gap-4 py-1.5">
-                        <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{k}</span>
-                        <span className="text-[16px] text-[#3e3e3e]">{v ?? <span className="text-gray-300">—</span>}</span>
+                    {(แถว as ReadonlyArray<readonly [string, string | null | undefined]>).map(([k, v]) => (
+                      <div key={k} className="grid grid-cols-[1fr_2fr] py-1 pl-[15px] md:pr-[45px]">
+                        <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
+                        <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">
+                          {v ?? <span className="text-gray-300 cursor-help" title={v === undefined ? 'ZORT มีช่องนี้ แต่ท่อยังไม่ส่งต่อมาให้จอ' : 'ZORT ไม่ได้ส่งค่านี้มา'}>—</span>}
+                        </span>
                       </div>
                     ))}
                   </section>
