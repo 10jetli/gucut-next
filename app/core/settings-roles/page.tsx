@@ -75,19 +75,20 @@ export default function SettingsRolesPage() {
           <thead className="bg-white border-b border-gray-200">
             <tr>
               <th className={TH}>ชื่อสิทธิ์การใช้งาน</th>
-              <th className={TH}>เข้าอะไรได้บ้าง</th>
-              <th className={TH}>ใครอยู่ในสิทธิ์นี้</th>
+              {/* 📐 โหมดเหมือน ZORT (ภาพ /Setting/UserRolelist 20 ต.ค. 2569): ตารางคอลัมน์เดียว · สองคอลัมน์ของเราย้ายไปพับใต้ตาราง + title ของชื่อ (ไม่ลบ) */}
+              {!เหมือนZORT && <th className={TH}>เข้าอะไรได้บ้าง</th>}
+              {!เหมือนZORT && <th className={TH}>ใครอยู่ในสิทธิ์นี้</th>}
               <th className={TH}> </th>
             </tr>
           </thead>
           <tbody>
             {ROLES.map((r) => (
               <tr key={r.name} className="border-b border-[#e8ecf8] last:border-0">
-                <td className={TD}>{r.name}</td>
+                <td className={TD}><span title={เหมือนZORT ? `${r.detail.replace(/\*\*/g, '')} · ใคร: ${r.who}` : undefined}>{r.name}</span></td>
                 {/* ข้อความนี้มี **ตัวหนา** แบบ markdown ⇒ ผ่าน pipeText ไม่งั้นดอกจันขึ้นจอดิบ ๆ (เจอบนจอสิทธิ์การใช้งาน 18 ต.ค. 2569) */}
                 {/* ⚠️ จอนี้เป็น server component — ค่าคลาสที่ import จาก @/components/zort (ไฟล์ 'use client') ห้ามต่อสตริง ⇒ ได้ [object Object] (เจอ 20 ต.ค. 2569) · สีใส่ที่ span ข้างใน */}
-                <td className={TD}><span className="text-gray-700">{pipeText(r.detail)}</span></td>
-                <td className={TD}><span className="text-gray-500">{r.who}</span></td>
+                {!เหมือนZORT && <td className={TD}><span className="text-gray-700">{pipeText(r.detail)}</span></td>}
+                {!เหมือนZORT && <td className={TD}><span className="text-gray-500">{r.who}</span></td>}
                 <td className={TD} style={{ textAlign: 'right' }}>
                   {/* ZORT ตรงนี้เป็นลิงก์ "แก้ไข" — ของเราแก้ที่โค้ด บอกตรง ๆ ดีกว่าลิงก์ที่กดแล้วไปไหนไม่ได้ */}
                   <span className="text-[11.5px] text-gray-400" title="สิทธิ์กำหนดใน middleware.ts — แก้ต้องแก้โค้ดแล้ว deploy">
@@ -104,6 +105,18 @@ export default function SettingsRolesPage() {
         <span className="inline-block border border-gray-300 rounded px-2 py-0.5 bg-white">1</span>
         <span>จำนวน {ROLES.length} รายการ | จำนวนต่อหน้า 20</span>
       </div>
+
+      {/* โหมดเหมือน ZORT: รายละเอียดสิทธิ์ (เดิมเป็นสองคอลัมน์) พับไว้ตรงนี้ — <details> ใช้ได้โดยไม่ต้องมี JS (จอนี้เป็น server component) */}
+      {เหมือนZORT && (
+        <details className="mt-3 text-[11.5px]">
+          <summary className="cursor-pointer select-none text-gray-500">แต่ละสิทธิ์เข้าอะไรได้บ้าง · ใครอยู่ในสิทธิ์นี้ <span className="text-gray-400">(กดเพื่ออ่าน)</span></summary>
+          <dl className="mt-1 space-y-1.5 text-gray-600">
+            {ROLES.map((r) => (
+              <div key={r.name}><dt className="inline font-semibold text-gray-800">{r.name}</dt>{' — '}<dd className="inline">{pipeText(r.detail)} · <span className="text-gray-500">{r.who}</span></dd></div>
+            ))}
+          </dl>
+        </details>
+      )}
 
       <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
         รายชื่อคนดูที่{' '}
