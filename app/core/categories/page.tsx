@@ -19,6 +19,7 @@
 //       **ใกล้ไม่ใช่เหมือน**
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import SortHead, { type สถานะเรียง } from '@/components/zort/SortHead'
 import ExportButton from '@/components/zort/ExportButton'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -121,11 +122,18 @@ export default function CoreCategoriesPage() {
 
   useEffect(() => { load() }, [load])
 
+  /* ↕️ หัว ชื่อหมวดหมู่ กดเรียงแบบ ZORT (หัวเดียวที่ ZORT เรียงได้ · DOM 21 ต.ค. 2569)
+     ท่อเส้นนี้ไม่รับ sort แต่ส่งมา **ครบทุกหมวดในครั้งเดียว** (43 แถว ไม่มี limit) ⇒ เรียงในเครื่องคือเรียงทั้งชุดจริง ไม่ใช่ปุ่มหลอก
+     ยังไม่กด = ลำดับเดิมของท่อ (SKU มากก่อน) */
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
   const rows = useMemo(() => {
     const all = Array.isArray(d?.rows) ? d!.rows! : []
     const s = q.trim().toLowerCase()
-    return s ? all.filter((r) => (r.name || '').toLowerCase().includes(s)) : all
-  }, [d, q])
+    const กรอง = s ? all.filter((r) => (r.name || '').toLowerCase().includes(s)) : all
+    if (เรียง?.sort !== 'name') return กรอง
+    const ทิศ = เรียง.dir === 'asc' ? 1 : -1
+    return [...กรอง].sort((a, b) => ทิศ * String(a.name || '').localeCompare(String(b.name || ''), 'th'))
+  }, [d, q, เรียง])
 
   const onhandOf = (r: Row) => (
     basis === 'zort' ? (r.zortValue ?? undefined)
@@ -176,8 +184,11 @@ export default function CoreCategoriesPage() {
                     แต่ในตารางมี 43 แถว เพราะมีกลุ่ม "(ยังไม่ได้จัดหมวดใน ZORT)" 139 SKU
                     ซึ่ง **ถูกต้องที่จะมี** (เป็นของจริงที่ ZORT ซ่อนไว้) แต่คนนับแล้วงง
                     ⇒ เขียนแยกให้ชัด · คง "42" ไว้เพราะนั่นคือเลขที่คนเอาไปเทียบกับ ZORT */}
-                จำนวน {typeof d.categories === 'number' ? fmtNum(d.categories) : 'ไม่รู้ (ท่อไม่ได้ส่งมา)'} หมวด
-                {extraBucket && <> + 1 กลุ่มที่ยังไม่ได้จัดหมวด</>}
+                {/* 📐 โหมดเหมือน ZORT: รูปคำ จำนวน N รายการ แบบ ZORT · กลุ่มที่ยังไม่ได้จัดหมวด **ยังเห็นบนบรรทัด** (ตัวเทาเล็ก) — หัวจอต้องอธิบายแถวที่ 43 ได้ */}
+                จำนวน {typeof d.categories === 'number' ? fmtNum(d.categories) : 'ไม่รู้ (ท่อไม่ได้ส่งมา)'} {เหมือนZORT ? 'รายการ' : 'หมวด'}
+                {extraBucket && (เหมือนZORT
+                  ? <span className="text-[13px] text-gray-400"> (+1 กลุ่มที่ยังไม่ได้จัดหมวด)</span>
+                  : <> + 1 กลุ่มที่ยังไม่ได้จัดหมวด</>)}
               </>
             )
             : 'กำลังโหลด…'
@@ -201,12 +212,18 @@ export default function CoreCategoriesPage() {
       />
 
       {/* 📐 โหมดเหมือน ZORT: ระยะช่องค้นหาเดียวกับ SearchRow ร่วม (pt-1 mb-5) */}
-      <div className={เหมือนZORT ? 'pt-1 mb-5' : 'mb-3'}>
+      <div className={เหมือนZORT ? 'pt-1 mb-5 relative max-w-[400px]' : 'mb-3'}>
+        {/* 📐 โหมดเหมือน ZORT: แว่นเส้นในช่องค้นหาแบบจออื่น (วาดเอง) */}
+        {เหมือนZORT && (
+          <svg aria-hidden width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#868e96" strokeWidth="2" strokeLinecap="round"
+            className="absolute left-3.5 top-[15px] pointer-events-none"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M15.5 15.5L21 21" /></svg>
+        )}
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="ค้นหา"
-          className="w-full max-w-[400px] h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] px-4 py-2 outline-none focus:border-[#868e96]"
+          aria-label="ค้นหาหมวดหมู่"
+          className={`w-full max-w-[400px] h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] ${เหมือนZORT ? 'pl-11 pr-4' : 'px-4'} py-2 outline-none focus:border-[#868e96]`}
         />
       </div>
 
@@ -325,7 +342,7 @@ export default function CoreCategoriesPage() {
                   เพราะท่อเมิน `sort` ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก · ติดเฉพาะช่องที่วัดมาแล้ว */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH_KANIT}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">ชื่อหมวดหมู่</span></th>
+                  <th className={TH_KANIT}><SortHead label="ชื่อหมวดหมู่" field="name" firstDir="asc" current={เรียง} supported={Array.isArray(d?.rows)} onSort={setเรียง} fallbackTitle="กำลังโหลดรายชื่อหมวด — เรียงได้เมื่อโหลดครบ" /></th>
                   <th className={THR_KANIT}>จำนวน SKU</th>
                   <th className={THR_KANIT}>มูลค่าสินค้าคงเหลือ</th>
                   <th className={THR_KANIT}>มูลค่าสินค้าพร้อมขาย</th>
