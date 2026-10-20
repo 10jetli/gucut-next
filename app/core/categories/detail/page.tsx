@@ -317,8 +317,12 @@ function Inner() {
                  · หมายเหตุที่มาของยอดยังอยู่ใต้กราฟ — ยอดของเราต่างจาก ZORT ได้ ต้องบอก */
               if (เหมือนZORT) return (
                 <div className="px-5 pb-4">
-                  <ZortBarChart legend={catName || '—'}
+                  {/* 📏 DOM ZORT /Product/CategoryDetail 20 ต.ค. 2569 (จอ 1280 CSS): กราฟ svg 777×265 เว้นข้างการ์ด ~96 · พื้นที่แท่งสูง ~165
+                      (ลูกศร ‹ เลื่อนเดือนของ ZORT ไม่ทำ — ของเรายังไม่มีชุดเดือนก่อนหน้าให้เลื่อน = ปุ่มหลอก) */}
+                  <div className={เหมือนZORT ? 'px-[96px]' : ''}>
+                  <ZortBarChart legend={catName || '—'} สูง={เหมือนZORT ? 165 : 240}
                     points={รายเดือน.map((m) => ({ label: `${TH_M[Number(m.month.slice(5, 7)) - 1]}/${Number(m.month.slice(0, 4)) + 543}`, value: m.amount }))} />
+                  </div>
                   <p className="text-[11px] text-gray-400 mt-2">{ที่มายอดรายเดือน}</p>
                 </div>
               )
