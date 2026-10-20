@@ -11,12 +11,23 @@
 //    ⚠️ ยังไม่เคยเห็นแถวจริง ⇒ ชื่อช่องมาจากเอกสาร V4 ล้วน · อ่านแบบทนฟิลด์หาย
 //    ⚠️ ยอดเงินรวมใช้ `totalAmount` ของ ZORT **ห้ามบวกจากแถวเอง** (ดึงมาแค่หน้าละไม่กี่แถว)
 import LedgerScreen from '@/components/zort/LedgerScreen'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export default function PurchaseReturnsPage() {
   return (
     <LedgerScreen
       title="คืนสินค้า (ให้ผู้ขาย)"
-      cols={[
+      cols={เหมือนZORT ? [
+        /* 📐 โหมดเหมือน ZORT — ชื่อ/ลำดับตามหัวตาราง ZORT (REA 20 ต.ค. 2569) · ⚠️ ต้องตรงกับ ROW_MAPS.returnpurchaseorders */
+        { label: 'วันที่' },
+        { label: 'รายการ' },
+        { label: 'อ้างอิง' },
+        { label: 'ผู้ติดต่อ' },
+        { label: 'วันส่งสินค้า' },
+        { label: 'มูลค่า', right: true },
+        { label: 'สถานะ' },
+        { label: 'ชำระเงิน' },
+      ] : [
         /* ลำดับ วันที่ → รายการ ตาม ZORT (17 ต.ค. 2569) · ⚠️ สลับที่นี่ต้องสลับ ROW_MAPS.returnpurchaseorders ด้วย */
         { label: 'วันที่' },
         { label: 'เลขที่ใบคืน' },

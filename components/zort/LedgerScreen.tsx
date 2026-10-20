@@ -97,7 +97,20 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
      สลับสองจอนี้ = ตัดสต็อกผิดทาง แล้วของหายจากคลังโดยไม่มีอะไรฟ้อง
      ⚠️ `customername` ของเส้นนี้ = **ผู้ขาย** ไม่ใช่ลูกค้า (ZORT ใช้ชื่อช่องเดิม) */
   /* ลำดับตาม ZORT: วันที่ ก่อน รายการ (วัดหัวตาราง /Sell/list?sttype=1 17 ต.ค. 2569) — ต้องตรงกับ cols ในจอ */
-  returnpurchaseorders: (r) => [
+  /* 📐 โหมดเหมือน ZORT: ลำดับ+ชื่อคอลัมน์ตาม REA อ่าน /Sell/list?&sttype=1 (20 ต.ค. 2569)
+       วันที่ · รายการ · อ้างอิง · ผู้ติดต่อ · วันส่งสินค้า · มูลค่า · สถานะ · ชำระเงิน — คลังไม่มีในจอ ZORT (ดูได้ในจอรายละเอียด)
+     ⚠️ `shippingdate*` = ชื่อช่องจากเอกสาร V4 ยังไม่เคยเห็นแถวจริง (ร้านมี 0 ใบ) ⇒ ไม่มีค่า = ขีด
+     ⚠️ ต้องตรงกับ cols ในจอ /core/purchases/returns ทั้งสองโหมด */
+  returnpurchaseorders: (r) => เหมือนZORT ? [
+    day(pick(r, 'returnpurchaseorderdateString', 'returnpurchaseorderdate', 'createdatetime')),
+    pick(r, 'number'),
+    pick(r, 'referencenumber'),
+    pick(r, 'customername', 'contactname'),
+    day(pick(r, 'shippingdateString', 'shippingdate')),
+    pick(r, 'amount'),
+    pick(r, 'status'),
+    pick(r, 'paymentstatus'),
+  ] : [
     day(pick(r, 'returnpurchaseorderdateString', 'returnpurchaseorderdate', 'createdatetime')),
     pick(r, 'number'),
     pick(r, 'customername', 'contactname'),
