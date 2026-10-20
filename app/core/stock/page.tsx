@@ -461,7 +461,8 @@ function CoreStockInner() {
     return (
       <button type="button"
         onClick={() => { if (ถัดไป) { setSort(ถัดไป); load(0, ถัดไป) } }}
-        className="hover:underline"
+        /* 📐 โหมดเหมือน ZORT (DOM /Product/List 21 ต.ค. 2569): หัวที่เรียงได้เป็นลิงก์ #337ab7 Kanit 14 — แบบเดียวกับ SortHead */
+        className={เหมือนZORT ? 'text-[#337ab7] hover:underline' : 'hover:underline'}
         title={ทางเดียว
           ? `เรียงตาม${ชื่อ} — ท่อเรียงให้ทางเดียว (${มาก ?? น้อย}) · กดแล้วเรียงทั้งชุด ไม่ใช่แค่หน้านี้`
           : `เรียงตาม${ชื่อ} — กดซ้ำเพื่อสลับมาก/น้อย · เรียงทั้งชุด ไม่ใช่แค่หน้านี้`}>
