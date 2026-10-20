@@ -19,7 +19,7 @@ import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortPie from '@/components/zort/ZortPie'
 import { ขั้นแกน, ย่อเลข } from '@/components/zort/ZortBarChart'
-import { คลาสตัวเลือก } from '@/components/zort/formCtl'
+import { คลาสตัวเลือก, คลาสช่องค้น, แว่นช่องค้น } from '@/components/zort/formCtl'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav, TH_KANIT, THR_KANIT,
 } from '@/components/zort'
@@ -844,7 +844,8 @@ export default function CoreCustomersPage() {
               ไม่เปลี่ยนเลขบนแท็บเป็น distinctNames เพราะ "ซื้อซ้ำ/ซื้อครั้งเดียว" คิดได้เฉพาะ
               รายที่มีข้อมูลมาจริง ⇒ ถ้าเอาเลขทั้งช่วงไปใส่แท็บเดียว สามแท็บจะคนละฐานกัน
               ⇒ เขียนขอบเขตกำกับไว้ข้างบนแทน ให้คนอ่านรู้ว่าเลขพวกนี้คิดจากกี่ราย */}
-          {truncated && (
+          {/* โหมดเหมือน ZORT ไม่มีเลขบนตัวเลือก ⇒ ไม่ต้องอธิบายเลขบนแท็บ · ขอบเขต "แสดง N จาก M" ยังอยู่บรรทัดหัวจอ */}
+          {!เหมือนZORT && truncated && (
             <p className="text-[11.5px] text-gray-500 mb-1">
               เลขบนแท็บนับจาก {people.length.toLocaleString('th-TH')} รายที่โหลดมา
               {distinctNames !== null && <> — ลูกค้าที่มีชื่อทั้งช่วงมี {distinctNames.toLocaleString('th-TH')} ราย</>}
@@ -857,29 +858,50 @@ export default function CoreCustomersPage() {
               ⚠️ คนที่ "ไม่ทราบสถานะ" อยู่ในแท็บทั้งหมดเท่านั้น ⇒ สองแท็บล่างบวกกันไม่เท่าแท็บแรก
                  (บอกไว้ใต้แท็บ ไม่ใช่ปล่อยให้คนบวกเอง) */}
           {เหมือนZORT && truncated && กล่องตัด500}
-          {เหมือนZORT && <SearchRow
-            value={q}
-            onChange={(v) => { setQ(v); setPage(0) }}
-            onSubmit={() => setPage(0)}
-            placeholder="ค้นชื่อลูกค้า"
-            advanced={<LinkText onClick={() => setPage(0)}>ค้นหา</LinkText>}
-          />}
-          <Tabs
-            tabs={[
-              { id: 'all', label: 'ทั้งหมด', count: people.length },
-              { id: 'a', label: LAB_A, count: newC.length },
-              { id: 'b', label: LAB_B, count: repC.length },
-              { id: 'mk', label: 'Marketplace Username', count: mkC.length },
-            ]}
-            active={tab}
-            onChange={(id) => { setTab(id as 'all' | 'a' | 'b' | 'mk'); setPage(0) }}
-          />
-          <p className="text-[11.5px] text-gray-400 mt-1">
+          {/* 📐 โหมดเหมือน ZORT (REA + DOM /Dashboard/ContactReport 20 ต.ค. 2569): การ์ด "ลูกค้า" หัวการ์ดมี
+                 ตัวเลือก `tableoption` (ลูกค้าใหม่ · ลูกค้าซื้อซ้ำ · Marketplace Username · 200×40) + ช่องค้นหาแคปซูล ชิดขวา — ไม่มีแท็บ
+              🔑 "ทั้งหมด" ZORT ไม่มี แต่ของเราเก็บไว้เป็นตัวเลือกท้ายสุด (ซ่อน ไม่ลบ) · คำอธิบายใต้แท็บย้ายไปเป็น title ของตัวเลือก */}
+          {เหมือนZORT ? (
+            <div className="bg-white rounded-t-[6px] px-5 py-5 flex flex-wrap items-center gap-3">
+              <span className="mr-auto"><ZortCardTitle รูป="▥">ลูกค้า</ZortCardTitle></span>
+              <select
+                value={tab}
+                onChange={(e) => { setTab(e.target.value as 'all' | 'a' | 'b' | 'mk'); setPage(0) }}
+                className={คลาสตัวเลือก('', 'w-[200px]')}
+                title={`ทั้งหมด รวมใบที่ไม่ระบุชื่อ${unkC.length > 0 ? ` และคนที่ยังไม่ทราบสถานะอีก ${unkC.length.toLocaleString('th-TH')} ราย` : ''} ⇒ ลูกค้าใหม่ + ลูกค้าซื้อซ้ำ ไม่เท่าทั้งหมด`}
+              >
+                <option value="a">{LAB_A}</option>
+                <option value="b">{LAB_B}</option>
+                <option value="mk">Marketplace Username</option>
+                <option value="all">ทั้งหมด</option>
+              </select>
+              <input
+                value={q}
+                onChange={(e) => { setQ(e.target.value); setPage(0) }}
+                placeholder="พิมพ์คำค้นหา"
+                aria-label="ค้นชื่อลูกค้า"
+                className={คลาสช่องค้น('')}
+                style={แว่นช่องค้น}
+              />
+            </div>
+          ) : (
+            <Tabs
+              tabs={[
+                { id: 'all', label: 'ทั้งหมด', count: people.length },
+                { id: 'a', label: LAB_A, count: newC.length },
+                { id: 'b', label: LAB_B, count: repC.length },
+                { id: 'mk', label: 'Marketplace Username', count: mkC.length },
+              ]}
+              active={tab}
+              onChange={(id) => { setTab(id as 'all' | 'a' | 'b' | 'mk'); setPage(0) }}
+            />
+          )}
+          {!เหมือนZORT && <p className="text-[11.5px] text-gray-400 mt-1">
             แท็บ &ldquo;ทั้งหมด&rdquo; รวมใบที่ไม่ระบุชื่อ
             {unkC.length > 0 && <> และคนที่ยังไม่ทราบสถานะอีก {unkC.length.toLocaleString('th-TH')} ราย</>}
             {' '}⇒ สองแท็บขวาบวกกันไม่เท่าแท็บแรก ·
             {tab === 'mk' && <> แท็บ <b>Marketplace Username</b> แสดงชื่อผู้ใช้มาร์เก็ตเพลสของรายที่โหลดมา{truncated ? ' (ไม่ใช่ทุกรายในช่วง — ดูบรรทัดบน)' : ''} · ZORT แยกแถวต่อชื่อผู้ใช้ ของเราแยกต่อชื่อลูกค้า ⇒ คนที่มีหลายชื่อผู้ใช้อยู่แถวเดียว</>}
-          </p>
+          </p>}
 
           <TableWrap>
             <table className="w-full min-w-[720px]">
