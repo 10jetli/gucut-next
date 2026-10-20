@@ -899,7 +899,8 @@ function CoreStockInner() {
                     <button type="button" title="รีเซ็ตการเรียงลำดับข้อมูล" aria-label="รีเซ็ตการเรียงลำดับข้อมูล"
                       disabled={sort === 'availablelow'}
                       onClick={() => { setSort('availablelow'); load(0, 'availablelow') }}
-                      className="text-[11px] leading-none px-1.5 py-1 rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40">
+                      /* 📏 โหมดเหมือน ZORT: ปุ่มสูง 21 (4+11+4+2) ดันหัวแถวเป็น 46 · ZORT 45 ⇒ ช่องในบนล่าง 3 ⇒ 19 (วัด DOM 21 ต.ค. 2569) */
+                      className={`text-[11px] leading-none px-1.5 ${เหมือนZORT ? 'py-[3px]' : 'py-1'} rounded border border-gray-300 bg-white text-gray-600 hover:bg-gray-50 disabled:opacity-40`}>
                       ⇅✕
                     </button>
                   </th>
