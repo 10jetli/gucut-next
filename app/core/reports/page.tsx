@@ -8,7 +8,8 @@
 //    และไม่ตรงกับชื่อเมนู (รายงาน → สินค้า) ⇒ จัดใหม่ตาม ZORT
 //    ของเดิมไม่ได้หาย — การวิเคราะห์ยอดขายอยู่ที่ รายงาน → ยอดขาย (/sales) ครบอยู่แล้ว
 import Link from 'next/link'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import SortHead, { type สถานะเรียง } from '@/components/zort/SortHead'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import ExportButton, { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/components/zort/ExportButton'
@@ -59,6 +60,8 @@ interface DeadResp {
   cut?: string
   /** ท่อบอกว่าเรียงแบบไหนจริง — ขอ lastsold (แบบ ZORT) · ไม่ตรง ⇒ จอต้องบอก */
   sortApplied?: string
+  /** ท่อ 23fbff19 (CTO 21 ต.ค. 2569): ช่องที่เรียงได้ ระดับบนสุด — sku name lastsold qty value · ส่ง dir มาเท่านั้นถึงใช้รูปใหม่ */
+  sortsSupported?: string[]
   /** ไล่หน้า — ท่อตอบครั้งละ 50 (16 ต.ค. 2569: total 1,543 · rows 50) · **เดินหน้าด้วย nextOffset เท่านั้น** (pagingNote ของท่อ) */
   offset?: number; limit?: number; nextOffset?: number | null
 }
@@ -82,9 +85,10 @@ const DEAD_RANGES: { days: number; label: string; months?: number }[] = [
   { days: 365, label: 'สินค้าจมที่ขายไม่ได้มากกว่า 1 ปี', months: 12 },
 ]
 /** พารามิเตอร์ช่วงของเส้น deadstock — ที่เดียว ใช้ทั้งโหลดแรก · เปลี่ยนหน้า · ส่งออก (สามที่ต้องตรงกันเสมอ) */
-const deadQs = (days: number) => {
+const deadQs = (days: number, เรียง: สถานะเรียง = null) => {
   const m = DEAD_RANGES.find((r) => r.days === days)?.months
-  return `${m ? `months=${m}` : `days=${days}`}&sort=lastsold`
+  /* ไม่ได้กดหัวคอลัมน์ ⇒ ส่ง lastsold ไม่ส่ง dir = ความหมายเดิมของท่อ (ใหม่→เก่า แบบ ZORT) · กดแล้ว ⇒ ส่ง sort+dir ตามหัวที่กด */
+  return `${m ? `months=${m}` : `days=${days}`}&${เรียง ? `sort=${เรียง.sort}&dir=${เรียง.dir}` : 'sort=lastsold'}`
 }
 
 export default function CoreProductReportPage() {
@@ -94,6 +98,9 @@ export default function CoreProductReportPage() {
   const [deadErr, setDeadErr] = useState('')
   const [catErr, setCatErr] = useState('')
   const [deadDays, setDeadDays] = useState(90)
+  /* ↕️ หัวคอลัมน์สินค้าจมกดเรียงแบบ ZORT (5 หัว) — ref เพราะสามที่ (โหลดแรก · ไล่หน้า · ส่งออก) ต้องใช้ลำดับเดียวกันเสมอ */
+  const [เรียงจม, setเรียงจม] = useState<สถานะเรียง>(null)
+  const เรียงจมRef = useRef<สถานะเรียง>(null)
   /** แถวแรกของหน้าที่เปิดอยู่ (ค่าที่ท่อตอบกลับ ไม่ใช่ค่าที่จอขอ) */
   const [deadBusy, setDeadBusy] = useState(false)
   /** 🏬 มูลค่าคงเหลือรายคลัง (ZORT มีการ์ดนี้) · `stockValue: null` = ยังไม่รู้ ห้ามนับเป็น 0 */
@@ -131,7 +138,7 @@ export default function CoreProductReportPage() {
         fetch('/api/web/core?list=stock&limit=1').then((r) => r.json()),
         // ท่อนี้มีแล้ว · ล้มก็ไม่ทำให้ทั้งจอพัง แค่ตารางสินค้าจมว่าง
         // ⚠️ แต่ต้องจำไว้ว่า "ล้มเพราะอะไร" — ท่อพังกับไม่มีสินค้าจม เขียนเหมือนกันไม่ได้
-        fetch(`/api/web/core?list=deadstock&${deadQs(days)}`).then((r) => r.json()).catch(() => null),
+        fetch(`/api/web/core?list=deadstock&${deadQs(days, เรียงจมRef.current)}`).then((r) => r.json()).catch(() => null),
         // ค่าที่คัดจาก ZORT — ล้มก็แค่ไม่มีบรรทัดเทียบ ไม่ทำให้ทั้งจอพัง
         fetch('/api/web/core?list=categories').then((r) => r.json()).catch(() => null),
         /* 🏬 มูลค่าคงเหลือรายคลัง — ZORT มีการ์ดนี้ในจอเดียวกัน (typeoption: รายคลัง/รายหมวดหมู่)
@@ -168,7 +175,7 @@ export default function CoreProductReportPage() {
   const loadDeadPage = useCallback(async (offset: number) => {
     setDeadBusy(true)
     try {
-      const r = await fetch(`/api/web/core?list=deadstock&${deadQs(deadDays)}&offset=${offset}`).then((x) => x.json()).catch(() => null)
+      const r = await fetch(`/api/web/core?list=deadstock&${deadQs(deadDays, เรียงจมRef.current)}&offset=${offset}`).then((x) => x.json()).catch(() => null)
       setDead(r && !r.error ? r : null)
       setDeadErr(!r ? 'ยิงไปที่ท่อสินค้าจมไม่สำเร็จ' : (typeof r.error === 'string' ? r.error : ''))
     } finally { setDeadBusy(false) }
@@ -503,11 +510,26 @@ export default function CoreProductReportPage() {
               <table className="w-full min-w-[760px]">
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className={TH_KANIT}>รหัสสินค้า</th>
-                    <th className={TH_KANIT}>สินค้า</th>
-                    <th className={TH_KANIT}>วันที่ขายล่าสุด</th>
-                    <th className={THR_KANIT}>จำนวนคงเหลือ</th>
-                    <th className={THR_KANIT}>มูลค่าสินค้าคงเหลือ (บาท)</th>
+                    {(() => {
+                      /* ↕️ กดได้เฉพาะช่องที่ท่อประกาศใน sortsSupported (ท่อรุ่นเก่าไม่ประกาศ ⇒ ตัวหนังสือทั้งหมด ไม่ทำปุ่มหลอก)
+                         ยังไม่กด ⇒ ลูกศรอยู่ที่ วันที่ขายล่าสุด ใหม่→เก่า (ลำดับตั้งต้นที่ท่อใช้จริง) */
+                      const ได้ = (f: string) => Array.isArray(dead?.sortsSupported) && dead!.sortsSupported!.includes(f)
+                      const ตอนนี้: สถานะเรียง = เรียงจม ?? (ได้('lastsold') ? { sort: 'lastsold', dir: 'desc' } : null)
+                      const กด = (n: { sort: string; dir: 'asc' | 'desc' }) => { เรียงจมRef.current = n; setเรียงจม(n); loadDeadPage(0) }
+                      const เหตุ = 'ท่อรุ่นที่ขึ้นอยู่ยังเรียงช่องนี้ไม่ได้ (เรียงได้แค่ตามวันที่ขายล่าสุด) · ขอฝั่งท่อแล้ว'
+                      const หัว = (label: string, field: string, cls: string, first: 'asc' | 'desc') => (
+                        <th className={cls}><SortHead label={label} field={field} firstDir={first} current={ตอนนี้} supported={ได้(field)} onSort={กด} fallbackTitle={เหตุ} /></th>
+                      )
+                      return (
+                        <>
+                          {หัว('รหัสสินค้า', 'sku', TH_KANIT, 'asc')}
+                          {หัว('สินค้า', 'name', TH_KANIT, 'asc')}
+                          {หัว('วันที่ขายล่าสุด', 'lastsold', TH_KANIT, 'desc')}
+                          {หัว('จำนวนคงเหลือ', 'qty', THR_KANIT, 'desc')}
+                          {หัว('มูลค่าสินค้าคงเหลือ (บาท)', 'value', THR_KANIT, 'desc')}
+                        </>
+                      )
+                    })()}
                   </tr>
                 </thead>
                 <tbody>
@@ -562,7 +584,7 @@ export default function CoreProductReportPage() {
               <div className="flex flex-wrap items-center justify-between gap-2 px-4 md:px-5 py-2.5 border-t border-gray-200 text-[12.5px] text-gray-500">
                 <span>
                   แสดง {fmtNum((dead.offset ?? 0) + 1)}–{fmtNum((dead.offset ?? 0) + (dead.rows?.length ?? 0))} จาก {fmtNum(dead.total)} รหัส
-                  {dead.sortApplied !== 'lastsold' && <span className="text-amber-700"> · ⚠️ ลำดับไม่ใช่วันที่ขายล่าสุดแบบ ZORT (ท่อตอบว่าเรียงแบบ {dead.sortApplied || 'ไม่บอก'})</span>}
+                  {!เรียงจม && dead.sortApplied !== 'lastsold' && <span className="text-amber-700"> · ⚠️ ลำดับไม่ใช่วันที่ขายล่าสุดแบบ ZORT (ท่อตอบว่าเรียงแบบ {dead.sortApplied || 'ไม่บอก'})</span>}
                   {q.trim() && <span className="text-amber-700"> · ค้นหากรองเฉพาะ {fmtNum(dead.rows?.length ?? 0)} แถวในหน้านี้ (ท่อยังไม่รับคำค้น)</span>}
                 </span>
                 <span className="flex items-center gap-2">
@@ -587,7 +609,7 @@ export default function CoreProductReportPage() {
                     scope: DEAD_RANGES.find((r) => r.days === deadDays)?.label ?? `ไม่มีใบขาย ${deadDays} วัน`,
                     note: dead.historyFrom ? `นับจากใบขายที่คลังเงามีตั้งแต่ ${thaiDate(dead.historyFrom)} เท่านั้น · มูลค่าคิดจากราคาขาย ไม่ใช่ต้นทุน` : 'มูลค่าคิดจากราคาขาย ไม่ใช่ต้นทุน',
                     fetchPage: async (off) => {
-                      const r = await fetch(`/api/web/core?list=deadstock&${deadQs(deadDays)}&offset=${off}`).then((x) => x.json())
+                      const r = await fetch(`/api/web/core?list=deadstock&${deadQs(deadDays, เรียงจมRef.current)}&offset=${off}`).then((x) => x.json())
                       if (!r || !Array.isArray(r.rows)) throw new Error(r?.error || 'ท่อไม่ส่งแถวมา')
                       return { rows: r.rows as DeadRow[], total: typeof r.total === 'number' ? r.total : null, done: typeof r.nextOffset !== 'number' }
                     },
