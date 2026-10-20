@@ -71,8 +71,18 @@ pairs = [p for p in json.load(open(คู่)) if not เฉพาะ or str(p['
 out = []
 with sync_playwright() as pw:
     bz = pw.chromium.connect_over_cdp('http://127.0.0.1:9223', timeout=20000)
-    bo = pw.chromium.connect_over_cdp('http://127.0.0.1:9224', timeout=20000)
-    pz = bz.contexts[0].new_page(); po = bo.contexts[0].new_page()
+    # 🔁 ฝั่งเรา: ค่าตั้งต้นใช้เบราว์เซอร์ร่วม 9224 · ตั้ง env OURS_STATE=<ไฟล์คุกกี้ storage_state> ⇒ เปิด Chromium หัวเงียบของตัวเองแทน
+    #    (20 ต.ค. 2569: 9224 มีคนอื่นใช้อยู่ — หน้า reCAPTCHA ทำให้ connect_over_cdp ค้างทุกรอบ 10+ ครั้ง)
+    #    ชื่อ env เป็นอังกฤษโดยตั้งใจ — bash ตั้งชื่อตัวแปรภาษาไทยไม่ได้ (เงียบแล้วเดินต่อด้วยค่าว่าง)
+    #    ⚠️ ไฟล์คุกกี้ต้องคัดเฉพาะโดเมนของเรา และอยู่ในที่ส่วนตัว ห้าม commit
+    สถานะเรา = os.environ.get('OURS_STATE') or ''
+    if สถานะเรา:
+        bo = pw.chromium.launch(headless=True)
+        po = bo.new_context(storage_state=สถานะเรา).new_page()
+    else:
+        bo = pw.chromium.connect_over_cdp('http://127.0.0.1:9224', timeout=20000)
+        po = bo.contexts[0].new_page()
+    pz = bz.contexts[0].new_page()
     try:
         for p in (pz, po): p.set_viewport_size({'width': 1600, 'height': 900})
         เมนูZORT = {}
@@ -108,6 +118,9 @@ with sync_playwright() as pw:
     finally:
         for p in (pz, po):
             try: p.close()
+            except Exception: pass
+        if สถานะเรา:
+            try: bo.close()
             except Exception: pass
 json.dump(out, open(ผล, 'w'), ensure_ascii=False, indent=1)
 ได้ = sorted(r['ต่าง%'] for r in out if 'ต่าง%' in r)
