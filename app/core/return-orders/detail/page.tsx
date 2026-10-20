@@ -6,6 +6,7 @@
 //    เพราะยังไม่เคยเห็นของจริงว่าช่องไหนคือยอดใบ ⇒ จอก็ต้องไม่เดาเหมือนกัน
 //    เดาผิด = ยอดคืนผิดทั้งร้าน · เห็นของจริงเมื่อไหร่ค่อยตั้งชื่อพร้อมกันสองฝั่ง
 // ⚠️ ห้าม log/ส่งต่อเนื้อหาใบ — มีชื่อลูกค้าจริง
+import AttachLinkOff from '@/components/zort/AttachLinkOff'
 import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -77,10 +78,11 @@ function Inner() {
   return (
     <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[860px]'}`}>
       {/* 📐 โหมดเหมือน ZORT (วัดเทียบ /Buy/Details ใบรับคืน 19 ต.ค. 2569 · CN-261017TR3HPQHV): ลิงก์กลับ Kanit 14 · จอกว้างเต็ม · ข้อความหัวจอคงเดิม (กติกาข้อ 6) */}
-      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}><Link href="/core/return-orders" className="text-[#337ab7] hover:underline">‹ รับคืนสินค้า</Link></p>
-      <PageHead title={`ใบคืนสินค้า ${wrongLevel ? '' : d?.number || ''}`}
+      <p className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[14px] mb-1" : 'text-[12.5px] mb-2'}><Link href="/core/return-orders" className="text-[#337ab7] hover:underline">{เหมือนZORT ? '‹ รายการรับคืนสินค้าเข้า' : '‹ รับคืนสินค้า'}</Link></p>
+      {/* 📐 โหมดเหมือน ZORT: หัวจอ/ลิงก์กลับใช้คำของ ZORT /Buy/Details?sttype=1 (ภาพ 20 ต.ค. 2569) · เลขที่ใบอยู่ในช่อง รายการ ข้างล่าง */}
+      <PageHead title={เหมือนZORT ? 'รายละเอียดรายการรับคืนสินค้าเข้า' : `ใบคืนสินค้า ${wrongLevel ? '' : d?.number || ''}`}
         summary={เหมือนZORT
-          ? <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก">ⓘ</span>
+          ? <><AttachLinkOff /><span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก">ⓘ</span></>
           : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ · ไม่ใช่กระจก</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT จอรายละเอียดเอกสารไม่มี */ />
 
@@ -178,15 +180,16 @@ function Inner() {
                   ['ข้อมูล', '📄', [['รายการ', d.number || null], ['ประเภทรายการ', 'รับคืนสินค้า'], ['วันที่', d.date ? thaiDate(d.date, 'เต็ม') : null], ['อ้างอิง', d.reference || null], ['ช่องทางการขาย', ไม่ส่ง]]],
                   ['ลูกค้า', '👤', [['ผู้สร้างรายการ', ไม่ส่ง], ['ชื่อลูกค้า', d.customer || null], ['เบอร์โทรศัพท์ลูกค้า', ไม่ส่ง], ['ที่อยู่ลูกค้า', ไม่ส่ง]]],
                 ] as const).map(([หัว, รูป, แถว]) => (
+                  /* 📏 ระยะตาม DOM การ์ดข้อมูลของ ZORT (วัดที่ใบโอน 20 ต.ค. 2569 ผังเดียวกัน): ตัวหนังสือห่างขอบ 50 · ป้าย 1/3 ค่า 2/3 */
                   <section key={หัว} className="px-5 py-3">
-                    <div className="flex items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 mb-4 pl-[30px]">
                       <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{รูป}</span>
                       <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                     </div>
                     {แถว.map(([k, v]) => (
-                      <div key={k} className="flex gap-4 py-1.5">
-                        <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{k}</span>
-                        <span className="text-[16px] text-[#3e3e3e]">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span> : v ?? <span className="text-gray-300">—</span>}</span>
+                      <div key={k} className="grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] pr-[15px]">
+                        <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
+                        <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span> : v ?? <span className="text-gray-300">—</span>}</span>
                       </div>
                     ))}
                   </section>
