@@ -11,6 +11,7 @@ import Link from 'next/link'
 import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT, TH_MONTH_SHORT } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
+import { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/components/zort/ExportButton'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { ยอดขายแบบZORT, type ผลยอดแบบZORT, type แถวใบคืน } from '@/lib/zort-sales-total'
 import LoadingState from '@/components/ui/LoadingState'
@@ -302,6 +303,19 @@ function downloadDaily(report: Report) {
     null,
     ['วันที่', 'ยอดขาย (บาท)', 'จำนวนใบ'],
     ...report.daily.map((d) => [d.date, String(d.sales), String(d.orders)]),
+  ])
+}
+
+/* 📤 ไฟล์ "ยอดขายรายเดือน" — ZORT มีปุ่ม Export สรุปยอดขายรายเดือน (อ่านจอจริง 20 ต.ค. 2569 ด้วย REA)
+   รวมจากยอดรายวันบนจอ (`daily` เติมครบทุกวันในช่วงแล้ว) ด้วยตัวจัดกองเดียวกับกราฟ ⇒ ผลรวมเท่ายอดรายวันเสมอ
+   ⚠️ เดือนแรก/เดือนท้ายอาจไม่เต็มเดือน — เขียนช่วงวันที่กำกับไว้บรรทัดแรก */
+function downloadMonthly(report: Report) {
+  saveCsv(`ยอดขายรายเดือน-${report.range.from}-ถึง-${report.range.to}`, [
+    ['ช่วงวันที่', `${report.range.from} ถึง ${report.range.to}`],
+    ['หมายเหตุ', 'รวมจากยอดรายวัน · ยังไม่ได้หักใบคืน · เดือนแรกและเดือนท้ายนับเฉพาะวันที่อยู่ในช่วง'],
+    null,
+    ['เดือน', 'ยอดขาย (บาท)', 'จำนวนใบ'],
+    ...groupDaily(report.daily, 'month').map((d) => [d.date, String(d.sales), String(d.orders)]),
   ])
 }
 
@@ -964,6 +978,15 @@ export default function SalesReportPage() {
                       <ReturnsFreshness utc={report.returnsSyncedAtUtc ?? null} />
                     )}
                     <ZortSalesTotal from={report.range.from} to={report.range.to} />
+                    {/* 📐 โหมดเหมือน ZORT (อ่าน DOM /Dashboard/SalesReport 20 ต.ค. 2569 ด้วย REA): ใต้ยอดรวมมีปุ่มเดียว
+                        "Download Excel - สรุปยอดขาย" (Kanit 12 #3e3e3e ขอบ #adb5bd สูง 28) · ปุ่ม Export อีกสามปุ่มอยู่แถวล่างใต้ตาราง */}
+                    {เหมือนZORT ? (
+                      <div className="mt-5 flex justify-center">
+                        <button onClick={() => downloadSummary(report)} className={ZORT_EXPORT_BTN}>
+                          <ไอคอนไฟล์ />Download Excel - สรุปยอดขาย
+                        </button>
+                      </div>
+                    ) : (
                     <div className="mt-5 flex flex-wrap gap-2 justify-center">
                       <button
                         onClick={() => downloadSummary(report)}
@@ -989,7 +1012,8 @@ export default function SalesReportPage() {
                         Export ยอดขายรายวัน
                       </button>
                     </div>
-                    {exportNote && (
+                    )}
+                    {!เหมือนZORT && exportNote && (
                       <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2 leading-relaxed max-w-[360px] text-center">
                         ⚠️ {exportNote}
                       </p>
@@ -1329,6 +1353,34 @@ export default function SalesReportPage() {
                 </TableWrap>
                 )}
               </Card>
+              {/* 📤 แถว Export ใต้การ์ดตาราง — ตำแหน่ง/ลำดับ/ถ้อยคำตาม ZORT (รายวัน · รายเดือน · ตามสินค้า · ชิดซ้าย ห่างการ์ด 32 · ห่างกัน 9)
+                  ทุกปุ่มสร้างไฟล์จริง (ตามสินค้ายิงคำขอเองครบทุกรหัส · รายวัน/รายเดือนจากยอดบนจอ) */}
+              {เหมือนZORT && report && (
+                <div>
+                  <div className="mt-[32px] flex flex-wrap gap-[9px]">
+                    <button onClick={() => downloadDaily(report)} disabled={report.daily.length === 0} className={ZORT_EXPORT_BTN}>
+                      <ไอคอนไฟล์ />Export สรุปยอดขายรายวัน ไฟล์ Excel
+                    </button>
+                    <button onClick={() => downloadMonthly(report)} disabled={report.daily.length === 0} className={ZORT_EXPORT_BTN}>
+                      <ไอคอนไฟล์ />Export สรุปยอดขายรายเดือน ไฟล์ Excel
+                    </button>
+                    <button
+                      onClick={async () => {
+                        setExportNote('กำลังขอข้อมูลครบทุกรหัส…')
+                        setExportNote(await downloadByProduct(report))
+                      }}
+                      className={ZORT_EXPORT_BTN}
+                    >
+                      <ไอคอนไฟล์ />Export สรุปยอดขายตามสินค้า ไฟล์ Excel
+                    </button>
+                  </div>
+                  {exportNote && (
+                    <p className="text-[11.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mt-2 leading-relaxed max-w-[480px]">
+                      ⚠️ {exportNote}
+                    </p>
+                  )}
+                </div>
+              )}
             </>
           )}
 
