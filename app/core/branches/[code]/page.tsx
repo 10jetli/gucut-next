@@ -67,6 +67,48 @@ const เวลาคัด = (raw?: string) => {
   return d ? thaiDayTime(d) : ''
 }
 
+/** กล่องยอดขาย 30 วันของคลัง (พับอยู่ในโหมดเหมือน ZORT) — แยกออกมาเพื่อวางได้สองตำแหน่งตามโหมด โดยไม่คัดลอกข้อความ */
+function กล่องยอดขายคลัง({ isPos, ยอด, ยอดล้ม }: {
+  isPos?: boolean
+  ยอด: { amount: number | null; orders: number | null } | null | undefined
+  ยอดล้ม: boolean
+}) {
+  return (
+    <>
+  {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีการ์ดยอดขาย 30 วัน ⇒ พับ แต่บรรทัดสรุปยังบอกยอด (ล้ม/ยังโหลด = บอกตามจริง) */}
+  <ZortLookFold tone="gray" สรุป={<>{เหมือนZORT && <>ประเภท: {isPos === undefined ? 'ยังไม่รู้ (ท่อไม่ส่งธง isPos)' : isPos ? 'จุดขาย (เปิดบิลได้)' : 'คลัง (ไม่ใช่จุดขาย)'} · </>}ยอดขายของคลังนี้ · 30 วันล่าสุด: {ยอดล้ม ? 'ถามไม่สำเร็จ — ยังไม่รู้' : ยอด ? (ยอด.amount === null ? 'ยังไม่รู้ยอด' : `${fmtMoney(ยอด.amount)} บาท`) + (ยอด.orders === null ? '' : ` · ${fmtNum(ยอด.orders)} ใบ`) : 'กำลังถาม…'}</>}>
+  <Card>
+    <p className="text-[14px] font-semibold text-gray-900 mb-1">ยอดขายของคลังนี้ · 30 วันล่าสุด</p>
+    {ยอดล้ม
+      ? <p className="text-[12.5px] text-amber-800">⚠️ ถามยอดขายรายคลังไม่สำเร็จ — <b>ยังไม่รู้</b> ไม่ใช่ว่าไม่มียอด</p>
+      : ยอด
+        ? (
+          <>
+            <div className="flex items-baseline gap-5">
+              {/* ⚠️ ท่อส่งค่าที่อ่านไม่ออก ⇒ เขียนว่าไม่รู้ ห้ามวาดเลข 0 ให้คนอ่านว่าขายไม่ได้ */}
+              <span className="text-[20px] font-black text-gray-900">
+                {ยอด.amount === null
+                  ? <span className="text-[14px] font-semibold text-amber-800">ยังไม่รู้ยอด — ท่อส่งค่าที่อ่านเป็นตัวเลขไม่ได้</span>
+                  : fmtMoney(ยอด.amount)}
+              </span>
+              <span className="text-[12.5px] text-gray-600">
+                {ยอด.orders === null ? 'ยังไม่รู้จำนวนใบ' : `${fmtNum(ยอด.orders)} ใบ`}
+              </span>
+            </div>
+            {/* 🔴 ZORT แยกรายสินค้า ของเราได้แค่ยอดรวมของคลัง ⇒ เขียนกำกับ
+                   ห้ามปล่อยให้คนอ่านว่าเป็นรายสินค้า (ตารางที่ ②/④ ของ ZORT) */}
+            <p className="text-[11.5px] text-gray-500 mt-1.5">
+              เป็น<b>ยอดรวมของคลัง</b> · รายสินค้าดูได้ที่ตาราง &ldquo;สินค้าขายดี&rdquo; ข้างล่าง
+            </p>
+          </>
+        )
+        : <LoadingState text="กำลังถามยอดขายรายคลัง…" />}
+  </Card>
+  </ZortLookFold>
+    </>
+  )
+}
+
 export default function BranchDetailPage() {
   const params = useParams<{ code: string }>()
   const code = decodeURIComponent(String(params?.code ?? ''))
@@ -156,7 +198,12 @@ export default function BranchDetailPage() {
         {/* ZORT วาง แก้ไข · ลบ ชิดขวาเป็นตัวหนังสือเทา (ไม่ใช่ปุ่มกรอบ) */}
         {(['แก้ไข', 'ลบ'] as const).map((t, i) => (
           <span key={t} title="ยังทำไม่ได้ — แก้/ลบคลังต้องทำใน ZORT"
-            className={เหมือนZORT ? `${i === 0 ? 'ml-auto ' : ''}font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>{t}</span>
+            className={เหมือนZORT ? `${i === 0 ? 'ml-auto ' : ''}inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>
+            {/* ZORT มีไอคอนดินสอ/ถังขยะหน้าคำ (ภาพ /Warehouse/Details 20 ต.ค. 2569) — วาดเอง ไม่ใช้ฟอนต์ไอคอนของ ZORT */}
+            {เหมือนZORT && (i === 0
+              ? <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M14 6l4 4" /></svg>
+              : <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>)}
+            {t}</span>
         ))}
       </div>
 
@@ -237,36 +284,7 @@ export default function BranchDetailPage() {
             </div>
           </Card>}
 
-          {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีการ์ดยอดขาย 30 วัน ⇒ พับ แต่บรรทัดสรุปยังบอกยอด (ล้ม/ยังโหลด = บอกตามจริง) */}
-          <ZortLookFold tone="gray" สรุป={<>{เหมือนZORT && <>ประเภท: {wh.isPos === undefined ? 'ยังไม่รู้ (ท่อไม่ส่งธง isPos)' : wh.isPos ? 'จุดขาย (เปิดบิลได้)' : 'คลัง (ไม่ใช่จุดขาย)'} · </>}ยอดขายของคลังนี้ · 30 วันล่าสุด: {ยอดล้ม ? 'ถามไม่สำเร็จ — ยังไม่รู้' : ยอด ? (ยอด.amount === null ? 'ยังไม่รู้ยอด' : `${fmtMoney(ยอด.amount)} บาท`) + (ยอด.orders === null ? '' : ` · ${fmtNum(ยอด.orders)} ใบ`) : 'กำลังถาม…'}</>}>
-          <Card>
-            <p className="text-[14px] font-semibold text-gray-900 mb-1">ยอดขายของคลังนี้ · 30 วันล่าสุด</p>
-            {ยอดล้ม
-              ? <p className="text-[12.5px] text-amber-800">⚠️ ถามยอดขายรายคลังไม่สำเร็จ — <b>ยังไม่รู้</b> ไม่ใช่ว่าไม่มียอด</p>
-              : ยอด
-                ? (
-                  <>
-                    <div className="flex items-baseline gap-5">
-                      {/* ⚠️ ท่อส่งค่าที่อ่านไม่ออก ⇒ เขียนว่าไม่รู้ ห้ามวาดเลข 0 ให้คนอ่านว่าขายไม่ได้ */}
-                      <span className="text-[20px] font-black text-gray-900">
-                        {ยอด.amount === null
-                          ? <span className="text-[14px] font-semibold text-amber-800">ยังไม่รู้ยอด — ท่อส่งค่าที่อ่านเป็นตัวเลขไม่ได้</span>
-                          : fmtMoney(ยอด.amount)}
-                      </span>
-                      <span className="text-[12.5px] text-gray-600">
-                        {ยอด.orders === null ? 'ยังไม่รู้จำนวนใบ' : `${fmtNum(ยอด.orders)} ใบ`}
-                      </span>
-                    </div>
-                    {/* 🔴 ZORT แยกรายสินค้า ของเราได้แค่ยอดรวมของคลัง ⇒ เขียนกำกับ
-                           ห้ามปล่อยให้คนอ่านว่าเป็นรายสินค้า (ตารางที่ ②/④ ของ ZORT) */}
-                    <p className="text-[11.5px] text-gray-500 mt-1.5">
-                      เป็น<b>ยอดรวมของคลัง</b> · รายสินค้าดูได้ที่ตาราง &ldquo;สินค้าขายดี&rdquo; ข้างล่าง
-                    </p>
-                  </>
-                )
-                : <LoadingState text="กำลังถามยอดขายรายคลัง…" />}
-          </Card>
-          </ZortLookFold>
+          {!เหมือนZORT && <กล่องยอดขายคลัง isPos={wh.isPos} ยอด={ยอด} ยอดล้ม={ยอดล้ม} />}
 
           <Card padded={false}>
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
@@ -325,6 +343,8 @@ export default function BranchDetailPage() {
                 </>
               )}
           </Card>
+          {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีกล่องนี้เลย ⇒ ย้ายลงมาใต้ตารางขายดี (เดิมแทรกระหว่างการ์ดกับตาราง ดันตารางลงจากตำแหน่ง ZORT) */}
+          {เหมือนZORT && <กล่องยอดขายคลัง isPos={wh.isPos} ยอด={ยอด} ยอดล้ม={ยอดล้ม} />}
 
           <PipeGapFrame
             หัว="สินค้าในคลังนี้"
