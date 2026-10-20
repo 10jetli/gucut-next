@@ -10,6 +10,8 @@
 // ✅ **ยกเลิกใบได้** — VoidPurchaseOrder ผ่านท่อ gucut-web POST ?voidpo (ยิงจริง 14 ก.ย. 2569: PO-202609001 → อ่านกลับ Voided)
 //    ⚠️ จอนี้ยังไม่มีปุ่มยกเลิก ⇒ ใบที่ส่งผิดต้องให้คนมีสิทธิ์ยกเลิกผ่านท่อ หรือเข้าจัดการใน ZORT
 //    ⇒ จอนี้จึงบังคับซ้อมก่อนเหมือนจอใบเสนอราคา และผูกสถานะซ้อมกับ "เนื้อหา" ไม่ใช่ "การกดปุ่ม"
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import FieldOff from '@/components/zort/FieldOff'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -168,6 +170,38 @@ function NewPurchaseOrderInner() {
         </p>
       )}
 
+      {เหมือนZORT ? (
+        /* 📐 โหมดเหมือน ZORT: ผังฟอร์ม /Buy/Add (อ่านช่องจากจอจริง 20 ต.ค. 2569 · ไม่กรอก ไม่กดบันทึก)
+             ซ้าย ข้อมูล: รายการ · วันที่ · อ้างอิง · ประเภทภาษี  ·  ขวา ผู้ติดต่อ: ชื่อ · รหัส · เบอร์ · อีเมล · ที่อยู่
+           ช่องที่ใช้ได้เป็น state ตัวเดิม (vendor · note) — body ที่ส่ง addpo ไม่เปลี่ยน · ช่องที่ยังส่งไม่ได้วาดไว้แต่ปิด */
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[30px] mb-[30px]">
+          <section className="bg-white rounded-[6px] p-5 space-y-3">
+            <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ข้อมูล</h2>
+            <FieldOff ป้าย="รายการ *" เหตุ="ZORT ออกเลขที่ใบให้เองตอนบันทึก — ท่อไม่ได้ส่งเลขที่ใบไป" />
+            <FieldOff ป้าย="วันที่ *" เหตุ={เหตุช่องใบซื้อ} />
+            <FieldOff ป้าย="อ้างอิง" เหตุ={เหตุช่องใบซื้อ} />
+            <FieldOff ป้าย="ประเภทภาษี" เหตุ={เหตุช่องใบซื้อ} />
+            <label className="block">
+              <span className={FORM_LABEL}>หมายเหตุ</span>
+              <input value={note} onChange={(e) => setNote(e.target.value)}
+                className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
+            </label>
+          </section>
+          <section className="bg-white rounded-[6px] p-5 space-y-3">
+            <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ผู้ติดต่อ</h2>
+            <label className="block">
+              <span className={FORM_LABEL}>ชื่อผู้ติดต่อ</span>
+              <input value={vendor} onChange={(e) => setVendor(e.target.value)}
+                className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
+            </label>
+            <FieldOff ป้าย="รหัสผู้ติดต่อ" เหตุ={เหตุช่องใบซื้อ} />
+            <FieldOff ป้าย="เบอร์โทรศัพท์ผู้ติดต่อ" เหตุ={เหตุช่องใบซื้อ} />
+            <FieldOff ป้าย="อีเมลผู้ติดต่อ" เหตุ={เหตุช่องใบซื้อ} />
+            <FieldOff ป้าย="ที่อยู่ผู้ติดต่อ" เหตุ={เหตุช่องใบซื้อ} />
+          </section>
+          <p className="lg:col-span-2 -mt-4 text-[11.5px] text-gray-500">ช่องสีเทา = ยังส่งไม่ได้ · {เหตุช่องใบซื้อ} · ช่องทางจัดส่ง/วันที่ส่งสินค้า/Tracking No./ส่วนลด/ภาษีมูลค่าเพิ่ม ของ ZORT ก็ยังส่งไม่ได้ด้วยเหตุเดียวกัน</p>
+        </div>
+      ) : (
       <div className="bg-white border border-gray-200 rounded-md p-4 mb-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
         <label className="block">
           <span className={FORM_LABEL}>คู่ค้า / ผู้ขาย</span>
@@ -180,6 +214,7 @@ function NewPurchaseOrderInner() {
             className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
         </label>
       </div>
+      )}
 
       <TableWrap>
         <table className="w-full min-w-[640px]">
@@ -318,6 +353,9 @@ function NewPurchaseOrderInner() {
     </div>
   )
 }
+
+/** เหตุของช่องที่ปิดในโหมดเหมือน ZORT — ที่เดียว (อ่านจาก body ที่จอนี้ส่ง addpo: vendor · note · items · และ status/paid/paymentMethod ในแบบง่าย) */
+const เหตุช่องใบซื้อ = 'ท่อสร้างใบสั่งซื้อ (addpo) ส่งได้แค่ ชื่อผู้ขาย · หมายเหตุ · รายการสินค้า (แบบง่ายส่งสถานะกับยอดจ่ายเพิ่ม) — ช่องนี้ยังส่งเข้า ZORT ไม่ได้'
 
 export default function NewPurchaseOrderPage() {
   // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (กติกาเดียวกับจอ moves)
