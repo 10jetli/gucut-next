@@ -9,6 +9,7 @@
 // ยังเหลือสองใบที่ยังพึ่ง ZORT อยู่ (ไม่มีในคลังเงา) — ติดป้ายบอกไว้บนจอแล้ว:
 //   · สินค้าตีกลับ → /api/returns-summary (มีแคช 6 ชม. · ย้ายจาก /api/returns 28 ก.ย. 2569)
 //   · การสั่งของกับโรงงาน → /api/sheets (ไม่ใช่ ZORT อยู่แล้ว)
+import { IconCalendarDay, IconCalendarMonth, IconCalendarGrid, IconCubes } from '@/components/zort/CardIcons'
 import StockPushAlert from '@/components/zort/StockPushAlert'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
@@ -226,6 +227,11 @@ function Shortcut({ href, icon, label, soon }: { href: string; icon: string; lab
 /** การ์ดเงินแถวบน — โหมดเหมือน ZORT ทศนิยม 2 ตำแหน่งเสมอ (17,410.30) · โหมดปกติคงของเดิม */
 const เงินการ์ด = เหมือนZORT ? fmtMoney2 : fmtMoney
 
+/** อีโมจิของการ์ดแถวบน → ไอคอนเส้นแบบ ZORT (เฉพาะโหมดเหมือน ZORT · อีโมจิที่ไม่อยู่ในนี้ใช้ตัวเดิม) */
+const ไอคอนการ์ดZ: Record<string, React.ReactNode> = {
+  '🛒': <IconCalendarDay />, '📅': <IconCalendarMonth />, '📈': <IconCalendarGrid />, '🏆': <IconCubes />, '🔁': <IconCubes />,
+}
+
 function ZortBigCard({ icon, label, value, unknown, tone }: {
   icon: string; label: string; value?: string; unknown?: string; tone?: 'red' | 'green'
 }) {
@@ -233,7 +239,8 @@ function ZortBigCard({ icon, label, value, unknown, tone }: {
     <Card>
       <div className="flex items-start gap-3">
         {/* โหมดเหมือน ZORT: วงไอคอน ~46px สี #d0daff (ภาพ /Dashboard 19 ต.ค. 2569 · วงเป็นภาพของ ZORT อ่าน DOM ไม่เจอ ⇒ กะจากภาพ) */}
-        <span className={`shrink-0 rounded-full flex items-center justify-center ${เหมือนZORT ? 'w-[46px] h-[46px] bg-[#d0daff] text-[20px]' : 'w-9 h-9 bg-violet-50 text-[16px]'}`}>{icon}</span>
+        {/* 📐 โหมดเหมือน ZORT: ไอคอนเส้น (ปฏิทิน 3 แบบ · กล่องซ้อน) แทนอีโมจิ — ภาพ /Dashboard/Main 20 ต.ค. 2569 · วาดเอง (CardIcons) */}
+        <span className={`shrink-0 rounded-full flex items-center justify-center ${เหมือนZORT ? 'w-[46px] h-[46px] bg-[#d0daff] text-[#4165ed] text-[20px]' : 'w-9 h-9 bg-violet-50 text-[16px]'}`}>{(เหมือนZORT && ไอคอนการ์ดZ[icon]) || icon}</span>
         <div className="ml-auto text-right">
           <p className="text-[14px] font-medium text-[#868e96]">{label}</p>
           {unknown
