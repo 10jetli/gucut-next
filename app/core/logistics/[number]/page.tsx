@@ -38,9 +38,9 @@ interface Row {
 function ช่อง({ ป้าย, ค่า }: { ป้าย: string; ค่า: React.ReactNode }) {
   return (
     <div>
-      {/* 📐 โหมดเหมือน ZORT (วัดจากภาพ /Logistics/Details 19 ต.ค. 2569): ป้าย 14 เทา · ค่า 18 หนา #3e3e3e */}
-      <p className={เหมือนZORT ? 'text-[14px] text-[#828282] mb-1' : 'text-[11.5px] text-gray-500'}>{ป้าย}</p>
-      <div className={เหมือนZORT ? 'text-[18px] font-semibold text-[#3e3e3e]' : 'text-[15px] font-semibold text-gray-900'}>{ค่า}</div>
+      {/* 📐 โหมดเหมือน ZORT — วัด DOM /Logistics/Details 21 ต.ค. 2569 (แทนค่าที่กะจากภาพ 19 ต.ค.): ป้าย Boon 12 #868e96 · ค่า Kanit 16/500 #3e3e3e · ป้ายถึงค่า 18 */}
+      <p className={เหมือนZORT ? 'text-[12px] leading-[18px] text-[#868e96]' : 'text-[11.5px] text-gray-500'}>{ป้าย}</p>
+      <div className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[16px] leading-[24px] font-medium text-[#3e3e3e]" : 'text-[15px] font-semibold text-gray-900'}>{ค่า}</div>
     </div>
   )
 }
@@ -124,7 +124,8 @@ export default function LogisticsDetailPage() {
       {!loading && !err && row && เหมือนZORT && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white rounded-md p-6 space-y-4">
-            <div className="grid grid-cols-2 gap-x-6 gap-y-4">
+            {/* 📏 ZORT แถวห่าง 52 = ป้าย 18 + ค่า 24 + ช่องว่าง 10 */}
+            <div className="grid grid-cols-2 gap-x-6 gap-y-[10px]">
               {/* ลำดับตาม ZORT: รายการ (= เลขพัสดุ) · วันที่ (เดือนเต็ม) · Tracking No · สถานะรายการ · รายการขายที่เกี่ยวข้อง — ช่องของเราต่อท้าย */}
               <ช่อง ป้าย="รายการ" ค่า={row.trackingNo || row.number} />
               <ช่อง ป้าย="วันที่" ค่า={row.date ? thaiDate(String(row.date), 'เต็ม') : ยังไม่มี('ไม่รู้')} />
@@ -148,11 +149,8 @@ export default function LogisticsDetailPage() {
                 คอลัมน์="ค่าส่ง (ของจริงที่อ่านได้จาก ZORT: 28 บาท)"
                 เหตุ="แถวของ `list=logistics` มี 9 ช่อง และไม่มีช่องค่าส่งเลย (ยิงอ่านรูปข้อมูลจริง 5 ต.ค. 2569)"
                 คำขอ="เพิ่มช่อง `shippingCost` ลงในแถวของ `list=logistics`" />
-              <PipeGapFrame
-                หัว="รายการขายที่เกี่ยวข้อง"
-                คอลัมน์="เลขที่ใบขาย (ของจริง: SO-202610010)"
-                เหตุ="ท่อส่งมาแค่ `lines` ซึ่งเป็น **จำนวนนับ** ไม่ใช่รายชื่อใบขาย ⇒ กดต่อไปที่ใบขายไม่ได้"
-                คำขอ="เพิ่มช่อง `orderNumbers` (อาเรย์ของเลขที่ใบขาย) ลงในแถวของ `list=logistics`" />
+              {/* 🔴 ถอดกรอบ รายการขายที่เกี่ยวข้อง ออกจากผังนี้ (21 ต.ค. 2569) — ช่องข้างบนขึ้นเลขใบขายพร้อมลิงก์อยู่แล้ว (ตรง ZORT: SO-202610027)
+                  กรอบบอกว่า กดต่อไปที่ใบขายไม่ได้ วางใต้ช่องที่กดได้ = ข้อความขัดกันในจอเดียว · คำขอ orderNumbers (ใบขนส่งเดียวหลายใบขาย) ย้ายไปอยู่ในกล่องพับข้างล่าง */}
             </div>
             <ZortLookFold สรุป="📏 จอนี้ตรงกับ ZORT กี่ช่อง · ปุ่มที่ยังไม่มี">
               <p>
@@ -162,6 +160,9 @@ export default function LogisticsDetailPage() {
               <p className="mt-1">
                 🖨️ ZORT มีปุ่ม <b>ส่ง SMS ให้ลูกค้า</b> กับ <b>พิมพ์ใบแปะกล่อง</b> — ของเรายังไม่มีทั้งคู่
                 ปุ่มบนแถบเป็นสีเทาพร้อมเหตุ (ชี้เมาส์ค้างเพื่ออ่าน)
+              </p>
+              <p className="mt-1">
+                🔗 รายการขายที่เกี่ยวข้อง: ขึ้นเลขใบขายของแถวนี้แล้ว · ถ้าใบขนส่งหนึ่งใบรวมหลายใบขาย ท่อยังส่งมาแค่จำนวน (lines) ไม่ใช่รายชื่อ — ขอช่อง orderNumbers ไว้แล้ว
               </p>
             </ZortLookFold>
           </div>
