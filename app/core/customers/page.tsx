@@ -159,16 +159,11 @@ export default function CoreContactsPage() {
   const รองรับเรียง = !!ที่ใช้เรียง && 'sortDefaulted' in ที่ใช้เรียง
   const เรียงไม่ติด = !!เรียง && รองรับเรียง && ที่ใช้เรียง?.sortDefaulted !== false
   const เปลี่ยนเรียง = (n: { sort: string; dir: 'asc' | 'desc' }) => { เรียงRef.current = n; setเรียง(n); load(0) }
-  /* 🔑 หัว "รหัส" — ท่อรุ่นที่ขึ้นอยู่ก่อน ef3165f4 รับ sort แต่ **ตีกลับ code** (ok:false ไม่รู้จักช่องเรียง)
-     และไม่ได้ประกาศรายชื่อช่อง ⇒ sortDefaulted อย่างเดียวบอกไม่ได้ว่า code ใช้ได้
-     ⇒ ถามท่อหนึ่งครั้ง (limit=1) · กดได้เฉพาะเมื่อท่อตอบรับจริง ไม่งั้นเป็นปุ่มที่กดแล้วขึ้นข้อผิดพลาด */
-  const [รับรหัส, setรับรหัส] = useState(false)
-  useEffect(() => {
-    if (!รองรับเรียง || รับรหัส) return
-    fetch('/api/web/core?list=contacts&limit=1&sort=code&dir=asc').then((r) => r.json())
-      .then((j) => setรับรหัส(j?.ok !== false && !!j?.applied && j.applied.sort === 'code'))
-      .catch(() => {})
-  }, [รองรับเรียง, รับรหัส])
+  /* 🔑 หัว "รหัส" — ท่อรุ่นก่อน ef3165f4 รับ sort แต่ **ตีกลับ code** (ok:false ไม่รู้จักช่องเรียง)
+     ⇒ sortDefaulted อย่างเดียวบอกไม่ได้ว่า code ใช้ได้ · อ่านรายชื่อจาก `sortsSupported` ระดับบนสุด (ท่อ c84646de)
+     ไม่มีรายชื่อ = ไม่รู้ ⇒ หัวรหัสเป็นตัวหนังสือ (ไม่ทำปุ่มที่กดแล้วขึ้นข้อผิดพลาด) */
+  const ช่องเรียงได้ = (data as { sortsSupported?: unknown } | null)?.sortsSupported
+  const รับรหัส = Array.isArray(ช่องเรียงได้) && ช่องเรียงได้.includes('code')
   // ⚠️ แท็บ ลูกค้า/คู่ค้า ของ ZORT กรองจากชนิดผู้ติดต่อ — ข้อมูลที่เรามี `type` เป็น
   //    "Undefined" ทุกแถวเท่าที่สุ่มดู 600 ราย ⇒ **กดแล้วจะได้ศูนย์ทุกครั้ง**
   //    ปุ่มที่กดแล้วได้ศูนย์เสมอคือปุ่มหลอก ⇒ โชว์ไว้ให้ผังตรง แต่กดไม่ได้ + บอกเหตุผล
