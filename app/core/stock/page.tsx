@@ -651,6 +651,7 @@ function CoreStockInner() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="ค้นหา รหัสสินค้า หรือชื่อสินค้า"
+        zortPlaceholder="ค้นหา" /* คำในช่องของ ZORT (REA 20 ต.ค. 2569) */
         /* ผัง ZORT ข้างช่องค้นมีแค่ลิงก์ "ค้นหาขั้นสูง" (ลิงก์ "ค้นหา ·" ของเราเอาออก 16 ต.ค. 2569 — กด Enter ในช่องค้นแทน) */
         advanced={Array.isArray(data?.advancedFiltersSupported)
           ? <LinkText onClick={() => setAdvOpen((v) => !v)}>{advOpen ? 'ปิดค้นหาขั้นสูง' : 'ค้นหาขั้นสูง'}</LinkText>

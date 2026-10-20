@@ -401,6 +401,7 @@ export default function MarketplaceProductsPage() {
             onChange={goSearch}
             onSubmit={() => doSearch(q)}
             placeholder="รหัสสินค้า หรือชื่อสินค้า"
+            zortPlaceholder="ค้นหา" /* คำในช่องของ ZORT (REA 20 ต.ค. 2569) */
             advanced={<LinkText onClick={() => doSearch('')}>ล้างคำค้น</LinkText>}
           />
 

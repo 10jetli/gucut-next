@@ -327,6 +327,7 @@ export default function CoreBundlesPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="ค้นหา รหัสชุด หรือชื่อชุด"
+        zortPlaceholder="ค้นหา" /* คำในช่องของ ZORT (REA 20 ต.ค. 2569) */
         /* ลิงก์ "ค้นหา" เอาออก 16 ต.ค. 2569 — ZORT ไม่มี · กด Enter ในช่องค้นแทน */
       />
 

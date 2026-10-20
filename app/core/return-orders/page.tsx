@@ -409,6 +409,7 @@ export default function ReturnOrdersPage() {
             onChange={setQ}
             onSubmit={() => load()}
             placeholder="ค้นเลขที่ใบคืน · เลขใบขายอ้างอิง · ชื่อลูกค้า"
+            zortPlaceholder="พิมพ์คำค้นหา" /* คำในช่องของ ZORT (REA 20 ต.ค. 2569) */
             advanced={<LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
             /* 📐 โหมดเหมือน ZORT: ตัวเลือกร้านมาอยู่ขวาของช่องค้นหา (ZORT ไม่มีแถวเลือกร้าน · วัดจอใบซื้อ 51.0 → 27.1) */
             right={เหมือนZORT ? (
