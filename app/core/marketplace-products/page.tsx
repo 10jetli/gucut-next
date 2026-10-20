@@ -23,6 +23,7 @@ import {TH_NO,
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
   EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav, ZORT_BACK_LINK } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { skuScopeNote } from '@/lib/sku-scope'
 import ChannelGapsCard from '@/components/zort/ChannelGapsCard'
 
@@ -225,6 +226,62 @@ export default function MarketplaceProductsPage() {
   /** ยิงจริง — ใช้ตอนกด Enter หรือกดล้างคำค้น */
   const doSearch = (v: string) => { setQ(v); setPage(0); if (serverFilter) load(tab, 0, v) }
 
+  /* 📤 ปุ่มส่งออกตัวเดียว วางได้สองที่ตามโหมด (หัวจอ / ใต้ตาราง) — ไม่คัดลอก spec */
+  const ปุ่มส่งออก = (
+    <ExportButton
+      disabled={loading}
+      label={เหมือนZORT ? 'Export to Excel' : undefined}
+      spec={{
+        filename: 'สินค้าบนมาร์เก็ตเพลส',
+        /* 🔴 **ไฟล์เดินไปไกลกว่าจอ** — คนเปิดไฟล์ไม่เห็นแถบเตือนบนจอ
+           ⇒ ถ้าแท็บ "ยังไม่ได้ลงขาย" ถูกดึงตอนที่ยังไม่รู้สถานะครบทุกช่องทาง
+              ชื่อขอบเขตต้องบอกเองว่าเชื่อไม่ได้ ไม่ใช่เขียนว่า "ยังไม่ได้ลงขายที่ไหนเลย" เฉย ๆ
+           (กติกาข้อ 2 ของท่านประธาน: ข้อมูลไม่สมบูรณ์ห้ามออกเป็นไฟล์ที่อ้างว่าสมบูรณ์) */
+        scope: tab === 'all' ? 'ทุกช่องทาง'
+          : tab === 'none'
+            ? (Object.keys(meta?.marketplacesFailed ?? {}).length
+                || Object.keys(meta?.marketplacesNotConnected ?? {}).length
+                ? `ยังไม่ได้ลงขายที่ไหนเลย — ⚠️ รอบนี้ยังไม่รู้สถานะครบทุกช่องทาง (${[
+                    ...Object.keys(meta?.marketplacesFailed ?? {}).map((x) => `${x} ดึงไม่สำเร็จ`),
+                    ...Object.keys(meta?.marketplacesNotConnected ?? {}).map((x) => `${x} ยังไม่เชื่อมร้าน`),
+                  ].join(' · ')}) ⇒ รายการนี้รวมรหัสที่ยังไม่รู้สถานะไว้ด้วย`
+                : 'ยังไม่ได้ลงขายที่ไหนเลย')
+            : `ช่องทาง ${tab}`,
+        title: 'สินค้าบนมาร์เก็ตเพลส',
+        /* 🔴 ขอบเขตต้องอยู่ในหัวไฟล์ (CTO กำชับข้อ 5 · 18 ก.ย. 2569) — จอนี้อ่านจาก
+           ทะเบียนสินค้าเหมือนจอคลัง ⇒ สินค้าที่ยังไม่ได้ตั้งรหัสไม่อยู่ในไฟล์นี้ */
+        note: skuScopeNote(meta?.noSkuInZort),
+        filters: [
+          ['แท็บช่องทาง', tab === 'all' ? 'ทั้งหมด' : tab === 'none' ? 'ยังไม่ได้ลงขายที่ไหนเลย' : tab],
+          ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
+        ],
+        fetchPage: async (offsetAt, limit) => {
+          const qs = new URLSearchParams({
+            list: 'stock', marketplaces: '1', limit: String(limit), offset: String(offsetAt),
+          })
+          if (tab !== 'all') qs.set('channel', tab)
+          if (q.trim()) qs.set('q', q.trim())
+          const r = await fetch(`/api/web/core?${qs}`)
+          const d = await r.json()
+          if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
+          return {
+            rows: (Array.isArray(d.rows) ? d.rows : []) as Row[],
+            total: typeof d.total === 'number' ? d.total : null,
+          }
+        },
+        header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ', 'พร้อมขาย', 'ลงขายที่ช่องทาง', 'สถานะ'],
+        /* ⚠️ ช่องที่ท่อไม่ส่ง = เว้นว่าง ห้ามแทนด้วยขีดหรือ 0 */
+        toRow: (r: Row) => [
+          r.sku, r.name ?? null,
+          typeof r.qty === 'number' ? r.qty : null,
+          typeof r.available === 'number' ? r.available : null,
+          (r.marketplaces ?? []).join(' · ') || null,
+          r.active === false ? 'ปิดใช้งาน' : 'ใช้งาน',
+        ],
+      }}
+    />
+  )
+
   return (
     <div className="p-4 md:p-6">
       {/* ผังภาพ 83: breadcrumb กลับไป Marketplace Dashboard อยู่เหนือหัวจอ */}
@@ -253,7 +310,8 @@ export default function MarketplaceProductsPage() {
               </>
             )
         }
-        actions={
+        /* 📐 โหมดเหมือน ZORT (ภาพ /Marketplace/List 20 ต.ค. 2569): หัวจอไม่มีปุ่ม · "Export to Excel" อยู่ใต้ตารางชิดซ้าย ⇒ ย้ายลงไป · รีเฟรชซ่อน (โหลดหน้าใหม่แทนได้) */
+        actions={เหมือนZORT ? undefined :
           <>
             <BtnGhost onClick={() => { load(tab, page, q); loadCounts() }} disabled={loading}>{loading ? 'กำลังโหลด…' : 'รีเฟรช'}</BtnGhost>
             {/* 📤 **ZORT มีปุ่มนี้จริงที่จอเดียวกัน** — เปิดดู `/Marketplace/list` ของเขา 18 ก.ย. 2569
@@ -261,57 +319,7 @@ export default function MarketplaceProductsPage() {
                 (ต่างจากจอวางแผนสั่งซื้อที่เขาไม่มีปุ่มนี้ — ตรวจแล้วเหมือนกัน)
                 ⚠️ ไฟล์ต้องกรองด้วย **แท็บช่องทางเดียวกับที่จอกำลังโชว์** ไม่งั้นไฟล์กับจอคนละชุด
                 ⚠️ ตารางนี้ไม่มีข้อมูลส่วนบุคคล (รหัส/ชื่อสินค้า/จำนวน/ช่องทาง) ⇒ ส่งออกได้ */}
-            <ExportButton
-              disabled={loading}
-              spec={{
-                filename: 'สินค้าบนมาร์เก็ตเพลส',
-                /* 🔴 **ไฟล์เดินไปไกลกว่าจอ** — คนเปิดไฟล์ไม่เห็นแถบเตือนบนจอ
-                   ⇒ ถ้าแท็บ "ยังไม่ได้ลงขาย" ถูกดึงตอนที่ยังไม่รู้สถานะครบทุกช่องทาง
-                      ชื่อขอบเขตต้องบอกเองว่าเชื่อไม่ได้ ไม่ใช่เขียนว่า "ยังไม่ได้ลงขายที่ไหนเลย" เฉย ๆ
-                   (กติกาข้อ 2 ของท่านประธาน: ข้อมูลไม่สมบูรณ์ห้ามออกเป็นไฟล์ที่อ้างว่าสมบูรณ์) */
-                scope: tab === 'all' ? 'ทุกช่องทาง'
-                  : tab === 'none'
-                    ? (Object.keys(meta?.marketplacesFailed ?? {}).length
-                        || Object.keys(meta?.marketplacesNotConnected ?? {}).length
-                        ? `ยังไม่ได้ลงขายที่ไหนเลย — ⚠️ รอบนี้ยังไม่รู้สถานะครบทุกช่องทาง (${[
-                            ...Object.keys(meta?.marketplacesFailed ?? {}).map((x) => `${x} ดึงไม่สำเร็จ`),
-                            ...Object.keys(meta?.marketplacesNotConnected ?? {}).map((x) => `${x} ยังไม่เชื่อมร้าน`),
-                          ].join(' · ')}) ⇒ รายการนี้รวมรหัสที่ยังไม่รู้สถานะไว้ด้วย`
-                        : 'ยังไม่ได้ลงขายที่ไหนเลย')
-                    : `ช่องทาง ${tab}`,
-                title: 'สินค้าบนมาร์เก็ตเพลส',
-                /* 🔴 ขอบเขตต้องอยู่ในหัวไฟล์ (CTO กำชับข้อ 5 · 18 ก.ย. 2569) — จอนี้อ่านจาก
-                   ทะเบียนสินค้าเหมือนจอคลัง ⇒ สินค้าที่ยังไม่ได้ตั้งรหัสไม่อยู่ในไฟล์นี้ */
-                note: skuScopeNote(meta?.noSkuInZort),
-                filters: [
-                  ['แท็บช่องทาง', tab === 'all' ? 'ทั้งหมด' : tab === 'none' ? 'ยังไม่ได้ลงขายที่ไหนเลย' : tab],
-                  ['คำค้นหา', q.trim() || '(ไม่ได้ค้น)'],
-                ],
-                fetchPage: async (offsetAt, limit) => {
-                  const qs = new URLSearchParams({
-                    list: 'stock', marketplaces: '1', limit: String(limit), offset: String(offsetAt),
-                  })
-                  if (tab !== 'all') qs.set('channel', tab)
-                  if (q.trim()) qs.set('q', q.trim())
-                  const r = await fetch(`/api/web/core?${qs}`)
-                  const d = await r.json()
-                  if (!r.ok || d?.error) throw new Error(d?.error ?? `HTTP ${r.status}`)
-                  return {
-                    rows: (Array.isArray(d.rows) ? d.rows : []) as Row[],
-                    total: typeof d.total === 'number' ? d.total : null,
-                  }
-                },
-                header: ['รหัสสินค้า', 'ชื่อสินค้า', 'คงเหลือ', 'พร้อมขาย', 'ลงขายที่ช่องทาง', 'สถานะ'],
-                /* ⚠️ ช่องที่ท่อไม่ส่ง = เว้นว่าง ห้ามแทนด้วยขีดหรือ 0 */
-                toRow: (r: Row) => [
-                  r.sku, r.name ?? null,
-                  typeof r.qty === 'number' ? r.qty : null,
-                  typeof r.available === 'number' ? r.available : null,
-                  (r.marketplaces ?? []).join(' · ') || null,
-                  r.active === false ? 'ปิดใช้งาน' : 'ใช้งาน',
-                ],
-              }}
-            />
+            {ปุ่มส่งออก}
           </>
         }
       />
@@ -494,6 +502,7 @@ export default function MarketplaceProductsPage() {
                 onGo={(off) => goPage(Math.max(0, Math.floor(off / PAGE)))} />
             </div>
           </TableWrap>
+          {เหมือนZORT && <div className="mt-[22px]">{ปุ่มส่งออก}</div>}
 
           <p className="text-[11.5px] text-gray-400 mt-3 leading-relaxed">
             {serverFilter

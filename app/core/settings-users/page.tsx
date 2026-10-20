@@ -161,8 +161,12 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
       <form method="get" className={`flex items-center gap-3 ${เหมือนZORT ? 'pt-1 mb-5' : 'mb-4'}`}>
         {/* ช่องค้นหา ZORT กว้าง 400 (เหมือนช่องค้นหาร่วมทุกจอ) */}
         <div className={`flex items-center gap-2 h-10 bg-white border border-[#adb5bd] rounded-[24px] px-3.5 ${เหมือนZORT ? 'w-[400px] max-w-full' : 'w-[280px]'}`}>
-          <span className="text-gray-400 text-[12.5px]">🔍</span>
-          <input name="q" defaultValue={ค่าแรก(searchParams?.q)} placeholder="ค้นหาผู้ใช้งาน"
+          {/* 📐 โหมดเหมือน ZORT: แว่นเส้น 16px สี #868e96 + คำในช่อง "พิมพ์คำค้นหา" ตามจอ ZORT /User/list (ภาพ 20 ต.ค. 2569)
+              วาด SVG ในไฟล์นี้เอง — จอนี้เป็น server component ห้ามดึงค่าคลาส/สไตล์จากไฟล์ 'use client' */}
+          {เหมือนZORT
+            ? <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#868e96" strokeWidth="1.4"><circle cx="7" cy="7" r="5.5" /><path d="M11 11l4 4" strokeLinecap="round" /></svg>
+            : <span className="text-gray-400 text-[12.5px]">🔍</span>}
+          <input name="q" defaultValue={ค่าแรก(searchParams?.q)} placeholder={เหมือนZORT ? 'พิมพ์คำค้นหา' : 'ค้นหาผู้ใช้งาน'} aria-label="ค้นหาผู้ใช้งาน"
             className="flex-1 text-[14px] text-[#3e3e3e] outline-none bg-transparent" />
         </div>
         {/* ผัง ZORT /User/list: ข้างช่องค้นมีแค่ลิงก์ "ค้นหาขั้นสูง" (แผง #searchAdvance = อีเมล · ชื่อ · อ่านจอ 16 ต.ค. 2569)
