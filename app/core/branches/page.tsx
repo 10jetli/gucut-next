@@ -11,6 +11,7 @@
 //      รหัสจะไม่ใช่ KLD/ANJ อีก แล้วการเดาจะพังเงียบ ๆ
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
+import SortHead, { type สถานะเรียง } from '@/components/zort/SortHead'
 import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 import Link from 'next/link'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -66,6 +67,9 @@ export default function CoreBranchesPage() {
    *  (ผมกันเคส "กำลังโหลด" ไว้แล้ว แต่ลืมเคส "โหลดไม่สำเร็จ" ซึ่งจบลงที่หน้าตาเดียวกัน) */
   const [salesFailed, setSalesFailed] = useState(false)
   const [q, setQ] = useState('')
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
+  const [ต่อหน้า, setต่อหน้า] = useState(20)
+  const [หน้า, setหน้า] = useState(0)
   /* 🔍 ค้นหาขั้นสูงแบบ ZORT (แผง searchAdvance ของ /Warehouse/list — อ่าน DOM ที่ซ่อนอยู่ 20 ต.ค. 2569):
      รหัสคลัง/สาขา · ชื่อคลัง/สาขา · ☐ แสดงคลังสินค้าที่ถูกลบ
      กรองในเบราว์เซอร์จาก **รายชื่อคลังทั้งหมด** (ท่อส่งครบทุกคลังในครั้งเดียว ไม่มีแบ่งหน้า) ⇒ ไม่ใช่กรองแค่หน้าที่เห็น */
@@ -149,10 +153,19 @@ export default function CoreBranchesPage() {
   }
 
   const มี = (ค่า: unknown, คำ: string) => String(ค่า ?? '').toLowerCase().includes(คำ.trim().toLowerCase())
-  const list = rows
+  const กรองแล้ว = rows
     .filter((r) => !q.trim() || มี(`${r.code} ${r.name}`, q))
     .filter((r) => !advCode.trim() || มี(r.code, advCode))
     .filter((r) => !advName.trim() || มี(r.name, advName))
+  /* ↕️ หัว รหัส · ชื่อคลัง/สาขา กดเรียงแบบ ZORT (DOM /Warehouse/list 21 ต.ค. 2569: สองหัวนี้เป็นลิงก์เรียง)
+     ท่อส่งคลังมาครบในคำขอเดียว ⇒ เรียงในเครื่องคือเรียงทั้งชุดจริง · ยังไม่กด = ลำดับเดิมของท่อ */
+  const list = !เรียง ? กรองแล้ว : [...กรองแล้ว].sort((a, b) => (เรียง.dir === 'asc' ? 1 : -1)
+    * String(เรียง.sort === 'code' ? a.code : a.name ?? '').localeCompare(String(เรียง.sort === 'code' ? b.code : b.name ?? ''), 'th'))
+  /* 📄 แถบหน้าแบบ ZORT (โหมดเหมือน ZORT) — จำนวนต่อหน้าตัดแถวจริง ไม่ใช่ตัวเลือกประดับ */
+  const หน้าละ = เหมือนZORT ? ต่อหน้า : Math.max(1, list.length)
+  const จำนวนหน้า = Math.max(1, Math.ceil(list.length / หน้าละ))
+  const หน้าปัจจุบัน = Math.min(หน้า, จำนวนหน้า - 1)
+  const แถวที่เห็น = list.slice(หน้าปัจจุบัน * หน้าละ, (หน้าปัจจุบัน + 1) * หน้าละ)
 
   return (
     <div className="p-4 md:p-6">
@@ -257,8 +270,8 @@ export default function CoreBranchesPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH}>รหัส</th>
-                  <th className={TH}>ชื่อคลัง/สาขา</th>
+                  <th className={TH}><SortHead label="รหัส" field="code" firstDir="asc" current={เรียง} supported={rows.length > 0} onSort={setเรียง} fallbackTitle="กำลังโหลดรายชื่อคลัง" /></th>
+                  <th className={TH}><SortHead label="ชื่อคลัง/สาขา" field="name" firstDir="asc" current={เรียง} supported={rows.length > 0} onSort={setเรียง} fallbackTitle="กำลังโหลดรายชื่อคลัง" /></th>
                   <th className={TH}>ประเภท</th>
                   <th className={THR}>มูลค่าสินค้าคงเหลือ</th>
                   {/* ✅ ท่อส่งข้อมูลช่องนี้แล้ว 15 ก.ย. 2569 (`movedAt`)
@@ -293,11 +306,11 @@ export default function CoreBranchesPage() {
                   <EmptyState cols={9} icon="🏬" title={q ? 'ไม่พบคลังที่ค้นหา' : 'ยังไม่มีคลังสินค้า'}
                     detail="คลังสินค้าดึงมาจาก ZORT — เพิ่มคลังที่ ZORT แล้วรอบซิงก์ถัดไปจะเข้ามาเอง" />
                 )}
-                {list.map((w, i) => {
+                {แถวที่เห็น.map((w, i) => {
                   const s = statOf(w.code)
                   return (
                     <tr key={w.code} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
-                      <td className={TD_NO}>{i + 1}</td>
+                      <td className={TD_NO}>{หน้าปัจจุบัน * หน้าละ + i + 1}</td>
                       <td className={`${TD} text-gray-700 font-medium whitespace-nowrap`}>{w.code}</td>
                       {/* 🔗 ทางเข้าจอรายละเอียด — ZORT มี `/Warehouse/Details?wid=` ของเราเพิ่งทำ 5 ต.ค. 2569
                              ก่อนหน้านี้แถวนี้เป็น **ทางตัน** กดแล้วไม่ไปไหน (ใบเทียบ ZORT ข้อ 13)
@@ -371,6 +384,26 @@ export default function CoreBranchesPage() {
 
           {/* 📤 ผัง ZORT /Warehouse/list: "Export to Excel" ใต้ตาราง (เดิมจอนี้ไม่มีปุ่มส่งออกเลย · เพิ่ม 16 ต.ค. 2569)
               ⚠️ ส่งออกจากแถวที่ดึงมาแล้วทั้งชุด (ท่อส่งคลังมาครบในคำขอเดียว) · มูลค่าที่ยังไม่เคยคัด = เว้นว่าง ห้ามเป็น 0 */}
+          {/* 📐 โหมดเหมือน ZORT: แถบหน้า [1] ซ้าย · จำนวน N รายการ | จำนวนต่อหน้า ขวา — ก่อนปุ่ม Export (ภาพ /Warehouse/list 21 ต.ค. 2569) */}
+          {เหมือนZORT && (
+            <div className="mt-3 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-1">
+                {Array.from({ length: จำนวนหน้า }, (_, p) => (
+                  <button key={p} type="button" onClick={() => setหน้า(p)} aria-current={p === หน้าปัจจุบัน ? 'page' : undefined}
+                    className={`min-w-[30px] h-[34px] px-2 text-[14px] rounded border ${p === หน้าปัจจุบัน ? 'bg-[#e9ecef] border-[#adb5bd] text-[#3e3e3e]' : 'bg-white border-[#ccc] text-[#337ab7] hover:bg-gray-50'}`}>
+                    {p + 1}
+                  </button>
+                ))}
+              </div>
+              <label className="flex items-center gap-2 text-[14px] text-[#868e96]">
+                จำนวน {list.length.toLocaleString('th-TH')} รายการ | จำนวนต่อหน้า
+                <select value={ต่อหน้า} onChange={(e) => { setต่อหน้า(Number(e.target.value)); setหน้า(0) }}
+                  aria-label="จำนวนต่อหน้า" className="h-[34px] border border-[#ccc] rounded px-2 text-[14px] text-[#3e3e3e] bg-white">
+                  {[10, 20, 50, 100].map((n) => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </label>
+            </div>
+          )}
           <div className="mt-3 flex items-center gap-2">
             <ExportButton
               disabled={loading || rows.length === 0}
