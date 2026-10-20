@@ -86,9 +86,11 @@ export default function LogisticsDetailPage() {
           <Link href="/core/logistics" className="text-[#337ab7] hover:underline">‹ บริการขนส่ง</Link>
         </p>
       )}
-      <PageHead title={`บริการขนส่ง ${number}`}
+      {/* 📐 โหมดเหมือน ZORT (ภาพ /Logistics/Details 20 ต.ค. 2569): หัวจอใช้ **เลขพัสดุ** (บริการขนส่ง TH59…) ไม่มีบรรทัดใต้หัว
+           ⓘ ย้ายไปท้ายแถวปุ่ม ⇒ แถวปุ่มขึ้นมาตำแหน่งเดียวกับ ZORT · ยังไม่มีเลขพัสดุ = ใช้เลขใบขายเหมือนเดิม */}
+      <PageHead title={`บริการขนส่ง ${เหมือนZORT && row?.trackingNo ? row.trackingNo : number}`}
         summary={เหมือนZORT
-          ? <span className="text-gray-400 cursor-help text-[14px]" title="รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)">ⓘ</span>
+          ? undefined
           : 'รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)'} />
       {!เหมือนZORT && (
         <div className="flex items-center gap-2">
@@ -99,11 +101,13 @@ export default function LogisticsDetailPage() {
           คำสั่ง ▾ (ส่งสินค้าสำเร็จ) · ส่ง SMS ให้ลูกค้า · พิมพ์ใบแปะกล่อง — ทั้งหมดเป็นการเขียนกลับ ZORT หรือยังไม่มีหน้าพิมพ์ ⇒ สีเทาพร้อมเหตุ
           (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
       <div className={`flex flex-wrap items-center gap-2 ${เหมือนZORT ? '!mt-[25px]' : ''}`} /* 📐 โหมดเหมือน ZORT: แถบปุ่ม y=194 เท่า ZORT · !mt เพราะ space-y ของกล่องแม่ทับ */>
-        <RowMenu label="คำสั่ง" items={[{ label: 'ส่งสินค้าสำเร็จ', disabled: 'ยังทำไม่ได้ — เปลี่ยนสถานะใบส่งต้องเขียนกลับ ZORT' }]} />
+        {/* ZORT ใบที่ส่งสำเร็จแล้วไม่มีปุ่ม คำสั่ง (ภาพ TH59019963GX9I 20 ต.ค. 2569 · คำสั่งเดียวในเมนูคือ ส่งสินค้าสำเร็จ) ⇒ โหมด ZORT ซ่อนเมื่อสำเร็จแล้ว */}
+        {!(เหมือนZORT && row?.status === 'Success') && <RowMenu label="คำสั่ง" items={[{ label: 'ส่งสินค้าสำเร็จ', disabled: 'ยังทำไม่ได้ — เปลี่ยนสถานะใบส่งต้องเขียนกลับ ZORT' }]} />}
         <span title="ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ)"
           className={ปุ่มเทา}>ส่ง SMS ให้ลูกค้า</span>
         <span title="ยังทำไม่ได้ — ใบแปะกล่องต้องใช้ที่อยู่เต็มของผู้รับ ซึ่งเราไม่ได้เก็บ (รอตัดสินเรื่องข้อมูลส่วนบุคคล)"
           className={ปุ่มเทา}>พิมพ์ใบแปะกล่อง</span>
+        {เหมือนZORT && <span className="text-gray-400 cursor-help text-[14px]" title="รายละเอียดใบส่งสินค้า — ลอกผังจาก ZORT /Logistics/Details (อ่าน DOM สด 5 ต.ค. 2569)">ⓘ</span>}
       </div>
 
       {loading && <LoadingState />}
@@ -121,11 +125,14 @@ export default function LogisticsDetailPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           <div className="bg-white rounded-md p-6 space-y-4">
             <div className="grid grid-cols-2 gap-x-6 gap-y-4">
-              <ช่อง ป้าย="รายการ" ค่า={row.number} />
-              <ช่อง ป้าย="วันที่" ค่า={row.date ? thaiDate(String(row.date)) : ยังไม่มี('ไม่รู้')} />
+              {/* ลำดับตาม ZORT: รายการ (= เลขพัสดุ) · วันที่ (เดือนเต็ม) · Tracking No · สถานะรายการ · รายการขายที่เกี่ยวข้อง — ช่องของเราต่อท้าย */}
+              <ช่อง ป้าย="รายการ" ค่า={row.trackingNo || row.number} />
+              <ช่อง ป้าย="วันที่" ค่า={row.date ? thaiDate(String(row.date), 'เต็ม') : ยังไม่มี('ไม่รู้')} />
               <ช่อง ป้าย="Tracking No" ค่า={row.trackingNo || ยังไม่มี('ยังไม่มีเลขพัสดุ')} />
               <ช่อง ป้าย="สถานะรายการ"
                 ค่า={row.status ? <Pill tone={toneOfStatus(String(row.status))}>{statusTh(row.status)}</Pill> : ยังไม่มี('ไม่รู้')} />
+              <ช่อง ป้าย="รายการขายที่เกี่ยวข้อง"
+                ค่า={row.number ? <Link href={`/core/sales?q=${encodeURIComponent(String(row.number))}`} className="text-[#337ab7] hover:underline">{row.number}</Link> : ยังไม่มี('ไม่รู้')} />
               <ช่อง ป้าย="ส่งโดย" ค่า={row.carrier || ยังไม่มี('ท่อไม่ได้ส่งชื่อขนส่งมา')} />
               <ช่อง ป้าย="ชำระเงิน"
                 ค่า={typeof row.isCod === 'boolean'
