@@ -16,6 +16,7 @@ import Link from 'next/link'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import StoreEcho from '@/components/zort/StoreEcho'
 import CategorySeriesChart, { useCategorySeries } from '@/components/zort/CategorySeriesChart'
@@ -684,7 +685,10 @@ export default function BuyReportPage() {
             )}
           </Card>
 
-          {/* ── ตารางรายใบซื้อ (ของเราเอง ZORT ไม่มีจอนี้) ── */}
+          {/* ── ตารางรายใบซื้อ (ของเราเอง ZORT ไม่มีจอนี้) ──
+              📐 โหมดเหมือน ZORT (REA 20 ต.ค. 2569: จอ ZORT มีตารางรายสินค้าตารางเดียว) ⇒ พับไว้ใต้บรรทัดสรุป ไม่ลบ */}
+          <div className={เหมือนZORT ? 'mt-4' : ''}>
+          <ZortLookFold tone="gray" สรุป={<>ตารางยอดซื้อรายใบ — ของเราเพิ่มเอง (ZORT มีแต่ตารางรายสินค้า)</>}>
           <Card padded={false} className="mt-4">
             <div className="flex flex-wrap items-center gap-3 px-4 md:px-5 pt-4 pb-2">
               <div className="flex items-center gap-2 mr-auto">
@@ -752,6 +756,8 @@ export default function BuyReportPage() {
             ZORT มีเฉพาะตาราง<b>รายสินค้า</b> · ตาราง<b>รายใบ</b> เป็นของเพิ่มของเราเอง
             เพราะช่วงเวลาที่เลือกด้านบนมีผลกับตารางนั้นจริง (ตารางรายสินค้ายังไม่ขยับตามช่วงเวลา)
           </p>
+          </ZortLookFold>
+          </div>
         </>
       )}
     </div>
