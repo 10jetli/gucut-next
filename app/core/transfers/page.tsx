@@ -14,7 +14,8 @@
 //    ส่วนจอนี้คือกระจกของ ZORT · รวมกันเมื่อไหร่ = ตัดสต็อกสองรอบ
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import SortHead, { SortNotApplied, type สถานะเรียง } from '@/components/zort/SortHead'
 import AdvancedSearch from '@/components/zort/AdvancedSearch'
 import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
@@ -71,7 +72,9 @@ interface Resp {
    *  `applied.status` มีค่า = ท่อกรองให้จริง ⇒ แถวที่เห็นคือทั้งชุด ไม่ใช่แค่หน้านี้
    *  `ignored` = ตัวที่ท่อ **ประกาศว่าเมิน** (days · page) — ดีกว่าหายเงียบ
    *  ⚠️ ค่าสถานะคือค่าในตาราง ไม่ใช่คำไทย · ส่งคำไทยไปได้ 400 พร้อม supportedStatus */
-  applied?: { q?: string | null; store?: string | null; status?: string | null; from?: string | null; to?: string | null } | null
+  applied?: { q?: string | null; store?: string | null; status?: string | null; from?: string | null; to?: string | null
+    /** ท่อ ef3165f4 (CTO 21 ต.ค. 2569) เรียง date number status ในกระจกก่อนตัดหน้า — มีคีย์ = รองรับ */
+    sort?: string | null; dir?: string | null; sortDefaulted?: boolean } | null
   ignored?: Record<string, unknown> | null
   supportedFilters?: string[]
   supportedStatus?: string[]
@@ -147,6 +150,10 @@ export default function CoreTransfersPage() {
   const [to, setTo] = useState('')
   const [advOpen, setAdvOpen] = useState(false)
 
+  /* ↕️ หัวคอลัมน์กดเรียงแบบ ZORT (วันที่ · รายการ · สถานะ) — ref เพราะ load ถูกเรียกจากแท็บ/เลขหน้า/ตัวกรอง */
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
+  const เรียงRef = useRef<สถานะเรียง>(null)
+
   const load = useCallback(async (off = 0, tabId = tab, storeId = store, size = perPage, fromD = from, toD = to) => {
     setLoading(true)
     setError('')
@@ -172,6 +179,7 @@ export default function CoreTransfersPage() {
       /* ว่าง = ไม่ส่ง `store` เลย ⇒ ท่อคืน z1 ให้ (และบอกกลับมาว่า storeDefaulted) */
       if (storeId) qs.set('store', storeId)
       if (q.trim()) qs.set('q', q.trim())
+      if (เรียงRef.current) { qs.set('sort', เรียงRef.current.sort); qs.set('dir', เรียงRef.current.dir) }
       const [tRes, wRes] = await Promise.all([
         fetch(`/api/web/core?${qs}`).then((r) => r.json()),
         fetch('/api/web/core?list=warehouses').then((r) => r.json()).catch(() => null),
@@ -202,6 +210,11 @@ export default function CoreTransfersPage() {
   }
 
   const allRows = data?.rows ?? []
+  const ap = data?.applied
+  const รองรับเรียง = !!ap && 'sortDefaulted' in ap
+  const เรียงไม่ติด = !!เรียง && รองรับเรียง && ap?.sortDefaulted !== false
+  const เหตุเรียงไม่ได้ = 'จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน'
+  function เปลี่ยนเรียง(n: { sort: string; dir: 'asc' | 'desc' }) { เรียงRef.current = n; setเรียง(n); load(0) }
   /* กรองตามแท็บในเครื่อง (ท่อไม่รับ status) — ค่าดิบตรงกับที่ท่อส่ง */
   const rows = tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)
   /** โหลดครบทั้งชุดไหม — ใบโอนเยอะ (หมื่นกว่าใบ) แทบไม่มีทางครบ ⇒ ต้องเตือนตรง ๆ */
@@ -505,6 +518,7 @@ export default function CoreTransfersPage() {
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />
 
+          <SortNotApplied show={เรียงไม่ติด} />
           <TableWrap>
             <table className="w-full min-w-[860px]">
               {/* 🔃 คอลัมน์ที่ **จอ ZORT กดเรียงได้** มี tooltip บอกว่าของเรายังเรียงไม่ได้ (ท่อเมิน sort ทุกค่า)
@@ -512,12 +526,12 @@ export default function CoreTransfersPage() {
                 <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
+                  <th className={TH}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH}>ประเภท</th>
                   <th className={TH}>จาก</th>
                   <th className={TH}>ไป</th>
-                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
+                  <th className={THC}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>

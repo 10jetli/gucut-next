@@ -8,7 +8,8 @@
 //    ⇒ ต้องเขียนบนจอว่าเป็นข้อมูลสด เพราะจอพี่น้องข้าง ๆ อ่านจากคลังเงาทั้งหมด
 //      คนใช้ต้องรู้ว่าจอไหนยิง ZORT จริง เวลา ZORT ล่มจะได้เข้าใจว่าทำไมจอนี้จอเดียวที่ว่าง
 import { HEAD_BTN } from '@/components/zort/headBtn'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import SortHead, { SortNotApplied, type สถานะเรียง } from '@/components/zort/SortHead'
 import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
@@ -43,7 +44,13 @@ interface Resp {
   /** ขอบเขตร้านของข้อมูลชุดนี้ — **ข้อความมาจากท่อ จอไม่แต่งเอง** (ใบ t_mu2kxy6u)
    *  ไม่มีช่อง = ไม่แสดง · ห้ามพิมพ์ z1 ตายตัว (วันที่ท่อดึง z2 เข้ามา ข้อความจะเป็นเท็จเงียบ ๆ) */
   storeScope?: string
- total?: number; live?: boolean; rows?: Row[]; note?: string }
+ total?: number; live?: boolean; rows?: Row[]; note?: string
+  /** ท่อ ef3165f4 (CTO 21 ต.ค. 2569): มีคีย์ sortDefaulted = รับ sort 6 ช่อง · เชื่อว่าเรียงจริงเฉพาะ false */
+  applied?: { sort?: string | null; dir?: string | null; sortDefaulted?: boolean } | null
+  /** 🔴 เส้นนี้อ่านสดจาก ZORT ⇒ ท่อเรียงในหน่วยความจำ · false = เรียงแค่หน้าที่ดึงมา (ใบหน้าอื่นไม่ถูกเทียบ) */
+  sortWholeSet?: boolean
+  /** ข้อความขอบเขตการเรียงจากท่อ (มีเลขทั้งสองฝั่ง) — จอไม่แต่งเอง */
+  sortScope?: string }
 
 // ⚠️ ZORT เขียนป้ายว่า "รออนุมัติ" กับ "อนุมัติแล้ว" ในจอนี้ — คนละคำกับจอรายการขาย
 //    ค่าดิบเป็น Pending/Success เหมือนกัน แต่ความหมายในบริบทใบเสนอราคาคือการอนุมัติ
@@ -98,11 +105,16 @@ export default function QuotationsPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  /* ↕️ หัวคอลัมน์กดเรียงแบบ ZORT (6 หัว) — ref เพราะ load ถูกเรียกจากตัวเลือกร้านด้วย */
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
+  const เรียงRef = useRef<สถานะเรียง>(null)
+
   const load = useCallback(async (storeId = store) => {
     setLoading(true)
     setError('')
     try {
-      const res = await fetch(`/api/web/core?list=quotations${storeId ? `&store=${storeId}` : ''}`)
+      const ส่งเรียง = เรียงRef.current ? `&sort=${เรียงRef.current.sort}&dir=${เรียงRef.current.dir}` : ''
+      const res = await fetch(`/api/web/core?list=quotations${storeId ? `&store=${storeId}` : ''}${ส่งเรียง}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
       setData(j)
@@ -117,6 +129,13 @@ export default function QuotationsPage() {
   useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const all = Array.isArray(data?.rows) ? data!.rows! : []
+  const ap = data?.applied
+  const รองรับเรียง = !!ap && 'sortDefaulted' in ap
+  const เรียงไม่ติด = !!เรียง && รองรับเรียง && ap?.sortDefaulted !== false
+  /* 🔴 ท่อเรียงจากแค่หน้าที่ดึงมา ⇒ ต้องบอกบนจอ ไม่งั้นคนเชื่อว่าเรียงทั้งชุด (ข้อความมาจากท่อ) */
+  const เรียงแค่หน้านี้ = !!เรียง && รองรับเรียง && ap?.sortDefaulted === false && data?.sortWholeSet === false
+  const เหตุเรียงไม่ได้ = 'จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว'
+  function เปลี่ยนเรียง(n: { sort: string; dir: 'asc' | 'desc' }) { เรียงRef.current = n; setเรียง(n); load() }
   const rows = all.filter((r) => {
     if (tab === 'approved' && r.status !== 'Success') return false
     /* ค้นหาขั้นสูง: กรองจากแถวที่โหลดมา — จอนี้ดึงสดทั้งชุด (ท่อบอก total 6)
@@ -397,6 +416,12 @@ export default function QuotationsPage() {
           {/* 🔴 ตรวจว่าท่อใช้ร้านเดียวกับที่จอขอจริง — เดิมส่ง store= ไปแล้วไม่เคยอ่านคำตอบ */}
           <StoreEcho ขอ={store} ได้={data?.store} ท่อเลือกให้={data?.storeDefaulted} />
 
+          <SortNotApplied show={เรียงไม่ติด} />
+          {เรียงแค่หน้านี้ && (
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
+              {(data?.sortScope ?? '⚠️ ท่อเรียงจากแค่หน้าที่ดึงมา ไม่ใช่ทั้งชุด').replace(/\*\*/g, '')}
+            </p>
+          )}
           <TableWrap>
             <table className="w-full min-w-[780px]">
               {/* 🔃 ZORT `/Quotation/list` กดเรียงได้ 6 ช่อง (วัดจอจริง 16 ก.ย. 2569):
@@ -405,12 +430,12 @@ export default function QuotationsPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">วันที่</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">รายการ</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">ลูกค้า</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">ช่องทาง</span></th>
-                  <th className={THR}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">มูลค่า</span></th>
-                  <th className={เหมือนZORT ? TH.replace('text-left', 'text-center') : TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">สถานะ</span></th>
+                  <th className={TH}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="ลูกค้า" field="customer" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="ช่องทาง" field="channel" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THR}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={เหมือนZORT ? TH.replace('text-left', 'text-center') : TH}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   {/* ช่องว่างสำหรับเมนู ⋮ — ต้องมีหัวคอลัมน์ด้วย ไม่งั้นตารางเหลื่อมหนึ่งช่อง */}
                   <th className={TH} style={{ width: 36 }} aria-label="คำสั่ง" />
                 </tr>
