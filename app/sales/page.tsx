@@ -8,7 +8,7 @@
 import { คลาสตัวเลือก } from '@/components/zort/formCtl'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
-import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT, TH_MONTH_SHORT } from '@/lib/format'
+import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT, TH_MONTH_SHORT, วันตัวเลข } from '@/lib/format'
 import Card from '@/components/ui/Card'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
@@ -544,11 +544,6 @@ function ReturnsFreshness({ utc }: { utc: string | null }) {
 }
 
 /** วันที่แบบตัวเลขของ ZORT "1/8/2569" (วัน/เดือน/ปี พ.ศ. ไม่เติมศูนย์) — รับ YYYY-MM-DD */
-function วันตัวเลข(iso: string): string {
-  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number)
-  return y && m && d ? `${d}/${m}/${y + 543}` : String(iso)
-}
-
 export default function SalesReportPage() {
   /* ① ค่าเริ่มต้นเป็น "ย้อนหลัง 3 เดือน" ให้เหมือน ZORT (สเปกเมนู 2 ข้อ 1)
      ⚠️ เปลี่ยนค่านี้แล้วตัวเลขบนจอจะกระโดดขึ้นทันที **ไม่ใช่บั๊ก** — คนละช่วงเวลากับของเดิม */

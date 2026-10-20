@@ -73,6 +73,12 @@ export function fmtDateTime(iso: string) {
 export const TH_MONTH_SHORT = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.',
   'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.']
 
+/** วันแบบตัวเลขที่ ZORT ใช้บนหัวรายงาน (1/7/2569) — `YYYY-MM-DD` → `d/m/พ.ศ.` · อ่านไม่ออก ⇒ คืนค่าเดิม */
+export function วันตัวเลข(iso: string): string {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number)
+  return y && m && d ? `${d}/${m}/${y + 543}` : String(iso)
+}
+
 /** `เดือน: 'เต็ม'` = ชื่อเดือนเต็ม (19 ตุลาคม 2569) แบบการ์ดเคลื่อนไหวล่าสุดของ ZORT · ค่าตั้งต้นย่อเหมือนเดิม */
 export function thaiDate(raw?: string | null, เดือน: 'ย่อ' | 'เต็ม' = 'ย่อ'): string {
   const ชื่อเดือน = เดือน === 'เต็ม' ? TH_MONTHS : TH_MONTH_SHORT

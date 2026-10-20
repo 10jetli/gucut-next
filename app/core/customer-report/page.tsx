@@ -11,7 +11,7 @@
 // ⚠️ จับลูกค้าด้วย "ชื่อ" ไม่ใช่เบอร์โทร — ชื่อซ้ำถูกนับรวมเป็นคนเดียว ต้องเขียนบอกบนจอ
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
-import { fmtMoney, ต้นเดือนย้อนหลังแบบZORT } from '@/lib/format'
+import { fmtMoney, ต้นเดือนย้อนหลังแบบZORT, วันตัวเลข } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -164,7 +164,8 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
   const เส้น: { key: keyof MonthlyRow; label: string; color: string; dash?: string }[] = [
     { key: 'newSales', label: 'ลูกค้าใหม่', color: '#8ea8f8' },
     { key: 'repeatSales', label: 'ซื้อซ้ำ', color: '#f2938c' },
-    { key: 'unnamedSales', label: 'ไม่ระบุชื่อ', color: '#9ca3af', dash: '4 3' },
+    /* 📐 โหมดเหมือน ZORT: เส้นไม่ระบุเป็นน้ำเงินทึบ (#2f8dde สีเดียวกับชิ้นในวงกลมของเรา) · เดิมเทาประ = คนละสีกับวงกลมบนจอเดียวกัน */
+    { key: 'unnamedSales', label: 'ไม่ระบุชื่อ', color: เหมือนZORT ? '#2f8dde' : '#9ca3af', dash: เหมือนZORT ? undefined : '4 3' },
     ...(มีไม่รู้ ? [{ key: 'unknownSales' as const, label: 'ไม่รู้วันซื้อครั้งแรก', color: '#d97706', dash: '2 2' }] : []),
   ]
   /* ไม่รู้ยอด = null (ไม่แปลงเป็น 0) ⇒ ตัดเส้นตรงเดือนนั้น ไม่ลากลงแกน */
@@ -493,7 +494,10 @@ export default function CoreCustomersPage() {
         <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-0 mb-6">
           <p className="font-['Kanit',sans-serif] text-[20px] leading-[30px] font-normal text-[#3e3e3e]">
             {RANGES.find((r) => r.days === days)?.label ?? `ย้อนหลัง ${days} วัน`}
-            {(range.from || range.to) && <> ({thaiDate(range.from)} – {thaiDate(range.to)})</>}
+            {/* 📐 โหมดเหมือน ZORT: วันแบบตัวเลข (1/7/2569 - 21/10/2569) แบบหัวรายงาน ZORT · โหมดปกติคงชื่อเดือน */}
+            {(range.from || range.to) && (เหมือนZORT && range.from && range.to
+              ? <> ({วันตัวเลข(range.from)} - {วันตัวเลข(range.to)})</>
+              : <> ({thaiDate(range.from)} – {thaiDate(range.to)})</>)}
           </p>
           <select
             value={days}
