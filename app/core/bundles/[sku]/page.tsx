@@ -330,7 +330,7 @@ export default function BundleDetailPage() {
               เหมือนZORT
                 /* 📏 ZORT มุมขวาเป็นลิงก์เล็กสีเทา "Share Link" มีไอคอนแชร์ (ภาพ /Bundle/Details 20 ต.ค. 2569) — ของเราทำงานเดิม (คัดลอกลิงก์) แค่หน้าตา */
                 ? <button type="button" onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}
-                    className={SHARE_LINK_Z}><IconShare />คัดลอกลิงก์หน้านี้</button>
+                    className={SHARE_LINK_Z} title="คัดลอกลิงก์หน้านี้"><IconShare />Share Link</button>
                 : <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
                   คัดลอกลิงก์หน้านี้
                 </BtnGhost>
@@ -474,10 +474,13 @@ export default function BundleDetailPage() {
           {เหมือนZORT ? (
             <div className="bg-white rounded-[6px] p-5 mt-6 grid grid-cols-[25%_1fr]">
               <div className="pr-[30px]">
+                {/* 📏 DOM ZORT 20 ต.ค. 2569 (จอ 1280 CSS · dpr 1.25): รูปเต็มคอลัมน์ 219×146 (3:2) · ไม่มีรูป = กล่องเทาพร้อมไอคอนรูป (วาดเอง) */}
                 {img
                   // eslint-disable-next-line @next/next/no-img-element
-                  ? <img src={img} alt="" className="w-[155px] object-cover bg-white" />
-                  : <span className="block w-[155px] h-[104px] bg-[#e9e9e9]" />}
+                  ? <img src={img} alt="" className="w-full aspect-[3/2] object-cover bg-white" />
+                  : <span aria-hidden className="w-full aspect-[3/2] bg-[#e9e9e9] grid place-items-center">
+                      <svg width="64" height="50" viewBox="0 0 64 50" fill="none" stroke="#a6a6a6" strokeWidth="3"><rect x="2" y="2" width="60" height="46" /><circle cx="20" cy="17" r="5" fill="#a6a6a6" stroke="none" /><path d="M6 44l18-18 10 10 8-8 16 16" strokeLinejoin="round" /></svg>
+                    </span>}
               </div>
               <div className="min-w-0">
                 <div className="flex gap-4">
@@ -507,7 +510,7 @@ export default function BundleDetailPage() {
                       </div>
                     </div>
                   </div>
-                  <div className="pt-11"><SkuCodes sku={sku} ชนิด="ชุด" แบบZORT /></div>
+                  <div className="pt-11"><SkuCodes sku={sku} ชนิด="ชุด" แบบZORT บาร์โค้ด={{ w: 219, h: 38 }} /></div>
                 </div>
               {ตารางในชุด}
               </div>
