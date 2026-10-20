@@ -9,10 +9,29 @@
  */
 import Card from '@/components/ui/Card'
 import { pipeText } from '@/components/ui/PipeNote'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export default function PipeGapFrame({ หัว, คอลัมน์, เหตุ, คำขอ }: {
   หัว: string; คอลัมน์: string; เหตุ: string; คำขอ: string
 }) {
+  /* 📐 โหมดเหมือน ZORT (ภาพ /Logistics/Details 20 ต.ค. 2569): ZORT ขึ้นหัว + "-" เมื่อไม่มีข้อมูล ไม่มีกล่องเส้นประ
+     ⇒ ย่อเป็น หัว · "-" · บรรทัดเตือนสีส้มหนึ่งบรรทัดที่กางอ่านเหตุ/คำขอได้ — **ยังเห็นบนจอเสมอ ไม่ใช่ซ่อน** (เหตุผลของกรอบนี้ยังอยู่ครบ) */
+  if (เหมือนZORT) {
+    return (
+      <Card>
+        <p className="font-['Kanit',sans-serif] text-[14px] font-medium text-[#3e3e3e]">{หัว}</p>
+        <p className="font-['Boon',sans-serif] text-[16px] text-[#3e3e3e] mt-1">-</p>
+        <details className="mt-1 text-[11.5px]">
+          <summary className="cursor-pointer select-none text-amber-800">⚠️ ยังเติมส่วนนี้ไม่ได้ — ต้องขอฝั่งท่อ <span className="text-gray-400">(กดเพื่ออ่าน)</span></summary>
+          <div className="mt-1 leading-relaxed">
+            <p className="text-gray-500">คอลัมน์ของ ZORT: {คอลัมน์}</p>
+            <p className="text-amber-800 mt-1">{pipeText(เหตุ)}</p>
+            <p className="text-gray-600 mt-1">🔧 ที่ต้องขอฝั่งท่อ: {pipeText(คำขอ)}</p>
+          </div>
+        </details>
+      </Card>
+    )
+  }
   return (
     <Card>
       <p className="text-[14px] font-semibold text-gray-900 mb-1">{หัว}</p>
