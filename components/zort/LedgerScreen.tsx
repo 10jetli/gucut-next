@@ -346,7 +346,9 @@ export default function LedgerScreen({
   const cantRead = Boolean(impossible) && reg?.impossibleScope !== 'write'
   const กรอบแคบ = เหมือนZORT && !!กรอบแคบZORT
   return (
-    <div className={กรอบแคบ ? 'p-4 md:p-6 max-w-[906px] mx-auto' : 'p-4 md:p-6'}>
+    <div className={กรอบแคบ
+      /* 📏 กรอบแคบ: ZORT กว้างเนื้อหา 906 ไม่รวมช่องใน (ภาพ 1600: 359→1491 = 1132 = 906×1.25) · ของเรามี p-6 ข้างละ 24 ⇒ กรอบ 954 ให้เนื้อหาได้ 906 */
+      ? 'p-4 md:p-6 max-w-[954px] mx-auto' : 'p-4 md:p-6'}>
       <PageHead
         title={title}
         // ⚠️ ZORT เขียน "จำนวน 0 รายการ, …0 บาท" — ของเราเขียนแบบนั้นไม่ได้
