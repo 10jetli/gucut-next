@@ -241,7 +241,8 @@ export default function CoreProductReportPage() {
                 /* 📏 ZORT ยอดรวมอยู่กลางการ์ดแนวตั้ง (ภาพ 1600: ตัวเลข y≈420 · ของเราเดิม 330 ⇒ ต่ำลง ~72 px CSS) */
                 <div className="flex flex-col items-center justify-center pt-[128px] pb-14">
                   <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold leading-none" style={{ color: '#337ab7' }} title={`มูลค่าสินค้าทั้งหมด · ${ยอดZORTเมื่อ}`}>
-                    {ยอดZORTสด!.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    {/* 📏 ZORT ไม่เติมศูนย์ท้าย (16,140,723.7 · ภาพ 20 ต.ค. 2569) ⇒ ทศนิยมสูงสุด 2 ไม่บังคับ */}
+                    {ยอดZORTสด!.toLocaleString('th-TH', { maximumFractionDigits: 2 })}
                     <span className="text-[15px] text-[#3e3e3e] font-normal"> บาท</span>
                   </p>
                   {/* ปุ่มส่งออกค่ากลางแบบ ZORT (เดิมเดาจากภาพ Lato 13 หนา — ค่า DOM จริงคือ Kanit 12/400 · ExportButton แก้ไปแล้ว จอนี้ตกค้าง) */}
@@ -362,9 +363,10 @@ export default function CoreProductReportPage() {
                    (มีคลังที่ ZORT ไม่ตอบ = null ⇒ สัดส่วนผิด ⇒ ไม่วาด ใช้ตารางตามเดิม — กฎ "ห้ามวาดจากข้อมูลที่ไม่มี") · ตารางพับไว้ใต้วงกลม */}
               {วาดวงคลัง && (
                 /* 📏 ZORT วงกลมอยู่ต่ำกว่า (ภาพ 1600: จุดกลาง y≈458 · ของเราเดิม 385 ⇒ ต่ำลง ~58 px CSS) */
-                <div className="flex items-center justify-center gap-8 flex-wrap pt-[82px] pb-6">
+                /* 📏 ป้ายสีของ ZORT (DOM 20 ต.ค. 2569): Arial 12px #3e3e3e · ชิดขอบบนของวงกลม (ไม่ใช่กึ่งกลาง) · บรรทัดห่าง ~23 */
+                <div className="flex items-start justify-center gap-8 flex-wrap pt-[82px] pb-6">
                   <ZortPie ป้าย="สัดส่วนมูลค่าคงเหลือรายคลัง" ขนาด={175} ชิ้น={(whs ?? []).map((w, i) => ({ ค่า: w.stockValue as number, สี: สีคลัง[i % สีคลัง.length] }))} />
-                  <div className="text-[14px] text-[#3e3e3e] space-y-1">
+                  <div className="font-['Arial',sans-serif] text-[12px] leading-[23px] text-[#3e3e3e]">
                     {(whs ?? []).map((w, i) => (
                       <p key={w.code}><span className="inline-block w-3 h-3 rounded-full align-middle mr-1.5" style={{ background: สีคลัง[i % สีคลัง.length] }} />{w.name || w.code}</p>
                     ))}
