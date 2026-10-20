@@ -230,7 +230,8 @@ function CoreStockInner() {
   //    ของแท็บ "ของหมด" ⇒ จอที่คนเปิดดูว่า "ต้องสั่งอะไร" ขึ้นของที่สั่งไม่ได้ก่อน
   // ⚠️ **แต่ต้องไม่ซ่อนเงียบ** — เขียนบนจอว่าซ่อนอะไรไว้กี่รายการ + กดกลับได้
   //    ไม่งั้นวันหนึ่งจะมีคนหา "ค่าบริการซ่อม" แล้วไม่เจอ นึกว่าข้อมูลหาย
-  const [kind, setKind] = useState<'goods' | 'all'>('goods')
+  /* 📐 โหมดเหมือน ZORT (ภาพ /Product/list 20 ต.ค. 2569): ZORT แสดงบริการด้วย (00747 · 04414 อยู่บนสุด สต็อก N/A) ⇒ ตั้งต้นแสดงทั้งหมด · ปุ่มซ่อนบริการยังกดได้ */
+  const [kind, setKind] = useState<'goods' | 'all'>(เหมือนZORT ? 'all' : 'goods')
   const [offset, setOffset] = useState(0)
   const [perPage, setPerPage] = useState(PAGE)
   /* ☑️ **เลือกหลายแถวแล้วสั่งงานเป็นชุด** — ZORT ทำแบบนี้ (ติ๊กแล้วมีปุ่ม "คำสั่ง" กับ "พิมพ์เอกสาร" โผล่)
@@ -1038,6 +1039,11 @@ function CoreStockInner() {
                         : <span className="text-gray-300">—</span>}
                     </td>
                     <td className={TDR}>{r.price ? fmtMoney(r.price) : '0'}</td>
+                    {/* 📐 โหมดเหมือน ZORT: บริการไม่มีสต็อกจริง ⇒ ZORT เขียน N/A ทั้งคงเหลือและพร้อมขาย · เลขจริงอยู่ใน title (ไม่หาย) */}
+                    {เหมือนZORT && r.service ? (<>
+                      <td className={TDR} title={`บริการ — ไม่มีสต็อกจริง (เลขในระบบ ${r.qty})`}>N/A</td>
+                      <td className={TDR} title={typeof r.available === 'number' ? `บริการ — ไม่มีสต็อกจริง (เลขในระบบ ${r.available})` : undefined}>N/A</td>
+                    </>) : (<>
                     <td className={TDR}>
                       <Num v={r.qty} zeroRed />
                       {r.unit && <span className="ml-1 text-[11.5px] text-gray-400">{r.unit}</span>}
@@ -1053,6 +1059,7 @@ function CoreStockInner() {
                         ? <Num v={r.available} />
                         : <span className="text-gray-300">—</span>}
                     </td>
+                    </>)}
                     <td className={TD}>
                       <MarketLogos list={r.marketplaces} by={r.marketplacesBy} from={r.marketplacesFrom} />
                     </td>
