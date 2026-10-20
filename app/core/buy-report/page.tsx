@@ -11,6 +11,7 @@
 // ⚠️ **"ไม่มียอดซื้อในช่วงนี้" ≠ "ร้านไม่เคยซื้อของ"**
 //    ZORT เองก็ขึ้น "ไม่มียอดซื้อ" ในช่วง 3 เดือนล่าสุด เพราะใบซื้อทั้ง 32 ใบเก่ากว่านั้น
 //    ถ้าจอเงียบ ๆ ว่าง คนอ่านจะสรุปผิดทันที ⇒ ต้องบอกว่ามีกี่ใบและใบล่าสุดเมื่อไหร่
+import { คลาสตัวเลือก } from '@/components/zort/formCtl'
 import Link from 'next/link'
 import StoreScopeLine from '@/components/zort/StoreScopeLine'
 import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
@@ -480,7 +481,8 @@ export default function BuyReportPage() {
                 <select
                   value={chartView}
                   onChange={(e) => setChartView(e.target.value === 'cat' ? 'cat' : 'total')}
-                  className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
+                  /* 📏 วัด DOM /Dashboard/BuyReport 20 ต.ค. 2569: Boon 14 สูง 40 กว้าง 149 */
+                  className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0", 'w-[149px] max-w-full')}
                 >
                   <option value="total">ยอดซื้อรวม</option>
                   <option value="cat">ยอดซื้อตามหมวดหมู่</option>
@@ -543,7 +545,8 @@ export default function BuyReportPage() {
                   const v = e.target.value as 'sku' | 'category' | 'vendor' | 'warehouse'
                   setBy(v); void load(store, v)
                 }}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700"
+                /* 📏 วัด DOM /Dashboard/BuyReport 20 ต.ค. 2569: ตัวเลือกจัดกลุ่ม Boon 14 สูง 40 กว้าง 200 */
+                className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white text-gray-700", 'w-[200px] max-w-full')}
               >
                 <option value="sku">สินค้า</option>
                 <option value="category">หมวดหมู่</option>
