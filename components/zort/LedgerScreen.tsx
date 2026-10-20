@@ -78,7 +78,9 @@ function ageOf(iso: string) {
      ค่ามีจริง (รวม 0 ⇒ ขึ้น 0) · คีย์มาแต่ว่าง null/'' ⇒ ZORT ไม่มีค่า ⇒ ขีด · **ไม่มีคีย์เลย** ⇒ ท่อรุ่นนี้ยังไม่ส่ง (คนละเรื่องกับว่าง)
      เดิมสามอย่างกลายเป็น null ตัวเดียวแล้วขึ้นขีดเหมือนกัน ⇒ บนจอเงิน ขีดอ่านได้ทั้ง ไม่มี / 0 / ยังไม่รู้ */
 const ไม่ส่ง = Symbol('ท่อยังไม่ส่งช่องนี้')
-type ช่อง = string | number | null | typeof ไม่ส่ง
+/* ช่องที่ **API ของ ZORT ไม่มีเลย** (ไล่เอกสารครบทุกเส้นของโมดูลแล้ว) — คนละเรื่องกับ ท่อยังไม่ส่ง ซึ่งอ่านเหมือนงานค้างฝั่งเรา (CEO 21 ต.ค. 2569 05:34) */
+const zortไม่มี = Symbol('ZORT ไม่มีช่องนี้')
+type ช่อง = string | number | null | typeof ไม่ส่ง | typeof zortไม่มี
 const pick = (r: Record<string, unknown>, ...keys: string[]): ช่อง => {
   let มีคีย์ = false
   for (const k of keys) {
@@ -88,7 +90,7 @@ const pick = (r: Record<string, unknown>, ...keys: string[]): ช่อง => {
   }
   return มีคีย์ ? null : ไม่ส่ง
 }
-const day = (v: ช่อง) => (v === null || v === ไม่ส่ง ? v : String(v).slice(0, 10))
+const day = (v: ช่อง) => (v === null || typeof v === 'symbol' ? v : String(v).slice(0, 10))
 
 const ROW_MAPS: Record<string, (r: Record<string, unknown>) => ช่อง[]> = {
   incomes: (r) => [day(pick(r, 'incomedate', 'incomedateString', 'createdatetime')),
@@ -107,7 +109,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => ช่อง[]> =
   /* 📐 โหมดเหมือน ZORT: ลำดับ+ชื่อคอลัมน์ตาม REA อ่าน /Sell/list?&sttype=1 (20 ต.ค. 2569)
        วันที่ · รายการ · อ้างอิง · ผู้ติดต่อ · วันส่งสินค้า · มูลค่า · สถานะ · ชำระเงิน — คลังไม่มีในจอ ZORT (ดูได้ในจอรายละเอียด)
      ⚠️ ~~`shippingdate*` = ชื่อช่องจากเอกสาร V4~~ **เท็จ** (CEO ดึงเอกสาร V4 จริง 21 ต.ค. 2569: ReturnPurchaseOrder 44 ช่อง **ไม่มีช่องวันส่งเลย**)
-        ⇒ จอ ZORT มีคอลัมน์นี้แต่ API ไม่ส่ง ⇒ ช่องนี้ขึ้น ขีด + ท่อยังไม่ส่ง ทุกแถว = ถูกต้องตามของจริง (ปลูกท่อปลอมฉาก ครบ ยืนยัน 21 ต.ค.)
+        ⇒ จอ ZORT มีคอลัมน์นี้แต่ API ไม่มี (CEO ไล่ครบ 4 เส้น) ⇒ ช่องนี้ขึ้น ขีด + ZORT ไม่มีช่องนี้ (ไม่ใช่ ท่อยังไม่ส่ง ซึ่งอ่านเหมือนงานค้างของเรา)
         · คง pick ชื่อเดิมไว้ เผื่อวันที่ ZORT ส่งจริงด้วยชื่อนี้ — ไม่ใช่เพราะเชื่อว่ามี
      ⚠️ ต้องตรงกับ cols ในจอ /core/purchases/returns ทั้งสองโหมด */
   returnpurchaseorders: (r) => เหมือนZORT ? [
@@ -115,7 +117,9 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => ช่อง[]> =
     pick(r, 'number'),
     pick(r, 'referencenumber'),
     pick(r, 'customername', 'contactname'),
-    day(pick(r, 'shippingdateString', 'shippingdate')),
+    /* วันส่งสินค้า: CEO ไล่เอกสาร 4 เส้นของใบคืนให้ผู้ขายแล้ว (21 ต.ค. 05:34) ไม่มีช่องวันส่งเลย · actionDate ของเส้น Movement เป็น "รายการวัน" (คืนหลายรอบ)
+       และยังไม่ได้วัดความหมาย ⇒ **ไม่เดาว่าเป็นวันส่ง** · ถ้าวันหนึ่งแถวมีช่อง shippingdate จริงก็ยังโชว์ (pick ก่อน) */
+    (() => { const v = day(pick(r, 'shippingdateString', 'shippingdate')); return v === ไม่ส่ง ? zortไม่มี : v })(),
     pick(r, 'amount'),
     pick(r, 'status'),
     pick(r, 'paymentstatus'),
@@ -675,7 +679,9 @@ export default function LedgerScreen({
                   {cols.map((c, j) => (
                     <td key={c.label} className={c.right ? TDR : TD}>
                       {/* ⚠️ ฟิลด์หาย = "—" **ห้ามเดาค่า** (ยังไม่เคยเห็นรูปแถวจริงของ ZORT) */}
-                      {cells[j] === ไม่ส่ง
+                      {cells[j] === zortไม่มี
+                        ? <span className="text-gray-300">—<span className="block text-[11px] text-gray-500">ZORT ไม่มีช่องนี้</span></span>
+                        : cells[j] === ไม่ส่ง
                         /* ท่อรุ่นนี้ไม่ส่งช่องนี้เลย — บอกบนจอ (มือถือไม่มี hover) ไม่ใช่ขีดเฉย ๆ ที่อ่านเป็น ว่าง/0 */
                         ? <span className="text-gray-300">—<span className="block text-[11px] text-amber-700">ท่อยังไม่ส่ง</span></span>
                         : cells[j] === null || cells[j] === undefined || cells[j] === '' ? '—' : String(cells[j] as string | number)}
@@ -783,7 +789,7 @@ export default function LedgerScreen({
               scope: 'ทั้งชุดที่ ZORT ส่งมา',
               fetchPage: async (off) => ({ rows: off === 0 ? rows! : [], total: zCount ?? rows!.length }),
               header: cols.map((c) => c.label),
-              toRow: (r: Record<string, unknown>) => ROW_MAPS[zortList](r).map((v) => (v === '' || v === ไม่ส่ง ? null : v)),
+              toRow: (r: Record<string, unknown>) => ROW_MAPS[zortList](r).map((v) => (v === '' || v === ไม่ส่ง || v === zortไม่มี ? null : v)),
             }}
           />
         </div>
