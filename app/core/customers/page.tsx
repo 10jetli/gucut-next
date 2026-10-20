@@ -159,6 +159,16 @@ export default function CoreContactsPage() {
   const รองรับเรียง = !!ที่ใช้เรียง && 'sortDefaulted' in ที่ใช้เรียง
   const เรียงไม่ติด = !!เรียง && รองรับเรียง && ที่ใช้เรียง?.sortDefaulted !== false
   const เปลี่ยนเรียง = (n: { sort: string; dir: 'asc' | 'desc' }) => { เรียงRef.current = n; setเรียง(n); load(0) }
+  /* 🔑 หัว "รหัส" — ท่อรุ่นที่ขึ้นอยู่ก่อน ef3165f4 รับ sort แต่ **ตีกลับ code** (ok:false ไม่รู้จักช่องเรียง)
+     และไม่ได้ประกาศรายชื่อช่อง ⇒ sortDefaulted อย่างเดียวบอกไม่ได้ว่า code ใช้ได้
+     ⇒ ถามท่อหนึ่งครั้ง (limit=1) · กดได้เฉพาะเมื่อท่อตอบรับจริง ไม่งั้นเป็นปุ่มที่กดแล้วขึ้นข้อผิดพลาด */
+  const [รับรหัส, setรับรหัส] = useState(false)
+  useEffect(() => {
+    if (!รองรับเรียง || รับรหัส) return
+    fetch('/api/web/core?list=contacts&limit=1&sort=code&dir=asc').then((r) => r.json())
+      .then((j) => setรับรหัส(j?.ok !== false && !!j?.applied && j.applied.sort === 'code'))
+      .catch(() => {})
+  }, [รองรับเรียง, รับรหัส])
   // ⚠️ แท็บ ลูกค้า/คู่ค้า ของ ZORT กรองจากชนิดผู้ติดต่อ — ข้อมูลที่เรามี `type` เป็น
   //    "Undefined" ทุกแถวเท่าที่สุ่มดู 600 ราย ⇒ **กดแล้วจะได้ศูนย์ทุกครั้ง**
   //    ปุ่มที่กดแล้วได้ศูนย์เสมอคือปุ่มหลอก ⇒ โชว์ไว้ให้ผังตรง แต่กดไม่ได้ + บอกเหตุผล
@@ -502,7 +512,7 @@ export default function CoreContactsPage() {
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
                     <th className={TH_NO} style={{ width: 44 }}>#</th>
-                    <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รหัส</span></th>
+                    <th className={TH}><SortHead label="รหัส" field="code" current={เรียง} supported={รองรับเรียง && รับรหัส} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ท่อรุ่นที่ขึ้นอยู่ยังไม่รับการเรียงด้วยรหัส (ตอบกลับว่าไม่รู้จักช่องเรียง code) · ขอฝั่งท่อแล้ว (ef3165f4 รอขึ้นเว็บ)" /></th>
                     <th className={TH}><SortHead label="ชื่อ" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน" /></th>
                     <th className={TH}>เลขประจำตัวผู้เสียภาษี</th>
                     <th className={TH}>เบอร์โทรศัพท์</th>
