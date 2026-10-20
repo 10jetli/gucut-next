@@ -691,9 +691,11 @@ export default function BundleDetailPage() {
             <table className="w-full min-w-[820px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
+                  {/* 📐 โหมดเหมือน ZORT (REA อ่าน /Bundle/Details 20 ต.ค. 2569): ประเภท · รายการ · วันที่ · จำนวน · คลัง/สาขา · มูลค่า · สถานะ · การชำระเงิน
+                      ชื่อลูกค้า ZORT ไม่มีในตารางนี้ ⇒ ย้ายไปเป็น title ของเลขที่ (ไม่หาย) */}
                   <th className={TH}>ประเภท</th>
-                  <th className={TH}>เลขที่</th>
-                  <th className={TH}>ชื่อลูกค้า</th>
+                  <th className={TH}>{เหมือนZORT ? 'รายการ' : 'เลขที่'}</th>
+                  {!เหมือนZORT && <th className={TH}>ชื่อลูกค้า</th>}
                   <th className={TH}>วันที่</th>
                   <th className={THR}>จำนวน</th>
                   <th className={TH}>คลัง/สาขา</th>
@@ -707,11 +709,11 @@ export default function BundleDetailPage() {
                        เดิมเขียนว่า "ท่อยังไม่มีเส้นดึงใบขายรายสินค้า" ซึ่งจริงเฉพาะเส้นค้นใบ (`q`)
                        แต่ `list=stockcard&kind=sale` ดึงได้อยู่แล้ว · ที่เคยได้ 0 เพราะชุดตัวอย่างไม่เคยขาย */}
                 {salesErr && (
-                  <EmptyState cols={9} icon="⚠️" title="อ่านรายการขายของชุดนี้ไม่สำเร็จ — ไม่ได้แปลว่าไม่มีการขาย"
+                  <EmptyState cols={เหมือนZORT ? 8 : 9} icon="⚠️" title="อ่านรายการขายของชุดนี้ไม่สำเร็จ — ไม่ได้แปลว่าไม่มีการขาย"
                     detail={salesErr} />
                 )}
                 {!salesErr && sales === null && (
-                  <EmptyState cols={9} icon="⏳" title="กำลังอ่านรายการขายของชุดนี้" detail="" />
+                  <EmptyState cols={เหมือนZORT ? 8 : 9} icon="⏳" title="กำลังอ่านรายการขายของชุดนี้" detail="" />
                 )}
                 {!salesErr && sales !== null && sales.length === 0 && (
                   (salesMeta?.failed.length ?? 0) > 0
@@ -724,19 +726,19 @@ export default function BundleDetailPage() {
                           (ถ้าคำสั่งดึงยอดขายล้มเอง ท่อล้มทั้งคำขอเป็น error ⇒ ไปทาง `salesErr`)
                           🔑 ที่เก็บไว้เพราะ **วันที่ใครเปลี่ยน kind ของจอนี้ ทางนี้จะกลายเป็นทางจริงทันที**
                              และเพราะ "ยังไม่เคยขาย" เป็นคำที่แพงถ้าพูดผิด */
-                    ? <EmptyState cols={9} icon="⚠️" title="ยังสรุปไม่ได้ว่าชุดนี้เคยขายหรือไม่ — ท่ออ่านข้อมูลบางส่วนไม่สำเร็จ"
+                    ? <EmptyState cols={เหมือนZORT ? 8 : 9} icon="⚠️" title="ยังสรุปไม่ได้ว่าชุดนี้เคยขายหรือไม่ — ท่ออ่านข้อมูลบางส่วนไม่สำเร็จ"
                         detail={`อ่านไม่สำเร็จ: ${salesMeta?.failed.join(' · ')} ⇒ ตารางว่างเพราะอ่านไม่ได้ ไม่ใช่เพราะไม่มีการขาย`} />
                     /* ✅ ว่างแบบนี้ **ตรวจแล้วจริง** — พูดได้ว่ายังไม่เคยขาย
                        ⚠️ ไม่ฝังตัวเลข "กี่ชุดจากกี่ชุด" ลงจอ เพราะจะเก่าเงียบทันทีที่ชุดขายเพิ่ม
                           (ฝั่งท่อชี้ 15 ก.ย. 2569) ⇒ เขียนเป็นเหตุการณ์+วันที่แทน */
-                    : <EmptyState cols={9} icon="🧾" title="ชุดนี้ยังไม่เคยขาย"
+                    : <EmptyState cols={เหมือนZORT ? 8 : 9} icon="🧾" title="ชุดนี้ยังไม่เคยขาย"
                         detail="อ่านบัตรสต็อกของรหัสชุดแล้วไม่มีรายการขายเลย · ชุดส่วนใหญ่ของร้านยังไม่เคยขาย (สำรวจทั้ง 360 ชุด 15 ก.ย. 2569) ⇒ ว่างเป็นเรื่องปกติ · หมายเหตุ: บัตรสต็อกของชุดไม่มีการเคลื่อนไหวชนิดอื่น ⇒ ว่างที่นี่ไม่ได้แปลว่าชุดนี้ไม่มีของในคลัง" />
                 )}
                 {!salesErr && (sales ?? []).map((r, i) => (
                   <tr key={`${r.ref ?? i}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                     <td className={TD}>{r.kind || <span className="text-gray-300">—</span>}</td>
-                    <td className={`${TD} whitespace-nowrap`}>{r.ref || <span className="text-gray-300">—</span>}</td>
-                    <td className={`${TD} max-w-[190px] truncate`}>{r.party || <span className="text-gray-300">—</span>}</td>
+                    <td className={`${TD} whitespace-nowrap`} title={เหมือนZORT && r.party ? `ลูกค้า: ${r.party}` : undefined}>{r.ref || <span className="text-gray-300">—</span>}</td>
+                    {!เหมือนZORT && <td className={`${TD} max-w-[190px] truncate`}>{r.party || <span className="text-gray-300">—</span>}</td>}
                     <td className={`${TD} whitespace-nowrap text-gray-600`}>{r.date || <span className="text-gray-300">—</span>}</td>
                     <td className={TDR}>{typeof r.qty === 'number' ? fmtNum(r.qty) : <span className="text-gray-300">—</span>}</td>
                     {/* 🔴 บัตรสต็อกไม่ส่งคลังรายแถวมา ⇒ ขีด ห้ามเดาว่าเป็นคลังหลัก */}

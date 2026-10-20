@@ -83,6 +83,9 @@ const LABEL: Record<string, string> = {
   branch_name: 'ชื่อสาขา', branch_no: 'เลขที่สาขา', type: 'ประเภท', updated_at: 'อัปเดตล่าสุด',
 }
 
+/** โหมดเหมือน ZORT: คอลัมน์ รายการ (เลขที่ใบ) มาก่อน วันที่ — ตามหัวตาราง /Contact/ContactDetail */
+const เลขที่ก่อนวันที่ = เหมือนZORT
+
 /** ข้อจำกัดการจับคู่ลูกค้า (จับคู่ออเดอร์ด้วยชื่อ) — โหมดเหมือน ZORT พับไว้ แต่บรรทัดสรุปยังบอกว่ามีข้อจำกัด
  *  แยกเป็นตัวเดียวเพื่อวางได้สองตำแหน่งตามโหมดโดยไม่คัดลอกข้อความ */
 function กล่องจับคู่({ note }: { note?: string | null }) {
@@ -456,29 +459,39 @@ function Inner() {
                     <tr className="border-b border-gray-200 text-left text-gray-500">
                       {/* คอลัมน์ ประเภท แบบ ZORT — ตารางเดียวมีทั้งขายออกและซื้อเข้า
                           ขึ้นเฉพาะเมื่อผู้ติดต่อรายนี้มีใบซื้อจริง ไม่งั้นเป็นคอลัมน์ที่มีค่าเดียวทั้งตาราง */}
-                      {!!buys.length && <th className={TH_KANIT}>ประเภท</th>}
+                      {/* 📐 โหมดเหมือน ZORT (REA อ่าน /Contact/ContactDetail 20 ต.ค. 2569): # · ประเภท · รายการ · วันที่ · มูลค่า · สถานะ · การชำระเงิน
+                          ประเภทขึ้นเสมอแบบ ZORT · ช่องทาง ZORT ไม่มี ⇒ ย้ายไปเป็น title ของเลขที่ใบ (ไม่หาย) */}
+                      {เหมือนZORT && <th className={TH_KANIT}>#</th>}
+                      {(เหมือนZORT || !!buys.length) && <th className={TH_KANIT}>ประเภท</th>}
+                      {เหมือนZORT && <th className={TH_KANIT}>รายการ</th>}
                       <th className={TH_KANIT}>วันที่</th>
-                      <th className={TH_KANIT}>เลขที่</th>
-                      <th className={TH_KANIT}>ช่องทาง</th>
+                      {!เหมือนZORT && <th className={TH_KANIT}>เลขที่</th>}
+                      {!เหมือนZORT && <th className={TH_KANIT}>ช่องทาง</th>}
                       <th className={THR_KANIT}>มูลค่า</th>
                       <th className={TH_KANIT}>สถานะ</th>
-                      <th className={TH_KANIT}>ชำระเงิน</th>
+                      <th className={TH_KANIT}>{เหมือนZORT ? 'การชำระเงิน' : 'ชำระเงิน'}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {(o?.recent ?? []).map((r, i) => (
                       <tr key={`${r.id ?? r.number ?? i}`} className="border-b border-gray-100 last:border-0">
-                        {!!buys.length && <td className="py-1 pr-2 whitespace-nowrap">ขายออก</td>}
+                        {เหมือนZORT && <td className="py-1 pr-2 tabular-nums">{i + 1}</td>}
+                        {(เหมือนZORT || !!buys.length) && <td className="py-1 pr-2 whitespace-nowrap">ขายออก</td>}
+                        {เลขที่ก่อนวันที่ && <td className="py-1 pr-2">
+                          {r.number
+                            ? <Link href={ลิงก์ใบขาย(r.number, r.order_date)} title={r.channel ? `ช่องทาง: ${r.channel}` : undefined} className="text-[#337ab7] hover:underline">{r.number}</Link>
+                            : '—'}
+                        </td>}
                         {/* 🗓️ เดิมโชว์ปี ค.ศ. ดิบ — เก็บค่าดิบไว้ใน title ให้คนตรวจย้อนได้ */}
                         <td className="py-1 pr-2 whitespace-nowrap" title={r.order_date ? `ค่าที่ท่อส่งมา: ${r.order_date}` : undefined}>
                           {r.order_date ? thaiDate(r.order_date) : '—'}</td>
-                        <td className="py-1 pr-2">
+                        {!เลขที่ก่อนวันที่ && <td className="py-1 pr-2">
                           {/* ลิงก์ข้ามจอ — เลขที่ใบต้องกดเข้ารายละเอียดได้เสมอ (แบบแผนข้อ 1 ของ ZORT) */}
                           {r.number
                             ? <Link href={ลิงก์ใบขาย(r.number, r.order_date)} className="text-[#337ab7] hover:underline">{r.number}</Link>
                             : '—'}
-                        </td>
-                        <td className="py-1 pr-2">{r.channel ?? '—'}</td>
+                        </td>}
+                        {!เหมือนZORT && <td className="py-1 pr-2">{r.channel ?? '—'}</td>}
                         <td className="py-1 pr-2 text-right tabular-nums">{baht(r.amount)}</td>
                         {/* 🔤 เดิมโชว์ค่าดิบ ("Success"/"Paid") — กวาดรอบก่อนไม่เจอเพราะเขียนเป็น `{r.status ?? '—'}`
                             (แพตเทิร์นค้นหาเดิมบังคับให้ปิดปีกกาติดชื่อช่อง) ⇒ รอบนี้ค้นแบบเผื่อ `??` ด้วย
@@ -492,11 +505,13 @@ function Inner() {
                         ใบเก่าของกองหนึ่งจะเบียดใบใหม่ของอีกกองหายไปโดยไม่มีอะไรฟ้อง */}
                     {buys.map((r, i) => (
                       <tr key={`buy-${r.id ?? r.number ?? i}`} className="border-b border-gray-100 last:border-0 bg-slate-50/60">
+                        {เหมือนZORT && <td className="py-1 pr-2 tabular-nums">{(o?.recent?.length ?? 0) + i + 1}</td>}
                         <td className="py-1 pr-2 whitespace-nowrap">ซื้อเข้า</td>
+                        {เลขที่ก่อนวันที่ && <td className="py-1 pr-2">{r.number ?? '—'}</td>}
                         <td className="py-1 pr-2 whitespace-nowrap" title={r.date ? `ค่าที่ท่อส่งมา: ${r.date}` : undefined}>
                           {r.date ? thaiDate(r.date) : '—'}</td>
-                        <td className="py-1 pr-2">{r.number ?? '—'}</td>
-                        <td className="py-1 pr-2 text-gray-400">—</td>
+                        {!เลขที่ก่อนวันที่ && <td className="py-1 pr-2">{r.number ?? '—'}</td>}
+                        {!เหมือนZORT && <td className="py-1 pr-2 text-gray-400">—</td>}
                         <td className="py-1 pr-2 text-right tabular-nums">{baht(r.amount)}</td>
                         {/* ใบซื้อใช้ชุดคำของหน้าใบซื้อ ไม่ใช่ของใบขาย (ZORT แยกคำระหว่างหน้าจริง) */}
                         <td className="py-1 pr-2">{r.status ? zortWord(PURCHASE_STATUS, r.status).text : '—'}</td>

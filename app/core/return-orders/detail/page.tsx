@@ -253,14 +253,26 @@ function Inner() {
               <TableWrap>
                 <table className="w-full min-w-[480px]">
                   <thead className="bg-white border-b border-gray-200">
+                    {/* 📐 โหมดเหมือน ZORT (REA อ่าน /Buy/Details ใบรับคืน 20 ต.ค. 2569): # · รหัส · ชื่อสินค้า · จำนวน · มูลค่าต่อหน่วย · ส่วนลดต่อหน่วย · รวม
+                        ท่อยังไม่ตั้งชื่อช่องเงินของบรรทัด ⇒ อ่านจากก้อนดิบ pricepernumber · discountPerNumber · totalprice (ยิงดูใบ CN-261017TR3HPQHV: 150 · – · 150)
+                        ไม่มีช่อง = ขีด ไม่ใช่ 0 · หน่วยต่อท้ายจำนวนแบบ ZORT */}
+                    {เหมือนZORT ? (
+                      <tr>
+                        <th className={TH}>#</th><th className={TH}>รหัส</th><th className={TH}>ชื่อสินค้า</th>
+                        <th className={THR}>จำนวน</th>
+                        <th className={THR}>มูลค่าต่อหน่วย</th><th className={THR}>ส่วนลดต่อหน่วย</th><th className={THR}>รวม</th>
+                      </tr>
+                    ) : (
                     <tr>
                       <th className={TH}>รหัส</th><th className={TH}>ชื่อสินค้า</th>
                       <th className={THR}>จำนวน</th><th className={TH}>หน่วย</th>
                     </tr>
+                    )}
                   </thead>
                   <tbody>
                     {d.lines.map((l, i) => (
                       <tr key={`${l.sku ?? ''}-${i}`} className="border-b border-[#e8ecf8] last:border-0">
+                        {เหมือนZORT && <td className={TD}>{i + 1}</td>}
                         {/* รหัสสินค้ากดเข้าหน้าสินค้าได้ — ปลายทางรับ sku ตรง ๆ (ไม่ต้องหา id) */}
                         <td className={`${TD} font-mono text-[12.5px]`}>
                           {l.sku
@@ -269,8 +281,22 @@ function Inner() {
                             : '—'}
                         </td>
                         <td className={TD}>{l.name || '—'}</td>
-                        <td className={TDR}>{typeof l.qty === 'number' ? l.qty.toLocaleString('th-TH') : '—'}</td>
-                        <td className={TD}>{l.unit || <span className="text-gray-300">—</span>}</td>
+                        <td className={TDR}>{typeof l.qty === 'number' ? l.qty.toLocaleString('th-TH') : '—'}{เหมือนZORT && l.unit ? <span className="text-gray-500"> {l.unit}</span> : null}</td>
+                        {เหมือนZORT ? (() => {
+                          const raw = l['ทุกช่องในบรรทัด'] ?? {}
+                          const เลข = (v: unknown) => typeof v === 'number' ? v : typeof v === 'string' && v.trim() !== '' && Number.isFinite(Number(v)) ? Number(v) : null
+                          const เงิน = (v: unknown, ศูนย์เป็นขีด = false) => {
+                            const n = เลข(v)
+                            return n === null || (ศูนย์เป็นขีด && n === 0)
+                              ? <span className="text-gray-400">-</span>
+                              : n.toLocaleString('th-TH', { maximumFractionDigits: 2 })
+                          }
+                          return <>
+                            <td className={TDR}>{เงิน(raw.pricepernumber)}</td>
+                            <td className={TDR}>{เงิน(raw.discountPerNumber, true)}</td>
+                            <td className={TDR}>{เงิน(raw.totalprice)}</td>
+                          </>
+                        })() : <td className={TD}>{l.unit || <span className="text-gray-300">—</span>}</td>}
                       </tr>
                     ))}
                   </tbody>
