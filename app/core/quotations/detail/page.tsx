@@ -30,6 +30,9 @@ interface Resp {
         ⇒ จอต้องอ่านได้ทั้งสองรุ่น · แยกรุ่นด้วย "มีคีย์ไหม" ไม่ใช่ "ค่าจริงไหม"
         เพราะ amount = 0 เป็นค่าที่ถูกต้องได้ (ใบราคา ฿0 มีจริง) */
   status?: string; date?: string; customer?: string
+  /** ท่อรุ่น 7933ab3a (CTO 20 ต.ค. 2569) ส่งต่อช่องลูกค้า/ผู้สร้างของ ZORT — 🔑 ไม่มีคีย์ = ท่อรุ่นเก่ายังไม่ส่ง ·
+   *  null หรือ '' = ZORT เองไม่มีค่า (ใบที่สร้างผ่าน API ว่างทุกช่อง) ⇒ แยกสองสถานะ ห้ามยุบ */
+  createUserName?: string | null; customerPhone?: string | null; customerEmail?: string | null; customerAddress?: string | null
   amount?: number; vatAmount?: number; discountAmount?: number; shippingAmount?: number
   'เงินที่ ZORT เก็บไว้'?: Record<string, unknown>
   lines?: Line[] | null
@@ -180,7 +183,14 @@ function Inner() {
               <div className="mb-4 bg-white rounded-[6px] p-5 md:grid md:grid-cols-2">
                 {([
                   ['ข้อมูล', '📄', [['รายการ', d.number || null], ['วันที่', d.date ? thaiDate(d.date, 'เต็ม') : null]]],
-                  ['ลูกค้า', '👤', [['ผู้สร้างรายการ', undefined], ['ชื่อลูกค้า', d.customer || null], ['เบอร์โทรศัพท์ลูกค้า', undefined], ['อีเมลลูกค้า', undefined], ['ที่อยู่ลูกค้า', undefined]]],
+                  /* ค่า: undefined = ท่อไม่ส่งคีย์ (ขีด + เหตุ) · '' = ZORT ไม่มีค่า (ขึ้น - แบบ ZORT) · สตริง = ค่าจริง */
+                  ['ลูกค้า', '👤', [
+                    ['ผู้สร้างรายการ', 'createUserName' in d ? (d.createUserName || '') : undefined],
+                    ['ชื่อลูกค้า', d.customer || null],
+                    ['เบอร์โทรศัพท์ลูกค้า', 'customerPhone' in d ? (d.customerPhone || '') : undefined],
+                    ['อีเมลลูกค้า', 'customerEmail' in d ? (d.customerEmail || '') : undefined],
+                    ['ที่อยู่ลูกค้า', 'customerAddress' in d ? (d.customerAddress || '') : undefined],
+                  ]],
                 ] as const).map(([หัว, รูป, แถว]) => (
                   <section key={หัว} className="mt-4 md:mt-0">
                     <div className="flex items-center gap-3 mb-4 pl-[30px]">
@@ -191,7 +201,8 @@ function Inner() {
                       <div key={k} className="grid grid-cols-[1fr_2fr] py-1 pl-[15px] md:pr-[45px]">
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">
-                          {v ?? <span className="text-gray-300 cursor-help" title={v === undefined ? 'ZORT มีช่องนี้ แต่ท่อยังไม่ส่งต่อมาให้จอ' : 'ZORT ไม่ได้ส่งค่านี้มา'}>—</span>}
+                          {v === '' ? '-'
+                            : v ?? <span className="text-gray-300 cursor-help" title={v === undefined ? 'ZORT มีช่องนี้ แต่ท่อยังไม่ส่งต่อมาให้จอ' : 'ZORT ไม่ได้ส่งค่านี้มา'}>—</span>}
                         </span>
                       </div>
                     ))}
