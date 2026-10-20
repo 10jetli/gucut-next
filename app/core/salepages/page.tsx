@@ -15,6 +15,8 @@ import LedgerScreen from '@/components/zort/LedgerScreen'
 export default function SalePagesPage() {
   return (
     <LedgerScreen
+      /* 📐 ผังท้ายตารางแบบ ZORT (จำนวนต่อหน้าก่อน Export · ช่องว่างมีแค่ ไม่มีข้อมูล) — จอนี้ไม่ใช่กลุ่มการเงิน */
+      ผังท้ายZORT
       title="Sale pages"
       /* 🔬 `/SalePage/List` ของ ZORT: ตารางมีหัวคอลัมน์ ชื่อ · สินค้า · คลังสินค้า/สาขา แต่ **0 แถว**
          และจอนั้น **ไม่มีตัวนับจำนวนรายการ** ⇒ นับจาก API ก็ไม่ได้ นับจากจอก็ได้แค่ "ว่าง" */
