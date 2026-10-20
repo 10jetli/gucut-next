@@ -422,8 +422,9 @@ function ReportKindSelect({ ประตู, value = 'total', onChange, withCate
     <select
       value={value}
       onChange={(e) => { const v = e.target.value; if (v === 'total' || v === 'cat') onChange?.(v) }}
-      /* 📏 โหมดเหมือน ZORT: ตัวเลือกบนหัวการ์ด Boon 14 สูง 40 กว้าง ~163 ชิดขวา (ภาพ /Dashboard/SalesReport 20 ต.ค. 2569 · ผังเดียวกับรายงานสินค้า/ลูกค้าที่วัด DOM แล้ว) */
-      className={คลาสตัวเลือก('text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0', 'w-[163px] max-w-full ml-auto')}
+      /* 📏 โหมดเหมือน ZORT (วัด DOM /Dashboard/SalesReport 20 ต.ค. 2569): Boon 14 สูง 40 ชิดขวา · กล่องสรุปกว้าง 130 · กล่องกราฟกว้าง 154
+         (รอบแรกใส่ 163 ซึ่งกะจากภาพ 1600 โดยไม่หาร 1.25 — วัดซ้ำแล้วแก้) */
+      className={คลาสตัวเลือก('text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0', `${withCategory ? 'w-[154px]' : 'w-[130px]'} max-w-full ml-auto`)}
       /* 🔄 **แก้ป้าย 15 ก.ย. 2569** — เดิมเขียนว่า "ยังไม่มี" เพราะท่อไม่ส่งหมวดมา
          ตอนนี้ท่อส่งแล้ว (b0a4aa3 · `by=category` รวมให้ฝั่งเซิร์ฟเวอร์ 36 หมวด)
          ⇒ ที่ยังขาดคือ **จอยังไม่ได้ทำ** ไม่ใช่ข้อมูลไม่มี · เขียนให้ตรงกับความจริงปัจจุบัน
