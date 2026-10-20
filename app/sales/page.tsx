@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT, TH_MONTH_SHORT } from '@/lib/format'
 import Card from '@/components/ui/Card'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/components/zort/ExportButton'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -542,6 +543,12 @@ function ReturnsFreshness({ utc }: { utc: string | null }) {
   )
 }
 
+/** วันที่แบบตัวเลขของ ZORT "1/8/2569" (วัน/เดือน/ปี พ.ศ. ไม่เติมศูนย์) — รับ YYYY-MM-DD */
+function วันตัวเลข(iso: string): string {
+  const [y, m, d] = String(iso).slice(0, 10).split('-').map(Number)
+  return y && m && d ? `${d}/${m}/${y + 543}` : String(iso)
+}
+
 export default function SalesReportPage() {
   /* ① ค่าเริ่มต้นเป็น "ย้อนหลัง 3 เดือน" ให้เหมือน ZORT (สเปกเมนู 2 ข้อ 1)
      ⚠️ เปลี่ยนค่านี้แล้วตัวเลขบนจอจะกระโดดขึ้นทันที **ไม่ใช่บั๊ก** — คนละช่วงเวลากับของเดิม */
@@ -867,7 +874,8 @@ export default function SalesReportPage() {
                  วันที่อยู่ใน **template literal ที่ส่งลง JSX** ไม่ได้อยู่เป็นนิพจน์เดี่ยว
                  ⇒ จดไว้เป็นจุดบอดของด่าน ไม่ได้แก้ด่านในใบนี้ (ต้องมีตัวควบคุมของตัวเอง) */}
           {เหมือนZORT
-            ? (report ? `(${thaiDate(report.range.from)} – ${thaiDate(report.range.to)})` : '')
+            /* 📐 ZORT เขียนช่วงเป็นตัวเลข "(1/8/2569 - 31/8/2569)" (ภาพ 20 ต.ค. 2569) */
+            ? (report ? `(${วันตัวเลข(report.range.from)} - ${วันตัวเลข(report.range.to)})` : '')
             : <>{report ? `${thaiDate(report.range.from)} – ${thaiDate(report.range.to)}` : ''} · อัพเดต {refreshed.toLocaleTimeString('th-TH')}</>}
         </span>
         {/* ② ลิงก์ "ค้นหาขั้นสูง" — ZORT มีตรงนี้ (สเปกข้อ 2)
@@ -934,6 +942,10 @@ export default function SalesReportPage() {
                         ? fmtMoney(report.totals.sales)
                         : <span className="text-[20px] text-amber-700">ยังไม่รู้ยอดขาย</span>}
                     </p>
+                    {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/SalesReport 20 ต.ค. 2569): การ์ดมีแค่ยอดตัวใหญ่ + ปุ่ม Download
+                        ⇒ บรรทัดจำนวนใบ · กล่องใบคืน · ความสดใบคืน · ยอดแบบ ZORT พับรวมไว้บรรทัดเดียว ไม่ลบ
+                        🔴 บรรทัดสรุปต้องพูดเรื่องหลักเอง: ยอดนี้ยังไม่หักใบคืน (คนอ่านไม่กดก็ต้องรู้) */}
+                    <ZortLookFold สรุป={<>⚠️ ยอดนี้ยังไม่หักของที่ลูกค้าคืน · จำนวนใบ · ยอดแบบ ZORT</>}>
                     <p className="text-[12.5px] text-gray-500 mt-2">
                       {typeof report.totals?.orders === 'number'
                         ? <>{fmtNum(report.totals.orders)} ใบ</>
@@ -999,6 +1011,7 @@ export default function SalesReportPage() {
                       <ReturnsFreshness utc={report.returnsSyncedAtUtc ?? null} />
                     )}
                     <ZortSalesTotal from={report.range.from} to={report.range.to} />
+                    </ZortLookFold>
                     {/* 📐 โหมดเหมือน ZORT (อ่าน DOM /Dashboard/SalesReport 20 ต.ค. 2569 ด้วย REA): ใต้ยอดรวมมีปุ่มเดียว
                         "Download Excel - สรุปยอดขาย" (Kanit 12 #3e3e3e ขอบ #adb5bd สูง 28) · ปุ่ม Export อีกสามปุ่มอยู่แถวล่างใต้ตาราง */}
                     {เหมือนZORT ? (
