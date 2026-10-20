@@ -28,6 +28,7 @@
 //    และ **นาฬิกาที่สาม**: stockSyncedAt = ตัวเลขคงเหลือ/พร้อมขายซิงก์ล่าสุด
 //    (รอบมาจากท่อ `stockExpectedEveryHours` — แยกเป็นงาน bundle-stock-sync แล้ว 19 ก.ย. 2569)
 //    ⇒ ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว มีเทสคุมการสลับสามค่านี้
+import { IconEdit, IconTrash, IconPrint, IconShare } from '@/components/zort/ButtonIcons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
 import { monthlySeries, sumMonth, salesComplete, monthLabel, lastSaleDate } from '@/lib/bundle-sales'
@@ -325,9 +326,13 @@ export default function BundleDetailPage() {
           <PageHead
             title={`รายละเอียดสินค้า ${bundle.name || sku}`}
             actions={
-              <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
-                คัดลอกลิงก์หน้านี้
-              </BtnGhost>
+              เหมือนZORT
+                /* 📏 ZORT มุมขวาเป็นลิงก์เล็กสีเทา "Share Link" มีไอคอนแชร์ (ภาพ /Bundle/Details 20 ต.ค. 2569) — ของเราทำงานเดิม (คัดลอกลิงก์) แค่หน้าตา */
+                ? <button type="button" onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}
+                    className="inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-[#868e96] hover:text-[#3e3e3e]"><IconShare />คัดลอกลิงก์หน้านี้</button>
+                : <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
+                  คัดลอกลิงก์หน้านี้
+                </BtnGhost>
             }
           />
           {/* ── (1) ปุ่มบนสุด 6 ปุ่มเหมือน ZORT ────────────────────────────────
@@ -337,8 +342,9 @@ export default function BundleDetailPage() {
             {/* 🔑 ปุ่มแก้ไขชี้หน้าจริงแล้ว (ใบงาน t_mv4hthvf) — เส้น `?updatebundle=1` ตอบ 405
                 บน production แล้ว ยืนยันด้วยตัวควบคุมลบ `updatebundlezzz=1` ที่ตอบ fallthrough
                 ⚠️ ปุ่มลบยังชี้ `/core/soon/` อยู่โดยตั้งใจ — จอลบยังไม่ได้ทำ (คนละใบ) */}
-            <Link href={`/core/bundles/${encodeURIComponent(sku)}/edit`} className={ปุ่มZ}>แก้ไข</Link>
-            <Link href="/core/soon/bundle-delete" className={ปุ่มลบZ}>ลบ</Link>
+            {/* โหมดเหมือน ZORT: ไอคอนหน้าคำแบบ ZORT (ดินสอ · ถังขยะ · เครื่องพิมพ์) */}
+            <Link href={`/core/bundles/${encodeURIComponent(sku)}/edit`} className={`${ปุ่มZ} inline-flex items-center gap-1`}>{เหมือนZORT && <IconEdit />}แก้ไข</Link>
+            <Link href="/core/soon/bundle-delete" className={`${ปุ่มลบZ} inline-flex items-center gap-1`}>{เหมือนZORT && <IconTrash />}ลบ</Link>
 
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'cmd' ? '' : 'cmd')}
@@ -358,8 +364,8 @@ export default function BundleDetailPage() {
 
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'print' ? '' : 'print')}
-                className={ปุ่มZ}>
-                พิมพ์เอกสาร ▾
+                className={`${ปุ่มZ} inline-flex items-center gap-1`}>
+                {เหมือนZORT && <IconPrint />}พิมพ์เอกสาร ▾
               </button>
               {menu === 'print' && (
                 <span className="absolute left-0 top-full mt-1 z-20 w-[230px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] py-1 block">
