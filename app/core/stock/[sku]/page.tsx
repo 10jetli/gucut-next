@@ -37,6 +37,8 @@ import { เหมือนZORT } from '@/lib/โหมดเหมือนzort
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
 
 interface Row {
+  /** หมวดหมู่ (ท่อ list=stock ส่งมาต่อแถว) — ZORT ต่อท้ายชื่อในกล่องข้อมูลเป็น "(โซ่ NEWWAVE)" · ไม่มี/ว่าง = ไม่ต่อ */
+  category?: string | null
   sku: string; name: string; qty: number; price: number; sold: number
   buy?: number | null; available?: number | null; unit?: string | null
   service?: boolean; active?: boolean | null; marketplaces?: string[]
@@ -344,6 +346,9 @@ export default function ProductDetailPage() {
     }
   }, [sku])
 
+  /* 📐 โหมดเหมือน ZORT: การ์ด "ยอดขายเดือนนี้" ขึ้นเลขทันทีแบบ ZORT ⇒ ยิงคำขอรายเดือนครั้งเดียวตอนเปิดจอ (เดิมรอกดแสดงกราฟ) */
+  useEffect(() => { if (เหมือนZORT) void loadChart() }, [loadChart])
+
   const img = imgOf(sku)
   const cardRows = Array.isArray(card?.rows) ? card!.rows! : []
   /** ยอดขายเดือนนี้ — ช่องสุดท้ายของกราฟคือเดือนปัจจุบันเสมอ (loop สร้างถึง i=0)
@@ -374,7 +379,8 @@ export default function ProductDetailPage() {
                     (ทำได้จริงเลยทำ · ต่างจากปุ่มอื่นที่ต้องรอท่อ) */}
                 {/* 📏 วัดซ้ำ 20 ต.ค. 2569: Share Link ของ ZORT เป็นปุ่มแบบลิงก์ Kanit 12 #868e96 (ไม่ใช่ปุ่มกรอบ 39 อย่างที่จด 17 ต.ค.) ⇒ SHARE_LINK_Z ในโหมด ZORT */}
                 <button type="button" className={เหมือนZORT ? SHARE_LINK_Z : DETAIL_BTN} onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
-                  {เหมือนZORT && <IconShare />}คัดลอกลิงก์หน้านี้
+                  {/* 📐 โหมดเหมือน ZORT: คำบนปุ่ม "Share Link" ตาม ZORT · คำของเราอยู่ใน title (สิ่งที่ปุ่มทำจริง) */}
+                  {เหมือนZORT ? <span title="คัดลอกลิงก์หน้านี้" className="inline-flex items-center gap-1"><IconShare />Share Link</span> : 'คัดลอกลิงก์หน้านี้'}
                 </button>
                 {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Product/Details ไม่มี */}
               </>
@@ -527,7 +533,7 @@ export default function ProductDetailPage() {
               )}
 
             <div className="min-w-0 flex-1">
-              <p className={เหมือนZORT ? `${ZORT_INFO_NAME} mb-2` : 'text-[15px] font-semibold text-gray-900'}>{row.name || sku}</p>
+              <p className={เหมือนZORT ? `${ZORT_INFO_NAME} mb-2` : 'text-[15px] font-semibold text-gray-900'}>{row.name || sku}{เหมือนZORT && typeof row.category === 'string' && row.category.trim() ? ` (${row.category.trim()})` : ''}</p>
               {/* โหมดเหมือน ZORT: ชื่อเต็มบรรทัดอยู่เหนือ [ข้อมูล | QR] — แบบ ZORT (QR เริ่มใต้ชื่อ ชื่อไม่ถูกบีบจนตกสองบรรทัด) */}
               <div className={เหมือนZORT ? 'flex items-start gap-6' : ''}>
               {/* 🧭 โหมดเหมือน ZORT: ลำดับช่องตาม /Product/Details (รหัส · ราคาขาย · น้ำหนัก · ราคาซื้อ · ต้นทุนเฉลี่ย · ชุด) ด้วย order
@@ -607,7 +613,7 @@ export default function ProductDetailPage() {
                 </div>
 
                 <div className={`${เหมือนZORT ? 'order-3' : ''}`}>
-                  <p className={ป้าย}>น้ำหนัก (กรัม)</p>
+                  <p className={ป้าย}>{เหมือนZORT ? 'น้ำหนัก' : 'น้ำหนัก (กรัม)'}</p>
                   {/* ⚠️ null = ยังไม่ได้กรอกใน ZORT · 0 = ของไม่มีน้ำหนักจริง ๆ — ห้ามยุบรวมกัน
                       ทั้งคลังมีน้ำหนักจริงแค่ 23% ⇒ ช่องนี้ขึ้นขีดเป็นเรื่องปกติ ไม่ใช่ท่อพัง */}
                   <p className={ค่า}>
