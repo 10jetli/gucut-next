@@ -83,9 +83,9 @@ interface MoveResp {
 const STEPS = ['กรอกหมายเลขรายการ', 'จัดการรับสินค้า', 'รับสำเร็จ']
 
 /* 🧭 ไอคอนขั้นของเราเอง (วาดเส้นเอง ไม่ใช้ไอคอนของ ZORT) — แว่นขยาย · กล่อง · กล่องมีเครื่องหมายถูก */
-function ไอคอนขั้น({ i, สี }: { i: number; สี: string }) {
+function ไอคอนขั้น({ i, สี, ขนาด = 22 }: { i: number; สี: string; ขนาด?: number }) {
   return (
-    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke={สี} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+    <svg viewBox="0 0 24 24" width={ขนาด} height={ขนาด} fill="none" stroke={สี} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {i === 0 && <><circle cx="10.5" cy="10.5" r="6" /><path d="M15 15l5 5" /></>}
       {i >= 1 && <><path d="M4 8l8-4 8 4v9l-8 4-8-4z" /><path d="M4 8l8 4 8-4M12 12v9" /></>}
       {i === 2 && <path d="M15 17.5l2 2 3.5-3.5" />}
@@ -94,21 +94,22 @@ function ไอคอนขั้น({ i, สี }: { i: number; สี: string 
 }
 
 /** 📐 แถบขั้นแบบ ZORT /Pickandpack/Main (ดูภาพ 19 ต.ค. 2569): การ์ดขาวไม่มีขอบ · สามขั้นกลางจอ ต่อด้วยเส้นประ ·
- *  ขั้นปัจจุบัน = วงน้ำเงินทึบ ไอคอนขาว · ขั้นอื่น = ไอคอนเส้นน้ำเงิน ไม่มีวง · ป้ายขั้นปัจจุบันเข้ม อื่นจาง */
+ *  ขั้นปัจจุบัน = วงน้ำเงินทึบ ไอคอนขาว · ขั้นอื่น = ไอคอนเส้นน้ำเงิน ไม่มีวง · ป้ายขั้นปัจจุบันเข้ม อื่นจาง
+ *  📏 วัด DOM 21 ต.ค. 2569: ขั้นกว้าง 110 ห่างกัน 215 (รวม 540) · วง 36 ไอคอน 18 · ป้าย Kanit 14 / 12 · การ์ดช่องในบนล่าง 12 */
 function StepperZ({ at }: { at: number }) {
   return (
-    <div className="bg-white rounded-[6px] py-4 mb-[38px] flex justify-center">
-      <div className="flex items-start w-full max-w-[700px]">
+    <div className="bg-white rounded-[6px] py-3 mb-[38px] flex justify-center">
+      <div className="flex items-start w-full max-w-[540px]">
         {STEPS.map((s, i) => (
           <div key={s} className="flex items-start flex-1 last:flex-none">
-            <div className="flex flex-col items-center w-[150px] shrink-0">
-              <div className="w-11 h-11 rounded-full grid place-items-center" style={i === at ? { background: '#4165ed' } : undefined}>
-                <ไอคอนขั้น i={i} สี={i === at ? '#fff' : '#4165ed'} />
+            <div className="flex flex-col items-center w-[110px] shrink-0">
+              <div className="w-9 h-9 rounded-full grid place-items-center" style={i === at ? { background: '#4165ed' } : undefined}>
+                <ไอคอนขั้น i={i} สี={i === at ? '#fff' : '#4165ed'} ขนาด={18} />
               </div>
-              <p className={`font-['Kanit',sans-serif] text-[16px] mt-1 ${i <= at ? 'text-[#3e3e3e]' : 'text-[#ced4da]'}`}>ขั้นตอนที่ {i + 1}</p>
-              <p className={`text-[13px] ${i <= at ? 'text-[#868e96]' : 'text-[#ced4da]'}`}>{s}</p>
+              <p className={`font-['Kanit',sans-serif] text-[14px] leading-[14px] mt-2 ${i <= at ? 'text-[#3e3e3e]' : 'text-[#ced4da]'}`}>ขั้นตอนที่ {i + 1}</p>
+              <p className={`font-['Kanit',sans-serif] text-[12px] leading-[18px] ${i <= at ? 'text-[#868e96]' : 'text-[#ced4da]'}`}>{s}</p>
             </div>
-            {i < STEPS.length - 1 && <div className="flex-1 border-t border-dashed border-[#ced4da] mt-[22px] -mx-10" />}
+            {i < STEPS.length - 1 && <div className="flex-1 border-t border-dashed border-[#ced4da] mt-[17px] -mx-[28px]" />}
           </div>
         ))}
       </div>
@@ -325,8 +326,9 @@ export default function ReceivePage() {
       {/* ── ขั้นที่ 1 ─────────────────────────────────────── */}
       {step === 0 && (
         /* 📏 ZORT /Pickandpack/Main ขั้นที่ 1 (วัด 18 ต.ค. 2569): การ์ดขาวไม่มีขอบ · หัว Kanit 30/500 · ป้าย 16 #3e3e3e · ช่องกรอกกว้าง ~250 · ปุ่ม 16/400 */
-        <div className={`bg-white p-8 text-center ${เหมือนZORT ? 'rounded-[6px]' : 'rounded-md'}`}>
-          <p className="font-['Kanit','Boon',sans-serif] text-[30px] leading-[30px] font-medium text-[#3e3e3e] mb-6">เริ่มต้นการรับสินค้าเข้า</p>
+        /* 📏 วัด DOM ZORT 21 ต.ค. 2569: ช่องในบน 39 ล่าง 24 · ใต้หัว 30 · ช่องกรอก 200×40 · ช่องกรอกถึงปุ่ม 30 */
+        <div className={`bg-white text-center ${เหมือนZORT ? 'rounded-[6px] px-8 pt-[39px] pb-6' : 'rounded-md p-8'}`}>
+          <p className={`font-['Kanit','Boon',sans-serif] text-[30px] leading-[30px] font-medium text-[#3e3e3e] ${เหมือนZORT ? 'mb-[30px]' : 'mb-6'}`}>เริ่มต้นการรับสินค้าเข้า</p>
           <p className="text-[16px] text-[#3e3e3e]">กรอกหมายเลขใบโอน หรือเลขอ้างอิง</p>
           {/* 🔴 ต้องบอกตั้งแต่ก่อนกรอก ว่าเลขพัสดุใช้ไม่ได้ — ไม่ใช่ปล่อยให้ค้นแล้วขึ้น "ไม่พบ"
               ซึ่งจะทำให้คนสรุปผิดว่า "ไม่มีใบนี้ในระบบ" ทั้งที่ระบบแค่ค้นด้วยเลขนั้นไม่เป็น */}
@@ -337,13 +339,13 @@ export default function ReceivePage() {
             {' '}<b>เลขพัสดุยังไม่ยืนยันว่าค้นได้</b> ZORT จอจริงค้นได้แต่เรายังไม่เคยยิงทดสอบ
           </p>
           </ZortLookFold>
-          <div className="mt-4 flex flex-col items-center gap-3">
+          <div className={`flex flex-col items-center ${เหมือนZORT ? 'mt-2.5 gap-[30px]' : 'mt-4 gap-3'}`}>
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
               onKeyDown={(e) => { if (e.key === 'Enter') find() }}
               placeholder="เช่น TF-2026xxxxxx"
-              className={`${FORM_INPUT} max-w-[250px]`}
+              className={`${FORM_INPUT} ${เหมือนZORT ? 'max-w-[200px]' : 'max-w-[250px]'}`}
             />
             <button
               onClick={find}
