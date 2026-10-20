@@ -18,6 +18,7 @@ import { เหมือนZORT } from '@/lib/โหมดเหมือนzort
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortPie from '@/components/zort/ZortPie'
+import { ขั้นแกน, ย่อเลข } from '@/components/zort/ZortBarChart'
 import { คลาสตัวเลือก } from '@/components/zort/formCtl'
 import {
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, TDR, LinkText, summaryLine, EmptyState, thaiDate, PageNav, TH_KANIT, THR_KANIT,
@@ -168,7 +169,12 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
   ]
   /* ไม่รู้ยอด = null (ไม่แปลงเป็น 0) ⇒ ตัดเส้นตรงเดือนนั้น ไม่ลากลงแกน */
   const val = (r: MonthlyRow, k: keyof MonthlyRow): number | null => (typeof r[k] === 'number' ? (r[k] as number) : null)
-  const max = Math.max(...rows.flatMap((r) => เส้น.map((l) => val(r, l.key) ?? -Infinity)), 1)
+  const maxจริง = Math.max(...rows.flatMap((r) => เส้น.map((l) => val(r, l.key) ?? -Infinity)), 1)
+  /* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/ContactReport 20 ต.ค. 2569): แกนตั้งมีป้าย 0 · 100K · 200K · 300K + เส้นตารางทุกขั้น
+     ⇒ ปัดเพดานขึ้นเป็นขั้นที่อ่านง่าย (ขั้นแกน ตัวเดียวกับกราฟแท่งหมวด) · โหมดเดิมใช้เพดาน = ค่าสูงสุดเหมือนเดิม */
+  const ขั้น = ขั้นแกน(maxจริง, 3)
+  const max = เหมือนZORT ? Math.ceil(maxจริง / ขั้น) * ขั้น : maxจริง
+  const ขีด = เหมือนZORT ? Array.from({ length: Math.round(max / ขั้น) + 1 }, (_, i) => i * ขั้น) : []
   const x = (i: number) => padL + (n === 1 ? (W - padL - padR) / 2 : (i * (W - padL - padR)) / (n - 1))
   const y = (v: number) => H - padY - (v / max) * (H - padY * 2)
   const ย่อ = (v: number) => (v >= 1e6 ? `${(v / 1e6).toFixed(1)} ล.` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : String(Math.round(v)))
@@ -180,9 +186,16 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
         ))}
       </div>
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="แนวโน้มยอดขายรายเดือนแยกกลุ่มลูกค้า">
-        {[0.5, 1].map((f2) => (
-          <line key={f2} x1={padL} x2={W - padR} y1={y(max * f2)} y2={y(max * f2)} stroke="#eef1f7" />
-        ))}
+        {เหมือนZORT
+          ? ขีด.map((v) => (
+            <g key={v}>
+              <line x1={padL} x2={W - padR} y1={y(v)} y2={y(v)} stroke={v === 0 ? '#3e3e3e' : '#e5e7eb'} />
+              <text x={padL - 6} y={y(v) + 4} textAnchor="end" className="fill-[#3e3e3e] text-[10px]">{ย่อเลข(v)}</text>
+            </g>
+          ))
+          : [0.5, 1].map((f2) => (
+            <line key={f2} x1={padL} x2={W - padR} y1={y(max * f2)} y2={y(max * f2)} stroke="#eef1f7" />
+          ))}
         {เส้น.map((l) => (
           <path key={l.key} d={rows.map((r, i) => { const v = val(r, l.key); if (v === null) return ''; const ก่อนว่าง = i === 0 || val(rows[i - 1], l.key) === null; return `${ก่อนว่าง ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}` }).join(' ')}
             fill="none" stroke={l.color} strokeWidth={l.dash ? 1.5 : 2} strokeDasharray={l.dash} />
@@ -190,10 +203,12 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
         {rows.map((r, i) => (
           <text key={r.month} x={x(i)} y={H - 6} textAnchor="middle" className="fill-gray-400 text-[10px]">{mLabel(r.month)}</text>
         ))}
-        <text x={2} y={y(max) + 4} className="fill-gray-400 text-[10px]">{ย่อ(max)} ฿</text>
+        {!เหมือนZORT && <text x={2} y={y(max) + 4} className="fill-gray-400 text-[10px]">{ย่อ(max)} ฿</text>}
       </svg>
       <p className="text-center text-[11px] text-gray-400 -mt-1">ช่วงเวลา</p>
-      {/* ตารางตัวเลขใต้กราฟ — เส้นบอกทิศ ตัวเลขบอกขนาด · คอลัมน์รวมมาจาก totalSales ของท่อ ไม่ได้บวกเอง */}
+      {/* ตารางตัวเลขใต้กราฟ — เส้นบอกทิศ ตัวเลขบอกขนาด · คอลัมน์รวมมาจาก totalSales ของท่อ ไม่ได้บวกเอง
+          📐 โหมดเหมือน ZORT: ZORT ไม่มีตารางนี้ ⇒ พับไว้ (ตัวเลขยังเปิดอ่านได้) */}
+      <ZortLookFold tone="gray" สรุป={<>ตัวเลขรายเดือนของกราฟ (บาท)</>}>
       <div className="overflow-x-auto mt-2">
         <table className="w-full text-[11.5px] tabular-nums">
           <thead><tr className="text-gray-500">
@@ -213,6 +228,7 @@ function TrendSalesChart({ rows }: { rows: MonthlyRow[] }) {
         </table>
       </div>
       <p className="text-[11px] text-gray-400 mt-1">ตัดใบยกเลิกออกแล้ว แต่ยังรวมใบที่ยังไม่จ่าย</p>
+      </ZortLookFold>
     </div>
   )
 }
