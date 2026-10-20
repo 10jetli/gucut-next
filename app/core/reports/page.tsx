@@ -230,14 +230,16 @@ export default function CoreProductReportPage() {
       {stock && (
         <>
           {/* 📐 โหมดเหมือน ZORT: ตำแหน่งการ์ดคู่ตามภาพ ZORT (เริ่มต่ำกว่าหัวจอ 12 · สูงอย่างน้อย 396 · ห่างการ์ดถัดไป 30) */}
-          <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px] mt-3 [&>*]:min-h-[396px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
+          {/* 📏 วัดซ้ำ 20 ต.ค. 2569 (ภาพ 1600): การ์ด ZORT เริ่ม y=175 ของเรา 160 — mt-3 ยุบรวมกับ mb-4 ของหัวจอ (margin collapse) ⇒ ใส่ 28 เต็ม */}
+          <div className={เหมือนZORT ? 'grid grid-cols-1 lg:grid-cols-2 gap-[30px] mt-[28px] [&>*]:min-h-[396px]' : 'grid grid-cols-1 lg:grid-cols-2 gap-4'}>
             <Card>
               {/* 📐 โหมดเหมือน ZORT (ภาพ /Dashboard/ProductReport 19 ต.ค. 2569): การ์ดมีแค่ยอดรวมตัวใหญ่ + ปุ่ม Download Excel
                    ⇒ ใช้เฉพาะตอนมียอดสดจาก ZORT (เลขที่ตรงกับ ZORT) · เนื้อหาเดิมทั้งก้อน (เลขวิธีคิดของเรา + กล่องเตือน) พับไว้ใต้บรรทัดสรุป ไม่ถอด */}
               {โหมดZ ? <div className="mb-2"><ZortCardTitle รูป="฿">สรุปมูลค่าสินค้าทั้งหมด</ZortCardTitle></div>
                 : <p className="text-[15px] font-semibold text-gray-900 mb-2">สรุปมูลค่าสินค้าทั้งหมด</p>}
               {โหมดZ && (
-                <div className="flex flex-col items-center justify-center py-14">
+                /* 📏 ZORT ยอดรวมอยู่กลางการ์ดแนวตั้ง (ภาพ 1600: ตัวเลข y≈420 · ของเราเดิม 330 ⇒ ต่ำลง ~72 px CSS) */
+                <div className="flex flex-col items-center justify-center pt-[128px] pb-14">
                   <p className="font-['Lato','Boon',sans-serif] text-[36px] font-semibold leading-none" style={{ color: '#337ab7' }} title={`มูลค่าสินค้าทั้งหมด · ${ยอดZORTเมื่อ}`}>
                     {ยอดZORTสด!.toLocaleString('th-TH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     <span className="text-[15px] text-[#3e3e3e] font-normal"> บาท</span>
@@ -359,7 +361,8 @@ export default function CoreProductReportPage() {
               {/* 📐 โหมดเหมือน ZORT: วงกลมสัดส่วนรายคลังแบบ ZORT — **วาดเฉพาะเมื่อรู้มูลค่าครบทุกคลัง**
                    (มีคลังที่ ZORT ไม่ตอบ = null ⇒ สัดส่วนผิด ⇒ ไม่วาด ใช้ตารางตามเดิม — กฎ "ห้ามวาดจากข้อมูลที่ไม่มี") · ตารางพับไว้ใต้วงกลม */}
               {วาดวงคลัง && (
-                <div className="flex items-center justify-center gap-8 flex-wrap py-6">
+                /* 📏 ZORT วงกลมอยู่ต่ำกว่า (ภาพ 1600: จุดกลาง y≈458 · ของเราเดิม 385 ⇒ ต่ำลง ~58 px CSS) */
+                <div className="flex items-center justify-center gap-8 flex-wrap pt-[82px] pb-6">
                   <ZortPie ป้าย="สัดส่วนมูลค่าคงเหลือรายคลัง" ขนาด={175} ชิ้น={(whs ?? []).map((w, i) => ({ ค่า: w.stockValue as number, สี: สีคลัง[i % สีคลัง.length] }))} />
                   <div className="text-[14px] text-[#3e3e3e] space-y-1">
                     {(whs ?? []).map((w, i) => (
