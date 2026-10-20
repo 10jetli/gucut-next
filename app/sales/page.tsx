@@ -19,7 +19,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import CategorySeriesChart, { useCategorySeries } from '@/components/zort/CategorySeriesChart'
 import CostStateNote, { useประตูกำไร, เปิดยอดรวมได้, ป้ายสั้น, type ประตูกำไร } from '@/components/zort/CostGate'
 import {
-  PageHead, Tabs, TableWrap, TH, TD, TDR, EmptyState, ChannelTag, thaiDate, TH_KANIT, THR_KANIT,
+  PageHead, Tabs, TableWrap, TH, TD, TDR, EmptyState, ChannelTag, thaiDate, TH_KANIT, THR_KANIT, PageNav,
 } from '@/components/zort'
 
 interface Report {
@@ -62,6 +62,10 @@ interface Report {
      ⇒ คนเอาไปเทียบกับเงินในบัญชีแล้วจะงง หรือแย่กว่านั้นคือเชื่อว่าขายดีกว่าความจริง
      ⚠️ คลาสเดียวกับกฎแท็บข้อ 4 ใน CLAUDE.md แต่หนักกว่า **เพราะเป็นตัวเลขเงิน** */
   amountScope?: string
+  /** จำนวนรหัสทั้งชุดที่ท่อนับ (totalSkus) — ใช้ทำเลขหน้าแบบ ZORT · null = ท่อไม่บอก ⇒ ไม่คิดหน้าสุดท้ายเอง */
+  topTotal?: number | null
+  /** การเรียงที่ท่อตอบว่าใช้จริง (sortApplied) */
+  topSort?: string | null
 }
 
 interface CoreRow { number: string; channel: string; amount: number; order_date: string }
@@ -570,6 +574,21 @@ export default function SalesReportPage() {
   const [whItems, setWhItems] = useState<{ sku: string; name: string; qty: number; amount: number }[] | null>(null)
   const [whItemsErr, setWhItemsErr] = useState('')
   const [report, setReport] = useState<Report | null>(null)
+  /* 📄 เลขหน้าของตารางยอดขายรายสินค้า (โหมดเหมือน ZORT) — ZORT ไล่ได้ทุกรหัส หน้าละ 10 เรียงตามยอดขาย (REA+ภาพ /Dashboard/SalesReport 20 ต.ค. 2569)
+     หน้าแรกใช้ 10 แถวที่โหลดมากับรายงาน · หน้าอื่นยิง topproducts เองด้วยช่วงเดียวกัน (ท่อรับ offset/limit · ทดสอบแล้ว 5+4=9 ไม่ซ้ำ) */
+  const [สินค้าหน้า, setสินค้าหน้า] = useState<{ offset: number; rows: Report['topProducts']; err: string }>({ offset: 0, rows: null, err: '' })
+  useEffect(() => { setสินค้าหน้า({ offset: 0, rows: null, err: '' }) }, [report?.range.from, report?.range.to])
+  const ไปหน้าสินค้า = useCallback(async (off: number) => {
+    if (!report) return
+    if (off === 0) { setสินค้าหน้า({ offset: 0, rows: null, err: '' }); return }
+    setสินค้าหน้า({ offset: off, rows: null, err: '' })
+    try {
+      const d = await fetch(`/api/web/core?list=topproducts&from=${report.range.from}&to=${report.range.to}&limit=10&offset=${off}&sort=amount`).then((r) => r.json())
+      if (!d || !Array.isArray(d.items)) throw new Error(String(d?.error ?? 'ท่อตอบผิดรูป'))
+      setสินค้าหน้า({ offset: off, err: '', rows: (d.items as { sku: string; name?: string; qty: number; amount?: number; category?: string }[])
+        .map((r) => ({ name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount, category: r.category })) })
+    } catch (e) { setสินค้าหน้า({ offset: off, rows: [], err: e instanceof Error ? e.message : String(e) }) }
+  }, [report])
   /** 📦 จัดกลุ่มตารางยอดขาย — `tableoption` ของ ZORT · ทำได้จริงตอนนี้: สินค้า · หมวดหมู่ (ท่อ `topproducts&by=category`) */
   const [tableBy, setTableBy] = useState<'sku' | 'cat' | 'channel' | 'wh' | 'customer'>('sku')
   type แถวหมวด = { category: string; qty?: number; amount?: number | null; skus?: number; orders?: number }
@@ -604,7 +623,7 @@ export default function SalesReportPage() {
         fetchRange(from, to, true),
         fetchRange(prevFrom, prevTo),
         // ยอดขายรายสินค้าพร้อม "ยอดเงินจริง" จาก order_items (ไม่ใช่ qty คูณราคาขาย ซึ่งเป็นการเดา)
-        fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=10`)
+        fetch(`/api/web/core?list=topproducts&from=${from}&to=${to}&limit=10${เหมือนZORT ? '&sort=amount' : ''}`)
           .then((r) => r.json())
           .catch(() => null),
         fetchDaily(d),
@@ -674,6 +693,8 @@ export default function SalesReportPage() {
           name: r.name || r.sku, sku: r.sku, qty: r.qty, amount: r.amount, category: r.category,
         })),
         amountScope: typeof best?.amountScope === 'string' ? best.amountScope : undefined,
+        topTotal: typeof best?.totalSkus === 'number' ? best.totalSkus : null,
+        topSort: typeof best?.sortApplied === 'string' ? best.sortApplied : null,
       })
     } catch (e) {
       setError(String(e instanceof Error ? e.message : e))
@@ -1312,7 +1333,13 @@ export default function SalesReportPage() {
                             ? `ตารางนี้ว่างเพราะระบบถามข้อมูลไม่สำเร็จ ไม่ใช่เพราะขายไม่ได้ — ${report.topError}`
                             : 'ลองขยายช่วงเวลาด้านบน · ตัวเลขนับจากรายการสินค้าในใบขายจริง'} />
                       )}
-                      {(report.topProducts ?? [])
+                      {เหมือนZORT && สินค้าหน้า.offset > 0 && สินค้าหน้า.rows === null && (
+                        <tr><td colSpan={5} className="py-6 text-center text-[12.5px] text-gray-400">กำลังโหลดหน้านี้…</td></tr>
+                      )}
+                      {เหมือนZORT && สินค้าหน้า.err && (
+                        <EmptyState cols={5} icon="⚠️" title="โหลดหน้านี้ไม่สำเร็จ — ไม่ได้แปลว่าไม่มีสินค้า" detail={สินค้าหน้า.err} />
+                      )}
+                      {((เหมือนZORT && สินค้าหน้า.offset > 0 ? สินค้าหน้า.rows : report.topProducts) ?? [])
                         .filter((p) => {
                           const t = tableQ.trim().toLowerCase()
                           return !t || String(p.sku ?? '').toLowerCase().includes(t)
@@ -1351,6 +1378,28 @@ export default function SalesReportPage() {
                     </tbody>
                   </table>
                 </TableWrap>
+                )}
+                {/* 📄 แถวใต้ตารางแบบ ZORT: เลขหน้า (ซ้าย) + Download Excel (ขวา) — เฉพาะมุมสินค้า */}
+                {เหมือนZORT && tableBy === 'sku' && (report.topProducts?.length ?? 0) > 0 && (
+                  <div className="flex flex-wrap items-center justify-between gap-3 px-4 md:px-5 py-4">
+                    <PageNav offset={สินค้าหน้า.offset} perPage={10}
+                      rowsOnPage={(สินค้าหน้า.offset > 0 ? สินค้าหน้า.rows : report.topProducts)?.length ?? 0}
+                      total={report.topTotal ?? null}
+                      disabled={สินค้าหน้า.offset > 0 && สินค้าหน้า.rows === null}
+                      onGo={(off) => { void ไปหน้าสินค้า(off) }} />
+                    <button
+                      onClick={async () => {
+                        setExportNote('กำลังขอข้อมูลครบทุกรหัส…')
+                        setExportNote(await downloadByProduct(report))
+                      }}
+                      className={ZORT_EXPORT_BTN}
+                    >
+                      <ไอคอนไฟล์ />Download Excel
+                    </button>
+                  </div>
+                )}
+                {เหมือนZORT && tableBy === 'sku' && report.topSort && report.topSort !== 'amount' && (
+                  <p className="px-4 md:px-5 pb-3 text-[11.5px] text-amber-800">⚠️ ท่อรอบนี้เรียงตาม{report.topSort === 'qty' ? 'จำนวน' : report.topSort} ไม่ใช่ยอดขายแบบ ZORT — ลำดับแถวจึงต่างจาก ZORT</p>
                 )}
               </Card>
               {/* 📤 แถว Export ใต้การ์ดตาราง — ตำแหน่ง/ลำดับ/ถ้อยคำตาม ZORT (รายวัน · รายเดือน · ตามสินค้า · ชิดซ้าย ห่างการ์ด 32 · ห่างกัน 9)
