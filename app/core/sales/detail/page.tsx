@@ -122,10 +122,11 @@ function Card({ title, icon, children, className = '' }: {
 /** แถวป้ายชื่อฟิลด์ซ้าย–ค่าขวา แบบการ์ด "ข้อมูล"/"ลูกค้า" ของ ZORT */
 function Field({ label, value, muted }: { label: string; value: React.ReactNode; muted?: boolean }) {
   return (
-    <div className="flex gap-4 py-1.5">
+    /* 📏 โหมดเหมือน ZORT: ป้าย 1/3 ค่า 2/3 ช่องในข้างละ 15 (DOM การ์ดข้อมูลของ ZORT 20 ต.ค. 2569 · ผังเดียวกับใบโอน) */
+    <div className={เหมือนZORT ? 'grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] pr-[15px]' : 'flex gap-4 py-1.5'}>
       {/* 📏 ZORT ป้าย Boon 16 #868e96 · ค่า Boon 16 #3e3e3e */}
-      <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{label}</span>
-      <span className={`text-[16px] ${muted ? 'text-gray-400 italic' : 'text-[#3e3e3e]'} break-words min-w-0`}>
+      <span className={เหมือนZORT ? "font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]" : 'text-[16px] text-[#868e96] w-[150px] shrink-0'}>{label}</span>
+      <span className={`text-[16px] ${เหมือนZORT ? "font-['Boon',sans-serif] leading-[23px] px-[15px]" : ''} ${muted ? 'text-gray-400 italic' : 'text-[#3e3e3e]'} break-words min-w-0`}>
         {value}
       </span>
     </div>
@@ -308,7 +309,7 @@ function DetailInner() {
           {/* ZORT มีลิงก์ "แนบไฟล์" ใต้ชื่อจอ (อ่าน HTML 16 ต.ค. 2569 · openUpload) — แนบไฟล์ = เขียนกลับ ZORT ⇒ สีเทาพร้อมเหตุ */}
           {order && (
             <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ (จอนี้อ่านอย่างเดียว) · สลิปที่ลูกค้าส่งมาดูได้ในกล่องสลิปข้างล่าง"
-              className="inline-block mt-1 ml-2 text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
+              className={เหมือนZORT ? "inline-block mt-1 ml-2 font-['Kanit',sans-serif] text-[12px] text-[#868e96] cursor-not-allowed" : 'inline-block mt-1 ml-2 text-[12.5px] text-gray-300 cursor-not-allowed'}>📎 แนบไฟล์</span>
           )}
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -376,7 +377,7 @@ function DetailInner() {
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
             className={DETAIL_BTN_OFF}>Accounting ▾</span>
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
-            className={`ml-auto ${DETAIL_BTN_OFF}`}>ดูกิจกรรมของรายการ</span>
+            className={เหมือนZORT ? DETAIL_BTN_OFF : `ml-auto ${DETAIL_BTN_OFF}`} /* ZORT: ติดกับปุ่มอื่น ไม่ชิดขวา (ภาพ 20 ต.ค. 2569) */>ดูกิจกรรมของรายการ</span>
         </div>
       )}
 
@@ -429,18 +430,18 @@ function DetailInner() {
               📐 โหมดเหมือน ZORT (วัด 19 ต.ค. 2569): ZORT เป็น **การ์ดเดียว** กว้างเต็ม ข้อมูลซ้าย ลูกค้าขวา ⇒ พื้นขาวที่กล่องนอก · ไม่มีช่องคั่น */}
           <div className={`grid grid-cols-1 md:grid-cols-2 ${เหมือนZORT ? 'gap-0 bg-white rounded-[6px] py-2' : 'gap-4'}`}>
             <Card title="ข้อมูล" icon="📄">
-              <div className="px-4 py-3">
+              <div className={เหมือนZORT ? 'px-5 py-3' : 'px-4 py-3'}>
                 <Field label="รายการ" value={<span className="text-blue-600 font-medium">{order.number}</span>} />
                 {/* 📐 คำของ ZORT `/Sell/Details` (อ่าน 16 ต.ค. 2569): ประเภทรายการ = **ขายสินค้าออก** (เดิมเราเขียน "รายการขาย") */}
                 <Field label="ประเภทรายการ" value="ขายสินค้าออก" />
                 {/* 🗓️ เดิมโชว์ค่าดิบปี ค.ศ. — ทั้งร้านอ่าน พ.ศ. · thaiDate จะแปลงโซนเวลาให้เฉพาะค่าที่บอกโซนมา
                     (ค่าที่เป็นวันที่เปล่า ๆ อ่านตรง ๆ ไม่คิดโซน ไม่งั้นวันเลื่อน) · เก็บค่าดิบใน tooltip */}
                 <Field label="วันที่" value={order.order_date
-                  ? <span title={`ค่าที่ท่อส่งมา: ${order.order_date}`}>{thaiDate(order.order_date)}</span>
+                  ? <span title={`ค่าที่ท่อส่งมา: ${order.order_date}`}>{thaiDate(order.order_date, เหมือนZORT ? 'เต็ม' : 'ย่อ')}</span>
                   : '—'} />
                 <Field label="ช่องทางการขาย" value={order.channel || '—'} />
                 {/* ZORT มีบรรทัด ผู้สร้างรายการ ต่อจากช่องทาง — ไม่มีชื่อ ZORT ขึ้น `-` เราขึ้นแบบเดียวกัน */}
-                {'create_user' in order && (
+                {'create_user' in order && !เหมือนZORT && (
                   <Field label="ผู้สร้างรายการ" value={order.create_user || '-'} />
                 )}
                 {/* 🔵 ZORT ไม่มีช่องนี้ — เราเพิ่มเอง เพราะร้านมี ZORT สองบัญชี ต้องรู้ว่าใบนี้มาจากร้านไหน
@@ -450,7 +451,11 @@ function DetailInner() {
               </div>
             </Card>
             <Card title="ลูกค้า" icon="👤">
-              <div className="px-4 py-3">
+              <div className={เหมือนZORT ? 'px-5 py-3' : 'px-4 py-3'}>
+                {/* 📐 โหมดเหมือน ZORT: ผู้สร้างรายการ อยู่บรรทัดแรกของการ์ดลูกค้า (ภาพ /Sell/Details 20 ต.ค. 2569) */}
+                {'create_user' in order && เหมือนZORT && (
+                  <Field label="ผู้สร้างรายการ" value={order.create_user || '-'} />
+                )}
                 <Field label="ชื่อลูกค้า" value={order.customer || '—'} />
                 <Field label="เบอร์โทรศัพท์" value="คลังเงาไม่ได้เก็บไว้" muted />
                 <Field label="ที่อยู่ลูกค้า" value="คลังเงาไม่ได้เก็บไว้" muted />
