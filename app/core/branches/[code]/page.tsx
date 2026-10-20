@@ -20,6 +20,7 @@
 // ✅ **ส่วนที่มีของจริง**: ยอดขายของคลังนี้ — `list=orderfacets&warehouses=1` ส่ง `byWarehouse`
 //    (ใบ·ยอด รายคลัง) ⇒ ตารางที่ ② กับ ④ ของ ZORT แยกรายสินค้า ของเราได้แค่ยอดรวมของคลัง
 //    ⇒ เขียนกำกับว่าได้ถึงระดับไหน **ห้ามปล่อยให้คนอ่านว่าเป็นรายสินค้า**
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -149,7 +150,7 @@ export default function BranchDetailPage() {
         {/* 🧰 ปุ่มแบบ ZORT: โอนสินค้าเข้า · โอนสินค้าออก · มูลค่าสินค้าคงเหลือ · แก้ไข · ลบ (ปุ่ม "โหลดใหม่" ของเราเอาออก — ZORT ไม่มี) */}
         {(['โอนสินค้าเข้า', 'โอนสินค้าออก'] as const).map((t) => (
           <span key={t} title="ยังทำไม่ได้ — สร้างใบโอนต้องเขียนกลับ ZORT (จอรายการโอนของเราอ่านอย่างเดียว)"
-            className={เหมือนZORT ? `${DETAIL_BTN} !text-gray-400 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>{t}</span>
+            className={DETAIL_BTN_OFF}>{t}</span>
         ))}
         <Link href="/core/reports" className={DETAIL_BTN}>มูลค่าสินค้าคงเหลือ</Link>
         {/* ZORT วาง แก้ไข · ลบ ชิดขวาเป็นตัวหนังสือเทา (ไม่ใช่ปุ่มกรอบ) */}

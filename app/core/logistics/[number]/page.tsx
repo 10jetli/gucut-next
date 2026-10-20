@@ -14,6 +14,7 @@
  * ⚠️ `trackingNo` เป็นสตริงว่างได้ ⇒ **"ยังไม่มีเลขพัสดุ" ไม่ใช่ช่องว่าง**
  *    (ของจริง: ใบ Pending ของ Flash Express ยังไม่มีเลข — ว่างเปล่าอ่านเหมือนจอพัง)
  */
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
@@ -22,7 +23,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import Card from '@/components/ui/Card'
 import PipeGapFrame from '@/components/zort/PipeGapFrame'
-import { PageHead, thaiDate, RowMenu, Pill, toneOfStatus, DETAIL_BTN } from '@/components/zort'
+import { PageHead, thaiDate, RowMenu, Pill, toneOfStatus } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
@@ -45,9 +46,7 @@ function ช่อง({ ป้าย, ค่า }: { ป้าย: string; ค�
 }
 
 /** ปุ่มที่ยังทำไม่ได้ · โหมดเหมือน ZORT ใช้ขนาดปุ่มแถบหัวจอของ ZORT (สูง 39) แต่ตัวอักษรเทา */
-const ปุ่มเทา = เหมือนZORT
-  ? `${DETAIL_BTN} font-['Kanit',sans-serif] !text-gray-400 cursor-not-allowed`
-  : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'
+const ปุ่มเทา = DETAIL_BTN_OFF
 
 const ยังไม่มี = (ข้อความ: string) => <span className="text-[12.5px] text-gray-400">{ข้อความ}</span>
 

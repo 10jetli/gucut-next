@@ -3,6 +3,7 @@
 // เส้น: ?transfer=<id ZORT ไม่ใช่เลขที่ใบ> → {live, number, status, date, from, to, tracking,
 //   lines:[{sku,name,qty}]|null, fields} — โครงจากซอร์สท่อจริง getTransferDetail
 // ⚠️ สามสถานะบรรทัดสินค้า: null = ZORT ไม่ส่งช่องบรรทัดมา · [] = ใบนี้ไม่มีของ — คนละคำ
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
@@ -11,7 +12,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE, DETAIL_BTN } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Line { sku?: string; name?: string; qty?: number }
@@ -102,9 +103,9 @@ function Inner() {
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           {/* 📏 โหมดเหมือน ZORT: ปุ่มขนาดเดียวกับ คำสั่ง (DOM 20 ต.ค. 2569: สูง 39 Kanit 14 ช่องใน 8/12 ขอบ 0.8 #adb5bd) แต่ตัวจาง = กดไม่ได้ */}
           <span title="ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบโอนสินค้า"
-            className={เหมือนZORT ? `${DETAIL_BTN} !text-[#adb5bd] cursor-not-allowed hover:!bg-white` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>🖨 พิมพ์เอกสาร</span>
+            className={DETAIL_BTN_OFF}>🖨 พิมพ์เอกสาร</span>
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
-            className={เหมือนZORT ? `${DETAIL_BTN} !text-[#adb5bd] cursor-not-allowed hover:!bg-white` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>ดูกิจกรรมของรายการ</span>
+            className={DETAIL_BTN_OFF}>ดูกิจกรรมของรายการ</span>
           {!เหมือนZORT && <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
             className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>}
         </div>

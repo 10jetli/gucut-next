@@ -5,6 +5,7 @@
 // ⚠️ ท่อจงใจ**ไม่เลือกช่องเงินให้** (ส่งทุกช่องที่มีค่า) — จอก็แสดงตามนั้น ไม่ตีความแทน
 //   (บทเรียนใบราคา ฿0: การตีความให้เรียบร้อยเคยปิดบังโครงสร้างจริงจนไล่ปัญหาไม่ได้)
 // ⚠️ ห้าม log/ส่งต่อเนื้อหาใบ — มีชื่อ/เบอร์ลูกค้าจริง
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -104,7 +105,7 @@ function Inner() {
             ['พิมพ์เอกสาร + จัดเก็บ', 'ยังทำไม่ได้ — จัดเก็บไฟล์ไว้ในระบบไฟล์ของ ZORT = เขียนกลับ'],
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
+            className={DETAIL_BTN_OFF}>ดูกิจกรรมของรายการ</span>
           <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
             className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
         </div>

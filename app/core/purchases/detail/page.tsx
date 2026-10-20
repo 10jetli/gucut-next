@@ -13,6 +13,7 @@
 //       ถ้าจอเลือกโชว์ค่าเดียว คนอ่านจะไม่มีวันรู้ว่ามีส่วนต่าง แล้วไล่บัญชีไม่ได้
 //       (คลาสเดียวกับใบเสนอราคาที่ท่อจงใจส่งช่องเงินทุกช่อง)
 // ⚠️ อ่านจาก **กระจก** ไม่ใช่ ZORT สด — ต้องเขียนบอกผู้ใช้ ไม่ปล่อยให้เข้าใจว่าสด
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -358,11 +359,11 @@ function Inner() {
             ['พิมพ์เอกสาร + จัดเก็บ', 'ยังทำไม่ได้ — จัดเก็บไฟล์ไว้ในระบบไฟล์ของ ZORT = เขียนกลับ'],
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">Accounting ▾</span>
+            className={DETAIL_BTN_OFF}>Accounting ▾</span>
           <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
             className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
-            className="ml-auto text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
+            className={`ml-auto ${DETAIL_BTN_OFF}`}>ดูกิจกรรมของรายการ</span>
         </div>
       )}
 

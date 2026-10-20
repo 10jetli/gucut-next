@@ -13,3 +13,12 @@ export const HEAD_BTN = เหมือนZORT
 export const HEAD_BTN_GHOST = เหมือนZORT
   ? "font-['Kanit','Boon',sans-serif] text-[16px] leading-6 font-normal text-[#868e96] bg-[#f1f3f5] rounded-full border border-[#adb5bd] px-[30px] py-[8px] hover:bg-[#e9ecef]"
   : "font-['Kanit','Boon',sans-serif] text-[16px] leading-6 font-normal text-[#868e96] bg-[#f1f3f5] rounded-full px-4 py-[9px] hover:bg-[#e9ecef]"
+
+/* 🚫 ปุ่มแถบหัวจอรายละเอียดที่ **ยังทำไม่ได้** (พิมพ์เอกสาร · ดูกิจกรรมของรายการ ฯลฯ) — เดิมคัดลอกคลาสไว้ 12 จุดใน 7 จอ
+ *    และแต่ละจอแต่งโหมด ZORT ไม่เหมือนกัน (ตัวเทา gray-400 บ้าง #adb5bd บ้าง บางจอไม่แต่งเลย = ปุ่มเล็กกว่า ZORT)
+ * 📏 โหมดเหมือน ZORT: ขนาดเดียวกับปุ่มที่กดได้ของ ZORT (DOM /Warehouse/TransferDetails 20 ต.ค. 2569: สูง 39 · Kanit 14 · ช่องใน 8/12 · ขอบ #adb5bd)
+ *    ตัวจาง #adb5bd = กดไม่ได้ · เหตุอยู่ที่ title ของแต่ละปุ่ม (จอที่เรียกใช้เขียนเอง)
+ * ⚠️ ต้องเป็นสตริงเต็มที่นี่ ไม่ดึง DETAIL_BTN จาก ./index — index เป็นไฟล์ 'use client' */
+export const DETAIL_BTN_OFF = เหมือนZORT
+  ? "inline-block font-['Kanit',sans-serif] text-[14px] leading-[21px] text-[#adb5bd] bg-white border border-[#adb5bd] rounded px-3 py-2 cursor-not-allowed"
+  : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'

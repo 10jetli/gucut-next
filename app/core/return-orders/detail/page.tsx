@@ -6,6 +6,7 @@
 //    เพราะยังไม่เคยเห็นของจริงว่าช่องไหนคือยอดใบ ⇒ จอก็ต้องไม่เดาเหมือนกัน
 //    เดาผิด = ยอดคืนผิดทั้งร้าน · เห็นของจริงเมื่อไหร่ค่อยตั้งชื่อพร้อมกันสองฝั่ง
 // ⚠️ ห้าม log/ส่งต่อเนื้อหาใบ — มีชื่อลูกค้าจริง
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -95,7 +96,7 @@ function Inner() {
             { label: 'พิมพ์เอกสาร', disabled: 'ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบรับคืน' },
           ]} />
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
-            className={เหมือนZORT ? `${DETAIL_BTN} !text-gray-400 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>Accounting</span>
+            className={DETAIL_BTN_OFF}>Accounting</span>
           {/* ZORT มีปุ่มนี้ต่อท้ายแถบ (อ่าน DOM 19 ต.ค. 2569) — เหตุเดียวกับจอใบโอน/ใบเสนอราคา */}
           {เหมือนZORT && <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
             className={`${DETAIL_BTN} !text-gray-400 cursor-not-allowed`}>ดูกิจกรรมของรายการ</span>}
