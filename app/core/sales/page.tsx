@@ -311,6 +311,12 @@ function วันส่งแบบZORT(day: string): string {
   return day === พรุ่งนี้ ? 'พรุ่งนี้' : relDay(day)
 }
 
+/** สีวันส่งแบบ ZORT — ยังไม่ถึง/ถึงวันนี้ (ยังต้องส่ง) แดง · เลยมาแล้วเขียว · คิดเป็นวันไทย */
+function สีวันส่งZORT(day: string): string {
+  const วันนี้ = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
+  return day >= วันนี้ ? 'text-[#d33535]' : 'text-[#1f9070]'
+}
+
 export default function CoreSalesPage() {
   const router = useRouter()
   const [days, setDays] = useState(DEFAULT_DAYS)
@@ -1510,9 +1516,12 @@ export default function CoreSalesPage() {
                       {r.ship_channel || <span className="text-gray-300">—</span>}
                     </td>
                     {/* 📐 โหมดเหมือน ZORT (ภาพ /Sell/list 20 ต.ค. 2569): วันส่งสินค้าเขียน วันนี้ / พรุ่งนี้ / เมื่อวานนี้ · วันที่เต็มอยู่ใน title
-                        (ZORT ระบายสีแดงด้วย แต่ยังไม่รู้กติกาสี ⇒ ไม่เดาสี ใช้แค่คำ) */}
+                        🎨 สีอ่านจาก DOM ZORT 20 ต.ค. 2569 (60 แถว): วันนี้ขึ้นไป = แดง #d33535 · ก่อนวันนี้ = เขียว #1f9070
+                        ไม่ขึ้นกับสถานะใบ (ยกเลิกพรุ่งนี้ก็แดง · สำเร็จวันนี้ก็แดง) */}
                     <td className={TD_DATE} title={เหมือนZORT && r.ship_date ? thaiDate(r.ship_date) : undefined}>
-                      {r.ship_date ? (เหมือนZORT ? วันส่งแบบZORT(String(r.ship_date).slice(0, 10)) : thaiDate(r.ship_date)) : <span className="text-gray-300">—</span>}
+                      {r.ship_date ? (เหมือนZORT
+                        ? <span className={สีวันส่งZORT(String(r.ship_date).slice(0, 10))}>{วันส่งแบบZORT(String(r.ship_date).slice(0, 10))}</span>
+                        : thaiDate(r.ship_date)) : <span className="text-gray-300">—</span>}
                       {(r.is_cod === 1 || r.is_cod === true) && (
                         <span className={`block w-fit mt-0.5 ${COD_BADGE}`}>COD</span>
                       )}
