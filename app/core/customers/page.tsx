@@ -34,7 +34,8 @@
 //    ③ เดินลึกเกินแถวที่ 500 โดยไม่ค้นหา เซิร์ฟเวอร์จะตอบ needQuery — ต้องอธิบายให้คนใช้เข้าใจ
 //       ไม่ใช่โชว์ตารางว่างเฉย ๆ (ตาข่ายกันไล่ดึงทั้งฐานทีละหน้า)
 import { HEAD_BTN } from '@/components/zort/headBtn'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import SortHead, { SortNotApplied, type สถานะเรียง } from '@/components/zort/SortHead'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
@@ -117,6 +118,10 @@ export default function CoreContactsPage() {
      ⇒ ตอนนั้น state ยังไม่อัปเดต ⇒ closure เดิมส่งคำขอโดย **ไม่มีตัวกรองติดไปเลย**
      ⇒ จอดูเหมือนกรองแล้วแต่ผลไม่เปลี่ยน = อาการเดียวกับ "ช่องหลอก" ที่ตั้งใจเลี่ยงมาตลอด
      (จอขาย/คลังสินค้าใช้รูป `opt` แบบนี้อยู่แล้ว — ที่นี่พลาดเพราะลอกไม่ครบ) */
+  /* ↕️ หัวคอลัมน์กดเรียงแบบ ZORT — ท่อรับ sort/dir ตั้งแต่ 20 ต.ค. 2569 (id · name · type · phone · email)
+     ⚠️ "รหัส" ของ ZORT = รหัสผู้ติดต่อ (code) แต่ท่อเรียงได้แค่ id ภายใน ⇒ หัว รหัส ยังไม่ให้กด (ขอช่อง code ไปแล้ว) */
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
+  const เรียงRef = useRef<สถานะเรียง>(null)
   const load = useCallback(async (
     off = 0,
     term = q,
@@ -129,6 +134,7 @@ export default function CoreContactsPage() {
       if (term.trim()) qs.set('q', term.trim())
       if (opt?.withPhone ?? withPhone) qs.set('withphone', '1')
       if (opt?.withEmail ?? withEmail) qs.set('withemail', '1')
+      if (เรียงRef.current) { qs.set('sort', เรียงRef.current.sort); qs.set('dir', เรียงRef.current.dir) }
       const res = await fetch(`/api/web/core?${qs}`)
       const j = await res.json()
       if (!res.ok || j?.error) throw new Error(j?.error ?? `HTTP ${res.status}`)
@@ -144,6 +150,11 @@ export default function CoreContactsPage() {
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = data?.rows ?? []
+  /** ท่อรุ่นที่เรียงได้สะท้อน applied.sortDefaulted — มีคีย์ = รองรับ · เชื่อว่าเรียงจริงเฉพาะ false */
+  const ที่ใช้เรียง = (data as { applied?: { sortDefaulted?: boolean } } | null)?.applied
+  const รองรับเรียง = !!ที่ใช้เรียง && 'sortDefaulted' in ที่ใช้เรียง
+  const เรียงไม่ติด = !!เรียง && รองรับเรียง && ที่ใช้เรียง?.sortDefaulted !== false
+  const เปลี่ยนเรียง = (n: { sort: string; dir: 'asc' | 'desc' }) => { เรียงRef.current = n; setเรียง(n); load(0) }
   // ⚠️ แท็บ ลูกค้า/คู่ค้า ของ ZORT กรองจากชนิดผู้ติดต่อ — ข้อมูลที่เรามี `type` เป็น
   //    "Undefined" ทุกแถวเท่าที่สุ่มดู 600 ราย ⇒ **กดแล้วจะได้ศูนย์ทุกครั้ง**
   //    ปุ่มที่กดแล้วได้ศูนย์เสมอคือปุ่มหลอก ⇒ โชว์ไว้ให้ผังตรง แต่กดไม่ได้ + บอกเหตุผล
@@ -478,6 +489,7 @@ export default function CoreContactsPage() {
             </div>
           )}
 
+          <SortNotApplied show={เรียงไม่ติด} />
           {!data.needQuery && (
             <TableWrap>
               <table className="w-full min-w-[860px]">
@@ -487,7 +499,7 @@ export default function CoreContactsPage() {
                   <tr>
                     <th className={TH_NO} style={{ width: 44 }}>#</th>
                     <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รหัส</span></th>
-                    <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ชื่อ</span></th>
+                    <th className={TH}><SortHead label="ชื่อ" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน" /></th>
                     <th className={TH}>เลขประจำตัวผู้เสียภาษี</th>
                     <th className={TH}>เบอร์โทรศัพท์</th>
                     <th className={TH}>อีเมล</th>

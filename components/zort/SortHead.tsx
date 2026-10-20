@@ -44,3 +44,13 @@ export default function SortHead({ label, field, current, supported, onSort, fal
     </button>
   )
 }
+
+/** กล่องเตือน: ขอเรียงแล้วแต่ท่อตอบว่าใช้ลำดับตั้งต้น — ห้ามปล่อยให้คนเชื่อว่าแถวเรียงตามที่กดแล้ว */
+export function SortNotApplied({ show }: { show: boolean }) {
+  if (!show) return null
+  return (
+    <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
+      ⚠️ ขอให้เรียงตามหัวคอลัมน์แล้ว แต่ท่อตอบว่าใช้ลำดับตั้งต้น — <b>ลำดับแถวข้างล่างยังไม่ใช่ที่กด</b>
+    </p>
+  )
+}

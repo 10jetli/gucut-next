@@ -17,7 +17,8 @@
 //     ตราบใดที่คลังเงายังไม่รู้จักส่วนประกอบ การตัดสต็อกจะไม่ตรงความจริงทุกครั้งที่ขายชุด
 //     (แม้แต่ ZORT เองก็มีชุดคงเหลือติดลบ แปลว่ามันก็ตามไม่ทันเหมือนกัน)
 import { HEAD_BTN } from '@/components/zort/headBtn'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import SortHead, { SortNotApplied, type สถานะเรียง } from '@/components/zort/SortHead'
 import Link from 'next/link'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import { recipeFreshness, thaiMoment, stockSyncFreshness, agoText, ป้ายรอบซิงก์ } from '@/lib/recipe-fresh'
@@ -133,9 +134,8 @@ const PAGE = 50
    ตัวเลขคงเหลือ/พร้อมขาย Lato 600 มีสี: ≤0 แดง rgb(242,87,87) · 1–4 เหลือง rgb(239,177,93) · ≥5 เขียว rgb(19,175,130)
    (เกณฑ์ 5 มาจากของที่เห็นบนจอเขา: 4 = เหลือง · 5 = เขียว · ไม่ใช่เลขที่เราตั้งเอง) */
 const หัวC = เหมือนZORT ? TH.replace('text-left', 'text-center') : TH
-/* ⚠️ ZORT ทำหัวสองช่องนี้เป็นลิงก์น้ำเงิน (กดเรียงได้) แต่ท่อของเรายังไม่รับ sort
-   ⇒ ไม่ทำน้ำเงินให้ดูเหมือนกดได้ (ปุ่มหลอก) · ถามท่านประธานแล้ว 19 ต.ค. 2569 — ระหว่างรอคงสีเข้มเหมือนจออื่น */
-const หัวลิงก์ = ''
+/* ✅ ZORT ทำหัว รหัส/สินค้าเป็นชุด เป็นลิงก์น้ำเงินกดเรียงได้ — เดิมท่อไม่รับ sort จึงคงสีเข้ม (กันปุ่มหลอก · ถามท่านประธาน 19 ต.ค. 2569)
+   20 ต.ค. 2569 ท่อรับ sort/dir แล้ว ⇒ ใช้ SortHead ซึ่งเป็นลิงก์ **เฉพาะเมื่อท่อประกาศ applied.sortDefaulted** (ท่อรุ่นเก่ายังเป็นตัวหนังสือเข้ม) */
 const สีจำนวนZORT = (n: number) => (n <= 0 ? '#f25757' : n < 5 ? '#efb15d' : '#13af82')
 
 function Qty({ n, unit, maybeNegative }: { n?: number; unit?: string; maybeNegative?: boolean }) {
@@ -189,6 +189,9 @@ export default function CoreBundlesPage() {
     }
   }, [items])
 
+  /* ↕️ หัวคอลัมน์กดเรียงแบบ ZORT (รหัส · สินค้าเป็นชุด) — ท่อรับ sort/dir ตั้งแต่ 20 ต.ค. 2569 (sku · name · …) · ref เพราะ load ถูกเรียกจากเลขหน้า/แท็บ */
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
+  const เรียงRef = useRef<สถานะเรียง>(null)
   const load = useCallback(async (off = 0, size = perPage, tabId = tab) => {
     setLoading(true)
     setError('')
@@ -198,6 +201,7 @@ export default function CoreBundlesPage() {
       if (q.trim()) qs.set('q', q.trim())
       /* แท็บ = ตัวกรองฝั่งเซิร์ฟเวอร์จริง (ท่อรับ only=active|inactive · ค่าอื่นตีกลับ ไม่ใช่เมินเงียบ) */
       if (tabId !== 'all') qs.set('only', tabId)
+      if (เรียงRef.current) { qs.set('sort', เรียงRef.current.sort); qs.set('dir', เรียงRef.current.dir) }
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
@@ -211,6 +215,11 @@ export default function CoreBundlesPage() {
   }, [q, perPage, tab])
 
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  /** ท่อรุ่นที่เรียงได้สะท้อน applied.sortDefaulted — มีคีย์ = รองรับ · เชื่อว่าเรียงจริงเฉพาะ false */
+  const ที่ใช้เรียง = (data as { applied?: { sortDefaulted?: boolean } } | null)?.applied
+  const รองรับเรียง = !!ที่ใช้เรียง && 'sortDefaulted' in ที่ใช้เรียง
+  const เรียงไม่ติด = !!เรียง && รองรับเรียง && ที่ใช้เรียง?.sortDefaulted !== false
+  const เปลี่ยนเรียง = (n: { sort: string; dir: 'asc' | 'desc' }) => { เรียงRef.current = n; setเรียง(n); load(0) }
 
   /* ความสดของการซิงก์สูตรชุด — ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว (มีเทสคุม)
      ⚠️ ส่ง checkedAt ก่อน changedAt **ห้ามสลับ** — สลับแล้วจอจะขึ้นว่าซิงก์หยุดทั้งที่ปกติ */
@@ -411,6 +420,7 @@ export default function CoreBundlesPage() {
               )}
             </span>
           </div>}
+          <SortNotApplied show={เรียงไม่ติด} />
           <TableWrap>
             <table className="w-full min-w-[940px]">
               {/* 🔃 ช่องที่ **จอ ZORT กดเรียงได้** (วัดจอจริง 16 ก.ย. 2569) — ของเรายังเรียงไม่ได้
@@ -418,8 +428,8 @@ export default function CoreBundlesPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH}><span className={หัวลิงก์} title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">รหัส</span></th>
-                  <th className={TH}><span className={หัวลิงก์} title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว">สินค้าเป็นชุด</span></th>
+                  <th className={TH}><SortHead label="รหัส" field="sku" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว" /></th>
+                  <th className={TH}><SortHead label="สินค้าเป็นชุด" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว" /></th>
                   <th className={THR}>ราคาสินค้ารวม</th>
                   <th className={THR}>ราคาขาย</th>
                   {/* 🕰 สองคอลัมน์นี้คือของที่แถบอายุข้างบนกำกับอยู่ — ใส่นาฬิกาให้ชี้ตรงกัน

@@ -15,7 +15,7 @@
 //    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useRef, useState } from 'react'
-import SortHead, { type สถานะเรียง } from '@/components/zort/SortHead'
+import SortHead, { SortNotApplied, type สถานะเรียง } from '@/components/zort/SortHead'
 import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
@@ -484,11 +484,7 @@ export default function CorePurchasesPage() {
 
           
 
-          {เรียงไม่ติด && (
-            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
-              ⚠️ ขอให้เรียงตามหัวคอลัมน์แล้ว แต่ท่อตอบว่าใช้ลำดับตั้งต้น — <b>ลำดับแถวข้างล่างยังไม่ใช่ที่กด</b>
-            </p>
-          )}
+          <SortNotApplied show={เรียงไม่ติด} />
           <TableWrap>
             <table className="w-full min-w-[900px]">
               {/* 🔃 หัวคอลัมน์ที่ **จอ ZORT กดเรียงได้** มี tooltip บอกว่าของเรายังเรียงไม่ได้
