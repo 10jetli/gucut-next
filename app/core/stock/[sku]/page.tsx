@@ -348,6 +348,23 @@ export default function ProductDetailPage() {
 
   /* 📐 โหมดเหมือน ZORT: การ์ด "ยอดขายเดือนนี้" ขึ้นเลขทันทีแบบ ZORT ⇒ ยิงคำขอรายเดือนครั้งเดียวตอนเปิดจอ (เดิมรอกดแสดงกราฟ) */
   useEffect(() => { if (เหมือนZORT) void loadChart() }, [loadChart])
+  /* 🔴 **ZORT นับร้านเดียว (z1) — กราฟของเรารวมสองร้าน** (วัด 00817 20 ต.ค. 2569: ZORT 1,551.58 · z1 1,470 · z2 1,274 · รวม 2,744)
+     ⇒ การ์ดที่ใช้ป้ายเดียวกับ ZORT ต้องเป็นเลขร้านเดียวกับ ZORT · เลขรวมสองร้านอยู่ใน title ของการ์ด (กฎแท็บข้อ 4: คนละแหล่งห้ามวางเฉย ๆ)
+     null = ยังไม่รู้/ท่อไม่ยืนยันร้าน ⇒ การ์ดขึ้นขีด ไม่ถอยไปใช้เลขรวม */
+  const [เดือนนี้z1, setเดือนนี้z1] = useState<number | null>(null)
+  useEffect(() => {
+    if (!เหมือนZORT) return
+    let ยกเลิก = false
+    const today = new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10)
+    const qs = new URLSearchParams({ list: 'topproducts', sku, by: 'month', from: `${today.slice(0, 8)}01`, to: today, store: 'z1' })
+    fetch(`/api/web/core?${qs}`).then((r) => r.json()).then((j) => {
+      if (ยกเลิก) return
+      if (j?.applied?.sku !== sku || j?.applied?.store !== 'z1') { setเดือนนี้z1(null); return }
+      const it = (Array.isArray(j.items) ? j.items : []).find((x: { month?: string }) => String(x.month) === today.slice(0, 7))
+      setเดือนนี้z1(it ? Number(it.amount) || 0 : 0)
+    }).catch(() => { if (!ยกเลิก) setเดือนนี้z1(null) })
+    return () => { ยกเลิก = true }
+  }, [sku])
 
   const img = imgOf(sku)
   const cardRows = Array.isArray(card?.rows) ? card!.rows! : []
@@ -447,7 +464,8 @@ export default function ProductDetailPage() {
                 <ZortKpiCards items={[
                   { ป้าย: 'สินค้าคงเหลือ' + หน่วย, วง: '#ebf6ff', สี: '#2f8dde', รูป: '▦', ค่า: fmtNum(Number(row.qty ?? 0)) },
                   { ป้าย: 'สินค้าพร้อมขาย' + หน่วย, วง: '#cefff1', สี: '#13af82', รูป: '✓', ค่า: row.available == null ? '-' : fmtNum(Number(row.available)), ว่าง: row.available == null },
-                  { ป้าย: 'ยอดขายเดือนนี้ (บาท)', วง: '#d0daff', สี: '#4165ed', รูป: '฿', ค่า: thisMonth == null ? '-' : fmtMoney(thisMonth), ว่าง: thisMonth == null },
+                  { ป้าย: 'ยอดขายเดือนนี้ (บาท)', วง: '#d0daff', สี: '#4165ed', รูป: '฿', ค่า: เดือนนี้z1 == null ? '-' : fmtMoney(เดือนนี้z1), ว่าง: เดือนนี้z1 == null,
+                    เหตุ: `ร้านออนไลน์ z1 (ร้านเดียวกับ ZORT)${thisMonth != null ? ` · รวมสองร้าน ${fmtMoney(thisMonth)} บาท` : ''} · ยอดบรรทัดสินค้า ตัดใบยกเลิก ยังรวมใบค้างจ่าย` },
                 ]} />
                 <ZortLookFold tone="gray" สรุป={<>ที่มาของเลขพร้อมขาย · ยอดขายเดือนนี้{thisMonth == null ? ' (กด "ดูกราฟยอดขาย" ด้านล่างแล้วเลขจะขึ้นเอง)' : ''}</>}>
                   <div className="mt-2 text-left"><StockSource row={row} ป้าย={ป้ายที่มา} /></div>
