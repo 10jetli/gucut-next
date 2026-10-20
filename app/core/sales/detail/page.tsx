@@ -11,6 +11,7 @@
 //    ทำได้โดยส่งลำดับใบ (i) กับตัวกรองเดิมมาทาง URL แล้วขอเพื่อนบ้านสามใบจากรายการเดียวกัน
 // ⚠️ **ช่องที่คลังเงาไม่ได้เก็บ ต้องเขียนว่า "ไม่ได้เก็บไว้" ห้ามเว้นว่างเฉย ๆ**
 //    เว้นว่าง = คนอ่านนึกว่าลูกค้าไม่ได้กรอก ซึ่งคนละเรื่องกับเราไม่ได้เก็บ (เจตนาเรื่องความเป็นส่วนตัว)
+import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { SALE_DETAIL_PAY_STATUS, SALE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import Link from 'next/link'
@@ -366,16 +367,16 @@ function DetailInner() {
             ] as const).map(([label, disabled]) => ({ label, disabled })),
           ]} />
           <span title="ยังทำไม่ได้ — ZORT เปิดหน้าจองขนส่ง (มีค่าใช้จ่ายจริง) · ของเราจองผ่าน L Shipping Point ของ ZORT"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">บริการส่งสินค้า</span>
+            className={DETAIL_BTN_OFF}>บริการส่งสินค้า</span>
           <span title="ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ) · จอนี้อ่านอย่างเดียว"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ส่ง SMS ให้ลูกค้า ▾</span>
+            className={DETAIL_BTN_OFF}>ส่ง SMS ให้ลูกค้า ▾</span>
           {order.channel && (
             <span className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5">{order.channel}</span>
           )}
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">Accounting ▾</span>
+            className={DETAIL_BTN_OFF}>Accounting ▾</span>
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
-            className="ml-auto text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
+            className={`ml-auto ${DETAIL_BTN_OFF}`}>ดูกิจกรรมของรายการ</span>
         </div>
       )}
 
