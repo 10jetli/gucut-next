@@ -123,7 +123,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
 }
 
 export default function LedgerScreen({
-  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, sumสั้นZORT, ผังท้ายZORT, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, กรอบแคบZORT, purpose, meanwhile,
+  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, sumสั้นZORT, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, กรอบแคบZORT, purpose, meanwhile,
   emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv, ผังแผงZORT, zortCols,
 }: {
   title: string
@@ -169,9 +169,6 @@ export default function LedgerScreen({
   /** โหมดเหมือน ZORT: คำนับแบบสั้นตามจอ ZORT (เช่น `0 items`) — ใช้แทน sumLabel บนหัวจอ **พร้อมวันที่ที่เห็น** · sumLabel เต็มย้ายเข้า ⓘ
    *  ⚠️ เป็นภาพ ณ วันนั้น ไม่ใช่ค่าสด ⇒ วันที่ต้องอยู่บนบรรทัดเสมอ ห้ามเขียนลอย ๆ */
   sumสั้นZORT?: string
-  /** โหมดเหมือน ZORT: แถบ จำนวนต่อหน้า ก่อน Export + ช่องว่างมีแค่ ไม่มีข้อมูล (กล่องพับย้ายใต้ปุ่ม) — **เปิดเป็นรายจอ**
-   *  🔒 จอกลุ่มการเงิน/เอกสารบัญชี (wallet · รายได้/รายจ่ายอื่น · โอนเงิน · เอกสารบัญชี) ไม่ส่งตัวนี้ ⇒ ผังเดิมเป๊ะ (คำสั่งห้ามแตะการเงิน) */
-  ผังท้ายZORT?: boolean
   /** วันที่ที่ "เลขใน sumLabel" ถูกเปิดดูที่ ZORT จริง — ไม่ส่งมา = ใช้วันตรวจรวมของจอตระกูลนี้
    *  🔴 เพิ่ม 16 ก.ย. 2569 เพราะเจอของจริง: จอเซลเพจยืนยันสดวันนี้ แต่ประโยคยังขึ้นวันที่รวม 3 ก.ย.
    *     ⇒ ประโยคเดียวมีสองวันที่ อ่านแล้วไม่รู้ว่าอันไหนคือวันที่ของเลขนั้น */
@@ -364,7 +361,6 @@ export default function LedgerScreen({
      ⇒ ถ้าเขียนรวมกัน จอจะขัดกับหลักฐานที่แสดงอยู่ข้างล่างในจอเดียวกัน */
   const cantRead = Boolean(impossible) && reg?.impossibleScope !== 'write'
   const กรอบแคบ = เหมือนZORT && !!กรอบแคบZORT
-  const ท้ายZ = เหมือนZORT && !!ผังท้ายZORT
   /* กล่องพับ "จอนี้ใช้ทำอะไร" + "หลักฐาน" ของแถวว่าง — ตัวเดียว วางได้สองที่ตามโหมด (ไม่เขียนซ้ำ)
      📐 โหมดเหมือน ZORT: ช่องว่างของ ZORT มีแค่รูป + ไม่มีข้อมูล (ภาพ /Product/Variantlist 21 ต.ค. 2569) ⇒ ย้ายมาใต้ปุ่ม Export · ยังเห็นบรรทัดพับ ไม่ลบ */
   const โน้ตว่าง = (
@@ -721,7 +717,7 @@ export default function LedgerScreen({
                             : impossible ? 'ยังไม่ได้ต่อท่อกับ ZORT (และสร้าง/แก้ผ่าน ZORT ไม่ได้ — ดูหลักฐานข้างล่าง)'
                               : 'ยังไม่ได้ต่อท่อกับ ZORT'}
                 </p>
-                {!ท้ายZ && โน้ตว่าง}
+                {!เหมือนZORT && โน้ตว่าง}
                 {/* ✅ ถ้ามีหลักฐานว่าว่างจริง ให้พูดให้ต่างจาก "ยังไม่ได้ดึง" อย่างชัดเจน
                     — และชี้ไปที่ของที่เก็บไว้ ไม่งั้นคนหาไม่เจอว่ามีคนตรวจให้แล้ว
                     🔴 **แต่ซ่อนตอนถาม ZORT ไม่สำเร็จ** — หัวกล่องเพิ่งบอกว่า "ยังไม่รู้ว่ามีกี่รายการ"
@@ -758,7 +754,7 @@ export default function LedgerScreen({
 
       {/* 📐 โหมดเหมือน ZORT: ZORT วางแถบ จำนวน N รายการ | จำนวนต่อหน้า ก่อน แล้ว Export to Excel ใต้แถบนั้น
           (ภาพ /Product/Variantlist · /Marketplace/List 20–21 ต.ค. 2569) ⇒ ห่อสองชิ้นแล้วสลับลำดับด้วย order — โหมดปกติเป็น div ธรรมดา ลำดับเดิม */}
-      <div className={ท้ายZ ? 'flex flex-col' : undefined}>
+      <div className={เหมือนZORT ? 'flex flex-col' : undefined}>
       {/* 📤 ผัง ZORT: "Export to Excel" ใต้ตาราง ชิดซ้าย — เพิ่ม 16 ต.ค. 2569 (ภาพ ZORT ที่เก็บไว้: Fin/Transferlist · walletlist · Variantlist มีปุ่มนี้)
           ขึ้นเฉพาะตอนมีแถวจริง (ไม่มีแถว = ไฟล์เปล่า แย่กว่าไม่มีปุ่ม) · ส่งออกจากแถวที่ดึงมาแล้ว
           🔴 total ส่งเลขทั้งชุดของ ZORT ⇒ ดึงได้ไม่ครบ ด่าน exportBlocked ไม่ให้ไฟล์ออก (ไม่ใช่ได้ไฟล์ครึ่งเดียวเงียบ ๆ) */}
@@ -791,7 +787,7 @@ export default function LedgerScreen({
           ⚠️ ล็อกไว้ทั้งคู่ เพราะยังไม่มีข้อมูลให้แบ่งหน้า · โชว์ตามผังแต่ไม่แกล้งใช้ได้
              และ **ห้ามเขียนจำนวนเป็นเลข** เพราะเรายังไม่ได้นับอะไรเลย ศูนย์ของเรา = "ยังไม่รู้" */}
       {/* กรอบแคบ (เซลเพจ): ZORT ไม่มีแถบนี้ — ข้อความ ไม่เปิดเส้น อยู่ในแถวตารางว่างครบแล้ว ⇒ ไม่วาดซ้ำ */}
-      {!กรอบแคบ && <div className={`flex flex-wrap items-center justify-end gap-3 mt-3 ${ท้ายZ ? 'order-first' : ''}`}>
+      {!กรอบแคบ && <div className={`flex flex-wrap items-center justify-end gap-3 mt-3 ${เหมือนZORT ? 'order-first' : ''}`}>
         <span className="text-[12.5px] text-gray-400">
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
           {/* 🔴 ต่อท่อแล้วต้องบอกจำนวนจริง — ปล่อยเป็น "ยังไม่ได้ดึงข้อมูล" ทั้งที่ดึงมาแล้ว
@@ -838,7 +834,7 @@ export default function LedgerScreen({
         </select>
       </div>}
       </div>
-      {ท้ายZ && !zLoading && (rows?.length ?? 0) === 0 && <div className="mt-2 text-center">{โน้ตว่าง}</div>}
+      {เหมือนZORT && !zLoading && (rows?.length ?? 0) === 0 && <div className="mt-2 text-center">{โน้ตว่าง}</div>}
 
       {/* 🔴 **ความต่างของชื่อคอลัมน์ต้องคำนวณ ห้ามพิมพ์** — ไม่งั้นวันที่ใครแก้ `cols`
           ประโยคข้างล่างจะค้างเป็นคำกล่าวอ้างเก่า (คลาส "เลขที่วัดได้ห้ามพิมพ์ค้างไว้")

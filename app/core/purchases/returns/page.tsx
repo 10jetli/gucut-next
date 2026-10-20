@@ -16,8 +16,6 @@ import { เหมือนZORT } from '@/lib/โหมดเหมือนzort
 export default function PurchaseReturnsPage() {
   return (
     <LedgerScreen
-      /* 📐 ผังท้ายตารางแบบ ZORT (จำนวนต่อหน้าก่อน Export · ช่องว่างมีแค่ ไม่มีข้อมูล) — จอนี้ไม่ใช่กลุ่มการเงิน */
-      ผังท้ายZORT
       title="คืนสินค้า (ให้ผู้ขาย)"
       cols={เหมือนZORT ? [
         /* 📐 โหมดเหมือน ZORT — ชื่อ/ลำดับตามหัวตาราง ZORT (REA 20 ต.ค. 2569) · ⚠️ ต้องตรงกับ ROW_MAPS.returnpurchaseorders */
