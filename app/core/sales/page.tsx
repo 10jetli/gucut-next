@@ -20,7 +20,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {TD_DATE, TH_NO, 
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE,} from '@/components/zort'
+  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE, TH_CHECK } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
@@ -1428,7 +1428,7 @@ export default function CoreSalesPage() {
                          (จอ ZORT เข้าไม่ได้ — ยังไม่มีโปรไฟล์ที่ล็อกอินบัญชีหลัก)
                          ⇒ เป็นของที่ต้องยืนยันด้วยตาอีกครั้งตอนเปิด ZORT ได้ ไม่ใช่ของที่ปิดจบแล้ว */}
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH} style={{ width: 34 }}>
+                  <th className={TH_CHECK} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
                       indeterminate={picked.length > 0 && picked.length < rows.length}

@@ -26,7 +26,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, TH_CHECK } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
@@ -494,7 +494,7 @@ export default function CorePurchasesPage() {
                 <tr>
                   {/* 📐 `#` ก่อนช่องติ๊ก — ตาม ZORT /Buy/list (หัวตาราง `#`,`` วัด 15 ต.ค. 2569) */}
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH} style={{ width: 34 }}>
+                  <th className={TH_CHECK} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
                       indeterminate={picked.length > 0 && picked.length < rows.length}
@@ -528,7 +528,8 @@ export default function CorePurchasesPage() {
                         checked={picked.includes(String(r.number))}
                         onChange={(v) => setPicked((old) => (v ? [...old, String(r.number)] : old.filter((x) => x !== String(r.number))))} />
                     </td>
-                    <td className={`${TD} whitespace-nowrap text-gray-500`}>{thaiDate(r.po_date)}</td>
+                    {/* 📐 โหมดเหมือน ZORT (DOM /Buy/List 21 ต.ค. 2569): วันที่สีเข้ม #3e3e3e · มูลค่าตัวเลข Lato */}
+                    <td className={`${TD} whitespace-nowrap ${เหมือนZORT ? 'text-[#3e3e3e]' : 'text-gray-500'}`}>{thaiDate(r.po_date)}</td>
                     {/* ⚠️ ไม่ทำสีฟ้า เพราะยังไม่มีหน้าปลายทางให้กด — สีฟ้าในตารางคือสัญญาว่ากดได้ */}
                     <td className={TD}>
                       {/* เลขที่ใบ → รายละเอียดรายใบ (แบบแผนข้อ 1 ของ ZORT: เลขเอกสารกดได้เสมอ)
@@ -538,7 +539,7 @@ export default function CorePurchasesPage() {
                         className={`${ROW_LINK} whitespace-nowrap`}>{r.number}</Link>
                     </td>
                     <td className={TD}><span className="text-gray-800">{r.vendor || '—'}</span></td>
-                    <td className={TDR}>{fmtMoney(r.amount)}</td>
+                    <td className={`${TDR} ${เหมือนZORT ? "font-['Lato','Boon',sans-serif]" : ''}`}>{fmtMoney(r.amount)}</td>
                     <td className={TDC}>
                       <Pill tone={statusTone(r.status)}>{statusTh(r.status)}</Pill>
                       {/* ZORT เขียนชื่อคลังตัวเล็กใต้ป้ายสถานะ */}
