@@ -3,6 +3,7 @@
 // เส้น: ?transfer=<id ZORT ไม่ใช่เลขที่ใบ> → {live, number, status, date, from, to, tracking,
 //   lines:[{sku,name,qty}]|null, fields} — โครงจากซอร์สท่อจริง getTransferDetail
 // ⚠️ สามสถานะบรรทัดสินค้า: null = ZORT ไม่ส่งช่องบรรทัดมา · [] = ใบนี้ไม่มีของ — คนละคำ
+import AttachLinkOff from '@/components/zort/AttachLinkOff'
 import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
 import { Suspense, useCallback, useEffect, useState } from 'react'
@@ -85,7 +86,7 @@ function Inner() {
         summary={เหมือนZORT
           ? <span className="inline-flex items-center gap-3">
             {/* 📏 ZORT วางลิงก์ แนบไฟล์ ใต้หัวจอ (DOM 20 ต.ค. 2569: Kanit 12 #868e96) · ของเรายังแนบไม่ได้ (เขียนกลับ ZORT) ⇒ สีเดียวกันแต่กดไม่ได้ เหตุใน title */}
-            <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ" className="font-['Kanit',sans-serif] text-[12px] text-[#868e96] cursor-not-allowed">📎 แนบไฟล์</span>
+            <AttachLinkOff />
             <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก">ⓘ</span>
           </span>
           : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}

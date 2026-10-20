@@ -13,6 +13,7 @@
 //       ถ้าจอเลือกโชว์ค่าเดียว คนอ่านจะไม่มีวันรู้ว่ามีส่วนต่าง แล้วไล่บัญชีไม่ได้
 //       (คลาสเดียวกับใบเสนอราคาที่ท่อจงใจส่งช่องเงินทุกช่อง)
 // ⚠️ อ่านจาก **กระจก** ไม่ใช่ ZORT สด — ต้องเขียนบอกผู้ใช้ ไม่ปล่อยให้เข้าใจว่าสด
+import AttachLinkOff from '@/components/zort/AttachLinkOff'
 import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -315,6 +316,8 @@ function Inner() {
         summary={เหมือนZORT ? (
           /* โหมดเหมือน ZORT: ZORT ไม่มีบรรทัดใต้หัวจอ ⇒ ที่มา/ร้าน/id เข้า ⓘ · ลิงก์ไม่บอกร้าน (ท่อเลือกให้) ยังขึ้นบนจอ */
           <>
+            {/* 📏 แนบไฟล์ใต้หัวจอแบบ ZORT (Kanit 12 #868e96) · ยังแนบไม่ได้ (เขียนกลับ ZORT) ⇒ กดไม่ได้ เหตุใน title */}
+            <AttachLinkOff />
             <span className="text-gray-400 cursor-help text-[14px]" title={[d?.source || 'อ่านจากคลังเงา', d?.store ? `ร้าน: ${storeLabel(d.store === 'z2' ? 'z2' : 'z1')}` : '', d?.id != null ? `id ${String(d.id)}` : ''].filter(Boolean).join(' · ')}>ⓘ</span>
             {d?.store && !store && <span className="text-amber-700 text-[12.5px]">{' 🏬 '}{storeLabel(d.store === 'z2' ? 'z2' : 'z1')} (ลิงก์ไม่ได้บอกร้าน — ท่อเลือกให้)</span>}
           </>
@@ -360,10 +363,11 @@ function Inner() {
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
             className={DETAIL_BTN_OFF}>Accounting ▾</span>
-          <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
-            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
+          {!เหมือนZORT && <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
+            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>}
+          {/* 📐 โหมดเหมือน ZORT: ภาพ /Buy/Details 20 ต.ค. 2569 ปุ่มนี้อยู่ติดกับ Accounting (ไม่ได้ชิดขวาอย่างที่จดไว้ 16 ต.ค.) */}
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
-            className={`ml-auto ${DETAIL_BTN_OFF}`}>ดูกิจกรรมของรายการ</span>
+            className={เหมือนZORT ? DETAIL_BTN_OFF : `ml-auto ${DETAIL_BTN_OFF}`}>ดูกิจกรรมของรายการ</span>
         </div>
       )}
 
@@ -419,7 +423,7 @@ function Inner() {
                 {/* 🔴 เดิมโชว์ค่าดิบ "2026-03-10" — ทั้งร้านอ่านปี พ.ศ. และจออื่นแปลงหมดแล้ว
                     จอเดียวที่ไม่แปลง = คนเทียบข้ามจอแล้วสะดุด และเสี่ยงอ่านปีผิดไป 543 ปี
                     (เจอกับของจริงตอนเปิดใบ PO-202603001 · 14 ก.ย. 2569) */}
-                <Field k="วันที่" v={d.poDate ? thaiDate(d.poDate) : d.poDate} />
+                <Field k="วันที่" v={d.poDate ? thaiDate(d.poDate, เหมือนZORT ? 'เต็ม' : 'ย่อ') : d.poDate} />
                 {/* 🔴 **เดิมโชว์ค่าดิบภาษาอังกฤษ** — ยิงของจริง 16 ก.ย. 2569 ได้ `status: "Voided"`
                     และ `paymentStatus: "Voided"` ⇒ จอนี้ขึ้นคำว่า **Voided** ให้คนอ่าน
                     นี่คือโรคเดียวกับที่ท่านประธานทักเรื่อง "Pending" บนจอขาย (ใบ t_mu23dljn)
