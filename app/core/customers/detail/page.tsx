@@ -27,6 +27,7 @@ import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { PageHead, TH_KANIT, THR_KANIT, DL_CARD } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
+import ExportButton from '@/components/zort/ExportButton'
 import { IconEdit, IconTrash } from '@/components/zort/ButtonIcons'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
@@ -436,7 +437,7 @@ function Inner() {
                    (คลาสเดียวกับบทเรียน "เลขจากลิสต์ที่ถูก cap ห้ามเอาไปใช้") */}
             <div className="mb-3 text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3 py-2 leading-relaxed">
               <b>ที่จอ ZORT มีแต่จอนี้ยังไม่มี</b> — ยอดขาย<b>รายหมวดหมู่</b> · ตัวกรองช่วงวันของกล่องยอดขาย
-              {' '}· <b>Download Excel</b> · ตารางของ ZORT มีคอลัมน์ <b>ประเภท</b> (รวมใบซื้อเข้า/ขายออกในตารางเดียว)
+              {' '}· Download Excel <b>ครบทุกใบ</b> (ของเราส่งออกได้เฉพาะใบที่ตารางแสดง) · ตารางของ ZORT มีคอลัมน์ <b>ประเภท</b> (รวมใบซื้อเข้า/ขายออกในตารางเดียว)
               {' '}ส่วนตารางนี้เป็นใบขายอย่างเดียว
               <br />
               ✅ <b>การ์ดยอดขายเดือนนี้/ปีนี้ทำได้แล้ว 18 ก.ย. 2569</b> — ท่อคิดจากใบทั้งกองด้วยคำสั่งของตัวเอง
@@ -552,6 +553,31 @@ function Inner() {
                     </>
                   )}
                 </p>
+                {/* 📤 Download Excel ใต้ตารางแบบ ZORT (REA อ่าน /Contact/ContactDetail 20 ต.ค. 2569: ปุ่มอยู่ใต้ตาราง ต่อจากบรรทัด "จำนวน N รายการ")
+                    🔴 ท่อตัดใบขาย/ใบซื้อมาแค่กลุ่มล่าสุด ⇒ ไฟล์มีเท่าที่ตารางแสดง (จำนวนในหัวไฟล์อ่านจากแถวจริง ไม่พิมพ์ค้าง)
+                       total = จำนวนทั้งหมดที่ท่อนับให้ ⇒ ตัวส่งออกเขียนในหัวไฟล์เองว่าไม่ครบ (ไม่ปล่อยให้คนนึกว่าครบ) */}
+                <div className="mt-3">
+                  <ExportButton
+                    label="Download Excel"
+                    spec={{
+                      filename: `รายการของผู้ติดต่อ-${d?.name ?? ''}`,
+                      title: `รายการของผู้ติดต่อ ${d?.name ?? ''}`,
+                      scope: `ใบที่ตารางในจอรายละเอียดผู้ติดต่อแสดง (ใบขายล่าสุด ${o?.recent?.length ?? 0} ใบ · ใบซื้อล่าสุด ${buys.length} ใบ)`,
+                      note: 'ใบขายกับใบซื้อเป็นสองกองที่ท่อตัดมาแยกกัน — ไม่ได้เรียงปนกันตามวัน · ดูใบขายครบทุกใบได้ที่จอรายการขาย',
+                      header: ['ประเภท', 'รายการ', 'วันที่', 'มูลค่า', 'สถานะ', 'การชำระเงิน'],
+                      fetchPage: async () => {
+                        const ขาย = (o?.recent ?? []).map((r) => ['ขายออก', r.number ?? null, r.order_date ?? null, typeof r.amount === 'number' ? r.amount : null,
+                          r.status ? zortWord(SALE_STATUS, r.status).text : null, r.pay_status ? zortWord(PAY_STATUS, r.pay_status).text : null])
+                        const ซื้อ = buys.map((r) => ['ซื้อเข้า', r.number ?? null, r.date ?? null, typeof r.amount === 'number' ? r.amount : null,
+                          r.status ? zortWord(PURCHASE_STATUS, r.status).text : null, r.payStatus ? zortWord(PAY_STATUS, r.payStatus).text : null])
+                        const ทั้งหมดขาย = typeof o?.count === 'number' ? o.count : null
+                        const ทั้งหมดซื้อ = d?.purchases === null ? null : (typeof d?.purchases?.count === 'number' ? d.purchases.count : buys.length)
+                        return { rows: [...ขาย, ...ซื้อ], total: ทั้งหมดขาย === null || ทั้งหมดซื้อ === null ? null : ทั้งหมดขาย + ทั้งหมดซื้อ, done: true }
+                      },
+                      toRow: (r) => r,
+                    }}
+                  />
+                </div>
               </div>
             )}
 
