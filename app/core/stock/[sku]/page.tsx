@@ -11,6 +11,8 @@
 //    เจ้าของร้านกดจากมือถือ 5 จุดแล้วรายงานว่า "กดเข้าสินค้าไม่ได้เลย"
 //    **สีฟ้าในตาราง = สัญญาว่ากดได้** — จอกำลังบอกว่ามีทั้งที่ไม่มี
 //    ⇒ กลับด้านกับกรณี ZZFAKE999 ที่ซ่อนแล้วบอกว่าซ่อน · อันนี้โชว์ว่ากดได้ทั้งที่กดไม่ได้
+import { SHARE_LINK_Z, DETAIL_BTN_OFF } from '@/components/zort/headBtn'
+import { IconEdit, IconTrash, IconPrint, IconShare, IconPlusCircle } from '@/components/zort/ButtonIcons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
@@ -370,9 +372,9 @@ export default function ProductDetailPage() {
               <>
                 {/* ZORT มี "Share Link" มุมขวาบน — ของเราคัดลอกลิงก์หน้านี้จริง ๆ
                     (ทำได้จริงเลยทำ · ต่างจากปุ่มอื่นที่ต้องรอท่อ) */}
-                {/* 📏 ปุ่ม Share Link ของ ZORT เป็นปุ่มกรอบ 14px สูง 39 (วัด 17 ต.ค. 2569) ⇒ DETAIL_BTN ไม่ใช่ปุ่มรองสีเทา */}
-                <button type="button" className={DETAIL_BTN} onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
-                  คัดลอกลิงก์หน้านี้
+                {/* 📏 วัดซ้ำ 20 ต.ค. 2569: Share Link ของ ZORT เป็นปุ่มแบบลิงก์ Kanit 12 #868e96 (ไม่ใช่ปุ่มกรอบ 39 อย่างที่จด 17 ต.ค.) ⇒ SHARE_LINK_Z ในโหมด ZORT */}
+                <button type="button" className={เหมือนZORT ? SHARE_LINK_Z : DETAIL_BTN} onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
+                  {เหมือนZORT && <IconShare />}คัดลอกลิงก์หน้านี้
                 </button>
                 {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Product/Details ไม่มี */}
               </>
@@ -385,13 +387,14 @@ export default function ProductDetailPage() {
                  ลบกับแก้อยู่หน้าเดียวกัน เพราะต้องถาม id ของ ZORT ก่อนเหมือนกัน */}
           {/* 📐 โหมดเหมือน ZORT: ระยะหัวจอ→แถบปุ่ม 27 (วัด DOM /Product/Details 19 ต.ค. 2569: หัวจอจบ 166 ปุ่มเริ่ม 193 · ของเราเดิม 178) · ⚠️ margin ยุบรวมกับ mb ของหัวจอ (16) ⇒ ต้องใส่ 27 เต็ม ไม่ใช่ส่วนต่าง */}
           <div className={`flex flex-wrap items-center gap-2 ${เหมือนZORT ? 'mt-[27px]' : '-mt-1'} mb-4`}>
+            {/* โหมดเหมือน ZORT: ไอคอนหน้าคำแบบ ZORT (ดินสอ · ถังขยะ · บวกในวง · เครื่องพิมพ์) */}
             <Link href={`/core/stock/${encodeURIComponent(sku)}/edit`}
-              className={DETAIL_BTN}>
-              แก้ไข
+              className={`${DETAIL_BTN} inline-flex items-center gap-1`}>
+              {เหมือนZORT && <IconEdit />}แก้ไข
             </Link>
             <Link href={`/core/stock/${encodeURIComponent(sku)}/edit#delete`}
-              className={DETAIL_BTN}>
-              ลบ
+              className={`${DETAIL_BTN} inline-flex items-center gap-1`}>
+              {เหมือนZORT && <IconTrash />}ลบ
             </Link>
             {/* คำสั่ง ▾ — ZORT /Product/Details มีแค่ ซื้อสินค้า · ขายสินค้า · โอนสินค้า (อ่านเมนูจาก HTML 16 ต.ค. 2569)
                 ⇒ หยิบสามข้อนี้จากเมนูชุดเดียวกับ ⋮ ในตาราง (ทางไปจริงอยู่ที่เดียว) · ตำแหน่งต่อจาก "ลบ" ตาม ZORT */}
@@ -407,13 +410,13 @@ export default function ProductDetailPage() {
                  หน้า /core/moves จึงยังใช้ได้ตามปกติ แค่ห้ามให้จอกระจกชี้ไปที่นั่น) */}
             <span
               title="ต้องปรับที่ ZORT ก่อน · ปรับที่นี่อย่างเดียวจะทำให้สองระบบไม่ตรงกัน และตัวเทียบยอดจะขึ้นส่วนต่างทุกวัน"
-              className="text-[12.5px] text-gray-300 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed"
+              className={เหมือนZORT ? `${DETAIL_BTN_OFF} inline-flex items-center gap-1` : 'text-[12.5px] text-gray-300 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}
             >
-              ปรับจำนวน
+              {เหมือนZORT && <IconPlusCircle />}ปรับจำนวน
             </span>
             <Link href={`/core/stock/print?sku=${encodeURIComponent(sku)}`}
-              className={DETAIL_BTN}>
-              พิมพ์เอกสาร
+              className={`${DETAIL_BTN} inline-flex items-center gap-1`}>
+              {เหมือนZORT && <IconPrint />}พิมพ์เอกสาร
             </Link>
             {/* อัพเดทช่องทางอื่น ▾ — ZORT เป็นเมนู 3 ข้อ (อัพเดทจำนวน/ข้อมูลสินค้า · เพิ่มสินค้าไปช่องทางการขายอื่น) · ใช้ชุดเดียวกับเมนูตาราง */}
             <RowMenu label="อัพเดทช่องทางอื่น" items={productMenuItems(sku, (href) => router.push(href))
@@ -421,7 +424,7 @@ export default function ProductDetailPage() {
             {/* ZORT มีปุ่มนี้ — ประวัติว่าใครแก้อะไรเมื่อไหร่ · คลังเงาไม่ได้เก็บเลย */}
             <span
               title="คลังเงาไม่ได้เก็บประวัติว่าใครแก้อะไรเมื่อไหร่ — ดูได้ที่ ZORT เท่านั้น"
-              className="text-[12.5px] text-gray-300 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed"
+              className={เหมือนZORT ? DETAIL_BTN_OFF : 'text-[12.5px] text-gray-300 bg-gray-50 border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}
             >
               ดูกิจกรรมของรายการ
             </span>
