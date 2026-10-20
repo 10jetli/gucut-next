@@ -13,6 +13,7 @@ import { IconEdit, IconTrash } from '@/components/zort/ButtonIcons'
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
+import ExportButton from '@/components/zort/ExportButton'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
@@ -381,6 +382,28 @@ function Inner() {
                   ช่วง {ขายดี.from} ถึง {ขายดี.to} · ร้าน z1 · ยอดบรรทัดสินค้า ยังไม่หักใบคืน
                   {ขายดี.more && ' · แสดงกลุ่มแรกที่ท่อส่งมา ยังมีรายการถัดไป'}
                 </p>
+                {/* 📤 Download Excel ใต้ตารางสินค้าขายดีแบบ ZORT (REA อ่าน /Product/CategoryDetail 20 ต.ค. 2569)
+                    ยิงคำขอเองครบทุกหน้า (offset ต่อจาก nextOffset) ด้วยหมวด/ช่วง/ร้านเดียวกับตาราง — ไม่ใช่เอาแค่กลุ่มแรกบนจอ */}
+                <div className="px-4 pb-3">
+                  <ExportButton
+                    label="Download Excel"
+                    spec={{
+                      filename: `สินค้าขายดี-${catName}`,
+                      title: `สินค้าขายดี หมวด ${catName}`,
+                      scope: `ช่วง ${ขายดี.from} ถึง ${ขายดี.to} · ร้าน z1`,
+                      note: 'ยอดบรรทัดสินค้า ยังไม่หักใบคืน · เรียงตามจำนวนที่ขายได้',
+                      header: ['รหัสสินค้า', 'ชื่อสินค้า', 'จำนวนที่ขายได้', 'ยอดขาย'],
+                      fetchPage: async (offset, limit) => {
+                        const r = await fetch(`/api/web/core?list=topproducts&category=${encodeURIComponent(catName)}&store=z1&sort=qty&from=${ขายดี.from}&to=${ขายดี.to}&offset=${offset}&limit=${limit}`).then((x) => x.json())
+                        if (!r || !Array.isArray(r.items)) throw new Error(String(r?.error ?? 'ท่อตอบผิดรูป'))
+                        if (r.applied?.category !== catName) throw new Error('ท่อรุ่นนี้ยังไม่กรองตามหมวด — ไม่ส่งออกเพื่อไม่ให้สินค้าหมวดอื่นปน')
+                        return { rows: r.items as { sku: string; name?: string; qty?: number; amount?: number }[],
+                          total: typeof r.totalSkus === 'number' ? r.totalSkus : null, done: typeof r.nextOffset !== 'number' }
+                      },
+                      toRow: (x) => [x.sku, x.name ?? null, NUM(x.qty), NUM(x.amount)],
+                    }}
+                  />
+                </div>
               </>
             )}
           </div>
