@@ -5,6 +5,7 @@
 //    ตามกฎ "จอที่ยัง fetch /api/zort อยู่ = ยังไม่เสร็จ" จอนี้จึงต้องยืนได้เองวันที่เลิกใช้ ZORT
 //    ตัวเลขชุดเดียวกับที่ /core/sales ใช้ จึงเทียบกันได้ตรง ๆ ไม่ใช่คนละแหล่ง
 // รีเฟรชด้วยปุ่มเท่านั้น ไม่มี auto-refresh (กติกาเจ้าของร้าน)
+import { คลาสตัวเลือก } from '@/components/zort/formCtl'
 import { useEffect, useState, useCallback } from 'react'
 import Link from 'next/link'
 import { fmtMoney, fmtNum, มิลลิวินาทีจากท่อ, ต้นเดือนย้อนหลังแบบZORT, TH_MONTH_SHORT } from '@/lib/format'
@@ -421,7 +422,8 @@ function ReportKindSelect({ ประตู, value = 'total', onChange, withCate
     <select
       value={value}
       onChange={(e) => { const v = e.target.value; if (v === 'total' || v === 'cat') onChange?.(v) }}
-      className="text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0"
+      /* 📏 โหมดเหมือน ZORT: ตัวเลือกบนหัวการ์ด Boon 14 สูง 40 กว้าง ~163 ชิดขวา (ภาพ /Dashboard/SalesReport 20 ต.ค. 2569 · ผังเดียวกับรายงานสินค้า/ลูกค้าที่วัด DOM แล้ว) */
+      className={คลาสตัวเลือก('text-[12.5px] border border-gray-300 rounded px-2 py-1 bg-white text-gray-700 max-w-full min-w-0', 'w-[163px] max-w-full ml-auto')}
       /* 🔄 **แก้ป้าย 15 ก.ย. 2569** — เดิมเขียนว่า "ยังไม่มี" เพราะท่อไม่ส่งหมวดมา
          ตอนนี้ท่อส่งแล้ว (b0a4aa3 · `by=category` รวมให้ฝั่งเซิร์ฟเวอร์ 36 หมวด)
          ⇒ ที่ยังขาดคือ **จอยังไม่ได้ทำ** ไม่ใช่ข้อมูลไม่มี · เขียนให้ตรงกับความจริงปัจจุบัน
@@ -1070,7 +1072,7 @@ export default function SalesReportPage() {
                   <select
                     value={tableBy}
                     onChange={(e) => setTableBy(e.target.value as 'sku' | 'cat' | 'channel' | 'wh' | 'customer')}
-                    className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0"
+                    className={คลาสตัวเลือก('text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0', 'w-[200px] max-w-full')}
                     title="ZORT จัดกลุ่มได้ 10 แบบ · ตารางนี้ทำได้ห้าแบบ (สินค้า · หมวดหมู่ · ช่องทางการขาย · ลูกค้า · คลัง/สาขา) — บางแบบของเราอยู่ที่แท็บข้างบนหรือจอรายงานลูกค้า ดูในวงเล็บ"
                   >
                     <option value="sku">สินค้า</option>
@@ -1415,7 +1417,7 @@ export default function SalesReportPage() {
                 <select
                   value={whPick}
                   onChange={(e) => setWhPick(e.target.value)}
-                  className="text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0"
+                  className={คลาสตัวเลือก('text-[12.5px] border border-gray-300 rounded px-2 py-1.5 bg-white text-gray-700 max-w-full min-w-0', 'w-[200px] max-w-full')}
                 >
                   <option value="">ทั้งหมด</option>
                   {/* รายชื่อคลังมาจากที่ท่อส่ง ไม่ใช่รายชื่อตายตัว · แถว "ยังไม่รู้คลัง" (code ว่าง) เลือกไม่ได้ */}
