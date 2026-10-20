@@ -399,6 +399,11 @@ export const THR = เหมือนZORT
   ? "text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-3 leading-5 align-bottom whitespace-nowrap"
   : 'text-right font-normal text-[12px] text-[#868e96] px-2 py-2.5 whitespace-nowrap'
 /** หัวคอลัมน์แบบ Kanit 14 #3e3e3e — ZORT ใช้ที่ /Logistics/list กับ /Product/Categorylist (วัด 17 ต.ค. 2569) ไม่ใช่ Lato 12 เหมือนจออื่น */
+/* หัวช่องติ๊กเลือกทั้งหน้า — ป้ายเป้ากด 32 (RowCheck · กันนิ้วพลาดบนแท็บเล็ต) ทำให้หัวแถวสูง 57 ทั้งแถว ขณะที่ ZORT สูง 45 (DOM /Buy/List 21 ต.ค. 2569)
+   ⇒ โหมดเหมือน ZORT ลดช่องในบนล่างเฉพาะช่องนี้เป็น 6 ⇒ 6+32+6+1 = 45 · เป้ากดเท่าเดิม · เขียนเป็นสตริงเต็มตามเหตุผลของ TH ข้างบน */
+export const TH_CHECK = เหมือนZORT
+  ? "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-1.5 leading-5 align-bottom whitespace-nowrap"
+  : TH
 export const TH_KANIT = `text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${เหมือนZORT ? หัวZ : 'py-2.5'} whitespace-nowrap`
 export const THR_KANIT = `text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${เหมือนZORT ? หัวZ : 'py-2.5'} whitespace-nowrap`
 /* 📐 วัดซ้ำ 19 ต.ค. 2569 (/Quotation/list · /Sell/list): เซลล์ Boon 14px **บรรทัด 20px** (ของเราเดิม 21px ⇒ ชื่อยาวที่ตกหลายบรรทัดสูงกว่า ZORT บรรทัดละ 1px)

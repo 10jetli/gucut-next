@@ -27,7 +27,7 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import { TH_NO, ROW_LINK, TD_NO,
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar,} from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar, TH_CHECK } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
@@ -879,7 +879,7 @@ function CoreStockInner() {
                 <tr>
                   {/* 📐 ลำดับ `#` ก่อนช่องติ๊ก — ตาม ZORT (`th.index` แล้ว `th.chk` · อ่าน thead จริง 15 ต.ค. 2569) */}
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH} style={{ width: 34 }}>
+                  <th className={TH_CHECK} style={{ width: 34 }}>
                     {/* ติ๊กทั้งหน้า — **ทั้งหน้าเท่านั้น ไม่ใช่ทั้งคลัง** (ZORT ก็เลือกได้แค่หน้าที่เห็น) */}
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}

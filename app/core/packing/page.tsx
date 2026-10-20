@@ -25,7 +25,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {TD_DATE, TH_NO, 
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  EmptyState, ChannelTag, thaiDate, Pill, RowCheck, BulkBar,} from '@/components/zort'
+  EmptyState, ChannelTag, thaiDate, Pill, RowCheck, BulkBar, TH_CHECK } from '@/components/zort'
 
 interface Job {
   /** id จริงของใบ (`z1/<number>`) — ท่อเริ่มส่งมา 9 ก.ย. 2569 · ท่อรุ่นก่อนไม่มี ⇒ ต้องเป็น optional */
@@ -279,7 +279,7 @@ export default function PackingPage() {
                   {/* 📐 `#` ก่อนช่องติ๊ก — **กติกาของเราเอง** ไม่ใช่ของ ZORT (จอแพ็คของ ZORT ไม่มีตาราง)
                       ให้ตรงกับจอขาย/คลัง/ซื้อของเรา · ที่มาเขียนไว้ใน scripts/lib/จับคู่จอ-zort.json หมวด ลำดับเลขก่อนติ๊ก */}
                   <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH} style={{ width: 34 }}>
+                  <th className={TH_CHECK} style={{ width: 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={เลือกได้.length > 0 && picked.length === เลือกได้.length}
                       indeterminate={picked.length > 0 && picked.length < เลือกได้.length}
