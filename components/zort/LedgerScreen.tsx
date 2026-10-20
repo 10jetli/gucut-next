@@ -123,7 +123,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
 }
 
 export default function LedgerScreen({
-  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, กรอบแคบZORT, purpose, meanwhile,
+  title, cols, createLabel, soonKey, withImport, withTabs, tabs, dateLine, noCreate, sumLabel, sumSeenAt, sumสั้นZORT, ว่างแถวเตี้ย, zortไม่มีช่องค้นหา, กรอบแคบZORT, purpose, meanwhile,
   emptyProof, zortList, createHref, totals, hadHandCheck, missingAdv, ผังแผงZORT, zortCols,
 }: {
   title: string
@@ -166,6 +166,9 @@ export default function LedgerScreen({
    *  ⚠️ ใส่ได้เฉพาะจอที่ **ยังไม่ต่อท่อ** และต้องเขียนที่มาของเลขไว้ในตัวข้อความเอง
    *     เช่น "จอ ZORT โชว์ 0 หน้า (เปิดดูด้วยตา)" ไม่ใช่ "มี 0 หน้า" ลอย ๆ */
   sumLabel?: string
+  /** โหมดเหมือน ZORT: คำนับแบบสั้นตามจอ ZORT (เช่น `0 items`) — ใช้แทน sumLabel บนหัวจอ **พร้อมวันที่ที่เห็น** · sumLabel เต็มย้ายเข้า ⓘ
+   *  ⚠️ เป็นภาพ ณ วันนั้น ไม่ใช่ค่าสด ⇒ วันที่ต้องอยู่บนบรรทัดเสมอ ห้ามเขียนลอย ๆ */
+  sumสั้นZORT?: string
   /** วันที่ที่ "เลขใน sumLabel" ถูกเปิดดูที่ ZORT จริง — ไม่ส่งมา = ใช้วันตรวจรวมของจอตระกูลนี้
    *  🔴 เพิ่ม 16 ก.ย. 2569 เพราะเจอของจริง: จอเซลเพจยืนยันสดวันนี้ แต่ประโยคยังขึ้นวันที่รวม 3 ก.ย.
    *     ⇒ ประโยคเดียวมีสองวันที่ อ่านแล้วไม่รู้ว่าอันไหนคือวันที่ของเลขนั้น */
@@ -376,7 +379,11 @@ export default function LedgerScreen({
         summary={cantRead
           /* หลักฐาน+วันที่ยิงตรวจแสดงในกล่อง "หลักฐาน:" ในตารางว่างข้างล่าง (ทะเบียน · 14 ก.ย. 2569) */
           /* ไม่มี sumLabel = ไม่มีเลขที่คัดมาด้วยมือให้อ้าง ⇒ พูดแค่สถานะ ห้ามเดาจำนวน */
-          ? <span>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้{sumLabel ? <> — ที่ ZORT เมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)} {sumLabel}</> : null}</span>
+          ? (เหมือนZORT && sumสั้นZORT
+            /* 📐 โหมดเหมือน ZORT (เซลเพจ · DOM 21 ต.ค. 2569 "0 items" บรรทัดเดียว Boon 16): คำสั้นของ ZORT + วันที่ที่เห็น · เหตุผลเต็มอยู่ใน ⓘ */
+            ? <span>ที่ ZORT เมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)}: {sumสั้นZORT}{' '}
+                <span className="text-gray-400 cursor-help text-[14px]" title={`ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้${sumLabel ? ` — ${sumLabel}` : ''} · เลขนี้คือภาพจอ ณ วันนั้น ไม่ใช่ค่าสด`}>ⓘ</span></span>
+            : <span>ZORT ไม่เปิดเส้นให้ดึงเรื่องนี้{sumLabel ? <> — ที่ ZORT เมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)} {sumLabel}</> : null}</span>)
           : !zortList
             ? <span>ยังไม่ได้ต่อกับ ZORT{sumLabel ? <> — ที่ ZORT เมื่อ {thaiDate(sumSeenAt ?? CHECKED_AT)} {sumLabel}</> : null}</span>
             : zLoading
