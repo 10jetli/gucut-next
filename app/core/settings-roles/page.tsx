@@ -77,7 +77,7 @@ export default function SettingsRolesPage() {
               <th className={TH}>ชื่อสิทธิ์การใช้งาน</th>
               <th className={TH}>เข้าอะไรได้บ้าง</th>
               <th className={TH}>ใครอยู่ในสิทธิ์นี้</th>
-              <th className={`${TH} text-right`}> </th>
+              <th className={TH}> </th>
             </tr>
           </thead>
           <tbody>
@@ -85,9 +85,10 @@ export default function SettingsRolesPage() {
               <tr key={r.name} className="border-b border-[#e8ecf8] last:border-0">
                 <td className={TD}>{r.name}</td>
                 {/* ข้อความนี้มี **ตัวหนา** แบบ markdown ⇒ ผ่าน pipeText ไม่งั้นดอกจันขึ้นจอดิบ ๆ (เจอบนจอสิทธิ์การใช้งาน 18 ต.ค. 2569) */}
-                <td className={`${TD} text-gray-700`}>{pipeText(r.detail)}</td>
-                <td className={`${TD} text-gray-500`}>{r.who}</td>
-                <td className={`${TD} text-right`}>
+                {/* ⚠️ จอนี้เป็น server component — ค่าคลาสที่ import จาก @/components/zort (ไฟล์ 'use client') ห้ามต่อสตริง ⇒ ได้ [object Object] (เจอ 20 ต.ค. 2569) · สีใส่ที่ span ข้างใน */}
+                <td className={TD}><span className="text-gray-700">{pipeText(r.detail)}</span></td>
+                <td className={TD}><span className="text-gray-500">{r.who}</span></td>
+                <td className={TD} style={{ textAlign: 'right' }}>
                   {/* ZORT ตรงนี้เป็นลิงก์ "แก้ไข" — ของเราแก้ที่โค้ด บอกตรง ๆ ดีกว่าลิงก์ที่กดแล้วไปไหนไม่ได้ */}
                   <span className="text-[11.5px] text-gray-400" title="สิทธิ์กำหนดใน middleware.ts — แก้ต้องแก้โค้ดแล้ว deploy">
                     กำหนดในโค้ด

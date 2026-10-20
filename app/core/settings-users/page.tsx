@@ -178,9 +178,9 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
                 className="mt-1 block w-full text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 cursor-not-allowed" />
               <span className="block mt-1 text-[11.5px] text-gray-400">ปิดไว้: ผู้ใช้ของเราไม่มีอีเมล — เข้าระบบด้วยรหัสผ่านที่ตั้งใน Netlify/หน้าเว็บ ⇒ ไม่มีอะไรให้ค้น</span>
             </label>
-            <label className="block text-[12.5px] text-gray-600">ชื่อ
+            <label className="block text-[12.5px] text-gray-600"><span className="block mb-1">ชื่อ</span>
               <input name="qname" defaultValue={ค่าแรก(searchParams?.qname)} placeholder="ชื่อ"
-                className={`mt-1 block ${FORM_INPUT}`} />
+                className={FORM_INPUT} /* ⚠️ server component: ห้ามต่อสตริงกับค่าจากไฟล์ 'use client' (ได้ [object Object]) */ />
             </label>
             <button type="submit" className={HEAD_BTN} style={{ background: '#4165ed' }}>ค้นหา</button>
           </div>
@@ -260,12 +260,13 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
                   </td>
                   {/* ✅ ผู้ใช้จากเว็บมี createdAt จริง ⇒ เลิกขีดทั้งคอลัมน์
                       (คอลัมน์นี้เคยขีดทุกแถวพร้อมคำอธิบายว่า "ไม่มีฐานข้อมูลผู้ใช้" ซึ่งเลิกจริงไปแล้ว) */}
-                  <td className={`${TD} ${r.createdAt ? 'text-gray-700' : 'text-gray-300'}`}
+                  {/* ⚠️ จอนี้เป็น server component — ค่าคลาสที่ import จาก @/components/zort (ไฟล์ 'use client') ห้ามต่อสตริง ⇒ ได้ [object Object] (เจอ 20 ต.ค. 2569) · สีใส่ที่ span ข้างใน */}
+                  <td className={TD}
                     title={r.createdAt ? '' : 'ผู้ใช้แถวนี้ตั้งใน env จึงไม่มีวันสมัครบันทึกไว้'}>
-                    {r.createdAt ? thaiDay(r.createdAt) : '—'}
+                    <span className={r.createdAt ? 'text-gray-700' : 'text-gray-300'}>{r.createdAt ? thaiDay(r.createdAt) : '—'}</span>
                   </td>
-                  <td className={`${TD} text-gray-300`} title="ระบบเรายังไม่บันทึกเวลาล็อกอิน — ทั้งสองแหล่ง">—</td>
-                  <td className={`${TD} text-gray-700`}>{r.role}</td>
+                  <td className={TD} title="ระบบเรายังไม่บันทึกเวลาล็อกอิน — ทั้งสองแหล่ง"><span className="text-gray-300">—</span></td>
+                  <td className={TD}><span className="text-gray-700">{r.role}</span></td>
                   <td className={TD}>
                     {/* ป้ายสถานะแบบ ZORT — ของเรา "ใช้งานได้" = ตั้งรหัสครบ · ไม่ครบ = เข้าไม่ได้จริง */}
                     {r.ok
