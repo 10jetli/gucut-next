@@ -26,6 +26,7 @@ import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 
 interface Row {
   /** id ในระบบ ZORT — เส้นรายใบรับ id เท่านั้น (ส่งเลขที่ใบ = ค่าว่างเงียบ ๆ · ท่อเตือนไว้เอง) */
@@ -516,7 +517,8 @@ export default function QuotationsPage() {
               ⚠️ แต่มันคือของที่ **จะเงียบตอนข้อมูลโต** — วันที่ใบเกินหนึ่งหน้า คนจะเห็นแค่แถวที่โผล่
               โดยไม่มีอะไรบอกว่านี่คือส่วนหนึ่งของเท่าไร ⇒ เขียนตอนที่ยังไม่เจ็บ ดีกว่ารอให้เจ็บก่อน
               🔑 นี่คือ "คำอธิบาย" ไม่ใช่ "ตัวควบคุม" ⇒ เพิ่มได้ในจอที่ลอก ZORT (กติกาที่ตกลงกัน 18 ก.ย.) */}
-          {rows.length > 0 && (
+          {/* 📐 โหมดเหมือน ZORT: ตอนแสดงครบทุกใบ บรรทัดนี้ซ้ำกับ จำนวน N รายการ บนหัวจอ ⇒ ไม่วาด (ZORT ไม่มี) · ตอนไม่ครบ ยังขึ้นเสมอ */}
+          {rows.length > 0 && !(เหมือนZORT && !(typeof data?.total === 'number' && data.total !== rows.length) && all.length === rows.length) && (
             <p className="text-[11.5px] text-gray-500 mt-1">
               แสดง <b>{fmtNum(rows.length)}</b> ใบ
               {typeof data?.total === 'number' && data.total !== rows.length
@@ -576,6 +578,8 @@ export default function QuotationsPage() {
           </div>
           {เหมือนZORT && ปุ่มส่งออก}
 
+          {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีหมายเหตุใต้ตาราง ⇒ พับเป็นบรรทัดเดียว (ยังกดอ่านได้) */}
+          <ZortLookFold tone="gray" สรุป={<>ⓘ หมายเหตุจอ — ป้ายสถานะ และเบอร์ลูกค้า</>}>
           <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
             {/* 🔴 **ประโยคนี้กลายเป็นเท็จตั้งแต่ 733055e** (เจอ 15 ก.ย. 2569 · ใบ t_mu1wvgcw)
                 เขียนว่า "ZORT มีปุ่ม Export to Excel — ยังไม่ได้ทำ" ทั้งที่ปุ่มส่งออกของจอนี้
@@ -585,6 +589,7 @@ export default function QuotationsPage() {
             ค่าดิบเป็น Pending/Success ชุดเดียวกับใบขาย แต่ในบริบทใบเสนอราคาแปลว่า<b>การอนุมัติ</b>
             ไม่ใช่การส่งของ · <b>เบอร์ลูกค้าดูได้จากการชี้ค้างที่ชื่อ</b> ไม่แสดงตรง ๆ บนตาราง
           </p>
+          </ZortLookFold>
         </>
       )}
     </div>
