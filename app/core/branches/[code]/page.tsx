@@ -25,6 +25,7 @@ import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
 import Link from 'next/link'
+import ExportButton from '@/components/zort/ExportButton'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
 import LoadingState from '@/components/ui/LoadingState'
@@ -341,6 +342,29 @@ export default function BranchDetailPage() {
                       </span>
                     </div>
                   )}
+                  {/* 📤 Download Excel ใต้ตารางสินค้าขายดีแบบ ZORT (REA อ่าน /Warehouse/Details 20 ต.ค. 2569)
+                      ยิงเองครบทุกหน้าด้วยคลัง/ช่วง/การเรียงเดียวกับตาราง · ท่อต้องยืนยันคลังทุกหน้า ไม่งั้นหยุด (กันยอดทั้งร้านปนเป็นยอดคลัง) */}
+                  <div className="px-4 md:px-5 pb-3 pt-1">
+                    <ExportButton
+                      label="Download Excel"
+                      disabled={ขายดี.items.length === 0}
+                      spec={{
+                        filename: `สินค้าขายดี-คลัง-${code}`,
+                        title: `สินค้าขายดีของคลัง ${code}`,
+                        scope: `ช่วง ${ขายดี.from} ถึง ${ขายดี.to} · คลัง ${code}`,
+                        note: 'คิดจากบรรทัดสินค้าในใบขายที่ตัดของจากคลังนี้ · ยังไม่หักใบคืน',
+                        header: ['รหัสสินค้า', 'ชื่อสินค้า', 'จำนวนที่ขายได้', 'ยอดขาย'],
+                        fetchPage: async (offset, limit) => {
+                          const d = await fetch(`/api/web/core?list=topproducts&from=${ขายดี.from}&to=${ขายดี.to}&limit=${limit}&offset=${offset}&warehouse=${encodeURIComponent(code)}&sort=amount`).then((r) => r.json())
+                          if (d?.error) throw new Error(d.error)
+                          if (d?.applied?.warehouse !== code) throw new Error('ท่อไม่ได้ยืนยันว่ากรองคลังนี้ — หยุดส่งออก เพราะอาจเป็นยอดทั้งร้าน')
+                          return { rows: (Array.isArray(d.items) ? d.items : []) as { sku: string; name?: string; qty?: number; amount?: number | null }[],
+                            total: typeof d.totalSkus === 'number' ? d.totalSkus : null, done: typeof d.nextOffset !== 'number' }
+                        },
+                        toRow: (r) => [r.sku, r.name ?? null, typeof r.qty === 'number' ? r.qty : null, typeof r.amount === 'number' ? r.amount : null],
+                      }}
+                    />
+                  </div>
                 </>
               )}
           </Card>
