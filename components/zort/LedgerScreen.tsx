@@ -74,16 +74,23 @@ function ageOf(iso: string) {
 
    ⚠️ **ยังไม่เคยเห็นรูปแถวจริง** — ร้านมี 0 รายการทุกชุด (ฝั่งท่อยืนยัน 14 ก.ย. 2569)
       ชื่อช่องมาจากเอกสารล้วน ⇒ อ่านแบบ **ทนฟิลด์หาย** และคืน null ให้จอแสดง "—" แทนการเดา */
-const pick = (r: Record<string, unknown>, ...keys: string[]) => {
+/* 🔑 **สามสถานะ ห้ามยุบ** (CEO 21 ต.ค. 2569 · สัญญาเดียวกับ ?quotation=)
+     ค่ามีจริง (รวม 0 ⇒ ขึ้น 0) · คีย์มาแต่ว่าง null/'' ⇒ ZORT ไม่มีค่า ⇒ ขีด · **ไม่มีคีย์เลย** ⇒ ท่อรุ่นนี้ยังไม่ส่ง (คนละเรื่องกับว่าง)
+     เดิมสามอย่างกลายเป็น null ตัวเดียวแล้วขึ้นขีดเหมือนกัน ⇒ บนจอเงิน ขีดอ่านได้ทั้ง ไม่มี / 0 / ยังไม่รู้ */
+const ไม่ส่ง = Symbol('ท่อยังไม่ส่งช่องนี้')
+type ช่อง = string | number | null | typeof ไม่ส่ง
+const pick = (r: Record<string, unknown>, ...keys: string[]): ช่อง => {
+  let มีคีย์ = false
   for (const k of keys) {
+    if (k in r) มีคีย์ = true
     const v = r[k]
     if (v !== undefined && v !== null && v !== '') return typeof v === 'number' ? v : String(v)
   }
-  return null
+  return มีคีย์ ? null : ไม่ส่ง
 }
-const day = (v: string | number | null) => (v === null ? null : String(v).slice(0, 10))
+const day = (v: ช่อง) => (v === null || v === ไม่ส่ง ? v : String(v).slice(0, 10))
 
-const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number | null)[]> = {
+const ROW_MAPS: Record<string, (r: Record<string, unknown>) => ช่อง[]> = {
   incomes: (r) => [day(pick(r, 'incomedate', 'incomedateString', 'createdatetime')),
     pick(r, 'contactname', 'customername'), pick(r, 'amount'), pick(r, 'paymentstatus')],
   expenses: (r) => [day(pick(r, 'expensedate', 'expensedateString', 'createdatetime')),
@@ -91,7 +98,7 @@ const ROW_MAPS: Record<string, (r: Record<string, unknown>) => (string | number 
   moneytransfers: (r) => [day(pick(r, 'actiondate', 'createdatetime')),
     pick(r, 'reference', 'description'), pick(r, 'amount'), pick(r, 'status')],
   variations: (r) => [pick(r, 'sku'), pick(r, 'name'),
-    Array.isArray(r.variants) ? `${(r.variants as unknown[]).length} ตัวเลือก` : null, null, null, null],
+    Array.isArray(r.variants) ? `${(r.variants as unknown[]).length} ตัวเลือก` : ('variants' in r ? null : ไม่ส่ง), ไม่ส่ง, ไม่ส่ง, ไม่ส่ง],
   /* ⚠️ **คนละตัวกับ "ลูกค้าคืนของ" (ReturnOrder)** — อันนี้คือของที่เราส่งคืน *ผู้ขาย*
      ชื่อสองอันนี้คล้ายกันมาก ⇒ ทุกข้อความบนจอต้องมีคำว่า "ให้ผู้ขาย" กำกับ
      สลับสองจอนี้ = ตัดสต็อกผิดทาง แล้วของหายจากคลังโดยไม่มีอะไรฟ้อง
@@ -666,7 +673,10 @@ export default function LedgerScreen({
                   {cols.map((c, j) => (
                     <td key={c.label} className={c.right ? TDR : TD}>
                       {/* ⚠️ ฟิลด์หาย = "—" **ห้ามเดาค่า** (ยังไม่เคยเห็นรูปแถวจริงของ ZORT) */}
-                      {cells[j] === null || cells[j] === undefined || cells[j] === '' ? '—' : String(cells[j])}
+                      {cells[j] === ไม่ส่ง
+                        /* ท่อรุ่นนี้ไม่ส่งช่องนี้เลย — บอกบนจอ (มือถือไม่มี hover) ไม่ใช่ขีดเฉย ๆ ที่อ่านเป็น ว่าง/0 */
+                        ? <span className="text-gray-300">—<span className="block text-[11px] text-amber-700">ท่อยังไม่ส่ง</span></span>
+                        : cells[j] === null || cells[j] === undefined || cells[j] === '' ? '—' : String(cells[j] as string | number)}
                     </td>
                   ))}
                 </tr>
@@ -708,7 +718,10 @@ export default function LedgerScreen({
                     : zUnknown && zCode === '500' ? 'ZORT ขัดข้องฝั่งเขา (ข้อผิดพลาดภายในของ ZORT) — ยังไม่รู้ว่ามีรายการโอนเงินไหม'
                       : zUnknown ? 'ถาม ZORT ไม่สำเร็จ — ยังไม่รู้ว่ามีกี่รายการ'
                         /* 📐 โหมดเหมือน ZORT: คำว่างของ ZORT คือ "ไม่มีข้อมูล" · คำของเรา (ZORT ตอบแล้ว ไม่ใช่ดึงไม่ได้) อยู่ใน title ของย่อหน้า */
-                        : zortAnswered ? (เหมือนZORT ? 'ไม่มีข้อมูล' : 'ZORT ตอบแล้วว่าไม่มีรายการ')
+                        : zortAnswered ? (เหมือนZORT
+                          /* คำของเราต้องเห็นได้โดยไม่ต้อง hover (CEO 21 ต.ค. 2569: มือถือ/แท็บเล็ตหน้าร้านไม่มี hover) */
+                          ? <>ไม่มีข้อมูล<span className="block text-[12px] text-gray-400 mt-0.5">ZORT ตอบแล้วว่าไม่มีรายการ (ถามสำเร็จ ไม่ใช่ดึงไม่ได้)</span></>
+                          : 'ZORT ตอบแล้วว่าไม่มีรายการ')
                           /* 🗓️ **วันที่ยิงตรวจของคำนี้อยู่รายคีย์ในทะเบียน `lib/zort-menu.ts` ช่อง impossible**
                              (นับเมื่อ 16 ก.ย. 2569: 22 คีย์ · วันที่ยิงตรวจ 14 ก.ย. 2569 จำนวน 16 คีย์ · 15 ก.ย. 2569 จำนวน 2 คีย์)
                              จอนี้เป็นตัวแสดงร่วมของหลายเมนู ⇒ ห้ามฝังวันที่ตายตัวในข้อความ
@@ -768,14 +781,15 @@ export default function LedgerScreen({
               scope: 'ทั้งชุดที่ ZORT ส่งมา',
               fetchPage: async (off) => ({ rows: off === 0 ? rows! : [], total: zCount ?? rows!.length }),
               header: cols.map((c) => c.label),
-              toRow: (r: Record<string, unknown>) => ROW_MAPS[zortList](r).map((v) => (v === '' ? null : v)),
+              toRow: (r: Record<string, unknown>) => ROW_MAPS[zortList](r).map((v) => (v === '' || v === ไม่ส่ง ? null : v)),
             }}
           />
         </div>
       )}
       {/* 📐 โหมดเหมือน ZORT: ZORT โชว์ปุ่ม Export to Excel แม้ไม่มีแถว (ภาพ /Product/Variantlist 20 ต.ค. 2569)
           ของเราไม่มีแถว = ไฟล์เปล่า ⇒ วาดเป็นปุ่มกดไม่ได้พร้อมเหตุ (ไม่ใช่ปุ่มหลอก) */}
-      {เหมือนZORT && zortAnswered && rows!.length === 0 && zortList && ROW_MAPS[zortList] && (
+      {/* ⚖️ ตัดสินจากยอดทั้งชุดที่ ZORT บอก (zCount) ไม่ใช่แถวที่ดึงมา — เลขเพื่อแสดงผลห้ามใช้ตัดสิน */}
+      {เหมือนZORT && zortAnswered && (zCount ?? rows!.length) === 0 && zortList && ROW_MAPS[zortList] && (
         <div className="mt-3 flex items-center gap-2">
           <button type="button" disabled className={ZORT_EXPORT_BTN} title="ยังไม่มีรายการให้ส่งออก — ZORT ตอบแล้วว่าไม่มีรายการ">
             <ไอคอนไฟล์ />Export to Excel
