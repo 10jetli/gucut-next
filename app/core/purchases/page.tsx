@@ -14,7 +14,8 @@
 //    แต่จะได้จอที่ **หน้าตาผ่านแต่ข้อมูลผิดความหมาย** — "เหมือน ZORT 100%"
 //    หมายถึงเหมือนทั้งหน้าตาและความหมายของข้อมูล ไม่ใช่เหมือนแค่หน้าตา
 import { HEAD_BTN } from '@/components/zort/headBtn'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import SortHead, { type สถานะเรียง } from '@/components/zort/SortHead'
 import StoreScopeLine, { StoreScopeInline } from '@/components/zort/StoreScopeLine'
 import StorePicker, { storeLabel, type StoreId } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
@@ -68,7 +69,10 @@ interface Resp {
   /** เงื่อนไขที่ท่อ **ใช้จริง** — มีไว้ให้จอตรวจว่าที่ขอไปกับที่ได้มาตรงกันไหม
    *  🔴 กฎประจำโปรเจกต์: **ตอบ 200 ไม่ได้แปลว่าทำให้** ⇒ ถ้าท่อบอกมาแล้ว จอต้องเอามาเทียบ
    *  ⚠️ ท่อรุ่นก่อนไม่มีช่องนี้ (undefined) ⇒ ห้ามถือว่า "ไม่ตรง" ต้องข้ามการตรวจไปเฉย ๆ */
-  applied?: { q?: string | null; limit?: number | null; offset?: number | null; from?: string | null; to?: string | null }
+  applied?: { q?: string | null; limit?: number | null; offset?: number | null; from?: string | null; to?: string | null
+    /** ท่อรุ่นที่เรียงได้ (CTO 20 ต.ค. 2569 · 7 ช่อง date number vendor status amount payment warehouse) สะท้อนสามคีย์นี้
+     *  🔑 มีคีย์ sortDefaulted = ท่อรองรับ · เชื่อว่าเรียงจริงเฉพาะ sortDefaulted === false */
+    sort?: string | null; dir?: string | null; sortDefaulted?: boolean }
   rows: Row[]
 }
 
@@ -140,6 +144,9 @@ export default function CorePurchasesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
+  /* ↕️ การเรียงตามหัวคอลัมน์แบบ ZORT — เก็บใน ref เพราะ load ถูกเรียกจากเลขหน้า/ตัวกรองด้วย (setState ไม่ทันในรอบเดียว) */
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
+  const เรียงRef = useRef<สถานะเรียง>(null)
   const load = useCallback(async (off = 0, tabId = tab, storeId = store, size = perPage, f = from, t = to) => {
     setLoading(true)
     setError('')
@@ -158,6 +165,7 @@ export default function CorePurchasesPage() {
       if (t) qs.set('to', t)
       if (storeId) qs.set('store', storeId)
       if (q.trim()) qs.set('q', q.trim())
+      if (เรียงRef.current) { qs.set('sort', เรียงRef.current.sort); qs.set('dir', เรียงRef.current.dir) }
       const res = await fetch(`/api/web/core?${qs}`)
       const d = await res.json()
       if (!res.ok || d?.error) throw new Error(d?.error ?? `HTTP ${res.status}`)
@@ -198,6 +206,12 @@ export default function CorePurchasesPage() {
   const loadedAll = ขอบเขตกรอง.ขอบเขต === 'ครบ'
   const shown = offset + rows.length
   const byStatus = Array.isArray(data?.byStatus) ? data!.byStatus! : []
+  /** ท่อรุ่นนี้เรียงได้ไหม — ดูจาก "มีคีย์ sortDefaulted ในคำตอบ" ไม่ใช่ค่า (ไม่ส่ง sort ⇒ ท่อรุ่นใหม่ตอบ true แต่ยังรองรับ) */
+  const รองรับเรียง = !!data?.applied && 'sortDefaulted' in data.applied
+  /** ขอให้เรียงแล้วแต่ท่อตอบว่าใช้ค่าตั้งต้น ⇒ ลำดับบนจอไม่ใช่ที่กด — ต้องบอก ห้ามปล่อยให้คนเชื่อว่าเรียงแล้ว */
+  const เรียงไม่ติด = !!เรียง && รองรับเรียง && data?.applied?.sortDefaulted !== false
+  const เหตุเรียงไม่ได้ = 'จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน'
+  const เปลี่ยนเรียง = (n: { sort: string; dir: 'asc' | 'desc' }) => { เรียงRef.current = n; setเรียง(n); load(0) }
   /* 🔴 **ท่อไม่ส่ง byStatus ≠ ทุกสถานะเป็นศูนย์** (เจอด้วยท่อปลอมโหมด partialgood 16 ก.ย. 2569)
      เดิม `countOf()` คืน 0 เสมอเมื่อไม่มีข้อมูล ⇒ แท็บขึ้น "สำเร็จ (0)" ทั้งที่ความจริงคือ **ยังไม่รู้**
      ⇒ คนอ่านจะสรุปว่าไม่มีใบสำเร็จเลย ซึ่งเป็นการตัดสินใจผิดจากเลขที่เราไม่ได้รู้จริง
@@ -470,6 +484,11 @@ export default function CorePurchasesPage() {
 
           
 
+          {เรียงไม่ติด && (
+            <p className="text-[12.5px] text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2 mb-2">
+              ⚠️ ขอให้เรียงตามหัวคอลัมน์แล้ว แต่ท่อตอบว่าใช้ลำดับตั้งต้น — <b>ลำดับแถวข้างล่างยังไม่ใช่ที่กด</b>
+            </p>
+          )}
           <TableWrap>
             <table className="w-full min-w-[900px]">
               {/* 🔃 หัวคอลัมน์ที่ **จอ ZORT กดเรียงได้** มี tooltip บอกว่าของเรายังเรียงไม่ได้
@@ -485,12 +504,12 @@ export default function CorePurchasesPage() {
                       indeterminate={picked.length > 0 && picked.length < rows.length}
                       onChange={(v) => setPicked(v ? rows.map((r) => String(r.number)) : [])} />
                   </th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ผู้ติดต่อ</span></th>
-                  <th className={THR}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">มูลค่า</span></th>
-                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
-                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ชำระเงิน</span></th>
+                  <th className={TH}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="ผู้ติดต่อ" field="vendor" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THR}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC}><SortHead label="ชำระเงิน" field="payment" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
