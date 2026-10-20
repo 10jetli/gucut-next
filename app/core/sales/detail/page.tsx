@@ -123,7 +123,8 @@ function Card({ title, icon, children, className = '' }: {
 function Field({ label, value, muted }: { label: string; value: React.ReactNode; muted?: boolean }) {
   return (
     /* 📏 โหมดเหมือน ZORT: ป้าย 1/3 ค่า 2/3 ช่องในข้างละ 15 (DOM การ์ดข้อมูลของ ZORT 20 ต.ค. 2569 · ผังเดียวกับใบโอน) */
-    <div className={เหมือนZORT ? 'grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] pr-[15px]' : 'flex gap-4 py-1.5'}>
+    /* 📏 แถวห่างกัน 31 แบบ ZORT (แถวสูง 23 · DOM ใบโอน + ภาพใบขาย 20 ต.ค. 2569) ⇒ py-1 */
+    <div className={เหมือนZORT ? 'grid grid-cols-[1fr_2fr] py-1 pl-[15px] pr-[15px]' : 'flex gap-4 py-1.5'}>
       {/* 📏 ZORT ป้าย Boon 16 #868e96 · ค่า Boon 16 #3e3e3e */}
       <span className={เหมือนZORT ? "font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]" : 'text-[16px] text-[#868e96] w-[150px] shrink-0'}>{label}</span>
       <span className={`text-[16px] ${เหมือนZORT ? "font-['Boon',sans-serif] leading-[23px] px-[15px]" : ''} ${muted ? 'text-gray-400 italic' : 'text-[#3e3e3e]'} break-words min-w-0`}>
@@ -392,7 +393,8 @@ function DetailInner() {
               🔴 ของเดิมเป็น สถานะรายการ · ช่องทางการขาย · ที่มาของข้อมูล
                  ⇒ สองใบหลังซ้ำกับกล่อง "ข้อมูล" ที่อยู่ใต้ลงมาไม่ถึงจอ
                     และไม่มีใบไหนตอบว่า "เงินมาหรือยัง" ซึ่งเป็นคำถามแรกของคนเปิดใบขาย */}
-          <div className={`grid grid-cols-1 md:grid-cols-3 ${เหมือนZORT ? 'gap-[30px]' : 'gap-4'}`}>
+          {/* 📏 โหมดเหมือน ZORT: การ์ดสถานะต่ำกว่าแถวปุ่ม 30 (ของเรา 20 · ภาพ 20 ต.ค. 2569) ⇒ ช่องบน 8 แบบ padding (margin ยุบ) */}
+          <div className={`grid grid-cols-1 md:grid-cols-3 ${เหมือนZORT ? 'gap-[30px] pt-2' : 'gap-4'}`}>
             <StatusCard
               icon="💳" label="สถานะการชำระเงิน"
               value={payTh(order.pay_status)}
