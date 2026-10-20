@@ -11,7 +11,7 @@ import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
-import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
+import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE, DETAIL_BTN } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Line { sku?: string; name?: string; qty?: number }
@@ -82,7 +82,11 @@ function Inner() {
       {/* หัวจอตาม ZORT: "รายละเอียดรายการโอนสินค้า" · เลขที่ใบอยู่ในช่อง "รายการ" ข้างล่าง (อ่านจอจริง 16 ต.ค. 2569) */}
       <PageHead title="รายละเอียดรายการโอนสินค้า"
         summary={เหมือนZORT
-          ? <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก">ⓘ</span>
+          ? <span className="inline-flex items-center gap-3">
+            {/* 📏 ZORT วางลิงก์ แนบไฟล์ ใต้หัวจอ (DOM 20 ต.ค. 2569: Kanit 12 #868e96) · ของเรายังแนบไม่ได้ (เขียนกลับ ZORT) ⇒ สีเดียวกันแต่กดไม่ได้ เหตุใน title */}
+            <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ" className="font-['Kanit',sans-serif] text-[12px] text-[#868e96] cursor-not-allowed">📎 แนบไฟล์</span>
+            <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก">ⓘ</span>
+          </span>
           : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ — ไม่ใช่กระจก</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Warehouse/TransferDetails ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
 
@@ -96,12 +100,13 @@ function Inner() {
             ['แก้ไข', 'ยังทำไม่ได้ — แก้ใบต้องเขียนกลับ ZORT'],
             ['ยกเลิกรายการ', 'ยังทำไม่ได้ — ยกเลิกใบต้องทำใน ZORT (ย้อนไม่ได้)'],
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
+          {/* 📏 โหมดเหมือน ZORT: ปุ่มขนาดเดียวกับ คำสั่ง (DOM 20 ต.ค. 2569: สูง 39 Kanit 14 ช่องใน 8/12 ขอบ 0.8 #adb5bd) แต่ตัวจาง = กดไม่ได้ */}
           <span title="ยังทำไม่ได้ — ของเรายังไม่มีหน้าพิมพ์ใบโอนสินค้า"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">🖨 พิมพ์เอกสาร</span>
+            className={เหมือนZORT ? `${DETAIL_BTN} !text-[#adb5bd] cursor-not-allowed hover:!bg-white` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>🖨 พิมพ์เอกสาร</span>
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
-            className="text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed">ดูกิจกรรมของรายการ</span>
-          <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
-            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
+            className={เหมือนZORT ? `${DETAIL_BTN} !text-[#adb5bd] cursor-not-allowed hover:!bg-white` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>ดูกิจกรรมของรายการ</span>
+          {!เหมือนZORT && <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
+            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>}
         </div>
       )}
 
@@ -163,20 +168,22 @@ function Inner() {
                   </div>
                 </div>
               </div>
-              <section className="mb-[30px] bg-white rounded-[6px] px-5 py-5">
-                <div className="flex items-center gap-3 mb-4">
+              {/* 📏 DOM /Warehouse/TransferDetails 20 ต.ค. 2569: กล่อง ช่องใน 20 · คอลัมน์ข้อมูลครึ่งกล่อง ช่องใน 15+30 ⇒ ตัวหนังสือห่างขอบกล่อง 50
+                   แถว ป้าย 1/3 (104) | ค่า 2/3 ช่องในข้างละ 15 · วันที่เดือนเต็มแบบ ZORT (13 ตุลาคม 2569) */}
+              <section className="mb-[30px] bg-white rounded-[6px] p-5">
+                <div className="flex items-center gap-3 mb-4 pl-[30px]">
                   <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📄</span>
                   <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ข้อมูล</h2>
                 </div>
                 {([
                   ['รายการ', d.number || '—'],
-                  ['วันที่', thaiDate(d.date)],
+                  ['วันที่', thaiDate(d.date, 'เต็ม')],
                   ['ไป', <>{wh(d.from, names)} → {wh(d.to, names)}{whErr && (d.from || d.to) && <span className="block text-[11.5px] text-amber-700 mt-0.5">⚠️ ดึงชื่อคลังไม่ได้ — ที่เห็นคือ<b>รหัสคลัง</b> ไม่ใช่ชื่อ</span>}</>],
                   ['เลขพัสดุ', d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>],
                 ] as const).map(([k, v]) => (
-                  <div key={k} className="flex gap-4 py-1.5 md:max-w-[50%]">
-                    <span className="text-[16px] text-[#868e96] w-[150px] shrink-0">{k}</span>
-                    <span className="text-[16px] text-[#3e3e3e]">{v}</span>
+                  <div key={k} className="grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] md:max-w-[50%] md:pr-[45px]">
+                    <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
+                    <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px]">{v}</span>
                   </div>
                 ))}
               </section>
