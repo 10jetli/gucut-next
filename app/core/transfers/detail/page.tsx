@@ -155,9 +155,10 @@ function Inner() {
         <>
           {เหมือนZORT && (
             /* 📐 โหมดเหมือน ZORT: การ์ดสถานะ "การโอนสินค้า" (ครึ่งแถว) → การ์ดข้อมูล (หัว Kanit 20 · ป้าย/ค่า Boon 16)
-               ZORT มีคอลัมน์ "ผู้ติดต่อ" (ผู้สร้างรายการ) ด้วย แต่ท่อเส้นนี้ไม่ส่งผู้สร้าง ⇒ ไม่ทำช่องว่างหลอก */
+               ZORT มีคอลัมน์ "ผู้ติดต่อ" (ผู้สร้างรายการ) ด้วย — ท่อไม่ส่งผู้สร้าง ⇒ 20 ต.ค. 2569 ใส่คอลัมน์แล้วแต่ค่าเป็นขีดพร้อมเหตุใน title (ไม่เดาชื่อ) */
             <>
-              <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+              {/* 📏 ZORT การ์ดสถานะต่ำกว่าแถวปุ่ม 30 · ของเรา 20 (ภาพ 20 ต.ค. 2569) ⇒ เติมช่องบน 8 CSS — ใช้ padding เพราะ margin ยุบรวมกับแถวปุ่ม */}
+              <div className="mb-[30px] pt-2 grid gap-[30px] md:grid-cols-2">
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
                   <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>⇄</span>
                   <div className="text-right">
