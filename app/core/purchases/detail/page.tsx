@@ -401,7 +401,8 @@ function Inner() {
                 <div key={หัว} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
                   <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>{รูป}</span>
                   <div className="text-right">
-                    <h2 className="text-[14px] font-medium text-[#868e96] m-0">{หัว}</h2>
+                    {/* ⚠️ ต้องระบุ Boon เอง — h2 รับ Kanit จากหัวเรื่องร่วม (ป้ายของ ZORT คือ Boon 14 #868e96) */}
+                    <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">{หัว}</h2>
                     <div className="mt-2">
                       {ค่า
                         ? <span className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(ค่า))}`}>{ค่า}</span>
@@ -511,9 +512,17 @@ function Inner() {
           </ZortLookFold>
 
           <section className={DL_CARD}>
+            {/* 📐 โหมดเหมือน ZORT: หัว "สินค้า" Kanit 20 มีวงไอคอน (ภาพ /Buy/Details 20 ต.ค. 2569) · จำนวนบรรทัดอยู่ใน title */}
+            {เหมือนZORT ? (
+              <div className="flex items-center gap-3 mb-3" title={d.lines?.length ? `${d.lines.length} บรรทัด` : undefined}>
+                <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📦</span>
+                <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">สินค้า</h2>
+              </div>
+            ) : (
             <h2 className={`mb-2 ${DL_CARD_TITLE}`}>
               รายการสินค้า {d.lines?.length ? `(${d.lines.length} บรรทัด)` : ''}
             </h2>
+            )}
             {/* 🔬 เทียบกับจอ `/Buy/Details` ของ ZORT ทีละชิ้น 16 ก.ย. 2569 (อ่านอย่างเดียว)
                 ZORT มีหัวข้อ: รายละเอียดรายการซื้อ · สถานะการชำระเงิน · **สถานะการโอนสินค้า** ·
                 ข้อมูล · ผู้ติดต่อ · การชำระเงิน · **ค่าใช้จ่ายอื่น** · การโอนสินค้า · **พูดคุย**
