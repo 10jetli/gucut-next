@@ -20,6 +20,7 @@
 // ✅ **ส่วนที่มีของจริง**: ยอดขายของคลังนี้ — `list=orderfacets&warehouses=1` ส่ง `byWarehouse`
 //    (ใบ·ยอด รายคลัง) ⇒ ตารางที่ ② กับ ④ ของ ZORT แยกรายสินค้า ของเราได้แค่ยอดรวมของคลัง
 //    ⇒ เขียนกำกับว่าได้ถึงระดับไหน **ห้ามปล่อยให้คนอ่านว่าเป็นรายสินค้า**
+import { IconEdit, IconTrash } from '@/components/zort/ButtonIcons'
 import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { useCallback, useEffect, useState } from 'react'
 import { useParams } from 'next/navigation'
@@ -201,8 +202,8 @@ export default function BranchDetailPage() {
             className={เหมือนZORT ? `${i === 0 ? 'ml-auto ' : ''}inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed` : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'}>
             {/* ZORT มีไอคอนดินสอ/ถังขยะหน้าคำ (ภาพ /Warehouse/Details 20 ต.ค. 2569) — วาดเอง ไม่ใช้ฟอนต์ไอคอนของ ZORT */}
             {เหมือนZORT && (i === 0
-              ? <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M14 6l4 4" /></svg>
-              : <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>)}
+              ? <IconEdit />
+              : <IconTrash />)}
             {t}</span>
         ))}
       </div>

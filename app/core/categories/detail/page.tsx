@@ -9,6 +9,7 @@
 // ⚠️ ค่า zortValue/zortAvailable/zortSkus เป็น **ค่าที่คัดมือจากจอ ZORT** (API ไม่เปิดให้ดึง)
 //    ⇒ เก่าได้ · จอต้องเขียนกำกับ ห้ามโชว์ปนกับค่าที่คิดสดจากกระจกโดยไม่บอก
 // ⚠️ หมวด "(ยังไม่ได้จัดหมวดใน ZORT)" = แถว category ว่างในกระจก ไม่ใช่หมวดจริงของ ZORT
+import { IconEdit, IconTrash } from '@/components/zort/ButtonIcons'
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -212,10 +213,10 @@ function Inner() {
           {/* 📏 ZORT มี แก้ไข · ลบ ตรงนี้ (DOM 20 ต.ค. 2569: ปุ่มกรอบ สูง 39 Kanit 14 มีไอคอน) — ของเราแก้/ลบหมวดต้องเขียนกลับ ZORT ⇒ วาดไว้แต่กดไม่ได้ เหตุใน title
               ไอคอนวาดเอง · ปุ่ม เปิดในจอสินค้า ของเราต่อท้าย */}
           <span title="ยังทำไม่ได้ — แก้หมวดต้องเขียนกลับ ZORT" className={`${DETAIL_BTN_OFF} inline-flex items-center gap-1`}>
-            <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z" /><path d="M14 6l4 4" /></svg>แก้ไข
+            <IconEdit />แก้ไข
           </span>
           <span title="ยังทำไม่ได้ — ลบหมวดต้องทำใน ZORT" className={`${DETAIL_BTN_OFF} inline-flex items-center gap-1`}>
-            <svg aria-hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6" /></svg>ลบ
+            <IconTrash />ลบ
           </span>
           <Link href={`/core/stock?category=${encodeURIComponent(catName)}`} className={`${DETAIL_BTN} font-['Kanit',sans-serif]`}>เปิดในจอสินค้า</Link>
         </div>
