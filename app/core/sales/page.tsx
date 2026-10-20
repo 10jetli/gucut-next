@@ -8,7 +8,8 @@
 //              → ตาราง: # · วันที่ · รายการ · ลูกค้า · ช่องทาง · มูลค่า · สถานะ
 import { HEAD_BTN } from '@/components/zort/headBtn'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import SortHead, { SortNotApplied, type สถานะเรียง } from '@/components/zort/SortHead'
 import { SALE_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import { สร้างแถบแท็บขาย, คำนำหน้าแท็บชำระเงิน, แท็บชำระเงินของZORT, อ่านเงินตามการชำระ, รายชื่อสถานะของแท็บ } from '@/lib/sales-tabs'
 import Link from 'next/link'
@@ -108,7 +109,9 @@ interface ListResp {
    *  🔴 เหตุ: เส้นนี้กรองด้วย `q` จริง (868 → 0) **แต่ไม่เคยบอกว่ากรอง** ⇒ จอเขียนได้แค่ "ไม่พบ"
    *  ⚠️ **ไม่มีคีย์ = ยังไม่ deploy** ⇒ จอไม่เขียนคำกำกับ (ไม่ใช่เดาว่ากรองแล้ว) */
   applied?: { q?: string | null; status?: string | null; channel?: string | null; store?: string | null
-              day?: string | null; limit?: number | null } | null
+              day?: string | null; limit?: number | null
+              /** ท่อรุ่น e4595823 (CTO 20 ต.ค. 2569) เรียงได้ 8 ช่อง — มีคีย์ sortDefaulted = รองรับ · เชื่อว่าเรียงจริงเฉพาะ false */
+              sort?: string | null; dir?: string | null; sortDefaulted?: boolean } | null
   appliedNote?: string
   /** ตัวกรองที่จอส่งไป **แต่ท่อไม่ได้ใช้** — ท่อคิดจากคำขอจริง ⇒ ปุ่มใหม่ที่เพิ่มวันหลัง ท่อฟ้องเอง
    *  ⚠️ ไม่มีคีย์นี้ = ท่อรุ่นเก่า **ยังไม่รู้** ไม่ใช่ "ไม่มีอะไรถูกเมิน" (สามสถานะ ห้ามยุบ) */
@@ -437,6 +440,9 @@ export default function CoreSalesPage() {
   const [perPage, setPerPage] = useState(PAGE)
 
   const [data, setData] = useState<ListResp | null>(null)
+  /* ↕️ หัวคอลัมน์กดเรียงแบบ ZORT (8 หัว) — ref เพราะ load ถูกเรียกจากเลขหน้า/แท็บ/ตัวกรอง (setState ไม่ทันในรอบเดียว) */
+  const [เรียง, setเรียง] = useState<สถานะเรียง>(null)
+  const เรียงRef = useRef<สถานะเรียง>(null)
   const [loading, setLoading] = useState(true)
   /** อายุของข้อมูลที่กำลังโชว์ — ไม่ null = โชว์ของเก่าอยู่ และยังดึงของใหม่ไม่เสร็จ */
   const [staleAge, setStaleAge] = useState<number | null>(null)
@@ -506,6 +512,7 @@ export default function CoreSalesPage() {
       if (opt?.customer !== undefined) { if (opt.customer.trim()) qs.set('customer', opt.customer.trim()); else qs.delete('customer') }
       /* ⚠️ ต้องอยู่ **หลัง** ลูป advParams() เสมอ — ไม่งั้นค่าเก่าจาก state จะทับค่าที่แท็บเพิ่งสั่ง */
       if (opt?.payStatus !== undefined) { if (opt.payStatus) qs.set('paystatus', opt.payStatus); else qs.delete('paystatus') }
+      if (เรียงRef.current) { qs.set('sort', เรียงRef.current.sort); qs.set('dir', เรียงRef.current.dir) }
       // ⚠️ **ส่ง cancelled=1 เสมอ** — ค่าเริ่มต้นของ API ตัดใบยกเลิกทิ้ง
       //    ถ้าไม่ส่ง byStatus จะไม่มี "Voided" เลย ⇒ ไม่มีแท็บยกเลิกให้กด
       //    และถ้าเผลอมีแท็บ กดแล้วจะได้ 0 ใบทั้งที่มี 44 ใบ (ฝั่งท่อหลังบ้านเตือนไว้)
@@ -622,6 +629,13 @@ export default function CoreSalesPage() {
   }
 
   const rows = data?.rows ?? []
+
+  /* ↕️ เรียงตามหัวคอลัมน์ — กดได้เฉพาะเมื่อท่อประกาศ sortDefaulted (ท่อรุ่นเก่าเมิน sort= ⇒ ทำเป็นปุ่ม = ปุ่มหลอก) */
+  const ap = data?.applied
+  const รองรับเรียง = !!ap && 'sortDefaulted' in ap
+  const เรียงไม่ติด = !!เรียง && รองรับเรียง && ap?.sortDefaulted !== false
+  const เหตุเรียงไม่ได้ = 'จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน'
+  function เปลี่ยนเรียง(n: { sort: string; dir: 'asc' | 'desc' }) { เรียงRef.current = n; setเรียง(n); load(0) }
 
   /* 🔴 **สามปุ่มนี้ไม่ทำอะไรเลยในวันนี้** (19 ก.ย. 2569 — ฝั่งท่ออ่านซอร์สยืนยัน)
      `list=sales` พิจารณาแค่ `day` กับ `limit` ⇒ `channel`/`status`/`q` ที่จอส่งไป **ถูกเมินทั้งสามตัว**
@@ -1388,6 +1402,7 @@ export default function CoreSalesPage() {
             </p>
           )}
 
+          <SortNotApplied show={เรียงไม่ติด} />
           <TableWrap>
             {/* 📐 เพดานล่าง 1080 ⇒ **880** ตามตารางของ ZORT (เขาใส่ครบ 11 คอลัมน์ใน 880 โดยไม่ต้องเลื่อนขวา)
                    ⚠️ **แต่วัดแล้วตำแหน่งหัวคอลัมน์ไม่ขยับเลย** — `มูลค่า` ยังอยู่ที่ x=1197 ทั้งก่อนและหลัง
@@ -1413,15 +1428,15 @@ export default function CoreSalesPage() {
                       indeterminate={picked.length > 0 && picked.length < rows.length}
                       onChange={(v) => setPicked(v ? rows.map((r) => r.id) : [])} />
                   </th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันที่</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">รายการ</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ลูกค้า</span></th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">ช่องทาง</span></th>
+                  <th className={TH}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="ลูกค้า" field="customer" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH}><SortHead label="ช่องทาง" field="channel" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH}>บริการขนส่ง</th>
-                  <th className={TH}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">วันส่งสินค้า</span></th>
-                  <th className={THR}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">มูลค่า</span></th>
-                  <th className={THC}><span title="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน">สถานะ</span></th>
-                  <th className={THC}>ชำระเงิน</th>
+                  <th className={TH}><SortHead label="วันส่งสินค้า" field="shipDate" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THR}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC}><SortHead label="ชำระเงิน" field="payStatus" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
