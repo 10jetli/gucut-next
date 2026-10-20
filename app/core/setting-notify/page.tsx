@@ -109,7 +109,9 @@ export default function SettingNotifyPage() {
 
       {/* แท็บช่องทาง — ชั้นเดียวกับแท็บ โปรแกรม/อีเมล/มือถือ ของ ZORT
           ⚠️ ร้านไม่ใช้อีเมลแจ้งเตือน — ไม่ทำแท็บเปล่า */}
-      <div className={`flex flex-wrap items-center border-b border-gray-200 mb-4 ${เหมือนZORT ? 'gap-0' : 'gap-6 px-1'}`}>
+      {/* 📏 วัด DOM ที่หน้าต่าง 1280 (20 ต.ค. 2569): แท็บ ZORT top 140 · ของเรา 129 · เมนูซ้าย ZORT 216 · ของเรา 197
+           ⇒ โหมด ZORT แถบแท็บลงอีก 11 และเว้นจากแท็บถึงกล่อง 24 (เดิม 16) */}
+      <div className={`flex flex-wrap items-center border-b border-gray-200 ${เหมือนZORT ? 'gap-0 mt-[11px] mb-6' : 'gap-6 px-1 mb-4'}`}>
         {CHANNELS.map((c) => (
           <button key={c.id}
             onClick={() => { setChan(c.id); setSel(c.items[0].id) }}
