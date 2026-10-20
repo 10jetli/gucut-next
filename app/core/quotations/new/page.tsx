@@ -25,6 +25,7 @@
 //    ⇒ **"ทำใบให้ถูกตั้งแต่แรก" เปลี่ยนจากคำแนะนำชั่วคราว เป็นข้อจำกัดถาวรของจอ**
 //    ⚠️ **ห้ามเหมาว่าใบสั่งซื้อ/ใบคืนก็ยกเลิกไม่ได้** — สองตัวนั้นยังไม่เคยยิง
 //       (เห็นตัวหนึ่งพังแล้วเหมาพี่น้อง = เดา ไม่ใช่ผลตรวจ)
+import FieldOff from '@/components/zort/FieldOff'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
@@ -63,16 +64,6 @@ const BLANK: Line = { sku: '', qty: '', price: '' }
 const REAL_SEND_ENABLED = ส่งจริงได้('quotations/new')
 /** เหตุของช่องที่ปิดในโหมดเหมือน ZORT — ที่เดียว (อ่านจาก body ที่จอนี้ส่ง: customer · phone · note · reference · items) */
 const เหตุช่องที่ท่อยังไม่รับ = 'ท่อสร้างใบเสนอราคา (addquotation) ส่งได้แค่ ชื่อลูกค้า · เบอร์ · อ้างอิง · หมายเหตุ · รายการสินค้า — ช่องนี้ยังส่งเข้า ZORT ไม่ได้'
-
-/** ช่องที่ ZORT มีแต่เรายังส่งไม่ได้ — กรอกไม่ได้ ไม่ส่งค่า · เหตุใน title และบรรทัดใต้การ์ด */
-function ช่องปิด(ป้าย: string, เหตุ: string) {
-  return (
-    <label className="block cursor-not-allowed" title={`ยังส่งไม่ได้ — ${เหตุ}`}>
-      <span className="block text-[12.5px] text-gray-400">{ป้าย}</span>
-      <input disabled placeholder="ยังส่งไม่ได้" className="mt-1 w-full text-[12.5px] border border-gray-200 rounded px-2.5 py-1.5 bg-gray-50 text-gray-400 cursor-not-allowed" />
-    </label>
-  )
-}
 
 export default function NewQuotationPage() {
   const [customer, setCustomer] = useState('')
@@ -186,16 +177,16 @@ export default function NewQuotationPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-[30px] mb-[30px]">
           <section className="bg-white rounded-[6px] p-5 space-y-3">
             <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ข้อมูล</h2>
-            {ช่องปิด('รายการ *', 'ZORT ออกเลขที่ใบให้เองตอนบันทึก — ท่อไม่ได้ส่งเลขที่ใบไป')}
-            {ช่องปิด('วันที่ *', เหตุช่องที่ท่อยังไม่รับ)}
+            <FieldOff ป้าย="รายการ *" เหตุ={'ZORT ออกเลขที่ใบให้เองตอนบันทึก — ท่อไม่ได้ส่งเลขที่ใบไป'} />
+            <FieldOff ป้าย="วันที่ *" เหตุ={เหตุช่องที่ท่อยังไม่รับ} />
             <label className="block">
               <span className={FORM_LABEL}>อ้างอิง</span>
               <input value={reference} onChange={(e) => setReference(e.target.value)}
                 className={`${FORM_INPUT} mt-1`} placeholder="เช่น เลขใบเสนอราคาเดิม" />
             </label>
-            {ช่องปิด('ช่องทางการขาย', เหตุช่องที่ท่อยังไม่รับ)}
-            {ช่องปิด('ประเภทภาษี', เหตุช่องที่ท่อยังไม่รับ)}
-            {ช่องปิด('คลัง/สาขา', เหตุช่องที่ท่อยังไม่รับ)}
+            <FieldOff ป้าย="ช่องทางการขาย" เหตุ={เหตุช่องที่ท่อยังไม่รับ} />
+            <FieldOff ป้าย="ประเภทภาษี" เหตุ={เหตุช่องที่ท่อยังไม่รับ} />
+            <FieldOff ป้าย="คลัง/สาขา" เหตุ={เหตุช่องที่ท่อยังไม่รับ} />
             <label className="block">
               <span className={FORM_LABEL}>หมายเหตุ</span>
               <input value={note} onChange={(e) => setNote(e.target.value)}
@@ -209,14 +200,14 @@ export default function NewQuotationPage() {
               <input value={customer} onChange={(e) => setCustomer(e.target.value)}
                 className={`${FORM_INPUT} mt-1`} placeholder="ชื่อ-นามสกุล หรือชื่อบริษัท" />
             </label>
-            {ช่องปิด('รหัสลูกค้า', เหตุช่องที่ท่อยังไม่รับ)}
+            <FieldOff ป้าย="รหัสลูกค้า" เหตุ={เหตุช่องที่ท่อยังไม่รับ} />
             <label className="block">
               <span className={FORM_LABEL}>เบอร์โทรศัพท์ลูกค้า</span>
               <input value={phone} onChange={(e) => setPhone(e.target.value)}
                 className={`${FORM_INPUT} mt-1`} placeholder="ไม่ใส่ก็ได้" />
             </label>
-            {ช่องปิด('อีเมลลูกค้า', เหตุช่องที่ท่อยังไม่รับ)}
-            {ช่องปิด('ที่อยู่ลูกค้า', เหตุช่องที่ท่อยังไม่รับ)}
+            <FieldOff ป้าย="อีเมลลูกค้า" เหตุ={เหตุช่องที่ท่อยังไม่รับ} />
+            <FieldOff ป้าย="ที่อยู่ลูกค้า" เหตุ={เหตุช่องที่ท่อยังไม่รับ} />
           </section>
           <p className="lg:col-span-2 -mt-4 text-[11.5px] text-gray-500">ช่องสีเทา = ยังส่งไม่ได้ · {เหตุช่องที่ท่อยังไม่รับ} · ส่วนลด/ภาษีมูลค่าเพิ่ม/ค่าส่ง/ช่องทางจัดส่ง ของ ZORT ก็ยังส่งไม่ได้ด้วยเหตุเดียวกัน</p>
         </div>
