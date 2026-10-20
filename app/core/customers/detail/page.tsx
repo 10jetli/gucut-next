@@ -83,6 +83,19 @@ const LABEL: Record<string, string> = {
   branch_name: 'ชื่อสาขา', branch_no: 'เลขที่สาขา', type: 'ประเภท', updated_at: 'อัปเดตล่าสุด',
 }
 
+/** ข้อจำกัดการจับคู่ลูกค้า (จับคู่ออเดอร์ด้วยชื่อ) — โหมดเหมือน ZORT พับไว้ แต่บรรทัดสรุปยังบอกว่ามีข้อจำกัด
+ *  แยกเป็นตัวเดียวเพื่อวางได้สองตำแหน่งตามโหมดโดยไม่คัดลอกข้อความ */
+function กล่องจับคู่({ note }: { note?: string | null }) {
+  if (!note) return null
+  return (
+    <ZortLookFold สรุป={<>⚠️ ข้อจำกัดการจับคู่ลูกค้า — จับคู่ออเดอร์ด้วยชื่อ</>}>
+      <p className="mb-3 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
+        ⚠️ <b>ข้อจำกัดการจับคู่ลูกค้า</b> — {note}
+      </p>
+    </ZortLookFold>
+  )
+}
+
 function Inner() {
   const sp = useSearchParams()
   const key = sp.get('name') ?? sp.get('id') ?? ''
@@ -127,7 +140,7 @@ function Inner() {
           ลูกค้ามาร์เก็ตเพลสไม่มีรหัส (ไม่อยู่ในทะเบียน) ⇒ ใส่ชื่อในวงเล็บแทน ไม่ปล่อยหัวจอไม่บอกว่าเป็นใคร */}
       <PageHead title={c?.code ? `รายละเอียดผู้ติดต่อ (รหัส : ${String(c.code)})` : `รายละเอียดผู้ติดต่อ (${d?.name || key || 'ลูกค้า'})`}
         summary={เหมือนZORT
-          ? <span className="text-gray-400 cursor-help text-[14px]" title="ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา">ⓘ</span>
+          ? undefined /* ⓘ ย้ายไปท้ายแถวปุ่ม — ZORT ไม่มีบรรทัดใต้หัวจอ (บรรทัดนี้ดันทั้งจอลง ~30px) */
           : <span className="text-gray-400">ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Contact/ContactDetail ไม่มี (อ่านปุ่ม+ฟังก์ชันทั้งหน้า) */ />
 
@@ -140,6 +153,7 @@ function Inner() {
           <span title="ยังทำไม่ได้ — ประวัติการแก้เก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ" className={DETAIL_BTN_OFF}>ดูกิจกรรมของรายการ</span>
           <span title="ยังทำไม่ได้ — แก้ผู้ติดต่อต้องเขียนกลับ ZORT" className="ml-auto inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed"><IconEdit />แก้ไข</span>
           <span title="ยังทำไม่ได้ — ลบผู้ติดต่อต้องทำใน ZORT" className="inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-gray-400 px-3 cursor-not-allowed"><IconTrash />ลบ</span>
+          <span className="text-gray-400 cursor-help text-[14px]" title="ภาพรวมรายคน · ข้อมูลติดต่อ + ประวัติการซื้อจากคลังเงา">ⓘ</span>
         </div>
       )}
 
@@ -166,14 +180,8 @@ function Inner() {
           </p>
         ) : null}
 
-      {d?.matchNote && (
-        /* โหมดเหมือน ZORT: พับ แต่บรรทัดสรุปยังบอกว่ามีข้อจำกัดการจับคู่ (คำเตือนว่าใบที่เห็นอาจไม่ใช่ของคนนี้ "ชื่อซ้ำ" อยู่ข้างบนและไม่พับ) */
-        <ZortLookFold สรุป={<>⚠️ ข้อจำกัดการจับคู่ลูกค้า — จับคู่ออเดอร์ด้วยชื่อ</>}>
-        <p className="mb-3 text-[12.5px] text-amber-900 bg-amber-50 border border-amber-300 rounded-md px-3.5 py-2.5 leading-relaxed">
-          ⚠️ <b>ข้อจำกัดการจับคู่ลูกค้า</b> — {d.matchNote}
-        </p>
-        </ZortLookFold>
-      )}
+      {/* 📐 โหมดเหมือน ZORT: กล่องพับนี้ย้ายไปใต้การ์ดยอดขาย (ZORT ไม่มีอะไรคั่นระหว่างแถวปุ่มกับการ์ด) · คำเตือนชื่อซ้ำข้างบนยังอยู่ที่เดิมและไม่พับ */}
+      {!เหมือนZORT && <กล่องจับคู่ note={d?.matchNote} />}
 
       {/* 🔴 ชื่อถูกปิดบัง — ต้องบอกก่อนที่ผู้ใช้จะเห็นเลข 0 แล้วเข้าใจผิด */}
       {masked && (
@@ -217,6 +225,7 @@ function Inner() {
                 </div>
               ))}
             </div>
+            <กล่องจับคู่ note={d?.matchNote} />
             <ZortLookFold tone="gray" สรุป={<>กติกาการนับยอดเดือนนี้/ปีนี้ · ทำไมยอดค้างชำระยังคิดไม่ได้</>}>
               <p className="mb-3 text-[11.5px] text-gray-500">
                 {d?.money?.scope ? <>กติกาของสองการ์ดแรก: {d.money.scope} · </> : null}
