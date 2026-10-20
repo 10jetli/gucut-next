@@ -22,3 +22,8 @@ export const HEAD_BTN_GHOST = เหมือนZORT
 export const DETAIL_BTN_OFF = เหมือนZORT
   ? "inline-block font-['Kanit',sans-serif] text-[14px] leading-[21px] text-[#adb5bd] bg-white border border-[#adb5bd] rounded px-3 py-2 cursor-not-allowed"
   : 'text-[12.5px] text-gray-300 bg-white border border-gray-200 rounded px-3 py-1.5 cursor-not-allowed'
+
+/* 🔗 ลิงก์ Share Link มุมขวาหัวจอรายละเอียด (สินค้า · ชุด) — วัด DOM /Product/Details + /Bundle/Details 20 ต.ค. 2569:
+ *    ปุ่มแบบลิงก์ Kanit 12 #868e96 ขอบใส 0.8 ช่องใน 4/8 มุม 4 (บันทึก 17 ต.ค. ที่ว่าเป็นปุ่มกรอบสูง 39 คลาดเคลื่อน)
+ * โหมดเดิมใช้คลาสที่จอส่งมา */
+export const SHARE_LINK_Z = "inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[12px] text-[#868e96] border-[0.8px] border-transparent rounded px-2 py-1 hover:text-[#3e3e3e]"

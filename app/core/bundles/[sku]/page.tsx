@@ -28,6 +28,7 @@
 //    และ **นาฬิกาที่สาม**: stockSyncedAt = ตัวเลขคงเหลือ/พร้อมขายซิงก์ล่าสุด
 //    (รอบมาจากท่อ `stockExpectedEveryHours` — แยกเป็นงาน bundle-stock-sync แล้ว 19 ก.ย. 2569)
 //    ⇒ ตรรกะอยู่ที่ lib/recipe-fresh.ts ที่เดียว มีเทสคุมการสลับสามค่านี้
+import { SHARE_LINK_Z } from '@/components/zort/headBtn'
 import { IconEdit, IconTrash, IconPrint, IconShare } from '@/components/zort/ButtonIcons'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { SALE_STATUS, zortWord } from '@/lib/zort-words'
@@ -329,7 +330,7 @@ export default function BundleDetailPage() {
               เหมือนZORT
                 /* 📏 ZORT มุมขวาเป็นลิงก์เล็กสีเทา "Share Link" มีไอคอนแชร์ (ภาพ /Bundle/Details 20 ต.ค. 2569) — ของเราทำงานเดิม (คัดลอกลิงก์) แค่หน้าตา */
                 ? <button type="button" onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}
-                    className="inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[14px] text-[#868e96] hover:text-[#3e3e3e]"><IconShare />คัดลอกลิงก์หน้านี้</button>
+                    className={SHARE_LINK_Z}><IconShare />คัดลอกลิงก์หน้านี้</button>
                 : <BtnGhost onClick={() => { navigator.clipboard?.writeText(window.location.href).catch(() => {}) }}>
                   คัดลอกลิงก์หน้านี้
                 </BtnGhost>
