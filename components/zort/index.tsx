@@ -179,12 +179,14 @@ export function BtnGhost({ children, ...p }: React.ButtonHTMLAttributes<HTMLButt
 
 /* ── แถวค้นหา ──────────────────────────────────────────────────────────── */
 export function SearchRow({
-  value, onChange, onSubmit, placeholder, right, advanced,
+  value, onChange, onSubmit, placeholder, zortPlaceholder, right, advanced,
 }: {
   value: string
   onChange: (v: string) => void
   onSubmit: () => void
   placeholder?: string
+  /** คำในช่องของจอ ZORT คู่นี้ (เช่น "พิมพ์คำค้นหา") — โหมดเหมือน ZORT ใช้คำนี้ ส่วน placeholder ของเรา (บอกว่าค้นอะไรได้) ย้ายไปเป็น title/ชื่อช่อง ไม่หาย */
+  zortPlaceholder?: string
   /** ฝั่งขวา — ZORT วางตัวเลือกช่วงเวลากับปุ่มตัวกรองไว้ตรงนี้ */
   right?: ReactNode
   /** ลิงก์ "ค้นหาขั้นสูง" ข้างช่องค้นหา */
@@ -205,7 +207,9 @@ export function SearchRow({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') onSubmit() }}
-          placeholder={placeholder}
+          placeholder={เหมือนZORT && zortPlaceholder ? zortPlaceholder : placeholder}
+          title={เหมือนZORT && zortPlaceholder ? placeholder : undefined}
+          aria-label={placeholder}
           className={`w-[400px] max-w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] ${เหมือนZORT ? 'pl-[42px]' : 'pl-9'} pr-3 py-2 focus:outline-none focus:border-[#868e96]`} /* ZORT ช่องซ้าย 42 (วัด DOM 20 ต.ค. 2569) */
         />
       </div>

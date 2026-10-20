@@ -302,6 +302,7 @@ export default function CoreTransfersPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขที่ใบโอน หรือคำอธิบาย"
+        zortPlaceholder="ค้นหา" /* คำในช่องของ ZORT (REA 20 ต.ค. 2569) */
         /* ลิงก์ "ค้นหา ·" เอาออก 16 ต.ค. 2569 — ZORT /Warehouse/Transferlist ข้างช่องค้นมีแค่ "ค้นหาขั้นสูง" (กด Enter แทน)
            ปุ่มเปิดแผงโผล่เฉพาะตอนท่อกรองวันได้จริง — ปุ่มที่เปิดแผงว่างคือปุ่มหลอก */
         advanced={ท่อรับช่วงวัน ? <LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText> : undefined}

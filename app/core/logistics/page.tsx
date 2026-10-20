@@ -392,6 +392,7 @@ export default function LogisticsPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขพัสดุ ชื่อผู้รับ เลขที่ใบขาย"
+        zortPlaceholder="พิมพ์คำค้นหา" /* คำในช่องของ ZORT (ภาพ 20 ต.ค. 2569) */
         advanced={
           <>
             {/* ลิงก์ "ค้นหา ·" เอาออก 16 ต.ค. 2569 — ZORT /Logistics/list ข้างช่องค้นมีแค่ "ค้นหาขั้นสูง" (กด Enter ในช่องค้นแทน)

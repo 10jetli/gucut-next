@@ -308,6 +308,7 @@ export default function CorePurchasesPage() {
         onChange={setQ}
         onSubmit={() => load(0)}
         placeholder="เลขที่ใบสั่งซื้อ หรือชื่อผู้ขาย"
+        zortPlaceholder="พิมพ์คำค้นหา" /* คำในช่องของ ZORT (REA 20 ต.ค. 2569) */
         /* ผัง ZORT ข้างช่องค้นมีแค่ "ค้นหาขั้นสูง" (ลิงก์ "ค้นหา ·" เอาออก 16 ต.ค. 2569 — กด Enter ในช่องค้นแทน) */
         advanced={<LinkText onClick={() => setAdvOpen((v) => !v)}>ค้นหาขั้นสูง</LinkText>}
       />

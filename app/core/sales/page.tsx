@@ -302,6 +302,12 @@ function ปุ่มโหมดแผง({ โหมด, เปลี่ยน
   )
 }
 
+/** วันส่งสินค้าแบบ ZORT — เหมือน relDay แต่มี "พรุ่งนี้" ด้วย (ใบมาร์เก็ตเพลสนัดส่งล่วงหน้า) · คิดเป็นวันไทย */
+function วันส่งแบบZORT(day: string): string {
+  const พรุ่งนี้ = new Date(Date.now() + 7 * 3600e3 + 864e5).toISOString().slice(0, 10)
+  return day === พรุ่งนี้ ? 'พรุ่งนี้' : relDay(day)
+}
+
 export default function CoreSalesPage() {
   const router = useRouter()
   const [days, setDays] = useState(DEFAULT_DAYS)
@@ -1155,7 +1161,13 @@ export default function CoreSalesPage() {
         <div className={เหมือนZORT ? 'text-[12.5px] text-gray-500 mb-2 leading-[22px]' : 'text-[12.5px] text-gray-500 mb-3'}>
           {/* ZORT เขียนวันแบบ 1/6/2569–2/9/2569 ไม่ใช่ ISO — ตรงนี้คือบรรทัดเดียวกันของเขา
               📐 โหมดเหมือน ZORT (ภาพ /Sell/list 19 ต.ค. 2569): Kanit 18 สีเข้ม "ค้นหา: วันที่:…" · นิยามวันย้ายเข้า ⓘ */}
-          <span className={เหมือนZORT ? "font-['Kanit',sans-serif] text-[18px] text-[#3e3e3e]" : ''}>🔍 ค้นหา: วันที่ {thaiShort(data.from)} – {thaiShort(data.to)}</span>
+          {/* 📏 วัด DOM ZORT 20 ต.ค. 2569: span.font-kanit 16px #3e3e3e · แว่นเส้นสีเทา · ข้อความ "ค้นหา:  วันที่:1/7/2569-20/10/2569" (ไม่มีช่องรอบขีด) */}
+          {เหมือนZORT
+            ? <span className="inline-flex items-center gap-1 font-['Kanit',sans-serif] text-[16px] text-[#3e3e3e]">
+                <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="#adb5bd" strokeWidth="1.4"><circle cx="7" cy="7" r="5.5" /><path d="M11 11l4 4" strokeLinecap="round" /></svg>
+                ค้นหา:&nbsp; วันที่:{thaiShort(data.from)}-{thaiShort(data.to)}
+              </span>
+            : <span>🔍 ค้นหา: วันที่ {thaiShort(data.from)} – {thaiShort(data.to)}</span>}
           {/* 🔑 **เลขที่ขึ้นกับนิยาม ต้องพิมพ์นิยามไว้ข้างเลข** (กติกาฝั่งท่อ 14 ต.ค. 2569)
                  ZORT ให้เลือกได้ว่าช่วงวันใช้กับวันไหน (วันที่ · วันที่ชำระเงิน · วันส่งสินค้า · วันที่โอนสินค้า)
                  ของเรามีแบบเดียว ⇒ ถ้าไม่เขียนไว้ คนจะอ่านเลข "เดือนนี้" เป็น "เงินเข้าเดือนนี้" ซึ่งคนละเลข
@@ -1482,8 +1494,10 @@ export default function CoreSalesPage() {
                       {/* 🔴 ไม่ fallback ไป ship_name (ชื่อผู้รับ) — ดูเหตุผลในไฟล์ส่งออกข้างบน */}
                       {r.ship_channel || <span className="text-gray-300">—</span>}
                     </td>
-                    <td className={TD_DATE}>
-                      {r.ship_date ? thaiDate(r.ship_date) : <span className="text-gray-300">—</span>}
+                    {/* 📐 โหมดเหมือน ZORT (ภาพ /Sell/list 20 ต.ค. 2569): วันส่งสินค้าเขียน วันนี้ / พรุ่งนี้ / เมื่อวานนี้ · วันที่เต็มอยู่ใน title
+                        (ZORT ระบายสีแดงด้วย แต่ยังไม่รู้กติกาสี ⇒ ไม่เดาสี ใช้แค่คำ) */}
+                    <td className={TD_DATE} title={เหมือนZORT && r.ship_date ? thaiDate(r.ship_date) : undefined}>
+                      {r.ship_date ? (เหมือนZORT ? วันส่งแบบZORT(String(r.ship_date).slice(0, 10)) : thaiDate(r.ship_date)) : <span className="text-gray-300">—</span>}
                       {(r.is_cod === 1 || r.is_cod === true) && (
                         <span className={`block w-fit mt-0.5 ${COD_BADGE}`}>COD</span>
                       )}
