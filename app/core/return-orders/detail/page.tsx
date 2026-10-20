@@ -187,8 +187,9 @@ function Inner() {
                       <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{รูป}</span>
                       <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                     </div>
+                    {/* 📏 แถวห่างกัน 31 แบบ ZORT (ภาพใบรับคืน + DOM ใบโอน 20 ต.ค. 2569: แถวสูง 23) ⇒ py-1 */}
                     {แถว.map(([k, v]) => (
-                      <div key={k} className="grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] pr-[15px]">
+                      <div key={k} className="grid grid-cols-[1fr_2fr] py-1 pl-[15px] pr-[15px]">
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span> : v ?? <span className="text-gray-300">—</span>}</span>
                       </div>
