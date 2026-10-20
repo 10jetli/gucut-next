@@ -15,6 +15,7 @@ import DupSkuNote from '@/components/zort/DupSkuNote'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { QtyZ } from '@/components/zort/qtyColor'
 import { fmtMoney, fmtNum } from '@/lib/format'
 import { coverageText } from '@/lib/csv-export'
 import { skuScopeNote } from '@/lib/sku-scope'
@@ -1044,6 +1045,12 @@ function CoreStockInner() {
                       <td className={TDR} title={`บริการ — ไม่มีสต็อกจริง (เลขในระบบ ${r.qty})`}>N/A</td>
                       <td className={TDR} title={typeof r.available === 'number' ? `บริการ — ไม่มีสต็อกจริง (เลขในระบบ ${r.available})` : undefined}>N/A</td>
                     </>) : (<>
+                    {/* 📐 โหมดเหมือน ZORT: ตัวเลข+หน่วยสีตามเกณฑ์ ZORT (≤0 แดง · 1–4 เหลือง · ≥5 เขียว · ตัวกลาง qtyColor) · ป้าย "ติดลบ" ไม่มีในจอ ZORT (สีแดง+เครื่องหมายลบบอกแล้ว) */}
+                    {เหมือนZORT ? (
+                    <td className={TDR}>
+                      <QtyZ n={r.qty} unit={r.unit} />
+                    </td>
+                    ) : (
                     <td className={TDR}>
                       <Num v={r.qty} zeroRed />
                       {r.unit && <span className="ml-1 text-[11.5px] text-gray-400">{r.unit}</span>}
@@ -1053,10 +1060,13 @@ function CoreStockInner() {
                         </span>
                       )}
                     </td>
+                    )}
                     {/* ⚠️ พร้อมขาย null = ไม่มีในทะเบียน **ห้ามเอาคงเหลือมาแทน** */}
                     <td className={TDR}>
                       {typeof r.available === 'number'
-                        ? <Num v={r.available} />
+                        ? (เหมือนZORT
+                          ? <QtyZ n={r.available} unit={r.unit} />
+                          : <Num v={r.available} />)
                         : <span className="text-gray-300">—</span>}
                     </td>
                     </>)}
