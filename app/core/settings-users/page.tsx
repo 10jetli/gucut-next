@@ -240,7 +240,8 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
               <tr>
                 <th className={TH}>ชื่อผู้ใช้งาน</th>
                 {/* 🔴 คอลัมน์แหล่งที่มา — ไม่ใช่ของประดับ: แก้/ปิดผู้ใช้สองแหล่งทำคนละวิธี */}
-                <th className={TH}>เพิ่มจากไหน</th>
+                {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีคอลัมน์นี้ ⇒ ซ่อน · แหล่งที่มาย้ายไปอยู่ใน title ของชื่อ (ยังอ่านได้ ไม่ลบ) */}
+                {!เหมือนZORT && <th className={TH}>เพิ่มจากไหน</th>}
                 {/* ⚠️ สองคอลัมน์นี้ ZORT มีข้อมูล เราไม่มี — ระบบเก็บผู้ใช้ใน env ไม่มีใครบันทึกเวลา */}
                 <th className={TH} title="ผู้ใช้ที่ตั้งใน env ไม่มีการบันทึกวันสมัคร (ผู้ใช้ที่เพิ่มจากหน้าเว็บมี createdAt แต่ตารางนี้ยังไม่ได้อ่านมาแสดง)">วันที่สมัคร</th>
                 <th className={TH} title="ระบบเรายังไม่บันทึกเวลาล็อกอิน">เข้าใช้งานล่าสุด</th>
@@ -251,17 +252,19 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
             <tbody>
               {rows.map((r, i) => (
                 <tr key={i} className="border-b border-[#e8ecf8] last:border-0">
-                  <td className={TD}>
+                  <td className={TD} title={เหมือนZORT
+                    ? (r.source === 'web' ? 'เพิ่มจากหน้าเว็บ — ปิด/ลบได้จากหน้าเพิ่มผู้ใช้งาน' : 'ตั้งที่ Netlify env — แก้แล้วต้อง deploy ใหม่')
+                    : undefined}>
                     {r.name}
                     {dupNames.includes(r.name) && (
                       <span className="ml-1.5 text-[11.5px] text-amber-700" title="ชื่อนี้มีมากกว่าหนึ่งบัญชี — คนละบัญชีจริง ๆ">⚠️ ชื่อซ้ำ</span>
                     )}
                   </td>
-                  <td className={TD}>
+                  {!เหมือนZORT && <td className={TD}>
                     {r.source === 'web'
                       ? <span className="text-[11.5px] text-blue-800 bg-blue-50 border border-blue-200 rounded px-2 py-0.5" title="เพิ่มจากจอนี้ — ปิด/ลบได้จากหน้าเพิ่มผู้ใช้งาน">หน้าเว็บ</span>
                       : <span className="text-[11.5px] text-gray-700 bg-gray-100 border border-gray-200 rounded px-2 py-0.5" title="ตั้งที่ Netlify env — แก้แล้วต้อง deploy ใหม่">Netlify env</span>}
-                  </td>
+                  </td>}
                   {/* ✅ ผู้ใช้จากเว็บมี createdAt จริง ⇒ เลิกขีดทั้งคอลัมน์
                       (คอลัมน์นี้เคยขีดทุกแถวพร้อมคำอธิบายว่า "ไม่มีฐานข้อมูลผู้ใช้" ซึ่งเลิกจริงไปแล้ว) */}
                   {/* ⚠️ จอนี้เป็น server component — ค่าคลาสที่ import จาก @/components/zort (ไฟล์ 'use client') ห้ามต่อสตริง ⇒ ได้ [object Object] (เจอ 20 ต.ค. 2569) · สีใส่ที่ span ข้างใน */}
@@ -282,7 +285,7 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
                 </tr>
               ))}
               {rows.length === 0 && (
-                <tr><td colSpan={6} className="px-3 py-6 text-center text-[12.5px] text-gray-400">
+                <tr><td colSpan={เหมือนZORT ? 5 : 6} className="px-3 py-6 text-center text-[12.5px] text-gray-400">
                   {q ? `ไม่พบผู้ใช้ที่ชื่อตรงกับ "${q}"` : 'ยังไม่ได้ตั้งผู้ใช้'}
                 </td></tr>
               )}
