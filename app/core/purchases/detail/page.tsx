@@ -392,7 +392,8 @@ function Inner() {
               กล่องขาว ขอบมน 6 ช่องใน 20 · ซ้ายวงไอคอน 48 สี #d0daff ไอคอน #4165ed (วาดเอง ไม่ใช้ไอคอนของเขา)
               · ขวาป้ายหัว Boon 14 w500 #868e96 + ป้ายสถานะใหญ่ (สูง 32) · สองแถวนี้จึงไม่ซ้ำในการ์ดข้อมูล */}
           {เหมือนZORT && (
-            <div className="mb-[30px] grid gap-[30px] md:grid-cols-2">
+            /* 📏 การ์ดสถานะต่ำกว่าแถวปุ่ม 30 แบบ ZORT (ของเรา 20 · ภาพ 20 ต.ค. 2569) ⇒ padding บน 8 (margin ยุบ) */
+            <div className="mb-[30px] pt-2 grid gap-[30px] md:grid-cols-2">
               {([
                 ['สถานะการชำระเงิน', d.paymentStatus ? zortWord(PURCHASE_DETAIL_PAY_STATUS, d.paymentStatus).text : null, '฿'],
                 ['สถานะการโอนสินค้า', d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : null, '▤'],
@@ -411,6 +412,35 @@ function Inner() {
               ))}
             </div>
           )}
+          {/* 📐 โหมดเหมือน ZORT (ภาพ /Buy/Details PO-202603001 20 ต.ค. 2569): กล่องเดียวสองคอลัมน์ ข้อมูล | ผู้ติดต่อ
+                หัว Kanit 20 มีวงไอคอน · แถวสูง 23 ห่าง 31 · ZORT ข้อมูลมีแค่ รายการ · ประเภทรายการ · วันที่
+                ⇒ กล่องเดิมสองใบของเรา (คลัง · โน้ต · อัปเดตกระจก · ยอดเงิน) พับไว้ใต้กล่องนี้ ไม่ลบ */}
+          {เหมือนZORT && (
+            <section className="mb-[30px] bg-white rounded-[6px] p-5 md:grid md:grid-cols-2">
+              {([
+                ['📄', 'ข้อมูล', [['รายการ', d.number || no], ['ประเภทรายการ', 'ซื้อสินค้าเข้า'], ['วันที่', d.poDate ? thaiDate(d.poDate, 'เต็ม') : '—']]],
+                ['👤', 'ผู้ติดต่อ', [
+                  /* ZORT API ไม่ส่งผู้สร้างรายการของใบซื้อ ⇒ ขีด + เหตุใน title ห้ามเดาชื่อ */
+                  ['ผู้สร้างรายการ', <span key="c" className="text-gray-300 cursor-help" title="ZORT API ไม่ส่งชื่อผู้สร้างรายการของใบซื้อมา — ดูได้ที่จอ ZORT">—</span>],
+                  ...(d.vendor ? [['ชื่อผู้ติดต่อ', d.vendor]] : []),
+                ]],
+              ] as const).map(([รูป, หัว, แถว]) => (
+                <div key={หัว} className="mt-4 md:mt-0">
+                  <div className="flex items-center gap-3 mb-4 pl-[30px]">
+                    <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{รูป}</span>
+                    <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
+                  </div>
+                  {(แถว as ReadonlyArray<readonly [string, React.ReactNode]>).map(([k, v]) => (
+                    <div key={k} className="grid grid-cols-[1fr_2fr] py-1 pl-[15px] md:pr-[45px]">
+                      <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
+                      <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </section>
+          )}
+          <ZortLookFold tone="gray" สรุป={<>ข้อมูลเพิ่มของเรา — คลังปลายทาง · โน้ต · อัปเดตกระจก · ยอดหัวใบเทียบผลรวมบรรทัด</>}>
           <div className="mb-4 grid gap-3 md:grid-cols-2">
             <section className={DL_CARD}>
               <h2 className={`mb-2 ${DL_CARD_TITLE}`}>ข้อมูล</h2>
@@ -478,6 +508,7 @@ function Inner() {
               )}
             </section>
           </div>
+          </ZortLookFold>
 
           <section className={DL_CARD}>
             <h2 className={`mb-2 ${DL_CARD_TITLE}`}>
