@@ -18,6 +18,7 @@
  * ⚠️ **ห้ามตัดแถวที่หน้าตาเหมือนกัน** — ของจริงรหัส 00313 มีแถวซ้ำเป๊ะ 106 แถว
  *    และเป็นข้อมูลจริง (ใบเดียวมีหลายบรรทัดรหัสเดียวกัน) ⇒ ตัดซ้ำ = ยอดหายเงียบ ๆ
  */
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { useCallback, useEffect, useState } from 'react'
 import { fmtNum, fmtMoney } from '@/lib/format'
 import { TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState } from './index'
@@ -63,6 +64,9 @@ interface Resp {
 }
 
 const PAGE = 100
+
+/** ป้ายปุ่มส่งออก — ปุ่มกับประโยคชวนกดใช้ค่าเดียวกัน ไม่งั้นแก้ที่หนึ่งแล้วอีกที่ค้าง */
+const ป้ายส่งออก = เหมือนZORT ? 'Export Stock Card ไฟล์ Excel' : '📤 ส่งออกบัตรสต็อก'
 
 export default function StockCard({ sku }: { sku: string }) {
   const [kind, setKind] = useState('all')
@@ -118,7 +122,8 @@ export default function StockCard({ sku }: { sku: string }) {
           {/* 📤 ZORT มี ExportStockCard() — ของเราส่งออกครบทุกหน้าตามตัวกรองเดียวกับที่เห็น */}
           <ExportButton
             disabled={loading || !data}
-            label="📤 ส่งออกบัตรสต็อก"
+            /* 📐 โหมดเหมือน ZORT: คำบนปุ่มตาม ZORT /Product/Details (REA 20 ต.ค. 2569 · stockCardModal "Export Stock Card ไฟล์ Excel") */
+            label={ป้ายส่งออก}
             spec={{
               filename: `บัตรสต็อก-${sku}`,
               scope: from || to ? `${from || 'เริ่มแรก'} ถึง ${to || 'ล่าสุด'}` : 'ทั้งหมดเท่าที่มี',
@@ -231,7 +236,7 @@ export default function StockCard({ sku }: { sku: string }) {
       <p className="text-[12.5px] text-gray-500 mt-2 leading-relaxed">
         {/* 🔴 บอกให้ชัดว่าที่เห็นคือหน้าแรก ไม่ใช่ทั้งหมด — CLAUDE.md กฎตัวนับกับตัวแถว */}
         {total !== null
-          ? <>มีทั้งหมด <b>{fmtNum(total)} รายการ</b>{shown < total && <> — จอนี้แสดง <b>{fmtNum(shown)} รายการแรก</b> · กด &ldquo;ส่งออกบัตรสต็อก&rdquo; เพื่อได้ครบทุกแถว</>}</>
+          ? <>มีทั้งหมด <b>{fmtNum(total)} รายการ</b>{shown < total && <> — จอนี้แสดง <b>{fmtNum(shown)} รายการแรก</b> · กด &ldquo;{ป้ายส่งออก.replace(/^📤 /, '')}&rdquo; เพื่อได้ครบทุกแถว</>}</>
           : 'ท่อไม่ได้บอกจำนวนทั้งหมด — ยังไม่รู้ว่าที่เห็นครบหรือไม่'}
         {data?.counts && <> · แยกตามชนิด: {Object.entries(data.counts).map(([k, v]) => `${k} ${fmtNum(v)}`).join(' · ')}</>}
       </p>
