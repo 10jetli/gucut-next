@@ -1019,9 +1019,13 @@ function CoreStockInner() {
                           ตรงที่ช่องอื่น
                         </span>
                       )}
-                      {r.service && (
+                      {r.service && (เหมือนZORT
+                        /* 📐 โหมดเหมือน ZORT (ภาพ /Product/list 20 ต.ค. 2569): บรรทัดใต้ชื่อ ไอคอนป้ายเส้น + "บริการ" สีลิงก์ #337ab7 (ไอคอนวาดเอง) */
+                        ? <span className="flex items-center gap-1 mt-1 text-[13px] text-[#337ab7]">
+                            <svg aria-hidden width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"><path d="M2 2h6l6 6-6 6-6-6z" /><circle cx="5.5" cy="5.5" r="1" /></svg>บริการ
+                          </span>
                         // ติดป้ายเฉพาะตอนแสดงบริการด้วย จะได้รู้ทันทีว่าทำไมแถวนี้ติดลบ
-                        <span className="ml-1.5 text-[10px] font-semibold text-gray-600 bg-gray-100 rounded px-1 py-0.5">
+                        : <span className="ml-1.5 text-[10px] font-semibold text-gray-600 bg-gray-100 rounded px-1 py-0.5">
                           บริการ
                         </span>
                       )}
