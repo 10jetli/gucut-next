@@ -180,7 +180,9 @@ function Inner() {
                 {([
                   ['รายการ', d.number || '—'],
                   ['วันที่', thaiDate(d.date, 'เต็ม')],
-                  ['ไป', <>{wh(d.from, names)} → {wh(d.to, names)}{whErr && (d.from || d.to) && <span className="block text-[11.5px] text-amber-700 mt-0.5">⚠️ ดึงชื่อคลังไม่ได้ — ที่เห็นคือ<b>รหัสคลัง</b> ไม่ใช่ชื่อ</span>}</>],
+                  /* 📐 ZORT แถว ไป = ชื่อคลังปลายทางอย่างเดียว (ภาพ TF-202610025 20 ต.ค. 2569: "โกดัง") · ใบที่มีต้นทาง แยกแถว จาก ไว้ก่อน */
+                  ...(d.from ? [['จาก', wh(d.from, names)] as const] : []),
+                  ['ไป', <>{d.to ? (names[String(d.to).trim()] || wh(d.to, names)) : wh(d.to, names)}{whErr && (d.from || d.to) && <span className="block text-[11.5px] text-amber-700 mt-0.5">⚠️ ดึงชื่อคลังไม่ได้ — ที่เห็นคือ<b>รหัสคลัง</b> ไม่ใช่ชื่อ</span>}</>],
                   ['เลขพัสดุ', d.tracking ? <span className="font-mono">{d.tracking}</span> : <span className="text-gray-300">ไม่มี</span>],
                 ] as const).map(([k, v]) => (
                   <div key={k} className="grid grid-cols-[1fr_2fr] py-1.5 pl-[15px] md:max-w-[50%] md:pr-[45px]">
