@@ -24,7 +24,7 @@
 // ⚠️ ปุ่ม "สร้าง…" กับ "นำเข้าไฟล์" พาไปหน้าที่บอกตรง ๆ ว่ายังทำอะไรไม่ได้
 //    ห้ามทำปุ่มที่กดแล้วไม่เกิดอะไร — คนใช้จะกดซ้ำแล้วนึกว่าระบบพัง
 import { HEAD_BTN, HEAD_BTN_GHOST } from '@/components/zort/headBtn'
-import ExportButton from '@/components/zort/ExportButton'
+import ExportButton, { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/components/zort/ExportButton'
 import { useCallback, useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SOON } from '@/lib/zort-menu'
@@ -394,7 +394,10 @@ export default function LedgerScreen({
                   </span>
                 )
                 /* 📐 ขึ้นต้นด้วยคำของ ZORT `จำนวน N รายการ` (หัวจอทุกหน้ารายการของเขา) แล้วค่อยบอกแหล่ง (15 ต.ค. 2569) */
-                : <span>จำนวน <b>{(zCount ?? rows?.length ?? 0).toLocaleString('th-TH')} รายการ</b> · ถาม ZORT สดรอบนี้</span>}
+                /* 📐 โหมดเหมือน ZORT: ตัวเลขไม่หนา · ที่มา (ถาม ZORT สด) ย้ายเป็น ⓘ — ภาพ /Product/Variantlist 20 ต.ค. 2569 */
+                : เหมือนZORT
+                  ? <span>จำนวน {(zCount ?? rows?.length ?? 0).toLocaleString('th-TH')} รายการ <span className="text-gray-400 cursor-help text-[14px]" title="ถาม ZORT สดรอบนี้">ⓘ</span></span>
+                  : <span>จำนวน <b>{(zCount ?? rows?.length ?? 0).toLocaleString('th-TH')} รายการ</b> · ถาม ZORT สดรอบนี้</span>}
         actions={
           <>
             {withImport && (
@@ -590,7 +593,8 @@ export default function LedgerScreen({
                    · ข้อความ Boon 14 #868e96 ใต้รูป ~25 — รูปวาดเองเป็น SVG (ไม่ใช้ภาพของ ZORT) · ข้อความสถานะของเราคงเดิมทุกคำ */}
               <td colSpan={cols.length + 1} className={แถวเตี้ย ? 'py-4 text-center' : เหมือนZORT ? 'pt-[38px] pb-[30px] text-center !bg-white' : 'py-14 text-center'}>
                 {!แถวเตี้ย && (เหมือนZORT ? <รูปโฟลเดอร์ว่าง /> : <span className="text-[34px] block opacity-60">🗂️</span>)}
-                <p className={แถวเตี้ย ? 'text-[14px] text-gray-800' : เหมือนZORT ? "font-['Boon',sans-serif] text-[14px] text-[#868e96] mt-[25px]" : 'text-[14px] text-gray-800 mt-2'}>
+                <p title={เหมือนZORT && zortAnswered && !zLoading && !zUnknown ? 'ZORT ตอบแล้วว่าไม่มีรายการ (ถามสำเร็จ ไม่ใช่ดึงไม่ได้)' : undefined}
+                  className={แถวเตี้ย ? 'text-[14px] text-gray-800' : เหมือนZORT ? "font-['Boon',sans-serif] text-[14px] text-[#868e96] mt-[25px]" : 'text-[14px] text-gray-800 mt-2'}>
                   {/* หลักฐาน+วันที่ยิงตรวจของคีย์นี้อยู่ในกล่อง "หลักฐาน:" ข้างบน (ทะเบียน 14 ก.ย. 2569) */}
                   {zLoading ? 'กำลังถาม ZORT…'
                     /* 🔴 resCode 500 = **ขัดข้องฝั่ง ZORT เอง** (ฝั่งท่อยิงตรวจ 23:00 14 ก.ย. 2569
@@ -598,7 +602,8 @@ export default function LedgerScreen({
                        ⚠️ ห้ามเขียนสาเหตุเกินนี้ — ยังไม่รู้ว่าพังเพราะร้านไม่มีรายการ หรือพังทุกร้าน */
                     : zUnknown && zCode === '500' ? 'ZORT ขัดข้องฝั่งเขา (ข้อผิดพลาดภายในของ ZORT) — ยังไม่รู้ว่ามีรายการโอนเงินไหม'
                       : zUnknown ? 'ถาม ZORT ไม่สำเร็จ — ยังไม่รู้ว่ามีกี่รายการ'
-                        : zortAnswered ? 'ZORT ตอบแล้วว่าไม่มีรายการ'
+                        /* 📐 โหมดเหมือน ZORT: คำว่างของ ZORT คือ "ไม่มีข้อมูล" · คำของเรา (ZORT ตอบแล้ว ไม่ใช่ดึงไม่ได้) อยู่ใน title ของย่อหน้า */
+                        : zortAnswered ? (เหมือนZORT ? 'ไม่มีข้อมูล' : 'ZORT ตอบแล้วว่าไม่มีรายการ')
                           /* 🗓️ **วันที่ยิงตรวจของคำนี้อยู่รายคีย์ในทะเบียน `lib/zort-menu.ts` ช่อง impossible**
                              (นับเมื่อ 16 ก.ย. 2569: 22 คีย์ · วันที่ยิงตรวจ 14 ก.ย. 2569 จำนวน 16 คีย์ · 15 ก.ย. 2569 จำนวน 2 คีย์)
                              จอนี้เป็นตัวแสดงร่วมของหลายเมนู ⇒ ห้ามฝังวันที่ตายตัวในข้อความ
@@ -749,6 +754,15 @@ export default function LedgerScreen({
               toRow: (r: Record<string, unknown>) => ROW_MAPS[zortList](r).map((v) => (v === '' ? null : v)),
             }}
           />
+        </div>
+      )}
+      {/* 📐 โหมดเหมือน ZORT: ZORT โชว์ปุ่ม Export to Excel แม้ไม่มีแถว (ภาพ /Product/Variantlist 20 ต.ค. 2569)
+          ของเราไม่มีแถว = ไฟล์เปล่า ⇒ วาดเป็นปุ่มกดไม่ได้พร้อมเหตุ (ไม่ใช่ปุ่มหลอก) */}
+      {เหมือนZORT && zortAnswered && rows!.length === 0 && zortList && ROW_MAPS[zortList] && (
+        <div className="mt-3 flex items-center gap-2">
+          <button type="button" disabled className={ZORT_EXPORT_BTN} title="ยังไม่มีรายการให้ส่งออก — ZORT ตอบแล้วว่าไม่มีรายการ">
+            <ไอคอนไฟล์ />Export to Excel
+          </button>
         </div>
       )}
 
