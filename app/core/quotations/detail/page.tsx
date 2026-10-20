@@ -5,6 +5,7 @@
 // ⚠️ ท่อจงใจ**ไม่เลือกช่องเงินให้** (ส่งทุกช่องที่มีค่า) — จอก็แสดงตามนั้น ไม่ตีความแทน
 //   (บทเรียนใบราคา ฿0: การตีความให้เรียบร้อยเคยปิดบังโครงสร้างจริงจนไล่ปัญหาไม่ได้)
 // ⚠️ ห้าม log/ส่งต่อเนื้อหาใบ — มีชื่อ/เบอร์ลูกค้าจริง
+import AttachLinkOff from '@/components/zort/AttachLinkOff'
 import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
@@ -87,7 +88,8 @@ function Inner() {
       {/* หัวจอตาม ZORT: "รายละเอียดใบเสนอราคา" · เลขที่ใบอยู่ในช่อง "รายการ" (อ่านจอจริง 16 ต.ค. 2569) */}
       <PageHead title="รายละเอียดใบเสนอราคา"
         summary={เหมือนZORT
-          ? <span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน">ⓘ</span>
+          /* 📐 โหมดเหมือน ZORT: แนบไฟล์อยู่ใต้หัวจอ (ไม่ใช่ท้ายแถวปุ่ม) */
+          ? <><AttachLinkOff /><span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน">ⓘ</span></>
           : <span className="text-gray-400">ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน</span>}
         /* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Quotation/Details ไม่มี · แถบปุ่มแบบ ZORT อยู่ข้างล่าง */ />
 
@@ -106,8 +108,8 @@ function Inner() {
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
             className={DETAIL_BTN_OFF}>ดูกิจกรรมของรายการ</span>
-          <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
-            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>
+          {!เหมือนZORT && <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
+            className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>}
         </div>
       )}
 
