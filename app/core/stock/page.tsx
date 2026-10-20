@@ -948,7 +948,7 @@ function CoreStockInner() {
                               src={pickImage(imgOf(r.sku), r, 128, false) as string}
                               alt=""
                               loading="lazy"
-                              className="w-10 h-10 rounded border border-gray-200 object-cover bg-white shrink-0"
+                              className={`${รูปย่อZ} border border-gray-200 object-cover bg-white shrink-0`}
                             />
                           )
                           : รูปดิบของZORT(r)
@@ -963,15 +963,15 @@ function CoreStockInner() {
                                     ผ่านตัวย่อของ Next ⇒ เบราว์เซอร์ได้รูปเล็ก และแคชที่ CDN หลังคำขอแรก
                                  ⚠️ ย่อไม่สำเร็จ (โฮสต์ล่ม/รูปหาย) ⇒ **ต้องกลับไปเป็นกล่องเทา ไม่ใช่รูปแตก**
                                     ⇒ ใช้ onError ซ่อนตัวเอง (กล่องเทาอยู่ข้างหลังแล้ว) */
-                              <span className="relative block w-10 h-10 shrink-0">
-                                <span className="absolute inset-0 rounded border border-gray-200 bg-gray-100" />
+                              <span className={`relative block ${รูปย่อZ} shrink-0`}>
+                                <span className={`absolute inset-0 ${รูปย่อZ} border border-gray-200 bg-gray-100`} />
                                 <Image
                                   src={รูปดิบของZORT(r) as string}
                                   alt=""
-                                  width={40}
-                                  height={40}
+                                  width={เหมือนZORT ? 50 : 40}
+                                  height={เหมือนZORT ? 50 : 40}
                                   unoptimized={false}
-                                  className="relative w-10 h-10 rounded border border-gray-200 object-cover bg-white"
+                                  className={`relative ${รูปย่อZ} border border-gray-200 object-cover bg-white`}
                                   onError={(e) => { (e.currentTarget as HTMLImageElement).style.visibility = 'hidden' }}
                                 />
                               </span>
@@ -1262,6 +1262,9 @@ function รหัสผิดรูป(sku?: string | null): boolean {
   const s = String(sku ?? '')
   return s.includes(';') || s.includes('#') || s.length > 40
 }
+
+/** 📏 รูปย่อในตาราง — โหมดเหมือน ZORT 50×50 มุมเหลี่ยม (วัด DOM /Product/list 20 ต.ค. 2569 · รูปเป็น background ของกล่อง 50×50) · โหมดเดิม 40 มุมมน */
+const รูปย่อZ = เหมือนZORT ? 'w-[50px] h-[50px] rounded-none' : 'w-10 h-10 rounded'
 
 export default function CoreStockPage() {
   // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (แพตเทิร์นเดียวกับ sales/detail)
