@@ -32,6 +32,9 @@ import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
 import DormantInShipPile from '@/components/zort/DormantInShipPile'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+
+/** ความกว้างคอลัมน์แบบ ZORT — เฉพาะโหมดเหมือน ZORT (โหมดปกติให้ตารางจัดเอง) */
+const กว้างZ = (w: number) => (เหมือนZORT ? { width: w } : undefined)
 import ไอคอนZ from '@/components/zort/ZortIcon'
 import { คลาสวันซ้าย, คลาสวันขวา, ลูกศรวัน, ป้ายแสดง } from '@/components/zort/dateSelect'
 
@@ -1425,25 +1428,25 @@ export default function CoreSalesPage() {
                 <tr>
                   {/* 🔢 **ลำดับคอลัมน์ `#` มาก่อนช่องติ๊ก — ตามผัง ZORT** (บันทึก `เทียบ-zort.md` 5 ต.ค. 2569
                       ข้อที่เขียนว่า "ลำดับช่องติ๊ก/# สลับกัน" คือข้อนี้ · สลับให้ตรงต้นแบบ 14 ต.ค. 2569)
-                      ⚠️ หลักฐานเป็น **การอ่านจอ ZORT เมื่อ 5 ต.ค.** ยังไม่ได้เปิดดูซ้ำรอบนี้
-                         (จอ ZORT เข้าไม่ได้ — ยังไม่มีโปรไฟล์ที่ล็อกอินบัญชีหลัก)
-                         ⇒ เป็นของที่ต้องยืนยันด้วยตาอีกครั้งตอนเปิด ZORT ได้ ไม่ใช่ของที่ปิดจบแล้ว */}
-                  <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH_CHECK} style={{ width: 34 }}>
+                      ✅ ยืนยันด้วย DOM /Sell/list 21 ต.ค. 2569: # ที่ x230 · ช่องติ๊ก x261
+                      📏 โหมดเหมือน ZORT: ความกว้างคอลัมน์ตาม DOM ZORT ที่ 1280 (# 31 · ติ๊ก 22 · วันที่ 74 · รายการ 138 · ลูกค้า 162 · ช่องทาง 149
+                         · บริการขนส่ง 68 · วันส่ง 83 · มูลค่า 50 · สถานะ 67 · ชำระ 75) — ค่าแนะนำ เนื้อที่ยาวกว่ายังขยายได้ */}
+                  <th className={TH_NO} style={{ width: เหมือนZORT ? 31 : 44 }}>#</th>
+                  <th className={TH_CHECK} style={{ width: เหมือนZORT ? 22 : 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
                       indeterminate={picked.length > 0 && picked.length < rows.length}
                       onChange={(v) => setPicked(v ? rows.map((r) => r.id) : [])} />
                   </th>
-                  <th className={TH}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}><SortHead label="ลูกค้า" field="customer" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}><SortHead label="ช่องทาง" field="channel" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}>บริการขนส่ง</th>
-                  <th className={TH}><SortHead label="วันส่งสินค้า" field="shipDate" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={THR}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={THC}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={THC}><SortHead label="ชำระเงิน" field="payStatus" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(74)}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(138)}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(162)}><SortHead label="ลูกค้า" field="customer" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(149)}><SortHead label="ช่องทาง" field="channel" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(68)}>บริการขนส่ง</th>
+                  <th className={TH} style={กว้างZ(83)}><SortHead label="วันส่งสินค้า" field="shipDate" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THR} style={กว้างZ(50)}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC} style={กว้างZ(67)}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC} style={กว้างZ(75)}><SortHead label="ชำระเงิน" field="payStatus" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
