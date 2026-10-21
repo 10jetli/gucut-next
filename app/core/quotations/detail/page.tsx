@@ -16,6 +16,7 @@ import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/
 import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, thaiDate, RowMenu, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import NavPrevNext from '@/components/zort/NavPrevNext'
 import ไอคอนZ from '@/components/zort/ZortIcon'
 import { QUOTATION_DETAIL_STATUS, zortWord } from '@/lib/zort-words'
 
@@ -91,6 +92,11 @@ function Inner() {
       {/* ⚠️ ห้ามเอา number ขึ้นหัวเรื่องตอนท่อส่งผิดชั้น — มันคือจำนวนสินค้า ไม่ใช่เลขที่ใบ */}
       {/* หัวจอตาม ZORT: "รายละเอียดใบเสนอราคา" · เลขที่ใบอยู่ในช่อง "รายการ" (อ่านจอจริง 16 ต.ค. 2569) */}
       <PageHead title="รายละเอียดใบเสนอราคา"
+        /* 📐 โหมดเหมือน ZORT: มุมขวาบน N จาก T ‹ › (ZORT /Quotation/Details ขึ้น 4 จาก 6 · 21 ต.ค. 2569) · ลำดับเดียวกับจอรายการ */
+        actions={เหมือนZORT && id ? (
+          <NavPrevNext ลิสต์URL="/api/web/core?list=quotations&limit=200" คีย์="id" ปัจจุบัน={id}
+            ลิงก์={(k) => `/core/quotations/detail?id=${encodeURIComponent(k)}`} />
+        ) : undefined}
         summary={เหมือนZORT
           /* 📐 โหมดเหมือน ZORT: แนบไฟล์อยู่ใต้หัวจอ (ไม่ใช่ท้ายแถวปุ่ม) */
           ? <><AttachLinkOff /><span className="text-gray-400 cursor-help text-[14px]" title="ดึงสดจาก ZORT รายใบ · จอแสดงช่องตามที่ ZORT ส่งจริง ไม่ตีความแทน">ⓘ</span></>
