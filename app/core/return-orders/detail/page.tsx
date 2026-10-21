@@ -12,7 +12,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import LoadingState from '@/components/ui/LoadingState'
-import { RETURN_ORDER_STATUS, zortWord } from '@/lib/zort-words'
+import { RETURN_ORDER_STATUS, PAY_STATUS, zortWord } from '@/lib/zort-words'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
 import { PageHead, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE, RowMenu, DETAIL_BTN } from '@/components/zort'
@@ -32,6 +32,10 @@ interface Resp {
   customer?: string; reference?: string
   'เงินที่ ZORT เก็บไว้'?: Record<string, unknown>
   lines?: Line[] | null
+  /* ท่อ f0ce6db3 (22 ต.ค. 2569): ห้าช่องหัวใบ — **ไม่มีคีย์** = ท่อรุ่นเก่า · **null** = ZORT ไม่ส่งช่องนี้ · **''** = ZORT ส่งมาว่าง (สามสถานะ ห้ามยุบ)
+     date มาจาก returnorderdate (เดิมถอยไปวันสร้างเอกสารเงียบ ๆ) — ไม่มีวันคืน ⇒ null · createdAt = วันสร้างเอกสาร ส่งแยก */
+  paymentstatus?: string | null; saleschannel?: string | null; createusername?: string | null
+  customerphone?: string | null; customeraddress?: string | null; createdAt?: string | null
   fields?: string[]; error?: string; skip?: string
 }
 
@@ -41,6 +45,14 @@ const ไม่ส่ง = Symbol('ไม่ส่ง')
    (paymentstatus · saleschannel · createusername · customerphone · customeraddress) แต่ท่อส่ง **ค่า** มาให้จอแค่ 6 ช่อง
    ⇒ เหตุคือ "ท่อยังไม่ส่งต่อค่า" ไม่ใช่ "ZORT ไม่มี" · ขอฝั่งท่อแล้ว (ใบถึง CTO 19 ต.ค. 2569) */
 const ไม่ส่งช่องนี้ = 'ZORT มีค่านี้ในใบ แต่ท่อของเรายังไม่ส่งต่อมาให้จอ — ยังไม่รู้ ไม่ใช่ว่าง'
+const ZORTไม่ส่งช่องนี้ = 'ZORT ไม่ได้ส่งช่องนี้มากับใบนี้'
+/** อ่านช่องหัวใบแบบสามสถานะ: ไม่มีคีย์ ⇒ ไม่ส่ง (ท่อรุ่นเก่า) · null ⇒ null (ZORT ไม่ส่ง) · '' ⇒ '-' แบบ ZORT · ค่า ⇒ ค่า */
+const ช่องหัวใบ = (d: object, k: string): string | null | typeof ไม่ส่ง => {
+  if (!(k in d)) return ไม่ส่ง
+  const v = (d as Record<string, unknown>)[k]
+  if (v === null || v === undefined) return null
+  return String(v) === '' ? '-' : String(v)
+}
 
 const fmtVal = (v: unknown) =>
   typeof v === 'number' ? v.toLocaleString('th-TH') : String(v ?? '—')
@@ -162,7 +174,9 @@ function Inner() {
                   <div className="text-right">
                     <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">สถานะการชำระเงิน</h2>
                     <div className="mt-2">
-                      <span title={ไม่ส่งช่องนี้} className="inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 text-gray-400 bg-gray-100 cursor-help">ยังไม่รู้</span>
+                      {typeof d.paymentstatus === 'string' && d.paymentstatus !== ''
+                        ? <span title={`ค่าที่ท่อส่งมา: ${d.paymentstatus}`} className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(zortWord(PAY_STATUS, d.paymentstatus).text))}`}>{zortWord(PAY_STATUS, d.paymentstatus).text}</span>
+                        : <span title={'paymentstatus' in d ? ZORTไม่ส่งช่องนี้ : ไม่ส่งช่องนี้} className="inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 text-gray-400 bg-gray-100 cursor-help">ยังไม่รู้</span>}
                     </div>
                   </div>
                 </div>
@@ -182,8 +196,8 @@ function Inner() {
                 {([
                   /* แถวเรียงตาม ZORT · `ไม่ส่ง` = เส้นรายใบของเรายังไม่ส่งช่องนี้ (ขีด + เหตุ ไม่ใช่ค่าว่างจริง)
                      ประเภทรายการเป็นค่าคงที่ของจอนี้ (ทุกใบในจอนี้คือใบรับคืน) ไม่ได้มาจากท่อ */
-                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['ประเภทรายการ', 'รับคืนสินค้า'], ['วันที่', d.date ? thaiDate(d.date, 'เต็ม') : null], ['อ้างอิง', d.reference || null], ['ช่องทางการขาย', ไม่ส่ง]]],
-                  ['ลูกค้า', '👤', [['ผู้สร้างรายการ', ไม่ส่ง], ['ชื่อลูกค้า', d.customer || null], ['เบอร์โทรศัพท์ลูกค้า', ไม่ส่ง], ['ที่อยู่ลูกค้า', ไม่ส่ง]]],
+                  ['ข้อมูล', '📄', [['รายการ', d.number || null], ['ประเภทรายการ', 'รับคืนสินค้า'], ['วันที่', d.date ? thaiDate(d.date, 'เต็ม') : null], ['อ้างอิง', d.reference || null], ['ช่องทางการขาย', ช่องหัวใบ(d, 'saleschannel')]]],
+                  ['ลูกค้า', '👤', [['ผู้สร้างรายการ', ช่องหัวใบ(d, 'createusername')], ['ชื่อลูกค้า', d.customer || null], ['เบอร์โทรศัพท์ลูกค้า', ช่องหัวใบ(d, 'customerphone')], ['ที่อยู่ลูกค้า', ช่องหัวใบ(d, 'customeraddress')]]],
                 ] as const).map(([หัว, รูป, แถว], ลำดับ) => (
                   /* 📏 ระยะตาม DOM การ์ดข้อมูลของ ZORT (วัดที่ใบโอน 20 ต.ค. 2569 ผังเดียวกัน): ตัวหนังสือห่างขอบ 50 · ป้าย 1/3 ค่า 2/3
                      · คอลัมน์ขวา: ZORT ป้ายเริ่มที่กึ่งกลางการ์ดพอดี (x499/998 · DOM /Buy/Details 21 ต.ค. 2569) ของเรามีช่องในซ้ำ 35 ⇒ ตัดช่องในซ้ายของคอลัมน์ขวา */
@@ -196,12 +210,14 @@ function Inner() {
                     {แถว.map(([k, v]) => (
                       <div key={k} className={`grid grid-cols-[1fr_2fr] py-1 pr-[15px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>
                         <span className={`font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] pr-[15px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>{k}</span>
-                        <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span> : v ?? <span className="text-gray-300">—</span>}</span>
+                        <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span>
+                          : v ?? <span className="text-gray-300 cursor-help" title={k === 'วันที่' && d.createdAt ? `ZORT ไม่ได้ส่งวันคืนของ — วันสร้างเอกสารคือ ${thaiDate(d.createdAt, 'เต็ม')} (ไม่เอามาแทน)` : ZORTไม่ส่งช่องนี้}>—</span>}</span>
                       </div>
                     ))}
                   </section>
                 ))}
-                <p className="md:col-span-2 px-5 pb-2 text-[11.5px] text-gray-400">— ที่ ช่องทางการขาย · ผู้สร้างรายการ · เบอร์ · ที่อยู่ = {ไม่ส่งช่องนี้}</p>
+                {/* หมายเหตุนี้จริงเฉพาะท่อรุ่นเก่า — ท่อ f0ce6db3 ส่งห้าช่องแล้ว ⇒ ซ่อนเมื่อมีคีย์ (ไม่งั้นบอกว่าท่อไม่ส่งทั้งที่ส่งแล้ว) */}
+                {!('paymentstatus' in d) && <p className="md:col-span-2 px-5 pb-2 text-[11.5px] text-gray-400">— ที่ ช่องทางการขาย · ผู้สร้างรายการ · เบอร์ · ที่อยู่ = {ไม่ส่งช่องนี้}</p>}
               </div>
             </>
           )}
