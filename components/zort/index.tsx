@@ -404,7 +404,7 @@ export const THR = เหมือนZORT
 /* หัวช่องติ๊กเลือกทั้งหน้า — ป้ายเป้ากด 32 (RowCheck · กันนิ้วพลาดบนแท็บเล็ต) ทำให้หัวแถวสูง 57 ทั้งแถว ขณะที่ ZORT สูง 45 (DOM /Buy/List 21 ต.ค. 2569)
    ⇒ โหมดเหมือน ZORT ลดช่องในบนล่างเฉพาะช่องนี้เป็น 6 ⇒ 6+32+6+1 = 45 · เป้ากดเท่าเดิม · เขียนเป็นสตริงเต็มตามเหตุผลของ TH ข้างบน */
 export const TH_CHECK = เหมือนZORT
-  ? "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 py-1.5 leading-5 align-bottom whitespace-nowrap"
+  ? "text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-0 py-1.5 leading-5 align-bottom whitespace-nowrap"
   : TH
 export const TH_KANIT = `text-left font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${เหมือนZORT ? หัวZ : 'py-2.5'} whitespace-nowrap`
 export const THR_KANIT = `text-right font-normal font-['Kanit','Boon',sans-serif] text-[14px] text-[#3e3e3e] px-2 ${เหมือนZORT ? หัวZ : 'py-2.5'} whitespace-nowrap`
@@ -413,6 +413,11 @@ export const THR_KANIT = `text-right font-normal font-['Kanit','Boon',sans-serif
 export const TD = เหมือนZORT
   ? 'px-2 py-2 text-[14px] leading-5 text-[#3e3e3e] align-top'
   : 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top'
+/* ช่องติ๊กของแถว — คู่กับ TH_CHECK · โหมดเหมือน ZORT ไม่มีช่องในข้าง (คอลัมน์เหลือ 32 = เป้ากด · เดิม 48 จาก px-2 สองข้าง ⇒ ทุกคอลัมน์เลื่อนขวา ~16 จาก ZORT)
+   · pt-0.5 ให้กึ่งกลางกล่องตรงบรรทัดแรกของแถว (ZORT กล่องอยู่แนวเดียวกับตัวหนังสือ · วิจารณ์ impeccable 21 ต.ค. 2569) */
+export const TD_CHECK = เหมือนZORT
+  ? "px-0 pt-0.5 pb-2 align-top"
+  : TD
 export const TDR = เหมือนZORT
   ? 'px-2 py-2 text-[14px] leading-5 text-[#3e3e3e] align-top text-right whitespace-nowrap'
   : 'px-2 py-2 text-[14px] text-[#3e3e3e] align-top text-right whitespace-nowrap'
@@ -619,7 +624,8 @@ export function RowMenu({ items, label }: {
         : (
           <button
             onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
-            className="w-6 h-6 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 leading-none"
+            /* โหมดเหมือน ZORT: ⋮ เข้มหนาแบบ ZORT · สูง 20 (เดิม 24 ทำแถวบรรทัดเดียวสูง 41 vs ZORT 38) */
+            className={เหมือนZORT ? 'w-6 h-5 rounded text-[#3e3e3e] font-bold text-[16px] hover:bg-gray-100 leading-none' : 'w-6 h-6 rounded text-gray-400 hover:bg-gray-100 hover:text-gray-600 leading-none'}
             title="เมนูลัด"
           >
             ⋮

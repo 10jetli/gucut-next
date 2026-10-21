@@ -25,7 +25,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP, isSkip } from '@/components/ui/ErrorBox'
 import {TD_DATE, TH_NO, 
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  EmptyState, ChannelTag, thaiDate, Pill, RowCheck, BulkBar, TH_CHECK } from '@/components/zort'
+  EmptyState, ChannelTag, thaiDate, Pill, RowCheck, BulkBar, TH_CHECK, TD_CHECK } from '@/components/zort'
 
 interface Job {
   /** id จริงของใบ (`z1/<number>`) — ท่อเริ่มส่งมา 9 ก.ย. 2569 · ท่อรุ่นก่อนไม่มี ⇒ ต้องเป็น optional */
@@ -305,7 +305,7 @@ export default function PackingPage() {
                   return (
                     <tr key={j.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
                       <td className={`${TD} text-gray-400`}>{i + 1}</td>
-                      <td className={TD}>
+                      <td className={TD_CHECK}>
                         <RowCheck label={`เลือก ${j.number}`}
                           disabled={!j.id}
                           title={j.id ? undefined : 'ท่อไม่ได้ส่งรหัสใบมา ⇒ พิมพ์ใบจัดเตรียมจากแถวนี้ไม่ได้ (กดที่เลขที่ใบเพื่อเปิดใบแทน)'}

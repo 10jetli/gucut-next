@@ -20,7 +20,7 @@ import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
 import {TD_DATE, TH_NO, TD_NO, 
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
-  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE, TH_CHECK } from '@/components/zort'
+  thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE, TH_CHECK, TD_CHECK } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/zort/AdvancedSearch'
 import { loadFilter, saveFilter, clearFilter, describeFilter } from '@/lib/remembered-filter'
@@ -1478,7 +1478,7 @@ export default function CoreSalesPage() {
                     <td className={เหมือนZORT ? TD_NO : `${TD} text-gray-400`}>{offset + i + 1}</td>
                     {/* ⚠️ ทั้งแถวกดแล้วเปิดรายละเอียด ⇒ ช่องติ๊กต้อง stopPropagation
                         ไม่งั้นติ๊กทีเดียวได้ทั้งติ๊กและเด้งเข้าใบ (ผู้ใช้จะงงว่าทำไมจอเปลี่ยน) */}
-                    <td className={TD} onClick={(e) => e.stopPropagation()}>
+                    <td className={TD_CHECK} onClick={(e) => e.stopPropagation()}>
                       <RowCheck label={`เลือก ${r.number}`}
                         checked={picked.includes(r.id)}
                         onChange={(v) => setPicked((old) => (v ? [...old, r.id] : old.filter((x) => x !== r.id)))} />

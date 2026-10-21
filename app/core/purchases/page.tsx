@@ -26,7 +26,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, THR, TD, TDR,
-  LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, TH_CHECK } from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, PaymentPill, summaryLine, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, TH_CHECK, TD_CHECK } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
@@ -525,7 +525,7 @@ export default function CorePurchasesPage() {
                 {rows.map((r, i) => (
                   <tr key={r.number} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(String(r.number)) ? 'bg-[#eef1fa]' : ''}`}>
                     <td className={TD_NO}>{offset + i + 1}</td>
-                    <td className={TD}>
+                    <td className={TD_CHECK}>
                       <RowCheck label={`เลือก ${r.number}`}
                         checked={picked.includes(String(r.number))}
                         onChange={(v) => setPicked((old) => (v ? [...old, String(r.number)] : old.filter((x) => x !== String(r.number))))} />
