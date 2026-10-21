@@ -30,7 +30,7 @@ import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import ExportButton from '@/components/zort/ExportButton'
 import { IconEdit, IconTrash } from '@/components/zort/ButtonIcons'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
-import ไอคอนZ from '@/components/zort/ZortIcon'
+import ZortKpiCards from '@/components/zort/ZortKpiCards'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
 interface Order {
@@ -215,20 +215,18 @@ function Inner() {
             ⚠️ ค่าคงความจริงของเรา: ไม่มียอด = 0 (ZORT เขียน "-") · ค้างชำระ = "ยังคิดไม่ได้" เหตุผลอยู่ใน title + บรรทัดพับข้างล่าง */}
         {เหมือนZORT && (
           <>
-            <div className="mb-3 grid grid-cols-1 gap-[30px] sm:grid-cols-3">
-              {([
-                ['ยอดขายเดือนนี้ (บาท)', '#ebf6ff', '#2f8dde', '📅', typeof d?.money?.thisMonth === 'number' ? baht(d.money.thisMonth) : '—', d?.money?.month ? `ช่วง ${d.money.month}` : 'ยังไม่รู้ช่วงที่ตัด'],
-                ['ยอดขายปีนี้ (บาท)', '#cefff1', '#13af82', '🗓', typeof d?.money?.thisYear === 'number' ? baht(d.money.thisYear) : '—', d?.money?.year ? `ช่วง ${d.money.year}` : 'ยังไม่รู้ช่วงที่ตัด'],
-                ['ยอดค้างชำระ (บาท)', '#ffebeb', '#f25757', '฿', 'ยังคิดไม่ได้', d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'],
-              ] as const).map(([ป้าย, วง, สี, รูป, ค่า, เหตุ]) => (
-                <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between" title={เหตุ}>
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{/* ไอคอนเส้นวาดเอง (ZORT: ปฏิทิน · ปฏิทินตาราง · เหรียญ) */}<ไอคอนZ k={รูป} size={24} /></span>
-                  <div className="text-right">
-                    <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
-                    <p className={`${ค่า === 'ยังคิดไม่ได้' ? "font-['Kanit',sans-serif] text-[18px]" : "font-['Lato',sans-serif] text-[24px]"} font-semibold mt-1 m-0`} style={{ color: ค่า === '—' ? '#ced4da' : สี }}>{ค่า}</p>
-                  </div>
-                </div>
-              ))}
+            {/* ตัวร่วม ZortKpiCards (22 ต.ค. 2569 · เดิมเขียนซ้ำในจอนี้ ป้าย h2 ไม่ได้ตั้ง Boon จึงรับ Kanit หนาจากหัวเรื่อง — บั๊กเดียวกับที่ตัวร่วมแก้ไปแล้ว) */}
+            <div className="mb-3">
+              <ZortKpiCards ขนาดเลข={24} items={[
+                { ป้าย: 'ยอดขายเดือนนี้ (บาท)', วง: '#ebf6ff', สี: '#2f8dde', รูป: '📅',
+                  ค่า: typeof d?.money?.thisMonth === 'number' ? baht(d.money.thisMonth) : '—', ว่าง: typeof d?.money?.thisMonth !== 'number',
+                  เหตุ: d?.money?.month ? `ช่วง ${d.money.month}` : 'ยังไม่รู้ช่วงที่ตัด' },
+                { ป้าย: 'ยอดขายปีนี้ (บาท)', วง: '#cefff1', สี: '#13af82', รูป: '🗓',
+                  ค่า: typeof d?.money?.thisYear === 'number' ? baht(d.money.thisYear) : '—', ว่าง: typeof d?.money?.thisYear !== 'number',
+                  เหตุ: d?.money?.year ? `ช่วง ${d.money.year}` : 'ยังไม่รู้ช่วงที่ตัด' },
+                { ป้าย: 'ยอดค้างชำระ (บาท)', วง: '#ffebeb', สี: '#f25757', รูป: '฿', ค่า: 'ยังคิดไม่ได้', ค่าเป็นข้อความ: true,
+                  เหตุ: d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ' },
+              ]} />
             </div>
             {/* 📐 กล่องพับสองบรรทัด (ข้อจำกัดจับคู่ · กติกาการนับ) ย้ายไปท้ายจอ — ZORT ใต้การ์ดเงินต่อด้วยกล่องข้อมูลทันที (ภาพ 20 ต.ค. 2569: ของเราต่ำกว่า ~64px) */}
           </>
