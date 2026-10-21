@@ -27,7 +27,7 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import { TH_NO, ROW_LINK, TD_NO,
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar, TH_CHECK } from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar, TH_CHECK, TD_CHECK } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
@@ -822,9 +822,9 @@ function CoreStockInner() {
                 ⇒ โชว์ตามผังแต่ล็อกไว้พร้อมเหตุผล · ทำปุ่มที่กดแล้วไม่เปลี่ยนอะไรคือปุ่มหลอก
                    และซ่อนทิ้งก็ไม่ได้ เพราะคนที่ชิน ZORT จะหาแล้วไม่เจอ แล้วนึกว่าระบบเราทำไม่ได้ */}
             <span title="มุมมองรายการ — จอนี้มีมุมมองเดียว"
-              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-600">{เหมือนZORT ? <span className="inline-block align-[-3px]"><ไอคอนZ k="☰" size={16} /></span> : '☰'}</span>
+              className={เหมือนZORT ? 'text-[12.5px] leading-none px-1 py-1 text-[#4165ed]' : 'text-[12.5px] leading-none px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-600'}>{เหมือนZORT ? <span className="inline-block align-[-3px]"><ไอคอนZ k="☰" size={16} /></span> : '☰'}</span>
             <span title="มุมมองตารางรูป — ยังไม่ได้ทำ (ไม่ใช่ทำไม่ได้) · ตอนนี้ดูรูปได้ในหน้ารายละเอียดสินค้า"
-              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">{เหมือนZORT ? <span className="inline-block align-[-3px]"><ไอคอนZ k="⊞" size={16} /></span> : '▦'}</span>
+              className={เหมือนZORT ? 'text-[12.5px] leading-none px-1 py-1 text-gray-300 cursor-not-allowed' : 'text-[12.5px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'}>{เหมือนZORT ? <span className="inline-block align-[-3px]"><ไอคอนZ k="⊞" size={16} /></span> : '▦'}</span>
           </div>
 
           <Tabs
@@ -931,7 +931,7 @@ function CoreStockInner() {
                 {rows.map((r, i) => (
                   <tr key={r.sku} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(r.sku) ? 'bg-[#eef1fa]' : ''}`}>
                     <td className={TD_NO}>{offset + i + 1}</td>
-                    <td className={TD}>
+                    <td className={TD_CHECK}>
                       <RowCheck label={`เลือก ${r.sku}`}
                         checked={picked.includes(r.sku)}
                         onChange={(v) => setPicked((old) => (v ? [...old, r.sku] : old.filter((x) => x !== r.sku)))} />
@@ -942,7 +942,7 @@ function CoreStockInner() {
                            ⇒ ⇒ ปลดล็อก `whitespace-nowrap` + ตั้งเพดาน 100 ⇒ **รหัสที่ยาวผิดปกติเท่านั้นที่ตัดบรรทัด**
                            ⚠️ นี่ไม่ใช่การลอกสัดส่วนของ ZORT — ผลที่ได้บังเอิญใกล้ของเขา
                               ซึ่งเป็น **หลักฐานว่าเขาก็วัดเหมือนกัน** ไม่ใช่เหตุผลที่เราทำ */}
-                    <td className={`${TD} max-w-[100px] break-words text-gray-700 font-medium`}>{r.sku}</td>
+                    <td className={`${TD} max-w-[100px] break-words ${เหมือนZORT ? '' : 'text-gray-700 font-medium'}`}>{r.sku}</td>
                     {/* ⚠️ ZORT วางรูปไว้**ในคอลัมน์ชื่อสินค้า** ไม่ใช่คอลัมน์แยก (ภาพ 02-สินค้า.jpg)
                         ไม่มีรูป = กล่องเทา ห้ามปล่อยช่องว่าง แถวจะเบี้ยวและดูเหมือนโหลดไม่เสร็จ */}
                     <td className={`${TD} min-w-[300px]`}>
