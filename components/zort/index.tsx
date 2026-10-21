@@ -198,7 +198,8 @@ export function SearchRow({
        ⚠️ เลื่อนลงต้องใช้ pt-1 ไม่ใช่ mt-1 — mt-1 ยุบรวมกับ mb-4 ของ PageHead (margin collapse) ⇒ ไม่ขยับเลย
           (รอบแรกใช้ mt-1 · วัดบน preview ได้ 160 เท่าเดิม ทั้งที่ class ขึ้นครบ) */
     <div className={`flex flex-wrap items-center gap-3 ${เหมือนZORT ? 'pt-1 mb-5' : 'mb-4'}`}>
-      <div className="relative">
+      {/* 📱 กล่องแม่กว้าง 400 แต่ไม่เกินแถว — เดิมช่องค้น w-[400px] max-w-full ในกล่องที่ไม่จำกัดกว้าง ⇒ จอ 375 เลื่อนแนวนอนทุกจอรายการ (วัด 21 ต.ค. 2569: 9 จอ กว้าง 416) */}
+      <div className="relative w-[400px] max-w-full">
         {/* 📐 โหมดเหมือน ZORT: แว่นขยายเส้นสีเทา (ภาพจอรายการ ZORT 20 ต.ค. 2569 · วาดเอง ไม่ใช้ฟอนต์ไอคอนของ ZORT) แทนอีโมจิ */}
         {เหมือนZORT
           ? <svg aria-hidden width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="#868e96" strokeWidth={1.4} strokeLinecap="round" className="absolute left-4 top-1/2 -translate-y-1/2"><circle cx={7} cy={7} r={5.5} /><path d="M11 11l4 4" /></svg>
@@ -210,7 +211,7 @@ export function SearchRow({
           placeholder={เหมือนZORT && zortPlaceholder ? zortPlaceholder : placeholder}
           title={เหมือนZORT && zortPlaceholder ? placeholder : undefined}
           aria-label={placeholder}
-          className={`w-[400px] max-w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] ${เหมือนZORT ? 'pl-[42px]' : 'pl-9'} pr-3 py-2 focus:outline-none focus:border-[#868e96]`} /* ZORT ช่องซ้าย 42 (วัด DOM 20 ต.ค. 2569) */
+          className={`w-full h-10 text-[14px] text-[#3e3e3e] border border-[#adb5bd] rounded-[24px] ${เหมือนZORT ? 'pl-[42px]' : 'pl-9'} pr-3 py-2 focus:outline-none focus:border-[#868e96]`} /* ZORT ช่องซ้าย 42 (วัด DOM 20 ต.ค. 2569) */
         />
       </div>
       {advanced}

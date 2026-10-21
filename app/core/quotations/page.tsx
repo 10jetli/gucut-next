@@ -364,7 +364,7 @@ export default function QuotationsPage() {
               คนที่ชิน ZORT จะกวาดตาหาตรงนี้ ⇒ วางไว้ทั้งสองที่ ไม่ใช่ย้าย
               (ย้ายขึ้นไปที่เดียวก็ผิดผัง · ย้ายลงมาที่เดียวก็หายจากที่คนของเราชินอยู่) */}
           {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list 19 ต.ค. 2569): แถบแท็บอยู่ **บนการ์ดขาวเดียวกับตาราง** ไม่มีช่องซ้าย (วัด DOM: ระยะเยื้องมาจากช่องในของปุ่มแท็บเอง) · ปุ่มโหลดใหม่ชิดขวาในแถบ */}
-          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
+          <div className={เหมือนZORT ? 'flex flex-wrap md:flex-nowrap items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
             {/* 🔶 **ไม่เพิ่มแท็บเอง** — จอนี้ลอกแท็บมาจาก ZORT (ทั้งหมด · อนุมัติแล้ว) เท่านั้น
                 แม้ข้อมูลจะมี 3 สถานะ (ยกเลิก · รออนุมัติ · อนุมัติแล้ว) ก็ไม่ตั้งแท็บที่ ZORT ไม่มี
                 (กติกา: ของที่เราคิดขึ้นเอง ห้ามอยู่ในจอที่กำลังลอก ZORT)
