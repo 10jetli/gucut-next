@@ -33,7 +33,7 @@ import Link from 'next/link'
 /* หัวตาราง/ช่อง: ZORT /User/list กับ /Setting/UserRolelist ใช้ Kanit 14 #3e3e3e / เซลล์ 14 #3e3e3e (วัด 17 ต.ค. 2569)
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
 import { PageHead, TH_KANIT as TH, TD, FORM_INPUT, Pill, ZORT_TABLE_BOX, ZORT_TABLE_SHADOW } from '@/components/zort'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { เหมือนZORT, กว้างZ, แถบเลขหน้านิ่ง, ปุ่มเลขหน้านิ่ง } from '@/lib/โหมดเหมือนzort'
 import { listStaffUsers } from '@/lib/staff-users'
 import { thaiDate } from '@/lib/format'
 
@@ -238,14 +238,15 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
           <table className="w-full min-w-[760px]">
             <thead className="bg-white border-b border-gray-200">
               <tr>
-                <th className={TH}>ชื่อผู้ใช้งาน</th>
+                {/* 📏 ความกว้างตาม DOM ZORT /User/list ที่ 1280 (21 ต.ค. 2569): 271 · 217 · 217 · 108 · 108 (+ ปุ่มรีเซ็ตรหัสผ่าน 100 — ของเราไม่มีคำสั่งนี้ ไม่วาดช่องว่าง) */}
+                <th className={TH} style={กว้างZ(271)}>ชื่อผู้ใช้งาน</th>
                 {/* 🔴 คอลัมน์แหล่งที่มา — ไม่ใช่ของประดับ: แก้/ปิดผู้ใช้สองแหล่งทำคนละวิธี */}
                 {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีคอลัมน์นี้ ⇒ ซ่อน · แหล่งที่มาย้ายไปอยู่ใน title ของชื่อ (ยังอ่านได้ ไม่ลบ) */}
                 {!เหมือนZORT && <th className={TH}>เพิ่มจากไหน</th>}
                 {/* ⚠️ สองคอลัมน์นี้ ZORT มีข้อมูล เราไม่มี — ระบบเก็บผู้ใช้ใน env ไม่มีใครบันทึกเวลา */}
-                <th className={TH} title="ผู้ใช้ที่ตั้งใน env ไม่มีการบันทึกวันสมัคร (ผู้ใช้ที่เพิ่มจากหน้าเว็บมี createdAt แต่ตารางนี้ยังไม่ได้อ่านมาแสดง)">วันที่สมัคร</th>
-                <th className={TH} title="ระบบเรายังไม่บันทึกเวลาล็อกอิน">เข้าใช้งานล่าสุด</th>
-                <th className={TH}>สิทธิ์การใช้งาน</th>
+                <th className={TH} style={กว้างZ(217)} title="ผู้ใช้ที่ตั้งใน env ไม่มีการบันทึกวันสมัคร (ผู้ใช้ที่เพิ่มจากหน้าเว็บมี createdAt แต่ตารางนี้ยังไม่ได้อ่านมาแสดง)">วันที่สมัคร</th>
+                <th className={TH} style={กว้างZ(217)} title="ระบบเรายังไม่บันทึกเวลาล็อกอิน">เข้าใช้งานล่าสุด</th>
+                <th className={TH} style={กว้างZ(108)}>สิทธิ์การใช้งาน</th>
                 <th className={TH}>สถานะ</th>
               </tr>
             </thead>
@@ -295,8 +296,8 @@ export default async function SettingsUsersPage({ searchParams }: { searchParams
       </div>
 
       {/* แถบล่างตามผัง — เลขหน้าล็อกไว้เพราะผู้ใช้มีไม่ถึงหน้าเดียว (โชว์ตามผัง ไม่แกล้งกดได้) */}
-      <div className="flex items-center justify-between mt-2 text-[12.5px] text-gray-500">
-        <span className="inline-block border border-gray-300 rounded px-2 py-0.5 bg-white">1</span>
+      <div className={แถบเลขหน้านิ่ง}>
+        <span className={ปุ่มเลขหน้านิ่ง}>1</span>
         <span>จำนวน {rows.length} รายการ | จำนวนต่อหน้า 20</span>
       </div>
 
