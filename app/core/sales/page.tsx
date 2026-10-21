@@ -17,7 +17,7 @@ import { useRouter } from 'next/navigation'
 import { fmtMoney, ช่วงปฏิทินไทย, ต้นเดือนย้อนหลังแบบZORT, type ชนิดช่วงปฏิทิน } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
-import {TD_DATE, TH_NO, 
+import {TD_DATE, TH_NO, TD_NO, 
   PageHead, SearchRow, Tabs, Pill, toneOfStatus, TableWrap, TH, THR, TD, TDR,
   LinkText, summaryLine, ChannelTag, relDay, RowMenu, EmptyState, DataUnreliableBanner,
   thaiDate, thaiShort, PaymentPill, StaleBar, PageNav, RowCheck, BulkBar, THC, TDC, คลังใต้ป้าย, COD_BADGE, TH_CHECK } from '@/components/zort'
@@ -1179,7 +1179,7 @@ export default function CoreSalesPage() {
       )}
 
       {data && (
-        <div className={เหมือนZORT ? 'text-[12.5px] text-gray-500 mb-2 leading-[22px]' : 'text-[12.5px] text-gray-500 mb-3'}>
+        <div className={เหมือนZORT ? 'text-[12.5px] text-gray-500 mb-0 leading-[22px]' : 'text-[12.5px] text-gray-500 mb-3'}>
           {/* ZORT เขียนวันแบบ 1/6/2569–2/9/2569 ไม่ใช่ ISO — ตรงนี้คือบรรทัดเดียวกันของเขา
               📐 โหมดเหมือน ZORT (ภาพ /Sell/list 19 ต.ค. 2569): Kanit 18 สีเข้ม "ค้นหา: วันที่:…" · นิยามวันย้ายเข้า ⓘ */}
           {/* 📏 วัด DOM ZORT 20 ต.ค. 2569: span.font-kanit 16px #3e3e3e · แว่นเส้นสีเทา · ข้อความ "ค้นหา:  วันที่:1/7/2569-20/10/2569" (ไม่มีช่องรอบขีด) */}
@@ -1288,7 +1288,13 @@ export default function CoreSalesPage() {
               }}
             />
             {เหมือนZORT && หมายเหตุแท็บ.length > 0 && (
-              <span className="text-[11.5px] text-gray-400 cursor-help shrink-0" title={หมายเหตุแท็บ.join('\n\n')}>ⓘ หมายเหตุ {หมายเหตุแท็บ.length} ข้อ</span>
+              /* 📱 กดเปิดอ่านได้ (เดิมอ่านได้แค่ hover — มือถือเปิดไม่ได้ · ผิดกฎคำเตือนห้ามซ่อนใน hover) */
+              <details className="relative text-[11.5px] text-gray-400 shrink-0">
+                <summary className="cursor-pointer select-none list-none">ⓘ หมายเหตุ {หมายเหตุแท็บ.length} ข้อ</summary>
+                <div className="absolute right-0 z-20 mt-1 w-[320px] max-w-[80vw] bg-white border border-gray-200 rounded shadow p-2.5 text-[12px] text-gray-700 space-y-1.5">
+                  {หมายเหตุแท็บ.map((t) => <p key={t}>{t}</p>)}
+                </div>
+              </details>
             )}
             <button onClick={() => load(0)} disabled={loading} aria-label="โหลดใหม่" title="โหลดใหม่"
               className={`${เหมือนZORT ? '' : 'mb-2 '}shrink-0 w-7 h-7 grid place-items-center rounded border border-gray-300
@@ -1439,7 +1445,8 @@ export default function CoreSalesPage() {
                   <th className={TH} style={กว้างZ(138)}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={กว้างZ(162)}><SortHead label="ลูกค้า" field="customer" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={กว้างZ(149)}><SortHead label="ช่องทาง" field="channel" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH} style={กว้างZ(68)}>บริการขนส่ง</th>
+                  {/* ZORT หัวนี้ตัดสองบรรทัด บริการ/ขนส่ง ในคอลัมน์ 68 ⇒ หัวตารางสูง ~63 (ของเราบรรทัดเดียว ดันคอลัมน์กว้าง 71) */}
+                  <th className={เหมือนZORT ? `${TH} !whitespace-normal` : TH} style={กว้างZ(68)}>บริการขนส่ง</th>
                   <th className={TH} style={กว้างZ(83)}><SortHead label="วันส่งสินค้า" field="shipDate" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={THR} style={กว้างZ(50)}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={THC} style={กว้างZ(67)}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
@@ -1467,7 +1474,8 @@ export default function CoreSalesPage() {
                     className="border-b border-gray-100 last:border-0 cursor-pointer hover:bg-gray-50"
                   >
                     {/* 🔢 ลำดับต้องตรงกับหัวตารางข้างบน (`#` ก่อน ช่องติ๊ก) — ผัง ZORT */}
-                    <td className={`${TD} text-gray-400`}>{offset + i + 1}</td>
+                    {/* เลขแถวแบบ ZORT (Lato 12 #868e96 = TD_NO) — วิจารณ์ impeccable 21 ต.ค. 2569 */}
+                    <td className={เหมือนZORT ? TD_NO : `${TD} text-gray-400`}>{offset + i + 1}</td>
                     {/* ⚠️ ทั้งแถวกดแล้วเปิดรายละเอียด ⇒ ช่องติ๊กต้อง stopPropagation
                         ไม่งั้นติ๊กทีเดียวได้ทั้งติ๊กและเด้งเข้าใบ (ผู้ใช้จะงงว่าทำไมจอเปลี่ยน) */}
                     <td className={TD} onClick={(e) => e.stopPropagation()}>
