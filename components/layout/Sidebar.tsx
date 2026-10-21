@@ -14,6 +14,7 @@
 //    ⇒ บทเรียน: สีกับพื้นหลังต้องดูจากภาพครอปที่ชัดพอ อย่าสรุปจากภาพย่อทั้งหน้า
 import Link from 'next/link'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import NavIcon from './NavIcon'
 import CreditBadge from '@/components/ui/CreditBadge'
 // (เดิม import useEffect/useState ไว้ใช้กับป้ายเครดิต — ย้ายไป CreditBadge แล้ว 18 ก.ย. 2569)
 import type { NavItem } from '@/lib/nav-config'
@@ -110,7 +111,8 @@ export default function Sidebar({
                     } ${open ? 'text-white font-normal' : 'text-[#ced4da] font-extralight hover:bg-white/10'}`}
                     style={open ? { borderBottom: `2px solid ${GROUP_LINE}`, paddingBottom: '6.5px' } /* เส้น 2px กินความสูง ⇒ ลด padding ล่างให้รวม 41 เท่า ZORT */ : undefined} aria-expanded={open}
                   >
-                    <span className="text-[16px] w-5 text-center shrink-0">{item.icon}</span>
+                    {/* 📐 โหมดเหมือน ZORT: ไอคอนเส้น 20 สีตามตัวหนังสือ (วาดเอง · NavIcon) · โหมดปกติคงอีโมจิ */}
+                    <span className={เหมือนZORT ? 'w-5 h-5 grid place-items-center shrink-0 mr-1' : 'text-[16px] w-5 text-center shrink-0'}>{เหมือนZORT ? <NavIcon k={item.icon} /> : item.icon}</span>
                     {!collapsed && (
                       <>
                         <span className="truncate flex-1 text-left">{item.label}</span>
@@ -168,7 +170,7 @@ export default function Sidebar({
               const style = active ? { background: ITEM_ACTIVE } : undefined
               const inner = (
                 <>
-                  <span className="text-[15px] w-5 text-center shrink-0">{item.icon}</span>
+                  <span className={เหมือนZORT ? 'w-5 h-5 grid place-items-center shrink-0 mr-1' : 'text-[15px] w-5 text-center shrink-0'}>{เหมือนZORT ? <NavIcon k={item.icon} /> : item.icon}</span>
                   {!collapsed && <span className="truncate">{item.label}</span>}
                 </>
               )
