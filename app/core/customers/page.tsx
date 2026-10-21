@@ -47,7 +47,7 @@ import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import DataFreshness, { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 
 interface Contact {
   id: string; type?: string; name?: string; code?: string
@@ -506,12 +506,13 @@ export default function CoreContactsPage() {
                     วัดจอ ZORT จริง 16 ก.ย. 2569 — ติดเฉพาะช่องที่วัดมาแล้ว ห้ามเดา */}
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    <th className={TH_NO} style={{ width: 44 }}>#</th>
-                    <th className={TH}><SortHead label="รหัส" field="code" current={เรียง} supported={รองรับเรียง && รับรหัส} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ท่อรุ่นที่ขึ้นอยู่ยังไม่รับการเรียงด้วยรหัส (ตอบกลับว่าไม่รู้จักช่องเรียง code) · ขอฝั่งท่อแล้ว (ef3165f4 รอขึ้นเว็บ)" /></th>
-                    <th className={TH}><SortHead label="ชื่อ" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน" /></th>
-                    <th className={TH}>เลขประจำตัวผู้เสียภาษี</th>
-                    <th className={TH}>เบอร์โทรศัพท์</th>
-                    <th className={TH}>อีเมล</th>
+                    {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Contact/list ที่ 1280 (21 ต.ค. 2569) · # รวมช่องติ๊ก 22 ของ ZORT ที่เราไม่มี (24+22) */}
+                    <th className={TH_NO} style={{ width: เหมือนZORT ? 46 : 44 }}>#</th>
+                    <th className={TH} style={กว้างZ(121)}><SortHead label="รหัส" field="code" current={เรียง} supported={รองรับเรียง && รับรหัส} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ท่อรุ่นที่ขึ้นอยู่ยังไม่รับการเรียงด้วยรหัส (ตอบกลับว่าไม่รู้จักช่องเรียง code) · ขอฝั่งท่อแล้ว (ef3165f4 รอขึ้นเว็บ)" /></th>
+                    <th className={TH} style={กว้างZ(302)}><SortHead label="ชื่อ" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน" /></th>
+                    <th className={TH} style={กว้างZ(171)}>เลขประจำตัวผู้เสียภาษี</th>
+                    <th className={TH} style={กว้างZ(151)}>เบอร์โทรศัพท์</th>
+                    <th className={TH} style={กว้างZ(176)}>อีเมล</th>
                     <th className={TH} style={{ width: 56 }}></th>
                   </tr>
                 </thead>
