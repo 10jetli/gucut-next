@@ -111,11 +111,11 @@ function FormRow({ label, value, muted, mutedWhy }: {
     <div className="flex items-start gap-3 mb-2.5">
       <span className="w-[150px] shrink-0 text-[12.5px] text-gray-500 pt-1.5">{label}</span>
       {typeof value === 'string' && value ? (
-        <span className="flex-1 max-w-[420px] text-[12.5px] text-gray-800 bg-gray-50 border border-gray-200 rounded px-3 py-1.5">
+        <span className="flex-1 min-w-0 break-words max-w-[420px] text-[12.5px] text-gray-800 bg-gray-50 border border-gray-200 rounded px-3 py-1.5">
           {value}
         </span>
       ) : (
-        <span className="flex-1 max-w-[420px] text-[12.5px] text-gray-400 bg-gray-50/60 border border-dashed border-gray-200 rounded px-3 py-1.5"
+        <span className="flex-1 min-w-0 break-words max-w-[420px] text-[12.5px] text-gray-400 bg-gray-50/60 border border-dashed border-gray-200 rounded px-3 py-1.5"
           title={mutedWhy}>
           {muted ?? '—'}
         </span>
