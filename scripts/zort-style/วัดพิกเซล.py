@@ -44,7 +44,17 @@ def ยังโหลด(pg):
         t = pg.evaluate('document.body.innerText') or ''
         # ZORT รายงานสินค้า: ไอคอนหมุน .fa-spin ข้างหัวการ์ดระหว่างโหลด (ไม่มีข้อความ) — หายภายใน ~8 วิ (19 ต.ค. 2569)
         หมุน = pg.evaluate("()=>[...document.querySelectorAll('.fa-spin')].some(e=>e.offsetParent)")
-        return 'กำลังโหลด' in t or 'Loading...' in t or bool(หมุน)
+        # 🔴 ม่านโปร่งแสงคลุมทั้งจอ (ZORT /Marketplace/List 21 ต.ค. 2569: จอซีด + จุดสามจุด ไม่มีคำ ไม่มี .fa-spin)
+        #    ⇒ เดิมตรวจไม่เจอ แล้วออกเลข 56.9/69.1 จากภาพจอโหลด · ตรวจที่ "ของคลุมจอ" ไม่ใช่ที่ชื่อคลาส (คลาสเปลี่ยนได้)
+        ม่าน = pg.evaluate("""()=>{const W=innerWidth,H=innerHeight;return [...document.querySelectorAll('body *')].some(e=>{
+          const s=getComputedStyle(e);if(s.display==='none'||s.visibility==='hidden')return false;
+          if(s.position!=='fixed'&&s.position!=='absolute')return false;
+          const r=e.getBoundingClientRect();if(r.width<W*0.5||r.height<H*0.5)return false; /* ม่าน ZORT กว้าง 1280×720 เท่าหน้าต่างตอนโหลด ไม่ใช่เท่าจอที่ขยายภายหลัง ⇒ 0.8 ตกขอบพอดี (วัด 21 ต.ค.) */
+          if(e.matches('.modal,.modal-backdrop,.swal2-container'))return false;
+          const m=s.backgroundColor.match(/rgba?\\(([^)]+)\\)/);if(!m)return false;const a=m[1].split(',').map(Number);
+          const bg=a.length>3?a[3]:1;if(bg<=0)return false;
+          const eff=bg*Number(s.opacity);return eff>0.05&&eff<0.95})}""")
+        return 'กำลังโหลด' in t or 'Loading...' in t or bool(หมุน) or bool(ม่าน)
     except Exception: return False
 
 def ไป(pg, url):
@@ -95,12 +105,24 @@ with sync_playwright() as pw:
                 zurl = เมนูZORT.get(p.get('เมนู') or '') or p['zort'].split(' ')[0]
                 if p.get('เมนู') and not เมนูZORT.get(p['เมนู']):
                     raise RuntimeError(f"วัดไม่ได้ — หาเมนู {p['เมนู']} ในเมนูซ้ายของ ZORT ไม่เจอ")
-                ไป(pz, 'https://secure.zortout.com' + zurl)
+                zโหลดทัน = ไป(pz, 'https://secure.zortout.com' + zurl)
                 pz.add_style_tag(content=ซ่อนป๊อปอัป); pz.wait_for_timeout(2500)
+                # 🔴 ฝั่ง ZORT ยังโหลดไม่เสร็จตอนถ่าย ⇒ เลขที่ได้คือ "ภาพจอโหลด เทียบ จอเรา" ไม่ใช่ความต่างของผัง ⇒ ห้ามออกเป็น %
+                #    (เดิมผลของ ไป() ฝั่ง ZORT ถูกทิ้ง — เจอ 21 ต.ค. 2569 สินค้าบน Marketplace ได้ 56.9 แล้ว 69.1 จากภาพจอซีด)
+                # ป๊อปอัปถูกซ่อนแล้ว ⇒ ให้เวลาโหลดอีก ~20 วิ ก่อนตัดสิน (ม่าน .loading-bg ของ ZORT ทึบ 0.4 · DOM 21 ต.ค. 2569)
+                for _ in range(10):
+                    if not ยังโหลด(pz): break
+                    pz.wait_for_timeout(2000)
+                if ยังโหลด(pz):
+                    raise RuntimeError('วัดไม่ได้ — ฝั่ง ZORT ยังโหลดไม่เสร็จตอนถ่าย (ม่าน/วงหมุน/คำว่ากำลังโหลด ค้างเกิน ~35 วิ): ' + zurl.split('?')[0])
                 if 'ZortError' in pz.url or 'มีปัญหาบางประการ' in (pz.evaluate('document.body.innerText') or '')[:400]:
                     raise RuntimeError('วัดไม่ได้ — ฝั่ง ZORT เป็นหน้า error: ' + pz.url.split('?')[0])
                 zw = pz.evaluate('innerWidth')
                 z = ภาพ(pz)
+                # 🔴 ม่านโหลดของ ZORT **กะพริบ** — จอที่ดึงข้อมูลไม่สำเร็จจะลองใหม่เรื่อย ๆ (/Marketplace/List 21 ต.ค. 2569:
+                #    ตอนตัดสินไม่มีม่าน แต่ภาพที่ถ่ายต่อมาซีดทั้งจอ) ⇒ ตรวจ **หลังถ่าย** ซ้ำ — ภาพที่ได้ต้องไม่ใช่ภาพจอโหลด
+                if ยังโหลด(pz):
+                    raise RuntimeError('วัดไม่ได้ — ฝั่ง ZORT ขึ้นม่านโหลดตอนถ่ายภาพ (จอ ZORT ลองโหลดซ้ำ — มักแปลว่าดึงข้อมูลไม่สำเร็จ): ' + zurl.split('?')[0])
                 โหลดทัน = ไป(po, 'https://' + HOST + p['เรา'].split(' ')[0])
                 if not โหลดทัน: แถว['หมายเหตุ'] = "ฝั่งเรายังขึ้น กำลังโหลด ตอนถ่าย"
                 if zw and zw != 1600:
