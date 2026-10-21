@@ -32,6 +32,7 @@ import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
 import DormantInShipPile from '@/components/zort/DormantInShipPile'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 import { คลาสวันซ้าย, คลาสวันขวา, ลูกศรวัน, ป้ายแสดง } from '@/components/zort/dateSelect'
 
 interface Row {
@@ -1557,7 +1558,8 @@ export default function CoreSalesPage() {
                             r.shipStatusUnverified ? 'คำแปลนี้ยังไม่ได้ยืนยันกับเอกสารทางการ' : '',
                           ].filter(Boolean).join('\n')}
                         >
-                          🚚{!เหมือนZORT && <> {r.shipStatus}</>}
+                          {/* โหมดเหมือน ZORT: รถเส้นวาดเอง (ZortIcon) แทนอีโมจิ · โหมดปกติคงอีโมจิ + คำ */}
+                          {เหมือนZORT ? <span className="inline-block align-[-2px]"><ไอคอนZ k="🚚" size={15} color="#868e96" /></span> : <>🚚 {r.shipStatus}</>}
                           {/* จุดส้ม = คำแปลยังไม่ยืนยัน (รหัสตัวเลขของ TikTok)
                               ต้องมีอะไรบอกสายตา ไม่งั้นคนเชื่อคำแปล TikTok เท่ากับ Shopee */}
                           {r.shipStatusUnverified && <span className="text-amber-600"> •</span>}
