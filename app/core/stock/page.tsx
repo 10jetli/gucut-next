@@ -32,6 +32,7 @@ import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 import ZortNoImage from '@/components/zort/ZortNoImage'
 
 interface Row {
@@ -821,9 +822,9 @@ function CoreStockInner() {
                 ⇒ โชว์ตามผังแต่ล็อกไว้พร้อมเหตุผล · ทำปุ่มที่กดแล้วไม่เปลี่ยนอะไรคือปุ่มหลอก
                    และซ่อนทิ้งก็ไม่ได้ เพราะคนที่ชิน ZORT จะหาแล้วไม่เจอ แล้วนึกว่าระบบเราทำไม่ได้ */}
             <span title="มุมมองรายการ — จอนี้มีมุมมองเดียว"
-              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-600">☰</span>
+              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-300 bg-gray-100 text-gray-600">{เหมือนZORT ? <span className="inline-block align-[-3px]"><ไอคอนZ k="☰" size={16} /></span> : '☰'}</span>
             <span title="มุมมองตารางรูป — ยังไม่ได้ทำ (ไม่ใช่ทำไม่ได้) · ตอนนี้ดูรูปได้ในหน้ารายละเอียดสินค้า"
-              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">▦</span>
+              className="text-[12.5px] leading-none px-2 py-1 rounded border border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed">{เหมือนZORT ? <span className="inline-block align-[-3px]"><ไอคอนZ k="⊞" size={16} /></span> : '▦'}</span>
           </div>
 
           <Tabs
@@ -1193,13 +1194,13 @@ function CoreStockInner() {
             {rows.length > 0 && (
               <Link href={`/core/stock/print?sku=${encodeURIComponent(rows.map((r) => r.sku).join(','))}`}
                 className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-                🖨 พิมพ์ฉลาก {rows.length} รหัสในหน้านี้
+                {เหมือนZORT ? <span className="inline-block align-[-3px] mr-1"><ไอคอนZ k="🖨" size={15} /></span> : '🖨 '}พิมพ์ฉลาก {rows.length} รหัสในหน้านี้
               </Link>
             )}
             {/* 🖼️ ทางเข้าจอ "รหัสที่ยังไม่มีรูป" (ใบ t_mu2u6eg6) — ทำจอไว้แล้วไม่มีทางเข้า = ไม่มีใครใช้ */}
             <Link href="/core/stock/no-image"
               className="text-[12.5px] font-medium text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50">
-              🖼️ รหัสที่ยังไม่มีรูป
+              {เหมือนZORT ? <span className="inline-block align-[-3px] mr-1"><ไอคอนZ k="🖼️" size={15} /></span> : '🖼️ '}รหัสที่ยังไม่มีรูป
             </Link>
           </div>
 
@@ -1243,7 +1244,7 @@ function CoreStockInner() {
               <span className="text-gray-500">(เฉพาะหน้านี้)</span>
               <Link href={`/core/stock/print?sku=${encodeURIComponent(picked.join(','))}`}
                 className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
-                🖨 พิมพ์ฉลากที่เลือก
+                {เหมือนZORT ? <span className="inline-block align-[-3px] mr-1"><ไอคอนZ k="🖨" size={15} /></span> : '🖨 '}พิมพ์ฉลากที่เลือก
               </Link>
               <button type="button" onClick={() => { void copySkus(picked) }}
                 className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50">
