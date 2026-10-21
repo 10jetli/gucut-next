@@ -14,6 +14,7 @@ import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/components/zort/ExportButton'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 import { ยอดขายแบบZORT, type ผลยอดแบบZORT, type แถวใบคืน } from '@/lib/zort-sales-total'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { SKIP } from '@/components/ui/ErrorBox'
@@ -1080,7 +1081,8 @@ export default function SalesReportPage() {
                             className={`text-[12.5px] w-7 h-7 rounded border ${
                               chartKind === k ? 'bg-violet-50 border-violet-400' : 'bg-white border-gray-300 hover:bg-gray-50'}`}
                           >
-                            {icon}
+                            {/* โหมดเหมือน ZORT: ไอคอนเส้นวาดเอง (ZortIcon ↗ เส้น · ▥ แท่ง) แทนอีโมจิ */}
+                            {เหมือนZORT ? <span className="grid place-items-center"><ไอคอนZ k={k === 'line' ? '↗' : '▥'} size={16} color="#4165ed" /></span> : icon}
                           </button>
                         ))}
                       {/* 🔴 สลับแล้วต้องรู้ว่ากำลังดูอะไร — สองชนิดนี้ตอบคนละคำถาม */}
@@ -1110,10 +1112,11 @@ export default function SalesReportPage() {
               <Card padded={false}>
                 {/* ⑧ ไอคอนวงกลม + ⑥ แถบเครื่องมือเหนือตาราง ([สินค้า ▾] + ช่องค้นหา) — สเปกข้อ 6 กับ 8 */}
                 <div className="flex flex-wrap items-center gap-2 px-4 md:px-5 pt-4">
+                  {เหมือนZORT ? <span className="mr-auto"><ZortCardTitle รูป="🧾">ยอดขาย</ZortCardTitle></span> : (
                   <p className="text-[15px] font-semibold text-gray-900 flex items-center gap-2 mr-auto">
                     <span className="w-7 h-7 rounded-full bg-violet-50 flex items-center justify-center text-[14px]">🧾</span>
                     ยอดขาย
-                  </p>
+                  </p>)}
                   {/* 🔴 **แก้จำนวนตัวเลือก 4 ต.ค. 2569 — เดิมเขียนว่า ZORT มี 5 แบบ ซึ่งน้อยไปครึ่ง**
                       อ่าน DOM สด `/Dashboard/SalesReport`: select `tableoption` มี **10 ค่า** เรียงนี้
                         สินค้า · หมวดหมู่ · สินค้าเป็นชุด · ช่องทางการขาย · ช่องทางการชำระเงิน ·

@@ -783,7 +783,7 @@ export default function CoreCustomersPage() {
               ⚠️ เลข (ไม่ระบุ) ของ ZORT กับของเรานับคนละแบบ (อ่านจอ 16 ต.ค.: ZORT 215 ราย · ของเรานับเฉพาะชื่อ) ⇒ ไม่อ้างว่าตรง */}
           <div className="bg-white border border-gray-200 rounded-md mb-4">
             <div className="flex flex-wrap items-center gap-3 px-4 pt-4 pb-2">
-              <p className="text-[15px] font-semibold text-gray-900 mr-auto">📍 จังหวัด</p>
+              {เหมือนZORT ? <span className="mr-auto"><ZortCardTitle รูป="📍">จังหวัด</ZortCardTitle></span> : <p className="text-[15px] font-semibold text-gray-900 mr-auto">📍 จังหวัด</p>}
               <select value={provBy} onChange={(e) => { setProvBy(e.target.value as 'customers' | 'orders' | 'sales'); setProvPage(0) }}
                 disabled={!provinces}
                 className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2 py-1 bg-white max-w-full min-w-0 disabled:text-gray-400", 'w-[200px] max-w-full min-w-0 disabled:text-gray-400')}>
