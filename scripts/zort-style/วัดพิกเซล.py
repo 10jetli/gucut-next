@@ -45,7 +45,9 @@ def ยังโหลด(pg):
     try:
         t = pg.evaluate('document.body.innerText') or ''
         # ZORT รายงานสินค้า: ไอคอนหมุน .fa-spin ข้างหัวการ์ดระหว่างโหลด (ไม่มีข้อความ) — หายภายใน ~8 วิ (19 ต.ค. 2569)
-        หมุน = pg.evaluate("()=>[...document.querySelectorAll('.fa-spin')].some(e=>e.offsetParent)")
+        # 🔴 นับเฉพาะวงหมุนที่อยู่ในภาพ — ZORT /Contact/ContactDetail มีไอคอน sync หมุนค้างถาวรที่ y1125 (ใต้ขอบภาพ 900)
+        #    ⇒ เดิมจอนี้ "วัดไม่ได้" ทุกรอบ ทั้งที่ภาพที่ถ่ายไม่มีวงหมุนเลย (21 ต.ค. 2569)
+        หมุน = pg.evaluate("()=>[...document.querySelectorAll('.fa-spin')].some(e=>{if(!e.offsetParent)return false;const r=e.getBoundingClientRect();return r.bottom>0&&r.top<innerHeight})")
         # 🔴 ม่านโปร่งแสงคลุมทั้งจอ (ZORT /Marketplace/List 21 ต.ค. 2569: จอซีด + จุดสามจุด ไม่มีคำ ไม่มี .fa-spin)
         #    ⇒ เดิมตรวจไม่เจอ แล้วออกเลข 56.9/69.1 จากภาพจอโหลด · ตรวจที่ "ของคลุมจอ" ไม่ใช่ที่ชื่อคลาส (คลาสเปลี่ยนได้)
         ม่าน = pg.evaluate("""()=>{const W=innerWidth,H=innerHeight;return [...document.querySelectorAll('body *')].some(e=>{
