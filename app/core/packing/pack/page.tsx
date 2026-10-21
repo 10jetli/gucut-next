@@ -19,6 +19,9 @@
 //    ท่อยิงพิสูจน์แล้ว: ใบออนไลน์เดือนล่าสุดมีเลขพัสดุครบ ใบไม่มีเลขเป็น POS ล้วน
 import { useCallback, useState } from 'react'
 import Link from 'next/link'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import StepperZ from '@/components/zort/StepperZ'
+import ZortLookFold from '@/components/zort/ZortLookFold'
 import { fmtMoney } from '@/lib/format'
 import { SALE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
@@ -33,6 +36,8 @@ interface Item { line?: number; sku?: string; name?: string; qty?: number; amoun
 const STEPS = ['กรอกหมายเลขรายการ', 'จัดการแพ็คสินค้า', 'แพ็คสำเร็จ']
 
 function StepHead({ step }: { step: number }) {
+  /* 📐 โหมดเหมือน ZORT: แถบขั้นตัวร่วมเดียวกับจอรับสินค้า (ZORT /Pickandpack/Main type=2 ผังเดียวกับ type=1) · ไอคอนเส้นวาดเอง */
+  if (เหมือนZORT) return <StepperZ steps={STEPS} at={step} />
   return (
     <div className="flex items-center justify-center gap-0 mb-6">
       {STEPS.map((label, i) => (
@@ -111,36 +116,50 @@ export default function PackWizardPage() {
   const reset = () => { setStep(0); setQ(''); setOrder(null); setItems([]); setPicked({}); setCandidates(null); setError('') }
 
   return (
-    <div className="p-4 md:p-6 max-w-[760px] mx-auto">
+    <div className={`p-4 md:p-6 ${เหมือนZORT ? '' : 'max-w-[760px] mx-auto'}`}>
       <StepHead step={step} />
 
       {error && !isSkip(error) && <ErrorBox title="ดำเนินการต่อไม่ได้">{error}</ErrorBox>}
       {error && isSkip(error) && <ErrorBox title="ยังทำงานส่วนนี้ต่อไม่ได้">{error}</ErrorBox>}
 
       {step === 0 && (
-        <div className="bg-white border border-gray-200 rounded-md p-6 md:p-10 text-center">
-          <h1 className="text-[20px] font-bold text-gray-900 mb-2">เริ่มต้นการแพ็คสินค้า</h1>
+        /* 📏 โหมดเหมือน ZORT — ขนาดเดียวกับการ์ดขั้นที่ 1 ของจอรับสินค้า (วัด DOM ZORT 21 ต.ค. 2569):
+             ช่องในบน 39 ล่าง 24 · หัว Kanit 30/500 · ใต้หัว 30 · ป้าย 16 · ช่องกรอก 200×40 · ช่องกรอกถึงปุ่ม 30 */
+        <div className={`bg-white text-center ${เหมือนZORT ? 'rounded-[6px] px-8 pt-[39px] pb-6' : 'border border-gray-200 rounded-md p-6 md:p-10'}`}>
+          <h1 className={เหมือนZORT ? "font-['Kanit','Boon',sans-serif] text-[30px] leading-[30px] font-medium text-[#3e3e3e] mb-[30px]" : 'text-[20px] font-bold text-gray-900 mb-2'}>เริ่มต้นการแพ็คสินค้า</h1>
+          {เหมือนZORT ? (
+            <p className="text-[16px] text-[#3e3e3e]">กรอกหมายเลขรายการ หรือ Tracking No.</p>
+          ) : (<>
           <p className="text-[12.5px] text-gray-500 mb-1">กรอกหมายเลขรายการ หรือ Tracking No. แล้วกด &ldquo;แพ็คสินค้า&rdquo;</p>
           <p className="text-[11.5px] text-gray-400 mb-2">
             ยิงเลขพัสดุจากใบปะหน้าได้เลย — ใบขายออนไลน์มีเลขพัสดุในคลังเงาครบ
             (ใบ POS ไม่มีเลขพัสดุ ให้ค้นด้วยเลขที่ใบแทน)
           </p>
+          </>)}
           {/* 🔴 หมายเหตุนี้อยู่ใต้ช่องกรอกของ ZORT จริง — **ลอกคำมาตรง ๆ** (กดอ่านจอ 16 ก.ย. 2569
               `/Pickandpack/Main?&mc=…&type=2` · จอ "รับสินค้า" คือ type=1 ใช้คำเดียวกัน)
               ⚠️ เตือน **ไม่บล็อก** — จอเราไม่ได้เขียนสถานะกลับ และยังไม่รู้ชุดคำสถานะทั้งหมดของใบโอน
                  (ท่าเดียวกับจอรับสินค้าที่ทำไว้ก่อนแล้ว) ⇒ ใบที่โอนครบแล้วยังค้นเจอที่นี่ได้
                  แต่เอาไปแพ็คใน ZORT ไม่ได้ ⇒ ต้องบอกก่อนที่คนจะเดินไปที่ ZORT แล้วกดไม่ได้ */}
+          {เหมือนZORT ? (
+            /* โหมดเหมือน ZORT: บรรทัดหมายเหตุสีเทาแบบ ZORT + คำเตือนของเรา (ไม่บล็อกตามสถานะ) **ยังเห็นบนจอ** บรรทัดเดียว — คำเตือนห้ามซ่อนหลัง hover */
+            <>
+              <p className="text-[14px] text-[#868e96]">หมายเหตุ การโอนสินค้าของรายการต้องเป็นสถานะรอโอน, รอบางส่วน</p>
+              <p className="text-[12px] text-amber-700 mt-0.5">⚠️ จอนี้ไม่บล็อกตามสถานะ — ใบที่โอนครบแล้วยังค้นเจอที่นี่ แต่ไปแพ็คใน ZORT ไม่ได้</p>
+            </>
+          ) : (
           <p className="text-[11.5px] text-gray-500 mb-4 leading-relaxed max-w-[420px] mx-auto">
             ⚠️ หมายเหตุของ ZORT: <b>การโอนสินค้าของรายการต้องเป็นสถานะรอโอน, รอบางส่วน</b> —
             จอนี้<b>ไม่บล็อกตามสถานะ</b> (เราไม่ได้เขียนสถานะกลับ และยังไม่รู้ชุดคำสถานะทั้งหมด)
             ⇒ ใบที่โอนครบแล้ว<b>ยังค้นเจอที่นี่</b> แต่ไปแพ็คใน ZORT ไม่ได้
           </p>
-          <form onSubmit={(e) => { e.preventDefault(); search() }} className="flex flex-col items-center gap-3">
+          )}
+          <form onSubmit={(e) => { e.preventDefault(); search() }} className={`flex flex-col items-center ${เหมือนZORT ? 'mt-2.5 gap-[30px]' : 'gap-3'}`}>
             <input value={q} onChange={(e) => setQ(e.target.value)} autoFocus
-              placeholder="เลขที่ใบ หรือเลขพัสดุ"
-              className="w-[260px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500" />
+              placeholder={เหมือนZORT ? undefined : 'เลขที่ใบ หรือเลขพัสดุ'} aria-label="เลขที่ใบ หรือเลขพัสดุ" title="เลขที่ใบ หรือเลขพัสดุ"
+              className={เหมือนZORT ? 'w-[200px] h-10 text-[14px] text-[#3e3e3e] border border-[#ccc] rounded px-3 outline-none focus:border-[#66afe9]' : 'w-[260px] text-center text-[14px] border border-gray-300 rounded px-3 py-2 outline-none focus:border-blue-500'} />
             <button type="submit" disabled={busy || !q.trim()}
-              className="text-[12.5px] font-semibold text-white rounded-full px-6 py-2 disabled:opacity-50"
+              className={`${เหมือนZORT ? "font-['Kanit',sans-serif] text-[16px] leading-6 font-normal px-8 py-[9px]" : 'text-[12.5px] font-semibold px-6 py-2'} text-white rounded-full disabled:opacity-50`}
               style={{ background: '#4165ed' }}>
               {busy ? 'กำลังค้นหา…' : 'แพ็คสินค้า'}
             </button>
@@ -273,6 +292,8 @@ export default function PackWizardPage() {
           เก็บโครงไว้ที่ `~/zort-export-private/zort-แพ็คสินค้า-จอรายละเอียด.json` (ไม่เข้า repo)
           ของเขาเป็นจอ **เขียนข้อมูล** (บันทึกสถานะแพ็ค · Tracking · วันส่ง) ของเราเป็นจอ **เช็คของ** อย่างเดียว
           ⇒ เขียนรายการให้ครบว่าอะไรต้องไปทำที่ ZORT ไม่ใช่ปล่อยให้คนหาในจอเราแล้วไม่เจอ */}
+      {/* 📐 โหมดเหมือน ZORT: ZORT ไม่มีกล่องนี้ ⇒ พับเป็นบรรทัดเดียว (ยังกดอ่านได้) */}
+      <ZortLookFold tone="gray" สรุป={<>ⓘ จอแพ็คของ ZORT ทำอะไรได้มากกว่าจอนี้ (ยังต้องไปกดแพ็คและใส่เลขพัสดุที่ ZORT)</>}>
       <div className="text-[12.5px] text-gray-600 bg-gray-50 border border-gray-200 rounded-md px-3.5 py-2.5 mt-4 leading-relaxed">
         <b>จอแพ็คของ ZORT ทำอะไรได้มากกว่าจอนี้</b> (เทียบของจริง 16 ก.ย. 2569) —
         {' '}แยกเป็นสองกอง <b>สินค้าที่ยังไม่ได้แพ็ค / สินค้าที่แพ็คแล้ว</b> ·
@@ -284,6 +305,7 @@ export default function PackWizardPage() {
           ปิดกล่องเสร็จแล้วยัง<b>ต้องไปกดแพ็คและใส่เลขพัสดุที่ ZORT</b> เหมือนเดิม
         </div>
       </div>
+      </ZortLookFold>
 
       <p className="text-[11.5px] text-gray-400 mt-4 text-center">
         ดูว่าวันนี้ต้องแพ็คใบไหนบ้างที่{' '}
