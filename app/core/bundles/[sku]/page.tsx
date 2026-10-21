@@ -472,9 +472,9 @@ export default function BundleDetailPage() {
                 ป้ายช่อง Boon 14 #868e96 · ค่า Lato 18/700 #3e3e3e · QR 150 + บาร์โค้ดใต้ QR
                 **ตารางสินค้าในชุดอยู่ในการ์ดเดียวกัน คอลัมน์เดียวกับข้อมูล** (ไม่ใช่ใต้การ์ด) */}
           {เหมือนZORT ? (
-            /* 📏 DOM /Bundle/Details 21 ต.ค. 2569: การ์ด KPI → กล่องข้อมูลชุด ZORT ห่าง 51 ของเรา 24 ⇒ mt 51
+            /* 📏 DOM /Bundle/Details 21 ต.ค. 2569: การ์ด KPI → กล่องข้อมูลชุด ZORT ห่าง 31 ของเรา 24 ⇒ mt 31 (รอบแรกใส่ 51 ผิด: ตัววัดฝั่ง ZORT หยิบกล่องในที่เยื้องช่องใน 20 ไม่ใช่ขอบการ์ด — ภาพยืนยัน 31)
                · เว้นแต่พร้อมขาย 0 (กล่องพับคำเตือนอยู่ใต้การ์ด กินที่แทนแล้ว) คงเดิม 24 */
-            <div className={`bg-white rounded-[6px] p-5 ${bundle.available === 0 ? 'mt-6' : 'mt-[51px]'} grid grid-cols-[25%_1fr]`}>
+            <div className={`bg-white rounded-[6px] p-5 ${bundle.available === 0 ? 'mt-6' : 'mt-[31px]'} grid grid-cols-[25%_1fr]`}>
               <div className="pr-[30px]">
                 {/* 📏 DOM ZORT 20 ต.ค. 2569 (จอ 1280 CSS · dpr 1.25): รูปเต็มคอลัมน์ 219×146 (3:2) · ไม่มีรูป = กล่องเทาพร้อมไอคอนรูป (วาดเอง) */}
                 {img
