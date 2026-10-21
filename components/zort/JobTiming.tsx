@@ -218,6 +218,8 @@ export default function JobTiming() {
         )
       )}
 
+      {/* 📱 กล่องเลื่อนแนวนอนแบบ SweepTiming — ตารางกว้าง 566 ดันหน้า settings-jobs กว้าง 599 บนจอ 375 (21 ต.ค. 2569) */}
+      <div className="overflow-x-auto">
       <table className="w-full text-[12.5px]">
         <thead>
           <tr className="text-gray-500 text-left border-b border-gray-200">
@@ -276,6 +278,7 @@ export default function JobTiming() {
           ))}
         </tbody>
       </table>
+      </div>
       {/* 🔑 **สองช่องนี้ตอบคนละคำถาม — วางคู่กันเฉย ๆ ไม่ได้** (กติกาเดิมของโปรเจกต์)
            · "จากแถวที่จด" = บวกเฉพาะรอบที่สมุดจดไว้ ⇒ สมุดจดไม่ครบ ⇒ **ต่ำกว่าความจริง**
            · "ตาราง×ค่ากลาง" = รอบต่อวันตาม cron × ค่ากลาง ⇒ ประมาณค่าที่ควรเป็นเมื่อสมุดครบ
