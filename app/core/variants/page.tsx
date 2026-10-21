@@ -1,18 +1,20 @@
 // สินค้า → สินค้าหลากคุณสมบัติ — ผังจาก `zort-ui/30-zort-สินค้าหลากคุณสมบัติ-ว่าง.jpg`
 // ZORT มี 0 รายการ (ร้านไม่ได้ใช้สินค้าแบบมีตัวเลือก — แต่ละรุ่น/ขนาดเป็นคนละรหัสไปเลย)
 import LedgerScreen from '@/components/zort/LedgerScreen'
+import { กว้างZ } from '@/lib/โหมดเหมือนzort'
 
 export default function VariantsPage() {
   return (
     <LedgerScreen
       title="สินค้าหลากคุณสมบัติ"
       cols={[
-        { label: 'รหัส' },
-        { label: 'ชื่อ' },
-        { label: 'คุณสมบัติ' },
-        { label: 'ชนิดสินค้า' },
-        { label: 'จำนวนคงเหลือ', right: true },
-        { label: 'จำนวนพร้อมขาย', right: true },
+        /* 📏 กว้าง = DOM /Product/Variantlist ที่ 1280 (21 ต.ค. 2569) · ส่งเฉพาะโหมดเหมือน ZORT (โหมดปกติ undefined = ตารางจัดเอง) */
+        { label: 'รหัส', กว้าง: กว้างZ(87)?.width },
+        { label: 'ชื่อ', กว้าง: กว้างZ(70)?.width },
+        { label: 'คุณสมบัติ', กว้าง: กว้างZ(159)?.width },
+        { label: 'ชนิดสินค้า', กว้าง: กว้างZ(160)?.width },
+        { label: 'จำนวนคงเหลือ', right: true, กว้าง: กว้างZ(218)?.width },
+        { label: 'จำนวนพร้อมขาย', right: true, กว้าง: กว้างZ(241)?.width },
       ]}
       /* ชื่อคอลัมน์ของจอ ZORT คู่นี้ — อ่าน DOM สด 4 ต.ค. 2569 · จอคำนวณความต่างเอง
          (ไม่ส่ง = ยังไม่ได้ไปวัด ไม่ใช่ตรงกันแล้ว) */
