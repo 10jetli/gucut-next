@@ -589,6 +589,14 @@ export function PaymentPill({ value }: { value?: string | null }) {
 import type { RowMenuItem } from '@/lib/types'
 export type { RowMenuItem }
 
+/** ลูกศรของปุ่มเมนูแบบ dropdown — โหมดเหมือน ZORT เป็นเชฟรอนเส้นวาดเอง (ZORT ใช้เชฟรอน ไม่ใช่สามเหลี่ยม · ภาพ /Product/Details 21 ต.ค. 2569)
+ *  โหมดปกติคงสามเหลี่ยม ▾ เดิม · ใช้ร่วมทุกปุ่มมีเมนูบนแถบหัวจอรายละเอียด */
+export function ลูกศรลง() {
+  return เหมือนZORT
+    ? <svg aria-hidden width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="inline-block ml-1 -mt-0.5"><path d="M6 9l6 6 6-6" /></svg>
+    : <> ▾</>
+}
+
 export function RowMenu({ items, label }: {
   items: RowMenuItem[]
   /** ใส่ = ปุ่มกรอบมีข้อความ + ▾ แบบแถบปุ่มหัวจอรายละเอียดของ ZORT (คำสั่ง · พิมพ์เอกสาร) · ไม่ใส่ = ⋮ ท้ายแถว */
@@ -603,7 +611,7 @@ export function RowMenu({ items, label }: {
             onClick={(e) => { e.stopPropagation(); setOpen((v) => !v) }}
             /* 📏 ZORT แถบปุ่มหัวจอรายละเอียด (วัด /Sell/Details 17 ต.ค. 2569): Kanit 14 #3e3e3e ขอบ #adb5bd มุม 4 สูง 39 */
             className={DETAIL_BTN}>
-            {label} ▾
+            {label}<ลูกศรลง />
           </button>
         )
         : (
