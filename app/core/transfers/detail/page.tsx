@@ -161,7 +161,7 @@ function Inner() {
               {/* 📏 ZORT การ์ดสถานะต่ำกว่าแถวปุ่ม 30 · ของเรา 20 (ภาพ 20 ต.ค. 2569) ⇒ เติมช่องบน 8 CSS — ใช้ padding เพราะ margin ยุบรวมกับแถวปุ่ม */}
               <div className="mb-[30px] pt-2 grid gap-[30px] md:grid-cols-2">
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}><ไอคอนZ k="⇄" size={24} /></span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>{/* ZORT ใช้ไอคอนเหรียญในการ์ดนี้ (ภาพ TF-202610025 21 ต.ค. 2569) */}<ไอคอนZ k={เหมือนZORT ? '฿' : '⇄'} size={24} /></span>
                   <div className="text-right">
                     <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">การโอนสินค้า</h2>
                     {/* 📏 DOM ZORT 20 ต.ค. 2569: การ์ดสูง 88 · ป้ายสถานะสูง 24 (ช่องใน 4/12 · 16px · lh 16) */}
