@@ -637,7 +637,7 @@ export default function CoreCustomersPage() {
                       )
                     return (
                       <div>
-                      <div className={เหมือนZORT ? 'flex items-start gap-12 mt-[63px] ml-[26px]' : ''}>
+                      <div className={เหมือนZORT ? 'flex flex-wrap md:flex-nowrap items-start gap-6 md:gap-12 md:mt-[63px] md:ml-[26px]' : ''}>
                       {เหมือนZORT && <ZortPie ขนาด={219} ป้าย="สัดส่วนยอดขายตามกลุ่มลูกค้า" ชิ้น={[
                         { ค่า: salesNew, สี: '#8ea8f8' },
                         { ค่า: salesRep, สี: '#f2938c' },
