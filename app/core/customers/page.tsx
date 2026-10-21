@@ -44,6 +44,7 @@ import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { TH_NO, ROW_LINK, TD_NO, TH_CHECK, TD_CHECK, RowCheck, BulkBar,
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, LinkText, EmptyState, RowMenu, PageNav,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
+import { useRowPick, useCopyList, CopyBtn } from '@/components/zort/RowPick'
 import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { AdvancedSearchLink } from '@/components/zort/AdvancedSearch'
 import DataFreshness, { parseUtc, thaiDayTime } from '@/components/zort/DataFreshness'
@@ -154,21 +155,10 @@ export default function CoreContactsPage() {
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = data?.rows ?? []
-  /* ☑️ ช่องติ๊กแบบ ZORT — เลือกได้เฉพาะแถวในหน้านี้ · คำสั่งที่ให้มีแค่ที่ทำได้จริงในเครื่อง (คัดลอก) ไม่เขียนอะไรกลับ ZORT
-     ข้อมูลเปลี่ยนหน้า/ค้นใหม่ ⇒ ล้างที่เลือก (ไม่งั้นนับแถวที่มองไม่เห็นแล้ว) */
-  const [picked, setPicked] = useState<string[]>([])
-  const [copyMsg, setCopyMsg] = useState('')
-  useEffect(() => { setPicked([]) }, [data])
-  const ที่เลือก = rows.filter((r) => picked.includes(r.id))
-  const คัดลอก = async (ค่า: string[], หน่วย: string) => {
-    try {
-      await navigator.clipboard.writeText(ค่า.join('\n'))
-      setCopyMsg(`คัดลอกแล้ว ${fmtNum(ค่า.length)} ${หน่วย}`)
-    } catch {
-      setCopyMsg('คัดลอกไม่สำเร็จ — เบราว์เซอร์ไม่อนุญาตให้เขียนคลิปบอร์ด (ลองเลือกข้อความแล้วคัดลอกเอง)')
-    }
-    setTimeout(() => setCopyMsg(''), 6000)
-  }
+  /* ☑️ ช่องติ๊กแบบ ZORT — ตัวร่วม RowPick · คำสั่งที่ให้มีแค่ที่ทำได้จริงในเครื่อง (คัดลอก) ไม่เขียนอะไรกลับ ZORT */
+  const เลือก = useRowPick(rows, (r) => r.id, data)
+  const ที่เลือก = เลือก.ที่เลือก
+  const { msg: copyMsg, copy: คัดลอก } = useCopyList()
   /** ท่อรุ่นที่เรียงได้สะท้อน applied.sortDefaulted — มีคีย์ = รองรับ · เชื่อว่าเรียงจริงเฉพาะ false */
   const ที่ใช้เรียง = (data as { applied?: { sortDefaulted?: boolean } } | null)?.applied
   const รองรับเรียง = !!ที่ใช้เรียง && 'sortDefaulted' in ที่ใช้เรียง
@@ -535,9 +525,7 @@ export default function CoreContactsPage() {
                     <th className={TH_NO} style={{ width: เหมือนZORT ? 24 : 44 }}>#</th>
                     <th className={TH_CHECK} style={{ width: 34 }}>
                       <RowCheck label="เลือกทั้งหน้า"
-                        checked={rows.length > 0 && ที่เลือก.length === rows.length}
-                        indeterminate={ที่เลือก.length > 0 && ที่เลือก.length < rows.length}
-                        onChange={(v) => setPicked(v ? rows.map((r) => r.id) : [])} />
+                        checked={เลือก.ติ๊กทั้งหน้า} indeterminate={เลือก.ติ๊กบางส่วน} onChange={เลือก.ทั้งหน้า} />
                     </th>
                     <th className={TH} style={กว้างZ(121)}><SortHead label="รหัส" field="code" current={เรียง} supported={รองรับเรียง && รับรหัส} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ท่อรุ่นที่ขึ้นอยู่ยังไม่รับการเรียงด้วยรหัส (ตอบกลับว่าไม่รู้จักช่องเรียง code) · ขอฝั่งท่อแล้ว (ef3165f4 รอขึ้นเว็บ)" /></th>
                     <th className={TH} style={กว้างZ(290)}><SortHead label="ชื่อ" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน" /></th>
@@ -553,12 +541,11 @@ export default function CoreContactsPage() {
                       detail={q ? 'ค้นได้จาก ชื่อ · เบอร์โทร · รหัสผู้ติดต่อ' : 'ยังไม่มีรายชื่อในคลังเงา — ต้องสั่งซิงก์ก่อน'} />
                   )}
                   {rows.map((r, i) => (
-                    <tr key={r.id} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(r.id) ? 'bg-[#eef1fa]' : ''}`}>
+                    <tr key={r.id} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${เลือก.เลือกอยู่(r) ? 'bg-[#eef1fa]' : ''}`}>
                       <td className={TD_NO}>{offset + i + 1}</td>
                       <td className={TD_CHECK}>
                         <RowCheck label={`เลือก ${r.name ?? r.code ?? ''}`}
-                          checked={picked.includes(r.id)}
-                          onChange={(v) => setPicked((old) => (v ? [...old, r.id] : old.filter((x) => x !== r.id)))} />
+                          checked={เลือก.เลือกอยู่(r)} onChange={(v) => เลือก.สลับ(r, v)} />
                       </td>
                       <td className={`${TD} whitespace-nowrap`}>{r.code || DASH}</td>
                       <td className={TD}>
@@ -642,18 +629,9 @@ export default function CoreContactsPage() {
               <BulkBar>
                 <b>เลือก {fmtNum(ที่เลือก.length)} รายการ</b>
                 <span className="text-gray-500">(เฉพาะหน้านี้)</span>
-                {/* ไม่มีเบอร์/อีเมลสักราย ⇒ ปิดพร้อมเหตุ ไม่ใช่กดแล้วได้คลิปบอร์ดว่าง */}
-                <button type="button" disabled={เบอร์.length === 0} onClick={() => { void คัดลอก(เบอร์, 'เบอร์') }}
-                  title={เบอร์.length === 0 ? 'รายที่เลือกไม่มีเบอร์โทรเลย' : undefined}
-                  className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50 disabled:opacity-50">
-                  คัดลอกเบอร์โทร ({fmtNum(เบอร์.length)})
-                </button>
-                <button type="button" disabled={อีเมล.length === 0} onClick={() => { void คัดลอก(อีเมล, 'อีเมล') }}
-                  title={อีเมล.length === 0 ? 'รายที่เลือกไม่มีอีเมลเลย' : undefined}
-                  className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50 disabled:opacity-50">
-                  คัดลอกอีเมล ({fmtNum(อีเมล.length)})
-                </button>
-                <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+                <CopyBtn label="คัดลอกเบอร์โทร" values={เบอร์} onCopy={(v) => { void คัดลอก(v, 'เบอร์') }} emptyWhy="รายที่เลือกไม่มีเบอร์โทรเลย" />
+                <CopyBtn label="คัดลอกอีเมล" values={อีเมล} onCopy={(v) => { void คัดลอก(v, 'อีเมล') }} emptyWhy="รายที่เลือกไม่มีอีเมลเลย" />
+                <button type="button" onClick={เลือก.ล้าง} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
                 {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
               </BulkBar>
             )
