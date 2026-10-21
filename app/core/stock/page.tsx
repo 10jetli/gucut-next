@@ -31,7 +31,7 @@ import { TH_NO, ROW_LINK, TD_NO,
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 import ไอคอนZ from '@/components/zort/ZortIcon'
 import ZortNoImage from '@/components/zort/ZortNoImage'
 
@@ -879,7 +879,9 @@ function CoreStockInner() {
                        ⇒ ⇒ วันที่ท่อถอดคีย์ไหนออก ปุ่มนั้นจะกลายเป็นข้อความอธิบายเองโดยไม่มีใครต้องกลับมาแก้ */}
                 <tr>
                   {/* 📐 ลำดับ `#` ก่อนช่องติ๊ก — ตาม ZORT (`th.index` แล้ว `th.chk` · อ่าน thead จริง 15 ต.ค. 2569) */}
-                  <th className={TH_NO} style={{ width: 44 }}>#</th>
+                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Product/list ที่ 1280 (21 ต.ค. 2569) # 27 · รหัส 100 · ชื่อ 353 · ซื้อ 67 · ขาย 74 · คงเหลือ 88 · พร้อมขาย 99 · Marketplace 131
+                      ช่องติ๊กคงเป้ากด 32 (ZORT 22) — เป้านิ้วสำคัญกว่าพิกเซล */}
+                  <th className={TH_NO} style={{ width: เหมือนZORT ? 27 : 44 }}>#</th>
                   <th className={TH_CHECK} style={{ width: 34 }}>
                     {/* ติ๊กทั้งหน้า — **ทั้งหน้าเท่านั้น ไม่ใช่ทั้งคลัง** (ZORT ก็เลือกได้แค่หน้าที่เห็น) */}
                     <RowCheck label="เลือกทั้งหน้า"
@@ -888,12 +890,12 @@ function CoreStockInner() {
                       onChange={(v) => setPicked(v ? rows.map((r) => r.sku) : [])} />
                   </th>
                   {(['รหัส', 'ชื่อสินค้า'] as const).map((ชื่อ) => (
-                    <th key={ชื่อ} className={TH}><หัวเรียง ชื่อ={ชื่อ} /></th>
+                    <th key={ชื่อ} className={TH} style={กว้างZ(กว้างหัวZ[ชื่อ])}><หัวเรียง ชื่อ={ชื่อ} /></th>
                   ))}
                   {(['ราคาซื้อ', 'ราคาขาย', 'คงเหลือ', 'พร้อมขาย'] as const).map((ชื่อ) => (
-                    <th key={ชื่อ} className={THR}><หัวเรียง ชื่อ={ชื่อ} /></th>
+                    <th key={ชื่อ} className={THR} style={กว้างZ(กว้างหัวZ[ชื่อ])}><หัวเรียง ชื่อ={ชื่อ} /></th>
                   ))}
-                  <th className={TH}>Marketplace</th>
+                  <th className={TH} style={กว้างZ(131)}>Marketplace</th>
                   <th className={TH} style={{ width: 40 }}>
                     {/* ผัง ZORT: ปุ่ม "รีเซ็ตการเรียงลำดับข้อมูล" ที่หัวคอลัมน์สุดท้าย (อ่าน th.action 16 ต.ค. 2569)
                         กลับไปลำดับตั้งต้นของ ZORT = พร้อมขายน้อยก่อน · ช่อง "เรียง" ข้างช่องค้นยังเก็บไว้เพราะมี "ขายดีก่อน" ที่ร้านใช้ (ZORT ไม่มี) */}
@@ -1290,6 +1292,9 @@ function รหัสผิดรูป(sku?: string | null): boolean {
 
 /** 📏 รูปย่อในตาราง — โหมดเหมือน ZORT 50×50 มุมเหลี่ยม (วัด DOM /Product/list 20 ต.ค. 2569 · รูปเป็น background ของกล่อง 50×50) · โหมดเดิม 40 มุมมน */
 const รูปย่อZ = เหมือนZORT ? 'w-[50px] h-[50px] rounded-none' : 'w-10 h-10 rounded'
+
+/** ความกว้างหัวคอลัมน์โหมดเหมือน ZORT (DOM /Product/list ที่ 1280 · 21 ต.ค. 2569) */
+const กว้างหัวZ = { 'รหัส': 100, 'ชื่อสินค้า': 353, 'ราคาซื้อ': 67, 'ราคาขาย': 74, 'คงเหลือ': 88, 'พร้อมขาย': 99 } as const
 
 export default function CoreStockPage() {
   // useSearchParams ต้องอยู่ใน Suspense ไม่งั้น build ของ Next ตก (แพตเทิร์นเดียวกับ sales/detail)
