@@ -241,7 +241,8 @@ function ZortBigCard({ icon, label, value, unknown, tone }: {
         {/* โหมดเหมือน ZORT: วงไอคอน ~46px สี #d0daff (ภาพ /Dashboard 19 ต.ค. 2569 · วงเป็นภาพของ ZORT อ่าน DOM ไม่เจอ ⇒ กะจากภาพ) */}
         {/* 📐 โหมดเหมือน ZORT: ไอคอนเส้น (ปฏิทิน 3 แบบ · กล่องซ้อน) แทนอีโมจิ — ภาพ /Dashboard/Main 20 ต.ค. 2569 · วาดเอง (CardIcons) */}
         <span className={`shrink-0 rounded-full flex items-center justify-center ${เหมือนZORT ? 'w-[46px] h-[46px] bg-[#d0daff] text-[#4165ed] text-[20px]' : 'w-9 h-9 bg-violet-50 text-[16px]'}`}>{(เหมือนZORT && ไอคอนการ์ดZ[icon]) || icon}</span>
-        <div className="ml-auto text-right">
+        {/* 📱 min-w-0 — จอ 768 (มีแถบซ้าย) การ์ดสองคอลัมน์ ข้อความดันหน้ากว้าง 800 (21 ต.ค. 2569) */}
+        <div className="ml-auto text-right min-w-0 break-words">
           <p className="text-[14px] font-medium text-[#868e96]">{label}</p>
           {unknown
             ? <p className="text-[12.5px] text-amber-800 mt-1 leading-snug max-w-[260px]">⚠️ {unknown}</p>
