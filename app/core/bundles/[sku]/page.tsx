@@ -309,6 +309,22 @@ export default function BundleDetailPage() {
     </>
   )
 
+  /** กล่องพับที่มาของตัวเลขบนการ์ด (โหมดเหมือน ZORT) — ตัวเดียว วางได้สองที่:
+   *  พร้อมขาย 0 (มีคำเตือน ⚠️ อาจติดลบ) ⇒ ใต้การ์ด ให้คำเตือนอยู่ติดเลข · ปกติ ⇒ ท้ายจอ (ใต้การ์ดดันกล่องข้อมูลชุดลง ~20 จาก ZORT · 21 ต.ค. 2569) */
+  const พับที่มาการ์ด = (b: BundleRow) => (
+              <ZortLookFold tone="gray" สรุป={<>ที่มาของตัวเลขบนการ์ด{b.available === 0 ? ' · ⚠️ พร้อมขาย 0 อาจหมายถึงติดลบ' : ''}{monthSum.amount === 0 && sales && sales.length === 0 ? ' · ชุดนี้ยังไม่เคยขายเลยสักใบ' : ''}</>}>
+                <ul className="text-[12px] text-gray-600 list-disc pl-5 mt-1 space-y-0.5">
+                  {stock.state === 'ok' && <li>คงเหลือ: ซิงก์จาก ZORT {agoText(stock.ageMinutes)}</li>}
+                  <li>พร้อมขาย: {b.available === 0
+                    ? '0 อาจหมายถึงติดลบ — เทียบทั้ง 360 ชุดกับจอ ZORT แล้ว (15 ก.ย. 2569) ส่วนใหญ่ของชุดที่ขึ้น 0 ตรงนี้ จอ ZORT แสดงค่าติดลบ'
+                    : 'ตัวเลขนี้มาจาก ZORT API — เทียบกับจอ ZORT แล้ว (15 ก.ย. 2569) บางชุดจอ ZORT ต่ำกว่านี้'}</li>
+                  <li>ยอดขายเดือนนี้ ({monthLabel(now.getFullYear(), now.getMonth(), false)}): {monthSum.amount !== null
+                    ? `${monthSum.qty ? `ขายได้ ${fmtNum(monthSum.qty)} ${unit} · ` : ''}จากบัตรสต็อกของรหัสชุด${monthSum.voided ? ` · ไม่นับใบยกเลิก ${fmtNum(monthSum.voided)} ใบ` : ''}`
+                    : (salesUnknownWhy || 'ยังไม่รู้')}</li>
+                </ul>
+              </ZortLookFold>
+  )
+
   return (
     <div className="p-4 md:p-6">
       <Link href="/core/bundles" className={ZORT_BACK_LINK}>{เหมือนZORT ? '‹' : '←'} สินค้าเป็นชุด</Link>
@@ -398,17 +414,7 @@ export default function BundleDetailPage() {
                   ['ยอดขายเดือนนี้ (บาท)', '#d0daff', '#4165ed', '฿', monthSum.amount !== null ? fmtMoney(monthSum.amount) : (salesUnknownWhy ? 'ยังไม่รู้' : '—')],
                 ] as const).map(([ป้าย, วง, สี, รูป, ค่า]) => ({ ป้าย, วง, สี, รูป, ค่า, ว่าง: ค่า === '—' }))} />
               </div>
-              <ZortLookFold tone="gray" สรุป={<>ที่มาของตัวเลขบนการ์ด{bundle.available === 0 ? ' · ⚠️ พร้อมขาย 0 อาจหมายถึงติดลบ' : ''}{monthSum.amount === 0 && sales && sales.length === 0 ? ' · ชุดนี้ยังไม่เคยขายเลยสักใบ' : ''}</>}>
-                <ul className="text-[12px] text-gray-600 list-disc pl-5 mt-1 space-y-0.5">
-                  {stock.state === 'ok' && <li>คงเหลือ: ซิงก์จาก ZORT {agoText(stock.ageMinutes)}</li>}
-                  <li>พร้อมขาย: {bundle.available === 0
-                    ? '0 อาจหมายถึงติดลบ — เทียบทั้ง 360 ชุดกับจอ ZORT แล้ว (15 ก.ย. 2569) ส่วนใหญ่ของชุดที่ขึ้น 0 ตรงนี้ จอ ZORT แสดงค่าติดลบ'
-                    : 'ตัวเลขนี้มาจาก ZORT API — เทียบกับจอ ZORT แล้ว (15 ก.ย. 2569) บางชุดจอ ZORT ต่ำกว่านี้'}</li>
-                  <li>ยอดขายเดือนนี้ ({monthLabel(now.getFullYear(), now.getMonth(), false)}): {monthSum.amount !== null
-                    ? `${monthSum.qty ? `ขายได้ ${fmtNum(monthSum.qty)} ${unit} · ` : ''}จากบัตรสต็อกของรหัสชุด${monthSum.voided ? ` · ไม่นับใบยกเลิก ${fmtNum(monthSum.voided)} ใบ` : ''}`
-                    : (salesUnknownWhy || 'ยังไม่รู้')}</li>
-                </ul>
-              </ZortLookFold>
+              {bundle.available === 0 && พับที่มาการ์ด(bundle)}
             </>
           )}
           {!เหมือนZORT && <div className="flex flex-wrap gap-3 mt-3">
@@ -813,6 +819,7 @@ export default function BundleDetailPage() {
               <>⚠️ ยังไม่รู้ว่าตัวเลข<b>คงเหลือ / พร้อมขาย</b> ซิงก์ล่าสุดเมื่อไหร่ (ท่อไม่ได้ส่งเวลามา) — ไม่ได้แปลว่าซิงก์หยุด</>
             )}
           </p>
+          {เหมือนZORT && bundle.available !== 0 && <div className="mt-4">{พับที่มาการ์ด(bundle)}</div>}
         </>
       )}
     </div>
