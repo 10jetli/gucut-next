@@ -18,15 +18,16 @@ export default function PurchaseReturnsPage() {
     <LedgerScreen
       title="คืนสินค้า (ให้ผู้ขาย)"
       cols={เหมือนZORT ? [
-        /* 📐 โหมดเหมือน ZORT — ชื่อ/ลำดับตามหัวตาราง ZORT (REA 20 ต.ค. 2569) · ⚠️ ต้องตรงกับ ROW_MAPS.returnpurchaseorders */
-        { label: 'วันที่' },
-        { label: 'รายการ' },
-        { label: 'อ้างอิง' },
-        { label: 'ผู้ติดต่อ' },
-        { label: 'วันส่งสินค้า' },
-        { label: 'มูลค่า', right: true },
-        { label: 'สถานะ' },
-        { label: 'ชำระเงิน' },
+        /* 📐 โหมดเหมือน ZORT — ชื่อ/ลำดับตามหัวตาราง ZORT (REA 20 ต.ค. 2569) · ⚠️ ต้องตรงกับ ROW_MAPS.returnpurchaseorders
+           📏 ความกว้างตาม DOM /Sell/list?&sttype=1 ที่ 1280 (21 ต.ค. 2569) · ZORT มีช่องติ๊กกว้าง 22 ที่เราไม่มี (ไม่มีคำสั่งหลายแถว) */
+        { label: 'วันที่', กว้าง: 66 },
+        { label: 'รายการ', กว้าง: 183 },
+        { label: 'อ้างอิง', กว้าง: 90 },
+        { label: 'ผู้ติดต่อ', กว้าง: 100 },
+        { label: 'วันส่งสินค้า', กว้าง: 132 },
+        { label: 'มูลค่า', right: true, กว้าง: 79 },
+        { label: 'สถานะ', กว้าง: 87 },
+        { label: 'ชำระเงิน', กว้าง: 166 },
       ] : [
         /* ลำดับ วันที่ → รายการ ตาม ZORT (17 ต.ค. 2569) · ⚠️ สลับที่นี่ต้องสลับ ROW_MAPS.returnpurchaseorders ด้วย */
         { label: 'วันที่' },

@@ -38,7 +38,11 @@ import ZortLookFold from './ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { แว่นช่องค้น } from '@/components/zort/formCtl'
 
-export interface LedgerCol { label: string; right?: boolean }
+export interface LedgerCol {
+  label: string; right?: boolean
+  /** ความกว้างคอลัมน์ (px) ที่วัดจาก DOM ZORT — จอส่งเฉพาะโหมดเหมือน ZORT · ไม่ส่ง = ตารางจัดเอง · เป็นค่าแนะนำ เนื้อที่ยาวกว่ายังขยายได้ */
+  กว้าง?: number
+}
 
 /** วันที่ไปเปิดดูจอ ZORT ของจริงล่าสุด — **แก้ที่นี่ที่เดียวเมื่อไปตรวจใหม่**
  *  🔴 เดิมเขียนตายตัวว่า "ตรวจเมื่อ 3 ก.ย. 2569 มี 0 รายการ" ฝังในข้อความ
@@ -665,7 +669,7 @@ export default function LedgerScreen({
           <thead className="bg-white border-b border-gray-200">
             <tr>
               <th className={TH_NO} style={{ width: 44 }}>#</th>
-              {cols.map((c) => <th key={c.label} className={c.right ? THR : TH}>{c.label}</th>)}
+              {cols.map((c) => <th key={c.label} className={c.right ? THR : TH} style={c.กว้าง ? { width: c.กว้าง } : undefined}>{c.label}</th>)}
             </tr>
           </thead>
           <tbody>
