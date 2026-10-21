@@ -277,7 +277,8 @@ function Inner() {
               <dl className="font-['Boon',sans-serif] text-[16px] leading-[23px]">
                 {([['ชื่อ', d?.name || key, true], ...(['phone', 'email', 'address', 'tax_id', 'branch_name', 'branch_no'] as const).map((k) => [LABEL[k], c[k], k in c] as const)] as const).map(([label, v, มีช่อง]) => (
                   /* 📏 แถวห่างกัน 31 แบบ ZORT (ภาพ /Contact/ContactDetail 20 ต.ค. 2569 · เดิม 37) ⇒ py-1 */
-                  <div key={label} className="grid grid-cols-[1fr_2fr] py-1">
+                  /* 📱 minmax(0,…) — ค่ายาวไม่มีช่องว่าง (เลขภาษี/อีเมล) ดันกล่องกว้าง 480 บนจอ 375 */
+                  <div key={label} className="grid grid-cols-[minmax(0,1fr)_minmax(0,2fr)] py-1">
                     <dt className="text-[#868e96]">{label}</dt>
                     <dd className="text-[#3e3e3e] break-words">{!มีช่อง ? <span className="text-[12.5px] text-gray-400">ท่อไม่ได้ส่งช่องนี้มา</span> : (v ? String(v) : '-')}</dd>
                   </div>
