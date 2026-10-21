@@ -6,13 +6,15 @@ import { ขั้นแกน, ย่อเลข } from './ZortBarChart'
 
 export interface LinePoint { label: string; value: number }
 
-export default function ZortLineChart({ points, legend, xTitle = 'ช่วงเวลา', ป้ายกำกับ }: {
+export default function ZortLineChart({ points, legend, xTitle = 'ช่วงเวลา', ป้ายกำกับ, จุด = false }: {
   points: LinePoint[]
   /** ชื่อเส้นเหนือกราฟ เช่น "ยอดขายรวม" */
   legend: string
   xTitle?: string
   /** aria-label ของกราฟ */
   ป้ายกำกับ: string
+  /** จุดกลมทุกค่า + จุดบนคำอธิบายเส้น — แบบกราฟยอดซื้อของ ZORT (/Dashboard/BuyReport) · กราฟยอดขาย ZORT ไม่มีจุด */
+  จุด?: boolean
 }) {
   const W = 449, H = 300, L = 72, R = 443, T = 59, B = 243
   const max = Math.max(1, ...points.map((p) => p.value))
@@ -26,6 +28,7 @@ export default function ZortLineChart({ points, legend, xTitle = 'ช่วง�
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto font-['Lato','Boon',sans-serif]" role="img" aria-label={ป้ายกำกับ}>
       <line x1={82} x2={112} y1={34} y2={34} stroke="#97adfd" strokeWidth={2} />
+      {จุด && <circle cx={97} cy={34} r={3.5} fill="#97adfd" />}
       <text x={116} y={38} fontSize={11} fill="#222">{legend}</text>
       {ขีด.map((v, i) => (
         <g key={v}>
@@ -35,6 +38,7 @@ export default function ZortLineChart({ points, legend, xTitle = 'ช่วง�
       ))}
       <path d={points.map((p, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(p.value).toFixed(1)}`).join(' ')}
         fill="none" stroke="#97adfd" strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+      {จุด && points.map((p, i) => <circle key={`c${i}`} cx={x(i)} cy={y(p.value)} r={3.5} fill="#97adfd" />)}
       {points.map((p, i) => i % ทุก === 0 && (
         <text key={i} x={x(i)} y={B + 18} fontSize={11} fill="#222" textAnchor="end"
           transform={`rotate(-30 ${x(i)} ${B + 14})`}>{p.label}</text>

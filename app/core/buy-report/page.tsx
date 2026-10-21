@@ -18,6 +18,7 @@ import StorePicker, { type StoreId } from '@/components/zort/StorePicker'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortLineChart from '@/components/zort/ZortLineChart'
 import StoreEcho from '@/components/zort/StoreEcho'
 import CategorySeriesChart, { useCategorySeries } from '@/components/zort/CategorySeriesChart'
 import { useCallback, useEffect, useMemo, useState } from 'react'
@@ -491,7 +492,8 @@ export default function BuyReportPage() {
               </div>
               {chartView === 'cat'
                 ? <CategorySeriesChart data={catSeries.data} err={catSeries.err} />
-                : <BuyChart points={points} />}
+                /* 📐 โหมดเหมือน ZORT: กราฟเส้นแบบ ZORT มีจุด (DOM /Dashboard/BuyReport 21 ต.ค. 2569: svg 449×300 · คำอธิบาย ยอดซื้อรวม · ป้ายเดือนเอียง) — ตัวร่วมกับจอยอดขาย */
+                : เหมือนZORT ? <ZortLineChart จุด legend="ยอดซื้อรวม" ป้ายกำกับ="กราฟยอดซื้อ" points={points} /> : <BuyChart points={points} />}
               {chartView === 'total' && กราฟ.โครงขาด && (
                 <p className="text-[12.5px] text-amber-800 mt-1">
                   ⚠️ <b>ช่วงวันที่เลือกยาวเกินที่กราฟไล่ได้</b> — โครงเวลาถูกตัดที่ 400 ช่อง
