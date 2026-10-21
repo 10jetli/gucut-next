@@ -22,7 +22,7 @@ import { reconcileOrder } from '@/lib/order-money'
 import SlipBox from '@/components/zort/SlipBox'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
-import { TH_NO, Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG } from '@/components/zort'
+import { TH_NO, Pill, toneOfStatus, TH, THR, TD, TDR, TD_NO, ZORT_BLUE, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG, ลูกศรลง } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 interface Order {
@@ -371,12 +371,12 @@ function DetailInner() {
           <span title="ยังทำไม่ได้ — ZORT เปิดหน้าจองขนส่ง (มีค่าใช้จ่ายจริง) · ของเราจองผ่าน L Shipping Point ของ ZORT"
             className={DETAIL_BTN_OFF}>บริการส่งสินค้า</span>
           <span title="ยังทำไม่ได้ — SMS ส่งจากระบบของ ZORT (คิดเงินตามข้อความ) · จอนี้อ่านอย่างเดียว"
-            className={DETAIL_BTN_OFF}>ส่ง SMS ให้ลูกค้า ▾</span>
+            className={DETAIL_BTN_OFF}>ส่ง SMS ให้ลูกค้า<ลูกศรลง /></span>
           {order.channel && (
             <span className="text-[12.5px] text-gray-700 bg-white border border-gray-300 rounded px-3 py-1.5">{order.channel}</span>
           )}
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
-            className={DETAIL_BTN_OFF}>Accounting ▾</span>
+            className={DETAIL_BTN_OFF}>Accounting<ลูกศรลง /></span>
           <span title="ยังทำไม่ได้ — ประวัติการแก้ใบเก็บอยู่ที่ ZORT (/User/activitylog) กระจกไม่ได้เก็บ"
             className={เหมือนZORT ? DETAIL_BTN_OFF : `ml-auto ${DETAIL_BTN_OFF}`} /* ZORT: ติดกับปุ่มอื่น ไม่ชิดขวา (ภาพ 20 ต.ค. 2569) */>ดูกิจกรรมของรายการ</span>
         </div>

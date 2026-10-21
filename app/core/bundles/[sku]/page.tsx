@@ -42,9 +42,10 @@ import {
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { useSkuImages } from '@/lib/sku-images'
-import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN, ZORT_BACK_LINK, ZORT_INFO_LABEL, ZORT_INFO_VALUE, ZORT_INFO_NAME } from '@/components/zort'
+import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN, ZORT_BACK_LINK, ZORT_INFO_LABEL, ZORT_INFO_VALUE, ZORT_INFO_NAME, ลูกศรลง } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortKpiCards from '@/components/zort/ZortKpiCards'
 
 /* 📐 ปุ่มแถบบน — โหมดเหมือน ZORT ใช้ปุ่มกรอบเหลี่ยม (DETAIL_BTN · วัด 17 ต.ค.) · นอกโหมดคงปุ่มกลมเดิม */
 const ปุ่มZ = เหมือนZORT ? DETAIL_BTN : 'text-[12.5px] font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-4 py-1.5 hover:bg-gray-50'
@@ -352,7 +353,7 @@ export default function BundleDetailPage() {
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'cmd' ? '' : 'cmd')}
                 className={ปุ่มZ}>
-                คำสั่ง ▾
+                คำสั่ง<ลูกศรลง />
               </button>
               {menu === 'cmd' && (
                 <span className="absolute left-0 top-full mt-1 z-20 w-[230px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] py-1 block">
@@ -368,7 +369,7 @@ export default function BundleDetailPage() {
             <span className="relative">
               <button type="button" onClick={() => setMenu(menu === 'print' ? '' : 'print')}
                 className={`${ปุ่มZ} inline-flex items-center gap-1`}>
-                {เหมือนZORT && <IconPrint />}พิมพ์เอกสาร ▾
+                {เหมือนZORT && <IconPrint />}พิมพ์เอกสาร<ลูกศรลง />
               </button>
               {menu === 'print' && (
                 <span className="absolute left-0 top-full mt-1 z-20 w-[230px] bg-white border border-gray-200 rounded-lg shadow-[0_12px_32px_-12px_rgba(15,23,42,0.3)] py-1 block">
@@ -377,7 +378,7 @@ export default function BundleDetailPage() {
               )}
             </span>
 
-            <Link href="/core/soon/bundle-push-marketplace" className={ปุ่มZ}>อัพเดทช่องทางอื่น ▾</Link>
+            <Link href="/core/soon/bundle-push-marketplace" className={ปุ่มZ}>อัพเดทช่องทางอื่น<ลูกศรลง /></Link>
             <Link href="/core/soon/bundle-activity" className={ปุ่มZ}>ดูกิจกรรมของรายการ</Link>
             {/* 🔁 ปุ่ม "รีเฟรช" เอาออก 16 ต.ค. 2569 — ZORT /Bundle/Details ไม่มี (อ่านปุ่มทั้งหน้า) */}
           </div>
@@ -389,20 +390,13 @@ export default function BundleDetailPage() {
               หมายเหตุใต้ค่าของแต่ละการ์ด (ซิงก์เมื่อไหร่ · พร้อมขายของ API ต่างจากจอ ZORT · ที่มายอดขาย) ย้ายไปพับใต้การ์ด ไม่ถอด */}
           {เหมือนZORT && (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-[30px] mt-3">
-                {([
+              {/* 🧩 ใช้การ์ดร่วม ZortKpiCards (เดิมเขียนซ้ำในจอนี้ — กฎข้อ 5) ⇒ ได้ไอคอนเส้นวาดเองชุดเดียวกับจอสินค้า/หมวด/คลัง */}
+              <div className="mt-3">
+                <ZortKpiCards items={([
                   ['สินค้าคงเหลือ', '#ebf6ff', '#2f8dde', '▦', typeof bundle.onhand === 'number' ? `${fmtNum(bundle.onhand)} ${unit}` : '—'],
                   ['สินค้าพร้อมขาย', '#cefff1', '#13af82', '✓', typeof bundle.available === 'number' ? `${fmtNum(bundle.available)} ${unit}` : '—'],
                   ['ยอดขายเดือนนี้ (บาท)', '#d0daff', '#4165ed', '฿', monthSum.amount !== null ? fmtMoney(monthSum.amount) : (salesUnknownWhy ? 'ยังไม่รู้' : '—')],
-                ] as const).map(([ป้าย, วง, สี, รูป, ค่า]) => (
-                  <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                    <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
-                    <div className="text-right">
-                      <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
-                      <p className="font-['Lato',sans-serif] text-[30px] leading-[30px] font-semibold mt-1 m-0" style={{ color: ค่า === '—' ? '#ced4da' : สี }}>{ค่า}</p>
-                    </div>
-                  </div>
-                ))}
+                ] as const).map(([ป้าย, วง, สี, รูป, ค่า]) => ({ ป้าย, วง, สี, รูป, ค่า, ว่าง: ค่า === '—' }))} />
               </div>
               <ZortLookFold tone="gray" สรุป={<>ที่มาของตัวเลขบนการ์ด{bundle.available === 0 ? ' · ⚠️ พร้อมขาย 0 อาจหมายถึงติดลบ' : ''}{monthSum.amount === 0 && sales && sales.length === 0 ? ' · ชุดนี้ยังไม่เคยขายเลยสักใบ' : ''}</>}>
                 <ul className="text-[12px] text-gray-600 list-disc pl-5 mt-1 space-y-0.5">

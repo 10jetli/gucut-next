@@ -23,7 +23,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
-import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
+import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE, ลูกศรลง } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import type { WriteResp } from '@/components/zort'
@@ -362,7 +362,7 @@ function Inner() {
             ['พิมพ์เอกสาร + จัดเก็บ', 'ยังทำไม่ได้ — จัดเก็บไฟล์ไว้ในระบบไฟล์ของ ZORT = เขียนกลับ'],
           ] as const).map(([label, disabled]) => ({ label, disabled }))} />
           <span title="ยังทำไม่ได้ — ส่งเอกสารเข้า PEAK รายใบ ของเรายังไม่มีทาง (รอตัดสินคู่กับแผนเลิกใช้ ZORT)"
-            className={DETAIL_BTN_OFF}>Accounting ▾</span>
+            className={DETAIL_BTN_OFF}>Accounting<ลูกศรลง /></span>
           {!เหมือนZORT && <span title="ยังทำไม่ได้ — แนบไฟล์เข้าใบใน ZORT = เขียนกลับ"
             className="text-[12.5px] text-gray-300 cursor-not-allowed">📎 แนบไฟล์</span>}
           {/* 📐 โหมดเหมือน ZORT: ภาพ /Buy/Details 20 ต.ค. 2569 ปุ่มนี้อยู่ติดกับ Accounting (ไม่ได้ชิดขวาอย่างที่จดไว้ 16 ต.ค.) */}
