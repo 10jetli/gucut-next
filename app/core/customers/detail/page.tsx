@@ -264,7 +264,7 @@ function Inner() {
           </p>
         )}
         {/* 📐 โหมดเหมือน ZORT: สองการ์ดกว้างเท่ากัน (ภาพ 20 ต.ค. 2569) · การ์ดซ้ายมีรูปคนกลม แล้วตามด้วยช่องข้อมูล 7 ช่องไม่มีเส้นคั่น */}
-        <div className={เหมือนZORT ? 'grid gap-[30px] md:grid-cols-2' : 'grid gap-4 md:grid-cols-[320px_1fr]'}>
+        <div className={เหมือนZORT ? 'grid grid-cols-1 gap-[30px] md:grid-cols-2' : 'grid grid-cols-1 gap-4 md:grid-cols-[320px_1fr]'}>
           {/* ── ข้อมูลติดต่อ ── */}
           <section className={DL_CARD}>
             {เหมือนZORT ? (

@@ -549,7 +549,8 @@ export default function ProductDetailPage() {
                 </span>
               )}
 
-            <div className="min-w-0 flex-1">
+            {/* 📱 จอเล็กกว่า md: คอลัมน์รายละเอียดขึ้นบรรทัดใหม่เต็มกว้างใต้รูป — เดิมถูกบีบเหลือ 59 ข้างรูป ⇒ QR ล้นจอ (หน้า 438 · 21 ต.ค. 2569) */}
+            <div className="min-w-0 flex-1 basis-full md:basis-0">
               <p className={เหมือนZORT ? `${ZORT_INFO_NAME} mb-2` : 'text-[15px] font-semibold text-gray-900'}>{row.name || sku}{เหมือนZORT && typeof row.category === 'string' && row.category.trim() ? ` (${row.category.trim()})` : ''}</p>
               {/* โหมดเหมือน ZORT: ชื่อเต็มบรรทัดอยู่เหนือ [ข้อมูล | QR] — แบบ ZORT (QR เริ่มใต้ชื่อ ชื่อไม่ถูกบีบจนตกสองบรรทัด) */}
               <div className={เหมือนZORT ? 'flex flex-wrap md:flex-nowrap items-start gap-6' : ''}>
