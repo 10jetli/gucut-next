@@ -28,6 +28,8 @@ HOST = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1] else '1.gucut.com'
 # เก็บภาพสองฝั่งไว้ดูด้วยตา: ตั้ง env เก็บภาพ=<โฟลเดอร์> ⇒ ได้ z<เลขคู่>.png / o<เลขคู่>.png (ไม่ตั้ง = ไม่เก็บ)
 import os
 เก็บภาพ = os.environ.get('เก็บภาพ') or os.environ.get('SAVE_DIR') or ''
+# 🔴 โฟลเดอร์ยังไม่มี ⇒ save พังเงียบ (ภาพหายทั้งรอบ 21 ต.ค. 2569) ⇒ สร้างให้ก่อน
+if เก็บภาพ: os.makedirs(เก็บภาพ, exist_ok=True)
 ซ่อนป๊อปอัป = ".modal,.modal-backdrop,.swal2-container{display:none!important} body.modal-open{overflow:auto!important}"
 
 def พร้อม(pg):
