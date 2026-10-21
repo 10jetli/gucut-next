@@ -649,7 +649,7 @@ export default function ProductDetailPage() {
               </div>
                 {/* โหมดเหมือน ZORT: QR + บาร์โค้ดมุมขวาในกล่องข้อมูล (ZORT วางที่นี่ ไม่ใช่ท้ายจอ)
                     · ห่างขอบขวาการ์ด ~90px (ภาพสองฝั่ง 19 ต.ค. 2569: ZORT 90 · เราเดิม 28) */}
-                {เหมือนZORT && <div className="ml-auto mr-[62px] mt-4 shrink-0"><SkuCodes sku={sku} แบบZORT บาร์โค้ด={{ w: 158, h: 50 }} /></div>}
+                {เหมือนZORT && <div className="md:ml-auto md:mr-[62px] mt-4 shrink-0"><SkuCodes sku={sku} แบบZORT บาร์โค้ด={{ w: 158, h: 50 }} /></div>}
               </div>
             </div>
           </div>

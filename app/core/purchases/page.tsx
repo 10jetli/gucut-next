@@ -393,7 +393,7 @@ export default function CorePurchasesPage() {
         <>
           {/* ผัง ZORT (ภาพ 27): ปุ่มรีเฟรชวงกลมมุมขวาแถบแท็บ — ชั้นแถบแท็บ จุดบอดประจำ (จอที่ 4 แล้ว) */}
           {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list · /Sell/list 19 ต.ค. 2569): แถบแท็บอยู่บนการ์ดขาวเดียวกับตาราง ไม่มีช่องซ้าย (วัด DOM: ระยะเยื้องมาจากช่องในของปุ่มแท็บเอง) (ใบเสนอราคา 29.0 → 15.2) */}
-          <div className={เหมือนZORT ? 'flex items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
+          <div className={เหมือนZORT ? 'flex flex-wrap md:flex-nowrap items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
             {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ (เห็นจริงบน preview 19 ต.ค.: แท็บ "ยกเลิก (1)" หายไปหลังแถบเลื่อน) ⇒ shrink-0 · ให้ตัวเลือกร้านเป็นฝ่ายตัดบรรทัด */}
             <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
             <Tabs
