@@ -507,8 +507,16 @@ export default function CoreBundlesPage() {
                         : <span className="text-gray-300" title="มีชิ้นส่วนที่ยังไม่ได้ตั้งราคา จึงรวมไม่ได้">—</span>}
                     </td>
                     <td className={TDR}>{typeof r.sellprice === 'number' ? fmtMoney(r.sellprice) : <span className="text-gray-300">—</span>}</td>
-                    <td className={TDR}><Qty n={r.onhand} unit={r.unit} /></td>
-                    <td className={TDR}><Qty n={r.available} unit={r.unit} maybeNegative /></td>
+                    {/* 📐 โหมดเหมือน ZORT: คงเหลือ/พร้อมขายเป็นลิงก์ขีดเส้นใต้ (ZORT เปิดป็อปอัปสต็อกรายส่วนประกอบ · DOM 21 ต.ค. 2569)
+                        ของเราพาไปจอรายละเอียดชุด ซึ่งมีตารางส่วนประกอบพร้อมสต็อกแบบเดียวกัน — ปลายทางมีจริง ไม่ใช่ลิงก์หลอก */}
+                    {(['onhand', 'available'] as const).map((k) => (
+                      <td key={k} className={TDR}>
+                        {เหมือนZORT && typeof r[k] === 'number'
+                          ? <Link href={`/core/bundles/${encodeURIComponent(r.sku)}`} className="underline underline-offset-2 decoration-1" style={{ textDecorationColor: สีจำนวนZORT(r[k] as number) }}
+                              title="ดูสต็อกรายส่วนประกอบของชุดนี้"><Qty n={r[k]} unit={r.unit} maybeNegative={k === 'available'} /></Link>
+                          : <Qty n={r[k]} unit={r.unit} maybeNegative={k === 'available'} />}
+                      </td>
+                    ))}
                     <td className={`${TD} text-gray-400 ${เหมือนZORT ? 'text-center' : ''}`}>-</td>
                     <td className={`${TD} ${เหมือนZORT ? 'text-center' : ''}`}>
                       {/* ⚠️ คอมเมนต์เดิมเขียนว่า "ZORT เป็นตัวหนังสือเขียว ไม่ใช่ป้ายกลม" — ผิด
