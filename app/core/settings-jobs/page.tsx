@@ -416,7 +416,7 @@ export default function SettingsJobsPage() {
           <div key={j.src} className="bg-white border border-gray-200 rounded-md p-4">
             <div className="flex flex-wrap items-start justify-between gap-2 mb-1">
               <p className="text-[14px] font-semibold text-gray-900">{j.name}</p>
-              <span className="flex items-center gap-2 shrink-0">
+              <span className="flex flex-wrap items-center gap-2 max-w-full">
                 {j.alert && <Pill tone="orange">มีแจ้งเตือนเมื่อล้ม</Pill>}
                 <span className="text-[12.5px] text-gray-700 bg-gray-100 rounded px-2 py-0.5">{j.when}</span>
                 {/* 🔴 **Netlify คิดเงินตามเวลารันฟังก์ชัน ไม่ใช่จำนวนครั้ง**
