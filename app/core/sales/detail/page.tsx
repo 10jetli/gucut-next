@@ -454,7 +454,8 @@ function DetailInner() {
               </div>
             </Card>
             <Card title="ลูกค้า" icon="👤">
-              <div className={เหมือนZORT ? 'px-5 py-3' : 'px-4 py-3'}>
+              {/* 📏 ZORT /Sell/Details ป้ายคอลัมน์ขวาเริ่ม x529 ของการ์ด 998 · ของเรา x548 ⇒ ช่องในซ้ายลด 15 (DOM 21 ต.ค. 2569) */}
+              <div className={เหมือนZORT ? 'pl-[5px] pr-5 py-3' : 'px-4 py-3'}>
                 {/* 📐 โหมดเหมือน ZORT: ผู้สร้างรายการ อยู่บรรทัดแรกของการ์ดลูกค้า (ภาพ /Sell/Details 20 ต.ค. 2569) */}
                 {'create_user' in order && เหมือนZORT && (
                   <Field label="ผู้สร้างรายการ" value={order.create_user || '-'} />
