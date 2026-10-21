@@ -30,7 +30,7 @@ import { TD_DATE, TH_NO, TD_NO, ROW_LINK,
   LinkText, RowMenu, EmptyState, thaiDate, PageNav, THC, TDC,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import PipeNote from '@/components/ui/PipeNote'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 
 /* 🔴 **ชื่อฟิลด์เคยผิดทั้งชุด — คอลัมน์ขึ้นขีดกลางทุกแถวโดยไม่มีอะไรฟ้อง** (แก้ 5 ก.ย. 2569)
    จอเดาชื่อไว้ว่า transferdate · transferType · fromwarehousecode · towarehousecode
@@ -525,13 +525,14 @@ export default function CoreTransfersPage() {
                     วัดจอ ZORT จริง 16 ก.ย. 2569 — ติดเฉพาะช่องที่วัดมาแล้ว ห้ามเดา */}
                 <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}>ประเภท</th>
-                  <th className={TH}>จาก</th>
-                  <th className={TH}>ไป</th>
-                  <th className={THC}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Warehouse/Transferlist ที่ 1280 (21 ต.ค. 2569) · # รวมช่องติ๊ก 22 ของ ZORT ที่เราไม่มี (38+22) */}
+                  <th className={TH_NO} style={{ width: เหมือนZORT ? 60 : 44 }}>#</th>
+                  <th className={TH} style={กว้างZ(151)}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(202)}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(151)}>ประเภท</th>
+                  <th className={TH} style={กว้างZ(151)}>จาก</th>
+                  <th className={TH} style={กว้างZ(151)}>ไป</th>
+                  <th className={THC} style={กว้างZ(101)}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
