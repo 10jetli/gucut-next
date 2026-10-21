@@ -364,14 +364,14 @@ export default function QuotationsPage() {
               คนที่ชิน ZORT จะกวาดตาหาตรงนี้ ⇒ วางไว้ทั้งสองที่ ไม่ใช่ย้าย
               (ย้ายขึ้นไปที่เดียวก็ผิดผัง · ย้ายลงมาที่เดียวก็หายจากที่คนของเราชินอยู่) */}
           {/* 📐 โหมดเหมือน ZORT (ภาพ /Quotation/list 19 ต.ค. 2569): แถบแท็บอยู่ **บนการ์ดขาวเดียวกับตาราง** ไม่มีช่องซ้าย (วัด DOM: ระยะเยื้องมาจากช่องในของปุ่มแท็บเอง) · ปุ่มโหลดใหม่ชิดขวาในแถบ */}
-          <div className={เหมือนZORT ? 'flex flex-wrap md:flex-nowrap items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
+          <div className={เหมือนZORT ? 'flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 bg-white pr-4' : 'flex items-end justify-between gap-3'}>
             {/* 🔶 **ไม่เพิ่มแท็บเอง** — จอนี้ลอกแท็บมาจาก ZORT (ทั้งหมด · อนุมัติแล้ว) เท่านั้น
                 แม้ข้อมูลจะมี 3 สถานะ (ยกเลิก · รออนุมัติ · อนุมัติแล้ว) ก็ไม่ตั้งแท็บที่ ZORT ไม่มี
                 (กติกา: ของที่เราคิดขึ้นเอง ห้ามอยู่ในจอที่กำลังลอก ZORT)
                 ⇒ แต่ **ต้องเขียนกำกับว่า "ทั้งหมด" รวมใบยกเลิกไว้เท่าไหร่** ตามกติกาแท็บใน CLAUDE.md
                    ไม่งั้นคนอ่าน 6 ใบแล้วไม่รู้ว่าครึ่งหนึ่งถูกยกเลิกไปแล้ว (ของจริง 18 ก.ย. 2569: ยกเลิก 3 จาก 6) */}
             {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ ⇒ shrink-0 (บทเรียนจอใบซื้อ 19 ต.ค. 2569) */}
-            <div className={เหมือนZORT ? 'min-w-0 max-w-full overflow-x-auto md:shrink-0 md:max-w-none md:overflow-visible' : 'contents'}>
+            <div className={เหมือนZORT ? 'min-w-0 max-w-full overflow-x-auto lg:shrink-0 lg:max-w-none lg:overflow-visible' : 'contents'}>
             <Tabs
               tabs={[
                 { id: '', label: 'ทั้งหมด', count: all.length },
