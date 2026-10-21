@@ -27,7 +27,8 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { TD_DATE, TH_NO, TD_NO, ROW_LINK,
   PageHead, SearchRow, Tabs, Pill, TableWrap, TH, TD,
-  LinkText, RowMenu, EmptyState, thaiDate, PageNav, THC, TDC,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, PageNav, THC, TDC, TH_CHECK, TD_CHECK, RowCheck, BulkBar,} from '@/components/zort'
+import { useRowPick, useCopyList, CopyBtn } from '@/components/zort/RowPick'
 import ExportButton from '@/components/zort/ExportButton'
 import PipeNote from '@/components/ui/PipeNote'
 import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
@@ -217,6 +218,8 @@ export default function CoreTransfersPage() {
   function เปลี่ยนเรียง(n: { sort: string; dir: 'asc' | 'desc' }) { เรียงRef.current = n; setเรียง(n); load(0) }
   /* กรองตามแท็บในเครื่อง (ท่อไม่รับ status) — ค่าดิบตรงกับที่ท่อส่ง */
   const rows = tab === 'all' ? allRows : allRows.filter((r) => (r.status ?? '') === tab)
+  const เลือก = useRowPick(rows, (r) => String(r.number ?? ''), data)
+  const { msg: copyMsg, copy: คัดลอก } = useCopyList()
   /** โหลดครบทั้งชุดไหม — ใบโอนเยอะ (หมื่นกว่าใบ) แทบไม่มีทางครบ ⇒ ต้องเตือนตรง ๆ */
   const loadedAll = typeof data?.total === 'number' ? offset + allRows.length >= data.total : false
   /* 🔴 **ตาข่ายกันบั๊กที่เพิ่งเจอไม่ให้กลับมาเงียบ ๆ อีก**
@@ -525,10 +528,13 @@ export default function CoreTransfersPage() {
                     วัดจอ ZORT จริง 16 ก.ย. 2569 — ติดเฉพาะช่องที่วัดมาแล้ว ห้ามเดา */}
                 <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Warehouse/Transferlist ที่ 1280 (21 ต.ค. 2569) · # รวมช่องติ๊ก 22 ของ ZORT ที่เราไม่มี (38+22) */}
-                  <th className={TH_NO} style={{ width: เหมือนZORT ? 60 : 44 }}>#</th>
+                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Warehouse/Transferlist ที่ 1280 (21 ต.ค. 2569) · # 38 แล้วช่องติ๊ก (ZORT 22 · ของเราเป้ากด 34 ⇒ รายการหัก 12) */}
+                  <th className={TH_NO} style={{ width: เหมือนZORT ? 38 : 44 }}>#</th>
+                  <th className={TH_CHECK} style={{ width: 34 }}>
+                    <RowCheck label="เลือกทั้งหน้า" checked={เลือก.ติ๊กทั้งหน้า} indeterminate={เลือก.ติ๊กบางส่วน} onChange={เลือก.ทั้งหน้า} />
+                  </th>
                   <th className={TH} style={กว้างZ(151)}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH} style={กว้างZ(202)}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(190)}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={กว้างZ(151)}>ประเภท</th>
                   <th className={TH} style={กว้างZ(151)}>จาก</th>
                   <th className={TH} style={กว้างZ(151)}>ไป</th>
@@ -539,13 +545,14 @@ export default function CoreTransfersPage() {
               <tbody>
                 {rows.length === 0 && (
                   q
-                    ? <EmptyState cols={8} icon="🔍" title="ไม่พบใบโอนที่ค้นหา" detail="ลองพิมพ์เลขที่ใบให้สั้นลง" />
-                    : <EmptyState cols={8} icon="🔄" title="ยังไม่มีใบโอนในแท็บนี้"
+                    ? <EmptyState cols={9} icon="🔍" title="ไม่พบใบโอนที่ค้นหา" detail="ลองพิมพ์เลขที่ใบให้สั้นลง" />
+                    : <EmptyState cols={9} icon="🔄" title="ยังไม่มีใบโอนในแท็บนี้"
                         detail="ใบโอนดึงมาจาก ZORT — โอนของที่ ZORT หรือที่เครื่องมือโอนสินค้าแล้วรอบซิงก์ถัดไปจะเข้ามา" />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={`${r.number}-${i}`} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                  <tr key={`${r.number}-${i}`} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${เลือก.เลือกอยู่(r) ? 'bg-[#eef1fa]' : ''}`}>
                     <td className={TD_NO}>{offset + i + 1}</td>
+                    <td className={TD_CHECK}><RowCheck label={`เลือก ${r.number ?? ''}`} checked={เลือก.เลือกอยู่(r)} onChange={(v) => เลือก.สลับ(r, v)} /></td>
                     <td className={TD_DATE}>{thaiDate(r.transfer_date)}</td>
                     <td className={TD}>
                       {r.id !== null && r.id !== undefined
@@ -588,6 +595,18 @@ export default function CoreTransfersPage() {
                   onPerPage={(n) => { setPerPage(n); load(0, undefined, undefined, n) }} />
             </div>
           </TableWrap>
+
+          {/* ☑️ แถบคำสั่งของแถวที่เลือก — มีเฉพาะคำสั่งที่ทำได้จริง (คัดลอกเลขที่ใบ) · คำสั่งเขียนของ ZORT (อนุมัติ/ยกเลิก/พิมพ์รวม) ยังไม่มีท่อเขียน ⇒ ไม่ทำปุ่มหลอก */}
+          {เลือก.ที่เลือก.length > 0 && (
+            <BulkBar>
+              <b>เลือก {fmtNum(เลือก.ที่เลือก.length)} รายการ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <CopyBtn label="คัดลอกเลขที่ใบ" values={เลือก.ที่เลือก.map((r) => r.number).filter((x): x is string => !!x)}
+                onCopy={(v) => { void คัดลอก(v, 'ใบ') }} emptyWhy="ใบที่เลือกไม่มีเลขที่" />
+              <button type="button" onClick={เลือก.ล้าง} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+            </BulkBar>
+          )}
 
           {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
           <div className="mt-3 flex items-center gap-2">

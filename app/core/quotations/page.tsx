@@ -20,10 +20,11 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import { TD_DATE, TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu,
+  Pill, toneOfStatus, EmptyState, thaiDate, RowMenu, TH_CHECK, TD_CHECK, RowCheck, BulkBar,
 } from '@/components/zort'
 import AdvancedSearch, { AdvancedSearchLink, type AdvField } from '@/components/zort/AdvancedSearch'
 import ImportButton from '@/components/zort/ImportButton'
+import { useRowPick, useCopyList, CopyBtn } from '@/components/zort/RowPick'
 import ExportButton from '@/components/zort/ExportButton'
 import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
@@ -175,6 +176,8 @@ export default function QuotationsPage() {
      ⇒ จอสรุปว่า "โหลดมาครบทั้งชุด จึงเท่ากับกรองทั้งชุด" ซึ่งเป็น **คำรับประกันที่เราไม่ได้รู้** */
   const รู้ทั้งชุด = typeof data?.total === 'number' && Number.isFinite(data.total)
   const cut = รู้ทั้งชุด ? Math.max(0, Number(data!.total) - all.length) : 0
+  const เลือก = useRowPick(rows, (r) => String(r.number ?? ''), data)
+  const { msg: copyMsg, copy: คัดลอก } = useCopyList()
 
   /* ปุ่ม Export — แยกเป็นตัวแปรเพื่อวางได้สองที่ (เหนือแถบเลขหน้าตามเดิม / ใต้แถบเลขหน้าในโหมดเหมือน ZORT) */
   const ปุ่มส่งออก = (
@@ -430,11 +433,14 @@ export default function QuotationsPage() {
                   ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Quotation/list ที่ 1280 (21 ต.ค. 2569) · # 44 ≈ # 23 + ช่องติ๊ก 22 ของ ZORT */}
-                  <th className={TH_NO} style={{ width: 44 }}>#</th>
+                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Quotation/list ที่ 1280 (21 ต.ค. 2569) · # 23 แล้วช่องติ๊ก (ZORT 22 · ของเราเป้ากด 34 ⇒ ลูกค้าหัก 11) */}
+                  <th className={TH_NO} style={{ width: เหมือนZORT ? 23 : 44 }}>#</th>
+                  <th className={TH_CHECK} style={{ width: 34 }}>
+                    <RowCheck label="เลือกทั้งหน้า" checked={เลือก.ติ๊กทั้งหน้า} indeterminate={เลือก.ติ๊กบางส่วน} onChange={เลือก.ทั้งหน้า} />
+                  </th>
                   <th className={TH} style={กว้างZ(130)}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={กว้างZ(146)}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH} style={กว้างZ(347)}><SortHead label="ลูกค้า" field="customer" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(336)}><SortHead label="ลูกค้า" field="customer" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={กว้างZ(85)}><SortHead label="ช่องทาง" field="channel" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={THR} style={กว้างZ(80)}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={เหมือนZORT ? TH.replace('text-left', 'text-center') : TH} style={กว้างZ(123)}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
@@ -444,12 +450,13 @@ export default function QuotationsPage() {
               </thead>
               <tbody>
                 {rows.length === 0 && (
-                  <EmptyState cols={8} icon="📄" title="ไม่มีใบเสนอราคาในเงื่อนไขนี้"
+                  <EmptyState cols={9} icon="📄" title="ไม่มีใบเสนอราคาในเงื่อนไขนี้"
                     detail={q || tab ? 'ลองล้างคำค้นหรือกลับไปแท็บทั้งหมด' : 'ยังไม่มีใบเสนอราคาใน ZORT'} />
                 )}
                 {rows.map((r, i) => (
-                  <tr key={r.number} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                  <tr key={r.number} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${เลือก.เลือกอยู่(r) ? 'bg-[#eef1fa]' : ''}`}>
                     <td className={TD_NO}>{i + 1}</td>
+                    <td className={TD_CHECK}><RowCheck label={`เลือก ${r.number ?? ''}`} checked={เลือก.เลือกอยู่(r)} onChange={(v) => เลือก.สลับ(r, v)} /></td>
                     <td className={TD_DATE}>
                       {r.date ? thaiDate(r.date) : <span className="text-gray-300">—</span>}
                     </td>
@@ -507,6 +514,18 @@ export default function QuotationsPage() {
               </tbody>
             </table>
           </TableWrap>
+
+          {/* ☑️ แถบคำสั่งของแถวที่เลือก — มีเฉพาะคำสั่งที่ทำได้จริง (คัดลอกเลขที่ใบ) · คำสั่งเขียนของ ZORT (อนุมัติ/ยกเลิก/พิมพ์รวม) ยังไม่มีท่อเขียน ⇒ ไม่ทำปุ่มหลอก */}
+          {เลือก.ที่เลือก.length > 0 && (
+            <BulkBar>
+              <b>เลือก {fmtNum(เลือก.ที่เลือก.length)} รายการ</b>
+              <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+              <CopyBtn label="คัดลอกเลขที่ใบ" values={เลือก.ที่เลือก.map((r) => r.number).filter((x): x is string => !!x)}
+                onCopy={(v) => { void คัดลอก(v, 'ใบ') }} emptyWhy="ใบที่เลือกไม่มีเลขที่" />
+              <button type="button" onClick={เลือก.ล้าง} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+              {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+            </BulkBar>
+          )}
 
           {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
           {/* 📐 โหมดเหมือน ZORT: ปุ่มส่งออกย้ายไปอยู่ใต้แถบเลขหน้า (ผัง ZORT · วัดภาพ 19 ต.ค. 2569) */}
