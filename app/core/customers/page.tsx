@@ -332,7 +332,10 @@ export default function CoreContactsPage() {
            ⇒ 15 ก.ย. เช้า: ยิงตรวจแล้วท่อรับแต่ `q` จึงเขียนว่า "ยังไม่มี" พร้อมเหตุผล
            ⇒ 15 ก.ย. บ่าย: **ฝั่งท่อเปิด withphone/withemail ให้** ⇒ เปลี่ยนเป็นแผงจริงตามที่จดไว้ */
         advanced={<AdvancedSearchLink open={advOpen} onToggle={() => setAdvOpen((v) => !v)} />}
-        right={เหมือนZORT ? <div className="max-w-[560px]">{แถวข้อมูลส่วนบุคคล}</div> : undefined}
+        /* 📐 21 ต.ค. 2569: หลัง 8ac263b0 บรรทัดนี้ตกลงไปขึ้นแถวใหม่ใต้ช่องค้นหา (สองบรรทัด) ⇒ แท็บลง 58 จาก ZORT · วัดพิกเซล 21.8 → 27.0
+           ⇒ rightShrink ให้หดอยู่แถวเดียวกับช่องค้นหา (สองบรรทัดเล็กสูงไม่เกินช่องค้นหา 40) */
+        right={เหมือนZORT ? <div className="max-w-[560px] min-w-0 leading-[17px]">{แถวข้อมูลส่วนบุคคล}</div> : undefined}
+        rightShrink={เหมือนZORT}
       />
 
       {/* 🔍 แผงค้นหาขั้นสูง — ใช้ตัวประกอบร่วม · มีเฉพาะตัวกรองที่ท่อกรองให้จริง
