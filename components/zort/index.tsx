@@ -180,7 +180,7 @@ export function BtnGhost({ children, ...p }: React.ButtonHTMLAttributes<HTMLButt
 
 /* ── แถวค้นหา ──────────────────────────────────────────────────────────── */
 export function SearchRow({
-  value, onChange, onSubmit, placeholder, zortPlaceholder, right, advanced,
+  value, onChange, onSubmit, placeholder, zortPlaceholder, right, advanced, rightShrink,
 }: {
   value: string
   onChange: (v: string) => void
@@ -192,6 +192,9 @@ export function SearchRow({
   right?: ReactNode
   /** ลิงก์ "ค้นหาขั้นสูง" ข้างช่องค้นหา */
   advanced?: ReactNode
+  /** ฝั่งขวาเป็นข้อความยาว (ไม่ใช่ปุ่ม) ⇒ ให้หดอยู่บรรทัดเดียวกับช่องค้นหาแทนการตกลงไปขึ้นแถวใหม่
+   *  (flex-wrap ตัดแถวจากความกว้างเต็มของข้อความ ⇒ ข้อความยาวตกแถวเสมอ · basis 280 = จอแคบยังตกแถวเองได้) */
+  rightShrink?: boolean
 }) {
   return (
     /* 📐 โหมดเหมือน ZORT — วัดตำแหน่งจริง (CSS px) /Bundle/list 18 ต.ค. 2569: บรรทัด "จำนวน" ล่าง 144 → ช่องค้นหา 164–204 → หัวตาราง 224
@@ -216,7 +219,7 @@ export function SearchRow({
         />
       </div>
       {advanced}
-      {right && <div className="flex flex-wrap items-center gap-2 ml-auto">{right}</div>}
+      {right && <div className={`flex flex-wrap items-center gap-2 ml-auto ${rightShrink ? 'flex-1 basis-[280px] min-w-0 justify-end' : ''}`}>{right}</div>}
     </div>
   )
 }
