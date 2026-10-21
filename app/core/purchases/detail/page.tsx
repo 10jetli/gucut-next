@@ -508,15 +508,16 @@ function Inner() {
                   ['ผู้สร้างรายการ', <span key="c" className="text-gray-300 cursor-help" title="ระบบเรายังไม่เก็บชื่อผู้สร้างรายการของใบซื้อ (กระจกไม่มีช่องนี้) — ดูได้ที่จอ ZORT">—</span>],
                   ...(d.vendor ? [['ชื่อผู้ติดต่อ', d.vendor]] : []),
                 ]],
-              ] as const).map(([รูป, หัว, แถว]) => (
+              ] as const).map(([รูป, หัว, แถว], ลำดับ) => (
+                /* 📏 คอลัมน์ขวา: ZORT ป้ายเริ่มที่กึ่งกลางการ์ดพอดี (x499/998 · DOM /Buy/Details 21 ต.ค. 2569) ของเรา x528 ⇒ ตัดช่องในซ้าย 30 ของคอลัมน์ขวา */
                 <div key={หัว} className="mt-4 md:mt-0">
-                  <div className="flex items-center gap-3 mb-4 pl-[30px]">
+                  <div className={`flex items-center gap-3 mb-4 ${ลำดับ === 1 ? '' : 'pl-[30px]'}`}>
                     <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k={รูป} size={17} color="#4165ed" /></span>
                     <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                   </div>
                   {(แถว as ReadonlyArray<readonly [string, React.ReactNode]>).map(([k, v]) => (
-                    <div key={k} className="grid grid-cols-[1fr_2fr] py-1 pl-[15px] md:pr-[45px]">
-                      <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
+                    <div key={k} className={`grid grid-cols-[1fr_2fr] py-1 md:pr-[45px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>
+                      <span className={`font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] pr-[15px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>{k}</span>
                       <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v}</span>
                     </div>
                   ))}
