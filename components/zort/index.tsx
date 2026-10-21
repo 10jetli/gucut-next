@@ -125,7 +125,8 @@ export function RowCheck({ checked, onChange, label, disabled, title, indetermin
       <input
         type="checkbox"
         aria-label={label}
-        className="w-4 h-4"
+        /* 📏 โหมดเหมือน ZORT: กล่องติ๊ก 13 แบบ ZORT (เดิม 16 · วิจารณ์ impeccable 21 ต.ค. 2569) — เป้ากด 32 รอบกล่องยังเท่าเดิม */
+        className={เหมือนZORT ? 'w-[13px] h-[13px]' : 'w-4 h-4'}
         checked={checked}
         disabled={disabled}
         ref={(el) => { if (el) el.indeterminate = !!indeterminate }}
