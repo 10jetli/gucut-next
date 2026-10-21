@@ -521,7 +521,8 @@ export default function ProductDetailPage() {
           </div>}
 
           {/* กล่องข้อมูล — รูปซ้าย ขวาสองคอลัมน์ ตามผัง ZORT */}
-          <div className={`bg-white p-5 flex flex-wrap gap-6 ${เหมือนZORT ? 'rounded-[6px] mt-6' : 'border border-gray-200 rounded-md mt-4'}`}>
+          {/* 📏 DOM /Product/Details 21 ต.ค. 2569: การ์ด KPI → กล่องรายละเอียด ZORT ห่าง 51 ของเรา 24 (หลังย้ายกล่องพับไปท้ายจอ) ⇒ mt 51 */}
+          <div className={`bg-white p-5 flex flex-wrap gap-6 ${เหมือนZORT ? 'rounded-[6px] mt-[51px]' : 'border border-gray-200 rounded-md mt-4'}`}>
             {/* 🖼️ ลำดับรูปตามที่ฝั่งท่อกำหนด (fc52832):
                    ① แผนที่รูปย่อของเรา (128px · เบา) ② ไม่มีค่อยใช้ `imagePath` ของ ZORT (ไฟล์ดิบ)
                    ③ ไม่มีทั้งคู่ ⇒ **แยกให้ออกว่า "ZORT ไม่มีรูป" กับ "ยังไม่รู้"**
