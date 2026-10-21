@@ -14,3 +14,7 @@
  */
 export const เหมือนZORT =
   (process.env.NEXT_PUBLIC_ZORT_LOOK ?? "1") !== "0"
+
+/** ความกว้างคอลัมน์ (px) ที่วัดจาก DOM ZORT — ใช้ใน `style` ของ `<th>` · โหมดปกติคืน undefined (ให้ตารางจัดเอง)
+ *  เป็นค่าแนะนำของ table-layout auto ⇒ เนื้อที่ยาวกว่ายังขยายคอลัมน์ได้ ไม่ตัดข้อความ */
+export const กว้างZ = (w: number) => (เหมือนZORT ? { width: w } : undefined)

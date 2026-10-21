@@ -32,7 +32,7 @@ import ExportButton from '@/components/zort/ExportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import { ขอบเขตกรองในเครื่อง } from '@/lib/client-filter-scope'
 import { ชื่อคลังจากคำตอบ } from '@/lib/warehouse-names'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   number: string
@@ -493,19 +493,20 @@ export default function CorePurchasesPage() {
               <thead className="bg-white border-b border-gray-200">
                 <tr>
                   {/* 📐 `#` ก่อนช่องติ๊ก — ตาม ZORT /Buy/list (หัวตาราง `#`,`` วัด 15 ต.ค. 2569) */}
-                  <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH_CHECK} style={{ width: 34 }}>
+                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Buy/list ที่ 1280 (21 ต.ค. 2569) # 31 · ติ๊ก 22 · วันที่ 124 · รายการ 142 · ผู้ติดต่อ 342 · มูลค่า 91 · สถานะ 95 · ชำระ 113 */}
+                  <th className={TH_NO} style={{ width: เหมือนZORT ? 31 : 44 }}>#</th>
+                  <th className={TH_CHECK} style={{ width: เหมือนZORT ? 22 : 34 }}>
                     <RowCheck label="เลือกทั้งหน้า"
                       checked={rows.length > 0 && picked.length === rows.length}
                       indeterminate={picked.length > 0 && picked.length < rows.length}
                       onChange={(v) => setPicked(v ? rows.map((r) => String(r.number)) : [])} />
                   </th>
-                  <th className={TH}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={TH}><SortHead label="ผู้ติดต่อ" field="vendor" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={THR}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={THC}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
-                  <th className={THC}><SortHead label="ชำระเงิน" field="payment" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(124)}><SortHead label="วันที่" field="date" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(142)}><SortHead label="รายการ" field="number" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={TH} style={กว้างZ(342)}><SortHead label="ผู้ติดต่อ" field="vendor" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THR} style={กว้างZ(91)}><SortHead label="มูลค่า" field="amount" firstDir="desc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC} style={กว้างZ(95)}><SortHead label="สถานะ" field="status" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
+                  <th className={THC} style={กว้างZ(113)}><SortHead label="ชำระเงิน" field="payment" firstDir="asc" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle={เหตุเรียงไม่ได้} /></th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
