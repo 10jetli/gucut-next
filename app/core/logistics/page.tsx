@@ -39,10 +39,7 @@ import {
   TH_KANIT, THR_KANIT, ROW_LINK, PageHead, SearchRow, Tabs, TableWrap, TD, TDR, Pill, toneOfStatus, EmptyState, thaiDate, relDay, RowMenu, CarrierMark, PageNav,
  COD_BADGE,} from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
-
-/** ความกว้างคอลัมน์แบบ ZORT — เฉพาะโหมดเหมือน ZORT (โหมดปกติให้ตารางจัดเอง) */
-const กว้างZ = (w: number) => (เหมือนZORT ? { width: w } : undefined)
+import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 
 interface Row {
   id: string; number: string; trackingNo?: string; date?: string

@@ -31,10 +31,7 @@ import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import ShipStatusCard, { type ShipGroup } from '@/components/zort/ShipStatusCard'
 import DataFreshness, { type Freshness } from '@/components/zort/DataFreshness'
 import DormantInShipPile from '@/components/zort/DormantInShipPile'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
-
-/** ความกว้างคอลัมน์แบบ ZORT — เฉพาะโหมดเหมือน ZORT (โหมดปกติให้ตารางจัดเอง) */
-const กว้างZ = (w: number) => (เหมือนZORT ? { width: w } : undefined)
+import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 import ไอคอนZ from '@/components/zort/ZortIcon'
 import { คลาสวันซ้าย, คลาสวันขวา, ลูกศรวัน, ป้ายแสดง } from '@/components/zort/dateSelect'
 
