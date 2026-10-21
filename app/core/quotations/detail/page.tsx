@@ -209,6 +209,9 @@ function Inner() {
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">
                           {v === '' ? '-'
+                            /* ZORT: ชื่อลูกค้าเป็นลิงก์ไปรายละเอียดผู้ติดต่อ (ภาพ QT-202506001 21 ต.ค. 2569) · ของเรามีจอปลายทางแล้ว (/core/customers/detail) */
+                            : k === 'ชื่อลูกค้า' && v
+                              ? <Link href={`/core/customers/detail?name=${encodeURIComponent(v)}`} className="text-[#337ab7] hover:underline">{v}</Link>
                             : v ?? <span className="text-gray-300 cursor-help" title={v === undefined ? 'ZORT มีช่องนี้ แต่ท่อยังไม่ส่งต่อมาให้จอ' : 'ZORT ไม่ได้ส่งค่านี้มา'}>—</span>}
                         </span>
                       </div>
