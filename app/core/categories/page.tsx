@@ -273,7 +273,8 @@ export default function CoreCategoriesPage() {
                 (เจ้าของร้านเลือกให้เก็บไว้ เพราะต้นทุนกับราคาขายต่างกันหลักสิบล้าน)
               </span>}
             </p>
-            <div className="flex items-center gap-1.5 shrink-0">
+            {/* 📱 ปุ่มสลับวิธีคิดมูลค่าสามปุ่มกว้างเกินจอ 375 (หน้ากว้าง 391 · 21 ต.ค. 2569) ⇒ ตัดบรรทัดได้ ไม่ล้นจอ */}
+            <div className="flex flex-wrap items-center gap-1.5 max-w-full">
               <button
                 onClick={() => setBasis('zort')}
                 className={`text-[12.5px] rounded-full px-3 py-1 border ${
