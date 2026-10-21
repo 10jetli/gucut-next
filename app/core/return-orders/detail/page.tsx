@@ -181,17 +181,18 @@ function Inner() {
                      ประเภทรายการเป็นค่าคงที่ของจอนี้ (ทุกใบในจอนี้คือใบรับคืน) ไม่ได้มาจากท่อ */
                   ['ข้อมูล', '📄', [['รายการ', d.number || null], ['ประเภทรายการ', 'รับคืนสินค้า'], ['วันที่', d.date ? thaiDate(d.date, 'เต็ม') : null], ['อ้างอิง', d.reference || null], ['ช่องทางการขาย', ไม่ส่ง]]],
                   ['ลูกค้า', '👤', [['ผู้สร้างรายการ', ไม่ส่ง], ['ชื่อลูกค้า', d.customer || null], ['เบอร์โทรศัพท์ลูกค้า', ไม่ส่ง], ['ที่อยู่ลูกค้า', ไม่ส่ง]]],
-                ] as const).map(([หัว, รูป, แถว]) => (
-                  /* 📏 ระยะตาม DOM การ์ดข้อมูลของ ZORT (วัดที่ใบโอน 20 ต.ค. 2569 ผังเดียวกัน): ตัวหนังสือห่างขอบ 50 · ป้าย 1/3 ค่า 2/3 */
-                  <section key={หัว} className="px-5 py-3">
-                    <div className="flex items-center gap-3 mb-4 pl-[30px]">
+                ] as const).map(([หัว, รูป, แถว], ลำดับ) => (
+                  /* 📏 ระยะตาม DOM การ์ดข้อมูลของ ZORT (วัดที่ใบโอน 20 ต.ค. 2569 ผังเดียวกัน): ตัวหนังสือห่างขอบ 50 · ป้าย 1/3 ค่า 2/3
+                     · คอลัมน์ขวา: ZORT ป้ายเริ่มที่กึ่งกลางการ์ดพอดี (x499/998 · DOM /Buy/Details 21 ต.ค. 2569) ของเรามีช่องในซ้ำ 35 ⇒ ตัดช่องในซ้ายของคอลัมน์ขวา */
+                  <section key={หัว} className={ลำดับ === 1 ? 'pr-5 py-3' : 'px-5 py-3'}>
+                    <div className={`flex items-center gap-3 mb-4 ${ลำดับ === 1 ? '' : 'pl-[30px]'}`}>
                       <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k={รูป} size={17} color="#4165ed" /></span>
                       <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                     </div>
                     {/* 📏 แถวห่างกัน 31 แบบ ZORT (ภาพใบรับคืน + DOM ใบโอน 20 ต.ค. 2569: แถวสูง 23) ⇒ py-1 */}
                     {แถว.map(([k, v]) => (
-                      <div key={k} className="grid grid-cols-[1fr_2fr] py-1 pl-[15px] pr-[15px]">
-                        <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] px-[15px]">{k}</span>
+                      <div key={k} className={`grid grid-cols-[1fr_2fr] py-1 pr-[15px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>
+                        <span className={`font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] pr-[15px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>{k}</span>
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span> : v ?? <span className="text-gray-300">—</span>}</span>
                       </div>
                     ))}
