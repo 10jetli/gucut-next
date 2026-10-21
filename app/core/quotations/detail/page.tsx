@@ -216,12 +216,7 @@ function Inner() {
                   </section>
                 ))}
               </div>
-              <div className={`${DL_CARD} mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 ${DL_VALUE}`}>
-                <div><p className={DL_LABEL}>ยอดใบ</p><span className="tabular-nums font-medium">{baht(d.amount)}</span></div>
-                <div><p className={DL_LABEL}>ภาษี</p><span className="tabular-nums">{baht(d.vatAmount)}</span></div>
-                <div><p className={DL_LABEL}>ส่วนลด</p><span className="tabular-nums">{baht(d.discountAmount)}</span></div>
-                <div><p className={DL_LABEL}>ค่าส่ง</p><span className="tabular-nums">{baht(d.shippingAmount)}</span></div>
-              </div>
+              {/* แถบยอดเงิน (ยอดใบ · ภาษี · ส่วนลด · ค่าส่ง) ย้ายไปใต้ตารางสินค้า — ZORT วางยอดไว้ท้ายการ์ดสินค้า (DOM /Quotation/Details 21 ต.ค. 2569: ส่วนลด y1066 · ภาษี y1132 ใต้ตาราง) */}
             </>
           ) : named ? (
             <div className={`${DL_CARD} mb-4 grid grid-cols-2 md:grid-cols-4 gap-3 ${DL_VALUE}`}>
@@ -345,6 +340,15 @@ function Inner() {
                 </div>
               </details>
             </>
+          )}
+          {/* 📐 โหมดเหมือน ZORT: ยอดเงินของใบอยู่ใต้ส่วนสินค้า แบบ ZORT — นอกเงื่อนไขบรรทัด (ใบที่ไม่มี/ไม่ส่งบรรทัด ยอดต้องยังขึ้น) */}
+          {named && เหมือนZORT && (
+            <div className={`mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 ${DL_VALUE}`}>
+              <div><p className={DL_LABEL}>ยอดใบ</p><span className="tabular-nums font-medium">{baht(d.amount)}</span></div>
+              <div><p className={DL_LABEL}>ภาษี</p><span className="tabular-nums">{baht(d.vatAmount)}</span></div>
+              <div><p className={DL_LABEL}>ส่วนลด</p><span className="tabular-nums">{baht(d.discountAmount)}</span></div>
+              <div><p className={DL_LABEL}>ค่าส่ง</p><span className="tabular-nums">{baht(d.shippingAmount)}</span></div>
+            </div>
           )}
 
           <p className="text-[11.5px] text-gray-400 mt-3">
