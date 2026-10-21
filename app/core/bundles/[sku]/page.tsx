@@ -45,6 +45,7 @@ import { useSkuImages } from '@/lib/sku-images'
 import { TH_NO, PageHead, TableWrap, TH, THR, TD, TDR, BtnGhost, EmptyState, DETAIL_BTN, ZORT_BACK_LINK, ZORT_INFO_LABEL, ZORT_INFO_VALUE, ZORT_INFO_NAME, ลูกศรลง } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { สภาพแถวชุด } from '@/lib/bundleitems'
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
 
 /* 📐 ปุ่มแถบบน — โหมดเหมือน ZORT ใช้ปุ่มกรอบเหลี่ยม (DETAIL_BTN · วัด 17 ต.ค.) · นอกโหมดคงปุ่มกลมเดิม */
@@ -148,6 +149,8 @@ export default function BundleDetailPage() {
   const [salesMeta, setSalesMeta] = useState<{ total: number | null; shown: number; hasMore: boolean; truncated: boolean; failed: string[] } | null>(null)
   const imgOf = useSkuImages(640)
   const [menu, setMenu] = useState<'' | 'cmd' | 'print' | 'push'>('')
+  /** ท่อบอกสภาพแถวสูตรชุด (asked.exists) — ใช้แยก ไม่รู้จักรหัส ออกจาก ว่างจริง */
+  const [สภาพสูตร, setสภาพสูตร] = useState<ReturnType<typeof สภาพแถวชุด> | null>(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -163,6 +166,7 @@ export default function BundleDetailPage() {
       setBundle(rows.find((r) => r.sku === sku) ?? null)
       setStockSyncedAt(typeof bRes?.stockSyncedAt === 'string' ? bRes.stockSyncedAt : null)
       setItems(Array.isArray(iRes?.rows) ? iRes.rows : [])
+      setสภาพสูตร(สภาพแถวชุด(iRes))
       setCollectedAt(typeof iRes?.collectedAt === 'string' ? iRes.collectedAt : '')
       setCheckedAt(typeof iRes?.recipeCheckedAt === 'string' ? iRes.recipeCheckedAt : null)
       setเกณฑ์('recipeStaleAfterHours' in (iRes ?? {}) ? iRes.recipeStaleAfterHours : undefined)
@@ -283,7 +287,12 @@ export default function BundleDetailPage() {
             </tr>
           </thead>
           <tbody>
-            {items.length === 0 && (
+            {/* 🔴 ท่อบอกว่าไม่รู้จักรหัสชุด ⇒ ห้ามเขียนว่า "ยังไม่มีรายการ" (ใบ CEO 17:56 · asked.exists) */}
+            {items.length === 0 && สภาพสูตร?.ชนิด === 'ไม่รู้จักรหัส' && (
+              <EmptyState cols={4} icon="❓" title={`ทะเบียนสินค้าไม่รู้จักรหัส ${สภาพสูตร.รหัส || sku}`}
+                detail="ไม่ใช่ชุดที่ไม่มีส่วนประกอบ — รหัสนี้ไม่มีในทะเบียนสินค้า" />
+            )}
+            {items.length === 0 && สภาพสูตร?.ชนิด !== 'ไม่รู้จักรหัส' && (
               <EmptyState cols={4} icon="📦" title="ยังไม่มีรายการส่วนประกอบของชุดนี้"
                 detail="รายการในชุดเก็บมาจากหน้ารายละเอียดของ ZORT ทีละชุด — ชุดนี้อาจยังไม่ถูกเก็บ" />
             )}

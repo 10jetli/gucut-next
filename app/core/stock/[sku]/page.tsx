@@ -34,6 +34,7 @@ import {
 } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { สภาพแถวชุด } from '@/lib/bundleitems'
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
 
 interface Row {
@@ -590,7 +591,13 @@ export default function ProductDetailPage() {
                     const list = inBundles?.rows ?? []
                     // ⚠️ ไม่มีคำตอบจากท่อ ≠ ไม่อยู่ในชุดไหน — ต้องเขียนต่างกัน
                     if (!inBundles) return <p className="text-[12.5px] text-gray-400">ยังดูย้อนไม่ได้รอบนี้</p>
-                    if (list.length === 0) return <p className="text-[15px] text-gray-500">ไม่มีข้อมูล</p>
+                    /* 🔴 ไม่ตัดสินจาก list.length อย่างเดียว (ใบ CEO 17:56): ท่อบอกว่าไม่รู้จักรหัส ⇒ เขียนตรง ๆ
+                       · ท่อรุ่นเก่าที่ยังไม่ส่ง asked: รหัสนี้ยืนยันแล้วจาก list=stock ในจอเดียวกัน (row ไม่ว่าง) ⇒ 0 แถว = ว่างจริง */
+                    if (list.length === 0) {
+                      const สภาพ = สภาพแถวชุด(inBundles)
+                      if (สภาพ.ชนิด === 'ไม่รู้จักรหัส') return <p className="text-[12.5px] text-amber-800">ทะเบียนสินค้าไม่รู้จักรหัส {สภาพ.รหัส || sku} — บอกไม่ได้ว่าอยู่ในชุดไหน</p>
+                      return <p className="text-[15px] text-gray-500">ไม่มีข้อมูล</p>
+                    }
                     const show = showAllBundles ? list : list.slice(0, 5)
                     return (
                       <>
