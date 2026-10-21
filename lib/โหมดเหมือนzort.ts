@@ -18,3 +18,10 @@ export const เหมือนZORT =
 /** ความกว้างคอลัมน์ (px) ที่วัดจาก DOM ZORT — ใช้ใน `style` ของ `<th>` · โหมดปกติคืน undefined (ให้ตารางจัดเอง)
  *  เป็นค่าแนะนำของ table-layout auto ⇒ เนื้อที่ยาวกว่ายังขยายคอลัมน์ได้ ไม่ตัดข้อความ */
 export const กว้างZ = (w: number) => (เหมือนZORT ? { width: w } : undefined)
+
+/** แถบเลขหน้าแบบนิ่ง (จอที่มีไม่ถึงหน้าเดียว) — ZORT ปุ่มเลขหน้าพื้นเทาขอบเทา ห่างตาราง 21 (ภาพ /Setting/UserRolelist · /User/list 21 ต.ค. 2569)
+ *  อยู่ไฟล์นี้ (ไม่ใช่ use client) ⇒ server component ต่อสตริงได้ */
+export const แถบเลขหน้านิ่ง = `flex items-center justify-between ${เหมือนZORT ? 'mt-5' : 'mt-2'} text-[12.5px] text-gray-500`
+export const ปุ่มเลขหน้านิ่ง = เหมือนZORT
+  ? 'inline-block border border-[#ced4da] rounded px-2.5 py-1 bg-[#e9ecef] text-[#3e3e3e] text-[14px]'
+  : 'inline-block border border-gray-300 rounded px-2 py-0.5 bg-white'

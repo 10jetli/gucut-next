@@ -17,7 +17,7 @@ import Link from 'next/link'
    ⇒ ใช้ชิ้นกลาง ไม่ประกาศสำเนาในไฟล์ */
 import { PageHead, TH_KANIT as TH, TD, ZORT_TABLE_SHADOW } from '@/components/zort'
 import { pipeText } from '@/components/ui/PipeNote'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { เหมือนZORT, แถบเลขหน้านิ่ง, ปุ่มเลขหน้านิ่ง } from '@/lib/โหมดเหมือนzort'
 
 
 /** สิทธิ์จริงของระบบ — ต้องตรงกับ middleware.ts เสมอ (แก้ที่โน่นต้องมาแก้ที่นี่)
@@ -104,10 +104,8 @@ export default function SettingsRolesPage() {
       </div>
 
       {/* 📏 ZORT: แถบเลขหน้าห่างตาราง 21 · ปุ่มเลขหน้าพื้นเทาขอบเทา (ภาพเดียวกัน) */}
-      <div className={`flex items-center justify-between ${เหมือนZORT ? 'mt-5' : 'mt-2'} text-[12.5px] text-gray-500`}>
-        <span className={เหมือนZORT
-          ? 'inline-block border border-[#ced4da] rounded px-2.5 py-1 bg-[#e9ecef] text-[#3e3e3e] text-[14px]'
-          : 'inline-block border border-gray-300 rounded px-2 py-0.5 bg-white'}>1</span>
+      <div className={แถบเลขหน้านิ่ง}>
+        <span className={ปุ่มเลขหน้านิ่ง}>1</span>
         <span>จำนวน {ROLES.length} รายการ | จำนวนต่อหน้า 20</span>
       </div>
 
