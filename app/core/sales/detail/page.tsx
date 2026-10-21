@@ -437,7 +437,8 @@ function DetailInner() {
             {/* 📏 หัว ข้อมูล/ลูกค้า: ZORT วงไอคอนห่างขอบการ์ด 54 / 553 · ของเรา 20 / 533 (DOM+ภาพ /Sell/Details 21 ต.ค. 2569) */}
             <Card title="ข้อมูล" icon="📄" หัวเยื้อง={54}>
               <div className={เหมือนZORT ? 'px-5 py-3' : 'px-4 py-3'}>
-                <Field label="รายการ" value={<span className="text-blue-600 font-medium">{order.number}</span>} />
+                {/* 📏 ZORT /Sell/Details: เลขรายการเป็นตัวหนังสือปกติ #3e3e3e (ภาพ 21 ต.ค. 2569) — สีน้ำเงินหนาของเราดูเป็นลิงก์ทั้งที่กดไม่ได้ */}
+                <Field label="รายการ" value={เหมือนZORT ? order.number : <span className="text-blue-600 font-medium">{order.number}</span>} />
                 {/* 📐 คำของ ZORT `/Sell/Details` (อ่าน 16 ต.ค. 2569): ประเภทรายการ = **ขายสินค้าออก** (เดิมเราเขียน "รายการขาย") */}
                 <Field label="ประเภทรายการ" value="ขายสินค้าออก" />
                 {/* 🗓️ เดิมโชว์ค่าดิบปี ค.ศ. — ทั้งร้านอ่าน พ.ศ. · thaiDate จะแปลงโซนเวลาให้เฉพาะค่าที่บอกโซนมา
