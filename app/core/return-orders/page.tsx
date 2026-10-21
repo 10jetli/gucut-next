@@ -334,11 +334,12 @@ export default function ReturnOrdersPage() {
             : loading ? 'กำลังโหลด…'
             : (
               <>
-                จำนวน <b>{total !== null ? fmtNum(total) : fmtNum(rows.length)}</b> รายการ
+                {/* โหมดเหมือน ZORT: เลขในบรรทัดสรุปไม่หนา (ภาพ ZORT /Buy/list?&sttype=1 21 ต.ค. 2569) */}
+                จำนวน <b className={เหมือนZORT ? 'font-normal' : undefined}>{total !== null ? fmtNum(total) : fmtNum(rows.length)}</b> รายการ
                 {/* 🔴 ยอดรวมต้องประกาศขอบเขตตัวเองเสมอ ห้ามเขียนคำว่า "ทั้งหมด" ถ้าดึงมาไม่ครบ */}
                 {ใช้ยอดกระจก ? (
                   <>
-                    {', '}มูลค่าทั้งหมด <b>{fmtMoney(mt!.amount!)}</b>
+                    {', '}มูลค่าทั้งหมด <b className={เหมือนZORT ? 'font-normal' : undefined}>{fmtMoney(mt!.amount!)}</b>
                     {!เหมือนZORT && typeof mt!.amountExcludingVoided === 'number' && mt!.countExcludingVoided !== mt!.count && (
                       <span className="text-gray-500"> (ไม่นับใบยกเลิก {fmtNum(mt!.count! - (mt!.countExcludingVoided ?? 0))} ใบ = {fmtMoney(mt!.amountExcludingVoided)})</span>
                     )}
