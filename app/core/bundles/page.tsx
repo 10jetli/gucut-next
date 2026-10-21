@@ -31,7 +31,7 @@ import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, TableWrap, Tabs, TH, THR, TD, TDR,
   LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
-import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 import ZortNoImage from '@/components/zort/ZortNoImage'
 
 interface Row {
@@ -429,22 +429,23 @@ export default function CoreBundlesPage() {
                   เพราะท่อเมิน `sort` ⇒ ติด tooltip บอก ไม่ทำปุ่มหลอก · ติดเฉพาะช่องที่วัดมาแล้ว */}
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH_NO} style={{ width: 44 }}>#</th>
-                  <th className={TH}><SortHead label="รหัส" field="sku" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว" /></th>
-                  <th className={TH}><SortHead label="สินค้าเป็นชุด" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว" /></th>
-                  <th className={THR}>ราคาสินค้ารวม</th>
-                  <th className={THR}>ราคาขาย</th>
+                  {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Bundle/list ที่ 1280 (21 ต.ค. 2569) · # รวมช่องติ๊ก 13 ของ ZORT (24+13) */}
+                  <th className={TH_NO} style={{ width: เหมือนZORT ? 37 : 44 }}>#</th>
+                  <th className={TH} style={กว้างZ(115)}><SortHead label="รหัส" field="sku" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว" /></th>
+                  <th className={TH} style={กว้างZ(119)}><SortHead label="สินค้าเป็นชุด" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569) · ขอฝั่งท่อไว้แล้ว" /></th>
+                  <th className={THR} style={กว้างZ(105)}>ราคาสินค้ารวม</th>
+                  <th className={THR} style={กว้างZ(105)}>ราคาขาย</th>
                   {/* 🕰 สองคอลัมน์นี้คือของที่แถบอายุข้างบนกำกับอยู่ — ใส่นาฬิกาให้ชี้ตรงกัน
                       ไม่งั้นแถบลอยอยู่ข้างบนแล้วคนเดาไม่ออกว่ามันพูดถึงคอลัมน์ไหน */}
-                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''}${stock.state === 'ok' ? ` — ล่าสุด ${thaiMoment(stock.syncedThai)} (${agoText(stock.ageMinutes)})` : ' — ดูอายุที่แถบเหนือตาราง'}`}>
+                  <th className={THR} style={กว้างZ(96)} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''}${stock.state === 'ok' ? ` — ล่าสุด ${thaiMoment(stock.syncedThai)} (${agoText(stock.ageMinutes)})` : ' — ดูอายุที่แถบเหนือตาราง'}`}>
                     คงเหลือ <span className="opacity-50 font-normal">🕰</span>
                   </th>
-                  <th className={THR} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''}${stock.state === 'ok' ? ` — ล่าสุด ${thaiMoment(stock.syncedThai)} (${agoText(stock.ageMinutes)})` : ' — ดูอายุที่แถบเหนือตาราง'} · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
+                  <th className={THR} style={กว้างZ(96)} title={`ตัวเลขนี้ซิงก์จาก ZORT${รอบสต็อก ? ` ${รอบสต็อก}` : ''}${stock.state === 'ok' ? ` — ล่าสุด ${thaiMoment(stock.syncedThai)} (${agoText(stock.ageMinutes)})` : ' — ดูอายุที่แถบเหนือตาราง'} · และ 0 อาจหมายถึงติดลบ เพราะ ZORT API ไม่ส่งค่าติดลบของพร้อมขาย`}>
                     พร้อมขาย <span className="opacity-50 font-normal">🕰</span>
                   </th>
-                  <th className={หัวC}>วันหมดอายุรายการ</th>
-                  <th className={หัวC}>สถานะ</th>
-                  <th className={TH}>Marketplace</th>
+                  <th className={หัวC} style={กว้างZ(105)}>วันหมดอายุรายการ</th>
+                  <th className={หัวC} style={กว้างZ(97)}>สถานะ</th>
+                  <th className={TH} style={กว้างZ(96)}>Marketplace</th>
                   <th className={TH} style={{ width: 40 }}></th>
                 </tr>
               </thead>
