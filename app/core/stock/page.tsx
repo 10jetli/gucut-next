@@ -1054,7 +1054,7 @@ function CoreStockInner() {
                     {/* 📐 โหมดเหมือน ZORT: ตัวเลข+หน่วยสีตามเกณฑ์ ZORT (≤0 แดง · 1–4 เหลือง · ≥5 เขียว · ตัวกลาง qtyColor) · ป้าย "ติดลบ" ไม่มีในจอ ZORT (สีแดง+เครื่องหมายลบบอกแล้ว) */}
                     {เหมือนZORT ? (
                     <td className={TDR}>
-                      <QtyZ n={r.qty} unit={r.unit} />
+                      <QtyZ n={r.qty} unit={r.unit} href={`/core/stock/${encodeURIComponent(r.sku)}`} title="ดูสต็อกรายคลังของสินค้านี้" />
                     </td>
                     ) : (
                     <td className={TDR}>
@@ -1071,7 +1071,7 @@ function CoreStockInner() {
                     <td className={TDR}>
                       {typeof r.available === 'number'
                         ? (เหมือนZORT
-                          ? <QtyZ n={r.available} unit={r.unit} />
+                          ? <QtyZ n={r.available} unit={r.unit} href={`/core/stock/${encodeURIComponent(r.sku)}`} title="ดูสต็อกรายคลังของสินค้านี้" />
                           : <Num v={r.available} />)
                         : <span className="text-gray-300">—</span>}
                     </td>
