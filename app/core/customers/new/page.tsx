@@ -18,6 +18,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import { FORM_INPUT, FORM_LABEL, PageHead, WriteResult } from '@/components/zort'
+import FieldOff from '@/components/zort/FieldOff'
+import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import type { WriteResp } from '@/components/zort'
 import { looksLikeFallThrough } from '@/lib/api-shape'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
@@ -54,6 +56,8 @@ export default function NewContactPage() {
   const [branchno, setBranchno] = useState('')
   const [line, setLine] = useState('')
   const [facebook, setFacebook] = useState('')
+  /* ท่อรับ instagram อยู่แล้ว (zortAddContact · เอกสาร ZORT V4) แต่ฟอร์มไม่มีช่อง — เติม 22 ต.ค. 2569 จากเทียบฟอร์มเพิ่มผู้ติดต่อของ ZORT */
+  const [instagram, setInstagram] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const [res, setRes] = useState<Resp | null>(null)
@@ -68,8 +72,8 @@ export default function NewContactPage() {
   const sig = useMemo(() => JSON.stringify({
     code: code.trim(), name: name.trim(), phone: phone.trim(), email: email.trim(),
     idnumber: idnumber.trim(), address: address.trim(),
-    branchname: branchname.trim(), branchno: branchno.trim(), line: line.trim(), facebook: facebook.trim(),
-  }), [code, name, phone, email, idnumber, address, branchname, branchno, line, facebook])
+    branchname: branchname.trim(), branchno: branchno.trim(), line: line.trim(), facebook: facebook.trim(), instagram: instagram.trim(),
+  }), [code, name, phone, email, idnumber, address, branchname, branchno, line, facebook, instagram])
   const dryOk = okDry !== '' && okDry === sig
 
   const send = useCallback(async (confirm: boolean) => {
@@ -88,7 +92,7 @@ export default function NewContactPage() {
           code: code.trim(),
           name: name.trim(),
           phone: t(phone), email: t(email), idnumber: t(idnumber), address: t(address),
-          branchname: t(branchname), branchno: t(branchno), line: t(line), facebook: t(facebook),
+          branchname: t(branchname), branchno: t(branchno), line: t(line), facebook: t(facebook), instagram: t(instagram),
           ...(confirm ? { confirm: true } : {}),
         }),
       }).then((x) => x.json())
@@ -105,7 +109,7 @@ export default function NewContactPage() {
     } catch (e) {
       setErr(String(e instanceof Error ? e.message : e))
     } finally { setBusy(false) }
-  }, [code, name, phone, email, idnumber, address, branchname, branchno, line, facebook, ref, sig])
+  }, [code, name, phone, email, idnumber, address, branchname, branchno, line, facebook, instagram, ref, sig])
 
   /* 🔴 **ย้าย `F` ออกไประดับโมดูลแล้ว 18 ก.ย. 2569 — ห้ามย้ายกลับ**
      ตัวห่อนี้ไม่มี `<input>` อยู่ในตัวเอง (รับมาทาง `children`) **แต่ยังทำให้พิมพ์ไม่ได้อยู่ดี**
@@ -136,9 +140,19 @@ export default function NewContactPage() {
         <F l="เลขประจำตัวผู้เสียภาษี"><input className={inp} value={idnumber} onChange={(e) => setIdnumber(e.target.value)} /></F>
         <F l="LINE"><input className={inp} value={line} onChange={(e) => setLine(e.target.value)} /></F>
         <F l="Facebook"><input className={inp} value={facebook} onChange={(e) => setFacebook(e.target.value)} /></F>
+        <F l="Instagram"><input className={inp} value={instagram} onChange={(e) => setInstagram(e.target.value)} /></F>
         <F l="ชื่อสาขา"><input className={inp} value={branchname} onChange={(e) => setBranchname(e.target.value)} placeholder="เช่น สำนักงานใหญ่" /></F>
         <F l="เลขที่สาขา"><input className={inp} value={branchno} onChange={(e) => setBranchno(e.target.value)} placeholder="เช่น 00000" /></F>
         <div className="md:col-span-3"><F l="ที่อยู่"><input className={inp} value={address} onChange={(e) => setAddress(e.target.value)} /></F></div>
+        {/* 🚫 ช่องที่ฟอร์มเพิ่มผู้ติดต่อของ ZORT มี แต่ API เพิ่มผู้ติดต่อไม่รับ (อ่าน contactModal 22 ต.ค. 2569 · zortAddContact รับแค่ 11 ช่อง) — วาดตามผัง กรอกไม่ได้ */}
+        {เหมือนZORT && <>
+          <FieldOff ป้าย="ประเภท" เหตุ="API เพิ่มผู้ติดต่อของ ZORT ไม่มีช่องนี้" />
+          <FieldOff ป้าย="Tag ผู้ติดต่อ" เหตุ="API เพิ่มผู้ติดต่อของ ZORT ไม่มีช่องนี้" />
+          <FieldOff ป้าย="เบอร์โทรศัพท์มือถือ" เหตุ="API เพิ่มผู้ติดต่อของ ZORT มีช่องเบอร์ช่องเดียว (ใช้ช่อง เบอร์โทร)" />
+          <FieldOff ป้าย="เบอร์โทรสาร" เหตุ="API เพิ่มผู้ติดต่อของ ZORT ไม่มีช่องนี้" />
+          <FieldOff ป้าย="ชื่อผู้ติดต่อ (คนประสานงาน)" เหตุ="API เพิ่มผู้ติดต่อของ ZORT ไม่มีช่องนี้" />
+          <p className="md:col-span-3 text-[11.5px] text-gray-500">ช่องสีเทา = ฟอร์มของ ZORT มี แต่ API ของ ZORT ไม่รับตอนเพิ่มผู้ติดต่อ ⇒ กรอกที่จอ ZORT หลังสร้างแล้ว · กลุ่มลูกค้า ดูเหตุในกล่องเหลืองข้างบน</p>
+        </>}
       </div>
 
       {err && <div className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2.5 mt-3">{err}</div>}
