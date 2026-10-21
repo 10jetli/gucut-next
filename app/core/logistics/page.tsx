@@ -41,6 +41,9 @@ import {
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
+/** ความกว้างคอลัมน์แบบ ZORT — เฉพาะโหมดเหมือน ZORT (โหมดปกติให้ตารางจัดเอง) */
+const กว้างZ = (w: number) => (เหมือนZORT ? { width: w } : undefined)
+
 interface Row {
   id: string; number: string; trackingNo?: string; date?: string
   receiver?: string; carrier?: string; status?: string
@@ -526,21 +529,23 @@ export default function LogisticsPage() {
           )}
 
           <TableWrap>
+            {/* 📏 โหมดเหมือน ZORT: ความกว้างคอลัมน์ตาม DOM /Logistics/list ที่ 1280 (21 ต.ค. 2569) 174 · 103 · 222 · 133 · 69 · 122 · ที่เหลือเลขออเดอร์
+                 (เดิมคอลัมน์รายการกว้าง 274 ⇒ วันที่/ชื่อผู้รับถูกดันขวา ~100) · เป็นค่าแนะนำ เนื้อที่ยาวกว่ายังขยายได้ */}
             <table className="w-full min-w-[900px]">
               <thead className="bg-white border-b border-gray-200">
                 <tr>
-                  <th className={TH_KANIT}>รายการ</th>
-                  <th className={TH_KANIT}><span title={data?.dateBasis ? `วันที่ในคอลัมน์นี้ = ${data.dateBasis}` : undefined}>วันที่</span></th>
-                  <th className={TH_KANIT}>ชื่อผู้รับ</th>
-                  <th className={THR_KANIT}>จำนวนรายการขาย</th>
-                  <th className={TH_KANIT}>ชำระเงิน</th>
+                  <th className={TH_KANIT} style={กว้างZ(174)}>รายการ</th>
+                  <th className={TH_KANIT} style={กว้างZ(103)}><span title={data?.dateBasis ? `วันที่ในคอลัมน์นี้ = ${data.dateBasis}` : undefined}>วันที่</span></th>
+                  <th className={TH_KANIT} style={กว้างZ(222)}>ชื่อผู้รับ</th>
+                  <th className={THR_KANIT} style={กว้างZ(133)}>จำนวนรายการขาย</th>
+                  <th className={TH_KANIT} style={กว้างZ(69)}>ชำระเงิน</th>
                   {/* 🔴 **คำว่า "สถานะ" ของสองจอไม่ใช่เรื่องเดียวกัน** (กดอ่านจอ ZORT 16 ก.ย. 2569)
                       ZORT คอลัมน์นี้คือ **สถานะการส่ง** — ตารางเห็นจริง "กำลังส่ง" · "สำเร็จ"
                       (แผงค้นหาของเขามี สำเร็จ · รอชำระ · รอส่ง · กำลังส่ง · ถูกยกเลิก)
                       ของเราได้มาจากท่อเป็น **สถานะใบขาย** (Success/Pending/Voided) ⇒ ไม่มี "กำลังส่ง" เลย
                       ⇒ ตั้งชื่อคอลัมน์ให้ตรงกับของที่มีจริง **ห้ามแปะคำ ZORT ทับของที่ไม่ใช่เรื่องเดียวกัน**
                          (กติกาในสกิล zort-words: เจอสถานะที่เราไม่มี = งานแก้ระบบ ต้องแจ้ง ไม่ใช่แปะคำ) */}
-                  <th className={TH_KANIT} title="สถานะของใบขาย — ไม่ใช่สถานะการส่งของบริษัทขนส่ง">สถานะใบขาย</th>
+                  <th className={TH_KANIT} style={กว้างZ(122)} title="สถานะของใบขาย — ไม่ใช่สถานะการส่งของบริษัทขนส่ง">สถานะใบขาย</th>
                   <th className={TH_KANIT}>หมายเลขออเดอร์</th>
                   <th className={TH_KANIT} style={{ width: 56 }}></th>
                 </tr>
