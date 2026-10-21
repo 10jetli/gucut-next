@@ -14,6 +14,7 @@ import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
 import { ZORT_EXPORT_BTN, ไอคอนไฟล์ } from '@/components/zort/ExportButton'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ZortLineChart from '@/components/zort/ZortLineChart'
 import ไอคอนZ from '@/components/zort/ZortIcon'
 import { ยอดขายแบบZORT, type ผลยอดแบบZORT, type แถวใบคืน } from '@/lib/zort-sales-total'
 import LoadingState from '@/components/ui/LoadingState'
@@ -174,6 +175,16 @@ function bucketKey(date: string, b: Bucket): string {
   if (b === 'quarter') return `${y}-Q${Math.floor((Number(m) - 1) / 3) + 1}`
   if (b === 'month') return `${y}-${m}`
   return date
+}
+/** ป้ายแกนนอนแบบ ZORT ตามขนาดช่วง: วัน "01 ส.ค." · เดือน "ส.ค./2569" (แบบกราฟรายงานลูกค้าของ ZORT) · ไตรมาส "Q3/2569" · ปี "2569" (พ.ศ.) */
+function ป้ายช่วงZORT(k: string): string {
+  const พศ = (y: string) => String(Number(y) + 543)
+  let m: RegExpMatchArray | null
+  if ((m = k.match(/^(\d{4})-(\d{2})-(\d{2})/))) return `${m[3]} ${TH_MONTH_SHORT[Number(m[2]) - 1] ?? ''}`
+  if ((m = k.match(/^(\d{4})-(\d{2})$/))) return `${TH_MONTH_SHORT[Number(m[2]) - 1] ?? ''}/${พศ(m[1])}`
+  if ((m = k.match(/^(\d{4})-Q(\d)$/))) return `Q${m[2]}/${พศ(m[1])}`
+  if ((m = k.match(/^(\d{4})$/))) return พศ(m[1])
+  return k
 }
 function groupDaily(daily: Report['daily'], b: Bucket): Report['daily'] {
   if (b === 'day') return daily
@@ -373,6 +384,11 @@ function TrendChart({ daily, kind }: { daily: Report['daily']; kind: 'line' | 'b
   const line = daily
     .map((d, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${(H - 24 - (d.orders / maxOrders) * (H - 48)).toFixed(1)}`)
     .join(' ')
+  /* 📐 โหมดเหมือน ZORT: เส้นล้วนวาดแบบ ZORT (แกนตั้ง · เส้นตาราง · คำอธิบายเส้น · ป้ายวันเอียง) — เลขชุดเดียวกัน · ชนิดแท่งยังเป็นของเดิม */
+  if (เหมือนZORT && kind === 'line') {
+    return <ZortLineChart legend="ยอดขายรวม" ป้ายกำกับ="กราฟเส้นยอดขายรายวัน"
+      points={daily.map((d) => ({ label: ป้ายช่วงZORT(String(d.date ?? '')), value: d.sales }))} />
+  }
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img"
       aria-label={kind === 'line' ? 'กราฟเส้นยอดขายรายวัน' : 'กราฟแท่งยอดขายรายวัน พร้อมเส้นจำนวนใบ'}>
