@@ -467,9 +467,7 @@ export default function ProductDetailPage() {
                   { ป้าย: 'ยอดขายเดือนนี้ (บาท)', วง: '#d0daff', สี: '#4165ed', รูป: '฿', ค่า: เดือนนี้z1 == null ? '-' : fmtMoney(เดือนนี้z1), ว่าง: เดือนนี้z1 == null,
                     เหตุ: `ร้านออนไลน์ z1 (ร้านเดียวกับ ZORT)${thisMonth != null ? ` · รวมสองร้าน ${fmtMoney(thisMonth)} บาท` : ''} · ยอดบรรทัดสินค้า ตัดใบยกเลิก ยังรวมใบค้างจ่าย` },
                 ]} />
-                <ZortLookFold tone="gray" สรุป={<>ที่มาของเลขพร้อมขาย · ยอดขายเดือนนี้{thisMonth == null ? ' (กด "ดูกราฟยอดขาย" ด้านล่างแล้วเลขจะขึ้นเอง)' : ''}</>}>
-                  <div className="mt-2 text-left"><StockSource row={row} ป้าย={ป้ายที่มา} /></div>
-                </ZortLookFold>
+                {/* กล่องพับที่มาของเลข ย้ายไปท้ายจอ (21 ต.ค. 2569) — ใต้การ์ดดันกล่องรายละเอียดลง ~16 จาก ZORT · ยังเห็นบนจอ ไม่ถอด */}
                 <ClampedNote resp={คำตอบสต็อก} ขอ={{ limit: 20, q: sku }} />
               </>
             )
@@ -943,6 +941,15 @@ export default function ProductDetailPage() {
 
           {/* 📇 บัตรสต็อก — ZORT มี ExportStockCard() ในจอรายการสินค้า ของเราไม่เคยมี (ใบ t_mu1i74cu) */}
           <StockCard sku={sku} />
+
+          {/* 📐 โหมดเหมือน ZORT: กล่องพับที่มาของเลขพร้อมขาย/ยอดขายเดือนนี้ (เดิมอยู่ใต้การ์ด KPI) — อธิบายว่าทำไมเลขต่างจาก ZORT */}
+          {เหมือนZORT && (
+            <div className="mt-4">
+              <ZortLookFold tone="gray" สรุป={<>ที่มาของเลขพร้อมขาย · ยอดขายเดือนนี้{thisMonth == null ? ' (กด "ดูกราฟยอดขาย" ด้านบนแล้วเลขจะขึ้นเอง)' : ''}</>}>
+                <div className="mt-2 text-left"><StockSource row={row} ป้าย={ป้ายที่มา} /></div>
+              </ZortLookFold>
+            </div>
+          )}
 
           <p className="text-[12.5px] text-gray-500 mt-4 leading-relaxed">
             {/* 🔴 บรรทัดนี้เคยเขียนว่า "น้ำหนักคลังเงายังไม่ได้เก็บช่องนี้มา" แล้วค้างอยู่
