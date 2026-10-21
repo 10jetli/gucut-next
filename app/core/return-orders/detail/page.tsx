@@ -176,6 +176,8 @@ function Inner() {
                     <div className="mt-2">
                       {typeof d.paymentstatus === 'string' && d.paymentstatus !== ''
                         ? <span title={`ค่าที่ท่อส่งมา: ${d.paymentstatus}`} className={`inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 ${PILL_ZORT_CLASS(toneOfStatus(zortWord(PAY_STATUS, d.paymentstatus).text))}`}>{zortWord(PAY_STATUS, d.paymentstatus).text}</span>
+                        /* '' = ZORT ส่งมาว่าง ⇒ ขีดแบบ ZORT (ไม่ใช่ ยังไม่รู้ — ท่อปลอมฉาก ว่าง จับได้ 22 ต.ค. 2569) */
+                        : d.paymentstatus === '' ? <span className="text-[16px] text-gray-400">-</span>
                         : <span title={'paymentstatus' in d ? ZORTไม่ส่งช่องนี้ : ไม่ส่งช่องนี้} className="inline-block rounded-[24px] px-3 py-1 text-[16px] leading-6 text-gray-400 bg-gray-100 cursor-help">ยังไม่รู้</span>}
                     </div>
                   </div>
@@ -211,7 +213,8 @@ function Inner() {
                       <div key={k} className={`grid grid-cols-[1fr_2fr] py-1 pr-[15px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>
                         <span className={`font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#868e96] pr-[15px] ${ลำดับ === 1 ? '' : 'pl-[15px]'}`}>{k}</span>
                         <span className="font-['Boon',sans-serif] text-[16px] leading-[23px] text-[#3e3e3e] px-[15px] break-words">{v === ไม่ส่ง ? <span className="text-gray-300 cursor-help" title={ไม่ส่งช่องนี้}>—</span>
-                          : v ?? <span className="text-gray-300 cursor-help" title={k === 'วันที่' && d.createdAt ? `ZORT ไม่ได้ส่งวันคืนของ — วันสร้างเอกสารคือ ${thaiDate(d.createdAt, 'เต็ม')} (ไม่เอามาแทน)` : ZORTไม่ส่งช่องนี้}>—</span>}</span>
+                          : v ?? <span className="text-gray-300 cursor-help" title={k === 'วันที่' && !('date' in d) ? ไม่ส่งช่องนี้ /* ไม่มีคีย์ = ท่อไม่ส่ง ไม่ใช่ ZORT ไม่ส่ง */
+                            : k === 'วันที่' && d.createdAt ? `ZORT ไม่ได้ส่งวันคืนของ — วันสร้างเอกสารคือ ${thaiDate(d.createdAt, 'เต็ม')} (ไม่เอามาแทน)` : ZORTไม่ส่งช่องนี้}>—</span>}</span>
                       </div>
                     ))}
                   </section>
