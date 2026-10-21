@@ -25,6 +25,7 @@ import { storeLabel } from '@/components/zort/StorePicker'
 import StoreEcho from '@/components/zort/StoreEcho'
 import { PageHead, WriteResult, thaiDate, RowMenu, TH, THR, TD_NO, ROW_LINK, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE, ลูกศรลง } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import type { WriteResp } from '@/components/zort'
 import { ส่งจริงได้, เหตุที่ยังไม่เปิด } from '@/lib/real-send'
@@ -399,7 +400,7 @@ function Inner() {
                 ['สถานะการโอนสินค้า', d.status ? zortWord(PURCHASE_DETAIL_TRANSFER_STATUS, d.status).text : null, '▤'],
               ] as const).map(([หัว, ค่า, รูป]) => (
                 <div key={หัว} className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>{รูป}</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}><ไอคอนZ k={รูป} size={24} /></span>
                   <div className="text-right">
                     {/* ⚠️ ต้องระบุ Boon เอง — h2 รับ Kanit จากหัวเรื่องร่วม (ป้ายของ ZORT คือ Boon 14 #868e96) */}
                     <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">{หัว}</h2>
@@ -429,7 +430,7 @@ function Inner() {
               ] as const).map(([รูป, หัว, แถว]) => (
                 <div key={หัว} className="mt-4 md:mt-0">
                   <div className="flex items-center gap-3 mb-4 pl-[30px]">
-                    <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{รูป}</span>
+                    <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k={รูป} size={17} color="#4165ed" /></span>
                     <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                   </div>
                   {(แถว as ReadonlyArray<readonly [string, React.ReactNode]>).map(([k, v]) => (
@@ -516,7 +517,7 @@ function Inner() {
             {/* 📐 โหมดเหมือน ZORT: หัว "สินค้า" Kanit 20 มีวงไอคอน (ภาพ /Buy/Details 20 ต.ค. 2569) · จำนวนบรรทัดอยู่ใน title */}
             {เหมือนZORT ? (
               <div className="flex items-center gap-3 mb-3" title={d.lines?.length ? `${d.lines.length} บรรทัด` : undefined}>
-                <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📦</span>
+                <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k="📦" size={17} color="#4165ed" /></span>
                 <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">สินค้า</h2>
               </div>
             ) : (

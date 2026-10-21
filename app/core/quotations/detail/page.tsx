@@ -16,6 +16,7 @@ import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/
 import { PageHead, TableWrap, TH, THR, TD, TDR, TD_NO, DL_CARD, DL_CARD_TITLE, DL_LABEL, DL_VALUE, thaiDate, RowMenu, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 import { QUOTATION_DETAIL_STATUS, zortWord } from '@/lib/zort-words'
 
 interface Line {
@@ -166,7 +167,7 @@ function Inner() {
               {/* 📏 การ์ดสถานะต่ำกว่าแถวปุ่ม 30 แบบ ZORT (ของเรา 20) ⇒ padding บน 8 · ป้าย Boon 14 (h2 รับ Kanit จากหัวเรื่องร่วม) */}
               <div className="mb-[30px] pt-2 grid gap-[30px] md:grid-cols-2">
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>▤</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}><ไอคอนZ k="▤" size={24} /></span>
                   <div className="text-right">
                     <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">สถานะรายการ</h2>
                     <div className="mt-2">
@@ -194,7 +195,7 @@ function Inner() {
                 ] as const).map(([หัว, รูป, แถว]) => (
                   <section key={หัว} className="mt-4 md:mt-0">
                     <div className="flex items-center gap-3 mb-4 pl-[30px]">
-                      <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{รูป}</span>
+                      <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k={รูป} size={17} color="#4165ed" /></span>
                       <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                     </div>
                     {(แถว as ReadonlyArray<readonly [string, string | null | undefined]>).map(([k, v]) => (
