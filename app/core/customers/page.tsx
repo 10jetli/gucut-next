@@ -41,7 +41,7 @@ import Link from 'next/link'
 import { fmtNum } from '@/lib/format'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
-import { TH_NO, ROW_LINK, TD_NO,
+import { TH_NO, ROW_LINK, TD_NO, TH_CHECK, TD_CHECK, RowCheck, BulkBar,
   PageHead, SearchRow, Tabs, TableWrap, TH, TD, LinkText, EmptyState, RowMenu, PageNav,} from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import ExportButton from '@/components/zort/ExportButton'
@@ -154,6 +154,21 @@ export default function CoreContactsPage() {
   useEffect(() => { load(0) }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const rows = data?.rows ?? []
+  /* ☑️ ช่องติ๊กแบบ ZORT — เลือกได้เฉพาะแถวในหน้านี้ · คำสั่งที่ให้มีแค่ที่ทำได้จริงในเครื่อง (คัดลอก) ไม่เขียนอะไรกลับ ZORT
+     ข้อมูลเปลี่ยนหน้า/ค้นใหม่ ⇒ ล้างที่เลือก (ไม่งั้นนับแถวที่มองไม่เห็นแล้ว) */
+  const [picked, setPicked] = useState<string[]>([])
+  const [copyMsg, setCopyMsg] = useState('')
+  useEffect(() => { setPicked([]) }, [data])
+  const ที่เลือก = rows.filter((r) => picked.includes(r.id))
+  const คัดลอก = async (ค่า: string[], หน่วย: string) => {
+    try {
+      await navigator.clipboard.writeText(ค่า.join('\n'))
+      setCopyMsg(`คัดลอกแล้ว ${fmtNum(ค่า.length)} ${หน่วย}`)
+    } catch {
+      setCopyMsg('คัดลอกไม่สำเร็จ — เบราว์เซอร์ไม่อนุญาตให้เขียนคลิปบอร์ด (ลองเลือกข้อความแล้วคัดลอกเอง)')
+    }
+    setTimeout(() => setCopyMsg(''), 6000)
+  }
   /** ท่อรุ่นที่เรียงได้สะท้อน applied.sortDefaulted — มีคีย์ = รองรับ · เชื่อว่าเรียงจริงเฉพาะ false */
   const ที่ใช้เรียง = (data as { applied?: { sortDefaulted?: boolean } } | null)?.applied
   const รองรับเรียง = !!ที่ใช้เรียง && 'sortDefaulted' in ที่ใช้เรียง
@@ -515,10 +530,17 @@ export default function CoreContactsPage() {
                     วัดจอ ZORT จริง 16 ก.ย. 2569 — ติดเฉพาะช่องที่วัดมาแล้ว ห้ามเดา */}
                 <thead className="bg-white border-b border-gray-200">
                   <tr>
-                    {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Contact/list ที่ 1280 (21 ต.ค. 2569) · # รวมช่องติ๊ก 22 ของ ZORT ที่เราไม่มี (24+22) */}
-                    <th className={TH_NO} style={{ width: เหมือนZORT ? 46 : 44 }}>#</th>
+                    {/* 📏 โหมดเหมือน ZORT: ความกว้างตาม DOM /Contact/list ที่ 1280 (21 ต.ค. 2569) · # 24 แล้วช่องติ๊ก (ZORT 22 · ของเราเป้ากด 34 ⇒ ชื่อหัก 12)
+                        📐 ลำดับ # ก่อนช่องติ๊ก ตาม ZORT (เหมือนจอสินค้า) */}
+                    <th className={TH_NO} style={{ width: เหมือนZORT ? 24 : 44 }}>#</th>
+                    <th className={TH_CHECK} style={{ width: 34 }}>
+                      <RowCheck label="เลือกทั้งหน้า"
+                        checked={rows.length > 0 && ที่เลือก.length === rows.length}
+                        indeterminate={ที่เลือก.length > 0 && ที่เลือก.length < rows.length}
+                        onChange={(v) => setPicked(v ? rows.map((r) => r.id) : [])} />
+                    </th>
                     <th className={TH} style={กว้างZ(121)}><SortHead label="รหัส" field="code" current={เรียง} supported={รองรับเรียง && รับรหัส} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ท่อรุ่นที่ขึ้นอยู่ยังไม่รับการเรียงด้วยรหัส (ตอบกลับว่าไม่รู้จักช่องเรียง code) · ขอฝั่งท่อแล้ว (ef3165f4 รอขึ้นเว็บ)" /></th>
-                    <th className={TH} style={กว้างZ(302)}><SortHead label="ชื่อ" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน" /></th>
+                    <th className={TH} style={กว้างZ(290)}><SortHead label="ชื่อ" field="name" current={เรียง} supported={รองรับเรียง} onSort={เปลี่ยนเรียง} fallbackTitle="จอ ZORT กดหัวคอลัมน์นี้เพื่อเรียงได้ — ของเรายังเรียงไม่ได้ เพราะท่อเส้นนี้ไม่รับ sort (ยิงทดสอบ 16 ก.ย. 2569: ส่งค่าอะไรไปก็ได้ลำดับเดิมทุกครั้ง) · ขอฝั่งท่อไว้แล้ว · ระหว่างนี้ใช้ตัวกรอง/ช่องค้นหาแทน" /></th>
                     <th className={TH} style={กว้างZ(171)}>เลขประจำตัวผู้เสียภาษี</th>
                     <th className={TH} style={กว้างZ(151)}>เบอร์โทรศัพท์</th>
                     <th className={TH} style={กว้างZ(176)}>อีเมล</th>
@@ -527,12 +549,17 @@ export default function CoreContactsPage() {
                 </thead>
                 <tbody>
                   {rows.length === 0 && (
-                    <EmptyState cols={7} icon="👥" title="ไม่พบผู้ติดต่อ"
+                    <EmptyState cols={8} icon="👥" title="ไม่พบผู้ติดต่อ"
                       detail={q ? 'ค้นได้จาก ชื่อ · เบอร์โทร · รหัสผู้ติดต่อ' : 'ยังไม่มีรายชื่อในคลังเงา — ต้องสั่งซิงก์ก่อน'} />
                   )}
                   {rows.map((r, i) => (
-                    <tr key={r.id} className="border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa]">
+                    <tr key={r.id} className={`border-b border-[#e8ecf8] last:border-0 hover:bg-[#eef1fa] ${picked.includes(r.id) ? 'bg-[#eef1fa]' : ''}`}>
                       <td className={TD_NO}>{offset + i + 1}</td>
+                      <td className={TD_CHECK}>
+                        <RowCheck label={`เลือก ${r.name ?? r.code ?? ''}`}
+                          checked={picked.includes(r.id)}
+                          onChange={(v) => setPicked((old) => (v ? [...old, r.id] : old.filter((x) => x !== r.id)))} />
+                      </td>
                       <td className={`${TD} whitespace-nowrap`}>{r.code || DASH}</td>
                       <td className={TD}>
                         {/* ✅ 8 ก.ย. 2569: มีหน้าปลายทางแล้ว (/core/customers/detail + เส้น ?customer=)
@@ -607,6 +634,30 @@ export default function CoreContactsPage() {
               </div>
             </TableWrap>
           )}
+
+          {ที่เลือก.length > 0 && (() => {
+            const เบอร์ = ที่เลือก.map((r) => r.phone).filter((x): x is string => !!x)
+            const อีเมล = ที่เลือก.map((r) => r.email).filter((x): x is string => !!x)
+            return (
+              <BulkBar>
+                <b>เลือก {fmtNum(ที่เลือก.length)} รายการ</b>
+                <span className="text-gray-500">(เฉพาะหน้านี้)</span>
+                {/* ไม่มีเบอร์/อีเมลสักราย ⇒ ปิดพร้อมเหตุ ไม่ใช่กดแล้วได้คลิปบอร์ดว่าง */}
+                <button type="button" disabled={เบอร์.length === 0} onClick={() => { void คัดลอก(เบอร์, 'เบอร์') }}
+                  title={เบอร์.length === 0 ? 'รายที่เลือกไม่มีเบอร์โทรเลย' : undefined}
+                  className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50 disabled:opacity-50">
+                  คัดลอกเบอร์โทร ({fmtNum(เบอร์.length)})
+                </button>
+                <button type="button" disabled={อีเมล.length === 0} onClick={() => { void คัดลอก(อีเมล, 'อีเมล') }}
+                  title={อีเมล.length === 0 ? 'รายที่เลือกไม่มีอีเมลเลย' : undefined}
+                  className="font-medium text-gray-700 bg-white border border-gray-300 rounded-full px-3 py-1 hover:bg-gray-50 disabled:opacity-50">
+                  คัดลอกอีเมล ({fmtNum(อีเมล.length)})
+                </button>
+                <button type="button" onClick={() => setPicked([])} className="text-blue-600 hover:underline">ล้างที่เลือก</button>
+                {copyMsg && <span className="text-gray-600">{copyMsg}</span>}
+              </BulkBar>
+            )
+          })()}
 
           {/* 📤 ผัง ZORT: "Export to Excel ▾" อยู่ใต้ตาราง ชิดซ้าย (อ่านจอ ZORT รายการนี้) */}
           <div className="mt-3 flex items-center gap-2">
