@@ -552,7 +552,7 @@ export default function ProductDetailPage() {
             <div className="min-w-0 flex-1">
               <p className={เหมือนZORT ? `${ZORT_INFO_NAME} mb-2` : 'text-[15px] font-semibold text-gray-900'}>{row.name || sku}{เหมือนZORT && typeof row.category === 'string' && row.category.trim() ? ` (${row.category.trim()})` : ''}</p>
               {/* โหมดเหมือน ZORT: ชื่อเต็มบรรทัดอยู่เหนือ [ข้อมูล | QR] — แบบ ZORT (QR เริ่มใต้ชื่อ ชื่อไม่ถูกบีบจนตกสองบรรทัด) */}
-              <div className={เหมือนZORT ? 'flex items-start gap-6' : ''}>
+              <div className={เหมือนZORT ? 'flex flex-wrap md:flex-nowrap items-start gap-6' : ''}>
               {/* 🧭 โหมดเหมือน ZORT: ลำดับช่องตาม /Product/Details (รหัส · ราคาขาย · น้ำหนัก · ราคาซื้อ · ต้นทุนเฉลี่ย · ชุด) ด้วย order
                      ไม่ย้ายโค้ด ⇒ โหมดปกติเรียงเดิม · คอลัมน์ละ 250 ตาม ZORT · ป้าย/ค่าใช้ค่ากลาง ZORT_INFO_* */}
               <div className={เหมือนZORT ? 'grid grid-cols-2 gap-y-[18px] mt-4 max-w-[500px]' : 'grid grid-cols-1 sm:grid-cols-2 gap-x-10 gap-y-4 mt-4 max-w-[640px]'}>
@@ -662,7 +662,7 @@ export default function ProductDetailPage() {
               <select
                 value={chartMode}
                 onChange={(e) => setChartMode(e.target.value as 'amount' | 'qty')}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-full"
               >
                 <option value="amount">ยอดขาย (บาท)</option>
                 <option value="qty">จำนวนที่ขายได้</option>
@@ -763,7 +763,7 @@ export default function ProductDetailPage() {
               <select
                 value={cardKind}
                 onChange={(e) => setCardKind(e.target.value)}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white max-w-full"
               >
                 {/* 🗂 ชื่อและลำดับตาม `typetransactionoption` ของ ZORT 8 ค่า (อ่านจอจริง 16 ต.ค. 2569)
                     แต่ละค่าผูกกับคีย์ของท่อ · เปิดได้เฉพาะเมื่อท่อประกาศคีย์นั้นใน kinds (ไม่ใช่เดาจากชื่อ)
@@ -800,7 +800,7 @@ export default function ProductDetailPage() {
               <select
                 disabled
                 title="คลังเงาเก็บสต็อกรวมทั้งร้าน (3 คลัง: โกดัง + จุดขาย 2) — ตรวจระดับพารามิเตอร์แล้ว 10 ก.ย. 2569: ZORT เมินตัวกรองคลัง (ใส่ warehouseid แล้วเลขไม่เปลี่ยน)"
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 cursor-not-allowed"
+                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-gray-50 text-gray-400 cursor-not-allowed max-w-full"
               >
                 <option>ทั้งหมด</option>
               </select>
