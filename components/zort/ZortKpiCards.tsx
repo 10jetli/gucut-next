@@ -22,6 +22,9 @@ export interface ZortKpi {
   เหตุ?: string
   /** การ์ดที่ค่าเป็นข้อความ (วันที่) — ZORT ใช้ Kanit น้ำหนักปกติ ไม่ใช่ Lato หนา (วัด DOM /Warehouse/Details 19 ต.ค. 2569: Kanit 24/400) */
   ค่าเป็นข้อความ?: boolean
+  /** บรรทัดเล็กใต้ตัวเลข — ใช้เมื่อเลขของเรา **คนละนิยาม** กับเลขป้ายเดียวกันของ ZORT (กฎแท็บข้อ 4: ต้องบอกบนจอ · title อ่านบนมือถือไม่ได้)
+   *  ZORT ไม่มีบรรทัดนี้ ⇒ ใส่เฉพาะการ์ดที่ต่างจริง */
+  ใต้?: string
 }
 
 /* 🎨 ไอคอนเส้นในวงมาจาก ZortIcon ตัวร่วม (ชุดเดียวกับจอรายละเอียดใบขาย/ซื้อ/โอน/เสนอราคา/รับคืน) */
@@ -32,13 +35,14 @@ export default function ZortKpiCards({ items, ขนาดเลข = 30 }: { it
   const เลข = ขนาดเลข === 20 ? 'text-[20px] leading-[20px]' : ขนาดเลข === 24 ? 'text-[24px] leading-[24px]' : 'text-[30px] leading-[30px]'
   return (
     <div className={`grid grid-cols-1 ${COLS[items.length] ?? 'sm:grid-cols-3'} gap-[30px]`}>
-      {items.map(({ ป้าย, วง, สี, รูป, ค่า, ว่าง, เหตุ, ค่าเป็นข้อความ }) => (
+      {items.map(({ ป้าย, วง, สี, รูป, ค่า, ว่าง, เหตุ, ค่าเป็นข้อความ, ใต้ }) => (
         <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between gap-3" title={เหตุ || undefined}>
           <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}><ไอคอนZ k={รูป} /></span>
           <div className="text-right min-w-0">
             {/* ป้าย Boon 14/500 — วัด DOM 19 ต.ค. 2569 ทั้ง /Product/Details กับ /Warehouse/Details (เดิม h2 รับ Kanit มาจากหัวเรื่อง) */}
             <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
             <p className={`${ค่าเป็นข้อความ ? "font-['Kanit',sans-serif] font-normal" : "font-['Lato',sans-serif] font-semibold"} ${เลข} mt-1 m-0 break-words`} style={{ color: ว่าง ? '#ced4da' : สี }}>{ค่า}</p>
+            {ใต้ && <p className="text-[11.5px] text-[#868e96] mt-1 m-0 leading-snug">{ใต้}</p>}
           </div>
         </div>
       ))}
