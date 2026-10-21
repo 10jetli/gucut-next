@@ -30,6 +30,7 @@ import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import ExportButton from '@/components/zort/ExportButton'
 import { IconEdit, IconTrash } from '@/components/zort/ButtonIcons'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 import { ลิงก์ใบขาย, ลิงก์ใบของลูกค้า } from '@/lib/sale-link'
 
 interface Order {
@@ -216,12 +217,12 @@ function Inner() {
           <>
             <div className="mb-3 grid grid-cols-1 gap-[30px] sm:grid-cols-3">
               {([
-                ['ยอดขายเดือนนี้ (บาท)', '#ebf6ff', '#2f8dde', '▦', typeof d?.money?.thisMonth === 'number' ? baht(d.money.thisMonth) : '—', d?.money?.month ? `ช่วง ${d.money.month}` : 'ยังไม่รู้ช่วงที่ตัด'],
-                ['ยอดขายปีนี้ (บาท)', '#cefff1', '#13af82', '▦', typeof d?.money?.thisYear === 'number' ? baht(d.money.thisYear) : '—', d?.money?.year ? `ช่วง ${d.money.year}` : 'ยังไม่รู้ช่วงที่ตัด'],
+                ['ยอดขายเดือนนี้ (บาท)', '#ebf6ff', '#2f8dde', '📅', typeof d?.money?.thisMonth === 'number' ? baht(d.money.thisMonth) : '—', d?.money?.month ? `ช่วง ${d.money.month}` : 'ยังไม่รู้ช่วงที่ตัด'],
+                ['ยอดขายปีนี้ (บาท)', '#cefff1', '#13af82', '🗓', typeof d?.money?.thisYear === 'number' ? baht(d.money.thisYear) : '—', d?.money?.year ? `ช่วง ${d.money.year}` : 'ยังไม่รู้ช่วงที่ตัด'],
                 ['ยอดค้างชำระ (บาท)', '#ffebeb', '#f25757', '฿', 'ยังคิดไม่ได้', d?.money?.outstandingWhy ?? 'ยังไม่รู้ว่า ZORT เอาเลขนี้มาจากไหน — ไม่ใช่ผลรวมใบที่ยังไม่ชำระ'],
               ] as const).map(([ป้าย, วง, สี, รูป, ค่า, เหตุ]) => (
                 <div key={ป้าย} className="bg-white rounded-[6px] p-5 flex items-center justify-between" title={เหตุ}>
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{รูป}</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold shrink-0" style={{ background: วง, color: สี }}>{/* ไอคอนเส้นวาดเอง (ZORT: ปฏิทิน · ปฏิทินตาราง · เหรียญ) */}<ไอคอนZ k={รูป} size={24} /></span>
                   <div className="text-right">
                     <h2 className="text-[14px] font-medium text-[#3e3e3e] m-0">{ป้าย}</h2>
                     <p className={`${ค่า === 'ยังคิดไม่ได้' ? "font-['Kanit',sans-serif] text-[18px]" : "font-['Lato',sans-serif] text-[24px]"} font-semibold mt-1 m-0`} style={{ color: ค่า === '—' ? '#ced4da' : สี }}>{ค่า}</p>
