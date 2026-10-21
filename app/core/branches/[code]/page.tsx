@@ -36,6 +36,7 @@ import {
   PageHead, thaiDate, TableWrap, TH, THR, TD, TDR, DETAIL_BTN, ZORT_BACK_LINK,
 } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import { คลาสตัวเลือก } from '@/components/zort/formCtl'
 import ZortKpiCards from '@/components/zort/ZortKpiCards'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import ZortCardTitle from '@/components/zort/ZortCardTitle'
@@ -294,7 +295,8 @@ export default function BranchDetailPage() {
                 ? <div className="mr-auto"><ZortCardTitle รูป="↗">สินค้าขายดีย้อนหลัง {ขายดีช่วง === 1 ? 'วันนี้' : `${ขายดีช่วง} วัน`}</ZortCardTitle></div>
                 : <p className="text-[14px] font-semibold text-gray-900 mr-auto">สินค้าขายดีย้อนหลัง {ขายดีช่วง === 1 ? 'วันนี้' : `${ขายดีช่วง} วัน`}</p>}
               <select value={ขายดีช่วง} onChange={(e) => setขายดีช่วง(Number(e.target.value))}
-                className="font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white">
+                /* 📏 โหมดเหมือน ZORT: ตัวเลือกช่วงวัน 84×40 Boon 14 (DOM /Warehouse/Details 21 ต.ค. 2569 · เดิม 74×28 ตัว 12) — ตัวช่วยร่วม คลาสตัวเลือก */
+                className={คลาสตัวเลือก("font-['Lato','Boon',sans-serif] text-[12px] text-[#555] h-7 border border-[#ccc] rounded px-2.5 py-1 bg-white", 'w-[84px]')}>
                 <option value={1}>วันนี้</option><option value={7}>7 วัน</option>
                 <option value={30}>1 เดือน</option><option value={90}>3 เดือน</option>
               </select>
