@@ -11,14 +11,17 @@ import Card from '@/components/ui/Card'
 import { pipeText } from '@/components/ui/PipeNote'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
-export default function PipeGapFrame({ หัว, คอลัมน์, เหตุ, คำขอ }: {
+export default function PipeGapFrame({ หัว, คอลัมน์, เหตุ, คำขอ, ในการ์ด = false }: {
   หัว: string; คอลัมน์: string; เหตุ: string; คำขอ: string
+  /** โหมดเหมือน ZORT: อยู่ในการ์ดขาวที่มีช่องในอยู่แล้ว ⇒ ไม่ห่อ Card ซ้ำ (ช่องในซ้อนสองชั้น ดันหัวเข้าไป ~31 จาก ZORT · /Logistics/Details 21 ต.ค. 2569) */
+  ในการ์ด?: boolean
 }) {
   /* 📐 โหมดเหมือน ZORT (ภาพ /Logistics/Details 20 ต.ค. 2569): ZORT ขึ้นหัว + "-" เมื่อไม่มีข้อมูล ไม่มีกล่องเส้นประ
      ⇒ ย่อเป็น หัว · "-" · บรรทัดเตือนสีส้มหนึ่งบรรทัดที่กางอ่านเหตุ/คำขอได้ — **ยังเห็นบนจอเสมอ ไม่ใช่ซ่อน** (เหตุผลของกรอบนี้ยังอยู่ครบ) */
   if (เหมือนZORT) {
+    const ห่อ = ({ children }: { children: React.ReactNode }) => ในการ์ด ? <div>{children}</div> : <Card>{children}</Card>
     return (
-      <Card>
+      <ห่อ>
         <p className="font-['Kanit',sans-serif] text-[14px] font-medium text-[#3e3e3e]">{หัว}</p>
         <p className="font-['Boon',sans-serif] text-[16px] text-[#3e3e3e] mt-1">-</p>
         <details className="mt-1 text-[11.5px]">
@@ -29,7 +32,7 @@ export default function PipeGapFrame({ หัว, คอลัมน์, เห�
             <p className="text-gray-600 mt-1">🔧 ที่ต้องขอฝั่งท่อ: {pipeText(คำขอ)}</p>
           </div>
         </details>
-      </Card>
+      </ห่อ>
     )
   }
   return (

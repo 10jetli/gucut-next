@@ -144,7 +144,7 @@ export default function LogisticsDetailPage() {
                 ค่า={typeof row.lines === 'number' ? `${fmtNum(row.lines)} รายการ` : ยังไม่มี('ไม่รู้')} />
             </div>
             <div className="border-t border-[#e8ecf8] pt-4 space-y-3">
-              <PipeGapFrame
+              <PipeGapFrame ในการ์ด
                 หัว="ค่าส่ง"
                 คอลัมน์="ค่าส่ง (ของจริงที่อ่านได้จาก ZORT: 28 บาท)"
                 เหตุ="แถวของ `list=logistics` มี 9 ช่อง และไม่มีช่องค่าส่งเลย (ยิงอ่านรูปข้อมูลจริง 5 ต.ค. 2569)"
@@ -167,12 +167,12 @@ export default function LogisticsDetailPage() {
             </ZortLookFold>
           </div>
           <div className="bg-white rounded-md p-6 space-y-3">
-            <PipeGapFrame
+            <PipeGapFrame ในการ์ด
               หัว="รายละเอียด Pick up"
               คอลัมน์="รายละเอียด Pick up"
               เหตุ="ไม่มีช่องนี้ในแถวที่ท่อส่งมา"
               คำขอ="เพิ่มช่อง `pickup` ลงในแถวของ `list=logistics`" />
-            <PipeGapFrame
+            <PipeGapFrame ในการ์ด
               หัว="ประวัติรายการ (การเดินทางของพัสดุ)"
               คอลัมน์="ข้อความเหตุการณ์ + วันเวลา (ของจริง 2 เหตุการณ์: รับพัสดุเข้าสาขา · เจ้าหน้าที่สาขารับพัสดุ)"
               เหตุ="เป็นข้อมูลรายเหตุการณ์ของใบเดียว ซึ่ง `list=logistics` เป็นเส้นรายการ ไม่มีที่ให้ใส่"
