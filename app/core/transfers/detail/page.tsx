@@ -15,6 +15,7 @@ import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
 import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/doc-error'
 import { PageHead, Pill, TableWrap, TH, TD, thaiDate, RowMenu, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE } from '@/components/zort'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 
 interface Line { sku?: string; name?: string; qty?: number }
 interface Resp {
@@ -160,7 +161,7 @@ function Inner() {
               {/* 📏 ZORT การ์ดสถานะต่ำกว่าแถวปุ่ม 30 · ของเรา 20 (ภาพ 20 ต.ค. 2569) ⇒ เติมช่องบน 8 CSS — ใช้ padding เพราะ margin ยุบรวมกับแถวปุ่ม */}
               <div className="mb-[30px] pt-2 grid gap-[30px] md:grid-cols-2">
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>⇄</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}><ไอคอนZ k="⇄" size={24} /></span>
                   <div className="text-right">
                     <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">การโอนสินค้า</h2>
                     {/* 📏 DOM ZORT 20 ต.ค. 2569: การ์ดสูง 88 · ป้ายสถานะสูง 24 (ช่องใน 4/12 · 16px · lh 16) */}
@@ -180,7 +181,7 @@ function Inner() {
                 <div className="md:grid md:grid-cols-2">
                 <div>
                 <div className="flex items-center gap-3 mb-4 pl-[30px]">
-                  <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📄</span>
+                  <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k="📄" size={17} color="#4165ed" /></span>
                   <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ข้อมูล</h2>
                 </div>
                 {([
@@ -200,7 +201,7 @@ function Inner() {
                 </div>
                 <div className="mt-4 md:mt-0">
                   <div className="flex items-center gap-3 mb-4 pl-[30px]">
-                    <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>👤</span>
+                    <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k="👤" size={17} color="#4165ed" /></span>
                     <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">ผู้ติดต่อ</h2>
                   </div>
                   {/* ⚠️ ZORT API ไม่ส่งผู้สร้างรายการของใบโอน (ช่องที่ส่งมา: fields ในคำตอบ · ยิงดู 20 ต.ค. 2569) ⇒ ขีด + เหตุ ห้ามเดาชื่อ */}
@@ -237,7 +238,7 @@ function Inner() {
           <กล่องสินค้า>
           {เหมือนZORT && (
             <div className="flex items-center gap-3 mb-3">
-              <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>📦</span>
+              <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k="📦" size={17} color="#4165ed" /></span>
               <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">สินค้า</h2>
             </div>
           )}

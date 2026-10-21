@@ -18,6 +18,7 @@ import { docErrorView, isDocFail, type DocFail, type DocErrorView } from '@/lib/
 import { PageHead, Pill, TableWrap, TH, THR, TD, TDR, thaiDate, toneOfStatus, PILL_ZORT_CLASS , ZORT_ICON_BG, ZORT_BLUE, RowMenu, DETAIL_BTN } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
+import ไอคอนZ from '@/components/zort/ZortIcon'
 
 interface Line {
   sku?: string; name?: string; qty?: number; unit?: string
@@ -154,7 +155,7 @@ function Inner() {
                 {/* 🔴 การ์ดชำระเงิน: ZORT มี (ใบแรก) — ท่อยังไม่ส่งต่อค่า paymentstatus ⇒ วาดไว้ตำแหน่งเดิมแต่ขึ้น "ยังไม่รู้" สีเทา
                        (CEO 19 ต.ค. 2569: ช่องที่ท่อยังไม่รองรับ ใส่แล้วปิดไว้พร้อมเหตุบนจอ — ไม่เดาค่า และไม่ซ่อนทั้งใบ) */}
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>฿</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}><ไอคอนZ k="฿" size={24} /></span>
                   <div className="text-right">
                     <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">สถานะการชำระเงิน</h2>
                     <div className="mt-2">
@@ -163,7 +164,7 @@ function Inner() {
                   </div>
                 </div>
                 <div className="bg-white rounded-[6px] p-5 flex items-center justify-between">
-                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}>▤</span>
+                  <span aria-hidden className="w-12 h-12 rounded-full grid place-items-center text-[22px] font-semibold" style={{ background: ZORT_ICON_BG, color: ZORT_BLUE }}><ไอคอนZ k="▤" size={24} /></span>
                   <div className="text-right">
                     <h2 className="font-['Boon',sans-serif] text-[14px] font-medium text-[#868e96] m-0">สถานะการโอนสินค้า</h2>
                     <div className="mt-2">
@@ -184,7 +185,7 @@ function Inner() {
                   /* 📏 ระยะตาม DOM การ์ดข้อมูลของ ZORT (วัดที่ใบโอน 20 ต.ค. 2569 ผังเดียวกัน): ตัวหนังสือห่างขอบ 50 · ป้าย 1/3 ค่า 2/3 */
                   <section key={หัว} className="px-5 py-3">
                     <div className="flex items-center gap-3 mb-4 pl-[30px]">
-                      <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}>{รูป}</span>
+                      <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k={รูป} size={17} color="#4165ed" /></span>
                       <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{หัว}</h2>
                     </div>
                     {/* 📏 แถวห่างกัน 31 แบบ ZORT (ภาพใบรับคืน + DOM ใบโอน 20 ต.ค. 2569: แถวสูง 23) ⇒ py-1 */}
