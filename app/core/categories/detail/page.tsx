@@ -253,18 +253,7 @@ function Inner() {
                   { ป้าย: 'ยอดขายเดือนที่แล้ว (บาท)', วง: '#ebf6ff', สี: '#2f8dde', รูป: '฿', ค่า: ค่า(ก่อน), ว่าง: ก่อน == null, เหตุ: ก่อน === null ? เดือนผิด : 'ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้' },
                   { ป้าย: 'ยอดขายเดือนนี้ (บาท)', วง: '#ffebeb', สี: '#f25757', รูป: '฿', ค่า: ค่า(นี้), ว่าง: นี้ == null, เหตุ: นี้ === null ? เดือนผิด : 'ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้' },
                 ]} />
-                <div className="mt-2">
-                  <ZortLookFold tone="gray" สรุป="ที่มาของเลข · ยอดขายของเราสูงกว่า ZORT ได้ (ยังไม่หักใบคืน)">
-                    <p className="mt-1">สองใบแรกคัดจากจอ ZORT (เก่าได้ ซื้อของเข้าแล้วต้องคัดใหม่) · ยอดขาย: ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้</p>
-                    <p className="mt-1">
-                      ระบบเราคิดเอง (ไม่ใช่เลข ZORT): {catSkus === null ? '' : <>SKU <b>{fmtNum(catSkus)}</b> · </>}
-                      มูลค่าคงเหลือตามทุนในกระจก <b>{NUM(cat?.onhand_value) === null ? '—' : fmtMoney(cat!.onhand_value as number)}</b> ·
-                      {' '}พร้อมขาย <b>{NUM(cat?.available_value) === null ? '—' : fmtMoney(cat!.available_value as number)}</b> ·
-                      {' '}ตามราคาขาย <b>{NUM(cat?.onhand_value_sell) === null ? '—' : fmtMoney(cat!.onhand_value_sell as number)}</b>
-                      {NUM(cat?.zortSkus) !== null && <> · ZORT นับ SKU <b>{fmtNum(cat!.zortSkus as number)}</b></>}
-                    </p>
-                  </ZortLookFold>
-                </div>
+                {/* กล่องพับที่มาของเลข ย้ายไปท้ายจอ (21 ต.ค. 2569) — ใต้การ์ดดันกราฟลง ~20 จาก ZORT · ยังเห็นบนจอ ไม่ถอด */}
               </div>
             )
           })()}
@@ -492,6 +481,21 @@ function Inner() {
                 </BtnGhost>
               </div>
             </div>
+          )}
+          {/* 📐 โหมดเหมือน ZORT: กล่องพับที่มาของเลขบนการ์ด (เดิมอยู่ใต้การ์ด) */}
+          {เหมือนZORT && (
+                <div className="mt-4">
+                  <ZortLookFold tone="gray" สรุป="ที่มาของเลข · ยอดขายของเราสูงกว่า ZORT ได้ (ยังไม่หักใบคืน)">
+                    <p className="mt-1">สองใบแรกคัดจากจอ ZORT (เก่าได้ ซื้อของเข้าแล้วต้องคัดใหม่) · ยอดขาย: ร้าน z1 · ตัดใบค้างจ่ายแล้ว · ยังไม่หักใบคืน ⇒ ZORT ต่ำกว่าได้</p>
+                    <p className="mt-1">
+                      ระบบเราคิดเอง (ไม่ใช่เลข ZORT): {catSkus === null ? '' : <>SKU <b>{fmtNum(catSkus)}</b> · </>}
+                      มูลค่าคงเหลือตามทุนในกระจก <b>{NUM(cat?.onhand_value) === null ? '—' : fmtMoney(cat!.onhand_value as number)}</b> ·
+                      {' '}พร้อมขาย <b>{NUM(cat?.available_value) === null ? '—' : fmtMoney(cat!.available_value as number)}</b> ·
+                      {' '}ตามราคาขาย <b>{NUM(cat?.onhand_value_sell) === null ? '—' : fmtMoney(cat!.onhand_value_sell as number)}</b>
+                      {NUM(cat?.zortSkus) !== null && <> · ZORT นับ SKU <b>{fmtNum(cat!.zortSkus as number)}</b></>}
+                    </p>
+                  </ZortLookFold>
+                </div>
           )}
         </>
       )}
