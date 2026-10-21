@@ -1,7 +1,7 @@
 // สินค้า → สินค้าหลากคุณสมบัติ — ผังจาก `zort-ui/30-zort-สินค้าหลากคุณสมบัติ-ว่าง.jpg`
 // ZORT มี 0 รายการ (ร้านไม่ได้ใช้สินค้าแบบมีตัวเลือก — แต่ละรุ่น/ขนาดเป็นคนละรหัสไปเลย)
 import LedgerScreen from '@/components/zort/LedgerScreen'
-import { กว้างZ } from '@/lib/โหมดเหมือนzort'
+import { กว้างZ, เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 
 export default function VariantsPage() {
   return (
@@ -12,7 +12,8 @@ export default function VariantsPage() {
         { label: 'รหัส', กว้าง: กว้างZ(87)?.width },
         { label: 'ชื่อ', กว้าง: กว้างZ(70)?.width },
         { label: 'คุณสมบัติ', กว้าง: กว้างZ(159)?.width },
-        { label: 'ชนิดสินค้า', กว้าง: กว้างZ(160)?.width },
+        /* DOM ZORT 21 ต.ค. 2569: หัว ชนิดสินค้า ชิดขวา (text-align right) */
+        { label: 'ชนิดสินค้า', right: เหมือนZORT, กว้าง: กว้างZ(160)?.width },
         { label: 'จำนวนคงเหลือ', right: true, กว้าง: กว้างZ(218)?.width },
         { label: 'จำนวนพร้อมขาย', right: true, กว้าง: กว้างZ(241)?.width },
       ]}
