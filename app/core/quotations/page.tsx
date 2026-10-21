@@ -371,7 +371,7 @@ export default function QuotationsPage() {
                 ⇒ แต่ **ต้องเขียนกำกับว่า "ทั้งหมด" รวมใบยกเลิกไว้เท่าไหร่** ตามกติกาแท็บใน CLAUDE.md
                    ไม่งั้นคนอ่าน 6 ใบแล้วไม่รู้ว่าครึ่งหนึ่งถูกยกเลิกไปแล้ว (ของจริง 18 ก.ย. 2569: ยกเลิก 3 จาก 6) */}
             {/* 🔴 แท็บห้ามถูกบีบจนตกขอบ ⇒ shrink-0 (บทเรียนจอใบซื้อ 19 ต.ค. 2569) */}
-            <div className={เหมือนZORT ? 'shrink-0' : 'contents'}>
+            <div className={เหมือนZORT ? 'min-w-0 max-w-full overflow-x-auto md:shrink-0 md:max-w-none md:overflow-visible' : 'contents'}>
             <Tabs
               tabs={[
                 { id: '', label: 'ทั้งหมด', count: all.length },
