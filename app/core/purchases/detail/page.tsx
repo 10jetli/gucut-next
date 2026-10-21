@@ -18,6 +18,7 @@ import { DETAIL_BTN_OFF } from '@/components/zort/headBtn'
 import { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'next/navigation'
 import Link from 'next/link'
+import NavPrevNext from '@/components/zort/NavPrevNext'
 import { PURCHASE_DETAIL_PAY_STATUS, PURCHASE_DETAIL_TRANSFER_STATUS, zortWord } from '@/lib/zort-words'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip, SKIP } from '@/components/ui/ErrorBox'
@@ -314,7 +315,10 @@ function Inner() {
         <Link href="/core/purchases" className="text-[#337ab7] hover:underline">‹ รายการซื้อ</Link>
       </p>
       <PageHead title="รายละเอียดรายการซื้อ" /* ตาม ZORT /Buy/Details (16 ต.ค. 2569) · เลขที่ใบอยู่ในช่อง "รายการ" */
-        actions={เหมือนZORT && no ? <เลื่อนใบ no={no} store={store} /> : undefined}
+        actions={เหมือนZORT && no ? (
+          <NavPrevNext ลิสต์URL={`/api/web/core?list=purchases&limit=200${store ? `&store=${store}` : ''}`} คีย์="number" ปัจจุบัน={no}
+            ลิงก์={(n) => `/core/purchases/detail?no=${encodeURIComponent(n)}${store ? `&store=${store}` : ''}`} />
+        ) : undefined}
         summary={เหมือนZORT ? (
           /* โหมดเหมือน ZORT: ZORT ไม่มีบรรทัดใต้หัวจอ ⇒ ที่มา/ร้าน/id เข้า ⓘ · ลิงก์ไม่บอกร้าน (ท่อเลือกให้) ยังขึ้นบนจอ */
           <>
@@ -617,34 +621,6 @@ function Field({ k, v }: { k: string; v?: string | null }) {
       <span className={`${DL_LABEL} min-w-[150px]`}>{k}</span>
       <span className={`${DL_VALUE} break-words`}>{v}</span>
     </div>
-  )
-}
-
-/** ‹ › เลื่อนใบแบบ ZORT (/Buy/Details มุมขวาบน "2 จาก 33 ‹ ›" · ภาพ 21 ต.ค. 2569)
- *  ลำดับ = ลำดับตั้งต้นของจอรายการซื้อ (วันที่ใหม่→เก่า · ท่อบอก sort=date dir=desc) ⇒ เลขตรงกับ ZORT
- *  ⚠️ แสดงเฉพาะเมื่อดึงมาครบทั้งชุด (total = จำนวนแถว) — ไม่ครบ = ไม่รู้ตำแหน่งจริง ⇒ ไม่วาด ดีกว่าโชว์เลขผิด */
-function เลื่อนใบ({ no, store }: { no: string; store: string }) {
-  const [ลิสต์, setลิสต์] = useState<string[] | null>(null)
-  useEffect(() => {
-    let ยกเลิก = false
-    fetch(`/api/web/core?list=purchases&limit=200${store ? `&store=${store}` : ''}`).then((r) => r.json()).then((j) => {
-      const rows: { number?: string }[] = Array.isArray(j?.rows) ? j.rows : []
-      if (!ยกเลิก && typeof j?.total === 'number' && j.total === rows.length) setลิสต์(rows.map((r) => String(r.number ?? '')))
-    }).catch(() => {})
-    return () => { ยกเลิก = true }
-  }, [store])
-  const i = ลิสต์ ? ลิสต์.indexOf(no) : -1
-  if (!ลิสต์ || i < 0) return null
-  const ลิงก์ = (n: string) => `/core/purchases/detail?no=${encodeURIComponent(n)}${store ? `&store=${store}` : ''}`
-  const ปุ่ม = (n: string | undefined, ป้าย: string, d: string) => n
-    ? <Link href={ลิงก์(n)} aria-label={ป้าย} title={`${ป้าย}: ${n}`} className="w-7 h-7 grid place-items-center rounded hover:bg-gray-100 text-[#3e3e3e]"><svg aria-hidden width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg></Link>
-    : <span aria-hidden className="w-7 h-7 grid place-items-center text-[#ced4da]"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d={d} /></svg></span>
-  return (
-    <span className="flex items-center gap-1 text-[13px] text-[#868e96]">
-      {(i + 1).toLocaleString('th-TH')} จาก {ลิสต์.length.toLocaleString('th-TH')}
-      {ปุ่ม(ลิสต์[i - 1], 'ใบก่อนหน้า', 'M15 6l-6 6 6 6')}
-      {ปุ่ม(ลิสต์[i + 1], 'ใบถัดไป', 'M9 6l6 6-6 6')}
-    </span>
   )
 }
 
