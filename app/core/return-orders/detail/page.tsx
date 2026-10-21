@@ -22,6 +22,9 @@ import ไอคอนZ from '@/components/zort/ZortIcon'
 
 interface Line {
   sku?: string; name?: string; qty?: number; unit?: string
+  /** ยอดบรรทัดแบน — ท่อ b5cde8cf (21 ต.ค. 2569) มาจาก totalprice ของ ZORT · **null = ZORT ไม่ส่งมา** (ท่อห้ามคิดแทนด้วยราคา × จำนวน) ·
+   *  ไม่มีคีย์ = ท่อรุ่นเก่า ⇒ อ่านจากก้อนดิบเหมือนเดิม */
+  amount?: number | null
   'ทุกช่องในบรรทัด'?: Record<string, unknown>
 }
 interface Resp {
@@ -298,7 +301,10 @@ function Inner() {
                           return <>
                             <td className={TDR}>{เงิน(raw.pricepernumber)}</td>
                             <td className={TDR}>{เงิน(raw.discountPerNumber, true)}</td>
-                            <td className={TDR}>{เงิน(raw.totalprice)}</td>
+                            {/* คีย์ amount มา = ท่อรุ่นใหม่ ⇒ ใช้ค่านั้นตรง ๆ (null ขึ้นขีดพร้อมเหตุ ไม่กลายเป็น 0) · ไม่มีคีย์ ⇒ ก้อนดิบเดิม */}
+                            <td className={TDR}>{'amount' in l
+                              ? (l.amount === null ? <span className="text-gray-400 cursor-help" title="ZORT ไม่ส่งยอดบรรทัดนี้มา — ไม่คิดแทนด้วยราคา × จำนวน">-</span> : เงิน(l.amount))
+                              : เงิน(raw.totalprice)}</td>
                           </>
                         })() : <td className={TD}>{l.unit || <span className="text-gray-300">—</span>}</td>}
                       </tr>
