@@ -49,6 +49,9 @@ const thaiDay = (back = 0) =>
  *  ⇒ ไม่มีช่องบอกว่าคลังไหนถูกลบ และไม่รู้ว่าท่อรวมคลังที่ลบแล้วมาด้วยไหม */
 const คลังที่ถูกลบยังไม่รู้ = 'ท่อส่งรายชื่อคลังมาโดยไม่มีช่องบอกว่าคลังไหนถูกลบ — ยังแยกไม่ได้ (ไม่ใช่ว่าไม่มีคลังที่ถูกลบ)'
 
+/** เกณฑ์ที่ถือว่ารอบคัดมูลค่าค้าง (ชม.) — ตัวคัดวิ่งทุกชั่วโมง ⇒ ข้ามไป 2 รอบติดยังไม่เตือน เกิน 3 ชม. เตือน · ที่เดียว ใช้ทั้งสองโหมด */
+const เกณฑ์คัดค้างชม = 3
+
 export default function CoreBranchesPage() {
   const [rows, setRows] = useState<Warehouse[]>([])
   const [note, setNote] = useState('')
@@ -90,6 +93,18 @@ export default function CoreBranchesPage() {
     const d = parseUtc(raw)
     return d ? thaiDayTime(d) : ''
   })()
+  /** 🔴 อายุของรอบคัด (ชม.) — จอบอกว่า "ตัวคัดวิ่งทุกชั่วโมง เก่ากว่า ZORT เล็กน้อย" แต่ 21 ต.ค. 2569 13:30 เจอค่าคัด 19/10 17:51 (~44 ชม.)
+   *  ⇒ ถ้อยคำ "เล็กน้อย" กลายเป็นคำยืนยันเท็จ ⇒ เกิน เกณฑ์คัดค้าง ต้องขึ้นคำเตือนบนจอ (ไม่ใช่ใน title) · null = ไม่รู้เวลาคัด (มีข้อความของมันเองแล้ว) */
+  const อายุคัดชม = (() => {
+    const d = parseUtc(rows.find((w) => w.valueCollectedAt)?.valueCollectedAt)
+    return d ? Math.max(0, (Date.now() - d.getTime()) / 3600e3) : null
+  })()
+  const คัดค้าง = อายุคัดชม !== null && อายุคัดชม > เกณฑ์คัดค้างชม
+  const คำเตือนคัดค้าง = คัดค้าง && (
+    <span className="block text-[12.5px] text-amber-800 mt-0.5">
+      ⚠️ ค่านี้คัดมาแล้ว {Math.floor(อายุคัดชม as number).toLocaleString('th-TH')} ชม. — นานกว่ารอบปกติ (ทุกชั่วโมง) ⇒ รอบคัดหลังจากนั้นไม่เข้ามา · มูลค่าอาจต่างจากจอ ZORT ตอนนี้มาก
+    </span>
+  )
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -237,6 +252,7 @@ export default function CoreBranchesPage() {
               มูลค่าสินค้าคงเหลือ คัดล่าสุด: {valueCollectedAt}{' '}
               <span className="text-gray-400 cursor-help text-[14px]"
                 title="มูลค่าสินค้าคงเหลือรายคลังคัดมาจากจอ ZORT ไม่ใช่คิดจากคลังเงา (เวลาไทย) · ตัวคัดวิ่งทุกชั่วโมง ⇒ ซื้อของเข้าหรือโอนของระหว่างรอบ เลขจะเก่ากว่าจอ ZORT เล็กน้อยเสมอ">ⓘ</span>
+              {คำเตือนคัดค้าง}
               </span>
               {/* ZORT มีปุ่ม "อัพเดท" (สั่งให้ ZORT คำนวณมูลค่าใหม่) — ของเราสั่ง ZORT ไม่ได้ ⇒ สีเทาพร้อมเหตุ ไม่ใช่ปุ่มหลอก */}
               <span title="ยังทำไม่ได้ — สั่งให้ ZORT คำนวณมูลค่าใหม่ต้องกดที่ ZORT · ของเรารอรอบคัดถัดไป (ทุกชั่วโมง)"
@@ -256,6 +272,7 @@ export default function CoreBranchesPage() {
               ? <> · <b>คัดล่าสุด {valueCollectedAt} (เวลาไทย)</b></>
               : <> · <b className="text-amber-700">ยังไม่รู้ว่าคัดเมื่อไหร่</b> — ท่อไม่ได้บอกเวลา</>}
             {' '}· ตัวคัดวิ่งทุกชั่วโมง ⇒ ซื้อของเข้าหรือโอนของระหว่างรอบ เลขจะเก่ากว่าจอ ZORT เล็กน้อยเสมอ
+            {คำเตือนคัดค้าง}
             {valuesError && (
               <span className="block mt-1 text-amber-900">
                 ⚠️ <b>รอบคัดล่าสุดอ่านมูลค่าไม่สำเร็จ</b> ({String(valuesError)})
