@@ -96,8 +96,10 @@ const payTh = (s?: string | null) =>
 const transferTh = (s?: string | null) =>
   !s ? 'ยังไม่ได้เก็บช่องนี้' : zortWord(SALE_DETAIL_TRANSFER_STATUS, s).text
 
-function Card({ title, icon, children, className = '' }: {
+function Card({ title, icon, children, className = '', หัวเยื้อง }: {
   title?: string; icon?: string; children: React.ReactNode; className?: string
+  /** โหมดเหมือน ZORT: ระยะหัวการ์ดจากขอบซ้าย (px) — การ์ดข้อมูล/ลูกค้าของ ZORT หัวเยื้องเข้ามากกว่าการ์ดอื่น · ไม่ส่ง = 20 */
+  หัวเยื้อง?: number
 }) {
   return (
     /* 📏 ZORT (วัด /Sell/Details 17 ต.ค. 2569): การ์ดพื้นขาว ไม่มีขอบ มุม 6 · หัวการ์ด Boon 14 น้ำหนัก 500 #868e96
@@ -105,7 +107,7 @@ function Card({ title, icon, children, className = '' }: {
           ⇒ ค่าเดิมข้างบนผิด/เก่า · โหมดเหมือน ZORT ใช้ค่าที่วัดซ้ำ (นอกโหมดคงเดิม) */
     <div className={`bg-white rounded-md ${className}`}>
       {title && (เหมือนZORT ? (
-        <div className="flex items-center gap-3 px-5 pt-5 mb-4">
+        <div className="flex items-center gap-3 px-5 pt-5 mb-4" style={หัวเยื้อง ? { paddingLeft: หัวเยื้อง } : undefined}>
           {icon && <span aria-hidden className="w-8 h-8 rounded-full grid place-items-center text-[14px]" style={{ background: ZORT_ICON_BG }}><ไอคอนZ k={icon} size={17} color="#4165ed" /></span>}
           <h2 className="font-['Kanit',sans-serif] text-[20px] font-medium text-[#3e3e3e] m-0">{title}</h2>
         </div>
@@ -432,7 +434,8 @@ function DetailInner() {
           {/* การ์ดคู่: ข้อมูล / ลูกค้า
               📐 โหมดเหมือน ZORT (วัด 19 ต.ค. 2569): ZORT เป็น **การ์ดเดียว** กว้างเต็ม ข้อมูลซ้าย ลูกค้าขวา ⇒ พื้นขาวที่กล่องนอก · ไม่มีช่องคั่น */}
           <div className={`grid grid-cols-1 md:grid-cols-2 ${เหมือนZORT ? 'gap-0 bg-white rounded-[6px] py-2' : 'gap-4'}`}>
-            <Card title="ข้อมูล" icon="📄">
+            {/* 📏 หัว ข้อมูล/ลูกค้า: ZORT วงไอคอนห่างขอบการ์ด 54 / 553 · ของเรา 20 / 533 (DOM+ภาพ /Sell/Details 21 ต.ค. 2569) */}
+            <Card title="ข้อมูล" icon="📄" หัวเยื้อง={54}>
               <div className={เหมือนZORT ? 'px-5 py-3' : 'px-4 py-3'}>
                 <Field label="รายการ" value={<span className="text-blue-600 font-medium">{order.number}</span>} />
                 {/* 📐 คำของ ZORT `/Sell/Details` (อ่าน 16 ต.ค. 2569): ประเภทรายการ = **ขายสินค้าออก** (เดิมเราเขียน "รายการขาย") */}
@@ -453,7 +456,7 @@ function DetailInner() {
                   value={order.source === 'z2' ? 'ZORT สาขา 2' : 'ZORT สาขา 1'} />
               </div>
             </Card>
-            <Card title="ลูกค้า" icon="👤">
+            <Card title="ลูกค้า" icon="👤" หัวเยื้อง={40}>
               {/* 📏 ZORT /Sell/Details ป้ายคอลัมน์ขวาเริ่ม x529 ของการ์ด 998 · ของเรา x548 ⇒ ช่องในซ้ายลด 15 (DOM 21 ต.ค. 2569) */}
               <div className={เหมือนZORT ? 'pl-[5px] pr-5 py-3' : 'px-4 py-3'}>
                 {/* 📐 โหมดเหมือน ZORT: ผู้สร้างรายการ อยู่บรรทัดแรกของการ์ดลูกค้า (ภาพ /Sell/Details 20 ต.ค. 2569) */}
@@ -461,7 +464,8 @@ function DetailInner() {
                   <Field label="ผู้สร้างรายการ" value={order.create_user || '-'} />
                 )}
                 <Field label="ชื่อลูกค้า" value={order.customer || '—'} />
-                <Field label="เบอร์โทรศัพท์" value="คลังเงาไม่ได้เก็บไว้" muted />
+                {/* คำของ ZORT /Sell/Details: เบอร์โทรศัพท์ลูกค้า */}
+                <Field label={เหมือนZORT ? 'เบอร์โทรศัพท์ลูกค้า' : 'เบอร์โทรศัพท์'} value="คลังเงาไม่ได้เก็บไว้" muted />
                 <Field label="ที่อยู่ลูกค้า" value="คลังเงาไม่ได้เก็บไว้" muted />
               </div>
             </Card>
