@@ -54,7 +54,9 @@ def ยังโหลด(pg):
           const m=s.backgroundColor.match(/rgba?\\(([^)]+)\\)/);if(!m)return false;const a=m[1].split(',').map(Number);
           const bg=a.length>3?a[3]:1;if(bg<=0)return false;
           const eff=bg*Number(s.opacity);return eff>0.05&&eff<0.95})}""")
-        return 'กำลังโหลด' in t or 'Loading...' in t or bool(หมุน) or bool(ม่าน)
+        # 🔴 จอเราหลายจอเขียน "กำลังถาม ZORT…" / "กำลังถาม…" ระหว่างรอท่อ (ไม่ใช่ "กำลังโหลด") ⇒ เดิมถ่ายภาพจอเราตอนยังว่าง
+        #    (คืนสินค้า 18.4 จากภาพ "กำลังถาม ZORT…" 21 ต.ค. 2569)
+        return 'กำลังโหลด' in t or 'กำลังถาม' in t or 'Loading...' in t or bool(หมุน) or bool(ม่าน)
     except Exception: return False
 
 def ไป(pg, url):
