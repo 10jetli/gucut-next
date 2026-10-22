@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { เก็บโทเคน } from '@/lib/registry-sheet'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,19 +26,6 @@ export async function GET(req: NextRequest) {
   const data = await res.json()
   if (!res.ok || !data.refresh_token) {
     return NextResponse.json({ error: 'แลก token ไม่สำเร็จ', detail: data }, { status: 500 })
-  }
-
-  /* 📥 สิทธิ์อ่านชีททะเบียน (state=registry) — **ไม่โชว์ token บนจอ** เก็บลง Blob เลย
-     🔴 เก็บเฉพาะเมื่อ token นี้เปิดชีททะเบียนได้จริง (เส้นนี้อยู่นอกกำแพงล็อกอิน ⇒ บัญชีอื่นกดได้แต่ทับของเดิมไม่ได้) */
-  if (req.nextUrl.searchParams.get('state') === 'registry') {
-    const ผล = await เก็บโทเคน(data.refresh_token)
-    const html = `<!doctype html><html lang="th"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<body style="font-family:sans-serif;max-width:640px;margin:40px auto;padding:0 16px">
-${ผล.ok
-  ? `<h2>✅ อนุญาตแล้ว</h2><p>ระบบอ่านชีททะเบียนได้แล้ว (อ่านอย่างเดียว) จะดึงเองทุก 15 นาที</p><p style="color:#888;font-size:13px">ไม่ต้องทำอะไรต่อ ปิดหน้านี้ได้เลย</p>`
-  : `<h2>⚠️ ยังไม่สำเร็จ</h2><p>บัญชีที่กดอนุญาตเปิดชีททะเบียนไม่ได้ — ต้องกดด้วยบัญชีที่ได้รับแชร์ชีทนั้น</p><p style="color:#888;font-size:13px">${ผล.เหตุ.replace(/[<>&]/g, '')}</p>`}
-</body></html>`
-    return new NextResponse(html, { status: ผล.ok ? 200 : 403, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
   }
 
   const html = `<!doctype html><html lang="th"><meta charset="utf-8">

@@ -1,40 +1,43 @@
 /* 🔐 **ไม่เปิดสาธารณะโดยตั้งใจ:** scheduled function ⇒ Netlify เรียกภายใน ไม่ผ่าน URL สาธารณะ
- * 📥 ตัวดึงชีททะเบียนอัตโนมัติทุก 15 นาที — ท่านประธานสั่ง 22 ต.ค. 2569 ("ทำให้มันออโต้สิ")
- *    งานจริงอยู่ที่ lib/registry-sheet.ts (ผ่านเส้น /api/registry-sheet-run) — ไฟล์นี้แค่กดตามเวลา + เตือน
- * ⚠️ เตือนเมื่อสถานะเปลี่ยนไปเป็นของเสีย (อ่านไม่ได้ · หยุด-*) และเมื่อกลับมาพร้อม — ไม่เตือนซ้ำทุก 15 นาที
- *    แต่ "สำรวจ"/"ยังไม่ได้อนุญาต" ไม่เตือน (เป็นงานที่รอคนอยู่แล้ว เห็นบนจอผังที่ /core/registry) */
+ * 📥 ตัวเฝ้าความเงียบของขาชีททะเบียน — ข้อมูลจริงมาจาก Apps Script ที่ POST /api/registry-sheet-push ทุก 15 นาที
+ *    (เปลี่ยนวิธี 22 ต.ค. 13:39: เลิก OAuth-ดึงเอง · ไฟล์นี้เลยเหลือหน้าที่เดียว = จับว่าสคริปต์หยุดส่ง)
+ * กติกา: เคยส่งแล้วแต่เงียบเกิน 35 นาที (รอบ 15 × 2 + เผื่อ) ⇒ จดรอบ 'อ่านไม่ได้' ลง log เดียวกัน (จอแดงเอง) + เด้ง Telegram
+ *        ไม่เคยส่งเลย ⇒ ไม่เตือน (ยังไม่ติดตั้ง — ผังขึ้น "ยังไม่เคยส่ง" อยู่แล้ว) · เตือนเฉพาะตอนสถานะเปลี่ยน */
 import { notify } from "./lib-notify.mjs";
 import { getStore } from "@netlify/blobs";
 
-const SITE = process.env.URL || "https://admin.gucut.com";
-const เสีย = (s) => s === "อ่านไม่ได้" || String(s).startsWith("หยุด-");
+const เพดานนาที = 35;
+const เงียบ = "ไม่มีการส่งจากสคริปต์เกิน " + เพดานนาที + " นาที — Apps Script ในบัญชีท่านอาจหยุด/ล้ม ดู execution log ฝั่ง Google";
 
 export default async () => {
-  const secret = process.env.DRIVESYNC_SECRET;
-  let รอบ = null, ผิด = "";
-  try {
-    const r = await fetch(`${SITE}/api/registry-sheet-run?secret=${encodeURIComponent(secret || "")}`, {
-      method: "POST", signal: AbortSignal.timeout(24000),
-    });
-    const d = await r.json().catch(() => null);
-    รอบ = d?.รอบ ?? null;
-    if (!r.ok || !รอบ) ผิด = `เส้นตอบ ${r.status} ${d?.error ?? ""}`;
-  } catch (e) {
-    ผิด = String(e?.message || e);
+  const s = getStore("registry-sheet");
+  const log = (await s.get("log", { type: "json" }).catch(() => null)) ?? [];
+  if (!Array.isArray(log) || log.length === 0) {
+    return new Response(JSON.stringify({ สถานะ: "ยังไม่เคยส่ง" }), { headers: { "content-type": "application/json" } });
   }
-  const สถานะ = รอบ?.สถานะ ?? "อ่านไม่ได้";
-  const store = getStore("registry-sheet");
-  const ก่อน = await store.get("last-alert-state", { type: "text" }).catch(() => null);
-  if (เสีย(สถานะ) || ผิด) {
-    if (ก่อน !== สถานะ) {
-      await notify(`🔴 ตัวดึงชีททะเบียน: ${สถานะ}${ผิด ? ` · ${ผิด}` : ""}${รอบ?.เหตุ ? `\n${รอบ.เหตุ}` : ""}${รอบ?.ลดฮวบ?.length ? `\n${รอบ.ลดฮวบ.slice(0, 8).join("\n")}` : ""}\nเป้าเดิมไม่ถูกแทน · ดู /core/registry`);
-      await store.set("last-alert-state", สถานะ);
+  const ล่าสุด = log[0];
+  const จริงล่าสุด = log.find((x) => x?.เหตุ !== เงียบ); // รอบจริงจากสคริปต์ (ข้ามรอบที่ตัวเฝ้าจดเอง)
+  const ms = Date.parse(String(จริงล่าสุด?.เมื่อ ?? ""));
+  const เงียบอยู่ = !Number.isFinite(ms) || Date.now() - ms > เพดานนาที * 60_000;
+  const ก่อน = await s.get("last-alert-state", { type: "text" }).catch(() => null);
+  if (เงียบอยู่) {
+    if (ล่าสุด?.เหตุ !== เงียบ) {
+      const เดิม = (await s.get("log", { type: "json" }).catch(() => null)) ?? [];
+      await s.setJSON("log", [{ เมื่อ: new Date().toISOString(), สถานะ: "อ่านไม่ได้", เหตุ: เงียบ }, ...เดิม].slice(0, 200));
     }
-  } else if (สถานะ === "พร้อม" && ก่อน && เสีย(ก่อน)) {
-    await notify(`✅ ตัวดึงชีททะเบียนกลับมาปกติ (ก่อนหน้า: ${ก่อน})`);
-    await store.set("last-alert-state", สถานะ);
+    if (ก่อน !== "เงียบ") {
+      await notify(`🔴 ขาชีททะเบียน: ${เงียบ}\nเป้าเดิมไม่ถูกแทน · ดู /core/registry`);
+      await s.set("last-alert-state", "เงียบ");
+    }
+  } else if (ก่อน === "เงียบ") {
+    await notify(`✅ ขาชีททะเบียนกลับมาส่งแล้ว (รอบล่าสุด ${จริงล่าสุด?.สถานะ})`);
+    await s.set("last-alert-state", "ปกติ");
+  } else if (["หยุด-ลดฮวบ", "หยุด-หัวเปลี่ยน"].includes(ล่าสุด?.สถานะ) && ก่อน !== ล่าสุด.สถานะ) {
+    // ตาข่าย pipeline สะดุด — เตือนครั้งเดียวต่อสถานะ (ของจริงรออยู่ให้คนดู)
+    await notify(`🔴 ขาชีททะเบียน: ${ล่าสุด.สถานะ} · ${ล่าสุด.เหตุ ?? ""}${ล่าสุด.ลดฮวบ?.length ? "\n" + ล่าสุด.ลดฮวบ.slice(0, 8).join("\n") : ""}`);
+    await s.set("last-alert-state", ล่าสุด.สถานะ);
   }
-  return new Response(JSON.stringify({ สถานะ, ผิด }), { headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify({ เงียบอยู่, รอบล่าสุด: จริงล่าสุด?.สถานะ ?? null }), { headers: { "content-type": "application/json" } });
 };
 
 export const config = { schedule: "*/15 * * * *" };

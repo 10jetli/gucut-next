@@ -2,7 +2,8 @@
 /* ด่านก่อน build: **ทุกเส้นใน `PUBLIC_PATHS` ต้องมีการตรวจกุญแจของตัวเอง**
  *
  * 🔴 ที่มา (19 ก.ย. 2569 · ใบ S5) — เอกสารเขียนว่าเว็บเปิด 3 เส้น
- *    ของจริง **16 รายการใน PUBLIC_PATHS**  วัดได้(รายการใน PUBLIC_PATHS)=16
+ *    ของจริง **17 รายการใน PUBLIC_PATHS**  วัดได้(รายการใน PUBLIC_PATHS)=17
+ *    🔁 **16 ⇒ 17 เมื่อ 22 ต.ค. 2569** — เพิ่ม `/api/registry-sheet-push` รับชีทจาก Apps Script (REGISTRY_PUSH_KEY เวลาคงที่)
  *    🔁 **15 ⇒ 16 เมื่อ 22 ต.ค. 2569** — เพิ่ม `/api/flow-status-upload` รับสถานะรายขาจาก g1 (POST ตรวจ x-admin-key)
  *    🔁 **14 ⇒ 15 เมื่อ 22 ต.ค. 2569** — เพิ่ม `/api/registry-sheet-run` ตัวดึงชีททะเบียน (POST ตรวจ DRIVESYNC_SECRET · GET ตรวจ x-admin-key)
  *    🔁 **13 ⇒ 14 เมื่อ 15 ต.ค. 2569** — เพิ่ม `/api/bills/scan` ให้ g1 สั่งสแกนบิลทางเมล

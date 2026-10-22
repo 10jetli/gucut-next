@@ -46,6 +46,8 @@ const PUBLIC_PATHS = ['/login', '/api/auth', '/api/google', '/api/telegram', '/a
   '/api/build',
   /* 📥 ตัวดึงชีททะเบียน (22 ต.ค. 2569) — POST ตรวจ DRIVESYNC_SECRET · GET ตรวจ x-admin-key เองในเส้น · ไม่ตั้งกุญแจ = ปิด */
   '/api/registry-sheet-run',
+  /* 📥 รับชีททะเบียนจาก Apps Script (22 ต.ค. 2569 · ท่า ads-push) — POST ตรวจ REGISTRY_PUSH_KEY เวลาคงที่ · ไม่ตั้ง = ปิด */
+  '/api/registry-sheet-push',
   /* 🧭 รับสถานะรายขาของผังสต็อกจาก g1 (22 ต.ค. 2569) — POST ตรวจ x-admin-key เองในเส้น · ไม่ตั้งกุญแจ = ปิด */
   '/api/flow-status-upload']
 /* 🔒 **เส้นสาธารณะที่ต้องเทียบ "เต็มเส้น" เท่านั้น** (เพิ่ม 28 ก.ย. 2569 · เงื่อนไข ③ ของฝั่งท่อ)
