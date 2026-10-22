@@ -154,6 +154,9 @@ export default function หน้าหัวสมอง() {
         {Object.keys(ผู้เชื่อม).length === 0 ? (
           <div className="text-sm text-gray-600">ยังไม่รู้ — ไฟล์ประกาศยังไม่มีข้อมูลส่วนนี้</div>
         ) : (
+          <>
+          {/* คำอธิบายสัญลักษณ์ — ⬜ เดิมไม่มีที่ไหนบอกความหมายเลย (ใบ 12:59 กวาดทั้งคลาส) */}
+          <p className="mb-1.5 text-[11.5px] leading-snug text-gray-500">✅ เชื่อมแล้ว · ⬜ ยังไม่ได้เชื่อม · ❔ ยังไม่ได้ตรวจ</p>
           <ul className="space-y-1 text-sm">
             {Object.entries(ผู้เชื่อม).map(([ชื่อ, ค่า]) => (
               <li key={ชื่อ}>
@@ -162,6 +165,7 @@ export default function หน้าหัวสมอง() {
               </li>
             ))}
           </ul>
+          </>
         )}
         {Object.keys(ชีพจร).length > 0 && (
           <div className="mt-2 rounded bg-gray-50 p-2 text-xs">
@@ -216,6 +220,9 @@ export default function หน้าหัวสมอง() {
         {Object.keys(งานตามเวลา).length === 0 ? (
           <div className="text-gray-600">ยังไม่รู้ — ไฟล์ประกาศยังไม่มีข้อมูลส่วนนี้</div>
         ) : (
+          <>
+          {/* คำอธิบาย 🟢/⬜ หน้าชื่องาน — เดิมไม่มีที่ไหนบอกความหมาย (ใบ 12:59 กวาดทั้งคลาส) */}
+          <p className="mb-1.5 text-[11.5px] leading-snug text-gray-500">🟢 ตัวตั้งเวลากำลังนับถอยหลัง · ⬜ ยังไม่สตาร์ท</p>
           <table className="w-full text-left">
             <thead className="text-xs text-gray-500">
               <tr><th className="py-1">งาน</th><th>รอบถัดไป</th><th>รอบล่าสุด</th></tr>
@@ -232,6 +239,7 @@ export default function หน้าหัวสมอง() {
               ))}
             </tbody>
           </table>
+          </>
         )}
         <div className="mt-2 text-xs text-gray-500">
           อ่านจาก <code>systemctl --user list-timers</code> ของจริง —

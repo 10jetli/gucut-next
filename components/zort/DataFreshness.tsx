@@ -1,4 +1,5 @@
 'use client'
+import { useState } from 'react'
 import { มิลลิวินาทีจากท่อ } from '@/lib/format'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 // บรรทัด "ข้อมูล ณ เวลา…" — บอกอายุของตัวเลขบนจอ
@@ -65,6 +66,8 @@ export default function DataFreshness(
     scheduleNote?: string
   },
 ) {
+  /* จิ้มเวลา ⏱ ในโหมดเหมือน ZORT เพื่อกางคำอธิบายเต็ม — เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี hover (ใบ 12:59) */
+  const [กาง, setกาง] = useState(false)
   const synced = parseUtc(freshness?.syncedAtUtc)
   const changed = parseUtc(freshness?.changedAtUtc)
   const rangeChanged = parseUtc(freshness?.rangeChangedAtUtc)
@@ -99,23 +102,30 @@ export default function DataFreshness(
      🔴 **ยกเว้นตอนข้อมูลเก่าเกิน (stale)** — นั่นคือคำเตือนว่าตัวเลขบนจออาจไม่ใช่ของล่าสุด
         ซ่อนไปด้วยคือทำให้จอโกหกเพื่อให้เหมือนต้นแบบ ซึ่งแย่กว่าไม่เหมือน
      🔑 คำอธิบายเต็มยังอยู่ใน title เหมือนเดิม ⇒ ซ่อน ไม่ใช่ลบ */
-  if (เหมือนZORT && !stale) {
+  if (เหมือนZORT && !stale && !กาง) {
     return (
-      <span className="text-[12px] text-gray-400 mb-2 inline-block cursor-help" title={tip}>
+      <button type="button" onClick={() => setกาง(true)}
+        className="text-[12px] text-gray-400 mb-2 inline-block cursor-help" title={tip}>
         ⏱ {thaiClock(synced)}
-      </span>
+      </button>
     )
   }
   return (
     <p
       className={`text-[12.5px] mb-2 ${stale ? 'text-amber-800 bg-amber-50 border border-amber-200 rounded px-3 py-2' : 'text-gray-500'}`}
       title={tip}
+      onClick={เหมือนZORT && !stale ? () => setกาง(false) : undefined}
     >
       ⏱ ข้อมูล ณ <b>{thaiClock(synced)}</b> (เวลาไทย)
       {stale
         ? <> — <b>เงียบมาแล้ว {mins.toLocaleString('th-TH')} นาที</b> ทั้งที่ปกติซิงก์ทุก {everyMinutes} นาที
           {' '}⇒ ตัวเลขบนจอนี้อาจไม่ใช่ของล่าสุด</>
         : <span className="text-gray-400"> · {mins <= 1 ? 'เมื่อครู่นี้' : `${mins.toLocaleString('th-TH')} นาทีที่แล้ว`}</span>}
+      {เหมือนZORT && !stale && (
+        <span className="block text-[11px] text-gray-400 mt-0.5">
+          เวลานี้คือรอบซิงก์จาก ZORT ล่าสุด ไม่ใช่เวลาที่ข้อมูลเปลี่ยน · จิ้มอีกทีเพื่อย่อ
+        </span>
+      )}
     </p>
   )
 }

@@ -250,6 +250,14 @@ export default function ChatCommercePage() {
               )
             })}
           </div>
+          {/* คำอธิบายจุดสี — เดิมความหมายอยู่แค่ใน title/สไตล์ ซึ่งมือถือไม่มี hover (ใบ 12:59 กวาดทั้งคลาส)
+              จุดเทาโชว์เฉพาะตอนมีช่องที่ยังไม่เชื่อมจริง · จุดแดงอยู่ในลิสต์แชทข้างล่าง */}
+          {(CHANNELS.some((c) => !c.live) || webUnread > 0) && (
+            <p className="px-3 pt-1.5 text-[10.5px] leading-snug text-gray-400">
+              {CHANNELS.some((c) => !c.live) && <><span className="inline-block w-1.5 h-1.5 rounded-full bg-gray-300 align-middle mr-1" />ช่องยังไม่ได้เชื่อม{webUnread > 0 && <> · </>}</>}
+              {webUnread > 0 && <><span className="inline-block w-2 h-2 rounded-full bg-red-500 align-middle mr-1" />มีข้อความยังไม่อ่าน</>}
+            </p>
+          )}
 
           <div className="px-3 py-2 border-b border-gray-100">
             <input

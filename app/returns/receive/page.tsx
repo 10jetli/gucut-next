@@ -535,6 +535,12 @@ export default function ReturnReceivePage() {
             <button onClick={() => fileRef.current?.click()}
               className="w-20 h-20 rounded border-2 border-dashed border-gray-300 text-gray-400 text-[24px]">📷</button>
           </div>
+          {/* คำอธิบายป้ายมุมรูป — เดิมอยู่แค่ใน title ซึ่งมือถือ (จอหลักของหน้านี้) ไม่มี hover (ใบ 12:59) */}
+          {photos.length > 0 && (
+            <p className="text-[11px] text-gray-400 -mt-1 mb-3 leading-snug">
+              ป้ายมุมรูป: <span className="text-emerald-700 font-semibold">✓</span> ส่งแล้ว · <span className="text-red-600 font-semibold">!</span> ส่งไม่สำเร็จ ระบบจะส่งซ้ำให้ · … ยังไม่ส่ง
+            </p>
+          )}
           {doc && (
             <p className="text-[12.5px] text-blue-900 bg-blue-50 border border-blue-200 rounded px-2.5 py-1.5 mb-3">
               📌 ใบ <span className="font-mono">{doc.returnId}</span> ถูกรับไว้แล้วแต่<b>ยังไม่มีรูป</b> —
