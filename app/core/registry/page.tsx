@@ -287,11 +287,26 @@ export default function Page() {
                         const จ = จองอยู่(z)
                         const ป้าย = (v: number | null) =>
                           v === null ? <span className="text-gray-400">—</span> : <b>{v}</b>
+                        /* 🔑 22 ต.ค. 2569 (ท่านเห็นช่องนี้แล้วเข้าใจว่า ZORT ไม่มีของ — CEO วัดแล้ว ZORT มีครบทั้ง 24 รหัส):
+                           เดิมเขียนแค่ "N รหัส — กดดู" ⇒ คนที่ไม่กดไม่มีวันเห็นรหัสหรือยอด
+                           ⇒ โชว์ทุกรหัสในแถวเลย รหัสละบรรทัด (ยังไม่บวกรวม ตามเหตุในคอมเมนต์ข้างบน) · ยังไม่อ่าน/อ่านไม่ได้ เขียนตรง ๆ ไม่ขึ้น 0 */
                         if (!หนึ่งรหัส) return (
                           <td className={TD} colSpan={3}>
-                            <span className="text-amber-700 text-[12.5px]">
-                              {x.รหัสสินค้า.length} รหัสในขนาดนี้ — กดดูรายรหัส
-                            </span>
+                            <ul className="m-0 p-0 list-none space-y-0.5 text-[12.5px]">
+                              {x.รหัสสินค้า.map((sku) => {
+                                const zz: สภาพZORT = zort[sku] ?? { สถานะ: 'ยังไม่อ่าน' }
+                                return (
+                                  <li key={sku} className="whitespace-nowrap">
+                                    <span className="font-mono text-gray-700">{sku}</span>{' · '}
+                                    {zz.สถานะ === 'มีค่า'
+                                      ? <>คงเหลือ <b>{zz.คงเหลือ}</b> · พร้อมขาย <b>{zz.พร้อมขาย}</b></>
+                                      : zz.สถานะ === 'ไม่มีรหัสนี้'
+                                        ? <span className="text-red-600">ZORT ไม่มีรหัสนี้</span>
+                                        : <span className="text-gray-400">{zz.สถานะ === 'ยังไม่อ่าน' ? 'กำลังอ่าน ZORT…' : 'อ่าน ZORT ไม่ได้'}</span>}
+                                  </li>
+                                )
+                              })}
+                            </ul>
                           </td>
                         )
                         return (
