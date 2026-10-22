@@ -248,6 +248,21 @@ export default function Page() {
         </div>
       )}
 
+      {/* 🔑 คำอธิบายสัญลักษณ์ต้องอยู่บนจอ (22 ต.ค. 2569 — ท่านถามว่าจุดเขียวแปลว่าอะไร · เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี) */}
+      {(เลื่อย.length > 0 || บาร์.length > 0) && (
+        <div className="mt-4 bg-white border border-gray-200 rounded-md px-3 py-2 text-[12.5px] text-gray-700 leading-relaxed" aria-label="คำอธิบายสัญลักษณ์">
+          <b>อ่านตารางยังไง</b>
+          <ul className="m-0 mt-1 p-0 list-none grid gap-x-6 gap-y-0.5 sm:grid-cols-2">
+            <li>🟢 ข้างรหัส = ZORT รู้จักรหัสนี้ (อ่านกลับมาแล้วเจอ)</li>
+            <li>🔴 ข้างรหัส = ZORT ตอบว่าไม่มีรหัสนี้ — ยังไม่ได้เชื่อม</li>
+            <li>⚪ ข้างรหัส = ยังอ่าน ZORT ไม่เสร็จ หรืออ่านไม่ได้ — ไม่รู้ ไม่ใช่ไม่มี</li>
+            <li><span className="text-gray-400">—</span> ในช่องตัวเลข = ยังไม่รู้ค่า (ไม่ใช่ศูนย์)</li>
+            <li><b className="text-amber-700">ตัวเลขสีส้ม</b> ในช่องติดจอง = มีใบค้างจองของอยู่</li>
+            <li><span className="bg-red-50 px-1">แถวพื้นแดง</span> = ทะเบียนกับตารางในโค้ดไม่ตรงกัน</li>
+          </ul>
+        </div>
+      )}
+
       {[{ หัว: 'เลื่อยโซ่ยนต์ (ลซ.7/1)', ชุด: เลื่อย }, { หัว: 'แผ่นบังคับโซ่ (ลซ.7/2)', ชุด: บาร์ }]
         .filter((g) => g.ชุด.length > 0)
         .map((g) => (
