@@ -98,12 +98,17 @@ LOG="/tmp/prepush-$(basename "$PWD").log"
 #    (ของจริงที่นี่ 15 ต.ค. 2569: `edea7030` ขึ้น remote จริงแต่สมุดจดว่า `fetch origin: fast-forward`)
 #    ⇒ นาฬิกาจะเก่ากว่าความจริง ⇒ **ปล่อย push ที่ถี่เกินเกณฑ์เงียบ ๆ**
 #    🔑 วันนี้ยังไม่ลอกมา เพราะรีโปนี้ **ไม่มีใครใช้ reflog เป็นนาฬิกาเลย** ⇒ ลอกมาก็ได้ด่านที่ไม่มีใครเรียก
-LOCKFILE="${GUCUT_PREPUSH_LOCK:-$HOME/.gucut-prepush-$(basename "$PWD").lock}"
+# 🔑 22 ต.ค. 2569 (ใบ t_mvj0zcs8 · gucut2): ล็อกต่อ **ปลายทาง** ไม่ใช่ชื่อโฟลเดอร์
+#    เดิม basename "$PWD" ⇒ pvwt กับ ~/gucut-next ได้ล็อกคนละใบ (ไม่กันซ้อน) · ~/gucut-next กับ ~/g2/gucut-next ได้ใบเดียวกันโดยบังเอิญ
+#    และ git-common-dir ก็ใช้ไม่ได้ (หลักคืน .git สัมพัทธ์ · worktree คืนเส้นทางสมบูรณ์ · โคลนแยกได้ dir ของตัวเอง — CEO วัด 11:24)
+#    ⇒ คีย์ = md5 ของ URL ปลายทาง ($2 ที่ git ส่งให้ฮุค) — ของที่ห้ามเกิดพร้อมกันคือ "ยิงขึ้นที่เดียวกัน"
+_DEST="${2:-${1:-unknown}}"
+LOCKFILE="${GUCUT_PREPUSH_LOCK:-$HOME/.gucut-prepush-$(printf '%s' "$_DEST" | md5sum | cut -c1-12).lock}"
 exec 9>"$LOCKFILE" 2>/dev/null || true
 if command -v flock >/dev/null 2>&1; then
   if ! flock -n 9; then
     echo "🛑 **มี push ของรีโปนี้กำลังวิ่งอยู่ — ไม่ push ซ้อน**"
-    echo "   ⇒ รอตัวแรกจบก่อน (ธง $HOME/.gucut-prepush-running หายเมื่อไหร่ = จบ)"
+    echo "   ⇒ รอตัวแรกจบก่อน — ⚠️ ดูว่าจบจริงจาก process ไม่ใช่จากธง: pgrep -af 'hooks/pre-push' (ธงหาย ≠ จบ · ธงอยู่ ≠ ยังวิ่ง)"
     echo "   🔑 ถ้าตัวแรกสำเร็จไปแล้ว ของจะขึ้นครบอยู่แล้ว ⇒ **ห้าม --force**"
     echo "   📏 ตรวจของจริงที่ปลายทางด้วย: git ls-remote origin main   (ไม่ใช่ fetch — fetch ขยับ ref ที่ใช้ตัดสิน)"
     exit 1
@@ -113,9 +118,12 @@ else
 fi
 
 FLAG="${GUCUT_PREPUSH_FLAG:-$HOME/.gucut-prepush-running}"
-printf '%s\n%s\n%s\n' "$PWD" "$(git rev-parse HEAD)" "$(date +%s)" > "$FLAG" 2>/dev/null || true
+# บรรทัด 4 = เจ้าของธง (pid + เวลาเริ่มของ pid — pid หมุนกลับมาซ้ำได้) · pre-commit อ่านแค่บรรทัด 1–3 ⇒ เข้ากันได้
+_FLAG_OWNER="$$ $(ps -o lstart= -p $$ 2>/dev/null | tr -s ' ')"
+printf '%s\n%s\n%s\n%s\n' "$PWD" "$(git rev-parse HEAD)" "$(date +%s)" "$_FLAG_OWNER" > "$FLAG" 2>/dev/null || true
 # 🔑 ลบธงทุกทางออก — รวมตอนถูกฆ่า (ไม่งั้นธงค้างแล้วบล็อก commit ไปตลอด)
-trap 'rm -f "$FLAG" 2>/dev/null || true' EXIT INT TERM
+# 🔑 ลบเฉพาะธงที่ยังเป็นของตัวเอง — เดิมลบทิ้งเสมอ ⇒ ตัวที่จบก่อนลบธงของอีกตัวที่ยังวิ่ง
+trap '[ "$(sed -n 4p "$FLAG" 2>/dev/null)" = "$_FLAG_OWNER" ] && rm -f "$FLAG" 2>/dev/null; true' EXIT INT TERM
 echo "🔎 กำลังตรวจ (ไม่บล็อก · ผลเต็มที่ $LOG)"
 echo "   🚩 ตั้งธง \"ด่านกำลังวิ่ง\" ไว้ที่ $FLAG ⇒ **ห้าม commit กิ่งนี้จนด่านจบ**"
 echo "      (จะทำงานต่อ ให้ commit บนกิ่งอื่น · ธงนี้ถูกลบอัตโนมัติทุกทางออก)"
