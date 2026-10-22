@@ -16,7 +16,7 @@
  *    และ **อ่านไม่ได้ต้องขึ้น ⚡? ไม่ใช่หายไป** — มาตรวัดที่หายตอนตัวเองพัง
  *    หน้าตาเหมือน "ทุกอย่างปกติ" เป๊ะ (บทเรียน 13 ก.ย. 2569)
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { creditAlert, type ผลเตือนเครดิต, type ข้อมูลเครดิต } from '@/lib/usage-alert'
 
 type สถานะ = { state: 'loading' } | { state: 'error' } | { state: 'ok'; a: ผลเตือนเครดิต }
@@ -60,15 +60,34 @@ function สีของ(level: ผลเตือนเครดิต['level']
     : 'bg-gray-100 text-gray-500'
 }
 
+/** ป้ายจิ้มได้ — ความหมายเต็มเคยอยู่แค่ใน title ซึ่ง **มือถือไม่มี hover = ไม่มีคำอธิบายเลย**
+ *  (ท่านประธานถามความหมายจุดเขียวบนจอทะเบียน 22 ต.ค. 2569 — คลาสเดียวกัน) ⇒ จิ้มแล้วกางคำใต้ป้าย */
+function ป้ายจิ้มได้({ คลาส, คำ, children }: { คลาส: string; คำ: string; children: ReactNode }) {
+  const [เปิด, setเปิด] = useState(false)
+  return (
+    <span className="relative inline-block">
+      <button type="button" onClick={() => setเปิด((v) => !v)} title={คำ}
+        className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${คลาส}`}>
+        {children}
+      </button>
+      {เปิด && (
+        <span className="absolute left-0 top-full z-50 mt-1 block w-60 max-w-[80vw] rounded-lg border border-gray-200 bg-white p-2 text-[11px] font-normal leading-snug text-gray-700 shadow-lg whitespace-normal">
+          {คำ}
+        </span>
+      )}
+    </span>
+  )
+}
+
 export default function CreditBadge({ dark = false }: { dark?: boolean }) {
   const s = useCredits()
   if (s.state === 'loading') return null
   if (s.state === 'error') {
     return (
-      <span className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${สีของ('unknown', dark)}`}
-        title="อ่านเครดิต Netlify ไม่ได้รอบนี้ — ไม่ได้แปลว่าเครดิตหมด แปลว่ายังไม่รู้">
+      <ป้ายจิ้มได้ คลาส={สีของ('unknown', dark)}
+        คำ="⚡? = อ่านเครดิต Netlify ไม่ได้รอบนี้ — ไม่ได้แปลว่าเครดิตหมด แปลว่ายังไม่รู้ (จิ้มป้ายเพื่อดูคำอธิบาย)">
         ⚡?
-      </span>
+      </ป้ายจิ้มได้>
     )
   }
   const { a } = s
@@ -80,14 +99,12 @@ export default function CreditBadge({ dark = false }: { dark?: boolean }) {
      ⚠️ เรื่องจริงที่ทำให้ต้องมีดอกจัน: ท่อตั้ง default เพดานไว้ 5,000 แต่ของจริงแพ็กเกจ Pro = **15,000**
         (อ่านจากหน้า Billing ของ Netlify เอง 18 ก.ย. 2569) ⇒ ถ้า Netlify ไม่ส่ง `plan_credits` มา
         เปอร์เซ็นต์จะเพี้ยนไป 3 เท่า และตัวเตือนจะร้องเร็วเกินจริงโดยไม่มีอะไรฟ้อง */
+  /* ⚠️ ต่อท้ายเรื่องเพดาน **เฉพาะตอนที่เพดานถูกเอาไปใช้คิดจริง** (มี pct)
+     ตอนอ่านไม่ได้/ยังไม่ตั้งคีย์ เพดานไม่เกี่ยวเลย — เติมไปก็เป็นคำเตือนที่ไม่ได้เตือนอะไร */
+  const คำ = `${a.ข้อความ}${a.pct !== null && !a.planConfirmed ? ' · เพดานยังไม่ได้ยืนยันจาก Netlify (ท่อใช้ค่าตั้งต้น ⇒ มี * ข้างเลข)' : ''}${a.stale ? ' · ⚡~ = ค่าที่อ่านค้างไว้ ไม่ใช่ค่าสด' : ''}`
   return (
-    <span
-      className={`inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${สีของ(a.level, dark)}`}
-      /* ⚠️ ต่อท้ายเรื่องเพดาน **เฉพาะตอนที่เพดานถูกเอาไปใช้คิดจริง** (มี pct)
-         ตอนอ่านไม่ได้/ยังไม่ตั้งคีย์ เพดานไม่เกี่ยวเลย — เติมไปก็เป็นคำเตือนที่ไม่ได้เตือนอะไร */
-      title={`${a.ข้อความ}${a.pct !== null && !a.planConfirmed ? ' · เพดานยังไม่ได้ยืนยันจาก Netlify (ท่อใช้ค่าตั้งต้น)' : ''}`}
-    >
+    <ป้ายจิ้มได้ คลาส={สีของ(a.level, dark)} คำ={คำ}>
       {a.stale ? '⚡~' : '⚡'}{เลข}{a.pct !== null && !a.planConfirmed ? '*' : ''}
-    </span>
+    </ป้ายจิ้มได้>
   )
 }

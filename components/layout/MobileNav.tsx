@@ -133,6 +133,13 @@ export function MobileDrawer({ navItems, open, onClose }: {
             )
           )}
         </nav>
+        {/* คำอธิบายจุดท้ายชื่อเมนู — เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี hover = ไม่มีคำอธิบายเลย
+            (คลาสเดียวกับจุดเขียวบนจอทะเบียนที่ท่านถาม 22 ต.ค. 2569) · ลิ้นชักนี้ไม่มีเมนู ◦ */}
+        {!เหมือนZORT && (
+          <p className="px-5 pb-2 text-[10px] leading-snug text-blue-100/40 shrink-0">
+            🟢 ใช้แทน ZORT ได้ · 🟡 ดูได้ งานเขียนยังทำที่ ZORT
+          </p>
+        )}
       </aside>
     </div>
   )
