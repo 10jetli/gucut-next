@@ -145,6 +145,11 @@ function StatusPill({ c }: { c: Conn }) {
   if (c.connected === true) {
     return <span className="text-[11.5px] font-semibold text-emerald-800 bg-emerald-100 rounded px-2 py-0.5">เชื่อมแล้ว</span>
   }
+  /* 🔴 22 ต.ค. 2569 Lazada: เคยเชื่อมแล้ว token ตาย 16 วัน ⇒ ท่อส่ง connected:false + tokenExpired:true
+     "ยังไม่ได้เชื่อม" สีเทาอ่านเหมือนงานที่ยังไม่เริ่ม ทั้งที่คือของที่หลุด ⇒ ต้องแดง ต้องบอกว่าหลุด */
+  if (c.connected === false && c.tokenExpired === true) {
+    return <span className="text-[11.5px] font-semibold text-red-800 bg-red-100 rounded px-2 py-0.5">หลุด · token หมดอายุ</span>
+  }
   if (c.connected === false) {
     return <span className="text-[11.5px] font-semibold text-gray-700 bg-gray-100 rounded px-2 py-0.5">ยังไม่ได้เชื่อม</span>
   }
@@ -212,6 +217,8 @@ export default function ConnectionsRegistryPage() {
   const shown = [...GROUPS, ...extraGroups.map((k) => ({ key: k, label: k, spread: false, ดิบ: true }))]
   // ⚠️ ทางถอยกลับต้อง **ไม่นับช่องที่ตรวจไม่ทัน** รวมมาด้วย — สองกองนี้ได้ null เหมือนกัน
   //    ถ้านับรวม จอจะบอกว่า "ยังไม่มีตัวตรวจ" ทั้งที่ตัวตรวจมีอยู่ แค่ปลายทางช้า
+  // 🔴 ของที่หลุดเพราะ token หมดอายุ — ท่อนับรวมไว้ใน notConnected ⇒ บอกแยกให้เห็นว่าในกองนั้นมีของที่เคยเชื่อมแล้วหลุด
+  const หลุด = all.filter((c) => c.connected === false && c.tokenExpired === true).map((c) => c.name)
   const unknown = typeof data?.unchecked === 'number'
     ? data.unchecked
     : all.filter((c) => c.connected === null && !c.retired && !c.timedOut).length
@@ -297,6 +304,7 @@ export default function ConnectionsRegistryPage() {
             {data.checkedAt && <> · ตรวจเมื่อ {new Date(data.checkedAt).toLocaleString('th-TH')}</>}
             <br />
             ✅ เชื่อมแล้ว <b>{data.connected ?? 0}</b> · ⬜ ยังไม่ได้เชื่อม <b>{data.notConnected ?? 0}</b>
+            {หลุด.length > 0 && <b className="text-red-700"> (ในนั้นหลุดเพราะ token หมดอายุ {หลุด.length}: {หลุด.join(' · ')})</b>}
             {' '}· ❓ ยังไม่มีตัวตรวจ <b>{data.unchecked ?? 0}</b> · 🚫 เลิกใช้แล้ว <b>{data.retired ?? 0}</b>
             {/* ⚠️ นับแยกจาก "ยังไม่มีตัวตรวจ" เสมอ — ทั้งคู่ได้ connected: null เหมือนกัน
                 แต่ตัวหนึ่งคืองานที่เรายังไม่ได้ทำ อีกตัวคือปลายทางช้าจนตรวจไม่ทัน

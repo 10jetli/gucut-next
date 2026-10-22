@@ -89,6 +89,8 @@ interface PlanSide {
   excludedGuess?: number; excludedOneToMany?: number; excludedOneToManyKeys?: number
   sameOnRecheck?: number
   skip?: string
+  /** คิดแผนไม่ได้ (เช่น token หมดอายุ) — 22 ต.ค. 2569 Lazada ส่ง `{error}` อย่างเดียว ⇒ เดิมทุกช่องขึ้น — โดยไม่บอกเหตุ */
+  error?: string
 }
 interface PlanResp {
   ok?: boolean; mode?: string
@@ -332,6 +334,14 @@ export default function StockPushPage() {
                     <div key={key} className="border border-gray-200 rounded-md p-3">
                       <p className="text-[12.5px] font-semibold text-gray-800">{label}</p>
                       <p className="text-[12.5px] text-gray-400 mt-1">ท่อไม่ได้ส่งแผนของเจ้านี้มา — ยังบอกไม่ได้ว่าต้องดันอะไร</p>
+                    </div>
+                  )
+                }
+                if (typeof p.error === 'string') {
+                  return (
+                    <div key={key} className="border border-red-200 bg-red-50 rounded-md p-3">
+                      <p className="text-[12.5px] font-semibold text-red-900">{label}</p>
+                      <p className="text-[12.5px] text-red-800 mt-1">🔴 คิดแผนไม่ได้ — ไม่มีข้อมูล (ไม่ใช่ศูนย์) · {p.error}</p>
                     </div>
                   )
                 }
