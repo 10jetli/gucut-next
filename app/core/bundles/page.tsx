@@ -29,7 +29,7 @@ import { MarketStaleBar } from '@/components/zort/DataFreshness'
 import { useSkuImages } from '@/lib/sku-images'
 import { TH_NO, ROW_LINK, TD_NO,
   PageHead, SearchRow, TableWrap, Tabs, TH, THR, TD, TDR,
-  LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav,} from '@/components/zort'
+  LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, MarketGuessNote, PageNav,} from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import { เหมือนZORT, กว้างZ } from '@/lib/โหมดเหมือนzort'
 import ZortNoImage from '@/components/zort/ZortNoImage'
@@ -361,6 +361,8 @@ export default function CoreBundlesPage() {
       {/* 🔴 คำเตือนว่าข้อมูลเชื่อไม่ได้ — **ต้องอยู่หัวจอ เหนือตาราง**
           เคยวางท้ายตารางแล้วไม่มีใครเห็น แม้แต่คนที่ตั้งใจหา (4 ก.ย. 2569) */}
       <MarketUnreliableBanner unreliable={data?.marketplacesUnreliable} />
+      {/* คำอธิบายจุดส้มมุมโลโก้ — เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี hover · โชว์เฉพาะตอนมีแถวที่เดาจริง */}
+      <MarketGuessNote rows={rows} />
 
       {error && <ErrorBox title="ดึงสินค้าเป็นชุดไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}

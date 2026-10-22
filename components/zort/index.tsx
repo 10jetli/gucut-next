@@ -760,6 +760,19 @@ export function CarrierMark({ name }: { name?: string | null }) {
   )
 }
 
+/** บรรทัดอธิบายจุดส้มมุมโลโก้ — เดิมความหมายอยู่แค่ใน title ซึ่งมือถือไม่มี hover (ใบ 12:59 กวาดทั้งคลาส)
+ *  โชว์เฉพาะเมื่อหน้านั้นมีแถวที่จับคู่จากการเดาจริง — คำอธิบายของสัญลักษณ์ที่ไม่ได้โผล่คือเสียงรบกวน */
+export function MarketGuessNote({ rows }: { rows?: Array<{ marketplacesBy?: Record<string, string> | null }> | null }) {
+  const มี = Array.isArray(rows) && rows.some((r) => r?.marketplacesBy && Object.values(r.marketplacesBy).indexOf('base') >= 0)
+  if (!มี) return null
+  return (
+    <p className="text-[11.5px] text-gray-500 mb-2 leading-snug">
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-amber-500 align-middle mr-1" />
+      จุดส้มมุมโลโก้ = รหัสบนแพลตฟอร์มไม่ตรงตัว ระบบจับคู่จากรหัสฐาน (ชี้ที่โลโก้เห็นรหัสเต็ม)
+    </p>
+  )
+}
+
 export function MarketLogos(
   { list, by, from }: {
     list?: string[] | null

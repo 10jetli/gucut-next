@@ -21,7 +21,7 @@ import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox, { isSkip } from '@/components/ui/ErrorBox'
 import {TH_NO, 
   PageHead, BtnGhost, SearchRow, LinkText, Tabs, TableWrap, TH, THR, TD, TDR,
-  EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, PageNav, ZORT_BACK_LINK } from '@/components/zort'
+  EmptyState, MarketLogos, MarketCoverage, MarketUnreliableBanner, MarketGuessNote, PageNav, ZORT_BACK_LINK } from '@/components/zort'
 import ExportButton from '@/components/zort/ExportButton'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
 import { skuScopeNote } from '@/lib/sku-scope'
@@ -330,6 +330,8 @@ export default function MarketplaceProductsPage() {
       {!loading && !error && (
         <>
           <MarketUnreliableBanner unreliable={meta?.marketplacesUnreliable} />
+          {/* คำอธิบายจุดส้มมุมโลโก้ — เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี hover · โชว์เฉพาะตอนมีแถวที่เดาจริง */}
+          <MarketGuessNote rows={shown} />
 
           {/* 🔴 **แท็บ "ยังไม่ได้ลงที่ไหนเลย" เป็นคำกล่าวอ้างเรื่องสินค้า ไม่ใช่เรื่องการโหลด**
               (ใบ t_mu7sk8r9 · 19 ก.ย. 2569 — กวาดคลาส `?? []` บนข้อมูลนอกบ้าน)

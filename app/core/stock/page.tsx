@@ -27,7 +27,7 @@ import { useSkuImages, pickImage, noImageReason } from '@/lib/sku-images'
 import { peekApiCache, putApiCache, ageText } from '@/lib/api-cache'
 import { productMenuItems } from '@/lib/product-menu'
 import { TH_NO, ROW_LINK, TD_NO,
-  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, StaleBar, PageNav, RowCheck, BulkBar, TH_CHECK, TD_CHECK } from '@/components/zort'
+  PageHead, SearchRow, Tabs, TableWrap, TH, THR, TD, TDR, Num, LinkText, RowMenu, EmptyState, thaiDate, MarketLogos, MarketCoverage, MarketUnreliableBanner, MarketGuessNote, StaleBar, PageNav, RowCheck, BulkBar, TH_CHECK, TD_CHECK } from '@/components/zort'
 import ImportButton from '@/components/zort/ImportButton'
 import AdvancedSearch, { type AdvField } from '@/components/zort/AdvancedSearch'
 import BlockedStock from '@/components/zort/BlockedStock'
@@ -751,6 +751,8 @@ function CoreStockInner() {
       {/* 🔴 คำเตือนว่าข้อมูลเชื่อไม่ได้ — **ต้องอยู่หัวจอ เหนือตาราง**
           เคยวางท้ายตารางแล้วไม่มีใครเห็น แม้แต่คนที่ตั้งใจหา (4 ก.ย. 2569) */}
       <MarketUnreliableBanner unreliable={data?.marketplacesUnreliable} />
+      {/* คำอธิบายจุดส้มมุมโลโก้ — เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี hover · โชว์เฉพาะตอนมีแถวที่เดาจริง */}
+      <MarketGuessNote rows={rows} />
 
       {error && <ErrorBox title="ดึงสินค้าไม่ได้">{error}</ErrorBox>}
       {loading && !data && <LoadingState />}

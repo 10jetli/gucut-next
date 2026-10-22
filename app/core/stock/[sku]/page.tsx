@@ -30,7 +30,7 @@ import type { คำตอบที่อาจถูกบีบ } from '@/lib/
 import { type ที่มาเลขสต็อก, type แผนที่ป้ายที่มา } from '@/lib/stock-source'
 import { findOrderId } from '@/lib/open-order'
 import {
-  PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT, ZORT_BACK_LINK, ZORT_INFO_LABEL, ZORT_INFO_VALUE, ZORT_INFO_NAME
+  PageHead, BtnGhost, TableWrap, TH, TD, TDR, EmptyState, thaiDate, MarketGuessNote, MarketLogos, RowMenu, DETAIL_BTN, TH_KANIT, THR_KANIT, ZORT_BACK_LINK, ZORT_INFO_LABEL, ZORT_INFO_VALUE, ZORT_INFO_NAME
 } from '@/components/zort'
 import ZortLookFold from '@/components/zort/ZortLookFold'
 import { เหมือนZORT } from '@/lib/โหมดเหมือนzort'
@@ -659,6 +659,8 @@ export default function ProductDetailPage() {
                 <div className={`${เหมือนZORT ? 'order-7' : ''}`}>
                   <p className={ป้าย}>ลงขายที่</p>
                   <div className="text-[15px]"><MarketLogos list={row.marketplaces} by={row.marketplacesBy} from={row.marketplacesFrom} /></div>
+                  {/* คำอธิบายจุดส้มมุมโลโก้ — เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี hover · โชว์เฉพาะตอนเดาจริง */}
+                  <MarketGuessNote rows={[row]} />
                 </div>
               </div>
                 {/* โหมดเหมือน ZORT: QR + บาร์โค้ดมุมขวาในกล่องข้อมูล (ZORT วางที่นี่ ไม่ใช่ท้ายจอ)

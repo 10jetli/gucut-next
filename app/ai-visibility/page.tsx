@@ -194,8 +194,12 @@ export default function AiVisibilityPage() {
 
           {lastRun && (
             <Card>
-              <p className="text-[12.5px] font-bold text-gray-900 mb-3">
+              <p className="text-[12.5px] font-bold text-gray-900 mb-1">
                 ผลรอบล่าสุด · {fmtDate(lastRun.runAt)}
+              </p>
+              {/* คำอธิบายสัญลักษณ์ — เดิมไม่มีที่ไหนบอกเลย แม้แต่ใน title (ใบ 12:59 กวาดทั้งคลาส) */}
+              <p className="text-[11.5px] text-gray-500 mb-3 leading-snug">
+                ✅ AI เอ่ยถึงร้านเราในคำตอบ · ❌ ไม่เอ่ยถึง · ⚠️ ถามรอบนั้นไม่สำเร็จ
               </p>
               <div className="space-y-2">
                 {lastRun.results.map((r, i) => {

@@ -288,6 +288,13 @@ export default function CoreBranchesPage() {
           </div>
           )}
 
+          {/* คำอธิบาย ? สีแดง — เดิมอยู่แค่ใน title ซึ่งมือถือไม่มี hover (ใบ 12:59 กวาดทั้งคลาส)
+              โชว์เฉพาะตอนที่ ? โผล่จริง · เขียนบนจอตรง ๆ ว่าไม่ใช่ "ไม่มียอด" */}
+          {salesFailed && (
+            <p className="text-[12.5px] text-red-800 bg-red-50 border border-red-300 rounded-md px-3.5 py-2 mb-2 leading-snug">
+              🔴 ดึงยอดขาย 30 วันไม่สำเร็จ — ช่องที่ขึ้น <span className="font-semibold text-red-600">?</span> คือยังไม่รู้ยอด <b>ไม่ใช่ว่าไม่มียอด</b>
+            </p>
+          )}
           <TableWrap>
             <table className="w-full min-w-[820px]">
               <thead className="bg-white border-b border-gray-200">
