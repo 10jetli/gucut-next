@@ -1,0 +1,63 @@
+/** 📥 สคริปต์ส่งชีททะเบียน → ระบบหลังร้าน (gucut2 ร่าง 22 ต.ค. 2569 · ท่าเดียวกับ ads-push ที่พิสูจน์แล้ว)
+ *
+ * ติดตั้ง (ครั้งเดียว · ในบัญชี Google ของท่านประธาน — บัญชีที่ได้รับแชร์ชีท):
+ *   1. script.google.com → New project → วางไฟล์นี้
+ *   2. Services (เครื่องหมาย +) → เพิ่ม "Drive API" (advanced service · ชื่อ Drive)
+ *   3. ใส่ KEY ข้างล่าง = ค่า REGISTRY_PUSH_KEY ที่ตั้งใน Netlify (env var ใหม่ — CEO ตั้ง)
+ *   4. รัน ทดสอบส่ง หนึ่งครั้ง (จะมีหน้าขอสิทธิ์ของบัญชีท่านเอง) → ดู log ว่าได้ ok
+ *   5. Triggers → Add → ฟังก์ชัน ส่งทะเบียน · Time-driven · ทุก 15 นาที
+ *
+ * 🔴 สิ่งที่สคริปต์นี้ทำ/ไม่ทำ:
+ *   · อ่านชีทผ่าน "สำเนาชั่วคราวของตัวเอง" แล้วลบทิ้งทันที — ต้นฉบับของภรรยาท่านไม่ถูกแตะ ไม่ถูกแปลง
+ *   · ส่งเฉพาะ: ชื่อแท็บ · แถวหัวเต็ม · และคอลัมน์ที่อนุญาต (ลำดับ/ยี่ห้อ/ขนาด/รุ่น/วันรับ/วันจำหน่าย)
+ *     🚫 ไม่ส่ง ซีเรียล · ชื่อ-ที่อยู่ผู้ซื้อ · เลขใบอนุญาต (ช่องพวกนั้นถูกแทนด้วยค่าว่าง)
+ *   · ฝั่งรับมีตาข่ายเอง (ลดฮวบ/หัวเปลี่ยน ⇒ ไม่แทนเป้าเดิม) และตัวเฝ้าเตือนถ้าสคริปต์หยุดส่ง
+ */
+// 🔒 FILE_ID จริงไม่ commit — repo นี้สาธารณะ (ฉบับกรอกค่าแล้วอยู่ในคลังทีม ~/claude-shared)
+const FILE_ID = 'ใส่-FILE-ID-ชีททะเบียน-ที่นี่'; // ชีททะเบียน (.xlsx — อ่านอย่างเดียว)
+const URL = 'https://admin.gucut.com/api/registry-sheet-push';
+const KEY = 'ใส่ค่า REGISTRY_PUSH_KEY ที่นี่';
+// คอลัมน์ที่ส่งได้ — หัวคอลัมน์ต้องมีคำพวกนี้ (คำอื่น = ช่องนั้นถูกเว้นว่าง)
+const อนุญาต = /ลำดับ|ยี่ห้อ|ขนาด|รุ่น|รับ|จำหน่าย/;
+const ห้าม = /ซีเรียล|หมายเลข|ผู้ซื้อ|ที่อยู่|ใบอนุญาต|เบอร์|ลูกค้า/; // ห้ามชนะ อนุญาต (เช่น "หมายเลขใบอนุญาต")
+
+function ส่งทะเบียน() {
+  const src = DriveApp.getFileById(FILE_ID);
+  const แก้ล่าสุด = src.getLastUpdated().toISOString();
+  // สำเนาชั่วคราว (แปลงเป็น Google ชีตเพื่ออ่าน) — เป็นไฟล์ของบัญชีท่านเอง ลบทิ้งท้ายรอบเสมอ
+  const copy = Drive.Files.copy({ title: 'ชั่วคราว-อ่านทะเบียน-ลบได้', mimeType: MimeType.GOOGLE_SHEETS }, FILE_ID);
+  let แท็บ = [];
+  try {
+    const ss = SpreadsheetApp.openById(copy.id);
+    for (const sh of ss.getSheets()) {
+      const ค่า = sh.getDataRange().getValues();
+      // หาแถวหัวใน 15 แถวแรก = แถวที่มีคำหัวมากสุด (เกณฑ์เดียวกับฝั่งรับ)
+      let หัวที่ = -1, คะแนน = 1;
+      ค่า.slice(0, 15).forEach((r, i) => {
+        const k = r.filter((x) => /ซีเรียล|หมายเลข|ยี่ห้อ|ขนาด|รุ่น|จำหน่าย|วันที่|ลำดับ|ใบอนุญาต|ผู้ซื้อ|รับ/.test(String(x))).length;
+        if (k > คะแนน) { หัวที่ = i; คะแนน = k; }
+      });
+      const โอเค = หัวที่ >= 0
+        ? ค่า[หัวที่].map((h) => อนุญาต.test(String(h)) && !ห้าม.test(String(h)))
+        : ค่า[0] ? ค่า[0].map(() => false) : [];
+      const แถว = ค่า.map((r, i) =>
+        i === หัวที่
+          ? r.map((x) => String(x).slice(0, 120))               // แถวหัวส่งเต็ม (ไม่ใช่ข้อมูลบุคคล)
+          : r.map((x, c) => (โอเค[c] ? String(x).slice(0, 120) : '')) // แถวข้อมูลส่งเฉพาะคอลัมน์ที่อนุญาต
+      );
+      แท็บ.push({ ชื่อ: sh.getName(), แถว: แถว });
+    }
+  } finally {
+    Drive.Files.remove(copy.id); // 🔴 ลบสำเนาชั่วคราวเสมอ แม้อ่านล้มกลางทาง
+  }
+  const res = UrlFetchApp.fetch(URL, {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify({ key: KEY, ชีทแก้ไขล่าสุด: แก้ล่าสุด, แท็บ: แท็บ }),
+    muteHttpExceptions: true,
+  });
+  console.log(res.getResponseCode(), res.getContentText().slice(0, 300));
+  if (res.getResponseCode() !== 200) throw new Error('ส่งไม่สำเร็จ: ' + res.getContentText().slice(0, 200));
+}
+
+function ทดสอบส่ง() { ส่งทะเบียน(); }
