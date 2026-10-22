@@ -104,7 +104,11 @@ export function นับตามกติกา(_แท็บ: แท็บ[])
   return null
 }
 
-const ร้าน = () => getStore(STORE)
+/* 🔴 Next แพตช์ fetch ให้แคชได้ — เจอตอนซ้อม 22 ต.ค.: GET `log` ของ blobs ถูกแคช (route เป็น
+   force-dynamic แล้วก็ยังโดน) ⇒ จอโชว์รอบเก่าตลอดกาลทั้งที่ถังขยับแล้ว = จอโกหกแบบไม่มีอะไรฟ้อง
+   ⇒ ยัด fetch ที่บังคับ no-store เข้า client ตรง ๆ ไม่พึ่งพฤติกรรมแคชของเฟรมเวิร์กในแต่ละรุ่น */
+const fetchสด: typeof fetch = (u, init) => fetch(u, { ...init, cache: 'no-store' })
+const ร้าน = () => getStore({ name: STORE, fetch: fetchสด })
 
 /** จดรอบลง log (ใหม่สุดก่อน) — ตัวเฝ้าความเงียบ (registry-sheet-pull.mjs) ก็เขียนรูปเดียวกันนี้ */
 export async function จด(ผล: ผลรอบ) {

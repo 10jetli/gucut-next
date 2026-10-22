@@ -13,6 +13,10 @@ export interface รายงานขา { เมื่อ: string; ผล: ผ
 export interface ก้อนสถานะ { ขา: Record<string, รายงานขา>; อัปโหลดเมื่อ: string }
 
 const STORE = 'flow-status'
+/* 🔴 Next แพตช์ fetch ให้แคชได้ — คลาสเดียวกับที่เจอตอนซ้อมขาชีท 22 ต.ค. (GET ของ blobs ถูกแคช
+   ทั้งที่ route เป็น force-dynamic) ⇒ บังคับ no-store ที่ client ตรง ๆ */
+const fetchสด: typeof fetch = (u, init) => fetch(u, { ...init, cache: 'no-store' })
+const ร้านสด = () => getStore({ name: STORE, fetch: fetchสด })
 
 /** ตรวจรูปก่อนเก็บ — ของผิดรูปไม่เก็บ (ไม่งั้นจอจะขึ้นค่าแปลก ๆ แทนที่จะแดง) */
 export function ตรวจรูป(x: unknown): { ok: true; ขา: Record<string, รายงานขา> } | { ok: false; เหตุ: string } {
@@ -36,7 +40,7 @@ export function เงียบเกิน(r: รายงานขา, ตอ�
 }
 
 export async function เก็บ(ขา: Record<string, รายงานขา>) {
-  const s = getStore(STORE)
+  const s = ร้านสด()
   const เดิม = ((await s.get('legs', { type: 'json' }).catch(() => null)) as ก้อนสถานะ | null)?.ขา ?? {}
   // รวมกับของเดิม — ขาที่รอบนี้ไม่ส่งมายังอยู่ แล้วจะเก่าเองจนแดง (ไม่หายเงียบ)
   const ก้อน: ก้อนสถานะ = { ขา: { ...เดิม, ...ขา }, อัปโหลดเมื่อ: new Date().toISOString() }
@@ -45,5 +49,5 @@ export async function เก็บ(ขา: Record<string, รายงานข�
 }
 
 export async function อ่าน(): Promise<ก้อนสถานะ | null> {
-  return ((await getStore(STORE).get('legs', { type: 'json' }).catch(() => null)) as ก้อนสถานะ | null) ?? null
+  return ((await ร้านสด().get('legs', { type: 'json' }).catch(() => null)) as ก้อนสถานะ | null) ?? null
 }

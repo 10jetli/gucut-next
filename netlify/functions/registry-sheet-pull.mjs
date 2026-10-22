@@ -20,24 +20,27 @@ export default async () => {
   const ms = Date.parse(String(จริงล่าสุด?.เมื่อ ?? ""));
   const เงียบอยู่ = !Number.isFinite(ms) || Date.now() - ms > เพดานนาที * 60_000;
   const ก่อน = await s.get("last-alert-state", { type: "text" }).catch(() => null);
+  /* ⚠️ สัญญาของ lib-notify: ผู้เรียกต้องเอา {sent, via, error} ใส่คำตอบของตัวเอง
+     ไม่งั้นแยก "ไม่มีอะไรต้องเตือน" กับ "เตือนแต่ส่งไม่ออก" ไม่ได้ (เจอตอนซ้อม 22 ต.ค.) */
+  let ผลเตือน = null;
   if (เงียบอยู่) {
     if (ล่าสุด?.เหตุ !== เงียบ) {
       const เดิม = (await s.get("log", { type: "json" }).catch(() => null)) ?? [];
       await s.setJSON("log", [{ เมื่อ: new Date().toISOString(), สถานะ: "อ่านไม่ได้", เหตุ: เงียบ }, ...เดิม].slice(0, 200));
     }
     if (ก่อน !== "เงียบ") {
-      await notify(`🔴 ขาชีททะเบียน: ${เงียบ}\nเป้าเดิมไม่ถูกแทน · ดู /core/registry`);
+      ผลเตือน = await notify(`🔴 ขาชีททะเบียน: ${เงียบ}\nเป้าเดิมไม่ถูกแทน · ดู /core/registry`);
       await s.set("last-alert-state", "เงียบ");
     }
   } else if (ก่อน === "เงียบ") {
-    await notify(`✅ ขาชีททะเบียนกลับมาส่งแล้ว (รอบล่าสุด ${จริงล่าสุด?.สถานะ})`);
+    ผลเตือน = await notify(`✅ ขาชีททะเบียนกลับมาส่งแล้ว (รอบล่าสุด ${จริงล่าสุด?.สถานะ})`);
     await s.set("last-alert-state", "ปกติ");
   } else if (["หยุด-ลดฮวบ", "หยุด-หัวเปลี่ยน"].includes(ล่าสุด?.สถานะ) && ก่อน !== ล่าสุด.สถานะ) {
     // ตาข่าย pipeline สะดุด — เตือนครั้งเดียวต่อสถานะ (ของจริงรออยู่ให้คนดู)
-    await notify(`🔴 ขาชีททะเบียน: ${ล่าสุด.สถานะ} · ${ล่าสุด.เหตุ ?? ""}${ล่าสุด.ลดฮวบ?.length ? "\n" + ล่าสุด.ลดฮวบ.slice(0, 8).join("\n") : ""}`);
+    ผลเตือน = await notify(`🔴 ขาชีททะเบียน: ${ล่าสุด.สถานะ} · ${ล่าสุด.เหตุ ?? ""}${ล่าสุด.ลดฮวบ?.length ? "\n" + ล่าสุด.ลดฮวบ.slice(0, 8).join("\n") : ""}`);
     await s.set("last-alert-state", ล่าสุด.สถานะ);
   }
-  return new Response(JSON.stringify({ เงียบอยู่, รอบล่าสุด: จริงล่าสุด?.สถานะ ?? null }), { headers: { "content-type": "application/json" } });
+  return new Response(JSON.stringify({ เงียบอยู่, รอบล่าสุด: จริงล่าสุด?.สถานะ ?? null, เตือน: ผลเตือน }), { headers: { "content-type": "application/json" } });
 };
 
 export const config = { schedule: "*/15 * * * *" };
