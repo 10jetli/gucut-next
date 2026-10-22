@@ -34,7 +34,7 @@ import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR } from '@/components/zo
 import StockFlow from './StockFlow'
 import {
   type สภาพZORT, จองอยู่, คาดพร้อมขาย, คำเตือนแถว, ต้องเลือกรหัสเอง,
-  refของการกด, ขาที่ยังไม่มี,
+  refของการกด, ขาที่ยังไม่มี, รวมทุกรหัสเทียบทะเบียน,
 } from '@/lib/registry-zort'
 // ⚠️ TH/THR/TD/TDR เป็น **สตริงคลาส** ไม่ใช่คอมโพเนนต์ — ใช้เป็น className ของ th/td
 
@@ -321,6 +321,19 @@ export default function Page() {
                                 )
                               })}
                             </ul>
+                            {/* 📏 ผลรวมทุกรหัส vs ทะเบียน — ตัวชี้ว่าขนาดนี้มีปัญหาไหม (CEO เสนอ 22 ต.ค. 2569)
+                                ไม่ใช่ของกองเดียวกัน ⇒ เลขรายรหัสข้างบนยังแยกบรรทัด · อ่านไม่ครบ ⇒ ไม่รวม บอกเหตุ */}
+                            {(() => {
+                              const r = รวมทุกรหัสเทียบทะเบียน(x.รหัสสินค้า, zort, x.ทะเบียนเหลือ)
+                              if (!r.รวมได้) return <p className="m-0 mt-1 text-[11.5px] text-gray-400">{r.เหตุ}</p>
+                              return (
+                                <p className={`m-0 mt-1 text-[11.5px] ${r.ต่าง === 0 ? 'text-gray-600' : 'text-red-600'}`}
+                                  title="บวกคงเหลือทุกรหัสของขนาดนี้ เทียบทะเบียนเหลือ — ใช้ชี้ว่าขนาดนี้มีปัญหาไหม รหัสพี่น้องเป็นบาร์คนละใบ ไม่ใช่ของกองเดียวกัน">
+                                  รวม {x.รหัสสินค้า.length} รหัส ZORT คงเหลือ <b>{r.รวม}</b> · ทะเบียน <b>{x.ทะเบียนเหลือ}</b>
+                                  {' ⇒ '}{r.ต่าง === 0 ? 'เท่ากัน' : r.ต่าง > 0 ? <b>ZORT เกิน {r.ต่าง}</b> : <b>ZORT ขาด {-r.ต่าง}</b>}
+                                </p>
+                              )
+                            })()}
                           </td>
                         )
                         return (
@@ -335,7 +348,7 @@ export default function Page() {
                         )
                       })()}
                       <td className={TD}>
-                        {x.ตรงกัน === true && <span className="text-green-700">ตรงกัน</span>}
+                        {x.ตรงกัน === true && <span className="text-green-700" title="ทะเบียน D1 ↔ ตารางในโค้ด — ยังไม่ได้เทียบกับชีทของท่าน">สองขาในระบบตรงกัน</span>}
                         {x.ตรงกัน === false && (
                           <span className="text-red-600">
                             ต่างกัน {Math.abs((x.เว็บโชว์ ?? 0) - x.ทะเบียนเหลือ)}
