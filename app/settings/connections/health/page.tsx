@@ -62,10 +62,15 @@ export default function ConnectionsPage() {
       </div>
 
       {!loading && !error && (
-        <div className={'rounded-2xl border p-4 text-[12.5px] ' + (okCount === conns.length ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700')}>
-          {okCount === conns.length
-            ? '✅ ทุกการเชื่อมต่อใช้งานได้ปกติ (' + okCount + '/' + conns.length + ')'
-            : '⚠️ มีการเชื่อมต่อที่มีปัญหา ' + (conns.length - okCount) + ' รายการ — ดูรายละเอียดด้านล่าง'}
+        /* 🔴 22 ต.ค. 2569: หน้านี้ตรวจแค่ Gmail · ZORT · ชีต — เดิมเขียน "ทุกการเชื่อมต่อใช้งานได้ปกติ" ทั้งที่ Lazada ตาย 16 วัน
+           ⇒ ต้องบอกขอบเขตบนจอ · ได้ 0 แถวห้ามขึ้นเขียว (0 === 0) */
+        <div className={'rounded-2xl border p-4 text-[12.5px] ' + (conns.length > 0 && okCount === conns.length ? 'bg-emerald-50 border-emerald-200 text-emerald-700' : 'bg-red-50 border-red-200 text-red-700')}>
+          {conns.length === 0
+            ? '⚠️ ไม่ได้ผลตรวจกลับมาเลยสักรายการ — บอกไม่ได้ว่าปกติ'
+            : okCount === conns.length
+              ? '✅ ' + okCount + '/' + conns.length + ' รายการที่หน้านี้ตรวจใช้งานได้'
+              : '⚠️ มีการเชื่อมต่อที่มีปัญหา ' + (conns.length - okCount) + ' รายการ — ดูรายละเอียดด้านล่าง'}
+          <span className="block text-gray-600 mt-1">หน้านี้ไม่ได้ตรวจ Shopee · Lazada · TikTok — ดูสถานะร้านบนแพลตฟอร์มที่หน้าการเชื่อมต่อ</span>
         </div>
       )}
 
