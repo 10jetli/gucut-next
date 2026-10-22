@@ -31,6 +31,7 @@ import { Fragment, useCallback, useEffect, useState } from 'react'
 import LoadingState from '@/components/ui/LoadingState'
 import ErrorBox from '@/components/ui/ErrorBox'
 import { PageHead, BtnGhost, TableWrap, TH, THR, TD, TDR } from '@/components/zort'
+import StockFlow from './StockFlow'
 import {
   type สภาพZORT, จองอยู่, คาดพร้อมขาย, คำเตือนแถว, ต้องเลือกรหัสเอง,
   refของการกด, ขาที่ยังไม่มี,
@@ -63,6 +64,7 @@ interface Serial {
 
 export default function Page() {
   const [sum, setSum] = useState<Summary | null>(null)
+  const [วัดสรุปเมื่อ, setวัดสรุปเมื่อ] = useState<number>()
   const [err, setErr] = useState('')
   const [busy, setBusy] = useState(true)
   const [เปิด, setเปิด] = useState<string | null>(null)
@@ -85,7 +87,7 @@ export default function Page() {
       const r = await fetch('/api/web/core?registry=1')
       const d: Summary = await r.json()
       if (d.error) setErr(d.error)
-      setSum(d)
+      setSum(d); setวัดสรุปเมื่อ(Date.now())
     } catch (e) {
       setErr(e instanceof Error ? e.message : 'เรียกข้อมูลไม่สำเร็จ')
     } finally { setBusy(false) }
@@ -201,6 +203,9 @@ export default function Page() {
       {err && <ErrorBox>{err}</ErrorBox>}
       {sum?.skip && <ErrorBox title="ยังใช้ไม่ได้">{sum.skip}</ErrorBox>}
       {busy && !sum && <LoadingState />}
+
+      {/* 🧭 ผังการอัปเดตสต็อก — ท่านประธานสั่ง 22 ต.ค. 2569 ("ทำผัง") · วางบนสุดเหนือการ์ดสรุป */}
+      <StockFlow ไม่ตรง={sum?.ไม่ตรง} ยังไม่จับคู่={sum?.ยังไม่ได้จับคู่} วัดทะเบียนเมื่อ={วัดสรุปเมื่อ} />
 
       {sum?.รวม && (
         <div className="bg-white border border-gray-200 rounded-md p-4 mt-3">
