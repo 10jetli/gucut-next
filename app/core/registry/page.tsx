@@ -272,7 +272,21 @@ export default function Page() {
                 {g.ชุด.map((x) => (
                   <Fragment key={x.ชื่อ}>
                     <tr className={x.ตรงกัน === false ? 'bg-red-50' : undefined}>
-                      <td className={TD}>{x.ชื่อ}</td>
+                      <td className={TD}>
+                        {x.ชื่อ}
+                        {/* 🔌 รหัส + ไฟเชื่อม ZORT รายรหัส (ท่านประธานวาดจุดเขียวเอง 22 ต.ค. 2569)
+                            🟢 = อ่านกลับจาก ZORT แล้วเจอรหัสนี้จริง · 🔴 = ZORT ตอบว่าไม่มีรหัสนี้ · ⚪ = ยังอ่าน/อ่านไม่ได้ — ห้ามเขียว
+                            ⏳ ปุ่มจับคู่รหัสที่ไม่เชื่อม ยังไม่ทำ (รอบหน้า) */}
+                        <ul className="m-0 mt-0.5 p-0 list-none">
+                          {x.รหัสสินค้า.map((sku) => {
+                            const st = (zort[sku] ?? { สถานะ: 'ยังไม่อ่าน' }).สถานะ
+                            const [ไฟ, คำ] = st === 'มีค่า' ? ['🟢', 'ZORT รู้จักรหัสนี้ (อ่านกลับแล้ว)']
+                              : st === 'ไม่มีรหัสนี้' ? ['🔴', 'ZORT ตอบว่าไม่มีรหัสนี้ — ยังไม่เชื่อม']
+                              : ['⚪', st === 'ยังไม่อ่าน' ? 'ยังไม่ได้อ่าน ZORT' : 'อ่าน ZORT ไม่ได้ — ไม่รู้ว่าเชื่อมไหม']
+                            return <li key={sku} className="text-[11.5px] text-gray-600 whitespace-nowrap" title={คำ}><span aria-label={คำ}>{ไฟ}</span> <span className="font-mono">{sku}</span></li>
+                          })}
+                        </ul>
+                      </td>
                       <td className={TDR}>{x.ทั้งหมด}</td>
                       <td className={TDR}><b>{x.ทะเบียนเหลือ}</b></td>
                       <td className={TDR}>{x.เว็บโชว์ === null ? <span className="text-gray-400">—</span> : x.เว็บโชว์}</td>
