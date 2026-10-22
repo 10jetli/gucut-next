@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { สิทธิ์ที่ขอ } from '@/lib/registry-sheet'
 
 export const dynamic = 'force-dynamic'
 
@@ -13,7 +14,11 @@ export async function GET(req: NextRequest) {
   url.searchParams.set('client_id', clientId)
   url.searchParams.set('redirect_uri', redirectUri)
   url.searchParams.set('response_type', 'code')
-  url.searchParams.set('scope', 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/drive.file')
+  /* 📥 ?for=registry — สิทธิ์อ่านชีททะเบียนของตัวดึงอัตโนมัติ (lib/registry-sheet.ts · 22 ต.ค. 2569)
+     ขอ **drive.readonly อย่างเดียว** แยกจากชุดบิล — ไม่พ่วงสิทธิ์ที่ไม่ใช้ · state บอก callback ให้เก็บลง Blob แทนการโชว์ token */
+  const ทะเบียน = req.nextUrl.searchParams.get('for') === 'registry'
+  url.searchParams.set('scope', ทะเบียน ? สิทธิ์ที่ขอ : 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/drive.file')
+  if (ทะเบียน) url.searchParams.set('state', 'registry')
   url.searchParams.set('access_type', 'offline')
   url.searchParams.set('prompt', 'consent')
   return NextResponse.redirect(url.toString())
