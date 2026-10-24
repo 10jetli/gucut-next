@@ -16,7 +16,18 @@ const ALLOW = new Set(['orders', 'live', 'chat', 'social', 'coupon', 'points', '
      🔑 เติมที่นี่เพราะ `parts-map` คือ **`path[0]` ของเส้นจริง** (`/api/parts-map`)
         ไม่ใช่พารามิเตอร์ของเส้น `core` ⇒ ต่างจากกรณี `zortarch` ที่อธิบายไว้ข้างล่าง
      ⚠️ POST ต้องผ่านพร็อกซีตัวนี้เพราะคีย์แอดมินอยู่ฝั่งเซิร์ฟเวอร์ ไม่ส่งลงเบราว์เซอร์ */
-  'parts-map'])
+  'parts-map',
+  /* 🔴 **`oauth` เป็น `path[0]` ⇒ เติมคำนี้เฉย ๆ = เปิดทุกเส้นใต้ `/api/oauth/*`**
+        ซึ่งรวม `/api/oauth/line|facebook|google` = ทางล็อกอินของ **ลูกค้า** ด้วย
+     ⚠️ อันตรายไม่ใช่เพราะเส้นพวกนั้นไม่มีด่านของตัวเอง แต่เพราะ **ท่อกลางแนบ `x-admin-key`
+        ให้ทุกคำขอ** ⇒ เส้นที่ปกติเห็นคำขอแบบไม่มีรหัส จะเริ่มเห็นคำขอที่ถือรหัสแอดมิน
+     ⇒ จึงมี **ด่านชั้นสองที่ `path[1]`** ข้างล่าง (OAUTH_OK) · เติมเส้นใหม่ต้องเติมที่นั่นด้วย */
+  'oauth'])
+
+/* 🔒 ด่านชั้นสองของ `oauth` — รายชื่อ **เส้นย่อย** ที่หน้าเนทีฟเรียกได้
+   `tiktok-video` = หน้า /web/tiktok (เชื่อมบัญชีปลายทางของท่อกระจายคลิป)
+   ⚠️ ชื่อที่ไม่อยู่ในนี้ตอบ 403 แม้ `oauth` จะอยู่ใน ALLOW แล้ว */
+const OAUTH_OK = new Set(['tiktok-video'])
 /* ℹ️ `?zortarch=1` ไม่ต้องเติมที่นี่ — มันเป็น **พารามิเตอร์ของเส้น `core`** ไม่ใช่เส้นใหม่
    (ใบงานเขียนว่าให้เติม allowlist · ตรวจแล้วรายการนี้คุมที่ `path[0]` ซึ่งคือ `core` อยู่แล้ว
     ⇒ เติมคำว่า `zortarch` ลงไปจะกลายเป็นของที่ไม่มีวันถูกใช้ และทำให้คนหลังอ่านว่ามีเส้นนั้นจริง) */
@@ -25,6 +36,11 @@ async function forward(req: NextRequest, path: string[]) {
   const key = process.env.GUCUT_WEB_ADMIN_KEY
   if (!key) return NextResponse.json({ error: 'ยังไม่ได้ตั้ง GUCUT_WEB_ADMIN_KEY' }, { status: 503 })
   if (!path.length || !ALLOW.has(path[0])) return NextResponse.json({ error: 'not allowed' }, { status: 403 })
+  /* 🔒 `oauth` ผ่านด่านแรกแล้วยังต้องผ่านด่านชั้นสอง — ดูเหตุผลที่ OAUTH_OK
+     🔑 เช็ค `path.length !== 2` ด้วย: `/api/web/oauth` เปล่า ๆ และ `/api/web/oauth/line/callback`
+        ต้องไม่หลุดผ่านเพราะ `path[1]` ตรงบังเอิญ */
+  if (path[0] === 'oauth' && (path.length !== 2 || !OAUTH_OK.has(path[1])))
+    return NextResponse.json({ error: 'not allowed' }, { status: 403 })
 
   const url = new URL(req.url)
   /* 🧪 **ปลายทางปลอมสำหรับทดสอบ "จอพูดอะไรตอนของพัง" — ใช้ได้เฉพาะตอนรันในเครื่อง**
