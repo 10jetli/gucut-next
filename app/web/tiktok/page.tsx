@@ -174,9 +174,13 @@ export default function WebTiktokPage() {
           <span className="font-bold">① ต้องยินยอมด้วย @ajtcut_8 เท่านั้น</span> — ล็อกอินบัญชีอื่นแล้วกดอนุญาต
           เซิร์ฟเวอร์จะไม่เก็บกุญแจให้ (เสียเวลาเปล่าและต้องเริ่มใหม่ทั้งรอบ)
         </p>
+        {/* 🔑 **ตัวเลขที่วัดได้ย้ายมาอยู่ในคอมเมนต์ ไม่ขึ้นบนจอ** (ด่าน "เลขค้างบนจอ" จับได้ถูก)
+            ของจริงที่วัด 24 ต.ค. 2569: เฉพาะคุกกี้ที่มองเห็นได้ 5,159 ไบต์ 57 ตัว
+            เลขนั้นเป็นของเครื่องหนึ่งเครื่อง ณ วันหนึ่งวัน ⇒ พิมพ์ไว้บนจอคือคำกล่าวอ้างที่เก่าเงียบ ๆ
+            และคนอ่านไม่ต้องใช้เลขนี้ทำอะไรเลย — เขาต้องรู้แค่ว่า "เจอ 431 ให้เปิดหน้าต่างไม่ระบุตัวตน" */}
         <p className="text-[12.5px] text-amber-900/90">
           <span className="font-bold">② เจอ HTTP 431 ให้เปิดหน้าต่างไม่ระบุตัวตน</span> — คุกกี้ของ tiktok.com
-          บวมเกินที่ TikTok รับ (วัดจริง 24 ต.ค. 2569: เฉพาะคุกกี้ที่มองเห็นได้ <span className="tabular-nums">5,159</span> ไบต์ <span className="tabular-nums">57</span> ตัว)
+          ในเบราว์เซอร์ที่ใช้อยู่บวมเกินที่ TikTok รับ (เจอมาจริงวันนี้) · หน้าต่างใหม่ที่ไม่มีคุกกี้เก่าผ่านได้
         </p>
       </div>
 
@@ -227,8 +231,11 @@ export default function WebTiktokPage() {
         <div className="flex flex-wrap items-center gap-2.5">
           <span className="min-w-0 flex-1">
             <span className="block text-[12.5px] font-bold text-gray-900">ส่งคลิปขึ้น TikTok</span>
+            {/* 🔑 ไม่พิมพ์ "ทุก 2 ชั่วโมง" และ "เพดาน 5 ใบ" ไว้ที่นี่ — สองค่านั้นอยู่ที่ตัวตั้งเวลา
+                กับ `อัปสูงสุดต่อรอบ` ใน ลงtiktok.py บน g1 ⇒ ใครแก้ที่นั่น ข้อความนี้จะโกหกทันที
+                เพดานจึงมาจากก้อนที่ g1 ดันขึ้น (โชว์ด้านล่างเมื่อมีข้อมูล) */}
             <span className="block text-[12.5px] text-gray-500 mt-0.5">
-              ท่อวิ่งเองทุก 2 ชั่วโมง (เพดาน 5 ใบ/รอบ) · ปุ่มนี้คือ “ขอให้ยิงรอบพิเศษเดี๋ยวนี้”
+              ท่อวิ่งเองเป็นรอบตามเวลาอยู่แล้ว · ปุ่มนี้คือ “ขอให้ยิงรอบพิเศษเดี๋ยวนี้”
             </span>
           </span>
           <button onClick={ขอส่งรอบนี้} disabled={ส่งอยู่}
@@ -267,7 +274,7 @@ export default function WebTiktokPage() {
           <p className="rounded-xl border border-amber-100 bg-amber-50/70 px-3.5 py-2.5 text-[12.5px] text-amber-900">
             {กล่อง.เหตุ || 'g1 ยังไม่เคยดันผลขึ้นมาเลย'}
             <span className="block mt-1 text-amber-900/80">
-              ⇒ ยัง<span className="font-bold">ไม่ทราบ</span>ว่าเคยส่งคลิปไปกี่ใบ (คนละเรื่องกับ “ส่งไปแล้ว 0 ใบ”)
+              ⇒ ยัง<span className="font-bold">ไม่ทราบ</span>ว่าเคยส่งคลิปไปกี่ใบ (คนละเรื่องกับ “ส่งไปแล้วศูนย์ใบ”)
               · ตัวดันบน g1 คือ <span className="font-mono text-[11.5px]">tiktok-pipe-bridge.timer</span>
             </span>
             {กล่อง.ขอรอบค้าง && <span className="block mt-1">มีคำขอรอบพิเศษค้างตั้งแต่ {เวลาไทย(กล่อง.ขอรอบค้าง)}</span>}
@@ -282,6 +289,9 @@ export default function WebTiktokPage() {
                 <span>ส่งไปแล้ว <span className="font-bold tabular-nums text-gray-800">{กล่อง.รายการ.length}</span> ใบ</span>
                 {กล่อง.บัญชี && <span>· บัญชีปลายทาง <span className="font-mono text-[11.5px] text-gray-700">@{กล่อง.บัญชี}</span></span>}
                 {กล่อง.โหมด && <span>· โหมดท่อ <span className="font-bold text-gray-700">{กล่อง.โหมด}</span></span>}
+                {typeof กล่อง.เพดานต่อรอบ === 'number' && (
+                  <span>· เพดาน <span className="font-bold tabular-nums text-gray-800">{กล่อง.เพดานต่อรอบ}</span> ใบ/รอบ <span className="text-gray-400">(ค่าจากท่อ)</span></span>
+                )}
                 {กล่อง.ดันเมื่อ && <span>· g1 รายงานล่าสุด {เวลาไทย(กล่อง.ดันเมื่อ)}</span>}
               </div>
 
@@ -290,7 +300,7 @@ export default function WebTiktokPage() {
               {typeof เงียบ === 'number' && เงียบ > 10 && (
                 <p className="rounded-xl border border-amber-100 bg-amber-50/70 px-3.5 py-2.5 text-[12.5px] text-amber-900">
                   ⚠️ g1 ไม่ได้รายงานมา <span className="font-bold tabular-nums">{เงียบ}</span> นาที
-                  (ตัวดันตั้งใจรายงานทุก ≤5 นาที) ⇒ <span className="font-bold">ตัวเลขในตารางอาจเก่า</span> ·
+                  (ตัวดันตั้งใจรายงานเป็นระยะแม้เนื้อไม่เปลี่ยน) ⇒ <span className="font-bold">ตัวเลขในตารางอาจเก่า</span> ·
                   ตรวจที่เครื่อง: <span className="font-mono text-[11.5px]">systemctl --user status tiktok-pipe-bridge.timer</span>
                 </p>
               )}
